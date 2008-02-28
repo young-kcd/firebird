@@ -982,11 +982,13 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 	Firebird::MutexLockGuard guard(file->fil_mutex);
 
 	for (int i = 0; i < MAX_FILE_IO; i++)
+	{
 		if (!file->fil_io_events[i]) {
 			file->fil_io_events[i] = overlapped->hEvent;
 			overlapped->hEvent = NULL;
 			break;
 		}
+	}
 
 	if (overlapped->hEvent)
 		CloseHandle(overlapped->hEvent);

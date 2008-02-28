@@ -591,8 +591,9 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 			const UCHAR c1 = *sjis_str;
 			if (SJIS1(c1)) {	/* It is a KANJI */
 				if (sjis_len == 0) {	/* truncated KANJI */
-					return (1);
+					return 1;
 				}
+
 				sjis_str += 2;
 				sjis_len -= 1;
 			}

@@ -1749,9 +1749,7 @@ UCHAR* ISC_map_file(
    initialized shared memory. */
 
 	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event");
-	event_handle =
-		CreateEvent(ISC_get_security_desc(), TRUE, FALSE,
-					expanded_filename);
+	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, expanded_filename);
 	if (!event_handle) {
 		error(status_vector, "CreateEvent", GetLastError());
 		CloseHandle(file_handle);

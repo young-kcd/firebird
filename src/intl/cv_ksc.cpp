@@ -189,6 +189,7 @@ INTL_BOOL CVKSC_check_ksc(charset* cs,
 					*offending_position = ksc_str - ksc_str_start;
 				return (false);
 			}
+
 			ksc_str += 2;
 			ksc_len -= 1;
 		}

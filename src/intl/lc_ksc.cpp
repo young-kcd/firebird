@@ -78,7 +78,7 @@ TEXTTYPE_ENTRY(ksc_5601_dict_init)
 		cache->texttype_fn_compare = LCKSC_compare;
 		return true;
 	}
-	
+
 	return false;
 }
 
@@ -269,13 +269,13 @@ static SSHORT LCKSC_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, c
 			continue;
 		if (key1[i] < key2[i])
 			return -1;
-		
+
 		return 1;
 	}
 	if (len1 < len2)
 		return -1;
 	if (len1 > len2)
 		return 1;
-	
+
 	return 0;
 }

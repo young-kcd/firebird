@@ -572,13 +572,13 @@ ULONG FB_DLL_EXPORT LD_setup_attributes(
 
 	if (dstLen == 0)
 		return newSpecificAttributes.length();
-	
+
 	if (newSpecificAttributes.length() <= dstLen)
 	{
 		memcpy(dst, newSpecificAttributes.begin(), newSpecificAttributes.length());
 		return newSpecificAttributes.length();
 	}
-	
+
 	return INTL_BAD_STR_LENGTH;
 }
 

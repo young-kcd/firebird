@@ -502,7 +502,7 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 			stat->stat_flags |= LC_HAVE_SPECIAL;
 			continue;
 		}
-		
+
 		if (!((col->IsExpand && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_expansions)) ||
 				   (col->IsCompress && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))))
 		{
@@ -511,7 +511,7 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 			(*p)++;
 			return col;
 		}
-		
+
 		if (col->IsExpand) {
 			const ExpandChar* exp = &((const ExpandChar*) obj->texttype_impl->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != **p)
@@ -526,7 +526,7 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 			stat->stat_flags |= LC_HAVE_WAITING;
 			return col;
 		}
-		
+
 		/* (col->IsCompress) */
 		if (*l > 1) {
 			const CompressPair* cmp =
@@ -694,6 +694,7 @@ static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 
 		return (1);
 	}
+
 	if (len1 < len2)
 		return (-1);
 	if (len1 > len2)
@@ -1017,7 +1018,7 @@ bool LC_NARROW_family3(
 
 		return true;
 	}
-	
+
 	return false;
 }
 

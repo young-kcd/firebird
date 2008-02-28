@@ -1079,7 +1079,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 		srcLen = pad - src + 1;
 	}
 
-	const UCollator* coll = 0;
+	const UCollator* coll = NULL;
 
 	switch (key_type)
 	{
@@ -1093,8 +1093,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			{
 				UChar str[10];
 				UErrorCode status = U_ZERO_ERROR;
-				int len = icu->usetGetItem(contractions,
-					i, NULL, NULL, str, sizeof(str), &status);
+				int len = icu->usetGetItem(contractions, i, NULL, NULL, str, sizeof(str), &status);
 
 				if (len > srcLen)
 					len = srcLen;
@@ -1236,8 +1235,6 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 		ICU* icu = UnicodeUtil::loadICU(*i, configInfo);
 		if (!icu)
 			continue;
-
-		//UErrorCode status = U_ZERO_ERROR;
 
 		if (locale.hasData())
 		{
