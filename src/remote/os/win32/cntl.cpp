@@ -34,6 +34,7 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../jrd/why_proto.h"
 #include "../common/classes/init.h"
 
 #ifdef WIN_NT

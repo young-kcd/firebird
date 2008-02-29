@@ -24,7 +24,7 @@
 #include "firebird.h"
 #include <windows.h>
 #include "../jrd/common.h"
-#include "../../utilities/install/registry.h"
+#include "../jrd/ibase.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/thread_proto.h"
 
