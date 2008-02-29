@@ -1,7 +1,7 @@
 ba.MyAppName=Firebird Database Server %1
 ba.ServerInstall=Puna instalacija Server-a i razvojnih alata.
 ba.SuperServerInstall=Puna instalacija Super Server-a i razvojnih alata.
-ba.ClassicServerInstall=Puna instalacijaClassic Server-a i razvojnih alata.
+ba.ClassicServerInstall=Puna instalacija Classic Server-a i razvojnih alata.
 ba.DeveloperInstall=Instalacija Client alata za Developere i database administratore.
 ba.ClientInstall=Minimalna instalacija client-a - bez server-a, bez alata.
 ba.CustomInstall=Custom instalacija
@@ -40,7 +40,7 @@ ba.InstallSummaryCancel1= Ako nastavite sa ovom instalacijom Firebird æe biti in
 ba.InstallSummaryCancel2= Moraæete da kompletirate instalaciju ruèno.
 ba.InstallSummaryCancel3= Želite li da ODUSTANETE od ove instalacije?
 
-ba.InstalledProducts='re-instalaciona analiza pokazuje da %s postojeæi Firebird ili Interbase %s je pronadjen.
+ba.InstalledProducts='Pre-instalaciona analiza pokazuje da %s postojeæi Firebird ili Interbase %s je pronadjen.
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
