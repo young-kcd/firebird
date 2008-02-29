@@ -57,7 +57,7 @@ public:
 	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
 
-}; // namespace
+} // namespace
 
 #endif // JRD_EXECUTE_STATEMENT_H
 
