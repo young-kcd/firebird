@@ -428,7 +428,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 						return FALSE;
 					}
 
-					JRD_shutdown_all(false);
+					fb__shutdown(NULL);
 					SRVR_shutdown();
 					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
@@ -451,7 +451,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
-				JRD_shutdown_all(false);
+				fb__shutdown(NULL);
 				SRVR_shutdown();
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
 			}
