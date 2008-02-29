@@ -1,7 +1,7 @@
 
-==================================
-Firebird 2.1.0       (Win32 Build)
-==================================
+===================================
+Firebird 2.1.0  RC2 (Windows Build)
+===================================
 
 
 o Introducción
@@ -72,18 +72,18 @@ Antes de reportar un error:
 o ¿Quizá alguien ya lo haya reportado? Consulte los
   reportes de errores aquí:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 o Si tiene dudas, ¿por qué no discutir el problema en
   la lista de desarrollo Firebird-devel? Puede
   suscribirse aquí:
 
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
   y puede ver los mensajes de la lista utilizando grupos de
   noticias (newsgroups) aquí:
 
-    news://news.atkin.com/
+	news://news.atkin.com/
 
 
 Por favor, no utilice la lista Firebird-devel para

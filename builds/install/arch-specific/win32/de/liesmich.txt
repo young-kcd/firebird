@@ -1,6 +1,6 @@
 
 ====================================
-Firebird 2.1.0       (Windows Build)
+Firebird 2.1.0 RC2   (Windows Build)
 ====================================
 
 
@@ -65,18 +65,18 @@ Bevor Sie einen Bug berichten:
  o Vielleicht hat jemand bereits das selbe Problem berichtet? Sie
    können existierende Problemberichte hier einsehen:
    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
-   
+
  o Falls Sie sich nicht sicher sind, diskutieren Sie das
    Problem am besten vorab in der Firebird-devel Liste.
    Dieser Liste können Sie hier beitreten:
-   
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
-   
+
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+
    Diese Liste ist auch über ein Newsgroup-Interface hier
    einsehbar:
-   
-    news://news.atkin.com/
-    
+
+	news://news.atkin.com/
+
 
 Verwenden Sie bitte die Firebird-devel Liste nicht für
 technische Supportanfragen, solange es sich bei Ihrer

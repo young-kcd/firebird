@@ -1,4 +1,4 @@
-Firebird Serveur Bases de données 2.1
+Firebird Serveur Bases de données 2.1 RC2
 ==================================================
 
 ** NOTE IMPORTANTE **
@@ -11,12 +11,14 @@ version, seul le texte original en anglais
 **       FIN      **
 
 Ce document est un guide pour l'installation de
-Firebird 2.1 sur une plateforme Win32. Ces notes concernent 
-l'utilitaire d'installation, pas Firebird 2.1 en général.
+Firebird 2.1 sur une plateforme Windows. Ces notes
+concernent l'utilitaire d'installation, pas Firebird 2.1
+en général.
 
 Ce document s'adresse à des personnes connaissant déjà
 Firebird 2.0. Si vous utilisez Firebird 1.5, nous vous
-conseillons de lire d'abord la documentation de Firebird 2.0
+conseillons de lire d'abord la documentation de
+Firebird 2.0.
 
 Contenu
 --------
@@ -44,15 +46,15 @@ Problèmes avec l'installation des bibliothèques MS VC runtime
 
 Tout est fait pour que les des bibliothèques MS VC runtime
 soient correctement installées par l'utilitaire d'installation.
-Toute fois, il est parfois ncessaire d'utiliser pour cela le 
+Toute fois, il est parfois ncessaire d'utiliser pour cela le
 programme officiel vcredist.exe. La version qui convient à cette
 version de Firebird se trouve ici (32b) :
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   et x64 ici :
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 
@@ -60,7 +62,7 @@ Problèmes connus d'installation
 -------------------------------
 
 o Vous ne pouvez utiliser l'utilitaire d'installation
-  que pour installer l'instance par défaut de Firebird 2.1. 
+  que pour installer l'instance par défaut de Firebird 2.1.
   Si vous voulez en installer une deuxième en plus, ou une
   instance nomée, vous devez le faire à partir de l'image
   zip.
@@ -73,12 +75,12 @@ o Il y a des chevauchements entre les installations
   32-bit et 64-bit :
 
   - L'installateur de service (instsvc) utilise
-    le même nom default instance pour les installations
-    32-bit et 64-bit. Les services existent
-    dans le même espace de nom.
+	le même nom default instance pour les installations
+	32-bit et 64-bit. Les services existent
+	dans le même espace de nom.
 
   - Si les deux applets 32-bit et 64-bit du panneau de configuration
-    sont installées, elles pointeront sur la même instance.
+	sont installées, elles pointeront sur la même instance.
 
 o Sous Vista, faites l'installation en tant qu'administrateur
   Sinon, l'utilitaire d'installation ne pourra pas démarrer
@@ -135,7 +137,7 @@ Autres Notes
   l'installation echouera. Vous pouvez visiter cet
   lien:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   pour savoir comment faire la mise à jour.
 
@@ -147,7 +149,7 @@ Le programme d'installation peut être utilisé depuis un
 fichier batch
 Lisez le document :
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 pour plus de détails.
 

@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.1.0       (Windows Build)
+Firebird 2.1.0 RC2   (Windows Build)
 ==================================
 
 o Uvod
@@ -20,8 +20,8 @@ Dobrodosli u Firebird 2.1.
 Kome je namjenjen?
 ============================
 
-Ovaj release candidate je namjenjen naprednim korisnicima 
-Firebird-a. On je poprilicno dobro istestiran i sve nove 
+Ovaj release candidate je namjenjen naprednim korisnicima
+Firebird-a. On je poprilicno dobro istestiran i sve nove
 mogucnosti bi trebale biti lijepo dokumentovane.
 
 Nemojte koristiti ovu verziju u produkcionom okruzenju.
@@ -33,8 +33,8 @@ Poznati nedostatci
 Windows Vista - Binarni installer ne uspjeva pokrenuti
 Firebird kao service prilikom instalacije, medjutim,
 service se ispravno pokrece nakon restarta racunara. Kao
-workaround, mozete uraditi sljedece: shift-right click na 
-Firebird control panel applet, izabrati 'Run as...' i 
+workaround, mozete uraditi sljedece: shift-right click na
+Firebird control panel applet, izabrati 'Run as...' i
 pokrenuti service odatle.
 
 
@@ -48,10 +48,10 @@ informacija.
 Instalacija
 ============
 
-Problemi prilikom instalacije su pokriveni u detalje u 
+Problemi prilikom instalacije su pokriveni u detalje u
 Installation Guide-u koji je dostupanu doc directoriju nakon
-instalacije. Kratak sadržaj instalacionih problema se moze 
-naci i u installation_readme.txt, koji je takodje 
+instalacije. Kratak sadržaj instalacionih problema se moze
+naci i u installation_readme.txt, koji je takodje
 dostupan u doc directoriju nakon instalacije.
 
 
@@ -66,21 +66,21 @@ Prije nego prijavite bug:
  o Mozda je neko vec prijavio bug? Pogledajte
    postojece prijave bugova ovdje:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
   Mozete se prijaviti ovdje:
 
-    mailto:firebird-support-subscribe@yahoogroups.com
+	mailto:firebird-support-subscribe@yahoogroups.com
 
 
  o Ako ste u dilemi zasto ne diskutujete o problemu na
    Firebird-devel listi? Mozete se prijaviti ovdje:
 
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    i listu je moguce pogledati kroz newsgroup interface ovdje:
 
-    news://news.atkin.com/
+	news://news.atkin.com/
 
 
 Molimo da ne koristite Firebird-devel listu za tehnicku podrsku

@@ -1,9 +1,9 @@
-Firebird Database Server 2.1
+Firebird Database Server 2.1 RC2
 ==================================================
 
 
 Este documento es una guía para instalar este paquete
-de Firebird 2.1 en la plataforma Win32. Estas notas
+de Firebird 2.1 en la plataforma Windows. Estas notas
 hacen referencia al paquete de instalación en sí, más
 que a Firebird 2.1 en general. Además, estas notas
 están destinadas principalmente a usuarios del
@@ -49,11 +49,11 @@ ser necesario instalar el vcredist.exe oficial. Las
 versiones correctas para esta compilación de Firebird
 pueden encontrarse aquí:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   y aquí para x64:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Otros problemas conocidos relacionados con la instalación
@@ -73,14 +73,14 @@ o Existen areas conocidas de superposición entre las
   instalaciones de de 32 y de 64 bits:
 
   - El instalador de servicios (instsvc) utiliza la
-    misma instancia por defecto para las instalaciones de
-    32 y de 64 bits. Esto ocurre "by design" (por
-    diseño). Los servicios existen en un único espacio de
-    nombres.
+	misma instancia por defecto para las instalaciones de
+	32 y de 64 bits. Esto ocurre "by design" (por
+	diseño). Los servicios existen en un único espacio de
+	nombres.
 
   - Si se instalan los applets del panel de control de
-    32 y de 64 bits, ambos apuntarán a la misma instancia
-    por defecto .
+	32 y de 64 bits, ambos apuntarán a la misma instancia
+	por defecto .
 
 o Al realizar una instalación en Vista asegúrese de
   hacerlo como administrador. Es decir, si usa el
@@ -146,7 +146,7 @@ Otras Notas
   la instalación fallará. Puede visitar el siguiente
   enlace:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   para obtener información sobre cómo realizar la
   actualización.
@@ -159,6 +159,6 @@ El programa de instalación puede ser ejecutado desde
 un archivo batch.
 Por favor lea el siguiente documento:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 para tener todos los detalles.

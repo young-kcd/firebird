@@ -1,9 +1,9 @@
-Firebird Datenbank Server 2.1
+Firebird Datenbank Server 2.1 RC2
 ==================================================
 
 
 Dieses Dokument ist eine Anleitung um dieses Paket
-von Firebird 2.1 auf einer Win32 Plattform zu installieren.
+von Firebird 2.1 auf einer Windows Plattform zu installieren.
 Diese Hinweise beziehen sich ausschließlich auf das
 Installationspaket und nicht auf Firebird 2.1 im
 Allgemeinen. Des Weiteren ist diese Anleitung für
@@ -47,11 +47,11 @@ installiert werden. Dennoch kann es beim Auftreten von Problemen
 notwendig sein, die offizielle vcredist.exe weiterzugeben. Die
 korrekte Version für dieses Build von Firebird finden Sie hier:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   und für x64:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Weitere bekannte Installationsprobleme
@@ -62,21 +62,21 @@ o Sie können die Setuproutine nur für die Installation
   Sie die Installation von weiteren, benannten Instanzen
   durchführen möchten, dann müssen Sie dazu die gezippte
   Distribution verwenden.
-  
+
 o Unglücklicherweise kann die Setuproutine einen laufenden
   Firebird Classic Server nicht verläßlich erkennen.
-  
+
 o Es existieren bekannte Probleme in Bezug auf die Überlappung
   der 32-bit und 64-bit Installation:
-  
+
   - Der Installer des Diensts (instsvc) verwendet den
-    selben Default-Instanznamen für 32-bit und 64-bit
-    Installationen. Dies ist "By Design". Dienste
-    existieren in einem einzelnen Namensraum.
+	selben Default-Instanznamen für 32-bit und 64-bit
+	Installationen. Dies ist "By Design". Dienste
+	existieren in einem einzelnen Namensraum.
 
   - Falls das 32-bit und 64-bit Systemsteuerungs-Panel
-    installiert ist: Beide verweisen auf die selbe
-    Default-Instanz.
+	installiert ist: Beide verweisen auf die selbe
+	Default-Instanz.
 
 o Falls Sie Firebird unter Vista installieren, stellen Sie
   sicher, dass dies als Administrator durchgeführt wird.
@@ -85,7 +85,7 @@ o Falls Sie Firebird unter Vista installieren, stellen Sie
   werden. Ist dies nicht der Fall, so kann am Ende der
   Installation die Setuproutine den Firebird Dienst nicht
   starten.
-  
+
 
 Deinstallation
 --------------
@@ -115,17 +115,17 @@ o Die Deinstallation entfernt folgende Dateien NICHT:
   späteren Zeitpunkt benötigt, falls Firebird neu installiert
   werden soll. Diese Dateien können gelöscht werden, wenn Sie
   dafür keine Verwendung mehr haben.
-  
+
 o Die Deinstallationsroutine kann nun auch mit dem /CLEAN
   Parameter aufgerufen werden. Dies überprüft den Shared File
   Count für jede der oben genannten Datei. Falls möglich,
   werden diese gelöscht.
-  
+
 o Eine Deinstallation entfernt die MS VC Laufzeitbibliotheken
   nicht aus dem Systemverzeichnis. Diese können über die
   Systemsteuerung entfernt werden, allerdings sollte dies unter
   normalen Umständen nicht notwendig sein.
-  
+
 
 Weitere Hinweise
 ----------------
@@ -137,7 +137,7 @@ Weitere Hinweise
   wird, so wird die Installation fehlschlagen. Sie können diesen Link
   besuchen:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   um herauszufinden, wie ein Upgrade erfolgen kann.
 
@@ -148,7 +148,7 @@ Installation mit einer Batch-Datei
 Das Setup-Programm kann von einer Batch-Datei aus verwendet werden.
 Nähere Informationen dazu finden Sie in:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 
 

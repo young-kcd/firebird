@@ -1,6 +1,6 @@
 
 ======================================
-Firebird 2.1.0       (Win32 Felépítés)
+Firebird 2.1.0 RC2 (Windows Felépítés)
 ======================================
 
 o Bevezetés
@@ -124,10 +124,10 @@ Ismert problémák
    <system> mappába és át nem nevezi "gds32.dll"-re.
 
  o A Windows-os készlet tartalmaz egy instclient.exe
-   nevezetû programot, amely arra használhat, hogy az 
+   nevezetû programot, amely arra használhat, hogy az
    örökölt programokkal kompatibilis gds32.dll fájlt
    hozhat vele létre, és opcionálisan ezt a fájlt a
-   rendszer <system> mappában helyezheti el. Ebben az 
+   rendszer <system> mappában helyezheti el. Ebben az
    esetben lényeges, hogy elolvassa a "Firebird 1.5 -
    Újdonságok"  dokumentumot valamint a mellékelt:
    .\doc\README_library_install.txt
@@ -167,17 +167,17 @@ o Biztosan érti, hogy hogyan mûködik a Firebird?
 
   Feliratkozni a következõ helyen tud:
 
-    mailto:firebird-support-subscribe@yahoogroups.com
+	mailto:firebird-support-subscribe@yahoogroups.com
 
   (e-mail küldésével)
 
 
 o Továbbra is úgy gondolja, hogy egy hibát talált?
 
-  Nézze át a még meglévõ hibák listáját. Ezt 
+  Nézze át a még meglévõ hibák listáját. Ezt
   megteheti a Firebird hibakövetõ rendszerében:
 
-    http://sourceforge.net/tracker/?group_id=9028&atid=109028
+	http://sourceforge.net/tracker/?group_id=9028&atid=109028
 
 Egyébként, ha Ön egészen biztos benne, hogy hibát
 talált, próbáljon meg felépíteni egy olyan

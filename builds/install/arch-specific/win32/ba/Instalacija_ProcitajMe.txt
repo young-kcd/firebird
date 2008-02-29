@@ -1,16 +1,16 @@
-Firebird Database Server 2.1
+Firebird Database Server 2.1 RC2
 ==================================================
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.1 za Win32 platformu. Ovaj tekst
+Firebird-a 2.1 za Windows platformu. Ovaj tekst
 se odnosi na instalacioni paket, a ne na Firebird 2.1
-u generalnom smislu. Kao dodatak, ovaj tekst je 
+u generalnom smislu. Kao dodatak, ovaj tekst je
 primarno namijenjen korisnicima binarne instalacije.
 
-Pretpostavljamo da citaoci ovog dokumenta su vec 
-upoznati sa Firebird-om 2.0. Ako evaluirate 
-Firebird 2.1 kao dio migracione strategije sa Fb 1.5 
-preporucujemo vam da pogledate Fb 2.0 dokumentaciju kako 
+Pretpostavljamo da citaoci ovog dokumenta su vec
+upoznati sa Firebird-om 2.0. Ako evaluirate
+Firebird 2.1 kao dio migracione strategije sa Fb 1.5
+preporucujemo vam da pogledate Fb 2.0 dokumentaciju kako
 bi razumjeli promjene napravljene uzmedju 1.5 i 2.0.
 
 
@@ -29,8 +29,8 @@ Prije instalacije
 -------------------
 
 Preporucuje se DEINSTALIRATI sve prethodne
-verzije Firebird-a ili InterBase-a prije instalacije 
-ovog paketa. Veoma je vazno provjeriti da su 
+verzije Firebird-a ili InterBase-a prije instalacije
+ovog paketa. Veoma je vazno provjeriti da su
 fbclient.dll i gds32.dll uklonjeni iz <system32>.
 
 
@@ -39,47 +39,47 @@ Problemi sa instalacijom MS VC runtime biblioteka
 
 Dosta posla je uradjeno da osigura da MS Visual
 C runtime biblioteke se ispravno instalirane putem
-instalacionog programa. Medjutim, u slucaju problema moze 
-biti potrebno uraditi deploy oficijelnog vcredist.exe. 
-Ispravne verzije za ovaj build Firebird-a mogu se 
+instalacionog programa. Medjutim, u slucaju problema moze
+biti potrebno uraditi deploy oficijelnog vcredist.exe.
+Ispravne verzije za ovaj build Firebird-a mogu se
 naci ovdje:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   i za x64 ovdje:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Drugi poznati problemi vezani za instalaciju
 ---------------------------------
 
-o Moguce je jedino koristiti instalacioni program 
+o Moguce je jedino koristiti instalacioni program
   za instalaciju default-ne instance Firebird-a 2.1.
-  Ako zelite da instalirate dodatne, named instance, 
+  Ako zelite da instalirate dodatne, named instance,
   trebate ih rucno instalirati iz zip datoteke.
 
-o Nazalost, instalacioni program ne moze pouzdano 
-  detektovati da li je prethodna verzija Firebird 
+o Nazalost, instalacioni program ne moze pouzdano
+  detektovati da li je prethodna verzija Firebird
   Classic server-a pokrenuta.
 
-o Poznate su zone preklapanja izmedju 
+o Poznate su zone preklapanja izmedju
   32-bit i 64-bit instalacija:
 
-  - Service installer (instsvc) koristi isto 
-    default instance ime za 32-bit i 64-bit
-    instalacije. To je "by design". Servisi postoje 
-    u jedinstvenom "name space-u".
+  - Service installer (instsvc) koristi isto
+	default instance ime za 32-bit i 64-bit
+	instalacije. To je "by design". Servisi postoje
+	u jedinstvenom "name space-u".
 
   - Ako su 32-bit i 64-bit control panel applet-i
-    instalirani, oba ce pokazivati na istu default
-    instancu.
+	instalirani, oba ce pokazivati na istu default
+	instancu.
 
-o Kada se instalira pod Vista-om budite sigurni da 
-  instalirate kao administrator. tj, ako koristite 
+o Kada se instalira pod Vista-om budite sigurni da
+  instalirate kao administrator. tj, ako koristite
   instalacioni program uradite sljedece:
   desni click i izaberite 'Run as administrator'.
-  U suprotnom instalacioni program nece biti sposoban 
+  U suprotnom instalacioni program nece biti sposoban
   da pokrene Firebird service na kraju instalacije.
 
 
@@ -117,12 +117,12 @@ o Deinstalacija ostavlja 4 datoteke u install
 
 o Novi feature deinstalacionog programa je opcija da se
   pokrene sa /CLEAN parametrom. Ovo ce provjeriti
-  broj dijeljenih datoteka svake od gore navedenih 
+  broj dijeljenih datoteka svake od gore navedenih
   datoteka. Ako je moguce onda ce ih pobrisati.
 
 o Deinstalacija nece ukloniti MS VC runtime
-  biblioteke iz system-skog direktorija. One mogu 
-  biti uklonjene rucno kroz control panel, ali ovo 
+  biblioteke iz system-skog direktorija. One mogu
+  biti uklonjene rucno kroz control panel, ali ovo
   ne bi trebalo biti potrebno u normalnim okolnostima.
 
 
@@ -134,7 +134,7 @@ Druge biljeske
  biblioteke se obavlje u toku instalacije. Ako nije nadjen,
  instalacija nece uspjeti. Posjetite ovaj link:
 
-    http://support.microsoft.com/default.aspx?/scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?/scid=kb;EN-US;q177719
 
  da bi saznali kako isti instalirati.
 
@@ -145,7 +145,7 @@ Instalacija batch datotekom
 Setup program se moze pokrenuti iz batch datoteke.
 Molimo da pogledate ovaj dokument:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 za sve detalje.
 

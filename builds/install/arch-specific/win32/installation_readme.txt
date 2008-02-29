@@ -1,9 +1,9 @@
-Firebird Database Server 2.1
+Firebird Database Server 2.1 RC2
 ==================================================
 
 
 This document is a guide to installing this package of
-Firebird 2.1 on the Win32 platform. These notes refer
+Firebird 2.1 on the Windows platform. These notes refer
 to the installation package itself, rather than
 Firebird 2.1 in general. In addition, these notes are
 primarily aimed at users of the binary installer.
@@ -45,11 +45,11 @@ be necessary to deploy the official vcredist.exe. The
 correct versions for this build of Firebird can be
 found here:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   and x64 here:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Other Known installation problems
@@ -69,13 +69,13 @@ o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The service installer (instsvc) uses the same
-    default instance name for 32-bit and 64-bit
-    installations. This is by design. Services exist
-    in a single name space.
+	default instance name for 32-bit and 64-bit
+	installations. This is by design. Services exist
+	in a single name space.
 
   - If the 32-bit and 64-bit control panel applets are
-    installed they will both point to the same default
-    instance.
+	installed they will both point to the same default
+	instance.
 
 o When installing under Vista be sure to install as an
   administrator. ie, if using the binary installer
@@ -135,7 +135,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -146,7 +146,7 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 for full details.
 

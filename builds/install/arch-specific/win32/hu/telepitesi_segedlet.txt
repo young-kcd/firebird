@@ -1,4 +1,4 @@
-Firebird Adatbázis Szerver 2.1
+Firebird Adatbázis Szerver 2.1 RC2
 ===================================================
 
 
@@ -16,7 +16,7 @@ telepítési segédlet még nem készült el.
 
   ** ****** **
 
-Ez a dokumentum egy telepítési segédlet a Win32
+Ez a dokumentum egy telepítési segédlet a Windows
 platformon mûködõ Firebird 2.1 telepítéséhez.
 A telepítési segédlet elsõsorban a telepítés menetét
 írja le, s nem a Firebird 2.1-ról szól
@@ -129,7 +129,7 @@ eltávolítja.
 A telepítõ új szolgáltatásai
 ----------------------------
 
-o Ha egy változatlan firebird.conf létezik a telepítés 
+o Ha egy változatlan firebird.conf létezik a telepítés
   mappájában, akkor az egy alapértelmezett konfigurációs
   állomány kerül mentésre az alábbi néven:
   firebird.conf.default
@@ -153,8 +153,8 @@ A telepítõ megszüntetett szolgáltatásai
 
 o A Firebird 1.0 fenntartott egy regisztrációs-adatbázis
   bejegyzést saját használatra. Ez a következõ volt:
-  
-    HKLM\SOFTWARE\FirebirdSQL
+
+	HKLM\SOFTWARE\FirebirdSQL
 
   Ez mostantól megszûnt és a telepítõ automatikusan
   törli ezt a bejegyzést. Ha olyan alkalmazásai
@@ -191,13 +191,13 @@ o Néhány ismert terület ahol a 32 bites és 64 bites verziók
   ütközhetnek:
 
   - A szolgáltatás-telepítõ (instsvc) ugyanazt az alapértelmezett
-    példánynevet használja, mind 32 bites, mind 64 bites tele-
-    pítésekhez. Ez a helyzet a tervezésmódból fakad. A szolgál-
-    tatások azonos nevtéren léteznek.
+	példánynevet használja, mind 32 bites, mind 64 bites tele-
+	pítésekhez. Ez a helyzet a tervezésmódból fakad. A szolgál-
+	tatások azonos nevtéren léteznek.
 
   - Ha a 32 bites és a 64 bites Vezérlõpult program telepítve
-    van akkor mindkettõ ugyanarra az alapértelmezett példányra
-    mutat.
+	van akkor mindkettõ ugyanarra az alapértelmezett példányra
+	mutat.
 
 o Amikor Vista alá telepíti a Firebird adatbáziskezelõt, gyõzõdjön
   meg róla, hogy rendszergazdaként van bejelentkezve. Például
@@ -239,13 +239,13 @@ o Az eltávolítási eljárás az alábbi fájlokat hagyja a
   a Firebird újratelepítése során. Amennyiben nincs
   szüksége ezekre a fájlokra, úgy le is törölheti
   õket.
-  
+
 o Az eltávolító alkalmazás új szolgáltatása, hogy a
   /CLEAN paraméterrel indítva a program ellenõrzi a
   megosztott programkönyvtárak számlálóit és ahol
   lehetséges törli a már szükségtelen megosztott
   programkönyvtárakat.
-  
+
 o Az eltávolítás során a Microsoft Visual C (MSVC)
   programkönyvtárak nem kerülnek eltávolításra. Ezeket
   eltávolíthatja a Programok hozzáadása és eltávolítása
@@ -275,4 +275,4 @@ Telepítés kötegelt (batch) fájlból
 A telepítõprogram futtatható kötegelt (batch) fájlból
 is. Információkat a következõ dokumentumból kaphat:
 
-    installation_scripted.txt
+	installation_scripted.txt

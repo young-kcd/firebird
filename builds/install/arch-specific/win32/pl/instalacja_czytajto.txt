@@ -1,9 +1,9 @@
-Serwer baz danych Firebird 2.1
+Serwer baz danych Firebird 2.1 RC2
 ==================================================
 
 
 Ten dokument jest przewodnikiem instalacji serwera
-baz danych Firebird 2.1 na systemach Win32.
+baz danych Firebird 2.1 na systemach Windows.
 Poni¿sze informacje dotycz¹ tego wydania serwera,
 a nie ogólnie serii wydañ Firebird'a 2.1. Informacje s¹
 przeznaczone dla u¿ytkowników uruchamiaj¹cych program
@@ -51,11 +51,11 @@ instalacja dodatkowego pakietu vcredist.exe. W³aœciwe
 wersje pakietów dla tego wydania Firebird'a mo¿na pobraæ
 ze stron:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
   dla systemów x64:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+	http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Inne znane problemy wystêpuj¹ce podczas instalacji
@@ -73,13 +73,13 @@ o Znane s¹ obszary pokrywania siê instalacji
   dla wersji 32 i 64 bitowych:
 
   - Instalator us³ugi (instsvc) u¿ywa tej samej,
-    domyœlnej nazwy instancji dla 32 i 64 bitowych
-    wersji instalacji. Trwaj¹ nad tym prace. Us³ugi
-    istniej¹ w jednej przestrzeni nazw.
+	domyœlnej nazwy instancji dla 32 i 64 bitowych
+	wersji instalacji. Trwaj¹ nad tym prace. Us³ugi
+	istniej¹ w jednej przestrzeni nazw.
 
   - Jeœli zainstalowane s¹ aplety w Panelu sterowania
-    dla 32 i 64 bitowych wersji, to oba wskazuj¹
-    na tê sam¹, domyœln¹ instancjê bazy.
+	dla 32 i 64 bitowych wersji, to oba wskazuj¹
+	na tê sam¹, domyœln¹ instancjê bazy.
 
 o W systemie Vista nale¿y przeprowadziæ instalacjê
   z konta administratora np. klikaj¹c prawym przyciskiem
@@ -144,7 +144,7 @@ Pozosta³e informacje
   Firebird'a. Na poni¿szej stronie mo¿na zaczerpn¹æ
   informacji, w jaki sposób nale¿y zainstalowaæ te biblioteki:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
 
 Instalacja z pliku wsadowego
@@ -154,5 +154,5 @@ Program instalatora mo¿e zostaæ uruchomiony z pliku wsadowego.
 W celu uzyskania dodatkowych informacji nale¿y zapoznaæ siê
 z zawartoœci¹ dokumentu:
 
-    installation_scripted.txt
+	installation_scripted.txt
 

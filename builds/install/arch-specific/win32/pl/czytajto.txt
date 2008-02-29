@@ -1,5 +1,5 @@
 =================================================
-Firebird 2.0.3       (Wersja Win32)
+Firebird 2.0.3       (Wersja Windows)
 =================================================
 
 o Wprowadzenie
@@ -78,14 +78,14 @@ o Jesteœ pewny, ¿e rozumiesz jak dzia³a Firebird ?
 
   Mo¿esz zapisaæ siê tu:
 
-    mailto:firebird-support-subscribe@yahoogroups.com
+	mailto:firebird-support-subscribe@yahoogroups.com
 
 
 o Ci¹gle myœlisz, ¿e to b³¹d ?
 
   SprawdŸ listê Otwartych B³êdów. Mo¿esz j¹ znaleŸæ tu:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
 Proszê nie u¿ywaæ trackera w celu uzyskania pomocy technicznej.
 Jeœli masz w¹tpliwoœci, to zapisz siê najpierw na listê wsparcia technicznego:

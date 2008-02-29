@@ -1,6 +1,6 @@
 
 ====================================
-Firebird 2.1.0       (Windows Build)
+Firebird 2.1.0 RC2   (Windows Build)
 ====================================
 
 
@@ -67,17 +67,17 @@ Before you report a bug:
  o Perhaps some has already reported this? Browse
    existing bug reports here:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
  o If in doubt why not discuss the problem on the
    Firebird-devel list? You can subscribe here:
 
-    http://lists.sourceforge.net/lists/listinfo/firebird-devel
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
    and the list is viewable via a newsgroup interface
    here:
 
-    news://news.atkin.com/
+	news://news.atkin.com/
 
 
 Please don't use the Firebird-devel list for technical
