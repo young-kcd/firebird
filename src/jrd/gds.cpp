@@ -857,7 +857,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 	// Handle primary code on a system by system basis
 
-	switch ((UCHAR) (*vector)[0]) {
+	switch ((UCHAR) (*vector)[0]) 
+	{
 	case isc_arg_warning:
 	case isc_arg_gds:
 		{
@@ -904,7 +905,10 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 	case isc_arg_sql_state:
 		q = (const TEXT*) (*vector)[1];
-		sprintf(s, "SQLSTATE (%s)", q);
+		if (strlen(q) >= FB_SQLSTATE_SIZE) // avoid surprises, corruption, etc.
+			sprintf(s, "SQLSTATE (%.*s)", FB_SQLSTATE_SIZE - 1, q);
+		else
+			sprintf(s, "SQLSTATE (%s)", q);
 		break;
 
 	case isc_arg_unix:
@@ -2244,14 +2248,14 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 		return;
 	}
 
-	SLONG gdscode = status_vector[1];
-	if (gdscode == 0) {
+	if (status_vector[1] == 0) {
 		// status_vector[1] == 0 is no error, by definition
 		strcpy(sqlstate, "00000");
 		return;
 	}
 
 	const ISC_STATUS* s = status_vector;
+	const ISC_STATUS* const last_status = status_vector + ISC_STATUS_LENGTH - 1;
 	bool have_sqlstate = false;
 
 	strcpy(sqlstate, "HY000"); // error of last resort
@@ -2261,7 +2265,12 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 	{
 		if (*s == isc_arg_sql_state)
 		{
-			strcpy(sqlstate, (char*) *(s + 1)); // easy, next argument points to sqlstate string
+			++s;
+			if (s >= last_status)
+				break;
+				
+			const char* state = (char*) *s; // easy, next argument points to sqlstate string
+			fb_utils::copy_terminate(sqlstate, state, FB_SQLSTATE_SIZE);
 			have_sqlstate = true;
 		}
 		else if (*s == isc_arg_cstring)
@@ -2272,39 +2281,44 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 		{
 			s += 2; // skip: isc_arg_* <item>
 		}
+		if (s >= last_status)
+			break;
 	}
 
 	if (have_sqlstate)
 		return;
 
 	// step #2, see if we can find a mapping.
-	gdscode = 0;
 	s = status_vector;
 
 	while ((*s != isc_arg_end) && (!have_sqlstate))
 	{
 		if (*s == isc_arg_gds)
 		{
-			s++;
-			gdscode = (const SLONG) *s;
+			++s;
+			if (s >= last_status)
+				break;
+				
+			const SLONG gdscode = (const SLONG) *s;
 			if (gdscode != 0)
 			{
-				if (!(gdscode == isc_random || gdscode == isc_sqlerr))
+				if (gdscode != isc_random && gdscode != isc_sqlerr)
 				{
 					// random is useless - it's just "%s". skip it
 					// sqlerr (sqlcode) is useless for determining sqlstate. skip it
 
 					// implement a binary search for array gds__sql_state[]
 					int first = 0;
-					int last = sizeof(gds__sql_states) / sizeof(*gds__sql_states);
-					while (first <= last)
-					{
-						int mid = (first + last) / 2;
-						if (gdscode > gds__sql_states[mid].gds_code)
+					int last = FB_NELEM(gds__sql_states);
+					while (first < last)
+					{				
+						const int mid = (first + last) / 2;
+						const SLONG new_code = gds__sql_states[mid].gds_code;
+						if (gdscode > new_code)
 						{
 							first = mid + 1;
 						}
-						else if (gdscode < gds__sql_states[mid].gds_code)
+						else if (gdscode < new_code)
 						{
 							last = mid - 1;
 						}
@@ -2314,13 +2328,14 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 
 							// we get 00000 for info messages like "Table %"
 							// these are completely ignored
-							if (!(strcmp("00000", gds__sql_states[mid].sql_state) == 0))
+							const char* new_state = gds__sql_states[mid].sql_state;
+							if (strcmp("00000", new_state) != 0)
 							{
-								strcpy(sqlstate, gds__sql_states[mid].sql_state);
+								fb_utils::copy_terminate(sqlstate, new_state, FB_SQLSTATE_SIZE);
 
 								// 42000 is general syntax error, and HY000 is general API error.
 								// we may be able to find something more precise if we keep scanning.
-								if (!(strcmp("42000", sqlstate) == 0 || strcmp("HY000", sqlstate) == 0))
+								if (strcmp("42000", sqlstate) != 0 && strcmp("HY000", sqlstate) != 0)
 								{
 									have_sqlstate = true;
 								}
@@ -2330,7 +2345,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 					} // while
 				}
 
-				s++;
+				++s;
 			}
 		}
 		else if (*s == isc_arg_cstring)
@@ -2341,6 +2356,8 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 		{
 			s += 2; // skip: isc_arg_* <item>
 		}
+		if (s >= last_status)
+			break;
 	} // while
 
 	// sqlstate will be exact match, or
