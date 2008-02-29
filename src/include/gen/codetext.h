@@ -586,6 +586,7 @@ static const struct {
 	{"long_login", 335544882},
 	{"fldnotdef2", 335544883},
 	{"invalid_similar_pattern", 335544884},
+	{"bad_teb_form", 335544885},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

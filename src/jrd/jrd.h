@@ -550,7 +550,7 @@ private:
 struct teb {
 	Attachment** teb_database;
 	int teb_tpb_length;
-	UCHAR* teb_tpb;
+	const UCHAR* teb_tpb;
 };
 
 typedef teb TEB;

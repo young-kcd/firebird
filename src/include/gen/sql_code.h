@@ -585,6 +585,7 @@ static const struct {
 	{335544882, -902}, /* 562 long_login */
 	{335544883, -205}, /* 563 fldnotdef2 */
 	{335544884, -105}, /* 564 invalid_similar_pattern */
+	{335544885, -901}, /* 565 bad_teb_form */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

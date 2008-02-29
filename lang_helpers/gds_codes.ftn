@@ -1180,6 +1180,8 @@ C --
       PARAMETER (GDS__fldnotdef2                       = 335544883)
       INTEGER*4 GDS__invalid_similar_pattern         
       PARAMETER (GDS__invalid_similar_pattern          = 335544884)
+      INTEGER*4 GDS__bad_teb_form                    
+      PARAMETER (GDS__bad_teb_form                     = 335544885)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

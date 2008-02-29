@@ -3471,6 +3471,11 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 											  0);
 		}
 
+		if (vector == NULL)
+		{
+			Firebird::status_exception::raise(isc_bad_teb_form, isc_arg_end);
+		}
+
 		for (TEB* v = vector; v < vector + count; v++)
 		{
 			Attachment* attachment = *v->teb_database;
@@ -3481,6 +3486,12 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
 			LOG_call(log_start_multiple, *tra_handle, count, vector);
 #endif
+
+			if ((v->teb_tpb_length < 0) ||
+				(v->teb_tpb_length > 0 && v->teb_tpb == NULL))
+			{
+				Firebird::status_exception::raise(isc_bad_tpb_form, isc_arg_end);
+			}
 
 			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
 

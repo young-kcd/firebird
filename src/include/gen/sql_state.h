@@ -585,6 +585,7 @@ static const struct {
 	{335544882, "HY000"}, // 562 long_login 
 	{335544883, "42S22"}, // 563 fldnotdef2 
 	{335544884, "42000"}, // 564 invalid_similar_pattern 
+	{335544885, "HY000"}, // 565 bad_teb_form 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

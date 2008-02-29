@@ -597,6 +597,7 @@ const
 	gds_long_login                       = 335544882;
 	gds_fldnotdef2                       = 335544883;
 	gds_invalid_similar_pattern          = 335544884;
+	gds_bad_teb_form                     = 335544885;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

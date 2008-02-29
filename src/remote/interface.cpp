@@ -4202,6 +4202,12 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 	try
 	{
+		if ((tpb_length < 0) ||
+			(tpb_length > 0 && tpb == NULL))
+		{
+			Firebird::status_exception::raise(isc_bad_tpb_form, isc_arg_end);
+		}
+
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_transaction;
 		P_STTR* trans = &packet->p_sttr;

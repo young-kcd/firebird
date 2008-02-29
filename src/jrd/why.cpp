@@ -177,7 +177,7 @@ struct teb
 {
 	FB_API_HANDLE *teb_database;
 	int teb_tpb_length;
-	UCHAR *teb_tpb;
+	const UCHAR *teb_tpb;
 };
 typedef teb TEB;
 
@@ -345,8 +345,9 @@ namespace
 		Firebird::SortedArray<Request*> requests;
 		Firebird::SortedArray<Blob*> blobs;
 		Firebird::SortedArray<Statement*> statements;
-		// Each array can be protected with personal mutex, but possibility 
-		// of collision is so slow here, that I prefer to save resources, using single mutex.
+		// Each array can be protected with personal mutex,
+		// but possibility of collision is so slow here, that's why
+		// I prefer to save resources, using single mutex.
 		Firebird::Mutex mutex;
 
 		int enterCount;
@@ -4939,10 +4940,10 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	{
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
-		if (count <= 0)
+		if ((count <= 0) ||
+			(count > 0 && vector == NULL))
 		{
-			Firebird::status_exception::raise(isc_bad_trans_handle,
-				/* Do we need new error code here ? */ isc_arg_end);
+			Firebird::status_exception::raise(isc_bad_teb_form, isc_arg_end);
 		}
 
 		Transaction** ptr;

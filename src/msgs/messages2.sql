@@ -666,6 +666,7 @@ COMMIT WORK;
 ('long_login', 'getUserInfo', 'jrd.cpp', NULL, 0, 562, NULL, 'Login name too long (@1 characters, maximum allowed @2)', NULL, NULL);
 ('fldnotdef2', NULL, NULL, NULL, 0, 563, NULL, 'column @1 is not defined in procedure @2', NULL, 'An undefined field was referenced in blr.');
 ('invalid_similar_pattern', 'SimilarToMatcher::Evaluator', 'SimilarToMatcher.h', NULL, 0, 564, NULL, 'Invalid SIMILAR TO pattern', NULL, NULL);
+('bad_teb_form', 'GDS_START_MULTIPLE', 'why.cpp', NULL, 0, 565, NULL, 'Invalid TEB format', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

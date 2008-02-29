@@ -620,6 +620,7 @@ const ISC_LONG isc_need_difference                  = 335544881L;
 const ISC_LONG isc_long_login                       = 335544882L;
 const ISC_LONG isc_fldnotdef2                       = 335544883L;
 const ISC_LONG isc_invalid_similar_pattern          = 335544884L;
+const ISC_LONG isc_bad_teb_form                     = 335544885L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -889,7 +890,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 833;
+const ISC_LONG isc_err_max                          = 834;
 
 #else /* c definitions */
 
@@ -1479,6 +1480,7 @@ const ISC_LONG isc_err_max                          = 833;
 #define isc_long_login                       335544882L
 #define isc_fldnotdef2                       335544883L
 #define isc_invalid_similar_pattern          335544884L
+#define isc_bad_teb_form                     335544885L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1748,7 +1750,7 @@ const ISC_LONG isc_err_max                          = 833;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          833
+#define isc_err_max                          834
 
 #endif
 
