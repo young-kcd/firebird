@@ -38,7 +38,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/file_params.h"
 
-#include <CoreServices/CoreService.h>
+#include <CoreServices/CoreServices.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 
