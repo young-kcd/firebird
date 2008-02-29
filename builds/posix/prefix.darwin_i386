@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_i386,v 1.1.2.2 2008-01-17 11:15:57 paulbeach Exp $
+#$Id: prefix.darwin_i386,v 1.1.2.3 2008-02-29 13:29:01 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
@@ -35,6 +35,7 @@ Physical_IO_Module=os/posix/unix.cpp
 PLATFORM_PATH=os/darwin
 
 LINK_OPTS:=
+LDFLAGS+=-isysroot /Developer/SDKs/MacOSX10.4u.sdk
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
 LIB_LINK_SONAME:=-current_version 2.0.0 -compatibility_version 2.0.0 -seg1addr 0x30000000
