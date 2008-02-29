@@ -38,9 +38,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/file_params.h"
 
-//#include <CoreServices.framework/Frameworks/CarbonCore.framework/Headers/MacTypes.h>
-
-#include </System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/MacTypes.h>
+#include <CoreServices/CoreService.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 
