@@ -166,6 +166,6 @@ public:
 	LexerState lex;
 };
 
-}; // namespace
+} // namespace
 
 #endif	// DSQL_PARSER_H

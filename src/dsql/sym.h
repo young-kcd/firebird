@@ -64,7 +64,7 @@ public:
 };
 typedef dsql_sym *DSQL_SYM;
 
-}; // namespace
+} // namespace
 
 #endif // DSQL_SYM_H
 

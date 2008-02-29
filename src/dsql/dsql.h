@@ -696,7 +696,7 @@ enum
 	ddl_charset, ddl_collation//, ddl_sec_class
 };
 
-}; // namespace
+} // namespace
 
 // macros for error generation
 

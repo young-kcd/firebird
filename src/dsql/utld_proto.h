@@ -64,7 +64,7 @@ namespace Jrd {
 		dsql_req* request;
 	};
 
-}; // namespace
+} // namespace
 
 #endif
 

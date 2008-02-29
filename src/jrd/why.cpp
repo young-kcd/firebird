@@ -5822,18 +5822,19 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS * user_status)
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+
+	try
 	{
 		// Shutdown clients before providers
 		if (ShutChain::run(FB_SHUT_PREPROVIDERS) == 0)
 		{
 			// Shutdown providers
-			for (int n=0; n<SUBSYSTEMS; ++n)
+			for (int n = 0; n < SUBSYSTEMS; ++n)
 			{
 				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
 				if (entry != no_entrypoint) 
 				{
-					if (entry(status) != 0)
+					if (entry(status) != FB_SUCCESS)
 						break;
 				}
 			}

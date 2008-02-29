@@ -977,7 +977,7 @@ enum node_args {
 	e_user_count
 };
 
-}; // namespace
+} // namespace
 
 namespace Jrd {
 
@@ -1064,6 +1064,6 @@ enum nod_flags_vals {
 	NOD_SPECIAL_SYNTAX		= 1	// nod_sys_function
 };
 
-}; // namespace
+} // namespace
 
 #endif // DSQL_NODE_H
