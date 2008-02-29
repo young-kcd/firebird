@@ -67,10 +67,6 @@
 #include "../utilities/common/cmd_util_proto.h"
 #include "../jrd/scl.h"
 
-#ifdef SERVER_SHUTDOWN
-#include "../jrd/jrd_proto.h"
-#endif
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -223,11 +219,6 @@ namespace {
 
 
 using namespace Jrd;
-
-#ifdef SERVER_SHUTDOWN
-static Service::shutdown_fct_t shutdown_fct = 0;
-static ULONG shutdown_param = 0L;
-#endif
 
 static Firebird::GlobalPtr<Firebird::Mutex> svc_mutex, thd_mutex;
 
@@ -661,26 +652,9 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 
 void Service::detach()
 {
-#ifdef SERVER_SHUTDOWN
 	if (svc_do_shutdown) {
-#ifdef UNIX
-		kill(getpid(), SIGTERM);
-#else
-		JRD_shutdown_all(true);
-		if (shutdown_fct) {
-			(shutdown_fct) (shutdown_param);
-		}
-		else {
-			exit(0);
-		}
-#endif //UNIX
-
-		// The shutdown operation is complete, just wait to die
-		while (true) {
-			THREAD_YIELD();
-		}
+		fb__shutdown(NULL);
 	}
-#endif //SERVER_SHUTDOWN
 
 	if (svc_uses_security_database)
 	{
@@ -698,17 +672,6 @@ Service::~Service()
 	CloseHandle((HANDLE) svc_handle);
 #endif
 }
-
-
-#ifdef SERVER_SHUTDOWN
-void Service::shutdown_init(shutdown_fct_t fptr, ULONG param)
-{
-	SchedulerContext scHolder;
-
-	shutdown_fct = fptr;
-	shutdown_param = param;
-}
-#endif // SERVER_SHUTDOWN
 
 
 ISC_STATUS Service::query2(thread_db* tdbb,
@@ -813,7 +776,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_end:
 			break;
 
-#ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
 			if (svc_user_flag & SVC_user_dba)
 			{
@@ -888,7 +850,6 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			else
 				need_admin_privs(&status, "isc_info_svc_svr_offline");
 			break;
-#endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
 			   buffer 'info' with values of environment variable FIREBIRD,
@@ -1232,7 +1193,6 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_end:
 			break;
 
-#ifdef SERVER_SHUTDOWN
 		case isc_info_svc_svr_db_info:
 			if (svc_user_flag & SVC_user_dba)
 			{
@@ -1286,7 +1246,6 @@ void Service::query(USHORT			send_item_length,
 			else
 				*info++ = 2;	/* No user authority */
 			break;
-#endif /* SERVER_SHUTDOWN */
 
 			/* The following 3 service commands (or items) stuff the response
 			   buffer 'info' with values of environment variable FIREBIRD,

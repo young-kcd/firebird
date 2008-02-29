@@ -64,7 +64,6 @@ static char *MakeVersionString(char *, int, USHORT);
 static BOOL CanEndServer(HWND, bool);
 
 // Window Procedure
-void WINDOW_shutdown(ULONG);
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
 
@@ -124,9 +123,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 						  CW_USEDEFAULT,
 						  APP_HSIZE,
 						  APP_VSIZE, HWND_DESKTOP, NULL, hInstance, NULL);
-#ifdef SERVER_SHUTDOWN
-	Jrd::Service::shutdown_init(WINDOW_shutdown, (ULONG) hWnd);
-#endif
+
 // Do the proper ShowWindow depending on if the app is an icon on
 // the desktop, or in the task bar.
 
@@ -476,25 +473,6 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	return FALSE;
-}
-
-
-void WINDOW_shutdown(ULONG hWnd)
-{
-/******************************************************************************
- *
- *  W I N D O W _ s h u t d o w n
- *
- ******************************************************************************
- *
- *  Input:  hWnd - Handle to the window
- *
- *  Return: none
- *
- *  Description: This is a callback function which is called at shutdown time.
- *               This function post the WM_DESTROY message in appl. queue.
- *****************************************************************************/
-	PostMessage(reinterpret_cast < HWND > (hWnd), WM_DESTROY, 0, 0);
 }
 
 

@@ -465,7 +465,9 @@ static void		shutdown_database(Database*, const bool);
 static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
-static bool		shutdown_all();
+static bool		shutdown_dbb(thread_db*, Database*);
+
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
 //____________________________________________________________
 //
@@ -3395,15 +3397,42 @@ ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status)
  *	database.
  *
  **************************************/
-	ISC_STATUS *s = user_status;
-	*s++ = isc_arg_gds;
-	*s = isc_arg_end;
+	ThreadContextHolder tdbb(user_status);
 
-	if (!shutdown_all())
+	try
 	{
-		*s++ = isc_random;
-		*s++ = isc_arg_string;
-		*s++ = (ISC_STATUS)("Forced server shutdown - not all databases closed");
+		ULONG attach_count, database_count;
+		JRD_num_attachments(NULL, 0, JRD_info_none, &attach_count, &database_count);
+
+		if (attach_count > 0)
+		{
+			gds__log("Shutting down the server with %d active connection(s) to %d database(s)",
+					 attach_count, database_count);
+		}
+
+		int shutdown_complete = 0;
+
+		gds__thread_start(shutdown_thread, &shutdown_complete, THREAD_medium, 0, 0);
+
+		int timeout = 10 * 10; // 10 seconds
+
+		while (timeout--) 
+		{
+			if (shutdown_complete)
+				break;
+			THREAD_SLEEP(100); // msec
+		}
+
+		if (!shutdown_complete)
+		{
+			ERR_post(isc_random,
+					 isc_arg_string, (ISC_STATUS) "Forced server shutdown - not all databases closed",
+					 0);
+		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -5636,46 +5665,6 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 }
 
 
-static bool shutdown_all()
-{
-/**************************************
- *
- *	s h u t d o w n _ a l l
- *
- **************************************
- *
- * Functional description
- *	rollback every transaction,
- *	release every attachment,
- *	and shutdown every database.
- *
- **************************************/
-	ThreadContextHolder tdbb;
-
-	try
-	{
-		Firebird::MutexLockGuard guard(databases_mutex);
-
-		Database* dbb_next;
-		for (Database* dbb = databases; dbb; dbb = dbb_next)
-		{
-			dbb_next = dbb->dbb_next;
-
-			if (!shutdown_dbb(tdbb, dbb))
-			{
-				return false;
-			}
-		}
-	}
-	catch (const Firebird::Exception&)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-
 UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 						  ULONG* atts, ULONG* dbs)
 {
@@ -5868,67 +5857,6 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 	*drive_mask |= mask;
 }
 #endif
-
-
-static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
-{
-/**************************************
- *
- *	s h u t d o w n _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *	Shutdown SuperServer. If hangs, server 
- *  is forcely & dirty closed after timeout.
- *
- **************************************/
-
-	*static_cast<int*>(arg) = shutdown_all();
-	return 0;
-}
-
-
-void JRD_shutdown_all(bool asyncMode)
-{
-/**************************************
- *
- *	J R D _ s h u t d o w n _ a l l
- *
- **************************************
- *
- * Functional description
- *	Rollback every transaction, release
- *	every attachment, and shutdown every
- *	database. Can be called in either a
- *  blocking mode or as a request for
- *  asynchronous shutdown.
- *
- **************************************/
-	int flShutdownComplete = 0;
-
-	if (asyncMode)
-	{
-		gds__thread_start(shutdown_thread, &flShutdownComplete, 
-			THREAD_medium, 0, 0);
-		int timeout = 10;	// seconds
-		while (timeout--) 
-		{
-			if (flShutdownComplete)
-				break;
-			THREAD_SLEEP(1 * 1000);
-		}
-	}
-	else // sync mode
-	{
-		flShutdownComplete = shutdown_all();
-	}
-
-	if (!flShutdownComplete)
-	{
-		gds__log("Forced server shutdown - not all databases closed");
-	}
-}
 
 
 static unsigned int purge_transactions(thread_db*	tdbb,
@@ -6376,6 +6304,50 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 	return userStatus[1];
 }
 
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
+{
+/**************************************
+ *
+ *	s h u t d o w n _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown the engine.
+ *
+ **************************************/
+	int* const result = static_cast<int*>(arg);
+
+	ThreadContextHolder tdbb;
+
+	bool success = true;
+
+	try
+	{
+		Firebird::MutexLockGuard guard(databases_mutex);
+
+		Database* dbb_next;
+		for (Database* dbb = databases; dbb; dbb = dbb_next)
+		{
+			dbb_next = dbb->dbb_next;
+			if (!shutdown_dbb(tdbb, dbb))
+			{
+				success = false;
+				break;
+			}
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		success = false;
+	}
+
+	*result = (success ? 1 : 0);
+
+	return 0;
+}
+
+
 void thread_db::setTransaction(jrd_tra* val)
 {
 	transaction = val;
@@ -6387,4 +6359,3 @@ void thread_db::setRequest(jrd_req* val)
 	request = val;
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
 }
-

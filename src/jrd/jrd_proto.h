@@ -208,7 +208,6 @@ enum JRD_info_tag
 };
 
 UCHAR*	JRD_num_attachments(UCHAR* const, USHORT, JRD_info_tag, ULONG*, ULONG*);
-void	JRD_shutdown_all(bool);
 
 bool	JRD_reschedule(Jrd::thread_db*, SLONG, bool);
 

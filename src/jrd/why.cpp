@@ -499,7 +499,7 @@ namespace
 			{
 				break;
 			}
-		
+
 			// perform shutdown
 			ISC_STATUS_ARRAY status;
 			fb__shutdown(status);
@@ -552,12 +552,12 @@ namespace
 			procInt = ISC_signal(SIGINT, handlerInt, 0);
 			procTerm = ISC_signal(SIGTERM, handlerTerm, 0);
 		}
-		
+
 		~CtrlCHandler()
 		{
 			ISC_signal_cancel(SIGINT, handlerInt, 0);
 			ISC_signal_cancel(SIGTERM, handlerTerm, 0);
-			
+
 			if (! killed)
 			{
 				// must be done to let shutdownThread close

@@ -92,16 +92,6 @@ class thread_db;
 // Service manager
 class Service : public Firebird::UtilSvc, public LocalType<type_svc>
 {
-#ifdef SERVER_SHUTDOWN
-// Set the global function pointer to the shutdown function
-public:	
-	typedef void (*shutdown_fct_t) (ULONG);
-	static void shutdown_init(shutdown_fct_t fptr, ULONG param);
-#endif // SERVER_SHUTDOWN
-
-	// Firebird log reader
-	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
-
 public:		// utilities interface with service
 	// printf() to svc_stdout
     virtual void printf(const SCHAR* format, ...);
@@ -144,6 +134,9 @@ public:		// external interface with service
 	{
 		return svc_spb_version;
 	}
+
+	// Firebird log reader
+	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
 
 private:
 	// Service must have private destructor, called from finish
