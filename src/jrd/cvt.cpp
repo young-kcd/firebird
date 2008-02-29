@@ -1907,7 +1907,7 @@ static SSHORT decompose(const char* string,
 		while (q < end && *q && *q != ' ')
 			++q;
 
-		end = q;
+		const char* digits_end = q;
 
 		// skip trailing spaces
 		while (q < end && *q == ' ')
@@ -1917,13 +1917,13 @@ static SSHORT decompose(const char* string,
 			conversion_error(&errd, err);
 
 		q = p;
-		value = hex_to_value(q, end);
+		value = hex_to_value(q, digits_end);
 
-		if (q != end)
+		if (q != digits_end)
 			conversion_error(&errd, err);
 
 		// 0xFFFFFFFF = -1; 0x0FFFFFFFF = 4294967295
-		if (end - p <= 8)
+		if (digits_end - p <= 8)
 			value = (SLONG) value;
 
 		if (dtype == dtype_long)
@@ -2804,10 +2804,6 @@ SINT64 hex_to_value(const char*& string, const char* end)
  *      Convert a hex string to a numeric value. This code only
  *      converts a hex string into a numeric value, and the
  *      biggest hex string supported must fit into a BIGINT.
- *
- *      We assume that the caller has pre-processed the
- *      input string, so that all characters here are upper case
- *      and the length of the string is <= 16.
  *
  *************************************/
 {
