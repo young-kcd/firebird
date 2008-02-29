@@ -211,18 +211,11 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			if (CanEndServer(hWnd, false)) {
-				if (GetPriorityClass(GetCurrentProcess()) !=
-					NORMAL_PRIORITY_CLASS)
+				if (GetPriorityClass(GetCurrentProcess()) != NORMAL_PRIORITY_CLASS)
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-#ifdef DEBUG_GDS_ALLOC
-				//gds_alloc_report(ALLOC_verbose, "from server", 0);
-				char fn[] = __FILE__;
-				fn[strlen(fn) - 19] = 0; // all remote files
-				gds_alloc_report(ALLOC_verbose, fn, 0);
-#endif
-				JRD_shutdown_all(false);
+				fb__shutdown(NULL);
 				SRVR_shutdown();
 				DestroyWindow(hWnd);
 			}
