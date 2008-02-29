@@ -4701,7 +4701,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
 		}
 		va_end(ptr);
 
-		GDS_START_MULTIPLE(user_status, tra_handle, count, teb);
+		GDS_START_MULTIPLE(status, tra_handle, count, teb);
 	}
 	catch (const Firebird::Exception& e)
 	{
