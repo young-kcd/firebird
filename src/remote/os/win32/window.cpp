@@ -39,6 +39,7 @@
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/why_proto.h"
 
 #include "../remote/os/win32/window.h"
 #include "../jrd/isc_proto.h"
