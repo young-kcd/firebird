@@ -56,11 +56,17 @@
 /* includes specific for DSQL */
 
 #include "../dsql/sqlda.h"
+#include "../dsql/sqlda_pub.h"
+#include "../dsql/prepa_proto.h"
+#include "../dsql/utld_proto.h"
 
 /* end DSQL-specific includes */
 
 #include "../jrd/why_proto.h"
-#include "../jrd/y_handle.h"
+#include "../common/classes/alloc.h"
+#include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
+#include "../jrd/thread_proto.h"
 #include "gen/iberror.h"
 #include "../jrd/msg_encode.h"
 #include "gen/msg_facs.h"
@@ -68,7 +74,6 @@
 #include "../jrd/inf_pub.h"
 #include "../jrd/isc.h"
 #include "../jrd/fil.h"
-#include "../jrd/flu.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/os/path_utils.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -81,22 +86,16 @@
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../dsql/prepa_proto.h"
-#include "../dsql/utld_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/semaphore.h"
 #include "../jrd/constants.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/ThreadStart.h"
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/blr.h"
 #endif
-
-using namespace YValve;
 
 // In 2.0 it's hard to include ibase.h in why.cpp due to API declaration conflicts.
 // Taking into account that given y-valve lives it's last version,
@@ -192,8 +191,351 @@ static void free_block(void*);
 static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
 										  const int proc, const ISC_STATUS specCode = 0);
 
+namespace Jrd {
+	class Attachment;
+	class jrd_tra;
+	class jrd_req;
+	class dsql_req;
+}
+
 namespace
 {
+	// flags
+	const UCHAR HANDLE_TRANSACTION_limbo	= 0x01;
+	const UCHAR HANDLE_STATEMENT_prepared	= 0x02;
+	const UCHAR HANDLE_shutdown				= 0x04;	// Database shutdown
+
+	// forwards
+	class Attachment;
+	class Transaction;
+	class Request;
+	class Blob;
+	class Statement;
+	class Service;
+
+	// force use of default memory pool for Y-Valve objects
+	typedef Firebird::GlobalStorage DefaultMemory;
+
+	// stored handle types
+	typedef Jrd::jrd_tra StoredTra;
+	typedef void StoredReq;
+	typedef void StoredBlb;
+	typedef Jrd::Attachment StoredAtt;
+	typedef Jrd::dsql_req StoredStm;
+	typedef void StoredSvc;
+
+	template <typename CleanupRoutine, typename CleanupArg>
+	class Clean : public DefaultMemory
+	{
+	private:
+		struct st_clean
+		{
+			CleanupRoutine *Routine;
+			void* clean_arg;
+			st_clean(CleanupRoutine *r, void* a)
+				: Routine(r), clean_arg(a) { }
+			st_clean()
+				: Routine(0), clean_arg(0) { }
+		};
+		Firebird::HalfStaticArray<st_clean, 1> calls;
+		Firebird::Mutex mutex;
+
+	public:
+		Clean() : calls(*getDefaultMemoryPool()) { }
+
+		void add(CleanupRoutine *r, void* a)
+		{
+			Firebird::MutexLockGuard guard(mutex);
+			for (size_t i = 0; i < calls.getCount(); ++i)
+			{
+				if (calls[i].Routine == r && 
+					calls[i].clean_arg == a)
+				{
+					return;
+				}
+			}
+			calls.add(st_clean(r, a));
+		}
+
+		void call(CleanupArg public_handle)
+		{
+			Firebird::MutexLockGuard guard(mutex);
+			for (size_t i = 0; i < calls.getCount(); ++i)
+			{
+				if (calls[i].Routine)
+				{
+					calls[i].Routine(public_handle, calls[i].clean_arg);
+				}
+			}
+		}
+	};
+
+	class BaseHandle : public DefaultMemory
+	{
+	public:
+		UCHAR			type;
+		UCHAR			flags;
+		USHORT			implementation;
+		FB_API_HANDLE	public_handle;
+		Attachment*		parent;
+    	FB_API_HANDLE*	user_handle;
+
+	protected:
+		BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp = ~0);
+
+	public:
+		static BaseHandle* translate(FB_API_HANDLE);
+		Jrd::Attachment* getAttachmentHandle();
+		~BaseHandle();
+
+		// required to put pointers to it into the tree
+		static const FB_API_HANDLE& generate(const void* sender, BaseHandle* value) 
+		{
+			return value->public_handle;
+		}
+	};
+
+	template <typename HType>
+		void toParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::Mutex& mutex)
+	{
+		Firebird::MutexLockGuard guard(mutex);
+		members.add(newMember);
+	}
+
+	template <typename HType>
+		void fromParent(Firebird::SortedArray<HType*>& members, HType* newMember, Firebird::Mutex& mutex)
+	{
+		Firebird::MutexLockGuard guard(mutex);
+		size_t pos;
+		if (members.find(newMember, pos))
+		{
+			members.remove(pos);
+		}
+#ifdef DEV_BUILD
+		else
+		{
+			//Attempt to deregister not registered member
+			fb_assert(false);
+		}
+#endif
+	}
+
+	template <typename ToHandle>
+		ToHandle* translate(FB_API_HANDLE* handle)
+	{
+		if (handle && *handle)
+		{
+			BaseHandle* rc = BaseHandle::translate(*handle);
+			if (rc && rc->type == ToHandle::hType())
+			{
+				return static_cast<ToHandle*>(rc);
+			}
+		}
+
+		Firebird::status_exception::raise(ToHandle::hError(), 
+										  isc_arg_end);
+		// compiler warning silencer
+		return 0;
+	}
+
+	class Attachment : public BaseHandle
+	{
+	public:
+		Firebird::SortedArray<Transaction*> transactions;
+		Firebird::SortedArray<Request*> requests;
+		Firebird::SortedArray<Blob*> blobs;
+		Firebird::SortedArray<Statement*> statements;
+		// Each array can be protected with personal mutex, but possibility 
+		// of collision is so slow here, that I prefer to save resources, using single mutex.
+		Firebird::Mutex mutex;
+
+		int enterCount;
+		Firebird::Mutex enterMutex;
+
+		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
+		StoredAtt* handle;
+		Firebird::PathName db_path;
+		Firebird::Array<SCHAR> db_prepare_buffer;
+		Firebird::Mutex prepareMutex;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_db_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 1;
+		}
+
+	public:
+		Attachment(StoredAtt*, FB_API_HANDLE*, USHORT);
+		~Attachment();
+	};
+
+	class Transaction : public BaseHandle
+	{
+	public:
+		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
+		Transaction* next;
+		StoredTra* handle;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_trans_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 2;
+		}
+
+	public:
+		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), 
+			  next(0), handle(h)
+		{
+			toParent<Transaction>(parent->transactions, this, parent->mutex);
+		}
+
+		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
+			: BaseHandle(hType(), pub, 0, a_implementation), 
+			  next(0), handle(0)
+		{
+		}
+
+		~Transaction()
+		{
+			cleanup.call(public_handle);
+			if (parent)
+			{
+				fromParent<Transaction>(parent->transactions, this, parent->mutex);
+			}
+		}
+	};
+
+	class Request : public BaseHandle
+	{
+	public:
+		StoredReq* handle;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_req_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 3;
+		}
+
+	public:
+		Request(StoredReq* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
+		{
+			toParent<Request>(parent->requests, this, parent->mutex);
+		}
+
+		~Request() 
+		{ 
+			fromParent<Request>(parent->requests, this, parent->mutex);
+		}
+	};
+
+	class Blob : public BaseHandle
+	{
+	public:
+		StoredBlb* handle;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_segstr_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 4;
+		}
+
+	public:
+		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
+		{
+			toParent<Blob>(parent->blobs, this, parent->mutex);
+		}
+
+		~Blob() 
+		{ 
+			fromParent<Blob>(parent->blobs, this, parent->mutex);
+		}
+	};
+
+	class Statement : public BaseHandle
+	{
+	public:
+		StoredStm* handle;
+		struct sqlda_sup das;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_stmt_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 5;
+		}
+
+	public:
+		Statement(StoredStm* h, FB_API_HANDLE* pub, Attachment* par)
+			: BaseHandle(hType(), pub, par), handle(h)
+		{
+			toParent<Statement>(parent->statements, this, parent->mutex);
+			memset(&das, 0, sizeof das);
+		}
+
+		void checkPrepared()
+		{
+			if (!(flags & HANDLE_STATEMENT_prepared))
+			{
+				Firebird::status_exception::raise(isc_unprepared_stmt, isc_arg_end);
+			}
+		}
+
+		~Statement() 
+		{ 
+			fromParent<Statement>(parent->statements, this, parent->mutex);
+		}
+	};
+
+	class Service : public BaseHandle
+	{
+	public:
+		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
+		StoredSvc* handle;
+
+		static ISC_STATUS hError()
+		{
+			return isc_bad_svc_handle;
+		}
+
+		static UCHAR hType()
+		{
+			return 6;
+		}
+
+	public:
+		Service(StoredSvc* h, FB_API_HANDLE* pub, USHORT impl)
+			: BaseHandle(hType(), pub, 0, impl), handle(h)
+		{
+		}
+
+		~Service() 
+		{ 
+			cleanup.call(&public_handle);
+		}
+	};
+
 	typedef Firebird::BePlusTree<BaseHandle*, FB_API_HANDLE, MemoryPool, BaseHandle> HandleMapping;
 
 	Firebird::GlobalPtr<HandleMapping> handleMapping;
@@ -251,10 +593,8 @@ namespace
 	};
 
 	ShutChain* ShutChain::list = 0;
-};
 
-namespace YValve
-{
+
 	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
 		: type(t), flags(0), implementation(par ? par->implementation : imp), 
 		  parent(par), user_handle(0)
@@ -291,14 +631,7 @@ namespace YValve
 		HandleMapping::Accessor accessor(&handleMapping);
 		if (accessor.locate(handle))
 		{
-			BaseHandle* h = accessor.current();
-			if (h->flags & HANDLE_shutdown)
-			{
-				Firebird::status_exception::raise(isc_shutdown, isc_arg_string,
-						h->parent ? h->parent->db_path.c_str() : "(unknown)",
-						isc_arg_end);
-			}
-			return h;
+			return accessor.current();
 		}
 
 		return 0;
