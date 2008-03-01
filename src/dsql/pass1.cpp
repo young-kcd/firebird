@@ -10024,6 +10024,9 @@ static dsql_nod* resolve_using_field(dsql_req* request, dsql_str* name, DsqlNodS
  **/
 static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* node, bool force_varchar)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+	Attachment* att = tdbb->getAttachment();
+
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -10040,12 +10043,11 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 
 				MAKE_desc(request, &in_node->nod_desc, node, NULL);
 
-				if (request->req_dbb->dbb_att_charset != CS_NONE &&
-					request->req_dbb->dbb_att_charset != CS_BINARY)
+				if (att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
 				{
 					const USHORT fromCharSet = in_node->nod_desc.getCharSet();
 					const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-						fromCharSet : request->req_dbb->dbb_att_charset;
+						fromCharSet : att->att_charset;
 
 					if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
 					{

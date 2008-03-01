@@ -536,11 +536,13 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
  *	charset' id, not by name.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	dsql_dbb* dbb = request->req_dbb;
 	USHORT bpc = 0;
 
 	if (charset_id == CS_dynamic)
-		charset_id = dbb->dbb_att_charset;
+		charset_id = tdbb->getAttachment()->att_charset;
 
 	dsql_intlsym* cs_sym = 0;
 	size_t pos = 0;
@@ -580,7 +582,7 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
     dsql_dbb* dbb = request->req_dbb;
     
     if (charset_id == CS_dynamic)
-		charset_id = dbb->dbb_att_charset;
+		charset_id = tdbb->getAttachment()->att_charset;
     
 	size_t pos = 0;
 	if (dbb->dbb_charsets_by_id.find(charset_id, pos))

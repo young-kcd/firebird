@@ -137,7 +137,6 @@ public:
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
-	SSHORT			dbb_att_charset;	//!< characterset at time of attachment
 	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number

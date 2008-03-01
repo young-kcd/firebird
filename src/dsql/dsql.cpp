@@ -110,7 +110,6 @@ namespace
 		isc_info_ods_minor_version,
 		isc_info_base_level,
 		isc_info_db_read_only,
-		frb_info_att_charset,
 		isc_info_end
 	};
 
@@ -2215,10 +2214,6 @@ static dsql_dbb* init(Attachment* attachment)
 			}
 		}
 
-		// assume that server can not report current character set,
-		// and if not then emulate pre-patch actions
-		database->dbb_att_charset = CS_dynamic;
-
 		const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
 		UCHAR p;
 		while ((p = *data++) != isc_info_end)
@@ -2267,10 +2262,6 @@ static dsql_dbb* init(Attachment* attachment)
 
 			case isc_info_db_read_only:
 				database->dbb_read_only = (USHORT) data[0] ? true : false;
-				break;
-
-			case frb_info_att_charset:
-				database->dbb_att_charset = static_cast<SSHORT>(gds__vax_integer(data, 2));
 				break;
 
 			default:
@@ -2632,7 +2623,7 @@ static dsql_req* prepare(thread_db* tdbb,
 	// Parse the SQL statement.  If it croaks, return 
 
 	Parser parser(client_dialect, request->req_dbb->dbb_db_SQL_dialect, parser_version,
-		string, string_length, request->req_dbb->dbb_att_charset);
+		string, string_length, tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
 

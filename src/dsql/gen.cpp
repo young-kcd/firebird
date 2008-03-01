@@ -614,6 +614,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 void GEN_port(dsql_req* request, dsql_msg* message)
 {
 	thread_db* tdbb = JRD_get_thread_data();
+	Attachment* att = tdbb->getAttachment();
 
 //	if (request->req_blr_string) {
 		stuff(request, blr_message);
@@ -632,11 +633,10 @@ void GEN_port(dsql_req* request, dsql_msg* message)
 
 		const USHORT fromCharSet = parameter->par_desc.getCharSet();
 		const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-			fromCharSet : request->req_dbb->dbb_att_charset;
+			fromCharSet : att->att_charset;
 
 		if (parameter->par_desc.dsc_dtype <= dtype_any_text &&
-			request->req_dbb->dbb_att_charset != CS_NONE &&
-			request->req_dbb->dbb_att_charset != CS_BINARY)
+			att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
 		{
 			USHORT adjust = 0;
 			if (parameter->par_desc.dsc_dtype == dtype_varying)
@@ -661,8 +661,8 @@ void GEN_port(dsql_req* request, dsql_msg* message)
 					request->req_dbb->dbb_minor_version) >= ODS_11_1 &&
 			parameter->par_desc.dsc_dtype == dtype_blob &&
 			parameter->par_desc.dsc_sub_type == isc_blob_text &&
-			request->req_dbb->dbb_att_charset != CS_NONE &&
-			request->req_dbb->dbb_att_charset != CS_BINARY)
+			att->att_charset != CS_NONE &&
+			att->att_charset != CS_BINARY)
 		{
 			if (fromCharSet != toCharSet)
 				parameter->par_desc.setTextType(toCharSet);
