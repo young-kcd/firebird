@@ -3912,8 +3912,8 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS * user_status,
-										   FB_API_HANDLE * user_handle)
+ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS* user_status,
+										   FB_API_HANDLE* user_handle)
 {
 /**************************************
  *
@@ -4912,10 +4912,10 @@ ISC_STATUS API_ROUTINE GDS_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
-										  FB_API_HANDLE * tra_handle,
+ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
+										  FB_API_HANDLE* tra_handle,
 										  SSHORT count,
-//										  TEB * vector)
+//										  TEB* vector)
 										  void* vec)
 {
 /**************************************
@@ -4941,7 +4941,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
 		if ((count <= 0) ||
-			(count > 0 && vector == NULL))
+			(count > 0 && !vector))
 		{
 			Firebird::status_exception::raise(isc_bad_teb_form, isc_arg_end);
 		}
@@ -6143,7 +6143,7 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
-ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS * user_status)
+ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -6190,7 +6190,7 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS * user_status)
 }
 
 
-ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS * user_status, FPTR_INT callBack, const int mask)
+ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask)
 {
 /**************************************
  *

@@ -130,7 +130,7 @@ class HugeStaticBuffer
 public:
 	HugeStaticBuffer(MemoryPool& p)
 		: zeroArray(p), 
-		zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
 	{
 		memset(zeroBuff, 0, ZERO_BUF_SIZE);
 	}

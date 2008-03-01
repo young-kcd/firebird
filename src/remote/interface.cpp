@@ -3830,7 +3830,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		const TEXT* us = (user_string.hasData()) ? user_string.c_str() : 0;
 
 		rem_port* port = analyze_service(expanded_name, user_status, us,
-						 user_verification, newSpb);
+										 user_verification, newSpb);
 		if (!port) {
 			return user_status[1];
 		}
@@ -4177,10 +4177,10 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
-							 RTR * rtr_handle,
+ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
+							 RTR* rtr_handle,
 							 SSHORT count,
-							 RDB * db_handle, SSHORT tpb_length, UCHAR * tpb)
+							 RDB* db_handle, SSHORT tpb_length, UCHAR* tpb)
 {
 /**************************************
  *
@@ -4202,7 +4202,7 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	try
 	{
 		if ((tpb_length < 0) ||
-			(tpb_length > 0 && tpb == NULL))
+			(tpb_length > 0 && !tpb))
 		{
 			Firebird::status_exception::raise(isc_bad_tpb_form, isc_arg_end);
 		}
