@@ -77,11 +77,6 @@ using namespace NAMESPACE;
 #include "fb_exception.h"
 #endif
 
-// 
-#if defined(SUPERSERVER) || defined(WIN_NT)
-#define SERVER_SHUTDOWN
-#endif
-
 // from thd.h
 #if defined(HAVE_POSIX_THREADS)
 #define USE_POSIX_THREADS
