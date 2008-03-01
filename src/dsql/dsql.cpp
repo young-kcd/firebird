@@ -670,8 +670,7 @@ void DSQL_insert(thread_db* tdbb,
 		// For put segment, use the user buffer and indicator directly. 
 
 		dsql_par* parameter = request->req_blob->blb_segment;
-		const UCHAR* buffer =
-			dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
+		const UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
 		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
 
@@ -799,7 +798,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 		request = prepare(tdbb, request, length, string, dialect, parser_version);
 
-// Can not prepare a CREATE DATABASE/SCHEMA statement
+		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
 		if (request->req_type == REQ_CREATE_DB)
 		{
@@ -809,7 +808,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 		request->req_flags |= REQ_prepared;
 
-// Now that we know that the new request exists, zap the old one. 
+		// Now that we know that the new request exists, zap the old one. 
 
 		{
 			Jrd::ContextPoolHolder another_context(tdbb, &old_request->req_pool);
@@ -887,7 +886,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 	}
 	cursor.resize(length);
 
-// If there already is a different cursor by the same name, bitch 
+	// If there already is a different cursor by the same name, bitch 
 
 	const dsql_sym* symbol = 
 		HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
@@ -902,8 +901,8 @@ void DSQL_set_cursor(thread_db* tdbb,
 				  isc_arg_string, symbol->sym_string, 0);
 	}
 
-/* If there already is a cursor and its name isn't the same, ditto.
-   We already know there is no cursor by this name in the hash table */
+	// If there already is a cursor and its name isn't the same, ditto.
+	// We already know there is no cursor by this name in the hash table
 
 	if (!request->req_cursor) {
 		request->req_cursor = MAKE_symbol(request->req_dbb, cursor.c_str(),

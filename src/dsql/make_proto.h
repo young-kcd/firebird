@@ -42,7 +42,7 @@ namespace Jrd {
 		CONSTANT_DATE		= 3, // stored as a SLONG
 		CONSTANT_TIME		= 4, // stored as a ULONG
 		CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
-		CONSTANT_SINT64		= 6 // stored as a SINT64
+		CONSTANT_SINT64		= 6  // stored as a SINT64
 	};
 };
 

@@ -667,7 +667,7 @@ SLONG genReadOnlyId()
 
 void getCwd(Firebird::PathName& pn)
 {
-	char *buffer = pn.getBuffer(MAXPATHLEN);
+	char* buffer = pn.getBuffer(MAXPATHLEN);
 #if defined(WIN_NT)
 	_getcwd(buffer, MAXPATHLEN);
 #elif defined(HAVE_GETCWD)

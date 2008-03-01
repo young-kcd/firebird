@@ -983,8 +983,7 @@ namespace Jrd {
 
 typedef Dsql::nod_t NOD_TYPE;
 
-/* definition of a syntax node created both
-   in parsing and in context recognition */
+// definition of a syntax node created both in parsing and in context recognition
 
 class dsql_nod : public pool_alloc_rpt<class dsql_nod*, dsql_type_nod>
 {

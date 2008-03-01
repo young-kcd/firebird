@@ -434,11 +434,11 @@ public:
 	dsql_sym* req_name;			//!< Name of request
 	dsql_sym* req_cursor;		//!< Cursor symbol, if any
 	dsql_dbb* req_dbb;			//!< DSQL attachment
-	jrd_tra* req_transaction;			//!< JRD transaction
+	jrd_tra* req_transaction;	//!< JRD transaction
 	dsql_nod* req_ddl_node;		//!< Store metadata request
 	dsql_nod* req_blk_node;		//!< exec_block node 
 	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	jrd_req*	req_request;				//!< JRD request
+	jrd_req*	req_request;			//!< JRD request
 	//dsql_str*	req_blr_string;			//!< String block during BLR generation
 	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request

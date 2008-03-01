@@ -113,7 +113,7 @@ void HSHD_debug()
     @param database
 
  **/
-void HSHD_finish( const void* database)
+void HSHD_finish(const void* database)
 {
 	Firebird::WriteLockGuard guard(hash_sync);
 

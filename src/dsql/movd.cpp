@@ -69,7 +69,7 @@ void MOVD_move(const dsc* from, dsc* to)
     @param 
 
  **/
-static void post_error( ISC_STATUS status, ...)
+static void post_error(ISC_STATUS status, ...)
 {
 	ISC_STATUS *v;
 	const ISC_STATUS* temp, *v_end;

@@ -125,7 +125,7 @@ void ERRD_bugcheck(const char* text)
     @param text
 
  **/
-void ERRD_error( int code, const char* text)
+void ERRD_error(int code, const char* text)
 {
 	TEXT s[MAXPATHLEN + 140];
 

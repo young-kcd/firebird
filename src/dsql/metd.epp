@@ -1493,7 +1493,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 				field->fld_seg_length = FLX.RDB$SEGMENT_LENGTH;
 			}
 
-			if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS) {
+			if (!FLX.RDB$DIMENSIONS.NULL && FLX.RDB$DIMENSIONS)
+			{
 				field->fld_element_dtype = field->fld_dtype;
 				field->fld_element_length = field->fld_length;
 				field->fld_dtype = dtype_array;
@@ -1509,8 +1510,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 			else if (!FLX.RDB$COLLATION_ID.NULL)
 				field->fld_collation_id = FLX.RDB$COLLATION_ID;
 
-			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG)
-				|| (relation->rel_flags & REL_view))
+			if (!(RFR.RDB$NULL_FLAG || FLX.RDB$NULL_FLAG) ||
+				(relation->rel_flags & REL_view))
 			{
 				field->fld_flags |= FLD_nullable;
 			}
