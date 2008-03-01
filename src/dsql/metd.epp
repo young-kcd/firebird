@@ -273,7 +273,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_collation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		WITH X.RDB$COLLATION_NAME EQ name->str_data AND
@@ -355,7 +355,7 @@ USHORT METD_get_col_default(dsql_req* request,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_col_default, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		RFL IN RDB$RELATION_FIELDS CROSS
 		FLD IN RDB$FIELDS WITH
 		RFL.RDB$RELATION_NAME EQ for_rel_name AND
@@ -472,7 +472,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_charset, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	X IN RDB$COLLATIONS
 		CROSS Y IN RDB$CHARACTER_SETS OVER RDB$CHARACTER_SET_ID
 		CROSS Z IN RDB$TYPES
@@ -589,7 +589,7 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
-	FOR (REQUEST_HANDLE handle)
+	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	    Y IN RDB$CHARACTER_SETS
 	    WITH Y.RDB$CHARACTER_SET_ID EQ charset_id
 
@@ -635,7 +635,7 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_default_cs, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		FIRST 1 DBB IN RDB$DATABASE
 		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING;
 
@@ -685,7 +685,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	    FLX IN RDB$FIELDS WITH FLX.RDB$FIELD_NAME EQ name 
 
 		if (!DSQL_REQUEST(irq_domain))
@@ -754,7 +754,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_domain_2, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 	    FLD IN RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ domain_name
 	    
 		if (!DSQL_REQUEST(irq_domain_2))
@@ -859,7 +859,7 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_exception, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$EXCEPTIONS WITH
 		X.RDB$EXCEPTION_NAME EQ name->str_data;
 
@@ -908,7 +908,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_function, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$FUNCTIONS WITH
 		X.RDB$FUNCTION_NAME EQ name->str_data 
 
@@ -942,7 +942,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_func_return, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$FUNCTION_ARGUMENTS WITH
 	    X.RDB$FUNCTION_NAME EQ name->str_data
 	    SORTED BY X.RDB$ARGUMENT_POSITION
@@ -1080,7 +1080,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_primary_key, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$INDICES CROSS
 		Y IN RDB$INDEX_SEGMENTS
 		OVER RDB$INDEX_NAME CROSS
@@ -1148,7 +1148,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$PROCEDURES WITH
 		X.RDB$PROCEDURE_NAME EQ name->str_data 
 
@@ -1185,7 +1185,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle2)
+		FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 			PR IN RDB$PROCEDURE_PARAMETERS CROSS
 			FLD IN RDB$FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
@@ -1207,7 +1207,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			{
 				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
-				FOR(REQUEST_HANDLE handle3)
+				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE request->req_transaction)
 					PR2 IN RDB$PROCEDURE_PARAMETERS
 					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
 						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
@@ -1371,7 +1371,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 		WITH REL.RDB$RELATION_NAME EQ name->str_data
@@ -1395,7 +1395,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_relation))
@@ -1444,7 +1444,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle3)
+	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE request->req_transaction)
 		FLX IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
@@ -1580,7 +1580,7 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_trigger, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$TRIGGERS WITH X.RDB$TRIGGER_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_trigger))
@@ -1626,7 +1626,7 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_type, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$TYPES WITH
 		X.RDB$FIELD_NAME EQ field AND X.RDB$TYPE_NAME EQ name->str_data;
 
@@ -1679,7 +1679,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_view_base, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
 			X IN RDB$VIEW_RELATIONS
 			WITH X.RDB$VIEW_NAME EQ view_name
 
@@ -1713,7 +1713,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 			jrd_req* handle2 = CMP_find_request(tdbb, irq_view_base_flds, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE handle2)
+			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
@@ -1811,7 +1811,7 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_view, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
 		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
 
 		if (!DSQL_REQUEST(irq_view))
