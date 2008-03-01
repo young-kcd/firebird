@@ -3838,11 +3838,8 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 	{
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
-		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
-
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 		DSQL_execute(tdbb, tra_handle, statement,
 					 in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
@@ -3874,11 +3871,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 	{
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
-		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
-
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
 		DSQL_execute_immediate(tdbb, attachment, tra_handle,
 							   length, string, dialect,
@@ -3998,13 +3992,10 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	{
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
-		validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-
-		DSQL_prepare(tdbb, transaction, stmt_handle,
+		DSQL_prepare(tdbb, *tra_handle, stmt_handle,
 					 length, string, dialect,
 					 item_length, reinterpret_cast<const UCHAR*>(items),
 					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
