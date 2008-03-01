@@ -77,6 +77,7 @@
 #include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
+#include "../jrd/intl_classes.h"
 #include "../jrd/jrd.h"
 #include "../jrd/flags.h"
 #include "../jrd/constants.h"
@@ -87,6 +88,8 @@
 #include "../dsql/metd_proto.h"
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
+#include "../jrd/intl_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
@@ -398,14 +401,7 @@ void DDL_execute(dsql_req* request)
 
 #ifndef SUPERSERVER
 	if (string)
-	{
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		s = jrd8_dsql_cache(tdbb->tdbb_status_vector,
-			&request->req_dbb->dbb_attachment, DSQL_CACHE_RELEASE, sym_type, string->str_data, NULL);
-
-		if (s)
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-	}
+		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 #endif	// SUPERSERVER
 }
 
@@ -7009,18 +7005,14 @@ void dsql_req::append_cstring(UCHAR verb, const char* string)
 //
 void dsql_req::append_meta_string(const char* string)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	ISC_STATUS_ARRAY status_vector = {0};
 	Firebird::UCharBuffer nameBuffer;
 
-	{	// scope
-		Database::Checkout dcoHolder(req_dbb->dbb_database);
-		if (jrd8_intl_function(status_vector, &req_dbb->dbb_attachment,
-							   INTL_FUNCTION_CONV_TO_METADATA, CS_dynamic,
-							   strlen(string), (const UCHAR*) string, &nameBuffer))
-		{
-			ERRD_punt(status_vector);
-		}
-	}
+	CsConvert cv(INTL_charset_lookup(tdbb, CS_dynamic)->getStruct(),
+		INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());
+	cv.convert(strlen(string), (const UCHAR*) string, nameBuffer);
 
 	append_string(0, (const TEXT*) nameBuffer.begin(), nameBuffer.getCount());
 }

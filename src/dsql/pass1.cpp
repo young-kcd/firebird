@@ -148,6 +148,7 @@
 #include "../jrd/blr.h"
 #include "../jrd/jrd.h"
 #include "../jrd/constants.h"
+#include "../jrd/intl_classes.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -157,6 +158,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
@@ -3684,6 +3686,7 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
  **/
 static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 {
+	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3744,21 +3747,25 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 		
 	constant->nod_desc.dsc_length -= adjust;
 
-	USHORT length;
-
 	ISC_STATUS_ARRAY status_vector = {0};
 
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_intl_function(status_vector, &request->req_dbb->dbb_attachment,
-							   INTL_FUNCTION_CHAR_LENGTH, INTL_GET_CHARSET(&constant->nod_desc),
-							   string->str_length, constant->nod_desc.dsc_address, &length))
-		{
-			ERRD_punt(status_vector);
-		}
+	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->nod_desc));
+
+	if (!charSet->wellFormed(string->str_length,
+			constant->nod_desc.dsc_address, NULL))
+	{
+		ERRD_post(isc_sqlerr,
+				  isc_arg_number, (SLONG) - 104,
+				  isc_arg_gds, isc_malformed_string,
+				  0);
+	}
+	else
+	{
+		constant->nod_desc.dsc_length =
+			charSet->length(string->str_length, constant->nod_desc.dsc_address, true) *
+			charSet->maxBytesPerChar();
 	}
 
-	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
 	constant->nod_desc.dsc_length += adjust;
 
 	return constant;

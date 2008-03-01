@@ -269,14 +269,6 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
 
-#define INTL_FUNCTION_CHAR_LENGTH		1
-#define INTL_FUNCTION_CONV_TO_METADATA	2
-ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, void*);
-
-#define DSQL_CACHE_USE		1
-#define DSQL_CACHE_RELEASE	2
-ISC_STATUS API_ROUTINE gds__dsql_cache(ISC_STATUS*, FB_API_HANDLE*, USHORT, int, const char*, bool*);
-
 ISC_STATUS API_ROUTINE gds__internal_compile_request(
 	ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
 	const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);

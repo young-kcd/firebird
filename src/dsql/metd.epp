@@ -47,6 +47,7 @@
 #include "../jrd/cmp_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
@@ -1960,18 +1961,12 @@ static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
  *	inform the engine that we're using it.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	HSHD_insert(symbol);
 
 #ifndef SUPERSERVER
-	ISC_STATUS_ARRAY status;
-
-	Database::Checkout dcoHolder(dbb->dbb_database);
-
-	const ISC_STATUS s = jrd8_dsql_cache(status, &dbb->dbb_attachment,
-		DSQL_CACHE_USE, symbol->sym_type, symbol->sym_string, NULL);
-
-	if (s)
-		ERRD_punt(status);
+	MET_dsql_cache_use(tdbb, symbol->sym_type, symbol->sym_string);
 #endif	// SUPERSERVER
 }
 
@@ -1992,6 +1987,8 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
  *	dropped and return NULL.
  *
  **************************************/
+	thread_db* tdbb = JRD_get_thread_data();
+
 	dsql_intlsym* intlSym;
 	dsql_prc* procedure;
 	dsql_rel* relation;
@@ -2036,17 +2033,7 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 #ifndef SUPERSERVER
 	if (symbol)
 	{
-		ISC_STATUS_ARRAY status;
-		bool obsolete;
-
-		{	// scope
-			Database::Checkout dcoHolder(dbb->dbb_database);
-			const ISC_STATUS s = jrd8_dsql_cache(status, &dbb->dbb_attachment,
-				DSQL_CACHE_USE, type, name, &obsolete);
-
-			if (s)
-				ERRD_punt(status);
-		}
+		bool obsolete = MET_dsql_cache_use(tdbb, type, name);
 
 		if (obsolete)
 		{

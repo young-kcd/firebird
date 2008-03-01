@@ -208,12 +208,6 @@ ENTRYPOINT( jrd8_rollback_retaining,
 ENTRYPOINT( jrd8_cancel_operation,
 			/* REM_cancel_operation */ no_entrypoint)
 
-ENTRYPOINT( jrd8_intl_function,
-			/* REM_intl_function */ no_entrypoint)
-
-ENTRYPOINT( jrd8_dsql_cache,
-			/* REM_dsql_cache */ no_entrypoint)
-
 ENTRYPOINT( jrd8_internal_compile_request,
 			/* REM_internal_compile_request */ no_entrypoint)
 

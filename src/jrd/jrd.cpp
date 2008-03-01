@@ -428,9 +428,6 @@ public:
 	void get(const UCHAR*, USHORT, bool&);
 };
 
-#ifndef SUPERSERVER
-static int blocking_ast_dsql_cache(void*);
-#endif
 static void			check_database(thread_db* tdbb);
 static void			check_transaction(thread_db*, jrd_tra*);
 static ISC_STATUS	commit(ISC_STATUS*, jrd_tra**, const bool);
@@ -517,8 +514,6 @@ const int BUFFER_LENGTH128		= 128;
 #define GDS_DDL					jrd8_ddl
 #define GDS_DETACH				jrd8_detach_database
 #define GDS_DROP_DATABASE		jrd8_drop_database
-#define GDS_INTL_FUNCTION		jrd8_intl_function
-#define GDS_DSQL_CACHE			jrd8_dsql_cache
 #define GDS_INTERNAL_COMPILE	jrd8_internal_compile_request
 #define GDS_GET_SEGMENT			jrd8_get_segment
 #define GDS_GET_SLICE			jrd8_get_slice
@@ -2241,154 +2236,6 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 	{
 		Firebird::stuff_exception(user_status, ex);
 	}
-
-	return user_status[1];
-}
-
-
-ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
-	USHORT function, UCHAR charSetNumber, USHORT strLen, const UCHAR* str, void* result)
-{
-/**************************************
- *
- *	g d s _ i n t l _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Return INTL informations.
- *  (candidate for removal when engine functions can be called by DSQL)
- *
- **************************************/
-	ThreadContextHolder tdbb(user_status);
-
-	try
-	{
-		Attachment* attachment = *handle;
-		validateHandle(tdbb, attachment);
-		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		CharSet* charSet = INTL_charset_lookup(tdbb, charSetNumber);
-
-		switch (function)
-		{
-			case INTL_FUNCTION_CHAR_LENGTH:
-			{
-				ULONG offendingPos;
-
-				if (!charSet->wellFormed(strLen, str, &offendingPos))
-				{
-					ERR_post(isc_sqlerr,
-							isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_malformed_string, 0);
-				}
-				else
-					*static_cast<USHORT*>(result) = charSet->length(strLen, str, true);
-
-				break;
-			}
-
-			case INTL_FUNCTION_CONV_TO_METADATA:
-			{
-				Firebird::UCharBuffer* buffer = static_cast<Firebird::UCharBuffer*>(result);
-				buffer->resize(INTL_convert_bytes(tdbb, CS_METADATA, buffer->getBuffer(strLen * 4),
-					strLen * 4,	charSetNumber, str, strLen, ERR_post));
-				break;
-			}
-
-			default:
-				fb_assert(false);
-		}
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(user_status, ex);
-	}
-
-	return user_status[1];
-}
-
-
-ISC_STATUS GDS_DSQL_CACHE(ISC_STATUS* user_status, Attachment** handle,
-						  USHORT operation, int type, const char* name, bool* obsolete)
-{
-/**************************************
- *
- *	g d s _ d s q l _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	Manage DSQL cache locks.
- *  (candidate for removal when engine functions can be called by DSQL)
- *
- **************************************/
-	ThreadContextHolder tdbb(user_status);
-
-#ifdef SUPERSERVER
-	if (obsolete)
-		*obsolete = false;
-#else
-	try
-	{
-		Attachment* attachment = *handle;
-		validateHandle(tdbb, attachment);
-		DatabaseContextHolder dbbHolder(tdbb);
-		check_database(tdbb);
-
-		Database* dbb = tdbb->getDatabase();
-
-		Firebird::string key((char*)&type, sizeof(type));
-		key.append(name);
-
-		DSqlCacheItem* item = attachment->att_dsql_cache.put(key);
-		if (item)
-		{
-			item->obsolete = false;
-			item->locked = false;
-			item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length()) Lock();
-
-			item->lock->lck_type = LCK_dsql_cache;
-			item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
-			item->lock->lck_parent = dbb->dbb_lock;
-			item->lock->lck_dbb = dbb;
-			item->lock->lck_object = (blk*)item;
-			item->lock->lck_ast = blocking_ast_dsql_cache;
-			item->lock->lck_length = key.length();
-			memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
-		}
-		else
-		{
-			item = &attachment->att_dsql_cache.current()->second;
-		}
-
-		if (obsolete)
-			*obsolete = item->obsolete;
-
-		if (operation == DSQL_CACHE_USE && !item->locked)
-		{
-			// lock to be notified by others when we should mark as obsolete
-			LCK_lock(tdbb, item->lock, LCK_SR, LCK_WAIT);
-			item->locked = true;
-		}
-		else if (operation == DSQL_CACHE_RELEASE)
-		{
-			// notify others through AST to mark as obsolete
-			LCK_lock(tdbb, item->lock, LCK_EX, LCK_WAIT);
-
-			// release lock
-			LCK_release(tdbb, item->lock);
-			item->locked = false;
-		}
-
-		item->obsolete = false;
-	}
-	catch (const Firebird::Exception& ex)
-	{
-		Firebird::stuff_exception(user_status, ex);
-	}
-#endif	// SUPERSERVER
 
 	return user_status[1];
 }
@@ -4280,39 +4127,6 @@ void jrd_vtof(const char* string, char* field, SSHORT length)
 		memset(field, ' ', length);
 	}
 }
-
-#ifndef SUPERSERVER
-static int blocking_ast_dsql_cache(void* ast_object)
-{
-/**************************************
- *
- *	b l o c k i n g _ a s t _ d s q l _ c a c h e
- *
- **************************************
- *
- * Functional description
- *	Someone is trying to drop a item from the DSQL cache.
- *	Mark the symbol as obsolete and release the lock.
- *
- **************************************/
-	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
-
-	Database* dbb = item->lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
-
-	ThreadContextHolder tdbb;
-
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(item->lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
-
-	item->obsolete = true;
-	item->locked = false;
-	LCK_release(tdbb, item->lock);
-
-	return 0;
-}
-#endif	// SUPERSERVER
 
 
 static void check_database(thread_db* tdbb)

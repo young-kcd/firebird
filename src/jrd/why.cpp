@@ -965,8 +965,6 @@ namespace
 #define GDS_DETACH				isc_detach_database
 #define GDS_DROP_DATABASE		isc_drop_database
 //#define GDS_EVENT_WAIT			gds__event_wait
-#define GDS_INTL_FUNCTION		gds__intl_function
-#define GDS_DSQL_CACHE			gds__dsql_cache
 #define GDS_INTERNAL_COMPILE	gds__internal_compile_request
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
@@ -1095,13 +1093,11 @@ const int PROC_SERVICE_START	= 51;
 
 const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
-const int PROC_INTL_FUNCTION	= 54;	// internal call
-const int PROC_DSQL_CACHE		= 55;	// internal call
-const int PROC_INTERNAL_COMPILE	= 56;	// internal call
+const int PROC_INTERNAL_COMPILE	= 54;	// internal call
 
-const int PROC_SHUTDOWN			= 57;
+const int PROC_SHUTDOWN			= 55;
 
-const int PROC_count			= 58;
+const int PROC_count			= 56;
 
 /* Define complicated table for multi-subsystem world */
 
@@ -3701,72 +3697,6 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 
 		event_t* event_ptr = why_event;
 		ISC_event_wait(1, &event_ptr, &value, -1);
-	}
-	catch (const Firebird::Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-
-
-ISC_STATUS API_ROUTINE GDS_INTL_FUNCTION(ISC_STATUS * user_status,
-										 FB_API_HANDLE * handle,
-										 USHORT function,
-										 UCHAR charSetNumber,
-										 USHORT strLen,
-										 const UCHAR* str,
-										 void* result)
-{
-/**************************************
- *
- *	g d s _ i n t l _ f u n c t i o n
- *
- **************************************
- *
- * Functional description
- *	Return INTL informations.
- *  (candidate for removal when engine functions can be called by DSQL)
- *
- **************************************/
-	YEntry status(user_status);
-
-	try
-	{
-		Attachment* dbb = translate<Attachment>(handle);
-		status.setPrimaryHandle(dbb);
-
-		CALL(PROC_INTL_FUNCTION, dbb->implementation) (status,
-													   &dbb->handle,
-													   function, charSetNumber,
-													   strLen, str, result);
-	}
-	catch (const Firebird::Exception& e)
-	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-
-
-ISC_STATUS API_ROUTINE GDS_DSQL_CACHE(ISC_STATUS * user_status,
-									  FB_API_HANDLE * handle,
-									  USHORT operation,
-									  int type,
-									  const char* name,
-									  bool* result)
-{
-	YEntry status(user_status);
-
-	try
-	{
-		Attachment* dbb = translate<Attachment>(handle);
-		status.setPrimaryHandle(dbb);
-		CALL(PROC_DSQL_CACHE, dbb->implementation) (status, &dbb->handle,
-													operation, type,
-													name, result);
 	}
 	catch (const Firebird::Exception& e)
 	{

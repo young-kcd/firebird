@@ -114,6 +114,10 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
 
+#ifndef SUPERSERVER
+static int blocking_ast_dsql_cache(void* ast_object);
+static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Firebird::MetaName& name);
+#endif
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
@@ -1082,6 +1086,42 @@ void MET_delete_shadow( thread_db* tdbb, USHORT shadow_number)
 	if (SDW_lck_update(tdbb, 0)) {
 		SDW_notify();
 	}
+}
+
+
+#ifndef SUPERSERVER
+bool MET_dsql_cache_use(thread_db* tdbb, int type, const Firebird::MetaName& name)
+{
+	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, name);
+
+	bool obsolete = item->obsolete;
+
+	if (!item->locked)
+	{
+		// lock to be notified by others when we should mark as obsolete
+		LCK_lock(tdbb, item->lock, LCK_SR, LCK_WAIT);
+		item->locked = true;
+	}
+
+	item->obsolete = false;
+
+	return obsolete;
+}
+
+
+void MET_dsql_cache_release(thread_db* tdbb, int type, const Firebird::MetaName& name)
+{
+	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, name);
+
+	// notify others through AST to mark as obsolete
+	LCK_lock(tdbb, item->lock, LCK_EX, LCK_WAIT);
+
+	// release lock
+	LCK_release(tdbb, item->lock);
+	item->locked = false;
+
+	item->obsolete = false;
+#endif
 }
 
 
@@ -4165,6 +4205,71 @@ void MET_update_transaction( thread_db* tdbb, jrd_tra* transaction, const bool d
 	if (!REQUEST(irq_m_trans))
 		REQUEST(irq_m_trans) = request;
 }
+
+
+#ifndef SUPERSERVER
+static int blocking_ast_dsql_cache(void* ast_object)
+{
+/**************************************
+ *
+ *	b l o c k i n g _ a s t _ d s q l _ c a c h e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Someone is trying to drop a item from the DSQL cache.
+ *	Mark the symbol as obsolete and release the lock.
+ *
+ **************************************/
+	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
+
+	Database* dbb = item->lock->lck_dbb;
+	Database::SyncGuard dsGuard(dbb, true);
+
+	ThreadContextHolder tdbb;
+
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(item->lock->lck_attachment);
+	Jrd::ContextPoolHolder context(tdbb, 0);
+
+	item->obsolete = true;
+	item->locked = false;
+	LCK_release(tdbb, item->lock);
+
+	return 0;
+}
+
+
+static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Firebird::MetaName& name)
+{
+	Database* dbb = tdbb->getDatabase();
+	Attachment* attachment = tdbb->getAttachment();
+
+	Firebird::string key((char*) &type, sizeof(type));
+	key.append(name.c_str());
+
+	DSqlCacheItem* item = attachment->att_dsql_cache.put(key);
+	if (item)
+	{
+		item->obsolete = false;
+		item->locked = false;
+		item->lock = FB_NEW_RPT(*dbb->dbb_permanent, key.length()) Lock();
+
+		item->lock->lck_type = LCK_dsql_cache;
+		item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
+		item->lock->lck_parent = dbb->dbb_lock;
+		item->lock->lck_dbb = dbb;
+		item->lock->lck_object = (blk*)item;
+		item->lock->lck_ast = blocking_ast_dsql_cache;
+		item->lock->lck_length = key.length();
+		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
+	}
+	else
+		item = &attachment->att_dsql_cache.current()->second;
+
+	return item;
+}
+#endif
 
 
 static int blocking_ast_procedure(void* ast_object)
