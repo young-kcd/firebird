@@ -847,7 +847,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		Firebird::PathName expanded_name(expanded_filename);
 		Firebird::PathName node_name;
-		const UCHAR* dpb2 = reinterpret_cast<const UCHAR*>(dpb);
 		rem_port* port = analyze(expanded_name, user_status, us, user_verification, newDpb, node_name);
 		if (!port) {
 			return user_status[1];
