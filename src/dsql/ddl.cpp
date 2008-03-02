@@ -334,16 +334,6 @@ void DDL_execute(dsql_req* request)
 	}
 #endif
 
-	const USHORT length = request->req_blr_data.getCount();
-	ISC_STATUS s;
-
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		s = jrd8_ddl(tdbb->tdbb_status_vector, &request->req_dbb->dbb_attachment,
-					 &request->req_transaction, length,
-					 (const SCHAR*)(request->req_blr_data.begin()));
-	}
-
 	// for delete & modify, get rid of the cached relation metadata
 
 	const dsql_str* string = NULL;
@@ -396,13 +386,13 @@ void DDL_execute(dsql_req* request)
 			break;
 	}
 
-	if (s)
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-
 #ifndef SUPERSERVER
 	if (string)
 		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 #endif	// SUPERSERVER
+
+	JRD_ddl(tdbb, request->req_dbb->dbb_attachment, request->req_transaction,
+		request->req_blr_data.getCount(), (const SCHAR*) request->req_blr_data.begin());
 }
 
 

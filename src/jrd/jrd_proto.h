@@ -214,5 +214,18 @@ void	JRD_print_pools(const char* filename);
 void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif
 
+
+void JRD_ddl(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_tra* transaction,
+	USHORT ddl_length, const SCHAR* ddl);
+void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
+	SCHAR* msg, SSHORT level
+#ifdef SCROLLABLE_CURSORS
+	, USHORT direction, ULONG offset
+#endif
+	);
+void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,
+	const SCHAR* items, SSHORT buffer_length, SCHAR* buffer);
+void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, SSHORT level);
+
 #endif /* JRD_JRD_PROTO_H */
 

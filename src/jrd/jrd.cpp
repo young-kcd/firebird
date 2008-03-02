@@ -2014,35 +2014,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		DYN_ddl(attachment, transaction, ddl_length,
-				reinterpret_cast<const UCHAR*>(ddl));
-
-		// Perform an auto commit for autocommit transactions.
-		// This is slightly tricky. If the commit retain works,
-		// all is well. If TRA_commit() fails, we perform
-		// a rollback_retain(). This will backout the
-		// effects of the transaction, mark it dead and
-		// start a new transaction.
-
-		if (transaction->tra_flags & TRA_perform_autocommit)
-		{
-			transaction->tra_flags &= ~TRA_perform_autocommit;
-
-			try {
-				TRA_commit(tdbb, transaction, true);
-			}
-			catch (const Firebird::Exception&) {
-				ISC_STATUS_ARRAY temp_status;
-				tdbb->tdbb_status_vector = temp_status;
-				try {
-					TRA_rollback(tdbb, transaction, true, false);
-				}
-				catch (const Firebird::Exception&)
-				{} // no-op
-				tdbb->tdbb_status_vector = user_status;
-				throw;
-			}
-		}
+		JRD_ddl(tdbb, attachment, transaction, ddl_length, ddl);
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(user_status, ex);
@@ -2654,20 +2626,11 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		verify_request_synchronization(request, level);
-
+		JRD_receive(tdbb, request, msg_type, msg_length, msg, level
 #ifdef SCROLLABLE_CURSORS
-		if (direction)
-			EXE_seek(tdbb, request, direction, offset);
+			, direction, offset
 #endif
-	
-		EXE_receive(tdbb, request, msg_type, msg_length,
-					reinterpret_cast<UCHAR*>(msg), true);
-	
-		check_autocommit(request, tdbb);
-	
-		if (request->req_flags & req_warning)
-			request->req_flags &= ~req_warning;
+			);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -2795,9 +2758,7 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		verify_request_synchronization(request, level);
-
-		INF_request_info(request, items, item_length, buffer, buffer_length);
+		JRD_request_info(tdbb, request, level, item_length, items, buffer_length, buffer);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -3210,16 +3171,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
 
-		if (level)
-			request = CMP_clone_request(tdbb, request, level, false);
-
-		EXE_unwind(tdbb, request);
-		EXE_start(tdbb, request, transaction);
-
-		check_autocommit(request, tdbb);
-
-		if (request->req_flags & req_warning)
-			request->req_flags &= ~req_warning;
+		JRD_start(tdbb, request, transaction, level);
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -6175,3 +6127,137 @@ void thread_db::setRequest(jrd_req* val)
 	request = val;
 	reqStat = val ? &val->req_stats : RuntimeStatistics::getDummy();
 }
+
+
+void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
+	USHORT ddl_length, const SCHAR* ddl)
+{
+/**************************************
+ *
+ *	J R D _ d d l
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	DYN_ddl(attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
+
+	// Perform an auto commit for autocommit transactions.
+	// This is slightly tricky. If the commit retain works,
+	// all is well. If TRA_commit() fails, we perform
+	// a rollback_retain(). This will backout the
+	// effects of the transaction, mark it dead and
+	// start a new transaction.
+
+	if (transaction->tra_flags & TRA_perform_autocommit)
+	{
+		transaction->tra_flags &= ~TRA_perform_autocommit;
+
+		try
+		{
+			TRA_commit(tdbb, transaction, true);
+		}
+		catch (const Firebird::Exception&)
+		{
+			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS_ARRAY temp_status;
+			tdbb->tdbb_status_vector = temp_status;
+
+			try
+			{
+				TRA_rollback(tdbb, transaction, true, false);
+			}
+			catch (const Firebird::Exception&)
+			{
+				// no-op
+			}
+
+			tdbb->tdbb_status_vector = old_status;
+			throw;
+		}
+	}
+}
+
+
+void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_length,
+	SCHAR* msg, SSHORT level
+#ifdef SCROLLABLE_CURSORS
+	, USHORT direction, ULONG offset
+#endif
+	)
+{
+/**************************************
+ *
+ *	J R D _ r e c e i v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a record from the host program.
+ *
+ **************************************/
+	verify_request_synchronization(request, level);
+
+#ifdef SCROLLABLE_CURSORS
+	if (direction)
+		EXE_seek(tdbb, request, direction, offset);
+#endif
+
+	EXE_receive(tdbb, request, msg_type, msg_length,
+				reinterpret_cast<UCHAR*>(msg), true);
+
+	check_autocommit(request, tdbb);
+
+	if (request->req_flags & req_warning)
+		request->req_flags &= ~req_warning;
+}
+
+
+
+void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT item_length,
+	const SCHAR* items, SSHORT buffer_length, SCHAR* buffer)
+{
+/**************************************
+ *
+ *	J R D _ r e q u e s t _ i n f o
+ *
+ **************************************
+ *
+ * Functional description
+ *	Provide information on blob object.
+ *
+ **************************************/
+
+	verify_request_synchronization(request, level);
+
+	INF_request_info(request, items, item_length, buffer, buffer_length);
+}
+
+
+void JRD_start(Jrd::thread_db* tdbb, jrd_req* request, jrd_tra* transaction, SSHORT level)
+{
+/**************************************
+ *
+ *	J R D _ s t a r t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get a record from the host program.
+ *
+ **************************************/
+
+	if (level)
+		request = CMP_clone_request(tdbb, request, level, false);
+
+	EXE_unwind(tdbb, request);
+	EXE_start(tdbb, request, transaction);
+
+	check_autocommit(request, tdbb);
+
+	if (request->req_flags & req_warning)
+		request->req_flags &= ~req_warning;
+}
+

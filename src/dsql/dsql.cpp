@@ -53,7 +53,10 @@
 #include "../dsql/movd_proto.h"
 #include "../dsql/parse_proto.h"
 #include "../dsql/pass1_proto.h"
+#include "../jrd/blb_proto.h"
+#include "../jrd/cmp_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/inf_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/sch_proto.h"
 #include "../jrd/tra_proto.h"
@@ -528,36 +531,19 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 			(USHORT *) (dsql_msg_buf + (IPTR) null->par_user_desc.dsc_address);
 		UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		{	// scope
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			const ISC_STATUS status = jrd8_get_segment(tdbb->tdbb_status_vector,
-													   &request->req_blob->blb_blob,
-													   ret_length,
-													   parameter->par_user_desc.dsc_length,
-													   buffer);
-			switch (status)
-			{
-			case 0:
-				return 0;
-			case isc_segment:
-				return 101;
-			case isc_segstr_eof:
-				return 100;
-			default:
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-		}
+		*ret_length = BLB_get_segment(tdbb, request->req_blob->blb_blob,
+			buffer, parameter->par_user_desc.dsc_length);
+
+		if (request->req_blob->blb_blob->blb_flags & BLB_eof)
+			return 100;
+		else if (request->req_blob->blb_blob->blb_fragment_size)
+			return 101;
+		else
+			return 0;
 	}
 
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_receive(tdbb->tdbb_status_vector, &request->req_request,
-						 message->msg_number, message->msg_length, 
-						 reinterpret_cast<SCHAR*>(message->msg_buffer), 0))
-		{
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
-	}
+	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
+		reinterpret_cast<SCHAR*>(message->msg_buffer), 0);
 
 	const dsql_par* const eof = request->req_eof;
 	if (eof)
@@ -671,13 +657,8 @@ void DSQL_insert(thread_db* tdbb,
 		dsql_par* parameter = request->req_blob->blb_segment;
 		const UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
 
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-
-		if (jrd8_put_segment(tdbb->tdbb_status_vector, &request->req_blob->blb_blob,
-							 parameter->par_user_desc.dsc_length, buffer))
-		{
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
+		BLB_put_segment(tdbb, request->req_blob->blb_blob, buffer,
+			parameter->par_user_desc.dsc_length);
 	}
 }
 
@@ -955,21 +936,23 @@ void DSQL_sql_info(thread_db* tdbb,
     @param request
 
  **/
-static void close_cursor( dsql_req* request)
+static void close_cursor(dsql_req* request)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	ISC_STATUS_ARRAY status_vector;
 
 	if (request->req_request)
 	{
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
 		{
-			jrd8_close_blob(status_vector, &request->req_blob->blb_blob);
+			BLB_close(tdbb, request->req_blob->blb_blob);
+			request->req_blob->blb_blob = NULL;
 		}
 		else
 		{
+			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
 			jrd8_unwind_request(status_vector, &request->req_request, 0);
 		}
 	}
@@ -1088,15 +1071,8 @@ static void execute_blob(thread_db* tdbb,
 			memset(blob_id, 0, sizeof(bid));
 		}
 
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-
-		if (jrd8_open_blob2(tdbb->tdbb_status_vector,
-						    &request->req_dbb->dbb_attachment,
-						    &request->req_transaction, &request->req_blob->blb_blob,
-						    blob_id, bpb_length, bpb))
-		{
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
+		request->req_blob->blb_blob = BLB_open2(tdbb, request->req_transaction, blob_id,
+			bpb_length, bpb, true);
 	}
 	else
 	{
@@ -1104,18 +1080,8 @@ static void execute_blob(thread_db* tdbb,
 		bid* blob_id = (bid*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(bid));
 
-		{	// scope
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			
-			if (jrd8_create_blob2(tdbb->tdbb_status_vector,
-								  &request->req_dbb->dbb_attachment,
-								  &request->req_transaction, &request->req_blob->blb_blob,
-								  blob_id, bpb_length,
-								  const_cast<const UCHAR*>(bpb)))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-		}
+		request->req_blob->blb_blob = BLB_create2(tdbb, request->req_transaction,
+			blob_id, bpb_length, const_cast<const UCHAR*>(bpb));
 
 		map_in_out(NULL, blob->blb_open_out_msg,
 				   out_blr_length, out_blr,
@@ -1368,20 +1334,11 @@ static void execute_request(thread_db* tdbb,
 		fb_assert(false);
 	}
 
-// If there is no data required, just start the request 
+	// If there is no data required, just start the request 
 
 	dsql_msg* message = request->req_send;
 	if (!message)
-	{
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_start_request(tdbb->tdbb_status_vector,
-							   &request->req_request,
-							   &request->req_transaction,
-							   0))
-		{
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
-	}
+		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
 	else
 	{
 #pragma FB_COMPILER_MESSAGE("constness hack")
@@ -1428,18 +1385,8 @@ static void execute_request(thread_db* tdbb,
 			message->msg_buffer = (UCHAR*)FB_ALIGN((U_IPTR) temp_buffer, DOUBLE_ALIGN);
 		}
 
-		{	// scope
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_receive(tdbb->tdbb_status_vector,
-							 &request->req_request,
-							 message->msg_number,
-							 message->msg_length,
-							 reinterpret_cast<SCHAR*>(message->msg_buffer),
-							 0))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-		}
+		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
+			reinterpret_cast<SCHAR*>(message->msg_buffer), 0);
 
 		if (out_msg_length)
 			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
@@ -1460,18 +1407,23 @@ static void execute_request(thread_db* tdbb,
 
 			ISC_STATUS status = FB_SUCCESS;
 
-			{	// scope
-				Database::Checkout dcoHolder(request->req_dbb->dbb_database);
+			for (counter = 0; counter < 2 && !status; counter++)
+			{
+				ISC_STATUS* old_status = tdbb->tdbb_status_vector;
 
-				for (counter = 0; counter < 2 && !status; counter++)
+				try
 				{
-					status = jrd8_receive(local_status,
-										  &request->req_request,
-										  message->msg_number,
-										  message->msg_length,
-										  reinterpret_cast<SCHAR*>(message_buffer),
-										  0);
+					tdbb->tdbb_status_vector = local_status;
+					JRD_receive(tdbb, request->req_request, message->msg_number,
+						message->msg_length, reinterpret_cast<SCHAR*>(message_buffer), 0);
+					status = FB_SUCCESS;
 				}
+				catch (Firebird::Exception&)
+				{
+					status = tdbb->tdbb_status_vector[1];
+				}
+
+				tdbb->tdbb_status_vector = old_status;
 			}
 
 			gds__free(message_buffer);
@@ -1666,19 +1618,16 @@ static USHORT get_plan_info(thread_db* tdbb,
 	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
 
-// get the access path info for the underlying request from the engine 
+	// get the access path info for the underlying request from the engine 
 
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_request_info(tdbb->tdbb_status_vector,
-							  &request->req_request,
-							  0,
-							  sizeof(explain_info),
-							  explain_info,
-							  sizeof(explain_buffer), explain_buffer))
-		{
-			return 0;
-		}
+	try
+	{
+		JRD_request_info(tdbb, request->req_request, 0, sizeof(explain_info), explain_info,
+			sizeof(explain_buffer), explain_buffer);
+	}
+	catch (Firebird::Exception&)
+	{
+		return 0;
 	}
 
 	if (*explain_buffer == isc_info_truncated) {
@@ -1689,17 +1638,19 @@ static USHORT get_plan_info(thread_db* tdbb,
 			return 0;
 		}
 
-		ISC_STATUS status = FB_SUCCESS;
-
-		{	// scope
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			status = jrd8_request_info(tdbb->tdbb_status_vector,
-									   &request->req_request, 0,
-									   sizeof(explain_info), explain_info,
-									   BUFFER_XLARGE, explain_ptr);
+		try
+		{
+			JRD_request_info(tdbb, request->req_request, 0, sizeof(explain_info), explain_info,
+				BUFFER_XLARGE, explain_ptr);
+		}
+		catch (Firebird::Exception&)
+		{
+			gds__free(explain_ptr);
+			return 0;
 		}
 
-		if (status || *explain_ptr == isc_info_truncated) {
+		if (*explain_ptr == isc_info_truncated)
+		{
 			// CVC: Before returning, deallocate the buffer!
 			gds__free(explain_ptr);
 			return 0;
@@ -1792,17 +1743,14 @@ static USHORT get_request_info(thread_db* tdbb,
 {
 	// get the info for the request from the engine 
 
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_request_info(tdbb->tdbb_status_vector,
-							  &request->req_request,
-							  0,
-							  sizeof(record_info),
-							  record_info,
-							  buffer_length, reinterpret_cast<char*>(buffer)))
-		{
-			return 0;
-		}
+	try
+	{
+		JRD_request_info(tdbb, request->req_request, 0, sizeof(record_info),
+			record_info, buffer_length, reinterpret_cast<char*>(buffer));
+	}
+	catch (Firebird::Exception&)
+	{
+		return 0;
 	}
 
 	const UCHAR* data = buffer;
@@ -2204,18 +2152,15 @@ static dsql_dbb* init(Attachment* attachment)
 		database->dbb_sys_trans = attachment->att_database->dbb_sys_trans;
 		attachment->att_dsql_instance = database;
 
-		ISC_STATUS_ARRAY user_status;
 		SCHAR buffer[BUFFER_TINY];
 
-		{ // scope
-			Database::Checkout dcoHolder(attachment->att_database);
-			if (jrd8_database_info(user_status, &attachment,
-								   sizeof(db_hdr_info_items),
-								   db_hdr_info_items,
-								   sizeof(buffer), buffer))
-			{
-				return database;
-			}
+		try
+		{
+			INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
+		}
+		catch (Firebird::Exception&)
+		{
+			return database;
 		}
 
 		const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
@@ -2894,9 +2839,8 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	// If a request has been compiled, release it now
 
 	if (request->req_request) {
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		ISC_STATUS_ARRAY status_vector;
-		jrd8_release_request(status_vector, &request->req_request);
+		CMP_release(tdbb, request->req_request);
+		request->req_request = NULL;
 	}
 
 	// free blr memory

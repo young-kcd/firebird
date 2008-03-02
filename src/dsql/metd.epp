@@ -44,6 +44,7 @@
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/errd_proto.h"
+#include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/gds_proto.h"
@@ -343,7 +344,6 @@ USHORT METD_get_col_default(dsql_req* request,
 	thread_db* tdbb = JRD_get_thread_data();
 
 	dsql_dbb* dbb = request->req_dbb;
-	ISC_STATUS_ARRAY status_vect;
 
 	bid* blob_id;
 
@@ -376,48 +376,35 @@ USHORT METD_get_col_default(dsql_req* request,
 		else
 			*has_default = false;
 
-		if (*has_default) {
-			{	// scope
-				Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-				stat = jrd8_open_blob2(status_vect,
-									   &request->req_dbb->dbb_attachment,
-									   &request->req_transaction,
-									   &blob_handle, blob_id, sizeof(blr_bpb),
-									   blr_bpb);
-			}
-			if (stat)
-				ERRD_punt(status_vect);
+		if (*has_default)
+		{
+			blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
+				sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough. 
 			UCHAR* ptr_in_buffer = reinterpret_cast<UCHAR*>(buffer);
 			while (true)
 			{
-				{	// scope
-					Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-					stat = jrd8_get_segment(status_vect, &blob_handle,
-										    &length, buff_length, ptr_in_buffer);
-				}
+				length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
 
 				ptr_in_buffer += length;
 				buff_length -= length;
 				result += length;
 
-				if (!stat)
-					continue;
-				else if (stat == isc_segstr_eof) {
+				if (blob_handle->blb_flags & BLB_eof)
+				{
 					// null terminate the buffer 
 					*ptr_in_buffer = 0;
 					break;
 				}
+				else if (blob_handle->blb_fragment_size)
+					Firebird::status_exception::raise(isc_segment, 0);
 				else
-					ERRD_punt(status_vect);
-
+					continue;
 			}
 
-			{	// scope
-				Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-				jrd8_close_blob(status_vect, &blob_handle);
-			}
+			BLB_close(tdbb, blob_handle);
+			blob_handle = NULL;
 
 			/* the default string must be of the form:
 			   blr_version4 blr_literal ..... blr_eoc  */
@@ -747,8 +734,6 @@ USHORT METD_get_domain_default(dsql_req* request,
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ISC_STATUS_ARRAY status_vect;
-
 	*has_default = false;
 
 	dsql_dbb* dbb = request->req_dbb;
@@ -772,51 +757,32 @@ USHORT METD_get_domain_default(dsql_req* request,
 
 	    if (*has_default) {
 		    ISC_STATUS stat = 0;
-		    blb* blob_handle = 0;
-
-			{	// scope
-				Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			    stat = jrd8_open_blob2(status_vect,
-									   &request->req_dbb->dbb_attachment,
-									   &request->req_transaction,
-			                           &blob_handle, blob_id, sizeof(blr_bpb),
-			                           blr_bpb);
-	        }
-	        if (stat)
-	            ERRD_punt(status_vect);
+		    blb* blob_handle = BLB_open2(tdbb, request->req_transaction, blob_id,
+				sizeof(blr_bpb), blr_bpb, true);
 
 	        // fetch segments. Assume buffer is big enough.  
 	        UCHAR* ptr_in_buffer = reinterpret_cast<UCHAR*>(buffer);
 	        while (true) {
-	            USHORT length = 0;
-
-				{	// scope
-					Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			        stat = jrd8_get_segment(status_vect,
-			                                &blob_handle,
-			                                &length, buff_length, ptr_in_buffer);
-	            }
+	            USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
 
 	            ptr_in_buffer += length;
 	            buff_length -= length;
 				result += length;
-	            
-	            if (!stat)
-	                continue;
-	            else if (stat == isc_segstr_eof) {
-	                // null terminate the buffer 
-	                *ptr_in_buffer = 0;
-	                break;
-	            }
-	            else
-	                ERRD_punt(status_vect);
 
+				if (blob_handle->blb_flags & BLB_eof)
+				{
+					// null terminate the buffer 
+					*ptr_in_buffer = 0;
+					break;
+				}
+				else if (blob_handle->blb_fragment_size)
+					Firebird::status_exception::raise(isc_segment, 0);
+				else
+					continue;
 	        }
 
-			{	// scope
-				Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		        jrd8_close_blob(status_vect, &blob_handle);
-	        }
+			BLB_close(tdbb, blob_handle);
+			blob_handle = NULL;
 
 	        /* the default string must be of the form:
 	           blr_version4 blr_literal ..... blr_eoc  */
