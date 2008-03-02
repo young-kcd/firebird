@@ -51,7 +51,7 @@ namespace Jrd {
 	class DSqlDataTypeUtil : public DataTypeUtilBase
 	{
 	public:
-		DSqlDataTypeUtil(dsql_req* req)
+		explicit DSqlDataTypeUtil(dsql_req* req)
 			: request(req)
 		{
 		}
