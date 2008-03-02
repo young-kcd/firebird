@@ -251,10 +251,10 @@ void DSQL_execute(thread_db* tdbb,
 	if (request->req_type != REQ_EMBED_SELECT)
 	{
 		execute_request(tdbb, request, tra_handle,
-						in_blr_length, reinterpret_cast<const UCHAR*>(in_blr),
-						in_msg_length, reinterpret_cast<const UCHAR*>(in_msg),
-						out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
-						out_msg_length, reinterpret_cast<UCHAR*>(out_msg),
+						in_blr_length, in_blr,
+						in_msg_length, in_msg,
+						out_blr_length, out_blr,
+						out_msg_length, out_msg,
 						singleton);
 	}
 	else
@@ -317,13 +317,13 @@ void DSQL_execute_immediate(thread_db* tdbb,
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
 		string, dialect, in_blr_length, 
-		reinterpret_cast<const UCHAR*>(in_blr),
+		in_blr,
 		in_msg_type, in_msg_length,
-		reinterpret_cast<const UCHAR*>(in_msg),
+		in_msg,
 		out_blr_length, 
-		reinterpret_cast<UCHAR*>(out_blr), 
+		out_blr, 
 		out_msg_type, out_msg_length, 
-		reinterpret_cast<UCHAR*>(out_msg),
+		out_msg,
 		~0);
 }
 
@@ -632,7 +632,7 @@ void DSQL_free_statement(thread_db* tdbb,
 void DSQL_insert(thread_db* tdbb,
 				 dsql_req* request,
 				 USHORT blr_length, const UCHAR* blr,
-				 USHORT msg_type, USHORT msg_length, const UCHAR*	dsql_msg_buf)
+				 USHORT msg_type, USHORT msg_length, const UCHAR* dsql_msg_buf)
 {
 	SET_TDBB(tdbb);
 
@@ -1052,6 +1052,7 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR bpb[24];
 
 	dsql_blb* blob = request->req_blob;
+#pragma FB_COMPILER_MESSAGE("constness hack")
 	map_in_out(request, blob->blb_open_in_msg,
 			   in_blr_length, in_blr,
 			   in_msg_length, const_cast<UCHAR*>(in_msg));
@@ -1383,6 +1384,7 @@ static void execute_request(thread_db* tdbb,
 	}
 	else
 	{
+#pragma FB_COMPILER_MESSAGE("constness hack")
 		map_in_out(request, message,
 				   in_blr_length, in_blr,
 				   in_msg_length, const_cast<UCHAR*>(in_msg));
@@ -1552,8 +1554,10 @@ static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
 	const dsql_par* parameter = (dsql_par*) node->nod_arg[e_par_parameter];
 	const dsql_par* null = parameter->par_null;
 	if (null)
+	{
 		if (*((SSHORT *) null->par_desc.dsc_address))
 			return 0;
+	}
 
 	return *((SSHORT *) parameter->par_desc.dsc_address);
 }
