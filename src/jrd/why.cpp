@@ -780,7 +780,7 @@ namespace
 	class Status
 	{
 	public:
-		Status(ISC_STATUS* v) throw()
+		explicit Status(ISC_STATUS* v) throw()
 			: local_vector(v ? v : local_status)
 		{
 			init_status(local_vector);
@@ -879,7 +879,7 @@ namespace
 	class CtrlCHandler
 	{
 	public:
-		CtrlCHandler(Firebird::MemoryPool&)
+		explicit CtrlCHandler(Firebird::MemoryPool&)
 		{
 			gds__thread_start(shutdownThread, 0, 0, 0, 0);
 
@@ -907,7 +907,7 @@ namespace
 	class YEntry : public Status
 	{
 	public:
-		YEntry(ISC_STATUS* v) throw()
+		explicit YEntry(ISC_STATUS* v) throw()
 			: Status(v), att(0)
 		{
 			subsystem_enter();

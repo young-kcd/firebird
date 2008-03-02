@@ -84,13 +84,14 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 		const Database* const dbb = tdbb->getDatabase();
 		const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-		UCHAR info_buffer[BUFFER_TINY], *info = info_buffer;
+		UCHAR info_buffer[BUFFER_TINY];
 
 		DSQL_prepare(tdbb, transaction, &statement,
 					 sqlText.length(), sqlText.c_str(), dialect,
 					 sizeof(sql_output_info), sql_output_info,
 					 sizeof(info_buffer), info_buffer);
 
+		const UCHAR* info(info_buffer);
 		UCHAR tag = *info++;
 		fb_assert(tag == isc_info_sql_select);
 		tag = *info++;
@@ -274,7 +275,7 @@ void ExecuteStatement::getString(thread_db* tdbb,
 		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}
 
-	sql.assign((const char*)ptr, len);
+	sql.assign((const char*) ptr, len);
 }
 
 void ExecuteStatement::generateBlr(const dsc* desc)
@@ -298,6 +299,7 @@ void ExecuteStatement::generateBlr(const dsc* desc)
 		blr->add(blr_varying2);
 		blr->add(desc->dsc_ttype());
 		blr->add(desc->dsc_ttype() >> 8);
+		fb_assert(desc->dsc_length >= sizeof(USHORT));
 		length = desc->dsc_length - sizeof(USHORT);
 		blr->add(length);
 		blr->add(length >> 8);

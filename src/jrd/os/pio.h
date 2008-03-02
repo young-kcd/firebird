@@ -139,7 +139,7 @@ public:
 
 private:
 	Firebird::Array<char> zeroArray;
-	char* zeroBuff;
+	char* const zeroBuff;
 };
 
 } //namespace Jrd

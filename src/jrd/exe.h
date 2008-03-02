@@ -40,8 +40,6 @@
 
 #include "gen/iberror.h"
 
-#define NODE(type, name, keyword) type,
-
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
 
@@ -65,6 +63,8 @@ class VaryingString;
 struct dsc;
 
 namespace Jrd {
+
+#define NODE(type, name, keyword) type,
 
 enum nod_t {
 #include "../jrd/nod.h"
