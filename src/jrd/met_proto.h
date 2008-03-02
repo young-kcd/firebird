@@ -42,7 +42,7 @@ namespace Jrd {
 	class jrd_fld;
 	class Shadow;
 	class DeferredWork;
-	class FieldInfo;
+	struct FieldInfo;
 }
 
 struct SubtypeInfo

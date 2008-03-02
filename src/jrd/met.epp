@@ -1094,7 +1094,7 @@ bool MET_dsql_cache_use(thread_db* tdbb, int type, const Firebird::MetaName& nam
 {
 	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, name);
 
-	bool obsolete = item->obsolete;
+	const bool obsolete = item->obsolete;
 
 	if (!item->locked)
 	{
@@ -1121,8 +1121,8 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const Firebird::MetaName&
 	item->locked = false;
 
 	item->obsolete = false;
-#endif
 }
+#endif
 
 
 void MET_error(const TEXT* string, ...)
@@ -4217,7 +4217,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
  **************************************
  *
  * Functional description
- *	Someone is trying to drop a item from the DSQL cache.
+ *	Someone is trying to drop an item from the DSQL cache.
  *	Mark the symbol as obsolete and release the lock.
  *
  **************************************/
@@ -4259,7 +4259,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 		item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
 		item->lock->lck_parent = dbb->dbb_lock;
 		item->lock->lck_dbb = dbb;
-		item->lock->lck_object = (blk*)item;
+		item->lock->lck_object = (blk*) item;
 		item->lock->lck_ast = blocking_ast_dsql_cache;
 		item->lock->lck_length = key.length();
 		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());
