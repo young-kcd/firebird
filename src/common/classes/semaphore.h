@@ -55,7 +55,7 @@ private:
 
 public:
 	Semaphore() { init(); }
-	explicit Semaphore(class MemoryPool&) { init(); }
+	explicit Semaphore(MemoryPool&) { init(); }
 
 	~Semaphore()
 	{
@@ -143,7 +143,7 @@ private:
 	
 public:
 	SignalSafeSemaphore() { init(); }
-	explicit SignalSafeSemaphore(class MemoryPool&) { init(); }
+	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
 
 #ifdef MIXED_SEMAPHORE_AND_FILE_HANDLE
 	static bool checkHandle(int n);
@@ -278,7 +278,7 @@ private:
 
 public:
 	Semaphore() { init(); }
-	explicit Semaphore(class MemoryPool&) { init(); }
+	explicit Semaphore(MemoryPool&) { init(); }
 
 	~Semaphore()
 	{
@@ -384,7 +384,7 @@ private:
 	
 public:
 	Semaphore() { init(); }
-	explicit Semaphore(class MemoryPool&) { init(); }
+	explicit Semaphore(MemoryPool&) { init(); }
 
 	~Semaphore()
 	{
