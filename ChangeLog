@@ -1,3 +1,52 @@
+2008-03-02 13:47  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.smp_server (1.1):
+
+	added forgotten file
+
+2008-03-02 10:24  robocop
+
+	* firebird2/src/common/classes/semaphore.h (1.54):
+
+	Cleanup.
+
+2008-03-02 09:45  robocop
+
+	* firebird2/src/jrd/: exe.h (1.111), execute_statement.cpp (1.35),
+	why.cpp (1.164), os/pio.h (1.20):
+
+	Misc.
+
+2008-03-02 09:44  robocop
+
+	* firebird2/src/dsql/utld_proto.h (1.22):
+
+	Style.
+
+2008-03-02 09:42  robocop
+
+	* firebird2/src/dsql/metd.epp (1.115):
+
+	Simplification.
+
+2008-03-02 09:40  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.226):
+
+	Cleanup and warning.
+
+2008-03-02 08:35  robocop
+
+	* firebird2/src/jrd/met.epp (1.242):
+
+	Correction.
+
+2008-03-02 08:31  robocop
+
+	* firebird2/src/jrd/met_proto.h (1.64):
+
+	Correction.
+
 2008-03-01 20:32  asfernandes
 
 	* firebird2/src/dsql/: dsql.cpp (1.225), dsql.h (1.124), gen.cpp
