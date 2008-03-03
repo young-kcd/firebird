@@ -371,18 +371,3 @@ static void print_help(void)
 	printf("\t\t\t0 = disable lock-grant-order (no lock-fairness)\n");
 	printf("\t\t\t1 = enable lock-grant-order [default]\n");
 }
-
-
-void SCH_ast(enum ast_t action)
-{
-/**************************************
- *
- *	S C H _ a s t 
- *
- **************************************
- *
- * Functional description
- *	Stub to prevent link error
- *
- **************************************/
-}
