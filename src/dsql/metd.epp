@@ -39,6 +39,7 @@
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
 #include "../jrd/irq.h"
+#include "../jrd/tra.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -92,6 +93,14 @@ namespace {
 		MutexHolder(const MutexHolder&);
 		MutexHolder& operator=(const MutexHolder&);
 	};
+
+	inline void validateTransaction(const dsql_req* request)
+	{
+		if (!request->req_transaction->checkHandle())
+		{
+			ERRD_post(isc_bad_trans_handle, 0);
+		}
+	}
 }
 
 
@@ -270,6 +279,8 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 
 	// Now see if it is in the database 
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 	dsql_intlsym* iname = NULL;
 
@@ -343,11 +354,12 @@ USHORT METD_get_col_default(dsql_req* request,
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 
 	bid* blob_id;
 
-	ISC_STATUS stat;
 	USHORT length, result = 0;
 	blb* blob_handle = 0;
 
@@ -465,6 +477,8 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 		return (dsql_intlsym*) symbol->sym_object;
 
 	// Now see if it is in the database 
+
+	validateTransaction(request);
 
 	dsql_dbb* dbb = request->req_dbb;
 	dsql_intlsym* iname = NULL;
@@ -588,6 +602,8 @@ Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 		return dbb->dbb_charsets_by_id[pos]->intlsym_name;
 	}
 
+	validateTransaction(request);
+
 	jrd_req* handle = CMP_find_request(tdbb, irq_cs_name, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
@@ -634,6 +650,8 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 	// Now see if it is in the database 
 
+	validateTransaction(request);
+
 	jrd_req* handle = CMP_find_request(tdbb, irq_default_cs, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
@@ -679,6 +697,8 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+
+	validateTransaction(request);
 
 	bool found = false;
 
@@ -745,6 +765,8 @@ USHORT METD_get_domain_default(dsql_req* request,
  *
  **************************************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+
+	validateTransaction(request);
 
 	*has_default = false;
 
@@ -844,6 +866,8 @@ bool METD_get_exception(dsql_req* request, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 	bool found = false;
 
@@ -891,6 +915,8 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
         return (dsql_udf*) symbol->sym_object;
 
 	// Now see if it is in the database 
+
+	validateTransaction(request);
 
 	dsql_dbb* dbb = request->req_dbb;
 	dsql_udf* userFunc = NULL;
@@ -1064,6 +1090,8 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 
 	DsqlNodStack stack;
@@ -1133,6 +1161,8 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		return (dsql_prc*) symbol->sym_object;
 
 	// now see if it is in the database 
+
+	validateTransaction(request);
 
 	dsql_prc* procedure = NULL;
 
@@ -1357,6 +1387,8 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	// and this is a type of request which does not use ids, prepare a
 	// temporary relation block to provide information without caching it
 
+	validateTransaction(request);
+
 	bool permanent = true;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
@@ -1562,6 +1594,8 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 
 	bool found = false;
@@ -1612,6 +1646,8 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
+	validateTransaction(request);
+
 	dsql_dbb* dbb = request->req_dbb;
 	bool found = false;
 
@@ -1656,6 +1692,8 @@ dsql_rel* METD_get_view_base(dsql_req* request,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+
+	validateTransaction(request);
 
 	dsql_rel* relation = NULL;
 
@@ -1795,6 +1833,8 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+
+	validateTransaction(request);
 
 	dsql_rel* relation = NULL;
 
