@@ -940,15 +940,26 @@ static void close_cursor(dsql_req* request)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS_ARRAY status_vector = {0};
 
 	if (request->req_request)
 	{
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
 		{
-			BLB_close(tdbb, request->req_blob->blb_blob);
-			request->req_blob->blb_blob = NULL;
+			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+
+			tdbb->tdbb_status_vector = status_vector;
+			try
+			{
+				BLB_close(tdbb, request->req_blob->blb_blob);
+				request->req_blob->blb_blob = NULL;
+			}
+			catch (Firebird::Exception&)
+			{
+			}
+
+			tdbb->tdbb_status_vector = old_status;
 		}
 		else
 		{
@@ -1081,7 +1092,7 @@ static void execute_blob(thread_db* tdbb,
 		memset(blob_id, 0, sizeof(bid));
 
 		request->req_blob->blb_blob = BLB_create2(tdbb, request->req_transaction,
-			blob_id, bpb_length, const_cast<const UCHAR*>(bpb));
+			blob_id, bpb_length, bpb);
 
 		map_in_out(NULL, blob->blb_open_out_msg,
 				   out_blr_length, out_blr,
@@ -1359,7 +1370,7 @@ static void execute_request(thread_db* tdbb,
 		}
 	}
 
-	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS_ARRAY local_status = {0};
 	// REQ_EXEC_BLOCK has no outputs so there are no out_msg 
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
@@ -2143,6 +2154,8 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
  **/
 static dsql_dbb* init(Attachment* attachment)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	if (!attachment->att_dsql_instance)
 	{
 		MemoryPool& pool = *attachment->att_database->createPool();
@@ -2154,14 +2167,21 @@ static dsql_dbb* init(Attachment* attachment)
 
 		SCHAR buffer[BUFFER_TINY];
 
+		ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+		ISC_STATUS_ARRAY status_vector = {0};
+
+		tdbb->tdbb_status_vector = status_vector;
 		try
 		{
 			INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
 		}
 		catch (Firebird::Exception&)
 		{
+			tdbb->tdbb_status_vector = old_status;
 			return database;
 		}
+
+		tdbb->tdbb_status_vector = old_status;
 
 		const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
 		UCHAR p;
@@ -2838,9 +2858,22 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If a request has been compiled, release it now
 
-	if (request->req_request) {
-		CMP_release(tdbb, request->req_request);
-		request->req_request = NULL;
+	if (request->req_request)
+	{
+		ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+		ISC_STATUS_ARRAY status_vector = {0};
+
+		tdbb->tdbb_status_vector = status_vector;
+		try
+		{
+			CMP_release(tdbb, request->req_request);
+			request->req_request = NULL;
+		}
+		catch (Firebird::Exception&)
+		{
+		}
+
+		tdbb->tdbb_status_vector = old_status;
 	}
 
 	// free blr memory

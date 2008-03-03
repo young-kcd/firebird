@@ -3312,7 +3312,7 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	{
 		if (prior)
 		{
-			ISC_STATUS_ARRAY temp_status;
+			ISC_STATUS_ARRAY temp_status = {0};
 			rollback(temp_status, &prior, false);
 		}
 
@@ -5414,7 +5414,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 			tdbb->setAttachment(attach);
 
 			// purge_attachment() below can do an ERR_post
-			ISC_STATUS_ARRAY temp_status;
+			ISC_STATUS_ARRAY temp_status = {0};
 			tdbb->tdbb_status_vector = temp_status;
 
 			try
@@ -6039,7 +6039,7 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 							   Attachment* attachment, 
 							   Database* dbb)
 {
-	ISC_STATUS_ARRAY temp_status;
+	ISC_STATUS_ARRAY temp_status = {0};
 	ISC_STATUS* const save_status = tdbb->tdbb_status_vector;
 	tdbb->tdbb_status_vector = temp_status;
 
@@ -6162,7 +6162,7 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
 		catch (const Firebird::Exception&)
 		{
 			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
-			ISC_STATUS_ARRAY temp_status;
+			ISC_STATUS_ARRAY temp_status = {0};
 			tdbb->tdbb_status_vector = temp_status;
 
 			try

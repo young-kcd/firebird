@@ -3747,8 +3747,6 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 		
 	constant->nod_desc.dsc_length -= adjust;
 
-	ISC_STATUS_ARRAY status_vector = {0};
-
 	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->nod_desc));
 
 	if (!charSet->wellFormed(string->str_length,

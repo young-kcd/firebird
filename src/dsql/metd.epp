@@ -403,11 +403,23 @@ USHORT METD_get_col_default(dsql_req* request,
 					continue;
 			}
 
-			BLB_close(tdbb, blob_handle);
-			blob_handle = NULL;
+			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+ 			ISC_STATUS_ARRAY status_vector = {0};
 
-			/* the default string must be of the form:
-			   blr_version4 blr_literal ..... blr_eoc  */
+			tdbb->tdbb_status_vector = status_vector;
+			try
+			{
+				BLB_close(tdbb, blob_handle);
+				blob_handle = NULL;
+			}
+			catch (Firebird::Exception&)
+			{
+			}
+
+			tdbb->tdbb_status_vector = old_status;
+
+			// the default string must be of the form:
+			// blr_version4 blr_literal ..... blr_eoc
 			fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 			fb_assert(buffer[1] == blr_literal);
 		}
@@ -781,8 +793,18 @@ USHORT METD_get_domain_default(dsql_req* request,
 					continue;
 	        }
 
-			BLB_close(tdbb, blob_handle);
-			blob_handle = NULL;
+			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+ 			ISC_STATUS_ARRAY status_vector = {0};
+
+			tdbb->tdbb_status_vector = status_vector;
+			try
+			{
+				BLB_close(tdbb, blob_handle);
+				blob_handle = NULL;
+			}
+			catch (Firebird::Exception&)
+			{
+			}
 
 	        /* the default string must be of the form:
 	           blr_version4 blr_literal ..... blr_eoc  */
