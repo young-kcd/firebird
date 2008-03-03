@@ -255,11 +255,11 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT);
 #define CANCEL_enable	2
 #define CANCEL_raise	3
 ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
-ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
-ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status);
-const int FB_SHUT_PREPROVIDERS	= 1;
-const int FB_SHUT_POSTPROVIDERS	= 2;
-ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask);
+
+ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS*, FB_API_HANDLE*);
+
+ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status);
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask);
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);

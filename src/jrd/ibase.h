@@ -83,6 +83,7 @@ typedef ISC_LONG isc_resv_handle;
 typedef void (*ISC_PRINT_CALLBACK) (void*, ISC_SHORT, const char*);
 typedef void (*ISC_VERSION_CALLBACK)(void*, const char*);
 typedef void (*ISC_EVENT_CALLBACK)(void*, ISC_USHORT, const ISC_UCHAR*);
+typedef int (*FB_SHUTDOWN_CALLBACK)();
 
 /*******************************************************************/
 /* Blob id structure                                               */
@@ -594,20 +595,22 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 ISC_EVENT_CALLBACK,
 									 void*);
 
-ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
-											 isc_tr_handle *);
+ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS*,
+											 isc_tr_handle*);
 
-ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS *,
-											   isc_tr_handle *);
+ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS*,
+											   isc_tr_handle*);
 
-ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS *,
-										 isc_tr_handle *,
+ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS*,
+										 isc_tr_handle*,
 										 short,
 										 void *);
 
-ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
-												   isc_tr_handle *,
+ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS*,
+												   isc_tr_handle*,
 												   short, ...);
+
+ISC_STATUS ISC_EXPORT fb_disconnect_transaction(ISC_STATUS*, isc_tr_handle*);
 
 ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
@@ -1123,6 +1126,12 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 										isc_resv_handle*,
 										unsigned short,
 										const ISC_SCHAR*);
+
+
+ISC_STATUS ISC_EXPORT fb_shutdown(ISC_STATUS*);
+ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
+										   FB_SHUTDOWN_CALLBACK,
+										   const int);
 
 
 /********************************/

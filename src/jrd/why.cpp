@@ -44,6 +44,7 @@
 
 #include "firebird.h"
 #include "memory_routines.h"	// needed for get_long
+#include "consts_pub.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -96,12 +97,6 @@
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/blr.h"
 #endif
-
-// In 2.0 it's hard to include ibase.h in why.cpp due to API declaration conflicts.
-// Taking into account that given y-valve lives it's last version,
-// in which dpb version is not likely to change, define it here.
-// #include "../jrd/ibase.h"
-const UCHAR isc_dpb_version1 = 1;
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
@@ -836,18 +831,7 @@ namespace
 
 			// perform shutdown
 			ISC_STATUS_ARRAY status;
-			fb__shutdown(status);
-
-			if (status[0] == 1 && status[1] != 0)
-			{
-				char buffer[256];
-				const ISC_STATUS *vector = status;
-				if (!fb_interpret(buffer, sizeof(buffer), &vector))
-				{
-					strcpy(buffer, "Unknown failure in shutdown thread in fb__shutdown()");
-				}
-				gds__log(buffer, 0);
-			}
+			fb_shutdown(NULL);
 		}
 
 		return 0;
@@ -3842,8 +3826,8 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS* user_status,
-										   FB_API_HANDLE* user_handle)
+ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
+												 FB_API_HANDLE* user_handle)
 {
 /**************************************
  *
@@ -3852,7 +3836,7 @@ ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Clean up a dangling y-valve handle.
+ *	Clean up a dangling transaction handle.
  *
  **************************************/
 	Status status(user_status);
@@ -3861,7 +3845,8 @@ ISC_STATUS API_ROUTINE gds__handle_cleanup(ISC_STATUS* user_status,
 	{
 		Transaction* transaction = translate<Transaction>(user_handle);
 
-		while (transaction) {
+		while (transaction) 
+		{
 			Transaction* sub = transaction;
 			transaction = sub->next;
 			delete sub;
@@ -6073,7 +6058,7 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
-ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
+ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status)
 {
 /**************************************
  *
@@ -6090,7 +6075,7 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
 	try
 	{
 		// Shutdown clients before providers
-		if (ShutChain::run(FB_SHUT_PREPROVIDERS) == 0)
+		if (ShutChain::run(fb_shut_preproviders) == 0)
 		{
 			// Shutdown providers
 			ISC_STATUS* curStatus = status;
@@ -6112,7 +6097,7 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
 			}
 
 			// Shutdown clients after providers
-			if (ShutChain::run(FB_SHUT_POSTPROVIDERS) == 0)
+			if (ShutChain::run(fb_shut_postproviders) == 0)
 			{
 				// All clients are ready to exit
 				exit(0);
@@ -6128,7 +6113,7 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
 }
 
 
-ISC_STATUS API_ROUTINE fb__shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask)
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask)
 {
 /**************************************
  *

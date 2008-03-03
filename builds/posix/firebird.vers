@@ -72,7 +72,6 @@ global:
 	gds__get_prefix;
 	gds__get_segment;
 	gds__get_slice;
-	gds__handle_cleanup;
 	gds__interprete;
 	gds__log;
 	gds__log_status;
@@ -134,9 +133,6 @@ global:
 
     gds_alloc_flag_unfreed;
     gds_alloc_report;
-
-	fb__shutdown;
-	fb__shutdown_callback;
 
 	perf_format;
 	perf_get_info;
@@ -292,6 +288,7 @@ global:
 	isc_start_multiple;
 	isc_start_transaction;
 	isc_transaction_info;
+	fb_disconnect_transaction;
 
 # Other functions
 
@@ -336,6 +333,11 @@ global:
 	BLOB_text_load;
 	Bopen;
 
+# Server shutdown support
+
+	fb_shutdown;
+	fb_shutdown_callback;
+
 # Other misc functions
 
 	isc_ftof;
@@ -356,18 +358,6 @@ global:
 
 	KEYWORD_stringIsAToken;
 	KEYWORD_getTokens;
-
-#--------------------------------------
-#functions needed by Solaris utilities
-	SCH_ast;
-
-#commented it out with new style of thd //Konstantin
-#
-#	THD_mutex_lock;
-#	THD_mutex_unlock;
-#	THD_mutex_destroy;
-#	THD_mutex_init;
-#--------------------------------------
 
 local:
 	*;

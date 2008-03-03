@@ -1531,19 +1531,14 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			while (transaction = rdb->rdb_transactions) {
 				THREAD_EXIT();
 				if (!transaction->rtr_limbo)
-					isc_rollback_transaction(status_vector,
-											 &transaction->rtr_handle);
+					isc_rollback_transaction(status_vector, &transaction->rtr_handle);
 #ifdef SUPERSERVER
 				/* The underlying JRD subsystem will release all
 				   memory resources related to a limbo transaction
-				   as a side-effect of the database detach call
-				   below. However, the y-valve handle must be released
-				   as well since an isc_disconnect_transaction()
-				   call doesn't exist. */
-
+				   as a side-effect of the database detach call below.
+				   However, the y-valve handle must be released. */
 				else
-					gds__handle_cleanup(status_vector,
-										(FB_API_HANDLE*) &transaction->rtr_handle);
+					fb_disconnect_transaction(status_vector, &transaction->rtr_handle);
 #endif
 				THREAD_ENTER();
 				release_transaction(rdb->rdb_transactions);
@@ -5276,15 +5271,9 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 #ifdef SUPERSERVER
 			/* Note that there is an underlying transaction pool
 			   that won't be released until this connection is
-			   detached. There is no isc_disconnect_transaction()
-			   call that gets rid of a transaction reference --
-			   there is only commit and rollback. It's not worth
-			   introducing such a call to all subsystems. At least
-			   release the y-valve handle. */
-
-			else {
-				gds__handle_cleanup(status_vector, &handle);
-			}
+			   detached. At least release the y-valve handle. */
+			else
+				fb_disconnect_transaction(status_vector, &handle);
 #endif
 			THREAD_ENTER();
 			status_vector[0] = isc_arg_gds;

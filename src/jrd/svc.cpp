@@ -652,8 +652,9 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 
 void Service::detach()
 {
-	if (svc_do_shutdown) {
-		fb__shutdown(NULL);
+	if (svc_do_shutdown) 
+	{
+		fb_shutdown(NULL);
 	}
 
 	if (svc_uses_security_database)

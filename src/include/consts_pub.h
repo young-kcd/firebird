@@ -931,6 +931,13 @@
 #define isc_dpb_SQL_dialect               63
 #define isc_dpb_set_db_SQL_dialect        65
 
+/***********************************/
+/* Masks for fb_shutdown_callback */
+/***********************************/
+
+#define fb_shut_preproviders			  1
+#define fb_shut_postproviders			  2
+
 /********************************************/
 /* Debug information items					*/
 /********************************************/

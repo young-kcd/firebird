@@ -51,7 +51,6 @@
 #include "../qli/meta_proto.h"
 #include "../qli/parse_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/why_proto.h"
 #include "../jrd/perf_proto.h"
 #include "../include/fb_exception.h"
 #include "../common/utils_proto.h"
@@ -298,7 +297,7 @@ static void enable_signals(void)
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);
 #endif
-	fb__shutdown_callback(0, async_quit, FB_SHUT_PREPROVIDERS);
+	fb_shutdown_callback(0, async_quit, fb_shut_preproviders);
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif

@@ -38,11 +38,9 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/divorce.h"
 #include "../jrd/ibase.h"
-#include "../jrd/why_proto.h"
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include <sys/param.h>
-//#include "../jrd/os/isc_i_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -523,7 +521,7 @@ static void shutdownInit()
 	setStopMainThread(tryStopMainThread);
 
 	ISC_STATUS_ARRAY status;
-	fb__shutdown_callback(status, shutdownInetServer, FB_SHUT_POSTPROVIDERS);
+	fb_shutdown_callback(status, shutdownInetServer, fb_shut_postproviders);
 	if (status[0] == 1 && status[1] > 0) 
 	{
 		gds__log_status("Error in shutdownInit()", status);

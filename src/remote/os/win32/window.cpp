@@ -213,7 +213,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-				fb__shutdown(NULL);
+				fb_shutdown(NULL);
 				SRVR_shutdown();
 				DestroyWindow(hWnd);
 			}
@@ -426,7 +426,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 						return FALSE;
 					}
 
-					fb__shutdown(NULL);
+					fb_shutdown(NULL);
 					SRVR_shutdown();
 					PostMessage(hWnd, WM_DESTROY, 0, 0);
 					return TRUE;
@@ -449,7 +449,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
-				fb__shutdown(NULL);
+				fb_shutdown(NULL);
 				SRVR_shutdown();
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
 			}

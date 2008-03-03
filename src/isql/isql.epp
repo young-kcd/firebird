@@ -4038,7 +4038,7 @@ static void do_isql()
 #ifdef WIN_NT
 	SetConsoleCtrlHandler(query_abort, TRUE);
 #elif defined(HAVE_SIGACTION)
-	fb__shutdown_callback(0, query_abort, FB_SHUT_PREPROVIDERS);
+	fb_shutdown_callback(0, query_abort, fb_shut_preproviders);
 #endif
 
 	// Open database and start tansaction

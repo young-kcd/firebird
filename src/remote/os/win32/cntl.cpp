@@ -295,7 +295,7 @@ static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
  *	This thread is responsible for the cleanup.
  *
  **************************************/
-	fb__shutdown(NULL);
+	fb_shutdown(NULL);
 	SRVR_shutdown();
 	return 0;
 }
