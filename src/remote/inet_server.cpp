@@ -526,7 +526,7 @@ static void shutdownInit()
 	fb__shutdown_callback(status, shutdownInetServer, FB_SHUT_POSTPROVIDERS);
 	if (status[0] == 1 && status[1] > 0) 
 	{
-		gds__log_status("shutdownInit", status);
+		gds__log_status("Error in shutdownInit()", status);
 		isc_print_status(status);
 		exit(STARTUP_ERROR);
 	}

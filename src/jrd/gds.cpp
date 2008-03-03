@@ -1305,8 +1305,15 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 
 	TEXT* p = buffer;
 	const TEXT* const end = p + BUFFER_XLARGE;
-	const int max_db_len = int(BUFFER_XLARGE - 12);
-	sprintf(p, "Database: %.*s", max_db_len, (database) ? database : "");
+	if (database)
+	{
+		const int max_db_len = int(BUFFER_XLARGE - 12);
+		sprintf(p, "Database: %.*s", max_db_len, database);
+	}
+	else
+	{
+		*p = 0;
+	}
 
 	do {
 		while (*p)

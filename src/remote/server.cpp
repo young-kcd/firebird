@@ -3642,7 +3642,7 @@ static bool process_packet(rem_port* port,
 		memset(local_status, 0, sizeof(local_status));
 
 		Firebird::stuff_exception(local_status, ex);
-		gds__log_status("unknown, SERVER/process_packet", local_status);
+		gds__log_status(0, local_status);
 
 		/*  It would be nice to log an error to the user, instead of just terminating them!  */
 		port->send_response(sendL, 0, 0, local_status, false);

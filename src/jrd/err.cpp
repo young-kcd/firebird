@@ -550,7 +550,7 @@ void ERR_punt(void)
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
 		gds__log_status(tdbb->getAttachment()->att_filename.hasData() ?
-			tdbb->getAttachment()->att_filename.c_str() : "Database unknown in ERR_punt on bugcheck",
+						tdbb->getAttachment()->att_filename.c_str() : NULL,
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{

@@ -6093,13 +6093,21 @@ ISC_STATUS API_ROUTINE fb__shutdown(ISC_STATUS* user_status)
 		if (ShutChain::run(FB_SHUT_PREPROVIDERS) == 0)
 		{
 			// Shutdown providers
+			ISC_STATUS* curStatus = status;
+			ISC_STATUS_ARRAY tempStatus;
 			for (int n = 0; n < SUBSYSTEMS; ++n)
 			{
 				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
 				if (entry != no_entrypoint) 
 				{
-					if (entry(status) != FB_SUCCESS)
-						break;
+					if (entry(curStatus) != FB_SUCCESS)
+					{
+						// Log error
+						gds__log("Error shutting down subsystem");
+						gds__log_status(0, curStatus);
+						// Preserve first error, which happened
+						curStatus = tempStatus;
+					}
 				}
 			}
 
