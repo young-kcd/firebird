@@ -559,7 +559,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 	// Old data left - use them
 	if (offset)
 	{
-		memmove(&buf[offset], p, loop);
+		memmove(&buf[offset], p, loop + 1);
 		p = buf;
 		loop += offset;
 		offset = 0;
@@ -567,6 +567,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 
 	while (*p != isc_info_end)
 	{
+		fb_assert(p[loop] == isc_info_end);
 		try 
 		{
 			switch (*p++)
