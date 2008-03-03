@@ -131,7 +131,6 @@ public:
 	MemoryPool&		dbb_pool;			//!< The current pool for the dbb
 	Database*		dbb_database;
 	Attachment*		dbb_attachment;
-	jrd_tra*		dbb_sys_trans;
 	dsql_str*		dbb_dfl_charset;
 	USHORT			dbb_base_level;		//!< indicates the version of the engine code itself
 	bool			dbb_no_charset;

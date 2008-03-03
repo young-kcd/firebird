@@ -2162,7 +2162,6 @@ static dsql_dbb* init(Attachment* attachment)
 		dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
 		database->dbb_attachment = attachment;
 		database->dbb_database = attachment->att_database;
-		database->dbb_sys_trans = attachment->att_database->dbb_sys_trans;
 		attachment->att_dsql_instance = database;
 
 		SCHAR buffer[BUFFER_TINY];
