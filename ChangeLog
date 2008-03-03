@@ -1,3 +1,84 @@
+2008-03-03 18:46  alexpeshkoff
+
+	* firebird2/: builds/posix/firebird.vers (1.13), src/burp/burp.cpp
+	(1.132), src/include/consts_pub.h (1.15), src/isql/isql.epp
+	(1.231), src/jrd/ibase.h (1.129), src/jrd/svc.cpp (1.210),
+	src/jrd/why.cpp (1.166), src/jrd/why_proto.h (1.43),
+	src/jrd/os/win32/ibinitdll.cpp (1.15), src/qli/dtr.cpp (1.48),
+	src/remote/inet_server.cpp (1.77), src/remote/server.cpp (1.173),
+	src/remote/os/win32/cntl.cpp (1.35), src/remote/os/win32/window.cpp
+	(1.28):
+
+	Make fb_disconnect_transaction, fb_shutdown and
+	fb_shutdown_callback public API calls.	Related cleanup.
+
+2008-03-03 17:31  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/classic/makeInstallImage.sh.in
+	(1.23):
+
+	add superclassic to binary package
+
+2008-03-03 16:40  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.218), dsql/metd.epp (1.119),
+	jrd/jrd.cpp (1.404), jrd/jrd.h (1.222), jrd/met.epp (1.243),
+	jrd/met_proto.h (1.65):
+
+	Let DSQL cache lock logic in SS too - per Dmitry request
+
+2008-03-03 15:38  dimitr
+
+	* firebird2/src/dsql/: dsql.cpp (1.229), dsql.h (1.125):
+
+	Cleanup.
+
+2008-03-03 15:31  alexpeshkoff
+
+	* firebird2/src/lock/driver.cpp (1.20):
+
+	cleanup
+
+2008-03-03 14:59  alexpeshkoff
+
+	* firebird2/src/: jrd/err.cpp (1.74), jrd/gds.cpp (1.243),
+	jrd/why.cpp (1.165), remote/inet_server.cpp (1.76),
+	remote/server.cpp (1.172):
+
+	1. Make use of gds__log_status() more consustent (no Database: line
+	in log when database is not specified).  2. A bit better logic when
+	error happens during provider shutdown.
+
+2008-03-03 14:52  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.17):
+
+	one more fix for CORE-1680
+
+2008-03-03 07:31  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.118):
+
+	Fixed the NULL transaction handle crash reported by Dmitry
+	Kovalenko in fb-devel.
+
+2008-03-03 01:46  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.228), dsql/metd.epp (1.117),
+	dsql/pass1.cpp (1.357), jrd/jrd.cpp (1.403):
+
+	1) Restore logic of not handled exceptions 2) Initialize some
+	status vectors
+
+2008-03-02 22:16  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.217), dsql/dsql.cpp (1.227),
+	dsql/metd.epp (1.116), jrd/jrd.cpp (1.402), jrd/jrd_proto.h (1.60):
+
+	Go direct to engine internals from DSQL, without need to exit/enter
+	the attachment lock - more to follow
+
 2008-03-02 13:47  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.smp_server (1.1):
