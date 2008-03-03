@@ -1994,9 +1994,7 @@ static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
 
 	HSHD_insert(symbol);
 
-#ifndef SUPERSERVER
 	MET_dsql_cache_use(tdbb, symbol->sym_type, symbol->sym_string);
-#endif	// SUPERSERVER
 }
 
 
@@ -2059,7 +2057,6 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 		}
     }
 
-#ifndef SUPERSERVER
 	if (symbol)
 	{
 		bool obsolete = MET_dsql_cache_use(tdbb, type, name);
@@ -2091,7 +2088,6 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 			symbol = NULL;
 		}
 	}
-#endif	// SUPERSERVER
 
 	return symbol;    
 }

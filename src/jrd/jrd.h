@@ -241,14 +241,12 @@ const int VAL_INDEX_CYCLE				= 25;
 const int VAL_MAX_ERROR					= 26;
 
 
-#ifndef SUPERSERVER
 struct DSqlCacheItem
 {
 	Lock* lock;
 	bool locked;
 	bool obsolete;
 };
-#endif
 
 
 //
@@ -322,9 +320,9 @@ public:
 	RandomGenerator att_random_generator;	// Random bytes generator
 #ifndef SUPERSERVER
 	Lock*		att_temp_pg_lock;			// temporary pagespace ID lock
+#endif
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
-#endif
 	dsql_dbb* att_dsql_instance;
 
 	bool locksmith() const;

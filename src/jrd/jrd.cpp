@@ -5160,10 +5160,8 @@ Attachment::Attachment(Database* dbb) :
 		att_context_vars(*dbb->dbb_permanent),
 		att_network_protocol(*dbb->dbb_permanent),
 		att_remote_address(*dbb->dbb_permanent),
-		att_remote_process(*dbb->dbb_permanent)
-#ifndef SUPERSERVER
-		, att_dsql_cache(*dbb->dbb_permanent)
-#endif
+		att_remote_process(*dbb->dbb_permanent),
+		att_dsql_cache(*dbb->dbb_permanent)
 {
 }
 

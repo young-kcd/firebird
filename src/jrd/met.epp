@@ -114,10 +114,8 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
 
-#ifndef SUPERSERVER
 static int blocking_ast_dsql_cache(void* ast_object);
 static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Firebird::MetaName& name);
-#endif
 static int blocking_ast_procedure(void*);
 static int blocking_ast_relation(void*);
 static int partners_ast_relation(void*);
@@ -1089,7 +1087,6 @@ void MET_delete_shadow( thread_db* tdbb, USHORT shadow_number)
 }
 
 
-#ifndef SUPERSERVER
 bool MET_dsql_cache_use(thread_db* tdbb, int type, const Firebird::MetaName& name)
 {
 	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, name);
@@ -1122,7 +1119,6 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const Firebird::MetaName&
 
 	item->obsolete = false;
 }
-#endif
 
 
 void MET_error(const TEXT* string, ...)
@@ -4207,7 +4203,6 @@ void MET_update_transaction( thread_db* tdbb, jrd_tra* transaction, const bool d
 }
 
 
-#ifndef SUPERSERVER
 static int blocking_ast_dsql_cache(void* ast_object)
 {
 /**************************************
@@ -4269,7 +4264,6 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 
 	return item;
 }
-#endif
 
 
 static int blocking_ast_procedure(void* ast_object)
