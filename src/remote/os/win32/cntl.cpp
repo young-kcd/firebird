@@ -41,7 +41,7 @@
 #include <windows.h>
 #endif
 
-const int ERROR_BUFFER_LENGTH	= 1024;
+const unsigned int SHUTDOWN_TIMEOUT = 10 * 1000;	// 10 seconds
 
 struct cntl_thread
 {
@@ -50,7 +50,6 @@ struct cntl_thread
 };
 
 static void WINAPI control_thread(DWORD);
-static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM);
 
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 
@@ -142,31 +141,11 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 
 	if (stop_event_handle)
 		CloseHandle(stop_event_handle);
-/* set the status with the timer, start the cleanup thread and wait for the
- * cleanup thread to exit or the timer to expire, once we reach the max number
- * of loops or the thread exits set the state to shutdown and exit */
-	HANDLE cleanup_thread_handle;
-	if (gds__thread_start(cleanup_thread, NULL, THREAD_medium, 0, 
-		&cleanup_thread_handle) != 0) 
-	{
-		last_error = GetLastError();
-		report_status(SERVICE_STOPPED, last_error, 0, 0);
-		return;
-	}
 
-	DWORD count = 1;
-	DWORD return_from_wait;
+	report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, SHUTDOWN_TIMEOUT);
 
-	do {
-		count++;
-		report_status(SERVICE_STOP_PENDING, NO_ERROR, count, 60000);
-		return_from_wait = WaitForSingleObject(cleanup_thread_handle, 50000);
-	} while (count < 10 && return_from_wait == WAIT_TIMEOUT);
-/* loop for 10 times about 7 minutes should be enough time for the server to
- * cleanup */
-
-/* TMN 29 Jul 2000 - close the thread handle */
-	CloseHandle(cleanup_thread_handle);
+	fb_shutdown(NULL, SHUTDOWN_TIMEOUT);
+	SRVR_shutdown();
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
 }
@@ -282,24 +261,6 @@ static void WINAPI control_thread( DWORD action)
 
 	report_status(state, NO_ERROR, 0, 0);
 }
-
-static THREAD_ENTRY_DECLARE cleanup_thread(THREAD_ENTRY_PARAM)
-{
-/**************************************
- *
- *	c l e a n u p _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *	This thread is responsible for the cleanup.
- *
- **************************************/
-	fb_shutdown(NULL);
-	SRVR_shutdown();
-	return 0;
-}
-
 
 static USHORT report_status(
 							DWORD state,

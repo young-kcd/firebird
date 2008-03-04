@@ -654,7 +654,7 @@ void Service::detach()
 {
 	if (svc_do_shutdown) 
 	{
-		fb_shutdown(NULL);
+		fb_shutdown(NULL, 10 * 1000);	// 10 seconds
 	}
 
 	if (svc_uses_security_database)

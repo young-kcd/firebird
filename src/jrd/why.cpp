@@ -806,7 +806,7 @@ namespace
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
-		for(;;)
+		for (;;)
 		{
 			killed = 0;
 			try {
@@ -814,7 +814,7 @@ namespace
 			}
 			catch (Firebird::status_exception& e)
 			{
-				TEXT buffer[1024];
+				TEXT buffer[BUFFER_LARGE];
 				const ISC_STATUS* vector = e.value();
 				if (! (vector && fb_interpret(buffer, sizeof(buffer), &vector)))
 				{
@@ -831,7 +831,7 @@ namespace
 
 			// perform shutdown
 			ISC_STATUS_ARRAY status;
-			fb_shutdown(NULL);
+			fb_shutdown(NULL, 0);
 		}
 
 		return 0;
@@ -6058,7 +6058,7 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
-ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status)
+ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status, unsigned int timeout)
 {
 /**************************************
  *
@@ -6085,10 +6085,9 @@ ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status)
 				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
 				if (entry != no_entrypoint) 
 				{
-					if (entry(curStatus) != FB_SUCCESS)
+					if (entry(curStatus, timeout) != FB_SUCCESS)
 					{
 						// Log error
-						gds__log("Error shutting down subsystem");
 						gds__log_status(0, curStatus);
 						// Preserve first error, which happened
 						curStatus = tempStatus;

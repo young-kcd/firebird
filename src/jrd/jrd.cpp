@@ -497,7 +497,6 @@ const int SWEEP_INTERVAL		= 20000;
 
 const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
-const int BUFFER_LENGTH128		= 128;
 
 #define GDS_ATTACH_DATABASE		jrd8_attach_database
 #define GDS_BLOB_INFO			jrd8_blob_info
@@ -3183,7 +3182,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status)
+ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status, unsigned int timeout)
 {
 /**************************************
  *
@@ -3210,24 +3209,23 @@ ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status)
 					 attach_count, database_count);
 		}
 
-		int shutdown_complete = 0;
-
-		gds__thread_start(shutdown_thread, &shutdown_complete, THREAD_medium, 0, 0);
-
-		int timeout = 10 * 10; // 10 seconds
-
-		while (timeout--) 
+		if (timeout)
 		{
-			if (shutdown_complete)
-				break;
-			THREAD_SLEEP(100); // msec
+			Firebird::Semaphore shutdown_semaphore;
+
+			ThreadStart::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, 0, 0);
+
+			if (!shutdown_semaphore.tryEnter(0, timeout))
+			{
+				const char errorMsg[] = "Server shutdown is still in progress after the specified timeout";
+				Firebird::status_exception::raise(isc_random,
+												  isc_arg_string, (ISC_STATUS) errorMsg,
+												  0);
+			}
 		}
-
-		if (!shutdown_complete)
+		else
 		{
-			ERR_post(isc_random,
-					 isc_arg_string, (ISC_STATUS) "Forced server shutdown - not all databases closed",
-					 0);
+			shutdown_thread(NULL);
 		}
 	}
 	catch (const Firebird::Exception& ex)
@@ -6083,7 +6081,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *	Shutdown the engine.
  *
  **************************************/
-	int* const result = static_cast<int*>(arg);
+	Firebird::Semaphore* const semaphore = static_cast<Firebird::Semaphore*>(arg);
 
 	ThreadContextHolder tdbb;
 
@@ -6109,7 +6107,10 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		success = false;
 	}
 
-	*result = (success ? 1 : 0);
+	if (success && semaphore)
+	{
+		semaphore->release();
+	}
 
 	return 0;
 }

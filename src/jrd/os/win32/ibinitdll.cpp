@@ -34,9 +34,7 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 	switch (reason)	{
 
 	case DLL_PROCESS_DETACH:
-#ifdef EMBEDDED
-		fb_shutdown(0);
-#endif
+		fb_shutdown(NULL, 0);
 		break;
 
 	default:

@@ -139,7 +139,7 @@ ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   USHORT, SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
-ISC_STATUS jrd8_shutdown_all(ISC_STATUS *);
+ISC_STATUS jrd8_shutdown_all(ISC_STATUS *, unsigned int);
 ISC_STATUS jrd8_allocate_statement(ISC_STATUS*,
 								   Jrd::Attachment**,
 								   Jrd::dsql_req**);
