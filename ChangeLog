@@ -1,3 +1,78 @@
+2008-03-04 20:07  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.143):
+
+	Defer the process block cleanup till its death. This is dumber but
+	more robust. It avoids races at LCK_fini() and fixes a rare
+	deadlock there.
+
+2008-03-04 14:25  dimitr
+
+	* firebird2/src/: jrd/ibase.h (1.130), jrd/jrd.cpp (1.406),
+	jrd/jrd_proto.h (1.62), jrd/svc.cpp (1.211), jrd/why.cpp (1.167),
+	jrd/why_proto.h (1.44), jrd/os/win32/ibinitdll.cpp (1.16),
+	remote/os/win32/cntl.cpp (1.36), remote/os/win32/window.cpp (1.29):
+
+	1) Added timeout value to the shutdown API call.  2) Fixed the slow
+	fbembed detach noticed by Claudio and Vlad.  3) Cleanup.
+
+2008-03-04 14:15  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.244):
+
+	Cleanup/refactoring.
+
+2008-03-04 14:13  alexpeshkoff
+
+	* firebird2/src/jrd/met.epp (1.244):
+
+	Fixed FK constraints - thanks to Vlad
+
+2008-03-04 11:58  dimitr
+
+	* firebird2/src/dsql/metd.epp (1.121):
+
+	Fixed the status vector thrown for the NULL transaction handle.
+
+2008-03-04 08:15  robocop
+
+	* firebird2/src/jrd/fun.epp (1.91):
+
+	Cleanup.
+
+2008-03-04 07:56  robocop
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.30), pwd.cpp (1.62):
+
+	Misc.
+
+2008-03-04 07:07  robocop
+
+	* firebird2/builds/win32/msvc8/Firebird2.sln (1.9):
+
+	After doing a clean BOOT and ALL build, I think we don't need
+	gpre_boot in Firebird2.sln, only in Firebird2Boot.sln.
+
+2008-03-04 07:03  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.219), dsql/dsql.cpp (1.230),
+	jrd/jrd.cpp (1.405), jrd/jrd_proto.h (1.61):
+
+	Let's better use UCHAR for binary streams.
+
+2008-03-04 07:01  robocop
+
+	* firebird2/src/: dsql/metd.epp (1.120), jrd/exe.cpp (1.241):
+
+	Misc.
+
+2008-03-04 07:00  robocop
+
+	* firebird2/builds/win32/defs/fbclient.def (1.19):
+
+	The client library on Windows won't build without getting rid of
+	these references to already gone private API entrypoints.
+
 2008-03-03 18:46  alexpeshkoff
 
 	* firebird2/: builds/posix/firebird.vers (1.13), src/burp/burp.cpp
