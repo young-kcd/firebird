@@ -1438,8 +1438,10 @@ static void execute_looper(
 /* Start a save point */
 
 	if (!(request->req_flags & req_proc_fetch) && request->req_transaction)
+	{
 		if (transaction && (transaction != dbb->dbb_sys_trans))
 			VIO_start_save_point(tdbb, transaction);
+	}
 
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
@@ -1835,10 +1837,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		{
 			JRD_reschedule(tdbb, 0, true);
 		}
-
-#if defined(DEBUG_GDS_ALLOC) && FALSE
-		int node_type = node->nod_type;
-#endif
 
 		switch (node->nod_type) {
 		case nod_asn_list:

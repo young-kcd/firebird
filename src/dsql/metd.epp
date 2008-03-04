@@ -415,7 +415,7 @@ USHORT METD_get_col_default(dsql_req* request,
 					continue;
 			}
 
-			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
  			ISC_STATUS_ARRAY status_vector = {0};
 
 			tdbb->tdbb_status_vector = status_vector;
@@ -815,7 +815,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 					continue;
 	        }
 
-			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
  			ISC_STATUS_ARRAY status_vector = {0};
 
 			tdbb->tdbb_status_vector = status_vector;
