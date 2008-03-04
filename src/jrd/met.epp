@@ -3459,8 +3459,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 		lock->lck_ast = blocking_ast_relation;
 	}
 
-	relation->rel_flags |= REL_check_existence;
-	LCK_lock(tdbb, relation->rel_partners_lock, LCK_SR, LCK_WAIT);
+	relation->rel_flags |= (REL_check_existence | REL_check_partners);
 	return relation;
 }
 
