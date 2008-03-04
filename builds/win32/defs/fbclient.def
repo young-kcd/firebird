@@ -63,7 +63,6 @@ EXPORTS
 	gds__get_prefix	@248
 	gds__get_segment	@39
 	gds__get_slice	@40
-	gds__handle_cleanup
 	gds__interprete	@41
 	gds__log	@42
 	gds__log_status	@142
@@ -126,8 +125,8 @@ EXPORTS
     gds_alloc_flag_unfreed
     gds_alloc_report
 
-	fb__shutdown
-	fb__shutdown_callback
+	fb_shutdown
+	fb_shutdown_callback
 
 	perf_format	@100
 	perf_get_info	@101
