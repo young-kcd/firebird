@@ -157,7 +157,6 @@ static void bug(ISC_STATUS*, const TEXT*);
 #ifdef DEV_BUILD
 static void bug_assert(const TEXT*, ULONG);
 #endif
-static void cleanup_process(ISC_STATUS*, prc*);
 static bool convert(SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*, ISC_STATUS*);
 static bool create_owner(ISC_STATUS*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
 static bool create_process(ISC_STATUS*);
@@ -200,6 +199,7 @@ static void validate_owner(const SRQ_PTR, USHORT);
 static void validate_request(const SRQ_PTR, USHORT, USHORT);
 static void validate_shb(const SRQ_PTR);
 #endif
+static void shutdown_blocking_thread(ISC_STATUS*);
 static bool signal_owner(own*, SRQ_PTR);
 static USHORT wait_for_request(lrq*, SSHORT, ISC_STATUS*);
 
@@ -638,14 +638,7 @@ void LOCK_fini(ISC_STATUS* status_vector,
 	acquire(offset);
 	owner = (own*) SRQ_ABS_PTR(offset);	// Re-init after a potential remap
 
-	fb_assert(owner->own_process == LOCK_process_offset);
-	prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
-	fb_assert(process->prc_process_id == LOCK_pid);
-
 	purge_owner(offset, owner);
-
-	if (SRQ_EMPTY(process->prc_owners))
-		cleanup_process(status_vector, process);
 
 	release_mutex();
 
@@ -1126,7 +1119,8 @@ static UCHAR* alloc(SSHORT size, ISC_STATUS* status_vector)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		const ULONG length = LOCK_data.sh_mem_length_mapped + Config::getLockMemSize();
+		const ULONG length = LOCK_data.sh_mem_length_mapped +
+			(LOCK_header->lhb_used > LOCK_header->lhb_length) ? Config::getLockMemSize() : 0;
 		lhb* header = (lhb*) ISC_remap_file(status_vector, &LOCK_data, length, true);
 		if (header) {
 			LOCK_header = header;
@@ -1455,48 +1449,6 @@ static void bug(ISC_STATUS* status_vector, const TEXT* string)
 #endif
 
 	exit(FINI_ERROR);
-}
-
-
-static void cleanup_process(ISC_STATUS* status_vector, prc* process)
-{
-/**************************************
- *
- *	c l e a n u p _ p r o c e s s
- *
- **************************************
- *
- * Functional description
- *	Purge the process, shutdown the blocking thread,
- *  unmap the process pointer.
- *
- **************************************/
-	LOCK_process_offset = 0;
-
-	if (LOCK_process) {
-#ifdef USE_BLOCKING_THREAD
-		// Wait for AST thread to start (or 5 secs)
-		localMutex->leave();
-		startupSemaphore->tryEnter(5);
-		localMutex->enter();
-
-		// Wakeup the AST thread - it might be blocking or stalled
-		ISC_event_post(&LOCK_process->prc_blocking);
-
-		// Wait for the AST thread to finish cleanup or for 5 seconds
-		localMutex->leave();
-		cleanupSemaphore->tryEnter(5);
-		localMutex->enter();
-#endif
-
-#if defined HAVE_MMAP || defined WIN_NT
-		ISC_unmap_object(status_vector, &LOCK_data, (UCHAR**) &LOCK_process, sizeof(prc));
-#else
-		LOCK_process = NULL;
-#endif
-	}
-
-	purge_process(process);
 }
 
 
@@ -2060,21 +2012,26 @@ static void exit_handler(void* arg)
  *	by the cleanup handler.
  *
  **************************************/
-	if (!LOCK_header)
-		return;
+	ISC_STATUS_ARRAY local_status;
+	Firebird::MutexLockGuard guard(localMutex);
 
 	// Get rid of all the owners belonging to the current process
 
-	ISC_STATUS_ARRAY local_status;
+	const SRQ_PTR process_offset = LOCK_process_offset;
 
-	if (LOCK_process_offset) {
+	if (process_offset)
+	{
+		shutdown_blocking_thread(local_status);
 		acquire(DUMMY_OWNER);
-		prc* const process = (prc*) SRQ_ABS_PTR(LOCK_process_offset);
-		cleanup_process(local_status, process);
+		prc* const process = (prc*) SRQ_ABS_PTR(process_offset);
+		purge_process(process);
 		release_mutex();
 	}
 
-	ISC_unmap_file(local_status, &LOCK_data, 0);
+	if (LOCK_header)
+	{
+		ISC_unmap_file(local_status, &LOCK_data, 0);
+	}
 }
 
 
@@ -3142,6 +3099,46 @@ static void release_request(lrq* request)
 	// so we might be holding up requests or conversions queued up behind.
 
 	post_pending(lock);
+}
+
+
+static void shutdown_blocking_thread(ISC_STATUS* status_vector)
+{
+/**************************************
+ *
+ *	s h u t d o w n _ b l o c k i n g _ t h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shutdown the blocking thread and
+ *  unmap the process pointer.
+ *
+ **************************************/
+	LOCK_process_offset = 0;
+
+	if (LOCK_process) {
+#ifdef USE_BLOCKING_THREAD
+		// Wait for AST thread to start (or 5 secs)
+		localMutex->leave();
+		startupSemaphore->tryEnter(5);
+		localMutex->enter();
+
+		// Wakeup the AST thread - it might be blocking
+		ISC_event_post(&LOCK_process->prc_blocking);
+
+		// Wait for the AST thread to finish cleanup or for 5 seconds
+		localMutex->leave();
+		cleanupSemaphore->tryEnter(5);
+		localMutex->enter();
+#endif
+
+#if defined HAVE_MMAP || defined WIN_NT
+		ISC_unmap_object(status_vector, &LOCK_data, (UCHAR**) &LOCK_process, sizeof(prc));
+#else
+		LOCK_process = NULL;
+#endif
+	}
 }
 
 
