@@ -1292,46 +1292,31 @@ void API_ROUTINE gds__log_status(const TEXT* database,
  *	Log error to error log.
  *
  **************************************/
-	TEXT* const buffer = (TEXT*) gds__alloc((SLONG) BUFFER_XLARGE);
-/* FREE: at procedure exit */
-	if (!buffer)				/* NOMEM: */
-		return;
-		
-#ifdef DEV_BUILD
-	const size_t db_len = database ? strlen(database) : 0;
-	fb_assert(db_len < BUFFER_XLARGE - 2);
-	fb_assert(db_len < MAXPATHLEN);
-#endif
+	fb_assert(status_vector[1] != FB_SUCCESS);
 
-	TEXT* p = buffer;
-	const TEXT* const end = p + BUFFER_XLARGE;
-	if (database)
+	try
 	{
-		const int max_db_len = int(BUFFER_XLARGE - 12);
-		sprintf(p, "Database: %.*s", max_db_len, database);
-	}
-	else
-	{
-		*p = 0;
-	}
+		Firebird::string buffer;
 
-	do {
-		while (*p)
-			p++;
-			
-		if (p + 2 > end)
+		if (database)
 		{
-			p = const_cast<TEXT*>(end) + 1;
-			break;
+			buffer.printf("Database: %s", database);
 		}
-			
-		*p++ = '\n';
-		*p++ = '\t';
-	} while (p < end && safe_interpret(p, end - p, &status_vector));
 
-	p[-2] = 0;
-	gds__log(buffer, 0);
-	gds__free(buffer);
+		TEXT temp[BUFFER_LARGE];
+		while (safe_interpret(temp, sizeof(temp), &status_vector))
+		{
+			if (!buffer.empty())
+			{
+				buffer += "\n\t";
+			}
+			buffer += temp;
+		}
+
+		gds__log(buffer.c_str());
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 }
 
 
