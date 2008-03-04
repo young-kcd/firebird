@@ -148,7 +148,7 @@ private:
 	int seconds;
 
 public:
-	DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
+	explicit DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
 
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
