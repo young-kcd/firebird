@@ -6744,7 +6744,7 @@ static ISC_STATUS unwindAttach(const std::exception& ex,
 							   Database* dbb)
 {
 	ISC_STATUS_ARRAY temp_status;
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const save_status = tdbb->tdbb_status_vector;
 
 	try
 	{
@@ -6777,7 +6777,7 @@ static ISC_STATUS unwindAttach(const std::exception& ex,
 	}
 	catch (const std::exception&) {}
 
-	tdbb->tdbb_status_vector = status;
+	tdbb->tdbb_status_vector = save_status;
 	JRD_SS_MUTEX_UNLOCK;
 
 	return error(userStatus, ex);

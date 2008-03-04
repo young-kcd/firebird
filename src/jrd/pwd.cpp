@@ -122,7 +122,7 @@ namespace {
 		Firebird::string login;
 		int	failCount;
 		time_t lastAttempt;
-		FailedLogin(const Firebird::string& l) 
+		explicit FailedLogin(const Firebird::string& l) 
 			: login(l), failCount(1), lastAttempt(time(0)) {}
 		FailedLogin(Firebird::MemoryPool& p, const FailedLogin& fl) 
 			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt) {}
@@ -150,7 +150,7 @@ namespace {
 			const Firebird::string, FailedLogin> inherited;
 
 	public:
-		FailedLogins(MemoryPool& p) : inherited(p) {}
+		explicit FailedLogins(MemoryPool& p) : inherited(p) {}
 
 		void loginFail(const Firebird::string& login)
 		{

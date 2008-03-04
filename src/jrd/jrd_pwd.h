@@ -128,7 +128,7 @@ class DelayFailedLogin : public Firebird::status_exception
 private:
 	int seconds;
 public:
-	DelayFailedLogin(int sec) throw()
+	explicit DelayFailedLogin(int sec) throw()
 		: Firebird::status_exception(), seconds(sec) 
 	{
 		ISC_STATUS temp[] = {isc_arg_gds, 
