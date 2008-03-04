@@ -98,7 +98,7 @@ namespace {
 	{
 		if (!request->req_transaction->checkHandle())
 		{
-			ERRD_post(isc_bad_trans_handle, 0);
+			ERR_post(isc_bad_trans_handle, 0);
 		}
 	}
 }
