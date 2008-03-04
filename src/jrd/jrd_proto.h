@@ -216,9 +216,9 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 
 
 void JRD_ddl(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_tra* transaction,
-	USHORT ddl_length, const SCHAR* ddl);
+	USHORT ddl_length, const UCHAR* ddl);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,
-	SCHAR* msg, SSHORT level
+	UCHAR* msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
 	, USHORT direction, ULONG offset
 #endif

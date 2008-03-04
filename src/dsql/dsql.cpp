@@ -543,7 +543,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 	}
 
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-		reinterpret_cast<SCHAR*>(message->msg_buffer), 0);
+		message->msg_buffer, 0);
 
 	const dsql_par* const eof = request->req_eof;
 	if (eof)
@@ -947,7 +947,7 @@ static void close_cursor(dsql_req* request)
 		if (request->req_type == REQ_GET_SEGMENT ||
 			request->req_type == REQ_PUT_SEGMENT)
 		{
-			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 
 			tdbb->tdbb_status_vector = status_vector;
 			try
@@ -1397,7 +1397,7 @@ static void execute_request(thread_db* tdbb,
 		}
 
 		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
-			reinterpret_cast<SCHAR*>(message->msg_buffer), 0);
+			message->msg_buffer, 0);
 
 		if (out_msg_length)
 			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
@@ -1420,13 +1420,13 @@ static void execute_request(thread_db* tdbb,
 
 			for (counter = 0; counter < 2 && !status; counter++)
 			{
-				ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+				ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 
 				try
 				{
 					tdbb->tdbb_status_vector = local_status;
 					JRD_receive(tdbb, request->req_request, message->msg_number,
-						message->msg_length, reinterpret_cast<SCHAR*>(message_buffer), 0);
+						message->msg_length, message_buffer, 0);
 					status = FB_SUCCESS;
 				}
 				catch (Firebird::Exception&)
@@ -2166,7 +2166,7 @@ static dsql_dbb* init(Attachment* attachment)
 
 		SCHAR buffer[BUFFER_TINY];
 
-		ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 		ISC_STATUS_ARRAY status_vector = {0};
 
 		tdbb->tdbb_status_vector = status_vector;
@@ -2859,7 +2859,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	if (request->req_request)
 	{
-		ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 		ISC_STATUS_ARRAY status_vector = {0};
 
 		tdbb->tdbb_status_vector = status_vector;

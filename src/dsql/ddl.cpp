@@ -390,7 +390,7 @@ void DDL_execute(dsql_req* request)
 		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 
 	JRD_ddl(tdbb, request->req_dbb->dbb_attachment, request->req_transaction,
-		request->req_blr_data.getCount(), (const SCHAR*) request->req_blr_data.begin());
+		request->req_blr_data.getCount(), request->req_blr_data.begin());
 }
 
 

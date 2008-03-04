@@ -2014,7 +2014,7 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-		JRD_ddl(tdbb, attachment, transaction, ddl_length, ddl);
+		JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(user_status, ex);
@@ -2626,7 +2626,8 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 		check_database(tdbb);
 		check_transaction(tdbb, request->req_transaction);
 
-		JRD_receive(tdbb, request, msg_type, msg_length, msg, level
+		JRD_receive(tdbb, request, msg_type, msg_length,
+			reinterpret_cast<UCHAR*>(msg), level
 #ifdef SCROLLABLE_CURSORS
 			, direction, offset
 #endif
@@ -6128,7 +6129,7 @@ void thread_db::setRequest(jrd_req* val)
 
 
 void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
-	USHORT ddl_length, const SCHAR* ddl)
+	USHORT ddl_length, const UCHAR* ddl)
 {
 /**************************************
  *
@@ -6140,7 +6141,7 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
  *
  **************************************/
 
-	DYN_ddl(attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
+	DYN_ddl(attachment, transaction, ddl_length, ddl);
 
 	// Perform an auto commit for autocommit transactions.
 	// This is slightly tricky. If the commit retain works,
@@ -6159,7 +6160,7 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
 		}
 		catch (const Firebird::Exception&)
 		{
-			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 			ISC_STATUS_ARRAY temp_status = {0};
 			tdbb->tdbb_status_vector = temp_status;
 
@@ -6180,7 +6181,7 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
 
 
 void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_length,
-	SCHAR* msg, SSHORT level
+	UCHAR* msg, SSHORT level
 #ifdef SCROLLABLE_CURSORS
 	, USHORT direction, ULONG offset
 #endif
@@ -6203,8 +6204,7 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
 		EXE_seek(tdbb, request, direction, offset);
 #endif
 
-	EXE_receive(tdbb, request, msg_type, msg_length,
-				reinterpret_cast<UCHAR*>(msg), true);
+	EXE_receive(tdbb, request, msg_type, msg_length, msg, true);
 
 	check_autocommit(request, tdbb);
 
