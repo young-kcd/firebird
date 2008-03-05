@@ -188,9 +188,7 @@ int main( int argc, char *argv[])
 	}
 
 	if (db_in) {
-		rbdb =
-			(RBDB)
-			RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in) + 1));
+		rbdb = (RBDB) RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in) + 1));
 		strcpy(rbdb->rbdb_file.fil_name, db_in);
 		rbdb->rbdb_file.fil_length = strlen(db_in);
 		if (header = open_database(rbdb, pg_size))
@@ -301,7 +299,7 @@ PAG CCH_release(WIN * x)
 #endif
 
 
-SCHAR *RBDB_alloc(SLONG size)
+void* RBDB_alloc(SLONG size)
 {
 /**************************************
  *
@@ -313,13 +311,7 @@ SCHAR *RBDB_alloc(SLONG size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	char* const block = gds__alloc(size);
-	char* p = block;
-	do {
-		*p++ = 0;
-	} while (--size);
-
-	return block;
+	return memset(gds__alloc(size), 0, size);
 }
 
 
@@ -488,8 +480,10 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 /* If the page is all zeros, return an artificial checksum */
 
 	for (p = (ULONG *) page; p < end;)
+	{
 		if (*p++)
 			return checksum;
+	}
 
 /* Page is all zeros -- invent a checksum */
 

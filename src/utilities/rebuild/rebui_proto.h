@@ -28,7 +28,7 @@ namespace Jrd {
 	struct pag;
 }
 
-SCHAR*		RBDB_alloc (SLONG);
+void*		RBDB_alloc (SLONG);
 void		RBDB_close (struct rbdb*);
 void		RBDB_open (struct rbdb*);
 Ods::pag*	RBDB_read (struct rbdb*, SLONG);
