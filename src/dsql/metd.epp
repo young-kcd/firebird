@@ -809,7 +809,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 					*ptr_in_buffer = 0;
 					break;
 				}
-				else if (blob_handle->blb_fragment_size)
+				if (blob_handle->blb_fragment_size)
 					Firebird::status_exception::raise(isc_segment, 0);
 				else
 					continue;

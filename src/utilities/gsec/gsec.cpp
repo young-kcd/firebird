@@ -467,8 +467,7 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 				errno = 0;
 				continue;
 			}
-			else
-				return true;
+			return true;
 		}
 	}
 

@@ -118,14 +118,14 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 				/* Attached flag should be NULL after detach_service
 				 */
 				detach_service(data);
-			if (attach_service(data) == false)
+			if (!attach_service(data))
 				return MSG_ATTFAIL;
 			data->reattach = 0;
 		}
 
 	switch (data->operation) {
 	case OP_START:
-		if (start_server(data) == false)
+		if (!start_server(data))
 			return MSG_STARTFAIL;
 		break;
 
@@ -134,7 +134,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 		case SOP_NONE:
 		case SOP_SHUT_NOW:
 			data->shutdown = true;
-			if (start_shutdown(data) == false) {
+			if (!start_shutdown(data)) {
 				data->shutdown = false;
 				return MSG_SSHUTFAIL;
 			}
@@ -163,7 +163,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 	case OP_PRINT:
 		switch (data->suboperation) {
 		case SOP_PRINT_POOL:
-			if (print_pool(data) == false)
+			if (!print_pool(data))
 				return MSG_PRPOOLFAIL;
 			return MSG_PRPOOLOK;
 		}
@@ -466,7 +466,7 @@ static bool start_server( ibmgr_data_t* data)
 
 /* Let's see if server is already running, try to attach to it
 */
-	if (server_is_up(data) == true) {
+	if (server_is_up(data)) {
 		SRVRMGR_msg_get(MSG_SRVUP, msg);
 		fprintf(OUTFILE, "%s\n", msg);
 		return true;
@@ -582,7 +582,7 @@ static bool start_server( ibmgr_data_t* data)
 #ifdef DEBUG
 		printf("Attach retries left: %d\n", retry);
 #endif
-		if (server_is_up(data) == true) {
+		if (server_is_up(data)) {
 			SRVRMGR_msg_get(MSG_SRVUPOK, msg);
 			fprintf(OUTFILE, "%s\n", msg);
 			return true;
@@ -635,10 +635,7 @@ static bool server_is_up( ibmgr_data_t* data)
 		   other reasons. For example, attach could return
 		   not enough memory error. Let's take care of it.
 		 */
-		if (status[1] == isc_virmemexh)
-			up = true;
-		else
-			up = false;
+		up = (status[1] == isc_virmemexh);
 	}
 	isc_service_detach(status, &svc_handle);
 	return up;

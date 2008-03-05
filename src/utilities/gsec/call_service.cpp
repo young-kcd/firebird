@@ -434,7 +434,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 				{
 					if (*p == isc_info_data_not_ready)
 						continue;
-					else if (*p == isc_info_end)
+					if (*p == isc_info_end)
 						break;
 				}
 				p[len] = 0;

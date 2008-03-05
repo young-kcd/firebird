@@ -281,8 +281,7 @@ if (sw_service_gsec)
 				errno = 0;
 				continue;
 			}
-			else
-				return true;
+			return true;
 		}
 	}
 

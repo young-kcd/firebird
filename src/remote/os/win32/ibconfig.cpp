@@ -565,13 +565,12 @@ BOOL ValidateUser(HWND hParentWnd)
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
 		return FALSE;
 	}
-	else {
-		szSysDbaPasswd[0] = '\0';
-		return (DialogBox
-				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
-				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
-				 (DLGPROC) PasswordDlgProc) > 0);
-	}
+
+	szSysDbaPasswd[0] = '\0';
+	return (DialogBox
+			((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+			 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
+			 (DLGPROC) PasswordDlgProc) > 0);
 }
 
 BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
@@ -616,9 +615,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
-			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
-			HCURSOR hOldCursor = NULL;
 
 			szPassword[0] = '\0';
 
@@ -628,7 +625,8 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity
-			hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+			HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
+			isc_svc_handle hService = NULL;
 			isc_service_attach(pdwStatus, 0, "query_server",
 							   &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
@@ -648,18 +646,14 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
-		else {
-			if (wParam == IDCANCEL) {
-				EndDialog(hDlg, 0);
-				return TRUE;
-			}
-		}
-		break;
-	case WM_CLOSE:
-		{
+		if (wParam == IDCANCEL) {
 			EndDialog(hDlg, 0);
 			return TRUE;
 		}
+		break;
+	case WM_CLOSE:
+		EndDialog(hDlg, 0);
+		return TRUE;
 	default:
 		return FALSE;
 	}

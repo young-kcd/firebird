@@ -187,8 +187,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		if (werr != ERROR_ALREADY_EXISTS)
 		{
 			DeleteFile(workfile);
-			return (*err_handler) (werr,
-				"MoveFile(_FBCLIENT.DLL, 'target')");
+			return (*err_handler) (werr, "MoveFile(_FBCLIENT.DLL, 'target')");
 		}
 		
 		// Failed moving because a destination target file already exists
@@ -264,8 +263,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr,
-				"WritePrivateProfileString(delete 'target')");
+			return (*err_handler) (werr, "WritePrivateProfileString(delete 'target')");
 		}
 
 		if (WritePrivateProfileString("rename", starget, sworkfile,
@@ -273,19 +271,16 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr,
-				"WritePrivateProfileString(replace 'target')");
+			return (*err_handler) (werr, "WritePrivateProfileString(replace 'target')");
 		}
 
 		IncrementSharedCount(target, err_handler);
 		return FB_INSTALL_COPY_REQUIRES_REBOOT;
 	}
-	else
-	{
-		// Straight plain MoveFile succeeded immediately.
-		IncrementSharedCount(target, err_handler);
-		return FB_SUCCESS;
-	}
+
+	// Straight plain MoveFile succeeded immediately.
+	IncrementSharedCount(target, err_handler);
+	return FB_SUCCESS;
 }
 
 USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
@@ -754,17 +749,16 @@ USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 		RegCloseKey(hkey);
 		return FB_SUCCESS;
 	}
-	else
+
+	status = RegDeleteValue(hkey, filename);
+	if (status != ERROR_SUCCESS)
 	{
-		status = RegDeleteValue(hkey, filename);
-		if (status != ERROR_SUCCESS)
-		{
-			RegCloseKey(hkey);
-			return (*err_handler) (status, "RegDeleteValue");
-		}
 		RegCloseKey(hkey);
-		return FB_INSTALL_SHARED_COUNT_ZERO;
+		return (*err_handler) (status, "RegDeleteValue");
 	}
+
+	RegCloseKey(hkey);
+	return FB_INSTALL_SHARED_COUNT_ZERO;
 }
 
 }	// namespace { }

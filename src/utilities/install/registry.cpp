@@ -170,7 +170,6 @@ static void cleanup_key(HKEY hkey_rootnode, const char* key)
 		else
 			RegCloseKey(hkey);
 	}
-	return;
 }
 
 #ifdef THIS_CODE_IS_TEMPORARILY_NOT_USED_ANYMORE

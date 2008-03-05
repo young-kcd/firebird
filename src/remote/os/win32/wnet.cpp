@@ -1115,24 +1115,23 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
+	while (bytecount > (SLONG) sizeof(ISC_QUAD))
+	{
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(buff, xdrs->x_private, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			if (!wnet_read(xdrs))
-				return FALSE;
+		if (xdrs->x_handy > 0) {
+			memcpy(buff, xdrs->x_private, xdrs->x_handy);
+			xdrs->x_private += xdrs->x_handy;
+			buff += xdrs->x_handy;
+			bytecount -= xdrs->x_handy;
+			xdrs->x_handy = 0;
 		}
+		if (!wnet_read(xdrs))
+			return FALSE;
 	}
 
 /* Scalar values and bulk transfer remainder fall thru
@@ -1243,17 +1242,15 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		else {
-			if (xdrs->x_handy > 0) {
-				memcpy(xdrs->x_private, buff, xdrs->x_handy);
-				xdrs->x_private += xdrs->x_handy;
-				buff += xdrs->x_handy;
-				bytecount -= xdrs->x_handy;
-				xdrs->x_handy = 0;
-			}
-			if (!wnet_write(xdrs, 0))
-				return FALSE;
+		if (xdrs->x_handy > 0) {
+			memcpy(xdrs->x_private, buff, xdrs->x_handy);
+			xdrs->x_private += xdrs->x_handy;
+			buff += xdrs->x_handy;
+			bytecount -= xdrs->x_handy;
+			xdrs->x_handy = 0;
 		}
+		if (!wnet_write(xdrs, 0))
+			return FALSE;
 	}
 
 /* Scalar values and bulk transfer remainder fall thru
@@ -1499,8 +1496,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 	if (!status)
 		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);
 	if (n != length)
-		return wnet_error(port, "WriteFile truncated", isc_net_write_err,
-						  ERRNO);
+		return wnet_error(port, "WriteFile truncated", isc_net_write_err, ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("send", (UCHAR*)buffer, buffer_length);

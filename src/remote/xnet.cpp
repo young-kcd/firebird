@@ -1548,10 +1548,9 @@ static int send_full( rem_port* port, PACKET * packet)
 
 	if (xnet_write(&port->port_send))
 		return TRUE;
-	else {
-		xnet_error(port, isc_net_write_err, ERRNO);
-		return FALSE;
-	}
+
+	xnet_error(port, isc_net_write_err, ERRNO);
+	return FALSE;
 }
 
 
@@ -1768,10 +1767,7 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 		}
 	}
 
-	if (xnet_shutdown)
-		return FALSE;
-	else
-		return TRUE;
+	return xnet_shutdown ? FALSE : TRUE;
 }
 
 
@@ -1870,7 +1866,8 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 			if ((ULONG) xdrs->x_handy == xch->xch_size) {
 
-				while (!xnet_shutdown) {
+				while (!xnet_shutdown)
+				{
 
 #ifdef SUPERCLIENT
 					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
@@ -1891,29 +1888,28 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						THREAD_ENTER();
 						break;
 					}
-					else if (wait_result == WAIT_TIMEOUT) {
+					if (wait_result == WAIT_TIMEOUT)
+					{
 						// Check whether another side is alive
 						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
 							THREAD_ENTER();
 							continue; // another side is alive
 						}
-						else {
-							THREAD_ENTER();
-							// Another side is dead or something bad has happened
-#ifdef SUPERCLIENT
-							server_shutdown(port);
-							xnet_error(port, isc_lost_db_connection, 0);								
-#else
-							xnet_error(port, isc_conn_lost, 0);
-#endif
-							return FALSE;
-						}
-					}
-					else {
+
 						THREAD_ENTER();
-						xnet_error(port, isc_net_write_err, ERRNO);
-						return FALSE; // a non-timeout result is an error
+						// Another side is dead or something bad has happened
+#ifdef SUPERCLIENT
+						server_shutdown(port);
+						xnet_error(port, isc_lost_db_connection, 0);
+#else
+						xnet_error(port, isc_conn_lost, 0);
+#endif
+						return FALSE;
 					}
+
+					THREAD_ENTER();
+					xnet_error(port, isc_net_write_err, ERRNO);
+					return FALSE; // a non-timeout result is an error
 				}
 			}
 
@@ -1938,10 +1934,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 		}
 	}
 
-	if (xnet_shutdown)
-		return FALSE;
-	else
-		return TRUE;
+	return xnet_shutdown ? FALSE : TRUE;
 }
 
 
@@ -2005,36 +1998,35 @@ static bool_t xnet_read(XDR * xdrs)
 			WaitForSingleObject(xcc->xcc_event_recv_channel_filled,
 		                        XNET_RECV_WAIT_TIMEOUT);
 
-		if (wait_result == WAIT_OBJECT_0) {
+		if (wait_result == WAIT_OBJECT_0)
+		{
 			THREAD_ENTER();
 			// Client has written some data for us (server) to read
 			xdrs->x_handy = xch->xch_length;
 			xdrs->x_private = xdrs->x_base;
 			return TRUE;
 		}
-		else if (wait_result == WAIT_TIMEOUT) {
+		if (wait_result == WAIT_TIMEOUT)
+		{
 			// Check if another side is alive
 			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
 				THREAD_ENTER();
 				continue; // another side is alive
 			}
-			else {
-				THREAD_ENTER();
-				// Another side is dead or something bad has happened
-#ifdef SUPERCLIENT
-				server_shutdown(port);
-				xnet_error(port, isc_lost_db_connection, 0);								
-#else
-				xnet_error(port, isc_conn_lost, 0);
-#endif
-				return FALSE;
-			}
-		}
-		else {
+
 			THREAD_ENTER();
-			xnet_error(port, isc_net_read_err, ERRNO);
-			return FALSE; // a non-timeout result is an error
+			// Another side is dead or something bad has happened
+#ifdef SUPERCLIENT
+			server_shutdown(port);
+			xnet_error(port, isc_lost_db_connection, 0);
+#else
+			xnet_error(port, isc_conn_lost, 0);
+#endif
+			return FALSE;
 		}
+		THREAD_ENTER();
+		xnet_error(port, isc_net_read_err, ERRNO);
+		return FALSE; // a non-timeout result is an error
 	}
 
 	return FALSE;
@@ -2062,12 +2054,10 @@ static bool_t xnet_write(XDR * xdrs)
 	if (SetEvent(xcc->xcc_event_send_channel_filled)) {
 		xdrs->x_private = xdrs->x_base;
 		xdrs->x_handy = xch->xch_size;
-
 		return TRUE;
 	}
-	else
-		return FALSE;
 
+	return FALSE;
 }
 
 
@@ -2196,27 +2186,27 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 
 	try {
 
-	XPM xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
+		XPM xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
 
-	xpm->xpm_handle = map_handle;
-	xpm->xpm_address = map_address;
-	xpm->xpm_number = map_number;
-	xpm->xpm_count = 0;
-	xpm->xpm_timestamp = timestamp;
+		xpm->xpm_handle = map_handle;
+		xpm->xpm_address = map_address;
+		xpm->xpm_number = map_number;
+		xpm->xpm_count = 0;
+		xpm->xpm_timestamp = timestamp;
 
-	for (USHORT i = 0; i < global_slots_per_map; i++) {
-		xpm->xpm_ids[i] = XPM_FREE;
-	}
-	xpm->xpm_flags = 0;
+		for (USHORT i = 0; i < global_slots_per_map; i++) {
+			xpm->xpm_ids[i] = XPM_FREE;
+		}
+		xpm->xpm_flags = 0;
 
-	XNET_LOCK();
+		XNET_LOCK();
 
-	xpm->xpm_next = global_client_maps;
-	global_client_maps = xpm;
+		xpm->xpm_next = global_client_maps;
+		global_client_maps = xpm;
 
-	XNET_UNLOCK();
+		XNET_UNLOCK();
 
-	return xpm;
+		return xpm;
 
 	}
 	catch (const Firebird::Exception&) {

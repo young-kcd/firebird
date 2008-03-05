@@ -289,8 +289,7 @@ static int shm_exclusive( SLONG key, SLONG length)
 	struct shmid_ds buf;
 
 	const int id = shmget(key, (int) length, IPC_ALLOC);
-	if (id == -1 ||
-		shmctl(id, IPC_STAT, &buf) == -1 || buf.shm_nattch != 1)
+	if (id == -1 || shmctl(id, IPC_STAT, &buf) == -1 || buf.shm_nattch != 1)
 	{
 		return -1;
 	}

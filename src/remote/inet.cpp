@@ -1234,7 +1234,7 @@ static rem_port* alloc_port( rem_port* parent)
 	}
 #endif
 
-	if (first_time == true)
+	if (first_time)
 	{
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW ||

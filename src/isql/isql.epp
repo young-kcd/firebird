@@ -2275,7 +2275,7 @@ static processing_state add_row(TEXT* tabname)
 					if (ivar->sqlscale < 0)
 					{
 						SSHORT lscale = 0;
-						if (get_numeric((UCHAR*) lastInputLine, length, &lscale, &n) != true) {
+						if (!get_numeric((UCHAR*) lastInputLine, length, &lscale, &n)) {
 							STDERROUT("Input parsing problem");
 							done = true;
 						}
@@ -3083,7 +3083,7 @@ static processing_state bulk_insert_hack(const char* command, XSQLDA** sqldap)
 					if (ivar->sqlscale < 0)
 					{
 						SSHORT lscale = 0;
-						if (get_numeric((UCHAR*) lastPos, length, &lscale, &n) != true)
+						if (!get_numeric((UCHAR*) lastPos, length, &lscale, &n))
 						{
 							STDERROUT("Input parsing problem in 'numeric' or 'decimal' value");
 							done = true;

@@ -746,7 +746,7 @@ int xdr_union(	XDR*			xdrs,
 	// can have any size.
 	int enum_value = *dscmp;
 	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast < enum_t >(enum_value);
+	*dscmp = static_cast<enum_t>(enum_value);
 
 	if (!bOK)
 	{
