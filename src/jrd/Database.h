@@ -300,7 +300,7 @@ public:
 
 	DatabaseModules	dbb_modules;		// external function/filter modules
 	Firebird::Mutex* dbb_mutexes;		// Database block mutexes
-	Firebird::Mutex dbb_sp_mutex;		// Mutex for accessing/updating stored procedure metadata
+	Firebird::Mutex dbb_meta_mutex;		// Mutex to protect metadata changes while dbb_sync is unlocked
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 
 	UATOM dbb_ast_flags;				// flags modified at AST level

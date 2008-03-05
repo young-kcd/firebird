@@ -4664,7 +4664,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		}
 
 		{ // guard scope
-			Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_mutex);
+			Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 			// Do not allow to modify procedure used by user requests
 			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))

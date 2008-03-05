@@ -2241,6 +2241,7 @@ bool MET_lookup_partner(thread_db*	tdbb,
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 	if (relation->rel_flags & REL_check_partners)
 	{
@@ -3028,7 +3029,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		vector->resize(id + 10);
 	}
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_mutex);
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 	jrd_prc* procedure = (*vector)[id];
 	if (procedure)
@@ -3741,7 +3742,7 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 	try {
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_mutex);
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 	if (relation->rel_flags & REL_scanned || relation->rel_flags & REL_deleted)
 	{

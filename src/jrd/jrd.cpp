@@ -267,7 +267,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 		Database* dbb = tdbb->getDatabase();
 
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_sp_mutex);
+		Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 		if (request)
 		{

@@ -2092,11 +2092,10 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 					CMP_get_index_lock(tdbb, relation, resource->rsc_id);
 				if (index)
 				{
-					if (!index->idl_count)
-					{
+					++index->idl_count;
+					if (index->idl_count == 1) {
 						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
 					}
-					++index->idl_count;
 				}
 				break;
 			}
@@ -2354,9 +2353,9 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 					jrd_rel* relation = resource->rsc_rel;
 					IndexLock* index = CMP_get_index_lock(tdbb, relation,
 													 resource->rsc_id);
-					if (index) {
-						if (index->idl_count)
-							--index->idl_count;
+					if (index && index->idl_count) 
+					{
+						--index->idl_count;
 						if (!index->idl_count)
 							LCK_release(tdbb, index->idl_lock);
 					}
@@ -2453,8 +2452,8 @@ void CMP_shutdown_database(thread_db* tdbb)
 				 index = index->idl_next)
 			{
 				if (index->idl_lock) {
-					LCK_release(tdbb, index->idl_lock);
 					index->idl_count = 0;
+					LCK_release(tdbb, index->idl_lock);
 				}
 			}
 		}

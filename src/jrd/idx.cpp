@@ -520,10 +520,10 @@ void IDX_create_index(
 		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (idx_lock)
 		{
-			if (!idx_lock->idl_count) {
+			++idx_lock->idl_count;
+			if (idx_lock->idl_count == 1) {
 				LCK_lock(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
 			}
-			++idx_lock->idl_count;
 		}
 	}
 }
