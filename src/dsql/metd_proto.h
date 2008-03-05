@@ -48,10 +48,10 @@ Jrd::dsql_intlsym*  METD_get_charset(Jrd::dsql_req*, USHORT, const char* name); 
 USHORT   METD_get_charset_bpc(Jrd::dsql_req*, SSHORT);
 Firebird::MetaName METD_get_charset_name(Jrd::dsql_req*, SSHORT);
 Jrd::dsql_intlsym* METD_get_collation(Jrd::dsql_req*, const Jrd::dsql_str*, USHORT charset_id);
-USHORT   METD_get_col_default(Jrd::dsql_req*, const char*, const char*, bool*, TEXT*, USHORT);
+USHORT   METD_get_col_default(Jrd::dsql_req*, const char*, const char*, bool*, UCHAR*, USHORT);
 Jrd::dsql_str*      METD_get_default_charset(Jrd::dsql_req*);
 USHORT   METD_get_domain(Jrd::dsql_req*, class Jrd::dsql_fld*, const char* name); // UTF-8
-USHORT   METD_get_domain_default(Jrd::dsql_req*, const TEXT*, bool*, TEXT*, USHORT);
+USHORT   METD_get_domain_default(Jrd::dsql_req*, const TEXT*, bool*, UCHAR*, USHORT);
 bool METD_get_exception(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_udf*      METD_get_function(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);

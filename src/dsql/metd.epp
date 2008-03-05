@@ -332,7 +332,7 @@ USHORT METD_get_col_default(dsql_req* request,
 							const char* for_rel_name,
 							const char* for_col_name,
 							bool* has_default,
-							TEXT* buffer,
+							UCHAR* buffer,
 							USHORT buff_length)
 {
 /*************************************************************
@@ -394,7 +394,7 @@ USHORT METD_get_col_default(dsql_req* request,
 				sizeof(blr_bpb), blr_bpb, true);
 
 			// fetch segments. Assuming here that the buffer is big enough. 
-			UCHAR* ptr_in_buffer = reinterpret_cast<UCHAR*>(buffer);
+			UCHAR* ptr_in_buffer = buffer;
 			while (true)
 			{
 				length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
@@ -409,7 +409,7 @@ USHORT METD_get_col_default(dsql_req* request,
 					*ptr_in_buffer = 0;
 					break;
 				}
-				else if (blob_handle->blb_fragment_size)
+				if (blob_handle->blb_fragment_size)
 					Firebird::status_exception::raise(isc_segment, 0);
 				else
 					continue;
@@ -751,7 +751,7 @@ USHORT METD_get_domain(dsql_req* request, dsql_fld* field, const char* name) // 
 USHORT METD_get_domain_default(dsql_req* request,
 							   const TEXT* domain_name,
 							   bool* has_default,
-							   TEXT* buffer,
+							   UCHAR* buffer,
 							   USHORT buff_length)
 {
 /*************************************************************
@@ -795,7 +795,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 				sizeof(blr_bpb), blr_bpb, true);
 
 	        // fetch segments. Assume buffer is big enough.  
-	        UCHAR* ptr_in_buffer = reinterpret_cast<UCHAR*>(buffer);
+	        UCHAR* ptr_in_buffer = buffer;
 	        while (true) {
 	            USHORT length = BLB_get_segment(tdbb, blob_handle, ptr_in_buffer, buff_length);
 

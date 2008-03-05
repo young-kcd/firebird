@@ -187,7 +187,7 @@ static void reset_context_stack(dsql_req*);
 static void save_field(dsql_req*, const SCHAR*);
 static void save_relation(dsql_req*, const dsql_str*);
 static void set_statistics(dsql_req*);
-static void stuff_default_blr(dsql_req*, const TEXT*, USHORT);
+static void stuff_default_blr(dsql_req*, const UCHAR*, USHORT);
 static void stuff_matching_blr(dsql_req*, const dsql_nod*, const dsql_nod*);
 static void stuff_trg_firing_cond(dsql_req*, const dsql_nod*);
 static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
@@ -1515,7 +1515,7 @@ static void define_set_default_trg(	dsql_req*    request,
  *
  *****************************************************/
 
-	char default_val[BLOB_BUFFER_SIZE];
+	UCHAR default_val[BLOB_BUFFER_SIZE];
 
 	if (element->nod_type != nod_foreign) {
 		return;
@@ -6583,8 +6583,8 @@ static void set_statistics( dsql_req* request)
 
 
 static void stuff_default_blr(	dsql_req*		request,
-								const TEXT*	default_buff,
-								USHORT	buff_size)
+								const UCHAR*	default_buff,
+								USHORT			buff_size)
 {
 /********************************************
  *
