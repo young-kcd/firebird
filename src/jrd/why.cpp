@@ -350,8 +350,6 @@ namespace
 		Clean<AttachmentCleanupRoutine, FB_API_HANDLE*> cleanup;
 		StoredAtt* handle;
 		Firebird::PathName db_path;
-		Firebird::Array<SCHAR> db_prepare_buffer;
-		Firebird::Mutex prepareMutex;
 
 		static ISC_STATUS hError()
 		{
@@ -667,8 +665,7 @@ namespace
 		  blobs(*getDefaultMemoryPool()),
 		  statements(*getDefaultMemoryPool()),
 		  handle(h),
-		  db_path(*getDefaultMemoryPool()),
-		  db_prepare_buffer(*getDefaultMemoryPool())
+		  db_path(*getDefaultMemoryPool())
 	{
 		toParent<Attachment>(attachments(), this, attachmentsMutex);
 		parent = this;
@@ -3356,14 +3353,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
-		USHORT buffer_len;
-		SCHAR *buffer;
 		sqlda_sup& dasup = statement->das;
 
-		buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
+		USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
 		Attachment*	attachment = statement->parent;
-		Firebird::MutexLockGuard guard(attachment->prepareMutex);
-		buffer = attachment->db_prepare_buffer.getBuffer(buffer_len);
+		Firebird::Array<SCHAR> db_prepare_buffer;
+		SCHAR* buffer = db_prepare_buffer.getBuffer(buffer_len);
 
 		if (!GDS_DSQL_PREPARE_M(status,
 								tra_handle,
