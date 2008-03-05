@@ -75,7 +75,7 @@ static const struct {
 	{335544372, "HY000"}, //  52 segstr_wrong_db 
 	{335544373, "HY000"}, //  53 sys_request 
 	{335544374, "HY000"}, //  54 stream_eof 
-	{335544375, "08012"}, //  55 unavailable 
+	{335544375, "08001"}, //  55 unavailable 
 	{335544376, "HY000"}, //  56 unres_rel 
 	{335544377, "HY000"}, //  57 uns_ext 
 	{335544378, "0A000"}, //  58 wish_list 
@@ -556,7 +556,7 @@ static const struct {
 	{335544853, "22011"}, // 533 bad_substring_length 
 	{335544854, "2C000"}, // 534 charset_not_installed 
 	{335544855, "22021"}, // 535 collation_not_installed 
-	{335544856, "08011"}, // 536 att_shutdown 
+	{335544856, "08003"}, // 536 att_shutdown 
 	{335544857, "54000"}, // 537 blobtoobig 
 	{335544858, "HY000"}, // 538 must_have_phys_field 
 	{335544859, "22007"}, // 539 invalid_time_precision 
