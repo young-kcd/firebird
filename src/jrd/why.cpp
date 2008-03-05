@@ -830,7 +830,6 @@ namespace
 			}
 
 			// perform shutdown
-			ISC_STATUS_ARRAY status;
 			fb_shutdown(NULL, 0);
 		}
 
