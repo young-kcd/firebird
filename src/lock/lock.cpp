@@ -2012,7 +2012,7 @@ static void exit_handler(void* arg)
  *	by the cleanup handler.
  *
  **************************************/
-	ISC_STATUS_ARRAY local_status;
+	ISC_STATUS_ARRAY local_status = {0};
 	Firebird::MutexLockGuard guard(localMutex);
 
 	// Get rid of all the owners belonging to the current process

@@ -6079,7 +6079,8 @@ ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status, unsigned int timeout
 		{
 			// Shutdown providers
 			ISC_STATUS* curStatus = status;
-			ISC_STATUS_ARRAY tempStatus;
+			ISC_STATUS_ARRAY tempStatus = {0};
+
 			for (int n = 0; n < SUBSYSTEMS; ++n)
 			{
 				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
