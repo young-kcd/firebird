@@ -198,7 +198,6 @@ namespace
 	// flags
 	const UCHAR HANDLE_TRANSACTION_limbo	= 0x01;
 	const UCHAR HANDLE_STATEMENT_prepared	= 0x02;
-	const UCHAR HANDLE_shutdown				= 0x04;	// Database shutdown
 
 	// forwards
 	class Attachment;
@@ -3844,6 +3843,11 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
 	{
 		Transaction* transaction = translate<Transaction>(user_handle);
 
+		if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
+		{
+			Firebird::status_exception::raise(isc_no_recon, isc_arg_end);
+		}
+
 		while (transaction) 
 		{
 			Transaction* sub = transaction;
@@ -4216,7 +4220,8 @@ ISC_STATUS API_ROUTINE GDS_RECONNECT(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		new Transaction(handle, tra_handle, dbb);
+		Transaction* transaction = new Transaction(handle, tra_handle, dbb);
+		transaction->flags |= HANDLE_TRANSACTION_limbo;
 	}
 	catch (const Firebird::Exception& e)
 	{
