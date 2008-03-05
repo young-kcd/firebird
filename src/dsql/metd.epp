@@ -828,11 +828,12 @@ USHORT METD_get_domain_default(dsql_req* request,
 			{
 			}
 
+			tdbb->tdbb_status_vector = old_status;
+
 	        /* the default string must be of the form:
 	           blr_version4 blr_literal ..... blr_eoc  */
 	        fb_assert((buffer[0] == blr_version4) || (buffer[0] == blr_version5));
 	        fb_assert(buffer[1] == blr_literal);
-
 	    }
 	    else {
 	        if (request->req_dbb->dbb_db_SQL_dialect > SQL_DIALECT_V5)
