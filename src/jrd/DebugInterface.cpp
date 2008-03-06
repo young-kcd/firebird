@@ -27,6 +27,8 @@
 using namespace Jrd;
 using namespace Firebird;
 
+const UCHAR CURRENT_DBG_INFO_VERSION = UCHAR(1);
+
 void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgInfo)
 {
 	Database* dbb = tdbb->getDatabase();
@@ -42,12 +44,12 @@ void DBG_parse_debug_info(thread_db* tdbb, bid *blob_id, Firebird::DbgInfo& dbgI
 
 void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& dbgInfo)
 {
-	const UCHAR* end = data + length;
+	const UCHAR* const end = data + length;
 	bool bad_format = false;
 
 	if ((*data++ != fb_dbg_version) ||
 		(end[-1] != fb_dbg_end)		||
-		(*data++ != 1))
+		(*data++ != CURRENT_DBG_INFO_VERSION))
 	{
 		bad_format = true;
 	}
@@ -144,10 +146,7 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 		}
 	}
 
-	if (!bad_format && (data != end))
-		bad_format = true;
-
-	if (bad_format) 
+	if (bad_format || data != end)
 	{
 		dbgInfo.clear();
 		ERR_post_warning(isc_bad_debug_format, 0);

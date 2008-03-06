@@ -283,7 +283,7 @@ namespace
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
-		static const FB_API_HANDLE& generate(const void* sender, BaseHandle* value) 
+		static const FB_API_HANDLE& generate(const void* sender, const BaseHandle* value) 
 		{
 			return value->public_handle;
 		}
@@ -3358,7 +3358,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
 		Attachment*	attachment = statement->parent;
 		Firebird::Array<SCHAR> db_prepare_buffer;
-		SCHAR* buffer = db_prepare_buffer.getBuffer(buffer_len);
+		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
 
 		if (!GDS_DSQL_PREPARE_M(status,
 								tra_handle,
