@@ -3,7 +3,7 @@
 # This file is used both to rebuild the header file and to set the 
 # environment variables on the config call
 
-BuildVersion="$Id: writeBuildNum.sh,v 1.17894.2.3 2008-02-20 12:41:43 dimitr Exp $"
+BuildVersion="$Id: writeBuildNum.sh,v 1.17894.2.4 2008-03-06 13:45:14 alexpeshkoff Exp $"
 
 BuildType=V
 MajorVer=2
@@ -94,7 +94,7 @@ cat >$1 <<eof
 MajorVer = $MajorVer
 MinorVer = $MinorVer
 RevNo = $RevNo
-BuildNum=17735
+BuildNum = $BuildNum
 BuildType = $BuildType
 BuildSuffix = $BuildSuffix
 
