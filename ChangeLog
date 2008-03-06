@@ -1,3 +1,30 @@
+2008-03-06 14:13  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.282), jrd.cpp (1.408), jrd.h
+	(1.223), scl.epp (1.90), scl.h (1.17), scl_proto.h (1.27), vio.cpp
+	(1.204):
+
+	Fixed CORE-1775 : Improve performance of security checking
+
+2008-03-06 10:43  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.66),
+	lang_helpers/gds_codes.pas (1.66), src/include/gen/codetext.h
+	(1.74), src/include/gen/iberror.h (1.76), src/include/gen/msgs.h
+	(1.93), src/include/gen/rdb_codes.h (1.71),
+	src/include/gen/sql_code.h (1.80), src/include/gen/sql_state.h
+	(1.4), src/jrd/tra.cpp (1.156), src/msgs/facilities2.sql (1.22),
+	src/msgs/messages2.sql (1.25), src/msgs/system_errors2.sql (1.18):
+
+	CORE-1600, work in progress, before I have to return to my private
+	work.
+
+2008-03-06 10:36  robocop
+
+	* firebird2/src/jrd/: DebugInterface.cpp (1.7), why.cpp (1.172):
+
+	Misc.
+
 2008-03-05 15:23  hvlad
 
 	* firebird2/src/jrd/: Database.h (1.5), cmp.cpp (1.281), dfw.epp
