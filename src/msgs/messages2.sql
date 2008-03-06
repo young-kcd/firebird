@@ -667,6 +667,22 @@ COMMIT WORK;
 ('fldnotdef2', NULL, NULL, NULL, 0, 563, NULL, 'column @1 is not defined in procedure @2', NULL, 'An undefined field was referenced in blr.');
 ('invalid_similar_pattern', 'SimilarToMatcher::Evaluator', 'SimilarToMatcher.h', NULL, 0, 564, NULL, 'Invalid SIMILAR TO pattern', NULL, NULL);
 ('bad_teb_form', 'GDS_START_MULTIPLE', 'why.cpp', NULL, 0, 565, NULL, 'Invalid TEB format', NULL, NULL);
+('tpb_multiple_txn_isolation', 'transaction_options', 'tra.cpp', NULL, 0, 566, NULL, 'Found more than one transaction isolation in TPB', NULL, NULL)
+('tpb_reserv_before_table', 'transaction_options', 'tra.cpp', NULL, 0, 567, NULL, 'Table reservation lock type @1 requires table name before in TPB', NULL, NULL)
+('tpb_multiple_spec', 'transaction_options', 'tra.cpp', NULL, 0, 568, NULL, 'Found more than one @1 specification in TPB', NULL, NULL)
+('tpb_option_without_rc', 'transaction_options', 'tra.cpp', NULL, 0, 569, NULL, 'Option @1 requires READ COMMITTED isolation in TPB', NULL, NULL)
+('tpb_nowait_after_timeout', 'transaction_options', 'tra.cpp', NULL, 0, 570, NULL, 'Option @1 is not valid if @2 was used previously in TPB', NULL, NULL)
+('tpb_reserv_missing_tlen', 'transaction_options', 'tra.cpp', NULL, 0, 571, NULL, 'Table name length missing after table reservation @1 in TPB', NULL, NULL)
+('tpb_reserv_long_tlen', 'transaction_options', 'tra.cpp', NULL, 0, 572, NULL, 'Table name length @1 is too long after table reservation @2 in TPB', NULL, NULL)
+('tpb_reserv_missing_tname', 'transaction_options', 'tra.cpp', NULL, 0, 573, NULL, 'Table name length @1 without table name after table reservation @2 in TPB', NULL, NULL)
+('tpb_reserv_corrup_tlen', 'transaction_options', 'tra.cpp', NULL, 0, 574, NULL, 'Table name length @1 goes beyond the remaining TPB size after table reservation @2', NULL, NULL)
+('tpb_reserv_relnotfound', 'transaction_options', 'tra.cpp', NULL, 0, 575, NULL, 'Table @1 not defined in system tables after table reservation @2 in TPB', NULL, NULL)
+('tpb_reserv_baserelnotfound', 'expand_view_lock', 'tra.cpp', NULL, 0, 576, NULL, 'Base table or view @1 for view @2 not defined in system tables after table reservation @3 in TPB', NULL, NULL)
+('tpb_missing_len', 'transaction_options', 'tra.cpp', NULL, 0, 577, NULL, 'Option length missing after option @1 in TPB', NULL, NULL)
+('tpb_missing_value', 'transaction_options', 'tra.cpp', NULL, 0, 578, NULL, 'Option length @1 without value after option @2 in TPB', NULL, NULL)
+('tpb_corrupt_len', 'transaction_options', 'tra.cpp', NULL, 0, 579, NULL, 'Option length @1 goes beyond the remaining TPB size after option @2', NULL, NULL)
+('tpb_overflow_len', 'transaction_options', 'tra.cpp', NULL, 0, 580, NULL, 'Option length @1 exceeds the range for option @2 in TPB', NULL, NULL)
+('tpb_invalid_value', 'transaction_options', 'tra.cpp', NULL, 0, 581, NULL, 'Option value @1 is invalid for the option @2 in TPB', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

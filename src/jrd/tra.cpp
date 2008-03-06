@@ -92,7 +92,7 @@ static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
 #ifdef VMS
 static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
 #endif
-static void expand_view_lock(jrd_tra*, jrd_rel*, SCHAR);
+static void expand_view_lock(jrd_tra*, jrd_rel*, const UCHAR lock_type, const char* option_name);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
 static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
@@ -117,7 +117,7 @@ void TRA_attach_request(Jrd::jrd_tra* transaction, Jrd::jrd_req* request)
 	// When request finishes normally transaction reference is not cleared.
 	// Then if afterwards request is restarted TRA_attach_request is called again.
 	if (request->req_transaction) {
-		if (request->req_transaction == transaction) 
+		if (request->req_transaction == transaction)
 			return;
 		TRA_detach_request(request);
 	}
@@ -152,7 +152,7 @@ void TRA_detach_request(Jrd::jrd_req* request)
 	if (request->req_tra_prev) {
 		fb_assert(request->req_tra_prev->req_tra_next == request);
 		request->req_tra_prev->req_tra_next = request->req_tra_next;
-	} 
+	}
 	else {
 		fb_assert(request->req_transaction->tra_requests == request);
 		request->req_transaction->tra_requests = request->req_tra_next;
@@ -301,7 +301,7 @@ void TRA_cleanup(thread_db* tdbb)
 	SLONG limbo = 0;
 
 	for (SLONG sequence = active / trans_per_tip; sequence <= last;
-		 sequence++, number = 0) 
+		 sequence++, number = 0)
 	{
 		window.win_page = inventory_page(tdbb, sequence);
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
@@ -400,13 +400,13 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	{
 		transaction->tra_flags &= ~TRA_prepared;
 		// Get rid of all user savepoints
-		while (transaction->tra_save_point && 
-			transaction->tra_save_point->sav_flags & SAV_user) 
+		while (transaction->tra_save_point &&
+			transaction->tra_save_point->sav_flags & SAV_user)
 		{
 			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
 			VIO_verb_cleanup(tdbb, transaction);
-			transaction->tra_save_point = next;				
+			transaction->tra_save_point = next;
 		}
 		return;
 	}
@@ -756,9 +756,9 @@ void TRA_invalidate(Database* database, ULONG mask)
 	for (Attachment* attachment = database->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
-			 
-		for (jrd_tra* transaction = attachment->att_transactions; transaction; 
-			transaction = transaction->tra_next) 
+
+		for (jrd_tra* transaction = attachment->att_transactions; transaction;
+			transaction = transaction->tra_next)
 		{
 			const ULONG transaction_mask =
 				1L << (transaction->tra_number & (BITS_PER_LONG - 1));
@@ -826,14 +826,14 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++) 
+	for (Resource* rsc = resources.begin(); rsc < resources.end(); rsc++)
 	{
 		if (rsc->rsc_type == Resource::rsc_relation ||
 			rsc->rsc_type == Resource::rsc_procedure ||
 			rsc->rsc_type == Resource::rsc_collation)
 		{
 			size_t i;
-			if (!transaction->tra_resources.find(*rsc, i)) 
+			if (!transaction->tra_resources.find(*rsc, i))
 			{
 				transaction->tra_resources.insert(i, *rsc);
 				switch (rsc->rsc_type) {
@@ -1014,7 +1014,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	const UCHAR state = limbo_transaction(tdbb, trans->tra_number);
 	if (state != tra_limbo) {
 		USHORT message;
-		
+
 		switch (state) {
 		case tra_active:
 			message = 262;		/* ACTIVE */
@@ -1069,14 +1069,14 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	Database* dbb = tdbb->getDatabase();
 	Attachment* attachment = tdbb->getAttachment();
 
-	if (transaction->tra_blobs.getFirst()) 
-		while (true) 
+	if (transaction->tra_blobs.getFirst())
+		while (true)
 		{
 			BlobIndex *current = &transaction->tra_blobs.current();
 			if (current->bli_materialized) {
 				if (!transaction->tra_blobs.getNext())
 					break;
-			} 
+			}
 			else {
 				ULONG temp_id = current->bli_temp_id;
 				BLB_cancel(tdbb, current->bli_blob_object);
@@ -1155,8 +1155,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 	// Unlink the transaction from the database block
 
 	for (jrd_tra** ptr = &attachment->att_transactions;
-		 *ptr; ptr = &(*ptr)->tra_next) 
-	{ 
+		 *ptr; ptr = &(*ptr)->tra_next)
+	{
 		if (*ptr == transaction) {
 			*ptr = transaction->tra_next;
 			break;
@@ -1220,7 +1220,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
 			VIO_verb_cleanup(tdbb, transaction);
-			transaction->tra_save_point = next;				
+			transaction->tra_save_point = next;
 		}
 	}
 
@@ -1254,7 +1254,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		while (transaction->tra_save_point->sav_flags & SAV_user) {
 			++transaction->tra_save_point->sav_verb_count;	/* cause undo */
 			VIO_verb_cleanup(tdbb, transaction);
-		}			
+		}
 	}
 	else {
 		// Free all savepoint data
@@ -1266,7 +1266,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
 			VIO_verb_cleanup(tdbb, transaction);
-			transaction->tra_save_point = next;				
+			transaction->tra_save_point = next;
 		}
 		if (transaction->tra_save_point) {
 			if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
@@ -1429,7 +1429,7 @@ void TRA_shutdown_attachment(thread_db* tdbb, Attachment* attachment)
 	SET_TDBB(tdbb);
 
 	for (jrd_tra* transaction = attachment->att_transactions; transaction;
-		 transaction = transaction->tra_next) 
+		 transaction = transaction->tra_next)
 	{
 		/* Release the relation locks associated with the transaction */
 
@@ -1697,7 +1697,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (VIO_sweep(tdbb, transaction)) {
 		const ULONG base = transaction->tra_oldest & ~TRA_MASK;
 		ULONG active = transaction->tra_oldest;
-		for (; active < (ULONG) transaction->tra_top; active++) 
+		for (; active < (ULONG) transaction->tra_top; active++)
 		{
 			if (transaction->tra_flags & TRA_read_committed) {
 				if (TPC_cache_state(tdbb, active) == tra_limbo)
@@ -1708,7 +1708,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 				const USHORT shift = TRANS_SHIFT(active);
 				if (
 					((transaction->tra_transactions[byte] >> shift) &
-					 TRA_MASK) == tra_limbo) 
+					 TRA_MASK) == tra_limbo)
 				{
 					break;
 				}
@@ -1752,7 +1752,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 		try {
 			if (!trans)
 				TRA_commit(tdbb, transaction, false);
-			
+
 			LCK_release(tdbb, &temp_lock);
 			dbb->dbb_flags &= ~DBB_sweep_in_progress;
 			tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -1932,7 +1932,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1) 
+	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1)
 	{
 		CCH_RELEASE(tdbb, window);
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
@@ -1945,7 +1945,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
-	const bool new_tip = 
+	const bool new_tip =
 		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
@@ -1986,7 +1986,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 			BUGCHECK(267);		/* next transaction older than oldest transaction */
 	}
 
-	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1) 
+	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1)
 	{
 		CCH_RELEASE(tdbb, window);
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
@@ -1995,7 +1995,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
-	const bool new_tip = 
+	const bool new_tip =
 		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
@@ -2104,7 +2104,8 @@ static void compute_oldest_retaining(
 #endif
 
 
-static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock_type)
+static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, const UCHAR lock_type,
+	const char* option_name)
 {
 /**************************************
  *
@@ -2144,7 +2145,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
 		/* force a scan to read view information */
 		MET_scan_relation(tdbb, rel);
 
-		expand_view_lock(transaction, rel, lock_type);
+		expand_view_lock(transaction, rel, lock_type, option_name);
 	}
 }
 
@@ -2297,7 +2298,7 @@ static void restart_requests(thread_db* tdbb, jrd_tra* trans)
  **************************************/
 	SET_TDBB(tdbb);
 	for (jrd_req* request = trans->tra_attachment->att_requests; request;
-		 request = request->req_request) 
+		 request = request->req_request)
 	{
 		if (request->req_transaction) {
 			EXE_unwind(tdbb, request);
@@ -2436,15 +2437,15 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 
 	// Get rid of all user savepoints
 	// Why we can do this in reverse order described in commit method
-	while (transaction->tra_save_point && 
-		transaction->tra_save_point->sav_flags & SAV_user) 
+	while (transaction->tra_save_point &&
+		transaction->tra_save_point->sav_flags & SAV_user)
 	{
 		Savepoint* const next = transaction->tra_save_point->sav_next;
 		transaction->tra_save_point->sav_next = NULL;
 		VIO_verb_cleanup(tdbb, transaction);
-		transaction->tra_save_point = next;				
+		transaction->tra_save_point = next;
 	}
-	
+
 	if (transaction->tra_save_point) {
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		/* Too many savepoints */
@@ -2603,7 +2604,7 @@ static void transaction_options(
 		case isc_tpb_consistency:
 			if (!isolation.assignOnce(true))
 				ERR_post(isc_bad_tpb_content, 0);
-				
+
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
 			break;
@@ -2625,7 +2626,13 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_shared:
+			ERR_post(isc_bad_tpb_content, 0);		
+			break;
+			
 		case isc_tpb_protected:
+			ERR_post(isc_bad_tpb_content, 0);		
+			break;
+			
 		case isc_tpb_exclusive:
 			ERR_post(isc_bad_tpb_content, 0);
 			break;
@@ -2638,7 +2645,7 @@ static void transaction_options(
 		case isc_tpb_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 				ERR_post(isc_bad_tpb_content, 0);
-				
+
 			if (!rec_version.assignOnce(true))
 				ERR_post(isc_bad_tpb_content, 0);
 
@@ -2656,10 +2663,12 @@ static void transaction_options(
 			break;
 
 		case isc_tpb_nowait:
-			if (lock_timeout.asBool() || !wait.assignOnce(false))
-			{
+			if (lock_timeout.asBool())
 				ERR_post(isc_bad_tpb_content, 0);
-			}
+
+			if (!wait.assignOnce(false))
+				ERR_post(isc_bad_tpb_content, 0);
+
 			transaction->tra_lock_timeout = 0;
 			break;
 
@@ -2688,10 +2697,13 @@ static void transaction_options(
 		case isc_tpb_lock_write:
 		case isc_tpb_lock_read:
 			{
+				const char* option_name = (op == isc_tpb_lock_read) ?
+					"isc_tpb_lock_read" : "isc_tpb_lock_write";
+			
 				// Do we have space for the identifier length?
 				if (tpb >= end)
 					ERR_post(isc_bad_tpb_form, 0);
-					
+
 				USHORT len = *tpb++;
 				if (len > MAX_SQL_IDENTIFIER_LEN) {
 					TEXT text[BUFFER_TINY];
@@ -2703,9 +2715,12 @@ static void transaction_options(
 							 isc_arg_string, ERR_cstring(text), 0);
 				}
 				// Does the identifier length surpasses the remaining of the TPB?
-				if (tpb >= end || end - tpb < len)
+				if (tpb >= end)
 					ERR_post(isc_bad_tpb_form, 0);
-				
+
+				if (end - tpb < len)
+					ERR_post(isc_bad_tpb_form, 0);
+
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
 				tpb += len;
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
@@ -2718,34 +2733,39 @@ static void transaction_options(
 				/* force a scan to read view information */
 				MET_scan_relation(tdbb, relation);
 
-				SCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
+				UCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
 				if (tpb < end)
 				{
 					// Things we don't check yet: that the same table is reserved
 					// for read/write shared and (protected or exclusive).
 					if (*tpb == isc_tpb_shared)
 						tpb++;
-					else if (*tpb == isc_tpb_protected ||
-							 *tpb == isc_tpb_exclusive)
+					else if (*tpb == isc_tpb_protected || *tpb == isc_tpb_exclusive)
 					{
 						tpb++;
 						lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
 					}
 				}
 
-				expand_view_lock(transaction, relation, lock_type);
+				expand_view_lock(transaction, relation, lock_type, option_name);
 			}
 			break;
 
 		case isc_tpb_verb_time:
 		case isc_tpb_commit_time:
 			{
-				// Will be caught at the top of the loop if it goes beyond "end".
 				// Harmless for now even if formally invalid.
-				//if (tpb >= end)
-				//	ERR_post(isc_bad_tpb_form, 0);
+				if (tpb >= end)
+					ERR_post(isc_bad_tpb_form, 0);
 
 				const USHORT len = *tpb++;
+
+				if (tpb >= end && len > 0)
+					ERR_post(isc_bad_tpb_form, 0);
+
+				if (end - tpb < len)
+					ERR_post(isc_bad_tpb_form, 0);
+
 				tpb += len;
 			}
 			break;
@@ -2760,20 +2780,32 @@ static void transaction_options(
 
 		case isc_tpb_lock_timeout:
 			{
-				if (wait.isAssigned() && !wait.asBool() || !lock_timeout.assignOnce(true))
-				{
+				if (wait.isAssigned() && !wait.asBool())
 					ERR_post(isc_bad_tpb_content, 0);
-				}
+
+				if (!lock_timeout.assignOnce(true))
+					ERR_post(isc_bad_tpb_content, 0);
+
 				// Do we have space for the identifier length?
 				if (tpb >= end)
 					ERR_post(isc_bad_tpb_form, 0);
 
 				const USHORT len = *tpb++;
 				// Does the encoded number's length surpasses the remaining of the TPB?
-				if (tpb >= end || end - tpb < len)
+				if (tpb >= end)
+					ERR_post(isc_bad_tpb_form, 0);
+
+				if (end - tpb < len)
+					ERR_post(isc_bad_tpb_form, 0);
+
+				if (len > sizeof(transaction->tra_lock_timeout))
 					ERR_post(isc_bad_tpb_form, 0);
 
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
+
+				if (transaction->tra_lock_timeout <= 0)
+					ERR_post(isc_bad_tpb_form, 0);
+
 				tpb += len;
 			}
 			break;
@@ -2782,7 +2814,7 @@ static void transaction_options(
 			ERR_post(isc_bad_tpb_form, 0);
 		}
 	}
-	
+
 	if (rec_version.isAssigned() &&
 		!(transaction->tra_flags & TRA_read_committed))
 	{
@@ -2869,7 +2901,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		oldest_snapshot = header->hdr_oldest_snapshot;
 	}
 
-	// oldest (OIT) > oldest_active (OAT) if OIT was advanced by sweep 
+	// oldest (OIT) > oldest_active (OAT) if OIT was advanced by sweep
 	// and no transactions was started after the sweep starts
 	active = MAX(oldest_active, oldest);
 
@@ -2904,10 +2936,10 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	lock->lck_key.lck_long = number;
 
 	// Put the TID of the oldest active transaction (from the header page)
-	// in the new transaction's lock. 
-	// hvlad: it is important to put transaction number for read-committed 
-	// transaction instead of oldest active to correctly calculate new oldest 
-	// active value (look at call to LCK_query_data below which will take into 
+	// in the new transaction's lock.
+	// hvlad: it is important to put transaction number for read-committed
+	// transaction instead of oldest active to correctly calculate new oldest
+	// active value (look at call to LCK_query_data below which will take into
 	// account this new lock too)
 
 	lock->lck_data = (trans->tra_flags & TRA_read_committed) ? number : active;
@@ -3018,12 +3050,12 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	}
 
 	// Put the TID of the oldest active transaction (just calculated)
-	// in the new transaction's lock. 
-	// hvlad: for read-committed transaction put tra_number to prevent 
-	// unnecessary blocking of garbage collection by read-committed 
-	// transactions 
+	// in the new transaction's lock.
+	// hvlad: for read-committed transaction put tra_number to prevent
+	// unnecessary blocking of garbage collection by read-committed
+	// transactions
 
-	const ULONG lck_data = 
+	const ULONG lck_data =
 		(trans->tra_flags & TRA_read_committed) ? number : oldest_active;
 
 	if (lock->lck_data != (SLONG) lck_data)
@@ -3070,7 +3102,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 #if defined(GARBAGE_THREAD)
 		if (!(dbb->dbb_flags & DBB_gc_active) &&
-			 (dbb->dbb_flags & DBB_gc_background) ) 
+			 (dbb->dbb_flags & DBB_gc_background) )
 		{
 			dbb->dbb_flags |= DBB_gc_pending;
 			ISC_event_post(dbb->dbb_gc_event);
