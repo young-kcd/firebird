@@ -3356,7 +3356,7 @@ static void check_rel_field_class(record_param* rpb,
 	EVL_field(0, rpb->rpb_record, f_rfr_class, &desc);
 	const Firebird::MetaName class_name(reinterpret_cast<TEXT*>(desc.dsc_address),
 								  desc.dsc_length);
-	const SecurityClass* s_class = SCL_get_class(class_name.c_str());
+	const SecurityClass* s_class = SCL_get_class(JRD_get_thread_data(), class_name.c_str());
 	if (s_class)
 	{
 		// In case when user has no access to the field, 

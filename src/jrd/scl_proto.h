@@ -63,12 +63,12 @@ inline void SCL_check_access(const Jrd::SecurityClass* s_class,
 void SCL_check_index(Jrd::thread_db*, const Firebird::MetaName&, UCHAR, Jrd::SecurityClass::flags_t);
 void SCL_check_procedure(const dsc*, Jrd::SecurityClass::flags_t);
 void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
-Jrd::SecurityClass* SCL_get_class(const TEXT*);
+Jrd::SecurityClass* SCL_get_class(Jrd::thread_db*, const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const Jrd::UserId& tempId, Jrd::thread_db*);
 void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
-void SCL_release(Jrd::SecurityClass*);
+void SCL_release(Jrd::SecurityClassList*);
 
 #endif // JRD_SCL_PROTO_H
 

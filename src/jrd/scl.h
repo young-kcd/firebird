@@ -24,18 +24,36 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
+#include "../common/classes/MetaName.h"
+#include "../common/classes/tree.h"
+
 namespace Jrd {
 
 /* Security class definition */
 
-class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
+class SecurityClass
 {
-    public:
+public:
     typedef USHORT flags_t;
-	SecurityClass* scl_next;	/* Next security class in system */
+
+	SecurityClass(Firebird::MemoryPool &pool) :
+		scl_name(pool) {}
+
 	flags_t scl_flags;			/* Access permissions */
-	TEXT scl_name[2];
+	Firebird::MetaName scl_name;
+
+	static const Firebird::MetaName& generate(const void*, const SecurityClass *Item) { 
+		return Item->scl_name;
+	}
 };
+
+typedef Firebird::BePlusTree<
+	SecurityClass*, 
+	Firebird::MetaName, 
+	Firebird::MemoryPool, 
+	SecurityClass
+> SecurityClassList;
+
 
 const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
 const SecurityClass::flags_t SCL_write			= 2;		/* Write access */
