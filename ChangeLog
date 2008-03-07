@@ -1,3 +1,81 @@
+2008-03-07 16:23  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.84),
+	builds/win32/msvc6/engine.dsp (1.76),
+	builds/win32/msvc6/engine_classic.dsp (1.72),
+	builds/win32/msvc6/engine_embed.dsp (1.51),
+	builds/win32/msvc7/engine.vcproj (1.68),
+	builds/win32/msvc7/engine_classic.vcproj (1.68),
+	builds/win32/msvc7/engine_embed.vcproj (1.57),
+	builds/win32/msvc8/engine.vcproj (1.18),
+	builds/win32/msvc8/engine_classic.vcproj (1.18),
+	builds/win32/msvc8/engine_embed.vcproj (1.16), src/dsql/dsql.cpp
+	(1.231), src/jrd/Database.h (1.6), src/jrd/blb.cpp (1.158),
+	src/jrd/blb.h (1.29), src/jrd/blb_proto.h (1.31), src/jrd/dbt.cpp
+	(1.39), src/jrd/entry.h (1.31), src/jrd/jrd.cpp (1.409),
+	src/jrd/jrd_proto.h (1.63), src/jrd/log.cpp (1.28), src/jrd/log.h
+	(1.10), src/jrd/log2.h (1.6), src/jrd/log_proto.h (1.4),
+	src/jrd/utl.cpp (1.110), src/jrd/why.cpp (1.173),
+	src/jrd/why_proto.h (1.45):
+
+	1) Remove REPLAY_OSRI_API_CALLS_SUBSYSTEM code 2) Remove internal
+	y-valve function INTERNAL_COMPILE_REQUEST 3) Go direct to engine
+	internals from DSQL, without need to exit/enter the attachment lock
+	and check exceptions in status vector
+
+2008-03-07 10:28  robocop
+
+	* firebird2/src/jrd/gds.cpp (1.245):
+
+	Return zero when isc_portable_integer or gds__vax_integer receive
+	invalid parameters.
+
+2008-03-07 10:24  robocop
+
+	* firebird2/src/: include/gen/rdb_codes.h (1.73), misc/codes.epp
+	(1.23), msgs/msg.sql (1.11), msgs/system_errors2.sql (1.20):
+
+	Get rid of the field VMS_CODE in the messages database.  You should
+	preprocess and compile codes.epp again or you will read trash from
+	the db when regenerating the header files in include/gen.  For
+	Win32, this means calling create_msgs alone is not enough; do a
+	boot build instead.
+
+2008-03-07 10:18  robocop
+
+	* firebird2/src/include/gen/files.txt (1.3):
+
+	Not sure who needs this file, but I updated it to reflect the
+	deletion of rdb_codes.h; I would delete this file as well.
+
+2008-03-07 08:37  robocop
+
+	* firebird2/src/msgs/: messages2.sql (1.27), msg.sql (1.10):
+
+	Putting more constraints was the only way to safely discover all
+	the inconsistencies in the scripts that fill msg.fdb with messages'
+	code, text, sqlclass and other information. Served as an exercise
+	to fix some errors that may predate FB, too.
+
+2008-03-07 08:28  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.157):
+
+	CORE-1600. Needs testing with any sort of valid and invalid TPBs.
+
+2008-03-07 07:25  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.67),
+	lang_helpers/gds_codes.pas (1.67), src/include/gen/codetext.h
+	(1.75), src/include/gen/iberror.h (1.77), src/include/gen/msgs.h
+	(1.94), src/include/gen/rdb_codes.h (1.72),
+	src/include/gen/sql_code.h (1.81), src/include/gen/sql_state.h
+	(1.5), src/msgs/facilities2.sql (1.23), src/msgs/messages2.sql
+	(1.26), src/msgs/system_errors2.sql (1.19):
+
+	CORE-1600, work in progress. I expect I copied a consistent
+	intermediate state.
+
 2008-03-06 14:13  hvlad
 
 	* firebird2/src/jrd/: cmp.cpp (1.282), jrd.cpp (1.408), jrd.h
