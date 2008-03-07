@@ -2131,21 +2131,23 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, const UCHA
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
-		jrd_rel* rel = MET_lookup_relation(tdbb, ctx[i].vcx_relation_name);
-		if (!rel)
+		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i].vcx_relation_name);
+		if (!base_rel)
 		{
-			ERR_post(isc_bad_tpb_content,	/* should be a BUGCHECK */
-					isc_arg_gds,
-					isc_relnotdef,
+			ERR_post(isc_tpb_reserv_baserelnotfound,	/* should be a BUGCHECK */
 					isc_arg_string,
 					ERR_cstring(ctx[i].vcx_relation_name.c_str()),
+					isc_arg_string,
+					ERR_cstring(relation->rel_name.c_str()),
+					isc_arg_string,
+					option_name,
 					0);
 		}
 
 		/* force a scan to read view information */
-		MET_scan_relation(tdbb, rel);
+		MET_scan_relation(tdbb, base_rel);
 
-		expand_view_lock(transaction, rel, lock_type, option_name);
+		expand_view_lock(transaction, base_rel, lock_type, option_name);
 	}
 }
 
@@ -2566,8 +2568,7 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 #endif
 
 
-static void transaction_options(
-								thread_db* tdbb,
+static void transaction_options(thread_db* tdbb,
 								jrd_tra* transaction,
 								const UCHAR* tpb, USHORT tpb_length)
 {
@@ -2603,7 +2604,7 @@ static void transaction_options(
 		{
 		case isc_tpb_consistency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2611,7 +2612,7 @@ static void transaction_options(
 
 		case isc_tpb_concurrency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2619,69 +2620,104 @@ static void transaction_options(
 
 		case isc_tpb_read_committed:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
 			break;
 
 		case isc_tpb_shared:
-			ERR_post(isc_bad_tpb_content, 0);		
+			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_shared", 0);
 			break;
 			
 		case isc_tpb_protected:
-			ERR_post(isc_bad_tpb_content, 0);		
+			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_protected", 0);
 			break;
 			
 		case isc_tpb_exclusive:
-			ERR_post(isc_bad_tpb_content, 0);
+			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_exclusive", 0);
 			break;
 
 		case isc_tpb_wait:
 			if (!wait.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+			{
+				if (!wait.asBool())
+				{
+					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_wait",
+						isc_arg_string, "isc_tpb_nowait", 0);
+				}
+				else
+					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_wait", 0);
+			}
 			break;
 
 		case isc_tpb_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
 
 			if (!rec_version.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_rec_version", 0);
 
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
 		case isc_tpb_no_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
 
 			if (!rec_version.assignOnce(false))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_no_rec_version", 0);
 
 			transaction->tra_flags &= ~TRA_rec_version;
 			break;
 
 		case isc_tpb_nowait:
 			if (lock_timeout.asBool())
-				ERR_post(isc_bad_tpb_content, 0);
+			{
+				ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
+					isc_arg_string, "isc_tpb_lock_timeout", 0);
+			}
 
 			if (!wait.assignOnce(false))
-				ERR_post(isc_bad_tpb_content, 0);
+			{
+				if (wait.asBool())
+				{
+					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
+						isc_arg_string, "isc_tpb_wait", 0);
+				}
+				else
+					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_nowait", 0);
+			}
 
 			transaction->tra_lock_timeout = 0;
 			break;
 
 		case isc_tpb_read:
 			if (!read_only.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+			{
+				if (!read_only.asBool())
+				{
+					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_read",
+						isc_arg_string, "isc_tpb_write", 0);
+				}
+				else
+					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_read", 0);
+			}
 
 			transaction->tra_flags |= TRA_readonly;
 			break;
 
 		case isc_tpb_write:
 			if (!read_only.assignOnce(false))
-				ERR_post(isc_bad_tpb_content, 0);
+			{
+				if (read_only.asBool())
+				{
+					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_write",
+						isc_arg_string, "isc_tpb_read", 0);
+				}
+				else
+					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_write", 0);
+			}
 
 			transaction->tra_flags &= ~TRA_readonly;
 			break;
@@ -2702,32 +2738,38 @@ static void transaction_options(
 			
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_tpb_reserv_missing_tlen, isc_arg_string, option_name, 0);
 
-				USHORT len = *tpb++;
-				if (len > MAX_SQL_IDENTIFIER_LEN) {
-					TEXT text[BUFFER_TINY];
-					USHORT flags = 0;
-					gds__msg_lookup(0, DYN_MSG_FAC, 159, sizeof(text),
-										text, &flags);
-					/* msg 159: Name longer than database column size */
-					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
-							 isc_arg_string, ERR_cstring(text), 0);
+				const USHORT len = *tpb++;
+				if (len > MAX_SQL_IDENTIFIER_LEN)
+				{
+					ERR_post(isc_tpb_reserv_long_tlen, isc_arg_number, len,
+						isc_arg_string, option_name, 0);
 				}
+
+				if (!len)
+					ERR_post(isc_tpb_reserv_null_tlen, isc_arg_string, option_name, 0);
+
 				// Does the identifier length surpasses the remaining of the TPB?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_reserv_missing_tname, isc_arg_number, len,
+						isc_arg_string, option_name, 0);
+				}
 
 				if (end - tpb < len)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_reserv_corrup_tlen, isc_arg_number, len,
+						isc_arg_string, option_name, 0);
+				}
 
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
 				tpb += len;
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
-				if (!relation) {
-					ERR_post(isc_bad_tpb_content,
-						 isc_arg_gds, isc_relnotdef, isc_arg_string,
-						 ERR_cstring(name), 0);
+				if (!relation)
+				{
+					ERR_post(isc_tpb_reserv_relnotfound, isc_arg_string, ERR_cstring(name),
+						isc_arg_string, option_name, 0);
 				}
 
 				/* force a scan to read view information */
@@ -2754,17 +2796,25 @@ static void transaction_options(
 		case isc_tpb_verb_time:
 		case isc_tpb_commit_time:
 			{
+				const char* option_name = (op == isc_tpb_verb_time) ?
+					"isc_tpb_verb_time" : "isc_tpb_commit_time";
 				// Harmless for now even if formally invalid.
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_tpb_missing_len, isc_arg_string, option_name, 0);
 
 				const USHORT len = *tpb++;
 
 				if (tpb >= end && len > 0)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_missing_value, isc_arg_number, len,
+						isc_arg_string, option_name, 0);
+				}
 
 				if (end - tpb < len)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_corrupt_len, isc_arg_number, len,
+						isc_arg_string, option_name, 0);
+				}
 
 				tpb += len;
 			}
@@ -2781,30 +2831,50 @@ static void transaction_options(
 		case isc_tpb_lock_timeout:
 			{
 				if (wait.isAssigned() && !wait.asBool())
-					ERR_post(isc_bad_tpb_content, 0);
+				{
+					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_lock_timeout",
+						isc_arg_string, "isc_tpb_nowait", 0);
+				}
 
 				if (!lock_timeout.assignOnce(true))
-					ERR_post(isc_bad_tpb_content, 0);
+					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_lock_timeout", 0);
 
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_tpb_missing_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
 
 				const USHORT len = *tpb++;
+				
 				// Does the encoded number's length surpasses the remaining of the TPB?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_missing_value, isc_arg_number, len,
+						isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				if (end - tpb < len)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_corrupt_len, isc_arg_number, len,
+						isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				if (len > sizeof(transaction->tra_lock_timeout))
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_overflow_len, isc_arg_number, len,
+						isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
+
+				if (!len)
+					ERR_post(isc_tpb_null_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
 
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
 
 				if (transaction->tra_lock_timeout <= 0)
-					ERR_post(isc_bad_tpb_form, 0);
+				{
+					ERR_post(isc_tpb_invalid_value,
+						isc_arg_number, transaction->tra_lock_timeout,
+						isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				tpb += len;
 			}
@@ -2818,7 +2888,10 @@ static void transaction_options(
 	if (rec_version.isAssigned() &&
 		!(transaction->tra_flags & TRA_read_committed))
 	{
-		ERR_post(isc_bad_tpb_content, 0);
+		if (rec_version.asBool())
+			ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
+		else
+			ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
 	}
 
 
