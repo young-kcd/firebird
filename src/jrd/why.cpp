@@ -944,7 +944,6 @@ namespace
 #define GDS_DETACH				isc_detach_database
 #define GDS_DROP_DATABASE		isc_drop_database
 //#define GDS_EVENT_WAIT			gds__event_wait
-#define GDS_INTERNAL_COMPILE	gds__internal_compile_request
 #define GDS_GET_SEGMENT			isc_get_segment
 #define GDS_GET_SLICE			isc_get_slice
 #define GDS_OPEN_BLOB			isc_open_blob
@@ -1072,11 +1071,10 @@ const int PROC_SERVICE_START	= 51;
 
 const int PROC_ROLLBACK_RETAINING	= 52;
 const int PROC_CANCEL_OPERATION	= 53;
-const int PROC_INTERNAL_COMPILE	= 54;	// internal call
 
-const int PROC_SHUTDOWN			= 55;
+const int PROC_SHUTDOWN			= 54;
 
-const int PROC_count			= 56;
+const int PROC_count			= 55;
 
 /* Define complicated table for multi-subsystem world */
 
@@ -3677,51 +3675,6 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	}
 	catch (const Firebird::Exception& e)
 	{
-		e.stuff_exception(status);
-	}
-
-	return status[1];
-}
-
-
-ISC_STATUS API_ROUTINE GDS_INTERNAL_COMPILE(ISC_STATUS* user_status,
-											FB_API_HANDLE* db_handle,
-											FB_API_HANDLE* req_handle,
-											USHORT blr_length,
-											const SCHAR* blr,
-											USHORT string_length,
-											const char* string,
-											USHORT dbginfo_length,
-											const UCHAR* dbginfo)
-{
-	YEntry status(user_status);
-	Attachment* dbb = NULL;
-	StoredReq* rq = NULL;
-
-	try
-	{
-		dbb = translate<Attachment>(db_handle);
-		status.setPrimaryHandle(dbb);
-		nullCheck(req_handle, isc_bad_req_handle);
-
-		if (CALL(PROC_INTERNAL_COMPILE, dbb->implementation) (status, &dbb->handle,
-															  &rq, blr_length,
-															  blr,
-															  string_length, string,
-															  dbginfo_length, dbginfo))
-		{
-			return status[1];
-		}
-
-		new Request(rq, req_handle, dbb);
-	}
-	catch (const Firebird::Exception& e)
-	{
-		*req_handle = 0;
-		if (dbb && rq)
-		{
-			CALL(PROC_RELEASE_REQUEST, dbb->implementation) (status, rq);
-		}
 		e.stuff_exception(status);
 	}
 

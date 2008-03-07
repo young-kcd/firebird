@@ -495,10 +495,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\log.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\jrd\met.cpp"
 				>
 			</File>
@@ -1140,18 +1136,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lnmdef.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\log.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\log2.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\log_proto.h"
 				>
 			</File>
 			<File

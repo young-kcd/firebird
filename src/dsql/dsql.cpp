@@ -944,28 +944,25 @@ static void close_cursor(dsql_req* request)
 
 	if (request->req_request)
 	{
-		if (request->req_type == REQ_GET_SEGMENT ||
-			request->req_type == REQ_PUT_SEGMENT)
-		{
-			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
+		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 
-			tdbb->tdbb_status_vector = status_vector;
-			try
+		tdbb->tdbb_status_vector = status_vector;
+		try
+		{
+			if (request->req_type == REQ_GET_SEGMENT ||
+				request->req_type == REQ_PUT_SEGMENT)
 			{
 				BLB_close(tdbb, request->req_blob->blb_blob);
 				request->req_blob->blb_blob = NULL;
 			}
-			catch (Firebird::Exception&)
-			{
-			}
-
-			tdbb->tdbb_status_vector = old_status;
+			else
+				JRD_unwind_request(tdbb, request->req_request, 0);
 		}
-		else
+		catch (Firebird::Exception&)
 		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			jrd8_unwind_request(status_vector, &request->req_request, 0);
 		}
+
+		tdbb->tdbb_status_vector = old_status;
 	}
 
 	request->req_flags &= ~REQ_cursor_open;
@@ -1251,62 +1248,32 @@ static void execute_request(thread_db* tdbb,
 	switch (request->req_type)
 	{
 	case REQ_START_TRANS:
-		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_start_transaction(tdbb->tdbb_status_vector,
-									   &request->req_transaction,
-									   1,
-									   &request->req_dbb->dbb_attachment,
-									   request->req_blr_data.getCount(),
-									   request->req_blr_data.begin()))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-			*tra_handle = request->req_transaction;
-			return;
-		}
+		JRD_start_transaction(tdbb,
+							  &request->req_transaction,
+							  1,
+							  &request->req_dbb->dbb_attachment,
+							  request->req_blr_data.getCount(),
+							  request->req_blr_data.begin());
+		*tra_handle = request->req_transaction;
+		return;
 
 	case REQ_COMMIT:
-		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_commit_transaction(tdbb->tdbb_status_vector, &request->req_transaction))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-			*tra_handle = NULL;
-			return;
-		}
+		JRD_commit_transaction(tdbb, &request->req_transaction);
+		*tra_handle = NULL;
+		return;
 
 	case REQ_COMMIT_RETAIN:
-		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_commit_retaining(tdbb->tdbb_status_vector, &request->req_transaction))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-			return;
-		}
+		JRD_commit_retaining(tdbb, &request->req_transaction);
+		return;
 
 	case REQ_ROLLBACK:
-		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_rollback_transaction(tdbb->tdbb_status_vector, &request->req_transaction))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-			*tra_handle = NULL;
-			return;
-		}
+		JRD_rollback_transaction(tdbb, &request->req_transaction);
+		*tra_handle = NULL;
+		return;
 
 	case REQ_ROLLBACK_RETAIN:
-		{
-			Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-			if (jrd8_rollback_retaining(tdbb->tdbb_status_vector, &request->req_transaction))
-			{
-				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-			}
-			return;
-		}
+		JRD_rollback_retaining(tdbb, &request->req_transaction);
+		return;
 
 	case REQ_CREATE_DB:
 	case REQ_DDL:
@@ -1357,17 +1324,13 @@ static void execute_request(thread_db* tdbb,
 				   in_blr_length, in_blr,
 				   in_msg_length, const_cast<UCHAR*>(in_msg));
 
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		if (jrd8_start_and_send(tdbb->tdbb_status_vector,
-							    &request->req_request,
-							    &request->req_transaction,
-							    message->msg_number,
-							    message->msg_length,
-							    reinterpret_cast<SCHAR*>(message->msg_buffer),
-							    0))
-		{
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
+		JRD_start_and_send(tdbb,
+						   request->req_request,
+						   request->req_transaction,
+						   message->msg_number,
+						   message->msg_length,
+						   reinterpret_cast<SCHAR*>(message->msg_buffer),
+						   0);
 	}
 
 	ISC_STATUS_ARRAY local_status = {0};
@@ -2714,17 +2677,21 @@ static dsql_req* prepare(thread_db* tdbb,
 
 	ISC_STATUS status = FB_SUCCESS;
 
-	{	// scope
-		Database::Checkout dcoHolder(request->req_dbb->dbb_database);
-		status = jrd8_internal_compile_request(tdbb->tdbb_status_vector,
-											   &request->req_dbb->dbb_attachment,
-											   &request->req_request,
-											   length,
-											   (const char*)(request->req_blr_data.begin()),
-											   string_length,
-											   string,
-											   request->req_debug_data.getCount(),
-											   request->req_debug_data.begin());
+	try
+	{
+		JRD_internal_compile(tdbb,
+							 request->req_dbb->dbb_attachment,
+							 &request->req_request,
+							 length,
+							 (const char*)(request->req_blr_data.begin()),
+							 string_length,
+							 string,
+							 request->req_debug_data.getCount(),
+							 request->req_debug_data.begin());
+	}
+	catch (const Firebird::Exception&)
+	{
+		status = tdbb->tdbb_status_vector[1];
 	}
 
 // restore warnings (if there are any) 

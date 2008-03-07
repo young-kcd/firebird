@@ -341,10 +341,6 @@ SOURCE=..\..\..\src\jrd\lck.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\log.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\jrd\met.cpp
 # End Source File
 # Begin Source File
@@ -1018,18 +1014,6 @@ SOURCE=..\..\..\src\jrd\lls.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\lnmdef.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\log.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\log2.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\log_proto.h
 # End Source File
 # Begin Source File
 

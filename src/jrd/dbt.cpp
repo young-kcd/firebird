@@ -49,9 +49,6 @@
 #include "../jrd/ext.h"
 #include "../jrd/met.h"
 #include "../jrd/sdw.h"
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-#include "../jrd/log.h"
-#endif
 #include "../jrd/intl.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/fil.h"
@@ -358,9 +355,6 @@ static TEXT_PTR VerbAction[] = {	"VERB", 0};
 static TEXT_PTR BlobFilter[] = {	"BLOB FILTER", 0};
 static TEXT_PTR ArrayField[] = {	"ARRAY DESCRIPTION", 0};
 static TEXT_PTR blb_map[] = {	"MAP BLOCK", 0};
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static TEXT_PTR fblog[] = {	"LOG BLOCK", 0};
-#endif
 static TEXT_PTR dir_list[] = {	"DIR LIST BLOCK", 0};
 static TEXT_PTR jrd_prc[] =
 {

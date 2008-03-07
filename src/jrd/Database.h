@@ -372,11 +372,6 @@ public:
 	crypt_routine dbb_encrypt;			// External encryption routine
 	crypt_routine dbb_decrypt;			// External decryption routine
 
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	class blb_map *dbb_blob_map;		// mapping of blobs for REPLAY
-	struct log *dbb_log;				// log file for REPLAY
-#endif
-
 	Firebird::Array<CharSetContainer*>		dbb_charsets;	// intl character set descriptions
 	TxPageCache*	dbb_tip_cache;		// cache of latest known state of all transactions in system
 	vcl*		dbb_pc_transactions;	// active precommitted transactions

@@ -74,11 +74,6 @@ ISC_STATUS jrd8_ddl(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**,
 								  USHORT, const SCHAR*);
 ISC_STATUS jrd8_detach_database(ISC_STATUS *, Jrd::Attachment**);
 ISC_STATUS jrd8_drop_database(ISC_STATUS *, Jrd::Attachment**);
-ISC_STATUS jrd8_internal_compile_request(ISC_STATUS*, Jrd::Attachment**,
-										 Jrd::jrd_req**,
-										 SSHORT, const SCHAR*,
-										 USHORT, const char*,
-										 USHORT, const UCHAR*);
 ISC_STATUS jrd8_get_segment(ISC_STATUS *, Jrd::blb**, USHORT *,
 										  USHORT, UCHAR *);
 ISC_STATUS jrd8_get_slice(ISC_STATUS*, Jrd::Attachment**,
@@ -226,6 +221,23 @@ void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, U
 void JRD_request_info(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level, SSHORT item_length,
 	const SCHAR* items, SSHORT buffer_length, SCHAR* buffer);
 void JRD_start(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction, SSHORT level);
+
+void JRD_commit_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
+void JRD_commit_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
+void JRD_rollback_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
+void JRD_rollback_retaining(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction);
+void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tra* transaction,
+	USHORT msg_type, USHORT msg_length, SCHAR* msg, SSHORT level);
+void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count, Jrd::teb* vector);
+void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
+void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);
+void JRD_internal_compile(Jrd::thread_db* tdbb,
+						  Jrd::Attachment* attachment,
+						  Jrd::jrd_req** req_handle,
+						  SSHORT blr_length,
+						  const SCHAR* blr,
+						  USHORT string_length, const char* string,
+						  USHORT dbginfo_length, const UCHAR* dbginfo);
 
 #endif /* JRD_JRD_PROTO_H */
 

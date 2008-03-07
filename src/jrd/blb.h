@@ -208,16 +208,6 @@ const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
 
-// mapping blob ids for REPLAY
-// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
-class blb_map : public pool_alloc<type_map>
-{
-    public:
-	blb_map*	map_next;
-	blb*		map_old_blob;
-	blb*		map_new_blob;
-};
-
 } //namespace Jrd
 
 #endif // JRD_BLB_H

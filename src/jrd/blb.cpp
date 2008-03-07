@@ -91,9 +91,6 @@ static void delete_blob_id(thread_db*, const bid*, SLONG, jrd_rel*);
 static ArrayField* find_array(jrd_tra*, const bid*);
 static BlobFilter* find_filter(thread_db*, SSHORT, SSHORT);
 static blob_page* get_next_page(thread_db*, blb*, WIN *);
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static void get_replay_blob(thread_db*, const bid*);
-#endif
 static void insert_page(thread_db*, blb*);
 static void move_from_string(Jrd::thread_db*, const dsc*, dsc*, Jrd::jrd_nod*);
 static void move_to_string(Jrd::thread_db*, dsc*, dsc*);
@@ -954,40 +951,6 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
 }
 
 
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-
-void BLB_map_blobs(thread_db* tdbb, blb* old_blob, blb* new_blob)
-{
-/**************************************
- *
- *      B L B _ m a p _ b l o b s
- *
- **************************************
- *
- * Functional description
- *      Form a mapping between two blobs.
- *      Since the blobs have been newly created
- *      in this session, only the second part of
- *      the blob id is significant.  At the moment
- *      this is intended solely for REPLAY, when
- *      replaying a log.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	blb_map* new_map = FB_NEW(*dbb->dbb_permanent) blb_map();
-	new_map->map_old_blob = old_blob;
-	new_map->map_new_blob = new_blob;
-
-	new_map->map_next = dbb->dbb_blob_map;
-	dbb->dbb_blob_map = new_map;
-}
-
-#endif	// REPLAY_OSRI_API_CALLS_SUBSYSTEM
-
-
 // This function can't take from_desc as const because it may call store_array,
 // which in turn calls BLB_create2 that writes in the blob id. Although the
 // compiler allows to modify from_desc->dsc_address' contents when from_desc is
@@ -1130,12 +1093,6 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		*destination = *source;
 		return;
 	}
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-	// for REPLAY, map blob id's from the original session
-
-	get_replay_blob(tdbb, source);
-#endif
 
 	// If the source is a permanent blob, then the blob must be copied.
 	// Otherwise find the temporary blob referenced.
@@ -1326,12 +1283,6 @@ blb* BLB_open2(thread_db* tdbb,
 					&to_type_specified, &to_charset_specified);
 
 	blb* blob = allocate_blob(tdbb, transaction);
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-/* for REPLAY, map blob id's from the original session */
-
-	get_replay_blob(tdbb, blob_id);
-#endif
 
 	bool try_relations = false;
 	BlobIndex* current = NULL;
@@ -2402,43 +2353,6 @@ static blob_page* get_next_page(thread_db* tdbb, blb* blob, WIN * window)
 
 	return page;
 }
-
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-static void get_replay_blob(thread_db* tdbb, bid* blob_id)
-{
-/**************************************
- *
- *      g e t _ r e p l a y _ b l o b
- *
- **************************************
- *
- * Functional description
- *      Replace the blob id passed with the
- *      blob id used in the original session.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-/* we're only interested in newly created blobs */
-
-	if (blob_id->bid_internal.bid_relation_id != 0)
-		return;
-
-/* search the linked list for the old blob id */
-
-	for (map* map_ptr = dbb->dbb_blob_map; map_ptr; map_ptr = map_ptr->map_next)
-	{
-		if (blob_id->bid_temp_id() == map_ptr->map_old_blob)
-		{
-			blob_id->bid_temp_id() = map_ptr->map_new_blob;
-			break;
-		}
-	}
-}
-#endif
 
 
 static void insert_page(thread_db* tdbb, blb* blob)

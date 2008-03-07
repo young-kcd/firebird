@@ -55,9 +55,6 @@
 #include "../jrd/event.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-#include "../jrd/blb_proto.h"
-#endif
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
@@ -899,36 +896,6 @@ int API_ROUTINE isc_get_client_minor_version()
  **************************************/
 
 	return atoi(ISC_MINOR_VER);
-}
-
-
-void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
-{
-/**************************************
- *
- *	g d s _ $ m a p _ b l o b s
- *
- **************************************
- *
- * Functional description
- *	Map an old blob to a new blob.
- *	This call is intended for use by REPLAY,
- *	and is probably not generally useful
- *	for anyone else.
- *
- **************************************/
-
-#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
-#ifndef SUPERCLIENT
-/* Note: gds__map_blobs is almost like an API call,
-   it needs a thread_db structure setup for it in order
-   to function properly.  This currently does
-   not function.
-   1996-Nov-06 David Schnepper  */
-	deliberate_compile_error++;
-	BLB_map_blobs(NULL, handle1, handle2);
-#endif
-#endif
 }
 
 
