@@ -43,7 +43,6 @@ const char* CODES_FTN	= "gds_codes.ftn";
 const char* IBERROR_H	= "iberror.h";
 const char* CODETEXT_H	= "codetext.h";
 const char* MSGS_H	= "msgs.h";
-const char* RDBCODES_H	= "rdb_codes.h";
 const char* SQL_CODES_H	= "sql_code.h";
 const char* MSGFAC_H	= "msg_facs.h";
 const char* SQL_STATES_H	= "sql_state.h";
@@ -63,7 +62,7 @@ static void build_iberror_h(void);
 static void build_other_headers(void);
 static void build_msgfac_h(void);
 static void move_if_not_identical(const char *, const char *, const char*);
-static void add_text(FILE*, formatStyle, const char **);
+static void add_text(FILE*, formatStyle, const char**);
 
 static const char* genDirectory = NULL;
 static const char* genFtnPasDirectory = NULL;
@@ -698,8 +697,6 @@ static void build_other_headers(void)
 	check_open(code_text, CODETEXT_H, "tmpcode6", "w");
 	FILE* msgs = NULL;
 	check_open(msgs, MSGS_H, "tmpcode7", "w");
-	FILE* rdbcodes = NULL;
-	check_open(rdbcodes, RDBCODES_H, "tmpcode8", "w");
 	FILE* sql_codes = NULL;
 	check_open(sql_codes, SQL_CODES_H, "tmpcode9", "w");
 	FILE* sql_states = NULL;
@@ -715,8 +712,6 @@ static void build_other_headers(void)
 	add_text(code_text, CSTYLE, warn);
 	add_text(msgs, CSTYLE, license);
 	add_text(msgs, CSTYLE, warn);
-	add_text(rdbcodes, CSTYLE, license);
-	add_text(rdbcodes, CSTYLE, warn);
 	add_text(sql_codes, CSTYLE, license);
 	add_text(sql_codes, CSTYLE, warn);
 	add_text(sql_states, CSTYLE, license);
@@ -760,10 +755,6 @@ static void build_other_headers(void)
 	for (i = 0; i < numLines; i++) {
 		fprintf(ftn_codes, "%s\n", ftn_boiler_plate_data[i]);
 	}
-
-/* Start the rdb_codes.h */
-	fprintf(rdbcodes, "static SLONG user_codes[] = {\n");
-	fprintf(rdbcodes, "1,\n");
 
 /* Start the codetext.h */
 
@@ -817,7 +808,6 @@ static void build_other_headers(void)
 		fprintf(ftn_codes,
 				   "      INTEGER*4 GDS__%-32.32s\n      PARAMETER (GDS__%-32.32s = %lu)\n",
 				   S.GDS_SYMBOL, S.GDS_SYMBOL, new_code);
-		fprintf(rdbcodes, "%ld,\n", S.VMS_CODE);
 
 		SCHAR* q = text;
 		SCHAR* end = q;
@@ -875,8 +865,6 @@ static void build_other_headers(void)
 
 	END_FOR;
 
-/* end the rdb_codes.h */
-	fprintf(rdbcodes, "};\n");
 /* end the codetext.h */
 	fprintf(code_text, "\t{NULL, 0}\n");
 	fprintf(code_text, "};\n");
@@ -894,7 +882,6 @@ static void build_other_headers(void)
 	check_close(ftn_codes, CODES_FTN, "tmpcode5", "w", genFtnPasDirectory);
 	check_close(code_text, CODETEXT_H, "tmpcode6", "w", genDirectory);
 	check_close(msgs, MSGS_H, "tmpcode7", "w", genDirectory);
-	check_close(rdbcodes, RDBCODES_H, "tmpcode8", "w", genDirectory);
 	check_close(sql_codes, SQL_CODES_H, "tmpcode9", "w", genDirectory);
 	check_close(sql_states, SQL_STATES_H, "tmpcode10", "w", genDirectory);
 }
@@ -942,8 +929,7 @@ static void move_if_not_identical( const char* original, const char* new_file,
 		sprintf(buffer, "mv -f %s %s", new_file, origName);
 #endif
 		if (system(buffer) != 0) {
-			fprintf(stderr, "Error moving %s to %s!\n",
-					   new_file, origName);
+			fprintf(stderr, "Error moving %s to %s!\n", new_file, origName);
 			exit(FINI_ERROR);
 		}
 		else
@@ -952,7 +938,7 @@ static void move_if_not_identical( const char* original, const char* new_file,
 }
 
 
-static void add_text(FILE * fd, formatStyle style, const char **text)
+static void add_text(FILE* fd, formatStyle style, const char** text)
 {
 /*******************************************
 *
