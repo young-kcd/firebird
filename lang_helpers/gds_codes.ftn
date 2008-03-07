@@ -1190,30 +1190,34 @@ C --
       PARAMETER (GDS__tpb_multiple_spec                = 335544888)
       INTEGER*4 GDS__tpb_option_without_rc           
       PARAMETER (GDS__tpb_option_without_rc            = 335544889)
-      INTEGER*4 GDS__tpb_nowait_after_timeout        
-      PARAMETER (GDS__tpb_nowait_after_timeout         = 335544890)
+      INTEGER*4 GDS__tpb_conflicting_options         
+      PARAMETER (GDS__tpb_conflicting_options          = 335544890)
       INTEGER*4 GDS__tpb_reserv_missing_tlen         
       PARAMETER (GDS__tpb_reserv_missing_tlen          = 335544891)
-      INTEGER*4 GDS__tpb_reserv_long_tname           
-      PARAMETER (GDS__tpb_reserv_long_tname            = 335544892)
+      INTEGER*4 GDS__tpb_reserv_long_tlen            
+      PARAMETER (GDS__tpb_reserv_long_tlen             = 335544892)
       INTEGER*4 GDS__tpb_reserv_missing_tname        
       PARAMETER (GDS__tpb_reserv_missing_tname         = 335544893)
       INTEGER*4 GDS__tpb_reserv_corrup_tlen          
       PARAMETER (GDS__tpb_reserv_corrup_tlen           = 335544894)
+      INTEGER*4 GDS__tpb_reserv_null_tlen            
+      PARAMETER (GDS__tpb_reserv_null_tlen             = 335544895)
       INTEGER*4 GDS__tpb_reserv_relnotfound          
-      PARAMETER (GDS__tpb_reserv_relnotfound           = 335544895)
+      PARAMETER (GDS__tpb_reserv_relnotfound           = 335544896)
       INTEGER*4 GDS__tpb_reserv_baserelnotfound      
-      PARAMETER (GDS__tpb_reserv_baserelnotfound       = 335544896)
+      PARAMETER (GDS__tpb_reserv_baserelnotfound       = 335544897)
       INTEGER*4 GDS__tpb_missing_len                 
-      PARAMETER (GDS__tpb_missing_len                  = 335544897)
+      PARAMETER (GDS__tpb_missing_len                  = 335544898)
       INTEGER*4 GDS__tpb_missing_value               
-      PARAMETER (GDS__tpb_missing_value                = 335544898)
+      PARAMETER (GDS__tpb_missing_value                = 335544899)
       INTEGER*4 GDS__tpb_corrupt_len                 
-      PARAMETER (GDS__tpb_corrupt_len                  = 335544899)
+      PARAMETER (GDS__tpb_corrupt_len                  = 335544900)
+      INTEGER*4 GDS__tpb_null_len                    
+      PARAMETER (GDS__tpb_null_len                     = 335544901)
       INTEGER*4 GDS__tpb_overflow_len                
-      PARAMETER (GDS__tpb_overflow_len                 = 335544900)
+      PARAMETER (GDS__tpb_overflow_len                 = 335544902)
       INTEGER*4 GDS__tpb_invalid_value               
-      PARAMETER (GDS__tpb_invalid_value                = 335544901)
+      PARAMETER (GDS__tpb_invalid_value                = 335544903)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

@@ -590,18 +590,20 @@ static const struct {
 	{335544887, -901}, /* 567 tpb_reserv_before_table */
 	{335544888, -901}, /* 568 tpb_multiple_spec */
 	{335544889, -901}, /* 569 tpb_option_without_rc */
-	{335544890, -901}, /* 570 tpb_nowait_after_timeout */
+	{335544890, -901}, /* 570 tpb_conflicting_options */
 	{335544891, -901}, /* 571 tpb_reserv_missing_tlen */
-	{335544892, -901}, /* 572 tpb_reserv_long_tname */
+	{335544892, -901}, /* 572 tpb_reserv_long_tlen */
 	{335544893, -901}, /* 573 tpb_reserv_missing_tname */
 	{335544894, -901}, /* 574 tpb_reserv_corrup_tlen */
-	{335544895, -901}, /* 575 tpb_reserv_relnotfound */
-	{335544896, -901}, /* 576 tpb_reserv_baserelnotfound */
-	{335544897, -901}, /* 577 tpb_missing_len */
-	{335544898, -901}, /* 578 tpb_missing_value */
-	{335544899, -901}, /* 579 tpb_corrupt_len */
-	{335544900, -901}, /* 580 tpb_overflow_len */
-	{335544901, -901}, /* 581 tpb_invalid_value */
+	{335544895, -901}, /* 575 tpb_reserv_null_tlen */
+	{335544896, -901}, /* 576 tpb_reserv_relnotfound */
+	{335544897, -901}, /* 577 tpb_reserv_baserelnotfound */
+	{335544898, -901}, /* 578 tpb_missing_len */
+	{335544899, -901}, /* 579 tpb_missing_value */
+	{335544900, -901}, /* 580 tpb_corrupt_len */
+	{335544901, -901}, /* 581 tpb_null_len */
+	{335544902, -901}, /* 582 tpb_overflow_len */
+	{335544903, -901}, /* 583 tpb_invalid_value */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

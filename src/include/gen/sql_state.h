@@ -590,18 +590,20 @@ static const struct {
 	{335544887, "HY000"}, // 567 tpb_reserv_before_table 
 	{335544888, "HY000"}, // 568 tpb_multiple_spec 
 	{335544889, "HY000"}, // 569 tpb_option_without_rc 
-	{335544890, "HY000"}, // 570 tpb_nowait_after_timeout 
+	{335544890, "HY000"}, // 570 tpb_conflicting_options 
 	{335544891, "HY000"}, // 571 tpb_reserv_missing_tlen 
-	{335544892, "HY000"}, // 572 tpb_reserv_long_tname 
+	{335544892, "HY000"}, // 572 tpb_reserv_long_tlen 
 	{335544893, "HY000"}, // 573 tpb_reserv_missing_tname 
 	{335544894, "HY000"}, // 574 tpb_reserv_corrup_tlen 
-	{335544895, "HY000"}, // 575 tpb_reserv_relnotfound 
-	{335544896, "HY000"}, // 576 tpb_reserv_baserelnotfound 
-	{335544897, "HY000"}, // 577 tpb_missing_len 
-	{335544898, "HY000"}, // 578 tpb_missing_value 
-	{335544899, "HY000"}, // 579 tpb_corrupt_len 
-	{335544900, "HY000"}, // 580 tpb_overflow_len 
-	{335544901, "HY000"}, // 581 tpb_invalid_value 
+	{335544895, "HY000"}, // 575 tpb_reserv_null_tlen 
+	{335544896, "HY000"}, // 576 tpb_reserv_relnotfound 
+	{335544897, "HY000"}, // 577 tpb_reserv_baserelnotfound 
+	{335544898, "HY000"}, // 578 tpb_missing_len 
+	{335544899, "HY000"}, // 579 tpb_missing_value 
+	{335544900, "HY000"}, // 580 tpb_corrupt_len 
+	{335544901, "HY000"}, // 581 tpb_null_len 
+	{335544902, "HY000"}, // 582 tpb_overflow_len 
+	{335544903, "HY000"}, // 583 tpb_invalid_value 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
