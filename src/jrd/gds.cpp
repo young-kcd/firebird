@@ -637,15 +637,13 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  *   changed. This function has been made public so gbak can use it.
  *
  **************************************/
-	SINT64 value;
-	SSHORT shift;
+	if (!ptr || length <= 0 || length > 8)
+		return 0;
+		
+	SINT64 value = 0;
 
-	fb_assert(length <= 8);
-	value = shift = 0;
-
-	while (--length >= 0) {
+	for (int shift = 0; --length >= 0; shift += 8) {
 		value += ((SINT64) *ptr++) << shift;
-		shift += 8;
 	}
 
 	return value;
@@ -2525,12 +2523,13 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
  *	bytes.
  *
  **************************************/
+	if (!ptr || length <= 0 || length > 4)
+		return 0;
+		
 	SLONG value = 0;
-	SSHORT shift = 0;
 
-	while (--length >= 0) {
-		value += ((SLONG) * ptr++) << shift;
-		shift += 8;
+	for (int shift = 0; --length >= 0; shift += 8) {
+		value += ((SLONG) *ptr++) << shift;
 	}
 
 	return value;
