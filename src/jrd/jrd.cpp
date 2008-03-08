@@ -1490,7 +1490,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_internal_compile(tdbb, attachment, req_handle, blr_length, blr,
+		JRD_compile(tdbb, attachment, req_handle, blr_length, blr,
 			0, NULL, 0, NULL);
 	}
 	catch (const Firebird::Exception& ex)
@@ -4889,6 +4889,7 @@ static void rollback(thread_db* tdbb,
  **************************************/
 	ISC_STATUS_ARRAY user_status = {0};
 	ISC_STATUS_ARRAY local_status = {0};
+	ISC_STATUS* orig_status = tdbb->tdbb_status_vector;
 
 	try
 	{
@@ -4938,6 +4939,8 @@ static void rollback(thread_db* tdbb,
 	{
 		Firebird::stuff_exception(user_status, ex);
 	}
+
+	tdbb->tdbb_status_vector = orig_status;
 
 	if (user_status[1] != FB_SUCCESS)
 		Firebird::status_exception::raise(user_status);
@@ -6191,23 +6194,22 @@ void JRD_unwind_request(thread_db* tdbb, jrd_req* request, SSHORT level)
 }
 
 
-void JRD_internal_compile(thread_db* tdbb,
-						  Attachment* attachment,
-						  jrd_req** req_handle,
-						  SSHORT blr_length,
-						  const SCHAR* blr,
-						  USHORT string_length, const char* string,
-						  USHORT dbginfo_length, const UCHAR* dbginfo)
+void JRD_compile(thread_db* tdbb,
+				 Attachment* attachment,
+				 jrd_req** req_handle,
+				 SSHORT blr_length,
+				 const SCHAR* blr,
+				 USHORT string_length, const char* string,
+				 USHORT dbginfo_length, const UCHAR* dbginfo)
 {
 /**************************************
  *
- *	J R D _ i n t e r n a l _ c o m p i l e
+ *	J R D _ c o m p i l e
  *
  **************************************
  *
  * Functional description
  *	Compile a request passing the SQL text and debug information.
- *  (candidate for removal when engine functions can be called by DSQL)
  *
  **************************************/
 	if (*req_handle)

@@ -756,7 +756,6 @@ void TRA_invalidate(Database* database, ULONG mask)
 	for (Attachment* attachment = database->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{
-
 		for (jrd_tra* transaction = attachment->att_transactions; transaction;
 			transaction = transaction->tra_next)
 		{
@@ -1154,8 +1153,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Unlink the transaction from the database block
 
-	for (jrd_tra** ptr = &attachment->att_transactions;
-		 *ptr; ptr = &(*ptr)->tra_next)
+	for (jrd_tra** ptr = &attachment->att_transactions; *ptr; ptr = &(*ptr)->tra_next)
 	{
 		if (*ptr == transaction) {
 			*ptr = transaction->tra_next;
@@ -1706,9 +1704,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 			else {
 				const ULONG byte = TRANS_OFFSET(active - base);
 				const USHORT shift = TRANS_SHIFT(active);
-				if (
-					((transaction->tra_transactions[byte] >> shift) &
-					 TRA_MASK) == tra_limbo)
+				if (((transaction->tra_transactions[byte] >> shift) & TRA_MASK) == tra_limbo)
 				{
 					break;
 				}
@@ -1945,8 +1941,8 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
-	const bool new_tip =
-		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
 					   (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
@@ -1995,8 +1991,8 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 
 /* If this is the first transaction on a TIP, allocate the TIP now. */
 
-	const bool new_tip =
-		(number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+	const bool new_tip = (number == 1 || (number % dbb->dbb_page_manager.transPerTIP) == 0);
+
 	if (new_tip) {
 		TRA_extend_tip(tdbb,
 					   (ULONG) (number / dbb->dbb_page_manager.transPerTIP), window);
@@ -2844,7 +2840,7 @@ static void transaction_options(thread_db* tdbb,
 					ERR_post(isc_tpb_missing_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
 
 				const USHORT len = *tpb++;
-				
+
 				// Does the encoded number's length surpasses the remaining of the TPB?
 				if (tpb >= end)
 				{
@@ -3175,7 +3171,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 #if defined(GARBAGE_THREAD)
 		if (!(dbb->dbb_flags & DBB_gc_active) &&
-			 (dbb->dbb_flags & DBB_gc_background) )
+			 (dbb->dbb_flags & DBB_gc_background))
 		{
 			dbb->dbb_flags |= DBB_gc_pending;
 			ISC_event_post(dbb->dbb_gc_event);

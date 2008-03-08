@@ -2184,8 +2184,8 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 
 	// allocate XPM structure and initialize it
 
-	try {
-
+	try
+	{
 		XPM xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
 
 		xpm->xpm_handle = map_handle;
@@ -2207,7 +2207,6 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 		XNET_UNLOCK();
 
 		return xpm;
-
 	}
 	catch (const Firebird::Exception&) {
 		return NULL;

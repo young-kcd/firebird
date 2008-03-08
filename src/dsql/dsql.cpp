@@ -2679,15 +2679,15 @@ static dsql_req* prepare(thread_db* tdbb,
 
 	try
 	{
-		JRD_internal_compile(tdbb,
-							 request->req_dbb->dbb_attachment,
-							 &request->req_request,
-							 length,
-							 (const char*)(request->req_blr_data.begin()),
-							 string_length,
-							 string,
-							 request->req_debug_data.getCount(),
-							 request->req_debug_data.begin());
+		JRD_compile(tdbb,
+					request->req_dbb->dbb_attachment,
+					&request->req_request,
+					length,
+					(const char*)(request->req_blr_data.begin()),
+					string_length,
+					string,
+					request->req_debug_data.getCount(),
+					request->req_debug_data.begin());
 	}
 	catch (const Firebird::Exception&)
 	{

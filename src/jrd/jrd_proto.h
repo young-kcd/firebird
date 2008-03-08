@@ -231,13 +231,9 @@ void JRD_start_and_send(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_tr
 void JRD_start_multiple(Jrd::thread_db* tdbb, Jrd::jrd_tra** tra_handle, USHORT count, Jrd::teb* vector);
 void JRD_start_transaction(Jrd::thread_db* tdbb, Jrd::jrd_tra** transaction, SSHORT count, ...);
 void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT level);
-void JRD_internal_compile(Jrd::thread_db* tdbb,
-						  Jrd::Attachment* attachment,
-						  Jrd::jrd_req** req_handle,
-						  SSHORT blr_length,
-						  const SCHAR* blr,
-						  USHORT string_length, const char* string,
-						  USHORT dbginfo_length, const UCHAR* dbginfo);
+void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
+	SSHORT blr_length, const SCHAR* blr, USHORT string_length, const char* string,
+	USHORT dbginfo_length, const UCHAR* dbginfo);
 
 #endif /* JRD_JRD_PROTO_H */
 

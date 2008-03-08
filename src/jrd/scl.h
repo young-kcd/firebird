@@ -42,8 +42,8 @@ public:
 	flags_t scl_flags;			// Access permissions
 	const Firebird::MetaName scl_name;
 
-	static const Firebird::MetaName& generate(const void*, const SecurityClass *Item) { 
-		return Item->scl_name;
+	static const Firebird::MetaName& generate(const void*, const SecurityClass* item) { 
+		return item->scl_name;
 	}
 };
 

@@ -215,7 +215,7 @@ public:
     Value& current() const { return defaultAccessor.current(); }
 
 	// Returns true if this tree appears to contain more elements than the other
-	bool seemsBiggerThan(const BePlusTree &other) const
+	bool seemsBiggerThan(const BePlusTree& other) const
 	{
 		if (level != other.level)
 			return level > other.level;
@@ -238,7 +238,7 @@ public:
 			return 0;
 
 		if (level == 0)
-			return ((ItemList*)root)->getCount();
+			return ((ItemList*) root)->getCount();
 
 		// Tree is large. Roughtly estimate number of leaf nodes using number of
 		// items in root list and depth of the tree. Theoretically possible fill
@@ -299,10 +299,12 @@ public:
     class ItemList : public SortedVector<Value, LeafCount, Key, KeyOfValue, Cmp>
 	{
 	public:
-		NodeList *parent;
-		ItemList *next, *prev;
+		NodeList* parent;
+		ItemList* next;
+		ItemList* prev;
+
 		// Adds newly created item to doubly-linked list
-		ItemList(ItemList *items)
+		ItemList(ItemList* items)
 			: parent(NULL)
 		{ 
 			if ((next = items->next))
@@ -324,7 +326,7 @@ public:
 	{
 	public:
 		// Adds newly created item to the doubly-linked list
-		NodeList(NodeList *items)
+		NodeList(NodeList* items)
 			: parent(NULL)
 		{ 
 			if ((next = items->next))
@@ -347,7 +349,7 @@ public:
 			// add ItemList typedef for you compiler with whichever syntax it likes
 			return KeyOfValue::generate(item, *((ItemList *)item)->begin());
 		}
-		static void setNodeParentAndLevel(void *node, int level, NodeList *parent)
+		static void setNodeParentAndLevel(void* node, int level, NodeList* parent)
 		{
 			if (level) {
 				((NodeList *)node)->parent = parent;
@@ -356,12 +358,12 @@ public:
 			else
 				((ItemList *)node)->parent = parent;
 		}		
-		static void setNodeParent(void *node, int level, NodeList *parent)
+		static void setNodeParent(void* node, int level, NodeList* parent)
 		{
 			if (level)
-				((NodeList *)node)->parent = parent;
+				((NodeList*) node)->parent = parent;
 			else
-				((ItemList *)node)->parent = parent;
+				((ItemList*) node)->parent = parent;
 		}		
 	}; 
 
@@ -461,7 +463,7 @@ public:
 			void *list = tree->root;
 			if (!list)
 				return false; // Uninitalized tree
-				
+
 			for (int lev = tree->level; lev; lev--) {
 				size_t pos;
 				if (!((NodeList *)list)->find(key, pos))
@@ -511,15 +513,15 @@ public:
 		// position of accessor is not defined.
 		bool getFirst()
 		{
-			void *items = tree->root;
+			void* items = tree->root;
 			if (!items)
 				return false; // Uninitalized tree
-				
+
 			for (int i = tree->level; i > 0; i--)
-				items = (*(NodeList *)items)[0];
-			curr = (ItemList *)items;
+				items = (*(NodeList*) items)[0];
+			curr = (ItemList*) items;
 			curPos = 0;
-			return ((ItemList *)items)->getCount();
+			return ((ItemList*) items)->getCount();
 		}
 		// If method returns false it means list is empty and 
 		// position of accessor is not defined.
@@ -528,12 +530,12 @@ public:
 			void *items = tree->root;
 			if (!items)
 				return false; // Uninitalized tree
-				
+
 			for (int i = tree->level; i > 0; i--)
-				items = (*(NodeList *)items)[((NodeList *)items)->getCount() - 1];
+				items = (*(NodeList*) items)[((NodeList*) items)->getCount() - 1];
 			curr = (ItemList *)items;
-			if (((ItemList *)items)->getCount()) {
-				curPos = ((ItemList *)items)->getCount() - 1;
+			if (((ItemList*) items)->getCount()) {
+				curPos = ((ItemList*) items)->getCount() - 1;
 				return true;
 			}			
 			return false;
@@ -596,7 +598,7 @@ public:
 				KeyOfValue::generate(this, current()) == key);
 		}
 
-		ItemList *curr;
+		ItemList* curr;
   		size_t curPos;
 		
 	private:
@@ -606,9 +608,9 @@ public:
 	}; // class Accessor
 
 private:
-	Allocator *pool;
+	Allocator* pool;
 	int level;
-    void *root;
+    void* root;
 	Accessor defaultAccessor;
 
 	void _removePage(int level, void *node);

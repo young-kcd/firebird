@@ -639,7 +639,7 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  **************************************/
 	if (!ptr || length <= 0 || length > 8)
 		return 0;
-		
+
 	SINT64 value = 0;
 
 	for (int shift = 0; --length >= 0; shift += 8) {
