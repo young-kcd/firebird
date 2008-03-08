@@ -899,6 +899,21 @@ int API_ROUTINE isc_get_client_minor_version()
 }
 
 
+void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
+{
+/**************************************
+ *
+ *	g d s _ $ m a p _ b l o b s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Deprecated API function.
+ *
+ **************************************/
+}
+
+
 void API_ROUTINE isc_set_debug(int value)
 {
 /**************************************
