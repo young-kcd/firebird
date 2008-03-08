@@ -29,18 +29,18 @@
 
 namespace Jrd {
 
-/* Security class definition */
+// Security class definition
 
 class SecurityClass
 {
 public:
     typedef USHORT flags_t;
 
-	SecurityClass(Firebird::MemoryPool &pool) :
-		scl_name(pool) {}
+	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) :
+		scl_flags(0), scl_name(pool, name) {}
 
-	flags_t scl_flags;			/* Access permissions */
-	Firebird::MetaName scl_name;
+	flags_t scl_flags;			// Access permissions
+	const Firebird::MetaName scl_name;
 
 	static const Firebird::MetaName& generate(const void*, const SecurityClass *Item) { 
 		return Item->scl_name;

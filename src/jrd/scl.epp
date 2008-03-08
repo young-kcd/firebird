@@ -484,7 +484,7 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* _string)
 		return NULL;
 	}
 
-	Firebird::MetaName string = _string;
+	Firebird::MetaName string(_string);
 
 	//fb_utils::exact_name(string);
 
@@ -498,21 +498,19 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* _string)
 
 	SecurityClass* s_class;
 	SecurityClassList *list = attachment->att_security_classes;
-	size_t pos = 0;
 	if (list && list->locate(string))
 		return list->current();
 
 	// Class isn't known. So make up a new security class block.
 
-	s_class = FB_NEW(*dbb->dbb_permanent) SecurityClass(*dbb->dbb_permanent);
-	s_class->scl_name = string;
+	s_class = FB_NEW(*dbb->dbb_permanent) SecurityClass(*dbb->dbb_permanent, string);
 	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
 		if (!list) {
 			attachment->att_security_classes = list = FB_NEW (*dbb->dbb_permanent)
-				SecurityClassList (*dbb->dbb_permanent);
+				SecurityClassList(*dbb->dbb_permanent);
 		}
 
 		list->add(s_class);
@@ -550,8 +548,7 @@ SecurityClass::flags_t SCL_get_mask(const TEXT* relation_name, const TEXT* field
 
 	// If there's a relation, track it down
 	jrd_rel* relation;
-	if (relation_name &&
-		(relation = MET_lookup_relation(tdbb, relation_name)))
+	if (relation_name && (relation = MET_lookup_relation(tdbb, relation_name)))
 	{
 		MET_scan_relation(tdbb, relation);
 		if ( (s_class = SCL_get_class(tdbb, relation->rel_security_name.c_str())) )
@@ -833,7 +830,7 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 
 	// Class no long exists - get rid of it!
 
-	Firebird::MetaName m_string(string);
+	const Firebird::MetaName m_string(string);
 	SecurityClassList *list = tdbb->getAttachment()->att_security_classes;
 	if (list && list->locate(m_string))
 	{
@@ -846,27 +843,30 @@ SecurityClass* SCL_recompute_class(thread_db* tdbb, const TEXT* string)
 }
 
 
-void SCL_release(SecurityClassList* list)
+void SCL_release_all(SecurityClassList*& list)
 {
 /**************************************
  *
- *	S C L _ r e l e a s e
+ *	S C L _ r e l e a s e _ a l l
  *
  **************************************
  *
  * Functional description
- *	Release an unneeded and unloved security class.
+ *	Release all security classes.
  *
  **************************************/
 	if (!list)
 		return;
 
 	if (list->getFirst())
+	{
 		do {
 			delete list->current();
 		} while (list->getNext());
+	}
 
 	delete list;
+	list = NULL;
 }
 
 

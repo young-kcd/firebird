@@ -68,7 +68,7 @@ Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const Jrd::UserId& tempId, Jrd::thread_db*);
 void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
-void SCL_release(Jrd::SecurityClassList*);
+void SCL_release_all(Jrd::SecurityClassList*&);
 
 #endif // JRD_SCL_PROTO_H
 

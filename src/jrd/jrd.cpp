@@ -5488,14 +5488,13 @@ static void purge_attachment(thread_db*		tdbb,
 		{
 			// There are still attachments so do a partial shutdown
 
-            // Both CMP_release() and SCL_release() do advance the pointer
-			// before the deallocation.
+            // CMP_release() advances the pointer before the deallocation.
 			jrd_req* request;
 			while ( (request = attachment->att_requests) ) {
 				CMP_release(tdbb, request);
 			}
 
-			SCL_release(attachment->att_security_classes);
+			SCL_release_all(attachment->att_security_classes);
 
 			delete attachment->att_user;
 			delete attachment;
@@ -5963,7 +5962,7 @@ void JRD_commit_transaction(thread_db* tdbb, jrd_tra** transaction)
  **************************************
  *
  * Functional description
- *	Commit a transaction.
+ *	Commit a transaction and keep the environment valid.
  *
  **************************************/
 	commit(tdbb, *transaction, false);
@@ -6115,7 +6114,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 		if (prior)
 		{
 			ISC_STATUS_ARRAY temp_status = {0};
-			ISC_STATUS* old_status = tdbb->tdbb_status_vector;
+			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
 
 			tdbb->tdbb_status_vector = temp_status;
 			try
