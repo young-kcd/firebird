@@ -1,3 +1,35 @@
+2008-03-08 19:48  asfernandes
+
+	* firebird2/src/jrd/utl.cpp (1.111):
+
+	Restore the deprecated API
+
+2008-03-08 12:37  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.410), scl.epp (1.91), scl.h
+	(1.18), scl_proto.h (1.28):
+
+	Since SCL_release changed meaning, it's necessary to adjust the
+	name (SCL_release_all) and the comments.
+
+2008-03-08 12:33  robocop
+
+	* firebird2/src/jrd/vio.cpp (1.205):
+
+	Pass thread_db* since it's available from the caller.
+
+2008-03-08 12:32  robocop
+
+	* firebird2/src/common/classes/tree.h (1.69):
+
+	Totally misc.
+
+2008-03-08 08:34  robocop
+
+	* firebird2/src/common/classes/GenericMap.h (1.17):
+
+	Totally misc.
+
 2008-03-07 16:23  asfernandes
 
 	* firebird2/: builds/posix/make.shared.variables (1.84),
