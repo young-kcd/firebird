@@ -38,7 +38,7 @@ static inline bool FAMILY2(TEXTTYPE cache,
 							const SortOrderTblEntry* NoCaseOrderTbl,
 							const BYTE* ToUpperConversionTbl,
 							const BYTE* ToLowerConversionTbl,
-							const CompressPair* CompressTbl,
+							const CompressPair* compressTbl,
 							const ExpandChar* ExpansionTbl,
 							const ASCII* POSIX,
 							USHORT attributes,
@@ -63,10 +63,51 @@ static inline bool FAMILY2(TEXTTYPE cache,
 	cache->texttype_impl->texttype_collation_table	= (const BYTE*) NoCaseOrderTbl;
 	cache->texttype_impl->texttype_toupper_table	= ToUpperConversionTbl;
 	cache->texttype_impl->texttype_tolower_table	= ToLowerConversionTbl;
-	cache->texttype_impl->texttype_compress_table	= (const BYTE*) CompressTbl;
+	cache->texttype_impl->texttype_compress_table	= (const BYTE*) compressTbl;
 	cache->texttype_impl->texttype_expand_table		= (const BYTE*) ExpansionTbl;
 	cache->texttype_impl->texttype_flags			= ((flags) & REVERSE) ? TEXTTYPE_reverse_secondary : 0;
 	cache->texttype_impl->texttype_bytes_per_key	= 0;
+
+	int maxPrimary = 0;
+	int minPrimary = INT_MAX;
+	int maxIgnore = 0;
+
+	while (compressTbl->CharPair[0])
+	{
+		if (compressTbl->NoCaseWeight.Primary > maxPrimary)
+			maxPrimary = compressTbl->NoCaseWeight.Primary;
+
+		if (compressTbl->NoCaseWeight.Primary < minPrimary)
+			minPrimary = compressTbl->NoCaseWeight.Primary;
+
+		++compressTbl;
+	}
+
+	for (int ch = 0; ch <= 255; ++ch)
+	{
+		const SortOrderTblEntry* coll =
+			&((const SortOrderTblEntry*)cache->texttype_impl->texttype_collation_table)[ch];
+
+		if (coll->IsExpand && coll->IsCompress)
+		{
+			if (coll->Primary > maxIgnore)
+				maxIgnore = coll->Primary;
+		}
+		else if (!(coll->IsExpand || coll->IsCompress))
+		{
+			if (coll->Primary > maxPrimary)
+				maxPrimary = coll->Primary;
+
+			if (coll->Primary < minPrimary)
+				minPrimary = coll->Primary;
+		}
+	}
+
+	if (maxIgnore > 0 && maxPrimary + maxIgnore - 1 <= 255)
+	{
+		cache->texttype_impl->ignore_sum = minPrimary - 1;
+		cache->texttype_impl->primary_sum = maxIgnore - 1;
+	}
 
 	return true;
 }

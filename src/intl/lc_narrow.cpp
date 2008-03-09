@@ -686,20 +686,27 @@ ULONG LC_NARROW_canonical(TEXTTYPE obj, ULONG srcLen, const UCHAR* src, ULONG ds
 		const SortOrderTblEntry* coll =
 			&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[*src];
 
+		USHORT primary = coll->Primary;
+
+		if (coll->IsExpand && coll->IsCompress)
+			primary += obj->texttype_impl->ignore_sum;
+		else
+			primary += obj->texttype_impl->primary_sum;
+
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
-			put(dst, (USHORT) ((coll->Primary << 8) | (coll->Secondary << 4) | coll->Tertiary));
+			put(dst, (USHORT) ((primary << 8) | (coll->Secondary << 4) | coll->Tertiary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive) == 0)
 		{
-			put(dst, (USHORT) ((coll->Primary << 8) | coll->Secondary));
+			put(dst, (USHORT) ((primary << 8) | coll->Secondary));
 		}
 		else if ((obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive) == 0)
 		{
-			put(dst, (USHORT) ((coll->Primary << 8) | coll->Tertiary));
+			put(dst, (USHORT) ((primary << 8) | coll->Tertiary));
 		}
 		else
-			*dst++ = coll->Primary;
+			*dst++ = primary;
 	}
 
 	return src - inbuff;

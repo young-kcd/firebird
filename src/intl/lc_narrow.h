@@ -38,7 +38,9 @@ struct TextTypeImpl
 		  texttype_expand_table(NULL),
 		  texttype_compress_table(NULL),
 		  texttype_toupper_table(NULL),
-		  texttype_tolower_table(NULL)
+		  texttype_tolower_table(NULL),
+		  ignore_sum(0),
+		  primary_sum(0)
 	{
 	}
 
@@ -49,6 +51,8 @@ struct TextTypeImpl
 	const BYTE* texttype_compress_table;
 	const BYTE* texttype_toupper_table;
 	const BYTE* texttype_tolower_table;
+	int ignore_sum;
+	int primary_sum;
 };
 
 USHORT LC_NARROW_key_length(TEXTTYPE obj, USHORT inLen);
