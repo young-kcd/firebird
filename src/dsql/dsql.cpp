@@ -2903,7 +2903,7 @@ static void sql_info(thread_db* tdbb,
 	while (items < end_items && *items != isc_info_end)
 	{
 		USHORT length, number;
-		UCHAR item = *items++; // cannot be const
+		const UCHAR item = *items++;
 		if (item == isc_info_sql_select || item == isc_info_sql_bind)
 		{
 			message = (item == isc_info_sql_select) ?
@@ -3029,9 +3029,9 @@ static void sql_info(thread_db* tdbb,
 			  	&& item != isc_info_sql_describe_vars))
 		{
 			buffer[0] = item;
-			item = isc_info_error;
+			const UCHAR item2 = isc_info_error;
 			length = 1 + convert((SLONG) isc_infunk, buffer + 1);
-			if (!(info = put_item(item, length, buffer, info, end_info))) {
+			if (!(info = put_item(item2, length, buffer, info, end_info))) {
 				return;
 			}
 		}
@@ -3106,9 +3106,6 @@ static UCHAR* var_info(
 					   const UCHAR* const end, 
 					   USHORT first_index)
 {
-	UCHAR buf[128];
-	SLONG sql_type, sql_sub_type, sql_scale, sql_len;
-
 	if (!message || !message->msg_index)
 		return info;
 
@@ -3126,6 +3123,8 @@ static UCHAR* var_info(
 		}
 	}
 
+	UCHAR buf[128];
+
 	for (size_t i = 0; i < parameters.getCount(); i++)
 	{
 		const dsql_par* param = parameters[i];
@@ -3133,9 +3132,11 @@ static UCHAR* var_info(
 
 		if (param->par_index >= first_index)
 		{
-			sql_len = param->par_desc.dsc_length;
-			sql_sub_type = 0;
-			sql_scale = 0;
+			SLONG sql_len = param->par_desc.dsc_length;
+			SLONG sql_sub_type = 0;
+			SLONG sql_scale = 0;
+			SLONG sql_type = 0;
+			
 			switch (param->par_desc.dsc_dtype)
 			{
 			case dtype_real:
