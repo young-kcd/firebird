@@ -235,7 +235,7 @@ gpre_sym* MSC_find_symbol(gpre_sym* symbol, enum sym_t type)
 //		Free a block.
 //  
 
-void MSC_free( UCHAR* block)
+void MSC_free(void* block)
 {
 
 }
@@ -251,7 +251,7 @@ void MSC_free_request( gpre_req* request)
 
 	gpreGlob.requests = request->req_next;
 	gpreGlob.cur_routine->act_object = (REF) request->req_routine;
-	MSC_free((UCHAR *) request);
+	MSC_free(request);
 }
 
 

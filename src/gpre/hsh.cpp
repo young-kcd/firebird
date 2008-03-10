@@ -62,7 +62,7 @@ void HSH_fini(void)
 		gpre_sym* symbol = key_symbols;
 		key_symbols = (gpre_sym*) key_symbols->sym_object;
 		HSH_remove(symbol);
-		MSC_free((UCHAR *) symbol);
+		MSC_free(symbol);
 	}
 }
 

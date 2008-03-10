@@ -130,18 +130,18 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 		/* 32 bytes allocated for size of of a metadata name */
 		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1
 			+ MAX_SQL_IDENTIFIER_SIZE;
-		SCHAR blr[blr_size];
+		UCHAR blr[blr_size];
 		fb_assert(strlen(generator_name) < MAX_SQL_IDENTIFIER_SIZE);
 
-		char* p = blr;
+		UCHAR* p = blr;
 		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
 		p += sizeof(gen_id_blr1);
 		*p++ = strlen(generator_name);
-		strcpy(p, generator_name);
+		memcpy(p, generator_name, p[-1]);
 		p += p[-1];
 		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 		p += sizeof(gen_id_blr2);
-		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
+		req_handle = CMP_compile2(tdbb, blr, TRUE);
 	}
 	*request = req_handle;
 	SINT64 value;

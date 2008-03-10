@@ -1411,7 +1411,7 @@ static void cmp_array( GPRE_NOD node, gpre_req* request)
 
 	//  Header stuff
 
-	reference->ref_sdl = reference->ref_sdl_base = reinterpret_cast<UCHAR*>(MSC_alloc(500));
+	reference->ref_sdl = reference->ref_sdl_base = MSC_alloc(500);
 	reference->ref_sdl_length = 500;
 	reference->ref_sdl_ident = CMP_next_ident();
 	reference->add_byte(isc_sdl_version1);
@@ -2192,7 +2192,7 @@ static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 			args->nod_arg[j] = node->nod_arg[node->nod_count - 1];
 		}
 		get_dtype_of_list(args, f);
-		MSC_free((UCHAR*) args);
+		MSC_free(args);
 		break;
 
 	case nod_case1:
@@ -2211,7 +2211,7 @@ static void get_dtype_of_case(const gpre_nod* node, gpre_fld* f)
 			args->nod_arg[j] = node->nod_arg[node->nod_count - 1];
 		}
 		get_dtype_of_list(args, f);
-		MSC_free((UCHAR*) args);
+		MSC_free(args);
 		break;
 	}
 }

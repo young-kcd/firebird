@@ -1534,33 +1534,33 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	}
 
 	USHORT in_msg_length;
-	SCHAR* in_msg;
+	UCHAR* in_msg;
 	jrd_nod* in_message = node->nod_arg[e_esp_in_msg];
 	if (in_message) {
 		const Format* format = (Format*) in_message->nod_arg[e_msg_format];
 		in_msg_length = format->fmt_length;
-		in_msg = (SCHAR *) request + in_message->nod_impure;
+		in_msg = (UCHAR*) request + in_message->nod_impure;
 	}
 
 	USHORT out_msg_length;
-	SCHAR* out_msg;
+	UCHAR* out_msg;
 	jrd_nod* out_message = node->nod_arg[e_esp_out_msg];
 	if (out_message) {
 		const Format* format = (Format*) out_message->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
-		out_msg = (SCHAR *) request + out_message->nod_impure;
+		out_msg = (UCHAR*) request + out_message->nod_impure;
 	}
 
 	jrd_prc* procedure = (jrd_prc*) node->nod_arg[e_esp_procedure];
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
-	Firebird::Array<char> temp_buffer;
+	Firebird::Array<UCHAR> temp_buffer;
 	
 	if (!out_message) {
 		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
 		out_msg = temp_buffer.getBuffer(out_msg_length + DOUBLE_ALIGN - 1);
-		out_msg = (SCHAR *) FB_ALIGN((U_IPTR) out_msg, DOUBLE_ALIGN);
+		out_msg = (UCHAR*) FB_ALIGN((U_IPTR) out_msg, DOUBLE_ALIGN);
 	}
 
 
@@ -1576,12 +1576,10 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		proc_request->req_timestamp = request->req_timestamp;
 		EXE_start(tdbb, proc_request, transaction);
 		if (in_message) {
-			EXE_send(tdbb, proc_request, 0, in_msg_length,
-					 reinterpret_cast<const UCHAR*>(in_msg));
+			EXE_send(tdbb, proc_request, 0, in_msg_length, in_msg);
 		}
 
-		EXE_receive(tdbb, proc_request, 1, out_msg_length,
-				reinterpret_cast<UCHAR*>(out_msg));
+		EXE_receive(tdbb, proc_request, 1, out_msg_length, out_msg);
 
 /* Clean up all savepoints started during execution of the
    procedure */

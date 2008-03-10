@@ -499,7 +499,6 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
    for the new dpb and copy the old one over */
 
 	UCHAR* new_dpb;
-	UCHAR* p;
 	if (new_dpb_length > *dpb_size)
 	{
 		/* Note: gds__free done by GPRE generated code */
@@ -513,19 +512,12 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 			return FB_FAILURE;		/* NOMEM: not really handled */
 		}
 
-		p = new_dpb;
-		const UCHAR* q = reinterpret_cast<const UCHAR*>(*dpb);
-		for (SSHORT length = *dpb_size; length; length--)
-		{
-			*p++ = *q++;
-		}
-
+		memcpy(new_dpb, dpb, *dpb_size);
 	}
 	else
-	{
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
-		p = new_dpb + *dpb_size;
-	}
+
+	UCHAR* p = new_dpb + *dpb_size;
 
 	if (!*dpb_size)
 	{

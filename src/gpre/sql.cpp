@@ -2559,7 +2559,7 @@ static act* act_delete(void)
 			CPR_s_error("OF <cursor>");
 		gpreGlob.requests = request->req_next;
 		gpreGlob.cur_routine->act_object = (REF) request->req_routine; // Beware global var
-		MSC_free((UCHAR *) request);
+		MSC_free(request);
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
 			(!transaction || !request->req_trans ||
@@ -2568,14 +2568,11 @@ static act* act_delete(void)
 			if (transaction)
 				PAR_error("different transaction for select and delete");
 			else {				// does not specify transaction clause in      
-				//   "delete ... where cuurent of cursor" stmt 
-				SSHORT trans_nm_len = strlen(request->req_trans);
-				SCHAR* str_2 = (SCHAR*) MSC_alloc(trans_nm_len + 1);
+				//   "delete ... where current of cursor" stmt
+				const size_t trans_nm_len = strlen(request->req_trans);
+				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
+				memcpy(str_2, request->req_trans, trans_nm_len);
 				transaction = str_2;
-				const SCHAR* str_1 = request->req_trans;
-				do {
-					*str_2++ = *str_1++;
-				} while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
@@ -5613,7 +5610,6 @@ static bool par_into( DYN statement)
 
 static void par_options(const TEXT** transaction)
 {
-
 	*transaction = NULL;
 
 	if (!MSC_match(KW_TRANSACTION))

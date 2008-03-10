@@ -2119,7 +2119,7 @@ static act* par_for()
 		PAR_get_token();
 
 		if (!MSC_match(KW_IN)) {
-			MSC_free((UCHAR *) symbol);
+			MSC_free(symbol);
 			return NULL;
 		}
 		if (dup_symbol) {

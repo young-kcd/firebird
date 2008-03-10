@@ -231,7 +231,7 @@ gpre_ctx* EXP_context(gpre_req* request, gpre_sym* initial_symbol)
 	if (!symbol) {
 		symbol = PAR_symbol(SYM_context);
 		if (!MSC_match(KW_IN)) {
-			MSC_free((UCHAR *) symbol);
+			MSC_free(symbol);
 			CPR_s_error("IN");
 		}
 	}

@@ -2673,7 +2673,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 					data.lstr_allocated = l;
 					if (data.lstr_address)
 						BURP_free (data.lstr_address);
-					data.lstr_address = (UCHAR *) BURP_alloc (data.lstr_allocated);
+					data.lstr_address = BURP_alloc(data.lstr_allocated);
 				}
 				p = data.lstr_address;
 			}

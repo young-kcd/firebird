@@ -585,7 +585,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 		print_line(control, offset);
 		if (length) {
 			control->ctl_level = level;
-			gds__print_blr((const UCHAR*) control->ctl_blr,
+			gds__print_blr(control->ctl_blr,
 						   print_blr_line, control,
 						   control->ctl_language);
 			control->ctl_blr += length;
