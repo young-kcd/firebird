@@ -66,7 +66,7 @@ public:
 	void*	ctl_internal[3];			/* Firebird internal-use only */
 	Firebird::string	ctl_exception_message;	/* Message to use in case of filter exception */
 public:
-	BlobControl(MemoryPool& p) 
+	explicit BlobControl(MemoryPool& p)
 		: ctl_exception_message(p) { }
 	BlobControl() 
 		: ctl_exception_message() { }

@@ -80,7 +80,7 @@ namespace {
 			return Firebird::PathName(Config::getExternalFileAccess());
 		}
 	public:
-		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		explicit ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p)
 		{
 			initialize();
 		}

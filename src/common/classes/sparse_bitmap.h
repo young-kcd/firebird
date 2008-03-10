@@ -61,7 +61,7 @@ public:
 	{ }
 
 	// Pooled constructor
-	SparseBitmap(MemoryPool& p) : 
+	explicit SparseBitmap(MemoryPool& p) :
 		AutoStorage(p), singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 

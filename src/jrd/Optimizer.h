@@ -103,7 +103,7 @@ enum segmentScanType {
 class IndexScratchSegment 
 {
 public:
-	IndexScratchSegment(MemoryPool& p);
+	explicit IndexScratchSegment(MemoryPool& p);
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
 
@@ -141,7 +141,7 @@ typedef Firebird::SortedArray<int> SortedStreamList;
 class InversionCandidate
 {
 public:
-	InversionCandidate(MemoryPool& p);
+	explicit InversionCandidate(MemoryPool& p);
 
 	double			selectivity;
 	double			cost;
@@ -228,7 +228,7 @@ typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
 class InnerJoinStreamInfo
 {
 public:
-	InnerJoinStreamInfo(MemoryPool& p);
+	explicit InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
 	int		stream;

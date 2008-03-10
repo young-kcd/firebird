@@ -128,7 +128,7 @@ static const int ZERO_BUF_SIZE = 1024 * 128;
 class HugeStaticBuffer 
 {
 public:
-	HugeStaticBuffer(MemoryPool& p)
+	explicit HugeStaticBuffer(MemoryPool& p)
 		: zeroArray(p), 
 		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
 	{

@@ -698,7 +698,7 @@ struct ItemInfo
 	{
 	}
 
-	ItemInfo(MemoryPool& p)
+	explicit ItemInfo(MemoryPool& p)
 		: name(p),
 		  field(p),
 		  nullable(true),

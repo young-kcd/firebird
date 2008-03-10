@@ -217,7 +217,7 @@ namespace {
 	class FailedLogins
 	{
 	public:
-		FailedLogins(MemoryPool& p) {}
+		explicit FailedLogins(MemoryPool& p) {}
 		void loginFail(const Firebird::string& login) { }
 		void loginSuccess(const Firebird::string& login) {}
 	};

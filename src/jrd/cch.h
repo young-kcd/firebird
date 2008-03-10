@@ -90,7 +90,7 @@ struct bcb_repeat
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
 public:
-	BufferControl(MemoryPool& p) : bcb_memory(p) { }
+	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
 	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */

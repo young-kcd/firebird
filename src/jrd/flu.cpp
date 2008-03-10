@@ -130,7 +130,7 @@ namespace {
 			return Firebird::PathName(Config::getUdfAccess());
 		}
 	public:
-		UdfDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		explicit UdfDirectoryList(MemoryPool& p) : DirectoryList(p)
 		{
 			initialize();
 		}

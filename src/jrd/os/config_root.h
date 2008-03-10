@@ -78,7 +78,7 @@ private:
 	}
 
 public:
-	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
+	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
 		install_dir(getPool()), root_dir(getPool()), config_file(getPool()) 
 	{
 		GetRoot();

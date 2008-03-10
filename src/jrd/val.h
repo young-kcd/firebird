@@ -113,7 +113,7 @@ public:
     fun_repeat fun_rpt[1];
 
 public:
-	UserFunction(MemoryPool& p)
+	explicit UserFunction(MemoryPool& p)
 		: fun_name(p),
 		  fun_exception_message(p)
 	{

@@ -79,7 +79,7 @@ typedef GenericMap<Pair<Right<ArgumentInfo, MetaName> > > MapArgumentInfoToName;
 
 struct DbgInfo
 {
-	DbgInfo(MemoryPool& p)
+	explicit DbgInfo(MemoryPool& p)
 		: blrToSrc(p),
 		  varIndexToName(p),
 		  argInfoToName(p)

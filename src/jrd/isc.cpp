@@ -384,7 +384,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 	 */
 	static struct ESwitches {
 		Firebird::PathName prefix, lockPrefix, msgPrefix;
-		ESwitches(MemoryPool& p) : prefix(p), lockPrefix(p), msgPrefix(p) { }
+		explicit ESwitches(MemoryPool& p) : prefix(p), lockPrefix(p), msgPrefix(p) { }
 	}* eSw = 0;
 	
 	if (! sw)
