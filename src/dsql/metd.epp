@@ -663,14 +663,11 @@ dsql_str* METD_get_default_charset(dsql_req* request)
 
 	    // Terminate ASCIIZ string on first trailing blank 
 	    fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
-	    USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
+	    const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
 	    dbb->dbb_dfl_charset = FB_NEW_RPT(dbb->dbb_pool, length) dsql_str;
 	    dbb->dbb_dfl_charset->str_length = length;
 	    dbb->dbb_dfl_charset->str_charset = NULL;
-		const UCHAR* str_charset = (UCHAR*) DBB.RDB$CHARACTER_SET_NAME;
-	    for (char* p = dbb->dbb_dfl_charset->str_data; length; --length) {
-	        *p++ = *str_charset++;
-		}
+		memcpy(dbb->dbb_dfl_charset->str_data, DBB.RDB$CHARACTER_SET_NAME, length);
 
 	END_FOR 
 

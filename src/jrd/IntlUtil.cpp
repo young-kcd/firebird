@@ -92,10 +92,10 @@ string IntlUtil::generateSpecificAttributes(
 		const USHORT equalChar = '=';
 
 		size = cs->getConvFromUnicode().convert(
-			sizeof(equalChar), (const UCHAR*)&equalChar,
+			sizeof(equalChar), (const UCHAR*) &equalChar,
 			sizeof(c), c);
 
-		s += string((const char*)&c, size);
+		s += string((const char*) &c, size);
 
 		s += escapeAttribute(cs, attribute->second);
 
@@ -105,9 +105,9 @@ string IntlUtil::generateSpecificAttributes(
 		{
 			const USHORT semiColonChar = ';';
 			size = cs->getConvFromUnicode().convert(
-				sizeof(semiColonChar), (const UCHAR*)&semiColonChar, sizeof(c), c);
+				sizeof(semiColonChar), (const UCHAR*) &semiColonChar, sizeof(c), c);
 
-			s += string((const char*)&c, size);
+			s += string((const char*) &c, size);
 		}
 	}
 

@@ -2592,7 +2592,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 				PAG_add_header_entry(header, HDR_file,
 									 (USHORT) strlen((const char*) q), q);
 				PAG_add_header_entry(header, HDR_last_page, sizeof(last),
-									 (const UCHAR*) & last);
+									 (const UCHAR*) &last);
 			}
 
 			header->hdr_flags |= hdr_active_shadow;

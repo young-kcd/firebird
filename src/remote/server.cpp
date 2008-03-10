@@ -2893,7 +2893,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 								buffer, stuff->p_info_buffer_length,
 								IMPLEMENTATION, 4, 1,
 								reinterpret_cast<const UCHAR*>(version.c_str()),
-								reinterpret_cast<UCHAR*>(this->port_host->str_data),
+								reinterpret_cast<const UCHAR*>(this->port_host->str_data),
 								0);
 		}
 		THREAD_ENTER();

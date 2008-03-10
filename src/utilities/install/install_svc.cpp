@@ -694,7 +694,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 		else
 			svc_error(GetLastError(), "QueryServiceConfig", NULL);
 		if (qsc)
-			delete [] (UCHAR*)qsc;
+			delete[] (UCHAR*) qsc;
 
 		CloseServiceHandle(service);
 	}

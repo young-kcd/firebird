@@ -1002,10 +1002,7 @@ static void add_files( DBB dbb, FIL files)
  *	Add a file to an existing database.  
  *
  **************************************/
-	SLONG length, start;
 	FIL file, next;
-	TEXT s[128];
-	SSHORT shadow_number;
 
 /* Reverse the order of files (parser left them backwards) */
 
@@ -1019,7 +1016,10 @@ static void add_files( DBB dbb, FIL files)
    current allocation of database, then check the allocation
    against the user given maximum length (if given). */
 
+	SLONG length = 0, start = 0;
+	
 	if (dbb) {
+		TEXT s[128];
 		if (isc_database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
 							   sizeof(s), s) || s[0] != isc_info_allocation) 
 		{
@@ -1033,12 +1033,8 @@ static void add_files( DBB dbb, FIL files)
 		length = (dbb->dbb_length) ? dbb->dbb_length + 1 : 0;
 		start = MAX(start, length);
 	}
-	else {
-		length = 0;
-		start = 0;
-	}
 
-	shadow_number = 0;
+	SSHORT shadow_number = 0;
 	for (file = files; file; file = file->fil_next) {
 		if (file->fil_shadow_number != shadow_number) {
 			start = 0;

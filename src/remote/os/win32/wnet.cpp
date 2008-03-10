@@ -1325,8 +1325,7 @@ static bool_t wnet_read( XDR * xdrs)
 
 	while (true) {
 		SSHORT length = end - p;
-		if (!packet_receive
-			(port, reinterpret_cast<UCHAR*>(p), length, &length))
+		if (!packet_receive(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
 			return FALSE;
 		}
