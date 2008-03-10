@@ -1047,12 +1047,10 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 /* Snarf data from record */
 
-	tail =
-		reinterpret_cast<UCHAR*>(
-			SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
+	tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
 							rpb->rpb_length,
-							reinterpret_cast<char*>(tail),
-							reinterpret_cast<const char*>(tail_end)));
+							tail,
+							tail_end);
 
 	if (rpb->rpb_flags & rpb_incomplete)
 	{
@@ -1062,12 +1060,8 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		{
 			DPM_fetch_fragment(tdbb, rpb, LCK_read);
 
-			const SCHAR* pIn		= reinterpret_cast<const char*>(rpb->rpb_address);
-			SCHAR* pOut		= reinterpret_cast<char*>(tail);
-			const SCHAR* const pOutEnd	= reinterpret_cast<const char*>(tail_end);
-
-			SCHAR* pRet = SQZ_decompress(pIn, rpb->rpb_length, pOut, pOutEnd);
-			tail = reinterpret_cast<UCHAR*>(pRet);
+			const SCHAR* pIn = reinterpret_cast<const char*>(rpb->rpb_address);
+			tail = SQZ_decompress(pIn, rpb->rpb_length, tail, tail_end);
 		}
 		rpb->rpb_b_page = back_page;
 		rpb->rpb_b_line = back_line;
@@ -3532,12 +3526,10 @@ static void delete_record(thread_db* tdbb, record_param* rpb, SLONG prior_page,
 			tail = record->rec_data;
 			tail_end = tail + record->rec_length;
 		}
-		tail =
-			reinterpret_cast<UCHAR*>(
-			SQZ_decompress
-			  (reinterpret_cast<const char*>(rpb->rpb_address), rpb->rpb_length,
-			   reinterpret_cast<char*>(tail),
-			   reinterpret_cast<const char*>(tail_end)));
+		tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
+								rpb->rpb_length,
+								tail,
+								tail_end);
 		rpb->rpb_prior = (rpb->rpb_flags & rpb_delta) ? record : 0;
 	}
 
@@ -3597,12 +3589,8 @@ static UCHAR* delete_tail(
 			BUGCHECK(248);		/* msg 248 cannot find record fragment */
 		}
 		if (tail) {
-			tail =
-				reinterpret_cast<UCHAR*>(
-				SQZ_decompress
-				  (reinterpret_cast<const char*>(rpb->rpb_address),
-				   rpb->rpb_length, reinterpret_cast<char*>(tail),
-				   reinterpret_cast<const char*>(tail_end)));
+			tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
+									rpb->rpb_length, tail, tail_end);
 		}
 		DPM_delete(tdbb, rpb, prior_page);
 		prior_page = rpb->rpb_page;

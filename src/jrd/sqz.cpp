@@ -196,10 +196,10 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 
 
 
-SCHAR* SQZ_decompress(const SCHAR*	input,
+UCHAR* SQZ_decompress(const SCHAR*	input,
 					  USHORT		length,
-					  SCHAR*		output,
-					  const SCHAR* const	output_end)
+					  UCHAR*		output,
+					  const UCHAR* const	output_end)
 {
 /**************************************
  *
@@ -212,20 +212,20 @@ SCHAR* SQZ_decompress(const SCHAR*	input,
  *	where the output stopped.
  *
  **************************************/
-	const SCHAR* last = input + length;
+	const SCHAR* const last = input + length;
 
 	while (input < last)
 	{
-		const SSHORT l = *input++;
+		const int l = (signed char) *input++;
 		if (l < 0)
 		{
-			const SCHAR c = *input++;
+			const UCHAR c = *input++;
 
 			if ((output - l) > output_end)
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			memset(output, (UCHAR) c, (-1 * l));
+			memset(output, c, (-1 * l));
 			output -= l;
 		}
 		else
