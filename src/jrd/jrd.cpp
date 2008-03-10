@@ -1490,7 +1490,8 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
-		JRD_compile(tdbb, attachment, req_handle, blr_length, blr,
+		JRD_compile(tdbb, attachment, req_handle,
+			blr_length, reinterpret_cast<const UCHAR*>(blr),
 			0, NULL, 0, NULL);
 	}
 	catch (const Firebird::Exception& ex)
@@ -2803,7 +2804,8 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		if (*svc_handle)
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 
-		*svc_handle = new Service(service_length, service_name, spb_length, spb);
+		*svc_handle = new Service(service_length, service_name, spb_length,
+			reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
 	{
@@ -2942,7 +2944,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 		Service* service = *svc_handle;
 		validateHandle(service);
 
-		service->start(spb_length, spb);
+		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
 	
 		if (service->getStatus()[1]) {
 			ISC_STATUS* svc_status = service->getStatus();
@@ -4889,7 +4891,7 @@ static void rollback(thread_db* tdbb,
  **************************************/
 	ISC_STATUS_ARRAY user_status = {0};
 	ISC_STATUS_ARRAY local_status = {0};
-	ISC_STATUS* orig_status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const orig_status = tdbb->tdbb_status_vector;
 
 	try
 	{
@@ -6198,7 +6200,7 @@ void JRD_compile(thread_db* tdbb,
 				 Attachment* attachment,
 				 jrd_req** req_handle,
 				 SSHORT blr_length,
-				 const SCHAR* blr,
+				 const UCHAR* blr,
 				 USHORT string_length, const char* string,
 				 USHORT dbginfo_length, const UCHAR* dbginfo)
 {
@@ -6215,8 +6217,7 @@ void JRD_compile(thread_db* tdbb,
 	if (*req_handle)
 		Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
-	jrd_req* request = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE,
-		dbginfo_length, dbginfo);
+	jrd_req* request = CMP_compile2(tdbb, blr, FALSE, dbginfo_length, dbginfo);
 
 	request->req_attachment = attachment;
 	request->req_request = attachment->att_requests;

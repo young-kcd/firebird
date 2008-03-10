@@ -514,7 +514,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 
 Service::Service(USHORT	service_length, const TEXT* service_name,
-				 USHORT spb_length, const SCHAR* spb_data)
+				 USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()), 
 	svc_handle(0), svc_status(svc_status_array), 
 	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
@@ -548,8 +548,7 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	}
 
 	// Process the service parameter block.
-	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbAttach, 
-								 reinterpret_cast<const UCHAR*>(spb_data), spb_length);
+	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbAttach, spb_data, spb_length);
 	Options options(spb);
 
 	// Perhaps checkout the user in the security database.
@@ -1493,10 +1492,9 @@ void Service::query(USHORT			send_item_length,
 }
 
 
-void Service::start(USHORT spb_length, const SCHAR* spb_data)
+void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
-	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, 
-		reinterpret_cast<const UCHAR*>(spb_data), spb_length);
+	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, spb_data, spb_length);
 
 /* The name of the service is the first element of the buffer */
 	const UCHAR svc_id = spb.getClumpTag();
