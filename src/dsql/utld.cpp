@@ -50,7 +50,7 @@ using namespace Jrd;
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
 static SLONG get_numeric_info(const SCHAR**);
-static SLONG get_string_info(const SCHAR**, SCHAR*, int);
+static SSHORT get_string_info(const SCHAR**, SCHAR*, int);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda(XSQLDA *);
@@ -101,13 +101,13 @@ SCHAR* UTLD_skip_sql_info(SCHAR* info)
 	if (*info++ != isc_info_sql_describe_vars)
 		return 0;
 
-	get_numeric_info((const SCHAR**) &info);
+	get_numeric_info((const SCHAR**) &info); // skip message->msg_index
 
 	// Loop over the variables being described
 	while (true)
 	{
 		SCHAR str[256]; // must be big enough to hold metadata name
-		SCHAR item = *info++;
+		const UCHAR item = *info++;
 
 		switch (item)
 		{
@@ -292,24 +292,22 @@ ISC_STATUS	UTLD_parse_sql_info(
 
 			case isc_info_sql_field:
 				xvar->sqlname_length =
-					static_cast<SSHORT>(get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname)));
+					get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname));
 				break;
 
 			case isc_info_sql_relation:
 				xvar->relname_length =
-					static_cast<SSHORT>(get_string_info(&info, xvar->relname, sizeof(xvar->relname)));
+					get_string_info(&info, xvar->relname, sizeof(xvar->relname));
 				break;
 
 			case isc_info_sql_owner:
 				xvar->ownname_length =
-					static_cast<SSHORT>(get_string_info(&info, xvar->ownname, sizeof(xvar->ownname)));
+					get_string_info(&info, xvar->ownname, sizeof(xvar->ownname));
 				break;
 
 			case isc_info_sql_alias:
 				xvar->aliasname_length =
-					static_cast<SSHORT>
-					(get_string_info
-					 (&info, xvar->aliasname, sizeof(xvar->aliasname)));
+					get_string_info(&info, xvar->aliasname, sizeof(xvar->aliasname));
 				break;
 
 			case isc_info_truncated:
@@ -425,6 +423,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 			xvar = xsqlda->sqlvar - 1;
 		else
 			qvar = sqlda->sqlvar - 1;
+
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
@@ -433,21 +432,26 @@ ISC_STATUS	UTLD_parse_sqlda(
 				qvar++;
 				sqlvar_to_xsqlvar(qvar, xvar);
 			}
+
 			const USHORT dtype = xvar->sqltype & ~1;
-			if (dtype == SQL_VARYING || dtype == SQL_TEXT)
+			switch (dtype)
+			{
+			case SQL_VARYING:
+			case SQL_TEXT:
 				blr_len += 3;
-			else
-				if (dtype == SQL_SHORT ||
-					dtype == SQL_LONG ||
-					dtype == SQL_INT64 ||
-					dtype == SQL_QUAD ||
-					dtype == SQL_BLOB
-					|| dtype == SQL_ARRAY)
-				{
-					blr_len += 2;
-				}
-				else
-					blr_len++;
+				break;
+			case SQL_SHORT:
+			case SQL_LONG:
+			case SQL_INT64:
+			case SQL_QUAD:
+			case SQL_BLOB:
+			case SQL_ARRAY:
+				blr_len += 2;
+				break;
+			default:
+				++blr_len;
+			}
+			
 			blr_len += 2;
 			par_count += 2;
 		}
@@ -908,7 +912,7 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
     @param ptr
 
  **/
-static SLONG get_numeric_info( const SCHAR** ptr)
+static SLONG get_numeric_info(const SCHAR** ptr)
 {
 	const SSHORT l =
 		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
@@ -934,23 +938,23 @@ static SLONG get_numeric_info( const SCHAR** ptr)
     @param buffer_len
 
  **/
-static SLONG get_string_info( const SCHAR** ptr, SCHAR * buffer, int buffer_len)
+static SSHORT get_string_info(const SCHAR** ptr, SCHAR* buffer, int buffer_len)
 {
 	const SCHAR* p = *ptr;
-	SSHORT l =
-		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
-	*ptr += l + 2;
+	SSHORT len = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
+	// CVC: What else can we do here?
+	if (len < 0)
+		len = 0;
+	
+	*ptr += len + 2;
 	p += 2;
 
-	if (l >= buffer_len)
-		l = buffer_len - 1;
+	if (len >= buffer_len)
+		len = buffer_len - 1;
 
-	SSHORT len = l;
 	if (len)
-		do
-			*buffer++ = *p++;
-		while (--l);
-	*buffer = 0;
+		memcpy(buffer, p, len);
+	buffer[len] = 0;
 
 	return len;
 }
