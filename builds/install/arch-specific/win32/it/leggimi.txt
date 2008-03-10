@@ -1,7 +1,13 @@
 
 ==================================
-Firebird 2.0.0       (Win32 Build)
+Firebird 2.5.0       (Windows Build)
 ==================================
+
+-------------------------------------------------------
+The information below refers to Firebird 2.1. 
+Documentation for Firebird 2.5 is not yet available.
+-------------------------------------------------------
+
 
 o Introduzione
 o A chi è rivolta questa versione

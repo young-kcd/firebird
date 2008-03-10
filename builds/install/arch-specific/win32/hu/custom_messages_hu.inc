@@ -40,23 +40,23 @@ hu.InstallSummaryCancel1= Ha folytatja, a Firebird Adatbázisszerver telepítésre 
 hu.InstallSummaryCancel2= A telepítés tökéletesítését kézzel kell majd elvégeznie.
 hu.InstallSummaryCancel3= MEGSZAKÍTJA ezt a telepítést?
 
-hu.InstalledProducts='Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Firebird vagy Interbase telepítés %s a számítógépen.
+hu.InstalledProducts=Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Firebird vagy Interbase telepítés %s a számítógépen.
 hu.InstalledProdCountSingular=található
 hu.InstalledProdCountPlural=találhatóak
 
-hu.FbRunning1=Egy létezõ Firebird Adatbázisszerver %1 már fut.
+hu.FbRunning1=Egy létezõ Firebird Adatbázisszerver %s már fut.
 hu.FbRunning2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
 hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 
 hu.PreviousInstallBroken=   (A telepítés hibásnak tûnik a nem megfelelõ verzió-azonosító miatt.)
 hu.PreviousInstallGood=   (A telepítés hibátlannak tûnik.)
 
-hu.IconReadme=Firebird 2.1 - Olvass El
-hu.IconUninstall=A Firebird eltávolítása
-hu.ReleaseNotes=Firebird 2.1 - Újdonságok (Acrobat Reader programot igényel)
-hu.InstallationGuide= installation guide. (Acrobat Reader programot igényel)
-hu.BugFixes= bug fixes. (Acrobat Reader programot igényel)
-hu.Uninstall=A Firebird eltávolítása
+hu.IconReadme=Firebird %1 - Olvass El
+hu.IconUninstall=A Firebird eltávolítása %1 
+hu.ReleaseNotes= Firebird %1 - Újdonságok (Acrobat Reader programot igényel)
+hu.InstallationGuide= telepítési segédlet. (Acrobat Reader programot igényel)
+hu.BugFixes= hibajavítások. (Acrobat Reader programot igényel)
+hu.Uninstall=A Firebird eltávolítása %1
 hu.Winsock2Web1=A Winsock 2 kiterjesztés nincs telepítve.
 hu.Winsock2Web2=Meg kívánja látogatni a Winsock 2 frissítés honlapját?
 hu.NoWinsock2=Kérem telepítse a Winsock 2 frissítést, mielõtt folytatná!

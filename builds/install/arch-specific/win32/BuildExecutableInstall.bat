@@ -330,7 +330,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v1.5.4.ReleaseNotes.pdf Firebird_v2.0.3.ReleaseNotes.pdf Firebird_v2.1.0.ReleaseNotes.pdf Firebird_v2.1.0.InstallationGuide.pdf Firebird_v2.1.0.BugFixes.pdf) do (
+@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v%FBBUILD_FB15_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.BugFixes.pdf) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
@@ -385,8 +385,9 @@ if %MSVC_VERSION% GEQ 8 (
 if not exist %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi (
     %WIX%\candle.exe -v0 %FB_ROOT_PATH%\builds\win32\msvc%MSVC_VERSION%\VCCRT_%FB_TARGET_PLATFORM%.wxs -out %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj
     %WIX%\light.exe %FB_GEN_DIR%\vccrt_%FB_TARGET_PLATFORM%.wixobj -out %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
+) else (
+    @echo   Using an existing build of %FB_OUTPUT_DIR%\system32\vccrt%MSVC_VERSION%_%FB_TARGET_PLATFORM%.msi
 ))
-
 
 ::End of BUILD_CRT_MSI
 ::--------------------
@@ -782,16 +783,16 @@ popd
 @(@call :SED_MAGIC ) || (@echo Error calling SED_MAGIC & @goto :EOF)
 @Echo.
 
-@Echo   Copying additonal files needed for installation, documentation etc.
+@Echo   Copying additional files needed for installation, documentation etc.
 @(@call :COPY_XTRA ) || (@echo Error calling COPY_XTRA & @goto :EOF)
 @Echo.
 
-if defined WIX (
 :: WIX is not necessary for a snapshot build, so we don't throw
 :: an error if WIX is not defined. On the other hand,
 :: if it is there anyway, use it.
+if defined WIX (
 @Echo   Building MSI runtimes
-@call :BUILD_CRT_MSI ) || (@echo Error calling BUILD_CRT_MSI & @goto :EOF)
+@(@call :BUILD_CRT_MSI ) || (@echo Error calling BUILD_CRT_MSI & @goto :EOF)
 @Echo.
 )
 

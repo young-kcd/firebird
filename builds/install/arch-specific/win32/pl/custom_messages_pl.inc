@@ -44,19 +44,19 @@ pl.InstalledProducts=Analiza przed instalacj¹ wykaza³a, ¿e ju¿ istnieje %s Fireb
 pl.InstalledProdCountSingular=wersja posiada
 pl.InstalledProdCountPlural=wersje posiadaj¹
 
-pl.FbRunning1=Istniej¹cy Firebird %1 Server jest uruchomiony.
+pl.FbRunning1=Istniej¹cy Firebird %s Server jest uruchomiony.
 pl.FbRunning2= Przed kontynuacj¹ musisz zakoñczyæ program
 pl.FbRunning3=       lub zatrzymaæ us³ugê.
 
 pl.PreviousInstallBroken=   (Instalacja wygl¹da na b³êdn¹, z powodu konfliktu wersji.)
 pl.PreviousInstallGood=   (Instalacja wygl¹da na poprawn¹.)
 
-pl.IconReadme=Firebird 2.1 - przeczytaj mnie
-pl.IconUninstall=Deinstalacja Firebird'a
+pl.IconReadme=Firebird %1 - przeczytaj mnie
+pl.IconUninstall=Deinstalacja Firebird'a %1
 pl.ReleaseNotes= Informacje o wydaniu. (Wymagany Acrobat Reader.)
 pl.InstallationGuide= installation guide. (Wymagany Acrobat Reader.)
 pl.BugFixes= bug fixes. (Wymagany Acrobat Reader.)
-pl.Uninstall=Deinstalacja Firebird'a
+pl.Uninstall=Deinstalacja Firebird'a %1
 pl.Winsock2Web1=Winsock 2 nie jest zainstalowany.
 pl.Winsock2Web2=Czy chcesz odwiedziæ stronê z aktualizacjami Winsock 2 ?
 pl.NoWinsock2=Przed kontynuacj¹ nale¿y zainstalowaæ aktualizacjê Winsock 2

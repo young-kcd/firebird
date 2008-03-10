@@ -1,7 +1,12 @@
 
-====================================
-Firebird 2.5.0       (Windows Build)
-====================================
+==========================================
+Firebird 2.5.0 pre alpha (Windows Build)
+==========================================
+
+-------------------------------------------------------
+The information below refers to Firebird 2.1. 
+Documentation for Firebird 2.5 is not yet available.
+-------------------------------------------------------
 
 
 o Introduction

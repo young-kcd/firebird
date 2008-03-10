@@ -1,15 +1,15 @@
-Firebird Database Server 2.5
+Firebird Database Server 2.5 pre alpha
 ==================================================
 
----------------------
+-------------------------------------------------------
 The information below refers to Firebird 2.1. 
-Documentation on the installation of Firebird 2.5 
-has not been prepared yet. 
-----------------------
+Documentation for Firebird 2.5 is not yet available.
+-------------------------------------------------------
+
 
 
 This document is a guide to installing this package of
-Firebird 2.1 on the Win32 platform. These notes refer
+Firebird 2.1 on the Windows platform. These notes refer
 to the installation package itself, rather than
 Firebird 2.1 in general. In addition, these notes are
 primarily aimed at users of the binary installer.
