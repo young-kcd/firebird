@@ -439,26 +439,6 @@ void MOVQ_double_to_date( double real, SLONG fixed[2])
 }
 
 
-void MOVQ_fast(const SCHAR* from,
-			   SCHAR* to,
-			   ULONG length)
-{
-/**************************************
- *
- *	M O V Q _ f a s t
- *
- **************************************
- *
- * Functional description
- *	Move a byte string as fast as possible.
- *
- **************************************/
-
-	if (length)
-		memcpy(to, from, length);
-}
-
-
 double MOVQ_get_double(const dsc* desc)
 {
 /**************************************

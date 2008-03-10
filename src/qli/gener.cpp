@@ -40,8 +40,8 @@
 #include "../jrd/gds_proto.h"
 
 #ifdef DEV_BUILD
-static void explain(const UCHAR*);
-static void explain_index_tree(SSHORT, const TEXT*, const SCHAR**, SSHORT*);
+static void explain(DBB db, const UCHAR*);
+static void explain_index_tree(DBB db, SSHORT, const TEXT*, const UCHAR**, SSHORT*);
 static void explain_printf(SSHORT, const TEXT*, const TEXT*);
 #endif
 
@@ -137,19 +137,19 @@ qli_rlb* GEN_rlb_extend(qli_rlb* rlb)
 	if (!rlb)
 		rlb = (qli_rlb*) ALLOCD(type_rlb);
 
-	const UCHAR* old_string = rlb->rlb_base;
-	const ULONG l = rlb->rlb_data - rlb->rlb_base;
+	UCHAR* const old_string = rlb->rlb_base;
+	const ULONG len = rlb->rlb_data - rlb->rlb_base;
 	rlb->rlb_length += RLB_BUFFER_SIZE;
 	UCHAR* new_string = (UCHAR*) ALLQ_malloc((SLONG) rlb->rlb_length);
 	if (old_string) {
-		MOVQ_fast((SCHAR*) old_string, (SCHAR*) new_string, l);
-		ALLQ_free((SCHAR*) old_string);
+		memcpy(new_string, old_string, len);
+		ALLQ_free(old_string);
 	}
 	rlb->rlb_base = new_string;
-	rlb->rlb_data = new_string + l;
+	rlb->rlb_data = new_string + len;
 	rlb->rlb_limit = rlb->rlb_data + RLB_BUFFER_SIZE - RLB_SAFETY_MARGIN;
 
-	return (rlb);
+	return rlb;
 }
 
 
@@ -173,7 +173,7 @@ void GEN_rlb_release( qli_rlb* rlb)
 		return;
 
 	if (rlb->rlb_base) {
-		ALLQ_free((SCHAR*) rlb->rlb_base);
+		ALLQ_free(rlb->rlb_base);
 		rlb->rlb_base = NULL;
 		rlb->rlb_length = 0;
 		rlb->rlb_data = NULL;
@@ -183,7 +183,7 @@ void GEN_rlb_release( qli_rlb* rlb)
 
 
 #ifdef DEV_BUILD
-static void explain(const UCHAR* explain_buffer)
+static void explain(DBB db, const UCHAR* explain_buffer)
 {
 /**************************************
  *
@@ -249,9 +249,7 @@ static void explain(const UCHAR* explain_buffer)
 			case isc_info_rsb_indexed:
 				printf("isc_info_rsb_indexed,\n");
 				level++;
-				explain_index_tree(level, relation_name,
-					reinterpret_cast<const SCHAR**>(&explain_buffer),
-					&buffer_length);
+				explain_index_tree(db, level, relation_name, &explain_buffer, &buffer_length);
 				level--;
 				break;
 
@@ -271,9 +269,7 @@ static void explain(const UCHAR* explain_buffer)
 			case isc_info_rsb_navigate:
 				printf("isc_info_rsb_navigate,\n");
 				level++;
-				explain_index_tree(level, relation_name,
-					reinterpret_cast<const SCHAR**>(&explain_buffer),
-					&buffer_length);
+				explain_index_tree(db, level, relation_name, &explain_buffer, &buffer_length);
 				level--;
 				break;
 
@@ -354,10 +350,10 @@ static void explain(const UCHAR* explain_buffer)
 
 
 #ifdef DEV_BUILD
-static void explain_index_tree(
+static void explain_index_tree(DBB db,
 							   SSHORT level,
 							   const TEXT* relation_name,
-							   const SCHAR** explain_buffer_ptr,
+							   const UCHAR** explain_buffer_ptr,
 							   SSHORT* buffer_length)
 {
 /**************************************
@@ -374,7 +370,7 @@ static void explain_index_tree(
 	SCHAR index_info[256];
 	SSHORT length;
 
-	const SCHAR* explain_buffer = *explain_buffer_ptr;
+	const UCHAR* explain_buffer = *explain_buffer_ptr;
 
 	(*buffer_length)--;
 
@@ -382,20 +378,16 @@ static void explain_index_tree(
 	case isc_info_rsb_and:
 		explain_printf(level, "isc_info_rsb_and,\n", 0);
 		level++;
-		explain_index_tree(level, relation_name, &explain_buffer,
-						   buffer_length);
-		explain_index_tree(level, relation_name, &explain_buffer,
-						   buffer_length);
+		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
+		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
 		level--;
 		break;
 
 	case isc_info_rsb_or:
 		explain_printf(level, "isc_info_rsb_or,\n", 0);
 		level++;
-		explain_index_tree(level, relation_name, &explain_buffer,
-						   buffer_length);
-		explain_index_tree(level, relation_name, &explain_buffer,
-						   buffer_length);
+		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
+		explain_index_tree(db, level, relation_name, &explain_buffer, buffer_length);
 		level--;
 		break;
 
@@ -408,13 +400,13 @@ static void explain_index_tree(
 		(*buffer_length)--;
 
 		length = (SSHORT) *explain_buffer++;
-		strncpy(index_name, explain_buffer, length);
+		memcpy(index_name, explain_buffer, length);
 		index_name[length] = 0;
 
 		*buffer_length -= length;
 		explain_buffer += length;
 
-		MET_index_info(relation_name, index_name, index_info);
+		MET_index_info(db, relation_name, index_name, index_info, sizeof(index_info));
 		printf("%s\n", index_info);
 		break;
 	}
@@ -602,7 +594,7 @@ static void gen_compile( qli_req* request)
 	if (QLI_blr)
 		gds__print_blr(rlb->rlb_base, 0, 0, 0);
 
-	const USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
+	const USHORT length = rlb->rlb_data - rlb->rlb_base;
 
 	DBB dbb = request->req_database;
 
@@ -622,7 +614,7 @@ static void gen_compile( qli_req* request)
 						   sizeof(explain_info), explain_info,
 						   sizeof(explain_buffer), explain_buffer))
 	{
-			explain((UCHAR*) explain_buffer);
+		explain(dbb, (UCHAR*) explain_buffer);
 	}
 #endif
 

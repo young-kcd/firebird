@@ -157,7 +157,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 }
 
 
-BLK ALLQ_extend(BLK * pointer, int size)
+BLK ALLQ_extend(BLK* pointer, int size)
 {
 /**************************************
  *
@@ -173,8 +173,7 @@ BLK ALLQ_extend(BLK * pointer, int size)
 	BLK new_blk = (BLK) ALLQ_alloc((PLB) global_pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
 	const int length = MIN(block->blk_length, new_blk->blk_length) - sizeof(blk);
-	MOVQ_fast((SCHAR*) block + sizeof(blk),
-			  (SCHAR*) new_blk + sizeof(blk), length);
+	memcpy((SCHAR*) new_blk + sizeof(blk), (SCHAR*) block + sizeof(blk), length);
 	ALLQ_release((FRB) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
@@ -188,7 +187,7 @@ BLK ALLQ_extend(BLK * pointer, int size)
 }
 
 
-void ALLQ_fini(void)
+void ALLQ_fini()
 {
 /**************************************
  *
@@ -217,7 +216,7 @@ void ALLQ_fini(void)
 }
 
 
-void ALLQ_free( SCHAR * memory)
+void ALLQ_free(void* memory)
 {
 /**************************************
  *
@@ -234,7 +233,7 @@ void ALLQ_free( SCHAR * memory)
 }
 
 
-void ALLQ_init(void)
+void ALLQ_init()
 {
 /**************************************
  *
@@ -246,9 +245,10 @@ void ALLQ_init(void)
  *	Initialize the pool system.
  *
  **************************************/
-	ISC_STATUS_ARRAY temp_vector;
+	qli_vec temp_vector[2];
+	memcpy(temp_vector, 0, sizeof(temp_vector));
 
-	global_pools = (qli_vec*) temp_vector;
+	global_pools = temp_vector;
 	global_pools->vec_count = 1;
 	global_pools->vec_object[0] = NULL;
 
@@ -286,7 +286,7 @@ SCHAR *ALLQ_malloc(SLONG size)
 }
 
 
-PLB ALLQ_pool(void)
+PLB ALLQ_pool()
 {
 /**************************************
  *

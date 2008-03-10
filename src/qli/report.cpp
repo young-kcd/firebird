@@ -103,8 +103,7 @@ void RPT_report( qli_nod* loop)
 		report->rpt_buffer = (UCHAR *) string->str_data;
 	}
 
-	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
-			  (SLONG) message->msg_length);
+	memcpy(report->rpt_buffer, message->msg_buffer, (SLONG) message->msg_length);
 
 	qli_brk* control;
 	if (control = report->rpt_top_rpt)
