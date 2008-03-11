@@ -382,9 +382,14 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 	 * To avoid it accumulate values for switches locally, 
 	 * and finally when called with sw==0, use them in correct order.
 	 */
-	static struct ESwitches {
+	static struct ESwitches
+	{
 		Firebird::PathName prefix, lockPrefix, msgPrefix;
-		explicit ESwitches(MemoryPool& p) : prefix(p), lockPrefix(p), msgPrefix(p) { }
+
+		explicit ESwitches(MemoryPool& p)
+			: prefix(p), lockPrefix(p), msgPrefix(p)
+		{
+		}
 	}* eSw = 0;
 	
 	if (! sw)

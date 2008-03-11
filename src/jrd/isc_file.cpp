@@ -1815,7 +1815,8 @@ namespace {
 			return Firebird::PathName(Config::getDatabaseAccess());
 		}
 	public:
-		explicit DatabaseDirectoryList(MemoryPool& p) : DirectoryList(p)
+		explicit DatabaseDirectoryList(MemoryPool& p)
+			: DirectoryList(p)
 		{ 
 			initialize();
 		}
