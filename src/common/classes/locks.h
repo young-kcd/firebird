@@ -30,6 +30,7 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
+#include "fb_atomic.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
@@ -56,8 +57,14 @@ class Exception;	// Needed for catch
 
 // Windows version of the class
 
+typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection 
+	(LPCRITICAL_SECTION lpCriticalSection);
+
 class Mutex
 {
+private:
+	static tTryEnterCriticalSection* TryEnterCriticalSection;
+
 protected:
 	CRITICAL_SECTION spinlock;
 
@@ -74,6 +81,7 @@ public:
 	void enter() {
 		EnterCriticalSection(&spinlock);
 	}
+	bool tryEnter();
 	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}
@@ -218,6 +226,43 @@ public:
 #endif //WIN_NT
 
 
+// mutex with reference count
+// This class is useful if mutex can be "deleted" by the
+// code between enter and leave calls
+class RefMutex : public Mutex
+{
+public:
+	RefMutex() : Mutex()
+	{
+		m_refcnt = 0;
+	}
+
+	explicit RefMutex(MemoryPool& pool)  : Mutex(pool)
+	{
+		m_refcnt = 0;
+	}
+
+	int addRef()
+	{
+		return ++m_refcnt;
+	}
+	
+	int release()
+	{
+		const int ret = --m_refcnt;
+		if (!ret) {
+			delete this;
+		}
+		return ret;
+	}
+
+private:
+	~RefMutex() {}
+
+	AtomicCounter m_refcnt;
+};
+
+
 // RAII holder
 class MutexLockGuard
 {
@@ -254,6 +299,8 @@ public:
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
+	MutexLockGuard(RefMutex*);
+	MutexLockGuard(RefMutex&);
 
 #ifdef DEV_BUILD
 	static void halt();
@@ -261,6 +308,36 @@ private:
 
 	Mutex* lock;
 };
+
+
+class RefMutexGuard
+{
+public:
+	explicit RefMutexGuard(RefMutex &alock) 
+		: lock(&alock)
+	{
+		lock->addRef();
+		lock->enter();
+	}
+
+	~RefMutexGuard()
+	{
+		try {
+			lock->leave();
+			lock->release();
+		}
+		catch (const Exception&)
+		{
+			MutexLockGuard::onDtorException();
+		}
+	}
+
+private:
+	// Forbid copy constructor
+	RefMutexGuard(const RefMutexGuard& source);
+	RefMutex *lock;
+};
+
 
 } //namespace Firebird
 

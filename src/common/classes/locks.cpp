@@ -38,6 +38,36 @@ namespace Firebird {
 
 #if defined(WIN_NT)
 
+#define MISS_TRY_ENTER_CS ((tTryEnterCriticalSection*)(-1))
+#define INIT_TRY_ENTER_CS ((tTryEnterCriticalSection*)(0))
+
+tTryEnterCriticalSection* Mutex::TryEnterCriticalSection = INIT_TRY_ENTER_CS;
+
+bool Mutex::tryEnter()
+{
+	if (TryEnterCriticalSection == MISS_TRY_ENTER_CS)
+		return false;
+
+	if (TryEnterCriticalSection == INIT_TRY_ENTER_CS) 
+	{
+		HMODULE kernel32 = GetModuleHandle("kernel32.dll");
+		if (!kernel32) {
+			TryEnterCriticalSection = MISS_TRY_ENTER_CS;
+			return false;
+		}
+		TryEnterCriticalSection = (tTryEnterCriticalSection*) 
+			GetProcAddress(kernel32, "TryEnterCriticalSection");
+		if (!TryEnterCriticalSection) {
+			TryEnterCriticalSection = MISS_TRY_ENTER_CS;
+			system_call_failed::raise("TryEnterCriticalSection is not supported", 0);
+			return false;
+		}
+	}
+
+	return TryEnterCriticalSection(&spinlock);
+}
+
+
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
 
@@ -50,7 +80,7 @@ void Spinlock::init()
 		return;
 
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
-		HMODULE kernel32 = LoadLibrary("kernel32.dll");
+		HMODULE kernel32 = GetModuleHandle("kernel32.dll");
 		if (!kernel32) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
