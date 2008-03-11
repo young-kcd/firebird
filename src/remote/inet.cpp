@@ -77,11 +77,9 @@
 
 
 
-#ifdef SUPERSERVER
 #ifdef	WIN_NT
 #define FD_SETSIZE 1024
 #endif
-#endif /* SUPERSERVER */
 
 #ifndef WIN_NT
 #include <netinet/tcp.h>
@@ -112,7 +110,6 @@ const int INET_RETRY_CALL	= 5;
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/sch_proto.h"
 
-#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -175,10 +172,6 @@ const int NOTASOCKET = EBADF;
 #ifndef FB_SETOPT_FLAGS
 #define FB_SETOPT_FLAGS 0
 #endif
-
-SLONG INET_remote_buffer;
-SLONG INET_max_data;
-static bool first_time = true;
 
 //
 //#define DEBUG	1
@@ -244,10 +237,6 @@ typedef struct slct
 	fd_set	slct_fdset;
 } SLCT;
 
-#ifdef SUPERSERVER
-#define DEFER_PORT_CLEANUP
-#endif
-
 static int		accept_connection(rem_port*, P_CNCT *);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
@@ -282,9 +271,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 
 static int		inet_destroy(XDR *);
 static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
-#endif
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
 #if !(defined WIN_NT)
@@ -323,14 +310,12 @@ static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
-#ifdef DEFER_PORT_CLEANUP
 static void		unhook_disconnected_ports(rem_port*);
-#endif
-
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_VOID tryStopMainThread = 0;
+static int shut_preproviders();
 
 
 
@@ -338,11 +323,7 @@ static XDR::xdr_ops inet_ops =
 {
 	inet_getlong,
 	inet_putlong,
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
 	inet_getbytes,
-#else
-	REMOTE_getbytes,
-#endif
 	inet_putbytes,
 	inet_getpostn,
 	inet_setpostn,
@@ -370,34 +351,21 @@ static XDR::xdr_ops inet_ops =
 #endif
 #endif
 
-
-static SLCT INET_select = { 0, 0, 0 };
-static int INET_max_clients;
-#ifdef WIN_NT
-static bool INET_initialized = false;
-static WSADATA INET_wsadata;
-#endif
-
-
 #ifdef	WIN_NT
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x) || (x) == WSAEINTR)
 #else
 #define	INTERRUPT_ERROR(x)	(SYSCALL_INTERRUPTED(x))
 #endif
 
+
+
+SLONG INET_remote_buffer;
+static bool INET_initialized = false;
+static bool INET_shutting_down = false;
+static SLCT INET_select = { 0, 0, 0 };
+static int INET_max_clients;
+
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
-
-inline void START_PORT_CRITICAL() 
-{
-	THREAD_EXIT();
-	port_mutex->enter();
-	THREAD_ENTER();
-}
-
-inline void STOP_PORT_CRITICAL()
-{
-	port_mutex->leave();
-}
 
 
 rem_port* INET_analyze(Firebird::PathName& file_name,
@@ -700,8 +668,6 @@ rem_port* INET_connect(const TEXT* name,
 		host_addr = get_bind_address();
 	}
 
-	THREAD_EXIT();
-
 	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
 #ifdef WIN_NT
 /* On Windows NT/9x, getservbyname can only accomodate
@@ -719,7 +685,6 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 #endif /* WIN_NT */
-	THREAD_ENTER();
 
 /* Modification by luz (slightly modified by FSG)
     instead of failing here, try applying hard-wired
@@ -801,11 +766,10 @@ rem_port* INET_connect(const TEXT* name,
 			// If host has two addresses and the first one failed,
 			// but the second one succeeded - no need to worry
 
-			THREAD_EXIT();
 			n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
 			inetErrNo = INET_ERRNO;
-			THREAD_ENTER();
+
 			if (n != -1 && send_full(port, packet))
 				return port;
 		}
@@ -898,18 +862,17 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
+
 		gds__register_cleanup(exit_handler, (void *) port);
 		return port;
 	}
 
 	while (true) {
-		THREAD_EXIT();
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, &l);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET) {
-			THREAD_ENTER();
 			inet_error(port, "accept", isc_net_connect_err, inetErrNo);
 			disconnect(port);
 			return NULL;
@@ -920,13 +883,11 @@ rem_port* INET_connect(const TEXT* name,
 		if ((flag & SRVR_debug) || !fork())
 #endif
 		{
-			THREAD_ENTER();
 			SOCLOSE((SOCKET) port->port_handle);
 			port->port_handle = (HANDLE) s;
 			port->port_server_flags |= SRVR_server;
 			return port;
 		}
-		THREAD_ENTER();
 		SOCLOSE(s);
 	}
 }
@@ -1015,6 +976,7 @@ void INET_set_clients( int count)
  **************************************/
 	INET_max_clients = (count && count < MAXCLIENTS) ? count : MAXCLIENTS;
 }
+
 
 static int accept_connection(rem_port* port,
 							 P_CNCT* cnct)
@@ -1215,34 +1177,32 @@ static rem_port* alloc_port( rem_port* parent)
 
 	TEXT buffer[BUFFER_SMALL];
 
+	if (!INET_initialized) 
+	{
 #ifdef WIN_NT
-	if (!INET_initialized) {
+		static WSADATA wsadata;
 	    const WORD version = MAKEWORD(2, 0);
-		if (WSAStartup(version, &INET_wsadata)) {
+		const int wsaError = WSAStartup(version, &wsadata);
+		if (wsaError) {
 			if (parent)
-				inet_error(parent, "WSAStartup", isc_net_init_error, INET_ERRNO);
+				inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
 			else {
 				SNPRINTF(buffer, FB_NELEM(buffer),
 						 "INET/alloc_port: WSAStartup failed, error code = %d",
-						 INET_ERRNO);
+						 wsaError);
 				gds__log(buffer, 0);
 			}
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
-		INET_initialized = true;
-	}
 #endif
 
-	if (first_time)
-	{
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW ||
 		    INET_remote_buffer > MAX_DATA_HW)
 		{
 			INET_remote_buffer = DEF_MAX_DATA;
 		}
-		INET_max_data = INET_remote_buffer;
 #ifdef DEBUG
 		{
 			char msg[BUFFER_SMALL];
@@ -1251,7 +1211,10 @@ static rem_port* alloc_port( rem_port* parent)
 			gds__log(msg, 0);
 		}
 #endif
-		first_time = false;
+
+		fb_shutdown_callback(0, shut_preproviders, fb_shut_preproviders);
+
+		INET_initialized = true;
 	}
 	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
 	port->port_type = port_inet;
@@ -1264,8 +1227,10 @@ static rem_port* alloc_port( rem_port* parent)
 	SNPRINTF(buffer, FB_NELEM(buffer), "tcp (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 
-	START_PORT_CRITICAL();
-	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) {
+	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) 
+	{
+		Firebird::MutexLockGuard guard(port_mutex);
+
 		port->port_parent = parent;
 		port->port_next = parent->port_clients;
 		parent->port_clients = parent->port_next = port;
@@ -1273,7 +1238,6 @@ static rem_port* alloc_port( rem_port* parent)
 		port->port_server = parent->port_server;
 		port->port_server_flags = parent->port_server_flags;
 	}
-	STOP_PORT_CRITICAL();
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
@@ -1295,11 +1259,15 @@ static rem_port* alloc_port( rem_port* parent)
 					0,
 					XDR_DECODE);
 
-#ifdef SUPERSERVER
+#ifdef REM_SERVER
 	port->port_queue = FB_NEW(*getDefaultMemoryPool())
 			Firebird::ObjectsArray< Firebird::Array< char > >(*getDefaultMemoryPool());
 	port->port_qoffset = 0;
+	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
+	port->port_que_sync->addRef();
 #endif
+	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
+	port->port_sync->addRef();
 
 	return port;
 }
@@ -1325,10 +1293,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 
 	if (port->port_server_flags) {
 	
-		THREAD_EXIT();
 		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
 		const int inetErrNo = INET_ERRNO;
-		THREAD_ENTER();
 		
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, inetErrNo);
@@ -1378,10 +1344,8 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	address.sin_family = AF_INET;
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
-	THREAD_EXIT();
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
-	THREAD_ENTER();
 
 	if (status < 0) {
 		inet_error(port, "connect", isc_net_event_connect_err, inetErrNo);
@@ -1676,21 +1640,20 @@ static void disconnect( rem_port* port)
 
 /* If this is a sub-port, unlink it from it's parent */
 
-#ifdef  DEFER_PORT_CLEANUP
 	bool defer_cleanup = false;
 	port->port_state = state_disconnected;
-#endif
+
 	rem_port* parent = port->port_parent;
 	if (parent != NULL) {
 		if (port->port_async) {
 			disconnect(port->port_async);
 			port->port_async = NULL;
 		}
-#ifdef	DEFER_PORT_CLEANUP
-		defer_cleanup = true;
-#else
-		unhook_port(port, parent);
-#endif
+
+		defer_cleanup = (port->port_server_flags & SRVR_multi_client);
+		if (!defer_cleanup) {
+			unhook_port(port, parent);
+		}
 	}
 	else if (port->port_async) {
 		port->port_async->port_flags |= PORT_disconnect;
@@ -1702,10 +1665,9 @@ static void disconnect( rem_port* port)
 
 	gds__unregister_cleanup(exit_handler, (void *) port);
 
-#ifdef DEFER_PORT_CLEANUP
-	if (!defer_cleanup)
-#endif
+	if (!defer_cleanup) {
 		cleanup_port(port);
+	}
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary) {
@@ -1765,9 +1727,11 @@ static void cleanup_port( rem_port* port)
 		ALLR_free(port->port_packet_vector);
 #endif
 
-#ifdef SUPERSERVER
+#ifdef REM_SERVER
 	delete port->port_queue;
+	port->port_que_sync->release();
 #endif
+	port->port_sync->release();
 
 #ifdef TRUSTED_AUTH
 	delete port->port_trusted_auth;
@@ -1794,17 +1758,21 @@ static void exit_handler( void *arg)
 	rem_port* main_port = (rem_port*) arg;
 
 #ifdef WIN_NT
-	if (!main_port) {
+	if (!main_port) 
+	{
 		SleepEx(0, FALSE);	// let select in other thread(s) shutdown gracefully
 		WSACleanup();
 		return;
 	}
 #endif
 
-	for (rem_port* port = main_port; port; port = port->port_next) {
-		shutdown((int) port->port_handle, 2);
-		SOCLOSE((SOCKET) port->port_handle);
-	}
+	for (rem_port* port = main_port; port; port = port->port_next) 
+		if (port->port_state != state_broken)
+		{
+			port->port_state = state_broken;
+			shutdown((int) port->port_handle, 2);
+			SOCLOSE((SOCKET) port->port_handle);
+		}
 }
 
 #ifdef NO_FORK
@@ -1913,8 +1881,6 @@ static in_addr get_host_address(const Firebird::string& name,
  *
  **************************************/
 
-	THREAD_EXIT();
-
 	host_addr_arr[0].s_addr = inet_addr(name.c_str());
 	host_addr_arr[1].s_addr = 0L;
 
@@ -1955,8 +1921,6 @@ static in_addr get_host_address(const Firebird::string& name,
 			}
 		}
 	}
-
-	THREAD_ENTER();
 
 	return host_addr_arr[0];
 }
@@ -2125,104 +2089,40 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
  *
  **************************************/
 
-#ifndef SUPERSERVER
-/* If this isn't a multi-client server, just do the operation and get it
-   over with */
+	/* loop as long as we are receiving dummy packets, just
+	   throwing them away--note that if we are a server we won't
+	   be receiving them, but it is better to check for them at
+	   this level rather than try to catch them in all places where
+	   this routine is called */
 
-	if (!(main_port->port_server_flags & SRVR_multi_client))
-#endif //SUPERSERVER
-	{
-		/* loop as long as we are receiving dummy packets, just
-		   throwing them away--note that if we are a server we won't
-		   be receiving them, but it is better to check for them at
-		   this level rather than try to catch them in all places where
-		   this routine is called */
+	do {
+		if (!xdr_protocol(&main_port->port_receive, packet))
+		{
+			packet->p_operation = main_port->port_flags & PORT_partial_data ? 
+								  op_partial : op_exit;
+			main_port->port_flags &= ~PORT_partial_data;
 
-		do {
-			if (!xdr_protocol(&main_port->port_receive, packet))
-			{
-				packet->p_operation = main_port->port_flags & PORT_partial_data ? 
-									  op_partial : op_exit;
-				main_port->port_flags &= ~PORT_partial_data;
-
-				if (packet->p_operation == op_exit) {
-					main_port->port_state = state_broken;
-				}
-				break;
+			if (packet->p_operation == op_exit) {
+				main_port->port_state = state_broken;
 			}
+			break;
+		}
 #ifdef DEBUG
-			{
-				static ULONG op_rec_count = 0;
-				op_rec_count++;
-				if (INET_trace & TRACE_operations) {
-					fprintf(stdout, "%04lu: OP Recd %5lu opcode %d\n",
-							   inet_debug_timer(),
-							   op_rec_count, packet->p_operation);
-					fflush(stdout);
-				}
+		{
+			static ULONG op_rec_count = 0;
+			op_rec_count++;
+			if (INET_trace & TRACE_operations) {
+				fprintf(stdout, "%04lu: OP Recd %5lu opcode %d\n",
+						   inet_debug_timer(),
+						   op_rec_count, packet->p_operation);
+				fflush(stdout);
 			}
+		}
 #endif
-		}
-		while (packet->p_operation == op_dummy);
-
-		return main_port;
 	}
+	while (packet->p_operation == op_dummy);
 
-#ifndef SUPERSERVER
-/* Multi-client server multiplexes all known ports for incoming packets. */
-
-	for (;;) {
-		rem_port* port = select_port(main_port, &INET_select);
-		if (port == main_port) {
-			if (port = select_accept(main_port))
-				return port;
-			continue;
-		}
-		if (port) {
-			if (port->port_dummy_timeout < 0) {
-				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8)
-				{
-					continue;
-				}
-				packet->p_operation = op_dummy;
-				return port;
-			}
-			/* We've got data -- lap it up and use it */
-
-			if (!xdr_protocol(&port->port_receive, packet))
-				packet->p_operation = op_exit;
-#ifdef DEBUG
-			{
-				static ULONG op_rec_count = 0;
-				op_rec_count++;
-				if (INET_trace & TRACE_operations) {
-					fprintf(stdout, "%05lu: OP Recd %5lu opcode %d\n",
-							   inet_debug_timer(),
-							   op_rec_count, packet->p_operation);
-					fflush(stdout);
-				}
-			}
-#endif
-
-/*  Make sure that there are no more messages in this port before blocking
-    ourselves in select_wait. If there are more messages then set the flag
-    corresponding to this port which was cleared in select_port routine.
-*/
-			if (port->port_receive.x_handy) {
-				FD_SET((SLONG) port->port_handle, &INET_select.slct_fdset);
-				++INET_select.slct_count;
-			}
-			if (packet->p_operation == op_dummy)
-				continue;
-
-			return port;
-		}
-		if (!select_wait(main_port, &INET_select))
-			return NULL;
-	}
-#endif //SUPERSERVER
+	return main_port;
 }
 
 static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length)
@@ -2247,7 +2147,17 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 		rem_port* port = select_port(main_port, &INET_select);
 		if (port == main_port) 
 		{
-			if (port = select_accept(main_port)) 
+			if (INET_shutting_down)
+			{
+				if (main_port->port_state != state_broken)
+				{
+					main_port->port_state = state_broken;
+					SOCKET s = (SOCKET) main_port->port_handle;
+					shutdown(s, 2);
+					SOCLOSE(s);
+				}
+			}
+			else if (port = select_accept(main_port)) 
 			{
 				if (!packet_receive(port, buffer, bufsize, length))
 				{
@@ -2271,6 +2181,9 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 			
 			if (!packet_receive(port, buffer, bufsize, length))
 			{
+				if (port->port_flags & PORT_disconnect) {
+					continue;
+				}
 				*length = 0;
 			}
 			return port;
@@ -2292,9 +2205,6 @@ static rem_port* select_accept( rem_port* main_port)
  *
  * Functional description
  *	Accept a new connection request.
- *	If client load is exceeded then
- *	handoff connection responsibility
- *	to a fresh server.
  *
  **************************************/
 	struct sockaddr_in address;
@@ -2314,22 +2224,7 @@ static rem_port* select_accept( rem_port* main_port)
 	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
 			   (SCHAR*) &optval, sizeof(optval));
 
-#if !(defined SUPERSERVER || defined WIN_NT)
-	int n;
-	for (n = 0, port = main_port->port_clients; port;
-		 n++, port = port->port_next);
-	if (n >= INET_max_clients) {
-		main_port->port_state = state_closed;
-		SOCLOSE((int) main_port->port_handle);
-		TEXT msg[BUFFER_SMALL];
-		SNPRINTF(msg, FB_NELEM(msg),
-				"INET/select_accept: exec new server at client limit: %d", n);
-		gds__log(msg, 0);
-
-		setreuid(0, 0);
-		kill(getppid(), SIGUSR1);
-	}
-#endif
+	port->port_flags |= PORT_server;
 
 	if (main_port->port_server_flags & SRVR_thread_per_port) {
 		port->port_server_flags =
@@ -2357,59 +2252,32 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
  *	NULL if	none are active.
  *
  **************************************/
+
+	Firebird::MutexLockGuard guard(port_mutex);
+
+	unhook_disconnected_ports(main_port);
+	for (rem_port* port = main_port; port; port = port->port_next) 
+	{
 #ifdef WIN_NT
-
-/* NT's socket handles are addresses */
-/* TMN: No, they are "black-box" handles. */
-
-	START_PORT_CRITICAL();
-#ifdef DEFER_PORT_CLEANUP
-	unhook_disconnected_ports(main_port);
-#endif
-	for (rem_port* port = main_port; port; port = port->port_next) {
-		if (FD_ISSET(port->port_handle, &selct->slct_fdset))
-		{
-			port->port_dummy_timeout = port->port_dummy_packet_interval;
-
-#pragma FB_COMPILER_MESSAGE("TODO: Make porthandle a SOCKET on Win32")
-
-			FD_CLR((SOCKET) port->port_handle, &selct->slct_fdset);
-			--selct->slct_count;
-			STOP_PORT_CRITICAL();
-			return port;
-		}
-		if (port->port_dummy_timeout < 0) {
-			STOP_PORT_CRITICAL();
-			return port;
-		}
-	}
-
-	STOP_PORT_CRITICAL();
-#else // !defined(WIN_NT)
-	START_PORT_CRITICAL();
-#ifdef DEFER_PORT_CLEANUP
-	unhook_disconnected_ports(main_port);
-#endif
-	for (rem_port* port = main_port; port; port = port->port_next) {
+		const SOCKET n = (SOCKET) port->port_handle;
+		if (FD_ISSET(n, &selct->slct_fdset))
+#else
 		const int n = (int) port->port_handle;
 		if (n < 0 || n >= FD_SETSIZE) {
-			STOP_PORT_CRITICAL();
 			return port;
 		}		
-		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) {
+		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) 
+#endif
+		{
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
 			--selct->slct_count;
-			STOP_PORT_CRITICAL();
 			return port;
 		}
 		if (port->port_dummy_timeout < 0) {
-			STOP_PORT_CRITICAL();
 			return port;
 		}
 	}
-	STOP_PORT_CRITICAL();
-#endif
 
 	return NULL;
 }
@@ -2453,86 +2321,84 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			selct->slct_time = (SLONG) time(NULL);
 		}
 
-		START_PORT_CRITICAL();
-#ifdef DEFER_PORT_CLEANUP
-		unhook_disconnected_ports(main_port);
-#endif
-		for (rem_port* port = main_port; port; port = port->port_next)
-		{
-			if (port->port_state == state_pending)
+		{ // port_mutex scope
+			Firebird::MutexLockGuard guard(port_mutex);
+			unhook_disconnected_ports(main_port);
+			for (rem_port* port = main_port; port; port = port->port_next)
 			{
-				/* Adjust down the port's keepalive timer. */
-
-				if (port->port_dummy_packet_interval)
+				if (port->port_state == state_pending)
 				{
-					port->port_dummy_timeout -= delta_time;
-				}
+					/* Adjust down the port's keepalive timer. */
 
-				if (checkPorts)
-				{
-					// select() returned EBADF\WSAENOTSOCK - we have a broken socket 
-					// in current fdset. Search and return it to caller to close
-					// broken connection correctly
-
-					struct linger lngr;
-					socklen_t optlen = sizeof(lngr);
-					const bool badSocket = 
-#ifdef WIN_NT
-						false;
-#else
-						((SOCKET) port->port_handle < 0) || 
-						((SOCKET) port->port_handle) >= FD_SETSIZE;
-#endif
-
-					if (badSocket || getsockopt((SOCKET) port->port_handle, 
-						SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+					if (port->port_dummy_packet_interval)
 					{
-						if (badSocket || INET_ERRNO == NOTASOCKET)
-						{
-							// not a socket, strange !
-							gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
+						port->port_dummy_timeout -= delta_time;
+					}
 
-							// this will lead to receive() which will break bad connection
-							selct->slct_count = selct->slct_width = 0;
-							FD_ZERO(&selct->slct_fdset);
-							if (!badSocket) 
-							{
-								FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
+					if (checkPorts)
+					{
+						// select() returned EBADF\WSAENOTSOCK - we have a broken socket 
+						// in current fdset. Search and return it to caller to close
+						// broken connection correctly
+
+						struct linger lngr;
+						socklen_t optlen = sizeof(lngr);
+						const bool badSocket = 
 #ifdef WIN_NT
-								++selct->slct_width;
+							false;
 #else
-								selct->slct_width = (int) port->port_handle + 1;
+							((SOCKET) port->port_handle < 0) || 
+							((SOCKET) port->port_handle) >= FD_SETSIZE;
 #endif
-							}
 
-							STOP_PORT_CRITICAL();
-							return true;
+						if (badSocket || getsockopt((SOCKET) port->port_handle, 
+							SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
+						{
+							if (badSocket || INET_ERRNO == NOTASOCKET)
+							{
+								// not a socket, strange !
+								gds__log("INET/select_wait: found \"not a socket\" socket : %u", (SOCKET) port->port_handle);
+
+								// this will lead to receive() which will break bad connection
+								selct->slct_count = selct->slct_width = 0;
+								FD_ZERO(&selct->slct_fdset);
+								if (!badSocket) 
+								{
+									FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
+#ifdef WIN_NT
+									++selct->slct_width;
+#else
+									selct->slct_width = (int) port->port_handle + 1;
+#endif
+								}
+								return true;
+							}
 						}
 					}
-				}
 
-				FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
-#ifdef WIN_NT
-				++selct->slct_width;
-#else
-				selct->slct_width =
-					MAX(selct->slct_width, (int) port->port_handle);
-#endif
-				found = true;
+					// if process is shuting down - don't listen on main port
+					if (!INET_shutting_down || port != main_port)
+					{
+						FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
+	#ifdef WIN_NT
+						++selct->slct_width;
+	#else
+						selct->slct_width = MAX(selct->slct_width, (int) port->port_handle + 1);
+	#endif
+						found = true;
+					}
+				}
 			}
-		}
-		checkPorts = false;
-		STOP_PORT_CRITICAL();
+			checkPorts = false;
+		} // port_mutex scope
 
 		if (!found)
 		{
-			gds__log("INET/select_wait: client rundown complete, server exiting",
-				 0);
+			if (!INET_shutting_down) {
+				gds__log("INET/select_wait: client rundown complete, server exiting", 0);
+			}
 			return FALSE;
 		}
-
-		THREAD_EXIT();
-		++selct->slct_width;
 
 		for (;;)
 		{
@@ -2555,6 +2421,11 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 									   NULL, NULL, &timeout);
 #endif
 			const int inetErrNo = INET_ERRNO;
+
+			//if (INET_shutting_down) {
+			//	return FALSE;
+			//}
+
 			if (selct->slct_count != -1)
 			{
 				/* if selct->slct_count is zero it means that we timed out of
@@ -2573,7 +2444,6 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 #endif
 					}
 				}
-				THREAD_ENTER();
 				return TRUE;
 			}
 			if (INTERRUPT_ERROR(inetErrNo))
@@ -2584,15 +2454,12 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				break;
 			}
 
-			THREAD_ENTER();
 			SNPRINTF(msg, FB_NELEM(msg),
 					 "INET/select_wait: select failed, errno = %d",
 					 inetErrNo);
 			gds__log(msg, 0);
 			return FALSE;
 		}	// for (;;)
-
-		THREAD_ENTER();
 	}
 }
 
@@ -2745,7 +2612,7 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 	}
 }
 
-#if !defined(SUPERSERVER) || defined(EMBEDDED)
+
 static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
@@ -2758,6 +2625,13 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
  *	Get a bunch of bytes from a memory stream if it fits.
  *
  **************************************/
+#ifdef REM_SERVER
+	rem_port* port = (rem_port*) xdrs->x_public;
+	if (port->port_flags & PORT_server) {
+		return REMOTE_getbytes(xdrs, buff, count);
+	}
+#endif
+
 	SLONG bytecount = count;
 
 /* Use memcpy to optimize bulk transfers. */
@@ -2808,7 +2682,7 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 	return TRUE;
 }
-#endif
+//#endif
 
 static bool_t inet_getlong( XDR * xdrs, SLONG * lp)
 {
@@ -3167,7 +3041,7 @@ static bool_t inet_write( XDR * xdrs, bool_t end_flag)
 	//p = xdrs->x_base; redundant
 
 	while (length) {
-		const SSHORT l = (SSHORT) MIN(length, INET_max_data);
+		const SSHORT l = (SSHORT) MIN(length, INET_remote_buffer);
 		length -= l;
 		if (!packet_send(port, p, (SSHORT) ((length) ? -l : l)))
 			return FALSE;
@@ -3273,6 +3147,11 @@ static int packet_receive(
  *	a duplicate message, just ignore it.
  *
  **************************************/
+
+	if (port->port_flags & PORT_disconnect) {
+		return FALSE;
+	}
+
 /* set the time interval for sending dummy packets to the client */
 
 	timeval timeout;
@@ -3321,22 +3200,19 @@ static int packet_receive(
 		/* Don't send op_dummy packets on aux port; the server won't
 		   read them because it only writes to aux ports. */
 
-		if (!(port->port_flags & PORT_async))
+		if ( !(port->port_flags & PORT_async) )
 		{
 			fd_set slct_fdset;
 			FD_ZERO(&slct_fdset);
 			FD_SET(ph, &slct_fdset);
 
-			THREAD_EXIT();
 			int slct_count;
 			for (;;) {
 #if (defined WIN_NT)
-				slct_count = select(FD_SETSIZE, &slct_fdset,
-									NULL, NULL, time_ptr);
+				slct_count = select(FD_SETSIZE, &slct_fdset, NULL, NULL, time_ptr);
 #else
-				slct_count =
-					select((SOCKET) port->port_handle + 1, &slct_fdset,
-						   NULL, NULL, time_ptr);
+				slct_count = select((SOCKET) port->port_handle + 1, &slct_fdset, 
+					NULL, NULL, time_ptr);
 #endif
 				inetErrNo = INET_ERRNO;
 
@@ -3348,12 +3224,12 @@ static int packet_receive(
 					break;
 				}
 			}
-			THREAD_ENTER();
 
 			if (slct_count == -1)
 			{
-				inet_error(port, "select in packet_receive",
-						   isc_net_read_err, inetErrNo);
+				if (!(port->port_flags & PORT_disconnect)) {
+					inet_error(port, "select in packet_receive", isc_net_read_err, inetErrNo);
+				}
 				return FALSE;
 			}
 
@@ -3381,14 +3257,15 @@ static int packet_receive(
 			}
 		}
 
-		THREAD_EXIT();
-		n =
-			recv((SOCKET) port->port_handle,
-				 reinterpret_cast<char*>(buffer), buffer_length, 0);
+		n = recv((SOCKET) port->port_handle, reinterpret_cast<char*>(buffer), buffer_length, 0);
 		inetErrNo = INET_ERRNO;
-		THREAD_ENTER();
+
 		if (n != -1 || !INTERRUPT_ERROR(inetErrNo))
 			break;
+	}
+
+	if ((n <= 0) && (port->port_flags & PORT_disconnect)) {
+		return FALSE;
 	}
 
 	if (n == -1) {
@@ -3440,7 +3317,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 	SSHORT length = buffer_length;
 
 	while (length) {
-		THREAD_EXIT();
 #ifdef DEBUG
 		if (INET_trace & TRACE_operations) {
 			fprintf(stdout, "Before Send\n");
@@ -3455,7 +3331,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 			fflush(stdout);
 		}
 #endif
-		THREAD_ENTER();
 		if (n == length) {
 			break;
 		}
@@ -3481,7 +3356,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 
 	if ((port->port_flags & PORT_async) && !(port->port_flags & PORT_no_oob))
 	{
-		THREAD_EXIT();
 		int count = 0;
 		SSHORT n;
 		int inetErrNo = 0;
@@ -3536,7 +3410,6 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		}
 #endif /* HAVE_SETITIMER */
 
-		THREAD_ENTER();
 		if (n == -1) {
 			inet_error(port, "send/oob", isc_net_write_err, inetErrNo);
 			return FALSE;
@@ -3572,8 +3445,7 @@ static void unhook_port( rem_port* port, rem_port* parent)
  *
  * Functional description
  *      Disconnect a port from its parent
- *      This must be done under
- *      START_PORT_CRITICAL/STOP_PORT_CRITICAL control.
+ *      This must be done under port_mutex control.
  *
  **************************************/
 
@@ -3588,7 +3460,6 @@ static void unhook_port( rem_port* port, rem_port* parent)
 	}
 }
 
-#ifdef DEFER_PORT_CLEANUP
 static void unhook_disconnected_ports(rem_port* main_port)
 {
 /**************************************
@@ -3600,8 +3471,7 @@ static void unhook_disconnected_ports(rem_port* main_port)
  * Functional description
  *      Go through a list of ports and get rid of any
  *      that are disconnected.   Note that this must be
- *      done under START_PORT_CRITICAL/STOP_PORT_CRITICAL
- *      control.
+ *      done port_mutex control.
  *
  **************************************/
 
@@ -3610,16 +3480,20 @@ static void unhook_disconnected_ports(rem_port* main_port)
 	while (more) {
 		more = false;
 		for (rem_port* port = main_port; port; port = port->port_next) {
-			if (port->port_state == state_disconnected) {
-				more = true;
-				unhook_port(port, port->port_parent);
-				cleanup_port(port);
-				break;
+			if (port->port_sync->tryEnter()) {
+				if (port->port_state == state_disconnected) {
+					more = true;
+					unhook_port(port, port->port_parent);
+					cleanup_port(port);
+					break;
+				}
+				else {
+					port->port_sync->leave();
+				}
 			}
 		}
 	}
 }
-#endif
 
 static bool setNoNagleOption(rem_port* port)
 {
@@ -3662,4 +3536,10 @@ void setStopMainThread(FPTR_VOID func)
  *
  **************************************/
 	tryStopMainThread = func;
+}
+
+static int shut_preproviders()
+{
+	INET_shutting_down = true;
+	return 0;
 }

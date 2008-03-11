@@ -98,7 +98,6 @@
 #include "../remote/xnet_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/os/isc_i_proto.h"
@@ -140,6 +139,10 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  *
  **************************************/
 	hInst = hThisInst;
+
+#ifndef SUPERSERVER
+	//MessageBox(NULL, "Debug me", "Please", MB_OK);
+#endif
 
 	// We want server to crash without waiting for feedback from the user
 	try
@@ -185,12 +188,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 
 	HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
-	if ((server_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
-		server_flag |= SRVR_wnet;
-		server_flag |= SRVR_inet;
-		server_flag |= SRVR_xnet;
-	}
-
 #ifdef SUPERSERVER
 	// get priority class from the config file
 	int priority = Config::getProcessPriorityLevel();
@@ -213,10 +210,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
    Setup sig_mutex for the process
 */
 	ISC_signal_init();
-
-#ifdef SUPERSERVER
 	ISC_enter();
-#endif
 
 	int nReturnValue = 0;
 	ISC_STATUS_ARRAY status_vector;
@@ -224,14 +218,14 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
 		rem_port* port = 0;
-		THREAD_ENTER();
+
 		if (server_flag & SRVR_inet)
 			port = INET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)
 			port = XNET_reconnect((ULONG) connection_handle, status_vector);
-		THREAD_EXIT();
+
 		if (port) {
 			service_connection(port);
 		}
@@ -264,19 +258,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 	else
 	{
-		if (server_flag & SRVR_inet) {
-			gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0,
-							  0);
-		}
-		if (server_flag & SRVR_wnet) {
-			gds__thread_start(wnet_connect_wait_thread, 0, THREAD_medium, 0,
-							  0);
-		}
-		if (server_flag & SRVR_xnet) {
-			gds__thread_start(xnet_connect_wait_thread, 0, THREAD_medium, 0,
-							  0);
-		}
-
+		start_connections_thread(0);
 		nReturnValue = WINDOW_main(hThisInst, nWndMode, server_flag);
 	}
 
@@ -341,10 +323,8 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		THREAD_ENTER();
-		rem_port* port =
-			INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
-		THREAD_EXIT();
+		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
+
 		if (!port) {
 			gds__log_status(0, status_vector);
 			break;
@@ -354,8 +334,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			break;
 		}
 		else {
-			gds__thread_start(process_connection_thread, port,
-							  THREAD_medium, 0, 0);
+			gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 		}
 	}
 
@@ -385,10 +364,8 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		THREAD_ENTER();
-		rem_port* port =
-			WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
-		THREAD_EXIT();
+		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
+
 		if (!port) {
 			if (status_vector[1] != isc_io_error ||
 				status_vector[6] != isc_arg_win32 ||
@@ -398,8 +375,7 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			}
 			break;
 		}
-		gds__thread_start(process_connection_thread, port,
-						  THREAD_medium, 0, 0);
+		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 	}
 
 	if (!(server_flag & SRVR_non_service)) {
@@ -429,16 +405,13 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
-		THREAD_ENTER();
-		rem_port* port =
-			XNET_connect(NULL, NULL, status_vector, server_flag);
-		THREAD_EXIT();
+		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
+
 		if (!port) {
 			gds__log_status(0, status_vector);
 			break;
 		}
-		gds__thread_start(process_connection_thread, port,
-						  THREAD_medium, 0, 0);
+		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 	}
 
 	if (!(server_flag & SRVR_non_service))
@@ -474,6 +447,8 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
+
+	fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders);
 
 	if (server_flag & SRVR_inet) {
 		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
@@ -640,5 +615,16 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 			}
 		}
 	}
+
+	if ((*pserver_flag & (SRVR_inet | SRVR_wnet | SRVR_xnet)) == 0) {
+		*pserver_flag |= SRVR_wnet;
+		*pserver_flag |= SRVR_inet;
+		*pserver_flag |= SRVR_xnet;
+	}
+
+	if (*pserver_flag & SRVR_debug) {
+		*pserver_flag |= SRVR_multi_client;
+	}
+
 	return connection_handle;
 }

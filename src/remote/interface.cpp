@@ -61,7 +61,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
 #include "../jrd/sch_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
@@ -291,8 +290,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
  *	Connect to an old, grungy database, corrupted by user data.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS* v = user_status;
 
 	*v++ = isc_arg_gds;
@@ -329,6 +326,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			return user_status[1];
 		}
 
+		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -374,12 +372,13 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
  *	Provide information on blob object.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RBL blob = *blob_handle;
 	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
+
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -410,8 +409,6 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
  *	Abort a partially completed blob.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RBL blob = *blob_handle;
 	if (!blob) {
 		if (user_status) {
@@ -423,8 +420,11 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
 	}
 
 	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
+
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 	try
@@ -457,13 +457,12 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS * user_status, RDB * handle, SLONG * id)
  *	Cancel an outstanding event.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
-	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -502,14 +501,15 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, RBL * blob_handle)
  *	Close a completed blob.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RBL blob = *blob_handle;
 	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
+
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
+	rdb->rdb_status_vector = user_status;
 
 	try
 	{
@@ -549,12 +549,13 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Commit a transaction.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -588,12 +589,13 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
  * Functional description
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+	
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -631,13 +633,15 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check and validate handles, etc. */
 
 	NULL_CHECK(req_handle, isc_bad_req_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -740,11 +744,13 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *rtr_handle;
 
@@ -817,8 +823,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
  *	Create a nice, squeeky clean database, uncorrupted by user data.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS* v = user_status;
 	*v++ = isc_arg_gds;
 	*v++ = isc_unavailable;
@@ -852,6 +856,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
+		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -896,13 +901,13 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
  *	Provide information on database object.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS	status;
 	UCHAR temp[1024];
 
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -921,8 +926,6 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS*	user_status,
 
 		if (!status)
 		{
-			rem_port* port = rdb->rdb_port;
-
 			Firebird::string version;
 			version.printf("%s/%s", GDS_VERSION, port->port_version->str_data);
 
@@ -960,14 +963,15 @@ ISC_STATUS GDS_DDL(ISC_STATUS*	user_status,
  * Functional description
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 /* Check and validate handles, etc. */
 
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *rtr_handle;
 
@@ -1012,12 +1016,11 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
  *	Close down a database.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -1090,15 +1093,14 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
  *	Close down and purge a database.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS_ARRAY local_status;
 
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
-	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -1156,11 +1158,12 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
  *	Allocate a statement handle.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(stmt_handle, isc_bad_req_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -1260,19 +1263,20 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
  *	Execute a non-SELECT dynamic SQL statement.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check and validate handles, etc. */
 
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	RTR transaction = *rtr_handle;
 	if (transaction) {
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -1486,18 +1490,19 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
  *	Prepare and execute a statement.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check and validate handles, etc. */
 
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	RTR transaction = *rtr_handle;
 	if (transaction) {
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	}
 
-	rem_port* port = rdb->rdb_port;
 	rdb->rdb_status_vector = user_status;
 
 	if (dialect > 10)
@@ -1671,8 +1676,6 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
  *	Fetch next record from a dynamic SQL cursor.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 /* Check and validate handles, etc. */
@@ -1681,6 +1684,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -1952,13 +1957,14 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
  *	Release request for a Dynamic SQL statement
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check and validate handles, etc. */
 
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	rdb->rdb_status_vector = user_status;
 
@@ -2049,13 +2055,15 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
  *	Insert next record into a dynamic SQL cursor.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 	/* Check and validate handles, etc. */
 
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -2166,14 +2174,17 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
  *	Prepare a dynamic SQL statement for execution.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check and validate handles, etc. */
 
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
+
 	RDB rdb = statement->rsr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	RTR transaction = *rtr_handle;
 	if (transaction) {
 		CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
@@ -2306,13 +2317,15 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
  *	parameter.
  *
  *****************************************/
-	SchedulerContext scHolder;
 
 	/* Check and validate handles, etc. */
 
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -2397,8 +2410,6 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
  *	Provide information on sql object.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 /* Check and validate handles, etc. */
@@ -2406,6 +2417,9 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 	RSR statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -2447,16 +2461,17 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
  *	them one by one to the caller.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Sniff out handles, etc, and find the various blocks. */
 
 	CHECK_HANDLE((*blob_handle), type_rbl, isc_bad_segstr_handle);
 	RBL blob = *blob_handle;
+	
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
 	try
 	{
@@ -2674,10 +2689,11 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
  *	Snatch a slice of an array.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
@@ -2774,11 +2790,13 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
  *	Open an existing blob.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(blob_handle, isc_bad_segstr_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *rtr_handle;
 	rdb->rdb_status_vector = user_status;
@@ -2846,11 +2864,13 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS* user_status,
  *	phase commit.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+	
 	RDB rdb = (*rtr_handle)->rtr_rdb;
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 
@@ -2905,16 +2925,18 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *	batch put.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 	/* Sniff out handles, etc, and find the various blocks. */
 
 	CHECK_HANDLE((*blob_handle), type_rbl, isc_bad_segstr_handle);
 	RBL blob = *blob_handle;
+	
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
+	rdb->rdb_status_vector = user_status;
 
 	try
 	{
@@ -2987,10 +3009,11 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
  *	Store a slice of an array.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	CHECK_HANDLE((*tra_handle), type_rtr, isc_bad_trans_handle);
 	RTR transaction = *tra_handle;
 	rdb->rdb_status_vector = user_status;
@@ -3077,12 +3100,12 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  *	Queue a request for event notification.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	PACKET* packet = &rdb->rdb_packet;
 
 	try
@@ -3182,19 +3205,21 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
  *	Remote server to send it to us if necessary.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 /* Check handles and environment, then set up error handling */
 
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	rrq* request = REMOTE_find_request(*req_handle, level);
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
 	{
-		rem_port* port = rdb->rdb_port;
 		rrq::rrq_repeat* tail = &request->rrq_rpt[msg_type];
 
 		REM_MSG message = tail->rrq_message;
@@ -3422,11 +3447,13 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(rtr_handle, isc_bad_trans_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3465,12 +3492,14 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, rrq** req_handle)
  *	Release a request.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	rrq* request = *req_handle;
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3507,14 +3536,16 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
  *	Provide information on request object.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 	rrq* request = REMOTE_find_request(*req_handle, level);
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3601,12 +3632,14 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Abort a transaction but keep its environment valid
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3642,12 +3675,14 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, RTR * rtr_handle)
  *	Abort a transaction.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+
 	RDB rdb = (*rtr_handle)->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3683,12 +3718,14 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
  *	Seek into a blob.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RBL blob = *blob_handle;
 	CHECK_HANDLE(blob, type_rbl, isc_bad_segstr_handle);
+
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3741,12 +3778,14 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
  *	Send a message to the server.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	rrq* request = REMOTE_find_request(*req_handle, level);
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
 
@@ -3802,8 +3841,6 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
  *	Connect to a Firebird service.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(handle, isc_bad_svc_handle);
 
 	Firebird::PathName expanded_name;
@@ -3835,6 +3872,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
+		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -3879,14 +3917,15 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS * user_status, RDB * handle)
  *	Close down a connection to a Firebird service.
  *
  **************************************/
-	SchedulerContext scHolder;
 
 	/* Check and validate handles, etc. */
 
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
-	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
+	rdb->rdb_status_vector = user_status;
 
 	try
 	{
@@ -3942,14 +3981,15 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS* user_status,
  *	network).  This parameter will be implemented at 
  *	a later date.
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 	/* Check and validate handles, etc. */
 
 	RDB rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -3992,14 +4032,15 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS * user_status,
  *	network).  This parameter will be implemented at 
  *	a later date.
  **************************************/
-	SchedulerContext scHolder;
-
 	ISC_STATUS status;
 
 	/* Check and validate handles, etc. */
 
 	RDB rdb = *svc_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_svc_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -4039,14 +4080,16 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	rrq* request = REMOTE_find_request(*req_handle, level);
 	RTR transaction = *rtr_handle;
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	if (msg_type > request->rrq_max_msg)
 		return handle_error(user_status, isc_badmsgnum);
 	rdb->rdb_status_vector = user_status;
@@ -4122,14 +4165,16 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
  *	Get a record from the host program.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	CHECK_HANDLE((*req_handle), type_rrq, isc_bad_req_handle);
 	CHECK_HANDLE((*rtr_handle), type_rtr, isc_bad_trans_handle);
 	rrq* request = REMOTE_find_request(*req_handle, level);
 	RTR transaction = *rtr_handle;
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -4192,11 +4237,13 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS* user_status,
  *	Start a transaction.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	NULL_CHECK(rtr_handle, isc_bad_trans_handle);
+
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -4248,14 +4295,14 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
  *	Execute a procedure on remote host.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RDB rdb = *db_handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	RTR transaction = *rtr_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
 	rdb->rdb_status_vector = user_status;
-	rem_port* port = rdb->rdb_port;
 
 	try
 	{
@@ -4382,12 +4429,14 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
  * Functional description
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	RTR transaction = *tra_handle;
 	CHECK_HANDLE(transaction, type_rtr, isc_bad_trans_handle);
+
 	RDB rdb = transaction->rtr_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	ISC_STATUS status;
@@ -4419,12 +4468,14 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS* user_status, rrq** req_handle, USHORT level)
  *	Unwind a running request.
  *
  **************************************/
-	SchedulerContext scHolder;
-
 	rrq* request = REMOTE_find_request(*req_handle, level);
 	CHECK_HANDLE(request, type_rrq, isc_bad_req_handle);
+
 	RDB rdb = request->rrq_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	rdb->rdb_status_vector = user_status;
 
 	try
@@ -5333,6 +5384,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 	rem_port* port = (rem_port*)arg;
 	PACKET packet;
 
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
 	for (;;) {
 		/* zero packet */
 
@@ -5340,9 +5392,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 		/* read what should be an event message */
 
-		THREAD_ENTER();
 		rem_port* stuff = port->receive(&packet);
-		THREAD_EXIT();
 
 		const P_OP operation = packet.p_operation;
 
@@ -5360,9 +5410,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		if (operation == op_event) {
 			P_EVENT* pevent = &packet.p_event;
 
-			THREAD_ENTER();
 			RVNT event = find_event(port, pevent->p_event_rid);
-			THREAD_EXIT();
 
 			if (event) {
 				/* Call the asynchronous event routine associated
@@ -6772,9 +6820,7 @@ static void send_cancel_event(RVNT event)
 
 	if (event->rvnt_id)
 	{
-		THREAD_EXIT();
 		(*event->rvnt_ast)(event->rvnt_arg, (USHORT) 0, NULL);
-		THREAD_ENTER();
 		event->rvnt_id = 0;
 	}
 }
@@ -6881,7 +6927,6 @@ static void server_death(rem_port* port)
  *	Cleanup events.
  *
  **************************************/
-	THREAD_ENTER();
 	RDB rdb = port->port_context;
 
 	if (!(port->port_flags & PORT_disconnect))
@@ -6890,16 +6935,13 @@ static void server_death(rem_port* port)
 		{
 			if (event->rvnt_id)
 			{
-				THREAD_EXIT();
 				(*event->rvnt_ast) (event->rvnt_arg, (USHORT) 0, NULL);
-				THREAD_ENTER();
 				event->rvnt_id = 0;
 			}
 		}
 	}
 
 	port->disconnect();
-	THREAD_EXIT();
 }
 
 

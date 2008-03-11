@@ -735,7 +735,7 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
-#ifdef SUPERSERVER
+#ifdef REM_SERVER
 bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
@@ -768,6 +768,7 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 				xdrs->x_handy = 0;
 			}
 			rem_port* port = (rem_port*) xdrs->x_public;
+			Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 			if (port->port_qoffset >= port->port_queue->getCount()) {
 				port->port_flags |= PORT_partial_data;
 				return FALSE;
@@ -782,7 +783,7 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 	
 	return TRUE;
 }
-#endif //SUPERSERVER
+#endif //REM_SERVER
 
 #ifdef TRUSTED_AUTH
 ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, 

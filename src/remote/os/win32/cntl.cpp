@@ -34,7 +34,6 @@
 #include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/why_proto.h"
 #include "../common/classes/init.h"
 
 #ifdef WIN_NT
@@ -145,7 +144,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, SHUTDOWN_TIMEOUT);
 
 	fb_shutdown(NULL, SHUTDOWN_TIMEOUT);
-	SRVR_shutdown();
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
 }

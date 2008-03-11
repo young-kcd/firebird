@@ -40,6 +40,10 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/StatusHolder.h"
 
+#if !defined(SUPERCLIENT) && !defined(EMBEDDED)
+#define REM_SERVER
+#endif
+
 /* Include some apollo include files for tasking */
 
 #ifndef WIN_NT
@@ -481,13 +485,15 @@ struct rem_port
 	void*			port_xcc;				/* interprocess structure */
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
-#ifdef SUPERSERVER
+#ifdef REM_SERVER
 	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
 	size_t			port_qoffset;			// current packet in the queue
+	Firebird::RefMutex	*port_que_sync;
 #endif
 #ifdef TRUSTED_AUTH
 	ServerAuth*		port_trusted_auth;
 #endif
+	Firebird::RefMutex	*port_sync;
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
@@ -501,22 +507,21 @@ struct rem_port
 	rem_port*	request(PACKET* pckt);
 	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
 
+#ifdef REM_SERVER
 	bool haveRecvData() const
 	{
+		Firebird::RefMutexGuard queGuard(*port_que_sync);
 		return (port_receive.x_handy > 0 
-#ifdef SUPERSERVER
 			|| port_queue && (port_qoffset < port_queue->getCount())
-#endif
 			);
 	}
 
 	void clearRecvQue()
 	{
-#ifdef SUPERSERVER
+		Firebird::RefMutexGuard queGuard(*port_que_sync);
 		if (port_queue)
 			port_queue->clear();
 		port_qoffset = 0; 
-#endif
 		port_receive.x_private = port_receive.x_base;
 	}
 
@@ -525,17 +530,13 @@ struct rem_port
 	public:
 		int save_handy;
 		size_t save_private;
-#ifdef SUPERSERVER
 		size_t save_qoffset;
-#endif
 
 		RecvQueState(const rem_port* port)
 		{ 
 			save_handy = port->port_receive.x_handy;
 			save_private = port->port_receive.x_private - port->port_receive.x_base;
-#ifdef SUPERSERVER
 			save_qoffset = port->port_qoffset;
-#endif
 		}
 	};
 
@@ -546,18 +547,16 @@ struct rem_port
 
 	void setRecvState(const RecvQueState& rs)
 	{
-#ifdef SUPERSERVER
 		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
 		{
 			Firebird::Array<char>& q = (*port_queue)[rs.save_qoffset - 1];
 			memcpy(port_receive.x_base, q.begin(), q.getCount());
 		}
 		port_qoffset = rs.save_qoffset;
-#endif
 		port_receive.x_private = port_receive.x_base + rs.save_private;
 		port_receive.x_handy = rs.save_handy;
 	}
-
+#endif // REM_SERVER
 
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
@@ -604,17 +603,17 @@ struct rem_port
 };
 
 // port_flags
-const USHORT PORT_symmetric		= 1;	// Server/client archiectures are symmetic
-const USHORT PORT_rpc			= 2;	// Protocol is remote procedure call
-const USHORT PORT_async			= 4;	// Port is asynchronous channel for events
-const USHORT PORT_no_oob		= 8;	// Don't send out of band data
-const USHORT PORT_disconnect	= 16;	// Disconnect is in progress
+const USHORT PORT_symmetric		= 0x0001;	// Server/client archiectures are symmetic
+const USHORT PORT_rpc			= 0x0002;	// Protocol is remote procedure call
+const USHORT PORT_async			= 0x0004;	// Port is asynchronous channel for events
+const USHORT PORT_no_oob		= 0x0008;	// Don't send out of band data
+const USHORT PORT_disconnect	= 0x0010;	// Disconnect is in progress
 // This is set only in inet.cpp but never tested
-const USHORT PORT_not_trusted	= 32;	// Connection is from an untrusted node
-const USHORT PORT_dummy_pckt_set= 64;	// A dummy packet interval is set
-const USHORT PORT_partial_data	= 128;	// Physical packet doesn't contain all API packet
-const USHORT PORT_lazy			= 256;	// Deferred operations are allowed
-const USHORT PORT_busy			= 512;	// Disable receive -- port is busy now
+const USHORT PORT_not_trusted	= 0x0020;	// Connection is from an untrusted node
+const USHORT PORT_dummy_pckt_set= 0x0040;	// A dummy packet interval is set
+const USHORT PORT_partial_data	= 0x0080;	// Physical packet doesn't contain all API packet
+const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed
+const USHORT PORT_server		= 0x0200;	// Server (not client) port
 
 
 /* Queuing structure for Client batch fetches */

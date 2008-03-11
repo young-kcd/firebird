@@ -34,7 +34,7 @@ extern "C" {
 
 void SRVR_main(rem_port*, USHORT);
 void SRVR_multi_thread(rem_port*, USHORT);
-void SRVR_shutdown();
+int SRVR_shutdown();
 
 #ifdef __cplusplus
 } // extern "C"

@@ -27,9 +27,6 @@
 #include "../remote/remote.h"
 #include "gen/iberror.h"
 #include "../remote/allr_proto.h"
-#include "../remote/remot_proto.h"
-#include "../jrd/gds_proto.h"
-#include "../common/thd.h"
 #include "../common/classes/alloc.h"
 
 

@@ -39,7 +39,6 @@
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/why_proto.h"
 
 #include "../remote/os/win32/window.h"
 #include "../jrd/isc_proto.h"
@@ -52,9 +51,10 @@
 #include "../common/config/config.h"
 
 
-HWND hPSDlg = NULL;
+static HWND hPSDlg = NULL;
 static HINSTANCE hInstance = NULL;
 static USHORT usServerFlags;
+static HWND hMainWnd = NULL;
 
 // Static functions to be called from this file only.
 static void GetDriveLetter(ULONG, char pchBuf[DRV_STRINGLEN]);
@@ -66,6 +66,7 @@ static BOOL CanEndServer(HWND, bool);
 // Window Procedure
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
+static int fb_shutdown_cb();
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 {
@@ -89,6 +90,8 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	HWND hWnd = NULL;
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
+
+	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders);
 
 /* initialize main window */
 
@@ -115,7 +118,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 		return 0;
 	}
 
-	hWnd = CreateWindowEx(0,
+	hMainWnd = hWnd = CreateWindowEx(0,
 						  szClassName,
 						  APP_NAME,
 						  WS_DLGFRAME | WS_SYSMENU | WS_MINIMIZEBOX,
@@ -214,8 +217,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
 				fb_shutdown(NULL, 0);
-				SRVR_shutdown();
-				DestroyWindow(hWnd);
+				//DestroyWindow(hWnd);
 			}
 		}
 		break;
@@ -427,8 +429,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 					}
 
 					fb_shutdown(NULL, 0);
-					SRVR_shutdown();
-					PostMessage(hWnd, WM_DESTROY, 0, 0);
+					//DestroyWindow(hWnd);
 					return TRUE;
 				}
 			/* Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
@@ -449,9 +450,8 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 								 IDS_PNP2, p, TMP_STRINGLEN - (p - tmp));
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
-				fb_shutdown(NULL, 0);
-				SRVR_shutdown();
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
+				fb_shutdown(NULL, 0);
 			}
 			return TRUE;
 
@@ -539,3 +539,11 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 					   MB_ICONQUESTION | MB_OKCANCEL) == IDOK);
 }
 
+
+static int fb_shutdown_cb()
+{
+	if (hMainWnd)
+		DestroyWindow(hMainWnd);
+
+	return 0;
+}
