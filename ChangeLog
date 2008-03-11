@@ -1,3 +1,139 @@
+2008-03-11 15:33  hvlad
+
+	* firebird2/src/common/classes/locks.h (1.37):
+
+	Correction, noted by Alex
+
+2008-03-11 15:11  hvlad
+
+	* firebird2/src/remote/: allr.cpp (1.36), inet.cpp (1.206),
+	interface.cpp (1.166), remote.cpp (1.53), remote.h (1.61),
+	serve_proto.h (1.13), server.cpp (1.175), xnet.cpp (1.101),
+	os/win32/cntl.cpp (1.37), os/win32/srvr_w32.cpp (1.47),
+	os/win32/window.cpp (1.30), os/win32/wnet.cpp (1.48):
+
+	Make remote module thread-safe, remove THREAD_EXIT\THREAD_ENTER
+	from it, refactor server code and some cleanup. To be continued.
+	Please check posix builds.
+
+2008-03-11 15:08  hvlad
+
+	* firebird2/src/common/classes/: locks.cpp (1.14), locks.h (1.36):
+
+	Implement Mutex::tryEnter and new RefMutex class - mutex with
+	reference counted lifetime
+
+2008-03-11 13:25  dimitr
+
+	* firebird2/src/isql/isql.epp (1.234):
+
+	Ooops. Fixed my own mistake.
+
+2008-03-11 13:24  dimitr
+
+	* firebird2/src/isql/isql.epp (1.233):
+
+	Fixed CORE-1782.
+
+2008-03-11 03:05  asfernandes
+
+	* firebird2/src/jrd/: ext.cpp (1.78), flu.cpp (1.63), isc.cpp
+	(1.75), isc_file.cpp (1.116):
+
+	Misc
+
+2008-03-10 16:03  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.37), FirebirdInstall_20.iss (1.33),
+	Readme.txt (1.18), installation_readme.txt (1.17),
+	ba/Instalacija_ProcitajMe.txt (1.6), ba/ProcitajMe.txt (1.4),
+	ba/custom_messages_ba.inc (1.5), de/custom_messages_de.inc (1.5),
+	de/installation_liesmich.txt (1.5), de/liesmich.txt (1.5),
+	es/custom_messages_es.inc (1.4), es/leame.txt (1.3),
+	es/leame_instalacion.txt (1.3), fr/custom_messages_fr.inc (1.5),
+	fr/installation_lisezmoi.txt (1.3), fr/lisezmoi.txt (1.3),
+	hu/custom_messages_hu.inc (1.5), hu/olvass_el.txt (1.3),
+	hu/telepitesi_segedlet.txt (1.3), it/custom_messages_it.inc (1.4),
+	it/leggimi.txt (1.3), it/leggimi_installazione.txt (1.3),
+	pl/custom_messages_pl.inc (1.6), pl/czytajto.txt (1.5),
+	pl/instalacja_czytajto.txt (1.6), pt/custom_messages_pt.inc (1.6),
+	pt/instalacao_leia-me.txt (1.5), pt/leia-me.txt (1.4),
+	si/custom_messages_si.inc (1.5):
+
+	sync HEAD to 2.1 branch and mark docs as unprepared for 2.5
+
+2008-03-10 10:42  robocop
+
+	* firebird2/src/jrd/: sqz.cpp (1.27), sqz_proto.h (1.13), vio.cpp
+	(1.206):
+
+	Cleanup. Done separately in case bad behavior happens.	Notice you
+	can't safely assume SCHAR is signed char since Mike Nordell made it
+	a synonym for plain char that's compiler-dependent.  SCHAR is
+	defined in both types_pub.h and fb_types.h.
+
+2008-03-10 10:32  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.234):
+
+	Cleanup.
+
+2008-03-10 10:31  robocop
+
+	* firebird2/src/: dsql/dsql.cpp (1.233), jrd/jrd.cpp (1.412),
+	jrd/jrd_proto.h (1.65), jrd/svc.cpp (1.212), jrd/svc.h (1.53):
+
+	Binary things are UCHAR. Let's try to fix them from the innermost
+	layer to the outermost layer until we can fix the public
+	interfaces.
+
+2008-03-10 10:23  robocop
+
+	* firebird2/src/dsql/utld.cpp (1.49):
+
+	Cleanup.
+
+2008-03-10 10:08  robocop
+
+	* firebird2/src/qli/: all.cpp (1.31), all_proto.h (1.7), gener.cpp
+	(1.41), meta.epp (1.71), meta_proto.h (1.12), mov.cpp (1.43),
+	mov_proto.h (1.11), report.cpp (1.19):
+
+	Cleanup, minimize casts and a bit better error reporting.
+
+2008-03-10 09:43  robocop
+
+	* firebird2/src/: dsql/metd.epp (1.125), dudley/exe.epp (1.65),
+	jrd/IntlUtil.cpp (1.17), jrd/cch.cpp (1.185), lock/driver.cpp
+	(1.21), remote/inet.cpp (1.205), remote/server.cpp (1.174),
+	remote/os/win32/wnet.cpp (1.47), utilities/install/install_svc.cpp
+	(1.36):
+
+	Cleanup and misc.
+
+2008-03-10 09:30  robocop
+
+	* firebird2/src/: burp/restore.epp (1.131), gpre/cme.cpp (1.44),
+	gpre/cmp.cpp (1.36), gpre/exp.cpp (1.41), gpre/hsh.cpp (1.24),
+	gpre/msc.cpp (1.24), gpre/msc_proto.h (1.15), gpre/par.cpp (1.67),
+	gpre/pretty.cpp (1.33), gpre/sql.cpp (1.67), jrd/dyn_util.epp
+	(1.51), jrd/exe.cpp (1.242), jrd/utl.cpp (1.112),
+	msgs/change_msgs.epp (1.20):
+
+	Minimize casts.
+
+2008-03-10 09:16  robocop
+
+	* firebird2/src/: common/classes/sparse_bitmap.h (1.21),
+	jrd/blob_filter.h (1.15), jrd/cch.h (1.37), jrd/DebugInterface.h
+	(1.7), jrd/exe.h (1.112), jrd/ext.cpp (1.77), jrd/flu.cpp (1.62),
+	jrd/isc.cpp (1.74), jrd/Optimizer.h (1.22), jrd/isc_file.cpp
+	(1.115), jrd/pwd.cpp (1.63), jrd/req.h (1.73), jrd/val.h (1.36),
+	jrd/os/config_root.h (1.14), jrd/os/pio.h (1.21):
+
+	Make them explicit.
+
 2008-03-08 22:20  asfernandes
 
 	* firebird2/src/: common/classes/tree.h (1.70), dsql/dsql.cpp
