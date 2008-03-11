@@ -7055,7 +7055,7 @@ static SSHORT print_item(TEXT** s,
 				print_item_numeric(value, length, dscale, str_buf.begin());
 				sprintf(p, "%s ", str_buf.c_str());
 				if (List) {
-					str_buf.rtrim(); // Added 1999-03-23 to left-justify in LIST ON mode 
+					str_buf.ltrim(); // Added 1999-03-23 to left-justify in LIST ON mode 
 					isqlGlob.printf("%s%s", str_buf.c_str(), NEWLINE);
 				}
 			}
