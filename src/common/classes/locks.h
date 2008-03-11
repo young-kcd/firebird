@@ -324,12 +324,12 @@ public:
 	{
 		try {
 			lock->leave();
-			lock->release();
 		}
 		catch (const Exception&)
 		{
 			MutexLockGuard::onDtorException();
 		}
+		lock->release();
 	}
 
 private:
