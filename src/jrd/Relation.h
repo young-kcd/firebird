@@ -190,13 +190,14 @@ public:
 	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key 
 	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys 
 
-	inline bool isTemporary() const;
-	inline bool isVirtual() const;
+	bool isSystem() const;
+	bool isTemporary() const;
+	bool isVirtual() const;
 
 	// global temporary relations attributes
-	inline RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
+	RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
 
-	inline RelationPages* getBasePages()
+	RelationPages* getBasePages()
 	{
 		return &rel_pages_base;
 	}
@@ -249,6 +250,8 @@ private:
 public:
 	explicit jrd_rel(MemoryPool& p) 
 		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p) { }
+
+	bool hasTriggers() const;
 };
 
 // rel_flags
@@ -271,6 +274,11 @@ const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const USHORT REL_virtual				= 0x8000;	// relation is virtual
 
 
+inline bool jrd_rel::isSystem() const
+{
+	return rel_flags & REL_system;
+}
+
 inline bool jrd_rel::isTemporary() const
 {
 	return (rel_flags & (REL_temp_tran | REL_temp_conn));
@@ -285,8 +293,8 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 {
 	if (!isTemporary()) 
 		return &rel_pages_base;
-	else
-		return getPagesInternal(tdbb, tran, allocPages);
+
+	return getPagesInternal(tdbb, tran, allocPages);
 }
 
 // Field block, one for each field in a scanned relation 

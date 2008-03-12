@@ -360,6 +360,27 @@ void jrd_rel::RelPagesSnapshot::clear()
 	inherited::clear();
 }
 
+bool jrd_rel::hasTriggers() const
+{
+	typedef const trig_vec* ctv;
+	ctv trigs[6] = // non-const array, don't want optimization tricks by the compiler.
+	{
+		rel_pre_erase,
+		rel_post_erase,
+		rel_pre_modify,
+		rel_post_modify,
+		rel_pre_store,
+		rel_post_store
+	};
+	
+	for (int i = 0; i < 6; ++i)
+	{
+		if (trigs[i] && trigs[i]->getCount())
+			return true;
+	}
+	return false;
+}
+
 void RelationPages::free(RelationPages*& nextFree) 
 {
 	rel_next_free = nextFree;
