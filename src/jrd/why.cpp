@@ -2204,7 +2204,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOC2(ISC_STATUS * user_status,
 
 	try 
 	{
-		if (GDS_DSQL_ALLOCATE(user_status, db_handle, stmt_handle))
+		if (GDS_DSQL_ALLOCATE(status, db_handle, stmt_handle))
 		{
 			return status[1];
 		}
