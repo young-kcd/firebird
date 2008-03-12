@@ -57,14 +57,31 @@ class Exception;	// Needed for catch
 
 // Windows version of the class
 
-typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection 
-	(LPCRITICAL_SECTION lpCriticalSection);
+class TryEnterCS
+{
+public:
+	TryEnterCS();
+
+	static bool tryEnter(LPCRITICAL_SECTION lpCS)
+	{
+		return ((*m_funct) (lpCS) == TRUE);
+	}
+
+private:
+	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection 
+		(LPCRITICAL_SECTION lpCriticalSection);
+
+	static BOOL WINAPI notImpl(LPCRITICAL_SECTION)
+	{
+		system_call_failed::raise("TryEnterCriticalSection is not implemented", 0);
+		return false;
+	}
+
+	static tTryEnterCriticalSection* m_funct;
+};
 
 class Mutex
 {
-private:
-	static tTryEnterCriticalSection* TryEnterCriticalSection;
-
 protected:
 	CRITICAL_SECTION spinlock;
 
@@ -81,7 +98,9 @@ public:
 	void enter() {
 		EnterCriticalSection(&spinlock);
 	}
-	bool tryEnter();
+	bool tryEnter() {
+		return TryEnterCS::tryEnter(&spinlock);
+	}
 	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}

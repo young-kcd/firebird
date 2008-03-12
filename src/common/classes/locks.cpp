@@ -38,33 +38,16 @@ namespace Firebird {
 
 #if defined(WIN_NT)
 
-#define MISS_TRY_ENTER_CS ((tTryEnterCriticalSection*)(-1))
-#define INIT_TRY_ENTER_CS ((tTryEnterCriticalSection*)(0))
+TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct = &TryEnterCS::notImpl;
+static TryEnterCS tryEnterCS;
 
-tTryEnterCriticalSection* Mutex::TryEnterCriticalSection = INIT_TRY_ENTER_CS;
-
-bool Mutex::tryEnter()
+TryEnterCS::TryEnterCS()
 {
-	if (TryEnterCriticalSection == MISS_TRY_ENTER_CS)
-		return false;
-
-	if (TryEnterCriticalSection == INIT_TRY_ENTER_CS) 
-	{
-		HMODULE kernel32 = GetModuleHandle("kernel32.dll");
-		if (!kernel32) {
-			TryEnterCriticalSection = MISS_TRY_ENTER_CS;
-			return false;
-		}
-		TryEnterCriticalSection = (tTryEnterCriticalSection*) 
+	HMODULE kernel32 = GetModuleHandle("kernel32.dll");
+	if (kernel32) {
+		m_funct = (tTryEnterCriticalSection*) 
 			GetProcAddress(kernel32, "TryEnterCriticalSection");
-		if (!TryEnterCriticalSection) {
-			TryEnterCriticalSection = MISS_TRY_ENTER_CS;
-			system_call_failed::raise("TryEnterCriticalSection is not supported", 0);
-			return false;
-		}
 	}
-
-	return TryEnterCriticalSection(&spinlock);
 }
 
 
