@@ -639,6 +639,14 @@ const ISC_LONG isc_tpb_corrupt_len                  = 335544900L;
 const ISC_LONG isc_tpb_null_len                     = 335544901L;
 const ISC_LONG isc_tpb_overflow_len                 = 335544902L;
 const ISC_LONG isc_tpb_invalid_value                = 335544903L;
+const ISC_LONG isc_tpb_reserv_stronger_wng          = 335544904L;
+const ISC_LONG isc_tpb_reserv_stronger              = 335544905L;
+const ISC_LONG isc_tpb_reserv_max_recursion         = 335544906L;
+const ISC_LONG isc_tpb_reserv_virtualtbl            = 335544907L;
+const ISC_LONG isc_tpb_reserv_systbl                = 335544908L;
+const ISC_LONG isc_tpb_reserv_temptbl               = 335544909L;
+const ISC_LONG isc_tpb_readtxn_after_writelock      = 335544910L;
+const ISC_LONG isc_tpb_writelock_after_readtxn      = 335544911L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -908,7 +916,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 852;
+const ISC_LONG isc_err_max                          = 860;
 
 #else /* c definitions */
 
@@ -1517,6 +1525,14 @@ const ISC_LONG isc_err_max                          = 852;
 #define isc_tpb_null_len                     335544901L
 #define isc_tpb_overflow_len                 335544902L
 #define isc_tpb_invalid_value                335544903L
+#define isc_tpb_reserv_stronger_wng          335544904L
+#define isc_tpb_reserv_stronger              335544905L
+#define isc_tpb_reserv_max_recursion         335544906L
+#define isc_tpb_reserv_virtualtbl            335544907L
+#define isc_tpb_reserv_systbl                335544908L
+#define isc_tpb_reserv_temptbl               335544909L
+#define isc_tpb_readtxn_after_writelock      335544910L
+#define isc_tpb_writelock_after_readtxn      335544911L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1786,7 +1802,7 @@ const ISC_LONG isc_err_max                          = 852;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          852
+#define isc_err_max                          860
 
 #endif
 

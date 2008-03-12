@@ -616,6 +616,14 @@ const
 	gds_tpb_null_len                     = 335544901;
 	gds_tpb_overflow_len                 = 335544902;
 	gds_tpb_invalid_value                = 335544903;
+	gds_tpb_reserv_stronger_wng          = 335544904;
+	gds_tpb_reserv_stronger              = 335544905;
+	gds_tpb_reserv_max_recursion         = 335544906;
+	gds_tpb_reserv_virtualtbl            = 335544907;
+	gds_tpb_reserv_systbl                = 335544908;
+	gds_tpb_reserv_temptbl               = 335544909;
+	gds_tpb_readtxn_after_writelock      = 335544910;
+	gds_tpb_writelock_after_readtxn      = 335544911;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

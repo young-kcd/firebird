@@ -604,6 +604,14 @@ static const struct {
 	{335544901, -901}, /* 581 tpb_null_len */
 	{335544902, -901}, /* 582 tpb_overflow_len */
 	{335544903, -901}, /* 583 tpb_invalid_value */
+	{335544904, -901}, /* 584 tpb_reserv_stronger_wng */
+	{335544905, -901}, /* 585 tpb_reserv_stronger */
+	{335544906, -901}, /* 586 tpb_reserv_max_recursion */
+	{335544907, -901}, /* 587 tpb_reserv_virtualtbl */
+	{335544908, -901}, /* 588 tpb_reserv_systbl */
+	{335544909, -901}, /* 589 tpb_reserv_temptbl */
+	{335544910, -901}, /* 590 tpb_readtxn_after_writelock */
+	{335544911, -901}, /* 591 tpb_writelock_after_readtxn */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

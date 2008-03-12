@@ -677,7 +677,7 @@ COMMIT WORK;
 ('tpb_reserv_missing_tname', 'transaction_options', 'tra.cpp', NULL, 0, 573, NULL, 'Table name length @1 without table name after table reservation @2 in TPB', NULL, NULL)
 ('tpb_reserv_corrup_tlen', 'transaction_options', 'tra.cpp', NULL, 0, 574, NULL, 'Table name length @1 goes beyond the remaining TPB size after table reservation @2', NULL, NULL)
 ('tpb_reserv_null_tlen', 'transaction_options', 'tra.cpp', NULL, 0, 575, NULL, 'Table name length is zero after table reservation @1 in TPB', NULL, NULL)
-('tpb_reserv_relnotfound', 'transaction_options', 'tra.cpp', NULL, 0, 576, NULL, 'Table @1 not defined in system tables after table reservation @2 in TPB', NULL, NULL)
+('tpb_reserv_relnotfound', 'transaction_options', 'tra.cpp', NULL, 0, 576, NULL, 'Table or view @1 not defined in system tables after table reservation @2 in TPB', NULL, NULL)
 ('tpb_reserv_baserelnotfound', 'expand_view_lock', 'tra.cpp', NULL, 0, 577, NULL, 'Base table or view @1 for view @2 not defined in system tables after table reservation @3 in TPB', NULL, NULL)
 ('tpb_missing_len', 'transaction_options', 'tra.cpp', NULL, 0, 578, NULL, 'Option length missing after option @1 in TPB', NULL, NULL)
 ('tpb_missing_value', 'transaction_options', 'tra.cpp', NULL, 0, 579, NULL, 'Option length @1 without value after option @2 in TPB', NULL, NULL)
@@ -685,6 +685,14 @@ COMMIT WORK;
 ('tpb_null_len', 'transaction_options', 'tra.cpp', NULL, 0, 581, NULL, 'Option length is zero after table reservation @1 in TPB', NULL, NULL)
 ('tpb_overflow_len', 'transaction_options', 'tra.cpp', NULL, 0, 582, NULL, 'Option length @1 exceeds the range for option @2 in TPB', NULL, NULL)
 ('tpb_invalid_value', 'transaction_options', 'tra.cpp', NULL, 0, 583, NULL, 'Option value @1 is invalid for the option @2 in TPB', NULL, NULL)
+('tpb_reserv_stronger_wng', 'expand_view_lock', 'tra.cpp', NULL, 0, 584, NULL, 'Preserving previous table reservation @1 for table @2, stronger than new @3 in TPB', NULL, NULL)
+('tpb_reserv_stronger', 'expand_view_lock', 'tra.cpp', NULL, 0, 585, NULL, 'Table reservation @1 for table @2 already specified and is stronger than new @3 in TPB', NULL, NULL)
+('tpb_reserv_max_recursion', 'expand_view_lock', 'tra.cpp', NULL, 0, 586, NULL, 'Table reservation reached maximum recursion of @1 when expanding views in TPB', NULL, NULL)
+('tpb_reserv_virtualtbl', 'expand_view_lock', 'tra.cpp', NULL, 0, 587, NULL, 'Table reservation in TPB cannot be applied to @1 because it''s a virtual table', NULL, NULL)
+('tpb_reserv_systbl', 'expand_view_lock', 'tra.cpp', NULL, 0, 588, NULL, 'Table reservation in TPB cannot be applied to @1 because it''s a system table', NULL, NULL)
+('tpb_reserv_temptbl', 'expand_view_lock', 'tra.cpp', NULL, 0, 589, NULL, 'Table reservation @1 or @2 in TPB cannot be applied to @3 because it''s a temporary table', NULL, NULL)
+('tpb_readtxn_after_writelock', 'transaction_options', 'tra.cpp', NULL, 0, 590, NULL, 'Cannot set the transaction in read only mode after a table reservation isc_tpb_lock_write in TPB', NULL, NULL)
+('tpb_writelock_after_readtxn', 'transaction_options', 'tra.cpp', NULL, 0, 591, NULL, 'Cannot take a table reservation isc_tpb_lock_write in TPB because the transaction is in read only mode', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -69,6 +69,7 @@
 #include "../lock/lock_proto.h"
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
+//#include "../common/classes/GenericMap.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -82,6 +83,9 @@ using namespace Ods;
 #include "../jrd/isc_s_proto.h"
 #endif
 
+typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, UCHAR> > > RelationLockTypeMap;
+
+
 static int blocking_ast_transaction(void*);
 #ifdef SUPERSERVER_V2
 static SLONG bump_transaction_id(thread_db*, WIN *);
@@ -92,8 +96,10 @@ static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
 #ifdef VMS
 static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
 #endif
-static void expand_view_lock(jrd_tra*, jrd_rel*, const UCHAR lock_type, const char* option_name);
+static void expand_view_lock(thread_db* tdbb, jrd_tra*, jrd_rel*, UCHAR lock_type,
+	const char* option_name, RelationLockTypeMap& lockmap, const int level);
 static tx_inv_page* fetch_inventory_page(thread_db*, WIN *, SLONG, USHORT);
+static const char* get_lockname_v3(const UCHAR lock);
 static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
 static void link_transaction(thread_db*, jrd_tra*);
@@ -1004,7 +1010,6 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
 
-
 	Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
 	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool());
 	trans->tra_number = gds__vax_integer(id, length);
@@ -1036,7 +1041,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 
 		TEXT text[128];
 		USHORT flags = 0;
-		gds__msg_lookup(0, JRD_BUGCHK, message, sizeof(text), text, &flags);
+		gds__msg_lookup(NULL, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
 		ERR_post(isc_no_recon,
 				 isc_arg_gds, isc_tra_state,
@@ -2100,8 +2105,8 @@ static void compute_oldest_retaining(
 #endif
 
 
-static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, const UCHAR lock_type,
-	const char* option_name)
+static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation,
+	UCHAR lock_type, const char* option_name, RelationLockTypeMap& lockmap, const int level)
 {
 /**************************************
  *
@@ -2112,29 +2117,111 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, const UCHA
  * Functional description
  *	A view in a RESERVING will lead to all tables in the
  *	view being locked.
+ *  Some checks only apply when the user reserved directly the table or view.
  *
  **************************************/
+	SET_TDBB(tdbb);
+	
+	if (level == 30)
+	{
+		ERR_post(isc_bad_tpb_content, isc_arg_gds,
+			isc_tpb_reserv_max_recursion, isc_arg_number, 30, 0);
+	}
 
-	thread_db* tdbb = JRD_get_thread_data();
+	const char* const relation_name = relation->rel_name.c_str();
+	
+	// LCK_none < LCK_SR < LCK_PR < LCK_SW < LCK_EX
+	UCHAR oldlock;
+	const bool found = lockmap.get(relation->rel_id, oldlock);
+	if (found && oldlock > lock_type)
+	{
+		const char* newname = get_lockname_v3(lock_type);
+		const char* oldname = get_lockname_v3(oldlock);
+		if (level)
+		{
+			lock_type = oldlock; // Preserve the old, more powerful lock.
+			ERR_post_warning(isc_tpb_reserv_stronger_wng,
+				isc_arg_string, relation_name, isc_arg_string, oldname,
+				isc_arg_string, newname, 0);
+		}
+		else
+		{
+			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_stronger,
+				isc_arg_string, relation_name, isc_arg_string, oldname,
+				isc_arg_string, newname, 0);
+		}
+	}
 
-	/* set up the lock on the relation/view */
+	if (level == 0)
+	{
+		fb_assert(!relation->rel_view_rse && !relation->rel_view_contexts.getCount());
+		// Reject explicit attempts to take locks on virtual tables, but RDB$ADMIN role
+		// can do that for whatever is needed.
+		if (relation->isVirtual())
+		{
+			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_virtualtbl,
+				isc_arg_string, relation_name, 0);
+		}
+			
+		// Reject explicit attempts to take locks on system tables, but RDB$ADMIN role
+		// can do that for whatever is needed.
+		if (relation->isSystem() && !tdbb->getAttachment()->locksmith())
+		{
+		    ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_systbl,
+				isc_arg_string, relation_name, 0);
+		}
 
+		if (relation->isTemporary() && (lock_type == LCK_PR || lock_type == LCK_EX))
+		{
+			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_temptbl,
+				isc_arg_string, get_lockname_v3(LCK_PR),
+				isc_arg_string, get_lockname_v3(LCK_EX),
+				isc_arg_string, relation_name, 0);
+		}
+	}
+	else
+	{
+		fb_assert(relation->rel_view_rse && relation->rel_view_contexts.getCount());
+		// Ignore implicit attempts to take locks on special tables through views.
+		if (relation->isVirtual() || relation->isSystem())
+			return;
+
+		// We can't propagate a view's LCK_PR or LCK_EX to a temporary table.
+		if (relation->isTemporary())
+		{
+			switch (lock_type)
+			{
+			case LCK_PR:
+				lock_type = LCK_SR;
+				break;
+			case LCK_EX:
+				lock_type = LCK_SW;
+				break;
+			}
+		}
+	}
+	
+	// set up the lock on the relation/view
 	Lock* lock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
-
 	lock->lck_logical = lock_type;
+	
+	if (!found)
+		*lockmap.put(relation->rel_id) = lock_type;
 
-	ViewContexts& ctx = relation->rel_view_contexts;
+	const ViewContexts& ctx = relation->rel_view_contexts;
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
 		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i].vcx_relation_name);
 		if (!base_rel)
 		{
-			ERR_post(isc_tpb_reserv_baserelnotfound,	/* should be a BUGCHECK */
+			ERR_post(isc_bad_tpb_content,
+					isc_arg_gds,
+					isc_tpb_reserv_baserelnotfound,	/* should be a BUGCHECK */
 					isc_arg_string,
 					ERR_cstring(ctx[i].vcx_relation_name.c_str()),
 					isc_arg_string,
-					ERR_cstring(relation->rel_name.c_str()),
+					ERR_cstring(relation_name),
 					isc_arg_string,
 					option_name,
 					0);
@@ -2143,7 +2230,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, const UCHA
 		/* force a scan to read view information */
 		MET_scan_relation(tdbb, base_rel);
 
-		expand_view_lock(transaction, base_rel, lock_type, option_name);
+		expand_view_lock(tdbb, transaction, base_rel, lock_type, option_name, lockmap, level + 1);
 	}
 }
 
@@ -2174,6 +2261,40 @@ static tx_inv_page* fetch_inventory_page(
 	TPC_update_cache(tdbb, tip, sequence);
 
 	return tip;
+}
+
+
+static const char* get_lockname_v3(const UCHAR lock)
+{
+/**************************************
+ *
+ * g e t _ l o c k n a m e _ v 3
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the lock mnemonic, given its binary value.
+ *	This is for TPB versions 1 & 3.
+ *
+ **************************************/
+	const char* typestr = "unknown";
+	switch (lock)
+	{
+	case LCK_none:
+	case LCK_SR:
+		typestr = "isc_tpb_lock_read, isc_tpb_shared";
+		break;
+	case LCK_PR:
+		typestr = "isc_tpb_lock_read, isc_tpb_protected/isc_tpb_exclusive";
+		break;
+	case LCK_SW:
+		typestr = "isc_tpb_lock_write, isc_tpb_shared";
+		break;
+	case LCK_EX:
+		typestr = "isc_tpb_lock_write, isc_tpb_protected/isc_tpb_exclusive";
+		break;
+	}
+	return typestr;
 }
 
 
@@ -2588,8 +2709,11 @@ static void transaction_options(thread_db* tdbb,
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
 		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
 
+	RelationLockTypeMap	lockmap;
+
 	TriState wait, lock_timeout;
 	TriState isolation, read_only, rec_version;
+	bool anylock_write = false;
 
 	++tpb;
 
@@ -2600,7 +2724,7 @@ static void transaction_options(thread_db* tdbb,
 		{
 		case isc_tpb_consistency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_tpb_multiple_txn_isolation, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2608,7 +2732,7 @@ static void transaction_options(thread_db* tdbb,
 
 		case isc_tpb_concurrency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_tpb_multiple_txn_isolation, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2616,22 +2740,25 @@ static void transaction_options(thread_db* tdbb,
 
 		case isc_tpb_read_committed:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_tpb_multiple_txn_isolation, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, 0);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
 			break;
 
 		case isc_tpb_shared:
-			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_shared", 0);
+			ERR_post(isc_bad_tpb_content, isc_arg_gds,
+				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_shared", 0);
 			break;
 			
 		case isc_tpb_protected:
-			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_protected", 0);
+			ERR_post(isc_bad_tpb_content, isc_arg_gds,
+				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_protected", 0);
 			break;
 			
 		case isc_tpb_exclusive:
-			ERR_post(isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_exclusive", 0);
+			ERR_post(isc_bad_tpb_content, isc_arg_gds,
+				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_exclusive", 0);
 			break;
 
 		case isc_tpb_wait:
@@ -2639,30 +2766,46 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (!wait.asBool())
 				{
-					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_wait",
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_wait",
 						isc_arg_string, "isc_tpb_nowait", 0);
 				}
 				else
-					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_wait", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_wait", 0);
+				}
 			}
 			break;
 
 		case isc_tpb_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
+			{
+				ERR_post(isc_bad_tpb_content, isc_arg_gds,
+					isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
+			}
 
 			if (!rec_version.assignOnce(true))
-				ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_rec_version", 0);
+			{
+				ERR_post(isc_bad_tpb_content, isc_arg_gds,
+					isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_rec_version", 0);
+			}
 
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
 		case isc_tpb_no_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
+			{
+				ERR_post(isc_bad_tpb_content, isc_arg_gds,
+					isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
+			}
 
 			if (!rec_version.assignOnce(false))
-				ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_no_rec_version", 0);
+			{
+				ERR_post(isc_bad_tpb_content, isc_arg_gds,
+					isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_no_rec_version", 0);
+			}
 
 			transaction->tra_flags &= ~TRA_rec_version;
 			break;
@@ -2670,7 +2813,8 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_nowait:
 			if (lock_timeout.asBool())
 			{
-				ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
+				ERR_post(isc_bad_tpb_content, isc_arg_gds,
+					isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
 					isc_arg_string, "isc_tpb_lock_timeout", 0);
 			}
 
@@ -2678,11 +2822,15 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (wait.asBool())
 				{
-					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
 						isc_arg_string, "isc_tpb_wait", 0);
 				}
 				else
-					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_nowait", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_nowait", 0);
+				}
 			}
 
 			transaction->tra_lock_timeout = 0;
@@ -2693,12 +2841,20 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (!read_only.asBool())
 				{
-					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_read",
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_read",
 						isc_arg_string, "isc_tpb_write", 0);
 				}
 				else
-					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_read", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_read", 0);
+				}
 			}
+			
+			// Cannot set the whole txn to R/O if we already saw a R/W table reservation.
+			if (anylock_write)
+				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_readtxn_after_writelock, 0);
 
 			transaction->tra_flags |= TRA_readonly;
 			break;
@@ -2708,11 +2864,15 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (read_only.asBool())
 				{
-					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_write",
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_write",
 						isc_arg_string, "isc_tpb_read", 0);
 				}
 				else
-					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_write", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_write", 0);
+				}
 			}
 
 			transaction->tra_flags &= ~TRA_readonly;
@@ -2727,35 +2887,50 @@ static void transaction_options(thread_db* tdbb,
 			break;
 
 		case isc_tpb_lock_write:
+			// Cannot set a R/W table reservation if the whole txn is R/O.
+			if (read_only.asBool())
+				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_writelock_after_readtxn, 0);
+				
+			anylock_write = true;
+			// fall into
 		case isc_tpb_lock_read:
 			{
 				const char* option_name = (op == isc_tpb_lock_read) ?
 					"isc_tpb_lock_read" : "isc_tpb_lock_write";
-			
+
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_tpb_reserv_missing_tlen, isc_arg_string, option_name, 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_missing_tlen, isc_arg_string, option_name, 0);
+				}
 
 				const USHORT len = *tpb++;
 				if (len > MAX_SQL_IDENTIFIER_LEN)
 				{
-					ERR_post(isc_tpb_reserv_long_tlen, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_long_tlen, isc_arg_number, len,
 						isc_arg_string, option_name, 0);
 				}
 
 				if (!len)
-					ERR_post(isc_tpb_reserv_null_tlen, isc_arg_string, option_name, 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_null_tlen, isc_arg_string, option_name, 0);
+				}
 
 				// Does the identifier length surpasses the remaining of the TPB?
 				if (tpb >= end)
 				{
-					ERR_post(isc_tpb_reserv_missing_tname, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_missing_tname, isc_arg_number, len,
 						isc_arg_string, option_name, 0);
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_tpb_reserv_corrup_tlen, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_corrup_tlen, isc_arg_number, len,
 						isc_arg_string, option_name, 0);
 				}
 
@@ -2764,7 +2939,8 @@ static void transaction_options(thread_db* tdbb,
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
 				if (!relation)
 				{
-					ERR_post(isc_tpb_reserv_relnotfound, isc_arg_string, ERR_cstring(name),
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_reserv_relnotfound, isc_arg_string, ERR_cstring(name),
 						isc_arg_string, option_name, 0);
 				}
 
@@ -2774,18 +2950,23 @@ static void transaction_options(thread_db* tdbb,
 				UCHAR lock_type = (op == isc_tpb_lock_read) ? LCK_none : LCK_SW;
 				if (tpb < end)
 				{
-					// Things we don't check yet: that the same table is reserved
-					// for read/write shared and (protected or exclusive).
-					if (*tpb == isc_tpb_shared)
-						tpb++;
-					else if (*tpb == isc_tpb_protected || *tpb == isc_tpb_exclusive)
+					switch (*tpb)
 					{
-						tpb++;
+					case isc_tpb_shared:
+						++tpb;
+						break;
+					case isc_tpb_protected:
+					case isc_tpb_exclusive:
+						++tpb;
 						lock_type = (lock_type == LCK_SW) ? LCK_EX : LCK_PR;
+						break;
+					// We'll assume table reservation doesn't make the concurrency type mandatory.
+					//default:
+					//    ERR_post(0);
 					}
 				}
 
-				expand_view_lock(transaction, relation, lock_type, option_name);
+				expand_view_lock(tdbb, transaction, relation, lock_type, option_name, lockmap, 0);
 			}
 			break;
 
@@ -2796,19 +2977,24 @@ static void transaction_options(thread_db* tdbb,
 					"isc_tpb_verb_time" : "isc_tpb_commit_time";
 				// Harmless for now even if formally invalid.
 				if (tpb >= end)
-					ERR_post(isc_tpb_missing_len, isc_arg_string, option_name, 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_missing_len, isc_arg_string, option_name, 0);
+				}
 
 				const USHORT len = *tpb++;
 
 				if (tpb >= end && len > 0)
 				{
-					ERR_post(isc_tpb_missing_value, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_missing_value, isc_arg_number, len,
 						isc_arg_string, option_name, 0);
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_tpb_corrupt_len, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_corrupt_len, isc_arg_number, len,
 						isc_arg_string, option_name, 0);
 				}
 
@@ -2828,46 +3014,59 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (wait.isAssigned() && !wait.asBool())
 				{
-					ERR_post(isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_lock_timeout",
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_lock_timeout",
 						isc_arg_string, "isc_tpb_nowait", 0);
 				}
 
 				if (!lock_timeout.assignOnce(true))
-					ERR_post(isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_tpb_missing_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_missing_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				const USHORT len = *tpb++;
 
 				// Does the encoded number's length surpasses the remaining of the TPB?
 				if (tpb >= end)
 				{
-					ERR_post(isc_tpb_missing_value, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_missing_value, isc_arg_number, len,
 						isc_arg_string, "isc_tpb_lock_timeout", 0);
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_tpb_corrupt_len, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_corrupt_len, isc_arg_number, len,
 						isc_arg_string, "isc_tpb_lock_timeout", 0);
 				}
 
 				if (len > sizeof(transaction->tra_lock_timeout))
 				{
-					ERR_post(isc_tpb_overflow_len, isc_arg_number, len,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_overflow_len, isc_arg_number, len,
 						isc_arg_string, "isc_tpb_lock_timeout", 0);
 				}
 
 				if (!len)
-					ERR_post(isc_tpb_null_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				{
+					ERR_post(isc_bad_tpb_content, isc_arg_gds,
+						isc_tpb_null_len, isc_arg_string, "isc_tpb_lock_timeout", 0);
+				}
 
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
 
 				if (transaction->tra_lock_timeout <= 0)
 				{
-					ERR_post(isc_tpb_invalid_value,
+					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_invalid_value,
 						isc_arg_number, transaction->tra_lock_timeout,
 						isc_arg_string, "isc_tpb_lock_timeout", 0);
 				}
@@ -2881,13 +3080,18 @@ static void transaction_options(thread_db* tdbb,
 		}
 	}
 
-	if (rec_version.isAssigned() &&
-		!(transaction->tra_flags & TRA_read_committed))
+	if (rec_version.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 	{
 		if (rec_version.asBool())
-			ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
+		{
+			ERR_post(isc_bad_tpb_content, isc_arg_gds,
+				isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", 0);
+		}
 		else
-			ERR_post(isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
+		{
+			ERR_post(isc_bad_tpb_content, isc_arg_gds,
+				isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", 0);
+		}
 	}
 
 

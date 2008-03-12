@@ -604,6 +604,14 @@ static const struct {
 	{335544901, "HY000"}, // 581 tpb_null_len 
 	{335544902, "HY000"}, // 582 tpb_overflow_len 
 	{335544903, "HY000"}, // 583 tpb_invalid_value 
+	{335544904, "HY000"}, // 584 tpb_reserv_stronger_wng 
+	{335544905, "HY000"}, // 585 tpb_reserv_stronger 
+	{335544906, "HY000"}, // 586 tpb_reserv_max_recursion 
+	{335544907, "HY000"}, // 587 tpb_reserv_virtualtbl 
+	{335544908, "HY000"}, // 588 tpb_reserv_systbl 
+	{335544909, "HY000"}, // 589 tpb_reserv_temptbl 
+	{335544910, "HY000"}, // 590 tpb_readtxn_after_writelock 
+	{335544911, "HY000"}, // 591 tpb_writelock_after_readtxn 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

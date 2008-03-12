@@ -1218,6 +1218,22 @@ C --
       PARAMETER (GDS__tpb_overflow_len                 = 335544902)
       INTEGER*4 GDS__tpb_invalid_value               
       PARAMETER (GDS__tpb_invalid_value                = 335544903)
+      INTEGER*4 GDS__tpb_reserv_stronger_wng         
+      PARAMETER (GDS__tpb_reserv_stronger_wng          = 335544904)
+      INTEGER*4 GDS__tpb_reserv_stronger             
+      PARAMETER (GDS__tpb_reserv_stronger              = 335544905)
+      INTEGER*4 GDS__tpb_reserv_max_recursion        
+      PARAMETER (GDS__tpb_reserv_max_recursion         = 335544906)
+      INTEGER*4 GDS__tpb_reserv_virtualtbl           
+      PARAMETER (GDS__tpb_reserv_virtualtbl            = 335544907)
+      INTEGER*4 GDS__tpb_reserv_systbl               
+      PARAMETER (GDS__tpb_reserv_systbl                = 335544908)
+      INTEGER*4 GDS__tpb_reserv_temptbl              
+      PARAMETER (GDS__tpb_reserv_temptbl               = 335544909)
+      INTEGER*4 GDS__tpb_readtxn_after_writelock     
+      PARAMETER (GDS__tpb_readtxn_after_writelock      = 335544910)
+      INTEGER*4 GDS__tpb_writelock_after_readtxn     
+      PARAMETER (GDS__tpb_writelock_after_readtxn      = 335544911)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
