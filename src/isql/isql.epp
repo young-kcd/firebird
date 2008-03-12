@@ -981,7 +981,9 @@ void ISQL_errmsg(const ISC_STATUS* status)
 		{
 			return;
 		}
-		ISQL_msg_get(0, errbuf, SafeArg() << isc_sqlcode(status));
+		FB_SQLSTATE_STRING sqlstate;
+		fb_sqlstate(sqlstate, status);
+		ISQL_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
 		STDERROUT(errbuf);
 		if (fb_interpret(errbuf, sizeof(errbuf), &vec))
 		{

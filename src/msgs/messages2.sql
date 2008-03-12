@@ -2742,7 +2742,7 @@ COMMIT WORK;
 -- Do not change the arguments of the previous JRD_BUGCHK messages.
 -- Write the new JRD_BUGCHK messages here.
 -- ISQL
-('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLCODE = @1', NULL, NULL);
+('GEN_ERR', 'errmsg', 'isql.e', NULL, 17, 0, NULL, 'Statement failed, SQLSTATE = @1', NULL, NULL);
 ('USAGE', 'ISQL_main', 'isql.epp', NULL, 17, 1, NULL, 'usage:    isql [options] [<database>]', NULL, NULL);
 ('SWITCH', 'parse_arg', 'isql.e', NULL, 17, 2, NULL, 'Unknown switch: @1', NULL, NULL);
 ('NO_DB', 'do_isql', 'isql.e', NULL, 17, 3, NULL, 'Use CONNECT or CREATE DATABASE to specify a database', NULL, NULL);
