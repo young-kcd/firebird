@@ -758,8 +758,15 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 {
 	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
 	// Return error otherwise.
-	// Also, if the first element of the vector doesn't signal an error, return.
-	if (!**vector || bufsize < 50)
+	if (bufsize < 50)
+		return 0;
+
+	// Skip the SQLSTATE
+	if ((*vector)[0] == isc_arg_sql_state)
+		*vector += 2;
+
+	// If the first element of the vector doesn't signal an error, return.
+	if (!**vector)
 		return 0;
 
 	const ISC_STATUS* v;
@@ -781,7 +788,7 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	MsgFormat::SafeArg safe;
 
 	// Parse and collect any arguments that may be present
-	
+
 	TEXT* p = 0;
 	const TEXT* q;
 	int temp_len = BUFFER_SMALL;
@@ -899,14 +906,6 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 			strncpy(s, q, bufsize);
 			s[bufsize - 1] = 0;
 		}
-		break;
-
-	case isc_arg_sql_state:
-		q = (const TEXT*) (*vector)[1];
-		if (strlen(q) >= FB_SQLSTATE_SIZE) // avoid surprises, corruption, etc.
-			sprintf(s, "SQLSTATE (%.*s)", FB_SQLSTATE_SIZE - 1, q);
-		else
-			sprintf(s, "SQLSTATE (%s)", q);
 		break;
 
 	case isc_arg_unix:
