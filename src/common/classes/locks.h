@@ -43,6 +43,7 @@
 #include <thread.h>
 #include <synch.h>
 #endif
+#include <errno.h>
 #endif
 
 namespace Firebird {
@@ -184,8 +185,8 @@ private:
 private:
 	void init() {
 		int rc = pthread_mutex_init(&mlock, &attr);
-		if (rc < 0)
-			system_call_failed::raise("pthread_mutex_init");
+		if (rc)
+			system_call_failed::raise("pthread_mutex_init", rc);
 	}
 
 public:
@@ -193,18 +194,26 @@ public:
 	explicit Mutex(MemoryPool&) { init(); }
 	~Mutex() {
 		int rc = pthread_mutex_destroy(&mlock);
-		if (rc < 0)
-			system_call_failed::raise("pthread_mutex_destroy");
+		if (rc)
+			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
 	void enter() {
 		int rc = pthread_mutex_lock(&mlock);
-		if (rc < 0)
-			system_call_failed::raise("pthread_mutex_lock");
+		if (rc)
+			system_call_failed::raise("pthread_mutex_lock", rc);
+	}
+	bool tryEnter() {
+		int rc = pthread_mutex_trylock(&mlock);
+		if (rc == EBUSY)
+			return false;
+		if (rc)
+			system_call_failed::raise("pthread_mutex_trylock", rc);
+		return true;
 	}
 	void leave() {
 		int rc = pthread_mutex_unlock(&mlock);
-		if (rc < 0)
-			system_call_failed::raise("pthread_mutex_unlock");
+		if (rc)
+			system_call_failed::raise("pthread_mutex_unlock", rc);
 	}
 	
 public:
