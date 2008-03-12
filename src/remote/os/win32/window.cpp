@@ -32,7 +32,6 @@
 #include "../remote/os/win32/property.rh"
 
 #include "../jrd/svc.h"
-#include "../jrd/sch_proto.h"
 #include "../common/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
