@@ -2163,12 +2163,10 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 		}
 		xpm->xpm_flags = 0;
 
-		{
-			Firebird::MutexLockGuard guard(xnet_mutex);
+		Firebird::MutexLockGuard guard(xnet_mutex);
 
-			xpm->xpm_next = global_client_maps;
-			global_client_maps = xpm;
-		}
+		xpm->xpm_next = global_client_maps;
+		global_client_maps = xpm;
 
 		return xpm;
 	}
