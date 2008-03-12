@@ -5624,19 +5624,6 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 
 /**
   
- 	Attachment::locksmith
-  
-    @brief	Validate - is attached user locksmith?
-
- **/
-bool Attachment::locksmith() const
-{
-	return att_user->locksmith();
-}
-
-
-/**
-  
 	getUserInfo
   
     @brief	Checks the userinfo database to validate

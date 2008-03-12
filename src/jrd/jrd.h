@@ -357,6 +357,13 @@ const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
 const ULONG ATT_no_db_triggers		= 131072;	// Don't execute database triggers
 
 
+inline bool Attachment::locksmith() const
+{
+	return att_user && att_user->locksmith();
+}
+
+
+
 // Procedure block
 
 class jrd_prc : public pool_alloc<type_prc>
