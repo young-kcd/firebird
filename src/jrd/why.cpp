@@ -152,7 +152,7 @@ inline void bad_handle(ISC_STATUS code)
 
 inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 {
-	// this function is called for incoming API handlers,
+	// this function is called for incoming API handles,
 	// proposed to be created by the call
 	if ((!ptr) || (*ptr)) 
 	{
@@ -1686,9 +1686,9 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
 	}
 	catch (const Firebird::Exception& e)
 	{
-		*req_handle = 0;
 		if (dbb && rq)
 		{
+			*req_handle = 0;
 			CALL(PROC_RELEASE_REQUEST, dbb->implementation) (status, rq);
 		}
 		e.stuff_exception(status);
@@ -2255,9 +2255,9 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 	}
 	catch (const Firebird::Exception& e)
 	{
-		*public_stmt_handle = 0;
 		if (dbb && stmt_handle)
 		{
+			*public_stmt_handle = 0;
 			CALL(PROC_DSQL_FREE, dbb->implementation) (status, &stmt_handle, DSQL_drop);
 		}
 		e.stuff_exception(status);
