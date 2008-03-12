@@ -97,7 +97,6 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/xnet_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/os/isc_i_proto.h"
@@ -139,10 +138,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
  *
  **************************************/
 	hInst = hThisInst;
-
-#ifndef SUPERSERVER
-	//MessageBox(NULL, "Debug me", "Please", MB_OK);
-#endif
 
 	// We want server to crash without waiting for feedback from the user
 	try
