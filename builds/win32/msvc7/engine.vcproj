@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/common;../../../extern/icu/source/i18n;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -81,7 +81,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/common;../../../extern/icu/source/i18n;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
@@ -890,9 +890,6 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\pio.h">
 			</File>
 			<File
@@ -915,6 +912,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\que.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rdb.h">

@@ -4,6 +4,7 @@
 	Version="7.10"
 	Name="engine_embed"
 	ProjectGUID="{74042D46-7104-47F1-B8BC-00E0E7BFF8AB}"
+	RootNamespace="engine_embed"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -29,7 +30,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/common;../../../extern/icu/source/i18n;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
@@ -82,7 +83,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/source/common;../../../extern/icu/source/i18n;../../../src/vulcan"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,_X86_,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -891,9 +892,6 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\os\pio.h">
 			</File>
 			<File
@@ -916,6 +914,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\que.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rdb.h">
