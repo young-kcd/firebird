@@ -2554,15 +2554,13 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
+
 		Transaction* transaction = NULL;
-		if (*tra_handle)
-		{
-			transaction = translate<Transaction>(tra_handle);
-		}
 		StoredTra* handle = NULL;
 
-		if (transaction)
+		if (tra_handle && *tra_handle)
 		{
+			transaction = translate<Transaction>(tra_handle);
 			Transaction* t = find_transaction(statement->parent, transaction);
 			if (!t)
 			{
@@ -2925,9 +2923,9 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 		Transaction* transaction = NULL;
 		StoredTra* handle = NULL;
 
-		if (*tra_handle) 
+		if (tra_handle && *tra_handle)
 		{
-			transaction = find_transaction(dbb, translate<Transaction>(tra_handle));
+			transaction = translate<Transaction>(tra_handle);
 			Transaction* t = find_transaction(dbb, transaction);
 			if (!t)
 			{
@@ -3491,7 +3489,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 		status.setPrimaryHandle(statement);
 
 		StoredTra* handle = NULL;
-		if (*tra_handle) 
+
+		if (tra_handle && *tra_handle)
 		{
 			Transaction* transaction = translate<Transaction>(tra_handle);
 			transaction = find_transaction(statement->parent, transaction);
