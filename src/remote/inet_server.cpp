@@ -83,7 +83,6 @@
 #include "../remote/inet_proto.h"
 #include "../remote/serve_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/fb_string.h"
@@ -357,9 +356,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		}
 		{ // scope block
 			ISC_STATUS_ARRAY status_vector;
-			THREAD_ENTER();
 			port = INET_connect(protocol, 0, status_vector, INET_SERVER_flag, 0);
-			THREAD_EXIT();
 			if (!port) {
 				gds__print_status(status_vector);
 				exit(STARTUP_ERROR);
@@ -367,9 +364,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 		} // end scope block
 	}
 	else {
-		THREAD_ENTER();
 		port = INET_server(channel);
-		THREAD_EXIT();
 		if (!port) {
 			fprintf(stderr, "fbserver: Unable to start INET_server\n");
 			exit(STARTUP_ERROR);

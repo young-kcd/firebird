@@ -60,7 +60,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/sdl_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"

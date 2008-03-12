@@ -90,7 +90,6 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrd_proto.h"

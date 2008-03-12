@@ -38,7 +38,6 @@
 #include "../remote/os/win32/window.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/fb_string.h"
 #include "../common/config/config.h"

@@ -50,7 +50,6 @@
 #include "../jrd/exe_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
@@ -1042,10 +1041,6 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	else if (userFunc->udf_dtype == dtype_varying)
 		userFunc->udf_length += sizeof(USHORT);
 
-    /* Since we could give up control due to the THREAD_EXIT and THREAD_ENTER
-     * calls, another thread may have added the same udf in the mean time
-     */
-
 	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_udf)))
 	{
 		// Get rid of all the stuff we just read in. Use existing one 
@@ -1544,9 +1539,6 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	if (!DSQL_REQUEST(irq_fields))
 		DSQL_REQUEST(irq_fields) = handle3;
-
-	// Since we could give up control due to the THREAD_EXIT and THREAD_ENTER,
-	// another thread may have added the same table in the mean time
 
 	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_relation)))
 	{

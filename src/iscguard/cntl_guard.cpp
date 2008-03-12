@@ -29,7 +29,6 @@
 #include "../utilities/install/install_nt.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/init.h"
 

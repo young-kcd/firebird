@@ -108,7 +108,6 @@ const int INET_RETRY_CALL	= 5;
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"
-#include "../jrd/sch_proto.h"
 
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"

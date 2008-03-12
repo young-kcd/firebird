@@ -51,7 +51,6 @@
 #include "../jrd/isc_signal.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/array.h"
@@ -1208,7 +1207,7 @@ static void blocking_action(SRQ_PTR blocking_owner_offset,
  **************************************
  *
  * Functional description
- *	Fault hander for a blocking signal.  A blocking signal
+ *	Fault handler for a blocking signal.  A blocking signal
  *	is an indication (albeit a strong one) that a blocking
  *	AST is pending for the owner.  Check in with the data
  *	structure for details.
@@ -2560,7 +2559,7 @@ static void post_blockage(lrq* request, lbl* lock)
 	SRQ lock_srq;
 	SRQ_LOOP(lock->lbl_requests, lock_srq)
 	{
-		lrq* block = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+		lrq* const block = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 
 		// Figure out if this lock request is blocking our own lock request.
 		// Of course, our own request cannot block ourselves.  Compatible

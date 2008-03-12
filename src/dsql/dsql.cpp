@@ -58,7 +58,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/inf_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/classes/init.h"
 #include "../common/utils_proto.h"
