@@ -250,6 +250,7 @@ global:
 	isc_print_status;
 	isc_sqlcode;
 	isc_sql_interprete;
+	fb_sqlstate;
 
 # Event functions
 
