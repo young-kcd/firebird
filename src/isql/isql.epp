@@ -7044,7 +7044,7 @@ static SSHORT print_item(TEXT** s,
 		case SQL_LONG:
 		case SQL_INT64:
 			{
-				Firebird::string str_buf(length);
+				Firebird::string str_buf;
 				SINT64 value;
 
 				if (dtype == SQL_SHORT)
@@ -7054,7 +7054,7 @@ static SSHORT print_item(TEXT** s,
 				else if (dtype == SQL_INT64)
 					value = *(SINT64*) var->sqldata;
 
-				print_item_numeric(value, length, dscale, str_buf.begin());
+				print_item_numeric(value, length, dscale, str_buf.getBuffer(length));
 				sprintf(p, "%s ", str_buf.c_str());
 				if (List) {
 					str_buf.ltrim(); // Added 1999-03-23 to left-justify in LIST ON mode 
