@@ -246,7 +246,7 @@ void ALLQ_init()
  *
  **************************************/
 	qli_vec temp_vector[2];
-	memcpy(temp_vector, 0, sizeof(temp_vector));
+	memset(temp_vector, 0, sizeof(temp_vector));
 
 	global_pools = temp_vector;
 	global_pools->vec_count = 1;
