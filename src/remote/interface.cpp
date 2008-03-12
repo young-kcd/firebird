@@ -6465,6 +6465,9 @@ static void release_transaction( RTR transaction)
 	RDB rdb = transaction->rtr_rdb;
 	SET_OBJECT(rdb, NULL, transaction->rtr_id);
 
+	while (transaction->rtr_blobs)
+		release_blob(transaction->rtr_blobs);
+
 	for (RTR* p = &rdb->rdb_transactions; *p; p = &(*p)->rtr_next)
 	{
 		if (*p == transaction) {
