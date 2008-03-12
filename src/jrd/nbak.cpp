@@ -43,7 +43,6 @@
 #include "gen/iberror.h"
 #include "gds_proto.h"
 #include "os/guid.h"
-#include "sch_proto.h"
 #include "os/isc_i_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H

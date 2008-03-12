@@ -86,7 +86,6 @@
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/utl_proto.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/auto.h"

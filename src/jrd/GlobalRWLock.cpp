@@ -44,17 +44,21 @@ namespace Jrd {
 
 int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 {
-	Jrd::GlobalRWLock* globalRWLock = 
-		static_cast<Jrd::GlobalRWLock*>(ast_object);
+	GlobalRWLock* globalRWLock = static_cast<GlobalRWLock*>(ast_object);
 
-	Jrd::Database* dbb = globalRWLock->cached_lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = globalRWLock->cached_lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
 
-	globalRWLock->blockingAstHandler(tdbb);
+		globalRWLock->blockingAstHandler(tdbb);
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;	
 }
@@ -71,7 +75,7 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 	Database* dbb = tdbb->getDatabase();
 
 	cached_lock = FB_NEW_RPT(getPool(), lockLen) Lock();
-	cached_lock->lck_type = static_cast<Jrd::lck_t>(lckType);
+	cached_lock->lck_type = static_cast<lck_t>(lckType);
 	cached_lock->lck_owner_handle = 0;
 	cached_lock->lck_length = lockLen;
 

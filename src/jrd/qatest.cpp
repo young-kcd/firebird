@@ -100,7 +100,6 @@ defined APIs for this function.
 #include "gen/iberror.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/flu_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #ifdef WIN_NT
 #include <windows.h>

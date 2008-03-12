@@ -91,7 +91,6 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/iberr.h"
 #include "../common/utils_proto.h"
@@ -4218,18 +4217,24 @@ static int blocking_ast_dsql_cache(void* ast_object)
  **************************************/
 	DSqlCacheItem* item = static_cast<DSqlCacheItem*>(ast_object);
 
-	Database* dbb = item->lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = item->lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(item->lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(item->lock->lck_attachment);
 
-	item->obsolete = true;
-	item->locked = false;
-	LCK_release(tdbb, item->lock);
+		Jrd::ContextPoolHolder context(tdbb, 0);
+
+		item->obsolete = true;
+		item->locked = false;
+		LCK_release(tdbb, item->lock);
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }
@@ -4284,19 +4289,25 @@ static int blocking_ast_procedure(void* ast_object)
  **************************************/
 	jrd_prc* procedure = static_cast<jrd_prc*>(ast_object);
 
-	Database* dbb = procedure->prc_existence_lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = procedure->prc_existence_lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(procedure->prc_existence_lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(procedure->prc_existence_lock->lck_attachment);
+	
+		Jrd::ContextPoolHolder context(tdbb, 0);
 
-	if (procedure->prc_existence_lock) {
-		LCK_release(tdbb, procedure->prc_existence_lock);
+		if (procedure->prc_existence_lock) {
+			LCK_release(tdbb, procedure->prc_existence_lock);
+		}
+		procedure->prc_flags |= PRC_obsolete;
 	}
-	procedure->prc_flags |= PRC_obsolete;
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }
@@ -4320,24 +4331,30 @@ static int blocking_ast_relation(void* ast_object)
  **************************************/
 	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
 
-	Database* dbb = relation->rel_existence_lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = relation->rel_existence_lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(relation->rel_existence_lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(relation->rel_existence_lock->lck_attachment);
+	
+		Jrd::ContextPoolHolder context(tdbb, 0);
 
-	if (relation->rel_use_count) {
-		relation->rel_flags |= REL_blocking;
+		if (relation->rel_use_count) {
+			relation->rel_flags |= REL_blocking;
+		}
+		else {
+			relation->rel_flags &= ~REL_blocking;
+			relation->rel_flags |= REL_check_existence;
+			if (relation->rel_existence_lock)
+				LCK_release(tdbb, relation->rel_existence_lock);
+		}
 	}
-	else {
-		relation->rel_flags &= ~REL_blocking;
-		relation->rel_flags |= REL_check_existence;
-		if (relation->rel_existence_lock)
-			LCK_release(tdbb, relation->rel_existence_lock);
-	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }
@@ -4347,19 +4364,23 @@ static int partners_ast_relation(void* ast_object)
 {
 	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
 
-	Database* dbb = relation->rel_partners_lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = relation->rel_partners_lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	fb_assert(relation->rel_partners_lock);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(relation->rel_partners_lock->lck_attachment);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(relation->rel_partners_lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
+		Jrd::ContextPoolHolder context(tdbb, 0);
 
-	LCK_release(tdbb, relation->rel_partners_lock);
-	relation->rel_flags |= REL_check_partners;
+		LCK_release(tdbb, relation->rel_partners_lock);
+		relation->rel_flags |= REL_check_partners;
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }

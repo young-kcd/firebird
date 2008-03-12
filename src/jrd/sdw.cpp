@@ -58,6 +58,7 @@ using namespace Ods;
 static void shutdown_shadow(Shadow* shadow);
 static void activate_shadow(void);
 static Shadow* allocate_shadow(jrd_file*, USHORT, USHORT);
+static int blocking_ast_shadowing(void*);
 static bool check_for_file(const SCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void check_if_got_ast(jrd_file*);
@@ -596,7 +597,7 @@ void SDW_init(bool activate, bool delete_files)
 	lock->lck_length = key_length;
 	lock->lck_dbb = dbb;
 	lock->lck_object = reinterpret_cast<blk*>(dbb);
-	lock->lck_ast = SDW_start_shadowing;
+	lock->lck_ast = blocking_ast_shadowing;
 
 	if (activate)
 		activate_shadow();
@@ -1088,46 +1089,6 @@ void SDW_start(const TEXT* file_name,
 }
 
 
-int SDW_start_shadowing(void* ast_object)
-{
-/**************************************
- *
- *	S D W _ s t a r t _ s h a d o w i n g
- *
- **************************************
- *
- * Functional description
- *	A blocking AST has been issued to give up
- *	the lock on the shadowing semaphore. 
- *	Do so after flagging the need to check for
- *	new shadow files before doing the next physical write.
- *
- **************************************/
-	Database* new_dbb = static_cast<Database*>(ast_object);
-	Database::SyncGuard dsGuard(new_dbb, true);
-
-	// Shouldn't we find a way to call check_if_got_ast() here?
-
-	Lock* lock = new_dbb->dbb_shadow_lock;
-	if (lock->lck_physical != LCK_SR)
-		return 0;
-
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
-	ThreadContextHolder tdbb;
-
-	tdbb->setDatabase(new_dbb);
-
-	new_dbb->dbb_ast_flags |= DBB_get_shadows;
-	if (LCK_read_data(tdbb, lock) & SDW_rollover)
-		update_dbb_to_sdw(new_dbb);
-
-	LCK_release(tdbb, lock);
-
-	return 0;
-}
-
-
 static void activate_shadow(void)
 {
 /**************************************
@@ -1203,6 +1164,47 @@ static Shadow* allocate_shadow(jrd_file* shadow_file,
 	*pShadow = shadow;
 
 	return shadow;
+}
+
+
+static int blocking_ast_shadowing(void* ast_object)
+{
+/**************************************
+ *
+ *	b l o c k i n g _ a s t _ s h a d o w i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	A blocking AST has been issued to give up
+ *	the lock on the shadowing semaphore. 
+ *	Do so after flagging the need to check for
+ *	new shadow files before doing the next physical write.
+ *
+ **************************************/
+	Database* new_dbb = static_cast<Database*>(ast_object);
+
+	try
+	{
+		Database::SyncGuard dsGuard(new_dbb, true);
+
+		Lock* lock = new_dbb->dbb_shadow_lock;
+
+		// Since this routine will be called asynchronously,
+		// we must establish a thread context
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(new_dbb);
+
+		new_dbb->dbb_ast_flags |= DBB_get_shadows;
+		if (LCK_read_data(tdbb, lock) & SDW_rollover)
+			update_dbb_to_sdw(new_dbb);
+
+		LCK_release(tdbb, lock);
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+	return 0;
 }
 
 

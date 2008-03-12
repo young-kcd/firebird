@@ -57,7 +57,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../jrd/ThreadStart.h"
@@ -314,79 +313,77 @@ int CCH_down_grade_dbb(void* ast_object)
  *
  **************************************/
 	Database* dbb = static_cast<Database*>(ast_object);
-	Database::SyncGuard dsGuard(dbb, true);
 
-/* Ignore the request if the database or lock block does not appear
-   to be valid . */
-	Lock* lock;
-	if ((MemoryPool::blk_type(dbb) != type_dbb) ||
-		!(lock = dbb->dbb_lock) ||
-		(MemoryPool::blk_type(lock) != type_lck) || !(lock->lck_id))
+	try
 	{
-		return 0;
-	}
+		Database::SyncGuard dsGuard(dbb, true);
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
-	ThreadContextHolder tdbb;
+		Lock* lock = dbb->dbb_lock;
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(lock->lck_attachment);
+		// Since this routine will be called asynchronously,
+		// we must establish a thread context
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(lock->lck_attachment);
 
-	dbb->dbb_ast_flags |= DBB_blocking;
+		dbb->dbb_ast_flags |= DBB_blocking;
 
-/* Database shutdown will release the database lock; just return. */
+		// Database shutdown will release the database lock; just return
 
-	if (SHUT_blocking_ast(tdbb)) {
-		dbb->dbb_ast_flags &= ~DBB_blocking;
-		return 0;
-	}
+		if (SHUT_blocking_ast(tdbb)) {
+			dbb->dbb_ast_flags &= ~DBB_blocking;
+			return 0;
+		}
 
-/* If we are already shared, there is nothing more we can do.
-   If any case, the other guy probably wants exclusive access,
-   and we can't give it anyway */
+		// If we are already shared, there is nothing more we can do.
+		// If any case, the other guy probably wants exclusive access,
+		// and we can't give it anyway
 
-	if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
-		return 0;
-	}
+		if ((lock->lck_logical == LCK_SW) || (lock->lck_logical == LCK_SR)) {
+			return 0;
+		}
 
-	if (dbb->dbb_flags & DBB_bugcheck) {
-		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
-		dbb->dbb_ast_flags &= ~DBB_blocking;
-		return 0;
-	}
+		if (dbb->dbb_flags & DBB_bugcheck) {
+			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+			dbb->dbb_ast_flags &= ~DBB_blocking;
+			return 0;
+		}
 
-/* If we are supposed to be exclusive, stay exclusive */
+		// If we are supposed to be exclusive, stay exclusive
 
-	if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
-		return 0;
-	}
+		if ((dbb->dbb_flags & DBB_exclusive) || (dbb->dbb_ast_flags & DBB_shutdown_single)) {
+			return 0;
+		}
 
-/* Assert any page locks that have been requested, but not asserted */
+		// Assert any page locks that have been requested, but not asserted
 
-	dbb->dbb_ast_flags |= DBB_assert_locks;
-	BufferControl* bcb = dbb->dbb_bcb;
-	if (bcb) {
-		if (bcb->bcb_count) {
-            const bcb_repeat* tail = bcb->bcb_rpt;
-			for (const bcb_repeat* const end = tail + bcb->bcb_count;
-				tail < end; tail++)
-			{
-				PAGE_LOCK_ASSERT(tail->bcb_bdb->bdb_lock);
+		dbb->dbb_ast_flags |= DBB_assert_locks;
+		BufferControl* bcb = dbb->dbb_bcb;
+		if (bcb) {
+			if (bcb->bcb_count) {
+				const bcb_repeat* tail = bcb->bcb_rpt;
+				for (const bcb_repeat* const end = tail + bcb->bcb_count;
+					tail < end; tail++)
+				{
+					PAGE_LOCK_ASSERT(tail->bcb_bdb->bdb_lock);
+				}
 			}
 		}
-	}
 
-/* Down grade the lock on the database itself */
+	// Down grade the lock on the database itself
 
-	if (lock->lck_physical == LCK_EX) {
-		LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	/* This lets waiting cache manager in first */
-	}
-	else {
-		LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
-	}
+		if (lock->lck_physical == LCK_EX) {
+			LCK_convert(tdbb, lock, LCK_PW, LCK_WAIT);	/* This lets waiting cache manager in first */
+		}
+		else {
+			LCK_convert(tdbb, lock, LCK_SW, LCK_WAIT);
+		}
 
-	dbb->dbb_ast_flags &= ~DBB_blocking;
+		dbb->dbb_ast_flags &= ~DBB_blocking;
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
 	return 0;
 }
 
@@ -2725,35 +2722,37 @@ static int blocking_ast_bdb(void* ast_object)
  *
  **************************************/
 	BufferDesc* bdb = static_cast<BufferDesc*>(ast_object);
-	Database* dbb = bdb->bdb_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
 
-	ISC_STATUS_ARRAY ast_status;
+	try
+	{
+		Database* dbb = bdb->bdb_dbb;
 
-/* Since this routine will be called asynchronously, we must establish
-   a thread context. */
-	ThreadContextHolder tdbb(ast_status);
+		Database::SyncGuard dsGuard(dbb, true);
 
-	BLKCHK(bdb, type_bdb);
-	
-	tdbb->setDatabase(dbb);
+		// Since this routine will be called asynchronously,
+		// we must establish a thread context
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
 
-/* Do some fancy footwork to make sure that pages are
-   not removed from the btc tree at AST level.  Then
-   restore the flag to whatever it was before. */
+		// Do some fancy footwork to make sure that pages are
+		// not removed from the btc tree at AST level. Then
+		// restore the flag to whatever it was before.
 
-	const bool keep_pages = (dbb->dbb_bcb->bcb_flags & BCB_keep_pages) != 0;
-	dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
+		const bool keep_pages = (dbb->dbb_bcb->bcb_flags & BCB_keep_pages) != 0;
+		dbb->dbb_bcb->bcb_flags |= BCB_keep_pages;
 
-	down_grade(tdbb, bdb);
+		down_grade(tdbb, bdb);
 
-	if (!keep_pages) {
-		dbb->dbb_bcb->bcb_flags &= ~BCB_keep_pages;
+		if (!keep_pages) {
+			dbb->dbb_bcb->bcb_flags &= ~BCB_keep_pages;
+		}
+
+		if (tdbb->tdbb_status_vector[1]) {
+			gds__log_status(dbb->dbb_filename.c_str(), tdbb->tdbb_status_vector);
+		}
 	}
-
-	if (ast_status[1]) {
-		gds__log_status(dbb->dbb_filename.c_str(), ast_status);
-	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
     return 0;
 }

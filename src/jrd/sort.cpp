@@ -42,7 +42,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sort_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H

@@ -99,7 +99,6 @@
 #include "../jrd/pcmet_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thread_proto.h"

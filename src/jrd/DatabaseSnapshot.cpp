@@ -363,33 +363,36 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 int DatabaseSnapshot::blockingAst(void* ast_object)
 {
 	Database* dbb = static_cast<Database*>(ast_object);
-	fb_assert(dbb);
-	Database::SyncGuard dsGuard(dbb, true);
 
-	ThreadContextHolder tdbb;
-
-	Lock* lock = dbb->dbb_monitor_lock;
-	fb_assert(lock);
-
-	tdbb->setDatabase(lock->lck_dbb);
-	tdbb->setAttachment(lock->lck_attachment);
-
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
+	try
 	{
-		try {
-			// Write the data to the shared memory
-			dumpData(tdbb, true);
+		Lock* lock = dbb->dbb_monitor_lock;
 
-			// Release the lock and mark dbb as requesting a new one
-			LCK_release(tdbb, lock);
-			dbb->dbb_ast_flags |= DBB_monitor_off;
-		}
-		catch (const Exception&) {
-			gds__log("Unexpected exception at the AST level");
+		Database::SyncGuard dsGuard(dbb, true);
+
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(lock->lck_dbb);
+		tdbb->setAttachment(lock->lck_attachment);
+
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
+		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
+		{
+			try {
+				// Write the data to the shared memory
+				dumpData(tdbb, true);
+
+				// Release the lock and mark dbb as requesting a new one
+				LCK_release(tdbb, lock);
+				dbb->dbb_ast_flags |= DBB_monitor_off;
+			}
+			catch (const Exception&) {
+				gds__log("Unexpected exception at the AST level");
+			}
 		}
 	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }

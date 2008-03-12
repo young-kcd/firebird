@@ -3668,3 +3668,20 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 #endif
 }
 
+
+// Deprecated private API functions
+
+int API_ROUTINE gds__thread_enable(int)
+{
+	return true;
+}
+
+
+void API_ROUTINE gds__thread_enter()
+{
+}
+
+
+void API_ROUTINE gds__thread_exit()
+{
+}

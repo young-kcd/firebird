@@ -64,7 +64,6 @@
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_pwd.h"

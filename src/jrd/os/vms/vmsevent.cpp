@@ -28,7 +28,6 @@
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/sch_proto.h"
 
 #include descrip
 #include lckdef

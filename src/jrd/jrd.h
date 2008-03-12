@@ -122,10 +122,10 @@ struct mod;
 
 namespace Jrd {
 
-//const int HASH_SIZE = 509;
+const int QUANTUM			= 100;	// Default quantum
+const int SWEEP_QUANTUM		= 10;	// Make sweeps less disruptive
 
 // fwd. decl.
-//class vec;
 class thread_db;
 class Attachment;
 class jrd_tra;

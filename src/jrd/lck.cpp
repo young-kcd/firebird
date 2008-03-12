@@ -38,7 +38,6 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../lock/lock_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef HAVE_SYS_TYPES_H

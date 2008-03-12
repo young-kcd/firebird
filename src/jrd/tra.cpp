@@ -56,7 +56,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
@@ -1896,21 +1895,27 @@ static int blocking_ast_transaction(void* ast_object)
  *
  **************************************/
 	jrd_tra* transaction = static_cast<jrd_tra*>(ast_object);
-	fb_assert(transaction);
 
-	Database* dbb = transaction->tra_cancel_lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Database* dbb = transaction->tra_cancel_lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(transaction->tra_cancel_lock->lck_attachment);
-	Jrd::ContextPoolHolder context(tdbb, 0);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(transaction->tra_cancel_lock->lck_attachment);
+	
+		Jrd::ContextPoolHolder context(tdbb, 0);
 
-	if (transaction->tra_cancel_lock)
-		LCK_release(tdbb, transaction->tra_cancel_lock);
+		if (transaction->tra_cancel_lock)
+			LCK_release(tdbb, transaction->tra_cancel_lock);
 
-	transaction->tra_flags |= TRA_cancel_request;
+		transaction->tra_flags |= TRA_cancel_request;
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
 	return 0;
 }
 

@@ -1254,17 +1254,23 @@ static int blocking_ast_collation(void* ast_object)
 
 		if (tt->existenceLock)
 		{
-			Database* dbb = tt->existenceLock->lck_dbb;
-			Database::SyncGuard dsGuard(dbb, true);
+			try
+			{
+				Database* dbb = tt->existenceLock->lck_dbb;
 
-			ThreadContextHolder tdbb;
+				Database::SyncGuard dsGuard(dbb, true);
 
-			tdbb->setDatabase(dbb);
-			tdbb->setAttachment(tt->existenceLock->lck_attachment);
-			Jrd::ContextPoolHolder context(tdbb, 0);
+				ThreadContextHolder tdbb;
+				tdbb->setDatabase(dbb);
+				tdbb->setAttachment(tt->existenceLock->lck_attachment);
+		
+				Jrd::ContextPoolHolder context(tdbb, 0);
 
-			LCK_release(tdbb, tt->existenceLock);
-			tt->existenceLock = NULL;
+				LCK_release(tdbb, tt->existenceLock);
+				tt->existenceLock = NULL;
+			}
+			catch (const Firebird::Exception&)
+			{} // no-op
 		}
 	}
 

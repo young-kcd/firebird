@@ -1492,17 +1492,22 @@ static int index_block_flush(void* ast_object)
  *
  **************************************/
 	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
-	Lock* lock = index_block->idb_lock;
 
-	Database* dbb = lock->lck_dbb;
-	Database::SyncGuard dsGuard(dbb, true);
+	try
+	{
+		Lock* lock = index_block->idb_lock;
+		Database* dbb = lock->lck_dbb;
 
-	ThreadContextHolder tdbb;
+		Database::SyncGuard dsGuard(dbb, true);
 
-	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(lock->lck_attachment);
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(lock->lck_attachment);
 
-	release_index_block(tdbb, index_block);
+		release_index_block(tdbb, index_block);
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
 
 	return 0;
 }

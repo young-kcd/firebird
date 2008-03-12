@@ -42,7 +42,6 @@ bool	SDW_rollover_to_shadow(Jrd::jrd_file*, const bool);
 // It's never called directly, but through SDW_check().
 //void	SDW_shutdown_shadow(Jrd::Shadow*);
 void	SDW_start(const TEXT*, USHORT, USHORT, bool);
-int		SDW_start_shadowing(void*);
 
 #endif // JRD_SDW_PROTO_H
 
