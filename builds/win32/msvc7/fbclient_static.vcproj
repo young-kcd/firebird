@@ -177,9 +177,6 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sch_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sdl.h">
 			</File>
 			<File
@@ -289,9 +286,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\perf.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sch.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl.cpp">

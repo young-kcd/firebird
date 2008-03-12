@@ -575,10 +575,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sch.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\jrd\scl.cpp"
 				>
 			</File>
@@ -1352,10 +1348,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sbm.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sch_proto.h"
 				>
 			</File>
 			<File

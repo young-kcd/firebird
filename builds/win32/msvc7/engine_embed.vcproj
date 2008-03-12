@@ -356,9 +356,6 @@
 				RelativePath="..\..\..\src\jrd\RuntimeStatistics.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sch.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\jrd\scl.cpp">
 			</File>
 			<File
@@ -937,9 +934,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sbm.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sch_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\scl.h">
