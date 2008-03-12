@@ -145,10 +145,6 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sch_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sdl.h
 # End Source File
 # Begin Source File
@@ -290,10 +286,6 @@ SOURCE=..\..\..\src\jrd\isc_sync.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\perf.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sch.cpp
 # End Source File
 # Begin Source File
 

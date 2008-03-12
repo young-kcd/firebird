@@ -461,10 +461,6 @@ SOURCE=..\..\..\src\jrd\RuntimeStatistics.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sch.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sdl.cpp
 # End Source File
 # Begin Source File
@@ -1229,10 +1225,6 @@ SOURCE=..\..\..\src\jrd\RuntimeStatistics.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sbm.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sch_proto.h
 # End Source File
 # Begin Source File
 

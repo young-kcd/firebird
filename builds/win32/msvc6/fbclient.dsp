@@ -163,10 +163,6 @@ SOURCE=..\..\..\src\jrd\perf.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sch.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sdl.cpp
 # End Source File
 # Begin Source File
@@ -341,10 +337,6 @@ SOURCE=..\..\..\src\jrd\perf.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\perf_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\sch_proto.h
 # End Source File
 # Begin Source File
 

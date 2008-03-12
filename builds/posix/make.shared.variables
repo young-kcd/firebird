@@ -16,7 +16,7 @@ WHY_Sources = why.cpp
 
 JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
-		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
+		isc_sync.cpp perf.cpp sdl.cpp status.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
