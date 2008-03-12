@@ -324,7 +324,8 @@ BOOL ReadFBSettings(HWND hDlg)
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
-	isc_service_attach(pdwStatus, 0, szService, &hService, 0, "");
+	char spb[] = {isc_spb_version1};
+	isc_service_attach(pdwStatus, 0, szService, &hService, sizeof(spb), spb);
 
 	*pchPtr = '\0';
 
