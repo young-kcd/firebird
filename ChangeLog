@@ -1,3 +1,176 @@
+2008-03-12 18:07  dimitr
+
+	* firebird2/builds/: win32/msvc6/engine.dsp (1.77),
+	win32/msvc6/engine_classic.dsp (1.73), win32/msvc6/engine_embed.dsp
+	(1.52), win32/msvc6/fb_event_print.dsp (1.5),
+	win32/msvc6/fbclient.dsp (1.59), win32/msvc6/fbclient_static.dsp
+	(1.23), posix/make.shared.variables (1.85):
+
+	Cleanup.
+
+2008-03-12 18:01  dimitr
+
+	* firebird2/builds/win32/: msvc8/engine.vcproj (1.19),
+	msvc8/engine_classic.vcproj (1.19), msvc8/engine_embed.vcproj
+	(1.17), msvc8/fbclient.vcproj (1.12), msvc8/fbclient_static.vcproj
+	(1.6), msvc7/engine.vcproj (1.69), msvc7/engine_classic.vcproj
+	(1.69), msvc7/engine_embed.vcproj (1.58), msvc7/fbclient.vcproj
+	(1.49), msvc7/fbclient_static.vcproj (1.21):
+
+	Cleanup.
+
+2008-03-12 17:53  dimitr
+
+	* firebird2/src/jrd/: sch.cpp (1.47), sch_proto.h (1.11):
+
+	1) Cleanup.  2) Catch exceptions in AST routines.
+
+2008-03-12 17:48  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.50), cch.cpp (1.186),
+	dfw.epp (1.229), dyn.epp (1.120), event.cpp (1.69), fun.epp (1.92),
+	gds.cpp (1.248), idx.cpp (1.133), intl.cpp (1.104), isc_sync.cpp
+	(1.129), lck.cpp (1.76), met.epp (1.246), nbak.cpp (1.76), pwd.cpp
+	(1.64), qatest.cpp (1.22), sdw.cpp (1.75), sdw_proto.h (1.16),
+	shut.cpp (1.54), sort.cpp (1.108), svc.cpp (1.213), thread_proto.h
+	(1.12), tra.cpp (1.160), validation.cpp (1.36), vio.cpp (1.207),
+	why.cpp (1.177), os/vms/vmsevent.cpp (1.19), os/vms/vmslock.cpp
+	(1.12), GlobalRWLock.cpp (1.13), jrd.cpp (1.414), jrd.h (1.225):
+
+	1) Cleanup.  2) Catch exceptions in AST routines.
+
+2008-03-12 17:42  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.145):
+
+	Cleanup.
+
+2008-03-12 17:39  dimitr
+
+	* firebird2/src/: remote/inet.cpp (1.207), remote/inet_server.cpp
+	(1.78), remote/interface.cpp (1.168), remote/server.cpp (1.176),
+	remote/xnet.cpp (1.103), dsql/ddl.cpp (1.221), dsql/dsql.cpp
+	(1.235), dsql/metd.epp (1.126), iscguard/cntl_guard.cpp (1.26):
+
+	Cleanup.
+
+2008-03-12 17:34  dimitr
+
+	* firebird2/src/remote/os/win32/: cntl.cpp (1.38), window.cpp
+	(1.31), wnet.cpp (1.49):
+
+	Cleanup.
+
+2008-03-12 17:27  dimitr
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.48):
+
+	Cleanup.
+
+2008-03-12 14:36  alexpeshkoff
+
+	* firebird2/src/common/classes/locks.h (1.39):
+
+	added new method to posix threads mutex
+
+2008-03-12 14:34  alexpeshkoff
+
+	* firebird2/builds/posix/firebird.vers (1.14):
+
+	added new API call
+
+2008-03-12 13:33  alexpeshkoff
+
+	* firebird2/src/qli/all.cpp (1.32):
+
+	Fixed AV when QLI started. I wonder how could it ever work at all?
+
+2008-03-12 12:02  dimitr
+
+	* firebird2/src/isql/isql.epp (1.236):
+
+	Fixed my own bug. Thanks to Claudio.
+
+2008-03-12 11:17  dimitr
+
+	* firebird2/src/: isql/isql.epp (1.235), msgs/messages2.sql (1.29):
+
+	Change the ISQL output to show SQLSTATE instead of SQLCODE.
+
+2008-03-12 11:04  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.176):
+
+	Fixed yet another AV reported by Dmitry Kovalenko.
+
+2008-03-12 10:50  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.167):
+
+	Fixed fbclient's problem with releasing blob after transaction end.
+	Reported by Dmitry Kovalenko in fb-devel.  The fix is like code in
+	server.cpp
+
+2008-03-12 10:41  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.102):
+
+	One more correction noted by Claudio
+
+2008-03-12 10:20  hvlad
+
+	* firebird2/src/remote/os/win32/ibconfig.cpp (1.23):
+
+	Empty SPB not allowed anymore
+
+2008-03-12 09:44  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.247):
+
+	Don't print SQLSTATE by fb_interpret().
+
+2008-03-12 09:17  hvlad
+
+	* firebird2/src/common/classes/: locks.cpp (1.15), locks.h (1.38):
+
+	Made Mutex::tryEnter more efficient. Per Claudio request
+
+2008-03-12 09:08  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.175):
+
+	Fixed the AV reported by Dmitry Kovalenko in fb-devel.
+
+2008-03-12 08:32  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.68),
+	lang_helpers/gds_codes.pas (1.68), src/include/gen/codetext.h
+	(1.76), src/include/gen/iberror.h (1.78), src/include/gen/msgs.h
+	(1.95), src/include/gen/sql_code.h (1.82),
+	src/include/gen/sql_state.h (1.6), src/jrd/tra.cpp (1.159),
+	src/msgs/facilities2.sql (1.24), src/msgs/messages2.sql (1.28),
+	src/msgs/system_errors2.sql (1.21):
+
+	More fixes for CORE-1600.  CORE-1777.
+
+2008-03-12 08:17  robocop
+
+	* firebird2/src/jrd/: Relation.cpp (1.10), Relation.h (1.4):
+
+	Added member functions.
+
+2008-03-12 08:16  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.413), jrd.h (1.224):
+
+	Make member function inline.
+
+2008-03-12 01:37  asfernandes
+
+	* firebird2/src/jrd/why.cpp (1.174):
+
+	Fixed the problem noticed by Dmitry Kovalenko
+
 2008-03-11 15:33  hvlad
 
 	* firebird2/src/common/classes/locks.h (1.37):
