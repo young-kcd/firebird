@@ -1730,12 +1730,12 @@ static void cleanup_port( rem_port* port)
 	delete port->port_queue;
 	port->port_que_sync->release();
 #endif
-	port->port_sync->release();
 
 #ifdef TRUSTED_AUTH
 	delete port->port_trusted_auth;
 #endif
 
+	port->port_sync->release();
 	ALLR_free(port);
 	return;
 }
@@ -3483,6 +3483,7 @@ static void unhook_disconnected_ports(rem_port* main_port)
 				if (port->port_state == state_disconnected) {
 					more = true;
 					unhook_port(port, port->port_parent);
+					port->port_sync->leave();
 					cleanup_port(port);
 					break;
 				}

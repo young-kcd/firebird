@@ -567,7 +567,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 //					gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
 
 					request->req_port = port;
-					port->port_sync->leave();
+					if (portLocked)
+					{
+						port->port_sync->leave();
+					}
 
 					if (!link_request(port, request))
 					{
@@ -596,6 +599,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		}
 		catch (const Firebird::Exception& e)
 		{
+			gds__log("SRVR_multi_thread: shutting down due to unhandled exception");
+			Firebird::stuff_exception(status_vector, e);
+			gds__log_status(0, status_vector);
+
 			/* If we got as far as having a port allocated before the error, disconnect it
 			 * gracefully.
 			 */
@@ -610,7 +617,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 				/* To handle recursion within the error handler */
 				try {
-					Firebird::stuff_exception(status_vector, e);
+
 					/* If we have a port, request really should be non-null, but just in case ... */
 					if (request != NULL) {
 						/* Send client a real status indication of why we disconnected them */
