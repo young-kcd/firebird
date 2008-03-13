@@ -41,12 +41,6 @@
 
 const unsigned int SHUTDOWN_TIMEOUT = 10 * 1000;	// 10 seconds
 
-struct cntl_thread
-{
-	cntl_thread* thread_next;
-	HANDLE thread_handle;
-};
-
 static void WINAPI control_thread(DWORD);
 
 static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
@@ -56,8 +50,6 @@ static SERVICE_STATUS_HANDLE service_handle;
 static Firebird::GlobalPtr<Firebird::string> service_name;
 static Firebird::GlobalPtr<Firebird::string> mutex_name;
 static HANDLE stop_event_handle;
-static Firebird::GlobalPtr<Firebird::Mutex> thread_mutex;
-static cntl_thread* threads = NULL;
 static HANDLE hMutex = NULL;
 
 
@@ -76,31 +68,6 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 	main_handler = handler;
 	service_name->printf(REMOTE_SERVICE, name);
 	mutex_name->printf(GUARDIAN_MUTEX, name);
-}
-
-
-void* CNTL_insert_thread()
-{
-/**************************************
- *
- *	C N T L _ i n s e r t _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	cntl_thread* new_thread = (cntl_thread*) ALLR_alloc((SLONG) sizeof(cntl_thread));
-
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-					GetCurrentProcess(), &new_thread->thread_handle, 0, FALSE,
-					DUPLICATE_SAME_ACCESS);
-
-	Firebird::MutexLockGuard guard(thread_mutex);
-	new_thread->thread_next = threads;
-	threads = new_thread;
-
-	return new_thread;
 }
 
 
@@ -145,38 +112,6 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	fb_shutdown(NULL, SHUTDOWN_TIMEOUT);
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
-}
-
-
-void CNTL_remove_thread(void* athread)
-{
-/**************************************
- *
- *	C N T L _ r e m o v e _ t h r e a d
- *
- **************************************
- *
- * Functional description
- *
- **************************************/
-	cntl_thread* const rem_thread = (cntl_thread*) athread;
-
-	{ // scope for lock on thread_mutex
-		Firebird::MutexLockGuard guard(thread_mutex);
-
-		for (cntl_thread** thread_ptr = &threads;
-			 *thread_ptr; thread_ptr = &(*thread_ptr)->thread_next)
-		{
-			if (*thread_ptr == rem_thread) {
-				*thread_ptr = rem_thread->thread_next;
-				break;
-			}
-		}
-	}
-
-	CloseHandle(rem_thread->thread_handle);
-
-	ALLR_free(rem_thread);
 }
 
 

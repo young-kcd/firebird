@@ -287,15 +287,7 @@ THREAD_ENTRY_DECLARE process_connection_thread(THREAD_ENTRY_PARAM arg)
  * Functional description
  *
  **************************************/
-	void *thread = NULL; // silence non initialized warning
-
-	if (!(server_flag & SRVR_non_service)) {
-		thread = CNTL_insert_thread();
-	}
 	service_connection((rem_port*)arg);
-	if (!(server_flag & SRVR_non_service)) {
-		CNTL_remove_thread(thread);
-	}
 	return 0;
 }
 
@@ -311,10 +303,6 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	void *thread = NULL; // silence non initialized warning
-	if (!(server_flag & SRVR_non_service))
-		thread = CNTL_insert_thread();
-
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
@@ -332,9 +320,6 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 			gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 		}
 	}
-
-	if (!(server_flag & SRVR_non_service))
-		CNTL_remove_thread(thread);
 	return 0;
 }
 
@@ -350,12 +335,6 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-	void *thread = NULL; // silence non initialized warning
-
-	if (!(server_flag & SRVR_non_service)) {
-		thread = CNTL_insert_thread();
-	}
-
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
@@ -373,9 +352,6 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 	}
 
-	if (!(server_flag & SRVR_non_service)) {
-		CNTL_remove_thread(thread);
-	}
 	return 0;
 }
 
@@ -392,11 +368,6 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
  *   Starts xnet server side interprocess thread
  *
  **************************************/
-	void *thread = NULL; // silence non initialized warning
-
-	if (!(server_flag & SRVR_non_service))
-		thread = CNTL_insert_thread();
-
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
@@ -409,8 +380,6 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
 	}
 
-	if (!(server_flag & SRVR_non_service))
-		CNTL_remove_thread(thread);
 	return 0;
 }
 

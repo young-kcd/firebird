@@ -115,7 +115,7 @@ typedef struct server_req_t
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
-	rem_port*			req_port;
+	rem_port*		req_port;
 	PACKET			req_send;
 	PACKET			req_receive;
 } *SERVER_REQ;
@@ -212,14 +212,16 @@ inline bool bad_service(ISC_STATUS* status_vector, RDB rdb)
 }
 
 
-
 class Worker
 {
 public:
+	static const int MAX_THREADS = 128;
+	static const int IDLE_TIMEOUT = 60;
+
 	Worker();
 	~Worker();
 
-	bool Wait(int timeout); // true is success, false if timeout
+	bool Wait(int timeout = IDLE_TIMEOUT); // true is success, false if timeout
 	static bool WakeUp();
 	static void WakeUpAll();
 
@@ -303,7 +305,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
  *
  **************************************/
 
-	//ISC_enter();				/* Setup floating point exception handler once and for all. */
+	ISC_enter();				/* Setup floating point exception handler once and for all. */
 
 	// Setup context pool for main thread
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
@@ -361,7 +363,8 @@ static SERVER_REQ alloc_request()
  *	if empty - allocate the new one.
  *
  **************************************/
-	Firebird::MutexLockGuard queGuard(request_que_mutex);
+	Firebird::MutexEnsureUnlock queGuard(request_que_mutex);
+	queGuard.enter();
 
 	SERVER_REQ request = free_requests;
 #if defined(DEV_BUILD) && defined(DEBUG)
@@ -388,9 +391,9 @@ static SERVER_REQ alloc_request()
 			   request and hope another thread will free memory or
 			   request blocks that we can then use. */
 
-			request_que_mutex->leave();
+			queGuard.leave();
 			THREAD_SLEEP(1 * 1000);
-			request_que_mutex->enter();
+			queGuard.enter();
 		}
 		zap_packet(&request->req_send, true);
 		zap_packet(&request->req_receive, true);
@@ -529,6 +532,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
 				}
 			
+				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = port->port_sync->tryEnter();
 				if (portLocked || !dataSize)
 				{
@@ -567,8 +571,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 //					gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
 
 					request->req_port = port;
-					if (portLocked)
-					{
+					if (portLocked) {
 						port->port_sync->leave();
 					}
 
@@ -585,7 +588,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							port->port_requests_queued);
 						fflush(stdout);
 #endif
-
 						if (!Worker::WakeUp())  {
 							gds__thread_start(loopThread, (void*)(IPTR) flags,
 								THREAD_medium, THREAD_ast, 0);
@@ -593,7 +595,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					}
 					request = 0;
 				}
-
 				port = 0;
 			}
 		}
@@ -5231,7 +5232,7 @@ static void success( ISC_STATUS * status_vector)
 	status_vector[2] = isc_arg_end;
 }
 
-static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
+static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 {
 /**************************************
  *
@@ -5244,22 +5245,15 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 
-	//ISC_enter();				/* Setup floating point exception handler once and for all. */
+	ISC_enter();				/* Setup floating point exception handler once and for all. */
 
-	const SLONG flags = (SLONG)(IPTR) arg;
 	Worker worker;
-
-#ifdef WIN_NT
-	void* thread = NULL; // silence non initialized warning
-	if (!(flags & SRVR_non_service))
-		thread = CNTL_insert_thread();
-#endif
-
 	rem_port* port;
 
 	while (!shutting_down)
 	{
-		request_que_mutex->enter();
+		Firebird::MutexEnsureUnlock reqQueGuard(request_que_mutex);
+		reqQueGuard.enter();
 		SERVER_REQ request = request_que;
 		if (request)
 		{
@@ -5267,7 +5261,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
 
 			REMOTE_TRACE(("Dequeue request %p", request_que));
 			request_que = request->req_next;
-			request_que_mutex->leave();
+			reqQueGuard.leave();
 
 			while (request)
 			{
@@ -5293,6 +5287,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
 
 				/* Validate port.  If it looks ok, process request */
 
+				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_sync);
 				{ // port_sync scope
 					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
 
@@ -5415,31 +5410,35 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM arg)
 						SERVER_REQ next = request->req_chain;
 						free_request(request);
 						//request = next;
-						if (next) {
+						
+						// Try to be fair - put new request at the end of waiting
+						// requests queue and take request to work on from the
+						// head of the queue
+						if (next) 
+						{
 							append_request_next(next, &request_que);
+							request = request_que;
+							request_que = request->req_next;
 						}
-						request = 0;
+						else {
+							request = NULL;
+						}
 					}
 				} // request_que_mutex scope
-			}	// while (request)
+			} // while (request)
 		}
 		else 
 		{
-			request_que_mutex->leave();
+			reqQueGuard.leave();
 			worker.setState(false);
 
 			if (shutting_down)
 				break;
 
-			if (!worker.Wait(10)) 
+			if (!worker.Wait()) 
 				break;
 		}
 	}
-
-#ifdef WIN_NT
-	if (!(flags & SRVR_non_service))
-		CNTL_remove_thread(thread);
-#endif
 
 	return 0;
 }
@@ -5604,6 +5603,7 @@ Worker::~Worker()
 	--m_cntAll;
 }
 
+
 bool Worker::Wait(int timeout)
 {
 	return m_sem.tryEnter(timeout);
@@ -5627,7 +5627,7 @@ bool Worker::WakeUp()
 		m_idleWorkers->m_sem.release();
 		return true;
 	}
-	return (m_cntAll >= 128);
+	return (m_cntAll >= MAX_THREADS);
 }
 
 void Worker::WakeUpAll()

@@ -325,7 +325,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			return user_status[1];
 		}
 
-		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
+		Firebird::RefMutexGuard portGuard(*port->port_sync); 
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -855,7 +855,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
-		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
+		Firebird::RefMutexGuard portGuard(*port->port_sync); 
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -3871,7 +3871,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
-		Firebird::RefMutexGuard portGuard(*port->port_sync); // hvlad ???
+		Firebird::RefMutexGuard portGuard(*port->port_sync);
 		rdb = port->port_context;
 		rdb->rdb_status_vector = user_status;
 
@@ -5383,7 +5383,6 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 	rem_port* port = (rem_port*)arg;
 	PACKET packet;
 
-	Firebird::RefMutexGuard portGuard(*port->port_sync);
 	for (;;) {
 		/* zero packet */
 
@@ -5391,7 +5390,11 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 		/* read what should be an event message */
 
-		rem_port* stuff = port->receive(&packet);
+		rem_port* stuff = NULL;
+		{
+			Firebird::RefMutexGuard portGuard(*port->port_sync);
+			stuff = port->receive(&packet);
+		}
 
 		const P_OP operation = packet.p_operation;
 
@@ -5409,7 +5412,11 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		if (operation == op_event) {
 			P_EVENT* pevent = &packet.p_event;
 
-			RVNT event = find_event(port, pevent->p_event_rid);
+			RVNT event = NULL;
+			{
+				Firebird::RefMutexGuard portGuard(*port->port_sync);
+				event = find_event(port, pevent->p_event_rid);
+			}
 
 			if (event) {
 				/* Call the asynchronous event routine associated
