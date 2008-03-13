@@ -5618,7 +5618,7 @@ int Parser::yylexAux()
 				{
 					byte = (byte << 4) + (UCHAR) c;
 					nibble = 0;
-					temp.append((char) byte);
+					temp.append(1, (char) byte);
 				}
 				else 
 				{

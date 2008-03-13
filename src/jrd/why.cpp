@@ -5879,7 +5879,7 @@ static bool set_path(const Firebird::PathName& file_name, Firebird::PathName& ex
 	// CVC: Make the concatenation work if no slash is present.
 	char lastChar = expanded_name[expanded_name.length() - 1];
 	if (lastChar != ':' && lastChar != '/' && lastChar != '\\') {
-		expanded_name.append(PathUtils::dir_sep);
+		expanded_name.append(1, PathUtils::dir_sep);
 	}
 
 	expanded_name.append(file_name);

@@ -401,9 +401,9 @@ namespace Firebird
 		inline StringBase<Comparator>(const StringType& v) : AbstractString(v) {}
 		inline StringBase<Comparator>(const_pointer s, size_type n) : AbstractString(n, s) {}
 		inline StringBase<Comparator>(const_pointer s) : AbstractString(strlen(s), s) {}
-		inline StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
+		inline explicit StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
 		inline StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
-		inline StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
+		//inline explicit StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
 		inline explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
 		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
@@ -635,7 +635,7 @@ namespace Firebird
 		return rc;
 	}
 	inline string operator+(string::char_type c, const string& str) {
-		string rc(c);
+		string rc(1, c);
 		rc += str;
 		return rc;
 	}
@@ -647,7 +647,7 @@ namespace Firebird
 		return rc;
 	}
 	inline PathName operator+(PathName::char_type c, const PathName& str) {
-		PathName rc(c);
+		PathName rc(1, c);
 		rc += str;
 		return rc;
 	}

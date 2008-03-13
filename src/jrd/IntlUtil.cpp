@@ -249,7 +249,7 @@ string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 	for (const USHORT* p = (const USHORT*) utf16.c_str(); p < end; ++p)
 	{
 		if (*p <= 0xFF)
-			s.append((UCHAR) *p);
+			s.append(1, (UCHAR) *p);
 		else
 		{
 			*error = true;
