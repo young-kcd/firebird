@@ -44,7 +44,7 @@ public:
 public:
 	bool fetch(thread_db* tdbb);
 	bool isNull(int param);
-	dsc getDesc(int param);
+	dsc& getDesc(int param);
 
 private:
 	PreparedStatement* stmt;

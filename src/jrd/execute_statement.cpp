@@ -170,7 +170,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
 
 	for (int i = 0; i < varCount; i++)
 	{
-		dsc desc = resultSet->getDesc(i + 1);
+		dsc& desc = resultSet->getDesc(i + 1);
 		bool nullFlag = resultSet->isNull(i + 1);
 		EXE_assignment(tdbb, jrdVar[i], &desc, nullFlag, NULL, NULL);
 	}

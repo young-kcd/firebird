@@ -85,7 +85,7 @@ bool ResultSet::isNull(int param)
 }
 
 
-dsc ResultSet::getDesc(int param)
+dsc& ResultSet::getDesc(int param)
 {
 	return stmt->values[(param - 1) * 2];
 }
