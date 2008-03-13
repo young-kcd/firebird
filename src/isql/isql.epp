@@ -7486,9 +7486,6 @@ static void print_item_numeric(SINT64 value,
  *	decimal point '.' for scale notation
  *
  **************************************/
-	bool all_digits_used = false;
-	bool neg = (value < 0);
-
 	// Handle special case of no negative scale, no '.' required!
 	if (scale >= 0) {
 		if (scale > 0)
@@ -7497,6 +7494,8 @@ static void print_item_numeric(SINT64 value,
 		return;
 	}
 
+	const bool neg = (value < 0);
+	
 	// Use one less space than allowed, to leave room for '.'
 	length--;
 	sprintf(buf, "%*" SQUADFORMAT, length, value);
@@ -7511,8 +7510,7 @@ static void print_item_numeric(SINT64 value,
 		buf[to] = buf[from];
 
 	// Check whether we need a '0' (zero) in front of the '.' point
-	if (!DIGIT(buf[from]))
-		all_digits_used = true;
+	const bool all_digits_used = !DIGIT(buf[from]);
 
 	// Insert new '0's to satisfy larger scale than input digits
 	// For e.g: 12345 with scale -7 would be .0012345
