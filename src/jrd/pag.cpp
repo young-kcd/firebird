@@ -2452,7 +2452,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	fb_assert(cb);
 
 	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
-							database->dbb_minor_version >= 1);
+							database->dbb_minor_version == 1);
 	if (! isODS11_1)
 	{
 		return 0;
