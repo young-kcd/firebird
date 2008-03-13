@@ -223,7 +223,7 @@ public:
 	static bool WakeUp();
 	static void WakeUpAll();
 
-	void setState(bool active);
+	void setState(const bool active);
 
 	static int getCount() 
 	{ return m_cntAll; }
@@ -233,10 +233,12 @@ private:
 	Worker* m_prev;
 	Firebird::Semaphore m_sem;
 	bool	m_active;
+#ifdef DEV_BUILD
 	FB_THREAD_ID	m_tid;
+#endif
 
 	void remove();
-	void insert(bool active);
+	void insert(const bool active);
 
 	static Worker* m_activeWorkers;
 	static Worker* m_idleWorkers;
@@ -5579,7 +5581,9 @@ Worker::Worker()
 {
 	m_active = false;
 	m_next = m_prev = NULL;
+#ifdef DEV_BUILD
 	m_tid = getThreadId();
+#endif
 
 	Firebird::MutexLockGuard guard(m_mutex);
 	++m_cntAll;
@@ -5598,7 +5602,7 @@ bool Worker::Wait(int timeout)
 	return m_sem.tryEnter(timeout);
 }
 
-void Worker::setState(bool active)
+void Worker::setState(const bool active)
 {
 	if (m_active == active)
 		return;
@@ -5622,8 +5626,7 @@ bool Worker::WakeUp()
 void Worker::WakeUpAll()
 {
 	Firebird::MutexLockGuard guard(m_mutex);
-	Worker *thd = m_idleWorkers;
-	for (; thd; thd = thd->m_next)
+	for (Worker* thd = m_idleWorkers; thd; thd = thd->m_next)
 		thd->m_sem.release();
 }
 
@@ -5648,7 +5651,7 @@ void Worker::remove()
 	m_prev = m_next = NULL;
 }
 
-void Worker::insert(bool active)
+void Worker::insert(const bool active)
 {
 	fb_assert(!m_next);
 	fb_assert(!m_prev);
