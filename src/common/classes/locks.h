@@ -93,16 +93,28 @@ public:
 	explicit Mutex(MemoryPool&) {
 		InitializeCriticalSection(&spinlock);
 	}
+
 	~Mutex() {
+#ifdef DEV_BUILD
+		if (spinlock.OwningThread != 0)
+			DebugBreak();
+#endif
 		DeleteCriticalSection(&spinlock);
 	}
+
 	void enter() {
 		EnterCriticalSection(&spinlock);
 	}
+
 	bool tryEnter() {
 		return TryEnterCS::tryEnter(&spinlock);
 	}
+
 	void leave() {
+#ifdef DEV_BUILD
+		if ((DWORD)spinlock.OwningThread != GetCurrentThreadId())
+			DebugBreak();
+#endif
 		LeaveCriticalSection(&spinlock);
 	}
 	
@@ -367,6 +379,81 @@ private:
 	RefMutex* lock;
 };
 
+
+template <typename T>
+class DefaultRefCounted
+{
+public:
+	static int addRef(T *object) {
+		return object->addRef();
+	}
+
+	static int release(T *object) {
+		return object->release();
+	}
+};
+
+template <typename T>
+class NotRefCounted
+{
+public:
+	static int addRef(void*) {
+		return 0;
+	}
+
+	static int release(void*) {
+		return 0;
+	}
+};
+
+
+template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
+class EnsureUnlock
+{
+public:
+	explicit EnsureUnlock(Mtx &mutex)
+	{
+		m_mutex = &mutex;
+		RefCounted::addRef(m_mutex);
+		m_locked = 0;
+	}
+
+	~EnsureUnlock()
+	{
+		while (m_locked)
+			leave();
+		RefCounted::release(m_mutex);
+	}
+
+	void enter() 
+	{
+		m_mutex->enter();
+		m_locked++;
+	}
+
+	bool tryEnter() 
+	{
+		if (m_mutex->tryEnter())
+		{
+			m_locked++;
+			return true;
+		}
+		return false;
+	}
+
+	void leave() 
+	{
+		m_mutex->leave();
+		m_locked--;
+	}
+
+private:
+	Mtx *m_mutex;
+	int m_locked;
+};
+
+typedef EnsureUnlock<Mutex, NotRefCounted<Mutex> > MutexEnsureUnlock;
+typedef EnsureUnlock<RefMutex> RefMutexEnsureUnlock;
 
 } //namespace Firebird
 
