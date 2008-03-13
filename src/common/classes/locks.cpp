@@ -39,6 +39,7 @@ namespace Firebird {
 #if defined(WIN_NT)
 
 TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct = &TryEnterCS::notImpl;
+
 static TryEnterCS tryEnterCS;
 
 TryEnterCS::TryEnterCS()
@@ -54,8 +55,7 @@ TryEnterCS::TryEnterCS()
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
 
-tSetCriticalSectionSpinCount* 
-	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
+tSetCriticalSectionSpinCount* Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
 void Spinlock::init()
 {

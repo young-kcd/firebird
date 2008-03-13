@@ -265,7 +265,7 @@ public:
 		m_refcnt = 0;
 	}
 
-	explicit RefMutex(MemoryPool& pool)  : Mutex(pool)
+	explicit RefMutex(MemoryPool& pool) : Mutex(pool)
 	{
 		m_refcnt = 0;
 	}
@@ -327,8 +327,8 @@ public:
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
-	MutexLockGuard(RefMutex*);
-	MutexLockGuard(RefMutex&);
+	MutexLockGuard(const RefMutex*);
+	MutexLockGuard(const RefMutex&);
 
 #ifdef DEV_BUILD
 	static void halt();
@@ -341,7 +341,7 @@ private:
 class RefMutexGuard
 {
 public:
-	explicit RefMutexGuard(RefMutex &alock) 
+	explicit RefMutexGuard(RefMutex& alock) 
 		: lock(&alock)
 	{
 		lock->addRef();
@@ -363,7 +363,8 @@ public:
 private:
 	// Forbid copy constructor
 	RefMutexGuard(const RefMutexGuard& source);
-	RefMutex *lock;
+	
+	RefMutex* lock;
 };
 
 

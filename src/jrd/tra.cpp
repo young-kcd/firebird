@@ -2138,10 +2138,12 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 	// LCK_none < LCK_SR < LCK_PR < LCK_SW < LCK_EX
 	UCHAR oldlock;
 	const bool found = lockmap.get(relation->rel_id, oldlock);
+
 	if (found && oldlock > lock_type)
 	{
 		const char* newname = get_lockname_v3(lock_type);
 		const char* oldname = get_lockname_v3(oldlock);
+
 		if (level)
 		{
 			lock_type = oldlock; // Preserve the old, more powerful lock.
