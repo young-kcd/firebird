@@ -1379,8 +1379,8 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 	{
 		const time_t now = time(0);
 
-		dbb->dbb_mutexes[DBB_MUTX_flush_count].enter();
-		
+		Database::CheckoutLockGuard guard(dbb, dbb->dbb_flush_count_mutex);
+
 		// If this is the first commit set last_flushed_write to now
 		if (!dbb->last_flushed_write)
 		{
@@ -1403,8 +1403,6 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		{
 			dbb->unflushed_writes++;
 		}
-
-		dbb->dbb_mutexes[DBB_MUTX_flush_count].leave();
 	}
 
 	if (doFlush)

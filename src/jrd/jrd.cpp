@@ -4528,8 +4528,6 @@ static Database* init(thread_db* tdbb,
  *	OPEN.
  *
  **************************************/
-	Firebird::Mutex temp_mutx[DBB_MUTX_max];
-
 	SET_TDBB(tdbb);
 
 	// Initialize standard random generator.
@@ -4573,8 +4571,6 @@ static Database* init(thread_db* tdbb,
 		dbb = Database::newDbb(perm);
 		perm->setStatsGroup(dbb->dbb_memory_stats);
 
-		dbb->dbb_mutexes = temp_mutx;
-
 		tdbb->setDatabase(dbb);
 
 		dbb->dbb_bufferpool = dbb->createPool();
@@ -4585,7 +4581,6 @@ static Database* init(thread_db* tdbb,
 		dbb->dbb_next = databases;
 		databases = dbb;
 
-		dbb->dbb_mutexes = FB_NEW(*dbb->dbb_permanent) Firebird::Mutex[DBB_MUTX_max];
 		dbb->dbb_flags |= DBB_exclusive;
 		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
@@ -5039,8 +5034,6 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		LCK_fini(tdbb, LCK_OWNER_database);	// For the database
 		dbb->dbb_flags &= ~DBB_lck_init_done;
 	}
-
-	delete[] dbb->dbb_mutexes;
 
 	if (release_pools) {
 		tdbb->setDatabase(NULL);

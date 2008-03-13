@@ -192,15 +192,6 @@ const int DBB_expunge_count			= 7;
 const int DBB_max_count				= 8;
 
 //
-// Database mutexes
-//
-const int DBB_MUTX_dyn				= 0;	// Dynamic ddl
-const int DBB_MUTX_clone			= 1;	// Request cloning
-const int DBB_MUTX_cmp_clone		= 2;	// Compiled request cloning
-const int DBB_MUTX_flush_count		= 3;	// flush count/time
-const int DBB_MUTX_max				= 4;
-
-//
 // Flags to indicate normal internal requests vs. dyn internal requests
 //
 const int IRQ_REQUESTS				= 1;

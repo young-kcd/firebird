@@ -633,7 +633,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	if (!request)
 		BUGCHECK /* REQUEST */ (167);	/* msg 167 invalid SEND request */
 
-	dbb->dbb_mutexes[DBB_MUTX_clone].enter();
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_exe_clone_mutex);
+
 	jrd_req* clone = NULL;
 	USHORT count = 0;
 	if (!(request->req_flags & req_in_use))
@@ -664,16 +665,16 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		}
 
 		if (count > MAX_CLONES) {
-			dbb->dbb_mutexes[DBB_MUTX_clone].leave();
 			ERR_post(isc_req_max_clones_exceeded, 0);
 		}
 		if (!clone)
 			clone = CMP_clone_request(tdbb, request, n, validate);
 	}
+
 	clone->req_attachment = tdbb->getAttachment();
 	clone->req_stats.reset();
 	clone->req_flags |= req_in_use;
-	dbb->dbb_mutexes[DBB_MUTX_clone].leave();
+
 	return clone;
 }
 

@@ -638,7 +638,8 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 	// if the request hasn't been compiled or isn't active,
 	// there're nothing to do
 
-	dbb->dbb_mutexes[DBB_MUTX_cmp_clone].enter();
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
+
 	jrd_req* request;
 	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
 		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
@@ -647,7 +648,6 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 		if (request) {
 			request->req_flags |= req_reserved;
 		}
-		dbb->dbb_mutexes[DBB_MUTX_cmp_clone].leave();
 		return request;
 	}
 
@@ -656,7 +656,6 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 
 	for (int n = 1; true; n++) {
 		if (n > MAX_RECURSION) {
-			dbb->dbb_mutexes[DBB_MUTX_cmp_clone].leave();
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_req_depth_exceeded,
 					 isc_arg_number, (SLONG) MAX_RECURSION, 0);
@@ -665,7 +664,6 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
 		if (!(clone->req_flags & (req_active | req_reserved))) {
 			clone->req_flags |= req_reserved;
-			dbb->dbb_mutexes[DBB_MUTX_cmp_clone].leave();
 			return clone;
 		}
 	}
