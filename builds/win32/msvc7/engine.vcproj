@@ -328,6 +328,9 @@
 				RelativePath="..\..\..\src\jrd\plugin_manager.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
 			</File>
 			<File
@@ -338,6 +341,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\Relation.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ResultSet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
@@ -875,6 +881,9 @@
 				RelativePath="..\..\..\src\jrd\pragma.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\PreparedStatement.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\prv_m_bypass.h">
 			</File>
 			<File
@@ -891,6 +900,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ResultSet.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rdb.h">

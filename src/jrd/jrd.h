@@ -24,6 +24,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * Claudio Valderrama C.
+ * Adriano dos Santos Fernandes
  *
  */
 
@@ -152,6 +153,7 @@ class TextType;
 class Parameter;
 class jrd_fld;
 class dsql_dbb;
+class PreparedStatement;
 
 // The database block, the topmost block in the metadata
 // cache for a database
@@ -316,6 +318,9 @@ public:
 	dsql_dbb* att_dsql_instance;
 
 	bool locksmith() const;
+
+	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+		jrd_tra* transaction, const Firebird::string& text);
 };
 
 

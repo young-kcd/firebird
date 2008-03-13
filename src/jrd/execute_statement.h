@@ -22,6 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
+ *  Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_EXECUTE_STATEMENT_H
@@ -29,35 +30,35 @@
 
 #include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
+#include "../jrd/PreparedStatement.h"
+#include "../jrd/ResultSet.h"
 #include "../jrd/exe.h"
 #include "../jrd/ibase.h"
-#include "../dsql/dsql.h"
 
 const int MAX_CALLBACKS	= 50;
 
 namespace Jrd {
 
-class ExecuteStatement {
+
+class ExecuteStatement
+{
+public:
+	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* dsc);
+	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
+	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
+	void close(Jrd::thread_db* tdbb);
+
+	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
+
 private:
-	dsql_req* statement;
-	Firebird::UCharBuffer* blr;
-	Firebird::UCharBuffer* message;
-	Firebird::Array<dsc>* values;
+	PreparedStatement* stmt;
+	ResultSet* resultSet;
 	int varCount;
 	bool singleMode;
 	TEXT startOfSqlOperator[32];
-
-	void generateBlr(const dsc* desc);
-
-public:
-	void Open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
-	bool Fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
-	void Close(Jrd::thread_db* tdbb);
-
-	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
 };
+
 
 } // namespace
 
 #endif // JRD_EXECUTE_STATEMENT_H
-

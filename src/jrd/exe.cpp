@@ -1159,7 +1159,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 					jrd_nod* node = request->req_exec_sta[i];
 					ExecuteStatement* impure =
 						(ExecuteStatement*)	((char*) request + node->nod_impure);
-					impure->Close(tdbb);
+					impure->close(tdbb);
 				}
 			}
 			catch (const Firebird::Exception&)
@@ -1477,30 +1477,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
  *
  **************************************/
 	SET_TDBB(tdbb);
-
-	jrd_tra* const transaction = tdbb->getTransaction();
-
-	if (transaction->tra_callback_count >= MAX_CALLBACKS)
-	{
-		ERR_post(isc_exec_sql_max_call_exceeded, 0);
-	}
-
-	Firebird::string sqlStatementText;
-	ExecuteStatement::getString(tdbb, sqlStatementText, dsc, request);
-
-	transaction->tra_callback_count++;
-
-	try
-	{
-		DSQL_callback_execute_immediate(tdbb, sqlStatementText);
-	}
-	catch (const Firebird::Exception&)
-	{
-		transaction->tra_callback_count--;
-		throw;
-	}
-
-	transaction->tra_callback_count--;
+	ExecuteStatement::execute(tdbb, request, dsc);
 }
 
 
@@ -2533,15 +2510,15 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_exec_into: 
 			{
-				ExecuteStatement* impure =
-					(ExecuteStatement*)
-						((SCHAR *) request + node->nod_impure);
+				ExecuteStatement* impure = (ExecuteStatement*)
+					((SCHAR *) request + node->nod_impure);
+
 				switch (request->req_operation) {
 				case jrd_req::req_evaluate:
-					impure->Open(tdbb, node->nod_arg[0], node->nod_count - 2, !node->nod_arg[1]);
+					impure->open(tdbb, node->nod_arg[0], node->nod_count - 2, !node->nod_arg[1]);
 				case jrd_req::req_return:
 				case jrd_req::req_sync:
-					if (impure->Fetch(tdbb, &node->nod_arg[2])) {
+					if (impure->fetch(tdbb, &node->nod_arg[2])) {
 						request->req_operation = jrd_req::req_evaluate;
 						node = node->nod_arg[1];
 						break;
@@ -2549,7 +2526,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					request->req_operation = jrd_req::req_return;
 				default:
 					// if have active opened request - close it
-					impure->Close(tdbb);
+					impure->close(tdbb);
 					node = node->nod_parent;
 				}
 			}

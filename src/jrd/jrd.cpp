@@ -30,6 +30,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * Claudio Valderrama C.
+ * Adriano dos Santos Fernandes
  *
  */
 
@@ -77,6 +78,7 @@
 #include "../jrd/iberr.h"
 #include "../intl/charsets.h"
 #include "../jrd/sort.h"
+#include "../jrd/PreparedStatement.h"
 
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
@@ -5611,6 +5613,13 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 		return vdnFail;
 	}
 	return vdnOk;
+}
+
+
+PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+	jrd_tra* transaction, const Firebird::string& text)
+{
+	return new PreparedStatement(tdbb, pool, this, transaction, text);
 }
 
 

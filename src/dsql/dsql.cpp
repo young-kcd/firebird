@@ -80,8 +80,7 @@ static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, c
 static void execute_immediate(thread_db*, Attachment*, jrd_tra**,
 							  USHORT, const TEXT*, USHORT,
 							  USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*,
-							  USHORT, UCHAR*, USHORT, USHORT, UCHAR*,
-							  long);
+							  USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 static void		execute_request(thread_db*, dsql_req*, jrd_tra**, USHORT, const UCHAR*,
 	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*, bool);
 static SSHORT	filter_sub_type(dsql_req*, const dsql_nod*);
@@ -325,42 +324,7 @@ void DSQL_execute_immediate(thread_db* tdbb,
 		out_blr_length, 
 		out_blr, 
 		out_msg_type, out_msg_length, 
-		out_msg,
-		~0);
-}
-
-/**
-  
- 	DSQL_callback_execute_immediate
-  
-    @brief	Execute sql_operator in context of jrd_transaction_handle
- 
-
-    @param tdbb
-    @param sql_operator
-    @param dialect
-
- **/
-void DSQL_callback_execute_immediate(thread_db* tdbb,
-									 const Firebird::string& sql_operator)
-{
-	// Other requests appear to be incorrect in this context 
-	long requests = (1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE)
-			      | (1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) 
-				  | (1 << REQ_EXEC_BLOCK);
-
-	Attachment* const attachment = tdbb->getAttachment();
-
-	const Database* const dbb = attachment->att_database;
-	const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
-
-	jrd_tra* transaction = tdbb->getTransaction();
-
-	execute_immediate(tdbb, attachment, &transaction,
-					  sql_operator.length(), sql_operator.c_str(), dialect,
-					  0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
-
-	fb_assert(transaction == tdbb->getTransaction());
+		out_msg);
 }
 
 
@@ -1130,8 +1094,7 @@ static void execute_immediate(thread_db* tdbb,
 							  USHORT in_blr_length, const UCHAR* in_blr,
 							  USHORT in_msg_type, USHORT in_msg_length, const UCHAR* in_msg,
 							  USHORT out_blr_length, UCHAR* out_blr,
-							  USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg,
-							  long possible_requests)
+							  USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
 {
 	SET_TDBB(tdbb);
 
@@ -1186,17 +1149,6 @@ static void execute_immediate(thread_db* tdbb,
 		request->req_client_dialect = dialect;
 
 		request = prepare(tdbb, request, length, string, dialect, parser_version);
-
-		if (!((1 << request->req_type) & possible_requests))
-		{
-			const int max_diag_len = 50;
-			char err_str[max_diag_len + 1];
-			strncpy(err_str, string, max_diag_len);
-			err_str[max_diag_len] = 0;
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -902,
-				isc_arg_gds, isc_exec_sql_invalid_req, 
-				isc_arg_string, err_str, isc_arg_end);
-		}
 
 		execute_request(tdbb, request, tra_handle, in_blr_length, in_blr,
 						in_msg_length, in_msg, out_blr_length, out_blr,

@@ -411,6 +411,10 @@ SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\PreparedStatement.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
@@ -424,6 +428,10 @@ SOURCE=..\..\..\src\jrd\RecordBuffer.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\Relation.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ResultSet.cpp
 # End Source File
 # Begin Source File
 
@@ -1133,6 +1141,10 @@ SOURCE=..\..\..\src\jrd\pragma.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\PreparedStatement.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\prv_m_bypass.h
 # End Source File
 # Begin Source File
@@ -1166,6 +1178,10 @@ SOURCE=..\..\..\src\jrd\Relation.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\relations.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\ResultSet.h
 # End Source File
 # Begin Source File
 

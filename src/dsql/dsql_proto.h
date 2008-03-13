@@ -19,6 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Adriano dos Santos Fernandes
  */
 
 #ifndef DSQL_DSQL_PROTO_H
@@ -81,8 +82,5 @@ void DSQL_sql_info(Jrd::thread_db*,
 				   Jrd::dsql_req*,
 				   USHORT, const UCHAR*,
 				   USHORT, UCHAR*);
-
-void DSQL_callback_execute_immediate(Jrd::thread_db* tdbb,
-									 const Firebird::string& sql_operator);
 
 #endif //  DSQL_DSQL_PROTO_H
