@@ -5391,7 +5391,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		/* read what should be an event message */
 
 		rem_port* stuff = NULL;
-		{
+		{	// scope
 			Firebird::RefMutexGuard portGuard(*port->port_sync);
 			stuff = port->receive(&packet);
 		}
@@ -5413,7 +5413,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 			P_EVENT* pevent = &packet.p_event;
 
 			RVNT event = NULL;
-			{
+			{	// scope
 				Firebird::RefMutexGuard portGuard(*port->port_sync);
 				event = find_event(port, pevent->p_event_rid);
 			}

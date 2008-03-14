@@ -221,9 +221,9 @@ public:
 	Worker();
 	~Worker();
 
-	bool Wait(int timeout = IDLE_TIMEOUT); // true is success, false if timeout
-	static bool WakeUp();
-	static void WakeUpAll();
+	bool wait(int timeout = IDLE_TIMEOUT); // true is success, false if timeout
+	static bool wakeUp();
+	static void wakeUpAll();
 
 	void setState(const bool active);
 
@@ -423,11 +423,13 @@ static bool link_request(rem_port* port, SERVER_REQ request)
  **************************************/
 	const P_OP operation = request->req_receive.p_operation;
 	SERVER_REQ queue;;
-	{// request_que_mutex scope
+
+	{	// request_que_mutex scope
 		Firebird::MutexLockGuard queGuard(request_que_mutex);
 
 		bool active = true;
 		queue = active_requests;
+
 		while (true)
 		{
 			for (; queue; queue = queue->req_next) 
@@ -449,8 +451,10 @@ static bool link_request(rem_port* port, SERVER_REQ request)
 					break;
 				}
 			}
+
 			if (queue || !active)
 				break;
+
 			queue = request_que;
 			active = false;
 		}
@@ -534,6 +538,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = port->port_sync->tryEnter();
+
 				if (portLocked || !dataSize)
 				{
 					// Allocate a memory block to store the request in
@@ -588,7 +593,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							port->port_requests_queued);
 						fflush(stdout);
 #endif
-						if (!Worker::WakeUp())  {
+						if (!Worker::wakeUp())  {
 							gds__thread_start(loopThread, (void*)(IPTR) flags,
 								THREAD_medium, THREAD_ast, 0);
 						}
@@ -5293,8 +5298,8 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 					if (request->req_port->port_state != state_disconnected)
 					{
-						rem_port* parent_port =
-							request->req_port->port_server->srvr_parent_port;
+						rem_port* parent_port = request->req_port->port_server->srvr_parent_port;
+
 						if (parent_port == request->req_port)
 						{
 							process_packet(parent_port, &request->req_send,
@@ -5435,7 +5440,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 			if (shutting_down)
 				break;
 
-			if (!worker.Wait()) 
+			if (!worker.wait()) 
 				break;
 		}
 	}
@@ -5461,7 +5466,7 @@ int SRVR_shutdown()
 
 	while (Worker::getCount()/* || cntServers.value()*/) 
 	{
-		Worker::WakeUpAll();
+		Worker::wakeUpAll();
 		THREAD_SLEEP(100);
 	}
 
@@ -5604,7 +5609,7 @@ Worker::~Worker()
 }
 
 
-bool Worker::Wait(int timeout)
+bool Worker::wait(int timeout)
 {
 	return m_sem.tryEnter(timeout);
 }
@@ -5619,7 +5624,7 @@ void Worker::setState(const bool active)
 	insert(active);
 }
 
-bool Worker::WakeUp()
+bool Worker::wakeUp()
 {
 	Firebird::MutexLockGuard guard(m_mutex);
 	if (m_idleWorkers)
@@ -5630,7 +5635,7 @@ bool Worker::WakeUp()
 	return (m_cntAll >= MAX_THREADS);
 }
 
-void Worker::WakeUpAll()
+void Worker::wakeUpAll()
 {
 	Firebird::MutexLockGuard guard(m_mutex);
 	for (Worker* thd = m_idleWorkers; thd; thd = thd->m_next)
@@ -5665,7 +5670,7 @@ void Worker::insert(const bool active)
 	fb_assert(m_idleWorkers != this);
 	fb_assert(m_activeWorkers != this);
 
-	Worker **list = active ? &m_activeWorkers : &m_idleWorkers;
+	Worker** list = active ? &m_activeWorkers : &m_idleWorkers;
 	m_next = *list;
 	if (*list) {
 		(*list)->m_prev = this;

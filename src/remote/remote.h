@@ -486,14 +486,14 @@ struct rem_port
 	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
 	OBJCT			port_last_object_id;	/* cached last id */
 #ifdef REM_SERVER
-	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
+	Firebird::ObjectsArray< Firebird::Array<char> >* port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-	Firebird::RefMutex	*port_que_sync;
+	Firebird::RefMutex* port_que_sync;
 #endif
 #ifdef TRUSTED_AUTH
 	ServerAuth*		port_trusted_auth;
 #endif
-	Firebird::RefMutex	*port_sync;
+	Firebird::RefMutex* port_sync;
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
@@ -511,9 +511,8 @@ struct rem_port
 	bool haveRecvData() const
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync);
-		return (port_receive.x_handy > 0 
-			|| port_queue && (port_qoffset < port_queue->getCount())
-			);
+		return (port_receive.x_handy > 0 ||
+			port_queue && (port_qoffset < port_queue->getCount()));
 	}
 
 	void clearRecvQue()
