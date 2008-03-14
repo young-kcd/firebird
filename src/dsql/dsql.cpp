@@ -2412,6 +2412,19 @@ static USHORT parse_blr(
 			desc.dsc_length = sizeof(SLONG);
 			break;
 
+		case blr_blob2:
+			{
+				desc.dsc_dtype = dtype_blob;
+				desc.dsc_length = sizeof(ISC_QUAD);
+				desc.dsc_sub_type = *blr++;
+				desc.dsc_sub_type += (*blr++) << 8;
+
+				USHORT textType = *blr++;
+				textType += (*blr++) << 8;
+				desc.setTextType(textType);
+			}
+			break;
+
 		default:
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 					  isc_arg_gds, isc_dsql_sqlda_err, 0);
