@@ -5392,20 +5392,21 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		/* read what should be an event message */
 
 		rem_port* stuff = NULL;
+		P_OP operation = op_void;
 		{	// scope
 			Firebird::RefMutexGuard portGuard(*port->port_sync);
 			stuff = port->receive(&packet);
-		}
 
-		const P_OP operation = packet.p_operation;
+			operation = packet.p_operation;
 
-		if (!stuff || operation == op_exit || operation == op_disconnect) {
-			/* Actually, the remote server doing the watching died.
-			   Clean up and leave. */
+			if (!stuff || operation == op_exit || operation == op_disconnect) {
+				/* Actually, the remote server doing the watching died.
+				   Clean up and leave. */
 
-			REMOTE_free_packet(port, &packet);
-			server_death(port);
-			break;
+				REMOTE_free_packet(port, &packet);
+				server_death(port);
+				break;
+			}
 		}
 
 		/* If the packet was an event, we handle it */
@@ -6939,7 +6940,7 @@ static void server_death(rem_port* port)
  **************************************/
 	RDB rdb = port->port_context;
 
-	if (!(port->port_flags & PORT_disconnect))
+	if (rdb && !(port->port_flags & PORT_disconnect))
 	{
 		for (RVNT event = rdb->rdb_events; event; event = event->rvnt_next)
 		{
