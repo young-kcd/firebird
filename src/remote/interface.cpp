@@ -2468,9 +2468,10 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 	
 	RDB rdb = blob->rbl_rdb;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
 	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
+	rdb->rdb_status_vector = user_status;
 
 	try
 	{
@@ -3101,10 +3102,10 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
  **************************************/
 	RDB rdb = *handle;
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
-	rdb->rdb_status_vector = user_status;
 	rem_port* port = rdb->rdb_port;
 	Firebird::RefMutexGuard portGuard(*port->port_sync);
 
+	rdb->rdb_status_vector = user_status;
 	PACKET* packet = &rdb->rdb_packet;
 
 	try
