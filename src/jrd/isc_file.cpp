@@ -1182,7 +1182,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring nfsServer;
 		if (ISC_analyze_nfs(buff, nfsServer))
 		{
-			buff.insert(0, ':');
+			buff.insert(0, ":");
 			buff.insert(0, nfsServer);
 		}
 	}
