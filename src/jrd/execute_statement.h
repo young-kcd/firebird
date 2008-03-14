@@ -44,11 +44,12 @@ class ExecuteStatement
 {
 public:
 	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* dsc);
-	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool SingleTon);
-	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** FirstVar);
+	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool singleton);
+	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** jrdVar);
 	void close(Jrd::thread_db* tdbb);
 
-	static void getString(Jrd::thread_db*, Firebird::string&, const dsc* d, const Jrd::jrd_req* r);
+	static void getString(Jrd::thread_db* tdbb, Firebird::string& sql, const dsc* desc,
+		const Jrd::jrd_req* request);
 
 private:
 	PreparedStatement* stmt;
