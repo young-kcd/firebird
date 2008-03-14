@@ -57,7 +57,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 			if (!par->par_index)
 				continue;
 
-			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
+			if (type_alignments[par->par_desc.dsc_dtype])
+				msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
 			msgLength += par->par_desc.dsc_length;
 			msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
 			msgLength += sizeof(SSHORT);
