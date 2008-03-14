@@ -66,8 +66,8 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* dsc)
 
 	try
 	{
-		AutoPtr<PreparedStatement> stmt = attachment->prepareStatement(
-			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText);
+		AutoPtr<PreparedStatement> stmt(attachment->prepareStatement(
+			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText));
 
 		// Other requests appear to be incorrect in this context 
 		const long requests =
