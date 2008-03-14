@@ -40,81 +40,88 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 	  resultSet(NULL)
 {
 	request = DSQL_allocate_statement(tdbb, attachment);
-
-	const Database* const dbb = tdbb->getDatabase();
-	const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
-
-	DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
-		0, NULL, 0, NULL);
-
-	int paramCount = 0;
-	size_t msgLength = 0;
-
-	if (request->req_receive)
+	try
 	{
-		for (dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
-		{
-			if (!par->par_index)
-				continue;
+		const Database* const dbb = tdbb->getDatabase();
+		const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
-			if (type_alignments[par->par_desc.dsc_dtype])
-				msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-			msgLength += par->par_desc.dsc_length;
-			msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
-			msgLength += sizeof(SSHORT);
+		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
+			0, NULL, 0, NULL);
 
-			++paramCount;
-		}
+		int paramCount = 0;
+		size_t msgLength = 0;
 
-		paramCount *= 2;
-
-		blr.add(blr_version5);
-		blr.add(blr_begin);
-		blr.add(blr_message);
-		blr.add(0);
-		blr.add(paramCount);
-		blr.add(paramCount >> 8);
-
-		values.resize(paramCount);
-		message.resize(msgLength);
-
-		msgLength = 0;
-
-		int i = 0;
-
-		for (int j = 1; j <= paramCount / 2; ++j)
+		if (request->req_receive)
 		{
 			for (dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
 			{
-				if (par->par_index != j)
+				if (!par->par_index)
 					continue;
 
 				if (type_alignments[par->par_desc.dsc_dtype])
 					msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-				values[i] = par->par_desc;
-				values[i].dsc_address = message.begin() + msgLength;
 				msgLength += par->par_desc.dsc_length;
-
-				generateBlr(&values[i]);
-
-				++i;
-
-				// Calculate the NULL indicator offset
-				if (type_alignments[dtype_short])
-					msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
-				values[i].makeShort(0);
-				values[i].dsc_address = message.begin() + msgLength;
+				msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
 				msgLength += sizeof(SSHORT);
 
-				// Generate BLR for the NULL indicator
-				blr.add(blr_short);
-				blr.add(0);
-
-				++i;
+				++paramCount;
 			}
-		}
 
-		blr.add(blr_end);
+			paramCount *= 2;
+
+			blr.add(blr_version5);
+			blr.add(blr_begin);
+			blr.add(blr_message);
+			blr.add(0);
+			blr.add(paramCount);
+			blr.add(paramCount >> 8);
+
+			values.resize(paramCount);
+			message.resize(msgLength);
+
+			msgLength = 0;
+
+			int i = 0;
+
+			for (int j = 1; j <= paramCount / 2; ++j)
+			{
+				for (dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
+				{
+					if (par->par_index != j)
+						continue;
+
+					if (type_alignments[par->par_desc.dsc_dtype])
+						msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
+					values[i] = par->par_desc;
+					values[i].dsc_address = message.begin() + msgLength;
+					msgLength += par->par_desc.dsc_length;
+
+					generateBlr(&values[i]);
+
+					++i;
+
+					// Calculate the NULL indicator offset
+					if (type_alignments[dtype_short])
+						msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
+					values[i].makeShort(0);
+					values[i].dsc_address = message.begin() + msgLength;
+					msgLength += sizeof(SSHORT);
+
+					// Generate BLR for the NULL indicator
+					blr.add(blr_short);
+					blr.add(0);
+
+					++i;
+				}
+			}
+
+			blr.add(blr_end);
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		DSQL_free_statement(tdbb, request, DSQL_drop);
+		throw;
 	}
 }
 
