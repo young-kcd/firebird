@@ -2259,14 +2259,15 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 	{
 #ifdef WIN_NT
 		const SOCKET n = (SOCKET) port->port_handle;
-		if (FD_ISSET(n, &selct->slct_fdset))
+		const int ok = FD_ISSET(n, &selct->slct_fdset);
 #else
 		const int n = (int) port->port_handle;
 		if (n < 0 || n >= FD_SETSIZE) {
 			return port;
 		}		
-		if (n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset)) 
+		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
+		if (ok)
 		{
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
