@@ -397,11 +397,11 @@ template <typename T>
 class NotRefCounted
 {
 public:
-	static int addRef(void*) {
+	static int addRef(T*) {
 		return 0;
 	}
 
-	static int release(void*) {
+	static int release(T*) {
 		return 0;
 	}
 };
