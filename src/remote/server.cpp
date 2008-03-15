@@ -144,8 +144,8 @@ static bool		link_request(rem_port*, SERVER_REQ);
 
 static bool		accept_connection(rem_port*, P_CNCT*, PACKET*);
 static ISC_STATUS	allocate_statement(rem_port*, P_RLSE*, PACKET*);
-static SLONG	append_request_chain(SERVER_REQ, SERVER_REQ*);
-static SLONG	append_request_next(SERVER_REQ, SERVER_REQ*);
+static void		append_request_chain(SERVER_REQ, SERVER_REQ*);
+static void		append_request_next(SERVER_REQ, SERVER_REQ*);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
 static void		attach_database2(rem_port*, P_OP, const char*, int, 
@@ -827,7 +827,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 }
 
 
-static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que_inst)
+static void append_request_chain(SERVER_REQ request, SERVER_REQ* que_inst)
 {
 /**************************************
  *
@@ -842,18 +842,15 @@ static SLONG append_request_chain( SERVER_REQ request, SERVER_REQ * que_inst)
  *
  **************************************/
 	Firebird::MutexLockGuard queGuard(request_que_mutex);
-	SLONG requests;
 
-	for (requests = 1; *que_inst; que_inst = &(*que_inst)->req_chain)
-		++requests;
+	while (*que_inst)
+		que_inst = &(*que_inst)->req_chain;
 
 	*que_inst = request;
-
-	return requests;
 }
 
 
-static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
+static void append_request_next(SERVER_REQ request, SERVER_REQ* que_inst)
 {
 /**************************************
  *
@@ -868,14 +865,11 @@ static SLONG append_request_next( SERVER_REQ request, SERVER_REQ * que_inst)
  *
  **************************************/
 	Firebird::MutexLockGuard queGuard(request_que_mutex);
-	SLONG requests;
 
-	for (requests = 1; *que_inst; que_inst = &(*que_inst)->req_next)
-		++requests;
+	while (*que_inst)
+		que_inst = &(*que_inst)->req_next;
 
 	*que_inst = request;
-
-	return requests;
 }
 
 
