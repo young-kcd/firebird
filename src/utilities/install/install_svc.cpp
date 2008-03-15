@@ -178,6 +178,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				case 'C':
 					sw_arch = ARCH_CS;
 					break;
+				
+				case 'M':
+					sw_arch = ARCH_SCS;
+					break;
 
 				case 'L':
 					if (++argv < end)
@@ -325,6 +329,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		switches.printf("-s \"%s\"", instance);
 	else
 		switches.printf("-s %s", instance);
+
+    if (sw_arch == ARCH_SCS)
+		switches += " -d";
 
 	switch (sw_command)
 	{
@@ -761,7 +768,7 @@ static void usage_exit(void)
  *
  **************************************/
 	printf("\nUsage:\n");
-	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
+	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] | -m[ultithreaded] ]\n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");

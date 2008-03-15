@@ -467,7 +467,7 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					break;
 
 				case 'D':
-					*pserver_flag |= (SRVR_debug | SRVR_non_service);
+					*pserver_flag |= SRVR_debug;
 					break;
 
 #ifndef SUPERSERVER

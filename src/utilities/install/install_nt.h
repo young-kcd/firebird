@@ -68,6 +68,7 @@ const USHORT HIGH_PRIORITY		= 2;
 // sw_arch
 const USHORT ARCH_SS			= 0;
 const USHORT ARCH_CS			= 1;
+const USHORT ARCH_SCS			= 2;
 
 // sw_client
 const USHORT CLIENT_NONE		= 0;
