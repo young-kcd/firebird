@@ -43,7 +43,7 @@ namespace Jrd {
 class ExecuteStatement
 {
 public:
-	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* dsc);
+	static void execute(Jrd::thread_db* tdbb, Jrd::jrd_req* request, DSC* desc);
 	void open(Jrd::thread_db* tdbb, Jrd::jrd_nod* sql, SSHORT nVars, bool singleton);
 	bool fetch(Jrd::thread_db* tdbb, Jrd::jrd_nod** jrdVar);
 	void close(Jrd::thread_db* tdbb);

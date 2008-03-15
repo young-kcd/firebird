@@ -47,7 +47,7 @@ using namespace Jrd;
 using Firebird::AutoPtr;
 
 
-void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* dsc)
+void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc)
 {
 	SET_TDBB(tdbb);
 
@@ -60,7 +60,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* dsc)
 	}
 
 	Firebird::string sqlStatementText;
-	getString(tdbb, sqlStatementText, dsc, request);
+	getString(tdbb, sqlStatementText, desc, request);
 
 	transaction->tra_callback_count++;
 
@@ -196,7 +196,9 @@ bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
 void ExecuteStatement::close(thread_db* tdbb)
 {
 	delete resultSet;
+	resultSet = NULL;
 	delete stmt;
+	stmt = NULL;
 }
 
 

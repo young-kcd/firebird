@@ -43,7 +43,7 @@ public:
 
 public:
 	bool fetch(thread_db* tdbb);
-	bool isNull(int param);
+	bool isNull(int param) const;
 	dsc& getDesc(int param);
 
 private:

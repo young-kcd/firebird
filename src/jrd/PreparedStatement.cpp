@@ -53,7 +53,7 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 
 		if (request->req_receive)
 		{
-			for (dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
+			for (const dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
 			{
 				if (!par->par_index)
 					continue;
@@ -85,7 +85,7 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 
 			for (int j = 1; j <= paramCount / 2; ++j)
 			{
-				for (dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
+				for (const dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
 				{
 					if (par->par_index != j)
 						continue;
@@ -150,7 +150,7 @@ ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction
 }
 
 
-int PreparedStatement::getResultCount()
+int PreparedStatement::getResultCount() const
 {
 	return values.getCount() / 2;
 }

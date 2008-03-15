@@ -76,12 +76,12 @@ bool ResultSet::fetch(thread_db* tdbb)
 }
 
 
-bool ResultSet::isNull(int param)
+bool ResultSet::isNull(int param) const
 {
-	dsc* desc = &stmt->values[(param - 1) * 2 + 1];
+	const dsc* desc = &stmt->values[(param - 1) * 2 + 1];
 	fb_assert(desc->dsc_dtype == dtype_short);
 
-	return *(SSHORT*) desc->dsc_address != 0;
+	return *reinterpret_cast<SSHORT*>(desc->dsc_address) != 0;
 }
 
 

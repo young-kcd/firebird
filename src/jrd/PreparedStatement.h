@@ -50,7 +50,7 @@ public:
 	void execute(thread_db* tdbb, jrd_tra* transaction);
 	ResultSet* executeQuery(thread_db* tdbb, jrd_tra* transaction);
 
-	int getResultCount();
+	int getResultCount() const;
 
 	dsql_req* getRequest()
 	{
