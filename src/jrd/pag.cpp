@@ -2459,12 +2459,12 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	}
 
 	Firebird::Array<BYTE> temp;
-	page_inv_page* pip = (Ods::page_inv_page*) 
-						 // can't reinterpret_cast<> here
-			FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
-	PageSpace* pageSpace = 
-		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	page_inv_page* pip = (Ods::page_inv_page*) // can't reinterpret_cast<> here
+		FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+
+	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
+
 	ULONG pageNo = pageSpace->ppFirst;
 	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
 

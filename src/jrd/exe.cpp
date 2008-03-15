@@ -2511,7 +2511,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_exec_into: 
 			{
 				ExecuteStatement* impure = (ExecuteStatement*)
-					((SCHAR *) request + node->nod_impure);
+					((SCHAR*) request + node->nod_impure);
 
 				switch (request->req_operation) {
 				case jrd_req::req_evaluate:

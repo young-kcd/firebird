@@ -384,11 +384,11 @@ template <typename T>
 class DefaultRefCounted
 {
 public:
-	static int addRef(T *object) {
+	static int addRef(T* object) {
 		return object->addRef();
 	}
 
-	static int release(T *object) {
+	static int release(T* object) {
 		return object->release();
 	}
 };
@@ -411,7 +411,7 @@ template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
 class EnsureUnlock
 {
 public:
-	explicit EnsureUnlock(Mtx &mutex)
+	explicit EnsureUnlock(Mtx& mutex)
 	{
 		m_mutex = &mutex;
 		RefCounted::addRef(m_mutex);
@@ -448,7 +448,7 @@ public:
 	}
 
 private:
-	Mtx *m_mutex;
+	Mtx* m_mutex;
 	int m_locked;
 };
 

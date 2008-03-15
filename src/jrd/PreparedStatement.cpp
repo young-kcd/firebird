@@ -139,6 +139,7 @@ PreparedStatement::~PreparedStatement()
 
 void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 {
+	fb_assert(resultSet == NULL);
 	DSQL_execute(tdbb, &transaction, request, 0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL);
 }
 
