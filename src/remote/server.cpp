@@ -537,7 +537,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				}
 			
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
-				const bool portLocked = port->port_sync->tryEnter();
+				const bool portLocked = portGuard.tryEnter();
 
 				if (portLocked || !dataSize)
 				{
@@ -558,7 +558,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						if (request->req_receive.p_operation == op_partial)
 						{
 							port->setRecvState(recvState);
-							port->port_sync->leave();
+							portGuard.leave();
 //							gds__log("Partial");
 
 							free_request(request);
@@ -577,7 +577,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 					request->req_port = port;
 					if (portLocked) {
-						port->port_sync->leave();
+						portGuard.leave();
 					}
 
 					if (!link_request(port, request))
@@ -5286,7 +5286,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 
 				/* Validate port.  If it looks ok, process request */
 
-				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_sync);
+				Firebird::RefMutexEnsureUnlock portQueGuard(*request->req_port->port_que_sync);
 				{ // port_sync scope
 					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
 
@@ -5331,7 +5331,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						// port_sync, else we can miss data arrived at time between
 						// releasing locks and will never handle it. Therefore we
 						// can't ise MutexLockGuard here
-						port->port_que_sync->enter();
+						portQueGuard.enter();
 						if (port->haveRecvData())
 						{
 							SERVER_REQ new_request = alloc_request();
@@ -5360,7 +5360,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				} // port_sync scope
 
 				if (port) {
-					port->port_que_sync->leave();
+					portQueGuard.leave();
 				}
 
 				{ // request_que_mutex scope

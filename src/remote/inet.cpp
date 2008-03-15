@@ -3482,16 +3482,16 @@ static void unhook_disconnected_ports(rem_port* main_port)
 		for (rem_port* port = main_port; port; port = port->port_next) 
 		{
 			Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
-			if (port->port_sync->tryEnter()) {
+			if (portGuard.tryEnter()) {
 				if (port->port_state == state_disconnected) {
 					more = true;
 					unhook_port(port, port->port_parent);
-					port->port_sync->leave();
+					portGuard.leave();
 					cleanup_port(port);
 					break;
 				}
 				else {
-					port->port_sync->leave();
+					portGuard.leave();
 				}
 			}
 		}
