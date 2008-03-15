@@ -2293,7 +2293,8 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 
 		// go through list of maps
 
-		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
+		for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next)
+		{
 
 			// find an available unused comm area
 
@@ -2309,6 +2310,7 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 				j = xpm->xpm_number;
 				break;
 			}
+
 			j++;
 		}
 	} // xnet_mutex scope
