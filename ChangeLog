@@ -1,3 +1,130 @@
+2008-03-15 20:13  skidder
+
+	* firebird2/doc/README.instsvc (1.7):
+
+	Update documentation for instsvc
+
+2008-03-15 20:12  skidder
+
+	* firebird2/src/: remote/os/win32/srvr_w32.cpp (1.50),
+	utilities/install/install_nt.h (1.16),
+	utilities/install/install_svc.cpp (1.37):
+
+	Allow running engine in superclassic mode on Windows as the
+	service.  This also changes the behavior of -d switch. To run
+	superclassic engine as application please now invoke fb_inet_server
+	with both -d and -a switches.
+
+2008-03-15 18:55  asfernandes
+
+	* firebird2/src/: common/classes/locks.h (1.43),
+	jrd/PreparedStatement.cpp (1.5), jrd/exe.cpp (1.245), jrd/pag.cpp
+	(1.169), remote/inet.cpp (1.213):
+
+	Misc
+
+2008-03-15 17:02  asfernandes
+
+	* firebird2/src/remote/xnet.cpp (1.104):
+
+	Misc
+
+2008-03-15 14:46  hvlad
+
+	* firebird2/src/remote/: inet.cpp (1.212), server.cpp (1.182):
+
+	Fixed few my mistakes noted by Claudio
+
+2008-03-15 11:28  robocop
+
+	* firebird2/src/remote/server.cpp (1.181):
+
+	Simplification.
+
+2008-03-15 11:27  robocop
+
+	* firebird2/src/remote/inet.cpp (1.211):
+
+	A bit more readable and more friendly with source code analysis
+	tools (including code completion in editors).
+
+2008-03-15 11:26  robocop
+
+	* firebird2/src/common/classes/locks.h (1.42):
+
+	Use the template type.
+
+2008-03-15 11:25  robocop
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.4),
+	PreparedStatement.h (1.2), ResultSet.cpp (1.3), ResultSet.h (1.3),
+	execute_statement.cpp (1.39), execute_statement.h (1.13):
+
+	Misc.
+
+2008-03-14 16:59  asfernandes
+
+	* firebird2/src/jrd/PreparedStatement.cpp (1.3):
+
+	Release the request when prepare throws
+
+2008-03-14 16:29  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.237):
+
+	Fixed EXECUTE STATEMENT returning BLOBs
+
+2008-03-14 15:39  asfernandes
+
+	* firebird2/src/jrd/PreparedStatement.cpp (1.2):
+
+	Correction
+
+2008-03-14 12:11  asfernandes
+
+	* firebird2/src/jrd/execute_statement.h (1.12):
+
+	Misc
+
+2008-03-14 12:06  asfernandes
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.71),
+	engine_classic.vcproj (1.71), engine_embed.vcproj (1.60),
+	intl.vcproj (1.36):
+
+	Revert the ICU include directory changes
+
+2008-03-14 11:43  alexpeshkoff
+
+	* firebird2/src/remote/interface.cpp (1.172):
+
+	Fixed races in client when working with events
+
+2008-03-14 09:32  alexpeshkoff
+
+	* firebird2/src/jrd/isc_file.cpp (1.117):
+
+	fixed gcc build
+
+2008-03-14 09:23  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.38):
+
+	fixed gcc build
+
+2008-03-14 08:58  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.171):
+
+	Correction. Thank to Adriano
+
+2008-03-14 03:50  asfernandes
+
+	* firebird2/src/remote/: interface.cpp (1.170), remote.h (1.62),
+	server.cpp (1.180):
+
+	Misc
+
 2008-03-13 20:50  asfernandes
 
 	* firebird2/src/jrd/: ResultSet.cpp (1.2), ResultSet.h (1.2):
