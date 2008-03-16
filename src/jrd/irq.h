@@ -42,6 +42,7 @@ enum irq_type_t
 	irq_r_format,			// read a format
 	irq_r_relation,			// pick up view definition
 	irq_c_index,			// create index
+	irq_c_index_m,			// create index - modify ID.NULL
 	irq_m_fields,			// process a modification of RDB$FIELDS
 	irq_m_index,			// modify index id
 	irq_r_fields,			// pick up field expressions

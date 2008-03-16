@@ -153,6 +153,23 @@ inline void clearRecordStack(RecordStack& stack)
 	}
 }
 
+inline bool needDfw(thread_db* tdbb, jrd_tra* transaction)
+{
+/**************************************
+ *
+ *	n e e d D f w
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checks, should DFW be called or not
+ *	when system relations are modified.
+ *
+ **************************************/
+	return !(transaction->tra_flags & TRA_system || 
+			 tdbb->tdbb_flags & TDBB_deferred);
+}
+
 IPTR VIO_savepoint_large(const Savepoint* savepoint, IPTR size)
 {
 /**************************************
@@ -1173,7 +1190,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 /* If we're about to erase a system relation, check to make sure
    everything is completely kosher. */
 
-	if (!(transaction->tra_flags & TRA_system))
+	if (needDfw(tdbb, transaction))
 	{
 		jrd_rel* r2;
 		const jrd_prc* procedure;
@@ -2202,7 +2219,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 /* If we're about to modify a system relation, check to make sure
    everything is completely kosher. */
 
-	if (!(transaction->tra_flags & TRA_system)) {
+	if (needDfw(tdbb, transaction)) {
 		switch ((RIDS) relation->rel_id) {
 		case rel_database:
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
@@ -2647,7 +2664,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
 
-	if (!(transaction->tra_flags & TRA_system)) {
+	if (needDfw(tdbb, transaction)) {
 		switch ((RIDS) relation->rel_id) {
 		case rel_relations:
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
