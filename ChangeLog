@@ -1,3 +1,23 @@
+2008-03-16 20:30  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.417):
+
+	Validate (and store in tdbb) non-NULL transaction handles
+
+2008-03-16 18:10  alexpeshkoff
+
+	* firebird2/src/jrd/: dfw.epp (1.230), dfw_proto.h (1.15), irq.h
+	(1.16), pcmet.epp (1.49), vio.cpp (1.208):
+
+	Fixed CORE-1770: Bugcheck 291 in DDL
+
+2008-03-16 14:38  robocop
+
+	* firebird2/src/msgs/build_file.epp (1.32):
+
+	Fix some issues: wrong pathname used for localized msgs, possibly
+	trash stored in msg file, some obvious checks, etc.
+
 2008-03-15 20:13  skidder
 
 	* firebird2/doc/README.instsvc (1.7):
