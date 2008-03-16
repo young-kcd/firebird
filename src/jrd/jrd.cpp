@@ -3430,6 +3430,8 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 	{
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
+		if (*tra_handle)
+			validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -3463,6 +3465,8 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 	{
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
+		if (*tra_handle)
+			validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
@@ -3584,6 +3588,8 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 	{
 		dsql_req* const statement = *stmt_handle;
 		validateHandle(tdbb, statement);
+		if (*tra_handle)
+			validateHandle(tdbb, *tra_handle);
 		DatabaseContextHolder dbbHolder(tdbb);
 		check_database(tdbb);
 
