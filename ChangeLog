@@ -1,3 +1,85 @@
+2008-03-17 18:59  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.249):
+
+	Fixed the bug in the binary search algorithm.
+
+2008-03-17 18:58  dimitr
+
+	* firebird2/src/include/gen/: codetext.h (1.78), iberror.h (1.80),
+	msgs.h (1.97), sql_code.h (1.84), sql_state.h (1.8):
+
+	Sync with SAS: Better diagnostics for some DYN errors.
+
+2008-03-17 18:55  dimitr
+
+	* firebird2/src/: msgs/messages2.sql (1.31),
+	msgs/system_errors2.sql (1.23), jrd/drq.h (1.22), jrd/dyn_def.epp
+	(1.163):
+
+	Sync with SAS: Better diagnostics for some DYN errors.
+
+2008-03-17 18:17  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.359):
+
+	Fixed the build.
+
+2008-03-17 17:48  alexpeshkoff
+
+	* firebird2/src/: common/classes/init.cpp (1.7),
+	common/classes/init.h (1.13), isql/isql.epp (1.238), jrd/ibase.h
+	(1.131), jrd/jrd.cpp (1.419), jrd/jrd_proto.h (1.66), jrd/svc.cpp
+	(1.214), jrd/why.cpp (1.179), jrd/why_proto.h (1.46),
+	jrd/os/win32/ibinitdll.cpp (1.17), qli/dtr.cpp (1.49), qli/dtr.h
+	(1.28), qli/err.cpp (1.22), remote/inet_server.cpp (1.79),
+	remote/os/win32/cntl.cpp (1.40), remote/os/win32/window.cpp (1.32):
+
+	Applied shutdown changes, discussed in fb-devel a week ago.
+
+2008-03-17 13:07  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.12):
+
+	Include aliases.conf in the install
+
+2008-03-17 11:29  hvlad
+
+	* firebird2/src/include/gen/: codetext.h (1.77), iberror.h (1.79),
+	msgs.h (1.96), sql_code.h (1.83), sql_state.h (1.7):
+
+	Update codes after new error message added. Note, i added message
+	at the place where it can be added in 2.1 release, not at the end
+	of list as usual.
+
+2008-03-17 11:26  hvlad
+
+	* firebird2/src/: dsql/dsql.h (1.126), dsql/node.h (1.103),
+	dsql/pass1.cpp (1.358), msgs/facilities2.sql (1.26),
+	msgs/messages2.sql (1.30), msgs/system_errors2.sql (1.22):
+
+	Fixed bug CORE-1793 : AV at prepare of query with unused
+	parametrized CTE
+
+2008-03-17 10:08  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.214):
+
+	Cleanup
+
+2008-03-17 10:08  alexpeshkoff
+
+	* firebird2/src/jrd/scl.epp (1.93):
+
+	Fixed gcc warning
+
+2008-03-17 03:00  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.231), jrd.cpp (1.418), vio.cpp
+	(1.209):
+
+	Misc
+
 2008-03-16 20:30  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.417):
