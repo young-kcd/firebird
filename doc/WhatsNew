@@ -2,8 +2,23 @@
   * v2.0.4
   **************************
 
+    * Fixed bug CORE-1775
+        Bad performance of the security checking during prepare
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1774
+        Problem with collate ES_ES_CI_AI
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Fixed bug CORE-1746
         Expression index can be created while doing inserts into table
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+
+    * Fixed bug CORE-1731
+        Sometimes the engine may "hang" using 100% CPU load and no IO activity for a few minutes
       Contributor(s):
         Vlad Horsun <horsun at kdb.dp.ua>
 
@@ -157,6 +172,11 @@
         (error code 0 instead of 335544727)
       Contributor(s):
         Dmitry Yemanov <yemanov at yandex.ru>
+
+    * Fixed bug CORE-1421
+        SuperServer can't shutdown immediately after shutdown request after failed login attempt
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Fixed bug CORE-1419
         Wrong current timestamp evaluation for selectable procedures
