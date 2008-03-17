@@ -2298,8 +2298,8 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 
 					// implement a binary search for array gds__sql_state[]
 					int first = 0;
-					int last = FB_NELEM(gds__sql_states);
-					while (first < last)
+					int last = FB_NELEM(gds__sql_states) - 1;
+					while (first <= last)
 					{				
 						const int mid = (first + last) / 2;
 						const SLONG new_code = gds__sql_states[mid].gds_code;
