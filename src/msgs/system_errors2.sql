@@ -799,8 +799,9 @@ COMMIT WORK;
 (-104, '42', '000', 13, 946, 'dsql_cte_nested_with', NULL, NULL)
 (-104, '42', '000', 13, 947, 'dsql_col_more_than_once_using', NULL, NULL)
 (-901, 'HY', '000', 13, 948, 'dsql_unsupp_feature_dialect', NULL, NULL)
-(-104, '42', '000', 13, 949, 'dsql_col_more_than_once_view', NULL, NULL)
-(-901, 'HY', '000', 13, 950, 'dsql_unsupported_in_auto_trans', NULL, NULL)
+(-104, '42', '000', 13, 949, 'dsql_cte_not_used', NULL, NULL)
+(-104, '42', '000', 13, 950, 'dsql_col_more_than_once_view', NULL, NULL)
+(-901, 'HY', '000', 13, 951, 'dsql_unsupported_in_auto_trans', NULL, NULL)
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

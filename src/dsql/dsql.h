@@ -481,6 +481,7 @@ public:
 	void addCTEs(dsql_nod* list);
 	dsql_nod* findCTE(const dsql_str* name);
 	void clearCTEs();
+	void checkUnusedCTEs();
 
 	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via 
 	// CTE name or via alias. We need to substitute this aliases when processing CTE 
