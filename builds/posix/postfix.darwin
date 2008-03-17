@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	DARWIN
-#$Id: postfix.darwin,v 1.1.4.6 2008-02-18 11:58:35 paulbeach Exp $
+#$Id: postfix.darwin,v 1.1.4.7 2008-03-17 12:04:38 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -98,6 +98,7 @@ darwin_finish_cs_framework:
 	cp ../builds/install/arch-specific/darwin/Readme.txt \
 			$(FB_FW)/Resources/Readme.txt
 	cp ../gen/firebird/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
+	cp ../builds/install/misc/aliases.conf.in $(FB_FW)/Resources/English.lprog/var/aliases.conf
 
 darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
 darwin_finish_ss_framework: 
@@ -156,6 +157,7 @@ darwin_finish_ss_framework:
 	cp ../builds/install/arch-specific/darwin/Readme.txt \
 			$(FB_FW)/Resources/Readme.txt
 	cp ../gen/firebird/misc/firebird.conf $(FB_FW)/Resources/English.lproj/var
+	cp ../builds/install/misc/aliases.conf.in $(FB_FW)/Resources/English.lprog/var/aliases.conf
 
 darwin_postbuild_target: package
 	@echo
