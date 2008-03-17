@@ -629,8 +629,6 @@ rem_port* INET_connect(const TEXT* name,
 	struct sockaddr_in address;
 	memset(&address, 0, sizeof(address));
 
-	TEXT msg[BUFFER_SMALL];
-
 /* U N I X style sockets */
 
 	address.sin_family = AF_INET;
@@ -647,10 +645,8 @@ rem_port* INET_connect(const TEXT* name,
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
-			SNPRINTF(msg, FB_NELEM(msg),
-					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
-					host.c_str(), H_ERRNO);
-			gds__log(msg, 0);
+			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
+					 host.c_str(), H_ERRNO);
 			inet_gen_error(port,
 						   isc_network_error,
 						   isc_arg_string,
@@ -712,10 +708,7 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			/* end of modification by FSG */
 			/* this is the original code */
-			SNPRINTF(msg, FB_NELEM(msg),
-					"INET/INET_connect: getservbyname failed, error code = %d",
-					H_ERRNO);
-			gds__log(msg, 0);
+			gds__log("INET/INET_connect: getservbyname failed, error code = %d", H_ERRNO);
 			inet_gen_error(port,
 						   isc_network_error,
 						   isc_arg_string,
@@ -1122,8 +1115,8 @@ static int accept_connection(rem_port* port,
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
 			if (chdir(home.c_str())) {
-				gds__log("inet_server: unable to cd to %s errno %d\n", home.c_str(),
-						 INET_ERRNO);
+				gds__log("inet_server: unable to cd to %s errno %d\n", 
+						 home.c_str(), INET_ERRNO);
 				/* We continue after the error */
 			}
 		}
@@ -1186,10 +1179,7 @@ static rem_port* alloc_port( rem_port* parent)
 			if (parent)
 				inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
 			else {
-				SNPRINTF(buffer, FB_NELEM(buffer),
-						 "INET/alloc_port: WSAStartup failed, error code = %d",
-						 wsaError);
-				gds__log(buffer, 0);
+				gds__log("INET/alloc_port: WSAStartup failed, error code = %d", wsaError);
 			}
 			return NULL;
 		}
@@ -1203,12 +1193,7 @@ static rem_port* alloc_port( rem_port* parent)
 			INET_remote_buffer = DEF_MAX_DATA;
 		}
 #ifdef DEBUG
-		{
-			char msg[BUFFER_SMALL];
-			SNPRINTF(msg, FB_NELEM(msg), " Info: Remote Buffer Size set to %ld",
-					 INET_remote_buffer);
-			gds__log(msg, 0);
-		}
+		gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 
 		fb_shutdown_callback(0, shut_preproviders, fb_shut_preproviders);
@@ -2296,7 +2281,6 @@ static int select_wait( rem_port* main_port, SLCT * selct)
  *	to read from them.
  *
  **************************************/
-	TEXT msg[BUFFER_SMALL];
 	struct timeval timeout;
 	bool checkPorts = false;
 
@@ -2454,10 +2438,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				break;
 			}
 
-			SNPRINTF(msg, FB_NELEM(msg),
-					 "INET/select_wait: select failed, errno = %d",
-					 inetErrNo);
-			gds__log(msg, 0);
+			gds__log("INET/select_wait: select failed, errno = %d", inetErrNo);
 			return FALSE;
 		}	// for (;;)
 	}
@@ -2788,17 +2769,13 @@ static void inet_error(
  *	to format the status vector if any.
  *
  **************************************/
-	TEXT msg[BUFFER_SMALL];
-
 	if (status) {
 		inet_gen_error(port, isc_network_error,
 					   isc_arg_string,
 					   (ISC_STATUS) port->port_connection->str_data,
 					   isc_arg_gds, operation, SYS_ERR, status, 0);
 
-		SNPRINTF(msg, FB_NELEM(msg),
-				 "INET/inet_error: %s errno = %d", function, status);
-		gds__log(msg, 0);
+		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
 	else {
 		/* No status value, just format the basic arguments. */
