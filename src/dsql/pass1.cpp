@@ -10406,7 +10406,7 @@ void dsql_req::checkUnusedCTEs()
 
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_dsql_cte_not_used, 
-				isc_arg_string, ERR_cstring(cte_name->str_data), 0);
+				isc_arg_string, cte_name->str_data, 0);
 		}
 	}
 }
