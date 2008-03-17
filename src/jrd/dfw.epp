@@ -48,7 +48,7 @@
  *
  * Adriano dos Santos Fernandes
  *
- * 2008-03-16 Alex Peshkoff - avoid most of data modifications in ststem transaction.
+ * 2008-03-16 Alex Peshkoff - avoid most of data modifications in system transaction.
  *	Problems took place when same data was modified in user transaction, and later - 
  *	in system transaction. System transaction always performs updates in place, 
  *	but when between RPB setup and actual modification garbage was collected (this 
@@ -788,19 +788,17 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		jrd_req* handle = 0;
 		jrd_req* handle2 = 0;
 
-		/* Check the file name for node name. This has already
-		 * been done for shadows in add_shadow() */
+		// Check the file name for node name. This has already
+		// been done for shadows in add_shadow()
 
 		if (work->dfw_type != dfw_add_shadow) {
 			check_filename(work->dfw_name, true);
 		}
 
-		/*
-		 * User transaction may be safely used instead of system cause 
-		 * we requested and got exclusive database access. AP-2008.
-		 */
+		// User transaction may be safely used instead of system, cause 
+		// we requested and got exclusive database access. AP-2008.
 
-		/* get any files to extend into */
+		// get any files to extend into
 
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction) X IN RDB$FILES
 			WITH X.RDB$FILE_NAME EQ work->dfw_name.c_str()
@@ -1705,17 +1703,15 @@ static bool create_index(	thread_db*	tdbb,
 		relation = NULL;
 		idx.idx_flags = 0;
 
-		/*
-		 * Here we need dirty reads from database (first of all from 
-		 * RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
-		 * with index to be created and it's dfw_name. Missing it breaks gbak, 
-		 * and appears can break other applications. Modification of 
-		 * record in RDB$INDICES was moved into separate request. AP-2008.
-		 */
+		// Here we need dirty reads from database (first of all from 
+		// RDB$RELATION_FIELDS and RDB$FIELDS - tables not directly related
+		// with index to be created and it's dfw_name. Missing it breaks gbak, 
+		// and appears can break other applications. Modification of 
+		// record in RDB$INDICES was moved into separate request. AP-2008.
 
-		/* Fetch the information necessary to create the index.  On the first
-		   time thru, check to see if the index already exists.  If so, delete
-		   it.  If the index inactive flag is set, don't create the index */
+		// Fetch the information necessary to create the index.  On the first
+		// time thru, check to see if the index already exists.  If so, delete
+		// it.  If the index inactive flag is set, don't create the index
 
 		request = CMP_find_request(tdbb, irq_c_index, IRQ_REQUESTS);
 
@@ -1755,19 +1751,20 @@ static bool create_index(	thread_db*	tdbb,
 					EXE_unwind(tdbb, request);
 					return false;
 				}
+
 				if (IDX.RDB$INDEX_ID)
 				{
 					IDX_delete_index(	tdbb,
 										relation,
 										(USHORT)(IDX.RDB$INDEX_ID - 1));
 
-					jrd_req* request = CMP_find_request(tdbb, irq_c_index_m, IRQ_REQUESTS);
+					jrd_req* request2 = CMP_find_request(tdbb, irq_c_index_m, IRQ_REQUESTS);
 
-			        FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			        FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 						IDXM IN RDB$INDICES WITH IDXM.RDB$INDEX_NAME EQ work->dfw_name.c_str()
 
 						if (!REQUEST(irq_c_index_m))
-							REQUEST(irq_c_index_m) = request;
+							REQUEST(irq_c_index_m) = request2;
 
 						MODIFY IDXM
 							IDXM.RDB$INDEX_ID.NULL = TRUE;
@@ -1775,7 +1772,7 @@ static bool create_index(	thread_db*	tdbb,
 					END_FOR;
 
 					if (!REQUEST(irq_c_index_m))
-						REQUEST(irq_c_index_m) = request;
+						REQUEST(irq_c_index_m) = request2;
 				}
 				if (IDX.RDB$INDEX_INACTIVE)
 				{
@@ -4328,10 +4325,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		jrd_req* request_fmt1 = CMP_find_request(tdbb, irq_format1, IRQ_REQUESTS);
 
-		/*
-		 * User transaction may be safely used instead of system cause 
-		 * all required dirty reads are performed in metadata cache. AP-2008.
-		 */
+		// User transaction may be safely used instead of system cause 
+		// all required dirty reads are performed in metadata cache. AP-2008.
 
 		FOR(REQUEST_HANDLE request_fmt1 TRANSACTION_HANDLE transaction)
 			REL IN RDB$RELATIONS WITH REL.RDB$RELATION_NAME EQ work->dfw_name.c_str()

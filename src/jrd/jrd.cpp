@@ -4850,18 +4850,6 @@ static void detachLocksFromAttachment(Attachment* attachment)
 }
 
 
-Attachment::~Attachment()
-{
-// For normal attachments that happens release_attachment(),
-// but for special ones like GC should be done also in dtor - 
-// they do not (and should not) call release_attachment().
-// It's no danger calling detachLocksFromAttachment() 
-// once more here because it nulls att_long_locks.
-//		AP 2007
-	detachLocksFromAttachment(this);
-}
-
-
 Attachment::Attachment(Database* dbb) :
 		att_database(dbb), 
 		att_lock_owner_id(Database::getLockOwnerId()),
@@ -4874,6 +4862,25 @@ Attachment::Attachment(Database* dbb) :
 		att_remote_process(*dbb->dbb_permanent),
 		att_dsql_cache(*dbb->dbb_permanent)
 {
+}
+
+
+Attachment::~Attachment()
+{
+	// For normal attachments that happens release_attachment(),
+	// but for special ones like GC should be done also in dtor - 
+	// they do not (and should not) call release_attachment().
+	// It's no danger calling detachLocksFromAttachment() 
+	// once more here because it nulls att_long_locks.
+	//		AP 2007
+	detachLocksFromAttachment(this);
+}
+
+
+PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+	jrd_tra* transaction, const Firebird::string& text)
+{
+	return new PreparedStatement(tdbb, pool, this, transaction, text);
 }
 
 
@@ -5619,13 +5626,6 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 		return vdnFail;
 	}
 	return vdnOk;
-}
-
-
-PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
-	jrd_tra* transaction, const Firebird::string& text)
-{
-	return new PreparedStatement(tdbb, pool, this, transaction, text);
 }
 
 
