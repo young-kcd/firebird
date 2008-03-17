@@ -80,6 +80,7 @@ public:
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
+	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk 
 #ifdef SUPERSERVER_V2
 	PageBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
 #endif
@@ -134,6 +135,7 @@ class BufferDesc : public pool_alloc<type_bdb>
 	SLONG       bdb_diff_generation;    /* Number of backup lock/unlock (NBAK) cycle for 
 										   this database in current process.
 										   Used in CS only. */
+	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
 	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 
