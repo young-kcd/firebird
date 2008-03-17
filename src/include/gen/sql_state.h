@@ -813,8 +813,9 @@ static const struct {
 	{336397234, "42000"}, // 946 dsql_cte_nested_with 
 	{336397235, "42000"}, // 947 dsql_col_more_than_once_using 
 	{336397236, "HY000"}, // 948 dsql_unsupp_feature_dialect 
-	{336397237, "42000"}, // 949 dsql_col_more_than_once_view 
-	{336397238, "HY000"}, // 950 dsql_unsupported_in_auto_trans 
+	{336397237, "42000"}, // 949 dsql_cte_not_used 
+	{336397238, "42000"}, // 950 dsql_col_more_than_once_view 
+	{336397239, "HY000"}, // 951 dsql_unsupported_in_auto_trans 
 	{336723983, "00000"}, //  15 gsec_cant_open_db 
 	{336723984, "00000"}, //  16 gsec_switches_error 
 	{336723985, "00000"}, //  17 gsec_no_op_spec 

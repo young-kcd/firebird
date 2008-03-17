@@ -848,8 +848,9 @@ const ISC_LONG isc_dsql_cte_miss_nonrecursive       = 336397233L;
 const ISC_LONG isc_dsql_cte_nested_with             = 336397234L;
 const ISC_LONG isc_dsql_col_more_than_once_using    = 336397235L;
 const ISC_LONG isc_dsql_unsupp_feature_dialect      = 336397236L;
-const ISC_LONG isc_dsql_col_more_than_once_view     = 336397237L;
-const ISC_LONG isc_dsql_unsupported_in_auto_trans   = 336397238L;
+const ISC_LONG isc_dsql_cte_not_used                = 336397237L;
+const ISC_LONG isc_dsql_col_more_than_once_view     = 336397238L;
+const ISC_LONG isc_dsql_unsupported_in_auto_trans   = 336397239L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -916,7 +917,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 860;
+const ISC_LONG isc_err_max                          = 861;
 
 #else /* c definitions */
 
@@ -1734,8 +1735,9 @@ const ISC_LONG isc_err_max                          = 860;
 #define isc_dsql_cte_nested_with             336397234L
 #define isc_dsql_col_more_than_once_using    336397235L
 #define isc_dsql_unsupp_feature_dialect      336397236L
-#define isc_dsql_col_more_than_once_view     336397237L
-#define isc_dsql_unsupported_in_auto_trans   336397238L
+#define isc_dsql_cte_not_used                336397237L
+#define isc_dsql_col_more_than_once_view     336397238L
+#define isc_dsql_unsupported_in_auto_trans   336397239L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1802,7 +1804,7 @@ const ISC_LONG isc_err_max                          = 860;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          860
+#define isc_err_max                          861
 
 #endif
 
