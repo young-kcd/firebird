@@ -705,6 +705,7 @@ const ISC_LONG isc_upd_ins_doesnt_match_matching    = 336003100L;
 const ISC_LONG isc_upd_ins_with_complex_view        = 336003101L;
 const ISC_LONG isc_dsql_incompatible_trigger_type   = 336003102L;
 const ISC_LONG isc_dsql_db_trigger_type_cant_change = 336003103L;
+const ISC_LONG isc_dyn_dup_table                    = 336068740L;
 const ISC_LONG isc_dyn_column_does_not_exist        = 336068784L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_LONG isc_dyn_no_grant_admin_opt           = 336068797L;
@@ -732,6 +733,7 @@ const ISC_LONG isc_dyn_miss_priv_warning            = 336068855L;
 const ISC_LONG isc_dyn_ods_not_supp_feature         = 336068856L;
 const ISC_LONG isc_dyn_cannot_addrem_computed       = 336068857L;
 const ISC_LONG isc_dyn_no_empty_pw                  = 336068858L;
+const ISC_LONG isc_dyn_dup_index                    = 336068859L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -917,7 +919,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 861;
+const ISC_LONG isc_err_max                          = 863;
 
 #else /* c definitions */
 
@@ -1592,6 +1594,7 @@ const ISC_LONG isc_err_max                          = 861;
 #define isc_upd_ins_with_complex_view        336003101L
 #define isc_dsql_incompatible_trigger_type   336003102L
 #define isc_dsql_db_trigger_type_cant_change 336003103L
+#define isc_dyn_dup_table                    336068740L
 #define isc_dyn_column_does_not_exist        336068784L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
@@ -1619,6 +1622,7 @@ const ISC_LONG isc_err_max                          = 861;
 #define isc_dyn_ods_not_supp_feature         336068856L
 #define isc_dyn_cannot_addrem_computed       336068857L
 #define isc_dyn_no_empty_pw                  336068858L
+#define isc_dyn_dup_index                    336068859L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1804,7 +1808,7 @@ const ISC_LONG isc_err_max                          = 861;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          861
+#define isc_err_max                          863
 
 #endif
 

@@ -670,6 +670,7 @@ static const struct {
 	{336003101, "54001"}, //  29 upd_ins_with_complex_view 
 	{336003102, "42000"}, //  30 dsql_incompatible_trigger_type 
 	{336003103, "42000"}, //  31 dsql_db_trigger_type_cant_change 
+	{336068740, "42S01"}, // 132 dyn_dup_table 
 	{336068784, "42S22"}, // 176 dyn_column_does_not_exist 
 	{336068796, "28000"}, // 188 dyn_role_does_not_exist 
 	{336068797, "28000"}, // 189 dyn_no_grant_admin_opt 
@@ -697,6 +698,7 @@ static const struct {
 	{336068856, "0A000"}, // 248 dyn_ods_not_supp_feature 
 	{336068857, "42000"}, // 249 dyn_cannot_addrem_computed 
 	{336068858, "42000"}, // 250 dyn_no_empty_pw 
+	{336068859, "42S11"}, // 251 dyn_dup_index 
 	{336330753, "00000"}, //   1 gbak_unknown_switch 
 	{336330754, "00000"}, //   2 gbak_page_size_missing 
 	{336330755, "00000"}, //   3 gbak_page_size_toobig 

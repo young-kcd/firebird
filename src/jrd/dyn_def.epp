@@ -118,7 +118,7 @@ static const UCHAR who_blr[] =
 };
 
 
-static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, bool);
+static void check_unique_name(thread_db*, Global*, const Firebird::MetaName&, int);
 static bool get_who(thread_db*, Global*, Firebird::MetaName&);
 static bool is_it_user_name(Global*, const Firebird::MetaName&, thread_db*);
 
@@ -1885,6 +1885,9 @@ void DYN_define_index(Global*		gbl,
 
 	try {
 
+	id = drq_l_idx_name;
+	check_unique_name(tdbb, gbl, index_name, obj_index);
+
 	request = CMP_find_request(tdbb, drq_s_indices, DYN_REQUESTS);
 	id = drq_s_indices;
 
@@ -2408,15 +2411,20 @@ void DYN_define_index(Global*		gbl,
 		else if (id == drq_s_idx_segs) {
 			DYN_rundown_request(request, id);
 			DYN_error_punt(true, 15);
-			/* msg 15: "STORE RDB$INDICES failed" */
+			/* msg 15: "STORE RDB$INDEX_SEGMENTS failed" */
 		}
 
 		DYN_rundown_request(request, -1);
+
 		switch (id)
 		{
+		case drq_l_idx_name:
+			DYN_error_punt(true, 21);
+			/* msg 21: "STORE RDB$INDICES failed" */
+			break;
 		case drq_l_lfield:
 			DYN_error_punt(true, 15);
-			/* msg 15: "STORE RDB$INDICES failed" */
+			/* msg 15: "STORE RDB$INDEX_SEGMENTS failed" */
 			break;
 		case drq_l_unq_idx:
 			DYN_error_punt(true, 17);
@@ -2426,10 +2434,12 @@ void DYN_define_index(Global*		gbl,
 			DYN_error_punt(true, 180);
 			/* msg 180: "Table Name lookup failed" */
 			break;
-		default:
+		case drq_l_primary:
 			DYN_error_punt(true, 19);
 			/* msg 19: "Primary Key lookup failed" */
 			break;
+		default:
+			fb_assert(false);
 		}
 	}
 }
@@ -3175,7 +3185,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 	try {
 
 	id = drq_l_prc_name;
-	check_unique_name(tdbb, gbl, procedure_name, true);
+	check_unique_name(tdbb, gbl, procedure_name, obj_procedure);
 	bool sql_prot = false;
 	prc_t prc_type = prc_legacy;
 	const UCHAR* debug_info_ptr = NULL;
@@ -3320,6 +3330,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 		}
 
 		DYN_rundown_request(request, -1);
+
 		if (id == drq_l_prc_name) {
 			DYN_error_punt(true, 134);
 			/* msg 134: "STORE RDB$PROCEDURES failed" */
@@ -3327,7 +3338,7 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 		/* Control should never reach this point, because id should have
 		   one of the values tested-for above. */
-		fb_assert(0);
+		fb_assert(false);
 		DYN_error_punt(true, 0);
 	}
 }
@@ -3367,7 +3378,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 	try {
 
 	id = drq_l_rel_name;
-	check_unique_name(tdbb, gbl, relation_name, false);
+	check_unique_name(tdbb, gbl, relation_name, obj_relation);
 	bool sql_prot = false;
 	rel_t rel_type = rel_persistent;
 
@@ -3595,6 +3606,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 		}
 
 		DYN_rundown_request(request, -1);
+
 		if (id == drq_l_rel_name)
 			DYN_error_punt(true, 24);
 			/* msg 24: "STORE RDB$RELATIONS failed" */
@@ -3606,7 +3618,7 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 		/* Control should never reach this point, because id should
 		   always have one of the values test-for above. */
-		fb_assert(0);
+		fb_assert(false);
 		DYN_error_punt(true, 0);
 	}
 }
@@ -4572,10 +4584,10 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 }
 
 
-static void check_unique_name(	thread_db*	tdbb,
-								Global*		gbl,
-								const Firebird::MetaName&	object_name,
-								bool		proc_flag)
+static void check_unique_name(thread_db* tdbb,
+							  Global* gbl,
+							  const Firebird::MetaName& object_name,
+							  int object_type)
 {
 /**************************************
  *
@@ -4584,70 +4596,81 @@ static void check_unique_name(	thread_db*	tdbb,
  **************************************
  *
  * Functional description
- *	Check if a procedure, view or relation by
- *	name of object_name already exists.
+ *	Check if an object already exists.
  *	If yes then return error.
  *
  **************************************/
 
-	bool found = false;
-
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	USHORT error_code = 0;
 	jrd_req* request = NULL;
 
-	try {
+	try
+	{
+		if (object_type == obj_relation)
+		{
+			request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
 
-		request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name.c_str()
 
-		found = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			EREL IN RDB$RELATIONS WITH EREL.RDB$RELATION_NAME EQ object_name.c_str()
-			if (!DYN_REQUEST(drq_l_rel_name)) {
+				if (!DYN_REQUEST(drq_l_rel_name))
+					DYN_REQUEST(drq_l_rel_name) = request;
+
+				error_code = 132;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_rel_name))
 				DYN_REQUEST(drq_l_rel_name) = request;
-			}
-			found = true;
-		END_FOR;
-		if (!DYN_REQUEST(drq_l_rel_name))
-			DYN_REQUEST(drq_l_rel_name) = request;
-
-		if (found) {
-			goto local_punt_false_132;
 		}
+		else if (object_type == obj_procedure)
+		{
+			request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
 
-		request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
 
-		found = false;
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
-			if (!DYN_REQUEST(drq_l_prc_name)) {
+				if (!DYN_REQUEST(drq_l_prc_name))
+					DYN_REQUEST(drq_l_prc_name) = request;
+
+				error_code = 135;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_prc_name))
 				DYN_REQUEST(drq_l_prc_name) = request;
-			}
-			found = true;
-		END_FOR;
-		if (!DYN_REQUEST(drq_l_prc_name)) {
-			DYN_REQUEST(drq_l_prc_name) = request;
+		}
+		else if (object_type == obj_index)
+		{
+			request = CMP_find_request(tdbb, drq_l_idx_name, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				EIDX IN RDB$INDICES WITH EIDX.RDB$INDEX_NAME EQ object_name.c_str()
+
+				if (!DYN_REQUEST(drq_l_idx_name))
+					DYN_REQUEST(drq_l_idx_name) = request;
+
+				error_code = 251;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_idx_name))
+				DYN_REQUEST(drq_l_idx_name) = request;
+		}
+		else
+		{
+			fb_assert(false);
 		}
 	}
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception&)
+	{
 		DYN_rundown_request(request, -1);
-		if (!proc_flag)
-			DYN_error_punt(true, 24);
-			/* msg 24: "STORE RDB$RELATIONS failed" */
-
-		DYN_error_punt(true, 134);
+		throw;
 	}
 
-	if (found) {
-		DYN_error_punt(false, 135, object_name.c_str());
+	if (error_code) {
+		DYN_error_punt(false, error_code, object_name.c_str());
 	}
-
-	return;
-
-local_punt_false_132:
-	DYN_error_punt(false, 132, object_name.c_str());
 }
 
 

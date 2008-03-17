@@ -653,6 +653,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-817, '42', '000', 7, 30, 'dsql_incompatible_trigger_type', NULL, NULL)
 (-817, '42', '000', 7, 31, 'dsql_db_trigger_type_cant_change', NULL, NULL)
 --  DYN
+(-901, '42', 'S01', 8, 132, 'dyn_dup_table', NULL, NULL)
 (-901, '42', 'S22', 8, 176, 'dyn_column_does_not_exist', NULL, NULL)
 (-901, '28', '000', 8, 188, 'dyn_role_does_not_exist', NULL, NULL)
 (-901, '28', '000', 8, 189, 'dyn_no_grant_admin_opt', NULL, NULL)
@@ -680,6 +681,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '0A', '000', 8, 248, 'dyn_ods_not_supp_feature', NULL, NULL)
 (-829, '42', '000', 8, 249, 'dyn_cannot_addrem_computed', NULL, NULL)
 (-901, '42', '000', 8, 250, 'dyn_no_empty_pw', NULL, NULL)
+(-901, '42', 'S11', 8, 251, 'dyn_dup_index', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)

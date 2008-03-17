@@ -206,7 +206,8 @@ const int drq_l_prm_coll	= 155;	// lookup procedure parameter collation
 const int drq_s_prms3		= 156;	// store parameters (ODS 11.2)
 const int drq_d_gfields2	= 157;	// drop a global field for procedure param (ODS 11.2)
 const int drq_m_map			= 158;  // modify os=>db names mapping
-const int drq_MAX			= 159;
+const int drq_l_idx_name	= 159;	// lookup index name
+const int drq_MAX			= 160;
 
 #endif /* JRD_DRQ_H */
 
