@@ -569,14 +569,14 @@ namespace
 
 		static int run(const int m)
 		{
-			int rc = 0;
+			int rc = FB_SUCCESS;
 			Firebird::MutexLockGuard guard(shutdownMutex);
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
-				if (chain->mask & m && chain->callBack())
+				if ((chain->mask & m) && (chain->callBack() != FB_SUCCESS))
 				{
-					rc = 1;
+					rc = FB_FAILURE;
 				}
 			}
 
@@ -797,6 +797,13 @@ namespace
 	int killed;
 	bool procInt, procTerm;
 
+	const int SHUTDOWN_TIMEOUT = 5000;	// 5 sec
+
+	void atExitShutdown()
+	{
+		fb_shutdown(SHUTDOWN_TIMEOUT);
+	}
+
 	Firebird::GlobalPtr<Firebird::SignalSafeSemaphore> shutdownSemaphore;
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
@@ -825,7 +832,11 @@ namespace
 			}
 
 			// perform shutdown
-			fb_shutdown(NULL, 0);
+			if (fb_shutdown(SHUTDOWN_TIMEOUT) == FB_SUCCESS)
+			{
+				Firebird::InstanceControl::registerShutdown(0);
+				exit(0);
+			}
 		}
 
 		return 0;
@@ -859,6 +870,8 @@ namespace
 	public:
 		explicit CtrlCHandler(Firebird::MemoryPool&)
 		{
+			Firebird::InstanceControl::registerShutdown(atExitShutdown);
+
 			gds__thread_start(shutdownThread, 0, 0, 0, 0);
 
 			procInt = ISC_signal(SIGINT, handlerInt, 0);
@@ -6008,7 +6021,7 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
-ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status, unsigned int timeout)
+int API_ROUTINE fb_shutdown(unsigned int timeout)
 {
 /**************************************
  *
@@ -6020,46 +6033,49 @@ ISC_STATUS API_ROUTINE fb_shutdown(ISC_STATUS* user_status, unsigned int timeout
  *	Shutdown firebird.
  *
  **************************************/
-	YEntry status(user_status);
+	YEntry status(NULL);
+	int rc = FB_SUCCESS;
 
 	try
 	{
 		// Shutdown clients before providers
-		if (ShutChain::run(fb_shut_preproviders) == 0)
+		if (ShutChain::run(fb_shut_preproviders) != FB_SUCCESS)
 		{
-			// Shutdown providers
-			ISC_STATUS* curStatus = status;
-			ISC_STATUS_ARRAY tempStatus = {0};
+			return FB_FAILURE;	// Do not perform former shutdown
+		}
 
-			for (int n = 0; n < SUBSYSTEMS; ++n)
+		// Shutdown providers
+		for (int n = 0; n < SUBSYSTEMS; ++n)
+		{
+			typedef int API_ROUTINE shutType(unsigned int);
+			PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
+			if (entry != no_entrypoint) 
 			{
-				PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
-				if (entry != no_entrypoint) 
+				// this awful cast will be gone as soon as we will have 
+				// pure virutal functions based provider interface
+				typedef int API_ROUTINE shutType(int);
+				if (((shutType*)entry)(timeout) != FB_SUCCESS)
 				{
-					if (entry(curStatus, timeout) != FB_SUCCESS)
-					{
-						// Log error
-						gds__log_status(0, curStatus);
-						// Preserve first error, which happened
-						curStatus = tempStatus;
-					}
+					rc = FB_FAILURE;
 				}
 			}
+		}
 
-			// Shutdown clients after providers
-			if (ShutChain::run(fb_shut_postproviders) == 0)
-			{
-				// All clients are ready to exit
-				exit(0);
-			}
+		// Shutdown clients after providers
+		if (ShutChain::run(fb_shut_postproviders) != FB_SUCCESS)
+		{
+			rc = FB_FAILURE;
 		}
 	}
 	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
+		gds__log_status(0, status);
+		return FB_SUCCESS;	// This seems to be a strange logic, but we should better 
+							// let it exit() when unexpected errors happen
 	}
 
-	return status[1];
+	return rc;
 }
 
 

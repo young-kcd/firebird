@@ -123,6 +123,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
 #endif
+	QLI_exit = false;
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -153,6 +154,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			case 'A':
 				if (argv >= arg_end) {
 					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name  
+					QLI_exit = true;
 					exit(FINI_ERROR);
 				}
 
@@ -276,6 +278,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  */
 	gds_alloc_report(0, __FILE__, __LINE__);
 #endif
+	QLI_exit = true;
 	return (FINI_OK);
 }
 
@@ -571,7 +574,7 @@ static int CLIB_ROUTINE async_quit()
  *
  **************************************/
 	EXEC_abort();
-	return 1;
+	return QLI_exit ? FB_SUCCESS : FB_FAILURE;
 }
 
 

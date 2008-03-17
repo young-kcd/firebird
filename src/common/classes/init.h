@@ -51,11 +51,13 @@ public:
 	InstanceControl();
 	static void destructors();
 	static void registerGdsCleanup(FPTR_VOID cleanup);
+	static void registerShutdown(FPTR_VOID shutdown);
 protected:
 	virtual void dtor() = 0;
 private:
 	static InstanceControl* instanceList;
 	static FPTR_VOID gdsCleanup;
+	static FPTR_VOID gdsShutdown;
 	InstanceControl* next;
 };
 

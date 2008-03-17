@@ -478,7 +478,7 @@ static Firebird::GlobalPtr<Firebird::Semaphore> mainThreadStopSem;
 static bool serverClosing = false;
 
 
-static int shutdownInetServer() 
+static int shutdownInetServer()
 {
 /****************************************************
  *
@@ -508,7 +508,7 @@ static int shutdownInetServer()
 	mainThreadStopSem->enter();
 
 	// Ready to die
-	return 0;
+	return FB_SUCCESS;
 }
 
 static void shutdownInit()

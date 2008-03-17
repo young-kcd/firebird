@@ -23,23 +23,8 @@
 
 #include "firebird.h"
 #include <windows.h>
-#include "../jrd/common.h"
-#include "../jrd/ibase.h"
-#include "../jrd/why_proto.h"
-#include "../jrd/thread_proto.h"
-
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-	switch (reason)	{
-
-	case DLL_PROCESS_DETACH:
-		fb_shutdown(NULL, 0);
-		break;
-
-	default:
-		break;
-	}
-
 	return TRUE;
 }

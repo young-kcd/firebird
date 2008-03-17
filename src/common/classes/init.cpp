@@ -110,6 +110,7 @@ namespace Firebird
 
 	InstanceControl* InstanceControl::instanceList = 0;
 	FPTR_VOID InstanceControl::gdsCleanup = 0;
+	FPTR_VOID InstanceControl::gdsShutdown = 0;
 
 	InstanceControl::InstanceControl()
 	{
@@ -124,6 +125,19 @@ namespace Firebird
 
 	void InstanceControl::destructors()
 	{
+		// Call fb_shutdown() if needed
+		if (gdsShutdown)
+		{
+			try
+			{
+				gdsShutdown();
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				cleanError();
+			}
+		}
+
 		// Call gds__cleanup() if present
 		if (gdsCleanup)
 		{
@@ -131,7 +145,7 @@ namespace Firebird
 			{
 				gdsCleanup();
 			}
-			catch (...)
+			catch (const Firebird::Exception& ex)
 			{
 				cleanError();
 			}
@@ -144,7 +158,7 @@ namespace Firebird
 			{
 				i->dtor();
 			}
-			catch (...)
+			catch (const Firebird::Exception& ex)
 			{
 				cleanError();
 			}
@@ -155,6 +169,12 @@ namespace Firebird
 	{
 		fb_assert((!gdsCleanup) || (!cleanup));
 		gdsCleanup = cleanup;
+	}
+
+	void InstanceControl::registerShutdown(FPTR_VOID shutdown)
+	{
+		fb_assert((!gdsShutdown) || (!shutdown));
+		gdsShutdown = shutdown;
 	}
 
 	Mutex* StaticMutex::mutex = 0;

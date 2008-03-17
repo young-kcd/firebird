@@ -1128,7 +1128,7 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 										const ISC_SCHAR*);
 
 
-ISC_STATUS ISC_EXPORT fb_shutdown(ISC_STATUS*, unsigned int);
+int ISC_EXPORT fb_shutdown(unsigned int);
 ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
 										   FB_SHUTDOWN_CALLBACK,
 										   const int);

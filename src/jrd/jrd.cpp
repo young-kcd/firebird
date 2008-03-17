@@ -3047,7 +3047,7 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status, unsigned int timeout)
+int GDS_SHUTDOWN(unsigned int timeout)
 {
 /**************************************
  *
@@ -3061,7 +3061,8 @@ ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status, unsigned int timeout)
  *	database.
  *
  **************************************/
-	ThreadContextHolder tdbb(user_status);
+ 	ISC_STATUS_ARRAY status;
+	ThreadContextHolder tdbb(status);
 
 	try
 	{
@@ -3095,10 +3096,11 @@ ISC_STATUS GDS_SHUTDOWN(ISC_STATUS * user_status, unsigned int timeout)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(user_status, ex);
+		Firebird::stuff_exception(status, ex);
+		gds__log_status(0, status);
 	}
 
-	return user_status[1];
+	return 0;
 }
 
 

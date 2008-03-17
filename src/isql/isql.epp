@@ -391,6 +391,7 @@ static Firebird::GlobalPtr<InputDevices> Filelist;
 //static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
 static bool Interrupt_flag = false;
+static bool Exit_flag = false;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
@@ -529,7 +530,9 @@ int CLIB_ROUTINE main(int argc,
 	isqlGlob.major_ods = 0;
 	isqlGlob.minor_ods = 0;
 
-	return ISQL_main(argc, argv);
+	int rc = ISQL_main(argc, argv);
+	Exit_flag = true;
+	return rc;
 }
 
 
@@ -557,6 +560,7 @@ int ISQL_main(int argc,
 			// Some problem in initializing multi-user test
 			// environment.
 			qa_mu_cleanup();
+			Exit_flag = true;
 			exit(1);
 		}
 		else {
@@ -8566,7 +8570,8 @@ static int API_ROUTINE query_abort()
 #ifdef WIN_NT
 	return TRUE;
 #else
-	return 1;	// we do not want to proceed with shutdown
+	// we do not want to proceed with shutdown except when exit() was called
+	return Exit_flag ? FB_SUCCESS : FB_FAILURE;	
 #endif
 }
 

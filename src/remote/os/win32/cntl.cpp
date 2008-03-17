@@ -109,7 +109,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 
 	report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, SHUTDOWN_TIMEOUT);
 
-	fb_shutdown(NULL, SHUTDOWN_TIMEOUT);
+	fb_shutdown(SHUTDOWN_TIMEOUT);
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
 }
