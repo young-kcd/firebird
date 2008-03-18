@@ -515,14 +515,15 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 		try {
 
+			const size_t MAX_PACKET_SIZE = MAX_SSHORT;
+			SSHORT dataSize = MIN(main_port->port_buff_size, MAX_PACKET_SIZE);
+			Firebird::UCharBuffer packet_buffer;
+			UCHAR* const buffer = packet_buffer.getBuffer(dataSize);
+
 			// When this loop exits, the server will no longer receive requests
 			while (true)
 			{
 				// We have a request block - now get some information to stick into it
-				const size_t MAX_PACKET_SIZE = 32767;
-				UCHAR buffer[MAX_PACKET_SIZE];
-				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
-								  sizeof(buffer) : main_port->port_buff_size;
 				if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
 				{
 					if (!shutting_down) {
