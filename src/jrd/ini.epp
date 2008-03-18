@@ -67,10 +67,10 @@ const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 #ifdef NOT_USED_OR_REPLACED
 static void add_generator(TEXT*, jrd_req**);
 #endif
-static void add_global_fields(USHORT);
+static void add_global_fields(thread_db*, USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
-static void add_relation_fields(USHORT);
+static void add_relation_fields(thread_db*, USHORT);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
@@ -468,9 +468,9 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 	store_functions(tdbb, dbb);
 
-	DFW_perform_system_work();
+	DFW_perform_system_work(tdbb);
 
-	add_relation_fields(0);
+	add_relation_fields(tdbb, 0);
 
 /*
 ====================================================================
@@ -843,13 +843,13 @@ void INI_update_database()
                which holds their information needs to have an additional field
                to define which major ODS version they belong to.
                PENDING WORK.
-                 add_global_fields (major_version, minor_version);
-                 add_relation_fields (major_version, minor_version);
+                 add_global_fields (tdbb, major_version, minor_version);
+                 add_relation_fields (tdbb, major_version, minor_version);
                Look at add_new_triggers() for reference.
      ***/
 
-		add_global_fields(minor_version);
-		add_relation_fields(minor_version);
+		add_global_fields(tdbb, minor_version);
+		add_relation_fields(tdbb, minor_version);
 	}
 
 	add_index_set(dbb, true, major_version, minor_version);
@@ -888,7 +888,7 @@ void INI_update_database()
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	CCH_RELEASE(tdbb, &window);
 
-	DFW_perform_system_work();
+	DFW_perform_system_work(tdbb);
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -923,7 +923,7 @@ static void add_generator(TEXT* generator_name, jrd_req** handle)
 }
 #endif
 
-static void add_global_fields( USHORT minor_version)
+static void add_global_fields(thread_db* tdbb, USHORT minor_version)
 {
 /**************************************
  *
@@ -938,7 +938,7 @@ static void add_global_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 /* add desired global fields to system relations  */
 
@@ -955,7 +955,7 @@ static void add_global_fields( USHORT minor_version)
 		CMP_release(tdbb, handle);
 	}
 
-	DFW_perform_system_work();
+	DFW_perform_system_work(tdbb);
 }
 
 
@@ -1102,7 +1102,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 }
 
 
-static void add_relation_fields( USHORT minor_version)
+static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
 {
 /**************************************
  *
@@ -1117,7 +1117,7 @@ static void add_relation_fields( USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
 /* add desired fields to system relations, forcing a new format version */
@@ -1160,7 +1160,7 @@ static void add_relation_fields( USHORT minor_version)
 		CMP_release(tdbb, m_handle);
 	}
 
-	DFW_perform_system_work();
+	DFW_perform_system_work(tdbb);
 }
 
 

@@ -143,7 +143,6 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
  *	the order of operations	lightly.
  *
  **************************************/
-
 	switch (phase) {
 	case 1:
 	case 2:
@@ -263,10 +262,11 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 	default:
+		SET_TDBB(tdbb);
 		break;
 	}
 
-	DFW_perform_system_work();
+	DFW_perform_system_work(tdbb);
 
 	return false;
 }

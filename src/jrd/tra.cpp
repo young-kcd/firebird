@@ -424,7 +424,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 /* Perform any meta data work deferred */
 
 	if (!(transaction->tra_flags & TRA_prepared))
-		DFW_perform_work(transaction);
+		DFW_perform_work(tdbb, transaction);
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
@@ -964,7 +964,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 
 /* Perform any meta data work deferred */
 
-	DFW_perform_work(transaction);
+	DFW_perform_work(tdbb, transaction);
 
 #ifdef GARBAGE_THREAD
 /* Flush pages if transaction logically modified data */

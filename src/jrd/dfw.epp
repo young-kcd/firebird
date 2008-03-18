@@ -265,7 +265,8 @@ static const deferred_task task_table[] =
 };
 
 
-USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype)
+USHORT DFW_assign_index_type(thread_db* tdbb,
+	DeferredWork* work, SSHORT field_type, SSHORT ttype)
 {
 /**************************************
  *
@@ -278,7 +279,7 @@ USHORT DFW_assign_index_type(DeferredWork* work, SSHORT field_type, SSHORT ttype
  * 	on the field's type and subtype.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	if (field_type == dtype_varying ||
 		field_type == dtype_cstring ||
@@ -443,7 +444,7 @@ void DFW_merge_work(jrd_tra* transaction,
 }
 
 
-void DFW_perform_system_work(void)
+void DFW_perform_system_work(thread_db* tdbb)
 {
 /**************************************
  *
@@ -456,13 +457,14 @@ void DFW_perform_system_work(void)
  *	system transaction.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
-	DFW_perform_work(dbb->dbb_sys_trans);
+	DFW_perform_work(tdbb, dbb->dbb_sys_trans);
 }
 
 
-void DFW_perform_work(jrd_tra* transaction)
+void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -475,7 +477,6 @@ void DFW_perform_work(jrd_tra* transaction)
  *	come.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
 
 /* If no deferred work or it's all deferred event posting
    don't bother */
@@ -486,6 +487,7 @@ void DFW_perform_work(jrd_tra* transaction)
 		return;
 	}
 
+	SET_TDBB(tdbb);
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
 /* Loop for as long as any of the deferred work routines says that it has
@@ -1868,7 +1870,7 @@ static bool create_index(	thread_db*	tdbb,
 			const SSHORT text_type =
 				INTL_CS_COLL_TO_TTYPE(FLD.RDB$CHARACTER_SET_ID, collate);
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_itype =
-				DFW_assign_index_type(work,
+				DFW_assign_index_type(tdbb, work,
 									  gds_cvt_blr_dtype[FLD.RDB$FIELD_TYPE],
 									  text_type);
 
