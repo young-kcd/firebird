@@ -1111,6 +1111,7 @@ static UCHAR* alloc(SSHORT size, ISC_STATUS* status_vector)
 #endif
 		)
 	{
+		const bool extend = (LOCK_header->lhb_used > LOCK_header->lhb_length);
 		LOCK_header->lhb_used -= size;
 
 #if (defined HAVE_MMAP || defined WIN_NT)
@@ -1119,7 +1120,7 @@ static UCHAR* alloc(SSHORT size, ISC_STATUS* status_vector)
 		remap_local_owners();
 		// Remap the shared memory region
 		const ULONG length = LOCK_data.sh_mem_length_mapped +
-			(LOCK_header->lhb_used > LOCK_header->lhb_length) ? Config::getLockMemSize() : 0;
+			(extend ? Config::getLockMemSize() : 0);
 		lhb* header = (lhb*) ISC_remap_file(status_vector, &LOCK_data, length, true);
 		if (header) {
 			LOCK_header = header;
