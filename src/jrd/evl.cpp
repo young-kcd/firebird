@@ -4613,11 +4613,11 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
  *      or STARTS WITH.
  *
  **************************************/
-	UCHAR *p1, *p2 = NULL, temp1[256], temp2[256];
+	UCHAR* p1 = NULL;
+	UCHAR* p2 = NULL;
 	SLONG l2 = 0;
 	USHORT type1;
 	MoveBuffer match_str;
-	bool ret_val;
 
 	SET_TDBB(tdbb);
 
@@ -4625,8 +4625,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 	DEV_BLKCHK(node, type_nod);
 
-	if (desc1->dsc_dtype != dtype_blob &&
-		desc1->dsc_dtype != dtype_quad)
+	if (desc1->dsc_dtype != dtype_blob && desc1->dsc_dtype != dtype_quad)
 	{
 		/* Source is not a blob, do a simple search */
 
@@ -4640,6 +4639,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 			l2 = MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 		}
 
+		UCHAR temp1[256];
 		USHORT xtype1;
 		const USHORT l1 =
 			MOV_get_string_ptr(desc1, &xtype1, &p1,
@@ -4647,201 +4647,202 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 							   sizeof(temp1));
 
 		fb_assert(xtype1 == type1);
-		ret_val = string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
+
+		return string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
 	}
-	else {
-		/* Source string is a blob, things get interesting */
+	
+	/* Source string is a blob, things get interesting */
 
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 
-		if (desc1->dsc_sub_type == isc_blob_text)
-			type1 = desc1->dsc_blob_ttype();	/* pick up character set and collation of blob */
-		else
-			type1 = ttype_none;	/* Do byte matching */
+	if (desc1->dsc_sub_type == isc_blob_text)
+		type1 = desc1->dsc_blob_ttype();	/* pick up character set and collation of blob */
+	else
+		type1 = ttype_none;	/* Do byte matching */
 
-		Collation* obj = INTL_texttype_lookup(tdbb, type1);
-		CharSet* charset = obj->getCharSet();
+	Collation* obj = INTL_texttype_lookup(tdbb, type1);
+	CharSet* charset = obj->getCharSet();
 
-		/* Get address and length of search string - make it string if necessary
-		 * but don't transliterate character set if the source blob is binary
-		 */
-		if (!computed_invariant) {
-			if (type1 == ttype_none) {
-				l2 =
-					MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
-								sizeof(temp2));
-			} 
-			else {
-				l2 =
-					MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
-			}
+	// Get address and length of search string - make it string if necessary
+	// but don't transliterate character set if the source blob is binary
+	UCHAR temp2[256];
+	if (!computed_invariant) {
+		if (type1 == ttype_none) {
+			l2 =
+				MOV_get_string(desc2, &p2, reinterpret_cast<vary*>(temp2),
+							sizeof(temp2));
 		}
-
-		blb* blob =	BLB_open(tdbb, request->req_transaction,
-						reinterpret_cast<bid*>(desc1->dsc_address));
-
-		if (charset->isMultiByte() &&
-			(node->nod_type != nod_starts || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
-		{
-			buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
+		else {
+			l2 =
+				MOV_make_string2(tdbb, desc2, type1, &p2, match_str);
 		}
+	}
 
-		/* Performs the string_function on each segment of the blob until
-		   a positive result is obtained */
+	blb* blob =	BLB_open(tdbb, request->req_transaction,
+					reinterpret_cast<bid*>(desc1->dsc_address));
 
-		ret_val = false;
-		switch (node->nod_type)
+	if (charset->isMultiByte() &&
+		(node->nod_type != nod_starts || !(obj->getFlags() & TEXTTYPE_DIRECT_MATCH)))
+	{
+		buffer.getBuffer(blob->blb_length);		// alloc space to put entire blob in memory
+	}
+
+	/* Performs the string_function on each segment of the blob until
+	   a positive result is obtained */
+
+	bool ret_val = false;
+	
+	switch (node->nod_type)
+	{
+	case nod_like:
+	case nod_similar:
 		{
-		case nod_like:
-		case nod_similar:
-			{
-				UCHAR temp3[TEMP_LENGTH];
-				const UCHAR* escape_str = NULL;
-				USHORT escape_length = 0;
+			UCHAR temp3[TEMP_LENGTH];
+			const UCHAR* escape_str = NULL;
+			USHORT escape_length = 0;
 
-				/* ensure 3rd argument (escape char) is in operation text type */
-				if (node->nod_count == 3 && !computed_invariant) {
-					/* Convert ESCAPE to operation character set */
-					DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
-					if (request->req_flags & req_null) {
-						if (node->nod_flags & nod_invariant) {
-							impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-							impure->vlu_flags |= VLU_computed;
-							impure->vlu_flags |= VLU_null;
-						}
-						ret_val = false;
-						break;
-					}
-
-					escape_length = MOV_make_string(dsc,
-										 type1, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
-										 sizeof(temp3));
-					if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
-					{
-						/* If characters left, or null byte character, return error */
-						BLB_close(tdbb, blob);
-						ERR_post(isc_escape_invalid, 0);
-					}
-
-					USHORT escape[2] = {0, 0};
-
-					charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
-					if (!escape[0])
-					{
-						/* If or null byte character, return error */
-						BLB_close(tdbb, blob);
-						ERR_post(isc_escape_invalid, 0);
-					}
-				}
-
-				PatternMatcher* evaluator;
-
-				if (node->nod_flags & nod_invariant)
-				{
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-
-					if (!(impure->vlu_flags & VLU_computed))
-					{
-						delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+			/* ensure 3rd argument (escape char) is in operation text type */
+			if (node->nod_count == 3 && !computed_invariant) {
+				/* Convert ESCAPE to operation character set */
+				DSC* dsc = EVL_expr(tdbb, node->nod_arg[2]);
+				if (request->req_flags & req_null) {
+					if (node->nod_flags & nod_invariant) {
+						impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
 						impure->vlu_flags |= VLU_computed;
-
-						if (node->nod_type == nod_like)
-						{
-							impure->vlu_misc.vlu_invariant = evaluator =
-								obj->createLikeMatcher(*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
-						}
-						else	// nod_similar
-						{
-							impure->vlu_misc.vlu_invariant = evaluator =
-								obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-									p2, l2, escape_str, escape_length);
-						}
+						impure->vlu_flags |= VLU_null;
 					}
-					else
-					{
-						evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
-						evaluator->reset();
-					}
-				}
-				else if (node->nod_type == nod_like)
-				{
-					evaluator = obj->createLikeMatcher(*tdbb->getDefaultPool(),
-						p2, l2, escape_str, escape_length);
-				}
-				else	// nod_similar
-				{
-					evaluator = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-						p2, l2, escape_str, escape_length);
+					ret_val = false;
+					break;
 				}
 
-				while (!(blob->blb_flags & BLB_eof))
+				escape_length = MOV_make_string(dsc,
+									 type1, reinterpret_cast<const char**>(&escape_str), (vary*) temp3,
+									 sizeof(temp3));
+				if (!escape_length || charset->length(escape_length, escape_str, true) != 1)
 				{
-					const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
-					if (!evaluator->process(buffer.begin(), l1))
-						break;
+					/* If characters left, or null byte character, return error */
+					BLB_close(tdbb, blob);
+					ERR_post(isc_escape_invalid, 0);
 				}
 
-				ret_val = evaluator->result();
+				USHORT escape[2] = {0, 0};
 
-				if (!(node->nod_flags & nod_invariant))
-					delete evaluator;
+				charset->getConvToUnicode().convert(escape_length, escape_str, sizeof(escape), escape);
+				if (!escape[0])
+				{
+					/* If or null byte character, return error */
+					BLB_close(tdbb, blob);
+					ERR_post(isc_escape_invalid, 0);
+				}
 			}
-			break;
 
-		case nod_contains:
-		case nod_starts:
+			PatternMatcher* evaluator;
+
+			if (node->nod_flags & nod_invariant)
 			{
-				PatternMatcher* evaluator;
-				if (node->nod_flags & nod_invariant)
+				impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+
+				if (!(impure->vlu_flags & VLU_computed))
 				{
-					impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
-					if (!(impure->vlu_flags & VLU_computed))
+					delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					impure->vlu_flags |= VLU_computed;
+
+					if (node->nod_type == nod_like)
 					{
-						delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
-
-						if (node->nod_type == nod_contains)
-						{
-							impure->vlu_misc.vlu_invariant = evaluator = obj->createContainsMatcher(
-								*tdbb->getDefaultPool(), p2, l2);
-						}
-						else	// nod_starts
-						{
-							impure->vlu_misc.vlu_invariant = evaluator = obj->createStartsMatcher(
-								*tdbb->getDefaultPool(), p2, l2);
-						}
-
-						impure->vlu_flags |= VLU_computed;
+						impure->vlu_misc.vlu_invariant = evaluator =
+							obj->createLikeMatcher(*tdbb->getDefaultPool(), p2, l2, escape_str, escape_length);
 					}
-					else
+					else	// nod_similar
 					{
-						evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
-						evaluator->reset();
+						impure->vlu_misc.vlu_invariant = evaluator =
+							obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
+								p2, l2, escape_str, escape_length);
 					}
 				}
 				else
 				{
-					if (node->nod_type == nod_contains)
-						evaluator = obj->createContainsMatcher(*tdbb->getDefaultPool(), p2, l2);
-					else	// nod_starts
-						evaluator = obj->createStartsMatcher(*tdbb->getDefaultPool(), p2, l2);
+					evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					evaluator->reset();
 				}
-
-				while (!(blob->blb_flags & BLB_eof))
-				{
-					const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
-					if (!evaluator->process(buffer.begin(), l1))
-						break;
-				}
-
-				ret_val = evaluator->result();
-				if (!(node->nod_flags & nod_invariant))
-					delete evaluator;
 			}
-			break;
-		}
+			else if (node->nod_type == nod_like)
+			{
+				evaluator = obj->createLikeMatcher(*tdbb->getDefaultPool(),
+					p2, l2, escape_str, escape_length);
+			}
+			else	// nod_similar
+			{
+				evaluator = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
+					p2, l2, escape_str, escape_length);
+			}
 
-		BLB_close(tdbb, blob);
+			while (!(blob->blb_flags & BLB_eof))
+			{
+				const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				if (!evaluator->process(buffer.begin(), l1))
+					break;
+			}
+
+			ret_val = evaluator->result();
+
+			if (!(node->nod_flags & nod_invariant))
+				delete evaluator;
+		}
+		break;
+
+	case nod_contains:
+	case nod_starts:
+		{
+			PatternMatcher* evaluator;
+			if (node->nod_flags & nod_invariant)
+			{
+				impure_value* impure = (impure_value*) ((SCHAR *) request + node->nod_impure);
+				if (!(impure->vlu_flags & VLU_computed))
+				{
+					delete reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+
+					if (node->nod_type == nod_contains)
+					{
+						impure->vlu_misc.vlu_invariant = evaluator = obj->createContainsMatcher(
+							*tdbb->getDefaultPool(), p2, l2);
+					}
+					else	// nod_starts
+					{
+						impure->vlu_misc.vlu_invariant = evaluator = obj->createStartsMatcher(
+							*tdbb->getDefaultPool(), p2, l2);
+					}
+
+					impure->vlu_flags |= VLU_computed;
+				}
+				else
+				{
+					evaluator = reinterpret_cast<PatternMatcher*>(impure->vlu_misc.vlu_invariant);
+					evaluator->reset();
+				}
+			}
+			else
+			{
+				if (node->nod_type == nod_contains)
+					evaluator = obj->createContainsMatcher(*tdbb->getDefaultPool(), p2, l2);
+				else	// nod_starts
+					evaluator = obj->createStartsMatcher(*tdbb->getDefaultPool(), p2, l2);
+			}
+
+			while (!(blob->blb_flags & BLB_eof))
+			{
+				const SLONG l1 = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), false);
+				if (!evaluator->process(buffer.begin(), l1))
+					break;
+			}
+
+			ret_val = evaluator->result();
+			if (!(node->nod_flags & nod_invariant))
+				delete evaluator;
+		}
+		break;
 	}
+
+	BLB_close(tdbb, blob);
 
 	return ret_val;
 }
