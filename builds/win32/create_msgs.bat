@@ -28,13 +28,14 @@
 @echo loading French translation
 @%FB_MSG_ISQL%transmsgs.fr_FR.sql
 @echo loading German translation
-@%FB_MSG_ISQL%transmsgs.de_DE.sql
+@%FB_MSG_ISQL%transmsgs.de_DE2.sql
 
 @if "%1"=="db" goto END
 
 :MSG
 @echo Building message file...
-@%FB_GEN_DIR%\build_msg -f %FB_GEN_DB_DIR%/firebird.msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb
+::@%FB_GEN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg -L all
+@%FB_GEN_DIR%\build_msg -D %FB_GEN_DB_DIR%\dbs\msg.fdb -p %FB_GEN_DB_DIR% -f firebird.msg
 @echo Building codes header...
 @%FB_GEN_DIR%\codes %FB_ROOT_PATH%\src\include\gen %FB_ROOT_PATH%\lang_helpers
 
