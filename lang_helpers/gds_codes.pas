@@ -682,6 +682,7 @@ const
 	gds_upd_ins_with_complex_view        = 336003101;
 	gds_dsql_incompatible_trigger_type   = 336003102;
 	gds_dsql_db_trigger_type_cant_change = 336003103;
+	gds_dyn_dup_table                    = 336068740;
 	gds_dyn_column_does_not_exist        = 336068784;
 	gds_dyn_role_does_not_exist          = 336068796;
 	gds_dyn_no_grant_admin_opt           = 336068797;
@@ -709,6 +710,7 @@ const
 	gds_dyn_ods_not_supp_feature         = 336068856;
 	gds_dyn_cannot_addrem_computed       = 336068857;
 	gds_dyn_no_empty_pw                  = 336068858;
+	gds_dyn_dup_index                    = 336068859;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;
@@ -825,8 +827,9 @@ const
 	gds_dsql_cte_nested_with             = 336397234;
 	gds_dsql_col_more_than_once_using    = 336397235;
 	gds_dsql_unsupp_feature_dialect      = 336397236;
-	gds_dsql_col_more_than_once_view     = 336397237;
-	gds_dsql_unsupported_in_auto_trans   = 336397238;
+	gds_dsql_cte_not_used                = 336397237;
+	gds_dsql_col_more_than_once_view     = 336397238;
+	gds_dsql_unsupported_in_auto_trans   = 336397239;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
