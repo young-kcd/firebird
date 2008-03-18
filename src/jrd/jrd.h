@@ -276,9 +276,8 @@ public:
 		att_counts[0] = 0;
 	}*/
 
-	Database*	att_database;				// Parent databasea block
+	Database*	att_database;				// Parent database block
 	Attachment*	att_next;					// Next attachment to database
-	Attachment*	att_blocking;				// Blocking attachment, if any
 	UserId*		att_user;					// User identification
 	jrd_tra*	att_transactions;			// Transactions belonging to attachment
 	jrd_tra*	att_dbkey_trans;			// transaction to control db-key scope
