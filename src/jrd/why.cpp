@@ -6047,13 +6047,12 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 		// Shutdown providers
 		for (int n = 0; n < SUBSYSTEMS; ++n)
 		{
-			typedef int API_ROUTINE shutType(unsigned int);
+			typedef int shutType(unsigned int);
 			PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
 			if (entry != no_entrypoint) 
 			{
 				// this awful cast will be gone as soon as we will have 
-				// pure virutal functions based provider interface
-				typedef int API_ROUTINE shutType(int);
+				// pure virtual functions based provider interface
 				if (((shutType*)entry)(timeout) != FB_SUCCESS)
 				{
 					rc = FB_FAILURE;
