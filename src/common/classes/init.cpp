@@ -132,7 +132,7 @@ namespace Firebird
 			{
 				gdsShutdown();
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Firebird::Exception&)
 			{
 				cleanError();
 			}
@@ -145,7 +145,7 @@ namespace Firebird
 			{
 				gdsCleanup();
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Firebird::Exception&)
 			{
 				cleanError();
 			}
@@ -158,7 +158,7 @@ namespace Firebird
 			{
 				i->dtor();
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Firebird::Exception&)
 			{
 				cleanError();
 			}
