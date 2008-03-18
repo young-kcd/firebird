@@ -556,7 +556,7 @@ namespace
 		{
 			Firebird::MutexLockGuard guard(shutdownMutex);
 
-			for (ShutChain* chain = list; chain; chain = chain->next)
+			for (const ShutChain* chain = list; chain; chain = chain->next)
 			{
 				if (chain->callBack == cb && chain->mask == m)
 				{

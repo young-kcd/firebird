@@ -153,7 +153,7 @@ inline void clearRecordStack(RecordStack& stack)
 	}
 }
 
-inline bool needDfw(thread_db* tdbb, jrd_tra* transaction)
+inline bool needDfw(thread_db* tdbb, const jrd_tra* transaction)
 {
 /**************************************
  *
@@ -166,7 +166,7 @@ inline bool needDfw(thread_db* tdbb, jrd_tra* transaction)
  *	when system relations are modified.
  *
  **************************************/
-	return !(transaction->tra_flags & TRA_system || 
+	return !((transaction->tra_flags & TRA_system) || 
 			 (tdbb->tdbb_flags & TDBB_deferred));
 }
 
