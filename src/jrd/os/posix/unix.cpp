@@ -302,7 +302,7 @@ void PIO_extend(Database* dbb, jrd_file* /*main_file*/, const ULONG /*extPages*/
 }
 
 
-void PIO_flush(jrd_file* main_file)
+void PIO_flush(Database* dbb, jrd_file* main_file)
 {
 /**************************************
  *
@@ -319,6 +319,7 @@ void PIO_flush(jrd_file* main_file)
    is a no-op. */
 
 #ifndef SUPERSERVER_V2
+	Database::Checkout dcoHolder(dbb, true);
 	for (jrd_file* file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc != -1) {	/* This really should be an error */
 			THD_IO_MUTEX_LOCK(file->fil_mutex);

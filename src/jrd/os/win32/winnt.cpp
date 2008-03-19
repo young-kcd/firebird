@@ -332,7 +332,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 }
 
 
-void PIO_flush(jrd_file* main_file)
+void PIO_flush(Database* dbb, jrd_file* main_file)
 {
 /**************************************
  *
@@ -344,6 +344,7 @@ void PIO_flush(jrd_file* main_file)
  *	Flush the operating system cache back to good, solid oxide.
  *
  **************************************/
+	Database::Checkout dcoHolder(dbb, true);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		FlushFileBuffers(file->fil_desc);
