@@ -38,7 +38,6 @@ const int COMPILE_SIZE	= 256;
 using namespace Jrd;
 
 struct sdl_arg {
-	//USHORT sdl_arg_mode; // unused
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -333,7 +332,6 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
-		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
 		UCHAR* array,
 		Ods::InternalArrayDesc* array_desc,
 		SLONG* variables,
@@ -354,7 +352,6 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	USHORT n, offset;
 	sdl_arg arg;
 
-	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
