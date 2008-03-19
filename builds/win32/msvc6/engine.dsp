@@ -628,10 +628,6 @@ SOURCE=..\..\..\src\jrd\blf_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\blk.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\blob_filter.h
 # End Source File
 # Begin Source File

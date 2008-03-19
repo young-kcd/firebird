@@ -138,10 +138,6 @@ SOURCE=..\..\..\src\alice\alloc.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\alice\blk.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\alice\exe_proto.h
 # End Source File
 # Begin Source File

@@ -198,10 +198,6 @@ SOURCE=..\..\..\src\dsql\array_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\dsql\blk.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\dsql\blob_proto.h
 # End Source File
 # Begin Source File

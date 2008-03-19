@@ -212,9 +212,6 @@
 				RelativePath="..\..\..\src\dsql\array_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\blk.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\dsql\blob_proto.h">
 			</File>
 			<File

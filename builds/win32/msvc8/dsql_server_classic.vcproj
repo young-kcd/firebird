@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="dsql_server_classic"
 	ProjectGUID="{488199DD-D9F3-41C8-AED6-8AFFFB294CFF}"
 	>
@@ -374,10 +374,6 @@
 			>
 			<File
 				RelativePath="..\..\..\src\dsql\array_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\blk.h"
 				>
 			</File>
 			<File

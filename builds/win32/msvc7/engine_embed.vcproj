@@ -465,9 +465,6 @@
 				RelativePath="..\..\..\src\jrd\blf_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\blk.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.h">
 			</File>
 			<File

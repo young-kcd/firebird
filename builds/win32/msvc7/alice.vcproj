@@ -172,9 +172,6 @@
 				RelativePath="..\..\..\src\alice\alloc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\blk.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\alice\exe_proto.h">
 			</File>
 			<File
