@@ -2517,24 +2517,12 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 	}
 
 	bool result = true;
-	SLONG* spare_buffer = NULL;
-
-	try {
+	Firebird::UCharBuffer spare_buffer;
 
 	pag* page;
-	pag* old_buffer = 0;
+	pag* old_buffer = NULL;
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-		/* allocate a spare buffer which is large enough,
-		   and set up to release it in case of error */
-
-		spare_buffer =
-			(SLONG*) dbb->dbb_bufferpool->allocate(dbb->dbb_page_size, 0
-#ifdef DEBUG_GDS_ALLOC
-			  ,__FILE__, __LINE__
-#endif
-			);
-
-		page = (pag*) spare_buffer;
+		page = (pag*) spare_buffer.getBuffer(dbb->dbb_page_size);
 		memcpy(page, bdb->bdb_buffer, HDR_SIZE);
 		old_buffer = bdb->bdb_buffer;
 		bdb->bdb_buffer = page;
@@ -2634,19 +2622,6 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
 		bdb->bdb_buffer = old_buffer;
-	}
-
-	if (spare_buffer) {
-		dbb->dbb_bufferpool->deallocate(spare_buffer);
-	}
-
-	}	// try
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		if (spare_buffer) {
-			dbb->dbb_bufferpool->deallocate(spare_buffer);
-		}
-		ERR_punt();
 	}
 
 	return result;
