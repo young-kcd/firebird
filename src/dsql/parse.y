@@ -5045,7 +5045,7 @@ dsql_nod* Parser::make_list (dsql_nod* node)
 		node->nod_type = nod_list;
 		node->nod_line = (USHORT) lex.lines_bk;
 		node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-		if (MemoryPool::blk_type(old) == dsql_type_nod)
+		if (old->getType() == dsql_type_nod)
 		{
 			node->nod_flags = old->nod_flags;
 		}

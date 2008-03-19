@@ -326,14 +326,14 @@ public:
 
 	// Allocate memory block. Result is not zero-initialized.
 	// It case of problems this method throws Firebird::BadAlloc
-	void* allocate(size_t size, SSHORT type = 0
+	void* allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	);
 
 	// Allocate memory block. In case of problems this method returns NULL
-	void* allocate_nothrow(size_t size, SSHORT type = 0
+	void* allocate_nothrow(size_t size
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
@@ -358,12 +358,12 @@ public:
 	}
 	
 	// Allocate zero-initialized block of memory
-	void* calloc(size_t size, SSHORT type = 0
+	void* calloc(size_t size
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	) {
-		void* result = allocate(size, type
+		void* result = allocate(size
 #ifdef DEBUG_GDS_ALLOC
 			, file, line
 #endif
@@ -375,11 +375,6 @@ public:
 	// Initialize and finalize global memory pool
 	static void init();
 	static void cleanup();
-	
-	/// Returns the type associated with the allocated memory.
-	static SSHORT blk_type(const void* mem) {
-		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_type;
-	}
 	
 	/// Returns the pool the memory was allocated from.
 	//static MemoryPool* blk_pool(const void* mem) {
@@ -439,7 +434,7 @@ inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::
 // Global versions of operators new and delete
 inline void* operator new(size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s, 0
+	return getDefaultMemoryPool()->allocate(s
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -447,7 +442,7 @@ inline void* operator new(size_t s) THROW_BAD_ALLOC
 }
 inline void* operator new[](size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s, 0
+	return getDefaultMemoryPool()->allocate(s
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -474,10 +469,10 @@ inline void operator delete[](void* mem) throw()
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
-	return pool.allocate(s, 0, file, line);
+	return pool.allocate(s, file, line);
 }
 inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
-	return pool.allocate(s, 0, file, line);
+	return pool.allocate(s, file, line);
 }
 #define FB_NEW(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)

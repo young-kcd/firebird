@@ -280,7 +280,7 @@ protected:
 			T* newdata = reinterpret_cast<T*>
 				(this->getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC
-		, 1, __FILE__, __LINE__
+		, __FILE__, __LINE__
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);

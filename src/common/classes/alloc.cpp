@@ -573,7 +573,7 @@ void MemoryPool::tree_free(void* block) {
 	needSpare = true;
 }
 
-void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
+void* MemoryPool::allocate_nothrow(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* file, int line
 #endif
@@ -594,7 +594,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		if (redirect_amount + size < REDIRECT_THRESHOLD) {
 			parent->lock.enter();
 			// Allocate block from parent
-			void* result = parent->internal_alloc(size + MEM_ALIGN(sizeof(MemoryRedirectList)), type
+			void* result = parent->internal_alloc(size + MEM_ALIGN(sizeof(MemoryRedirectList)), 0
 #ifdef DEBUG_GDS_ALLOC
 			  , file, line
 #endif
@@ -699,7 +699,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		increment_mapping(ext_size);
 		blk->mbk_pool = this;
 		blk->mbk_flags = MBK_LARGE | MBK_USED;
-		blk->mbk_type = type;
+		blk->mbk_type = 0;
 		blk->mbk_large_length = size + MEM_ALIGN(sizeof(MemoryRedirectList));
 #ifdef DEBUG_GDS_ALLOC
 		blk->mbk_file = file;
@@ -726,7 +726,7 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 		return result;
 	}
 	// Otherwise use conventional allocator
-	void* result = internal_alloc(size, type
+	void* result = internal_alloc(size, 0
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
@@ -747,12 +747,12 @@ void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 	return result;
 }
 
-void* MemoryPool::allocate(size_t size, SSHORT type
+void* MemoryPool::allocate(size_t size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* file, int line
 #endif
 ) {
-	void* result = allocate_nothrow(size, type
+	void* result = allocate_nothrow(size
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
@@ -991,33 +991,22 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 		if (blk->mbk_flags & MBK_DELAYED)
 			strcat(flags, " DELAYED");
 
-		int size =
+		const int size =
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->mbk_small.mbk_length;
-#ifdef DEBUG_GDS_ALLOC
+
 		if (blk->mbk_flags & MBK_USED)
 		{
+#ifdef DEBUG_GDS_ALLOC
 			if (!filter_path || blk->mbk_file
 				&& !strncmp(filter_path, blk->mbk_file, filter_len))
 			{
-				if (blk->mbk_type > 0)
-					fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n",
-						mem, flags, size, blk->mbk_type, blk->mbk_file, blk->mbk_line);
-				else if (blk->mbk_type == 0)
-					fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
-						mem, flags, size, blk->mbk_file, blk->mbk_line);
-				else
-					fprintf(file, "%p%s: size=%d type=%d\n",
-						mem, flags, size, blk->mbk_type);
+				fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
+					mem, flags, size, blk->mbk_file, blk->mbk_line);
 			}
-		}
 #else
-		if (blk->mbk_type && (blk->mbk_flags & MBK_USED))
-			fprintf(file, "%p%s: size=%d type=%d\n",
-				mem, flags, size, blk->mbk_type);
+			fprintf(file, "%p%s: size=%d\n", mem, flags, size);
 #endif
-		else
-			fprintf(file, "%p%s: size=%d\n",
-				mem, flags, size);
+		}
 	}
 }
 

@@ -30,10 +30,6 @@
 #include "../jrd/iberr.h"
 #include "../jrd/err_proto.h"
 
-#ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
-#endif
-
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif

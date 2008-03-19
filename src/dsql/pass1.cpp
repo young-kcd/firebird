@@ -10475,7 +10475,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		return;
 	}
 
-	switch (MemoryPool::blk_type(node)) {
+	switch (node->getType()) {
 	case (TEXT) dsql_type_str:
 		trace_line("%sSTRING: \"%s\"\n", buffer, ((dsql_str*) node)->str_data);
 		return;
@@ -11383,8 +11383,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		/* CVC: The answer is that nod_arg[0] can be either the udf name or the
 		pointer to udf struct returned by METD_get_function, so we should resort
 		to the block type. The replacement happens in pass1_udf(). */
-		//switch (node->nod_arg[e_udf_name]->nod_header.blk_type) {
-		switch (MemoryPool::blk_type(node->nod_arg[e_udf_name])) {
+		switch (node->nod_arg[e_udf_name]->getType()) {
 		case dsql_type_udf:
 			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name.c_str());
 			break;

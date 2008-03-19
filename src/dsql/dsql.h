@@ -51,10 +51,6 @@
 DEFINE_TRACE_ROUTINE(dsql_trace);
 #endif
 
-// this table is used in data allocation to determine
-// whether a block has a variable length tail
-#include "../dsql/blk.h"
-
 // generic block used as header to all allocated structures
 #include "../include/fb_blk.h"
 
@@ -159,7 +155,7 @@ public:
 };
 
 //! Relation block
-class dsql_rel : public pool_alloc<dsql_type_dsql_rel>
+class dsql_rel : public pool_alloc<dsql_type_rel>
 {
 public:
 	explicit dsql_rel(MemoryPool& p)

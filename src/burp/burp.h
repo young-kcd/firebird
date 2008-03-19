@@ -680,15 +680,6 @@ enum gfld_flags_vals {
 // I need to review if we tolerate different lengths for different OS's here.
 const unsigned int MAX_FILE_NAME_SIZE		= 256;
 
-// Note that this typedef is also defined in JRD.H and REMOTE.H 
-// but for some reason we are avoiding including JRD.H
-// and this typedef is needed to include SVC.H
-#if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
-#ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
-#endif
-#endif
-
 #include "../jrd/svc.h"
 
 #include "../burp/std_desc.h"

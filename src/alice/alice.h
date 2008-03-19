@@ -33,8 +33,6 @@
 #include "../common/classes/array.h"
 #include "../common/UtilSvc.h"
 
-#include "../alice/blk.h"
-
 enum val_errors {
 	VAL_INVALID_DB_VERSION	= 0,
 	VAL_RECORD_ERRORS		= 1,

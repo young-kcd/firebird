@@ -193,23 +193,6 @@ static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
 static void clearPermanentField (dsql_rel*, bool);
 static void define_user(dsql_req*, UCHAR);
 
-#ifdef BLKCHK
-#undef BLKCHK
-#endif
-
-#ifdef DEV_BUILD
-static inline void BLKCHK(const void* p, const USHORT type)
-{
-	if (p && MemoryPool::blk_type(p) != type) {
-		ERRD_bugcheck("Invalid block type");
-	}
-}
-#else
-static inline void BLKCHK(const void* p, const USHORT type)
-{
-}
-#endif
-
 enum trigger_type {
 	PRE_STORE_TRIGGER = 1,
 	POST_STORE_TRIGGER = 2,
@@ -834,8 +817,6 @@ static bool is_array_or_blob(dsql_req* request, const dsql_nod* node)
  *	definition time, rather than a runtime error at execution.
  *
  **************************************/
-
-	BLKCHK(node, dsql_type_nod);
 
 	switch (node->nod_type) {
 	case nod_agg_count:
@@ -1822,8 +1803,7 @@ static void define_domain(dsql_req* request)
 					// Set any VALUE nodes to the type of the domain being defined.
 					if (node1->nod_arg[e_cnstr_condition])
 					{
-						set_nod_value_attributes(node1->nod_arg[e_cnstr_condition],
-												 field);
+						set_nod_value_attributes(node1->nod_arg[e_cnstr_condition], field);
 					}
 
 					/* Increment the context level for this request, so
@@ -6392,11 +6372,11 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
  * Function
  *	Given an input node tree, find any field name nodes
  *	and replace them according to the mapping provided.
- *	Used to create view  WITH CHECK OPTION.
+ *	Used to create view WITH CHECK OPTION.
  *
  **************************************/
 
-	if (!input || MemoryPool::blk_type(input) != dsql_type_nod) {
+	if (!input || input->getType() != dsql_type_nod) {
 		return input;
 	}
 
@@ -6886,7 +6866,7 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 	for (ULONG child_number = 0; child_number < node->nod_count; ++child_number)
 	{
 		dsql_nod* child = node->nod_arg[child_number];
-		if (child && MemoryPool::blk_type(child) == dsql_type_nod)
+		if (child && child->getType() == dsql_type_nod)
 		{
 			if (nod_dom_value == child->nod_type)
 			{

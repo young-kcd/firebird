@@ -997,6 +997,7 @@ public:
 	dsql_nod* nod_arg[1];
 
 	dsql_nod() : nod_type(Dsql::nod_unknown_type), nod_count(0), nod_flags(0) {}
+
 	SLONG getSlong() const
 	{
 		fb_assert(nod_type == Dsql::nod_constant);
@@ -1004,6 +1005,7 @@ public:
 		fb_assert((void*) nod_desc.dsc_address == (void*) nod_arg);
 		return *((SLONG*) nod_arg);
 	}
+
 };
 
 // values of flags

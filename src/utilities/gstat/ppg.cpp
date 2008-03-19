@@ -35,10 +35,6 @@
 #include "../jrd/nbak.h"
 #include "../jrd/gds_proto.h"
 
-#ifndef INCLUDE_FB_BLK
-#include "../include/fb_blk.h"
-#endif
-
 #include "../utilities/gstat/ppg_proto.h"
 
 // gstat directly reads database files, therefore

@@ -316,7 +316,7 @@ dsql_intlsym* METD_get_collation(dsql_req* request,
 	// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = (BLK) iname;
+	symbol->sym_object = iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = name->str_length;
 	symbol->sym_type = SYM_intlsym_collation;
@@ -518,7 +518,7 @@ dsql_intlsym* METD_get_charset(dsql_req* request, USHORT length, const char* nam
 	// Store in the symbol table 
 
 	symbol = iname->intlsym_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = (BLK) iname;
+	symbol->sym_object = iname;
 	symbol->sym_string = iname->intlsym_name;
 	symbol->sym_length = length;
 	symbol->sym_type = SYM_intlsym_charset;
@@ -1056,7 +1056,7 @@ dsql_udf* METD_get_function(dsql_req* request, const dsql_str* name)
 	// The UDF_new_udf flag is not used, so nothing extra to check. 
 
 	symbol = userFunc->udf_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-	symbol->sym_object = (BLK) userFunc;
+	symbol->sym_object = userFunc;
 	symbol->sym_string = userFunc->udf_name.c_str();
 	symbol->sym_length = userFunc->udf_name.length();
 	symbol->sym_type = SYM_udf;
@@ -1328,7 +1328,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		dbb->dbb_procedures = procedure;
 
 		symbol = procedure->prc_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-		symbol->sym_object = (BLK) procedure;
+		symbol->sym_object = procedure;
 		symbol->sym_string = procedure->prc_name.c_str();
 		symbol->sym_length = procedure->prc_name.length();
 		symbol->sym_type = SYM_procedure;
@@ -1555,7 +1555,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		// store in the symbol table unless the relation is not yet committed 
 
 		symbol = relation->rel_symbol = FB_NEW_RPT(dbb->dbb_pool, 0) dsql_sym;
-		symbol->sym_object = (BLK) relation;
+		symbol->sym_object = relation;
 		symbol->sym_string = relation->rel_name.c_str();
 		symbol->sym_length = relation->rel_name.length();
 		symbol->sym_type = SYM_relation;

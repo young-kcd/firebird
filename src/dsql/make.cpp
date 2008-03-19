@@ -1742,7 +1742,7 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 
 	dsql_sym* symbol = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_sym;
 	symbol->sym_type = type;
-	symbol->sym_object = (BLK) object;
+	symbol->sym_object = object;
 	symbol->sym_dbb = database;
 	symbol->sym_length = length;
 	TEXT* p = symbol->sym_name;
