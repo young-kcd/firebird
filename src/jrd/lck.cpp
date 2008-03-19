@@ -199,6 +199,20 @@ inline bool checkLock(const Lock* l)
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
 
+class LockContextHolder: public Database::Checkout, public Firebird::MutexLockGuard
+{
+public:
+	LockContextHolder(Database* dbb, Firebird::Mutex& mutex)
+		: Database::Checkout(dbb), Firebird::MutexLockGuard(mutex)
+	{}
+
+private:
+	// copying is prohibited
+	LockContextHolder(const LockContextHolder&);
+	LockContextHolder& operator= (const LockContextHolder&);
+};
+
+
 void LCK_assert(thread_db* tdbb, Lock* lock)
 {
 /**************************************
@@ -242,7 +256,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -320,7 +334,7 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -467,7 +481,7 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 	fb_assert(lock->lck_physical > LCK_none);
 
 	const bool result =
@@ -539,7 +553,7 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -646,7 +660,7 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 	const SLONG data = LOCK_read_data(lock->lck_id);
 	LCK_release(lock);
 #else
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	Lock* parent = lock->lck_parent;
 	const SLONG data =
@@ -677,7 +691,7 @@ void LCK_release(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	if (lock->lck_physical != LCK_none) {
 		DEQUEUE(tdbb, lock);
@@ -707,7 +721,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	if (lock->lck_compatible) {
 		if (lock->lck_ast) {
@@ -737,7 +751,7 @@ void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	Database::CheckoutLockGuard guard(tdbb->getDatabase(), lock->lck_mutex);
+	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	LOCK_write_data(lock->lck_id, data);
 	lock->lck_data = data;
