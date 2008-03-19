@@ -2780,12 +2780,8 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	UCHAR* const temp =
-		(UCHAR*)tdbb->getDefaultPool()->allocate((SLONG) dbb->dbb_page_size, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
+	Firebird::UCharBuffer temp_buffer;
+	UCHAR* const temp = temp_buffer.getBuffer(dbb->dbb_page_size);
 	memcpy(temp, page, dbb->dbb_page_size);
 	UCHAR* p = temp + dbb->dbb_page_size;
 
@@ -2805,10 +2801,8 @@ static USHORT compress_root(thread_db* tdbb, index_root_page* page)
 			root_idx->irt_desc = p - temp;
 		}
 	}
-	const USHORT l = p - temp;
-	tdbb->getDefaultPool()->deallocate(temp);
 
-	return l;
+	return p - temp;
 }
 
 
