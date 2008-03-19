@@ -33,7 +33,6 @@ namespace Jrd {
 }
 
 struct Ods::pag;
-struct blk;
 
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLONG);
 void	PIO_close(Jrd::jrd_file*);

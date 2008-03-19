@@ -596,7 +596,7 @@ void SDW_init(bool activate, bool delete_files)
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = key_length;
 	lock->lck_dbb = dbb;
-	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_object = dbb;
 	lock->lck_ast = blocking_ast_shadowing;
 
 	if (activate)

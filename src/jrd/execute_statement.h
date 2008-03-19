@@ -28,7 +28,6 @@
 #ifndef JRD_EXECUTE_STATEMENT_H
 #define JRD_EXECUTE_STATEMENT_H
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/ResultSet.h"

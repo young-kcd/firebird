@@ -32,7 +32,6 @@
 #include "../jrd/isc.h"
 #include "../jrd/svc_undoc.h"
 #include "../jrd/ThreadStart.h"
-#include "../jrd/jrd_blks.h"
 
 #include "../common/classes/semaphore.h"
 #include "../common/classes/array.h"
@@ -90,7 +89,7 @@ const int SVC_cmd_line		= 128;
 class thread_db;
 
 // Service manager
-class Service : public Firebird::UtilSvc, public LocalType<type_svc>
+class Service : public Firebird::UtilSvc, public EngineType<type_svc>
 {
 public:		// utilities interface with service
 	// printf() to svc_stdout

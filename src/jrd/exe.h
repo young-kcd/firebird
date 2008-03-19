@@ -32,7 +32,6 @@
 #ifndef JRD_EXE_H
 #define JRD_EXE_H
 
-#include "../jrd/jrd_blks.h"
 #include "../jrd/blb.h"
 #include "../jrd/Relation.h"
 #include "../common/classes/array.h"

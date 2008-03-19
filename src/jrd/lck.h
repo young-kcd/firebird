@@ -24,8 +24,6 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
-struct blk;
-
 namespace Jrd {
 
 class Database;
@@ -102,9 +100,9 @@ public:
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */
 	Database*	lck_dbb;	/* database object is contained in */
-	blk*	lck_object;		/* argument to be passed to ast */
-	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
-	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
+	void*	lck_object;		/* argument to be passed to ast */
+	void*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
+	void*	lck_compatible2;	/* Sub-level for internal compatibility */
 	Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
@@ -113,6 +111,7 @@ public:
 	UCHAR		lck_logical;			/* Logical lock level */
 	UCHAR		lck_physical;			/* Physical lock level */
 	SLONG		lck_data;				/* Data associated with a lock */
+	Firebird::Mutex lck_mutex;
 	enum lck_t lck_type;
 	union {
 		UCHAR lck_string[1];

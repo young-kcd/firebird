@@ -24,7 +24,6 @@
 #ifndef JRD_SDW_H
 #define JRD_SDW_H
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 namespace Jrd {

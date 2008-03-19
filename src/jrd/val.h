@@ -29,7 +29,6 @@
 #ifndef JRD_VAL_H
 #define JRD_VAL_H
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"

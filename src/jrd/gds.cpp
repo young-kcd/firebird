@@ -234,7 +234,7 @@ void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
                                    ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
 		, filename, lineno
 #endif
@@ -3517,7 +3517,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
+	return getDefaultMemoryPool()->allocate_nothrow(size_request
 #ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif

@@ -334,8 +334,9 @@ void LCK_assert(thread_db* tdbb, Lock* lock)
  *	Assert a logical lock.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_logical == lock->lck_physical ||
@@ -363,9 +364,11 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
  *	Convert an existing lock to a new level.
  *
  **************************************/
+	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	SET_TDBB(tdbb);
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -411,7 +414,10 @@ int LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 	const USHORT old_level = lock->lck_logical;
 	lock->lck_logical = level;
 	Database* dbb = lock->lck_dbb;
@@ -438,8 +444,10 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
  *	Downgrade a lock.
  *
  **************************************/
-	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
+	fb_assert(LCK_CHECK_LOCK(lock));
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -585,6 +593,9 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
  *  grant it onto new one.
  *
  **************************************/
+	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_physical > LCK_none);
 
@@ -653,8 +664,10 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
  *	Lock a block.  There had better not have been a lock there.
  *
  **************************************/
-	fb_assert(LCK_CHECK_LOCK(lock));
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
+	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -701,9 +714,11 @@ int LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
  *	Assert a lock if the parent is not locked in exclusive mode.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 	lock->lck_logical = level;
 	Database* dbb = lock->lck_dbb;
 
@@ -731,8 +746,11 @@ SLONG LCK_query_data(thread_db* tdbb, Lock* parent, enum lck_t lock_type, USHORT
  *	at a parent lock.
  *
  **************************************/
+	SET_TDBB(tdbb);
 
+	Firebird::MutexLockGuard guard(parent->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(parent));
+
 	return lock_query_data(tdbb->getDatabase(), parent->lck_id, lock_type, aggregate);
 }
 
@@ -749,7 +767,11 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
  *	Read the data associated with a lock.
  *
  **************************************/
+	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 #ifdef VMS
 	if (!LCK_lock(NULL, lock, LCK_null, LCK_NO_WAIT))
 		return 0;
@@ -784,8 +806,9 @@ void LCK_release(thread_db* tdbb, Lock* lock)
  *	Release an existing lock.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
+
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_physical != LCK_none) {
@@ -813,8 +836,11 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
  *	deliver resulted in blockage.
  *
  **************************************/
+	SET_TDBB(tdbb);
 
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 	if (lock->lck_compatible) {
 		if (lock->lck_ast) {
 			(*lock->lck_ast)(lock->lck_object);
@@ -841,10 +867,14 @@ void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
  *	Write a longword into an existing lock.
  *
  **************************************/
+	SET_TDBB(tdbb);
 
+	Firebird::MutexLockGuard guard(lock->lck_mutex);
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 	lock_write_data(tdbb->getDatabase(), lock->lck_id, data);
 	lock->lck_data = data;
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
 

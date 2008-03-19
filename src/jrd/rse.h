@@ -28,7 +28,6 @@
 
 // This is really funny: class rse is not defined here but in exe.h!!!
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../common/classes/array.h"

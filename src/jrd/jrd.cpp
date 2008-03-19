@@ -175,7 +175,7 @@ namespace
 		tdbb->setDatabase(attachment->att_database);
 	}
 
-	inline void validateHandle(thread_db* tdbb, jrd_tra* transaction)
+	inline void validateHandle(thread_db* tdbb, jrd_tra* const transaction)
 	{
 		if (!transaction->checkHandle())
 			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
@@ -185,7 +185,7 @@ namespace
 		tdbb->setTransaction(transaction);
 	}
 
-	inline void validateHandle(thread_db* tdbb, jrd_req* request)
+	inline void validateHandle(thread_db* tdbb, jrd_req* const request)
 	{
 		if (!request->checkHandle())
 			Firebird::status_exception::raise(isc_bad_req_handle, 0);
@@ -193,7 +193,7 @@ namespace
 		validateHandle(tdbb, request->req_attachment);
 	}
 
-	inline void validateHandle(thread_db* tdbb, dsql_req* statement)
+	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
 	{
 		if (!statement->checkHandle())
 			Firebird::status_exception::raise(isc_bad_req_handle, 0);
@@ -215,7 +215,6 @@ namespace
 		if (!service->checkHandle())
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 	}
-
 
 	class DatabaseContextHolder : public Jrd::ContextPoolHolder
 	{
@@ -4681,7 +4680,7 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_dbb = dbb;
-	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_object = dbb;
 	lock->lck_ast = DatabaseSnapshot::blockingAst;
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 

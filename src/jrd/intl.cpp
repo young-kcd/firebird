@@ -353,7 +353,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		{
 			Lock* lock = charset_collations[id]->existenceLock =
 				CharSetContainer::createCollationLock(tdbb, tt_id);
-			lock->lck_object = (blk*)charset_collations[id];
+			lock->lck_object = charset_collations[id];
 
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		}

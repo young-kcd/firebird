@@ -28,7 +28,6 @@
 #ifndef JRD_REQ_H
 #define JRD_REQ_H
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/exe.h"

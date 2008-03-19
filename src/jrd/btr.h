@@ -29,7 +29,6 @@
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */

@@ -1106,7 +1106,7 @@ static jrd_file* setup_file(Database*					dbb,
 	dbb->dbb_lock = lock;
 	lock->lck_type = LCK_database;
 	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
-	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_object = dbb;
 	lock->lck_length = l;
 	lock->lck_dbb = dbb;
 	lock->lck_ast = CCH_down_grade_dbb;

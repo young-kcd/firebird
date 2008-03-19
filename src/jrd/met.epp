@@ -4259,7 +4259,7 @@ static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Fireb
 		item->lock->lck_owner_handle = LCK_get_owner_handle(tdbb, item->lock->lck_type);
 		item->lock->lck_parent = dbb->dbb_lock;
 		item->lock->lck_dbb = dbb;
-		item->lock->lck_object = (blk*) item;
+		item->lock->lck_object = item;
 		item->lock->lck_ast = blocking_ast_dsql_cache;
 		item->lock->lck_length = key.length();
 		memcpy(item->lock->lck_key.lck_string, key.c_str(), key.length());

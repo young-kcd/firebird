@@ -69,27 +69,9 @@
 #define IBERROR(number)         ERR_error (number)
 
 
-#define BLKCHK(blk, type)       if (MemoryPool::blk_type(blk) != (USHORT) (type)) BUGCHECK (147)
+#define BLKCHK(blk, type)       if (!blk->checkHandle()) BUGCHECK(147)
 
-/* DEV_BLKCHK is used for internal consistency checking - where
- * the performance hit in production build isn't desired.
- * (eg: scatter this everywhere)
- *
- * This causes me a problem DEV_BLKCHK fails when the data seems valid
- * After talking to John this could be because the memory is from the local
- * stack rather than the heap.  However I found to continue I needed to 
- * turn it off by dfining the macro to be empty.  But In thinking about
- * it I think that it would be more helful for a mode where these extra 
- * DEV checks just gave warnings rather than being fatal.
- * MOD 29-July-2002
- *
- */
-#ifdef DEV_BUILD
-#define DEV_BLKCHK(blk,type)
-//#define DEV_BLKCHK(blk, type)    if (blk) {BLKCHK (blk, type);}
-#else
 #define DEV_BLKCHK(blk, type)	// nothing
-#endif
 
 
 // Thread data block / IPC related data blocks
@@ -100,7 +82,6 @@
 #include "../common/thd.h"
 
 // Definition of block types for data allocation in JRD
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/blb.h"
@@ -143,13 +124,11 @@ class ViewContext;
 class IndexBlock;
 class IndexLock;
 class ArrayField;
-//class PageControl;
 class Symbol;
 struct sort_context;
 class RecordSelExpr;
 class vcl;
 class TextType;
-//class jrd_prc;
 class Parameter;
 class jrd_fld;
 class dsql_dbb;
@@ -440,7 +419,7 @@ public:
 
 
 // general purpose vector
-template <class T, USHORT TYPE = type_vec>
+template <class T, BlockType TYPE = type_vec>
 class vec_base : protected pool_alloc<TYPE>
 {
 public:
@@ -760,7 +739,7 @@ private:
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
-	char* rc = (char*) p.allocate(s.length() + 1, 0
+	char* rc = (char*) p.allocate(s.length() + 1
 #ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif
@@ -771,7 +750,7 @@ inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 
 inline char* stringDup(MemoryPool& p, const char* s, size_t l)
 {
-	char* rc = (char*) p.allocate(l + 1, 0
+	char* rc = (char*) p.allocate(l + 1
 #ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif
@@ -833,7 +812,7 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 	if (p1 && p1->getType() == ThreadData::tddDBB)
 	{
 		Jrd::thread_db* p2 = (Jrd::thread_db*)p1;
-		if (p2->getDatabase() && MemoryPool::blk_type(p2->getDatabase()) != type_dbb)
+		if (p2->getDatabase() && !p2->getDatabase()->checkHandle())
 		{
 			BUGCHECK(147);
 		}
@@ -842,11 +821,10 @@ inline Jrd::thread_db* JRD_get_thread_data() {
 }
 inline void CHECK_TDBB(const Jrd::thread_db* tdbb) {
 	fb_assert(tdbb && (tdbb->getType() == ThreadData::tddDBB) &&
-			(!tdbb->getDatabase() ||
-				MemoryPool::blk_type(tdbb->getDatabase()) == type_dbb));
+		(!tdbb->getDatabase() || tdbb->getDatabase()->checkHandle()));
 }
 inline void CHECK_DBB(const Jrd::Database* dbb) {
-	fb_assert(dbb && MemoryPool::blk_type(dbb) == type_dbb);
+	fb_assert(dbb->checkHandle());
 }
 
 #else // PROD_BUILD

@@ -81,7 +81,7 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 
 	cached_lock->lck_dbb = dbb;
 	cached_lock->lck_parent = dbb->dbb_lock;
-	cached_lock->lck_object = reinterpret_cast<blk*>(this);
+	cached_lock->lck_object = this;
 	cached_lock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
 	memcpy(&cached_lock->lck_key, lockStr, lockLen);
 	

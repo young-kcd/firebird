@@ -29,7 +29,6 @@
 #ifndef JRD_PIO_H
 #define JRD_PIO_H
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../jrd/thread_proto.h"
 #include "../common/classes/rwlock.h"

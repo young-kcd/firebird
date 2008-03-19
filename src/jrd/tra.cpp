@@ -91,6 +91,7 @@ static SLONG bump_transaction_id(thread_db*, WIN *);
 #else
 static header_page* bump_transaction_id(thread_db*, WIN *);
 #endif
+static Lock* create_transaction_lock(thread_db* tdbb, void* object);
 static void retain_context(thread_db*, jrd_tra*, bool, SSHORT);
 #ifdef VMS
 static void compute_oldest_retaining(thread_db*, jrd_tra*, bool);
@@ -1772,34 +1773,6 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 }
 
 
-Lock* TRA_transaction_lock(thread_db* tdbb, BLK object)
-{
-/**************************************
- *
- *	T R A _ t r a n s a c t i o n _ l o c k
- *
- **************************************
- *
- * Functional description
- *	Allocate a transaction lock block.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock();
-	lock->lck_type = LCK_tra;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_length = sizeof(SLONG);
-
-	lock->lck_dbb = dbb;
-	lock->lck_parent = dbb->dbb_lock;
-	lock->lck_object = object;
-
-	return lock;
-}
-
-
 int TRA_wait(thread_db* tdbb, jrd_tra* trans, SLONG number, jrd_tra::wait_t wait)
 {
 /**************************************
@@ -2028,6 +2001,34 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 #endif
 
 
+static Lock* create_transaction_lock(thread_db* tdbb, void* object)
+{
+/**************************************
+ *
+ *	c r e a t e _ t r a n s a c t i o n _ l o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Allocate a transaction lock block.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(SLONG)) Lock();
+	lock->lck_type = LCK_tra;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_length = sizeof(SLONG);
+
+	lock->lck_dbb = dbb;
+	lock->lck_parent = dbb->dbb_lock;
+	lock->lck_object = object;
+
+	return lock;
+}
+
+
 #ifdef VMS
 static void compute_oldest_retaining(
 									 thread_db* tdbb,
@@ -2063,7 +2064,7 @@ static void compute_oldest_retaining(
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_parent = dbb->dbb_lock;
 		lock->lck_length = sizeof(SLONG);
-		lock->lck_object = reinterpret_cast<blk*>(dbb);
+		lock->lck_object = dbb;
 		LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		dbb->dbb_retaining_lock = lock;
 	}
@@ -2500,8 +2501,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 	Lock* new_lock = 0;
 	Lock* old_lock = transaction->tra_lock;
 	if (old_lock) {
-		new_lock =
-			TRA_transaction_lock(tdbb, transaction);
+		new_lock = create_transaction_lock(tdbb, transaction);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
@@ -3151,7 +3151,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	Attachment* attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
-	Lock* lock = TRA_transaction_lock(tdbb, temp);
+	Lock* lock = create_transaction_lock(tdbb, temp);
 
 /* Read header page and allocate transaction number.  Since
    the transaction inventory page was initialized to zero, it

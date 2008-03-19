@@ -32,7 +32,6 @@
  * to define the types this header uses.
  */
 
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/GenericMap.h"

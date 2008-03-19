@@ -45,7 +45,6 @@
 #include "../common/thd.h"
 
 // Definition of block types for data allocation in JRD
-#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 
@@ -88,4 +87,4 @@ namespace Jrd
 		MemoryPool::deletePool(pool);
 	}
 
-}
+} // namespace
