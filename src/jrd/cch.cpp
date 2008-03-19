@@ -1407,10 +1407,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 
 	if (doFlush)
 	{
-		PIO_flush(main_file);
+		PIO_flush(dbb, main_file);
 		if (dbb->dbb_shadow)
 		{
-			PIO_flush(dbb->dbb_shadow->sdw_file);
+			PIO_flush(dbb, dbb->dbb_shadow->sdw_file);
 		}
 		tdbb->bumpStats(RuntimeStatistics::FLUSHES);
 	}
