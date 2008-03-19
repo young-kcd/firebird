@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.34.2.1 2007-01-22 12:27:53 paulbeach Exp $
+$Id: flu.cpp,v 1.34.2.2 2008-03-19 14:06:31 paulbeach Exp $
 */
 
 #include "firebird.h"
@@ -694,11 +694,11 @@ if (!(mod = FLU_lookup_module (module)))
     strcpy (absolute_module, module);
     length = strlen (absolute_module);
     /* call search_for_module with the supplied name,
-       and if unsuccessful, then with <name>.so . */
+       and if unsuccessful, then with <name>.dylib . */
     mod = search_for_module (absolute_module, name, false);
     if (!mod)
         {
-        strcat (absolute_module, ".so");
+        strcat (absolute_module, ".dylib");
         mod = search_for_module (absolute_module, name, ShowAccessError);
         }
     if (!mod)
