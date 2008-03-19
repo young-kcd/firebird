@@ -839,23 +839,16 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 /* Get someplace to put data */
 
-	UCHAR* data = (UCHAR*) database->dbb_permanent->allocate(desc->iad_total_length, 0
-#ifdef DEBUG_GDS_ALLOC
-	  ,__FILE__, __LINE__
-#endif
-	);
+	Firebird::UCharBuffer data_buffer;
+	UCHAR* const data = data_buffer.getBuffer(desc->iad_total_length);
 
-/* zero out memory, so that it does not have to be done for
-   each element */
+/* zero out memory, so that it does not have to be done for each element */
 
 	memset(data, 0, desc->iad_total_length);
 
 	SLONG offset = 0;
 
 	array_slice arg;
-
-/* Trap any potential errors */
-	try {
 
 /* If we know something about the subscript bounds, prepare
    to fetch only stuff we really care about */
@@ -892,23 +885,14 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 	ISC_STATUS status = SDL_walk(tdbb->tdbb_status_vector,
 					  sdl,
-					  //true,
 					  data,
 					  desc,
 					  variables,
 					  slice_callback,
 					  &arg);
 
-	database->dbb_permanent->deallocate(data);
-
 	if (status) {
 		ERR_punt();
-	}
-
-	}	// try
-	catch (const Firebird::Exception&) {
-		database->dbb_permanent->deallocate(data);
-		throw;
 	}
 
 	return (SLONG) (arg.slice_count * arg.slice_element_length);
@@ -1754,7 +1738,6 @@ void BLB_put_slice(	thread_db*	tdbb,
 
 	if (SDL_walk(tdbb->tdbb_status_vector,
 				 sdl,
-				 //true,
 				 array->arr_data,
 				 &array_desc->arr_desc,
 				 variables,
@@ -1787,9 +1770,7 @@ void BLB_release_array(ArrayField* array)
  *
  **************************************/
 
-	if (array->arr_data) {
-		MemoryPool::globalFree(array->arr_data); // But know that it comes from permanent pool
-	}
+	delete[] array->arr_data;
 
 	jrd_tra* transaction = array->arr_transaction;
 	if (transaction)
@@ -1875,8 +1856,6 @@ static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* pro
  *
  **************************************/
 
-	Database* dbb = GET_DBB();
-
 	// Compute size and allocate block
 
 	const USHORT n = MAX(proto_desc->iad_struct_count, proto_desc->iad_dimensions);
@@ -1894,12 +1873,7 @@ static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* pro
 
 	// Allocate large block to hold array
 
-	array->arr_data =
-		(UCHAR*)dbb->dbb_permanent->allocate(array->arr_desc.iad_total_length, 0
-#ifdef DEBUG_GDS_ALLOC
-		  ,__FILE__, __LINE__
-#endif
-		);
+	array->arr_data = FB_NEW(*transaction->tra_pool) UCHAR[array->arr_desc.iad_total_length];
 	array->arr_temp_id = ++transaction->tra_next_blob_id;
 
 	return array;
