@@ -4119,6 +4119,7 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 		deliverNode->nod_count = boolean->nod_count;
 		deliverNode->nod_type = boolean->nod_type;
 		deliverNode->nod_flags = boolean->nod_flags;
+		deliverNode->nod_impure = boolean->nod_impure;
 		bool wrongNode = false;
 		for (indexArg = 0; (indexArg < boolean->nod_count) && (!wrongNode); indexArg++) {
 

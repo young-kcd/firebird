@@ -4951,6 +4951,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_like:
 	case nod_contains:
 	case nod_similar:
+	case nod_starts:
 		if (node->nod_flags & nod_invariant) {
 			csb->csb_invariants.push(node);
 		}
