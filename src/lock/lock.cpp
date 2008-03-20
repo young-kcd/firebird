@@ -627,6 +627,55 @@ SLONG LOCK_enq(	SRQ_PTR		prior_request,
 	return lock_id;
 }
 
+bool LOCK_set_owner_handle(SRQ_PTR request_offset, SRQ_PTR new_owner_offset)
+{
+/**************************************
+ *
+ *	L O C K _ s e t _ o w n e r _ h a n d l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set new owner handle for granted request.
+ *
+ **************************************/
+	LOCK_TRACE(("LOCK_set_owner_handle (%ld)\n", request_offset));
+
+	lrq* request = get_request(request_offset);
+
+	// We need not to change owner
+	if (request->lrq_owner == new_owner_offset)
+		return true;
+
+	acquire(new_owner_offset);
+	request = (LRQ) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
+	own *old_owner = (OWN) SRQ_ABS_PTR(request->lrq_owner);
+	fb_assert(old_owner->own_pending_request != request_offset);
+	own *new_owner = (OWN) SRQ_ABS_PTR(new_owner_offset);
+	fb_assert(new_owner->own_pending_request != request_offset);
+	fb_assert(old_owner->own_process_id == new_owner->own_process_id);
+	lbl *lck = (LBL) SRQ_ABS_PTR(request->lrq_lock);
+
+	// Make sure that change of lock owner is possible
+	SRQ lock_srq;
+	SRQ_LOOP(lck->lbl_requests, lock_srq) {
+		LRQ granted_request = (LRQ) ((UCHAR *) lock_srq - OFFSET(LRQ, lrq_own_requests));
+		// One owner must have the only granted request on the same lock resource
+		if (granted_request->lrq_owner == new_owner_offset) {
+			LOCK_TRACE(("The owner already has a granted request"));
+			release(request->lrq_owner);
+			return false;
+		}
+	}
+
+	remove_que(&request->lrq_own_requests);
+	request->lrq_owner = new_owner_offset;
+	insert_tail(&new_owner->own_requests, &request->lrq_own_requests);
+
+	release(new_owner_offset);
+
+	return true;
+}
 
 void LOCK_fini( ISC_STATUS* status_vector, SRQ_PTR * owner_offset)
 {

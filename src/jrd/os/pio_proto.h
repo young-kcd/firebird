@@ -55,6 +55,7 @@ bool	PIO_status(struct Jrd::phys_io_blk*, ISC_STATUS*);
 #endif
 
 #ifdef SUPPORT_RAW_DEVICES
+bool    PIO_on_raw_device(const Firebird::PathName&);
 int		PIO_unlink(const Firebird::PathName&);
 #endif
 bool	PIO_write(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);

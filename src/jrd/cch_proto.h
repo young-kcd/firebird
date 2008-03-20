@@ -45,8 +45,7 @@ bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
 Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, SSHORT);
 void		CCH_init(Jrd::thread_db*, ULONG);
-void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT);
-void		CCH_mark_must_write(Jrd::thread_db*, Jrd::win*);
+void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
 void		CCH_must_write(Jrd::win*);
 Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
@@ -60,7 +59,7 @@ void		CCH_release_exclusive(Jrd::thread_db*);
 bool		CCH_rollover_to_shadow(Jrd::Database*, Jrd::jrd_file*, const bool);
 void		CCH_unwind(Jrd::thread_db*, bool);
 bool		CCH_validate(Jrd::win*);
-void		CCH_flush_database(Jrd::thread_db*);
+void		CCH_flush_ast(Jrd::thread_db*);
 bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
 					 ISC_STATUS*, USHORT, const bool);
 
@@ -108,12 +107,12 @@ inline void CCH_RELEASE_TAIL(Jrd::thread_db* tdbb, Jrd::win * window)
 
 inline void CCH_MARK(Jrd::thread_db* tdbb, Jrd::win * window)
 {
-	CCH_mark (tdbb, window, 0);
+	CCH_mark (tdbb, window, 0, 0);
 }
 
 inline void CCH_MARK_SYSTEM(Jrd::thread_db* tdbb, Jrd::win * window)
 {
-	CCH_mark (tdbb, window, 1);
+	CCH_mark (tdbb, window, 1, 0);
 }
 
 inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
@@ -133,7 +132,7 @@ inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG 
 
 inline void CCH_MARK_MUST_WRITE(Jrd::thread_db* tdbb, Jrd::win * window)
 {
-	CCH_mark_must_write(tdbb, window);
+	CCH_mark(tdbb, window, 0, 1);
 }
 
 #ifdef SUPERSERVER_V2

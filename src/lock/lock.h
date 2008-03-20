@@ -103,8 +103,7 @@ const UCHAR LCK_PW		= 5;		// Protected Write
 const UCHAR LCK_EX		= 6;		// Exclusive
 const UCHAR LCK_max		= 7;
 
-const UCHAR LCK_read	= LCK_PR;
-const UCHAR LCK_write	= LCK_EX;
+enum locklevel_t {LCK_read = LCK_PR, LCK_write = LCK_EX};
 
 const SSHORT LCK_WAIT		= 1;
 const SSHORT LCK_NO_WAIT	= 0;

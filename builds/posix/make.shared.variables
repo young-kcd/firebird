@@ -30,7 +30,7 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
                    \
         all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
-		cch.cpp cmp.cpp cvt2.cpp \
+		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		dfw.cpp divorce.cpp \
 		err.cpp iberr.cpp \
 		event.cpp evl.cpp exe.cpp ext.cpp \

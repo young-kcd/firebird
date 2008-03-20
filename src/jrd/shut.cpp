@@ -439,8 +439,7 @@ static void check_backup_state(thread_db* tdbb)
 {
 	Database* dbb = tdbb->tdbb_database;
 
-	if (!dbb->dbb_backup_manager->lock_state(tdbb, true))
-		ERR_punt();
+	dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 
 	try {
 		if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
@@ -452,11 +451,11 @@ static void check_backup_state(thread_db* tdbb)
 		}
 	}
 	catch(const std::exception&) {
-		dbb->dbb_backup_manager->unlock_state(tdbb);
+		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		throw;
 	}
 
-	dbb->dbb_backup_manager->unlock_state(tdbb);
+	dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 }
 
 static bool notify_shutdown(Database* dbb, SSHORT flag, SSHORT delay)

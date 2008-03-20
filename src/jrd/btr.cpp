@@ -5933,7 +5933,7 @@ static SLONG insert_node(thread_db* tdbb,
 
 	CCH_RELEASE(tdbb, &split_window);
 	CCH_precedence(tdbb, window, split_window.win_page);
-	CCH_mark_must_write(tdbb, window);
+	CCH_MARK_MUST_WRITE(tdbb, window);
 
 	// The split bucket is still residing in the scratch page. Copy it
 	// back to the original buffer.  After cleaning up the last node,

@@ -281,6 +281,9 @@ public:
 	BackupManager *dbb_backup_manager; /* physical backup manager */
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
+	// returns true if primary file is located on raw device
+	bool onRawDevice();
+	
 private:
 	explicit Database(MemoryPool& p)
 	:	modules(p),
@@ -1038,8 +1041,7 @@ public:
 const USHORT TDBB_sweeper				= 1;	/* Thread sweeper or garbage collector */
 const USHORT TDBB_no_cache_unwind		= 2;	/* Don't unwind page buffer cache */
 const USHORT TDBB_prc_being_dropped		= 4;	/* Dropping a procedure  */
-const USHORT TDBB_set_backup_state		= 8;	/* Setting state for backup lock */
-const USHORT TDBB_backup_merge			= 16;	/* Merging changes from difference file */
+const USHORT TDBB_backup_write_locked	= 8;  /* BackupManager has write lock on LCK_backup_database */
 const USHORT TDBB_stack_trace_done		= 32;	/* PSQL stack trase is added into status-vector */
 const USHORT TDBB_shutdown_manager		= 64;	/* Server shutdown thread */
 const USHORT TDBB_verb_cleanup			= 128;	/* Verb cleanup is in progress */

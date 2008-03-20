@@ -31,6 +31,7 @@ UCHAR	LOCK_downgrade(SLONG, ISC_STATUS *);
 SLONG	LOCK_enq(SLONG, SLONG, USHORT, const UCHAR*, USHORT, UCHAR,
 					  lock_ast_t, void*, SLONG, SSHORT, ISC_STATUS*,
 					  SLONG);
+bool	LOCK_set_owner_handle(SLONG, SLONG);
 void	LOCK_fini(ISC_STATUS*, SLONG *);
 int		LOCK_init(ISC_STATUS*, bool, LOCK_OWNER_T, UCHAR, SLONG *);
 void	LOCK_manager(SLONG);

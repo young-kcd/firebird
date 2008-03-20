@@ -2002,6 +2002,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
 	
+	dbb->dbb_backup_manager->dbCreating = true;
 	PAG_format_header();
 	INI_init2();
 	PAG_format_log();
@@ -2119,6 +2120,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 	*handle = attachment;
 	CCH_flush(tdbb, FLUSH_FINI, 0);
+
+	dbb->dbb_backup_manager->dbCreating = false;
 
 	return return_success(tdbb);
 
@@ -5926,6 +5929,14 @@ static void setup_NT_handlers()
 }
 #endif
 
+bool Database::onRawDevice()
+{
+#ifdef SUPPORT_RAW_DEVICES
+	return PIO_on_raw_device(dbb_filename);
+#else
+	return false;
+#endif
+}
 
 static void shutdown_database(Database* dbb, const bool release_pools)
 {

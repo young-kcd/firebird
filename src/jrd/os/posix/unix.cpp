@@ -142,7 +142,6 @@ static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
-static bool raw_devices_check_file (const Firebird::PathName&);
 static bool raw_devices_validate_database (int, const Firebird::PathName&);
 static int  raw_devices_unlink_database (const Firebird::PathName&);
 #endif
@@ -233,7 +232,7 @@ int PIO_connection(const Firebird::PathName& file_name)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overwrite, bool share_delete)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool overwrite, bool share_delete)
 {
 /**************************************
  *
@@ -248,15 +247,13 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
  *	have been locked before entry.
  *
  **************************************/
-	const TEXT* file_name = string.c_str();
-
 #ifdef SUPERSERVER_V2
 	const int flag =
 		SYNC | O_RDWR | O_CREAT | (overwrite ? O_TRUNC : O_EXCL) | O_BINARY;
 #else
 #ifdef SUPPORT_RAW_DEVICES
 	const int flag = O_RDWR |
-			(raw_devices_check_file(file_name) ? 0 : O_CREAT) |
+			(PIO_on_raw_device(file_name) ? 0 : O_CREAT) |
 			(overwrite ? O_TRUNC : O_EXCL) |
 			O_BINARY;
 #else
@@ -264,18 +261,18 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string, bool overw
 #endif
 #endif
 
-	const int desc = open(file_name, flag, MASK);
+	const int desc = open(file_name.c_str(), flag, MASK);
 	if (desc == -1) 
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
-				 isc_arg_cstring, string.length(), ERR_cstring(string),
+				 isc_arg_cstring, string.length(), ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
 
 /* File open succeeded.  Now expand the file name. */
 
-	Firebird::PathName expanded_name(string);
+	Firebird::PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
 	jrd_file* file;
 	try 
@@ -665,7 +662,7 @@ jrd_file* PIO_open(Database* dbb,
 	 * mode. Check if it is a special file (i.e. raw block device) and if a
 	 * valid database is on it. If not, return an error.
 	 */
-	if (raw_devices_check_file(file_name)
+	if (PIO_on_raw_device(file_name)
 		&& !raw_devices_validate_database(desc, file_name))
 	{
 		ERR_post (isc_io_error,
@@ -1162,19 +1159,19 @@ int PIO_unlink (const Firebird::PathName& file_name)
  *
  **************************************/
 
-	if (raw_devices_check_file(file_name))
+	if (PIO_on_raw_device(file_name)
 		return raw_devices_unlink_database(file_name);
 	else
 		return unlink(file_name.c_str());
 }
 
 
-static bool raw_devices_check_file (
+static bool PIO_on_raw_device(
 	const Firebird::PathName& file_name)
 {
 /**************************************
  *
- *	raw_devices_check_file
+ *	P I O _ o n _ r a w _ d e v i c e
  *
  **************************************
  *

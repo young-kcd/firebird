@@ -1057,8 +1057,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	case 2:
 		return true;
 	case 3:
-		if (!dbb->dbb_backup_manager->lock_state(tdbb, true))
-			ERR_punt();
+		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 		try {
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
@@ -1067,11 +1066,12 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
-		} catch(const std::exception&) {
-			dbb->dbb_backup_manager->unlock_state(tdbb);
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		}
+		catch (const std::exception&) {
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 			throw;
 		}
-		dbb->dbb_backup_manager->unlock_state(tdbb);
 
 		return false;
 	}
@@ -1109,8 +1109,7 @@ static bool delete_difference(	thread_db*	tdbb,
 	case 2:
 		return true;
 	case 3:
-		if (!dbb->dbb_backup_manager->lock_state(tdbb, true))
-			ERR_punt();
+		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 		try {
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
@@ -1118,11 +1117,12 @@ static bool delete_difference(	thread_db*	tdbb,
 						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
-		} catch(const std::exception&) {
-			dbb->dbb_backup_manager->unlock_state(tdbb);
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		}
+		catch (const std::exception&) {
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 			throw;
 		}
-		dbb->dbb_backup_manager->unlock_state(tdbb);
 		return false;
 	}
 

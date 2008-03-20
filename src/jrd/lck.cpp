@@ -506,7 +506,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 {
 /**************************************
  *
- *	L C K _ g e t _ l o c k _ o w n e r
+ *	L C K _ g e t _ o w n e r _ h a n d l e
  *
  **************************************
  *
@@ -535,7 +535,6 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_record_locking:
 	case LCK_prc_exist:
 	//case LCK_range_relation: // PC_ENGINE
-	case LCK_backup_state:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
 		return *LCK_OWNER_HANDLE_DBB(dbb);
@@ -546,6 +545,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_sweep:
 	case LCK_record:
 	case LCK_update_shadow:
+	case LCK_backup_end:
 		return *LCK_OWNER_HANDLE_ATT(attachment);
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
@@ -554,6 +554,56 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	}
 }
 
+SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
+{
+/**********************************************************
+ *
+ *	L C K _ g e t _ o w n e r _ h a n d l e _ b y _ t y p e
+ *
+ **********************************************************
+ *
+ * Functional description
+ *	return the lock owner given a lock owner type.
+ *
+ *********************************************************/
+	SET_TDBB(tdbb);
+
+	switch(lck_owner_type)
+	{
+		case LCK_OWNER_process:
+			return *LCK_OWNER_HANDLE_PROCESS();
+		case LCK_OWNER_database:
+			return *LCK_OWNER_HANDLE_DBB(tdbb->tdbb_database);;
+		case LCK_OWNER_attachment:
+			return *LCK_OWNER_HANDLE_ATT(tdbb->tdbb_attachment);
+		default:
+			bug_lck("Invalid lock owner type in LCK_get_owner_handle_by_type ()");
+			return 0;
+	}
+}
+
+bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_handle)
+{
+/**************************************
+ *
+ *	L C K _ s e t _ o w n e r _ h a n d l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Change lock owner, remove request from old owner que and
+ *  grant it onto new one.
+ *
+ **************************************/
+	fb_assert(LCK_CHECK_LOCK(lock));
+	fb_assert(lock->lck_physical > LCK_none);
+
+	bool result = LOCK_set_owner_handle(lock->lck_id, owner_handle);
+	if (result)
+		lock->lck_owner_handle = owner_handle;
+
+	return result;
+}
 
 void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 {

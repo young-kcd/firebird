@@ -151,6 +151,9 @@
 				RelativePath="..\..\..\src\jrd\builtin.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cch.cpp">
 			</File>
 			<File
@@ -456,6 +459,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\build_no.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\GlobalRWLock.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cch.h">
