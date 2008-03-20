@@ -292,6 +292,7 @@ segmented) blob.', 'daves', '1993-07-16 12:15:53')
 ('violation of foreign key constraint for index "%s"', NULL, NULL, 0, 146, 'Fremdschlüssel-Beschränkung für Index "%s" wurde überschritten', NULL, NULL, 'daves', '1993-07-16 12:15:53')
 ('minor version too high found %ld expected %ld', NULL, NULL, 0, 147, 'Version ungültig. Gefunden: %ld, erwartet: %ld', NULL, NULL, 'daves', '1993-07-16 12:15:57')
 ('transaction %d is %s', NULL, NULL, 0, 148, 'Die Transaktion %d ist %s', NULL, NULL, 'daves', '1993-07-16 12:15:59')
+-- Translate (0,149)-(0,558)
 -- QLI
 ('expected type', NULL, NULL, 1, 0, 'Erwartet: Typ', NULL, NULL, 'daves', '1993-07-16 12:15:59')
 ('bad block type', NULL, NULL, 1, 1, 'Block-Typ ist ungültig', NULL, NULL, 'daves', '1993-07-16 12:15:59')
@@ -728,6 +729,7 @@ COMMIT WORK;
 ('matching language string too long', NULL, NULL, 1, 415, 'Die passende Sprachen-Zeichenkette ist zu lang', NULL, NULL, 'daves', '1993-07-16 12:16:14')
 ('Functions in database "%s" (%s):', NULL, NULL, 1, 416, 'Funktionen in der Datenbank "%s" (%s):', NULL, NULL, 'daves', '1993-07-16 12:16:14')
 ('Functions are not supported in database %s.', NULL, NULL, 1, 417, 'In der Datenbank %s werden keine Funktionen unterstützt', NULL, NULL, 'daves', '1993-07-16 12:16:14')
+-- 418 doesn't exist
 ('There are no functions defined in any open database.', NULL, NULL, 1, 419, 'In keiner der geöffneten Datenbanken sind Funktionen definiert', NULL, NULL, 'daves', '1993-07-16 12:16:14')
 ('Functions are not supported in any open database.', NULL, NULL, 1, 420, 'In keiner der geöffneten Datenbanken werden Funktionen unterstützt', NULL, NULL, 'daves', '1993-07-16 12:16:14')
 ('    Function description:', NULL, NULL, 1, 421, '    Funktionsbeschreibung:', NULL, NULL, 'daves', '1993-07-16 12:16:14')
@@ -776,8 +778,9 @@ COMMIT WORK;
 ('no functions are defined in database %s', NULL, NULL, 1, 462, 'In der Datenbank %s sind keine Funktionen definiert', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('filters are not supported in database %s', NULL, NULL, 1, 463, 'In der Datenbank %s werden keine Filter unterstützt', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('no filters are defined for database %s', NULL, NULL, 1, 464, 'Für die Datenbank %s sind keine Filter definiert', NULL, NULL, 'daves', '1993-07-16 12:16:25')
-('Error during two phase commit on database %s
-rollback all databases or commit databases individually', NULL, NULL, 1, 465, 'Fehler beim Zwei-Phasen-Commit bei Datenbank %s. Alle Datenbanken zurückrollen oder einzeln ''committen''', NULL, NULL, 'daves', '1993-07-16 12:16:25')
+('Error during two phase commit on database %s.
+Rollback all databases or commit databases individually', NULL, NULL, 1, 465, 'Fehler beim Zwei-Phasen-Commit bei Datenbank %s.
+Alle Datenbanken zurückrollen oder einzeln ''committen''', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('Only fields may be subscripted', NULL, NULL, 1, 466, 'Es können nur Felder indiziert werden', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('"%s" is not a field and so may not be subscripted', NULL, NULL, 1, 467, '"%s" ist kein Feld und darf nicht indiziert werden', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('Datatype of field %s may not be changed to or from blob', NULL, NULL, 1, 468, 'Der Datentyp des Feldes %s kann nicht von oder zu BLOB geändert werden', NULL, NULL, 'daves', '1993-07-16 12:15:53')
@@ -874,13 +877,14 @@ Keine Fehler', NULL, NULL, 'daves', '1993-07-16 12:16:14')
 ('can''t drop system relation %s', NULL, NULL, 2, 68, 'Die System-Relation %s kann nicht gelöscht werden', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('relation %s doesn''t exist', NULL, NULL, 2, 69, 'Die Relation %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('security class %s doesn''t exist', NULL, NULL, 2, 70, 'Die Sicherheitsklasse %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
-('shadow %ld doesn''t exist', NULL, NULL, 2, 71, 'Der Shadow %ld existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
+('shadow %ld does not exist', NULL, NULL, 2, 71, 'Der Shadow %ld existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('error commiting deletion of shadow', NULL, NULL, 2, 72, 'Fehler beim ''COMMIT'' der Löschung des Shadow', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('Trigger %s doesn''t exist', NULL, NULL, 2, 73, 'Der Trigger %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('Trigger message number %d for trigger %s doesn''t exist', NULL, NULL, 2, 74, 'Die Trigger-Mitteilungsnummer %d für den Trigger %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
-('Type %s for field %s doesn''t exist', NULL, NULL, 2, 75, 'Der Typ %s für das Feld %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
+('Type %s for field %s does not exist', NULL, NULL, 2, 75, 'Der Typ %s für das Feld %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('User privilege %s on field %s in relation %s
-for user %s doesn''t exist', NULL, NULL, 2, 76, 'Das Zugriffsprivileg %s für das Feld %s der Relation %s für den Benutzer %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
+for user %s does not exist', NULL, NULL, 2, 76, 'Das Zugriffsprivileg %s für das Feld %s der Relation %s
+für den Benutzer %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('User privilege %s on relation %s for user %s doesn''t exist', NULL, NULL, 2, 77, 'Das Zugriffsprivileg %s für die Relation %s für den Benutzer %s existiert nicht', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('field %s is unknown in relation %s', NULL, NULL, 2, 78, 'Das Feld %s ist in der Relation %s nicht bekannt', NULL, NULL, 'daves', '1993-07-16 12:16:16')
 ('relation %s is used in trigger %s but not defined', NULL, NULL, 2, 79, 'Die Relation %s wird im Trigger %s verwendet, ist jedoch nicht definiert', NULL, NULL, 'daves', '1993-07-16 12:16:16')
@@ -1141,7 +1145,7 @@ COMMIT WORK;
 ('argument mode ''by value'' requires a return mode', NULL, NULL, 2, 293, 'Für ein Argument, das durch einen Wert übergeben wurde, ist ein Rückgabe-Modus erforderlich', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('unexpected end of file, semi_colon missing?', NULL, NULL, 2, 294, 'Unerwartetes Dateiende (EOF). Fehlendes Semikolon?', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('Functions can''t return arrays.', NULL, NULL, 2, 295, 'Funktionen können keine Arrays als Ergebniswert haben', NULL, NULL, 'daves', '1993-07-16 12:16:25')
-('symbol %s is too long, truncating it to %ld characters', NULL, NULL, 2, 296, 'Das Symbol % ist zu lang. Es wird auf %ld Zeichen gekürzt', NULL, NULL, 'daves', '1993-07-16 12:16:25')
+('symbol %s is too long, truncating it to %ld characters', NULL, NULL, 2, 296, 'Das Symbol %s ist zu lang. Es wird auf %ld Zeichen gekürzt', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('A node name is not permitted in a shadow or secondary file name', NULL, NULL, 2, 297, 'In einem Shadow oder sekundären Dateinamen ist kein Knotenname zulässig', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('A non-Decnet node name is not permitted in an external file name', NULL, NULL, 2, 298, 'In einem externen Dateinamen ist nur ein Decnet-Knotenname zulässig', NULL, NULL, 'daves', '1993-07-16 12:16:25')
 ('A node name is not permitted in an external file name', NULL, NULL, 2, 299, 'In einem externen Dateinamen ist kein Knotenname zulässig', NULL, NULL, 'daves', '1993-07-16 12:16:25')
@@ -1469,15 +1473,15 @@ COMMIT WORK;
 ('Connection authorization failure.', NULL, NULL, 13, 78, 'Authorisierungsfehler bei der Herstellung der Verbindung', NULL, NULL, 'daves', '1993-07-16 12:15:58')
 ('Unsuccessful execution caused by deadlock.', NULL, NULL, 13, 88, 'Ausführung wegen Deadlock gescheitert', NULL, NULL, 'daves', '1993-07-16 12:15:59')
 ('Unsuccessful execution caused by an unavailable resource.', NULL, NULL, 13, 96, 'Ausführung gescheitert: Betriebsmittel nicht verfügbar', NULL, NULL, 'daves', '1993-07-16 12:15:58')
-('Unsuccessful execution caused by a system error that precludes
-successful execution of subsequent statements', NULL, NULL, 13, 98, 'Ausführung wegen Systemfehlers gescheitert. Erfolgreiche Ausführung nachfolgender Anweisungen nicht beeinträchtigt', NULL, NULL, 'daves', '1993-07-16 12:15:58')
-('Unsuccessful execution caused by system error that doesn''t
-preclude successful execution of subsequent statements', NULL, NULL, 13, 99, 'Ausführung wegen Systemfehlers gescheitert. Erfolgreiche Ausführung nachfolgender Anweisungen beeinträchtigt', NULL, NULL, 'daves', '1993-07-16 12:15:58')
-('The insert, update, delete, ddl or authorization statement cannot
- be executed because the transaction is inquiry only', NULL, NULL, 13, 183, 'Transaktion ist READ ONLY. INSERT, UPDATE, DELETE sowie Datendefinitions/Authorisierungsanwsgn. sind nicht ausführbar', NULL, NULL, 'daves', '1993-07-16 12:15:58')
+('Unsuccessful execution caused by a system error that precludes successful execution of subsequent statements', NULL, NULL, 13, 98, +++
+'Ausführung wegen Systemfehlers gescheitert. Erfolgreiche Ausführung nachfolgender Anweisungen nicht beeinträchtigt', NULL, NULL, 'daves', '1993-07-16 12:15:58')
+('Unsuccessful execution caused by system error that doesn''t preclude successful execution of subsequent statements', NULL, NULL, 13, 99, +++
+'Ausführung wegen Systemfehlers gescheitert. Erfolgreiche Ausführung nachfolgender Anweisungen beeinträchtigt', NULL, NULL, 'daves', '1993-07-16 12:15:58')
+('The insert, update, delete, ddl or authorization statement cannot be executed because the transaction is inquiry only', NULL, NULL, 13, 183, +++
+'Transaktion ist READ ONLY. INSERT, UPDATE, DELETE sowie Datendefinitions/Authorisierungsanwsgn. sind nicht ausführbar', NULL, NULL, 'daves', '1993-07-16 12:15:58')
 ('An error was found in the application program input parameters for the sql statement.', NULL, NULL, 13, 196, 'Die Anwendungsprogramm-Eingabeparameter für die SQL-Anweisung sind fehlerhaft', NULL, NULL, 'daves', '1993-07-16 12:15:58')
-('Invalid insert or update value(s): object columns are
-constrained - no 2 table rows can have duplicate column values', NULL, NULL, 13, 197, 'INSERT- oder UPDATE-Wert(e) ungültig. 2 Tabellenreihen könnnen nicht dieselben Spaltenwerte haben', NULL, NULL, 'daves', '1993-07-16 12:15:58')
+('Invalid insert or update value(s): object columns are constrained - no 2 table rows can have duplicate column values', NULL, NULL, 13, 197, +++
+'INSERT- oder UPDATE-Wert(e) ungültig. 2 Tabellenreihen könnnen nicht dieselben Spaltenwerte haben', NULL, NULL, 'daves', '1993-07-16 12:15:58')
 ('Arithmetic overflow or division by zero has occured.', NULL, NULL, 13, 198, 'Arithmetischer Überlauf oder Division durch Null', NULL, NULL, 'daves', '1993-07-16 12:15:58')
 ('The insert failed because a column definition includes validation constraints.', NULL, NULL, 13, 375, 'Eine Spaltendefinition enthält Validierungsbeschränkungen. Einfügung gescheitert', NULL, NULL, 'daves', '1993-07-16 12:15:59')
 ('This operation is not defined for system tables.', NULL, NULL, 13, 393, 'Diese Operation ist nicht für Systemtabellen definiert', NULL, NULL, 'daves', '1993-07-16 12:15:58')
