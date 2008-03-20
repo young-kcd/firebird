@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="common"
 	ProjectGUID="{15605F44-BFFD-444F-AD4C-55DC9D704465}"
 	>
@@ -352,6 +352,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\PublicHandle.cpp"
 				>
 			</File>
 			<File
