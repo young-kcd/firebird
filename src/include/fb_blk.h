@@ -124,7 +124,7 @@ public:
 		return blockType;
 	}
 
-	virtual bool checkHandle() const
+	bool checkHandle() const
 	{
 		if (!this)
 		{
