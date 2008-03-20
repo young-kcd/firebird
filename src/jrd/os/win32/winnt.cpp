@@ -832,7 +832,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 			release_io_event(piob->piob_file,
 							 (OVERLAPPED *) & piob->piob_io_event);
 			return nt_error("GetOverlappedResult", piob->piob_file,
-							isc_io_error, status_vector);
+							isc_io_error, status_vector); // io_error is wrong here as primary & secondary error.
 		}
 	}
 
