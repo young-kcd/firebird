@@ -320,7 +320,7 @@ static const struct {
 	{335544616, "invalid column reference"},		/* 296, field_ref_err */
 	{335544617, "invalid ORDER BY clause"},		/* 297, order_by_err */
 	{335544618, "Return mode by value not allowed for this data type"},		/* 298, return_mode_err */
-	{335544619, " External functions cannot have more than 10 parameters"},		/* 299, extern_func_err */
+	{335544619, "External functions cannot have more than 10 parameters"},		/* 299, extern_func_err */
 	{335544620, "alias @1 conflicts with an alias in the same statement"},		/* 300, alias_conflict_err */
 	{335544621, "alias @1 conflicts with a procedure in the same statement"},		/* 301, procedure_conflict_error */
 	{335544622, "alias @1 conflicts with a table in the same statement"},		/* 302, relation_conflict_err */
