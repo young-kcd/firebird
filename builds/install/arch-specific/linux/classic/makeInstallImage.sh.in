@@ -64,6 +64,7 @@ addLibs() {
 
 	rm -f $libTarget
 	touch $libTarget
+	echo "#!/bin/sh" >>$libTarget
 	for i in posixLibrary.sh classicLibrary.sh linuxLibrary.sh
 	do
 		echo "# $i" >>$libTarget
