@@ -26,7 +26,7 @@
 @echo loading system errors
 @%FB_MSG_ISQL%system_errors2.sql
 @echo loading French translation
-@%FB_MSG_ISQL%transmsgs.fr_FR.sql
+@%FB_MSG_ISQL%transmsgs.fr_FR2.sql
 @echo loading German translation
 @%FB_MSG_ISQL%transmsgs.de_DE2.sql
 
