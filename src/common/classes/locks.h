@@ -31,6 +31,7 @@
 
 #include "firebird.h"
 #include "fb_atomic.h"
+#include "RefCounted.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
@@ -269,37 +270,11 @@ public:
 // mutex with reference count
 // This class is useful if mutex can be "deleted" by the
 // code between enter and leave calls
-class RefMutex : public Mutex
+class RefMutex : public Mutex, public RefCounted
 {
 public:
-	RefMutex() : Mutex()
-	{
-		m_refcnt = 0;
-	}
-
-	explicit RefMutex(MemoryPool& pool) : Mutex(pool)
-	{
-		m_refcnt = 0;
-	}
-
-	int addRef()
-	{
-		return ++m_refcnt;
-	}
-	
-	int release()
-	{
-		const int ret = --m_refcnt;
-		if (!ret) {
-			delete this;
-		}
-		return ret;
-	}
-
-private:
-	~RefMutex() {}
-
-	AtomicCounter m_refcnt;
+	RefMutex() {}
+	explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
 };
 
 
