@@ -1396,6 +1396,8 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 	// Delist in old attachment
 	if (lock->lck_attachment) {
+		Firebird::MutexLockGuard guard(lock->lck_attachment->att_long_locks_mutex);
+
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(lock->lck_attachment->att_flags != 0xDEADBEEF);
 
@@ -1423,6 +1425,8 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 	// Enlist in new attachment
 	if (attachment) {
+		Firebird::MutexLockGuard guard(attachment->att_long_locks_mutex);
+
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(attachment->att_flags != 0xDEADBEEF);
 

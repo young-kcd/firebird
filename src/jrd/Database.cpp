@@ -20,13 +20,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
- *
- * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * Sean Leyne
  * Claudio Valderrama C.
- *
  */
-
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
@@ -46,7 +42,6 @@
 
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
-
 
 namespace Jrd
 {
@@ -70,6 +65,8 @@ namespace Jrd
 		{
 			MemoryPool::deletePool(dbb_pools[i]);
 		}
+
+		dbb_sync->release();
 	}
 
 	void Database::deletePool(MemoryPool* pool)

@@ -30,11 +30,10 @@
 
 #ifndef JRD_DATABASE_H
 #define JRD_DATABASE_H
- 
+
 #include "firebird.h"
 #include "../jrd/cch.h"
 #include "../jrd/que.h"
-
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "../jrd/dsc.h"
@@ -45,6 +44,8 @@
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
+#include "../include/gen/iberror.h"
+
 #if defined(UNIX) && defined(SUPERSERVER)
 #include <setjmp.h>
 #endif
@@ -57,16 +58,16 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/classes/RefCounted.h"
+#include "../common/classes/PublicHandle.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
 
-
-
 class CharSetContainer;
- 
+
 namespace Jrd
 {
 
@@ -76,7 +77,6 @@ namespace Jrd
 	class jrd_rel;
 	class Shadow;
 	class BlobFilter;
-	//class PageControl;
 	class TxPageCache;
 	class BackupManager;
 	class vcl;
@@ -84,23 +84,14 @@ namespace Jrd
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 
-class Database : public pool_alloc<type_dbb>
+class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 {
-	class Sync
+	class Sync : public Firebird::RefCounted
 	{
 	public:
 		Sync()
-			: threadId(0), isAst(false)
+			: threadId(0), isAst(false), astInhibits(0)
 		{}
-
-		~Sync()
-		{
-			if (threadId)
-			{
-				syncMutex.leave();
-				threadId = 0;
-			}
-		}
 
 		void lock(bool ast = false)
 		{
@@ -113,6 +104,12 @@ class Database : public pool_alloc<type_dbb>
 				stateMutex.leave();
 				++waiters;
 				syncMutex.enter();
+				while (ast && astInhibits)
+				{
+					syncMutex.leave();
+					THREAD_SLEEP(1);
+					syncMutex.enter();
+				}
 				--waiters;
 				stateMutex.enter();
 				threadId = currentId;
@@ -140,7 +137,26 @@ class Database : public pool_alloc<type_dbb>
 			return (waiters.value() > 0);
 		}
 
+		void disableAsts()
+		{
+			++astInhibits;
+		}
+
+		void enableAsts()
+		{
+			--astInhibits;
+		}
+
 	private:
+		~Sync()
+		{
+			if (threadId)
+			{
+				syncMutex.leave();
+				threadId = 0;
+			}
+		}
+
 		// copying is prohibited
 		Sync(const Sync&);
 		Sync& operator=(const Sync&);
@@ -150,29 +166,59 @@ class Database : public pool_alloc<type_dbb>
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
 		bool isAst;
+		int astInhibits;
 	};
 
 public:
 
+	class AstInhibit
+	{
+	public:
+		AstInhibit(Database* dbb)
+			: sync(*dbb->dbb_sync)
+		{
+			sync.disableAsts();
+		}
+		~AstInhibit()
+		{
+			sync.enableAsts();
+		}
+		Sync& sync;
+	};
+
 	class SyncGuard
 	{
 	public:
-		SyncGuard(Database* arg, bool ast = false)
-			: dbb(*arg)
+		SyncGuard(Database* dbb, bool ast = false)
+			: sync(*dbb->dbb_sync)
 		{
-			dbb.dbb_sync.lock(ast);
+			if (!dbb->checkHandle())
+			{
+				Firebird::status_exception::raise(isc_bad_db_handle, 0);
+			}
+
+			sync.addRef();
+			sync.lock(ast);
+
+			if (!dbb->checkHandle())
+			{
+				sync.unlock();
+				sync.release();
+				Firebird::status_exception::raise(isc_bad_db_handle, 0);
+			}
 		}
 
 		~SyncGuard()
 		{
 			try
 			{
-				dbb.dbb_sync.unlock();
+				sync.unlock();
 			}
 			catch (const Firebird::Exception&)
 			{
 				Firebird::MutexLockGuard::onDtorException();
 			}
+			sync.release();
 		}
 
 	private:
@@ -180,19 +226,19 @@ public:
 		SyncGuard(const SyncGuard&);
 		SyncGuard& operator=(const SyncGuard&);
 
-		Database& dbb;
+		Sync& sync;
 	};
 
 	class Checkout
 	{
 	public:
-		explicit Checkout(Database* arg, bool flag = false)
-			: dbb(*arg), io(flag)
+		explicit Checkout(Database* dbb, bool flag = false)
+			: sync(*dbb->dbb_sync), io(flag)
 		{
 #ifndef SUPERSERVER
 			if (!io)
 #endif
-				dbb.checkout();
+				sync.unlock(true);
 		}
 
 		~Checkout()
@@ -200,7 +246,7 @@ public:
 #ifndef SUPERSERVER
 			if (!io)
 #endif
-				dbb.checkin();
+				sync.lock();
 		}
 
 	private:
@@ -208,10 +254,10 @@ public:
 		Checkout(const Checkout&);
 		Checkout& operator=(const Checkout&);
 
-		Database& dbb;
+		Sync& sync;
 		const bool io;
 	};
-	
+
 	class CheckoutLockGuard
 	{
 	public:
@@ -275,7 +321,17 @@ public:
 		return ++counter;
 	}
 
-	mutable Sync dbb_sync;				// Database sync primitive
+	bool checkHandle() const
+	{
+		if (!isKnownHandle())
+		{
+			return false;
+		}
+
+		return TypedHandle::checkHandle();
+	}
+
+	mutable Sync* dbb_sync;				// Database sync primitive
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
@@ -390,16 +446,6 @@ public:
 		return ++dbb_current_id;
 	}
 
-	void checkin() const
-	{
-		dbb_sync.lock();
-	}
-
-	void checkout() const
-	{
-		dbb_sync.unlock(true);
-	}
-
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
 
@@ -431,6 +477,8 @@ private:
 		dbb_charsets(*p),
 		dbb_functions(*p)
 	{
+		dbb_sync = FB_NEW(*getDefaultMemoryPool()) Sync;
+		dbb_sync->addRef();
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);
 		dbb_dyn_req.grow(drq_MAX);

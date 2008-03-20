@@ -216,15 +216,15 @@ namespace
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 	}
 
-	class DatabaseContextHolder : public Jrd::ContextPoolHolder
+	class DatabaseContextHolder : public Database::SyncGuard, public Jrd::ContextPoolHolder
 	{
 	public:
 		DatabaseContextHolder(thread_db* arg)
-			: Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
+			: Database::SyncGuard(arg->getDatabase()),
+			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
 			  tdbb(arg)
 		{
 			Database* dbb = tdbb->getDatabase();
-			dbb->dbb_sync.lock();
 			++dbb->dbb_use_count;
 		}
 
@@ -234,7 +234,6 @@ namespace
 			if (dbb->checkHandle())
 			{
 				--dbb->dbb_use_count;
-				dbb->dbb_sync.unlock();
 			}
 		}
 
@@ -3730,7 +3729,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  **************************************/
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_sync.hasContention())
+	if (dbb->dbb_sync->hasContention())
 	{
 		Database::Checkout dcoHolder(dbb);
 		THREAD_YIELD();
@@ -4839,6 +4838,8 @@ static void detachLocksFromAttachment(Attachment* attachment)
  * block doesn't get dereferenced after it is released
  *
  **************************************/
+	Database::CheckoutLockGuard guard(attachment->att_database, attachment->att_long_locks_mutex);
+
 	Lock* long_lock = attachment->att_long_locks;
 	while (long_lock) {
 		Lock* next = long_lock->lck_next;
