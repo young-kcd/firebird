@@ -89,7 +89,7 @@ const int SVC_cmd_line		= 128;
 class thread_db;
 
 // Service manager
-class Service : public Firebird::UtilSvc, public EngineType<type_svc>
+class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>
 {
 public:		// utilities interface with service
 	// printf() to svc_stdout

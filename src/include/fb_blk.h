@@ -108,12 +108,12 @@ enum BlockType
 
 
 template<BlockType BLOCK_TYPE>
-class EngineType
+class TypedHandle
 {
 public:
-	EngineType() : blockType(BLOCK_TYPE) {}
+	TypedHandle() : blockType(BLOCK_TYPE) {}
 
-	EngineType<BLOCK_TYPE>& operator= (const EngineType<BLOCK_TYPE>& from)
+	TypedHandle<BLOCK_TYPE>& operator= (const TypedHandle<BLOCK_TYPE>& from)
 	{
 		blockType = from.blockType;
 		return *this;
@@ -124,7 +124,7 @@ public:
 		return blockType;
 	}
 
-	bool checkHandle() const
+	virtual bool checkHandle() const
 	{
 		if (!this)
 		{
@@ -139,7 +139,7 @@ private:
 };
 
 template<BlockType BLOCK_TYPE = type_unknown>
-class pool_alloc : public EngineType<BLOCK_TYPE>
+class pool_alloc : public TypedHandle<BLOCK_TYPE>
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
@@ -169,7 +169,7 @@ private:
 };
 
 template<typename RPT, BlockType BLOCK_TYPE = type_unknown>
-class pool_alloc_rpt : public EngineType<BLOCK_TYPE>
+class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
 {
     public:
 		typedef RPT blk_repeat_type;
