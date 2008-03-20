@@ -1,3 +1,92 @@
+2008-03-20 18:00  dimitr
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.10),
+	common_classic.vcproj (1.10):
+
+	Update the makefiles.
+
+2008-03-20 17:42  dimitr
+
+	* firebird2/src/jrd/: Database.cpp (1.4), Database.h (1.8),
+	GlobalRWLock.cpp (1.15), GlobalRWLock.h (1.13), jrd.cpp (1.421),
+	jrd.h (1.230), lck.cpp (1.80):
+
+	1) Added proper handle validation for dbb.  2) Changed dbb_sync
+	lifestyle handling.  3) Sync'ed access to the att_long_locks.  4)
+	Put in a temporary workaround for nbackup deadlocks.
+
+2008-03-20 17:41  dimitr
+
+	* firebird2/src/common/classes/: PublicHandle.cpp (1.1),
+	PublicHandle.h (1.1):
+
+	1) Added proper handle validation for dbb.  2) Changed dbb_sync
+	lifestyle handling.  3) Sync'ed access to the att_long_locks.
+
+2008-03-20 17:38  dimitr
+
+	* firebird2/src/include/fb_blk.h (1.16):
+
+	Correction. We cannot have vtbl in child classes.
+
+2008-03-20 17:23  dimitr
+
+	* firebird2/src/: include/fb_blk.h (1.15), jrd/svc.h (1.55):
+
+	A bit better name.
+
+2008-03-20 14:08  dimitr
+
+	* firebird2/src/jrd/nbak.cpp (1.77):
+
+	Misc.
+
+2008-03-20 14:00  dimitr
+
+	* firebird2/src/common/classes/: RefCounted.h (1.1), locks.h
+	(1.44):
+
+	Make the reference counting a common feature.
+
+2008-03-20 13:14  robocop
+
+	* firebird2/src/jrd/os/win32/winnt.cpp (1.69):
+
+	Misc indication.
+
+2008-03-20 11:04  robocop
+
+	* firebird2/builds/win32/create_msgs.bat (1.9):
+
+	Redirect the build to the new, cleaned French translation.
+
+2008-03-20 11:03  robocop
+
+	* firebird2/src/: msgs/messages2.sql (1.32), include/gen/msgs.h
+	(1.98):
+
+	Misc fixed to the default messages.
+
+2008-03-20 11:00  robocop
+
+	* firebird2/src/msgs/transmsgs.de_DE2.sql (1.2):
+
+	Fix the German translation of the firebird.msg file to sync with
+	the English (and default) version.
+
+2008-03-20 10:59  robocop
+
+	* firebird2/src/msgs/transmsgs.fr_FR2.sql (1.1):
+
+	Clean, order and fix the French translation of the firebird.msg
+	file.
+
+2008-03-19 21:46  dimitr
+
+	* firebird2/src/jrd/lck.cpp (1.79):
+
+	This time it should be what I wanted to see originally :-)
+
 2008-03-19 19:53  skidder
 
 	* firebird2/builds/win32/setenvvar.bat (1.18):
