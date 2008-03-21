@@ -1,3 +1,83 @@
+2008-03-21 20:02  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.363), jrd/exe.cpp (1.247):
+
+	More problematic cases of CORE-1798 - thanks to Dmitry
+
+2008-03-21 18:05  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.246):
+
+	Fixed CORE-1798 - RDB$DB_KEY evaluates to NULL in INSERT ...
+	RETURNING
+
+2008-03-21 16:39  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.217):
+
+	Fixed CORE-1763 : The client library does not set options
+	SO_KEEPALIVE, TCP_NODELAY for socket at connection
+
+2008-03-21 15:52  hvlad
+
+	* firebird2/src/remote/: xnet.cpp (1.105), os/win32/wnet.cpp
+	(1.50):
+
+	Link port into parent's list only after it full creation.  Not used
+	currently in XNET\WNET but looks better ;)
+
+2008-03-21 13:54  robocop
+
+	* firebird2/src/msgs/messages2.sql (1.33):
+
+	I hope that I finally fixed all errors generated in the migration
+	from the printf-based (%) messages to the MsgPrint-based (@)
+	messages. They were mostly wrong numbered parameters.  Fixed some
+	minor historical inconsistencies that predate FB, too.
+
+2008-03-21 10:12  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.216):
+
+	Fixed races when using uninitialized object in
+	unhook_disconnected_ports - thanks to Dmitry Kovalenko
+
+2008-03-21 09:23  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.41):
+
+	Cleanup.
+
+2008-03-21 08:36  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.147):
+
+	Fixed unexpected crashed in purge_process().
+
+2008-03-21 07:34  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.164):
+
+	Table and procedure must share the same namespace. Thanks to
+	Adriano.
+
+2008-03-21 03:42  asfernandes
+
+	* firebird2/src/: common/classes/PublicHandle.h (1.2),
+	common/classes/RefCounted.h (1.2), common/classes/alloc.cpp
+	(1.105), common/classes/array.h (1.45), dsql/pass1.cpp (1.362),
+	jrd/Database.h (1.10), jrd/GlobalRWLock.h (1.14), jrd/lck.cpp
+	(1.81), jrd/why.cpp (1.182), remote/inet.cpp (1.215):
+
+	Misc
+
+2008-03-21 03:39  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.87),
+	src/jrd/Database.h (1.9):
+
+	Fix GCC build
+
 2008-03-20 18:00  dimitr
 
 	* firebird2/builds/win32/msvc8/: common.vcproj (1.10),
