@@ -3777,6 +3777,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			}
 		}
 
+		rpb->rpb_number.setValid(true);
+
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
