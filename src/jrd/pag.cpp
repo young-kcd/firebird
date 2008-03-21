@@ -188,7 +188,7 @@ static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 	archIntel86, // CLASS_FREEBSD_I386
     archIntel86, // CLASS_NETBSD_I386
 	archUnknown, // CLASS_DARWIN_PPC
-	archUnknown  // CLASS_LINUX_AMD64
+	archUnknown, // CLASS_LINUX_AMD64
 	archIntel86  // CLASS_DARWIN_I386
 };
 
