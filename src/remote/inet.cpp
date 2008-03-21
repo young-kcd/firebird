@@ -747,7 +747,15 @@ rem_port* INET_connect(const TEXT* name,
 
     int n;
     
-	if (packet) {
+	if (packet) 
+	{
+		if (! setNoNagleOption(port)) {
+			inet_error(port, "setsockopt TCP_NODELAY",
+					   isc_net_connect_err, INET_ERRNO);
+			disconnect(port);
+			return NULL;
+		}
+
 		int inetErrNo = 0;
 		for (int i = 0; i < MAX_HOST_ADDRESS_NUMBER; i++)
 		{
@@ -1330,6 +1338,10 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	}
 	address.sin_family = AF_INET;
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
+
+	int optval = 1;
+	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
+			   (SCHAR*) &optval, sizeof(optval));
 
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
