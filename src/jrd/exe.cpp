@@ -2937,6 +2937,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				}
 			}
 
+			new_rpb->rpb_number = org_rpb->rpb_number;
+			new_rpb->rpb_number.setValid(true);
+
 			jrd_req* trigger;
 			if (relation->rel_post_modify &&
 				which_trig != PRE_TRIG &&
