@@ -233,8 +233,8 @@ public:
 	class Checkout
 	{
 	public:
-		explicit Checkout(Database* dbb, bool flag = false)
-			: sync(*dbb->dbb_sync), io(flag)
+		explicit Checkout(Database* dbb, bool io_flag = false)
+			: sync(*dbb->dbb_sync), io(io_flag)
 		{
 #ifndef SUPERSERVER
 			if (!io)
