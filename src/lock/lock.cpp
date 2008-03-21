@@ -2601,7 +2601,8 @@ static void post_blockage(lrq* request, lbl* lock)
 	while (blocking_owners.getCount())
 	{
 		own* const blocking_owner = (own*) SRQ_ABS_PTR(blocking_owners.pop());
-		if (!signal_owner(blocking_owner, owner_offset))
+		if (blocking_owner->own_count &&
+			!signal_owner(blocking_owner, owner_offset))
 		{
 			dead_processes.add(blocking_owner->own_process);
 		}
