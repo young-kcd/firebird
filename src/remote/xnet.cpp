@@ -626,18 +626,6 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_connection = REMOTE_make_string(buffer);
 	fb_utils::snprintf(buffer, sizeof(buffer), "XNet (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
-	if (parent) {
-		port->port_parent = parent;
-		port->port_next = parent->port_clients;
-		parent->port_clients = parent->port_next = port;
-		port->port_handle = parent->port_handle;
-		port->port_server = parent->port_server;
-		port->port_server_flags = parent->port_server_flags;
-		if (port->port_connection)
-			ALLR_free(port->port_connection);
-		port->port_connection =
-			REMOTE_make_string(parent->port_connection->str_data);
-	}
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
@@ -658,6 +646,20 @@ static rem_port* alloc_port(rem_port* parent,
 
 	xdrxnet_create(&port->port_send, port, send_buffer,	send_length, XDR_ENCODE);
 	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
+
+	if (parent) 
+	{
+		port->port_parent = parent;
+		port->port_next = parent->port_clients;
+		parent->port_clients = parent->port_next = port;
+		port->port_handle = parent->port_handle;
+		port->port_server = parent->port_server;
+		port->port_server_flags = parent->port_server_flags;
+		if (port->port_connection) {
+			ALLR_free(port->port_connection);
+		}
+		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
+	}
 
 	return port;
 }
