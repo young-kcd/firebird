@@ -4609,7 +4609,7 @@ static void check_unique_name(thread_db* tdbb,
 
 	try
 	{
-		if (object_type == obj_relation)
+		if (object_type == obj_relation || object_type == obj_procedure)
 		{
 			request = CMP_find_request(tdbb, drq_l_rel_name, DYN_REQUESTS);
 
@@ -4624,22 +4624,23 @@ static void check_unique_name(thread_db* tdbb,
 
 			if (!DYN_REQUEST(drq_l_rel_name))
 				DYN_REQUEST(drq_l_rel_name) = request;
-		}
-		else if (object_type == obj_procedure)
-		{
-			request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
 
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
+			if (!error_code)
+			{
+				request = CMP_find_request(tdbb, drq_l_prc_name, DYN_REQUESTS);
+
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+					EPRC IN RDB$PROCEDURES WITH EPRC.RDB$PROCEDURE_NAME EQ object_name.c_str()
+
+					if (!DYN_REQUEST(drq_l_prc_name))
+						DYN_REQUEST(drq_l_prc_name) = request;
+
+					error_code = 135;
+				END_FOR;
 
 				if (!DYN_REQUEST(drq_l_prc_name))
 					DYN_REQUEST(drq_l_prc_name) = request;
-
-				error_code = 135;
-			END_FOR;
-
-			if (!DYN_REQUEST(drq_l_prc_name))
-				DYN_REQUEST(drq_l_prc_name) = request;
+			}
 		}
 		else if (object_type == obj_index)
 		{
