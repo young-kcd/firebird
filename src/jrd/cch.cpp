@@ -1820,7 +1820,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 		bdb->bdb_backup_lock_owner = attachment_lock_owner;
 	}
 	
-set_diff_page(tdbb, bdb);
+	set_diff_page(tdbb, bdb);
 }
 
 

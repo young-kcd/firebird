@@ -163,12 +163,12 @@ namespace {
 			{
 				FailedLogin& l = (*this)[pos];
 				if (t - l.lastAttempt >= FAILURE_DELAY)
-		{
+				{
 					l.failCount = 0;
 				}
 				l.lastAttempt = t;
 				if (++l.failCount >= MAX_FAILED_ATTEMPTS)
-			{
+				{
 					l.failCount = 0;
 					Jrd::DelayFailedLogin::raise(FAILURE_DELAY);
 				}
