@@ -1198,7 +1198,11 @@ static rem_port* alloc_port( rem_port* parent)
 
 		INET_initialized = true;
 	}
+
+
 	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
+	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
+	port->port_sync->addRef();
 	port->port_type = port_inet;
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0);
@@ -1210,18 +1214,6 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_connection = REMOTE_make_string(buffer);
 	SNPRINTF(buffer, FB_NELEM(buffer), "tcp (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
-
-	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) 
-	{
-		Firebird::MutexLockGuard guard(port_mutex);
-
-		port->port_parent = parent;
-		port->port_next = parent->port_clients;
-		parent->port_clients = parent->port_next = port;
-		port->port_handle = parent->port_handle;
-		port->port_server = parent->port_server;
-		port->port_server_flags = parent->port_server_flags;
-	}
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
@@ -1250,8 +1242,19 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
 	port->port_que_sync->addRef();
 #endif
-	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_sync->addRef();
+
+	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) 
+	{
+		Firebird::MutexLockGuard guard(port_mutex);
+
+		port->port_parent = parent;
+		port->port_next = parent->port_clients;
+		port->port_handle = parent->port_handle;
+		port->port_server = parent->port_server;
+		port->port_server_flags = parent->port_server_flags;
+
+		parent->port_clients = parent->port_next = port;
+	}
 
 	return port;
 }
