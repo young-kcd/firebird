@@ -266,7 +266,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool ov
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
-				 isc_arg_cstring, string.length(), ERR_string(file_name),
+				 isc_arg_cstring, file_name.length(), ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
 
@@ -1159,14 +1159,14 @@ int PIO_unlink (const Firebird::PathName& file_name)
  *
  **************************************/
 
-	if (PIO_on_raw_device(file_name)
+	if (PIO_on_raw_device(file_name))
 		return raw_devices_unlink_database(file_name);
 	else
 		return unlink(file_name.c_str());
 }
 
 
-static bool PIO_on_raw_device(
+bool PIO_on_raw_device(
 	const Firebird::PathName& file_name)
 {
 /**************************************
