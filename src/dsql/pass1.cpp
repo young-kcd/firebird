@@ -4052,6 +4052,9 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 						  0);
 			}
 
+			if (context->ctx_flags & CTX_null)
+				return MAKE_node(nod_null, 0);
+
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
 			rel_node->nod_arg[0] = (dsql_nod*) context;
@@ -4080,6 +4083,9 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
 						  0);
 			}
+
+			if (context->ctx_flags & CTX_null)
+				return MAKE_node(nod_null, 0);
 
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
