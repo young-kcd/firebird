@@ -96,17 +96,17 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 
 ULONG CV_wc_to_wc(csconvert* obj,
 				  ULONG src_len,
-				  const UCHAR* p_src_ptr,
+				  const USHORT* src_ptr,
 				  ULONG dest_len,
-				  UCHAR* p_dest_ptr,
+				  USHORT* dest_ptr,
 				  USHORT *err_code,
 				  ULONG *err_position)
 {
-	fb_assert(p_src_ptr != NULL || p_dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == CV_wc_to_wc);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CV_wc_to_wc));
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -114,20 +114,17 @@ ULONG CV_wc_to_wc(csconvert* obj,
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
-	if (p_dest_ptr == NULL)
+	if (dest_ptr == NULL)
 		return (src_len);
-
-	Firebird::Aligner<USHORT> s(p_src_ptr, src_len);
-	const USHORT* src_ptr = s;
-	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
-	USHORT* dest_ptr = d;
 
 	const USHORT* const start = dest_ptr;
 	while ((src_len > 1) && (dest_len > 1)) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
 		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)[
-			((const USHORT*) obj->csconvert_impl->csconvert_misc)[
-				(USHORT) uni / 256] + (uni % 256)];
+												   ((const USHORT*) obj->csconvert_impl->
+													csconvert_misc)[(USHORT)
+																	uni / 256]
+												   + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -152,15 +149,15 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 					   ULONG src_len,
 					   const BYTE* src_ptr,
 					   ULONG dest_len,
-					   BYTE* dest_ptr,
-					   USHORT* err_code,
-					   ULONG* err_position)
+					   BYTE *dest_ptr,
+					   USHORT *err_code,
+					   ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == CV_nc_to_unicode);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CV_nc_to_unicode));
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(sizeof(UNICODE) == 2);
 
@@ -285,11 +282,11 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_865, CV_dos_865_x_iso8859_1)
 #include "../intl/conversions/tx865_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_865_to_iso88591, NULL);
 	else
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_iso88591_to_865, NULL);
 	CONVERT_RETURN;
 }
@@ -301,11 +298,11 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_dos_865)
 #include "../intl/conversions/tx437_865.h"
 	if (dest_cs == CS_DOS_865)
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_437_to_865, NULL);
 	else
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_865_to_437, NULL);
 
 	CONVERT_RETURN;
@@ -318,11 +315,11 @@ CONVERT_ENTRY(CS_ISO8859_1, CS_DOS_437, CV_dos_437_x_iso8859_1)
 #include "../intl/conversions/tx437_lat1.h"
 	if (dest_cs == CS_ISO8859_1)
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_437_to_iso88591, NULL);
 	else
 		CV_convert_init(csptr, dest_cs, source_cs,
-						eight_bit_convert,
+						reinterpret_cast<pfn_INTL_convert>(eight_bit_convert),
 						cvt_iso88591_to_437, NULL);
 
 	CONVERT_RETURN;

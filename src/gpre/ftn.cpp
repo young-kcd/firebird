@@ -159,7 +159,23 @@ static TEXT output_buffer[512];
 static bool global_first_flag = false;
 static adl* array_decl_list;
 
-#if (defined AIX || defined AIX_PPC)
+#ifdef VMS
+const char* const INCLUDE_ISC_FTN	= "       include  'interbase:[syslib]gds.for\' \n\n";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "%VAL(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "%VAL(";
+const char* const VAL_2				= ")";
+const char* const REF_1				= "%REF(";
+const char* const REF_2				= ")";
+const char* const I4CONST_1			= "%VAL(";
+const char* const I4CONST_2			= ")";
+const char* const COMMENT			= "C     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
+#elif (defined AIX || defined AIX_PPC)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -193,8 +209,25 @@ const char* const I4CONST_2			= "";
 const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
+#elif defined(SINIXZ)
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
+const char* const INCLUDE_FTN_FILE	= "include/gds.f";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "";
+const char* const I2CONST_2			= "";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "";
+const char* const VAL_2				= "";
+const char* const REF_1				= "";
+const char* const REF_2				= "";
+const char* const I4CONST_1			= "";
+const char* const I4CONST_2			= "";
+const char* const COMMENT			= "*     ";
+const char* const INLINE_COMMENT	= "\n*                ";
+const char* const COMMA				= ",";
 #elif defined(LINUX)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -228,7 +261,7 @@ const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
 #elif (defined FREEBSD || defined NETBSD)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
+const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/interbase/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
 const char* const I2CONST_1			= "";
@@ -261,7 +294,7 @@ const char* const I4CONST_2			= "";
 const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
-#elif defined(HPUX)
+#elif defined(hpux)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -309,7 +342,11 @@ const char* const ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 const char* const DSQL_I2CONST_1			= I2CONST_1;
 const char* const DSQL_I2CONST_2			= I2CONST_2;
 
+#ifdef VMS
+const char* const NULL_SQLDA	= "%VAL(0)";
+#else
 const char* const NULL_SQLDA	= "0";
+#endif
 
 
 //____________________________________________________________
@@ -516,9 +553,6 @@ void FTN_action(const act* action, int column)
 		gen_trans(action);
 		break;
 	case ACT_rollback:
-		gen_trans(action);
-		break;
-	case ACT_rollback_retain_context:
 		gen_trans(action);
 		break;
 	case ACT_routine:
@@ -1477,7 +1511,7 @@ static void gen_database_decls(const act* action)
 			dcl_ndx_var = true;
 		}
 
-#ifdef HPUX
+#ifdef hpux
 		// build fields to handle start_multiple 
 
 		count++;
@@ -1495,7 +1529,7 @@ static void gen_database_decls(const act* action)
 		printa(COLUMN, "COMMON /%s/ %s", name, name);
 	}
 
-#ifdef HPUX
+#ifdef hpux
 //  declare array and set up equivalence for start_multiple vector 
 
 	const SSHORT length = 12;
@@ -1721,7 +1755,7 @@ static void gen_dyn_execute(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1761,7 +1795,7 @@ static void gen_dyn_fetch(const act* action)
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1813,7 +1847,7 @@ static void gen_dyn_immediate(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1855,7 +1889,7 @@ static void gen_dyn_insert(const act* action)
 	const dyn* statement = (const dyn*) action->act_object;
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1904,7 +1938,7 @@ static void gen_dyn_open(const act* action)
 
 	const TEXT* sqlda = statement->dyn_sqlda;
 	const TEXT* sqlda2 = statement->dyn_sqlda2;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64], s3[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -1964,7 +1998,7 @@ static void gen_dyn_prepare(const act* action)
 	}
 
 	const TEXT* sqlda = statement->dyn_sqlda;
-#ifdef HPUX
+#ifdef hpux
 	TEXT s2[64];
 	if (sqlda) {
 		sprintf(s2, "isc_baddress (%s)", sqlda);
@@ -3402,8 +3436,8 @@ static void gen_t_start(const act* action)
 			}
 		}
 
-#ifdef HPUX
-//  If this is HPUX we should be building a teb vector here 
+#ifdef hpux
+//  If this is hpux we should be building a teb vector here 
 //  with the tpb address and length specified 
 
 	int count = 0;
@@ -3521,19 +3555,12 @@ static void gen_tpb_decls(const tpb* tpb_buffer)
 
 static void gen_trans(const act* action)
 {
-	if (action->act_type == ACT_commit_retain_context) {
+	if (action->act_type == ACT_commit_retain_context)
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)",
-			   status_vector(action),
-			   (action->act_object) ?
-			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else {
+	else
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3541,8 +3568,6 @@ static void gen_trans(const act* action)
 				status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-
 	status_and_stop(action);
 
 }
@@ -4073,7 +4098,7 @@ static void t_start_auto(const gpre_req* request,
 		}
 
 		count++;
-#ifdef HPUX
+#ifdef hpux
 		printa(COLUMN, "ISC_TEB%d_LEN = 0", count);
 		printa(COLUMN, "ISC_TEB%d_TPB = ISC_NULL", count);
 		printa(COLUMN, "ISC_TEB%d_DBB = ISC_BADDRESS (%s)", count,
@@ -4091,7 +4116,7 @@ static void t_start_auto(const gpre_req* request,
 			printa(COLUMN, "IF (%s) THEN", buffer);
 	}
 
-#ifdef HPUX
+#ifdef hpux
 	printa(COLUMN_INDENT, "CALL ISC_START_MULTIPLE (%s, %s, %s%d%s, ISC_TEB)",
 		   vector, trname, I2CONST_1, count, I2CONST_2);
 #else

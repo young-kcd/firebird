@@ -30,6 +30,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/isc_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/vmslo_proto.h"
 
 typedef int PTR;

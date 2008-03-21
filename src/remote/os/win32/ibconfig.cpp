@@ -32,12 +32,12 @@
 #include "../jrd/file_params.h"
 
 #include "../jrd/svc_undoc.h"
+#include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../remote/os/win32/window_proto.h"
 
 #include "../remote/os/win32/ibconfig.h"
 #include "../remote/os/win32/property.rh"
-#include "../remote/os/win32/window.h"
 
 #include "../jrd/ibase.h"
 
@@ -62,7 +62,7 @@ static BOOL bServerApp = FALSE;	// Flag indicating if Server application
 static char szService[SERVICE_LEN];	// To store the service path
 
 // Window procedure
-LRESULT APIENTRY FirebirdPage(HWND, UINT, WPARAM, LPARAM);
+LRESULT APIENTRY InterbasePage(HWND, UINT, WPARAM, LPARAM);
 LRESULT APIENTRY OSPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions for reading and writing settings
@@ -135,18 +135,18 @@ void AddConfigPages(HWND hPropSheet, HINSTANCE hInst)
 	IBPage.hInstance = hInst;
 	IBPage.pszTemplate = MAKEINTRESOURCE(CONFIG_DLG);
 	IBPage.pszTitle = "FB Settings";
-	IBPage.pfnDlgProc = (DLGPROC) FirebirdPage;
+	IBPage.pfnDlgProc = (DLGPROC) InterbasePage;
 	IBPage.pfnCallback = NULL;
 
 	PropSheet_AddPage(hPropSheet, CreatePropertySheetPage(&IBPage));
 }
 
-LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
+LRESULT CALLBACK InterbasePage(HWND hDlg, UINT unMsg, WPARAM wParam,
 							   LPARAM lParam)
 {
 /******************************************************************************
  *
- *  F i r e b i r d P a g e
+ *  I n t e r B a s e P a g e
  *
  ******************************************************************************
  *
@@ -255,7 +255,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:	// When the page is about to lose focus
 			{
-				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+				SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 				break;
 			}
 		case PSN_SETACTIVE:	// When the page is about to recieve 
@@ -279,7 +279,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				}
 				else			// Error writing the values
 				{
-					SetWindowLongPtr(hDlg, DWLP_MSGRESULT, TRUE);
+					SetWindowLong(hDlg, DWL_MSGRESULT, TRUE);
 					return TRUE;
 				}
 			break;
@@ -324,8 +324,7 @@ BOOL ReadFBSettings(HWND hDlg)
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
-	char spb[] = {isc_spb_version1};
-	isc_service_attach(pdwStatus, 0, szService, &hService, sizeof(spb), spb);
+	isc_service_attach(pdwStatus, 0, szService, &hService, 0, "");
 
 	*pchPtr = '\0';
 
@@ -566,12 +565,13 @@ BOOL ValidateUser(HWND hParentWnd)
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
 		return FALSE;
 	}
-
-	szSysDbaPasswd[0] = '\0';
-	return (DialogBox
-			((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
-			 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
-			 (DLGPROC) PasswordDlgProc) > 0);
+	else {
+		szSysDbaPasswd[0] = '\0';
+		return (DialogBox
+				((HINSTANCE) GetWindowLong(hParentWnd, GWL_HINSTANCE),
+				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
+				 (DLGPROC) PasswordDlgProc) > 0);
+	}
 }
 
 BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
@@ -616,7 +616,9 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
+			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
+			HCURSOR hOldCursor = NULL;
 
 			szPassword[0] = '\0';
 
@@ -626,8 +628,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity
-			HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-			isc_svc_handle hService = NULL;
+			hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 			isc_service_attach(pdwStatus, 0, "query_server",
 							   &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
@@ -647,14 +648,18 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
-		if (wParam == IDCANCEL) {
-			EndDialog(hDlg, 0);
-			return TRUE;
+		else {
+			if (wParam == IDCANCEL) {
+				EndDialog(hDlg, 0);
+				return TRUE;
+			}
 		}
 		break;
 	case WM_CLOSE:
-		EndDialog(hDlg, 0);
-		return TRUE;
+		{
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
 	default:
 		return FALSE;
 	}

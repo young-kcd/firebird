@@ -33,8 +33,6 @@
  *				Honor explicit USER keyword in GRANTs and REVOKEs. *
  *    2002.08.10 Dmitry Yemanov: ALTER VIEW
  *    2002.10.29 Nickolay Samofatov: Added support for savepoints
- *
- *	Alex Peshkov
  */
 
 #include "firebird.h"
@@ -51,11 +49,13 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
 #include "../jrd/dyn.h"
 //#include "../jrd/license.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -70,16 +70,11 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
-#include "../jrd/jrd_pwd.h"
-#include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
-#include "../jrd/msg_encode.h"
-
-using MsgFormat::SafeArg;
-
 
 DATABASE DB = STATIC "ODS.RDB";
 
@@ -90,12 +85,10 @@ static void grant(Global*, const UCHAR**);
 static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const Firebird::MetaName&,
 	const Firebird::MetaName&, bool);
 static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName&, const Firebird::MetaName&);
-static const char* privilege_name(char symbol);
 static void	revoke_permission(Global*, const UCHAR**);
 static void store_privilege(Global*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&,
 	const TEXT*, SSHORT, SSHORT, int);
 static void	set_field_class_name(Global*, const Firebird::MetaName&, const Firebird::MetaName&);
-static void dyn_user(Global*, const UCHAR**);
 
 
 void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
@@ -113,7 +106,10 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+
+#if defined(V4_THREADING) || (defined(SUPERSERVER) && defined(WIN_NT))
+	Database* dbb = tdbb->tdbb_database;
+#endif
 
 	const UCHAR* ptr = ddl;
 
@@ -130,11 +126,20 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	MemoryPool* tempPool = dbb->createPool();
+	JrdMemoryPool* tempPool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
 	try {
-		Database::CheckoutLockGuard guard(dbb, dbb->dbb_dyn_mutex);
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THREAD_EXIT();
+		THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+		THREAD_ENTER();
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
 
 		VIO_start_save_point(tdbb, transaction);
 		transaction->tra_save_point->sav_verb_count++;
@@ -142,8 +147,17 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		DYN_execute(&gbl, &ptr, NULL, NULL, NULL, NULL, NULL);
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
+
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
@@ -155,10 +169,18 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (const Firebird::Exception&) {
+			catch (const std::exception&) {
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
+
+#if defined(SUPERSERVER) && defined(WIN_NT)
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#else
+#ifdef V4_THREADING
+		V4_JRD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_dyn);
+#endif
+#endif
 
 		ERR_punt();
 	}
@@ -167,7 +189,11 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 void DYN_error(bool	status_flag,
 			   USHORT	number,
-			   const SafeArg& sarg)
+			   const TEXT*	arg1,
+			   const TEXT*	arg2,
+			   const TEXT*	arg3,
+			   const TEXT*	arg4,
+			   const TEXT*	arg5)
 {
 /**************************************
  *
@@ -185,19 +211,11 @@ void DYN_error(bool	status_flag,
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
-	FB_SQLSTATE_STRING sqlstate;
 
 	if (number)
-	{
-		fb_msg_format(NULL, DYN_MSG_FAC, number,
-					  sizeof(error_buffer), error_buffer, sarg);
-
-		ISC_STATUS_ARRAY temp_status = {isc_arg_gds, 0, isc_arg_end};
-		temp_status[1] = ENCODE_ISC_MSG(number, DYN_MSG_FAC);
-		fb_sqlstate(sqlstate, temp_status);
-		if (!strcmp(sqlstate, "HY000"))
-			strcpy(sqlstate, "42000"); // default SQLSTATE for DYN
-	}
+		gds__msg_format(NULL, DYN_MSG_FAC, number,
+						sizeof(error_buffer), error_buffer, arg1,
+						arg2, arg3, arg4, arg5);
 
 	ISC_STATUS_ARRAY local_status;
 	ISC_STATUS* v1 = local_status;
@@ -209,8 +227,6 @@ void DYN_error(bool	status_flag,
 		*v1++ = isc_random;
 		*v1++ = isc_arg_string;
 		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
-		*v1++ = isc_arg_sql_state;
-		*v1++ = (ISC_STATUS) ERR_cstring(sqlstate);
 	}
 	if (status_flag) {
 		const ISC_STATUS* v2 = tdbb->tdbb_status_vector;
@@ -239,7 +255,11 @@ void DYN_error(bool	status_flag,
 
 void DYN_error_punt(bool	status_flag,
 					USHORT	number,
-					const SafeArg& arg)
+					const TEXT*	arg1,
+					const TEXT*	arg2,
+					const TEXT*	arg3,
+					const TEXT*	arg4,
+					const TEXT*	arg5)
 {
 /**************************************
  *
@@ -252,47 +272,7 @@ void DYN_error_punt(bool	status_flag,
  *
  **************************************/
 
-	DYN_error(status_flag, number, arg);
-	ERR_punt();
-}
-
-
-void DYN_error_punt(bool	status_flag,
-					USHORT	number,
-					const char* str)
-{
-/**************************************
- *
- *	D Y N _ e r r o r _ p u n t
- *
- **************************************
- *
- * Functional description
- *	DDL failed.
- *
- **************************************/
-
-	DYN_error(status_flag, number, SafeArg() << str);
-	ERR_punt();
-}
-
-
-void DYN_error_punt(bool	status_flag,
-					USHORT	number)
-{
-/**************************************
- *
- *	D Y N _ e r r o r _ p u n t
- *
- **************************************
- *
- * Functional description
- *	DDL failed.
- *
- **************************************/
-
-	static const SafeArg dummy;
-	DYN_error(status_flag, number, dummy);
+	DYN_error(status_flag, number, arg1, arg2, arg3, arg4, arg5);
 	ERR_punt();
 }
 
@@ -315,7 +295,7 @@ bool DYN_is_it_sql_role(Global*						gbl,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -357,8 +337,7 @@ void DYN_unsupported_verb(void)
  *
  **************************************/
 
-	static const SafeArg dummy;
-	DYN_error_punt(false, 2, dummy);	/* msg 2: "unsupported DYN verb" */
+	DYN_error_punt(false, 2, NULL, NULL, NULL, NULL, NULL);	/* msg 2: "unsupported DYN verb" */
 }
 
 
@@ -416,10 +395,6 @@ void DYN_execute(Global* gbl,
 
 		case isc_dyn_def_collation:
 			DYN_define_collation(gbl, ptr);
-			break;
-
-		case isc_dyn_del_collation:
-			DYN_delete_collation(gbl, ptr);
 			break;
 
 		case isc_dyn_def_rel:
@@ -640,14 +615,6 @@ void DYN_execute(Global* gbl,
 			DYN_modify_collation(gbl, ptr);
 			break;
 
-		case isc_dyn_mapping:
-			DYN_modify_mapping(gbl, ptr);
-			break;
-
-		case isc_dyn_user:
-			dyn_user(gbl, ptr);
-			break;
-
 		default:
 			DYN_unsupported_verb();
 			break;
@@ -677,7 +644,7 @@ SLONG DYN_get_number(const UCHAR** ptr)
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool err_flag)
 {
 /**************************************
  *
@@ -688,46 +655,43 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
  * Functional description
  *	Pick up a string, move to a target, and, if requested,
  *	set a null flag.  Return length of string.
- *	If destination field size is too small, punt.
+ *	If destination field size is too small, punt if err_flag is true,
+ *	otherwise try to copy as much as possible and skip the rest.
  *	Strings need enough space for null pad.
  *
  **************************************/
+	USHORT e = 0;
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	Firebird::HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
-
 	if (l) {
 		if (length >= size) {
-			DYN_error_punt(false, 159);
-			// msg 159: Name longer than database field size
+			if (err_flag) {
+				DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+			/* msg 159: Name longer than database field size */
+			}
+			else {
+				l = size - 1;
+				e = length - l;
+			}
 		}
-
-		TEXT* p2 = (transliterate ? temp.getBuffer(length) : field);
-
 		do {
-			*p2++ = *p++;
+			*field++ = *p++;
 		} while (--l);
+		for (; e; e--)
+			p++;
 	}
 
+	*field = 0;
 	*ptr = p;
-
-	if (transliterate)
-	{
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) field, size - 1,
-			ttype_dynamic, (const BYTE*) temp.begin(), length, ERR_post);
-	}
-
-	field[length] = 0;
 
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool err_flag)
 {
 /**************************************
  *
@@ -737,79 +701,28 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool 
  *
  * Functional description
  *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt.
+ *	If destination field size is too small, punt if err_flag is true,
+ *	otherwise try to copy as much as possible and skip the rest.
  *
  **************************************/
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	if (length > MAX_SQL_IDENTIFIER_LEN)
+	if (err_flag && length > MAX_SQL_IDENTIFIER_LEN)
 	{
-		DYN_error_punt(false, 159);
-		// msg 159: Name longer than database field size
+		DYN_error_punt(false, 159, NULL, NULL, NULL, NULL, NULL);
+		/* msg 159: Name longer than database field size */
 	}
 	field.assign(p, length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
-
 	return length;
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, Firebird::string& field, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up an object name, move to a target. Return length of string.
- *	If destination field size is too small, punt.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	
-	if (length > MAX_SQL_IDENTIFIER_LEN)
-	{
-		DYN_error_punt(false, 159);
-		// msg 159: Name longer than database field size
-	}
-	field.assign(p, length);
-	p += length;
-
-	*ptr = p;
-
-	if (transliterate)
-	{
-		TEXT temp[MAX_SQL_IDENTIFIER_LEN];
-
-		length = INTL_convert_bytes(JRD_get_thread_data(),
-			ttype_metadata, (BYTE*) temp, sizeof(temp),
-			ttype_dynamic, (const BYTE*) field.c_str(), field.length(), ERR_post);
-		field.assign(temp, length);
-	}
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool)
 {
 /**************************************
  *
@@ -819,78 +732,17 @@ USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool 
  *
  * Functional description
  *	Pick up a file name, move to a target. Return length 
- *	of string.
+ *	of string. Copy all available data ignoring err_flag.
  *
  **************************************/
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
+	
 	field.assign(p, length);
 	p += length;
 
 	*ptr = p;
-
-	if (transliterate)
-	{
-		thread_db* tdbb = JRD_get_thread_data();
-		Firebird::PathName temp;
-
-		temp.reserve(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, (BYTE*) temp.begin(), temp.capacity(),
-			ttype_dynamic, (const BYTE*) field.begin(), field.length(), ERR_post);
-		field.assign(temp.c_str(), length);
-	}
-
-	return length;
-}
-
-
-USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool transliterate)
-{
-/**************************************
- *
- *	D Y N _ g e t _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Pick up a string, move to a target. Return length 
- *	of string.
- *
- **************************************/
-	const TEXT* p = *ptr;
-	USHORT length = (UCHAR) *p++;
-	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-
-	if (transliterate)
-	{
-		Firebird::UCharBuffer temp;
-		memcpy(temp.getBuffer(length), p, length);
-
-		thread_db* tdbb = JRD_get_thread_data();
-
-		array.resize(
-			INTL_convert_bytes(tdbb,
-				ttype_metadata, NULL, 0,
-				ttype_dynamic, temp.begin(), length, ERR_post));
-
-		length = INTL_convert_bytes(tdbb,
-			ttype_metadata, array.begin(), array.getCapacity(),
-			ttype_dynamic, temp.begin(), length, ERR_post);
-		array.resize(length);
-	}
-	else
-		memcpy(array.getBuffer(length), p, length);
-
-	p += length;
-	*ptr = p;
-
 	return length;
 }
 
@@ -923,9 +775,9 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
+		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
 
@@ -934,7 +786,7 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	return length;
 }
 
-USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
+USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id, USHORT bpb_length, const UCHAR* bpb)
 {
 /**************************************
  *
@@ -961,37 +813,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	const UCHAR* end = NULL;
 
 	try {
-		Firebird::UCharBuffer bpb;
-
-		Database* dbb = tdbb->getDatabase();
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1) 
-		{
-			bpb.resize(15);
-
-			UCHAR* p = bpb.begin();
-			*p++ = isc_bpb_version1;
-
-			*p++ = isc_bpb_source_type;
-			*p++ = 2;
-			put_short(p, isc_blob_text);
-			p += 2;
-			*p++ = isc_bpb_source_interp;
-			*p++ = 1;
-			*p++ = tdbb->getAttachment()->att_charset;
-
-			*p++ = isc_bpb_target_type;
-			*p++ = 2;
-			put_short(p, isc_blob_text);
-			p += 2;
-			*p++ = isc_bpb_target_interp;
-			*p++ = 1;
-			*p++ = CS_METADATA;
-
-			// set the array count to the number of bytes we used
-			bpb.shrink(p - bpb.begin());
-		}
-
-		blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, blob_id, bpb.getCount(), bpb.begin());
+		blb* blob = BLB_create2(tdbb, gbl->gbl_transaction, blob_id, bpb_length, bpb);
 
 		for (end = p + length; p < end; p += TEXT_BLOB_LENGTH)
 		{
@@ -1000,9 +822,9 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_error_punt(true, 106);
+		DYN_error_punt(true, 106, NULL, NULL, NULL, NULL, NULL);
 		/* msg 106: "Create metadata blob failed" */
 	}
 
@@ -1026,7 +848,7 @@ void DYN_rundown_request(jrd_req* handle, SSHORT id)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb  = tdbb->getDatabase();
+	Database*  dbb  = tdbb->tdbb_database;
 
 	if (!handle) {
 		return;
@@ -1061,27 +883,6 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
 }
 
 
-USHORT DYN_skip_blr_blob(const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ s k i p _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Skip a blr blob.
- *
- **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-	*ptr = p + length;
-
-	return length;
-}
-
-
 static void grant( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
@@ -1105,7 +906,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName grantor;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1150,7 +951,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 				if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 					user_type = obj_sql_role;
 					if (user == NULL_ROLE) {
-						DYN_error_punt(false, 195, user.c_str());
+						DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
 					/* msg 195: keyword NONE could not be used as SQL role name. */
 					}
 				}
@@ -1171,25 +972,25 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		    user_type = obj_sql_role;
 		    GET_STRING(ptr, user);
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str());
+				DYN_error_punt(false, 188, user.c_str(), NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
 			}
 			if (user == NULL_ROLE) {
-				DYN_error_punt(false, 195, user.c_str());
+				DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 			break;
 
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196);
+                DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 				grant_role_stmt = true;
 				if (object == NULL_ROLE) {
-					DYN_error_punt(false, 195, object.c_str());
+					DYN_error_punt(false, 195, object.c_str(), NULL, NULL, NULL, NULL);
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
@@ -1304,11 +1105,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		{
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 			{
-	            DYN_error_punt(false, 196);
+	            DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			id = drq_get_role_nm;
 
-			grantor = tdbb->getAttachment()->att_user->usr_user_name;
+			grantor = tdbb->tdbb_attachment->att_user->usr_user_name;
 			grantor.upper7();
 
 			if (!grantor_can_grant_role(tdbb, gbl, grantor, object)) {
@@ -1324,7 +1125,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
             ** could be reused for blocking cycles of role grants
             **
             *****************************************************/
-	            DYN_error_punt(false, 192, user.c_str());
+	            DYN_error_punt(false, 192, user.c_str(), NULL, NULL, NULL, NULL);
 			}
 		}
 		else
@@ -1342,7 +1143,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			{	/* relation or view because we cannot distinguish at this point. */
 				id = drq_gcg1;
 				if (!grantor_can_grant(gbl,
-										tdbb->getAttachment()->att_user->usr_user_name.c_str(),
+										tdbb->tdbb_attachment->att_user->usr_user_name.c_str(),
 										priv,
 										object,
 										field,
@@ -1362,7 +1163,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
@@ -1373,11 +1174,11 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		switch (id)
 		{
 		case drq_l_grant1:
-			DYN_error_punt(true, 77);
+			DYN_error_punt(true, 77, NULL, NULL, NULL, NULL, NULL);
 			// msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		case drq_l_grant2:
-			DYN_error_punt(true, 78);
+			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		case drq_s_grant:
@@ -1391,7 +1192,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			break;
 		default:
 			fb_assert(id == drq_gcg1);
-			DYN_error_punt(true, 78);
+			DYN_error_punt(true, 78, NULL, NULL, NULL, NULL, NULL);
 			// msg 78: "SELECT RDB$USER_PRIVILEGES failed in grant"
 			break;
 		}
@@ -1425,7 +1226,7 @@ static bool grantor_can_grant(Global*					gbl,
 	USHORT err_num;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 /* Verify that the input relation exists. */
 
@@ -1450,7 +1251,7 @@ static bool grantor_can_grant(Global*					gbl,
 	if (!DYN_REQUEST(drq_gcg4))
 		DYN_REQUEST(drq_gcg4) = request;
 	if (!relation_exists) {
-		DYN_error(false, 175, SafeArg() << relation_name.c_str());
+		DYN_error(false, 175, relation_name.c_str(), NULL, NULL, NULL, NULL);
 		/* table/view .. does not exist */
 		return false;
 	}
@@ -1475,7 +1276,8 @@ static bool grantor_can_grant(Global*					gbl,
 		if (!DYN_REQUEST(drq_gcg5))
 			DYN_REQUEST(drq_gcg5) = request;
 		if (!field_exists) {
-			DYN_error(false, 176, SafeArg() << field_name.c_str() << relation_name.c_str());
+			DYN_error(false, 176, field_name.c_str(), relation_name.c_str(), NULL, NULL,
+					  NULL);
 			/* column .. does not exist in table/view .. */
 			return false;
 		}
@@ -1483,7 +1285,7 @@ static bool grantor_can_grant(Global*					gbl,
 
 /* If the current user is locksmith - allow all grants to occur */
 
-	if (tdbb->getAttachment()->locksmith()) {
+	if (tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith) {
 		return true;
 	}
 
@@ -1563,33 +1365,37 @@ static bool grantor_can_grant(Global*					gbl,
 		{
 			DYN_error(false,
 					(USHORT)(top_level ? 167 : 168),
-					SafeArg() << privilege <<
-					field_name.c_str() <<
-					relation_name.c_str());
+					privilege,
+					field_name.c_str(),
+					relation_name.c_str(),
+					NULL,
+					NULL);
 			/* no grant option for privilege .. on column .. of [base] table/view .. */
 			return false;
 		}
-
-		if (go_fld == -1)
+		else if (go_fld == -1)
 		{
 			if (go_rel == 0)
 			{
 				DYN_error(false,
 						(USHORT)(top_level ? 169 : 170),
-						SafeArg() << privilege <<
-						relation_name.c_str() <<
-						field_name.c_str());
+						privilege,
+						relation_name.c_str(),
+						field_name.c_str(),
+						NULL,
+						NULL);
 				/* no grant option for privilege .. on [base] table/view .. (for column ..) */
 				return false;
 			}
-
-			if (go_rel == -1)
+			else if (go_rel == -1)
 			{
 				DYN_error(false,
 						(USHORT)(top_level ? 171 : 172),
-						SafeArg() << privilege <<
-						relation_name.c_str() <<
-						field_name.c_str());
+						privilege,
+						relation_name.c_str(),
+						field_name.c_str(),
+						NULL,
+						NULL);
 				/* no .. privilege with grant option on [base] table/view .. (for column ..) */
 				return false;
 			}
@@ -1599,14 +1405,13 @@ static bool grantor_can_grant(Global*					gbl,
 	{
 		if (go_rel == 0)
 		{
-			DYN_error(false, 173, SafeArg() << privilege << relation_name.c_str());
+			DYN_error(false, 173, privilege, relation_name.c_str(), NULL, NULL, NULL);
 			/* no grant option for privilege .. on table/view ..  */
 			return false;
 		}
-
-		if (go_rel == -1)
+		else if (go_rel == -1)
 		{
-			DYN_error(false, 174, SafeArg() << privilege << relation_name.c_str());
+			DYN_error(false, 174, privilege, relation_name.c_str(), NULL, NULL, NULL);
 			/* no .. privilege with grant option on table/view .. */
 			return false;
 		}
@@ -1666,10 +1471,10 @@ static bool grantor_can_grant(Global*					gbl,
 	// all done.
 
 	}	// try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, err_num);
+		DYN_error_punt(true, err_num, NULL, NULL, NULL, NULL, NULL);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
 
 		return false;
@@ -1700,15 +1505,18 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 	bool grantable = false;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	// Fetch the name of the owner of the ROLE
 	Firebird::MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
-		if (tdbb->getAttachment()->locksmith() || owner == grantor)
+		if ((tdbb->tdbb_attachment->att_user->usr_flags & USR_locksmith)
+			|| (owner == grantor))
+		{
 			return true;
+		}
 	}
 	else
 	{
@@ -1717,7 +1525,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 		**  role name not exist.
 		**
 		*****************************************************/
-		DYN_error(false, 188, SafeArg() << role_name.c_str());
+		DYN_error(false, 188, role_name.c_str(), NULL, NULL, NULL, NULL);
 		return false;
 	}
 
@@ -1745,7 +1553,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 			**  user have no admin option.
 			**
 			*****************************************************/
-			DYN_error(false, 189, SafeArg() << grantor.c_str() << role_name.c_str());
+			DYN_error(false, 189, grantor.c_str(), role_name.c_str(), NULL, NULL, NULL);
 			return false;
 		}
 
@@ -1761,36 +1569,11 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 		**  user is not a member of the role.
 		**
 		*****************************************************/
-		DYN_error(false, 190, SafeArg() << grantor.c_str() << role_name.c_str());
+		DYN_error(false, 190, grantor.c_str(), role_name.c_str(), NULL, NULL, NULL);
 		return false;
 	}
 
 	return grantable;
-}
-
-
-static const char* privilege_name(char symbol)
-{
-/**************************************
- *
- *	p r i v i l e g e _ n a m e
- *
- **************************************
- *
- * Functional description
- *	Diagnostics print helper.
- *
- **************************************/
-	switch (UPPER7(symbol))
-	{
-		case 'A': return "All";
-		case 'I': return "Insert";
-		case 'U': return "Update";
-		case 'D': return "Delete";
-		case 'S': return "Select";
-		case 'X': return "Execute";
-	}
-	return "<Unknown>";
 }
 
 
@@ -1822,15 +1605,15 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
 
 /* Stash away a copy of the revoker's name, in uppercase form */
 
-	const UserId* revoking_user = tdbb->getAttachment()->att_user;
-	Firebird::MetaName revoking_user_name(revoking_user->usr_user_name);
+	const UserId* revoking_user = tdbb->tdbb_attachment->att_user;
+	Firebird::MetaName revoking_user_name = revoking_user->usr_user_name;
 	revoking_user_name.upper7();
 
 	GET_STRING(ptr, privileges);
@@ -1869,8 +1652,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
 				user_type = obj_sql_role;
 				if (user == NULL_ROLE) {
-					DYN_error_punt(false, 195, user.c_str());
-					// msg 195: keyword NONE could not be used as SQL role name.
+					DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
+				/* msg 195: keyword NONE could not be used as SQL role name. */
 				}
 			}
 			else {
@@ -1889,25 +1672,25 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			user_type = obj_sql_role;
 			GET_STRING(ptr, user);
 			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
-				DYN_error_punt(false, 188, user.c_str());
+				DYN_error_punt(false, 188, user.c_str(), NULL, NULL, NULL, NULL);
 			/* msg 188: Role doesn't exist. */
 			}
 			if (user == NULL_ROLE) {
-				DYN_error_punt(false, 195, user.c_str());
+				DYN_error_punt(false, 195, user.c_str(), NULL, NULL, NULL, NULL);
 			/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
 		    break;
 
 		case isc_dyn_sql_role_name:	/* role name in role_name_list */
 			if (ENCODE_ODS(major_version, minor_original) < ODS_9_0) {
-                DYN_error_punt(false, 196);
+                DYN_error_punt(false, 196, NULL, NULL, NULL, NULL, NULL);
 			}
 			else {
 				obj_type = obj_sql_role;
 				GET_STRING(ptr, object);
 /* CVC: Make this a warning in the future.
 				if (object == NULL_ROLE)
-					DYN_error_punt(false, 195, object.c_str());
+					DYN_error_punt(false, 195, object.c_str(), NULL, NULL, NULL, NULL);
 */
 				/* msg 195: keyword NONE could not be used as SQL role name. */
 			}
@@ -1949,7 +1732,6 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	for (const TEXT* pr = privileges; (temp[0] = *pr); pr++)
 	{
 		bool grant_erased = false;
-		bool bad_grantor = false;
 
 		if (field.length())
 		{
@@ -1964,16 +1746,13 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant1))
 						DYN_REQUEST(drq_e_grant1) = request;
 
-				if ((revoking_user->locksmith()) ||
+				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;
 					grant_erased = true;
 				}
-				else
-				{
-					bad_grantor = true;
-				}
+
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant1)) {
 				DYN_REQUEST(drq_e_grant1) = request;
@@ -1996,15 +1775,11 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				   in this table which have been granted the privilege, we
 				   erase the entries from RDB$USER_PRIVILEGES. */
 
-				if ((revoking_user->locksmith()) ||
+				if ((revoking_user->usr_flags & USR_locksmith) ||
 					(revoking_user_name == PRIV.RDB$GRANTOR))
 				{
 					ERASE PRIV;
 					grant_erased = true;
-				}
-				else
-				{
-					bad_grantor = true;
 				}
 			END_FOR;
 			if (!DYN_REQUEST(drq_e_grant2))
@@ -2027,26 +1802,10 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 			id = old_id;
 		}
-		
-		if (bad_grantor)
-		{
-			DYN_error_punt(false, 246, SafeArg() << revoking_user_name.c_str() << 
-				privilege_name(temp[0]) << object.c_str() << user.c_str());
-			// msg 246: @1 is not grantor of @2 on @3 to @4.
-		}
-		
-		if (!grant_erased)
-		{
-			ERR_post_warning(isc_dyn_miss_priv_warning, 
-							 isc_arg_string, privilege_name(temp[0]),
-							 isc_arg_string, ERR_string(object), 
-							 isc_arg_string, ERR_string(user), 0);
-			// msg 247: Warning: @1 on @2 is not granted to @3.
-		}
 	}
 
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
@@ -2055,12 +1814,12 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 							-1);
 		if (id == drq_e_grant1)
 		{
-			DYN_error_punt(true, 111);
+			DYN_error_punt(true, 111, NULL, NULL, NULL, NULL, NULL);
 			/* msg 111: "ERASE RDB$USER_PRIVILEGES failed in revoke(1)" */
 		}
 		else if (id == drq_e_grant2)
 		{
-			DYN_error_punt(true, 113);
+			DYN_error_punt(true, 113, NULL, NULL, NULL, NULL, NULL);
 			/* msg 113: "ERASE RDB$USER_PRIVILEGES failed in revoke (3)" */
 		}
 		else
@@ -2088,7 +1847,7 @@ static void set_field_class_name(Global*					gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	jrd_req* request2 = NULL;
@@ -2104,7 +1863,7 @@ static void set_field_class_name(Global*					gbl,
 		MODIFY RFR
 			while (!unique)
 		    {
-				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
+				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" QUADFORMAT "d", "SQL$GRANT", 
 				DPM_gen_id(tdbb, 
 					MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
@@ -2152,7 +1911,7 @@ static void store_privilege(Global*						gbl,
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_grant, DYN_REQUESTS);
 
@@ -2181,165 +1940,11 @@ static void store_privilege(Global*						gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 79);
+		DYN_error_punt(true, 79, NULL, NULL, NULL, NULL, NULL);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
 	}
 }
 
-
-static void dyn_user(Global* gbl, const UCHAR** ptr)
-{
-/**************************************
- *
- *	d y n _ u s e r
- *
- **************************************
- *
- * Functional description
- *	Implements CREATE/ALTER/DROP USER
- *
- **************************************/
-#if (defined BOOT_BUILD || defined EMBEDDED)
-	Firebird::status_exception::raise(isc_wish_list, isc_arg_end);
-#else
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-
-	char securityDatabaseName[MAXPATHLEN];
-	SecurityDatabase::getPath(securityDatabaseName);
-
-	Database::Checkout dcoHolder(dbb);
-
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
-	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
-
-	isc_db_handle securityDatabase = 0;
-	ISC_STATUS_ARRAY status;
-	try 
-	{
-		isc_attach_database(status, 0, securityDatabaseName, &securityDatabase, 
-			dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
-
-		if (status[1])
-		{
-			Firebird::status_exception::raise(status);
-		}
-
-		internal_user_data userData;
-		UCHAR verb;
-		while ((verb = *(*ptr)++) != isc_user_end)
-		{
-			Firebird::string text;
-			GET_STRING(ptr, text);
-
-			switch(verb)
-			{
-			case isc_dyn_user_add:
-				userData.operation = ADD_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
-				break;
-
-			case isc_dyn_user_mod:
-				userData.operation = MOD_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
-				break;
-
-			case isc_dyn_user_del:
-				userData.operation = DEL_OPER;
-				text.copyTo(userData.user_name, sizeof(userData.user_name));
-				userData.user_name_entered = true;
-				break;
-
-			case isc_dyn_user_passwd:
-				if (text.isEmpty())
-				{
-					Firebird::status_exception::raise(ENCODE_ISC_MSG(249, DYN_MSG_FAC), isc_arg_end);
-					// 249: Password should not be empty string
-				}
-				text.copyTo(userData.password, sizeof(userData.password));
-				userData.password_entered = true;
-				break;
-
-			case isc_dyn_user_first:
-				if (text.hasData())
-				{
-					text.copyTo(userData.first_name, sizeof(userData.first_name));
-					userData.first_name_entered = true;
-				}
-				else
-				{
-					userData.first_name_entered = false;
-					userData.first_name_specified = true;
-				}
-				break;
-
-			case isc_dyn_user_middle:
-				if (text.hasData())
-				{
-					text.copyTo(userData.middle_name, sizeof(userData.middle_name));
-					userData.middle_name_entered = true;
-				}
-				else
-				{
-					userData.middle_name_entered = false;
-					userData.middle_name_specified = true;
-				}
-				break;
-
-			case isc_dyn_user_last:
-				if (text.hasData())
-				{
-					text.copyTo(userData.last_name, sizeof(userData.last_name));
-					userData.last_name_entered = true;
-				}
-				else
-				{
-					userData.last_name_entered = false;
-					userData.last_name_specified = true;
-				}
-				break;
-			}
-		}
-
-		int errcode = (! userData.user_name_entered) ? GsecMsg18 :
-			SECURITY_exec_line(status, securityDatabase, &userData, NULL, NULL);
-
-		switch (errcode)
-		{
-		case 0: // nothing
-		    break;
-		case GsecMsg22:
-			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC),
-				isc_arg_string, ERR_cstring(userData.user_name), isc_arg_end);
-		default:
-			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC), isc_arg_end);
-		}
-
-		isc_detach_database(status, &securityDatabase);
-
-		if (status[1])
-		{
-			securityDatabase = 0;
-			Firebird::status_exception::raise(status);
-		}
-	}
-	catch(const Firebird::Exception& e)
-	{
-		if (securityDatabase)
-		{
-			isc_detach_database(status, &securityDatabase);
-		}
-		e.stuff_exception(status);
-		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));
-		status[0] = isc_arg_gds;
-		status[1] = isc_no_meta_update;
-		Firebird::status_exception::raise(status);
-	}
-#endif
-}

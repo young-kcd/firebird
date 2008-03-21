@@ -28,7 +28,6 @@
 #define BURP_BURPSWI_H
 
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 
 /* Local copies of global variables.  They will be copied into
@@ -81,12 +80,6 @@ const int IN_SW_BURP_HIDDEN_RDONLY	= 36;
 const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
 
 const int IN_SW_BURP_RECREATE		= 38;      // recreate database 
-const int IN_SW_BURP_NOD			= 39;      // do not run database triggers
-#ifdef TRUSTED_AUTH
-const int IN_SW_BURP_TRUSTED_USER   = 40;      // force trusted auth
-#endif
-const int IN_SW_BURP_TRUSTED_SVC    = 41;      // trusted user name to use on attach 
-const int IN_SW_BURP_TRUSTED_ROLE   = 42;      // use trusted role on attach 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
 
@@ -127,8 +120,6 @@ static in_sw_tab_t burp_in_sw_table [] =
                 // msg 278: %sMODE read_only or read_write access 
     {IN_SW_BURP_N,    isc_spb_res_no_validity,	"NO_VALIDITY",	    0, 0, 0, FALSE, 187, 0, NULL},
                 // msg 187: %sN(O_VALIDITY) do not restore database validity conditions 
-    {IN_SW_BURP_NOD,  0,				"NODBTRIGGERS",    0, 0, 0, FALSE, 294, 0, NULL},
-                // msg 294: %sNOD(BTRIGGERS) do not run database triggers
     {IN_SW_BURP_NT,   isc_spb_bkp_non_transportable,      "NT",	    0, 0, 0, FALSE, 239, 0, NULL},
                 // msg 239: %sNT Non-Transportable backup file format 
     {IN_SW_BURP_O,    isc_spb_res_one_at_a_time,	"ONE_AT_A_TIME",    0, 0, 0, FALSE, 99, 0, NULL},
@@ -138,33 +129,27 @@ static in_sw_tab_t burp_in_sw_table [] =
     {IN_SW_BURP_P,    isc_spb_res_page_size,	"PAGE_SIZE",	    0, 0, 0, FALSE, 101, 0, NULL},
                 // msg 101: %sPAGE_SIZE override default page size 
     {IN_SW_BURP_PASS, 0,				"PASSWORD",	    0, 0, 0, FALSE, 190, 0, NULL},
-                // msg 190: %sPA(SSWORD) Firebird password
+                // msg 190: %sPA(SSWORD) InterBase password 
     {IN_SW_BURP_RECREATE, 0,	"RECREATE_DATABASE", 0, 0, 0, FALSE, 284, 0, NULL},
                 // msg 284: %sR(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file 
     {IN_SW_BURP_R,    isc_spb_res_replace,	"REPLACE_DATABASE", 0, 0, 0, FALSE, 112, 0, NULL},
                 // msg 112: %sREP(LACE_DATABASE) replace database from backup file 
 /**************************************************************
-** msg 252: %sRO(LE) Firebird SQL role
+** msg 252: %sRO(LE) InterBase SQL role
 ***************************************************************/
     {IN_SW_BURP_ROLE, isc_spb_sql_role_name,	"ROLE",		    0, 0, 0, FALSE, 252, 0, NULL},
     {IN_SW_BURP_S,    0,				"SKIP_BAD_DATA",    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_SE,   0,				"SERVICE",	    0, 0, 0, FALSE, 277, 0, NULL},
-				// msg 277: %sSE(RVICE) use services manager 
+		// msg 277: %sSE(RVICE) use services manager 
     {IN_SW_BURP_T,    0,				"TRANSPORTABLE",    0, 0, 0, FALSE, 175, 0, NULL},
-				// msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format 
-#ifdef TRUSTED_AUTH
-    {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",			0, 0, 0, FALSE, 295, 0, NULL},
-				// msg 295: @1TRU(STED)            use trusted authentication
-#endif
-    {IN_SW_BURP_TRUSTED_SVC, 0,	 		TRUSTED_USER_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_BURP_TRUSTED_ROLE, 0, 		TRUSTED_ROLE_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
+                // msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format 
 /*
     {IN_SW_BURP_U,    0,				"UNPROTECTED",	    0, 0, 0, FALSE, 0, 0, NULL},
 */
     {IN_SW_BURP_US,   isc_spb_res_use_all_space,	"USE_ALL_SPACE",    0, 0, 0, FALSE, 276, 0, NULL},
                 // msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions 
     {IN_SW_BURP_USER, 0,				"USER",		    0, 0, 0, FALSE, 191, 0, NULL},
-                // msg 191: %sUSER Firebird user name
+                // msg 191: %sUSER InterBase user name 
     {IN_SW_BURP_V,    isc_spb_verbose,		"VERBOSE",	    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_V,    0,				"VERIFY",	    0, 0, 0, FALSE, 113, 0, NULL},
                 // msg 113: %sVERIFY report each action taken 

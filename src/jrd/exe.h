@@ -26,18 +26,26 @@
  *                            implemented ROWS_AFFECTED system variable
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_EXE_H
 #define JRD_EXE_H
 
-#include "../jrd/blb.h"
-#include "../jrd/Relation.h"
+#include "../jrd/jrd_blks.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
 #include "gen/iberror.h"
+
+#define NODE(type, name, keyword) type,
+
+enum nod_t {
+#include "../jrd/nod.h"
+	nod_MAX
+#undef NODE
+};
+
+typedef nod_t NOD_T;
 
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
@@ -45,8 +53,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/scl.h"
 #include "../jrd/sbm.h"
-
-#include "../jrd/DebugInterface.h"
 
 // This macro enables DSQL tracing code
 //#define CMP_DEBUG
@@ -63,22 +69,11 @@ struct dsc;
 
 namespace Jrd {
 
-#define NODE(type, name, keyword) type,
-
-enum nod_t {
-#include "../jrd/nod.h"
-	nod_MAX
-#undef NODE
-};
-
-typedef nod_t NOD_T;
-
 class jrd_rel;
 class jrd_nod;
 struct sort_key_def;
 template <typename T> class vec;
 class jrd_prc;
-class Collation;
 struct index_desc;
 struct IndexDescAlloc;
 class Format;
@@ -92,7 +87,7 @@ public:
 	jrd_nod*	nod_parent;
 	SLONG	nod_impure;			/* Inpure offset from request block */
 	NOD_T	nod_type;				/* Type of node */
-	USHORT	nod_flags;
+	UCHAR	nod_flags;
 	SCHAR	nod_scale;			/* Target scale factor */
 	USHORT	nod_count;			/* Number of arguments */
 };
@@ -123,7 +118,6 @@ const int nod_value		= 16;		/* full value area required in impure space */
 const int nod_deoptimize	= 32;	/* boolean which requires deoptimization */
 const int nod_agg_dbkey	= 64;		/* dbkey of an aggregate */
 const int nod_invariant	= 128;		/* node is recognized as being invariant */
-const int nod_recurse	= 256;		/* union node is a recursive union */
 
 
 /* Special RecordSelExpr node */
@@ -136,7 +130,7 @@ public:
 	bool		rse_writelock;
 	RecordSource*	rse_rsb;
 	jrd_nod*	rse_first;
-	jrd_nod*	rse_skip;
+    jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
 	jrd_nod*	rse_sorted;
 	jrd_nod*	rse_projection;
@@ -188,8 +182,6 @@ public:
 	SCHAR	nod_scale;
 	USHORT	nod_count;
 	dsc		asb_desc;
-	USHORT	asb_length;
-	bool	asb_intl;
 	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
@@ -208,7 +200,6 @@ struct impure_value {
 	USHORT vlu_flags; // Computed/invariant flags
 	VaryingString* vlu_string;
 	union {
-		UCHAR vlu_uchar;
 		SSHORT vlu_short;
 		SLONG vlu_long;
 		SINT64 vlu_int64;
@@ -219,20 +210,18 @@ struct impure_value {
 		GDS_TIMESTAMP vlu_timestamp;
 		GDS_TIME vlu_sql_time;
 		GDS_DATE vlu_sql_date;
-		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
 };
 
 struct impure_value_ex : public impure_value {
 	SLONG vlux_count;
-	blb* vlu_blob;
 };
 
 
-const int VLU_computed	= 1;	// An invariant sub-query has been computed
-const int VLU_null		= 2;	// An invariant sub-query computed to null
-const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable
+const int VLU_computed	= 1;		/* An invariant sub-query has been computed */
+const int VLU_null		= 2;		/* An invariant sub-query computed to null */
+
 
 /* Inversion (i.e. nod_index) impure area */
 
@@ -260,14 +249,12 @@ const int e_arg_flag		= 0;
 const int e_arg_indicator	= 1;
 const int e_arg_message		= 2;
 const int e_arg_number		= 3;
-const int e_arg_info		= 4;
-const int e_arg_length		= 5;
+const int e_arg_length		= 4;
 
-const int e_msg_number			= 0;
-const int e_msg_format			= 1;
-const int e_msg_next			= 2;
-const int e_msg_impure_flags	= 3;
-const int e_msg_length			= 4;
+const int e_msg_number		= 0;
+const int e_msg_format		= 1;
+const int e_msg_next		= 2;
+const int e_msg_length		= 3;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
@@ -292,14 +279,13 @@ const int e_sav_name		= 1;
 const int e_sav_length		= 2;
 
 const int e_mod_statement	= 0;
-const int e_mod_statement2	= 1;
-const int e_mod_sub_mod		= 2;
-const int e_mod_validate	= 3;
-const int e_mod_map_view	= 4;
-const int e_mod_org_stream	= 5;
-const int e_mod_new_stream	= 6;
-const int e_mod_rsb			= 7;
-const int e_mod_length		= 8;
+const int e_mod_sub_mod		= 1;
+const int e_mod_validate	= 2;
+const int e_mod_map_view	= 3;
+const int e_mod_org_stream	= 4;
+const int e_mod_new_stream	= 5;
+const int e_mod_rsb			= 6;
+const int e_mod_length		= 7;
 
 const int e_send_statement	= 0;
 const int e_send_message	= 1;
@@ -340,8 +326,7 @@ const int e_val_length		= 2;
 
 const int e_uni_stream		= 0;	// Stream for union
 const int e_uni_clauses		= 1;	// RecordSelExpr's for union
-const int e_uni_map_stream	= 2;	// stream for next level record of recursive union
-const int e_uni_length		= 3;
+const int e_uni_length		= 2;
 
 const int e_agg_stream		= 0;
 const int e_agg_rse			= 1;
@@ -403,8 +388,7 @@ const int e_xcp_length		= 2;
 
 const int e_var_id			= 0;
 const int e_var_variable	= 1;
-const int e_var_info		= 2;
-const int e_var_length		= 3;
+const int e_var_length		= 2;
 
 const int e_dcl_id			= 0;
 const int e_dcl_desc		= 1;
@@ -431,8 +415,7 @@ const int e_err_length		= 2;
 
 const int e_cast_source		= 0;
 const int e_cast_fmt		= 1;
-const int e_cast_iteminfo	= 2;
-const int e_cast_length		= 3;
+const int e_cast_length		= 2;
 
 
 // CVC: These belong to SCROLLABLE_CURSORS, but I can't mark them with the macro
@@ -487,32 +470,6 @@ const int e_trim_specification	= 2;
 const int e_trim_count			= 2;
 const int e_trim_length			= 3;
 
-// nod_src_info
-const int e_src_info_line		= 0;
-const int e_src_info_col		= 1;
-const int e_src_info_node		= 2;
-const int e_src_info_length		= 3;
-
-// nod_init_variable
-const int e_init_var_id			= 0;
-const int e_init_var_variable	= 1;
-const int e_init_var_info		= 2;
-const int e_init_var_length		= 3;
-
-// nod_domain_validation
-const int e_domval_desc			= 0;
-const int e_domval_length		= sizeof (DSC) / sizeof(::Jrd::jrd_nod*);	// Room for descriptor
-
-// System function expression
-const int e_sysfun_args		= 0;
-const int e_sysfun_function	= 1;
-const int e_sysfun_count	= 1;
-const int e_sysfun_length	= 2;
-
-// nod_auto_trans
-const int e_auto_trans_action	= 0;
-const int e_auto_trans_length	= 1;
-
 // Request resources
 
 struct Resource
@@ -521,15 +478,13 @@ struct Resource
 	{
 		rsc_relation,
 		rsc_procedure,
-		rsc_index,
-		rsc_collation
+		rsc_index
 	};
 
 	enum rsc_s	rsc_type;
 	USHORT		rsc_id;			/* Id of the resource */
 	jrd_rel*	rsc_rel;		/* Relation block */
 	jrd_prc*	rsc_prc;		/* Procedure block */
-	Collation*	rsc_coll;		/* Collation block */
 
 	static bool greaterThan(const Resource& i1, const Resource& i2) {
 		// A few places of the engine depend on fact that rsc_type 
@@ -544,8 +499,8 @@ struct Resource
 		return i1.rsc_id > i2.rsc_id;
 	}
 
-	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc, Collation* coll) :
-		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
+	Resource(rsc_s type, USHORT id, jrd_rel* rel, jrd_prc* prc) :
+		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc) { }
 };
 
 typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
@@ -559,7 +514,7 @@ struct AccessItem
 {
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
-	Firebird::MetaName		acc_name, acc_r_name;
+	Firebird::MetaName		acc_name;
 	const TEXT*				acc_type;
 	SecurityClass::flags_t	acc_mask;
 
@@ -583,17 +538,13 @@ struct AccessItem
 		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
 
-		if ((v = i1.acc_r_name.compare(i2.acc_r_name)) != 0)
-			return v > 0;
-
 		return false; // Equal
 	}
 
 	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
-		const Firebird::MetaName& name, const TEXT* type, 
-		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
-	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name), 
-		acc_r_name(relName), acc_type(type), acc_mask(mask)
+		const Firebird::MetaName& name, const TEXT* type, SecurityClass::flags_t mask)
+	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
+		acc_type(type), acc_mask(mask)
 	{}
 };
 
@@ -640,96 +591,6 @@ struct ExternalAccess
 typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
 	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
 
-// The three structs below are used for domains DEFAULT and constraints in PSQL
-struct Item
-{
-	Item(NOD_T aType, UCHAR aSubType, USHORT aIndex)
-		: type(aType),
-		  subType(aSubType),
-		  index(aIndex)
-	{
-	}
-
-	Item(NOD_T aType, USHORT aIndex = 0)
-		: type(aType),
-		  subType(0),
-		  index(aIndex)
-	{
-	}
-
-	NOD_T type;
-	UCHAR subType;
-	USHORT index;
-
-	bool operator >(const Item& x) const
-	{
-		if (type == x.type)
-		{
-			if (subType == x.subType)
-				return index > x.index;
-
-			return subType > x.subType;
-		}
-
-		return type > x.type;
-	}
-};
-
-struct FieldInfo
-{
-	FieldInfo()
-		: nullable(false), defaultValue(0), validation(0)
-	{}
-
-	bool nullable;
-	jrd_nod* defaultValue;
-	jrd_nod* validation;
-};
-
-struct ItemInfo
-{
-	ItemInfo(MemoryPool& p, const ItemInfo& o)
-		: name(p, o.name),
-		  field(p, o.field),
-		  nullable(o.nullable),
-		  explicitCollation(o.explicitCollation),
-		  fullDomain(o.fullDomain)
-	{
-	}
-
-	explicit ItemInfo(MemoryPool& p)
-		: name(p),
-		  field(p),
-		  nullable(true),
-		  explicitCollation(false),
-		  fullDomain(false)
-	{
-	}
-
-	ItemInfo()
-		: name(),
-		  field(),
-		  nullable(true),
-		  explicitCollation(false),
-		  fullDomain(false)
-	{
-	}
-
-	bool isSpecial() const
-	{
-		return !nullable || fullDomain;
-	}
-
-	Firebird::MetaName name;
-	Firebird::MetaName field;
-	bool nullable;
-	bool explicitCollation;
-	bool fullDomain;
-};
-
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaName, FieldInfo> > > MapFieldInfo;
-typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > MapItemInfo;
-
 // Compile scratch block
 
 /*
@@ -743,7 +604,7 @@ typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > 
 class CompilerScratch : public pool_alloc<type_csb>
 {
 public:
-	CompilerScratch(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
+	CompilerScratch(MemoryPool& p, size_t len)
 	:	/*csb_blr(0),
 		csb_running(0),
 		csb_node(0),
@@ -767,15 +628,11 @@ public:
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
-		csb_dbg_info(p),
-		csb_map_field_info(p),
-		csb_map_item_info(p),
-		csb_domain_validation(domain_validation),
 		csb_rpt(p, len)
 	{}
 
-	static CompilerScratch* newCsb(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
-		{ return FB_NEW(p) CompilerScratch(p, len, domain_validation); }
+	static CompilerScratch* newCsb(MemoryPool& p, size_t len)
+		{ return FB_NEW(p) CompilerScratch(p, len); }
 
 	int nextStream(bool check = true)
 	{
@@ -795,7 +652,7 @@ public:
 	ResourceList	csb_resources;		/* Resources (relations and indexes) */
 	NodeStack		csb_dependencies;	/* objects this request depends upon */
 	Firebird::Array<RecordSource*> csb_fors;	/* stack of fors */
-	Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
+    Firebird::Array<jrd_nod*> csb_exec_sta;		// Array of exec_into nodes
 	Firebird::Array<jrd_nod*> csb_invariants;	/* stack of invariant nodes */
 	Firebird::Array<jrd_node_base*> csb_current_nodes;	/* RecordSelExpr's and other invariant candidates within whose scope we are */
 #ifdef SCROLLABLE_CURSORS
@@ -807,13 +664,9 @@ public:
 	USHORT			csb_msg_number;		/* Highest used message number */
 	SLONG			csb_impure;			/* Next offset into impure area */
 	USHORT			csb_g_flags;
-	MemoryPool&		csb_pool;			// Memory pool to be used by csb
-	Firebird::DbgInfo	csb_dbg_info;			// Debug information
-	MapFieldInfo		csb_map_field_info;		// Map field name to field info
-	MapItemInfo			csb_map_item_info;		// Map item to item info
-	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
+	MemoryPool&		csb_pool;				/* Memory pool to be used by csb */
 
-	struct csb_repeat
+    struct csb_repeat
 	{
 		// We must zero-initialize this one
 		csb_repeat()
@@ -868,7 +721,7 @@ const int csb_blr_version4		= 8;	// the BLR is of version 4
 const int csb_pre_trigger		= 16;	// this is a BEFORE trigger
 const int csb_post_trigger		= 32;	// this is an AFTER trigger
 const int csb_validation		= 64;	// we're in a validation expression (RDB hack)
-const int csb_reuse_context		= 128;	// allow context reusage
+const int csb_no_context_check	= 128;	// don't validate context usage
 
 const int csb_active		= 1;		// stream is active
 const int csb_used			= 2;		// context has already been defined (BLR parsing only)
@@ -877,7 +730,8 @@ const int csb_trigger		= 8;		// NEW or OLD context in trigger
 const int csb_no_dbkey		= 16;		// stream doesn't have a dbkey
 const int csb_store			= 32;		// we are processing a store statement
 const int csb_modify		= 64;		// we are processing a modify
-const int csb_sub_stream	= 128;		// a sub-stream of the RSE being processed
+// Obsolete: was used for PC_ENGINE
+//const int csb_compute		= 128;		// compute cardinality for this stream
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
@@ -892,9 +746,9 @@ struct xcp_repeat {
 
 class PsqlException : public pool_alloc_rpt<xcp_repeat, type_xcp>
 {
-public:
+    public:
 	SLONG xcp_count;
-	xcp_repeat xcp_rpt[1];
+    xcp_repeat xcp_rpt[1];
 };
 
 const int xcp_sql_code	= 1;

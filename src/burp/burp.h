@@ -35,9 +35,8 @@
 #include "../jrd/dsc.h"
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/ThreadData.h"
-#include "../common/UtilSvc.h"
-
+#include "../jrd/thd.h"
+	
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -110,8 +109,7 @@ enum rec_type {
 	rec_chk_constraint,		// Check constraints
 	rec_charset,		// Character sets 
 	rec_collation,		// Collations 
-	rec_sql_roles,		// SQL roles 
-	rec_mapping			// Mapping of security names
+	rec_sql_roles		// SQL roles 
 };
 
 
@@ -181,14 +179,7 @@ and trigger-new is:
 			  RDB$FILE_NAME in character_sets and collations
 			  RDB$BASE_COLLATION_NAME and RDB$SPECIFIC_ATTRIBUTES in collations
  */
-
-/* Version 8: RDB$RELATION_TYPE in relations
-			  RDB$PROCEDURE_TYPE and RDB$VALID_BLR in procedures
-			  RDB$VALID_BLR in triggers
-			  RDB$DEFAULT_VALUE, RDB$DEFAULT_SOURCE and RDB$COLLATION_ID in procedure_parameters
-
- */
-const int ATT_BACKUP_FORMAT		= 8;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
+const int ATT_BACKUP_FORMAT		= 7;	// ASF: when change this, change the text of the message gbak_inv_bkup_ver too
 
 // format version number for ranges for arrays 
 
@@ -252,8 +243,7 @@ enum att_type {
 	att_relation_view_source2,
 	att_relation_ext_description2,
 	att_relation_flags,  
-	att_relation_ext_file_name, // name of file for external tables
-	att_relation_type,
+	att_relation_ext_file_name, // name of file for external tables 
 
 	// Field attributes (used for both global and local fields) 
 
@@ -372,9 +362,7 @@ enum att_type {
 	att_trig_inactive,
 	att_trig_source2,
 	att_trig_description2,
-	att_trig_flags,
-	att_trig_valid_blr,
-	att_trig_debug_info,
+	att_trig_flags,	 
 
 	// Function attributes 
 
@@ -459,9 +447,6 @@ enum att_type {
 	att_procedure_blr,
 	att_procedure_security_class,
 	att_procedure_owner_name,
-	att_procedure_type,
-	att_procedure_valid_blr,
-	att_procedure_debug_info,
 
 	// Stored procedure parameter attributes 
 
@@ -471,13 +456,6 @@ enum att_type {
 	att_procedureprm_field_source,
 	att_procedureprm_description,
 	att_procedureprm_description2,
-	att_procedureprm_default_value,
-	att_procedureprm_default_source,
-	att_procedureprm_collation_id,
-	att_procedureprm_null_flag,
-	att_procedureprm_mechanism,
-	att_procedureprm_field_name,
-	att_procedureprm_relation_name,
 
 	// Exception attributes 
 
@@ -532,12 +510,7 @@ enum att_type {
 	att_coll_description,
 	att_coll_funct,
 	att_coll_base_collation_name,
-	att_coll_specific_attr,
-
-	// Names mapping
-	att_map_os = SERIES,
-	att_map_user,
-	att_map_role
+	att_coll_specific_attr
 };
 
 
@@ -658,9 +631,6 @@ struct gfld {
 	ISC_QUAD	gfld_vb;
 	ISC_QUAD	gfld_vs;
 	ISC_QUAD	gfld_vs2;
-	ISC_QUAD	gfld_computed_blr;
-	ISC_QUAD	gfld_computed_source;
-	ISC_QUAD	gfld_computed_source2;
 	gfld*		gfld_next;
 	USHORT		gfld_flags;
 };
@@ -670,17 +640,25 @@ typedef gfld* GFLD;
 enum gfld_flags_vals {
 	GFLD_validation_blr		= 1,
 	GFLD_validation_source	= 2,
-	GFLD_validation_source2	= 4,
-	GFLD_computed_blr		= 8,
-	GFLD_computed_source	= 16,
-	GFLD_computed_source2	= 32
+	GFLD_validation_source2	= 4
 };
 
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
 // I need to review if we tolerate different lengths for different OS's here.
-const unsigned int MAX_FILE_NAME_SIZE		= 256;
+const int MAX_FILE_NAME_SIZE		= 256;
+
+// Note that this typedef is also defined in JRD.H and REMOTE.H 
+// but for some reason we are avoiding including JRD.H
+// and this typedef is needed to include SVC.H
+#if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
+#endif
+
 
 #include "../jrd/svc.h"
+#include "../jrd/svc_proto.h"
 
 #include "../burp/std_desc.h"
 
@@ -729,20 +707,16 @@ enum SIZE_CODE {
 	size_e		// error 
 };
 
-class burp_fil 
-{
-public:
+struct burp_fil {
 	burp_fil*	fil_next;
-	Firebird::PathName	fil_name;
+	TEXT*		fil_name;
 	ULONG		fil_length;
 	DESC		fil_fd;
 	USHORT		fil_seq;
 	SIZE_CODE	fil_size_code;
-
-burp_fil(Firebird::MemoryPool& p)
-	: fil_next(0), fil_name(p), fil_length(0), 
-	  fil_fd(INVALID_HANDLE_VALUE), fil_seq(0), fil_size_code(size_n) { }
 };
+
+const size_t FIL_LEN	= sizeof(burp_fil);
 
 /* Split & Join stuff */
 
@@ -768,7 +742,7 @@ const size_t ACT_LEN = sizeof(act);
 
 const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
 
-// This structure has been cloned from spit.cpp
+// This structure has been cloned from spit.c 
 
 struct hdr_split {
 	TEXT hdr_split_tag[18];
@@ -794,18 +768,19 @@ static const char HDR_SPLIT_TAG6[]	= "InterBase/gbak,   ";
 const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes 
 
 // Global switches and data 
+#ifndef SERVICE_THREAD
+class BurpGlobals;
+extern BurpGlobals* gdgbl;
+#endif
 
 class BurpGlobals : public ThreadData
 {
 public:
-	BurpGlobals(Firebird::UtilSvc* us) 
-		: ThreadData(ThreadData::tddGBL), flag_on_line(true), uSvc(us), firstMap(true)
+	BurpGlobals() : ThreadData(ThreadData::tddGBL), flag_on_line(true)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
-
-		// normal code follows
 		exit_code = FINI_ERROR;	// prevent FINI_OK in case of unknown error thrown
 								// would be set to FINI_OK (==0) in exit_local
 	}
@@ -816,7 +791,6 @@ public:
 	bool		gbl_sw_ignore_limbo;
 	bool		gbl_sw_meta;
 	bool		gbl_sw_novalidity;
-	bool		gbl_sw_nodbtriggers;
 	USHORT		gbl_sw_page_size;
 	bool		gbl_sw_compress;
 	bool		gbl_sw_version;
@@ -827,6 +801,8 @@ public:
 	USHORT		gbl_sw_blk_factor;
 	bool		gbl_sw_no_reserve;
 	bool		gbl_sw_old_descriptions;
+	bool		gbl_sw_service_gbak;
+	bool		gbl_sw_service_thd;
 	bool		gbl_sw_convert_ext_tables;
 	bool		gbl_sw_mode;
 	bool		gbl_sw_mode_val;
@@ -834,7 +810,6 @@ public:
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;
-	const SCHAR*	gbl_sw_tr_user;
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;
@@ -850,10 +825,9 @@ public:
 	burp_prc*	procedures;
 	SLONG		BCK_capabilities;
 	USHORT		RESTORE_format;
-	int         RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
-	FB_UINT64	mvol_cumul_count;
+	UINT64		mvol_cumul_count;
 	UCHAR*		mvol_io_ptr;
 	int			mvol_io_cnt;
 	UCHAR*		mvol_io_buffer;
@@ -872,8 +846,10 @@ public:
 	ISC_STATUS_ARRAY status_vector;
 	int			exit_code;
 	UCHAR*		head_of_mem_list;
+	Jrd::pfn_svc_output	output_proc;
+	Jrd::Service*		output_data;
 	FILE*	output_file;
-
+	Jrd::Service*	service_blk;
 	/*
 	 * Link list of global fields that were converted from V3 sub_type
 	 * to V4 char_set_id/collate_id. Needed for local fields conversion.
@@ -910,7 +886,6 @@ public:
 	isc_req_handle	handles_get_relation_req_handle1;
 	isc_req_handle	handles_get_security_class_req_handle1;
 	isc_req_handle	handles_get_sql_roles_req_handle1;
-	isc_req_handle	handles_get_mapping_req_handle1;
 	isc_req_handle	handles_get_trigger_message_req_handle1;
 	isc_req_handle	handles_get_trigger_message_req_handle2;
 	isc_req_handle	handles_get_trigger_old_req_handle1;
@@ -935,6 +910,7 @@ public:
 	USHORT			hdr_forced_writes;
 	TEXT			database_security_class[GDS_NAME_LEN]; // To save database security class for deferred update 
 	
+#ifdef SERVICE_THREAD
 	static inline BurpGlobals* getSpecific() {
 		return (BurpGlobals*) ThreadData::getSpecific();
 	}
@@ -944,13 +920,21 @@ public:
 	static inline void restoreSpecific() {
 		ThreadData::restoreSpecific();
 	}
+#else
+	static inline BurpGlobals* getSpecific() {
+		return gdgbl;
+	}
+	static inline void putSpecific(BurpGlobals* tdgbl) {
+		gdgbl = tdgbl;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 
 	char veryEnd;
 	//starting after this members must be initialized in constructor explicitly
 	
 	bool flag_on_line;	// indicates whether we will bring the database on-line
-	Firebird::UtilSvc* uSvc;
-	bool firstMap;      // this is the first time we entered get_mapping()
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
@@ -988,12 +972,15 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
 
-/* Move the read and write mode declarations in here from burp.cpp
+/* Move the read and write mode declarations in here from burp.c
    so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT
 static const ULONG MODE_READ	= GENERIC_READ;
 static const ULONG MODE_WRITE	= GENERIC_WRITE;
+#elif defined(VMS)
+static const ULONG MODE_READ	= O_RDONLY;
+static const ULONG MODE_WRITE	= O_WRONLY | O_CREAT | O_TRUNC;
 #else
 static const ULONG MODE_READ	= O_RDONLY;
 static const ULONG MODE_WRITE	= O_WRONLY | O_CREAT;

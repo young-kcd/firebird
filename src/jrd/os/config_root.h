@@ -28,7 +28,6 @@
 
 #include "fb_types.h"
 #include "../common/classes/fb_string.h"
-#include "../common/config/config.h"
 
 #include "../jrd/os/path_utils.h"
 #include "../common/utils_proto.h"
@@ -60,12 +59,6 @@ class ConfigRoot : public Firebird::PermanentStorage
 
 private:
 	void GetRoot() {
-		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
-		if (clRoot) {
-			root_dir = *clRoot;
-			addSlash();
-			return;
-		}
 #ifdef DEV_BUILD
 		if (getRootFromEnvironment("FIREBIRD_DEV")) {
 			return;
@@ -78,7 +71,7 @@ private:
 	}
 
 public:
-	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
+	ConfigRoot(MemoryPool& p) : PermanentStorage(p),
 		install_dir(getPool()), root_dir(getPool()), config_file(getPool()) 
 	{
 		GetRoot();

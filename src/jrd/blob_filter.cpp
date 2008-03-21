@@ -50,7 +50,9 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
+#include "../jrd/thd.h"
 #include "../jrd/isc_s_proto.h"
+#include "../jrd/all_proto.h"
 #include "gen/iberror.h"
 
 using namespace Jrd;
@@ -193,10 +195,7 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 	else
 		*length = 0;
 
-	if (status != user_status[1] && 
-		status != isc_segment && 
-		status != isc_segstr_eof) 
-	{
+	if (status != user_status[1]) {
 		user_status[1] = status;
 		user_status[2] = isc_arg_end;
 	}
@@ -219,7 +218,7 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
  *	Lookup blob filter in data structures.
  *
  **************************************/
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 /* Check for system defined filter */
 
@@ -347,13 +346,12 @@ static ISC_STATUS open_blob(
  *	Open a blob and invoke a filter.
  *
  **************************************/
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	ISC_STATUS* user_status = tdbb->tdbb_status_vector;
 
 	SSHORT from, to;
 	USHORT from_charset, to_charset;
-	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset,
-		NULL, NULL, NULL, NULL);
+	gds__parse_bpb2(bpb_length, bpb, &from, &to, &from_charset, &to_charset);
 
 	if ((!filter) || (!filter->blf_filter)) {
 		*user_status++ = isc_arg_gds;

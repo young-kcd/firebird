@@ -41,9 +41,8 @@ include     $(ROOT)/gen/make.shared.variables
 unexport ISC_USER
 unexport ISC_PASSWORD
 
-ISQL_Other_Sources = jrd/path_utils.cpp
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp
+ISQL_Other_Sources =
+ISQL_Files = extract.epp isql.epp show.epp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 
@@ -62,7 +61,7 @@ Dependencies = $(AllObjects:.o=.d)
 isql : $(LIBFBEMBED_SO) $(ISQL)
 
 $(ISQL):	$(ISQL_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LIBEDITLINE) $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets

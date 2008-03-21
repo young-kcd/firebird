@@ -37,19 +37,19 @@
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
 #include "../jrd/gds_proto.h"
-
-using MsgFormat::SafeArg;
-
+#ifdef VMS
+#include <descrip.h>
+#endif
 
 static void dump_procedure(DBB, FILE*, const TEXT*, USHORT, FB_API_HANDLE);
-static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD&);
+static void extract_procedure(void*, const TEXT*, USHORT, DBB, ISC_QUAD*);
 
 #ifdef NOT_USED_OR_REPLACED
 static SCHAR db_items[] =
 	{ gds_info_page_size, gds_info_allocation, gds_info_end };
 #endif
 
-bool CMD_check_ready()
+bool CMD_check_ready(void)
 {
 /**************************************
  *
@@ -66,7 +66,7 @@ bool CMD_check_ready()
 	if (QLI_databases)
 		return false;
 
-	ERRQ_msg_put(95);	// Msg95 No databases are currently ready
+	ERRQ_msg_put(95, NULL, NULL, NULL, NULL, NULL);	// Msg95 No databases are currently ready
 
 	return true;
 }
@@ -138,8 +138,9 @@ void CMD_delete_proc( qli_syntax* node)
 	if (PRO_delete_procedure(proc->qpr_database, proc->qpr_name->nam_string))
 		return;
 
-	ERRQ_msg_put(88, SafeArg() << proc->qpr_name->nam_string <<	// Msg88 Procedure %s not found in database %s
-				 proc->qpr_database->dbb_symbol->sym_string);
+	ERRQ_msg_put(88, proc->qpr_name->nam_string,	// Msg88 Procedure %s not found in database %s
+				 proc->qpr_database->dbb_symbol->sym_string, NULL, NULL,
+				 NULL);
 }
 
 
@@ -175,6 +176,8 @@ void CMD_extract( qli_syntax* node)
  *	Extract a series of procedures.
  *
  **************************************/
+	DBB database;
+
 	FILE* file = (FILE*) EXEC_open_output((qli_nod*) node->syn_arg[1]);
 
 	qli_syntax* list = node->syn_arg[0];
@@ -184,16 +187,15 @@ void CMD_extract( qli_syntax* node)
 			ptr < end; ptr++)
 		{
 			QPR proc = (QPR) *ptr;
-			DBB database = proc->qpr_database;
-			if (!database)
+			if (!(database = proc->qpr_database))
 				database = QLI_databases;
-
 			NAM name = proc->qpr_name;
 			FB_API_HANDLE blob = PRO_fetch_procedure(database, name->nam_string);
 			if (!blob) {
 				ERRQ_msg_put(89,	// Msg89 Procedure %s not found in database %s
-							 SafeArg() << name->nam_string <<
-							 database->dbb_symbol->sym_string);
+							 name->nam_string,
+							 database->dbb_symbol->sym_string, NULL, NULL,
+							 NULL);
 				continue;
 			}
 			dump_procedure(database, file, name->nam_string, name->nam_length,
@@ -202,7 +204,9 @@ void CMD_extract( qli_syntax* node)
 	}
 	else {
 		CMD_check_ready();
-		for (DBB database = QLI_databases; database; database = database->dbb_next)
+		for (database = QLI_databases; database;
+			 database =
+			 database->dbb_next)
 		{
 			PRO_scan(database, extract_procedure, file);
 		}
@@ -272,7 +276,8 @@ void CMD_rename_proc( qli_syntax* node)
 	}
 
 	ERRQ_error(85,				// Msg85 Procedure %s not found in database %s
-			   SafeArg() << old_name->nam_string << database->dbb_symbol->sym_string);
+			   old_name->nam_string, database->dbb_symbol->sym_string, NULL,
+			   NULL, NULL);
 }
 
 
@@ -338,7 +343,7 @@ void CMD_set( qli_syntax* node)
 		case set_prompt:
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
-				ERRQ_error(86);	// Msg86 substitute prompt string too long
+				ERRQ_error(86, NULL, NULL, NULL, NULL, NULL);	// Msg86 substitute prompt string too long
 			strncpy(QLI_prompt_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
@@ -347,7 +352,7 @@ void CMD_set( qli_syntax* node)
 		case set_continuation:
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
-				ERRQ_error(87);	// Msg87 substitute prompt string too long
+				ERRQ_error(87, NULL, NULL, NULL, NULL, NULL);	// Msg87 substitute prompt string too long
 			strncpy(QLI_cont_string, (char*) string->con_data,
 					string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
@@ -434,24 +439,49 @@ void CMD_shell( qli_syntax* node)
 	TEXT* p = buffer;
 	const qli_const* constant = (qli_const*) node->syn_arg[0];
 	if (constant) {
-		const USHORT l = constant->con_desc.dsc_length;
+		const TEXT* q = (TEXT*) constant->con_data;
+		USHORT l = constant->con_desc.dsc_length;
 		if (l)
-			memcpy(p, constant->con_data, l);
-
-		p += l;
+			do {
+				*p++ = *q++;
+			} while (--l);
 		*p++ = ' ';
 		*p = 0;
 	}
 	else
-	{
 #ifndef WIN_NT
 		strcpy(buffer, "$SHELL");
 #else
 		strcpy(buffer, "%ComSpec%");
 #endif
-	}
 
+#ifdef VMS
+	struct dsc$descriptor desc, *ptr;
+	if (constant) {
+		desc.dsc$b_dtype = DSC$K_DTYPE_T;
+		desc.dsc$b_class = DSC$K_CLASS_S;
+		desc.dsc$w_length = p - buffer;
+		desc.dsc$a_pointer = buffer;
+		ptr = &desc;
+	}
+	else
+		ptr = NULL;
+	int return_status = 0;
+	int mask = 1;
+	int status = lib$spawn(ptr,		// Command to be executed
+					   NULL,	// Command file
+					   NULL,	// Output file
+					   &mask,	// sub-process characteristics mask
+					   NULL,	// sub-process name
+					   NULL,	// returned process id
+					   &return_status,	// completion status
+					   &15);	// event flag for completion
+	if (status & 1)
+		while (!return_status)
+			sys$waitfr(15);
+#else
 	system(buffer);
+#endif
 }
 
 
@@ -476,7 +506,6 @@ void CMD_transaction( qli_syntax* node)
 		return;
 
 	if (node->syn_type == nod_commit)
-	{
 		if ((node->syn_count > 1) ||
 			(node->syn_count == 0 && QLI_databases->dbb_next))
 		{
@@ -490,17 +519,16 @@ void CMD_transaction( qli_syntax* node)
 		}
 		else
 			QLI_databases->dbb_flags |= DBB_prepared;
-	}
 
 
-	if (node->syn_count == 0) 
-	{
+	if (node->syn_count == 0) {
 		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
 		{
 			if ((node->syn_type == nod_commit)
 				&& !(db_iter->dbb_flags & DBB_prepared))
 			{
-				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string);
+				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string,
+							NULL, NULL, NULL, NULL);
 			}
 			else if (node->syn_type == nod_prepare)
 				db_iter->dbb_flags |= DBB_prepared;
@@ -522,7 +550,8 @@ void CMD_transaction( qli_syntax* node)
 		if ((node->syn_type == nod_commit) &&
 			!(database->dbb_flags & DBB_prepared))
 		{
-				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
+				ERRQ_msg_put(465, database->dbb_symbol->sym_string, NULL,
+							 NULL, NULL, NULL);
 		}
 		else if (node->syn_type == nod_prepare)
 			database->dbb_flags |= DBB_prepared;
@@ -563,7 +592,7 @@ static void dump_procedure(
 static void extract_procedure(
 							  void* file,
 							  const TEXT* name,
-							  USHORT length, DBB database, ISC_QUAD& blob_id)
+							  USHORT length, DBB database, ISC_QUAD* blob_id)
 {
 /**************************************
  *

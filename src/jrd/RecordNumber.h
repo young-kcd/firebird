@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  *
+ *  $Id: RecordNumber.h,v 1.5.4.2 2007-03-25 10:12:36 alexpeshkoff Exp $
  *
  */
 
@@ -38,6 +39,7 @@ const SINT64 BOF_NUMBER = QUADCONST(-1);
 // compiler check errors on our migration path from 32-bit to 64-bit record 
 // numbers.
 class RecordNumber {
+
 public:
 	// Packed record number represents common layout of RDB$DB_KEY and BLOB ID.
 	// To ensure binary compatibility with old (pre-ODS11) databases it differs 
@@ -86,18 +88,19 @@ public:
 		}
 
 		inline SINT64 bid_decode() const {
-			return bid_number + (((FB_UINT64) bid_number_up) << 32);
+			return bid_number + (((UINT64) bid_number_up) << 32);
 		}
 	};
 	
+public:
 	// Default constructor.
-	inline RecordNumber() : value(EMPTY_NUMBER), valid(false) {}
+	inline RecordNumber() : value(EMPTY_NUMBER) {}
 
 	// Copy constructor
-	inline RecordNumber(const RecordNumber& from) : value(from.value), valid(from.valid) {}
+	inline RecordNumber(const RecordNumber& from) : value(from.value) {}
 
 	// Explicit constructor from 64-bit record number value
-	inline explicit RecordNumber(SINT64 number) : value(number), valid(true) {}
+	inline explicit RecordNumber(SINT64 number) : value(number) {}
 
 	// Assignment operator
 	inline RecordNumber& operator =(const RecordNumber& from) { 
@@ -140,8 +143,6 @@ public:
 	bool isBof() const { return value == BOF_NUMBER; }
 
 	bool isEmpty() const { return value == EMPTY_NUMBER; }
-
-	bool isValid() const { return valid; }
 
 	inline bool checkNumber(
 		USHORT records_per_page, // ~400 (8k page)
@@ -196,17 +197,11 @@ public:
 		value = recno->bid_decode();
 	}
 
-	inline void setValid(bool to_value)
-	{
-		valid = to_value;
-	}
-
 private:
 	// Use signed value because negative values are widely used as flags in the 
 	// engine. Since page number is the signed 32-bit integer and it is also may
 	// be stored in this structure we want sign extension to take place.
 	SINT64 value;
-	bool valid;
 };
 
 #endif // JRD_RECORDNUMBER_H

@@ -19,6 +19,8 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Added TCP_NO_DELAY option for superserver on Linux
+ * FSG 16.03.2001
  *
  * 2001.07.06 Sean Leyne - Code Cleanup, removed "#ifdef READONLY_DATABASE"
  *                         conditionals, as the engine now fully supports
@@ -67,14 +69,24 @@
   do not use links in source code to maintain platform neutrality
 */
 
-#ifdef SUPERSERVER
-#define SWEEP_THREAD
-#define GARBAGE_THREAD
-#define CANCEL_OPERATION
+#ifdef PROD_BUILD
+#ifdef DEV_BUILD
+#undef DEV_BUILD
+#endif
 #endif
 
+#ifdef MULTI_THREAD
+# ifdef SUPERSERVER
+#  define SWEEP_THREAD
+#  define GARBAGE_THREAD
+# else
+#  define AST_THREAD
+# endif
+#endif
 
 #ifdef SUPERSERVER
+#define GOVERNOR
+#define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
 #define FB_ARCHITECTURE isc_info_db_class_classic_access
@@ -82,7 +94,7 @@
 
 
 /*****************************************************
-* Linux platforms 
+* Linux for Intel platforms 
 *****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"
@@ -100,13 +112,17 @@
 //format for __LINE__
 #define LINEFORMAT "d"
 
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
 //#define KILLER_SIGNALS
 
 #define UNIX
 #define IEEE
 
 #ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
+#define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66  next higher unique number, See you later  */
 #endif
 
 #ifdef PPC
@@ -115,24 +131,132 @@
 
 #ifdef i386
 #define I386
-#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
+#define IMPLEMENTATION  isc_info_db_impl_i386 /* 60  next higher unique number, See you later  */
 #endif /* i386 */
 
 #ifdef sparc
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
-#define RISC_ALIGNMENT
 #endif /* sparc */
 
-#ifdef MIPSEL
-#define IMPLEMENTATION  isc_info_db_impl_linux_mipsel /* 71  */
-#endif /* mipsel */
-
-#ifdef MIPS
-#define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
-#endif /* mips */
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
 #endif /* LINUX */
 
+/*****************************************************
+* SINIX-Z 5.42
+*****************************************************/
+#ifdef SINIXZ
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* These prototypes are missing in the system header files :-( */
+int gettimeofday (struct timeval *tp);
+int munmap(void * addr, size_t len);
+int gethostname(char *name, size_t len);
+int socket(int domain, int type, int protocol);
+int connect(int s, struct sockaddr *name, int namelen);
+int send(int s, void *msg, int len, int flags);
+int recv(int s, void *buf, int len, int flags);
+int strcasecmp(const char *s1, const char *s2);
+int strncasecmp(const char *s1, const char *s2, size_t n);
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *execptfds, struct timeval *timeout);
+int getsockopt(int s, int level, int optname, char *optval, int *optlen);
+int setsockopt(int s, int level, int optname, char *optval, int optlen);
+int bind(int s, struct sockaddr *name, int namelen);
+int listen(int s, int backlog);
+int accept(int s, struct sockaddr *ddr, int *addrlen);
+int getsockname(int s, struct sockaddr *name, int *namelen);
+int setsockname(int s, struct sockaddr *name, int *namelen);
+int getpeername(int s, struct sockaddr *name, int *namelen);
+int shutdown(int s, int how);
+int syslog(int pri, char *fmt, ...);
+
+#ifdef __cplusplus
+    }
+#endif
+
+#include <dlfcn.h>
+#define dlopen(a, b)		dlopen((char *)(a),(b))
+#define dlsym(a, b)		dlsym((a), (char *)(b))
+
+#include <signal.h>
+#include <sys/siginfo.h>
+
+struct sinixz_sigaction
+  {
+    int sa_flags;
+    union
+      {
+        /* Used if SA_SIGINFO is not set.  */
+        void (*sa_handler)(int);
+        /* Used if SA_SIGINFO is set.  */
+        void (*sa_sigaction) (int, siginfo_t *, void *);
+      }
+    __sigaction_handler;
+#define sa_handler		__sigaction_handler.sa_handler
+#define sa_sigaction		__sigaction_handler.sa_sigaction
+    sigset_t sa_mask;
+    int sa_resv[2];
+  };
+
+static inline int sinixz_sigaction(int sig, const struct sinixz_sigaction *act,
+                                   struct sinixz_sigaction *oact)
+{
+  return sigaction(sig, (struct sigaction*)act, (struct sigaction*)oact);
+}
+
+// Re-define things actually
+#define sigaction		sinixz_sigaction
+
+#define QUADFORMAT "ll"
+#define QUADCONST(n) (n##LL)
+
+//#define ALIGNMENT	4
+//#define DOUBLE_ALIGN	8
+
+#ifdef SUPERSERVER
+#define SET_TCP_NO_DELAY
+#endif
+
+//#define KILLER_SIGNALS
+
+#define UNIX
+#define IEEE
+
+#ifdef i386
+#define I386
+/* Change version string into SINIXZ */
+#define IMPLEMENTATION  isc_info_db_impl_sinixz  /* 64 */
+#endif /* i386 */
+
+#define setreuid(ruid, euid)     setuid(euid)
+#define setregid(rgid, egid)     setgid(egid)
+
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+
+//format for __LINE__
+#define LINEFORMAT "d"
+
+//#define SLONGFORMAT "ld"
+//#define ULONGFORMAT "lu"
+//#define XLONGFORMAT "lX"
+//#define xLONGFORMAT "lx"
+
+#define O_BINARY 0
+#endif /* SINIXZ */
 
 /*****************************************************
 * Darwin Platforms 
@@ -155,21 +279,22 @@
 //#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef powerpc 
-#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
-#endif
 #ifdef i386
 #define I386
 #define IMPLEMENTATION isc_info_db_impl_darwin_x86 /* 70 */
 #endif
-#ifdef __x86_64__
-#define DARWIN64
-#define IMPLEMENTATION isc_info_db_impl_darwin_x64 /* 73 */
+#ifdef __ppc__
+#define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
-#define MAP_ANON
+#define MAP_ANNON
+
+#define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t)length)
+#define MOVE_FAST(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)	memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)		memset (to, 0, (int) (length))
 
 #endif /* Darwin Platforms */
 
@@ -203,6 +328,11 @@
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
+#define MEMMOVE(from, to, length)     memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+
 #endif /* FREEBSD */
 
 /*****************************************************
@@ -229,6 +359,11 @@
 //#define KILLER_SIGNALS
 #define NO_NFS					/* no MTAB_OPEN or MTAB_CLOSE in isc_file.c */
 
+#define MEMMOVE(from, to, length)     memmove ((void *)(to), (void *)(from), (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy ((to), (from), (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy ((to), (from), (int) (length))
+#define MOVE_CLEAR(to, length)           memset ((to), 0, (int) (length))
+
 #endif /* NETBSD */
 
 
@@ -252,6 +387,10 @@
  */
 #define SOLARIS_MT
 
+#ifdef SOLARIS_MT
+#define ANY_THREADING
+#define MULTI_THREAD
+#endif
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
@@ -270,9 +409,35 @@
 #error "need to use SFIO"
 #endif
 
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+/*********   Reason for introducing MEMMOVE macro.
+
+  void *memcpy( void *s1, const void *s2, size_t n);
+  void *memmove( void *s1, const void *s2, size_t n);
+
+  The memcpy() function copies n characters from the string pointed to by the
+  s2 parameter into the location pointed to by the s1 parameter.  When copy-
+  ing overlapping strings, the behavior of this function is unreliable.
+
+  The memmove() function copies n characters from the string at the location
+  pointed to by the s2 parameter to the string at the location pointed to by
+  the s1 parameter.  Copying takes place as though the n number of characters
+  from string s2 are first copied into a temporary location having n bytes
+  that do not overlap either of the strings pointed to by s1 and s2. Then, n
+  number of characters from the temporary location are copied to the string
+  pointed to by s1. Consequently, this operation is nondestructive and
+  proceeds from left to right.
+  The above text is taken from the Digital UNIX man pages.
+
+     For maximum portability, memmove should be used when the memory areas
+     indicated by s1 and s2 may overlap, and memcpy used for faster copying
+     between non-overlapping areas.
+
+**********/
+
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or FB_UINT64. */
+   is an SINT64 or UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
@@ -292,7 +457,6 @@
 //#define DOUBLE_ALIGN    8
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
-#define RISC_ALIGNMENT
 #else /* sparc */
 
 #ifdef i386
@@ -304,6 +468,9 @@
 
 #endif /* sparc */
 
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)            memset (to, 0, (int) (length))
 
 #endif /* sun */
 
@@ -312,7 +479,11 @@
 * HP/UX platforms 
 *****************************************************/
 
-#ifdef HPUX
+#if (defined(hpux) || defined(HPUX))
+
+#ifndef hpux
+#define hpux
+#endif
 
 //#define KILLER_SIGNALS
 #define UNIX
@@ -330,15 +501,47 @@
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or FB_UINT64. */
+   is an SINT64 or UINT64. */
 #define QUADFORMAT "ll"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
 
-#define RISC_ALIGNMENT
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 
-#endif /* HPUX */
+#endif /* hpux */
+
+
+/*****************************************************
+* DEC VAX/VMS and AlphaVMS 
+*****************************************************/
+#ifdef VMS
+#define VAX_FLOAT
+//#define ALIGNMENT       4
+#define NO_NFS
+#define NO_CHECKSUM
+#define SYS_ARG		isc_arg_vms
+#define SYS_ERR		isc_arg_vms
+
+#if __ALPHA
+#define IMPLEMENTATION  isc_info_db_impl_alpha_vms /* 53 */
+#include <ints.h>
+#define ATOM_DEFINED
+typedef int64 SATOM;			/* 64 bit */
+typedef unsigned int64 UATOM;
+#else
+#define IMPLEMENTATION  isc_info_db_impl_isc_vms /* 27 */
+#endif /* __ALPHA */
+
+#define FINI_OK         1
+#define FINI_ERROR      44
+#define STARTUP_ERROR   46		/* this is also used in iscguard.h, make sure these match */
+
+#endif /* VMS */
+
 
 
 /*****************************************************
@@ -354,6 +557,10 @@
 //*#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 #else /* AIX PowerPC */
 #define AIX_PPC
@@ -363,6 +570,10 @@
 //#define ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
 #define QUADFORMAT "ll"			/* TMC 081700 */
@@ -382,6 +593,11 @@
 
 #define NO_NFS
 
+#define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
+#define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
+#define MOVE_CLEAR(to, length)           memset (to, 0, (int) (length))
+#define MEMMOVE(from, to, length)         memmove ((void *)to, (void *)from, (size_t) length)
+
 #define SYS_ARG		isc_arg_win32
 #define SYS_ERR		isc_arg_win32
 //#define SLONGFORMAT	"ld"
@@ -393,27 +609,25 @@
 #define LINEFORMAT "d"
 
 typedef __int64 SINT64;
-typedef unsigned __int64 FB_UINT64;
+typedef unsigned __int64 UINT64;
 #define INT64_DEFINED
 
 /* The following define is the prefix to go in front of a "d" or "u"
    format item in a printf() format string, to indicate that the argument
-   is an SINT64 or FB_UINT64. */
+   is an SINT64 or UINT64. */
 #define QUADFORMAT "I64"
 /* The following macro creates a quad-sized constant, possibly one
    which is too large to fit in a long int.  The Microsoft compiler does
    not permit the LL suffix which some other platforms require, but it
    handles numbers up to the largest 64-bit integer correctly without such
    a suffix, so the macro definition is trivial. */
-#ifdef __GNUC__ // needed for gcc 3.3.1
+#ifdef MINGW // needed for gcc 3.3.1
 #define QUADCONST(n) (n##LL)
 #else
 #define QUADCONST(n) (n)
 #endif
 
-#ifdef AMD64
-#define IMPLEMENTATION  isc_info_db_impl_winnt_amd64 /* 68 */
-#else
+#ifdef _X86_
 #ifndef I386
 #define I386
 #endif
@@ -466,6 +680,10 @@ typedef unsigned __int64 FB_UINT64;
 //#define KILLER_SIGNALS
 //
 #define IMPLEMENTATION  isc_info_db_impl_sco_ev /* 59 */
+#define MEMMOVE(from, to, length)       memmove ((void *)to, (void *)from, (size_t) length)
+#define MOVE_FAST(from, to, length)    memcpy (to, from, (unsigned int) (length))
+#define MOVE_FASTER(from, to, length)  memcpy (to, from, (unsigned int) (length))
+#define MOVE_CLEAR(to, length)        memset (to, 0, (unsigned int) (length))
 
 //  These functions are supported so we don't need the defines
 //#define setreuid(ruid, euid)     setuid(euid)
@@ -562,7 +780,11 @@ typedef unsigned __int64 FB_UINT64;
 
 /* sys/paramh.h : compatibility purposes */
 #ifndef NOFILE
+#ifdef VMS
+#define NOFILE      32
+#else
 #define NOFILE      20
+#endif
 #endif
 
 /* data type definitions */
@@ -570,7 +792,7 @@ typedef unsigned __int64 FB_UINT64;
 
 #ifndef INT64_DEFINED			/* 64 bit */
 typedef long long int SINT64;
-typedef unsigned long long int FB_UINT64;
+typedef unsigned long long int UINT64;
 #else
 #undef INT64_DEFINED
 #endif
@@ -647,7 +869,7 @@ struct ISC_TIMESTAMP
 #define MAX_SLONG		0x7FFFFFFF
 #define MIN_SLONG		(-MAX_SLONG - 1)
 
-#define MAX_UINT64              ((FB_UINT64) QUADCONST(0xFFFFFFFFFFFFFFFF))
+#define MAX_UINT64              ((UINT64) QUADCONST(0xFFFFFFFFFFFFFFFF))
 #define MIN_UINT64              QUADCONST(0x0000000000000000)
 
 #define MAX_SINT64              QUADCONST(0x7FFFFFFFFFFFFFFF)
@@ -699,9 +921,33 @@ struct ISC_TIMESTAMP
 #endif
 
 
+
+/* data conversion macros */
+
+#ifndef AOF32L
+#define AOF32L(l)               &l
+#endif
+
+
+
 /* data movement and allocation macros */
 
-#define MOVE_CLEAR(to, length)			memset(to, 0, (size_t) (length))
+#ifndef MOVE_FAST
+#define MOVE_FAST(from, to, length)       MOV_fast (from, to, (ULONG) (length))
+#endif
+
+#ifndef MOVE_FASTER
+#define MOVE_FASTER(from, to, length)     MOV_faster (from, to, (ULONG) (length))
+#endif
+
+#ifndef MEMMOVE
+/* Use character by character copy function */
+#define MEMMOVE(from, to, length)       MOV_fast (from, to, (ULONG) (length))
+#endif
+
+#ifndef MOVE_CLEAR
+#define MOVE_CLEAR(to, length)           MOV_fill (to, (ULONG) (length))
+#endif
 
 #ifndef ALLOC_LIB_MEMORY
 #define ALLOC_LIB_MEMORY(size)          gds__alloc (size)
@@ -803,16 +1049,6 @@ void GDS_breakpoint(int);
 #ifndef DOUBLE_DIVIDE
 #define DOUBLE_DIVIDE(a, b)      (((double) (a)) / ((double) (b)))
 #endif
-
-#define STRINGIZE_AUX(x)	#x
-#define STRINGIZE(x)		STRINGIZE_AUX(x)
-
-#ifdef _MSC_VER
-#define CONST64(a) (a##i64)
-#else
-#define CONST64(a) (a##LL)
-#endif
-
 
 /* switch name and state table.  This structure should be used in all
  * command line tools to facilitate parsing options.*/

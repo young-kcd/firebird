@@ -24,8 +24,6 @@
 #include "../dsql/dsql.h"
 #include "../dsql/misc_func.h"
 
-using namespace Jrd;
-
 const InternalInfo::InfoAttr InternalInfo::attr_array[max_internal_id] = {
 	{"<UNKNOWN>", 0},
 	{"CURRENT_CONNECTION", 0},

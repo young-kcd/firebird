@@ -34,9 +34,10 @@
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/scl.h"
 #include "../common/config/config.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
@@ -121,13 +122,8 @@ namespace {
 		Firebird::string login;
 		int	failCount;
 		time_t lastAttempt;
-
-		explicit FailedLogin(const Firebird::string& l)
-			: login(l), failCount(1), lastAttempt(time(0)) {}
-
-		FailedLogin(Firebird::MemoryPool& p, const FailedLogin& fl) 
-			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt) {}
-
+		FailedLogin(Firebird::MemoryPool& p) 
+			: login(p), failCount(0), lastAttempt(time(0)) {}
 		static const Firebird::string* generate(const void* sender, const FailedLogin* f)
 		{
 			return &(f->login);
@@ -152,34 +148,48 @@ namespace {
 			const Firebird::string, FailedLogin> inherited;
 
 	public:
-		explicit FailedLogins(MemoryPool& p) : inherited(p) {}
+		FailedLogins(MemoryPool& p) : inherited(p) {}
 
 		void loginFail(const Firebird::string& login)
 		{
-			Firebird::MutexLockGuard guard(fullAccess);
+			//Firebird::MutexLockGuard(fullAccess);
+			fullAccess.enter();
+			FailedLogin& l = get(login);
+			if (++l.failCount >= MAX_FAILED_ATTEMPTS)
+			{
+				sleepThread();
+				l.failCount = 0;
+			}
+			fullAccess.leave();
+		}
 
-			const time_t t = time(0);
-
+		void loginSuccess(const Firebird::string& login)
+		{
+			//Firebird::MutexLockGuard(fullAccess);
+			fullAccess.enter();
 			size_t pos;
 			if (find(login, pos))
 			{
-				FailedLogin& l = (*this)[pos];
-				if (t - l.lastAttempt >= FAILURE_DELAY)
-				{
-					l.failCount = 0;
-				}
-				l.lastAttempt = t;
-				if (++l.failCount >= MAX_FAILED_ATTEMPTS)
-				{
-					l.failCount = 0;
-					Jrd::DelayFailedLogin::raise(FAILURE_DELAY);
-				}
-				return;
+				remove(pos);
+			}
+			fullAccess.leave();
+		}
+
+	private:
+		FailedLogin& get(const Firebird::string& login)
+		{
+			size_t pos;
+			if (find(login, pos))
+			{
+				(*this)[pos].lastAttempt = time(0);
+				return (*this)[pos];
 			}
 
+checkForFreeSpace:
 			if (getCount() >= MAX_CONCURRENT_FAILURES)
 			{
 				// try to perform old entries collection
+				const time_t t = time(0);
 				for (iterator i = begin(); i != end(); )
 				{
 					if (t - i->lastAttempt >= FAILURE_DELAY)
@@ -195,20 +205,23 @@ namespace {
 			if (getCount() >= MAX_CONCURRENT_FAILURES)
 			{
 				// it seems we are under attack - too many wrong logins !!!
-				Jrd::DelayFailedLogin::raise(FAILURE_DELAY);
+				// therefore sleep for a while and clear failures cache
+				sleepThread();
+				goto checkForFreeSpace;
 			}
 
-			add(FailedLogin(login));
+			FailedLogin& rc = add();
+			rc.login = login;
+			return rc;
 		}
 
-		void loginSuccess(const Firebird::string& login)
+		void sleepThread()
 		{
-			Firebird::MutexLockGuard guard(fullAccess);
-			size_t pos;
-			if (find(login, pos))
-			{
-				remove(pos);
-			}
+			THREAD_EXIT();
+			fullAccess.leave();
+			THREAD_SLEEP(1000 * FAILURE_DELAY);
+			THREAD_ENTER();
+			fullAccess.enter();
 		}
 	};
 #else //SUPERSERVER
@@ -216,7 +229,7 @@ namespace {
 	class FailedLogins
 	{
 	public:
-		explicit FailedLogins(MemoryPool& p) {}
+		FailedLogins(MemoryPool& p) {}
 		void loginFail(const Firebird::string& login) { }
 		void loginSuccess(const Firebird::string& login) {}
 	};
@@ -234,23 +247,23 @@ namespace {
 
 void SecurityDatabase::fini()
 {
-	Firebird::MutexLockGuard guard(mutex);
 	counter -= (is_cached) ? 1 : 0;
 #ifndef EMBEDDED
 	if (counter == 1 && lookup_db)
 	{
+		THREAD_EXIT();
 		isc_detach_database(status, &lookup_db);
+		THREAD_ENTER();
 	}
 #endif
 }
 
 void SecurityDatabase::init()
 {
-	Firebird::MutexLockGuard guard(mutex);
 	counter += (is_cached) ? 1 : 0;
 }
 
-bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
+bool SecurityDatabase::lookup_user(TEXT * user_name, int *uid, int *gid, TEXT * pwd)
 {
 	bool found = false;		// user found flag
 	TEXT uname[129];		// user name buffer
@@ -268,7 +281,9 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
-	Firebird::MutexLockGuard guard(mutex);
+	THREAD_EXIT();
+	mutex.acquire();
+	THREAD_ENTER();
 
 	// Attach database and compile request
 
@@ -280,7 +295,9 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 			lookup_db = 0;
 			isc_detach_database(status, &tmp);
 		}
-		Firebird::status_exception::raise(isc_psw_attach, 0);
+		THREAD_ENTER();
+		mutex.release();
+		ERR_post(isc_psw_attach, 0);
 	}
 
 	// Lookup
@@ -289,7 +306,9 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		Firebird::status_exception::raise(isc_psw_start_trans, 0);
+		THREAD_ENTER();
+		mutex.release();
+		ERR_post(isc_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -318,6 +337,8 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	{
 		isc_detach_database(status, &lookup_db);
 	}
+	THREAD_ENTER();
+	mutex.release();
 
 	return found;
 }
@@ -328,8 +349,11 @@ bool SecurityDatabase::prepare()
 
 	if (lookup_db)
 	{
+		THREAD_EXIT();
 		return true;
 	}
+
+	THREAD_EXIT();
 
 	lookup_db = lookup_req = 0;
 
@@ -339,11 +363,21 @@ bool SecurityDatabase::prepare()
 	// Perhaps build up a dpb
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
+	// Insert username
+	const char* szAuthenticator = "authenticator";
+	dpb.insertString(isc_dpb_user_name, 
+		szAuthenticator, strlen(szAuthenticator));
+
+	// Insert password
+	const char* szPassword = "none";
+	dpb.insertString(isc_dpb_password, 
+		szPassword, strlen(szPassword));
+
 	// Attachment is for the security database
 	dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
-	// Attach as SYSDBA
-	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
+	// Temporarily disable security checks for this thread
+	JRD_thread_security_disable(true);
 
 	isc_attach_database(status, 0, user_info_name, &lookup_db, 
 		dpb.getBufferLength(), 
@@ -351,6 +385,7 @@ bool SecurityDatabase::prepare()
 
 	if (status[1])
 	{
+		JRD_thread_security_disable(false);
 		char buffer[1024];
 		const ISC_STATUS *s = status;
 		if (fb_interpret(buffer, sizeof buffer, &s))
@@ -364,6 +399,8 @@ bool SecurityDatabase::prepare()
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
 						reinterpret_cast<const char*>(PWD_REQUEST));
+
+	JRD_thread_security_disable(false);
 
 	if (status[1])
 	{
@@ -396,7 +433,7 @@ void SecurityDatabase::shutdown()
 	instance.fini();
 }
 
-void SecurityDatabase::verifyUser(Firebird::string& name,
+void SecurityDatabase::verifyUser(TEXT* name,
 								  const TEXT* user_name,
 								  const TEXT* password,
 								  const TEXT* password_enc,
@@ -407,39 +444,22 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 {
 	if (user_name)
 	{
-		name = user_name;
-		for (unsigned int n = 0; n < name.length(); ++n)
+		TEXT* p = name;
+		for (const TEXT* q = user_name; *q; ++q, ++p)
 		{
-			name[n] = UPPER7(name[n]);
+			*p = UPPER7(*q);
 		}
+		*p = 0;
 	}
 
 #ifndef EMBEDDED
-	else
-	{
-		remoteFailedLogins().loginFail(remoteId);
-		Firebird::status_exception::raise(isc_login, 0);
-	}
-
-	static AmCache useNative = AM_UNKNOWN;
-	if (useNative == AM_UNKNOWN)
-	{
-		Firebird::PathName authMethod(Config::getAuthMethod());
-		useNative = (authMethod == AmNative || authMethod == AmMixed) ? 
-			AM_ENABLED : AM_DISABLED;
-	}
-	if (useNative == AM_DISABLED)
-	{
-		remoteFailedLogins().loginFail(remoteId);
-		Firebird::status_exception::raise(isc_login, 0);
-	}
 
 	// Look up the user name in the userinfo database and use the parameters
 	// found there. This means that another database must be accessed, and
 	// that means the current context must be saved and restored.
 
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
-	const bool found = instance.lookup_user(name.c_str(), uid, gid, pw1);
+	const bool found = instance.lookup_user(name, uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
 	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();
@@ -453,7 +473,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	{
 		usernameFailedLogins().loginFail(name);
 		remoteFailedLogins().loginFail(remoteId);
-		Firebird::status_exception::raise(isc_login, 0);
+		ERR_post(isc_login, 0);
 	}
 
 	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
@@ -480,7 +500,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 		{
 			usernameFailedLogins().loginFail(name);
 			remoteFailedLogins().loginFail(remoteId);
-			Firebird::status_exception::raise(isc_login, 0);
+			ERR_post(isc_login, 0);
 		}
 	}
 
@@ -491,23 +511,3 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	*node_id = 0;
 }
 
-void DelayFailedLogin::raise(int sec)
-{
-	throw DelayFailedLogin(sec);
-}
-
-ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer*) const throw()
-{
-	ISC_STATUS *sv = status_vector;
-
-	*sv++ = isc_arg_gds;
-	*sv++ = isc_login;
-	*sv++ = isc_arg_end;
-
-	return status_vector[1];
-}
-
-void DelayFailedLogin::sleep() const
-{
-	THREAD_SLEEP(1000 * seconds);
-}

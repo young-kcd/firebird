@@ -378,7 +378,7 @@ void HSH_remove( SYM symbol)
 					return;
 				}
 
-	DDL_err(280);	/* msg 280: HSH_remove failed  */
+	DDL_err(280, NULL, NULL, NULL, NULL, NULL);	/* msg 280: HSH_remove failed  */
 }
 
 

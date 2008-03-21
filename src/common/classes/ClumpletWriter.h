@@ -45,11 +45,9 @@ class ClumpletWriter : public ClumpletReader
 public:
 	// Create empty clumplet writer.
 	ClumpletWriter(Kind k, size_t limit, UCHAR tag = 0);
-	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
 	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
-	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, size_t buffLen);
@@ -67,10 +65,6 @@ public:
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
-
-	// Delete all clumplets with given tag
-	// Returns true if any found
-	bool deleteWithTag(UCHAR tag);
 
 	virtual const UCHAR* getBuffer() const { return dynamic_buffer.begin(); }
 protected:

@@ -33,7 +33,6 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
-#define DEBUG_CLUMPLETS
 #if defined(DEV_BUILD) && !defined(DEBUG_CLUMPLETS)
 #define DEBUG_CLUMPLETS
 #endif
@@ -45,11 +44,10 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
-	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
 	virtual ~ClumpletReader() { }
 
 	// Navigation in clumplet buffer
@@ -74,8 +72,7 @@ public:
 	size_t getBufferLength() const 
 	{
 		size_t rc = getBufferEnd() - getBuffer();
-		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
-					   kind != WideUnTagged && kind != SpbItems)
+		if (rc == 1 && kind != UnTagged && kind != SpbStart)
 		{
 			rc = 0;
 		}
@@ -90,11 +87,11 @@ public:
 #endif
 
 protected:
-	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
+	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb};
 	ClumpletType getClumpletType(UCHAR tag) const;
 	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();
-
+	
 	size_t cur_offset;
 	const Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer

@@ -28,9 +28,9 @@
 const int isc_action_svc_lock_stats		= 13;	/* Retrieves lock manager statistics */
 const int isc_action_svc_set_config		= 14;	/* Sets configuration file values */
 const int isc_action_svc_default_config	= 15;	/* Sets the configuration options to their default values */
-const int isc_action_svc_set_env		= 16;	/* Sets the value for $FIREBIRD */
-const int isc_action_svc_set_env_lock	= 17;	/* Sets the value for $FIREBIRD_LOCK */
-const int isc_action_svc_set_env_msg	= 18;	/* Sets the value for $FIREBIRD_MSG */
+const int isc_action_svc_set_env		= 16;	/* Sets the value for $INTERBASE */
+const int isc_action_svc_set_env_lock	= 17;	/* Sets the value for $INTERBASE_LOCK */
+const int isc_action_svc_set_env_msg	= 18;	/* Sets the value for $INTERBASE_MSG */
 
 
 /* Service Info Flags */

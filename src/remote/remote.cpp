@@ -32,14 +32,16 @@
 #include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
-#include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 
 #ifdef REMOTE_DEBUG
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
+
+int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 
 const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
 const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
@@ -48,6 +50,7 @@ static TEXT* attach_failures = NULL;
 static TEXT* attach_failures_ptr;
 
 static void cleanup_memory(void*);
+static SLONG get_parameter(const UCHAR**);
 
 
 void REMOTE_cleanup_transaction( RTR transaction)
@@ -280,7 +283,7 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 }
 
 
-void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
+void REMOTE_free_packet( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -289,8 +292,8 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
  **************************************
  *
  * Functional description
- *	Zero out a full packet block (partial == false) or
- *	part of packet used in last operation (partial == true)
+ *	Zero out a packet block.
+ *
  **************************************/
 	XDR xdr;
 	USHORT n;
@@ -300,18 +303,12 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 					  sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
 
-		if (partial) {
+		for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
+			packet->p_operation = (P_OP) n;
 			xdr_protocol(&xdr, packet);
 		}
-		else {
-			for (n = (USHORT) op_connect; n < (USHORT) op_max; n++) {
-				packet->p_operation = (P_OP) n;
-				xdr_protocol(&xdr, packet);
-			}
-		}
 #ifdef DEBUG_XDR_MEMORY
-		// All packet memory allocations should now be voided. 
-		// note: this code will may work properly if partial == true
+		/* All packet memory allocations should now be voided. */
 
 		for (n = 0; n < P_MALLOC_SIZE; n++)
 			fb_assert(packet->p_malloc[n].p_operation == op_void);
@@ -321,7 +318,9 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 }
 
 
-void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
+void REMOTE_get_timeout_params(
+										  rem_port* port,
+										  const UCHAR* dpb, USHORT dpb_length)
 {
 /**************************************
  *
@@ -338,19 +337,99 @@ void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
  *
  **************************************/
 	bool got_dpb_connect_timeout = false;
+	bool got_dpb_dummy_packet_interval = false;
 
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
+	fb_assert(isc_dpb_dummy_packet_interval == isc_spb_dummy_packet_interval);
 
-	port->port_connect_timeout = pb && pb->find(isc_dpb_connect_timeout) ? 
-								 pb->getInt() : Config::getConnectionTimeout();
+	port->port_flags &= ~PORT_dummy_pckt_set;
 
-	port->port_flags |= PORT_dummy_pckt_set;
-	port->port_dummy_packet_interval = Config::getDummyPacketInterval();
+	if (dpb && dpb_length) {
+		const UCHAR* p = dpb;
+		const UCHAR* const end = p + dpb_length;
+
+		if (*p++ == isc_dpb_version1) {
+			while (p < end)
+				switch (*p++) {
+				case isc_dpb_connect_timeout:
+					port->port_connect_timeout = get_parameter(&p);
+					got_dpb_connect_timeout = true;
+					break;
+
+// 22 Aug 2003. Do not receive this parameter from the client as dummy packets
+//   either kill idle client process or cause unexpected disconnections. 
+//   This applies to all IB/FB versions.
+//				case isc_dpb_dummy_packet_interval:
+//					port->port_dummy_packet_interval = get_parameter(&p);
+//					got_dpb_dummy_packet_interval = true;
+//					port->port_flags |= PORT_dummy_pckt_set;
+//					break;
+
+				case isc_dpb_sys_user_name:
+			/** Store the user name in thread specific storage.
+			We need this later while expanding filename to
+			get the users home directory.
+			Normally the working directory is stored in
+			the attachment but in this case the attachment is 
+			not yet created.
+			Also note that the thread performing this task
+			has already called THREAD_ENTER
+		    **/
+					{
+						char* t_data;
+						int i = 0;
+						int l = *(p++);
+						if (l) {
+							t_data = (char *) malloc(l + 1);
+							do {
+								t_data[i] = *p;
+								if (t_data[i] == '.')
+									t_data[i] = 0;
+								i++;
+								p++;
+							} while (--l);
+						}
+						else
+							t_data = (char *) malloc(1);
+						t_data[i] = 0;
+
+
+						ThreadData::putSpecificData((void *) t_data);
+
+					}
+					break;
+
+				default:
+					{
+						// Skip over this parameter - not important to us
+						const USHORT len = *p++;
+						p += len;
+						break;
+					}
+				}
+		}
+	}
+
+	if (!got_dpb_connect_timeout || !got_dpb_dummy_packet_interval) {
+		/* Didn't find all parameters in the dpb, fetch configuration
+		   information from the configuration file and set the missing
+		   values */
+
+		if (!got_dpb_connect_timeout)
+			port->port_connect_timeout = Config::getConnectionTimeout();
+
+		if (!got_dpb_dummy_packet_interval) {
+			port->port_flags |= PORT_dummy_pckt_set;
+			port->port_dummy_packet_interval = Config::getDummyPacketInterval();
+		}
+	}
+/* Insure a meaningful keepalive interval has been set. Otherwise, too
+   many keepalive packets will drain network performance. */
+
 	if (port->port_dummy_packet_interval < 0)
 		port->port_dummy_packet_interval = DUMMY_INTERVAL;
 
 	port->port_dummy_timeout = port->port_dummy_packet_interval;
-
 #ifdef DEBUG
 	printf("REMOTE_get_timeout dummy = %lu conn = %lu\n",
 			  port->port_dummy_packet_interval, port->port_connect_timeout);
@@ -405,7 +484,7 @@ void REMOTE_release_messages( REM_MSG messages)
 			printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
-			ALLR_free(temp);
+			ALLR_release(temp);
 			if (message == messages)
 				break;
 		}
@@ -427,12 +506,10 @@ void REMOTE_release_request( rrq* request)
 	RDB rdb = request->rrq_rdb;
 
 	for (rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
-	{
 		if (*p == request) {
 			*p = request->rrq_next;
 			break;
 		}
-	}
 
 /* Get rid of request and all levels */
 
@@ -449,7 +526,7 @@ void REMOTE_release_request( rrq* request)
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
 #endif
-					ALLR_free(tail->rrq_format);
+					ALLR_release(tail->rrq_format);
 				}
 				REMOTE_release_messages(message);
 			}
@@ -458,7 +535,7 @@ void REMOTE_release_request( rrq* request)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_release_request    free request     %x\n", request);
 #endif
-		ALLR_free(request);
+		ALLR_release(request);
 		if (!(request = next))
 			break;
 	}
@@ -534,9 +611,9 @@ void REMOTE_reset_statement( RSR statement)
 
 /* find the entry before statement->rsr_message */
 
-	REM_MSG temp = message->msg_next;
-	while (temp->msg_next != message)
-		temp = temp->msg_next;
+	REM_MSG temp;
+	for (temp = message->msg_next; temp->msg_next != message;
+		 temp = temp->msg_next);
 
 	temp->msg_next = message->msg_next;
 	message->msg_next = message;
@@ -596,7 +673,6 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
-		case isc_arg_sql_state:
 			p = (TEXT*) *vector;
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
@@ -663,7 +739,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_release_request    free vector      %x\n", vector);
 #endif
-		ALLR_free(vector);
+		ALLR_release(vector);
 	}
 
 	new_vector->vec_object[slot] = object;
@@ -691,6 +767,29 @@ static void cleanup_memory( void *block)
 	gds__unregister_cleanup(cleanup_memory, 0);
 	attach_failures = NULL;
 }
+
+
+static SLONG get_parameter(const UCHAR** ptr)
+{
+/**************************************
+ *
+ *	g e t _ p a r a m e t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Pick up a VAX format parameter from a parameter block, including the
+ *	length byte.
+ *	This is a clone of jrd/jrd.c:get_parameter()
+ *
+ **************************************/
+	const SSHORT l = *(*ptr)++;
+	const SLONG parameter = gds__vax_integer(*ptr, l);
+	*ptr += l;
+
+	return parameter;
+}
+
 
 
 // TMN: Beginning of C++ port - ugly but a start
@@ -735,7 +834,7 @@ rem_port* rem_port::request(PACKET* pckt)
 	return (*this->port_request)(this, pckt);
 }
 
-#ifdef REM_SERVER
+#ifdef SUPERSERVER
 bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
@@ -768,7 +867,6 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 				xdrs->x_handy = 0;
 			}
 			rem_port* port = (rem_port*) xdrs->x_public;
-			Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 			if (port->port_qoffset >= port->port_queue->getCount()) {
 				port->port_flags |= PORT_partial_data;
 				return FALSE;
@@ -783,25 +881,4 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 	
 	return TRUE;
 }
-#endif //REM_SERVER
-
-#ifdef TRUSTED_AUTH
-ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, 
-					   ServerAuth::Part2* p2, P_OP op)
-: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()), 
-  part2(p2), operation(op)
-{
-	fileName.assign(fName, fLen);
-	size_t pbLen = pb.getBufferLength();
-	if (pbLen)
-	{
-		memcpy(clumplet.getBuffer(pbLen), pb.getBuffer(), pbLen);
-	}
-	authSspi = FB_NEW(*getDefaultMemoryPool()) AuthSspi;
-}
-
-ServerAuth::~ServerAuth()
-{
-	delete authSspi;
-}
-#endif // TRUSTED_AUTH
+#endif //SUPERSERVER

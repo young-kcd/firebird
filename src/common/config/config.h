@@ -24,6 +24,7 @@
 #define COMMON_CONFIG_H
 
 #include "../common/classes/fb_string.h"
+#include "fb_vector.h"
 #include "../jrd/os/path_utils.h"
 
 /**
@@ -62,19 +63,13 @@ extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
 extern const char*	GCPolicyDefault;
 
-extern const char*	AmNative;
-extern const char*	AmTrusted;
-extern const char*	AmMixed;
-
-enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
-
 class Config
 {
 	enum ConfigKey
 	{
 		KEY_ROOT_DIRECTORY,							// 0
-		KEY_TEMP_BLOCK_SIZE,						// 1
-		KEY_TEMP_CACHE_LIMIT,						// 2
+		KEY_SORT_MEM_BLOCK_SIZE,					// 1
+		KEY_SORT_MEM_UPPER_LIMIT,					// 2
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
@@ -85,50 +80,41 @@ class Config
 		KEY_CONNECTION_TIMEOUT,						// 10
 		KEY_DUMMY_PACKET_INTERVAL,					// 11
 		KEY_LOCK_MEM_SIZE,							// 12
-		KEY_LOCK_GRANT_ORDER,						// 13
-		KEY_LOCK_HASH_SLOTS,						// 14
-		KEY_LOCK_ACQUIRE_SPINS,						// 15
-		KEY_EVENT_MEM_SIZE,							// 16
-		KEY_DEADLOCK_TIMEOUT,						// 17
-		KEY_PRIORITY_SWITCH_DELAY,					// 18
-		KEY_USE_PRIORITY_SCHEDULER,					// 19
-		KEY_PRIORITY_BOOST,							// 20
-		KEY_REMOTE_SERVICE_NAME,					// 21
-		KEY_REMOTE_SERVICE_PORT,					// 22
-		KEY_REMOTE_PIPE_NAME,						// 23
-		KEY_IPC_NAME,								// 24
-		KEY_MAX_UNFLUSHED_WRITES,					// 25
-		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 26
-		KEY_PROCESS_PRIORITY_LEVEL,					// 27
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 28
-		KEY_REMOTE_AUX_PORT,						// 29
-		KEY_REMOTE_BIND_ADDRESS,					// 30
-		KEY_EXTERNAL_FILE_ACCESS,					// 31
-		KEY_DATABASE_ACCESS,						// 32
-		KEY_UDF_ACCESS,								// 33
-		KEY_TEMP_DIRECTORIES,						// 34
- 		KEY_BUGCHECK_ABORT,							// 35
-		KEY_LEGACY_HASH,							// 36
-		KEY_GC_POLICY,								// 37
-		KEY_REDIRECTION,							// 38
-		KEY_OLD_COLUMN_NAMING,						// 39
-		KEY_AUTH_METHOD,							// 40
-		KEY_DATABASE_GROWTH_INCREMENT,				// 41
-		KEY_MAX_FILESYSTEM_CACHE,					// 42
-		KEY_RELAXED_ALIAS_CHECKING					// 43
+		KEY_LOCK_SEM_COUNT,							// 13
+		KEY_LOCK_SIGNAL,							// 14
+		KEY_LOCK_GRANT_ORDER,						// 15
+		KEY_LOCK_HASH_SLOTS,						// 16
+		KEY_LOCK_ACQUIRE_SPINS,						// 17
+		KEY_EVENT_MEM_SIZE,							// 18
+		KEY_DEADLOCK_TIMEOUT,						// 19
+		KEY_SOLARIS_STALL_VALUE,					// 20
+		KEY_TRACE_MEMORY_POOLS,						// 21	
+		KEY_PRIORITY_SWITCH_DELAY,					// 22
+		KEY_USE_PRIORITY_SCHEDULER,					// 23
+		KEY_PRIORITY_BOOST,							// 24
+		KEY_REMOTE_SERVICE_NAME,					// 25
+		KEY_REMOTE_SERVICE_PORT,					// 26
+		KEY_REMOTE_PIPE_NAME,						// 27
+		KEY_IPC_NAME,								// 28
+		KEY_MAX_UNFLUSHED_WRITES,					// 29
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 30
+		KEY_PROCESS_PRIORITY_LEVEL,					// 31
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 32
+		KEY_REMOTE_AUX_PORT,						// 33
+		KEY_REMOTE_BIND_ADDRESS,					// 34
+		KEY_EXTERNAL_FILE_ACCESS,					// 35
+		KEY_DATABASE_ACCESS,						// 36
+		KEY_UDF_ACCESS,								// 37
+		KEY_TEMP_DIRECTORIES,						// 38
+ 		KEY_BUGCHECK_ABORT,							// 39
+		KEY_TRACE_DSQL,								// 40
+		KEY_LEGACY_HASH,							// 41
+		KEY_GC_POLICY,								// 42
+		KEY_REDIRECTION,							// 43
+		KEY_OLD_COLUMN_NAMING						// 44
 	};
 
 public:
-
-	/*
-	 Interface to support command line root specification.
-	*
-	 This ugly solution was required to make it possible to specify root
-	 in command line to load firebird.conf from that root, though in other 
-	 cases firebird.conf may be also used to specify root.
-	*/
-	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
-	static const Firebird::PathName* getCommandLineRootDirectory();
 
 	/*
 		Installation directory
@@ -141,14 +127,14 @@ public:
 	static const char* getRootDirectory();
 
 	/*
-		Allocation chunk for the temporary spaces
+		Block size for the sorting manager
 	*/
-	static int getTempBlockSize();
+	static int getSortMemBlockSize();
 
 	/*
-		Caching limit for the temporary data
+		Memory usage limit for the sorting manager
 	*/
-	static int getTempCacheLimit();
+	static int getSortMemUpperLimit();
 
 	/*
 		Whether remote (NFS) files can be opened
@@ -201,6 +187,16 @@ public:
 	static int getLockMemSize();
 
 	/*
+		Lock manager semaphore count
+	*/
+	static int getLockSemCount();
+
+	/*
+		Lock manager signal number
+	*/
+	static int getLockSignal();
+
+	/*
 		Lock manager grant order
 	*/
 	static bool getLockGrantOrder();
@@ -229,6 +225,11 @@ public:
 		Solaris stall value
 	*/
 	static int getSolarisStallValue();
+
+	/*
+		Trace memory pools
+	*/
+	static bool getTraceMemoryPools();
 
 	/*
 		Priority switch delay
@@ -315,6 +316,11 @@ public:
 	*/
 	static const char *getTempDirectories();
 
+	/*
+		DSQL trace bitmask
+	*/
+	static int getTraceDSQL();
+
  	/*
  		Abort on BUGCHECK and structured exceptions
  	*/
@@ -340,16 +346,6 @@ public:
 	*/
 	static bool getOldColumnNaming();
 
-	/*
-		Use native, trusted or mixed authentication 
-	*/
-	static const char *getAuthMethod();
-
-	static int getDatabaseGrowthIncrement();
-
-	static int getMaxFileSystemCache();
-
-	static bool getRelaxedAliasChecking();
 };
 
 namespace Firebird {

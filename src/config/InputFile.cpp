@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "firebird.h"
-#include "../common/classes/alloc.h"
 #include "InputFile.h"
 #include "AdminException.h"
 

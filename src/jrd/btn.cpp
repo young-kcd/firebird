@@ -81,7 +81,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
  *
  **************************************/
 	const bool leafPage = (page->btr_level == 0);
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->btr_header.pag_flags;
 	//const UCHAR* endPointer = (UCHAR*)page + page->btr_length;
 
 	IndexNode node, previousNode;
@@ -130,7 +130,7 @@ SLONG findPageInDuplicates(const btree_page* page, UCHAR* pointer,
 }
 
 
-USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, UCHAR flags)
+USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, SCHAR flags)
 {
 /**************************************
  *
@@ -185,7 +185,7 @@ USHORT getJumpNodeSize(const IndexJumpNode* jumpNode, UCHAR flags)
 }
 
 
-USHORT getNodeSize(const IndexNode* indexNode, UCHAR flags, bool leafNode)
+USHORT getNodeSize(const IndexNode* indexNode, SCHAR flags, bool leafNode)
 {
 /**************************************
  *
@@ -346,21 +346,21 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
  *  node is returned.
  *
  **************************************/
-	if (page->btr_header.pag_flags & btr_jump_info)
-	{
+	if (page->btr_header.pag_flags & btr_jump_info) {
 		if (jumpInfo) {
 			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);
 		}
-
-		IndexJumpInfo jumpInformation;
-		UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
-		readJumpInfo(&jumpInformation, pointer);
-
-		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
+		else {
+			IndexJumpInfo jumpInformation;
+			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
+			readJumpInfo(&jumpInformation, pointer);
+			return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
+		}
 	}
-
-	return reinterpret_cast<UCHAR*>(page->btr_nodes);
+	else {
+		return reinterpret_cast<UCHAR*>(page->btr_nodes);
+	}
 }
 
 
@@ -422,7 +422,7 @@ UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expa
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	const UCHAR flags = page->btr_header.pag_flags;
+	const SCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);
@@ -440,7 +440,7 @@ UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expa
 
 
 UCHAR* nextNode(IndexNode* node, UCHAR* pointer, 
-					UCHAR flags,  btree_exp** expanded_node)
+					SCHAR flags,  btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -466,7 +466,7 @@ UCHAR* nextNode(IndexNode* node, UCHAR* pointer,
 
 
 UCHAR* previousNode(IndexNode* node, UCHAR* pointer,
-					UCHAR flags,  btree_exp** expanded_node)
+					SCHAR flags,  btree_exp** expanded_node)
 {
 /**************************************
  *
@@ -513,7 +513,7 @@ UCHAR* readJumpInfo(IndexJumpInfo* jumpInfo, UCHAR* pagePointer)
 
 
 UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, 
-					UCHAR flags)
+					SCHAR flags)
 {
 /**************************************
  *
@@ -556,6 +556,194 @@ UCHAR* readJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 }
 
 
+UCHAR* readNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, bool leafNode)
+{
+/**************************************
+ *
+ *	r e a d N o d e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Read a leaf/page node from the page by the
+ *  given pagePointer and the return the
+ *  remaining position after the read.
+ *
+ **************************************/
+	indexNode->nodePointer = pagePointer;
+	if (flags & btr_large_keys) {
+
+		// Get first byte that contains internal flags and 6 bits from number
+		UCHAR* localPointer = pagePointer;
+		UCHAR internalFlags = *localPointer++;
+		SINT64 number = (internalFlags & 0x1F);
+		internalFlags = ((internalFlags & 0xE0) >> 5);
+
+		indexNode->isEndLevel = (internalFlags == BTN_END_LEVEL_FLAG);
+		indexNode->isEndBucket = (internalFlags == BTN_END_BUCKET_FLAG);
+
+		// If this is a END_LEVEL marker then we're done
+		if (indexNode->isEndLevel) {
+			indexNode->prefix = 0;
+			indexNode->length = 0;
+			indexNode->recordNumber.setValue(0);
+			indexNode->pageNumber = 0;
+			return localPointer;
+		}
+
+		// Get remaining bits for number
+		ULONG tmp = *localPointer++;
+		number |= (tmp & 0x7F) << 5;
+		if (tmp >= 128) {
+			tmp = *localPointer++;
+			number |= (tmp & 0x7F) << 12;
+			if (tmp >= 128) {
+				tmp = *localPointer++;
+				number |= (tmp & 0x7F) << 19;
+				if (tmp >= 128) {
+					tmp = *localPointer++;
+					number |= (UINT64) (tmp & 0x7F) << 26;
+					if (tmp >= 128) {
+						tmp = *localPointer++;
+						number |= (UINT64) (tmp & 0x7F) << 33;
+/*
+	Uncomment this if you need more bits in record number
+						if (tmp >= 128) {
+							tmp = *localPointer++;
+							number |= (UINT64) (tmp & 0x7F) << 40;
+							if (tmp >= 128) {
+								tmp = *localPointer++;
+								number |= (UINT64) (tmp & 0x7F) << 47;
+								if (tmp >= 128) {
+									tmp = *localPointer++;
+									number |= (UINT64) (tmp & 0x7F) << 54; // We get 61 bits at this point!
+								}
+							}
+						}
+*/
+					}
+				}
+			}
+		}
+		indexNode->recordNumber.setValue(number);
+
+		if (!leafNode) {
+			// Get page number for non-leaf pages
+			tmp = *localPointer++;
+			number = (tmp & 0x7F);
+			if (tmp >= 128) {
+				tmp = *localPointer++;
+				number |= (tmp & 0x7F) << 7;
+				if (tmp >= 128) {
+					tmp = *localPointer++;
+					number |= (tmp & 0x7F) << 14;
+					if (tmp >= 128) {
+						tmp = *localPointer++;
+						number |= (tmp & 0x7F) << 21;
+						if (tmp >= 128) {
+							tmp = *localPointer++;
+							number |= (tmp & 0x0F) << 28;
+/*
+	Change number to 64-bit type and enable this for 64-bit support
+
+							number |= (*tmp & 0x7F) << 28;
+							if (tmp >= 128) {
+								tmp = *localPointer++;
+								number |= (*tmp & 0x7F) << 35;
+								if (tmp >= 128) {
+									tmp = *localPointer++;
+									number |= (*tmp & 0x7F) << 42;
+									if (tmp >= 128) {
+										tmp = *localPointer++;
+										number |= (*tmp & 0x7F) << 49;
+										if (tmp >= 128) {
+											tmp = *localPointer++;
+											number |= (*tmp & 0x7F) << 56; // We get 63 bits at this point!
+										}
+									}
+								}
+							}
+*/
+						}
+					}
+				}
+			}
+			indexNode->pageNumber = number;
+		}
+
+		if (internalFlags == BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG) {
+			// Prefix is zero
+			indexNode->prefix = 0;
+		}
+		else {
+			// Get prefix
+			tmp = *localPointer++;
+			indexNode->prefix = (tmp & 0x7F);
+			if (tmp & 0x80) {
+				tmp = *localPointer++;
+				indexNode->prefix |= (tmp & 0x7F) << 7; // We get 14 bits at this point
+			}
+		}
+
+		if ((internalFlags == BTN_ZERO_LENGTH_FLAG) ||
+			(internalFlags == BTN_ZERO_PREFIX_ZERO_LENGTH_FLAG))
+		{
+			// Length is zero
+			indexNode->length = 0;
+		}
+		else if (internalFlags == BTN_ONE_LENGTH_FLAG) {
+			// Length is one
+			indexNode->length = 1;
+		}
+		else {
+			// Get length
+			tmp = *localPointer++;
+			indexNode->length = (tmp & 0x7F);
+			if (tmp & 0x80) {
+				tmp = *localPointer++;
+				indexNode->length |= (tmp & 0x7F) << 7; // We get 14 bits at this point
+			}
+		}
+
+		// Get pointer where data starts
+		indexNode->data = localPointer;
+		localPointer += indexNode->length;
+
+		return localPointer;
+	}
+	else {
+		indexNode->prefix = *pagePointer++;
+		indexNode->length = *pagePointer++;
+		if (leafNode) {
+			// Nice sign extension should happen here
+			indexNode->recordNumber.setValue(get_long(pagePointer));
+			indexNode->isEndLevel = (indexNode->recordNumber.getValue() == END_LEVEL);
+			indexNode->isEndBucket = (indexNode->recordNumber.getValue() == END_BUCKET);
+		} 
+		else {
+			indexNode->pageNumber = get_long(pagePointer);
+			indexNode->isEndLevel = (indexNode->pageNumber == END_LEVEL);
+			indexNode->isEndBucket = (indexNode->pageNumber == END_BUCKET);
+		}
+		pagePointer += sizeof(SLONG);
+
+		indexNode->data = pagePointer;
+		pagePointer += indexNode->length;
+
+		// Get recordnumber for non-leaf-nodes and on leaf-nodes when
+		// last node is END_BUCKET and duplicate (or NULL).
+		if ((flags & btr_all_record_number) &&
+			((!leafNode) ||
+			 (leafNode && indexNode->isEndBucket && (indexNode->length == 0)))) 
+		{
+			indexNode->recordNumber.setValue(get_long(pagePointer));
+			pagePointer += sizeof(SLONG);
+		}
+	}
+	return pagePointer;
+}
+
+
 UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
 {
 /**************************************
@@ -580,7 +768,7 @@ UCHAR* writeJumpInfo(btree_page* page, const IndexJumpInfo* jumpInfo)
 
 
 UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer, 
-						UCHAR flags)
+						SCHAR flags)
 {
 /**************************************
  *
@@ -633,7 +821,7 @@ UCHAR* writeJumpNode(IndexJumpNode* jumpNode, UCHAR* pagePointer,
 }
 
 
-UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, UCHAR flags,
+UCHAR* writeNode(IndexNode* indexNode, UCHAR* pagePointer, SCHAR flags, 
 	bool leafNode, bool withData)
 {
 /**************************************

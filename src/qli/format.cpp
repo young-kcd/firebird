@@ -39,9 +39,6 @@
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
 
-using MsgFormat::SafeArg;
-
-
 #ifdef DEV_BUILD
 //extern bool QLI_hex_output; decl already done in dtr.h
 
@@ -272,7 +269,8 @@ TEXT* FMT_format(qli_lls* stack)
 	const ULONG size = (max_offset + 1) * (number_segments + 1) + 2;
 
 	if (size >= 60000)
-		ERRQ_print_error(482, SafeArg() << max_offset << (number_segments + 1));
+		ERRQ_print_error(482, (TEXT *)(IPTR) max_offset,
+						 (TEXT *)(IPTR) (number_segments + 1), NULL, NULL, NULL);
 
 	qli_str* header = (qli_str*) ALLOCDV(type_str, size);
 	TEXT* p = header->str_data;
@@ -586,36 +584,46 @@ void FMT_put(const TEXT* line, qli_prt* print)
  **************************************
  *
  * Functional description
- *	Write out an output file.
+ *	Write out an output file.   Write
+ *	fewer than 256 characters at a time
+ *	to avoid annoying VMS.
  *
  **************************************/
 	for (const TEXT* pnewline = line; *pnewline; pnewline++)
-	{
 		if (*pnewline == '\n' || *pnewline == '\f')
 			--print->prt_lines_remaining;
-	}
+
+	TEXT buffer[256];
+	const TEXT* const end = buffer + sizeof(buffer) - 1;
+	const TEXT* q = line;
+	TEXT* p;
 
 	if (print && print->prt_file)
-	{
-		fprintf(print->prt_file, "%s", line);
-	}
-	else {
-#ifdef DEV_BUILD
-		if (QLI_hex_output)
-		{
-			// Hex mode output to assist debugging of multicharset work
-
-			for (const TEXT* p = line; *p; p++)
-			{
-				if (is_printable(*p))
-					fprintf(stdout, "%c", *p);
-				else
-					fprintf(stdout, "[%2.2X]", *(UCHAR*) p);
-			}
+		while (*q) {
+			for (p = buffer; p < end && *q;)
+				*p++ = *q++;
+			*p = 0;
+			fprintf((FILE *) print->prt_file, "%s", buffer);
 		}
-		else
+	else {
+		while (*q) {
+			for (p = buffer; p < end && *q;)
+				*p++ = *q++;
+			*p = 0;
+#ifdef DEV_BUILD
+			if (QLI_hex_output) {
+				// Hex mode output to assist debugging of multicharset work
+
+				for (p = buffer; p < end && *p; p++)
+					if (is_printable(*p))
+						fprintf(stdout, "%c", *p);
+					else
+						fprintf(stdout, "[%2.2X]", *(UCHAR *) p);
+			}
+			else
 #endif
-			fprintf(stdout, "%s", line);
+				fprintf(stdout, "%s", buffer);
+		}
 		QLI_skip_line = true;
 	}
 }
@@ -1066,8 +1074,8 @@ static void format_value( qli_print_item* item, int flags)
 		if (node->nod_type == nod_field) {
 			field = (qli_fld*) node->nod_arg[e_fld_field];
 			if ((field->fld_flags & FLD_array) && !node->nod_arg[e_fld_subs])
-				ERRQ_print_error(480, field->fld_name->sym_string);
-				// msg 480 can not format unsubscripted array %s
+				ERRQ_print_error(480, field->fld_name->sym_string, NULL, NULL,
+								 NULL, NULL);	// msg 480 can not format unsubscripted array %s
 		}
 
 		if (!(item->itm_picture->pic_missing) &&
@@ -1372,10 +1380,8 @@ static void report_break( qli_brk* control, qli_vec** columns_vec, const bool bo
 	}
 
 	for (; control; control = control->brk_next)
-	{
 		if (control->brk_line)
 			report_line((qli_nod*) control->brk_line, columns_vec);
-	}
 }
 
 

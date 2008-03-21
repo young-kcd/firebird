@@ -30,6 +30,7 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: makeInstallImage.sh.in,v 1.18 2005-10-27 13:51:27 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -114,10 +115,7 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions 
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
-    mkdir $DestDir/misc/upgrade
-	for i in ib_udf metadata security; do
-		mkdir $DestDir/misc/upgrade/$i
-	done
+	mkdir $DestDir/upgrade
 	
 #    mkdir $TargetDir/etc 
 #    mkdir $TargetDir/etc/init.d
@@ -130,7 +128,6 @@ copyFiles() {
     mkdir -p $TargetDir/usr/include
 
     cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
-    cp -f $BuiltFBDir/bin/fb_smp_server $DestDir/bin/fb_smp_server 
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
     cp $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
@@ -144,7 +141,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup 
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
-    copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
     copyIfExists $BuiltFBDir/bin/isc4.gbak $DestDir/bin/isc4.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/qli $DestDir/bin/qli 
@@ -217,10 +213,7 @@ copyFiles() {
     cp $BuildRootDir/doc/README.user $DestDir/README
     
 #	Copy various upgrade stuff
-    cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		$DestDir/misc/upgrade/security/
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	$DestDir/misc/upgrade/metadata/
+    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
 
 #	Misc. config files
     cp $BuildRootDir/gen/install/misc/firebird.xinetd $DestDir/misc/

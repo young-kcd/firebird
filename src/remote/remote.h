@@ -30,28 +30,18 @@
 #define REMOTE_REMOTE_H
 
 #include "../jrd/common.h"
-#include "../remote/allr_proto.h"
 #include "../remote/remote_def.h"
-#include "../jrd/ThreadData.h"
-#include "../common/thd.h"
+#include "../jrd/thd.h"
 #include "../common/classes/objects_array.h"
-#include "../auth/trusted/AuthSspi.h"
-#include "../common/classes/fb_string.h"
-#include "../common/classes/ClumpletWriter.h"
-#include "../common/StatusHolder.h"
-
-#if !defined(SUPERCLIENT) && !defined(EMBEDDED)
-#define REM_SERVER
-#endif
 
 /* Include some apollo include files for tasking */
 
-#ifndef WIN_NT
+#if !(defined VMS || defined WIN_NT)
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-#endif // !WIN_NT
+#endif /* !VMS || !WIN_NT */
 
 
 // Uncomment this line if you need to trace module activity
@@ -112,9 +102,12 @@ typedef struct rtr
 	rtr*		rtr_next;
 	struct rbl*	rtr_blobs;
 	FB_API_HANDLE rtr_handle;
-	bool		rtr_limbo;
+	USHORT		rtr_flags;
 	USHORT		rtr_id;
 } *RTR;
+
+// rtr_flags
+const USHORT RTR_limbo	= 1;
 
 typedef struct rbl
 {
@@ -191,8 +184,12 @@ struct rem_fmt
 	USHORT		fmt_net_length;
 	USHORT		fmt_count;
 	USHORT		fmt_version;
+	USHORT		fmt_flags; // unused
 	struct dsc	fmt_desc[1];
 };
+
+// fmt_flags (not used)
+//#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
 /* Windows declares a msg structure, so rename the structure 
    to avoid overlap problems. */
@@ -226,7 +223,11 @@ typedef struct rpr
 	message*	rpr_out_msg;	/* output message */
 	rem_fmt*	rpr_in_format;	/* Format of input message */
 	rem_fmt*	rpr_out_format;	/* Format of output message */
+	USHORT		rpr_flags; // unused
 } *RPR;
+
+// rpr_flags (not used)
+//#define RPR_eof		1		/* End-of-stream encountered */
 
 struct rrq
 {
@@ -280,7 +281,7 @@ typedef struct rsr
 	rem_fmt*		rsr_format;				/* Format of current message */
 	message*		rsr_message;			/* Next message to process */
 	message*		rsr_buffer;				/* Next buffer to use */
-	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
+	ISC_STATUS_ARRAY	rsr_status_vector;	/* saved status for buffered errors */
 	USHORT			rsr_id;
 	USHORT			rsr_flags;
 	USHORT			rsr_fmt_length;
@@ -297,47 +298,7 @@ const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
 const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
 const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
 const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
-const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
-const USHORT RSR_defer_execute	= 64;	// op_execute can be deferred
-const USHORT RSR_past_eof	= 128;		// EOF was returned by fetch from this statement
 
-// will be methods of remote statement class
-inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
-{
-	if (!statement->rsr_status) {
-		statement->rsr_status = new Firebird::StatusHolder();
-	}
-	if (overwrite || !statement->rsr_status->getError()) {
-		statement->rsr_status->save(status);
-	}
-}
-
-inline void stmt_clear_exception(RSR statement)
-{
-	if (statement->rsr_status)
-		statement->rsr_status->clear();
-}
-
-inline ISC_STATUS stmt_have_exception(RSR statement)
-{
-	return (statement->rsr_status ?	
-		statement->rsr_status->getError() : 0);
-}
-
-inline void stmt_raise_exception(RSR statement)
-{
-	if (statement->rsr_status)
-		statement->rsr_status->raise();
-}
-
-inline void stmt_release_exception(RSR statement)
-{
-	if (statement->rsr_status) 
-	{
-		delete statement->rsr_status;
-		statement->rsr_status = NULL;
-	}
-}
 
 enum blk_t
 {
@@ -375,7 +336,9 @@ enum state_t
 {
 	state_closed,		/* no connection */
 	state_pending,		/* connection is pending */
+	state_eof,			/* other side has shut down */
 	state_broken,		/* connection is broken */
+	state_active,		/* connection is complete */
 	state_disconnected          /* port is disconnected */
 };
 
@@ -389,35 +352,6 @@ typedef int HANDLE;
 // fwd. decl.
 struct p_cnct;
 struct rmtque;
-
-/* Queue of deferred packets */
-
-struct rem_que_packet
-{
-	PACKET packet;
-	bool sent;
-};
-
-typedef Firebird::Array<rem_que_packet> PacketQueue;
-
-#ifdef TRUSTED_AUTH
-// delayed authentication block for trusted auth callback
-class ServerAuth
-{
-public:
-	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
-	Firebird::PathName fileName;
-	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
-	AuthSspi* authSspi;
-	Part2* part2;
-	P_OP operation;
-
-	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
-	~ServerAuth();
-};
-#endif // TRUSTED_AUTH
-
-/* Port itself */
 
 class port_interface
 {
@@ -450,6 +384,8 @@ struct rem_port
 	ISC_STATUS*		port_status_vector;
 	HANDLE			port_handle;		/* handle for connection (from by OS) */
 	int				port_channel;		/* handle for connection (from by OS) */
+	int				port_misc1;
+	SLONG			port_semaphore;
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
 	/* port function pointers (C "emulation" of virtual functions) */
@@ -482,18 +418,14 @@ struct rem_port
 	rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
-	void*			port_xcc;				/* interprocess structure */
-	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
-	OBJCT			port_last_object_id;	/* cached last id */
-#ifdef REM_SERVER
-	Firebird::ObjectsArray< Firebird::Array<char> >* port_queue;
+#ifdef VMS
+	USHORT			port_iosb[4];
+#endif
+	void*			port_xcc;              /* interprocess structure */
+#ifdef SUPERSERVER
+	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-	Firebird::RefMutex* port_que_sync;
 #endif
-#ifdef TRUSTED_AUTH
-	ServerAuth*		port_trusted_auth;
-#endif
-	Firebird::RefMutex* port_sync;
 	UCHAR			port_buffer[1];
 
 	/* TMN: Beginning of C++ port */
@@ -506,57 +438,7 @@ struct rem_port
 	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
 	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
-
-#ifdef REM_SERVER
-	bool haveRecvData() const
-	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
-		return (port_receive.x_handy > 0 ||
-			port_queue && (port_qoffset < port_queue->getCount()));
-	}
-
-	void clearRecvQue()
-	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync);
-		if (port_queue)
-			port_queue->clear();
-		port_qoffset = 0; 
-		port_receive.x_private = port_receive.x_base;
-	}
-
-	class RecvQueState
-	{
-	public:
-		int save_handy;
-		size_t save_private;
-		size_t save_qoffset;
-
-		RecvQueState(const rem_port* port)
-		{ 
-			save_handy = port->port_receive.x_handy;
-			save_private = port->port_receive.x_private - port->port_receive.x_base;
-			save_qoffset = port->port_qoffset;
-		}
-	};
-
-	RecvQueState getRecvState() const
-	{
-		return RecvQueState(this);
-	}
-
-	void setRecvState(const RecvQueState& rs)
-	{
-		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
-		{
-			Firebird::Array<char>& q = (*port_queue)[rs.save_qoffset - 1];
-			memcpy(port_receive.x_base, q.begin(), q.getCount());
-		}
-		port_qoffset = rs.save_qoffset;
-		port_receive.x_private = port_receive.x_base + rs.save_private;
-		port_receive.x_handy = rs.save_handy;
-	}
-#endif // REM_SERVER
-
+	
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
 	 *      That is, if we don't factor these method out.
@@ -590,8 +472,8 @@ struct rem_port
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
-	ISC_STATUS	service_attach(const char*, const USHORT, Firebird::ClumpletWriter&, PACKET*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*);
+	ISC_STATUS	service_attach(P_ATCH*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	ISC_STATUS	service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
@@ -599,25 +481,62 @@ struct rem_port
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
+
 };
 
 // port_flags
-const USHORT PORT_symmetric		= 0x0001;	// Server/client archiectures are symmetic
-const USHORT PORT_rpc			= 0x0002;	// Protocol is remote procedure call
-const USHORT PORT_async			= 0x0004;	// Port is asynchronous channel for events
-const USHORT PORT_no_oob		= 0x0008;	// Don't send out of band data
-const USHORT PORT_disconnect	= 0x0010;	// Disconnect is in progress
-// This is set only in inet.cpp but never tested
-const USHORT PORT_not_trusted	= 0x0020;	// Connection is from an untrusted node
-const USHORT PORT_dummy_pckt_set= 0x0040;	// A dummy packet interval is set
-const USHORT PORT_partial_data	= 0x0080;	// Physical packet doesn't contain all API packet
-const USHORT PORT_lazy			= 0x0100;	// Deferred operations are allowed
-const USHORT PORT_server		= 0x0200;	// Server (not client) port
+const USHORT PORT_symmetric		= 1;	/* Server/client archiectures are symmetic */
+const USHORT PORT_rpc			= 2;	/* Protocol is remote procedure call */
+const USHORT PORT_pend_ack		= 4;	/* An ACK is pending on the port */
+const USHORT PORT_broken		= 8;	/* Connect is broken */
+const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
+const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
+const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
+//const USHORT PORT_pend_rec		= 128;	// A record is pending on the port
+// This is set only in inet.cpp but never tested.
+const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
+// This is tested only in wnet.cpp but never set.
+//const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
+const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
+const USHORT PORT_partial_data  = 2048;	/* Physical packet doesn't contain all API packet */
 
+
+/* Misc declarations */
+
+#include "../remote/allr_proto.h"
+#include "../jrd/thd.h"
+
+/* Thread specific remote database block */
+
+class trdb : public ThreadData
+{
+public:
+	trdb(ISC_STATUS* status) 
+		: ThreadData(ThreadData::tddRDB), trdb_status_vector(status)
+	{
+		trdb_database = 0;
+	}
+	rdb*	trdb_database;
+	ISC_STATUS*	trdb_status_vector;
+};
+
+typedef trdb* TRDB;
+
+
+inline trdb* REM_get_thread_data() {
+	return (trdb*) ThreadData::getSpecific();
+}
+inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
+	tdrdb = thd_context;
+	tdrdb->putSpecific();
+}
+inline void REM_restore_thread_data() {
+	ThreadData::restoreSpecific();
+}
 
 /* Queuing structure for Client batch fetches */
 
-typedef bool (*t_rmtque_fn)(rem_port*, rmtque*, ISC_STATUS*, USHORT);
+typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
 
 typedef struct rmtque
 {
@@ -632,3 +551,4 @@ typedef struct rmtque
 } *RMTQUE;
 
 #endif // REMOTE_REMOTE_H
+

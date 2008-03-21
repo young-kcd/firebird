@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Service manager
  *	MODULE:		run_service.cpp
- *	DESCRIPTION:	Run a utility as a Firebird service
+ *	DESCRIPTION:	Run a utility as an Interbase service
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

@@ -28,7 +28,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\isql_embed/isql_embed.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\isql_embed/"
 				ObjectFile="..\..\..\temp\debug\isql_embed/"
@@ -96,7 +96,7 @@
 				PreprocessorDefinitions="NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\isql_embed/isql_embed.pch"
 				AssemblerListingLocation="..\..\..\temp\release\isql_embed/"
 				ObjectFile="..\..\..\temp\release\isql_embed/"
@@ -149,25 +149,13 @@
 			Name="ISQL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\isql\ColList.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\isql\Extender.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\isql\extract.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\isql\InputDevices.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\isql\isql.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\isql\OptionsBase.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\isql\show.cpp">
@@ -189,9 +177,6 @@
 		<Filter
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
-			<File
-				RelativePath="..\..\..\src\isql\Extender.h">
-			</File>
 			<File
 				RelativePath="..\..\..\src\isql\extra_proto.h">
 			</File>

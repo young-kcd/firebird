@@ -25,27 +25,18 @@
 
 Function Prototypes
 
-  function IsVista: boolean;
-  function IsWin2k3: boolean;
-  function IsWinXP: boolean;
-  function IsWin2K: boolean;
-  function IsWinNT: boolean;
-  function IsWinME: boolean;
-  function IsWin98: boolean;
-  function IsWin95: boolean;
+  function UsingWin2k: boolean;
+  function UsingWinXP: boolean;
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
-  function WIVersion: string;
   function ReplaceLine(Filename, StringToFind, NewLine,CommentType: string): boolean;
   procedure DecodeVersion( VerStr: String; var VerInt: array of Integer );
   function CompareVersion( ver1, ver2: String ) : Integer;
   function GetInstalledVersion(BinaryFile: String): Array of Integer;
   function ConvertIBVerStrToFbVerStr( VerStr: String) : String;
   function GetRegistryEntry(RegKey, RegEntry: string): String;
-  procedure CreateHelpDlg;
-  function ShowHelpDlg: Integer;
-  procedure CloseHelpDlg;
+
  *)
 
 (*
@@ -56,133 +47,27 @@ InnoSetup Help Extract on Windows version strings:
 4.1.1998      Windows 98
 4.1.2222      Windows 98 Second Edition
 4.9.3000      Windows Me
-
 Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
-5.01.2600 Windows XP
-  or Windows XP 64-Bit Edition Version 2002 (Itanium)
-5.02.3790 Windows Server 2003
-  or Windows XP x64 Edition (AMD64/EM64T)
-  or Windows XP 64-Bit Edition Version 2003 (Itanium)
-6.0.6000 Windows Vista
-
+5.01.2600     Windows XP
+5.2.3790      Windows 2003 Standard
 *)
 
-(*
-Windows Installer versions: (extracted from MSDN)
-Release Version                     Description
------------------------------------------------
-v2.0    2.0.2600.0                  Released with Windows XP.
-v2.0    2.0.2600.1                  Released with Windows 2000 Server SP3.
-v2.0    2.0.2600.1183               Released with Windows 2000 Server SP4.
-v2.0    2.0.2600.2                  Released as a redistributable.
-v2.0    2.0.2600.1106               Released with Windows XP SP1.
-v2.0    2.0.3790.0                  Released with Windows Server 2003.
-v3.0    3.0.3790.2180               Released with Windows XP SP2.
-                                    Released as a redistributable.
-v3.1    3.1.4000.1823               Released as a redistributable.
-                                    This version has the same functionality as version 3.1.4000.2435.
-v3.1    3.1.4000.1830               Released with Windows Server 2003 SP1 and
-                                    Windows XP Professional x64 Edition.
-                                    Update this version to version 3.1.4000.2435
-                                    to address the issue discussed in KB898628.
-v3.1    3.1.4000.2435               Released with a fix to address the issue
-                                    discussed in KB898628. This is the latest version
-                                    of Windows Installer 3.1.
-v4.0    4.0.6000.16386              Released with Windows Vista.
-v4.0    4.0.6001.16531 or greater   Released with Windows Vista SP1 and
-                                    Windows Server 2008.
-
-(NB1 - msi.dll stores the correct version number and is updated
-        automatically by Windows Update. msiexec.exe will be the original shipped version.
-
- NB2 - Re v3.1 build numbers and KB 898628 - This KB article refers to the
-        fact that initial releases of WI 3.1 would error and STOP if an attempt
-        was made to overwrite a system file in the WFP list. Previous behaviour
-        was to error, log and continue. This behaviour is irrelevant to us because
-        we don't do anything sophisticated with the msi. OTOH, if we used msi
-        for all our installation needs this would be a serious problem.
-
- NB3 - Our installer will not run msiexec on systems before XP. However, some early XP and W2K3
-       systems do not have v3.0 of the Windows Installer.
-*)
-
-function IsVista: boolean;
-var
-  Version: TWindowsVersion;
+function UsingWin2k: boolean;
+//return true if using Win2k OR later
 begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 6) and (Version.Minor = 0) then
-     result := true;
+  Result := (InstallOnThisVersion('0,5.0', '0,0') = irInstall);
 end;
 
-function IsWin2k3: boolean;
-var
-  Version: TWindowsVersion;
+
+function UsingWinXP: boolean;
+// return true if using WinXP OR later.
+// Currently not used in this script.
 begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 5) and (Version.Minor = 2) then
-     result := true;
+  Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
 end;
 
-function IsWinXP: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 5) and (Version.Minor = 1) then
-     result := true;
-end;
-
-function IsWin2K: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 5) and (Version.Minor = 0) then
-     result := true;
-end;
-
-function IsWinNT: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 4) and (Version.Minor = 0) then
-    if Version.NTPlatform then
-     result := true;
-end;
-
-function IsWinME: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 4) and (Version.Minor = 9) then
-//    if Version.NTPlatform then
-     result := true;
-end;
-
-function IsWin98: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 4) and (Version.Minor = 1) then
-//    if Version.NTPlatform then
-     result := true;
-end;
-
-function IsWin95: boolean;
-var
-  Version: TWindowsVersion;
-begin
-  GetWindowsVersionEx(Version);
-  if (Version.Major = 4) and (Version.Minor = 0) then
-    if not Version.NTPlatform then
-     result := true;
-end;
 
 const
   sWinSock2 = 'ws2_32.dll';
@@ -217,15 +102,6 @@ function GetSysPath: String;
 begin
   Result := ExpandConstant('{sys}');
 //  Result := '"' + Result +'"';
-end;
-
-function WIVersion: string;
-//Get version of Windows Installer
-var
-  VersionStr: string;
-begin
-  GetVersionNumbersString(GetSysPath + '\msi.dll', VersionStr);
-  result := VersionStr;
 end;
 
 
@@ -310,7 +186,7 @@ var
 begin
 
   if places > 4 then
-    places := 4;
+    places :=4;
 
   SetArrayLength( verint1, 4 );
   DecodeVersion( ver1, verint1 );
@@ -372,59 +248,6 @@ function GetRegistryEntry(RegKey, RegEntry: string): String;
 begin
   result := '';
   RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
-end;
-
-
-var
-  HelpDlg: TForm;
-
-procedure CreateHelpDlg;
-var
-  HelpFileName: String;
-  HelpMemo: TMemo;
-  OKButton: TButton;
-begin
-  ExtractTemporaryFile ('installation_scripted.txt');
-  HelpFileName := ExpandConstant ('{tmp}\installation_scripted.txt');
-  HelpDlg := TForm.create(nil);
-  with HelpDlg do begin
-      BorderStyle := bsDialog;
-      Position := poScreenCenter;
-      ClientWidth := 450;
-      ClientHeight := 550;
-      Caption := 'Firebird Installation - command-line parameters.';
-  end;
-  HelpMemo := TMemo.Create(HelpDlg);
-  with HelpMemo do begin
-      Parent := HelpDlg;
-      ScrollBars := ssVertical;
-      Lines.LoadFromFile(HelpFileName);
-      Align := alTop;
-      Height := 500;
-      ReadOnly := True;
-    end;
-  OKButton := TButton.create(HelpDlg);
-  with OKButton do begin
-      Parent := HelpDlg;
-      Left := (Parent.width  div 2) - width div 2;
-      top := Parent.ClientHeight - 40;
-      Caption := 'OK';
-      ModalResult := mrOK;
-  end;
-  HelpDlg.ActiveControl := OKButton;
-end;
-
-function ShowHelpDlg: Integer;
-begin
-  result := HelpDlg.ShowModal;
-end;
-
-procedure CloseHelpDlg;
-begin
-  with HelpDlg do begin
-     Close;
-     Free;
-  end;
 end;
 
 

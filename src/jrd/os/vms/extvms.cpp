@@ -32,6 +32,7 @@
 #include "../jrd/tra.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/ext_proto.h"
@@ -83,7 +84,7 @@ void EXT_close(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if ((rab.rab$w_isi = rpb->rpb_ext_isi) &&
@@ -95,7 +96,7 @@ void EXT_close(RecordSource* rsb)
 }
 
 
-void EXT_erase(record_param* rpb, jrd_tra *transaction)
+void EXT_erase(record_param* rpb, int *transaction)
 {
 /**************************************
  *
@@ -142,7 +143,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 	UCHAR index_buffer[MAX_KEYS * sizeof(index_desc)];
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 /* Allocate and fill out an external file block.  Get the
    external format and flesh it out using the internal
@@ -232,7 +233,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 		const ptrdiff_t l2 = (UCHAR *) index - index_buffer;
 		if (l2) {
 			str* string = FB_NEW_RPT(tdbb->getDefaultPool(), l2) str();
-			memcpy(string->str_data, index_buffer, l2);
+			MOVE_FAST(index_buffer, string->str_data, l2);
 			file->ext_indices = string->str_data;
 		}
 	}
@@ -292,7 +293,7 @@ bool EXT_get(RecordSource* rsb)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	if (tdbb->getRequest()->req_flags & req_abort)
+	if (tdbb->tdbb_request->req_flags & req_abort)
 		return false;
 
 	switch (rsb->rsb_type) {
@@ -311,7 +312,7 @@ bool EXT_get(RecordSource* rsb)
 }
 
 
-void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra *transaction)
+void EXT_modify(record_param* old_rpb, record_param* new_rpb, int *transaction)
 {
 /**************************************
  *
@@ -364,7 +365,7 @@ EXT_open(RecordSource* rsb)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	jrd_rel* relation = rsb->rsb_relation;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	const Format* format;
@@ -502,7 +503,7 @@ void EXT_ready(jrd_rel* relation)
 }
 
 
-void EXT_store(record_param* rpb, jrd_tra *transaction)
+void EXT_store(record_param* rpb, int *transaction)
 {
 /**************************************
  *
@@ -545,7 +546,7 @@ void EXT_store(record_param* rpb, jrd_tra *transaction)
 }
 
 
-void EXT_trans_commit(jrd_tra* transaction)
+void EXT_trans_commit(tra* transaction)
 {
 /**************************************
  *
@@ -560,7 +561,7 @@ void EXT_trans_commit(jrd_tra* transaction)
 }
 
 
-void EXT_trans_prepare(jrd_tra* transaction)
+void EXT_trans_prepare(tra* transaction)
 {
 /**************************************
  *
@@ -575,7 +576,7 @@ void EXT_trans_prepare(jrd_tra* transaction)
 }
 
 
-void EXT_trans_rollback(jrd_tra* transaction)
+void EXT_trans_rollback(tra* transaction)
 {
 /**************************************
  *
@@ -590,7 +591,7 @@ void EXT_trans_rollback(jrd_tra* transaction)
 }
 
 
-void EXT_trans_start(jrd_tra* transaction)
+void EXT_trans_start(tra* transaction)
 {
 /**************************************
  *
@@ -839,7 +840,7 @@ static bool get_dbkey(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
@@ -873,8 +874,8 @@ static bool get_dbkey(RecordSource* rsb)
 
 	sys$free(&rab);
 	set_flags(relation, record);
-	memcpy(&rpb->rpb_ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
-	memcpy(file->ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
 	return true;
 }
@@ -903,7 +904,7 @@ static bool get_indexed(RecordSource* rsb)
 	ExternalFile* file = relation->rel_file;
 	const Format* format = file->ext_format;
 
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 
@@ -1015,7 +1016,7 @@ static bool get_sequential(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 
 	irsb_ext* impure = (irsb_ext*) ((UCHAR *) request + rsb->rsb_impure);
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
@@ -1052,14 +1053,14 @@ static bool get_sequential(RecordSource* rsb)
 
 	sys$free(&rab);
 	set_flags(relation, record);
-	memcpy(&rpb->rpb_ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa));
 
 /* If we're using the shared stream, save the current dbkey to
    determine whether repositioning will be required next time
    thru */
 
 	if (rpb->rpb_ext_isi == file->ext_isi)
-		memcpy(file->ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+		MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
 	return true;
 }
@@ -1117,7 +1118,7 @@ static open_indexed(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	jrd_nod* node = (jrd_nod*) rsb->rsb_arg[0];
 	IndexRetrieval* retrieval = (IndexRetrieval*) node->nod_arg[e_idx_retrieval];
@@ -1147,7 +1148,7 @@ static open_sequential(RecordSource* rsb)
 
 	jrd_rel* relation = rsb->rsb_relation;
 	ExternalFile* file = relation->rel_file;
-	jrd_req* request = tdbb->getRequest();
+	jrd_req* request = tdbb->tdbb_request;
 	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 	if (file->ext_file_type == FAB$C_IDX) {
@@ -1179,7 +1180,7 @@ static void position_by_rfa(ExternalFile* file, USHORT * rfa)
  *	Position file to specific RFA.
  *
  **************************************/
-	memcpy(rab.rab$w_rfa, rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rfa, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
 	rab.rab$b_rac = RAB$C_RFA;
 	file->ext_flags &= ~EXT_eof;
 	const int status = sys$get(&rab);

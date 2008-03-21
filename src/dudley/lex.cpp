@@ -36,13 +36,17 @@
 #include "../dudley/ddl_proto.h"
 #include "../dudley/hsh_proto.h"
 #include "../dudley/lex_proto.h"
-#include "../common/classes/TempFile.h"
+#include "../jrd/gds_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
+#ifdef SMALL_FILE_NAMES
+const char* SCRATCH = "fb_q";
+#else
 const char* SCRATCH = "fb_query_";
+#endif
 
 static int nextchar(void);
 static void retchar(SSHORT);
@@ -50,26 +54,26 @@ static int skip_white(void);
 
 /* Input line control */
 
-static FILE *input_file, *trace_file = NULL;
+static FILE *input_file, *trace_file;
 static TEXT *DDL_char, DDL_buffer[256], trace_file_name[MAXPATHLEN];
 
+enum chr_types {
+	CHR_ident = 1,
+	CHR_letter = 2,
+	CHR_digit = 4,
+	CHR_quote = 8,
+	CHR_white = 16,
+	CHR_eol = 32,
 
-const SCHAR CHR_ident = 1;
-const SCHAR CHR_letter = 2;
-const SCHAR CHR_digit = 4;
-const SCHAR CHR_quote = 8;
-const SCHAR CHR_white = 16;
-const SCHAR CHR_eol = 32;
+	CHR_IDENT = CHR_ident,
+	CHR_LETTER = CHR_letter + CHR_ident,
+	CHR_DIGIT = CHR_digit + CHR_ident,
+	CHR_QUOTE = CHR_quote,
+	CHR_WHITE = CHR_white,
+	CHR_EOL = CHR_white
+};
 
-const SCHAR CHR_IDENT = CHR_ident;
-const SCHAR CHR_LETTER = CHR_letter | CHR_ident;
-const SCHAR CHR_DIGIT = CHR_digit | CHR_ident;
-const SCHAR CHR_QUOTE = CHR_quote;
-const SCHAR CHR_WHITE = CHR_white;
-const SCHAR CHR_EOL = CHR_white;
-
-
-static const SCHAR classes_array[256] = {
+static SCHAR classes[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, CHR_WHITE, CHR_EOL, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -94,16 +98,6 @@ static const SCHAR classes_array[256] = {
 		CHR_LETTER, CHR_LETTER,
 	CHR_LETTER, CHR_LETTER, CHR_LETTER, 0
 };
-
-inline SCHAR classes(int idx)
-{
-	return classes_array[(UCHAR) idx];
-}
-
-inline SCHAR classes(UCHAR idx)
-{
-	return classes_array[idx];
-}
 
 
 
@@ -132,7 +126,7 @@ TOK LEX_filename(void)
 		return NULL;
 	}
 
-	while (!(classes(c = nextchar()) & (CHR_white | CHR_eol)))
+	while (!(classes[c = nextchar()] & (CHR_white | CHR_eol)))
 		*p++ = c;
 
 	retchar(c);
@@ -158,10 +152,10 @@ void LEX_fini(void)
  *
  **************************************/
 
-	if (trace_file != NULL) {
+	if (trace_file != NULL)
 		fclose(trace_file);
+	if (trace_file_name[0])
 		unlink(trace_file_name);
-	}
 }
 
 
@@ -208,8 +202,8 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 	length = text->txt_length;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, 0, 2);
-		DDL_err(275);
+		fseek(trace_file, (SLONG) 0, 2);
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);
 		/* msg 275: fseek failed */
 	}
 
@@ -217,7 +211,7 @@ void LEX_get_text(UCHAR * buffer, TXT text)
 	while (length--)
 		*p++ = getc(trace_file);
 
-	fseek(trace_file, 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -234,14 +228,15 @@ void LEX_init( void *file)
  *	scratch trace file to keep all input.
  *
  **************************************/
-	const Firebird::PathName filename = TempFile::create(SCRATCH);
-	strcpy(trace_file_name, filename.c_str());
-	trace_file = fopen(trace_file_name, "w+b");
-	if (!trace_file)
-	{
-		DDL_err(276);
+
+#if !(defined WIN_NT)
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, 0);
+#else
+	trace_file = (FILE*) gds__temp_file(TRUE, SCRATCH, trace_file_name);
+#endif
+	if (trace_file == (FILE*) - 1)
+		DDL_err(276, NULL, NULL, NULL, NULL, NULL);
 		/* msg 276: couldn't open scratch file */
-	}
 
 	input_file = (FILE*) file;
 	DDL_char = DDL_buffer;
@@ -273,8 +268,8 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 	length = text->txt_length;
 
 	if (fseek(trace_file, start, 0)) {
-		fseek(trace_file, 0, 2);
-		DDL_err(275);
+		fseek(trace_file, (SLONG) 0, 2);
+		DDL_err(275, NULL, NULL, NULL, NULL, NULL);	
 		/* msg 275: fseek failed */
 	}
 
@@ -288,11 +283,11 @@ void LEX_put_text (FB_API_HANDLE blob, TXT text)
 		}
 		if (l = p - buffer)
 			if (isc_put_segment(status_vector, &blob, l, buffer))
-				DDL_err(277);
+				DDL_err(277, NULL, NULL, NULL, NULL, NULL);	
 		/* msg 277: isc_put_segment failed */
 	}
 
-	fseek(trace_file, 0, 2);
+	fseek(trace_file, (SLONG) 0, 2);
 }
 
 
@@ -337,7 +332,7 @@ TOK LEX_token(void)
 
 /* On end of file, generate furious but phony end of line tokens */
 
-	TEXT char_class = classes(c);
+	TEXT char_class = classes[c];
 
 	if (dudleyGlob.DDL_eof) {
 		p = token->tok_string;
@@ -354,18 +349,18 @@ TOK LEX_token(void)
 		return NULL;
 	}
 	else if (char_class & CHR_letter) {
-		while (classes(c = nextchar()) & CHR_ident)
+		while (classes[c = nextchar()] & CHR_ident)
 			*p++ = c;
 
 		retchar(c);
 		token->tok_type = tok_ident;
 	}
 	else if (char_class & CHR_digit) {
-		while (classes(c = nextchar()) & CHR_digit)
+		while (classes[c = nextchar()] & CHR_digit)
 			*p++ = c;
 		if (c == '.') {
 			*p++ = c;
-			while (classes(c = nextchar()) & CHR_digit)
+			while (classes[c = nextchar()] & CHR_digit)
 				*p++ = c;
 		}
 		retchar(c);
@@ -375,7 +370,7 @@ TOK LEX_token(void)
 		token->tok_type = tok_quoted;
 		do {
 			if (!(next = nextchar()) || next == '\n') {
-				DDL_err(278);
+				DDL_err(278, NULL, NULL, NULL, NULL, NULL);
 				/* msg 278: unterminated quoted string */
 				break;
 			}
@@ -446,7 +441,7 @@ static int nextchar(void)
 			if (DDL_char < end)
 				*DDL_char++ = c;
 			else
-				DDL_err(279);
+				DDL_err(279, NULL, NULL, NULL, NULL, NULL);
 				/* msg 279: line too SLONG */
 			if (c == '\n')
 				break;
@@ -521,7 +516,7 @@ static int skip_white(void)
 
 	while ((c = nextchar()) != EOF) {
 
-		const SSHORT char_class = classes(c);
+		const SSHORT char_class = classes[c];
 		if (char_class & CHR_white)
 			continue;
 		if (c == '/') {

@@ -31,7 +31,7 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
-#include "../common/thd.h"
+#include "../jrd/thd.h"
 #include "../jrd/iberr.h"
 
 #include "../utilities/install/install_nt.h"
@@ -42,6 +42,8 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -49,12 +51,13 @@
 
 const int MAX_DATA		= 2048;
 const int BUFFER_SIZE	= MAX_DATA;
+const int MAX_SEQUENCE	= 256;
 
 const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
-Firebird::AtomicCounter event_counter;
 
+int xdrmem_create();
 
 static int		accept_connection(rem_port*, P_CNCT *);
 static rem_port*		alloc_port(rem_port*);
@@ -62,7 +65,7 @@ static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
-static void		exit_handler(void*);
+static void		exit_handler(rem_port*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
 static int		send_full(rem_port*, PACKET *);
@@ -86,6 +89,7 @@ static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
 static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(rem_port*, const SCHAR*, SSHORT);
+static void		wnet_copy(const UCHAR*, SCHAR*, int);
 static void		wnet_make_file_name(TEXT *, DWORD);
 
 static xdr_t::xdr_ops wnet_ops =
@@ -99,6 +103,8 @@ static xdr_t::xdr_ops wnet_ops =
 	wnet_inline,
 	wnet_destroy
 };
+
+const USHORT MAX_PTYPE	= ptype_out_of_band;
 
 
 rem_port* WNET_analyze(Firebird::PathName& file_name,
@@ -129,16 +135,25 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
-	Firebird::string buffer;
+	TEXT buffer[128];
+	TEXT *p;
 	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0, 0);
-	buffer.lower();
-	user_id.insertString(CNCT_user, buffer);
+	ISC_get_user(buffer, 0, 0, 0, 0, 0, 0);
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
+			*p = *p - 'A' + 'a';
+		}
+	}
+	user_id.insertString(CNCT_user, buffer, strlen(buffer));
 
-	ISC_get_host(buffer);
-	buffer.lower();
-	user_id.insertString(CNCT_host, buffer);
+	ISC_get_host(buffer, sizeof(buffer));
+	for (p = buffer; *p; p++) {
+		if (*p >= 'A' && *p <= 'Z') {
+			*p = *p - 'A' + 'a';
+		}
+	}
+	user_id.insertString(CNCT_host, buffer, strlen(buffer));
 
 	if (uv_flag) {
 		user_id.insertTag(CNCT_user_verification);
@@ -166,13 +181,12 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, MAX_PTYPE, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 3)
 #ifdef SCROLLABLE_CURSORS
 		,
-		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 4)
 #endif
 	};
 	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
@@ -185,7 +199,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
-		ALLR_free(rdb);
+		ALLR_release(rdb);
 		return NULL;
 	}
 
@@ -222,7 +236,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_free(rdb);
+			ALLR_release(rdb);
 			return NULL;
 		}
 
@@ -259,7 +273,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_free(rdb);
+			ALLR_release(rdb);
 			return NULL;
 		}
 
@@ -284,8 +298,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
    string to reflect it...  */
 
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
-						  port->port_protocol & FB_PROTOCOL_MASK);
+	temp.printf("%s/P%d", port->port_version->str_data, port->port_protocol);
 	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
@@ -334,6 +347,7 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	if (packet)
 	{
+		THREAD_EXIT();
 		while (true) {
 			port->port_handle = CreateFile(port->port_connection->str_data,
 										   GENERIC_WRITE | GENERIC_READ,
@@ -343,19 +357,23 @@ rem_port* WNET_connect(const TEXT*		name,
 			}
 			const ISC_STATUS status = GetLastError();
 			if (status != ERROR_PIPE_BUSY) {
+				THREAD_ENTER();
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
 				return NULL;
 			}
 			WaitNamedPipe(port->port_connection->str_data, 3000L);
 		}
+		THREAD_ENTER();
 		send_full(port, packet);
 		return port;
 	}
 
+#ifndef REQUESTER
 /* We're a server, so wait for a host to show up */
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
+	THREAD_EXIT();
 
 	while (true)
 	{
@@ -374,6 +392,7 @@ rem_port* WNET_connect(const TEXT*		name,
 			// TMN: The check for GetLastError() is redundant.
 			// This code should NEVER be called if not running on NT,
 			// since Win9x does not support the server side of named pipes!
+			THREAD_ENTER();
 			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err,
 					   ERRNO);
 			disconnect(port);
@@ -383,6 +402,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		if (!ConnectNamedPipe(port->port_handle, 0) &&
 			GetLastError() != ERROR_PIPE_CONNECTED)
 		{
+			THREAD_ENTER();
 			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, ERRNO);
 			disconnect(port);
 			return NULL;
@@ -390,12 +410,14 @@ rem_port* WNET_connect(const TEXT*		name,
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
+			THREAD_ENTER();
 			port->port_server_flags |= SRVR_server;
 			if (flag & SRVR_multi_client)
 			{
 				port->port_server_flags |= SRVR_multi_client;
 			}
-			gds__register_cleanup(exit_handler, port);
+			gds__register_cleanup(reinterpret_cast <
+								  void (*)(void *) >(exit_handler), port);
 			return port;
 		}
 
@@ -403,10 +425,10 @@ rem_port* WNET_connect(const TEXT*		name,
 		GetModuleFileName(NULL, name, sizeof(name));
 
 		Firebird::string cmdLine;
-		cmdLine.printf("%s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
+		cmdLine.printf("%s -s -w -h %"SLONGFORMAT, name, (SLONG) port->port_handle);
 
-		STARTUPINFO start_crud;
-		PROCESS_INFORMATION pi;
+		STARTUPINFO           start_crud;
+		PROCESS_INFORMATION   pi;
 		start_crud.cb = sizeof(STARTUPINFO);
 		start_crud.lpReserved = NULL;
 		start_crud.lpReserved2 = NULL;
@@ -414,18 +436,22 @@ rem_port* WNET_connect(const TEXT*		name,
 		start_crud.lpDesktop = NULL;
 		start_crud.lpTitle = NULL;
 		start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-
-		if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
-						  (flag & SRVR_high_priority ?
+		const USHORT ret = CreateProcess(NULL,
+							cmdLine.begin(),
+							NULL,
+							NULL,
+							TRUE,
+							(flag & SRVR_high_priority ?
 							 HIGH_PRIORITY_CLASS | DETACHED_PROCESS :
 							 NORMAL_PRIORITY_CLASS | DETACHED_PROCESS),
-						  NULL, NULL, &start_crud, &pi))
-		{
+							NULL, NULL, &start_crud, &pi);
+		if (ret) {
 			CloseHandle(pi.hThread);
 			CloseHandle(pi.hProcess);
 		}
 		CloseHandle(port->port_handle);
 	}
+#endif /* REQUESTER */
 }
 
 
@@ -580,13 +606,6 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_request = aux_request;
 	port->port_buff_size = BUFFER_SIZE;
 
-	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_sync->addRef();
-#ifdef REM_SERVER
-	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_que_sync->addRef();
-#endif
-
 	xdrwnet_create(&port->port_send, port,
 				   &port->port_buffer[BUFFER_SIZE], BUFFER_SIZE, XDR_ENCODE);
 
@@ -611,6 +630,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
+#ifndef REQUESTER
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
@@ -626,6 +646,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 		port->port_flags |= PORT_async;
 		return port;
 	}
+#endif /* REQUESTER */
 
 /* The server will be sending its process id in the packet to
  * create a unique pipe name.
@@ -638,7 +659,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	if (response->p_resp_data.cstr_length) {
 		// Avoid B.O.
 		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
-		memcpy(str_pid, response->p_resp_data.cstr_address, len);
+		wnet_copy(response->p_resp_data.cstr_address, str_pid, len);
 		str_pid[len] = 0;
 		p = str_pid;
 	}
@@ -650,6 +671,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	new_port->port_connection =
 		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
+	THREAD_EXIT();
 	while (true) {
 		new_port->port_handle =
 			CreateFile(new_port->port_connection->str_data, GENERIC_READ, 0,
@@ -658,11 +680,14 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 			break;
 		const ISC_STATUS status = GetLastError();
 		if (status != ERROR_PIPE_BUSY) {
+			THREAD_ENTER();
 			return (rem_port*) wnet_error(new_port, "CreateFile",
 									 isc_net_event_connect_err, status);
 		}
 		WaitNamedPipe(new_port->port_connection->str_data, 3000L);
 	}
+
+	THREAD_ENTER();
 
 	return new_port;
 }
@@ -686,8 +711,8 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  **************************************/
 	rem_port* new_port = NULL;  // If this is the client, we will return NULL
 
-	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ? 
-		++event_counter : GetCurrentProcessId();
+#ifndef REQUESTER
+	const DWORD server_pid = GetCurrentProcessId();
 	vport->port_async = new_port = alloc_port(vport->port_parent);
 	new_port->port_server_flags = vport->port_server_flags;
 	new_port->port_flags = vport->port_flags & PORT_no_oob;
@@ -698,7 +723,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
-
+	THREAD_EXIT();
 	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
 						PIPE_ACCESS_DUPLEX,
@@ -708,7 +733,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 						MAX_DATA,
 						0,
 						security_attr);
-
+	THREAD_ENTER();
 	if (new_port->port_handle == INVALID_HANDLE_VALUE) {
 		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err,
 				   ERRNO);
@@ -718,7 +743,11 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	P_RESP* response = &packet->p_resp;
 	response->p_resp_data.cstr_length = strlen(str_pid);
-	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
+	wnet_copy(reinterpret_cast<UCHAR*>(str_pid),
+			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
+			  response->p_resp_data.cstr_length);
+
+#endif /* REQUESTER */
 
 	return new_port;
 }
@@ -761,24 +790,39 @@ static void disconnect(rem_port* port)
 	}
 	else if (port->port_async)
 	{
-#ifdef SUPERSERVER
+/* If we're MULTI_THREAD then we cannot free the port because another
+ * thread might be using it.  If we're SUPERSERVER we must free the
+ * port to avoid a memory leak.  What we really need to know is if we
+ * have multi-threaded events, but this is transport specific.
+ */
+#if     (defined (MULTI_THREAD) && !defined (SUPERSERVER))
+		port->port_async->port_flags |= PORT_disconnect;
+#else
 		disconnect(port->port_async);
 		port->port_async = NULL;
-#else
-		port->port_async->port_flags |= PORT_disconnect;
 #endif
 	}
 
+#ifndef REQUESTER
 	if (port->port_server_flags & SRVR_server)
 	{
 		FlushFileBuffers(port->port_handle);
 		DisconnectNamedPipe(port->port_handle);
+		/* CVC: It's never set, so how could it be active?
+		if (port->port_flags & PORT_impersonate)
+		{
+			RevertToSelf();
+			port->port_flags &= ~PORT_impersonate;
+		}
+		*/
 	}
+#endif /* REQUESTER */
 	if (port->port_handle) {
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
-	gds__unregister_cleanup(exit_handler, port);
+	gds__unregister_cleanup(reinterpret_cast<void (*)(void*)>(exit_handler),
+	                        port);
 	cleanup_port(port);
 }
 
@@ -798,42 +842,37 @@ static void cleanup_port( rem_port* port)
  **************************************/
 
 	if (port->port_version)
-		ALLR_free(port->port_version);
+		ALLR_free((UCHAR *) port->port_version);
 
 	if (port->port_connection)
-		ALLR_free(port->port_connection);
+		ALLR_free((UCHAR *) port->port_connection);
 
 	if (port->port_user_name)
-		ALLR_free(port->port_user_name);
+		ALLR_free((UCHAR *) port->port_user_name);
 
 	if (port->port_protocol_str)
-		ALLR_free(port->port_protocol_str);
+		ALLR_free((UCHAR *) port->port_protocol_str);
 
 	if (port->port_address_str)
-		ALLR_free(port->port_address_str);
+		ALLR_free((UCHAR *) port->port_address_str);
 
 	if (port->port_host)
-		ALLR_free(port->port_host);
+		ALLR_free((UCHAR *) port->port_host);
 
 	if (port->port_object_vector)
-		ALLR_free(port->port_object_vector);
+		ALLR_free((UCHAR *) port->port_object_vector);
 
 #ifdef DEBUG_XDR_MEMORY
 	if (port->port_packet_vector)
-		ALLR_free(port->port_packet_vector);
+		ALLR_free((UCHAR *) port->port_packet_vector);
 #endif
 
-	port->port_sync->release();
-#ifdef REM_SERVER
-	port->port_que_sync->release();
-#endif
-
-	ALLR_free(port);
+	ALLR_release((UCHAR *) port);
 	return;
 }
 
 
-static void exit_handler(void* main_port)
+static void exit_handler( rem_port* main_port)
 {
 /**************************************
  *
@@ -846,7 +885,7 @@ static void exit_handler(void* main_port)
  *	to allow restart.
  *
  **************************************/
-	for (rem_port* vport = static_cast<rem_port*>(main_port); vport; vport = vport->port_next)
+	for (rem_port* vport = main_port; vport; vport = vport->port_next)
 		CloseHandle(vport->port_handle);
 }
 
@@ -1086,6 +1125,7 @@ static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
+	port->port_flags |= PORT_broken;
 	port->port_state = state_broken;
 
 	ISC_STATUS* status_vector = NULL;
@@ -1116,23 +1156,24 @@ static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 
 /* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD))
-	{
+	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
 		if (xdrs->x_handy >= bytecount) {
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0) {
-			memcpy(buff, xdrs->x_private, xdrs->x_handy);
-			xdrs->x_private += xdrs->x_handy;
-			buff += xdrs->x_handy;
-			bytecount -= xdrs->x_handy;
-			xdrs->x_handy = 0;
+		else {
+			if (xdrs->x_handy > 0) {
+				memcpy(buff, xdrs->x_private, xdrs->x_handy);
+				xdrs->x_private += xdrs->x_handy;
+				buff += xdrs->x_handy;
+				bytecount -= xdrs->x_handy;
+				xdrs->x_handy = 0;
+			}
+			if (!wnet_read(xdrs))
+				return FALSE;
 		}
-		if (!wnet_read(xdrs))
-			return FALSE;
 	}
 
 /* Scalar values and bulk transfer remainder fall thru
@@ -1243,15 +1284,17 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0) {
-			memcpy(xdrs->x_private, buff, xdrs->x_handy);
-			xdrs->x_private += xdrs->x_handy;
-			buff += xdrs->x_handy;
-			bytecount -= xdrs->x_handy;
-			xdrs->x_handy = 0;
+		else {
+			if (xdrs->x_handy > 0) {
+				memcpy(xdrs->x_private, buff, xdrs->x_handy);
+				xdrs->x_private += xdrs->x_handy;
+				buff += xdrs->x_handy;
+				bytecount -= xdrs->x_handy;
+				xdrs->x_handy = 0;
+			}
+			if (!wnet_write(xdrs, 0))
+				return FALSE;
 		}
-		if (!wnet_write(xdrs, 0))
-			return FALSE;
 	}
 
 /* Scalar values and bulk transfer remainder fall thru
@@ -1293,7 +1336,7 @@ static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
  **************************************/
 	const SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<const char*>(&l),
+									   reinterpret_cast<const char*>(AOF32L(l)),
 									   4);
 }
 
@@ -1324,11 +1367,25 @@ static bool_t wnet_read( XDR * xdrs)
 		p += xdrs->x_handy;
 	}
 
+/* If an ACK is pending, do an ACK.  The alternative is deadlock. */
+
+/*
+if (port->port_flags & PORT_pend_ack)
+    if (!packet_send (port, 0, 0))
+	return FALSE;
+*/
+
 	while (true) {
 		SSHORT length = end - p;
-		if (!packet_receive(port, reinterpret_cast<UCHAR*>(p), length, &length))
+		if (!packet_receive
+			(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
 			return FALSE;
+	/***
+	if (!packet_send (port, 0, 0))
+	    return FALSE;
+	continue;
+	***/
 		}
 		if (length >= 0) {
 			p += length;
@@ -1339,7 +1396,8 @@ static bool_t wnet_read( XDR * xdrs)
 			return FALSE;
 	}
 
-	xdrs->x_handy = (int) (p - xdrs->x_base);
+	port->port_flags |= PORT_pend_ack;
+	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
 
 	return TRUE;
@@ -1392,6 +1450,7 @@ static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
    that with a negative length.  A positive length marks the end. */
 
 	while (length) {
+		vport->port_misc1 = (vport->port_misc1 + 1) % MAX_SEQUENCE;
 		const SSHORT l = MIN(length, MAX_DATA);
 		length -= l;
 		if (!packet_send(vport, p, (SSHORT) (length ? -l : l)))
@@ -1454,12 +1513,15 @@ static int packet_receive(
  **************************************/
 	DWORD n = 0;
 
-	const USHORT status = ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
-
+	THREAD_EXIT();
+	const USHORT status =
+		ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
+	THREAD_ENTER();
 	if (!status && GetLastError() != ERROR_BROKEN_PIPE)
 		return wnet_error(port, "ReadFile", isc_net_read_err, ERRNO);
 	if (!n)
-		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, ERRNO);
+		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err,
+						  ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("receive", buffer, n);
@@ -1486,19 +1548,39 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
 
+	THREAD_EXIT();
 	DWORD n;
 	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
-
+	THREAD_ENTER();
 	if (!status)
 		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);
 	if (n != length)
-		return wnet_error(port, "WriteFile truncated", isc_net_write_err, ERRNO);
+		return wnet_error(port, "WriteFile truncated", isc_net_write_err,
+						  ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("send", (UCHAR*)buffer, buffer_length);
 #endif
 
+	port->port_flags &= ~PORT_pend_ack;
+
 	return TRUE;
+}
+
+
+static void wnet_copy(const UCHAR* from, SCHAR* to, int length)
+{
+/**************************************
+ *
+ *      w n e t _ c o p y
+ *
+ **************************************
+ *
+ * Functional description
+ *      Copy a number of bytes;
+ *
+ **************************************/
+	memcpy(to, from, length);
 }
 
 
@@ -1540,3 +1622,4 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	}
 	*p++ = 0;
 }
+

@@ -32,6 +32,9 @@
 #include <stdlib.h>
 #endif
 
+//#include <fstream>
+//#include <iostream>
+
 // Invalid or missing CONF_FILE may lead to severe errors
 // in applications. That's why for regular SERVER builds
 // it's better to exit with appropriate diags rather continue
@@ -178,7 +181,7 @@ void ConfigFile::loadConfig()
 		{
 			Firebird::string Msg = "Missing configuration file: " + 
 				configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg.c_str());
+			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
 			Firebird::fatal_exception::raise(Msg.c_str());
 		}
 #endif //EXCEPTION_ON_NO_CONF
@@ -204,7 +207,7 @@ void ConfigFile::loadConfig()
 				inputLine + "\"").ToString();
 			Firebird::Syslog::Record(fExceptionOnError ? 
 					Firebird::Syslog::Error :
-					Firebird::Syslog::Warning, Msg.c_str());
+					Firebird::Syslog::Warning, Msg);
 #ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif

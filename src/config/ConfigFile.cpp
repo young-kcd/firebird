@@ -24,13 +24,11 @@
  *  All Rights Reserved.
  */
 
-#include "firebird.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <memory.h>
-#include "../common/classes/alloc.h"
+#include "firebird.h"
 #include "ConfigFile.h"
 #include "ConfObject.h"
 #include "InputFile.h"
@@ -237,7 +235,7 @@ const char* ConfigFile::getInstallDirectory(void)
 JString ConfigFile::expand(JString rawString)
 {
 	char temp [1024];
-	char *p = temp, *temp_end = temp + sizeof(temp) - 1;
+	char *p = temp, *end = temp + sizeof(temp) - 1;
 	bool change = false;
 	
 	for (const char *s = rawString; *s;)
@@ -256,11 +254,11 @@ JString ConfigFile::expand(JString rawString)
 				const char *subst = translate (name, NULL);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
-				for (const char *t = subst; *t && p < temp_end;)
+				for (const char *t = subst; *t && p < end;)
 					*p++ = *t++;					
 				}
 			}
-		else if (p < temp_end)
+		else if (p < end)
 			*p++ = c;
 		}
 	
@@ -316,10 +314,6 @@ const char* ConfigFile::translate(const char *value, Element *object)
 void ConfigFile::wildCardInclude(const char* fileName)
 {
 	char directory [256];
-	
-	if (strlen(fileName) >= sizeof(directory))
-		throw AdminException("Too long filename in wildCardInclude()");
-		
 	strcpy (directory, fileName);
 	const char *wildcard = fileName;
 	char *p = strrchr (directory, '/');

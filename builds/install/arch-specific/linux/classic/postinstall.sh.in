@@ -31,6 +31,7 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: postinstall.sh.in,v 1.13.4.1 2006-04-16 11:51:55 alexpeshkoff Exp $
 # 
 
 # The post install script for Firebird Classic
@@ -63,6 +64,8 @@
     #    replaceLineInFile "$FileName" "$newLine" "$oldLine"
     fi
 
+    updateHostsDotFile
+
     # add Firebird user
     if [ $RunUser = "firebird" ]
       then
@@ -70,18 +73,31 @@
     fi
 
 
-    # Update ownership and SUID bits for files.
+    # Create Lock files
+    cd $FBRootDir
+
+    for i in isc_init1 isc_lock1 isc_event1 
+      do
+        FileName=$i.`hostname`
+        touch $FileName
+      done
+
+    # Create log
+    touch firebird.log
+
+
+    # Update ownership and SUID bits for programs.
+    chown -R $RunUser:$RunUser $FBRootDir
+
     fixFilePermissions
 
-	# Create libgds.so links
     createLinksForBackCompatibility
 
-	# Prepare for uninstall
     buildUninstallFile
-
 
     # Update the /etc/inetd.conf or xinetd entry
     updateInetdServiceEntry
+
 
     # Get inetd to reread new init files.
     resetInetdServer

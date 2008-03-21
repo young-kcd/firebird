@@ -39,6 +39,13 @@
 #endif
 #endif
 
+// MIN_YEAR and MAX_YEAR delimit the range for valid years
+// when either inserting data or performing date arithmetic
+
+const int MIN_YEAR = 0001;
+const int MAX_YEAR = 9999;
+
+
 namespace Firebird {
 
 // Wrapper class for ISC_TIMESTAMP supposed to implement date/time conversions
@@ -69,9 +76,6 @@ public:
 
 	// Construct wrapper around pre-existing timestamp
 	TimeStamp(const ISC_TIMESTAMP& from) : mValue(from) { }
-
-	// See if timestamp represents the supported range
-	bool isRangeValid() const;
 
 	// See if timestamp contains non-zero value
 	bool isEmpty() const {
@@ -108,12 +112,6 @@ public:
 	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions);
 	static ISC_TIME encode_time(int hours, int minutes, int seconds, int fractions);
 	static void round_time(ISC_TIME &ntime, int precision);
-
-	static inline bool isLeapYear(int year)
-	{
-		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-	}    
-
 private:
 	ISC_TIMESTAMP mValue;
 

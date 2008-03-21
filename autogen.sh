@@ -2,20 +2,21 @@
 #
 # Run this to generate all the initial makefiles, etc.
 #
+# $Id: autogen.sh,v 1.12 2005-05-27 22:14:40 asfernandes Exp $
 
 PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
 DIE=0
 
-if [ -z "$AUTOCONF" ]
+if [ -z $AUTOCONF ]
 then
   AUTOCONF=autoconf
 fi
-if [ -z "$LIBTOOL" ]
+if [ -z $LIBTOOL ]
 then
   LIBTOOL=libtool
 fi
-if [ -z "$LIBTOOLIZE" ]
+if [ -z $LIBTOOLIZE ]
 then
   LIBTOOLIZE=libtoolize
 fi

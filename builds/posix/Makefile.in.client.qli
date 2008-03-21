@@ -39,7 +39,7 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp jrd/path_utils.cpp
+QLI_Other_Sources = jrd/dsc.cpp gpre/pretty.cpp
 
 QLI_Files=	all.cpp command.cpp compile.cpp dtr.cpp err.cpp eval.cpp \
 		expand.cpp exe.cpp format.cpp gener.cpp help.cpp \
@@ -61,7 +61,7 @@ all:	qli
 qli : create_yachts $(LIBFBCLIENT_SO) $(QLI)
 
 $(QLI): $(QLI_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 # EKU: At this point yachts.lnk is a link to empty.fdb, but gpre will fail
 #      with it. metadata.fdb is what is needed here.

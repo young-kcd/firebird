@@ -27,10 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.intl,v 1.23.4.1 2007-03-07 15:04:16 paulbeach Exp $
 #
 ROOT=..
 ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT
+CFLAGS+=-DSUPERCLIENT @PTHREAD_CFLAGS@
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -49,22 +50,12 @@ INTL_Files1=	ld.cpp       cv_narrow.cpp \
 		cs_big5.cpp    cv_big5.cpp   lc_big5.cpp \
 		cs_gb2312.cpp  cv_gb2312.cpp lc_gb2312.cpp \
 		cs_jis.cpp     cv_jis.cpp    lc_jis.cpp \
-		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp \
-		cs_icu.cpp     cv_icu.cpp    lc_icu.cpp
+		cs_ksc.cpp     cv_ksc.cpp    lc_ksc.cpp
 
 
 # INTL_Sources =  $(INTL_Files1)
 INTL_Sources = $(addprefix intl/, $(INTL_Files1))
-
-# SD: add modules that are not in intl subdir
-INTL_Sources += jrd/IntlUtil.cpp jrd/unicode_util.cpp jrd/CharSet.cpp jrd/mod_loader.cpp
-
 INTL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTL_Sources))))
-
-# SD: Shared variables are overriden to exclude extra files and
-# this way fix 'unresolved symbol' errors when some unused routines call
-# other routines from not included modules
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp fb_string.cpp timestamp.cpp
 
 
 AllObjects = $(INTL_Objects)
@@ -83,13 +74,13 @@ all : libfbintl
 
 libfbintl : $(LIBFBINTL_SO)
 
-$(LIBFBINTL_SO):	$(INTL_Objects) $(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
+$(LIBFBINTL_SO):	$(INTL_Objects)
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
--o $@ $^ $(SO_LINK_LIBS)
+-o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 else
 	$(LIB_LINK) $(LINK_FBINTL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)libintl.$(SHRLIB_EXT).1 \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ -L$(LIB) $(ICU_LIBS) $(SO_LINK_LIBS)
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(SO_LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 endif
 
 include $(ROOT)/gen/make.shared.targets

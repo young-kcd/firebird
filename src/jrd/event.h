@@ -31,28 +31,27 @@
 #define JRD_EVENT_H
 
 #include "../jrd/isc.h"
+#include "../jrd/thd.h"
 #include "../jrd/file_params.h"
 #include "../jrd/que.h"
 
+const int SIZE_SHIFT	= 2;
+const int FAST_ALLOC	= 16;
+
 /* Global section header */
 
-const int EVENT_VERSION			= 3;
-
-const int EVENT_HASH_SIZE		= 7;
-
-const int EVENT_DEFAULT_SIZE	= 32768;
-const int EVENT_EXTEND_SIZE		= 32768;
+const int EVH_HASH_SIZE	= 7;
 
 struct evh {
 	SLONG evh_length;			/* Current length of global section */
 	UCHAR evh_version;			/* Version number of global section */
-	srq evh_events;				/* Known events */
+	srq evh_events;				/* Known processes */
 	srq evh_processes;			/* Known processes */
 	SRQ_PTR evh_free;				/* Free blocks */
 	SRQ_PTR evh_current_process;	/* Current process, if any */
-	MTX_T evh_mutex;			/* Mutex controlling access */
+	MTX_T evh_mutex[1];			/* Mutex controlling access */
 	SLONG evh_request_id;		/* Next request id */
-	SRQ_PTR evh_hash_table[EVENT_HASH_SIZE];
+	SRQ_PTR evh_hash_table[EVH_HASH_SIZE];
 };
 
 typedef evh *EVH;
@@ -91,7 +90,8 @@ struct prb
 	srq prb_processes;			/* Process que owned by header */
 	srq prb_sessions;			/* Sessions within process */
 	SLONG prb_process_id;		/* Process id */
-	event_t prb_event;			/* Event on which to wait */
+	SLONG prb_process_uid[2];	/* Process UID (apollo) */
+	event_t prb_event[1];		/* Event on which to wait */
 	USHORT prb_flags;
 };
 typedef prb *PRB;
@@ -108,13 +108,15 @@ struct ses {
 	event_hdr ses_header;
 	srq ses_sessions;			/* Sessions within process */
 	srq ses_requests;			/* Outstanding requests */
-	SRQ_PTR ses_interests;		/* Historical interests */
+	SRQ_PTR ses_interests;			/* Historical interests */
+	SRQ_PTR ses_process;			/* Parent process */
+#ifdef MULTI_THREAD
 	USHORT ses_flags;
+#endif
 };
 typedef ses *SES;
 
 const int SES_delivering	= 1;		/* Watcher thread is delivering an event */
-const int SES_purge			= 2;		// delete session after delivering an event
 
 /* Event block */
 
@@ -122,6 +124,7 @@ struct evnt {
 	event_hdr evnt_header;
 	srq evnt_events;			/* System event que (owned by header) */
 	srq evnt_interests;			/* Que of request interests in event */
+	SRQ_PTR evnt_hash_collision;	/* Hash table collision pointer */
 	SRQ_PTR evnt_parent;			/* Major event name */
 	SLONG evnt_count;			/* Current event count */
 	USHORT evnt_length;			/* Length of event name */

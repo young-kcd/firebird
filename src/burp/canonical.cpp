@@ -27,13 +27,13 @@
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
  */
+/*
+$Id: canonical.cpp,v 1.36 2005-11-15 08:48:16 dimitr Exp $
+*/
 
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#ifdef HP11
-#include <arpa/inet.h>
-#endif
 #include "../burp/burp.h"
 #include "../jrd/align.h"
 #include "../jrd/sdl.h"
@@ -405,7 +405,7 @@ static bool_t burp_putlong(XDR* xdrs, const SLONG* lp)
  **************************************/
 	SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<char*>(&l),
+									   reinterpret_cast<char*>(AOF32L(l)),
 									   4);
 }
 

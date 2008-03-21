@@ -32,16 +32,14 @@
  * to define the types this header uses.
  */
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/GenericMap.h"
-#include "../jrd/exe.h"
 #include "../jrd/rpb_chain.h"
+#include "../jrd/exe.h"
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
-
-#include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
@@ -54,8 +52,6 @@ class Record;
 class VerbAction;
 class ArrayField;
 class Attachment;
-class DeferredWork;
-class dsql_opn;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
@@ -82,32 +78,16 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 
 /* Transaction block */
 
-const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
-const char* const TRA_TEMP_SPACE = "fb_trans_";
-
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
-public:
+    public:
 	enum wait_t {
 		tra_no_wait,
 		tra_probe,
 		tra_wait
 	};
 
-	explicit jrd_tra(MemoryPool* p) :
-		tra_pool(p),
-		tra_blobs(p),
-		tra_resources(*p),
-		tra_context_vars(*p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_open_cursors(*p)
-	{}
-
-	~jrd_tra()
-	{
-		delete tra_temp_space;
-	}
-
+	jrd_tra(MemoryPool& p) : tra_blobs(&p), tra_resources(p), tra_context_vars(p) {}
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
 	SLONG tra_top;				/* highest transaction in snapshot */
@@ -116,18 +96,16 @@ public:
 								   gargage-collected by this tx */
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
-	MemoryPool* tra_pool;		/* pool for transaction */
+	JrdMemoryPool* tra_pool;		/* pool for transaction */
 	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
-	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
 	vec<Lock*>*		tra_relation_locks;	/* locks for relations */
 	UInt32Bitmap*	tra_commit_sub_trans;	/* commited sub-transactions */
-	Savepoint*	tra_save_point;	/* list of savepoints */
-	Savepoint*	tra_save_free;	/* free savepoints */
+	Savepoint*	tra_save_point;	/* list of savepoints  */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
-	DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
+	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	ResourceList tra_resources;		/* resource existence list */
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
@@ -135,30 +113,12 @@ public:
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
 	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
-	Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
-	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
-	RuntimeStatistics tra_stats;
-	Firebird::Array<dsql_req*> tra_open_cursors;
-
-private:
-	TempSpace* tra_temp_space;	// temp space storage
-
-public:
 	UCHAR tra_transactions[1];
 
-public:
 	SSHORT getLockWait() const
 	{
 		return -tra_lock_timeout;
-	}
-
-	TempSpace* getTempSpace()
-	{
-		if (!tra_temp_space)
-			tra_temp_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_TEMP_SPACE);
-
-		return tra_temp_space;
 	}
 };
 
@@ -171,6 +131,7 @@ const ULONG TRA_system			= 1L;		/* system transaction */
 //const ULONG TRA_update			= 2L;		// update is permitted 
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
 const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
+// How can RLCK_reserve_relation test for it if it's not set anywhere?
 //const ULONG TRA_reserving		= 16L;		// relations explicityly locked
 const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
 //const ULONG TRA_committing		= 64L;		// commit in progress
@@ -189,7 +150,8 @@ const ULONG TRA_perform_autocommit	= 262144L;	/* indicates autocommit is necessa
 const ULONG TRA_rec_version			= 524288L;	/* don't wait for uncommitted versions */
 const ULONG TRA_restart_requests	= 1048576L;	/* restart all requests in attachment */
 const ULONG TRA_no_auto_undo		= 2097152L;	/* don't start a savepoint in TRA_start */
-const ULONG TRA_cancel_request		= 4194304L;	// cancel active request, if any
+// Obsolete, this was for LIBS on 16-bit.
+//const ULONG TRA_sweep_at_startup	= 4194304L;	// sweep done at startup 
 const ULONG TRA_precommitted		= 8388608L;	/* transaction committed at startup */
 
 const int TRA_MASK				= 3;
@@ -226,7 +188,6 @@ class Savepoint : public pool_alloc<type_sav>
 {
     public:
 	VerbAction*		sav_verb_actions;	/* verb action list */
-	VerbAction*		sav_verb_free;		/* free verb actions */
 	USHORT			sav_verb_count;		/* Active verb count */
 	SLONG			sav_number;			/* save point number */
 	Savepoint*		sav_next;
@@ -262,9 +223,7 @@ enum dfw_t {
 	dfw_delete_shadow,
 	dfw_modify_file,
 	dfw_erase_file,
-	dfw_create_field,
 	dfw_delete_field,
-	dfw_modify_field,
 	dfw_delete_global,
 	dfw_delete_rfr,
 	dfw_post_event,
@@ -281,8 +240,6 @@ enum dfw_t {
 	dfw_modify_procedure,
 	dfw_delete_procedure,
 	dfw_delete_prm, 
-	dfw_create_collation,
-	dfw_delete_collation,
 	dfw_delete_exception, 
 	//dfw_unlink_file,
 	dfw_delete_generator,
@@ -296,11 +253,7 @@ enum dfw_t {
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
 	dfw_arg_partner_rel_id,	// partner relation id for dfw_delete_index if index is FK, optional
-	dfw_arg_proc_name,		// procedure name for dfw_delete_prm, mandatory
-	dfw_arg_force_computed,	// we need to drop dependencies from a field that WAS computed
-	dfw_arg_check_blr,		// check if BLR is still compilable
-	dfw_arg_rel_name,		// relation name of a trigger
-	dfw_arg_trg_type		// trigger type
+	dfw_arg_proc_name		// procedure name for dfw_delete_prm, mandatory
 };
 
 class DeferredWork : public pool_alloc<type_dfw>

@@ -34,9 +34,8 @@ namespace Jrd {
 }
 
 Jrd::Lock* RLCK_reserve_relation(Jrd::thread_db*, Jrd::jrd_tra*,
-								 Jrd::jrd_rel*, bool);
-Jrd::Lock* RLCK_transaction_relation_lock(Jrd::thread_db*, Jrd::jrd_tra*,
-										  Jrd::jrd_rel*);
+										 Jrd::jrd_rel*, bool, bool);
+Jrd::Lock* RLCK_transaction_relation_lock(Jrd::jrd_tra*, Jrd::jrd_rel*);
 
 #endif // JRD_RLCK_PROTO_H
 

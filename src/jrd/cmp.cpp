@@ -36,7 +36,6 @@
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -45,6 +44,7 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
+#include "../jrd/sym.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"
@@ -53,6 +53,7 @@
 #include "../jrd/rse.h"
 #include "../jrd/scl.h"
 #include "../jrd/tra.h"
+#include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
@@ -60,6 +61,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/btr.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
@@ -67,26 +69,24 @@
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/idx_proto.h"
-#include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
 
 #include "../jrd/lck_proto.h"
 #include "../jrd/opt_proto.h"
 #include "../jrd/par_proto.h"
 #include "../jrd/scl_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/dbg_proto.h"	// DBG_supervisor
+#include "../jrd/intl_proto.h"
 #include "../jrd/execute_statement.h"
-
-#include "../jrd/DataTypeUtil.h"
-#include "../jrd/SysFunction.h"
 
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
-/* Firebird provides transparent conversion from string to date in
+/* InterBase provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
  * see if it is something that *could* represent a date value
  */
@@ -138,7 +138,6 @@ static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_
 static jrd_nod* pass2(thread_db*, CompilerScratch*, jrd_nod* const, jrd_nod*);
 static void pass2_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
 static jrd_nod* pass2_union(thread_db*, CompilerScratch*, jrd_nod*);
-static jrd_nod* pass2_validation(thread_db*, CompilerScratch*, const Item&);
 static void plan_check(const CompilerScratch*, const RecordSelExpr*);
 static void plan_set(CompilerScratch*, RecordSelExpr*, jrd_nod*);
 static void post_procedure_access(thread_db*, CompilerScratch*, jrd_prc*);
@@ -256,9 +255,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++) 
 	{
 		size_t i;
-		if (list.find(*item, i))
-			continue;
-
+		if (list.find(*item, i)) continue;
 		list.insert(i, *item);
 
 		// Add externals recursively
@@ -270,8 +267,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 		else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 
-			if (!relation)
-				continue;
+			if (!relation) continue;
 
 			trig_vec *vec1, *vec2;
 			switch (item->exa_action) {
@@ -348,14 +344,13 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 					continue;
 				}
 			}
-
 			// a direct access to an object from this trigger
-			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
+			const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
 			SCL_check_access(sec_class,
 							(access->acc_view_id) ? access->acc_view_id : 
 								(view ? view->rel_id : 0),
 							t.request->req_trg_name, NULL, access->acc_mask,
-							access->acc_type, access->acc_name, access->acc_r_name);
+							access->acc_type, access->acc_name);
 		}
 	}
 }
@@ -380,16 +375,14 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	for (ExternalAccess* item = external.begin(); item < external.end(); item++) {
 		if (item->exa_action == ExternalAccess::exa_procedure) {
 			jrd_prc* prc = MET_lookup_procedure_id(tdbb, item->exa_prc_id, false, false, 0);
-			if (!prc->prc_request)
-				continue;
-
+			if (!prc->prc_request) continue;
 			for (const AccessItem* access = prc->prc_request->req_access.begin();
 				 access < prc->prc_request->req_access.end();
 				 access++) 
 			{
-				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, access->acc_mask,
-								 access->acc_type, access->acc_name, access->acc_r_name);
+				const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
+				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, 
+								 access->acc_mask, access->acc_type, access->acc_name);
 			}
 		} 
 		else {
@@ -398,8 +391,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			if (item->exa_view_id)
 				view = MET_lookup_relation_id(tdbb, item->exa_view_id, false);
 
-			if (!relation)
-				continue;
+			if (!relation) continue;
 
 			switch (item->exa_action) {
 			case ExternalAccess::exa_insert:
@@ -423,9 +415,9 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
 		access++) 
 	{
-		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, access->acc_mask,
-						 access->acc_type, access->acc_name, access->acc_r_name);
+		const SecurityClass* sec_class = SCL_get_class(access->acc_security_name.c_str());
+		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL,
+						 access->acc_mask, access->acc_type, access->acc_name);
 	}
 }
 
@@ -447,9 +439,6 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
 	// find the request if we've got it
 
 	if (!level) {
@@ -463,13 +452,14 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		return clone;
 	}
 
+
 	if (validate) {
 		jrd_prc* procedure = request->req_procedure;
 		if (procedure) {
 			const TEXT* prc_sec_name =
 				(procedure->prc_security_name.length() > 0 ?
 				procedure->prc_security_name.c_str() : NULL);
-			const SecurityClass* sec_class = SCL_get_class(tdbb, prc_sec_name);
+			const SecurityClass* sec_class = SCL_get_class(prc_sec_name);
 			SCL_check_access(sec_class, 0, NULL, NULL, SCL_execute,
 							 object_procedure, procedure->prc_name);
 		}
@@ -489,7 +479,7 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 		(USHORT) ((request->req_impure_size - REQ_SIZE + REQ_TAIL - 1) / REQ_TAIL);
 	clone = FB_NEW_RPT(*request->req_pool, n) jrd_req(request->req_pool);
 	(*vector)[level] = clone;
-	clone->req_attachment = tdbb->getAttachment();
+	clone->req_attachment = tdbb->tdbb_attachment;
 	clone->req_count = request->req_count;
 	clone->req_pool = request->req_pool;
 	clone->req_impure_size = request->req_impure_size;
@@ -498,13 +488,11 @@ jrd_req* CMP_clone_request(thread_db* tdbb, jrd_req* request, USHORT level, bool
 	clone->req_procedure = request->req_procedure;
 	clone->req_flags = request->req_flags & REQ_FLAGS_CLONE_MASK;
 	clone->req_last_xcp = request->req_last_xcp;
-	clone->req_id = dbb->generateId();
 
 	// We are cloning full lists here, not assigning pointers
 	clone->req_invariants = request->req_invariants;
 	clone->req_fors = request->req_fors;
 	clone->req_exec_sta = request->req_exec_sta;
-	clone->req_map_field_info.assign(request->req_map_field_info);
 
 	record_param* rpb1 = clone->req_rpb;
 	const record_param* const end = rpb1 + clone->req_count;
@@ -544,8 +532,7 @@ jrd_req* CMP_compile(USHORT blr_length, const UCHAR* blr, USHORT internal_flag)
 }
 
 
-jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
-					  USHORT dbginfo_length, const UCHAR* dbginfo)
+jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag)
 {
 /**************************************
  *
@@ -557,21 +544,20 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
  *	Compile a BLR request.
  *
  **************************************/
-	jrd_req* request = NULL;
+	jrd_req* request = 0;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
 	// and will be freed by CMP_release
-	MemoryPool* new_pool = NULL;
+	JrdMemoryPool* new_pool = 0;
 
-	try
-	{
-		new_pool = dbb->createPool();
+	try {
+
+		new_pool = JrdMemoryPool::createPool();
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag, dbginfo_length, dbginfo);
+		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag);
 		request = CMP_make_request(tdbb, csb);
 
 		if (internal_flag) {
@@ -581,14 +567,16 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 		CMP_verify_access(tdbb, request);
 
 		delete csb;
+
 	}
-	catch (const Firebird::Exception& ex)
-	{
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		if (request)
+		if (request) {
 			CMP_release(tdbb, request);
-		else
-			dbb->deletePool(new_pool);
+		}
+		else if (new_pool) {
+			JrdMemoryPool::deletePool(new_pool);
+		}
 		ERR_punt();
 	}
 
@@ -632,14 +620,13 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// if the request hasn't been compiled or isn't active,
 	// there're nothing to do
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_cmp_clone_mutex);
-
+	THD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 	jrd_req* request;
 	if ((which == IRQ_REQUESTS && !(request = REQUEST(id))) ||
 		(which == DYN_REQUESTS && !(request = DYN_REQUEST(id))) ||
@@ -648,14 +635,16 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 		if (request) {
 			request->req_flags |= req_reserved;
 		}
+		THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 		return request;
 	}
 
 	// Request exists and is in use. Look for clones until we find
 	// one that is available.
 
-	for (int n = 1; true; n++) {
+	for (USHORT n = 1; true; n++) {
 		if (n > MAX_RECURSION) {
+			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_req_depth_exceeded,
 					 isc_arg_number, (SLONG) MAX_RECURSION, 0);
@@ -664,6 +653,7 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
 		if (!(clone->req_flags & (req_active | req_reserved))) {
 			clone->req_flags |= req_reserved;
+			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_cmp_clone);
 			return clone;
 		}
 	}
@@ -712,8 +702,7 @@ Format* CMP_format(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	if (tail->csb_relation) {
 		return tail->csb_format = MET_current(tdbb, tail->csb_relation);
 	}
-
-	if (tail->csb_procedure) {
+	else if (tail->csb_procedure) {
 		return tail->csb_format = tail->csb_procedure->prc_format;
 	}
 
@@ -776,6 +765,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		case dtype_int64:
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 		case dtype_text:
 		case dtype_cstring:
 		case dtype_varying:
@@ -834,6 +826,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 		case dtype_text:
 		case dtype_cstring:
 		case dtype_varying:
@@ -869,6 +864,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			break;
 		}
 		break;
+
 
 	case nod_prot_mask:
 	case nod_null:
@@ -920,8 +916,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				IBERROR(223);	// msg 223 argument of scalar operation must be an array
 			}
 			*desc = array->arr_desc.iad_rpt[0].iad_desc;
-			if (array->arr_desc.iad_dimensions > MAX_ARRAY_DIMENSIONS)
-				IBERROR(306); // Found array data type with more than 16 dimensions
 			return;
 		}
 
@@ -1017,12 +1011,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			return;
 		}
 		break;
-
-	case nod_agg_list:
-	case nod_agg_list_distinct:
-		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
-		return;
 
 	case nod_add:
 	case nod_subtract:
@@ -1189,6 +1177,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			case dtype_long:
 			case dtype_real:
 			case dtype_double:
+#ifdef VMS
+			case dtype_d_float:
+#endif
 				node->nod_flags |= nod_double;
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
@@ -1251,17 +1242,12 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			USHORT dtype1 = desc1.dsc_dtype;
 			USHORT dtype2 = desc2.dsc_dtype;
 
-			// In Dialect 2 or 3, strings can never partipate in addition / sub
-			// (use a specific cast instead)
-			if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
-				ERR_post(isc_expression_eval_err, 0);
-
 			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
 			// the result dtype. The rule is that two exact numeric operands yield an int64
 			// result, while an approximate numeric and anything yield a double result.
 
-			if (DTYPE_IS_EXACT(desc1.dsc_dtype) &&
-				DTYPE_IS_EXACT(desc2.dsc_dtype))
+			if (DTYPE_IS_EXACT(desc1.dsc_dtype)
+				&& DTYPE_IS_EXACT(desc2.dsc_dtype))
 			{
 				dtype = dtype_int64;
 			}
@@ -1270,8 +1256,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			{
 				dtype = dtype_double;
 			}
-			else
-			{
+			else {
 				// mixed numeric and non-numeric:
 
 				fb_assert(COULD_BE_DATE(desc1) || COULD_BE_DATE(desc2));
@@ -1481,6 +1466,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				return;
 
 			case dtype_double:
+#ifdef VMS
+			case dtype_d_float:
+#endif
 				node->nod_flags |= nod_double;
 				desc->dsc_dtype = DEFAULT_DOUBLE;
 				desc->dsc_length = sizeof(double);
@@ -1559,14 +1547,46 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			DSC desc1, desc2;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc1);
 			CMP_get_desc(tdbb, csb, node->nod_arg[1], &desc2);
-			DataTypeUtil(tdbb).makeConcatenate(desc, &desc1, &desc2);
+			desc->dsc_dtype = dtype_varying;
+			ULONG rc_len;
+			if (desc1.dsc_dtype <= dtype_varying)
+			{
+			    rc_len = DSC_string_length(&desc1);
+				desc->dsc_ttype() = desc1.dsc_ttype();
+			}
+			else
+			{
+			    rc_len = DSC_convert_to_text_length(desc1.dsc_dtype);
+				desc->dsc_ttype() = ttype_ascii;
+			}
+			if (desc2.dsc_dtype <= dtype_varying)
+			{
+				rc_len += DSC_string_length (&desc2);
+				if (((desc->dsc_ttype() == CS_ASCII) || (desc->dsc_ttype() == CS_NONE)) &&
+					(desc2.dsc_ttype() != CS_NONE)) 
+				{
+					desc->dsc_ttype() = desc2.dsc_ttype();
+				}
+			}
+			else
+			{
+				rc_len += DSC_convert_to_text_length(desc2.dsc_dtype);
+			}
+			if (rc_len > MAX_COLUMN_SIZE - sizeof(USHORT))
+			{
+				rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
+				ERR_post_warning(isc_concat_overflow, 0);
+			}
+			desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			desc->dsc_scale = 0;
+			desc->dsc_flags = 0;
 			return;
 		}
 
 	case nod_upcase:
 	case nod_lowcase:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		if (desc->dsc_dtype > dtype_varying && desc->dsc_dtype != dtype_blob) {
+		if (desc->dsc_dtype > dtype_varying) {
 			desc->dsc_length = DSC_convert_to_text_length(desc->dsc_dtype);
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_ascii;
@@ -1578,7 +1598,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_dbkey:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = sizeof(ISC_QUAD);
+		desc->dsc_length = 8;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -1586,7 +1606,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	case nod_rec_version:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_binary;
-		desc->dsc_length = sizeof(SLONG);
+		desc->dsc_length = 4;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
 		return;
@@ -1619,7 +1639,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
     case nod_current_role:
 		desc->dsc_dtype = dtype_text;
 		desc->dsc_ttype() = ttype_metadata;
-		// ASF: should be multiplied by maxBytesPerChar of ttype_metadata in the future
 		desc->dsc_length = USERNAME_LENGTH;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = 0;
@@ -1633,22 +1652,21 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		return;
 
 	case nod_extract:
-		switch ((IPTR) node->nod_arg[e_extract_part])
-		{
-			case blr_extract_second:
-				// QUADDATE - SECOND returns a float, or scaled!
-				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
-				break;
-
-			case blr_extract_millisecond:
-				desc->makeLong(0);
-				break;
-
-			default:
-				desc->makeShort(0);
-				break;
+		if ((IPTR) node->nod_arg[e_extract_part] == blr_extract_second) {
+			// QUADDATE - SECOND returns a float, or scaled!
+			desc->dsc_dtype = dtype_long;
+			desc->dsc_length = sizeof(ULONG);
+			desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
 		}
-
+		else {
+			desc->dsc_dtype = dtype_short;
+			desc->dsc_length = sizeof(SSHORT);
+			desc->dsc_scale = 0;
+			desc->dsc_sub_type = 0;
+			desc->dsc_flags = 0;
+		}
 		return;
 
 	case nod_strlen:
@@ -1695,8 +1713,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 			// Do the same thing which DSQL does.
 			// Increase descriptor size to evaluate dependent expressions correctly.
-			CharSet* cs = INTL_charset_lookup(tdbb, desc->getCharSet());
-			desc->dsc_length = (cs->length(desc->dsc_length - adjust, p, true) *
+			CharSet* cs = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(desc));
+			desc->dsc_length = (cs->length(tdbb, desc->dsc_length - adjust, p, true) *
 				cs->maxBytesPerChar()) + adjust;
 		}
 		return;
@@ -1732,9 +1750,9 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_substr:
 		{
-			DSC desc0, desc1, desc2, desc3;
+			CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
 
-			CMP_get_desc(tdbb, csb, node->nod_arg[0], &desc0);
+			DSC desc1, desc2, desc3;
 
 			jrd_nod* offset_node = node->nod_arg[1];
 			jrd_nod* decrement_node = NULL;
@@ -1752,7 +1770,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			jrd_nod* length_node = node->nod_arg[2];
 			CMP_get_desc(tdbb, csb, length_node, &desc2);
 
-			DataTypeUtil(tdbb).makeSubstr(desc, &desc0, &desc1, &desc2);
+			ULONG rc_len = 0;
 
 			if (desc1.dsc_flags & DSC_null || desc2.dsc_flags & DSC_null)
 			{
@@ -1787,37 +1805,32 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 						ERR_post(isc_bad_substring_length,
 								 isc_arg_number, length, 0);
 					}
+					// Set up the given length
+					rc_len = length;
 				}
 			}
-
+			if (desc->dsc_dtype == dtype_blob)
+			{
+				if (!rc_len && !(desc->dsc_flags & DSC_null))
+				{
+					// We don't know how big will the resulting string be
+					rc_len = MAX_COLUMN_SIZE - sizeof(USHORT);
+				}
+				desc->dsc_dtype = dtype_varying;
+				desc->dsc_ttype() = desc->dsc_blob_ttype();
+				desc->dsc_scale = 0;
+				desc->dsc_length = static_cast<USHORT>(rc_len) + sizeof(USHORT);
+			}
 			return;
 		}
 
 	case nod_trim:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
-
-		if (node->nod_arg[e_trim_characters])
 		{
-			DSC desc1;
-			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_characters], &desc1);
-			desc->dsc_flags |= desc1.dsc_flags & DSC_null;
-		}
-
-		if (desc->dsc_dtype != dtype_blob)
-		{
-			USHORT length = DSC_string_length(desc);
-
-			if (!DTYPE_IS_TEXT(desc->dsc_dtype))
-			{
-				desc->dsc_ttype() = ttype_ascii;
-				desc->dsc_scale = 0;
-			}
-
+			CMP_get_desc(tdbb, csb, node->nod_arg[e_trim_value], desc);
+			desc->dsc_length = sizeof(USHORT) + DSC_string_length(desc);
 			desc->dsc_dtype = dtype_varying;
-			desc->dsc_length = length + sizeof(USHORT);
+			return;
 		}
-
-		return;
 
 	case nod_function:
 		{
@@ -1844,32 +1857,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			return;
 		}
 
-	case nod_sys_function:
-		{
-			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
-			fb_assert(nodeArgs->nod_type == nod_list);
-
-			Firebird::Array<dsc*> args;
-
-			for (jrd_nod** p = nodeArgs->nod_arg;
-				 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
-			{
-				dsc* targetDesc = FB_NEW(*tdbb->getDefaultPool()) dsc();
-				args.push(targetDesc);
-				CMP_get_desc(tdbb, csb, *p, targetDesc);
-			}
-
-			DataTypeUtil dataTypeUtil(tdbb);
-			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
-
-			function->makeFunc(&dataTypeUtil, function,
-				desc, args.getCount(), const_cast<const dsc**>(args.begin()));
-
-			for (dsc** pArgs = args.begin(); pArgs != args.end(); ++pArgs)
-				delete *pArgs;
-		}
-		return;
-
 	case nod_variable:
 		{
 			const jrd_nod* value = node->nod_arg[e_var_variable];
@@ -1879,10 +1866,6 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_value_if:
 		CMP_get_desc(tdbb, csb, node->nod_arg[1], desc);
-		return;
-
-	case nod_domain_validation:
-		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
 		return;
 
 	default:
@@ -1911,7 +1894,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	DEV_BLKCHK(relation, type_rel);
 
@@ -1939,7 +1922,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 	index->idl_lock = lock;
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_dbb = dbb;
-	lock->lck_key.lck_long = (relation->rel_id << 16) | id;
+	lock->lck_key.lck_long = relation->rel_id * 1000 + id;
 	lock->lck_length = sizeof(lock->lck_key.lck_long);
 	lock->lck_type = LCK_idx_exist;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -1991,11 +1974,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 	SET_TDBB(tdbb);
 
-	Database* dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	jrd_req* old_request = tdbb->getRequest();
-	tdbb->setRequest(NULL);
+	jrd_req* old_request = tdbb->tdbb_request;
+	tdbb->tdbb_request = NULL;
 
 	try {
 
@@ -2004,42 +1984,11 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	// optimizations can be performed here.
 
 	DEBUG;
-	csb->csb_node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
-
-	// Copy and compile (pass1) domains DEFAULT and constraints.
-	bool found = csb->csb_map_field_info.getFirst();
-	while (found)
-	{
-		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
-		UCHAR local_map[MAP_LENGTH];
-
-		fieldInfo.defaultValue =
-			copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
-		fieldInfo.validation =
-			copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
-
-		fieldInfo.defaultValue = pass1(tdbb, csb, fieldInfo.defaultValue, 0, 0, false);
-		fieldInfo.validation = pass1(tdbb, csb, fieldInfo.validation, 0, 0, false);
-
-		found = csb->csb_map_field_info.getNext();
-	}
-
-	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
+	jrd_nod* node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
+	csb->csb_node = node;
+	csb->csb_impure = REQ_SIZE + REQ_TAIL * csb->csb_n_stream;
 	csb->csb_exec_sta.clear();
-
 	csb->csb_node = pass2(tdbb, csb, csb->csb_node, 0);
-
-	// Compile (pass2) domains DEFAULT and constraints
-	found = csb->csb_map_field_info.getFirst();
-	while (found)
-	{
-		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
-
-		fieldInfo.defaultValue = pass2(tdbb, csb, fieldInfo.defaultValue, 0);
-		fieldInfo.validation = pass2(tdbb, csb, fieldInfo.validation, 0);
-
-		found = csb->csb_map_field_info.getNext();
-	}
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
@@ -2056,9 +2005,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_top_node = csb->csb_node;
 	request->req_access = csb->csb_access;
 	request->req_external = csb->csb_external;
-	request->req_map_field_info.takeOwnership(csb->csb_map_field_info);
-	request->req_id = dbb->generateId();
-
 	// CVC: Unused.
 	//request->req_variables = csb->csb_variables;
 	request->req_resources = csb->csb_resources; // Assign array contents
@@ -2091,10 +2037,14 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 					CMP_get_index_lock(tdbb, relation, resource->rsc_id);
 				if (index)
 				{
-					++index->idl_count;
-					if (index->idl_count == 1) {
-						LCK_lock(tdbb, index->idl_lock, LCK_SR, LCK_WAIT);
+					if (!index->idl_count)
+					{
+						LCK_lock_non_blocking(	tdbb,
+												index->idl_lock,
+												LCK_SR,
+												LCK_WAIT);
 					}
+					++index->idl_count;
 				}
 				break;
 			}
@@ -2111,12 +2061,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 					JRD_print_procedure_info(tdbb, buffer);
 				}
 #endif
-				break;
-			}
-		case Resource::rsc_collation:
-			{
-				Collation* coll = resource->rsc_coll;
-				coll->incUseCount(tdbb);
 				break;
 			}
 		default:
@@ -2136,14 +2080,6 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 		{
 			 rpb->rpb_stream_flags |= RPB_s_update;
 		}
-
-		// if no fields are referenced, mark the stream as not requiring record's data
-
-		if (!tail->csb_fields)
-		{
-			 rpb->rpb_stream_flags |= RPB_s_no_data;
-		}
-
 		rpb->rpb_relation = tail->csb_relation;
 
 		delete tail->csb_fields;
@@ -2162,16 +2098,14 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 	request->req_invariants = csb->csb_invariants;
 
 	DEBUG;
-	tdbb->setRequest(old_request);
+	tdbb->tdbb_request = old_request;
 
 	} // try
-	catch (const Firebird::Exception& ex) {
+	catch (const std::exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
-		tdbb->setRequest(old_request);
+		tdbb->tdbb_request = old_request;
 		ERR_punt();
 	}
-
-	tdbb->bumpStats(RuntimeStatistics::STMT_PREPARES);
 
 	return request;
 }
@@ -2183,8 +2117,7 @@ void CMP_post_access(thread_db* tdbb,
 					 SLONG view_id,
 					 SecurityClass::flags_t mask,
 					 const TEXT* type_name,
-					 const Firebird::MetaName& name,
-					 const Firebird::MetaName& r_name)
+					 const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -2208,7 +2141,7 @@ void CMP_post_access(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 	
-	AccessItem access(security_name, view_id, name, type_name, mask, r_name);
+	AccessItem access(security_name, view_id, name, type_name, mask);
 
 	size_t i;
 
@@ -2222,7 +2155,7 @@ void CMP_post_access(thread_db* tdbb,
 
 
 void CMP_post_resource(	ResourceList* rsc_ptr,
-						void* obj,
+						BLK rel_or_prc,
 						enum Resource::rsc_s type,
 						USHORT id)
 {
@@ -2237,17 +2170,14 @@ void CMP_post_resource(	ResourceList* rsc_ptr,
  *
  **************************************/
 	// Initialize resource block
-	Resource resource(type, id, NULL, NULL, NULL);
+	Resource resource(type, id, NULL, NULL);
 	switch (type) {
 	case Resource::rsc_relation:
 	case Resource::rsc_index:
-		resource.rsc_rel = (jrd_rel*) obj;
+		resource.rsc_rel = (jrd_rel*) rel_or_prc;
 		break;
 	case Resource::rsc_procedure:
-		resource.rsc_prc = (jrd_prc*) obj;
-		break;
-	case Resource::rsc_collation:
-		resource.rsc_coll = (Collation*) obj;
+		resource.rsc_prc = (jrd_prc*) rel_or_prc;
 		break;
 	default:
 		BUGCHECK(220);			/* msg 220 unknown resource */
@@ -2302,13 +2232,12 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
-		( (*tdbb->getDatabase()->dbb_procedures)[procedure->prc_id] !=
-		 	// &procedure->prc_header))
-		 	procedure))
+		( (*tdbb->tdbb_database->dbb_procedures)[procedure->prc_id]
+		 //!= &procedure->prc_header))
+		 != procedure))
 	{
 		if (procedure->prc_request) {
 			CMP_release(tdbb, procedure->prc_request);
-			procedure->prc_request = NULL;
 		}
 		procedure->prc_flags &= ~PRC_being_altered;
 		MET_remove_procedure(tdbb, procedure->prc_id, procedure);
@@ -2329,7 +2258,6 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	DEV_BLKCHK(request, type_req);
 
@@ -2344,7 +2272,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_relation:
 				{
 					jrd_rel* relation = resource->rsc_rel;
-					MET_release_existence(tdbb, relation);
+					MET_release_existence(relation);
 					break;
 				}
 			case Resource::rsc_index:
@@ -2352,9 +2280,9 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 					jrd_rel* relation = resource->rsc_rel;
 					IndexLock* index = CMP_get_index_lock(tdbb, relation,
 													 resource->rsc_id);
-					if (index && index->idl_count) 
-					{
-						--index->idl_count;
+					if (index) {
+						if (index->idl_count)
+							--index->idl_count;
 						if (!index->idl_count)
 							LCK_release(tdbb, index->idl_lock);
 					}
@@ -2363,12 +2291,6 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 			case Resource::rsc_procedure:
 				{
 					CMP_decrement_prc_use_count(tdbb, resource->rsc_prc);
-					break;
-				}
-			case Resource::rsc_collation:
-				{
-					Collation* coll = resource->rsc_coll;
-					coll->decUseCount(tdbb);
 					break;
 				}
 			default:
@@ -2403,7 +2325,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 		}
 	}
 
-	dbb->deletePool(request->req_pool);
+	JrdMemoryPool::deletePool(request->req_pool);
 }
 
 
@@ -2422,7 +2344,7 @@ void CMP_shutdown_database(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	DEV_BLKCHK(dbb, type_dbb);
@@ -2451,8 +2373,8 @@ void CMP_shutdown_database(thread_db* tdbb)
 				 index = index->idl_next)
 			{
 				if (index->idl_lock) {
-					index->idl_count = 0;
 					LCK_release(tdbb, index->idl_lock);
+					index->idl_count = 0;
 				}
 			}
 		}
@@ -2748,7 +2670,6 @@ static jrd_nod* copy(thread_db* tdbb,
 			RecordSelExpr* new_rse =
 				(RecordSelExpr*) PAR_make_node(tdbb, old_rse->rse_count + rse_delta + 2);
 			new_rse->nod_type = input->nod_type;
-			new_rse->nod_flags = input->nod_flags;
 			new_rse->nod_count = 0;
 			new_rse->rse_count = old_rse->rse_count;
 			jrd_nod** arg1 = old_rse->rse_relation;
@@ -2912,24 +2833,13 @@ static jrd_nod* copy(thread_db* tdbb,
 			BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 		node = PAR_make_node(tdbb, e_uni_length);
 		node->nod_type = input->nod_type;
-		node->nod_count = 3;
-		node->nod_flags = input->nod_flags;
+		node->nod_count = 2;
 		stream = (USHORT)(IPTR) input->nod_arg[e_uni_stream];
 		fb_assert(stream <= MAX_STREAMS);
 		new_stream = csb->nextStream();
 		node->nod_arg[e_uni_stream] = (jrd_nod*) (IPTR) new_stream;
 		remap[stream] = (UCHAR) new_stream;
 		CMP_csb_element(csb, new_stream);
-
-		if (node->nod_flags & nod_recurse)
-		{
-			stream = (USHORT)(IPTR) input->nod_arg[e_uni_map_stream];
-			fb_assert(stream <= MAX_STREAMS);
-			new_stream = csb->nextStream();
-			node->nod_arg[e_uni_map_stream] = (jrd_nod*) (IPTR) new_stream;
-			remap[stream] = (UCHAR) new_stream;
-			CMP_csb_element(csb, new_stream);
-		}
 
 		csb->csb_rpt[new_stream].csb_flags |=
 			csb->csb_rpt[stream].csb_flags & csb_no_dbkey;
@@ -2944,7 +2854,6 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_count = input->nod_count;
 		node->nod_arg[e_msg_number] = input->nod_arg[e_msg_number];
 		node->nod_arg[e_msg_format] = input->nod_arg[e_msg_format];
-		node->nod_arg[e_msg_impure_flags] = input->nod_arg[e_msg_impure_flags];
 		// dimitr: hmmm, cannot find where the following one is used...
 		node->nod_arg[e_msg_next] =
 			copy(tdbb, csb, input->nod_arg[e_msg_next], remap, field_id,
@@ -2954,30 +2863,6 @@ static jrd_nod* copy(thread_db* tdbb,
 	case nod_sort:
 		args *= 3;
 		break;
-
-	case nod_domain_validation:
-		node = PAR_make_node(tdbb, e_domval_length);
-		node->nod_type = nod_domain_validation;
-		node->nod_count = 0;
-		*(dsc*) (node->nod_arg + e_domval_desc) = *(dsc*) (input->nod_arg + e_domval_desc);
-		return node;
-
-	case nod_dbkey:
-		node = PAR_make_node(tdbb, 1);
-		node->nod_type = input->nod_type;
-		node->nod_count = 0;
-		node->nod_arg[0] = input->nod_arg[0];
-		return node;
-
-	case nod_sys_function:
-		node = PAR_make_node(tdbb, e_sysfun_length);
-		node->nod_type = input->nod_type;
-		node->nod_count = e_sysfun_count;
-		node->nod_arg[e_sysfun_args] =
-			copy(tdbb, csb, input->nod_arg[e_sysfun_args], remap, field_id,
-				 message, remap_fld);
-		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
-		return node;
 
 	default:
 		break;
@@ -3301,10 +3186,9 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 	switch (node->nod_type) {
 	case nod_like:
-	case nod_similar:
 		ptr = node->nod_arg;
 		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
-		// We need to take care of invariantness of like/similar pattern expression to be
+		// We need to take care of invariantness of like pattern expression to be
 		// able to pre-compile its pattern
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
@@ -3317,7 +3201,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 
 		// If there is no top-level RSE present and patterns are not constant,
 		// unmark node as invariant because it may be dependent on data or variables.
-		// See the same for nod_contains and nod_starts below.
+		// See the same for nod_contains below.
 		if ((node->nod_flags & nod_invariant) && 
 			(ptr[1]->nod_type != nod_literal || 
 			 (node->nod_count == 3 && ptr[2]->nod_type != nod_literal)))
@@ -3336,11 +3220,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 		return node;
 
 	case nod_contains:
-	case nod_starts:
 		ptr = node->nod_arg;
 		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
-		// We need to take care of invariantness of contains and starts
-		// expression to be able to pre-compile it for searching
+		// We need to take care of invariantness of contains expression to be
+		// able to pre-compile it for searching
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
 		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
@@ -3367,24 +3250,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_variable:
 	case nod_argument:
 		break;
-
-	case nod_cast:
-		{
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				CMP_post_resource(&csb->csb_resources,
-					INTL_texttype_lookup(tdbb, ttype),
-					Resource::rsc_collation, ttype);
-			}
-
-			break;
-		}
 
 	case nod_field:
 		{
@@ -3423,41 +3288,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 				break;
 			}
 
-			dsc desc;
-			CMP_get_desc(tdbb, csb, node, &desc);
-
-			USHORT ttype = INTL_TEXT_TYPE(desc);
-
-			// Are we using a collation?
-			if (TTYPE_TO_COLLATION(ttype) != 0)
-			{
-				Jrd::Collation* collation = NULL;
-				ISC_STATUS* save_status = tdbb->tdbb_status_vector;
-
-				try
-				{
-					ISC_STATUS_ARRAY local_status;
-					tdbb->tdbb_status_vector = local_status;
-
-					collation = INTL_texttype_lookup(tdbb, ttype);
-				}
-				catch (Firebird::Exception&)
-				{
-					// ASF: Swallow the exception if we fail to load the collation here.
-					// This allows we to backup databases when the collation isn't available.
-					if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
-						throw;
-				}
-
-				tdbb->tdbb_status_vector = save_status;
-
-				if (collation)
-				{
-					CMP_post_resource(&csb->csb_resources, collation,
-						Resource::rsc_collation, ttype);
-				}
-			}
-
 			// if this is a modify or store, check REFERENCES access to any foreign keys
 
 /* CVC: This is against the SQL standard. REFERENCES should be enforced only at the
@@ -3489,7 +3319,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
 									SCL_sql_update, object_column,
-									field->fld_name, relation->rel_name);
+									field->fld_name);
 				}
 			}
 			else if (tail->csb_flags & csb_erase) {
@@ -3508,8 +3338,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_column, 
-								field->fld_name, relation->rel_name);
+								SCL_sql_insert, object_column, field->fld_name);
 			}
 			else {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
@@ -3519,7 +3348,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 				CMP_post_access(tdbb, csb, field->fld_security_name,
 								(tail->csb_view) ? tail->csb_view->rel_id : 
 									(view ? view->rel_id : 0),
-								SCL_read, object_column, field->fld_name, relation->rel_name);
+								SCL_read, object_column, field->fld_name);
 			}
 
 			if (!(sub = field->fld_computation) && !(sub = field->fld_source)) {
@@ -3549,6 +3378,14 @@ static jrd_nod* pass1(thread_db* tdbb,
 					break;
 			}
 
+			// dimitr:	if we reference view columns, we need to pass them
+			//			as belonging to a view (in order to compute the access
+			//			permissions properly).
+			if (relation->rel_view_rse) {
+				view = relation;
+				view_stream = stream;
+			}
+
 			UCHAR local_map[MAP_LENGTH];
 			UCHAR* map = tail->csb_map;
 			if (!map) {
@@ -3559,16 +3396,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 				map[2] = stream + 2;
 			}
 			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
-
-			if (relation->rel_view_rse)
-			{
-				// dimitr:	if we reference view columns, we need to pass them
-				//			as belonging to a view (in order to compute the access
-				//			permissions properly).
-				view = relation;
-				view_stream = stream;
-			}
-
 			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
 		}
 
@@ -3684,95 +3511,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
 			if (stack.hasData())
-			{
-				size_t stackCount = stack.getCount();
-
-				// If that is a DB_KEY of a view, it's possible (in case of 
-				// outer joins) that some sub-stream have a NULL DB_KEY.
-				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
-				// for the concatenation of sub DB_KEYs not result in NULL.
-				if (type == nod_dbkey && stackCount > 1)
-				{
-					NodeStack stack2;
-
-					for (NodeStack::iterator i(stack); i.hasData(); ++i)
-					{
-						jrd_nod* new_node = PAR_make_node(tdbb, 3);
-						new_node->nod_type = nod_value_if;
-						new_node->nod_count = 3;
-
-						// build an IF (RDB$DB_KEY IS NOT NULL)
-						new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_type = nod_not;
-						new_node->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-						new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
-						new_node->nod_arg[0]->nod_arg[0]->nod_count = 1;
-						new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = i.object();
-
-						new_node->nod_arg[1] = i.object();	// THEN
-
-						const SSHORT count = lit_delta +
-							(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-						new_node->nod_arg[2] = PAR_make_node(tdbb, count);	// ELSE
-						new_node->nod_arg[2]->nod_type = nod_literal;
-						new_node->nod_arg[2]->nod_count = 0;
-						Literal* literal = (Literal*) new_node->nod_arg[2];
-						literal->lit_desc.dsc_dtype = dtype_text;
-						literal->lit_desc.dsc_ttype() = CS_BINARY;
-						literal->lit_desc.dsc_scale = 0;
-						literal->lit_desc.dsc_length = 0;
-						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
-
-						stack2.push(new_node);
-					}
-
-					stack.clear();
-
-					// stack2 is in reverse order, pushing everything in stack
-					// will correct the order.
-					for (NodeStack::iterator i2(stack2); i2.hasData(); ++i2)
-						stack.push(i2.object());
-				}
-
-				node = catenate_nodes(tdbb, stack);
-
-				if (type == nod_dbkey && stackCount > 1)
-				{
-					// ASF: If the view is in null state (with outer joins) we need to transform
-					// the view RDB$KEY to NULL. (CORE-1245)
-
-					jrd_nod* new_node = PAR_make_node(tdbb, 3);
-					new_node->nod_type = nod_value_if;
-					new_node->nod_count = 3;
-
-					// build an IF (RDB$DB_KEY = '')
-					new_node->nod_arg[0] = PAR_make_node(tdbb, 2);
-					new_node->nod_arg[0]->nod_type = nod_eql;
-					new_node->nod_arg[0]->nod_flags = nod_comparison;
-					new_node->nod_arg[0]->nod_arg[0] =
-						copy(tdbb, csb, node, NULL, 0, NULL, false);
-					const SSHORT count = lit_delta +
-						(0 + sizeof(jrd_nod*) - 1) / sizeof(jrd_nod*);
-					new_node->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, count);
-					new_node->nod_arg[0]->nod_arg[1]->nod_type = nod_literal;
-					new_node->nod_arg[0]->nod_arg[1]->nod_count = 0;
-					Literal* literal = (Literal*) new_node->nod_arg[0]->nod_arg[1];
-					literal->lit_desc.dsc_dtype = dtype_text;
-					literal->lit_desc.dsc_ttype() = CS_BINARY;
-					literal->lit_desc.dsc_scale = 0;
-					literal->lit_desc.dsc_length = 0;
-					literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
-
-					new_node->nod_arg[1] = PAR_make_node(tdbb, 0);	// THEN: NULL
-					new_node->nod_arg[1]->nod_type = nod_null;
-					new_node->nod_arg[2] = node;					// ELSE: RDB$DB_KEY
-
-					node = new_node;
-				}
-
-				return node;
-			}
+				return catenate_nodes(tdbb, stack);
 
 			// The user is asking for the dbkey/record version of an aggregate.
 			// Humor him with a key filled with zeros.
@@ -3825,11 +3564,6 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_unique:
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_any_rse], view);
 		break;
-
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
-			pass1(tdbb, csb, node->nod_arg[e_src_info_node], view, view_stream, validate_expr);
-		return node;		
 
 	default:
 		break;
@@ -4345,7 +4079,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	if (plan) {
 		rse->rse_plan = plan;
 	}
-	
+
 	rse->rse_writelock = writelock;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4392,7 +4126,7 @@ static void pass1_source(thread_db*			tdbb,
 	DEV_BLKCHK(*boolean, type_nod);
 	DEV_BLKCHK(parent_view, type_rel);
 
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated, 
@@ -4828,25 +4562,6 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 }
 
 
-static jrd_nod* pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item& item)
-{
-/**************************************
- *
- *	p a s s 2 _ v a l i d a t i o n
- *
- **************************************
- *
- * Functional description
- *	Copy items' information into appropriate node
- *
- **************************************/
-	ItemInfo itemInfo;
-	return csb->csb_map_item_info.get(item, itemInfo) ?
-		reinterpret_cast<jrd_nod*>(FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo)) :
-		0;
-}
-
-
 static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, jrd_nod* parent)
 {
 /**************************************
@@ -4950,8 +4665,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 
 	case nod_like:
 	case nod_contains:
-	case nod_similar:
-	case nod_starts:
 		if (node->nod_flags & nod_invariant) {
 			csb->csb_invariants.push(node);
 		}
@@ -4966,28 +4679,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				(*ptr)->nod_flags |= nod_value;
 			}
 		}
-		break;
-
-	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
-			pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
-		return node;
-		
-	case nod_variable:
-		node->nod_arg[e_var_info] = 
-			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]));
-		break;
-
-	case nod_init_variable:
-		node->nod_arg[e_init_var_info] =
-			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_init_var_id]));
-		break;
-
-	case nod_argument:
-		node->nod_arg[e_arg_info] =
-			pass2_validation(tdbb, csb, Item(nod_argument, 
-				(IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
-				(IPTR) node->nod_arg[e_arg_number]));
 		break;
 
 	default:
@@ -5080,15 +4771,21 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		}
 		break;
 
-	case nod_total:
 	case nod_agg_total:
 	case nod_agg_total_distinct:
+	case nod_total:
 	case nod_agg_total2:
 	case nod_agg_total_distinct2:
+		{
+			node->nod_count = 0;
+			csb->csb_impure += sizeof(impure_value);
+			dsc descriptor_a;
+			CMP_get_desc(tdbb, csb, node, &descriptor_a);
+		}
+		break;
+
 	case nod_agg_average2:
 	case nod_agg_average_distinct2:
-	case nod_agg_list:
-	case nod_agg_list_distinct:
 		{
 			node->nod_count = 0;
 			csb->csb_impure += sizeof(impure_value_ex);
@@ -5102,9 +4799,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			const Format* format = (Format*) node->nod_arg[e_msg_format];
 			if (!((tdbb->tdbb_flags & TDBB_prc_being_dropped) && !format)) {
 				csb->csb_impure += FB_ALIGN(format->fmt_length, 2);
-
-				node->nod_arg[e_msg_impure_flags] = (jrd_nod*)(IPTR) CMP_impure(csb, 0);
-				csb->csb_impure += sizeof(USHORT) * format->fmt_count;
 			}
 		}
 		break;
@@ -5127,14 +4821,11 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 	case nod_list:
 		// We are using the same "node" always. The "end" was set in the middle
 		// of the two huge switch() statements (this is the second).
-		if (node->nod_count > 0)
-		{
-			node->nod_type = nod_asn_list;
-			for (ptr = node->nod_arg; ptr < end; ptr++) {
-				if ((*ptr)->nod_type != nod_assignment) {
-					node->nod_type = nod_list;
-					break;
-				}
+		node->nod_type = nod_asn_list;
+		for (ptr = node->nod_arg; ptr < end; ptr++) {
+			if ((*ptr)->nod_type != nod_assignment) {
+				node->nod_type = nod_list;
+				break;
 			}
 		}
 		// FALL INTO
@@ -5154,13 +4845,16 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			// SMB_SET uses ULONG, not USHORT
 			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
+			if (node->nod_flags & nod_value) {
+				csb->csb_impure += sizeof(impure_value_ex);
+				break;
+			}
 		}
 		// FALL INTO
 
 	case nod_argument:
 	case nod_variable:
-		csb->csb_impure += (node->nod_flags & nod_value) ?
-			sizeof(impure_value_ex) : sizeof(dsc);
+		csb->csb_impure += sizeof(dsc);
 		break;
 
 	case nod_concatenate:
@@ -5219,32 +4913,18 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 			// For gbak attachments, there is no need to resolve the UDF function
 			// Also if we are dropping a procedure don't bother resolving the
 			// UDF that the procedure invokes.
-			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment) &&
+			if (!(tdbb->tdbb_attachment->att_flags & ATT_gbak_attachment) &&
 				!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
 			{
 				jrd_nod* value = node->nod_arg[e_fun_args];
 				UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 				node->nod_arg[e_fun_function] =
-					(jrd_nod*) FUN_resolve(tdbb, csb, function, value);
+					(jrd_nod*) FUN_resolve(csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
 					ERR_post(isc_funmismat, isc_arg_string,
-							function->fun_name.c_str(), 0);
+							function->fun_symbol->sym_string.c_str(), 0);
 				}
 			}
-			dsc descriptor_a;
-			CMP_get_desc(tdbb, csb, node, &descriptor_a);
-			csb->csb_impure += sizeof(impure_value);
-		}
-		break;
-
-	case nod_sys_function:
-		{
-			SysFunction* function = ((SysFunction*) node->nod_arg[e_sysfun_function]);
-			jrd_nod* nodeArgs = node->nod_arg[e_sysfun_args];
-			fb_assert(nodeArgs->nod_type == nod_list);
-
-			function->checkArgsMismatch(nodeArgs->nod_count);
-
 			dsc descriptor_a;
 			CMP_get_desc(tdbb, csb, node, &descriptor_a);
 			csb->csb_impure += sizeof(impure_value);
@@ -5264,7 +4944,6 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		// boolean nodes taking three values as inputs
 	case nod_like:
 	case nod_between:
-	case nod_similar:
 	case nod_sleuth:
 		if (node->nod_count > 2) {
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
@@ -5305,7 +4984,7 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 				node->nod_arg[0]->nod_flags |= nod_date;
 		}
 		if (node->nod_flags & nod_invariant) {
-			// This may currently happen for nod_like, nod_contains and nod_similar
+			// This may currently happen for nod_like and nod_contains
 			csb->csb_impure += sizeof(impure_value);
 		}
 		break;
@@ -5484,12 +5163,6 @@ static jrd_nod* pass2_union(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 		process_map(tdbb, csb, map, format);
 	}
 
-	if (node->nod_flags & nod_recurse)
-	{
-		const USHORT map_id = (USHORT)(IPTR) node->nod_arg[e_uni_map_stream];
-		csb->csb_rpt[map_id].csb_format = *format;
-	}
-
 	return node;
 }
 
@@ -5621,8 +5294,9 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 				break;
 			}
-
-			view_relation = NULL;
+			else {
+				view_relation = NULL;
+			}
 
 			// if the user didn't specify an alias (or didn't specify one
 			// for this level), check to make sure there is one and only one 
@@ -5884,7 +5558,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
  **************************************
  *
  * Functional description
- *	Translate a map block into a format.  If the format
+ *	Translate a map block into a format.  If the format is
  *	is missing or incomplete, extend it.
  *
  **************************************/
@@ -5915,15 +5589,15 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 		CMP_get_desc(tdbb, csb, assignment->nod_arg[e_asgn_from], &desc2);
 		const USHORT min = MIN(desc->dsc_dtype, desc2.dsc_dtype);
 		const USHORT max = MAX(desc->dsc_dtype, desc2.dsc_dtype);
-		if (!min) {			// eg: dtype_unknown
-			*desc = desc2;
-		}
-		else if (max == dtype_blob) {
+		if (max == dtype_blob) {
 			desc->dsc_dtype = dtype_quad;
-			desc->dsc_length = sizeof(ISC_QUAD);
+			desc->dsc_length = 8;
 			desc->dsc_scale = 0;
 			desc->dsc_sub_type = 0;
 			desc->dsc_flags = 0;
+		}
+		else if (!min) {			// eg: dtype_unknown
+			*desc = desc2;
 		}
 		else if (min <= dtype_any_text) {	// either field a text field?
 			const USHORT len1 = DSC_string_length(desc);
@@ -5971,7 +5645,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 
 	// flesh out the format of the record
 
-	ULONG offset = FLAG_BYTES(format->fmt_count);
+	format->fmt_length = (USHORT) FLAG_BYTES(format->fmt_count);
 
 	Format::fmt_desc_iterator desc3 = format->fmt_desc.begin();
 	for (const Format::fmt_desc_const_iterator end_desc = format->fmt_desc.end();
@@ -5979,16 +5653,11 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	{
 		const USHORT align = type_alignments[desc3->dsc_dtype];
 		if (align) {
-			offset = FB_ALIGN(offset, align);
+			format->fmt_length = FB_ALIGN(format->fmt_length, align);
 		}
-		desc3->dsc_address = (UCHAR *) (IPTR) offset;
-		offset += desc3->dsc_length;
+		desc3->dsc_address = (UCHAR *) (IPTR) format->fmt_length;
+		format->fmt_length += desc3->dsc_length;
 	}
-
-	if (offset > MAX_FORMAT_SIZE)
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
-
-	format->fmt_length = (USHORT) offset;
 }
 
 
@@ -6007,15 +5676,16 @@ static SSHORT strcmp_space(const char* p, const char* q)
  **************************************/
 
 	for (; *p && *p != ' ' && *q && *q != ' '; p++, q++)
-	{
 		if (*p != *q)
 			break;
-	}
 
 	if ((!*p || *p == ' ') && (!*q || *q == ' '))
 		return 0;
 
-	return (*p > *q) ? 1 : -1;
+	if (*p > *q)
+		return 1;
+	else
+		return -1;
 }
 
 

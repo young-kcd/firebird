@@ -33,10 +33,11 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "firebird.h"
+ 
 #include "../include/fb_types.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
+#include "../include/gen/autoconfig.h"
 
 namespace Firebird
 {
@@ -192,7 +193,7 @@ namespace Firebird
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
 		void baseTrim(TrimType WhereTrim, const_pointer ToTrim);
-
+		
 	public:
 		inline const_pointer c_str() const {
 			return stringBuffer;
@@ -210,16 +211,18 @@ namespace Firebird
 		// in case a null ASCII was inserted in the middle of the string.
 		inline size_type recalculate_length()
 		{
-		    stringLength = static_cast<internal_size_type>(strlen(stringBuffer));
+		    stringLength = strlen(stringBuffer);
 		    return stringLength;
 		}
-
+		
 		void reserve(size_type n = 0);
 		void resize(size_type n, char_type c = ' ');
 
-		inline pointer getBuffer(size_t l)
+		inline size_type copy_from(pointer s, size_type n, size_type pos = 0) const
 		{
-			return baseAssign(l);
+			AdjustRange(length(), pos, n);
+			memcpy(s, c_str() + pos, n);
+			return n;
 		}
 
 /*		inline void swap(AbstractString& str) {
@@ -355,7 +358,7 @@ namespace Firebird
 		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
 
-		inline size_type copyTo(pointer to, size_type toSize) const
+		inline int copyTo(pointer to, size_type toSize) const
 		{
 			fb_assert(to);
 			fb_assert(toSize);
@@ -401,9 +404,9 @@ namespace Firebird
 		inline StringBase<Comparator>(const StringType& v) : AbstractString(v) {}
 		inline StringBase<Comparator>(const_pointer s, size_type n) : AbstractString(n, s) {}
 		inline StringBase<Comparator>(const_pointer s) : AbstractString(strlen(s), s) {}
-		inline explicit StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
+		inline StringBase<Comparator>(const unsigned char* s) : AbstractString(strlen((char*)s), (char*)s) {}
 		inline StringBase<Comparator>(size_type n, char_type c) : AbstractString(n, c) {}
-		//inline explicit StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
+		inline StringBase<Comparator>(char_type c) : AbstractString(1, c) {}
 		inline StringBase<Comparator>(const_iterator first, const_iterator last) : AbstractString(last - first, first) {}
 		inline explicit StringBase<Comparator>(MemoryPool& p) : AbstractString(p) {}
 		inline StringBase<Comparator>(MemoryPool& p, const AbstractString& v) : AbstractString(p, v) {}
@@ -605,12 +608,7 @@ namespace Firebird
 		int compare(const_pointer s, size_type n) const {
 			const size_type ml = length() < n ? length() : n;
 			const int rc = Comparator::compare(c_str(), s, ml);
-			if (rc)
-			{
-				return rc;
-			}
-			const difference_type dl = length() - n;
-			return (dl < 0) ? -1 : (dl > 0) ? 1 : 0;
+			return rc ? rc : length() - n;
 		}
 
 		inline bool operator< (const StringType& str) const {return compare(str) <  0;}
@@ -635,7 +633,7 @@ namespace Firebird
 		return rc;
 	}
 	inline string operator+(string::char_type c, const string& str) {
-		string rc(1, c);
+		string rc(c);
 		rc += str;
 		return rc;
 	}
@@ -647,7 +645,7 @@ namespace Firebird
 		return rc;
 	}
 	inline PathName operator+(PathName::char_type c, const PathName& str) {
-		PathName rc(1, c);
+		PathName rc(c);
 		rc += str;
 		return rc;
 	}

@@ -58,7 +58,7 @@ Usage:
                     |
    CLIENT_ADDRESS   | The wire protocol address of remote client represented as
                     | string. Value is IP address in form "xxx.xxx.xxx.xxx" for
-                    | TCPv4 protocol, local host name for XNET protocol and
+                    | TCPv4 protocol. Local process ID for XNET protocol and
                     | NULL for all other protocols
                     |
    DB_NAME          | Canonical name of current database. It is either alias
@@ -79,8 +79,6 @@ Usage:
                     |
    CURRENT_ROLE     | Current role for the connection. Returned value is the
                     | same as of CURRENT_ROLE pseudo-variable
-                    |
-   ENGINE_VERSION   | Engine version number, e.g. "2.1.0" (since V2.1)
 
 Notes:
    To prevent DoS attacks against Firebird Server you are not allowed to have

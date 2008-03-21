@@ -28,8 +28,6 @@
 #define JRD_BLB_H
 
 #include "../jrd/RecordNumber.h"
-#include "../common/classes/array.h"
-#include "../common/classes/File.h"
 
 namespace Jrd {
 
@@ -41,12 +39,9 @@ namespace Jrd {
    number of the first segment-clump.  The two types of blobs can be
    reliably distinguished by a zero or non-zero relation id. */
 
-class Attachment;
 class BlobControl;
-class jrd_rel;
 class jrd_req;
 class jrd_tra;
-class vcl;
 
 // This structure must occupy 8 bytes
 struct bid {
@@ -61,7 +56,7 @@ struct bid {
 			ULONG bid_quad_low;
 		} bid_quad;
 	};
-
+	
 	ULONG& bid_temp_id() {
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
@@ -128,15 +123,9 @@ struct bid {
 
 /* Your basic blob block. */
 
-class blb : public pool_alloc<type_blb>
+class blb : public pool_alloc_rpt<UCHAR, type_blb>
 {
-public:
-	blb(MemoryPool& pool, USHORT page_size)
-		: blb_buffer(pool, page_size / sizeof(SLONG)),
-		  blb_has_buffer(true)
-	{
-	}
-
+    public:
 	Attachment*	blb_attachment;	/* database attachment */
 	jrd_rel*	blb_relation;	/* Relation, if known */
 	jrd_tra*	blb_transaction;	/* Parent transaction block */
@@ -156,8 +145,6 @@ public:
 	USHORT blb_source_interp;	/* source interp (for writing) */
 	USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
-	UCHAR blb_charset;			// Blob's charset
-	USHORT blb_pg_space_id;		// page space
 	ULONG blb_sequence;			/* Blob page sequence */
 	ULONG blb_max_sequence;		/* Number of data pages */
 	ULONG blb_count;			/* Number of segments */
@@ -165,31 +152,8 @@ public:
 	ULONG blb_lead_page;		/* First page number */
 	ULONG blb_seek;				/* Seek location */
 	ULONG blb_temp_id;          // ID of newly created blob in transaction
-	size_t blb_temp_size;		// size stored in transaction temp space
-	offset_t blb_temp_offset;	// offset in transaction temp space
-
-private:
-	Firebird::Array<SLONG> blb_buffer;	// buffer used in opened blobs - must be longword aligned
-	bool blb_has_buffer;
-
-public:
-	bool hasBuffer() const
-	{
-		return blb_has_buffer;
-	}
-
-	UCHAR* getBuffer()
-	{
-		fb_assert(blb_has_buffer);
-		return (UCHAR*) blb_buffer.begin();
-	}
-
-	void freeBuffer()
-	{
-		fb_assert(blb_has_buffer);
-		blb_buffer.free();
-		blb_has_buffer = false;
-	}
+	/* blb_data must be longword aligned */
+	UCHAR blb_data[1];			/* A page's worth of blob */
 };
 
 const int BLB_temporary	= 1;			/* Newly created blob */
@@ -207,6 +171,16 @@ const int BLB_large_scan	= 128;		/* Blob is larger than page buffer cache */
 	1	medium blob -- blob "record" is pointer to pages
 	2	large blob -- blob "record" is pointer to pages of pointers
 */
+
+// mapping blob ids for REPLAY
+// Useful only with REPLAY_OSRI_API_CALLS_SUBSYSTEM defined.
+class blb_map : public pool_alloc<type_map>
+{
+    public:
+	blb_map*	map_next;
+	blb*		map_old_blob;
+	blb*		map_new_blob;
+};
 
 } //namespace Jrd
 

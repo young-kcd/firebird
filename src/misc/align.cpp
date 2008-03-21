@@ -121,7 +121,7 @@ static int check_double(void)
 		*p = 3;
 		*p *= 2.5;
 	}
-	catch (const Firebird::Exception&) {
+	catch(const std::exception&) {
 		return 1;
 	}
 

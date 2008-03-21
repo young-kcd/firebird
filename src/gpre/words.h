@@ -15,10 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
- * Stephen W. Boyd						- Added support for new features.
  */
-
 typedef enum kwwords {
 	KW_none = 0,
 	KW_start_actions,
@@ -163,7 +160,6 @@ typedef enum kwwords {
 	KW_ENTRY_POINT,
 	KW_EQ,
 	KW_EQUALS,
-	KW_EQUIV,
 	KW_ERROR,
 	KW_EVENT,
 	KW_EXACTCASE,
@@ -315,15 +311,5 @@ typedef enum kwwords {
 	KW_WARNING,
 	KW_WEEKDAY,
 	KW_WHENEVER, KW_WIDTH, KW_WITH, KW_WORK, KW_WRITE, KW_YEAR, KW_YEARDAY,
-	KW_NULLIF,
-	KW_SKIP,
-	KW_CURRENT_CONNECTION,
-	KW_CURRENT_ROLE,
-	KW_CURRENT_TRANSACTION,
-	KW_CURRENT_USER,
-	KW_COALESCE,
-	KW_WHEN,
-	KW_THEN,
-	KW_SUBSTRING,
 	KW_max
 } KWWORDS;

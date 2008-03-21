@@ -77,7 +77,7 @@ namespace {
 } // namespace
 
 namespace Firebird {
-	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
+	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(-1);
 
 	AbstractString::AbstractString(const AbstractString& v) {
 		initialize(v.length());
@@ -187,11 +187,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (memcmp(endL, s, l) == 0) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}
@@ -205,11 +206,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (*endL == c) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}
@@ -357,37 +359,23 @@ extern "C" {
 		va_end(params);
 	}
 
-// Need macros here - va_copy()/va_end() should be called in SAME function
-#ifdef HAVE_VA_COPY
-#define FB_VA_COPY(to, from) va_copy(to, from)
-#define FB_CLOSE_VACOPY(to) va_end(to)
-#else
-#define FB_VA_COPY(to, from) to = from
-#define FB_CLOSE_VACOPY(to)
-#endif
-
 	void AbstractString::vprintf(const char* format, va_list params) {
 #ifndef HAVE_VSNPRINTF
 #error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
-#error to Firebird extern repository
+#error to Firebird src\extern repository
 #endif
 		enum {tempsize = 256};
 		char temp[tempsize];
-		va_list paramsCopy;
-		FB_VA_COPY(paramsCopy, params);
-		int l = VSNPRINTF(temp, tempsize, format, paramsCopy);
-		FB_CLOSE_VACOPY(paramsCopy);
+		int l = VSNPRINTF(temp, tempsize, format, params);
 		if (l < 0) {
 			size_type n = sizeof(temp);
 			while (true) {
 				n *= 2;
 				if (n > max_length())
 					n = max_length();
-				FB_VA_COPY(paramsCopy, params);
-				l = VSNPRINTF(baseAssign(n), n + 1, format, paramsCopy);
-				FB_CLOSE_VACOPY(paramsCopy);
+				l = VSNPRINTF(baseAssign(n), n + 1, format, params);
 				if (l >= 0)
 					break;
 				if (n >= max_length()) {
@@ -404,9 +392,7 @@ extern "C" {
 		}
 		else {
 			resize(l);
-			FB_VA_COPY(paramsCopy, params);
-			VSNPRINTF(begin(), l + 1, format, paramsCopy);
-			FB_CLOSE_VACOPY(paramsCopy);
+			VSNPRINTF(begin(), l + 1, format, params);
 		}
 	}
 

@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,_X86_,NAMESPACE=Vulcan"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\engine_cs/engine_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\release\engine_cs/"
@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\engine_cs/engine_classic.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\engine_cs/"
 				ObjectFile="..\..\..\temp\debug\engine_cs/"
@@ -154,13 +154,7 @@
 				RelativePath="..\..\..\src\jrd\cch.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\CharSet.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cmp.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Collation.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp">
@@ -169,19 +163,13 @@
 				RelativePath="..\..\..\src\jrd\cvt2.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\DataTypeUtil.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\DebugInterface.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\jrd\dfw.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\divorce.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dls.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\dpm.cpp">
@@ -241,9 +229,6 @@
 				RelativePath="..\..\..\src\jrd\gds.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\jrd\grant.cpp">
 			</File>
 			<File
@@ -271,7 +256,7 @@
 				RelativePath="..\..\..\src\jrd\IntlManager.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\IntlUtil.cpp">
+				RelativePath="..\..\..\src\jrd\inuse.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
@@ -290,6 +275,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\met.cpp">
@@ -328,22 +316,7 @@
 				RelativePath="..\..\..\src\jrd\plugin_manager.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\pwd.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RecordBuffer.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Relation.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rlck.cpp">
@@ -355,7 +328,7 @@
 				RelativePath="..\..\..\src\jrd\rse.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RuntimeStatistics.cpp">
+				RelativePath="..\..\..\src\jrd\sch.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\jrd\scl.cpp">
@@ -376,6 +349,9 @@
 				RelativePath="..\..\..\src\jrd\sort.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sort_mem.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sqz.cpp">
 			</File>
 			<File
@@ -385,22 +361,16 @@
 				RelativePath="..\..\..\src\jrd\svc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\SysFunction.cpp">
+				RelativePath="..\..\..\src\jrd\sym.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\TempSpace.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\TextType.cpp">
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadStart.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\tpc.cpp">
@@ -419,9 +389,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\VirtualTable.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why.cpp">
@@ -449,6 +416,9 @@
 				RelativePath="..\..\..\src\jrd\all.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\all_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\ansi.h">
 			</File>
 			<File
@@ -459,6 +429,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blf_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\blk.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.h">
@@ -494,16 +467,10 @@
 				RelativePath="..\..\..\src\jrd\cdefs.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\Charset.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\codetext.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Collation.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\common.h">
@@ -512,28 +479,16 @@
 				RelativePath="..\..\..\src\jrd\constants.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\CsConvert.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cvt2_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\DataTypeUtil.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\dbg.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dbg_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\DebugInterface.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dflt.h">
@@ -543,6 +498,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\divorce.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dls_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\dmp_proto.h">
@@ -653,9 +611,6 @@
 				RelativePath="..\..\..\src\jrd\gdsassert.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\GlobalRWLock.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\grant_proto.h">
 			</File>
 			<File
@@ -671,7 +626,7 @@
 				RelativePath="..\..\..\src\jrd\iberr_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\include\gen\iberror.h">
+				RelativePath="..\..\..\src\jrd\iberror.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ibsetjmp.h">
@@ -713,7 +668,7 @@
 				RelativePath="..\..\..\src\jrd\intlobj_new.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\IntlUtil.h">
+				RelativePath="..\..\..\src\jrd\inuse_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\irq.h">
@@ -774,6 +729,15 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lnmdef.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log2.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\map_proto.h">
@@ -878,9 +842,6 @@
 				RelativePath="..\..\..\src\jrd\pragma.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\prv_m_bypass.h">
 			</File>
 			<File
@@ -896,12 +857,6 @@
 				RelativePath="..\..\..\src\jrd\que.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RandomGenerator.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\rdb.h">
 			</File>
 			<File
@@ -912,12 +867,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rec_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RecordBuffer.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Relation.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\relations.h">
@@ -938,10 +887,10 @@
 				RelativePath="..\..\..\src\jrd\rse_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RuntimeStatistics.h">
+				RelativePath="..\..\..\src\jrd\sbm.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sbm.h">
+				RelativePath="..\..\..\src\jrd\sch_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\scl.h">
@@ -1007,16 +956,7 @@
 				RelativePath="..\..\..\src\jrd\sym_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\SysFunction.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\TempSpace.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\termtype.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\TextType.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\thd.h">
@@ -1059,9 +999,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\VirtualTable.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vms.h">

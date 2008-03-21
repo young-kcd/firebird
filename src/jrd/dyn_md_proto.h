@@ -42,7 +42,6 @@ void DYN_modify_trigger(Jrd::Global*, const UCHAR**);
 void DYN_modify_trigger_msg(Jrd::Global*, const UCHAR**, Firebird::MetaName*);
 void DYN_modify_sql_field(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void DYN_modify_view(Jrd::Global*, const UCHAR**);
-void DYN_modify_mapping(Jrd::Global*, const UCHAR**);
 
 
 #endif // JRD_DYN_MD_PROTO_H

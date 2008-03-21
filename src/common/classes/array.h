@@ -21,7 +21,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
  
 #ifndef CLASSES_ARRAY_H
@@ -99,8 +98,6 @@ protected:
 			this->getPool().deallocate(data);
 	}
 public:
-	typedef T* iterator;
-	typedef const T* const_iterator;
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
 	{
 		ensureCapacity(L.count);
@@ -156,34 +153,28 @@ public:
 	}
 	size_t add(const T& item) {
 		ensureCapacity(count + 1);
-		data[count] = item;
-  		return ++count;
+		data[count++] = item;
+  		return count;
 	}
-	// NOTE: remove method must be signal safe
-	// This function may be called in AST. The function doesn't wait.
-	T* remove(size_t index) {
+	void remove(size_t index) {
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
-	T* removeRange(size_t from, size_t to) {
+	void removeRange(size_t from, size_t to) {
   		fb_assert(from <= to);
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
-		return &data[from];
 	}
-	T* removeCount(size_t index, size_t n) {
+	void removeCount(size_t index, size_t n) {
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
 		count -= n;
-		return &data[index];
 	}
-	T* remove(T* itr) {
+	void remove(T* itr) {
 		const size_t index = itr - begin();
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
-		return &data[index];
 	}
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
@@ -196,34 +187,11 @@ public:
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;
 	}
-	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount, const T& val) {
-		if (newCount > count) {
-			ensureCapacity(newCount);
-			while (count < newCount) {
-				data[count++] = val;
-			}
-		}
-		else {
-			count = newCount;
-		}
-	}
-	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount) {
-		if (newCount > count) {
-			grow(newCount);
-		}
-		else {
-			count = newCount;
-		}
-	}
 	void join(const Array<T, Storage>& L) {
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
-	// NOTE: getCount method must be signal safe
-	// Used as such in GlobalRWLock::blockingAstHandler
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return capacity; }
 	void push(const T& item) {
@@ -254,21 +222,6 @@ public:
 		data = this->getStorage();
 	}
 
-	bool find(const T& item, size_t& pos) const	{
-		for (size_t i = 0; i < count; i++) {
-			if (data[i] == item) {
-				pos = i;
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool exist(const T& item) const {
-		size_t pos;	// ignored
-		return find(item, pos);
-	}
-
 protected:
 	size_t count, capacity;
 	T* data;
@@ -280,7 +233,7 @@ protected:
 			T* newdata = reinterpret_cast<T*>
 				(this->getPool().allocate(sizeof(T) * newcapacity
 #ifdef DEBUG_GDS_ALLOC
-					, __FILE__, __LINE__
+		, 1, __FILE__, __LINE__
 #endif
 						));
 			memcpy(newdata, data, sizeof(T) * count);
@@ -303,7 +256,6 @@ public:
 	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
 	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
-
 	bool find(const Key& item, size_t& pos) const {
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
@@ -317,13 +269,6 @@ public:
 		return highBound != this->count &&
 			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
-
-	bool exist(const Key& item) const
-	{
-		size_t pos;	// ignored
-		return find(item, pos);
-	}
-
 	size_t add(const Value& item) {
 	    size_t pos;
   	    find(KeyOfValue::generate(this, item), pos);
@@ -344,8 +289,7 @@ public:
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 
-typedef HalfStaticArray<UCHAR, 16> UCharBuffer;
-
 }	// namespace Firebird
 
 #endif // CLASSES_ARRAY_H
+

@@ -49,11 +49,9 @@
 #include "../jrd/dsc.h"
 #include "../jrd/constants.h"
 
-#include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
-#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -74,6 +72,16 @@
 #include <sys/timeb.h>
 #endif
 
+#ifdef VMS
+#include <file.h>
+#include <perror.h>
+#include <descrip.h>
+#include <types.h>
+#include <stat.h>
+#include <rmsdef.h>
+
+#else /* !VMS */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_FILE_H
@@ -92,7 +100,42 @@
 #endif
 #endif
 
+#endif /* VMS */
+
 #include "../common/config/config.h"
+
+// Turn on V4 mutex protection for gds__alloc/free 
+// 03/23/2003 BRS. Those defines don't do anything, V4_ macros are defined in thd.h 
+// but this file is included before this definition and so the macros are defined as empty
+// Those definitions are commented to allow V4_ macros to be inside V4_THREADING ifdefs
+// The include chain is
+// gdsassert.h -> gds_proto.h -> fil.h -> thd.h
+//
+//#ifdef WIN_NT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SOLARIS_MT
+//#define V4_THREADING
+//#endif
+//
+//#ifdef SUPERSERVER
+//#define V4_THREADING			// RFM: 9/22/2000 fix from Inprise tree,
+//								// Inprise bug 114840
+//#endif
+//
+// The following ifdef was added to build thread safe gds shared
+//  library on linux platform. It seems the gdslib works now (20020220)
+//  with thread enabled applications. Anyway, more tests should be 
+//  done as I don't have deep knowledge of the interbase/firebird 
+//  engine and this change may imply side effect I haven't known 
+//  about yet. Tomas Nejedlik (tomas@nejedlik.cz)
+//
+//#if ((defined(LINUX) || defined(FREEBSD)) && defined(SUPERCLIENT))
+//#define V4_THREADING
+//#endif
+//
+
 
 #ifdef SUPERSERVER
 static const TEXT gdslogid[] = " (Server)";
@@ -107,7 +150,7 @@ static const TEXT gdslogid[] = "";
 static const char* FB_PID_FILE = "fb_%d";
 
 #include "gen/sql_code.h"
-#include "gen/sql_state.h"
+#include "../jrd/thd.h"
 #include "gen/iberror.h"
 #include "../jrd/ibase.h"
 
@@ -116,7 +159,9 @@ static const char* FB_PID_FILE = "fb_%d";
 #include "../jrd/fil.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
+#ifndef REQUESTER
 #include "../jrd/os/isc_i_proto.h"
+#endif
 
 #ifdef WIN_NT
 #define _WINSOCKAPI_
@@ -125,16 +170,19 @@ static const char* FB_PID_FILE = "fb_%d";
 #undef leave
 #endif /* WIN_NT */
 
-static char fb_prefix_val[MAXPATHLEN];
-static char fb_prefix_lock_val[MAXPATHLEN];
-static char fb_prefix_msg_val[MAXPATHLEN];
+// Number of times to try to generate new name for temporary file
+const int MAX_TMPFILE_TRIES		= 256;
+
+static char ib_prefix_val[MAXPATHLEN];
+static char ib_prefix_lock_val[MAXPATHLEN];
+static char ib_prefix_msg_val[MAXPATHLEN];
 static char fbTempDir[MAXPATHLEN];
 #ifdef EMBEDDED
 static char fbEmbeddedRoot[MAXPATHLEN];
 #endif
-static char *fb_prefix = 0;
-static char *fb_prefix_lock = 0;
-static char *fb_prefix_msg = 0;
+static char *ib_prefix = 0;
+static char *ib_prefix_lock = 0;
+static char *ib_prefix_msg = 0;
 static void gdsPrefixInit();
 
 #include "gen/msgs.h"
@@ -148,9 +196,6 @@ const SLONG GENERIC_SQLCODE		= -999;
 #include "../include/fb_types.h"
 #include "../jrd/jrd.h"
 #include "../common/utils_proto.h"
-
-#include "../common/classes/SafeArg.h"
-#include "../common/classes/MsgPrint.h"
 
 using Firebird::TimeStamp;
 
@@ -225,16 +270,15 @@ struct clean
 
 typedef clean *CLEAN;
 
-static Firebird::GlobalPtr<Firebird::Mutex> cleanup_handlers_mutex;
 static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;
-static bool volatile initialized = false;
+static bool initialized = false;
 
 void* API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
                                    ULONG lineno)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request
+	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
 #ifdef DEBUG_GDS_ALLOC
 		, filename, lineno
 #endif
@@ -251,9 +295,21 @@ ULONG API_ROUTINE gds__free(void* blk)
 static SLONG gds_pid = 0;
 #endif
 
+/* VMS structure to declare exit handler */
+
+#ifdef VMS
+static SLONG exit_status = 0;
+static struct
+{
+	SLONG link;
+	int (*exit_handler) ();
+	SLONG args;
+	SLONG arg[1];
+} exit_description;
+#endif
+
 /* BLR Pretty print stuff */
 
-#define BLR_PEEK    *(control->ctl_blr)
 #define BLR_BYTE	*(control->ctl_blr)++
 #define PUT_BYTE(byte)	control->ctl_string += byte
 
@@ -278,7 +334,6 @@ const int op_literals	= 18;
 const int op_relation	= 20;
 const int op_exec_into	= 21;
 const int op_cursor_stmt	= 22;
-const int op_byte_opt_verb	= 23;
 
 static const UCHAR
 	/* generic print formats */
@@ -334,9 +389,7 @@ static const UCHAR
 	dcl_cursor[] = { op_word, op_line, op_verb, op_indent, op_word, op_line, op_args, 0},
 	cursor_stmt[] = { op_cursor_stmt, 0 },
 	strlength[] = { op_byte, op_line, op_verb, 0},
-	trim[] = { op_byte, op_byte_opt_verb, op_verb, 0},
-	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
-	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0};
+	trim[] = { op_byte, op_byte, op_line, op_verb, 0};
 
 #include "../jrd/blp.h"
 
@@ -402,11 +455,14 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
  **************************************/
 
 	if (!code)
+	{
 		return FB_SUCCESS;
-		
-	// not an ISC error message
-	if ((code & ISC_MASK) != ISC_MASK)
+	}
+	else if ((code & ISC_MASK) != ISC_MASK)
+	{
+		/* not an ISC error message */
 		return code;
+	}
 
 	*fac = GET_FACILITY(code);
 	*code_class = GET_CLASS(code);
@@ -637,13 +693,15 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  *   changed. This function has been made public so gbak can use it.
  *
  **************************************/
-	if (!ptr || length <= 0 || length > 8)
-		return 0;
+	SINT64 value;
+	SSHORT shift;
 
-	SINT64 value = 0;
+	fb_assert(length <= 8);
+	value = shift = 0;
 
-	for (int shift = 0; --length >= 0; shift += 8) {
+	while (--length >= 0) {
 		value += ((SINT64) *ptr++) << shift;
+		shift += 8;
 	}
 
 	return value;
@@ -758,15 +816,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 {
 	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
 	// Return error otherwise.
-	if (bufsize < 50)
-		return 0;
-
-	// Skip the SQLSTATE
-	if ((*vector)[0] == isc_arg_sql_state)
-		*vector += 2;
-
-	// If the first element of the vector doesn't signal an error, return.
-	if (!**vector)
+	// Also, if the first element of the vector doesn't signal an error, return.
+	if (!**vector || bufsize < 50)
 		return 0;
 
 	const ISC_STATUS* v;
@@ -785,10 +836,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const TEXT** arg = args;
 	const char* const* const argend = arg + FB_NELEM(args);
 
-	MsgFormat::SafeArg safe;
-
 	// Parse and collect any arguments that may be present
-
+	
 	TEXT* p = 0;
 	const TEXT* q;
 	int temp_len = BUFFER_SMALL;
@@ -805,15 +854,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		switch (x)
 		{
 		case isc_arg_string:
-			*arg++ = (TEXT*) *v;
-			safe << (TEXT*) *v;
-			++v;
-			continue;
-
 		case isc_arg_number:
-			*arg++ = (TEXT*) *v;
-			safe << *v;
-			++v;
+			*arg++ = (TEXT*) *v++;
 			continue;
 
 		case isc_arg_cstring:
@@ -838,18 +880,14 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 				// the loop changes "len".
 				temp_len -= len;
 				*arg++ = p;
-				safe << p;
 				// We'll silently truncate the parameter to our available space.
 				while (--len) // CVC: Decrement first to make room for the null terminator.
 					*p++ = *q++;
 					
 				*p++ = 0;
 			}
-			else  // No space at all, pass the empty string.
-			{
+			else // No space at all, pass the empty string.
 				*arg++ = "";
-				safe << "";
-			}
 				
 			continue;
 
@@ -862,29 +900,26 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 	// Handle primary code on a system by system basis
 
-	switch ((UCHAR) (*vector)[0]) 
-	{
+	switch ((UCHAR) (*vector)[0]) {
 	case isc_arg_warning:
 	case isc_arg_gds:
 		{
-			while (arg < args + 5) // could be argend, but we only use up to args[4]
-			    *arg++ = 0;
-
 			USHORT fac = 0, dummy_class = 0;
 			const ISC_STATUS decoded = gds__decode(code, &fac, &dummy_class);
-			if (fb_msg_format(0, fac, (USHORT) decoded, bufsize, s, safe) < 0)
+			if (gds__msg_format(0, fac, (USHORT) decoded,
+								bufsize, s, args[0], args[1], args[2], args[3],
+								args[4]) < 0)
 			{
 				bool found = false;
 
 				for (int i = 0; messages[i].code_number; ++i) {
 					if (code == messages[i].code_number) {
-						if (legacy && strchr(messages[i].code_text, '%'))
-						{
+						if (legacy)
 							sprintf(s, messages[i].code_text,
 									args[0], args[1], args[2], args[3], args[4]);
-						}
 						else
-							MsgFormat::MsgPrint(s, bufsize, messages[i].code_text, safe);
+							fb_utils::snprintf(s, bufsize, messages[i].code_text,
+									args[0], args[1], args[2], args[3], args[4]);
 						found = true;
 						break;
 					}
@@ -909,8 +944,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		break;
 
 	case isc_arg_unix:
-		// The strerror() function returns the appropriate description string,
-		// or an unknown error message if the error code is unknown.
+		// The  strerror()  function  returns  the appropriate description
+		// string, or an unknown error message if the error code is unknown.
 		q = (const TEXT*) strerror(code);
 		if (legacy)
 			safe_strncpy(s, q, bufsize);
@@ -925,16 +960,35 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		sprintf(s, "unknown dos error %ld", code);	// TXNN
 		break;
 
+#ifdef VMS
+	case isc_arg_vms:
+		{
+			SSHORT ll = 0;
+			struct dsc$descriptor_s desc;
+			desc.dsc$b_class = DSC$K_CLASS_S;
+			desc.dsc$b_dtype = DSC$K_DTYPE_T;
+			desc.dsc$w_length = bufsize;
+			desc.dsc$a_pointer = s;
+			TEXT flags[4];
+			ISC_STATUS status = sys$getmsg(code, &ll, &desc, 15, flags);
+			if (status & 1)
+				s[ll] = 0;
+			else
+				sprintf(s, "uninterpreted VMS code %x", code);	// TXNN
+		}
+		break;
+#endif
+
 #ifdef WIN_NT
 	case isc_arg_win32:
-		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 GetUserDefaultLangID(),
 										 s,
 										 bufsize,
-										 NULL)
-		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
+						                 NULL)
+		  && !FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
 										 NULL,
 										 code,
 										 0, // TMN: Fallback to system known language
@@ -1083,9 +1137,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	// Note: signal-safe code
 	gds__prefix(name, LOGFILE);
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
-	if (file == -1)
-		return;
-		
+	if (file == -1) return;
 	write(file, text, length);
 	close(file);
 #endif
@@ -1123,41 +1175,32 @@ void API_ROUTINE gds__trace(const TEXT * text)
 
 	char buffer[1024]; // 1K should be enough for the trace message
 	char* p = buffer;
-	gds__ulstr(p, today.tm_year + 1900, 4, '0');
-	p += 4;
+	gds__ulstr(p, today.tm_year + 1900, 4, '0'); p += 4;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mon, 2, '0');
-	p += 2;
+	gds__ulstr(p, today.tm_mon, 2, '0'); p += 2;
 	*p++ = '-';
-	gds__ulstr(p, today.tm_mday, 2, '0');
-	p += 2;
+	gds__ulstr(p, today.tm_mday, 2, '0'); p += 2;
 	*p++ = 'T';
-	gds__ulstr(p, today.tm_hour, 2, '0');
-	p += 2;
+	gds__ulstr(p, today.tm_hour, 2, '0'); p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_min, 2, '0');
-	p += 2;
+	gds__ulstr(p, today.tm_min, 2, '0'); p += 2;
 	*p++ = ':';
-	gds__ulstr(p, today.tm_sec, 2, '0');
-	p += 2;
+	gds__ulstr(p, today.tm_sec, 2, '0'); p += 2;
 	*p++ = ' ';
-	ULONG apid =
+	gds__ulstr(p, 
 #ifdef WIN_NT
 #ifdef SUPERSERVER
-			     GetCurrentThreadId();
+			     GetCurrentThreadId(),
 #else
-				 GetCurrentProcessId();
+				 GetCurrentProcessId(),				   
 #endif
 #else
-				 getpid();
+				 getpid(),
 #endif
-	gds__ulstr(p, apid, 5, ' ');
-	p += 5;
+				 5, ' '); p += 5;
 	*p++ = ' ';
-	strcpy(p, text);
-	p += strlen(p);
-	strcat(p, "\n");
-	p += strlen(p);
+	strcpy(p, text); p += strlen(p);
+	strcat(p, "\n"); p += strlen(p);
 	gds__trace_raw(buffer, p - buffer);
 }
 
@@ -1223,7 +1266,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #endif
 }
 
-void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
+void API_ROUTINE gds__print_pool(JrdMemoryPool* pool, const TEXT* text, ...)
 {
 /**************************************
  *
@@ -1289,31 +1332,33 @@ void API_ROUTINE gds__log_status(const TEXT* database,
  *	Log error to error log.
  *
  **************************************/
-	fb_assert(status_vector[1] != FB_SUCCESS);
+	TEXT* const buffer = (TEXT*) gds__alloc((SLONG) BUFFER_XLARGE);
+/* FREE: at procedure exit */
+	if (!buffer)				/* NOMEM: */
+		return;
+		
+#ifdef DEV_BUILD
+	const size_t db_len = database ? strlen(database) : 0;
+	fb_assert(db_len < BUFFER_XLARGE - 2);
+	fb_assert(db_len < MAXPATHLEN);
+#endif
 
-	try
-	{
-		Firebird::string buffer;
+	TEXT* p = buffer;
+	const TEXT* const end = p + BUFFER_XLARGE;
+	const int max_db_len = int(BUFFER_XLARGE - 12);
+	sprintf(p, "Database: %.*s", max_db_len, (database) ? database : "");
 
-		if (database)
-		{
-			buffer.printf("Database: %s", database);
-		}
+	do {
+		while (*p)
+			p++;
+			
+		*p++ = '\n';
+		*p++ = '\t';
+	} while (p < end && safe_interpret(p, end - p, &status_vector));
 
-		TEXT temp[BUFFER_LARGE];
-		while (safe_interpret(temp, sizeof(temp), &status_vector))
-		{
-			if (!buffer.empty())
-			{
-				buffer += "\n\t";
-			}
-			buffer += temp;
-		}
-
-		gds__log(buffer.c_str());
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
+	p[-2] = 0;
+	gds__log(buffer, 0);
+	gds__free(buffer);
 }
 
 
@@ -1382,7 +1427,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 
 	size = (size < length) ? length : size;
 
-	TEXT* formatted = (TEXT *) gds__alloc(size);
+	TEXT* formatted = (TEXT *) gds__alloc((SLONG) size);
 
 	if (!formatted)				/* NOMEM: */
 		return -1;
@@ -1405,9 +1450,8 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 			s += "message text not found";
 		else if (n == -2) {
 			s += "message file ";
-			TEXT temp[MAXPATHLEN];
-			gds__prefix_msg(temp, MSG_FILE);
-			s += temp;
+			gds__prefix_msg(formatted, MSG_FILE);
+			s += formatted;
 			s += " not found";
 		}
 		else {
@@ -1426,7 +1470,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 	*buffer = 0;
 
 	gds__free(formatted);
-	return (n > 0 ? l : -l);
+	return ((n > 0) ? l : -l);
 }
 
 
@@ -1434,8 +1478,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 								   USHORT facility,
 								   USHORT number,
 								   USHORT length,
-								   TEXT* buffer,
-								   USHORT* flags)
+								   TEXT* buffer, USHORT* flags)
 {
 /**************************************
  *
@@ -1474,13 +1517,6 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			if (fb_utils::readenv("LC_MESSAGES", p))
 			{
 				sanitize(p);
-				Firebird::string::size_type pos = p.find_last_of('/');
-				if (pos == Firebird::string::npos)
-				    pos = p.find_last_of('\\');
-				    
-				if (pos != Firebird::string::npos)
-				    p.erase(0, pos + 1);
-				    
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
@@ -1490,7 +1526,6 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			}
 			else
 				status = 1;
-				
 			if (status) {
 				/* Default to standard message file */
 
@@ -1547,7 +1582,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				status = -1;
 				break;
 			}
-			if (leaf->msgrec_code == code) {
+			else if (leaf->msgrec_code == code) {
 				/* We found the correct message, so return it to the user */
 				const USHORT n = MIN(length - 1, leaf->msgrec_length);
 				memcpy(buffer, leaf->msgrec_text, n);
@@ -1588,12 +1623,11 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 		close(n);
 		return -3;
 	}
+	// Trick to silence compiler when MSG_MINOR_VERSION == 0
+	const USHORT minor = MSG_MINOR_VERSION;
 
-	if (header.msghdr_major_version != MSG_MAJOR_VERSION
-#if FB_MSG_MINOR_VERSION > 0
-		|| header.msghdr_minor_version < MSG_MINOR_VERSION
-#endif
-		)
+	if (header.msghdr_major_version != MSG_MAJOR_VERSION ||
+		header.msghdr_minor_version < minor)
 	{
 		close(n);
 		return -4;
@@ -1618,13 +1652,15 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	messageL->msg_levels = header.msghdr_levels;
 	messageL->msg_top_tree = header.msghdr_top_tree;
 
+
 	*handle = messageL;
 
 	return 0;
 }
 
 
-void API_ROUTINE gds__msg_put(void* handle,
+void API_ROUTINE gds__msg_put(
+							  void* handle,
 							  USHORT facility,
 							  USHORT number,
 							  const TEXT* arg1, const TEXT* arg2,
@@ -1640,7 +1676,6 @@ void API_ROUTINE gds__msg_put(void* handle,
  * Functional description
  *	Lookup and format message.  Return as much of formatted string
  *	as fits in callers buffer.
- *  This function will misbehave with the new format and we can't solve it.
  *
  **************************************/
 	TEXT formatted[BUFFER_MEDIUM];
@@ -1660,65 +1695,61 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  **************************************
  *
  * Functional description
- *	Find appropriate Firebird command line arguments
+ *	Find appropriate InterBase command line arguments 
  *	for Interbase file prefix.
  *
- *      arg_type is 0 for $FIREBIRD, 1 for $FIREBIRD_LOCK
- *      and 2 for $FIREBIRD_MSG
+ *      arg_type is 0 for $INTERBASE, 1 for $INTERBASE_LOCK 
+ *      and 2 for $INTERBASE_MSG
  *
  *      Function returns 0 on success and -1 on failure
- *		it has very strange name, but to keep API as is leave it
  **************************************/
 	int count = 0;
-	
-	if (! passed_string)
-		return -1;
 
-	Firebird::PathName prefix(passed_string);
-	prefix.erase(MAXPATHLEN);
-	for (size_t n = 0; n < prefix.length(); ++n)
-	{
-		switch (prefix[n])
-		{
-		case ' ':
-		case '\n':	// don't know exact reason - just keep
-		case '\r':	// old API call behavior
-			prefix.erase(n);
-			break;	// will also leave for() due to length change
-		}
-	}
-
-	if (arg_type == IB_PREFIX_TYPE)
-	{
-		// it's very important to do it BEFORE gdsPrefixInit()
-		Config::setRootDirectoryFromCommandLine(prefix);
-	}
+	if (arg_type < IB_PREFIX_TYPE || arg_type > IB_PREFIX_MSG_TYPE)
+		return ((SLONG) - 1);
 
 	gdsPrefixInit();
 
+	char* prefix_ptr;
 	switch (arg_type) {
 	case IB_PREFIX_TYPE:
-		prefix.copyTo(fb_prefix_val, sizeof fb_prefix_val);
+		prefix_ptr = ib_prefix = ib_prefix_val;
 		break;
 	case IB_PREFIX_LOCK_TYPE:
-		prefix.copyTo(fb_prefix_lock_val, sizeof fb_prefix_lock_val);
+		prefix_ptr = ib_prefix_lock = ib_prefix_lock_val;
 		break;
 	case IB_PREFIX_MSG_TYPE:
-		prefix.copyTo(fb_prefix_msg_val, sizeof fb_prefix_msg_val);
+		prefix_ptr = ib_prefix_msg = ib_prefix_msg_val;
 		break;
 	default:
-		return -1;
+		return ((SLONG) - 1);
 	}
-
-	return 0;
+/* the command line argument was 'H' for interbase home */
+	while (*prefix_ptr++ = *passed_string++) {
+		/* if the next character is space, newline or carriage return OR
+		   number of characters exceeded */
+		if (*passed_string == ' ' || *passed_string == 10
+			|| *passed_string == 13 || (count == MAXPATHLEN))
+		{
+			*(prefix_ptr++) = '\0';
+			break;
+		}
+		count++;
+	}
+	if (!count) {
+		prefix_ptr = NULL;
+		return ((SLONG) - 1);
+	}
+	return ((SLONG) 0);
 }
 
 
+#ifndef VMS
 void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 {
 /**************************************
  *
- *	g d s _ $ p r e f i x
+ *	g d s _ $ p r e f i x	( n o n - V M S )
  *
  **************************************
  *
@@ -1730,16 +1761,66 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 
 	gdsPrefixInit();
 
-	strcpy(resultString, fb_prefix);	// safe - no BO
+	strcpy(resultString, ib_prefix);	// safe - no BO
 	safe_concat_path(resultString, file);
 }
+#endif /* !defined(VMS) */
 
 
+#ifdef VMS
+void API_ROUTINE gds__prefix(TEXT* string, const TEXT* root)
+{
+/**************************************
+ *
+ *	g d s _ $ p r e f i x	( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find appropriate InterBase file prefix.
+ *	Override conditional defines with
+ *	the enviroment variable INTERBASE if it is set.
+ *
+ **************************************/
+	if (*root != '[') {
+		strcpy(string, root);
+		return;
+	}
+
+/* Check for the existence of an InterBase logical name.  If there is 
+   one use it, otherwise use the system directories. */
+	TEXT temp[256];
+	if (ISC_expand_logical_once(ISC_LOGICAL, sizeof(ISC_LOGICAL) - 2, temp, sizeof(temp)))
+	{
+		strcpy(string, ISC_LOGICAL);
+		strcat(string, root);
+		return;
+	}
+
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+		if (*p++ == ']')
+			break;
+
+	const SSHORT len = p - temp;
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+		if (!strncmp(temp, prefix->isc_prefix, len)) {
+			strcpy(string, prefix->vms_prefix);
+			strcat(string, &root[len]);
+			return;
+		}
+
+	strcpy(string, &root[len]);
+}
+#endif
+
+
+#ifndef VMS
 void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
- *	g d s _ $ p r e f i x _ l o c k
+ *	g d s _ $ p r e f i x _ l o c k	( n o n - V M S )
  *
  ********************************************************
  *
@@ -1757,16 +1838,66 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	root = buf;
 #endif
 
-	strcpy(string, fb_prefix_lock);	// safe - no BO
+	strcpy(string, ib_prefix_lock);	// safe - no BO
 	safe_concat_path(string, root);
 }
+#endif
 
 
+#ifdef VMS
+void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
+{
+/************************************************
+ *
+ *	g d s _ $ p r e f i x _ l o c k	( V M S )
+ *
+ ************************************************
+ *
+ * Functional description
+ *	Find appropriate Firebird lock file prefix.
+ *	Override conditional defines with the enviroment
+ *      variable FIREBIRD_LOCK if it is set.
+ *
+ *************************************************/
+	if (*root != '[') {
+		strcpy(string, root);
+		return;
+	}
+
+/* Check for the existence of a Firebird logical name.  If there is 
+   one use it, otherwise use the system directories. */
+	TEXT temp[256];
+	if (ISC_expand_logical_once
+		(ISC_LOGICAL_LOCK, sizeof(ISC_LOGICAL_LOCK) - 2, temp, sizeof(temp)))
+	{
+		strcpy(string, ISC_LOGICAL_LOCK);
+		strcat(string, root);
+		return;
+	}
+
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+		if (*p++ == ']')
+			break;
+
+	const SSHORT len = p - temp;
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+		if (!strncmp(temp, prefix->isc_prefix, len)) {
+			strcpy(string, prefix->vms_prefix);
+			strcat(string, &root[len]);
+			return;
+		}
+
+	strcpy(string, &root[len]);
+}
+#endif
+
+#ifndef VMS
 void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 {
 /********************************************************
  *
- *      g d s _ $ p r e f i x _ m s g
+ *      g d s _ $ p r e f i x _ m s g ( n o n - V M S )
  *
  ********************************************************
  *
@@ -1781,9 +1912,62 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 
 	gdsPrefixInit();
 
-	strcpy(string, fb_prefix_msg);	// safe - no BO
+	strcpy(string, ib_prefix_msg);	// safe - no BO
 	safe_concat_path(string, root);
 }
+#endif
+
+#ifdef VMS
+void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
+{
+/************************************************
+ *
+ *      g d s _ $ p r e f i x _ m s g ( V M S )
+ *
+ ************************************************
+ *
+ * Functional description
+ *      Find appropriate Firebird message file prefix.
+ *      Override conditional defines with the enviroment
+ *      variable FIREBIRD_MSG if it is set.
+ *
+ *************************************************/
+	if (*root != '[') {
+		strcpy(string, root);
+		return;
+	}
+
+
+/* Check for the existence of an InterBase logical name.  If there is
+   one use it, otherwise use the system directories. */
+
+/* ISC_LOGICAL_MSG macro needs to be defined, check non VMS version of routine
+   for functionality. */
+	TEXT temp[256];
+	if (ISC_expand_logical_once
+		(ISC_LOGICAL_MSG, sizeof(ISC_LOGICAL_MSG) - 2, temp, sizeof(temp)))
+	{
+		strcpy(string, ISC_LOGICAL_MSG);
+		strcat(string, root);
+		return;
+	}
+
+	TEXT* p = temp;
+	for (const TEXT* q = root; *p = UPPER7(*q); q++)
+		if (*p++ == ']')
+			break;
+
+	const SSHORT len = p - temp;
+	for (const isc_vms_prefix* prefix = trans_prefix; prefix->isc_prefix; prefix++)
+		if (!strncmp(temp, prefix->isc_prefix, len)) {
+			strcpy(string, prefix->vms_prefix);
+			strcat(string, &root[len]);
+			return;
+		}
+
+	strcpy(string, &root[len]);
+}
+#endif
 
 
 ISC_STATUS API_ROUTINE gds__print_status(const ISC_STATUS* vec)
@@ -1844,8 +2028,7 @@ USHORT API_ROUTINE gds__parse_bpb(USHORT bpb_length,
 
   /* SIGN ERROR */
 
-	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target,
-		NULL, NULL, NULL, NULL, NULL, NULL);
+	return gds__parse_bpb2(bpb_length, bpb, (SSHORT*)source, (SSHORT*)target, NULL, NULL);
 }
 
 
@@ -1854,11 +2037,7 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 								   SSHORT* source,
 								   SSHORT* target,
 								   USHORT* source_interp,
-								   USHORT* target_interp,
-								   bool* source_type_specified,
-								   bool* source_interp_specified,
-								   bool* target_type_specified,
-								   bool* target_interp_specified)
+								   USHORT* target_interp)
 {
 /**************************************
  *
@@ -1880,14 +2059,6 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		*source_interp = 0;
 	if (target_interp)
 		*target_interp = 0;
-	if (source_type_specified)
-		*source_type_specified = false;
-	if (source_interp_specified)
-		*source_interp_specified = false;
-	if (target_type_specified)
-		*target_type_specified = false;
-	if (target_interp_specified)
-		*target_interp_specified = false;
 
 	if (!bpb_length || !bpb)
 		return type;
@@ -1904,33 +2075,24 @@ USHORT API_ROUTINE gds__parse_bpb2(USHORT bpb_length,
 		switch (op) {
 		case isc_bpb_source_type:
 			*source = (USHORT) gds__vax_integer(p, length);
-			if (source_type_specified)
-				*source_type_specified = true;
 			break;
 
 		case isc_bpb_target_type:
 			*target = (USHORT) gds__vax_integer(p, length);
-			if (target_type_specified)
-				*target_type_specified = true;
 			break;
 
 		case isc_bpb_type:
-		case isc_bpb_storage:
-			type |= (USHORT) gds__vax_integer(p, length);
+			type = (USHORT) gds__vax_integer(p, length);
 			break;
 
 		case isc_bpb_source_interp:
 			if (source_interp)
 				*source_interp = (USHORT) gds__vax_integer(p, length);
-			if (source_interp_specified)
-				*source_interp_specified = true;
 			break;
 
 		case isc_bpb_target_interp:
 			if (target_interp)
 				*target_interp = (USHORT) gds__vax_integer(p, length);
-			if (target_interp_specified)
-				*target_interp_specified = true;
 			break;
 
 		default:
@@ -2033,7 +2195,7 @@ int API_ROUTINE gds__print_blr(
 	blr_print_line(control, (SSHORT) offset);
 
 	}	// try
-	catch (const Firebird::LongJump&) {
+	catch (const std::exception&) {
 		return -1;
 	}
 
@@ -2054,9 +2216,16 @@ void API_ROUTINE gds__put_error(const TEXT* string)
  *
  **************************************/
 
+#ifdef VMS
+	struct dsc$descriptor_s desc;
+
+	ISC_make_desc(string, &desc, 0);
+	lib$put_output(&desc);
+#else
 	fputs(string, stderr);
 	fputc('\n', stderr);
 	fflush(stderr);
+#endif
 }
 
 
@@ -2098,11 +2267,11 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 */
 
 	if (!initialized)
-	{
 		init();
-	}
 
 	CLEAN clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
+	clean->clean_next = cleanup_handlers;
+	cleanup_handlers = clean;
 	clean->clean_routine = routine;
 	clean->clean_arg = arg;
 
@@ -2110,10 +2279,6 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 /* Startup function - known to be unfreed */
 	gds_alloc_flag_unfreed((void *) clean);
 #endif
-
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
-	clean->clean_next = cleanup_handlers;
-	cleanup_handlers = clean;
 }
 
 
@@ -2217,142 +2382,23 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
 }
 
 
-void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
+void API_ROUTINE gds__temp_dir(TEXT* buffer)
 {
 /**************************************
  *
- *	f b _ s q l s t a t e
+ *      g d s _ _ t e m p _ d i r
  *
  **************************************
  *
  * Functional description
- *	Translate GDS error code to SQL State. We'll check to see if
- *  we have an exact match, and if so that's great. Maybe we'll
- *  get lucky and the caller already put a SQLSTATE in the
- *  status vector. It could happen.
+ *      Return temporary directory.
  *
  **************************************/
-	if (!status_vector) {
-		DEV_REPORT("fb_sqlstate: NULL status vector");
-		return;
-	}
+	buffer[0] = 0;
 
-	if (status_vector[1] == 0) {
-		// status_vector[1] == 0 is no error, by definition
-		strcpy(sqlstate, "00000");
-		return;
-	}
+	gdsPrefixInit();
 
-	const ISC_STATUS* s = status_vector;
-	const ISC_STATUS* const last_status = status_vector + ISC_STATUS_LENGTH - 1;
-	bool have_sqlstate = false;
-
-	strcpy(sqlstate, "HY000"); // error of last resort
-
-	// step #1, maybe we already have a SQLSTATE stuffed in the status vector
-	while ((*s != isc_arg_end) && (!have_sqlstate))
-	{
-		if (*s == isc_arg_sql_state)
-		{
-			++s;
-			if (s >= last_status)
-				break;
-				
-			const char* state = (char*) *s; // easy, next argument points to sqlstate string
-			fb_utils::copy_terminate(sqlstate, state, FB_SQLSTATE_SIZE);
-			have_sqlstate = true;
-		}
-		else if (*s == isc_arg_cstring)
-		{
-			s += 3; // skip: isc_arg_cstring <len> <ptr>
-		}
-		else
-		{
-			s += 2; // skip: isc_arg_* <item>
-		}
-		if (s >= last_status)
-			break;
-	}
-
-	if (have_sqlstate)
-		return;
-
-	// step #2, see if we can find a mapping.
-	s = status_vector;
-
-	while ((*s != isc_arg_end) && (!have_sqlstate))
-	{
-		if (*s == isc_arg_gds)
-		{
-			++s;
-			if (s >= last_status)
-				break;
-				
-			const SLONG gdscode = (const SLONG) *s;
-			if (gdscode != 0)
-			{
-				if (gdscode != isc_random && gdscode != isc_sqlerr)
-				{
-					// random is useless - it's just "%s". skip it
-					// sqlerr (sqlcode) is useless for determining sqlstate. skip it
-
-					// implement a binary search for array gds__sql_state[]
-					int first = 0;
-					int last = FB_NELEM(gds__sql_states) - 1;
-					while (first <= last)
-					{				
-						const int mid = (first + last) / 2;
-						const SLONG new_code = gds__sql_states[mid].gds_code;
-						if (gdscode > new_code)
-						{
-							first = mid + 1;
-						}
-						else if (gdscode < new_code)
-						{
-							last = mid - 1;
-						}
-						else
-						{
-							// found it!!!
-
-							// we get 00000 for info messages like "Table %"
-							// these are completely ignored
-							const char* new_state = gds__sql_states[mid].sql_state;
-							if (strcmp("00000", new_state) != 0)
-							{
-								fb_utils::copy_terminate(sqlstate, new_state, FB_SQLSTATE_SIZE);
-
-								// 42000 is general syntax error, and HY000 is general API error.
-								// we may be able to find something more precise if we keep scanning.
-								if (strcmp("42000", sqlstate) != 0 && strcmp("HY000", sqlstate) != 0)
-								{
-									have_sqlstate = true;
-								}
-							}
-							break;
-						}
-					} // while
-				}
-
-				++s;
-			}
-		}
-		else if (*s == isc_arg_cstring)
-		{
-			s += 3; // skip: isc_arg_cstring <len> <ptr>
-		}
-		else
-		{
-			s += 2; // skip: isc_arg_* <item>
-		}
-		if (s >= last_status)
-			break;
-	} // while
-
-	// sqlstate will be exact match, or
-	// 42000 for no_meta_update, or
-	// HY000 if we didn't find a match
-	return;
+	strcpy(buffer, fbTempDir);	// safe - no BO
 }
 
 
@@ -2378,30 +2424,88 @@ void* API_ROUTINE gds__temp_file(
  *      via introducing two functions with different return types.
  *
  **************************************/
-	try {
-		// This legacy wrapper cannot process these parameters.
-		// Fortunately, utilities never pass non-default values.
-		fb_assert(!dir && !unlink_flag);
+	TEXT temp_dir[MAXPATHLEN];
 
-		Firebird::PathName filename = TempFile::create(string);
+	const TEXT* directory = dir;
+	if (!directory) {
+		gds__temp_dir(temp_dir);
+		directory = temp_dir;
+	}
+	if (strlen(directory) >= MAXPATHLEN - strlen(string) - strlen(TEMP_PATTERN) - 2)
+		return (void *)-1;
 
+	void* result;
+
+#ifdef WIN_NT
+	/* These are the characters used in temporary filenames.  */
+	static const char letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+	_timeb t;
+	_ftime(&t);
+	__int64 randomness = t.time;
+	randomness *= 1000;
+	randomness += t.millitm;
+	for (int tryCount = 0; tryCount < MAX_TMPFILE_TRIES; tryCount++) {
+		char file_name[MAXPATHLEN];
+		strcpy(file_name, directory);
+		if (file_name[strlen(file_name) - 1] != '\\')
+			strcat(file_name, "\\");
+		strcat(file_name, string);
+		char suffix[] = TEMP_PATTERN;
+		__int64 temp = randomness;
+		for (size_t i = 0; i < sizeof(suffix) - 1; i++) {
+			suffix[i] = letters[temp % (sizeof(letters) - 1)];
+			temp /= sizeof(letters) - 1;
+		}
+		strcat(file_name, suffix);
 		if (expanded_string)
-		{
-			strcpy(expanded_string, filename.c_str());
-		}
-
-		if (stdio_flag)
-		{
-			FILE* result = fopen(filename.c_str(), "w+b");
-			return result ? result : (void*) (IPTR) (-1);
-		}
-
-		return (void*) (IPTR) open(filename.c_str(), O_RDWR | O_EXCL | O_TRUNC);
+			strcpy(expanded_string, file_name);
+		result = (void*)_sopen(file_name, _O_CREAT | _O_TRUNC | _O_RDWR | 
+			_O_BINARY | _O_SHORT_LIVED | _O_NOINHERIT | _O_EXCL |
+			(expanded_string && !unlink_flag ? 0 : _O_TEMPORARY),
+			_SH_DENYRW, _S_IREAD | _S_IWRITE);
+		if ((int)result != -1 || (errno != EACCES && errno != EEXIST))
+			break;
+		randomness++;
 	}
-	catch (const Firebird::Exception&)
-	{
-		return (void*) (IPTR) (-1);
+	if ((int)result == -1) return result;
+	if (stdio_flag) {
+		if (!(result = fdopen((int) result, "w+b")))
+			return (void *)-1;
 	}
+#else
+	TEXT file_name[MAXPATHLEN];
+	strcpy(file_name, directory);
+	if (file_name[strlen(file_name) - 1] != '/')
+		strcat(file_name, "/");
+	strcat(file_name, string);
+	strcat(file_name, TEMP_PATTERN);
+	
+#ifdef HAVE_MKSTEMP
+	result = (void *)(IPTR)mkstemp(file_name);
+#else
+	if (mktemp(file_name) == (char *)0)
+		return (void *)-1;
+
+	do {
+		result = (void *)open(file_name, O_RDWR | O_EXCL | O_CREAT);
+	} while (result == (void *)-1 && errno == EINTR);
+#endif
+	if (result == (void *)-1)
+		return result;
+
+	if (stdio_flag)
+		if (!(result = fdopen((int)(IPTR)result, "w+")))
+			return (void *)-1;
+
+	if (expanded_string)
+		strcpy(expanded_string, file_name);
+
+	if (!expanded_string || unlink_flag)
+		unlink(file_name);
+#endif
+
+	return result;
 }
 
 
@@ -2418,12 +2522,6 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
  *
  **************************************/
 	CLEAN clean;
-	if (!initialized)
-	{
-		return;
-	}
-
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
 	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
 		 clean_ptr = &clean->clean_next) 
@@ -2439,6 +2537,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 }
 
 
+#ifndef VMS
 BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 										   const TEXT* ib_env_var,
 										   TEXT* resolved_module,
@@ -2507,6 +2606,66 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 	}
 	return FALSE;
 }
+#endif
+
+
+#ifdef VMS
+BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
+										   const TEXT* ib_env_var,
+										   TEXT* resolved_module,
+										   SLONG length)
+{
+/**************************************
+ *
+ *	g d s _ $ v a l i d a t e _ l i b _ p a t h	( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the InterBase external library path variable.
+ *	Validate that the path to the library module name 
+ *	in the path specified.  If the external lib path
+ *	is not defined then accept any path, and return true.
+ * 	If the module is not in the path return FALSE.
+ *
+ **************************************/
+	TEXT *p, *q;
+	TEXT path[MAXPATHLEN];
+	TEXT abs_module_path[MAXPATHLEN];
+	TEXT abs_module[MAXPATHLEN];
+
+/* Check for the existence of an InterBase logical name.  If there is 
+   one use it, otherwise use the system directories. */
+
+	COMPILER ERROR ! BEFORE DOING A VMS POST PLEASE
+		MAKE SURE THAT THIS FUNCTION WORKS THE SAME WAY
+		AS THE NON -
+		VMS ONE
+		DOES.
+	if (!
+				 (ISC_expand_logical_once
+				  (ib_env_var, strlen(ib_env_var) - 2, path, sizeof(path))))
+		return TRUE;
+
+	if (ISC_expand_logical_once(module, strlen(module) - 2, abs_module, sizeof(abs_module)))
+	{
+		/* Extract the path from the module name */
+		for (p = abs_module, q = NULL; *p; p++)
+			if (*p == ']')
+				q = p;
+
+		memset(abs_module_path, 0, MAXPATHLEN);
+		strncpy(abs_module_path, abs_module, q - abs_module + 1);
+
+		/* Check to see if the module path is the same as lib path
+		   if it is return TURE.  If not then the module path is 
+		   not valid so return FALSE */
+		if (!strcmp(path, abs_module_path))
+			return TRUE;
+	}
+	return FALSE;
+}
+#endif
 
 
 SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
@@ -2522,13 +2681,12 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
  *	bytes.
  *
  **************************************/
-	if (!ptr || length <= 0 || length > 4)
-		return 0;
-		
 	SLONG value = 0;
+	SSHORT shift = 0;
 
-	for (int shift = 0; --length >= 0; shift += 8) {
-		value += ((SLONG) *ptr++) << shift;
+	while (--length >= 0) {
+		value += ((SLONG) * ptr++) << shift;
+		shift += 8;
 	}
 
 	return value;
@@ -2644,15 +2802,51 @@ void API_ROUTINE isc_sql_interprete(
  *
  *	NOTE: As of 21-APR-1999, sqlmessages HAVE arguments hence use
  *	      an empty string instead of NULLs.
- *
+ *	      
  **************************************/
-	static const MsgFormat::SafeArg arg = MsgFormat::SafeArg() << "" << "" << "" << "" << "";
+	const TEXT* str = "";
 
 	if (sqlcode < 0)
-		fb_msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer, arg);
+		gds__msg_format(0, 13, (USHORT) (1000 + sqlcode), length, buffer,
+						str, str, str, str, str);
 	else
-		fb_msg_format(0, 14, sqlcode, length, buffer, arg);
+		gds__msg_format(0, 14, sqlcode, length, buffer,
+						str, str, str, str, str);
 }
+
+
+#ifdef VMS
+int unlink(const SCHAR* file)
+{
+/**************************************
+ *
+ *	u n l i n k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get rid of a file and all of its versions.
+ *
+ **************************************/
+	int status;
+	struct dsc$descriptor_s desc;
+
+	ISC_make_desc(file, &desc, 0);
+
+	for (;;) {
+		status = lib$delete_file(&desc);
+		if (!(status & 1))
+			break;
+	}
+
+	if (!status)
+		return 0;
+	else if (status != RMS$_FNF)
+		return -1;
+	else
+		return 0;
+}
+#endif
 
 
 static void blr_error(gds_ctl* control, const TEXT* string, ...)
@@ -2675,7 +2869,7 @@ static void blr_error(gds_ctl* control, const TEXT* string, ...)
 	va_end(args);
 	offset = 0;
 	blr_print_line(control, (SSHORT) offset);
-	Firebird::LongJump::raise();
+	Firebird::status_exception::raise();
 }
 
 
@@ -2830,14 +3024,6 @@ static void blr_print_cond(gds_ctl* control)
 			blr_print_char(control);
 		break;
 
-	case blr_exception_msg:
-		blr_format(control, "blr_exception_msg, ");
-		n = blr_print_byte(control);
-		while (--n >= 0)
-			blr_print_char(control);
-		blr_print_verb(control, 0);
-		break;
-
 	case blr_sql_code:
 		blr_format(control, "blr_sql_code, ");
 		blr_print_word(control);
@@ -2851,6 +3037,7 @@ static void blr_print_cond(gds_ctl* control)
 		blr_error(control, "*** invalid condition type ***");
 		break;
 	}
+	return;
 }
 
 
@@ -2875,8 +3062,7 @@ static int blr_print_dtype(gds_ctl* control)
    jump table */
 	const TEXT* string;
 
-	switch (dtype)
-	{
+	switch (dtype) {
 	case blr_short:
 		string = "short";
 		length = 2;
@@ -2962,38 +3148,6 @@ static int blr_print_dtype(gds_ctl* control)
 		length = 8;
 		break;
 
-	case blr_domain_name:
-		string = "domain_name";
-		// Don't bother with this length.
-		// It will not be used for blr_domain_name.
-		length = 0;
-		break;
-
-	case blr_domain_name2:
-		string = "domain_name2";
-		// Don't bother with this length.
-		// It will not be used for blr_domain_name2.
-		length = 0;
-		break;
-
-	case blr_column_name:
-		string = "column_name";
-		// Don't bother with this length.
-		// It will not be used for blr_column_name.
-		length = 0;
-		break;
-
-	case blr_column_name2:
-		string = "column_name2";
-		// Don't bother with this length.
-		// It will not be used for blr_column_name2.
-		length = 0;
-		break;
-
-	case blr_not_nullable:
-		string = "not_nullable";
-		break;
-
 	default:
 		blr_error(control, "*** invalid data type ***");
 		break;
@@ -3001,22 +3155,13 @@ static int blr_print_dtype(gds_ctl* control)
 
 	blr_format(control, "blr_%s, ", string);
 
-	switch (dtype)
-	{
-	case blr_not_nullable:
-		length = blr_print_dtype(control);
-		break;
-
+	switch (dtype) {
 	case blr_text:
 		length = blr_print_word(control);
 		break;
 
 	case blr_varying:
 		length = blr_print_word(control) + 2;
-		break;
-
-	case blr_cstring:
-		length = blr_print_word(control);
 		break;
 
 	case blr_short:
@@ -3046,22 +3191,10 @@ static int blr_print_dtype(gds_ctl* control)
 		blr_print_word(control);
 		break;
 
-	case blr_domain_name:
-	case blr_domain_name2:
-	case blr_column_name:
-	case blr_column_name2:
-		{
-			// 0 = blr_domain_type_of; 1 = blr_domain_full
-			blr_print_byte(control);
-
-			for (UCHAR n = blr_print_byte(control); n > 0; --n)
-				blr_print_char(control);
-
-			if (dtype == blr_domain_name2 || dtype == blr_column_name2)
-				blr_print_word(control);
-
-			break;
-		}
+	default:
+		if (dtype == blr_cstring)
+			length = blr_print_word(control);
+		break;
 	}
 
 	return length;
@@ -3159,7 +3292,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 	SSHORT n;
 
 	while (*ops)
-	{
 		switch (*ops++) {
 		case op_verb:
 			blr_print_verb(control, level);
@@ -3171,13 +3303,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 		case op_byte:
 			n = blr_print_byte(control);
-			break;
-
-		case op_byte_opt_verb:
-			n = blr_print_byte(control);
-			blr_print_line(control, (SSHORT) offset);
-			if (n != 0)
-				blr_print_verb(control, level);
 			break;
 
 		case op_word:
@@ -3315,7 +3440,6 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			fb_assert(false);
 			break;
 		}
-	}
 }
 
 
@@ -3341,7 +3465,7 @@ static int blr_print_word(gds_ctl* control)
 }
 
 
-void gds__cleanup()
+void gds__cleanup(void)
 {
 /**************************************
  *
@@ -3360,13 +3484,9 @@ void gds__cleanup()
 
 	gds__msg_close(NULL);
 
-	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 	CLEAN clean;
 
-	initialized = false;
-	Firebird::InstanceControl::registerGdsCleanup(0);	
-
-	while ( (clean = cleanup_handlers) ) {
+	while (clean = cleanup_handlers) {
 		cleanup_handlers = clean->clean_next;
 		FPTR_VOID_PTR routine = clean->clean_routine;
 		void* arg = clean->clean_arg;
@@ -3379,7 +3499,13 @@ void gds__cleanup()
 
 		(*routine)(arg);
 	}
+
+#ifdef V4_THREADING
+/* V4_DESTROY; */
+#endif
+	initialized = false;
 }
+
 
 static void init(void)
 {
@@ -3396,11 +3522,19 @@ static void init(void)
 	if (initialized)
 		return;
 
-	static Firebird::GlobalPtr<Firebird::Mutex> gdsInitMutex;
-	Firebird::MutexLockGuard guard(gdsInitMutex);
-
-	if (initialized)
+	/* V4_INIT; */
+	/* V4_GLOBAL_MUTEX_LOCK; */
+	if (initialized) {
+		/*  V4_GLOBAL_MUTEX_UNLOCK; */
 		return;
+	}
+
+#ifdef VMS
+	exit_description.exit_handler = cleanup;
+	exit_description.args = 1;
+	exit_description.arg[0] = &exit_status;
+	ISC_STATUS status = sys$dclexh(&exit_description);
+#endif
 
 #ifdef UNIX
 	gds_pid = getpid();
@@ -3433,13 +3567,17 @@ static void init(void)
 #endif /* SUPERSERVER */
 #endif /* UNIX */
 
-	initialized = true;
+	atexit(gds__cleanup);
 
-	Firebird::InstanceControl::registerGdsCleanup(gds__cleanup);
+	initialized = true;
 
 	gdsPrefixInit();
 
+#ifndef REQUESTER
 	ISC_signal_init();
+#endif
+
+	/* V4_GLOBAL_MUTEX_UNLOCK; */
 }
 
 static void sanitize(Firebird::string& locale)
@@ -3506,8 +3644,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 	gds__ulstr(p, offset, 4, ' ');
 	p += strlen(p);
 	*p++ = ' ';
-	strcpy(p, line);
-	p += strlen(p);
+	strcpy(p, line); p += strlen(p);
 	*p++ = '\n';
 	*p = 0;
 	gds__trace_raw(buffer);
@@ -3517,7 +3654,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 
 void* API_ROUTINE gds__alloc(SLONG size_request)
 {
-	return getDefaultMemoryPool()->allocate_nothrow(size_request
+	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
 #ifdef DEBUG_GDS_ALLOC
 		, __FILE__, __LINE__
 #endif
@@ -3530,7 +3667,7 @@ class InitPrefix
 public:
 	static void init()
 	{
-		// Get fb_prefix value from config file
+		// Get ib_prefix value from config file
 		// CVC: I put this protection block because we can't raise exceptions
 		// if exceptions are already raised due to the same reason:
 		// config file not found.
@@ -3547,8 +3684,8 @@ public:
 			if (!GetProgramFilesDir(prefix))
 				prefix = FB_PREFIX;
 		}
-		prefix.copyTo(fb_prefix_val, sizeof(fb_prefix_val));
-		fb_prefix = fb_prefix_val;
+		prefix.copyTo(ib_prefix_val, sizeof(ib_prefix_val));
+		ib_prefix = ib_prefix_val;
 
 		// Find appropiate temp directory
 		Firebird::PathName tempDir;
@@ -3590,8 +3727,8 @@ public:
 			lockPrefix = prefix;
 #endif
 		}
-		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
-		fb_prefix_lock = fb_prefix_lock_val;
+		lockPrefix.copyTo(ib_prefix_lock_val, sizeof(ib_prefix_lock_val));
+		ib_prefix_lock = ib_prefix_lock_val;
 
 		// Find appropriate Firebird message file prefix.
 		Firebird::PathName msgPrefix;
@@ -3599,8 +3736,8 @@ public:
 		{
 			msgPrefix = prefix;
 		}
-		msgPrefix.copyTo(fb_prefix_msg_val, sizeof(fb_prefix_msg_val));
-		fb_prefix_msg = fb_prefix_msg_val;
+		msgPrefix.copyTo(ib_prefix_msg_val, sizeof(ib_prefix_msg_val));
+		ib_prefix_msg = ib_prefix_msg_val;
 	}
 	static void cleanup()
 	{
@@ -3618,7 +3755,7 @@ static void gdsPrefixInit()
  **************************************
  *
  * Functional description
- *	Initialize all data in various fb_prefixes.
+ *	Initialize all data in various ib_prefixes.
  *	Calling it before any signal can be caught (from init())
  *	makes gds__prefix* family of functions signal-safe.
  *	In order not to break external API, call to gdsPrefixInit
@@ -3668,20 +3805,3 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 #endif
 }
 
-
-// Deprecated private API functions
-
-int API_ROUTINE gds__thread_enable(int)
-{
-	return true;
-}
-
-
-void API_ROUTINE gds__thread_enter()
-{
-}
-
-
-void API_ROUTINE gds__thread_exit()
-{
-}

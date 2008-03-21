@@ -25,6 +25,7 @@
 //
 //____________________________________________________________
 //
+//	$Id: cmd.cpp,v 1.40 2005-05-27 22:42:12 asfernandes Exp $
 //
 
 #include "firebird.h"
@@ -154,8 +155,10 @@ int CMD_compile_ddl(gpre_req* request)
 			create_database(request, action);
 			return 0;
 		}
-		create_database_modify_dyn(request, action);
+		else
+			create_database_modify_dyn(request, action);
 		break;
+
 
 	case ACT_create_domain:
 		create_domain(request, action);

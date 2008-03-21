@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: license.h,v 1.31.12.2 2007-05-02 13:46:11 paulbeach Exp $
  * Revision 1.5  2000/12/08 16:18:21  fsg
  * Preliminary changes to get IB_BUILD_NO automatically
  * increased on commits.
@@ -67,11 +67,11 @@
 #include "../jrd/build_no.h"
 #include "../jrd/isc_version.h"
 
-#ifdef HPUX
+#ifdef hpux
 #ifdef HP10
 #define FB_PLATFORM	"HU"
 #endif /* HP10 */
-#ifdef HP11 
+#ifdef HP11  /* RITTER */
 #define FB_PLATFORM     "HU"
 #endif /* HP11 */
 #endif
@@ -91,6 +91,14 @@
 #define FB_PLATFORM	"S3"
 #endif
 #endif /* sun */
+
+#ifdef VMS
+#ifdef __ALPHA
+#define FB_PLATFORM     "AV"
+#else
+#define FB_PLATFORM	"VM"
+#endif
+#endif
 
 #ifdef AIX
 #define FB_PLATFORM	"IA"
@@ -112,6 +120,10 @@
 #define FB_PLATFORM     "LI"	/* Linux on Intel */
 #endif
 
+#ifdef SINIXZ
+#define FB_PLATFORM     "SZ"	/* SINIX for PC  */
+#endif
+
 #ifdef FREEBSD
 #define FB_PLATFORM     "FB"	/* FreeBSD/i386 */
 #endif
@@ -121,13 +133,13 @@
 #endif
 
 #ifdef DARWIN
-#if defined(i386) || defined(__x86_64__)
-#define FB_PLATFORM		"UI"	/* Darwin/Intel */
+#ifdef i386
+#define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#if defined(_powerpc_)
+#endif
+#if defined (DARWIN) && defined (__ppc__)
 #define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
-#endif	// DARWIN
 
 #ifndef FB_VERSION
 #define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX

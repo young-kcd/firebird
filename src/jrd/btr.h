@@ -29,6 +29,7 @@
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
@@ -165,21 +166,13 @@ struct temporary_key {
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 
-// hvlad: index_sort_record structure is stored in sort scratch file so we 
-// don't want to grow sort file with padding added by compiler to please 
-// alignment rules. 
-// #pragma pack is supported at least by MSVC and GCC. Don't know about
-// other compilers, sorry
-
-#pragma pack(push, 1)
 struct index_sort_record {
 	// RecordNumber should be at the first place, because it's used
 	// for determing sort by creating index (see idx.cpp)
-	SINT64 isr_record_number;
+	RecordNumber isr_record_number;
 	USHORT isr_key_length;
 	USHORT isr_flags;
 };
-#pragma pack(pop)
 
 const int ISR_secondary	= 1;	// Record is secondary version
 const int ISR_null		= 2;	// Record consists of NULL values only

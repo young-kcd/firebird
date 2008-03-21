@@ -31,10 +31,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../qli/mov_proto.h"
-#include "../common/utils_proto.h"
-
-using MsgFormat::SafeArg;
-
 
 static void date_error(const TEXT*, const USHORT);
 static double double_from_text(const dsc* desc);
@@ -59,8 +55,7 @@ const char* const YESTERDAY = "YESTERDAY";
 
 const int PRECISION		= 10000;
 
-struct dtypes_t 
-{
+struct dtypes_t {
 	USHORT type;
 	const TEXT* description;
 };
@@ -158,24 +153,36 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 					if (length = arg2->dsc_length)
 						do {
 							if (*p1++ != *p2++)
-								return (p1[-1] > p2[-1]) ? 1 : -1;
+								if (p1[-1] > p2[-1])
+									return 1;
+								else
+									return -1;
 						} while (--length);
 					if (length = arg1->dsc_length - arg2->dsc_length)
 						do {
 							if (*p1++ != ' ')
-								return (p1[-1] > ' ') ? 1 : -1;
+								if (p1[-1] > ' ')
+									return 1;
+								else
+									return -1;
 						} while (--length);
 					return 0;
 				}
 				if (length = arg1->dsc_length)
 					do {
 						if (*p1++ != *p2++)
-							return (p1[-1] > p2[-1]) ? 1 : -1;
+							if (p1[-1] > p2[-1])
+								return 1;
+							else
+								return -1;
 					} while (--length);
 				length = arg2->dsc_length - arg1->dsc_length;
 				do {
 					if (*p2++ != ' ')
-						return (' ' > p2[-1]) ? 1 : -1;
+						if (' ' > p2[-1])
+							return 1;
+						else
+							return -1;
 				} while (--length);
 				return 0;
 			}
@@ -194,24 +201,36 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 			if (length2)
 				do {
 					if (*p1++ != *p2++)
-						return (p1[-1] > p2[-1]) ? 1 : -1;
+						if (p1[-1] > p2[-1])
+							return 1;
+						else
+							return -1;
 				} while (--length2);
 			if (fill > 0)
 				do {
 					if (*p1++ != ' ')
-						return (p1[-1] > ' ') ? 1 : -1;
+						if (p1[-1] > ' ')
+							return 1;
+						else
+							return -1;
 				} while (--fill);
 			return 0;
 		}
 		if (length) {
 			do {
 				if (*p1++ != *p2++)
-					return (p1[-1] > p2[-1]) ? 1 : -1;
+					if (p1[-1] > p2[-1])
+						return 1;
+					else
+						return -1;
 			} while (--length);
 		}
 		do {
 			if (*p2++ != ' ')
-				return (' ' > p2[-1]) ? 1 : -1;
+				if (' ' > p2[-1])
+					return 1;
+				else
+					return -1;
 		} while (++fill);
 		return 0;
 	}
@@ -354,25 +373,21 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 
 	const TEXT* p = string;
 	const TEXT* const end = p + length;
-	for (; p < end; p++) 
-	{
+	for (; p < end; p++) {
 		if (*p == ',')
 			continue;
-		
-		if (DIGIT(*p)) {
+		else if (DIGIT(*p)) {
 			value = value * 10 + *p - '0';
 			if (fraction)
 				--scale;
 		}
 		else if (*p == '.')
-		{
 			if (fraction) {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp);
+				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 			}
 			else
 				fraction = true;
-		}
 		else if (*p == '-' && !value && !sign)
 			sign = true;
 		else if (*p == '+' && !value && !sign)
@@ -381,7 +396,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 			break;
 		else if (*p != ' ') {
 			MOVQ_terminate(string, temp, length, sizeof(temp));
-			ERRQ_error(411, temp);
+			ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 		}
 	}
 
@@ -394,8 +409,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 	if (p < end) {
 		SSHORT exp = 0;
 		sign = false;
-		for (p++; p < end; p++) 
-		{
+		for (p++; p < end; p++) {
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
 			else if (*p == '-' && !exp)
@@ -404,7 +418,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 				continue;
 			else if (*p != ' ') {
 				MOVQ_terminate(string, temp, length, sizeof(temp));
-				ERRQ_error(411, temp);
+				ERRQ_error(411, temp, NULL, NULL, NULL, NULL);
 			}
 		}
 		if (sign)
@@ -436,6 +450,28 @@ void MOVQ_double_to_date( double real, SLONG fixed[2])
 
 	fixed[0] = static_cast<SLONG>(real);
 	fixed[1] = static_cast<SLONG>((real - fixed[0]) * 24. * 60. * 60. * PRECISION);
+}
+
+
+void MOVQ_fast(const SCHAR* from,
+			   SCHAR* to,
+			   ULONG length)
+{
+/**************************************
+ *
+ *	M O V Q _ f a s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move a byte string as fast as possible.
+ *
+ **************************************/
+
+	if (length)
+		do {
+			*to++ = *from++;
+		} while (--length);
 }
 
 
@@ -484,7 +520,7 @@ double MOVQ_get_double(const dsc* desc)
 
 // Last, but not least, adjust for scale
 
-	int scale = desc->dsc_scale;
+	SSHORT scale = desc->dsc_scale;
 	if (scale == 0)
 		return value;
 
@@ -584,9 +620,9 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 		return value;
 
 	if (scale > 0) {
-		if ((desc->dsc_dtype == dtype_short) || (desc->dsc_dtype == dtype_long))
-		{
-			int fraction = 0;
+		if ((desc->dsc_dtype == dtype_short)
+			|| (desc->dsc_dtype == dtype_long)) {
+			SSHORT fraction = 0;
 			do {
 				if (scale == 1)
 					fraction = value % 10;
@@ -692,8 +728,9 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 */
 	{
 		if (length)
-			memcpy(p, q, length);
-			
+			do {
+				*p++ = *q++;
+			} while (--length);
 		return;
 	}
 
@@ -783,27 +820,33 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 						length = MIN(length, to->dsc_length);
 						SSHORT fill = to->dsc_length - length;
 						if (length)
-							memcpy(p, s, length);
+							do {
+								*p++ = *s++;
+							} while (--length);
 						if (fill > 0)
-							memset(p + length, ' ', fill);
+							do {
+								*p++ = ' ';
+							} while (--fill);
 						return;
 					}
 
 				case dtype_cstring:
 					length = MIN(length, to->dsc_length - 1);
 					if (length)
-						memcpy(p, s, length);
-					p[length] = 0;
+						do {
+							*p++ = *s++;
+						} while (--length);
+					*p = 0;
 					return;
 
 				case dtype_varying:
-					{
-						length = MIN(length, to->dsc_length - sizeof(SSHORT));
-						vary* avary = reinterpret_cast<vary*>(p);
-						avary->vary_length = length;
-						if (length)
-							memcpy(avary->vary_string, s, length);
-					}
+					length = MIN(length, to->dsc_length - sizeof(SSHORT));
+					((vary*) p)->vary_length = length;
+					p = (UCHAR*) ((vary*) p)->vary_string;
+					if (length)
+						do {
+							*p++ = *s++;
+						} while (--length);
 					return;
 				}
 			}
@@ -898,11 +941,15 @@ void MOVQ_terminate(const SCHAR* from,
 	fb_assert(max_length != 0);
 	if (length) {
 		length = MIN(length, max_length - 1);
-		memcpy(to, from, length);
-		to[length] = '\0';
+		do {
+			*to++ = *from++;
+		} while (--length);
+		*to++ = '\0';
 	}
-	else
-		fb_utils::copy_terminate(to, from, max_length);
+	else {
+		while (max_length-- && (*to++ = *from++));
+		*--to = '\0';
+	}
 }
 
 
@@ -921,7 +968,7 @@ static void date_error(const TEXT* string, const USHORT length)
 	SCHAR temp[128];
 
 	MOVQ_terminate(string, temp, length, sizeof(temp));
-	ERRQ_error(56, temp);
+	ERRQ_error(56, temp, NULL, NULL, NULL, NULL);
 	// Msg 56 Error converting string \"%s\" to date
 }
 
@@ -930,27 +977,23 @@ static double double_from_text(const dsc* desc)
 {
 	const TEXT* p;
 	const SSHORT length = MOVQ_get_string(desc, &p, 0, 0);
-	int scale = 0;
+	SSHORT scale = 0;
 	bool fraction = false, sign = false;
 	double value = 0;
 	const TEXT* const end = p + length;
-	for (; p < end; p++) 
-	{
+	for (; p < end; p++) {
 		if (*p == ',')
 			continue;
-		
-		if (DIGIT(*p)) {
+		else if (DIGIT(*p)) {
 			value = value * 10. + (*p - '0');
 			if (fraction)
 				scale++;
 		}
 		else if (*p == '.')
-		{
 			if (fraction)
 				IBERROR(52);	// Msg 52 conversion error
 			else
 				fraction = true;
-		}
 		else if (!value && *p == '-')
 			sign = true;
 		else if (!value && *p == '+')
@@ -969,14 +1012,13 @@ static double double_from_text(const dsc* desc)
 
 	if (p < end) {
 		sign = false;
-		int exp = 0;
+		SSHORT exp = 0;
 		for (p++; p < end; p++) {
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
 			else if (*p == '-' && !exp)
 				sign = true;
-			else if (*p == '+' && !exp)
-				;
+			else if (*p == '+' && !exp);
 			else if (*p != ' ')
 				IBERROR(54);	// Msg 54 conversion error
 		}
@@ -1133,7 +1175,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
  **************************************/
 	TEXT in_name[25], out_name[25], msg_unknown[40];
 
-	ERRQ_msg_get(504, msg_unknown, sizeof(msg_unknown));	// Msg504 unknown datatype %d
+	ERRQ_msg_get(504, msg_unknown);	// Msg504 unknown datatype %d
 
 	const TEXT* in = type_name(in_type);
 	if (!in) {
@@ -1147,7 +1189,7 @@ static void mover_error( int pattern, USHORT in_type, USHORT out_type)
 		sprintf(out_name, msg_unknown, out_type);
 	}
 
-	ERRQ_error(pattern, SafeArg() << in << out);
+	ERRQ_error(pattern, in, out, NULL, NULL, NULL);
 }
 
 
@@ -1317,7 +1359,7 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	tm* today = localtime(&clock);
 
-	int i;
+	USHORT i;
 	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
@@ -1483,7 +1525,7 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 	const time_t clock = time(0);
 	const tm* today = localtime(&clock);
 
-	int i;
+	USHORT i;
 	USHORT components[7];
 	for (i = 0; i < 7; i++)
 		components[i] = 0;
@@ -1524,10 +1566,8 @@ static void string_to_time(const TEXT* string, USHORT length, SLONG date[2])
 			}
 			*t = 0;
 			while (++p < end)
-			{
 				if (*p != ' ' && *p != '\t' && *p != 0)
 					date_error(string, length);
-			}
 
 			if (strcmp(temp, NOW) == 0) {
 				now_to_date(today, date);

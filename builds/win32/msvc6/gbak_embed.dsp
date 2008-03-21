@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\gbak_embed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "SUPERCLIENT" /D "EMBEDDED" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
@@ -66,7 +66,7 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\gbak_embed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "NOMSG" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "WIN32" /D "_CONSOLE" /D "_MBCS" /D "_X86_" /D "SUPERCLIENT" /D "EMBEDDED" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -118,10 +118,6 @@ SOURCE=..\..\..\src\burp\burp.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\burp\burpMain.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\burp\canonical.cpp
 # End Source File
 # Begin Source File
@@ -147,10 +143,6 @@ SOURCE=..\..\..\src\jrd\sdl.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sdl_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ThreadData.cpp
 # End Source File
 # End Group
 # Begin Group "REMOTE files"

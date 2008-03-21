@@ -1,10 +1,10 @@
 # EKU: taken from Makefile.in.firebird
 ROOT=..
 
-include	$(ROOT)/gen/make.defaults
-include	$(ROOT)/gen/make.platform
-include	$(ROOT)/gen/make.rules
-include	$(ROOT)/gen/make.shared.variables
+include     $(ROOT)/gen/make.defaults
+include		$(ROOT)/gen/make.platform
+include     $(ROOT)/gen/make.rules
+include     $(ROOT)/gen/make.shared.variables
 
 
 
@@ -23,7 +23,7 @@ FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/
 FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/minorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 FB_REV_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/revno.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
 FB_BUILD_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/buildno.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
-FB_PLATFORM:=$(CpuType)
+FB_PLATFORM:=$(shell uname -p)
 
 package packages dist: package_@FIREBIRD_ARCH_TYPE@
 
@@ -162,7 +162,7 @@ install_super install_server:
 
 install_classic install_serverc:
 	installer -verbose -dumplog -pkg \
-			`pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS).$(FB_MINOR_VERS)-$(FB_PLATFORM).pkg -target /
+			`pwd`/$(ROOT)/gen/firebird/Firebird-CS-$(FB_INST_VERS).$*FB_MINOR_VERS)-$(FB_PLATFORM)..pkg -target /
 
 darwin_installer_common: force
 	$(QUIET_ECHO) "Building Firebird Installer..."

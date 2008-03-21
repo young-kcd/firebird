@@ -31,9 +31,6 @@ OS_SPECIFIC_Files=thd_priority.cpp
 
 OS_ServerFiles= os/win32/srvr_w32 os/win32/window.cpp os/win32/chop.cpp os/win32/property.cpp os/win32/ibconfig.cpp os/win32/cntl.cpp 
 
-# Override link command for implicit stdc++ linking
-LIB_LINK=$(LD)
-
 LIB_LINK_OPTIONS+=-Wl,--enable-stdcall-fixup
 
 # Strip symbols from release versions to decrease size
@@ -46,7 +43,7 @@ LIB_LINK_IMPLIB:=-Wl,--out-implib,firebird/lib/fbclient_ms.lib
 LIB_GUI:= -mwindows -lcomctl32 -lgdi32
 
 EMBED_UTIL_TARGETS:=gstat gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS:=gstat gsec instsvc instreg nbackup fb_lock_print
+CLIENT_UTIL_TARGETS:=gstat gsec ibguard instsvc instreg nbackup fb_lock_print
 
 Physical_IO_Module=os/win32/winnt.cpp
 

@@ -57,11 +57,11 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/nbak.h"
 
 using namespace Jrd;
 
@@ -102,19 +102,10 @@ int INF_blob_info(const blb* blob,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -151,14 +142,6 @@ int INF_blob_info(const blb* blob,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
-
 	return TRUE;
 }
 
@@ -179,7 +162,9 @@ USHORT INF_convert(SLONG number, SCHAR* buffer)
 	const SCHAR* p;
 
 #ifndef WORDS_BIGENDIAN
-	p = reinterpret_cast<const SCHAR*>(&number);
+	// CVC: What's the need for an intermediate "n" here?
+	const SLONG n = number;
+	p = reinterpret_cast<const SCHAR*>(&n);
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -221,15 +206,15 @@ int INF_database_info(const SCHAR* items,
 	bool header_refreshed = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
 	jrd_tra* transaction = NULL;
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	const SCHAR* const end_buf = buffer + sizeof(buffer);
 
-	const Attachment* err_att = tdbb->getAttachment();
+	Attachment* err_att = 0;
+	Attachment* att = 0;
 	const SCHAR* q;
 
 	while (items < end_items && *items != isc_info_end) {
@@ -304,6 +289,7 @@ int INF_database_info(const SCHAR* items,
 			length = INF_convert(0, buffer);
 			break;
 
+#ifdef SUPERSERVER
 		case isc_info_current_memory:
 			length = INF_convert(dbb->dbb_memory_stats.get_current_usage(), buffer);
 			break;
@@ -311,9 +297,18 @@ int INF_database_info(const SCHAR* items,
 		case isc_info_max_memory:
 			length = INF_convert(dbb->dbb_memory_stats.get_maximum_usage(), buffer);
 			break;
+#else
+		case isc_info_current_memory:
+			length = INF_convert(MemoryPool::default_stats_group->get_current_usage(), buffer);
+			break;
+
+		case isc_info_max_memory:
+			length = INF_convert(MemoryPool::default_stats_group->get_maximum_usage(), buffer);
+			break;
+#endif
 
 		case isc_info_attachment_id:
-			length = INF_convert(PAG_attachment_id(tdbb), buffer);
+			length = INF_convert(PAG_attachment_id(), buffer);
 			break;
 
 		case isc_info_ods_version:
@@ -326,7 +321,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_allocation:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PageSpace::maxAlloc(dbb), buffer);
+			length = INF_convert(PIO_max_alloc(dbb), buffer);
 			break;
 
 		case isc_info_sweep_interval:
@@ -432,38 +427,31 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_id:
 			{
-				// May be simpler to code using a server-side version of isql's Extender class.
 				const Firebird::PathName& str_fn = dbb->dbb_database_name;
 				STUFF(p, 2);
-				USHORT len = str_fn.length();
-				if (p + len + 1 >= end_buf)
-					len = end_buf - p - 1;
-				if (len > 255)
-					len = 255; // Cannot put more in one byte, will truncate instead.
-				*p++ = len;
-				memcpy(p, str_fn.c_str(), len);
-				p += len;
-				if (p + 2 < end_buf)
-				{
-					SCHAR site[256];
-					ISC_get_host(site, sizeof(site));
-					len = strlen(site);
-					if (p + len + 1 >= end_buf)
-						len = end_buf - p - 1;
-					*p++ = len;
-					memcpy(p, site, len);
-					p += len;
-				}
+				SSHORT l = str_fn.length();
+				*p++ = l;
+				for (q = str_fn.c_str(); *q;)
+					*p++ = *q++;
+				SCHAR site[256];
+				ISC_get_host(site, sizeof(site));
+				*p++ = l = strlen(site);
+				for (q = site; *q;)
+					*p++ = *q++;
 				length = p - buffer;
+				break;
 			}
-			break;
 
 		case isc_info_creation_date:
 			{
-				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
-				length = INF_convert(ts.timestamp_date, p); 
+				WIN window(HEADER_PAGE);
+				Ods::header_page* header = (Ods::header_page*) 
+					CCH_FETCH(tdbb, &window, LCK_read, pag_header);
+
+				length = INF_convert(header->hdr_creation_date[0], p); 
 				p += length;
-				length += INF_convert(ts.timestamp_time, p);
+				length += INF_convert(header->hdr_creation_date[1], p);
+				CCH_RELEASE(tdbb, &window);
 			}
 			break;
 
@@ -540,32 +528,8 @@ int INF_database_info(const SCHAR* items,
 			}
 			break;
 
-		case isc_info_db_file_size:
-			{
-				BackupManager *bm = dbb->dbb_backup_manager;
-				length = INF_convert(bm ? bm->getPageCount() : 0, buffer);
-			}
-			break;
-
 		case isc_info_user_names:
-			// Assumes user names will be smaller than sizeof(buffer) - 1.
-			if (!(tdbb->getAttachment()->locksmith())) {
-				const UserId* user = tdbb->getAttachment()->att_user;
-				const char* uname = (user && user->usr_user_name.hasData()) ? user->usr_user_name.c_str() : "<Unknown>";
-				const SSHORT len = strlen(uname);
-				*p++ = len;
-				memcpy(p, uname, len);
-				info = INF_put_item(item, len + 1, buffer, info, end);
-				if (!info) {
-					if (transaction)
-						TRA_commit(tdbb, transaction, false);
-					return FALSE;
-				}
-				continue;
-			}
-			{ // scope for VC6
-			for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-			{
+			for (att = dbb->dbb_attachments; att; att = att->att_next) {
 				if (att->att_flags & ATT_shutdown)
 					continue;
                 
@@ -574,10 +538,12 @@ int INF_database_info(const SCHAR* items,
 					const char* user_name = user->usr_user_name.hasData() ?
 						user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 					p = buffer;
-					const SSHORT len = strlen(user_name);
-					*p++ = len;
-					memcpy(p, user_name, len);
-                    info = INF_put_item(item, len + 1, buffer, info, end);
+					SSHORT l = strlen (user_name);
+					*p++ = l;
+					for (q = user_name; l; l--)
+						*p++ = *q++;
+					length = p - buffer;
+                    info = INF_put_item(item, length, buffer, info, end);
 					if (!info) {
 						if (transaction)
 							TRA_commit(tdbb, transaction, false);
@@ -585,10 +551,10 @@ int INF_database_info(const SCHAR* items,
 					}
 				}
 			}
-			} // end scope for VC6
 			continue;
 
 		case isc_info_page_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_PAG_WRONG_TYPE]
@@ -604,6 +570,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_bpage_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_BLOB_INCONSISTENT]
@@ -617,6 +584,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_record_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_REC_CHAIN_BROKEN]
@@ -634,6 +602,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_dpage_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_DATA_PAGE_CONFUSED]
@@ -647,6 +616,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_ipage_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val =
 					(*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT] +
@@ -662,6 +632,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_ppage_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val = (*err_att->att_val_errors)[VAL_P_PAGE_LOST]
 					+
@@ -674,6 +645,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_tpage_errors:
+			err_att = tdbb->tdbb_attachment;
 			if (err_att->att_val_errors) {
 				err_val = (*err_att->att_val_errors)[VAL_TIP_LOST]
 					+ (*err_att->att_val_errors)[VAL_TIP_LOST_SEQUENCE]
@@ -732,7 +704,7 @@ int INF_database_info(const SCHAR* items,
 
 		case isc_info_db_size_in_pages:
 			CCH_flush(tdbb, FLUSH_ALL, 0L);
-			length = INF_convert(PageSpace::actAlloc(dbb), buffer);
+			length = INF_convert(PIO_act_alloc(dbb), buffer);
 			break;
 
 		case isc_info_oldest_transaction:
@@ -780,7 +752,7 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case frb_info_att_charset:
-			length = INF_convert(tdbb->getAttachment()->att_charset, buffer);
+			length = INF_convert(tdbb->tdbb_attachment->att_charset, buffer);
 			break;
 
 		default:
@@ -832,7 +804,7 @@ SCHAR* INF_put_item(SCHAR item,
 	STUFF_WORD(ptr, length);
 
 	if (length) {
-		memmove(ptr, string, length);
+		MEMMOVE(string, ptr, length);
 		ptr += length;
 	}
 
@@ -861,16 +833,6 @@ int INF_request_info(const jrd_req* request,
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
-
 	SCHAR buffer[256];
 	memset(buffer, 0, sizeof(buffer));
 	SCHAR* buffer_ptr = buffer;
@@ -995,14 +957,6 @@ int INF_request_info(const jrd_req* request,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
-
 	return TRUE;
 }
 
@@ -1023,19 +977,10 @@ int INF_transaction_info(const jrd_tra* transaction,
  *
  **************************************/
 	SCHAR buffer[128];
-	USHORT length;
+	SSHORT length;
 
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
-	SCHAR* start_info;
-	
-	if (*items == isc_info_length) {
-		start_info = info;
-		items++;
-	}
-	else {
-		start_info = 0;
-	}
 
 	while (items < end_items && *items != isc_info_end) {
 		SCHAR item = *items++;
@@ -1109,14 +1054,6 @@ int INF_transaction_info(const jrd_tra* transaction,
 
 	*info++ = isc_info_end;
 
-	if (start_info && (end - info >= 7))
-	{
-		SLONG number = info - start_info;
-		memmove(start_info + 7, start_info, number);
-		length = INF_convert(number, buffer);
-		INF_put_item(isc_info_length, length, buffer, start_info, end);
-	}
-
 	return TRUE;
 }
 
@@ -1135,7 +1072,7 @@ static USHORT get_counts(USHORT count_id, SCHAR* buffer, USHORT length)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	const vcl* vector = tdbb->getAttachment()->att_counts[count_id];
+	const vcl* vector = tdbb->tdbb_attachment->att_counts[count_id];
 	if (!vector)
 		return 0;
 

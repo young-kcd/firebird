@@ -1,6 +1,6 @@
 /*
  *      PROGRAM:        JRD Lock Manager
- *      MODULE:         print.cpp
+ *      MODULE:         print.c
  *      DESCRIPTION:    Lock Table printer
  *
  * The contents of this file are subject to the Interbase Public
@@ -38,6 +38,7 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "../jrd/isc.h"
+//#include "../common/classes/timestamp.h"
 #include "../lock/lock.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/gds_proto.h"
@@ -79,7 +80,7 @@ struct waitque {
 static void prt_lock_activity(OUTFILE, const lhb*, USHORT, USHORT, USHORT);
 static void prt_lock_init(void*, sh_mem*, bool);
 static void prt_history(OUTFILE, const lhb*, SRQ_PTR, const SCHAR*);
-static void prt_lock(OUTFILE, const lhb*, lbl*, USHORT);
+static void prt_lock(OUTFILE, const lhb*, LBL, USHORT);
 static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool);
 static void prt_owner_wait_cycle(OUTFILE, const lhb*, const own*, USHORT, waitque*);
 static void prt_request(OUTFILE, const lhb*, const lrq*);
@@ -92,23 +93,21 @@ static const TEXT history_names[][10] = {
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-// The same table is in lock.cpp, maybe worth moving to a common file?
-static const UCHAR compatibility[LCK_max][LCK_max] =
-{
+static const UCHAR compatibility[] = {
 
-/*							Shared	Prot	Shared	Prot
-			none	null	Read	Read	Write	Write	Exclusive */
+/*				Shared	Prot	Shared	Prot
+		none	null	 Read	Read	Write	Write	Exclusive */
 
-/* none */	{true,	true,	true,	true,	true,	true,	true},
-/* null */	{true,	true,	true,	true,	true,	true,	true},
-/* SR */	{true,	true,	true,	true,	true,	true,	false},
-/* PR */	{true,	true,	true,	true,	false,	false,	false},
-/* SW */	{true,	true,	true,	false,	true,	false,	false},
-/* PW */	{true,	true,	true,	false,	false,	false,	false},
-/* EX */	{true,	true,	false,	false,	false,	false,	false}
+/* none */ 1, 1, 1, 1, 1, 1, 1,
+/* null */ 1, 1, 1, 1, 1, 1, 1,
+/* SR */ 1, 1, 1, 1, 1, 1, 0,
+/* PR */ 1, 1, 1, 1, 0, 0, 0,
+/* SW */ 1, 1, 1, 0, 1, 0, 0,
+/* PW */ 1, 1, 1, 0, 0, 0, 0,
+/* EX */ 1, 1, 0, 0, 0, 0, 0
 };
 
-//#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
+#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 
 
 
@@ -127,7 +126,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************/
 	OUTFILE outfile = stdout;
 
-/* Perform some special handling when run as a Firebird service.  The
+/* Perform some special handling when run as an Interbase service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
    by 3 file descriptors to use in re-directing stdin, stdout, and stderr. */
 
@@ -260,7 +259,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					}
 				if (!sw_interactive)
 					sw_interactive =
-						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
+						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE |
+						 SW_I_WAIT);
 				sw_nobridge = true;
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
@@ -312,8 +312,17 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	SH_MEM_T shmem_data;
+#ifdef UNIX
+	shmem_data.sh_mem_semaphores = 0;
+#endif
 
-	SLONG LOCK_size_mapped = 0;			/* Use length of existing segment */
+	SLONG LOCK_size_mapped = DEFAULT_SIZE;
+
+#ifdef UNIX
+	LOCK_size_mapped = 0;		/* Use length of existing segment */
+#else
+	LOCK_size_mapped = DEFAULT_SIZE;	/* length == 0 not supported by all non-UNIX */
+#endif
 
 	ISC_STATUS_ARRAY status_vector;
 	
@@ -366,15 +375,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	if ((LOCK_header->lhb_version != SS_LHB_VERSION) &&
 		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION))
 	{
-		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0) 
-		{
-			FPRINTF(outfile, "\tLock table is empty.\n");
-		}
-		else 
-		{
-			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
+		FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
-		}
 		exit(FINI_OK);
 	}
 
@@ -417,8 +419,18 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_version, LOCK_header->lhb_active_owner,
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
-	FPRINTF(outfile, "\tFlags: 0x%04X\n",
-			LOCK_header->lhb_flags);
+#ifdef MANAGER_PROCESS
+	int manager_pid = 0;
+	if (LOCK_header->lhb_manager) {
+		OWN manager = (OWN) SRQ_ABS_PTR(LOCK_header->lhb_manager);
+		manager_pid = manager->own_process_id;
+	}
+
+	FPRINTF(outfile, "\tLock manager pid: %6d\n", manager_pid);
+#endif
+
+	FPRINTF(outfile, "\tSemmask: 0x%"XLONGFORMAT", Flags: 0x%04X\n",
+			LOCK_header->lhb_mask, LOCK_header->lhb_flags);
 
 	FPRINTF(outfile,
 			"\tEnqs: %6"UQUADFORMAT", Converts: %6"UQUADFORMAT
@@ -439,7 +451,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			LOCK_header->lhb_acquire_spins);
 
 	if (LOCK_header->lhb_acquire_blocks) {
-		// CVC: MSVC up to v6 couldn't convert FB_UINT64 to double.
+		// CVC: MSVC up to v6 couldn't convert UINT64 to double.
 		const float bottleneck =
 			(float) ((100. * (SINT64) LOCK_header->lhb_acquire_blocks) /
 					 (SINT64) LOCK_header->lhb_acquires);
@@ -475,21 +487,24 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			hash_min_count, (hash_total_count / LOCK_header->lhb_hash_slots),
 			hash_max_count);
 
-	const shb* a_shb = (shb*) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
-	FPRINTF(outfile,
-			"\tRemove node: %6"SLONGFORMAT", Insert queue: %6"SLONGFORMAT
-			", Insert prior: %6"SLONGFORMAT"\n",
-			a_shb->shb_remove_node, a_shb->shb_insert_que,
-			a_shb->shb_insert_prior);
+	const shb* a_shb = NULL;
+	if (LOCK_header->lhb_secondary != LHB_PATTERN) {
+		a_shb = (shb*) SRQ_ABS_PTR(LOCK_header->lhb_secondary);
+		FPRINTF(outfile,
+				"\tRemove node: %6"SLONGFORMAT", Insert queue: %6"SLONGFORMAT
+				", Insert prior: %6"SLONGFORMAT"\n",
+				a_shb->shb_remove_node, a_shb->shb_insert_que,
+				a_shb->shb_insert_prior);
+	}
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
-			OFFSET(own*, own_lhb_owners));
+			OFFSET(OWN, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree owners",
-			&LOCK_header->lhb_free_owners, OFFSET(own*, own_lhb_owners));
+			&LOCK_header->lhb_free_owners, OFFSET(OWN, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree locks",
-			&LOCK_header->lhb_free_locks, OFFSET(lbl*, lbl_lhb_hash));
+			&LOCK_header->lhb_free_locks, OFFSET(LBL, lbl_lhb_hash));
 	prt_que(outfile, LOCK_header, "\tFree requests",
-			&LOCK_header->lhb_free_requests, OFFSET(lrq*, lrq_lbl_requests));
+			&LOCK_header->lhb_free_requests, OFFSET(LRQ, lrq_lbl_requests));
 
 /* Print lock ordering option */
 
@@ -502,11 +517,37 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (sw_owners) {
 		const srq* que_inst;
+		
+#ifdef SOLARIS_MT
+		/* The Lock Starvation recovery code on Solaris rotates the owner
+		   queue once per acquire.  This makes it difficult to read the
+		   printouts when multiple runs are made.  So we scan the list
+		   of owners once to find the lowest owner_id, and start the printout
+		   from there. */
+		SRQ_PTR least_owner_id = 0x7FFFFFFF;
+		const srq* least_owner_ptr = &LOCK_header->lhb_owners;
+		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
+			OWN this_owner = (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners));
+			if (SRQ_REL_PTR(this_owner) < least_owner_id) {
+				least_owner_id = SRQ_REL_PTR(this_owner);
+				least_owner_ptr = que_inst;
+			}
+		}
+		que_inst = least_owner_ptr;
+		do {
+			if (que_inst != &LOCK_header->lhb_owners)
+				prt_owner(outfile, LOCK_header,
+						  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
+						  sw_requests, sw_waitlist);
+			que_inst = SRQ_NEXT((*que_inst));
+		} while (que_inst != least_owner_ptr);
+#else
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst) {
 			prt_owner(outfile, LOCK_header,
-					  (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners)),
+					  (OWN) ((UCHAR*) que_inst - OFFSET(OWN, own_lhb_owners)),
 					  sw_requests, sw_waitlist);
 		}
+#endif /* SOLARIS_MT */
 	}
 
 /* Print known locks */
@@ -520,7 +561,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				 que_inst = (SRQ) SRQ_ABS_PTR(que_inst->srq_forward))
 			{
 				prt_lock(outfile, LOCK_header,
-						 (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash)),
+						 (LBL) ((UCHAR *) que_inst - OFFSET(LBL, lbl_lhb_hash)),
 						 sw_series);
 			}
 		}
@@ -530,7 +571,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		prt_history(outfile, LOCK_header, LOCK_header->lhb_history,
 					"History");
 
-	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
+	if (LOCK_header->lhb_secondary != LHB_PATTERN)
+		prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
 	if (header)
 		gds__free(header);
@@ -674,22 +716,34 @@ static void prt_lock_activity(
 		if (flag & SW_I_WAIT) {
 			FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+					" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 					" %9"UQUADFORMAT" ",
 					(header->lhb_waits - prior.lhb_waits) / seconds,
 					(header->lhb_denies - prior.lhb_denies) / seconds,
 					(header->lhb_timeouts - prior.lhb_timeouts) / seconds,
 					(header->lhb_blocks - prior.lhb_blocks) / seconds,
+					(header->lhb_direct_sigs -
+					 prior.lhb_direct_sigs) / seconds,
+					(header->lhb_indirect_sigs -
+					 prior.lhb_indirect_sigs) / seconds,
 					(header->lhb_wakeups - prior.lhb_wakeups) / seconds,
 					(header->lhb_scans - prior.lhb_scans) / seconds,
-					(header->lhb_deadlocks - prior.lhb_deadlocks) / seconds);
+					(header->lhb_deadlocks - prior.lhb_deadlocks) / seconds,
+					(header->lhb_waits -
+					 prior.lhb_waits) ? (header->lhb_wait_time -
+										 prior.lhb_wait_time) /
+					(header->lhb_waits - prior.lhb_waits) : 0);
 
 			prior.lhb_waits = header->lhb_waits;
 			prior.lhb_denies = header->lhb_denies;
 			prior.lhb_timeouts = header->lhb_timeouts;
 			prior.lhb_blocks = header->lhb_blocks;
+			prior.lhb_direct_sigs = header->lhb_direct_sigs;
+			prior.lhb_indirect_sigs = header->lhb_indirect_sigs;
 			prior.lhb_wakeups = header->lhb_wakeups;
 			prior.lhb_scans = header->lhb_scans;
 			prior.lhb_deadlocks = header->lhb_deadlocks;
+			prior.lhb_wait_time = header->lhb_wait_time;
 		}
 
 		FPRINTF(outfile, "\n");
@@ -752,14 +806,23 @@ static void prt_lock_activity(
 	if (flag & SW_I_WAIT) {
 		FPRINTF(outfile, "%9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
+				" %9"UQUADFORMAT" %9"UQUADFORMAT" %9"UQUADFORMAT
 				" %9"UQUADFORMAT" ",
 				(header->lhb_waits - base.lhb_waits) / (factor),
 				(header->lhb_denies - base.lhb_denies) / (factor),
 				(header->lhb_timeouts - base.lhb_timeouts) / (factor),
 				(header->lhb_blocks - base.lhb_blocks) / (factor),
+				(header->lhb_direct_sigs - base.lhb_direct_sigs) / (factor),
+				(header->lhb_indirect_sigs -
+				 base.lhb_indirect_sigs) / (factor),
 				(header->lhb_wakeups - base.lhb_wakeups) / (factor),
 				(header->lhb_scans - base.lhb_scans) / (factor),
-				(header->lhb_deadlocks - base.lhb_deadlocks) / (factor));
+				(header->lhb_deadlocks - base.lhb_deadlocks) / (factor),
+				(header->lhb_waits -
+				 base.lhb_waits) ? (header->lhb_wait_time -
+									base.lhb_wait_time) / (header->lhb_waits -
+														   base.
+														   lhb_waits) : 0);
 	}
 
 	FPRINTF(outfile, "\n");
@@ -800,8 +863,8 @@ static void prt_history(
  **************************************/
 	FPRINTF(outfile, "%s:\n", title);
 
-	for (const his* history = (his*) SRQ_ABS_PTR(history_header); true;
-		 history = (his*) SRQ_ABS_PTR(history->his_next))
+	for (const his* history = (HIS) SRQ_ABS_PTR(history_header); true;
+		 history = (HIS) SRQ_ABS_PTR(history->his_next))
 	{
 		if (history->his_operation)
 			FPRINTF(outfile,
@@ -818,7 +881,7 @@ static void prt_history(
 
 static void prt_lock(
 					 OUTFILE outfile,
-					 const lhb* LOCK_header, lbl* lock, USHORT sw_series)
+					 const lhb* LOCK_header, LBL lock, USHORT sw_series)
 {
 /**************************************
  *
@@ -840,54 +903,30 @@ static void prt_lock(
 			lock->lbl_series, lock->lbl_parent, lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
-	if (lock->lbl_series == Jrd::LCK_bdb && lock->lbl_length == Jrd::PageNumber::getLockLen()) {
-		// Since fb 2.1 lock keys for page numbers (series == 3) contains
-		// page space number in high long of two-longs key. Lets print it
-		// in <page_space>:<page_number> format
+	if (lock->lbl_length == 4) {
+		SLONG key;
+		UCHAR* p = (UCHAR *) &key;
 		const UCHAR* q = lock->lbl_key;
-		
-		SLONG key;
-		memcpy(&key, q, sizeof(SLONG));
-		q += sizeof(SLONG);
-
-		ULONG pg_space;
-		memcpy(&pg_space, q, sizeof(SLONG));
-
-		FPRINTF(outfile, "\tKey: %04"ULONGFORMAT":%06"SLONGFORMAT",", pg_space, key);
-	}
-	else if (lock->lbl_length == 4) {
-		SLONG key;
-		memcpy(&key, lock->lbl_key, 4);
-
+		for (const UCHAR* const end = q + 4; q < end; q++)
+			*p++ = *q;
 		FPRINTF(outfile, "\tKey: %06"SLONGFORMAT",", key);
 	}
 	else {
 		UCHAR temp[512];
-		fb_assert(sizeof(temp) >= lock->lbl_length + 1); // Not enough, see <%d> below.
 		UCHAR* p = temp;
-		const UCHAR* end_temp = p + sizeof(temp) - 1;
   		const UCHAR* q = lock->lbl_key;
   		const UCHAR* const end = q + lock->lbl_length;
-		for (; q < end && p < end_temp; q++) {
+		for (; q < end; q++) {
 			const UCHAR c = *q;
 			if ((c >= 'a' && c <= 'z') ||
 				(c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/')
 			{
 				*p++ = c;
 			}
-			else
-			{
-				char buf[6] = "";
-				int n = sprintf(buf, "<%d>", c);
-				if (n < 1 || p + n >= end_temp)
-				{
-					while (p < end_temp)
-						*p++ = '.';
-
-					break;
-				}
-				memcpy(p, buf, n);
-				p += n;
+			else {
+				sprintf((char*) p, "<%d>", c);
+				while (*p)
+					p++;
 			}
 		}
 		*p = 0;
@@ -898,14 +937,14 @@ static void prt_lock(
 			lock->lbl_flags, lock->lbl_pending_lrq_count);
 
 	prt_que(outfile, LOCK_header, "\tHash que", &lock->lbl_lhb_hash,
-			OFFSET(lbl*, lbl_lhb_hash));
+			OFFSET(LBL, lbl_lhb_hash));
 
 	prt_que(outfile, LOCK_header, "\tRequests", &lock->lbl_requests,
-			OFFSET(lrq*, lrq_lbl_requests));
+			OFFSET(LRQ, lrq_lbl_requests));
 
 	const srq* que_inst;
 	SRQ_LOOP(lock->lbl_requests, que_inst) {
-		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_lbl_requests));
+		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(LRQ, lrq_lbl_requests));
 		FPRINTF(outfile,
 				"\t\tRequest %6"SLONGFORMAT", Owner: %6"SLONGFORMAT
 				", State: %d (%d), Flags: 0x%02X\n",
@@ -933,30 +972,51 @@ static void prt_owner(OUTFILE outfile,
  *      Print a formatted owner block.
  *
  **************************************/
-	const prc* process = (prc*) SRQ_ABS_PTR(owner->own_process);
-
 	FPRINTF(outfile, "OWNER BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(owner));
-	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %6"SLONGFORMAT"\n",
+	FPRINTF(outfile, "\tOwner id: %6"ULONGFORMAT
+			", type: %1d, flags: 0x%02X, pending: %6"SLONGFORMAT", semid: %6d ",
 			owner->own_owner_id, owner->own_owner_type,
-			owner->own_pending_request);
-	FPRINTF(outfile, "\tProcess id: %6d, %s\n",
-			process->prc_process_id,
-			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead");
+			(owner->own_flags | (UCHAR) owner->own_ast_flags),
+			owner->own_pending_request, owner->own_semaphore & ~OWN_semavail);
+	if (owner->own_semaphore & OWN_semavail)
+		FPRINTF(outfile, "(available)\n");
+	else
+		FPRINTF(outfile, "\n");
+
+	FPRINTF(outfile, "\tProcess id: %6d, UID: 0x%X  %s\n",
+			owner->own_process_id,
+			owner->own_process_uid,
+			ISC_check_process_existence(owner->own_process_id,
+										owner->own_process_uid,
+										FALSE) ? "Alive" : "Dead");
+#ifdef SOLARIS_MT
+	FPRINTF(outfile, "\tLast Acquire: %6"UQUADFORMAT" (%6"UQUADFORMAT" ago)",
+			owner->own_acquire_time,
+			LOCK_header->lhb_acquires - owner->own_acquire_time);
+#ifdef DEV_BUILD
+	FPRINTF(outfile, " sec %9"ULONGFORMAT" (%3"ULONGFORMAT" sec ago)",
+			owner->own_acquire_realtime,
+			time(NULL) - owner->own_acquire_realtime);
+#endif /* DEV_BUILD */
+	FPRINTF(outfile, "\n");
+#endif /* SOLARIS_MT */
 	{
-		const USHORT flags = owner->own_flags;
-		FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
-		FPRINTF(outfile, " %s", (flags & OWN_blocking) ? "blkg" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? "wait" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_signaled) ? "sgnl" : "    ");
+		const UCHAR tmp = (owner->own_flags | (UCHAR) owner->own_ast_flags
+			   | (UCHAR) owner->own_ast_hung_flags);
+		FPRINTF(outfile, "\tFlags: 0x%02X ", tmp);
+		FPRINTF(outfile, " %s", (tmp & OWN_hung) ? "hung" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_blocking) ? "blkg" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_starved) ? "STRV" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_signal) ? "sgnl" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_wakeup) ? "wake" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_scanned) ? "scan" : "    ");
 		FPRINTF(outfile, "\n");
 	}
 
 	prt_que(outfile, LOCK_header, "\tRequests", &owner->own_requests,
-			OFFSET(lrq*, lrq_own_requests));
+			OFFSET(LRQ, lrq_own_requests));
 	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks,
-			OFFSET(lrq*, lrq_own_blocks));
+			OFFSET(LRQ, lrq_own_blocks));
 
 	if (sw_waitlist) {
 		waitque owner_list;
@@ -970,8 +1030,8 @@ static void prt_owner(OUTFILE outfile,
 		const srq* que_inst;
 		SRQ_LOOP(owner->own_requests, que_inst)
 			prt_request(outfile, LOCK_header,
-						(lrq*) ((UCHAR *) que_inst -
-							   OFFSET(lrq*, lrq_own_requests)));
+						(LRQ) ((UCHAR *) que_inst -
+							   OFFSET(LRQ, lrq_own_requests)));
 	}
 }
 
@@ -1024,11 +1084,11 @@ static void prt_owner_wait_cycle(
 		waiters->waitque_entry[waiters->waitque_depth++] = SRQ_REL_PTR(owner);
 
 		FPRINTF(outfile, "\n");
-		const lrq* owner_request = (lrq*) SRQ_ABS_PTR(owner->own_pending_request);
+		const lrq* owner_request = (LRQ) SRQ_ABS_PTR(owner->own_pending_request);
 		fb_assert(owner_request->lrq_type == type_lrq);
 		const bool owner_conversion = (owner_request->lrq_state > LCK_null);
 
-		const lbl* lock = (lbl*) SRQ_ABS_PTR(owner_request->lrq_lock);
+		const lbl* lock = (LBL) SRQ_ABS_PTR(owner_request->lrq_lock);
 		fb_assert(lock->lbl_type == type_lbl);
 
 		int counter = 0;
@@ -1044,7 +1104,7 @@ static void prt_owner_wait_cycle(
 			}
 
 			const lrq* lock_request =
-				(lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
+				(LRQ) ((UCHAR *) que_inst - OFFSET(LRQ, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
 
 
@@ -1054,8 +1114,8 @@ static void prt_owner_wait_cycle(
 				if (owner_request == lock_request)
 					break;
 
-				if (compatibility[owner_request->lrq_requested]
-								[MAX(lock_request->lrq_state, lock_request->lrq_requested)])
+				if (COMPATIBLE(owner_request->lrq_requested, MAX(lock_request->lrq_state,
+								   lock_request->lrq_requested)))
 				{
 					continue;
 				}
@@ -1066,10 +1126,10 @@ static void prt_owner_wait_cycle(
 				if (lock_request == owner_request)
 					continue;
 
-				if (compatibility[owner_request->lrq_requested][lock_request->lrq_state])
+				if (COMPATIBLE(owner_request->lrq_requested, lock_request->lrq_state)) 
 					continue;
 			}
-			const own* lock_owner = (own*) SRQ_ABS_PTR(lock_request->lrq_owner);
+			const own* lock_owner = (OWN) SRQ_ABS_PTR(lock_request->lrq_owner);
 			prt_owner_wait_cycle(outfile, LOCK_header, lock_owner, indent + 4,
 								 waiters);
 		}
@@ -1099,11 +1159,11 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
 			request->lrq_ast_routine, request->lrq_ast_argument);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_requests",
-			 &request->lrq_own_requests, OFFSET(lrq*, lrq_own_requests));
+			 &request->lrq_own_requests, OFFSET(LRQ, lrq_own_requests));
 	prt_que2(outfile, LOCK_header, "\tlrq_lbl_requests",
-			 &request->lrq_lbl_requests, OFFSET(lrq*, lrq_lbl_requests));
+			 &request->lrq_lbl_requests, OFFSET(LRQ, lrq_lbl_requests));
 	prt_que2(outfile, LOCK_header, "\tlrq_own_blocks  ",
-			 &request->lrq_own_blocks, OFFSET(lrq*, lrq_own_blocks));
+			 &request->lrq_own_blocks, OFFSET(LRQ, lrq_own_blocks));
 	FPRINTF(outfile, "\n");
 }
 
@@ -1168,3 +1228,4 @@ static void prt_que2(
 			", backward: %6"SLONGFORMAT"\n", string,
 			que_inst->srq_forward - que_offset, que_inst->srq_backward - que_offset);
 }
+

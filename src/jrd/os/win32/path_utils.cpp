@@ -1,5 +1,4 @@
 
-#include "firebird.h"
 #include "../jrd/os/path_utils.h"
 #include <io.h> // _access
 
@@ -131,16 +130,6 @@ void PathUtils::concatPath(Firebird::PathName& result,
 	result = first + second;
 }
 
-// We don't work correctly with MBCS.
-void PathUtils::ensureSeparator(Firebird::PathName& in_out)
-{
-	if (in_out.length() == 0)
-		in_out = PathUtils::dir_sep;
-	
-	if (in_out[in_out.length() - 1] != PathUtils::dir_sep)
-		in_out += PathUtils::dir_sep;
-}
-
 bool PathUtils::isRelative(const Firebird::PathName& path)
 {
 	if (path.length() > 0) {
@@ -150,7 +139,7 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 				(('A' <= path[0] && path[0] <= 'Z') || 
 				 ('a' <= path[0] && path[0] <= 'z')))
 			{
-				ds = path[2];
+						ds = path[2];
 			}
 		}
 		return ds != PathUtils::dir_sep && ds != '/';

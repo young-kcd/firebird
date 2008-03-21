@@ -23,7 +23,7 @@
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  *
- *  Adriano dos Santos Fernandes
+ *
  *
  */
  
@@ -42,9 +42,9 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/ibase.h"
-#include "../common/utils_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ClumpletWriter.h"
+#include <typeinfo>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -87,8 +87,6 @@ void usage()
 		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
 		"  -U <user>                             User name\n"
 		"  -P <password>                         Password\n"
-		"  -T                                    Do not run database triggers\n"
-		"  -S                                    Print database size in pages after lock\n"
 		"Notes:\n"
 		"  <database> may specify database alias\n"
 		"  incremental backups of multi-file databases are not supported yet\n"
@@ -102,7 +100,7 @@ void missing_parameter_for_switch(const char* sw) {
 	usage();
 } 
 
-class b_error : public Firebird::LongJump
+class b_error : public std::exception
 {
 public:
 	explicit b_error(const char* message) {
@@ -159,20 +157,14 @@ struct inc_header {
 
 class nbackup {
 public:
-	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
+	nbackup(const char* _database, const char* _username, const char* _password)
 	{
-		if (_username)
-			username = _username;
-			
-		if (_password)
-			password = _password;
-			
+		if (_username) username = _username;
+		if (_password) password = _password;
 		database = _database;
-		run_db_triggers = _run_db_triggers;
 
 		dbase = 0;
 		backup = 0;
-		db_size_pages = 0;
 		newdb = 0;
 		trans = 0;
 		// Recognition of local prefix allows to work with
@@ -186,46 +178,42 @@ public:
 	}
 	// External calls must clean up resources after themselves
 	void fixup_database();
-	void lock_database(bool get_size);
+	void lock_database();
 	void unlock_database();
 	void backup_database(int level, const char* fname);
 	void restore_database(int filecount, const char* const* files);
-
 private:
-    ISC_STATUS_ARRAY status; // status vector
-	isc_db_handle newdb; // database handle
-    isc_tr_handle trans; // transaction handle
-
+    ISC_STATUS_ARRAY status; /* status vector */
+	isc_db_handle newdb; /* database handle */
+    isc_tr_handle trans; /* transaction handle */
+	
 	Firebird::PathName database;
 	Firebird::string username;
 	Firebird::string password;
-	bool run_db_triggers;
 
 	Firebird::PathName dbname; // Database file name
 	Firebird::PathName bakname;
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
-	ULONG  db_size_pages;	// In pages
-
+	
 	// IO functions
 	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
 	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
-
+	
 	static void pr_error(const ISC_STATUS* status, const char* operation);
-
+	
 	void internal_lock_database();
-	void get_database_size();
 	void internal_unlock_database();
 	void attach_database();
 	void detach_database();
-
+	
 	// Create/open database and backup
 	void open_database_write();
 	void open_database_scan();
 	void create_database();
 	void close_database();
-
+		
 	void open_backup_scan();
 	void create_backup();
 	void close_backup();
@@ -300,8 +288,8 @@ void nbackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 void nbackup::open_database_write()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
@@ -322,8 +310,8 @@ void nbackup::open_database_scan()
 	// and OS itself. Basically, reading any large file brings the whole system
 	// down for extended period of time. Documented workaround is to avoid using
 	// system cache when reading large files.
-	dbase = CreateFile(dbname.c_str(),
-		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ,
+		FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_NO_BUFFERING,
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
@@ -338,7 +326,7 @@ void nbackup::open_database_scan()
 void nbackup::create_database()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
 		NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) creating database file: %s", GetLastError(), dbname.c_str());
@@ -361,7 +349,7 @@ void nbackup::close_database()
 void nbackup::open_backup_scan()
 {
 #ifdef WIN_NT
-	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0, 
+	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (backup == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) opening backup file: %s", GetLastError(), bakname.c_str());
@@ -378,15 +366,15 @@ void nbackup::create_backup()
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
-	else {		
-		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, 
+	else {
+		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, 0,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup == INVALID_HANDLE_VALUE)
 		b_error::raise("Error (%d) creating backup file: %s", GetLastError(), bakname.c_str());
 #else
 	if (bakname == "stdout") {
-		backup = 1; // Posix file handle for stdout
+		backup = 1 /* Posix file handle for stdout */;
 	}
 	else {
 		backup = open(bakname.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
@@ -446,7 +434,7 @@ void nbackup::attach_database()
 		b_error::raise("Username or password is too long");
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-
+	
 	if (!username.isEmpty()) {
 		dpb.insertString(isc_dpb_user_name, username);
 	}
@@ -454,9 +442,6 @@ void nbackup::attach_database()
 	if (!password.isEmpty()) {
 		dpb.insertString(isc_dpb_password, password);
 	}
-
-	if (!run_db_triggers)
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	if (isc_attach_database(status, 0, database.c_str(), &newdb, 
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
@@ -486,22 +471,6 @@ void nbackup::internal_lock_database()
 		pr_error(status, "begin backup: commit");
 }
 
-void nbackup::get_database_size()
-{
-	db_size_pages = 0;
-	char fs[] = {isc_info_db_file_size};
-	char res[128];
-	if (isc_database_info(status, &newdb, sizeof(fs), fs, sizeof(res), res))
-	{
-		pr_error(status, "size info");
-	}
-	else if (res[0] == isc_info_db_file_size)
-	{
-		USHORT len = isc_vax_integer (&res[1], 2);
-		db_size_pages = isc_vax_integer (&res[3], len);
-	}
-}
-
 void nbackup::internal_unlock_database()
 {
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
@@ -513,20 +482,15 @@ void nbackup::internal_unlock_database()
 		pr_error(status, "end backup: commit");
 }
 
-void nbackup::lock_database(bool get_size)
+void nbackup::lock_database()
 {
 	attach_database();
-	db_size_pages = 0;
 	try {
 		internal_lock_database();
-		if (get_size)
-		{
-			get_database_size();
-			if (db_size_pages)
-				printf("%d\n", db_size_pages);
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
 		}
-	} 
-	catch (const Firebird::Exception&) {
 		detach_database();		
 		throw;
 	}
@@ -538,8 +502,10 @@ void nbackup::unlock_database()
 	attach_database();
 	try {
 		internal_unlock_database();
-	} 
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		detach_database();		
 		throw;
 	}
@@ -564,7 +530,7 @@ void nbackup::backup_database(int level, const char* fname)
 			XSQLDA *out_sqlda = (XSQLDA*)out_sqlda_data;
 			out_sqlda->version = SQLDA_VERSION1;
 			out_sqlda->sqln = 2;
-
+		
 			isc_stmt_handle stmt = 0;
 			if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 				pr_error(status, "allocate statement");
@@ -584,9 +550,9 @@ void nbackup::backup_database(int level, const char* fname)
 			out_sqlda->sqlvar[1].sqldata = (char*)&prev_scn;
 			if (isc_dsql_execute(status, &trans, &stmt, 1, NULL))
 				pr_error(status, "execute history query");
-
+				
 			switch (isc_dsql_fetch(status, &stmt, 1, out_sqlda)) {
-			case 100: // No more records available
+			case 100: /* No more records available */
 				b_error::raise("Cannot find record for database \"%s\" backup level %d "
 					"in the backup history", database.c_str(), level - 1);
 			case 0: 
@@ -601,16 +567,15 @@ void nbackup::backup_database(int level, const char* fname)
 			if (isc_commit_transaction(status, &trans))
 				pr_error(status, "commit history query");
 		}
-
+	
 		// Lock database for backup
 		internal_lock_database();
 		database_locked = true;	
-		get_database_size();
 		detach_database();
 
 		time_t _time = time(NULL);
 		const struct tm *today = localtime(&_time);
-
+	
 		if (fname)
 			bakname = fname;
 		else {
@@ -630,20 +595,20 @@ void nbackup::backup_database(int level, const char* fname)
 		// used directly after fixup. Incremenal backups of other levels are 
 		// consisted of header followed by page data. Each page is preceded
 		// by 4-byte integer page number
-
+	
 		// Actual IO is optimized to get maximum performance 
 		// from the IO subsystem while taking as little CPU time as possible
-
+		
 		// NOTE: this is still possible to improve performance by implementing
 		// version using asynchronous unbuffered IO on NT series of OS.
 		// But this task is for another day. 02 Aug 2003, Nickolay Samofatov.
-
+		
 		// Create backup file and open database file
 		create_backup();
 		delete_backup = true;
-
+		
 		open_database_scan();
-
+		
 		// Read database header
 		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
 
@@ -657,7 +622,7 @@ void nbackup::backup_database(int level, const char* fname)
 			b_error::raise("Internal error. Database file is not locked. Flags are %d",
 				header->hdr_flags);
 		}
-
+	
 		Firebird::Array<UCHAR> unaligned_page_buffer;
 		page_buff = reinterpret_cast<Ods::pag*>(
 			FB_ALIGN(
@@ -666,14 +631,12 @@ void nbackup::backup_database(int level, const char* fname)
 				SECTOR_ALIGNMENT
 			)
 		);
-
-		ULONG db_size = db_size_pages;
+		
 		seek_file(dbase, 0);
-
+		
 		if (read_file(dbase, page_buff, header->hdr_page_size) != header->hdr_page_size)
 			b_error::raise("Unexpected end of file when reading header of database file (stage 2)");
-		--db_size;
-
+		
 		FB_GUID backup_guid;
 		bool guid_found = false;
 		const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buff)->hdr_data;
@@ -691,9 +654,10 @@ void nbackup::backup_database(int level, const char* fname)
 			}
 			break;
 		}
-
+	
 		if (!guid_found)
 			b_error::raise("Internal error. Cannot get backup guid clumplet");
+	
 	
 		// Write data to backup file
 		ULONG backup_scn = header->hdr_header.pag_scn - 1;
@@ -709,20 +673,8 @@ void nbackup::backup_database(int level, const char* fname)
 			bh.prev_scn = prev_scn;
 			write_file(backup, &bh, sizeof(bh));
 		}
-
+	
 		ULONG curPage = 0;
-
-		// Starting from ODS 11.1 we can expand file but never use some last 
-		// pages in it. There are no need to backup this empty pages. More, 
-		// we can't be sure its not used pages have right SCN assigned.
-		// How many pages are really used we know from pip_header.reserved
-		// where stored number of pages allocated from this pointer page 
-		const bool isODS11_1 = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11)
-							&& (header->hdr_ods_minor_original == 1);
-		ULONG lastPage = 1; // first PIP must be at page number 1
-		const ULONG pagesPerPIP = 
-			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
-
 		while (true) {
 			if (curPage && page_buff->pag_scn > backup_scn)
 				b_error::raise("Internal error. Database page %d had been changed during backup"
@@ -736,42 +688,18 @@ void nbackup::backup_database(int level, const char* fname)
 			}
 			else
 				write_file(backup, page_buff, header->hdr_page_size);
-		
-			if ((db_size_pages != 0) && (db_size == 0))
-				break;
-
 			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
-			--db_size;
 			if (bytesDone == 0)
 				break;
 			if (bytesDone != header->hdr_page_size)
 				b_error::raise("Database file size is not a multiply of page size");
 			curPage++;
-
-			if (isODS11_1 && curPage == lastPage)
-			{
-				if (page_buff->pag_type == pag_pages)
-				{
-					if (lastPage == 1)
-						lastPage = page_buff->reserved - 1;
-					else
-						lastPage += page_buff->reserved;
-
-					if (page_buff->reserved < pagesPerPIP)
-						lastPage++;
-				}
-				else
-				{
-					fb_assert(page_buff->pag_type == pag_undefined);
-					break;
-				}
-			}
 		}		
 		close_database();
 		close_backup();
-
+		
 		delete_backup = false; // Backup file is consistent. No need to delete it
-
+	
 		attach_database();
 		// Write about successful backup to backup history table
 	    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
@@ -816,11 +744,13 @@ void nbackup::backup_database(int level, const char* fname)
 		isc_dsql_free_statement(status, &stmt, DSQL_drop);
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
-
-	} 
-	catch (const Firebird::Exception&) {
+		
+	} catch (const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		if (delete_backup)
-			remove(bakname.c_str());
+			unlink(bakname.c_str());
 		if (trans) {
 			if (isc_rollback_transaction(status, &trans))
 				pr_error(status, "rollback transaction");
@@ -865,7 +795,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					{
 						close_database();
 						if (!curLevel) {
-							remove(dbname.c_str());
+							unlink(dbname.c_str());
 							b_error::raise("Level 0 backup is not restored");
 						}
 						fixup_database();
@@ -878,8 +808,7 @@ void nbackup::restore_database(int filecount, const char* const* files)
 #endif
 							open_backup_scan();
 						break;
-					}
-					catch (const Firebird::Exception& e) {
+					} catch (const std::exception& e) {
 						printf("%s\n", e.what());
 					}
 				}
@@ -891,13 +820,15 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					delete[] page_buffer;
 					return;
 				}
-				bakname = files[curLevel];
+				else {
+					bakname = files[curLevel];
 #ifdef WIN_NT
-				if (curLevel)
+					if (curLevel)
 #endif
-					open_backup_scan();
+						open_backup_scan();
+				}
 			}
-
+		
 			if (curLevel) {
 				inc_header bakheader;
 				if (read_file(backup, &bakheader, sizeof(bakheader)) != sizeof(bakheader))
@@ -957,12 +888,12 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					b_error::raise("Unexpected end of file when reading restored database header");
 				page_buffer = FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
-
+		
 				seek_file(dbase, 0);
-
+		
 				if (read_file(dbase, page_buffer, header.hdr_page_size) != header.hdr_page_size)
 					b_error::raise("Unexpected end of file when reading header of restored database file (stage 2)");
-
+				
 				bool guid_found = false;
 				const UCHAR* p = reinterpret_cast<Ods::header_page*>(page_buffer)->hdr_data;
 				while (true) {
@@ -990,11 +921,13 @@ void nbackup::restore_database(int filecount, const char* const* files)
 				close_backup();
 			curLevel++;
 		}
-	} 
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception& ex) {
+		if (typeid(ex) != typeid(b_error)) {
+			fprintf(stderr, "Unexpected error %s: %s\n", typeid(ex).name(), ex.what());
+		}
 		delete[] page_buffer;
 		if (delete_database)
-			remove(dbname.c_str());
+			unlink(dbname.c_str());
 		throw;
 	}
 }
@@ -1012,12 +945,10 @@ int main( int argc, char *argv[] )
 	NbOperation op = nbNone;
 	const char *username = NULL, *password = NULL, *database = NULL, 
 		*filename = NULL;
-	bool run_db_triggers = true;
 	const char* const* backup_files = NULL;
 	int level;
 	int filecount;
-	bool print_size = false;
-
+	
 	try {
 		// Read global command line parameters
 		for (char** argp = argv + 1; argp < end; argp++) {
@@ -1039,11 +970,7 @@ int main( int argc, char *argv[] )
 				if (++argp >= end)
 					missing_parameter_for_switch(argp[-1]);
 
-				password = fb_utils::get_passwd(*argp);
-				break;
-
-			case 'T':
-				run_db_triggers = false;
+				password = *argp;
 				break;
 
 			case 'F':
@@ -1115,50 +1042,43 @@ int main( int argc, char *argv[] )
 				op = nbRestore;
 				break;
 
-			case 'S':
-				print_size = true;
-				break;
-
 			default:
 				fprintf(stderr, "ERROR: Unknown switch %s.\n\n", *argp);
 				usage();
 				break;
 			}
 		}
-
-		if (print_size && (op != nbLock))
-			usage();
-
+		
 		switch (op) {
 			case nbNone:
 				usage();
 				break;
 
 			case nbLock:
-				nbackup(database, username, password, run_db_triggers).lock_database(print_size);
+				nbackup(database, username, password).lock_database();
 				break;
 
 			case nbUnlock:
-				nbackup(database, username, password, run_db_triggers).unlock_database();
+				nbackup(database, username, password).unlock_database();
 				break;
 
 			case nbFixup:
-				nbackup(database, username, password, run_db_triggers).fixup_database();
+				nbackup(database, username, password).fixup_database();
 				break;
 
 			case nbBackup:
-				nbackup(database, username, password, run_db_triggers).backup_database(level, filename);
+				nbackup(database, username, password).backup_database(level, filename);
 				break;
 
 			case nbRestore:
-				nbackup(database, username, password, run_db_triggers).restore_database(filecount, backup_files);
+				nbackup(database, username, password).restore_database(filecount, backup_files);
 				break;
 		}
-	}
-	catch (const Firebird::Exception&) {
+	} catch (const std::exception&) {
 		// It must have been printed out. No need to repeat the task
 		return EXIT_ERROR;
 	}
-
+	
 	return EXIT_OK;
 }
+

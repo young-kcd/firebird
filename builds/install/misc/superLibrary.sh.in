@@ -28,7 +28,7 @@ fixFilePermissions() {
     # Lock files
     cd $FBRootDir
 
-    for i in isc_init1 isc_lock1 isc_event1 isc_guard1 isc_monitor1
+    for i in isc_init1 isc_lock1 isc_event1 isc_guard1
     do
         FileName=$i.`hostname`
         touch $FileName
@@ -64,11 +64,8 @@ fixFilePermissions() {
 		chown $RunUser:$RunUser $i
         chmod ug=rw,o= $i
     done
-
-	# fix up doc permissions
-	fixDocPermissions
-
-	cd $FBRootDir
+	
+	cd ..
 }
 
 

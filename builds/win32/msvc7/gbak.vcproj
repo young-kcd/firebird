@@ -27,7 +27,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gbak/gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gbak/"
 				ObjectFile="..\..\..\temp\debug\gbak/"
@@ -95,7 +95,7 @@
 				PreprocessorDefinitions="NDEBUG,WIN32,_CONSOLE,_X86_,SUPERCLIENT"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gbak\gbak.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gbak/"
 				ObjectFile="..\..\..\temp\release\gbak/"
@@ -151,9 +151,6 @@
 				RelativePath="..\..\..\src\burp\burp.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\burp\burpMain.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\burp\canonical.cpp">
 			</File>
 			<File
@@ -194,9 +191,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 		<Filter

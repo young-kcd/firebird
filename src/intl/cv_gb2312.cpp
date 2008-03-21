@@ -31,15 +31,15 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 							 ULONG src_len,
 							 const UCHAR* src_ptr,
 							 ULONG dest_len,
-							 UCHAR* p_dest_ptr,
-							 USHORT* err_code,
-							 ULONG* err_position)
+							 USHORT *dest_ptr,
+							 USHORT *err_code,
+							 ULONG *err_position)
 {
-	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
+	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == CVGB_gb2312_to_unicode);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVGB_gb2312_to_unicode));
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -47,11 +47,8 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 	*err_code = 0;
 
 /* See if we're only after a length estimate */
-	if (p_dest_ptr == NULL)
+	if (dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
-
-	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
-	USHORT* dest_ptr = d;
 
 	USHORT wide;
 	USHORT this_len;
@@ -108,17 +105,17 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 
 ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 							 ULONG unicode_len,
-							 const UCHAR* p_unicode_str,
+							 const USHORT* unicode_str,
 							 ULONG gb_len,
-							 UCHAR* gb_str,
-							 USHORT* err_code, 
-							 ULONG* err_position)
+							 UCHAR *gb_str,
+							 USHORT *err_code, 
+							 ULONG *err_position)
 {
-	fb_assert(p_unicode_str != NULL || gb_str == NULL);
+	fb_assert(unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
 	fb_assert(obj != NULL);
-	fb_assert(obj->csconvert_fn_convert == CVGB_unicode_to_gb2312);
+	fb_assert(obj->csconvert_fn_convert == reinterpret_cast<pfn_INTL_convert>(CVGB_unicode_to_gb2312));
 	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
 	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
 
@@ -128,9 +125,6 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 /* See if we're only after a length estimate */
 	if (gb_str == NULL)
 		return (unicode_len);	/* worst case - all han character input */
-
-	Firebird::Aligner<USHORT> s(p_unicode_str, unicode_len);
-	const USHORT* unicode_str = s;
 
 	const UCHAR* const start = gb_str;
 	while ((gb_len) && (unicode_len > 1)) {
@@ -185,39 +179,26 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
  *          return false.  
  *          else return(true);
  **************************************/
-	const UCHAR* gb_str_start = gb_str;
+	const UCHAR *gb_str_start = gb_str;
 
-	while (gb_len--)
-	{
+	while (gb_len--) {
 		const UCHAR c1 = *gb_str;
-
-		if (c1 & 0x80)	// it is not an ASCII char
-		{
-			if (GB1(c1))	// first byte is GB2312
-			{
-				if (gb_len == 0 ||		// truncated GB2312
-					!GB2(gb_str[1]))	// bad second byte
-				{
-					if (offending_position)
-						*offending_position = gb_str - gb_str_start;
-
-					return false;
-				}
-
-				gb_str += 2;
-				gb_len -= 1;
-			}
-			else	// bad first byte
+		if (GB1(c1)) {			/* Is it  GB2312 */
+			if (gb_len == 0)	/* truncated GB2312 */
 			{
 				if (offending_position)
 					*offending_position = gb_str - gb_str_start;
-
-				return false;
+				return (false);
+			}
+			else {
+				gb_str += 2;
+				gb_len -= 1;
 			}
 		}
-		else	// it is an ASCII char
-			gb_str++;
-	}
+		else {					/* it is a ASCII */
 
-	return true;
+			gb_str++;
+		}
+	}
+	return (true);
 }

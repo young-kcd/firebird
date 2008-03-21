@@ -36,12 +36,13 @@
 #include "../qli/lex_proto.h"
 #include "../jrd/gds_proto.h"
 
-using MsgFormat::SafeArg;
-
-
 const char* INDENT	= "  ";
 const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
+
+#ifdef VMS
+const char* TARGET	= "[syshlp]help.fdb";
+#endif
 
 #ifdef UNIX
 const char* TARGET	= "help/help.fdb";
@@ -198,7 +199,7 @@ static void print_more(
  **************************************/
 	TEXT buffer[256], topic[80], prompt[80];
 
-	ERRQ_msg_get(502, prompt, sizeof(prompt));	/* Msg502 "Subtopic? "  */
+	ERRQ_msg_get(502, prompt);	/* Msg502 "Subtopic? "  */
 
 // Prompt the user for a line
 
@@ -264,7 +265,7 @@ static void print_topic(
 	END_FOR;
 
 	if (count > 1)
-		ERRQ_msg_put(80, SafeArg() << count << *topics);	/* Msg80 [%d topics matched %s] */
+		ERRQ_msg_put(80, (TEXT*)(IPTR) count, *topics, NULL, NULL, NULL);	/* Msg80 [%d topics matched %s] */
 
 	count = 0;
 
@@ -277,8 +278,7 @@ static void print_topic(
 			  return;
 
 		if (count) {
-			ERRQ_msg_get(503, prompt, sizeof(prompt));
-			/* Msg503 "\ntype <cr> for next topic or <EOF> to stop: " */
+			ERRQ_msg_get(503, prompt);	/* Msg503 "\ntype <cr> for next topic or <EOF> to stop: " */
 			if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 				return;
 		}
@@ -302,8 +302,8 @@ static void print_topic(
 				B.SEGMENT[B.LENGTH] = 0;
 				printf("%s%s", INDENT, B.SEGMENT);
 			END_FOR;
-			ERRQ_msg_format(81, sizeof(banner), banner, SafeArg() << INDENT);
-			// Msg81 %sSub-topics available:
+			ERRQ_msg_format(81, sizeof(banner), banner, INDENT, NULL, NULL,
+							NULL, NULL);	// Msg81 %sSub-topics available:
 			if (additional_topics(string, banner, INDENT))
 				print_more(level, depth, topics, max_level, string,
 						   error_flag);
@@ -312,9 +312,8 @@ static void print_topic(
 
 	if (!count && error_flag && level > *max_level) {
 		const TEXT* path = strip(parent);
-		ERRQ_msg_put(82, SafeArg() << path << *topics);	// Msg82 No help is available for %s %s
-		ERRQ_msg_format(83, sizeof(banner), banner, SafeArg() << path);
-		// Msg83 Sub-topics available for %s are:
+		ERRQ_msg_put(82, path, *topics, NULL, NULL, NULL);	// Msg82 No help is available for %s %s
+		ERRQ_msg_format(83, sizeof(banner), banner, path, NULL, NULL, NULL, NULL);	// Msg83 Sub-topics available for %s are:
 		additional_topics(parent, banner, path);
 	}
 }

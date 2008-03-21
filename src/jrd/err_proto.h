@@ -27,6 +27,8 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 
+#ifndef REQUESTER
+
 namespace Jrd {
 
 /* Index error types */
@@ -58,6 +60,8 @@ void	ERR_post_nothrow(ISC_STATUS, ...);
 void	ERR_punt(void);
 void	ERR_warning(ISC_STATUS, ...);
 void	ERR_log(int, int, const TEXT*);
+
+#endif /* REQUESTER */
 
 const TEXT*		ERR_cstring(const TEXT*);
 inline const TEXT*		ERR_cstring(const Firebird::string& in_string)

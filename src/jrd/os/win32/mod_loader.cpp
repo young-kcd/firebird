@@ -3,7 +3,6 @@
  *
  */
 
-#include "firebird.h"
 #include "../jrd/os/mod_loader.h"
 #include <windows.h>
 

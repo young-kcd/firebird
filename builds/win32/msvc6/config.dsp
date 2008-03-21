@@ -40,9 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\debug\config"
 # PROP Intermediate_Dir "..\..\..\temp\debug\config"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/vulcan" /I "../../../src/jrd" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D NAMESPACE=Vulcan /FD /GZ /c
-# SUBTRACT CPP /YX
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/vulcan" /I "../../../src/jrd" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D NAMESPACE=Vulcan /YX /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -64,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\config"
 # PROP Intermediate_Dir "..\..\..\temp\release\config"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/vulcan" /I "../../../src/jrd" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D NAMESPACE=Vulcan /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /GR /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src/vulcan" /I "../../../src/jrd" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D NAMESPACE=Vulcan /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe

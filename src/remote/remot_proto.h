@@ -25,16 +25,12 @@
 #define REMOTE_REMOT_PROTO_H
 
 struct blk;
-namespace Firebird
-{
-	class ClumpletReader;
-};
 
 void		REMOTE_cleanup_transaction (struct rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
-void		REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb);
+void		REMOTE_get_timeout_params (rem_port*, const UCHAR*, USHORT);
 struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
-void		REMOTE_free_packet (rem_port*, struct packet *, bool = false);
+void		REMOTE_free_packet (rem_port*, struct packet *);
 struct rem_str*	REMOTE_make_string (const SCHAR*);
 void		REMOTE_release_messages (struct message *);
 void		REMOTE_release_request (struct rrq *);

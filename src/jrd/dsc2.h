@@ -57,13 +57,13 @@ struct dsc
 	explicit dsc(const dtype_t dtype) :
 		dsc_dtype(dtype), dsc_scale(0),  dsc_length(0), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(0)
-	{}
+	{};
 	
 	dsc(const dtype_t dtype, const scale_t scale, const length_t length = 0,
 	    const address_t address = 0) :
 		dsc_dtype(dtype), dsc_scale(scale), dsc_length(length), dsc_sub_type(0),
 		dsc_flags(0), dsc_address(address)
-	{}
+	{};
 
 	dtype_t		dsc_dtype;
 	scale_t		dsc_scale;
@@ -130,6 +130,9 @@ struct dsc
 	GDS_QUAD	asQuad() const;
 	float		asReal() const;
 	double		asDouble() const;
+#ifdef VMS
+	double		asDFloat() const;
+#endif
 	GDS_DATE	asSqlDate() const;
 	GDS_TIME	asSqlTime() const;
 	GDS_TIMESTAMP asSqlTimestamp() const;
@@ -137,7 +140,7 @@ struct dsc
 	//bid		asBlobId() const;
 	//bid		asArrayId() const;
 	SINT64		asSBigInt() const;
-	FB_UINT64	asUBigInt() const;
+	UINT64		asUBigInt() const;
 };
 
 typedef dsc DSC;
@@ -424,14 +427,23 @@ inline bool dsc::isSqlDecimal() const
 
 // Floating point types?
 
+#ifdef VMS
+//#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
+//				 ((d) == dtype_real)  || 
+//				 ((d) == dtype_d_float))
+#else
 //#define DTYPE_IS_APPROX(d)       (((d) == dtype_double) || 
 //				  ((d) == dtype_real))
+#endif
 
 inline bool dsc::isApprox() const
 {
 	switch (dsc_dtype) {
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		return true;
 	default:
 		return false;
@@ -450,7 +462,11 @@ inline bool dsc::isApprox() const
 inline bool dsc::isANumber() const
 {
 	return dsc_dtype >= dtype_byte
+#ifdef VMS
+		&& dsc_dtype <= dtype_d_float
+#else
 		&& dsc_dtype <= dtype_double
+#endif
 		|| dsc_dtype == dtype_int64;
 }
 
@@ -632,6 +648,15 @@ inline double dsc::asDouble() const
 	return 0;
 }
 
+#ifdef VMS
+inline double dsc::asDFloat() const
+{
+	if (dsc_dtype == dtype_d_float)
+		return *reinterpret_cast<double*>(dsc_address);
+	return 0;
+}
+#endif
+
 inline GDS_DATE dsc::asSqlDate() const
 {
 	if (dsc_dtype == dtype_sql_date)
@@ -692,7 +717,7 @@ inline SINT64 dsc::asSBigInt() const
 	}
 }
 
-inline FB_UINT64 dsc::asUBigInt() const
+inline UINT64 dsc::asUBigInt() const
 {
 	switch (dsc_dtype) {
 	case dtype_byte:
@@ -702,7 +727,7 @@ inline FB_UINT64 dsc::asUBigInt() const
 	case dtype_long:
 		return asULong();
 	case dtype_int64:
-		return *reinterpret_cast<FB_UINT64*>(dsc_address);
+		return *reinterpret_cast<UINT64*>(dsc_address);
 	default:
 		return 0;
 	}

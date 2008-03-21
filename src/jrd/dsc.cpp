@@ -745,12 +745,6 @@ static bool validate_dsc_tables();
 
 
 
-int dsc::getStringLength() const
-{
-	return DSC_string_length(this);
-}
-
-
 USHORT DSC_convert_to_text_length(USHORT dsc_type)
 {
 	if (dsc_type < (sizeof(_DSC_convert_to_text_length) /
@@ -835,10 +829,19 @@ bool DSC_make_descriptor(DSC* desc,
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_length = sizeof(double);
 		desc->dsc_dtype = dtype_double;
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_length = sizeof(double);
+		desc->dsc_dtype = dtype_d_float;
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_length = 2 * sizeof(SLONG);
@@ -967,7 +970,7 @@ void dsc::address32bit() const
  *
  **************************************/
 #if SIZEOF_VOID_P > 4
-	FB_UINT64 addr = (FB_UINT64)(IPTR) dsc_address;
+	UINT64 addr = (UINT64)(IPTR)dsc_address;
 	fb_assert(addr == (addr & 0xFFFFFFFF));
 #endif
 }

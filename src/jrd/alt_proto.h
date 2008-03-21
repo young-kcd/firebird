@@ -66,7 +66,7 @@ ISC_STATUS	API_ROUTINE gds__create_database( ISC_STATUS*, SSHORT, const SCHAR*,
 						  FB_API_HANDLE*, SSHORT, const SCHAR*, SSHORT);
 
 ISC_STATUS	API_ROUTINE gds__database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
-					  	  AttachmentCleanupRoutine*, void * );
+					  	  DatabaseCleanupRoutine*, void * );
 
 ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT, 
 						const SCHAR*, SSHORT, SCHAR*);
@@ -81,8 +81,10 @@ int			API_ROUTINE gds__get_client_major_version();
 
 int			API_ROUTINE gds__get_client_minor_version();
 
+#ifndef REQUESTER
 ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FB_API_HANDLE*, 
 					    SSHORT, const UCHAR*, UCHAR*);
+#endif
 
 ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FB_API_HANDLE*, 
 					     USHORT*, USHORT, SCHAR*);

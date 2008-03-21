@@ -54,7 +54,6 @@ const ISC_LONG isc_arg_next_mach	= 15;	// NeXT/Mach error code
 const ISC_LONG isc_arg_netware		= 16;	// NetWare error code 
 const ISC_LONG isc_arg_win32		= 17;	// Win32 error code 
 const ISC_LONG isc_arg_warning		= 18;	// warning argument 
-const ISC_LONG isc_arg_sql_state	= 19;	// SQLSTATE 
 
 const ISC_LONG isc_arith_except                     = 335544321L;
 const ISC_LONG isc_bad_dbkey                        = 335544322L;
@@ -437,7 +436,7 @@ const ISC_LONG isc_scale_nogt                       = 335544698L;
 const ISC_LONG isc_expec_short                      = 335544699L;
 const ISC_LONG isc_expec_long                       = 335544700L;
 const ISC_LONG isc_expec_ushort                     = 335544701L;
-const ISC_LONG isc_escape_invalid                   = 335544702L;
+const ISC_LONG isc_like_escape_invalid              = 335544702L;
 const ISC_LONG isc_svcnoexe                         = 335544703L;
 const ISC_LONG isc_net_lookup_err                   = 335544704L;
 const ISC_LONG isc_service_unknown                  = 335544705L;
@@ -601,52 +600,6 @@ const ISC_LONG isc_record_lock_not_supp             = 335544862L;
 const ISC_LONG isc_partner_idx_not_found            = 335544863L;
 const ISC_LONG isc_tra_num_exc                      = 335544864L;
 const ISC_LONG isc_field_disappeared                = 335544865L;
-const ISC_LONG isc_met_wrong_gtt_scope              = 335544866L;
-const ISC_LONG isc_subtype_for_internal_use         = 335544867L;
-const ISC_LONG isc_illegal_prc_type                 = 335544868L;
-const ISC_LONG isc_invalid_sort_datatype            = 335544869L;
-const ISC_LONG isc_collation_name                   = 335544870L;
-const ISC_LONG isc_domain_name                      = 335544871L;
-const ISC_LONG isc_domnotdef                        = 335544872L;
-const ISC_LONG isc_array_max_dimensions             = 335544873L;
-const ISC_LONG isc_max_db_per_trans_allowed         = 335544874L;
-const ISC_LONG isc_bad_debug_format                 = 335544875L;
-const ISC_LONG isc_bad_proc_BLR                     = 335544876L;
-const ISC_LONG isc_key_too_big                      = 335544877L;
-const ISC_LONG isc_concurrent_transaction           = 335544878L;
-const ISC_LONG isc_not_valid_for_var                = 335544879L;
-const ISC_LONG isc_not_valid_for                    = 335544880L;
-const ISC_LONG isc_need_difference                  = 335544881L;
-const ISC_LONG isc_long_login                       = 335544882L;
-const ISC_LONG isc_fldnotdef2                       = 335544883L;
-const ISC_LONG isc_invalid_similar_pattern          = 335544884L;
-const ISC_LONG isc_bad_teb_form                     = 335544885L;
-const ISC_LONG isc_tpb_multiple_txn_isolation       = 335544886L;
-const ISC_LONG isc_tpb_reserv_before_table          = 335544887L;
-const ISC_LONG isc_tpb_multiple_spec                = 335544888L;
-const ISC_LONG isc_tpb_option_without_rc            = 335544889L;
-const ISC_LONG isc_tpb_conflicting_options          = 335544890L;
-const ISC_LONG isc_tpb_reserv_missing_tlen          = 335544891L;
-const ISC_LONG isc_tpb_reserv_long_tlen             = 335544892L;
-const ISC_LONG isc_tpb_reserv_missing_tname         = 335544893L;
-const ISC_LONG isc_tpb_reserv_corrup_tlen           = 335544894L;
-const ISC_LONG isc_tpb_reserv_null_tlen             = 335544895L;
-const ISC_LONG isc_tpb_reserv_relnotfound           = 335544896L;
-const ISC_LONG isc_tpb_reserv_baserelnotfound       = 335544897L;
-const ISC_LONG isc_tpb_missing_len                  = 335544898L;
-const ISC_LONG isc_tpb_missing_value                = 335544899L;
-const ISC_LONG isc_tpb_corrupt_len                  = 335544900L;
-const ISC_LONG isc_tpb_null_len                     = 335544901L;
-const ISC_LONG isc_tpb_overflow_len                 = 335544902L;
-const ISC_LONG isc_tpb_invalid_value                = 335544903L;
-const ISC_LONG isc_tpb_reserv_stronger_wng          = 335544904L;
-const ISC_LONG isc_tpb_reserv_stronger              = 335544905L;
-const ISC_LONG isc_tpb_reserv_max_recursion         = 335544906L;
-const ISC_LONG isc_tpb_reserv_virtualtbl            = 335544907L;
-const ISC_LONG isc_tpb_reserv_systbl                = 335544908L;
-const ISC_LONG isc_tpb_reserv_temptbl               = 335544909L;
-const ISC_LONG isc_tpb_readtxn_after_writelock      = 335544910L;
-const ISC_LONG isc_tpb_writelock_after_readtxn      = 335544911L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -698,15 +651,6 @@ const ISC_LONG isc_dsql_cursor_rel_ambiguous        = 336003093L;
 const ISC_LONG isc_dsql_cursor_rel_not_found        = 336003094L;
 const ISC_LONG isc_dsql_cursor_not_open             = 336003095L;
 const ISC_LONG isc_dsql_type_not_supp_ext_tab       = 336003096L;
-const ISC_LONG isc_dsql_feature_not_supported_ods   = 336003097L;
-const ISC_LONG isc_primary_key_required             = 336003098L;
-const ISC_LONG isc_upd_ins_doesnt_match_pk          = 336003099L;
-const ISC_LONG isc_upd_ins_doesnt_match_matching    = 336003100L;
-const ISC_LONG isc_upd_ins_with_complex_view        = 336003101L;
-const ISC_LONG isc_dsql_incompatible_trigger_type   = 336003102L;
-const ISC_LONG isc_dsql_db_trigger_type_cant_change = 336003103L;
-const ISC_LONG isc_dyn_dup_table                    = 336068740L;
-const ISC_LONG isc_dyn_column_does_not_exist        = 336068784L;
 const ISC_LONG isc_dyn_role_does_not_exist          = 336068796L;
 const ISC_LONG isc_dyn_no_grant_admin_opt           = 336068797L;
 const ISC_LONG isc_dyn_user_not_role_member         = 336068798L;
@@ -724,16 +668,6 @@ const ISC_LONG isc_dyn_char_fld_too_small           = 336068816L;
 const ISC_LONG isc_dyn_invalid_dtype_conversion     = 336068817L;
 const ISC_LONG isc_dyn_dtype_conv_invalid           = 336068818L;
 const ISC_LONG isc_dyn_zero_len_id                  = 336068820L;
-const ISC_LONG isc_max_coll_per_charset             = 336068829L;
-const ISC_LONG isc_invalid_coll_attr                = 336068830L;
-const ISC_LONG isc_dyn_wrong_gtt_scope              = 336068840L;
-const ISC_LONG isc_dyn_scale_too_big                = 336068852L;
-const ISC_LONG isc_dyn_precision_too_small          = 336068853L;
-const ISC_LONG isc_dyn_miss_priv_warning            = 336068855L;
-const ISC_LONG isc_dyn_ods_not_supp_feature         = 336068856L;
-const ISC_LONG isc_dyn_cannot_addrem_computed       = 336068857L;
-const ISC_LONG isc_dyn_no_empty_pw                  = 336068858L;
-const ISC_LONG isc_dyn_dup_index                    = 336068859L;
 const ISC_LONG isc_gbak_unknown_switch              = 336330753L;
 const ISC_LONG isc_gbak_page_size_missing           = 336330754L;
 const ISC_LONG isc_gbak_page_size_toobig            = 336330755L;
@@ -825,34 +759,6 @@ const ISC_LONG isc_dsql_line_col_error              = 336397208L;
 const ISC_LONG isc_dsql_unknown_pos                 = 336397209L;
 const ISC_LONG isc_dsql_no_dup_name                 = 336397210L;
 const ISC_LONG isc_dsql_too_many_values             = 336397211L;
-const ISC_LONG isc_dsql_no_array_computed           = 336397212L;
-const ISC_LONG isc_dsql_implicit_domain_name        = 336397213L;
-const ISC_LONG isc_dsql_only_can_subscript_array    = 336397214L;
-const ISC_LONG isc_dsql_max_sort_items              = 336397215L;
-const ISC_LONG isc_dsql_max_group_items             = 336397216L;
-const ISC_LONG isc_dsql_conflicting_sort_field      = 336397217L;
-const ISC_LONG isc_dsql_derived_table_more_columns  = 336397218L;
-const ISC_LONG isc_dsql_derived_table_less_columns  = 336397219L;
-const ISC_LONG isc_dsql_derived_field_unnamed       = 336397220L;
-const ISC_LONG isc_dsql_derived_field_dup_name      = 336397221L;
-const ISC_LONG isc_dsql_derived_alias_select        = 336397222L;
-const ISC_LONG isc_dsql_derived_alias_field         = 336397223L;
-const ISC_LONG isc_dsql_auto_field_bad_pos          = 336397224L;
-const ISC_LONG isc_dsql_cte_wrong_reference         = 336397225L;
-const ISC_LONG isc_dsql_cte_cycle                   = 336397226L;
-const ISC_LONG isc_dsql_cte_outer_join              = 336397227L;
-const ISC_LONG isc_dsql_cte_mult_references         = 336397228L;
-const ISC_LONG isc_dsql_cte_not_a_union             = 336397229L;
-const ISC_LONG isc_dsql_cte_nonrecurs_after_recurs  = 336397230L;
-const ISC_LONG isc_dsql_cte_wrong_clause            = 336397231L;
-const ISC_LONG isc_dsql_cte_union_all               = 336397232L;
-const ISC_LONG isc_dsql_cte_miss_nonrecursive       = 336397233L;
-const ISC_LONG isc_dsql_cte_nested_with             = 336397234L;
-const ISC_LONG isc_dsql_col_more_than_once_using    = 336397235L;
-const ISC_LONG isc_dsql_unsupp_feature_dialect      = 336397236L;
-const ISC_LONG isc_dsql_cte_not_used                = 336397237L;
-const ISC_LONG isc_dsql_col_more_than_once_view     = 336397238L;
-const ISC_LONG isc_dsql_unsupported_in_auto_trans   = 336397239L;
 const ISC_LONG isc_gsec_cant_open_db                = 336723983L;
 const ISC_LONG isc_gsec_switches_error              = 336723984L;
 const ISC_LONG isc_gsec_no_op_spec                  = 336723985L;
@@ -912,14 +818,7 @@ const ISC_LONG isc_gstat_unexpected_eof             = 336920580L;
 const ISC_LONG isc_gstat_open_err                   = 336920605L;
 const ISC_LONG isc_gstat_read_err                   = 336920606L;
 const ISC_LONG isc_gstat_sysmemex                   = 336920607L;
-const ISC_LONG isc_fbsvcmgr_bad_am                  = 336986113L;
-const ISC_LONG isc_fbsvcmgr_bad_wm                  = 336986114L;
-const ISC_LONG isc_fbsvcmgr_bad_rs                  = 336986115L;
-const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
-const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
-const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
-const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 863;
+const ISC_LONG isc_err_max                          = 763;
 
 #else /* c definitions */
 
@@ -943,7 +842,6 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_arg_netware	16	/* NetWare error code */
 #define isc_arg_win32		17	/* Win32 error code */
 #define isc_arg_warning	18	/* warning argument */
-#define isc_arg_sql_state	19	/* SQLSTATE */
 
 #define isc_arith_except                     335544321L
 #define isc_bad_dbkey                        335544322L
@@ -1326,7 +1224,7 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_expec_short                      335544699L
 #define isc_expec_long                       335544700L
 #define isc_expec_ushort                     335544701L
-#define isc_escape_invalid                   335544702L
+#define isc_like_escape_invalid              335544702L
 #define isc_svcnoexe                         335544703L
 #define isc_net_lookup_err                   335544704L
 #define isc_service_unknown                  335544705L
@@ -1490,52 +1388,6 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_partner_idx_not_found            335544863L
 #define isc_tra_num_exc                      335544864L
 #define isc_field_disappeared                335544865L
-#define isc_met_wrong_gtt_scope              335544866L
-#define isc_subtype_for_internal_use         335544867L
-#define isc_illegal_prc_type                 335544868L
-#define isc_invalid_sort_datatype            335544869L
-#define isc_collation_name                   335544870L
-#define isc_domain_name                      335544871L
-#define isc_domnotdef                        335544872L
-#define isc_array_max_dimensions             335544873L
-#define isc_max_db_per_trans_allowed         335544874L
-#define isc_bad_debug_format                 335544875L
-#define isc_bad_proc_BLR                     335544876L
-#define isc_key_too_big                      335544877L
-#define isc_concurrent_transaction           335544878L
-#define isc_not_valid_for_var                335544879L
-#define isc_not_valid_for                    335544880L
-#define isc_need_difference                  335544881L
-#define isc_long_login                       335544882L
-#define isc_fldnotdef2                       335544883L
-#define isc_invalid_similar_pattern          335544884L
-#define isc_bad_teb_form                     335544885L
-#define isc_tpb_multiple_txn_isolation       335544886L
-#define isc_tpb_reserv_before_table          335544887L
-#define isc_tpb_multiple_spec                335544888L
-#define isc_tpb_option_without_rc            335544889L
-#define isc_tpb_conflicting_options          335544890L
-#define isc_tpb_reserv_missing_tlen          335544891L
-#define isc_tpb_reserv_long_tlen             335544892L
-#define isc_tpb_reserv_missing_tname         335544893L
-#define isc_tpb_reserv_corrup_tlen           335544894L
-#define isc_tpb_reserv_null_tlen             335544895L
-#define isc_tpb_reserv_relnotfound           335544896L
-#define isc_tpb_reserv_baserelnotfound       335544897L
-#define isc_tpb_missing_len                  335544898L
-#define isc_tpb_missing_value                335544899L
-#define isc_tpb_corrupt_len                  335544900L
-#define isc_tpb_null_len                     335544901L
-#define isc_tpb_overflow_len                 335544902L
-#define isc_tpb_invalid_value                335544903L
-#define isc_tpb_reserv_stronger_wng          335544904L
-#define isc_tpb_reserv_stronger              335544905L
-#define isc_tpb_reserv_max_recursion         335544906L
-#define isc_tpb_reserv_virtualtbl            335544907L
-#define isc_tpb_reserv_systbl                335544908L
-#define isc_tpb_reserv_temptbl               335544909L
-#define isc_tpb_readtxn_after_writelock      335544910L
-#define isc_tpb_writelock_after_readtxn      335544911L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1587,15 +1439,6 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_dsql_cursor_rel_not_found        336003094L
 #define isc_dsql_cursor_not_open             336003095L
 #define isc_dsql_type_not_supp_ext_tab       336003096L
-#define isc_dsql_feature_not_supported_ods   336003097L
-#define isc_primary_key_required             336003098L
-#define isc_upd_ins_doesnt_match_pk          336003099L
-#define isc_upd_ins_doesnt_match_matching    336003100L
-#define isc_upd_ins_with_complex_view        336003101L
-#define isc_dsql_incompatible_trigger_type   336003102L
-#define isc_dsql_db_trigger_type_cant_change 336003103L
-#define isc_dyn_dup_table                    336068740L
-#define isc_dyn_column_does_not_exist        336068784L
 #define isc_dyn_role_does_not_exist          336068796L
 #define isc_dyn_no_grant_admin_opt           336068797L
 #define isc_dyn_user_not_role_member         336068798L
@@ -1613,16 +1456,6 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_dyn_invalid_dtype_conversion     336068817L
 #define isc_dyn_dtype_conv_invalid           336068818L
 #define isc_dyn_zero_len_id                  336068820L
-#define isc_max_coll_per_charset             336068829L
-#define isc_invalid_coll_attr                336068830L
-#define isc_dyn_wrong_gtt_scope              336068840L
-#define isc_dyn_scale_too_big                336068852L
-#define isc_dyn_precision_too_small          336068853L
-#define isc_dyn_miss_priv_warning            336068855L
-#define isc_dyn_ods_not_supp_feature         336068856L
-#define isc_dyn_cannot_addrem_computed       336068857L
-#define isc_dyn_no_empty_pw                  336068858L
-#define isc_dyn_dup_index                    336068859L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -1714,34 +1547,6 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_dsql_unknown_pos                 336397209L
 #define isc_dsql_no_dup_name                 336397210L
 #define isc_dsql_too_many_values             336397211L
-#define isc_dsql_no_array_computed           336397212L
-#define isc_dsql_implicit_domain_name        336397213L
-#define isc_dsql_only_can_subscript_array    336397214L
-#define isc_dsql_max_sort_items              336397215L
-#define isc_dsql_max_group_items             336397216L
-#define isc_dsql_conflicting_sort_field      336397217L
-#define isc_dsql_derived_table_more_columns  336397218L
-#define isc_dsql_derived_table_less_columns  336397219L
-#define isc_dsql_derived_field_unnamed       336397220L
-#define isc_dsql_derived_field_dup_name      336397221L
-#define isc_dsql_derived_alias_select        336397222L
-#define isc_dsql_derived_alias_field         336397223L
-#define isc_dsql_auto_field_bad_pos          336397224L
-#define isc_dsql_cte_wrong_reference         336397225L
-#define isc_dsql_cte_cycle                   336397226L
-#define isc_dsql_cte_outer_join              336397227L
-#define isc_dsql_cte_mult_references         336397228L
-#define isc_dsql_cte_not_a_union             336397229L
-#define isc_dsql_cte_nonrecurs_after_recurs  336397230L
-#define isc_dsql_cte_wrong_clause            336397231L
-#define isc_dsql_cte_union_all               336397232L
-#define isc_dsql_cte_miss_nonrecursive       336397233L
-#define isc_dsql_cte_nested_with             336397234L
-#define isc_dsql_col_more_than_once_using    336397235L
-#define isc_dsql_unsupp_feature_dialect      336397236L
-#define isc_dsql_cte_not_used                336397237L
-#define isc_dsql_col_more_than_once_view     336397238L
-#define isc_dsql_unsupported_in_auto_trans   336397239L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1801,14 +1606,7 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_gstat_open_err                   336920605L
 #define isc_gstat_read_err                   336920606L
 #define isc_gstat_sysmemex                   336920607L
-#define isc_fbsvcmgr_bad_am                  336986113L
-#define isc_fbsvcmgr_bad_wm                  336986114L
-#define isc_fbsvcmgr_bad_rs                  336986115L
-#define isc_fbsvcmgr_info_err                336986116L
-#define isc_fbsvcmgr_query_err               336986117L
-#define isc_fbsvcmgr_switch_unknown          336986118L
-#define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          863
+#define isc_err_max                          763
 
 #endif
 

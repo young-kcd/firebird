@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.msgs,v 1.18 2007-12-14 11:32:05 alexpeshkoff Exp $
+#  $Id: Makefile.in.msgs,v 1.17 2005-12-18 17:56:43 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -99,35 +99,35 @@ do_check: $(CHECK_MESSAGES) $(BUILD_FILE)
 check_messages : $(CHECK_MESSAGES) 
 
 $(CHECK_MESSAGES):	$(CHECK_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $(CHECK_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(CHECK_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 build_file : $(BUILD_FILE) 
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $(BUILD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(BUILD_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 enter_messages : $(ENTER_MESSAGES)
 
 $(ENTER_MESSAGES):	$(ENTER_Objects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $(ENTER_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(ENTER_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 modify_messages: $(MODIFY_MESSAGES) 
 
 $(MODIFY_MESSAGES):	$(MODIFY_Objects) $(LIBFBSTATIC_A) 
-	$(STATICEXE_LINK) $(LINK_OPTS) $(MODIFY_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(MODIFY_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 
 change_messages: $(CHANGE_MESSAGES)
 
 $(CHANGE_MESSAGES):	$(CHANGE_Objects) $(COMMON_Objects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $(CHANGE_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
+	$(LD) $(LINK_OPTS) $(CHANGE_Objects) $(COMMON_Objects) -o $@ -L$(LIB) -lfbstatic $(LINK_LIBS) $(ICU_LIBS)
 	$(CHMOD_7) $@
 
 

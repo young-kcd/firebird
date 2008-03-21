@@ -23,7 +23,6 @@
 
 #include "firebird.h"
 #include <stdio.h>
-#include "../intl/ldcommon.h"
 #include "../jrd/common.h"
 #include "kanji.h"
 #include "kanji_proto.h"
@@ -71,9 +70,10 @@ USHORT KANJI_check_euc(const UCHAR* euc_str, USHORT euc_len)
 			if (euc_len == 0) {	/* truncated kanji */
 				return (1);
 			}
-
-			euc_str += 2;
-			euc_len -= 1;
+			else {
+				euc_str += 2;
+				euc_len -= 1;
+			}
 		}
 		else {					/* it is a ASCII */
 			euc_str++;
@@ -104,9 +104,10 @@ USHORT KANJI_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 				if (sjis_len == 0) {	/* truncated KANJI */
 					return (1);
 				}
-
-				sjis_str += 2;
-				sjis_len -= 1;
+				else {
+					sjis_str += 2;
+					sjis_len -= 1;
+				}
 			}
 			else {				/*It is a KANA */
 				sjis_str++;

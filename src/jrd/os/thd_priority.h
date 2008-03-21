@@ -39,6 +39,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -62,7 +63,7 @@ private:
 		Firebird::InlineStorage<ThreadPriorityScheduler*, 16> > TpsPointers;
 	enum OperationMode {Running, Stopping, ShutdownComplete};
 
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;	// locks modification of thps chains
+	static Firebird::Mutex mutex;	// locks modification of thps chains
 	static ThreadPriorityScheduler* chain;	// where starts thps chain
 	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
 	static OperationMode opMode;	// current mode

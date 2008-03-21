@@ -27,8 +27,8 @@
 #include "../burp/burp.h"
 
 
-FB_UINT64		MVOL_fini_read();
-FB_UINT64		MVOL_fini_write(int*, UCHAR**);
+UINT64			MVOL_fini_read();
+UINT64			MVOL_fini_write(int*, UCHAR**);
 void			MVOL_init(ULONG);
 void			MVOL_init_read(const char*, const char*, USHORT*, int*, UCHAR**);
 void			MVOL_init_write(const char*, const char*, int*, UCHAR**);
@@ -37,7 +37,7 @@ bool			MVOL_split_hdr_read();
 int				MVOL_read(int*, UCHAR**);
 UCHAR*			MVOL_read_block(BurpGlobals*, UCHAR*, ULONG);
 void			MVOL_skip_block(BurpGlobals*, ULONG);
-UCHAR			MVOL_write(const UCHAR, int*, UCHAR**);
+UCHAR			MVOL_write(UCHAR, int*, UCHAR**);
 const UCHAR*	MVOL_write_block(BurpGlobals*, const UCHAR*, ULONG);
 
 #if defined WIN_NT
