@@ -161,6 +161,7 @@ private:
 			Database::Checkout dcoHolder(dbb);
 			lock.enter(); 
 		}
+
 		~CountersLockHolder() { lock.leave(); }
 
 	private:

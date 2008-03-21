@@ -10400,6 +10400,7 @@ void dsql_req::checkUnusedCTEs() const
 	for (size_t i = 0; i < req_ctes.getCount(); i++)
 	{
 		const dsql_nod* cte = req_ctes[i];
+
 		if (!(cte->nod_flags & NOD_DT_CTE_USED))
 		{
 			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];

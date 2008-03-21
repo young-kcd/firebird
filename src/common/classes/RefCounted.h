@@ -50,9 +50,9 @@ namespace Firebird
 		virtual ~RefCounted() {}
 
 	private:
-		Firebird::AtomicCounter m_refCnt;
+		AtomicCounter m_refCnt;
 	};
 
-}; // namespace
+} // namespace
 
 #endif // COMMON_REF_COUNTED_H

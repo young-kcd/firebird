@@ -997,8 +997,8 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 		if (blk->mbk_flags & MBK_USED)
 		{
 #ifdef DEBUG_GDS_ALLOC
-			if (!filter_path || blk->mbk_file
-				&& !strncmp(filter_path, blk->mbk_file, filter_len))
+			if (!filter_path || blk->mbk_file &&
+				!strncmp(filter_path, blk->mbk_file, filter_len))
 			{
 				fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
 					mem, flags, size, blk->mbk_file, blk->mbk_line);

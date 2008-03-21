@@ -484,8 +484,7 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
 	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 	fb_assert(lock->lck_physical > LCK_none);
 
-	const bool result =
-		LOCK_set_owner_handle(lock->lck_id, owner_handle);
+	const bool result = LOCK_set_owner_handle(lock->lck_id, owner_handle);
 
 	if (result)
 		lock->lck_owner_handle = owner_handle;
@@ -528,8 +527,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 	}
 
 	Database::Checkout dcoHolder(tdbb->getDatabase());
-	if (!LOCK_init(tdbb->tdbb_status_vector,
-				   owner_id, owner_type, owner_handle_ptr))
+	if (!LOCK_init(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)
 			tdbb->getDatabase()->dbb_flags |= DBB_bugcheck;

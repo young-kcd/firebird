@@ -42,6 +42,6 @@ namespace Firebird
 		static GlobalPtr<RWLock> sync;
 	};
 
-}; // namespace
+} // namespace
 
 #endif // COMMON_PUBLIC_HANDLE

@@ -1167,8 +1167,6 @@ static rem_port* alloc_port( rem_port* parent)
  *
  **************************************/
 
-	TEXT buffer[BUFFER_SMALL];
-
 	if (!INET_initialized) 
 	{
 #ifdef WIN_NT
@@ -1205,7 +1203,9 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_state = state_pending;
 	REMOTE_get_timeout_params(port, 0);
 
+	TEXT buffer[BUFFER_SMALL];
 	gethostname(buffer, sizeof(buffer));
+
 	port->port_host = REMOTE_make_string(buffer);
 	port->port_connection = REMOTE_make_string(buffer);
 	SNPRINTF(buffer, FB_NELEM(buffer), "tcp (%s)", port->port_host->str_data);

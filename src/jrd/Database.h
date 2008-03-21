@@ -27,7 +27,6 @@
  *
  */
 
-
 #ifndef JRD_DATABASE_H
 #define JRD_DATABASE_H
 
@@ -179,10 +178,12 @@ public:
 		{
 			sync.disableAsts();
 		}
+
 		~AstInhibit()
 		{
 			sync.enableAsts();
 		}
+
 		Sync& sync;
 	};
 
