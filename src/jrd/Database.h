@@ -328,7 +328,7 @@ public:
 			return false;
 		}
 
-		return TypedHandle::checkHandle();
+		return TypedHandle<type_dbb>::checkHandle();
 	}
 
 	mutable Sync* dbb_sync;				// Database sync primitive
