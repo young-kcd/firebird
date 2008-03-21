@@ -973,7 +973,7 @@ void CCH_fetch_page(
 			if (!CCH_rollover_to_shadow(dbb, file, false)) {
 				PAGE_LOCK_RELEASE(bdb->bdb_lock);
 				if (database_locked) {
-				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 					database_locked = false;
 				}
 
@@ -988,7 +988,7 @@ void CCH_fetch_page(
 							   "IO error loop Unwind to avoid a hang\n");
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
-					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 						database_locked = false;
 					}
 					CCH_unwind(tdbb, true);
@@ -1009,7 +1009,7 @@ void CCH_fetch_page(
 #endif
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			if (database_locked) {
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 				database_locked = false;
 			}
 			CCH_unwind(tdbb, true);
@@ -1030,7 +1030,7 @@ void CCH_fetch_page(
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
 					if (database_locked) {
-					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 						database_locked = false;
 					}
 					CCH_unwind(tdbb, true);
@@ -1044,7 +1044,7 @@ void CCH_fetch_page(
 								   "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
 						if (database_locked) {
-						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+							dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 							database_locked = false;
 						}
 						CCH_unwind(tdbb, true);
@@ -1058,7 +1058,7 @@ void CCH_fetch_page(
 	}
 	
 	if (database_locked) {
-	dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		database_locked = false;
 	}
 
@@ -1416,8 +1416,8 @@ void CCH_flush_ast(thread_db* tdbb)
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
 		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) 
 		{
-		down_grade(tdbb, bdb);
-	}
+			down_grade(tdbb, bdb);
+		}
 	}
 
 	if (!keep_pages) {
@@ -1812,12 +1812,15 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 			// Backup lock owner can ba database or attachment
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
 			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
-		} else {
+		}
+		else {
 			fb_assert(bdb->bdb_backup_lock_owner == 0);
-	}
+		}
+
 		bdb->bdb_backup_lock_owner = attachment_lock_owner;
-}
-	set_diff_page(tdbb, bdb);
+	}
+	
+set_diff_page(tdbb, bdb);
 }
 
 
@@ -6274,8 +6277,7 @@ static bool write_page(
 #endif
 
 			if (backup_state == nbak_state_stalled ||
-				(backup_state == nbak_state_merge)
-				) 
+				(backup_state == nbak_state_merge)) 
 			{
 #ifdef SUPERSERVER
 				THREAD_EXIT();
