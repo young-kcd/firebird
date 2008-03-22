@@ -33,8 +33,7 @@ namespace Firebird
 	{
 		WriteLockGuard guard(sync);
 
-		size_t pos;
-		if (handles->find(this, pos))
+		if (handles->exist(this))
 		{
 			fb_assert(false);
 		}
