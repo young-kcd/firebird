@@ -219,7 +219,7 @@ namespace
 	class DatabaseContextHolder : public Database::SyncGuard, public Jrd::ContextPoolHolder
 	{
 	public:
-		DatabaseContextHolder(thread_db* arg)
+		explicit DatabaseContextHolder(thread_db* arg)
 			: Database::SyncGuard(arg->getDatabase()),
 			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
 			  tdbb(arg)

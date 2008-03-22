@@ -173,7 +173,7 @@ public:
 	class AstInhibit
 	{
 	public:
-		AstInhibit(Database* dbb)
+		explicit AstInhibit(Database* dbb)
 			: sync(*dbb->dbb_sync)
 		{
 			sync.disableAsts();
@@ -190,7 +190,7 @@ public:
 	class SyncGuard
 	{
 	public:
-		SyncGuard(Database* dbb, bool ast = false)
+		explicit SyncGuard(Database* dbb, bool ast = false)
 			: sync(*dbb->dbb_sync)
 		{
 			if (!dbb->checkHandle())
