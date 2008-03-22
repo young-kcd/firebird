@@ -70,7 +70,7 @@ static const struct {
 	{335544367, "attempted retrieval of more segments than exist"},		/* 47, segstr_eof */
 	{335544368, "attempted invalid operation on a BLOB"},		/* 48, segstr_no_op */
 	{335544369, "attempted read of a new, open BLOB"},		/* 49, segstr_no_read */
-	{335544370, "attempted action on blob outside transaction"},		/* 50, segstr_no_trans */
+	{335544370, "attempted action on BLOB outside transaction"},		/* 50, segstr_no_trans */
 	{335544371, "attempted write to read-only BLOB"},		/* 51, segstr_no_write */
 	{335544372, "attempted reference to BLOB in unavailable database"},		/* 52, segstr_wrong_db */
 	{335544373, "operating system directive @1 failed"},		/* 53, sys_request */
@@ -724,9 +724,9 @@ static const struct {
 	{336330778, "data type @1 not understood"},		/* 700, gbak_unk_type */
 	{336330779, "gds_$compile_request failed"},		/* 701, gbak_comp_req_failed */
 	{336330780, "gds_$start_request failed"},		/* 702, gbak_start_req_failed */
-	{336330781, " gds_$receive failed"},		/* 703, gbak_rec_failed */
+	{336330781, "gds_$receive failed"},		/* 703, gbak_rec_failed */
 	{336330782, "gds_$release_request failed"},		/* 704, gbak_rel_req_failed */
-	{336330783, " gds_$database_info failed"},		/* 705, gbak_db_info_failed */
+	{336330783, "gds_$database_info failed"},		/* 705, gbak_db_info_failed */
 	{336330784, "Expected database description record"},		/* 706, gbak_no_db_desc */
 	{336330785, "failed to create database @1"},		/* 707, gbak_db_create_failed */
 	{336330786, "RESTORE: decompression length error"},		/* 708, gbak_decomp_len_error */
@@ -742,7 +742,7 @@ static const struct {
 	{336330796, "Expected backup version 1..8.  Found @1"},		/* 718, gbak_inv_bkup_ver */
 	{336330797, "expected backup description record"},		/* 719, gbak_missing_bkup_desc */
 	{336330798, "string truncated"},		/* 720, gbak_string_trunc */
-	{336330799, " warning -- record could not be restored"},		/* 721, gbak_cant_rest_record */
+	{336330799, "warning -- record could not be restored"},		/* 721, gbak_cant_rest_record */
 	{336330800, "gds_$send failed"},		/* 722, gbak_send_failed */
 	{336330801, "no table name for data"},		/* 723, gbak_no_tbl_name */
 	{336330802, "unexpected end of file on backup file"},		/* 724, gbak_unexp_eof */
