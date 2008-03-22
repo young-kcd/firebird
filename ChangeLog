@@ -1,3 +1,27 @@
+2008-03-22 10:02  robocop
+
+	* firebird2/src/jrd/: Database.h (1.12), jrd.cpp (1.422):
+
+	make them explicit.
+
+2008-03-22 10:00  robocop
+
+	* firebird2/src/common/classes/PublicHandle.cpp (1.2):
+
+	Misc.
+
+2008-03-22 07:36  robocop
+
+	* firebird2/src/include/gen/msgs.h (1.99):
+
+	Commit generated file after my messages2.sql changes.
+
+2008-03-21 21:34  roman-simakov
+
+	* firebird2/src/jrd/Database.h (1.11):
+
+	Misc
+
 2008-03-21 20:02  asfernandes
 
 	* firebird2/src/: dsql/pass1.cpp (1.363), jrd/exe.cpp (1.247):
