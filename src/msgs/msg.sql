@@ -112,7 +112,7 @@ CREATE TABLE SYSTEM_ERRORS (
     CONSTRAINT SQL_STATE_FK FOREIGN KEY (SQL_CLASS, SQL_SUBCLASS) REFERENCES SQLSTATES (SQL_CLASS, SQL_SUBCLASS),
     --CONSTRAINT SYMBOL_FK FOREIGN KEY (GDS_SYMBOL) REFERENCES MESSAGES (SYMBOL)
     CONSTRAINT CNS_FK FOREIGN KEY (FAC_CODE, NUMBER, GDS_SYMBOL)
-	    REFERENCES MESSAGES (FAC_CODE, NUMBER, SYMBOL)
+        REFERENCES MESSAGES (FAC_CODE, NUMBER, SYMBOL)
 );
 
 CREATE TABLE TEMPLATES (
@@ -219,4 +219,167 @@ GRANT SELECT ON TEMPLATES     TO PUBLIC;
 GRANT SELECT ON TRANSMSGS     TO PUBLIC;
 
 COMMIT;
+
+/* Notes:
+
+1) Dumping new messages that need translation.
+
+select '(''' || m.text || ''' , NULL, NULL, ' || m.fac_code || ', ' || m.number ||
+	', ''#'', NULL, NULL, ''truser'', ''trdate'')'
+from messages m
+where not exists (select * from transmsgs t
+				where t.fac_code = m.fac_code and t.number = m.number)
+order by m.fac_code, m.number;
+
+2) Identify messages whose default text in the English main version is different
+than in the localized version (it leads to screwed human translation, since the
+English version serves as model to translate).
+
+select m.fac_code, m.number, t.locale
+from messages m
+join transmsgs t
+on m.fac_code = t.fac_code and m.number = t.number
+where m.text <> t.eng_text
+order by m.fac_code, m.number;
+
+3) Identify messages whose number of parameters in the English main version
+is different than in the localized versions (it leads old clients to crash).
+Starting with the new parameters using @, it's possible to reorder the parameters
+in localized version to suit each human language's syntax, but the old messages
+before the change have to be maintained in the strict same order, because old
+clients use the old printf syntax that's rigid.
+
+select t.fac_code, t.number, t.locale
+from transmsgs t
+where char_length(t.eng_text) - char_length(replace(t.eng_text, '@', '')) <>
+	char_length(t.text) - char_length(replace(t.text, '@', ''))
+order by t.fac_code, t.number;
+
+4) The following procedure verifies some oddities in translated messages,
+regarding the arguments used. Not necessarily errors, because there may be the
+need to put params out of order in translated messages when compared to the English
+version or to repeat an argument (features that couldn't be done with the
+original, printf-based system). The argument for the procedure is the locale. Example:
+select * from verifymsg('de_DE');
+
+Claudio Valderrama, March 2008.
+*/
+
+set term ^;
+create procedure verifymsg(inloc varchar(5))
+returns (reason varchar(20), fac int, num int, loc varchar(5))
+as
+	declare flags int;
+	declare test1 int;
+	declare test2 int;
+	declare test3 int;
+	declare test4 int;
+	declare test5 int;
+	declare iter int;
+	declare found_loop int;
+	declare efound int;
+	declare newpos int;
+	declare testchar char;
+	declare len int;
+	declare a1 int;
+	declare a2 int;
+	declare a3 int;
+	declare a4 int;
+	declare a5 int;
+	-- declare fac int;
+	-- declare num int;
+	-- declare loc varchar(5);
+	declare trans_text type of text;
+begin
+	for select m.fac_code, m.number, t.locale, t.text
+	from messages m
+	join transmsgs t
+	on m.fac_code = t.fac_code and m.number = t.number
+	where t.locale = :inloc
+	order by m.fac_code, m.number
+	into :fac, :num, :loc, :trans_text
+	do begin
+		a1 = 0;
+		a2 = 0;
+		a3 = 0;
+		a4 = 0;
+		a5 = 0;
+		newpos = 0;
+		flags = 0;
+		found_loop = 0;
+		iter = 1;
+		efound = 0;
+
+		len = char_length(trans_text);
+		while (iter <= len)
+		do begin
+			newpos = position('@', trans_text, iter);
+			if (newpos = 0)
+			then break;
+			testchar = substring(trans_text from newpos + 1 for 1);
+			found_loop = 1;
+
+			if (testchar = '1')
+			then a1 = a1 + 1;
+			else if (testchar = '2')
+			then a2 = a2 + 1;
+			else if (testchar = '3')
+			then a3 = a3 + 1;
+			else if (testchar = '4')
+			then a4 = a4 + 1;
+			else if (testchar = '5')
+			then a5 = a5 + 1;
+			else if (testchar <> '@')
+			then begin
+				efound = 1;
+				reason = 'Found ' || testchar || ' after @';
+				break;
+			end
+
+			if (testchar <> '@')
+			then flags = bin_or(flags, bin_shl(1, cast(testchar as int)));
+			iter = newpos + 2;
+		end
+
+		if (efound = 0)
+		then if (a1 > 1 or a2 > 1 or a3 > 1 or a4 > 1 or a5 > 1)
+		then begin
+			efound = 1;
+			reason = 'One param has count > 1';
+		end
+		else if (found_loop = 1)
+		then begin
+			-- efound = 0;
+			if (bin_and(flags, 2) > 0) -- 2 == bin_shl(1, 1)
+			then found_loop = 1;
+			else found_loop = 0;
+
+			iter = 2;
+			while (iter < 6) do
+			begin
+				if (bin_and(flags, bin_shl(1, iter)) > 0)
+				then begin
+					if (found_loop = 0)
+					then begin
+						efound = 1;
+						reason = '@' || cast(iter as varchar(1)) || ' out of order';
+						break;
+					end
+					-- else found_loop = 1;
+				end
+				else found_loop = 0;
+				iter = iter + 1;
+			end
+		end
+
+		if (efound = 1)
+		then suspend;
+	end
+end ^
+set term ;^
+
+grant execute on procedure verifymsg to public;
+
+commit;
+
 
