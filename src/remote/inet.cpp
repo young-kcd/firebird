@@ -1207,7 +1207,6 @@ static rem_port* alloc_port( rem_port* parent)
 		INET_initialized = true;
 	}
 
-
 	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
 	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
 	port->port_sync->addRef();
