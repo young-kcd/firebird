@@ -224,8 +224,9 @@ COMMIT;
 
 1) Dumping new messages that need translation.
 
-select '(''' || m.text || ''' , NULL, NULL, ' || m.fac_code || ', ' || m.number ||
-	', ''#'', NULL, NULL, ''truser'', ''trdate'')'
+select '(''' || replace(m.text, '''', '''''') ||
+	''', NULL, NULL, ' || m.fac_code || ', ' || m.number ||
+	', ''#'', NULL, NULL, ''truser'', ''1000-01-01 00:00:00'')'
 from messages m
 where not exists (select * from transmsgs t
 				where t.fac_code = m.fac_code and t.number = m.number)
@@ -262,7 +263,7 @@ version or to repeat an argument (features that couldn't be done with the
 original, printf-based system). The argument for the procedure is the locale. Example:
 select * from verifymsg('de_DE');
 
-Claudio Valderrama, March 2008.
+Claudio Valderrama C., March 2008.
 */
 
 set term ^;
