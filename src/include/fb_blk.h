@@ -104,6 +104,12 @@ enum BlockType
 	alice_type_tdr,
 	alice_type_str,
 	alice_type_lls,
+
+	rem_type_rdb,
+	rem_type_rrq,
+	rem_type_rtr,
+	rem_type_rbl,
+	rem_type_rsr
 };
 
 
