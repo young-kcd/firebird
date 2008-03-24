@@ -26,6 +26,7 @@
 #define COMMON_REF_COUNTED_H
 
 #include "../common/classes/fb_atomic.h"
+#include "../jrd/gdsassert.h"
 
 namespace Firebird
 {
@@ -47,7 +48,11 @@ namespace Firebird
 
 	protected:
 		RefCounted() : m_refCnt(0) {}
-		virtual ~RefCounted() {}
+
+		~RefCounted()
+		{
+			fb_assert(!m_refCnt.value());
+		}
 
 	private:
 		AtomicCounter m_refCnt;
