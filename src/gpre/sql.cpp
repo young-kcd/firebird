@@ -5009,7 +5009,8 @@ static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 			|| ((*fld_ptr)->nod_type == nod_array))
 		{
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
-			slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
+			if ((*fld_ptr)->nod_count > 2)
+				slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
 		}
 
 		REF reference = NULL;
