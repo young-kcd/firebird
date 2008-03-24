@@ -49,7 +49,7 @@ namespace Firebird
 	protected:
 		RefCounted() : m_refCnt(0) {}
 
-		~RefCounted()
+		virtual ~RefCounted()
 		{
 			fb_assert(!m_refCnt.value());
 		}
