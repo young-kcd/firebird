@@ -654,6 +654,12 @@ typedef struct packet {
 	P_TRAU	p_trau;		/* Trusted authentication */
 	p_update_account p_account_update;
 	p_authenticate p_authenticate_user;
+
+public:
+	packet()
+	{
+		memset(this, 0, sizeof(*this));
+	}
 } PACKET;
 
 #endif // REMOTE_PROTOCOL_H

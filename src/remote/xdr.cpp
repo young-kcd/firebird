@@ -29,7 +29,6 @@
 #include "../remote/remote.h"
 #include "../remote/xdr.h"
 #include "../jrd/common.h"
-#include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"

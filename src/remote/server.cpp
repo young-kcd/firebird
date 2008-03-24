@@ -64,52 +64,6 @@
 #include "../remote/proto_proto.h"	// xdr_protocol_overhead()
 #include "../jrd/scroll_cursors.h"
 
-/** CHECK_HANDLE checks -
-    if the id passwd is within the vector bounds,
-    that the port_object corresponding to the id is not null,
-    if the port_object's type matches with the expected type
-**/
-
-#pragma FB_COMPILER_MESSAGE("What kind of crap is this?! FIX!")
-
-#define CHECK_HANDLE(blk, cast, type, id, err)						\
-	{																\
-		if ((port->port_flags & PORT_lazy) && id == INVALID_OBJECT)	\
-		{															\
-			id = port->port_last_object_id;							\
-		}															\
-		if (!port->port_objects ||									\
-			id >= port->port_object_vector->vec_count ||			\
-			!(blk = (cast) port->port_objects [id]) ||				\
-			((BLK) blk)->blk_type != (UCHAR) type)					\
-		{															\
-			status_vector [0] = isc_arg_gds;						\
-			status_vector [1] = err;								\
-			status_vector [2] = isc_arg_end;						\
-			return port->send_response(send, 0, 0, status_vector,	\
-									   false);						\
-		}															\
-	}
-
-#define CHECK_HANDLE_MEMBER(blk, cast, type, id, err)				\
-	{																\
-		if ((this->port_flags & PORT_lazy) && id == INVALID_OBJECT)	\
-		{															\
-			id = this->port_last_object_id;							\
-		}															\
-		if (!this->port_objects ||									\
-			id >= this->port_object_vector->vec_count ||			\
-			!(blk = (cast) this->port_objects [id]) ||				\
-			((BLK) blk)->blk_type != (UCHAR) type)					\
-		{															\
-			status_vector [0] = isc_arg_gds;						\
-			status_vector [1] = err;								\
-			status_vector [2] = isc_arg_end;						\
-			return this->send_response(sendL, 0, 0, status_vector,	\
-									   false);						\
-		}															\
-	}
-
 
 typedef struct server_req_t
 {
@@ -120,12 +74,18 @@ typedef struct server_req_t
 	PACKET			req_receive;
 } *SERVER_REQ;
 
-typedef struct srvr
+typedef struct srvr : public Firebird::GlobalStorage
 {
 	struct srvr*	srvr_next;
 	rem_port*		srvr_parent_port;
-	enum rem_port_t	srvr_port_type;
+	rem_port::rem_port_t	srvr_port_type;
 	USHORT			srvr_flags;
+
+public:
+	srvr(srvr *servers, rem_port* port, USHORT flags) :
+		srvr_next(servers), srvr_parent_port(port), 
+		srvr_port_type(port->port_type), srvr_flags(flags)
+	{ }
 } *SRVR;
 
 namespace {
@@ -168,14 +128,14 @@ static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const
 static void		cancel_operation(rem_port*);
 #endif
 
-static bool		check_request(rrq*, USHORT, USHORT);
+static bool		check_request(Rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(RSR);
 
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG	dump_cache(rrq::rrq_repeat*);
+static REM_MSG	dump_cache(Rrq::rrq_repeat*);
 #endif
 
-static bool		get_next_msg_no(rrq*, USHORT, USHORT*);
+static bool		get_next_msg_no(Rrq*, USHORT, USHORT*);
 static RTR		make_transaction(RDB, FB_API_HANDLE);
 static bool		process_packet(rem_port* port,
 							   PACKET* sendL,
@@ -183,13 +143,13 @@ static bool		process_packet(rem_port* port,
 							   rem_port** result);
 static void		release_blob(RBL);
 static void		release_event(RVNT);
-static void		release_request(rrq*);
+static void		release_request(Rrq*);
 static void		release_statement(RSR*);
 static void		release_sql_request(RSR);
 static void		release_transaction(RTR);
 
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG	scroll_cache(rrq::rrq_repeat*, USHORT *, ULONG *);
+static REM_MSG	scroll_cache(Rrq::rrq_repeat*, USHORT *, ULONG *);
 #endif
 
 static void		server_ast(void*, USHORT, const UCHAR*);
@@ -535,7 +495,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				if (dataSize)
 				{
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
-					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
+					memcpy(port->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 				}
 			
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
@@ -754,7 +714,7 @@ static bool accept_connection(rem_port* port,
 	Firebird::string buffer;
 	buffer.printf("%s/P%d", port->port_version->str_data,
 							port->port_protocol & FB_PROTOCOL_MASK);
-	ALLR_free(port->port_version);
+	delete port->port_version;
 	port->port_version = REMOTE_make_string(buffer.c_str());
 
 	if (architecture == ARCHITECTURE)
@@ -806,10 +766,10 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	else {
 		/* Allocate SQL request block */
 
-		RSR statement = (RSR) ALLR_block(type_rsr, 0);
+		RSR statement = new Rsr;
 		statement->rsr_rdb = rdb;
 		statement->rsr_handle = handle;
-		if (statement->rsr_id = port->get_id(&statement->rsr_header))
+		if (statement->rsr_id = port->get_id(statement))
 		{
 			object = statement->rsr_id;
 			statement->rsr_next = rdb->rdb_sql_requests;
@@ -818,7 +778,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 		else {
 			object = 0;
 			GDS_DSQL_FREE(status_vector, &statement->rsr_handle, DSQL_drop);
-			ALLR_free(statement);
+			delete statement;
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;
@@ -1086,7 +1046,7 @@ static void attach_database2(rem_port* port,
 
 	if (!status_vector[1])
 	{
-		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+		RDB rdb = new Rdb;
 		if (rdb)
 		{
 			port->port_context = rdb;
@@ -1272,7 +1232,7 @@ static void cancel_operation( rem_port* port)
 
 	if (rdb->rdb_handle)
 	{
-		if (!(rdb->rdb_flags & RDB_service))
+		if (!(rdb->rdb_flags & Rdb::SERVICE))
 		{
 			ISC_STATUS_ARRAY status_vector;
 			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
@@ -1283,7 +1243,7 @@ static void cancel_operation( rem_port* port)
 #endif
 
 
-static bool check_request(rrq* request,
+static bool check_request(Rrq* request,
 						  USHORT incarnation,
 						  USHORT msg_number)
 {
@@ -1406,7 +1366,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 
 /* Allocate block and merge into data structures */
 
-	rrq* requestL = (rrq*) ALLR_block(type_rrq, max_msg + 1);
+	Rrq* requestL = new Rrq(max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("compile(server)           allocate request %x\n", request);
 #endif
@@ -1415,7 +1375,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	requestL->rrq_max_msg = max_msg;
 	OBJCT object = 0;
 	
-	if (requestL->rrq_id = this->get_id(&requestL->rrq_header))
+	if (requestL->rrq_id = this->get_id(requestL))
 	{
 		object = requestL->rrq_id;
 		requestL->rrq_next = rdb->rdb_requests;
@@ -1423,7 +1383,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 	}
 	else {
 		isc_release_request(status_vector, &requestL->rrq_handle);
-		ALLR_free(requestL);
+		delete requestL;
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_too_many_handles;
 		status_vector[2] = isc_arg_end;
@@ -1437,7 +1397,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 		message->msg_prior = message;
 #endif
 
-		rrq::rrq_repeat* tail = requestL->rrq_rpt + message->msg_number;
+		Rrq::rrq_repeat* tail = &requestL->rrq_rpt[message->msg_number];
 		tail->rrq_message = message;
 		tail->rrq_xdr = message;
 		tail->rrq_format = (rem_fmt*) message->msg_address;
@@ -1465,11 +1425,7 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 	RTR transaction;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						ddlL->p_ddl_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, ddlL->p_ddl_transaction);
 
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
@@ -1529,7 +1485,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	PACKET *packet = &rdb->rdb_packet;
 	if ((this->port_async) &&
-		((this->port_type == port_xnet) || (this->port_type == port_pipe)))
+		((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE)))
 	{
 		packet->p_operation = op_disconnect;
 		this->port_async->send(packet);
@@ -1538,7 +1494,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (rdb->rdb_handle)
-		if (!(rdb->rdb_flags & RDB_service)) {
+		if (!(rdb->rdb_flags & Rdb::SERVICE)) {
 #ifdef CANCEL_OPERATION
 			/* Prevent a pending or spurious cancel from aborting
 			   a good, clean detach from the database. */
@@ -1586,23 +1542,14 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	this->port_context = NULL;
 	if (this->port_async)
 		this->port_async->port_context = NULL;
-	ALLR_free(rdb);
-	if (this->port_object_vector)
-	{
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free vector      %x\n",
-				  this->port_object_vector);
-#endif
-		ALLR_free(this->port_object_vector);
-		this->port_object_vector = NULL;
-	}
+	delete rdb;
 	if (this->port_connection)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_connection);
 #endif
-		ALLR_free(this->port_connection);
+		delete this->port_connection;
 		this->port_connection = NULL;
 	}
 	if (this->port_version)
@@ -1611,7 +1558,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_version);
 #endif
-		ALLR_free(this->port_version);
+		delete this->port_version;
 		this->port_version = NULL;
 	}
 	if (this->port_passwd)
@@ -1620,7 +1567,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_passwd);
 #endif
-		ALLR_free(this->port_passwd);
+		delete this->port_passwd;
 		this->port_passwd = NULL;
 	}
 	if (this->port_user_name)
@@ -1629,7 +1576,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_user_name);
 #endif
-		ALLR_free(this->port_user_name);
+		delete this->port_user_name;
 		this->port_user_name = NULL;
 	}
 	if (this->port_host)
@@ -1638,7 +1585,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		printf("disconnect(server)        free string      %x\n",
 				  this->port_host);
 #endif
-		ALLR_free(this->port_host);
+		delete this->port_host;
 		this->port_host = NULL;
 	}
 	this->disconnect();
@@ -1695,7 +1642,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 
 
 #ifdef SCROLLABLE_CURSORS
-static REM_MSG dump_cache( rrq::rrq_repeat* tail)
+static REM_MSG dump_cache( Rrq::rrq_repeat* tail)
 {
 /**************************************
  *
@@ -1739,11 +1686,7 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
 	RBL blob;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(blob,
-						RBL,
-						type_rbl,
-						release->p_rlse_object,
-						isc_bad_segstr_handle);
+	getHandle(blob, release->p_rlse_object);
 
 	if (operation == op_close_blob)
 		isc_close_blob(status_vector, &blob->rbl_handle);
@@ -1814,14 +1757,10 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
  *	End a request.
  *
  **************************************/
-	rrq* requestL;
+	Rrq* requestL;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						release->p_rlse_object,
-						isc_bad_req_handle);
+	getHandle(requestL, release->p_rlse_object);
 
 	isc_release_request(status_vector, &requestL->rrq_handle);
 
@@ -1847,11 +1786,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						free_stmt->p_sqlfree_statement,
-						isc_bad_req_handle);
+	getHandle(statement, free_stmt->p_sqlfree_statement);
 
 	GDS_DSQL_FREE(status_vector,
 				  &statement->rsr_handle,
@@ -1865,7 +1800,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 		statement = NULL;
 	}
 	else {
-		statement->rsr_flags &= ~RSR_fetched;
+		statement->rsr_flags &= ~Rsr::FETCHED;
 		statement->rsr_rtr = NULL;
 		REMOTE_reset_statement(statement);
 		statement->rsr_message = statement->rsr_buffer;
@@ -1892,11 +1827,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 	RTR transaction;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						release->p_rlse_object,
-						isc_bad_trans_handle);
+	getHandle(transaction, release->p_rlse_object);
 
 	switch (operation)
 	{
@@ -1956,12 +1887,8 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	}
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
-	if (this->port_objects && exnow->p_sqlst_transaction) {
-		CHECK_HANDLE_MEMBER(transaction,
-							RTR,
-							type_rtr,
-							exnow->p_sqlst_transaction,
-							isc_bad_trans_handle);
+	if (exnow->p_sqlst_transaction) {
+		getHandle(transaction, exnow->p_sqlst_transaction);
 	}
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
@@ -2098,19 +2025,11 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (sqldata->p_sqldata_transaction)
 	{
-		CHECK_HANDLE_MEMBER(transaction,
-							RTR,
-							type_rtr,
-							sqldata->p_sqldata_transaction,
-							isc_bad_trans_handle);
+		getHandle(transaction, sqldata->p_sqldata_transaction);
 	}
 
 	RSR statement;
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						sqldata->p_sqldata_statement,
-						isc_bad_req_handle);
+	getHandle(statement, sqldata->p_sqldata_statement);
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
 	UCHAR* in_msg = NULL;
@@ -2141,7 +2060,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		out_msg_type = 0;
 		out_blr = NULL;
 	}
-	statement->rsr_flags &= ~RSR_fetched;
+	statement->rsr_flags &= ~Rsr::FETCHED;
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
@@ -2212,13 +2131,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						sqldata->p_sqldata_statement,
-						isc_bad_req_handle);
+	getHandle(statement, sqldata->p_sqldata_statement);
 
-	if (statement->rsr_flags & RSR_blob) {
+	if (statement->rsr_flags & Rsr::BLOB) {
 		return this->fetch_blob(sqldata, sendL);
 	}
 
@@ -2230,14 +2145,14 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		msg_length = 0;
 	}
 	USHORT count = ((this->port_flags & PORT_rpc) ||
-			(statement->rsr_flags & RSR_no_batch)) ? 1 :
+			(statement->rsr_flags & Rsr::NO_BATCH)) ? 1 :
 			sqldata->p_sqldata_messages;
-	USHORT count2 = (statement->rsr_flags & RSR_no_batch) ? 0 : count;
+	USHORT count2 = (statement->rsr_flags & Rsr::NO_BATCH) ? 0 : count;
 
 /* On first fetch, clear the end-of-stream flag & reset the message buffers */
 
-	if (!(statement->rsr_flags & RSR_fetched)) {
-		statement->rsr_flags &= ~(RSR_eof | RSR_stream_err);
+	if (!(statement->rsr_flags & Rsr::FETCHED)) {
+		statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR);
 		stmt_clear_exception(statement);
 		REM_MSG message = statement->rsr_message;
 		if (message != NULL) {
@@ -2266,19 +2181,19 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (true) {
 
 		/* Have we exhausted the cache & reached cursor EOF? */
-		if ((statement->rsr_flags & RSR_eof) && !statement->rsr_msgs_waiting) {
-			statement->rsr_flags &= ~RSR_eof;
+		if ((statement->rsr_flags & Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
+			statement->rsr_flags &= ~Rsr::EOF_SET;
 			s = 100;
 			count2 = 0;
 			break;
 		}
 
 		/* Have we exhausted the cache & have a pending error? */
-		if ((statement->rsr_flags & RSR_stream_err)
+		if ((statement->rsr_flags & Rsr::STREAM_ERR)
 			&& !statement->rsr_msgs_waiting)
 		{
 			fb_assert(statement->rsr_status);
-			statement->rsr_flags &= ~RSR_stream_err;
+			statement->rsr_flags &= ~Rsr::STREAM_ERR;
 			return this->send_response(sendL, 0, 0,
 								 statement->rsr_status->value(),
 								 false);
@@ -2302,9 +2217,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 							   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 							   sqldata->p_sqldata_message_number,
 							   msg_length,
-							   reinterpret_cast<char*>(message->msg_buffer));
+							   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
-			statement->rsr_flags |= RSR_fetched;
+			statement->rsr_flags |= Rsr::FETCHED;
 			if (s) {
 				if (s == 100 || s == 101)
 				{
@@ -2377,7 +2292,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				while (next->msg_next != message)
 					next = next->msg_next;
 			}
-			message = (REM_MSG) ALLR_block(type_msg, statement->rsr_fmt_length);
+			message = new Message(statement->rsr_fmt_length);
 			message->msg_number = next->msg_number;
 			message->msg_next = next->msg_next;
 			next->msg_next = message;
@@ -2389,18 +2304,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 						   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 						   sqldata->p_sqldata_message_number,
 						   msg_length,
-						   reinterpret_cast<char*>(message->msg_buffer));
+						   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
 		if (s) {
 			if (status_vector[1]) {
 				/* If already have an error queued, don't overwrite it */
-				if (!(statement->rsr_flags & RSR_stream_err)) {
-					statement->rsr_flags |= RSR_stream_err;
+				if (!(statement->rsr_flags & Rsr::STREAM_ERR)) {
+					statement->rsr_flags |= Rsr::STREAM_ERR;
 					stmt_save_exception(statement, status_vector, true);
 				}
 			}
 			if (s == 100)
-				statement->rsr_flags |= RSR_eof;
+				statement->rsr_flags |= Rsr::EOF_SET;
 			break;
 		}
 		message->msg_address = message->msg_buffer;
@@ -2427,11 +2342,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						sqldata->p_sqldata_statement,
-						isc_bad_req_handle);
+	getHandle(statement, sqldata->p_sqldata_statement);
 
 	USHORT msg_length;
 	if (statement->rsr_format)
@@ -2459,7 +2370,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 					   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 					   sqldata->p_sqldata_message_number,
 					   msg_length,
-					   reinterpret_cast<char*>(message->msg_buffer));
+					   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
 	if (!status_vector[1] ||
 		status_vector[1] != isc_segment || status_vector[1] != isc_segstr_eof)
@@ -2476,55 +2387,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 }
 
 
-OBJCT rem_port::get_id(BLK block)
-{
-/**************************************
- *
- *	g e t _ i d
- *
- **************************************
- *
- * Functional description
- *	Allocate an object slot for an object.
- *	If the object vector cannot be expanded
- *	to accomodate the object slot then
- *	REMOTE_set_object() will return a NULL
- *	object slot.
- *
- **************************************/
-
-/* If there isn't a vector, obvious the object goes in slot 1.
-   Reserve slot 0 so we can distinguish something from nothing.
-   NOTE: prior to server version 4.5.0 id==0 COULD be used - so
-   only the server side can now depend on id==0 meaning "invalid id" */
-
-	rem_vec* vector = this->port_object_vector;
-	if (!vector) {
-		return (this->port_last_object_id = 
-			REMOTE_set_object(this, block, (OBJCT) 1));
-	}
-
-	// Search vector for an empty slot.  If we find one, use it
-
-	blk** p = vector->vec_object + 1;
-	for (const blk* const* const end = vector->vec_object + vector->vec_count;
-		p < end; p++)
-	{
-		if (!*p) {
-			*p = block;
-			this->port_last_object_id = (OBJCT) (p - vector->vec_object);
-			return this->port_last_object_id;
-		}
-	}
-
-/* Vector is full -- somebody will need to expand it */
-
-	return (this->port_last_object_id = 
-		REMOTE_set_object(this, block, (OBJCT) vector->vec_count));
-}
-
-
-static bool get_next_msg_no(rrq* request,
+static bool get_next_msg_no(Rrq* request,
 							USHORT incarnation,
 							USHORT * msg_number)
 {
@@ -2590,11 +2453,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	RBL blob;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(blob,
-						RBL,
-						type_rbl,
-						segment->p_sgmt_blob,
-						isc_bad_segstr_handle);
+	getHandle(blob, segment->p_sgmt_blob);
 
 	UCHAR temp_buffer[BLOB_LENGTH];
 	USHORT buffer_length = segment->p_sgmt_length;
@@ -2604,12 +2463,7 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	else
 	{
 		if (buffer_length > blob->rbl_buffer_length) {
-			if (blob->rbl_buffer != blob->rbl_data) {
-				ALLR_free(blob->rbl_buffer);
-				blob->rbl_buffer = blob->rbl_data;
-				blob->rbl_buffer_length = 1;
-			}
-			blob->rbl_buffer = ALLR_alloc((SLONG) buffer_length);
+			blob->rbl_buffer = blob->rbl_data.getBuffer(buffer_length);
 			blob->rbl_buffer_length = buffer_length;
 		}
 		buffer = blob->rbl_buffer;
@@ -2634,12 +2488,6 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
-		if (status_vector[1] == isc_segstr_eof)
-			if (blob->rbl_buffer != blob->rbl_data) {
-				ALLR_free(blob->rbl_buffer);
-				blob->rbl_buffer = blob->rbl_data;
-				blob->rbl_buffer_length = 1;
-			}
 
 		return status;
 	}
@@ -2688,13 +2536,6 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	printf("get_segment(server)       free buffer      %x\n", buffer);
 #endif
 
-	if (status_vector[1] == isc_segstr_eof)
-		if (blob->rbl_buffer != blob->rbl_data) {
-			ALLR_free(blob->rbl_buffer);
-			blob->rbl_buffer = blob->rbl_data;
-			blob->rbl_buffer_length = 1;
-		}
-
 	return status;
 }
 
@@ -2720,29 +2561,18 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						stuff->p_slc_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, stuff->p_slc_transaction);
 
-	UCHAR temp_buffer[4096];
-	UCHAR* slice;
-	if (!stuff->p_slc_length)
-		slice = 0;
-	else {
-		if (stuff->p_slc_length <= sizeof(temp_buffer))
-			slice = temp_buffer;
-		else
-			slice = ALLR_alloc((SLONG) stuff->p_slc_length);
-	}
-
-	if (slice) {
+	Firebird::HalfStaticArray<UCHAR, 4096> temp_buffer;
+	UCHAR* slice = 0;
+	if (stuff->p_slc_length) {
+		slice = temp_buffer.getBuffer(stuff->p_slc_length);
 		memset(slice, 0, stuff->p_slc_length);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("get_slice(server)         allocate buffer  %x\n", slice);
 #endif
 	}
+
 	P_SLR* response = &sendL->p_slr;
 
 	isc_get_slice(status_vector, &rdb->rdb_handle, &transaction->rtr_handle,
@@ -2765,14 +2595,6 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 		this->send(sendL);
 		response->p_slr_sdl = 0;
 		status = FB_SUCCESS;
-	}
-
-	if (slice) {
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("get_slice(server)         free buffer      %x\n", slice);
-#endif
-		if (slice != temp_buffer)
-			ALLR_free(slice);
 	}
 
 	return status;
@@ -2804,30 +2626,20 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 	}
 
 /* Make sure there is a suitable temporary blob buffer */
-
-	UCHAR* const buffer = ALLR_alloc(stuff->p_info_buffer_length);
+	Firebird::Array<UCHAR> buf;
+	UCHAR* const buffer = buf.getBuffer(stuff->p_info_buffer_length);
 	memset(buffer, 0, stuff->p_info_buffer_length);
-#ifdef DEBUG_REMOTE_MEMORY
-	printf("info(server)              allocate buffer  %x\n", buffer);
-#endif
 
-	SCHAR info[1024], *info_buffer;
+	Firebird::HalfStaticArray<SCHAR, 1024> info;
+	SCHAR* info_buffer = 0;
 	USHORT info_len;
-	UCHAR temp[1024];
-	UCHAR* temp_buffer;
-	temp_buffer = temp;
+	Firebird::HalfStaticArray<UCHAR, 1024> temp;
+	UCHAR* temp_buffer = 0;
 	if (op == op_info_database)
 	{
 		info_len = 0;
 		info_buffer = 0;
-
-		if (stuff->p_info_buffer_length > sizeof(temp)) 
-		{
-			temp_buffer = ALLR_alloc((SLONG) stuff->p_info_buffer_length);
-#ifdef DEBUG_REMOTE_MEMORY
-			printf("info(server)              allocate buffer  %x\n", temp_buffer);
-#endif
-		}
+		temp_buffer = temp.getBuffer(stuff->p_info_buffer_length);
 	}
 	else
 	{
@@ -2837,17 +2649,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 			&stuff->p_info_recv_items : &stuff->p_info_items;
 
 		info_len = 1 + info_string->cstr_length;
-
-		if (info_len > sizeof(info))
-		{
-			info_buffer = (SCHAR*) ALLR_alloc((SLONG) info_len);
-#ifdef DEBUG_REMOTE_MEMORY
-			ib_printf("info(server)              allocate buffer  %x\n", info_buffer);
-#endif
-		}
-		else {
-			info_buffer = info;
-		}
+		info_buffer = info.getBuffer(info_len);
 
 		*info_buffer = isc_info_length;
 		memmove(info_buffer + 1, info_string->cstr_address, info_len - 1);
@@ -2856,11 +2658,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 	USHORT info_db_len = 0;
 	switch (op) {
 	case op_info_blob:
-		CHECK_HANDLE_MEMBER(blob,
-							RBL,
-							type_rbl,
-							stuff->p_info_object,
-							isc_bad_segstr_handle);
+		getHandle(blob, stuff->p_info_object);
 		isc_blob_info(status_vector, &blob->rbl_handle,
 					  info_len,
 					  info_buffer,
@@ -2888,12 +2686,8 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 
 	case op_info_request:
 		{
-		rrq* requestL;
-		CHECK_HANDLE_MEMBER(requestL,
-							rrq*,
-							type_rrq,
-							stuff->p_info_object,
-							isc_bad_req_handle);
+		Rrq* requestL;
+		getHandle(requestL, stuff->p_info_object);
 		isc_request_info(status_vector, &requestL->rrq_handle,
 						 stuff->p_info_incarnation,
 						 info_len,
@@ -2904,11 +2698,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		}
 
 	case op_info_transaction:
-		CHECK_HANDLE_MEMBER(transaction,
-							RTR,
-							type_rtr,
-							stuff->p_info_object,
-							isc_bad_trans_handle);
+		getHandle(transaction, stuff->p_info_object);
 		isc_transaction_info(status_vector, &transaction->rtr_handle,
 							 info_len,
 							 info_buffer,
@@ -2930,11 +2720,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 		break;
 
 	case op_info_sql:
-		CHECK_HANDLE_MEMBER(statement,
-							RSR,
-							type_rsr,
-							stuff->p_info_object,
-							isc_bad_req_handle);
+		getHandle(statement, stuff->p_info_object);
 
 		GDS_DSQL_SQL_INFO(status_vector,
 						  &statement->rsr_handle,
@@ -2943,20 +2729,6 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 						  stuff->p_info_buffer_length,
 						  reinterpret_cast < char *>(buffer));
 		break;
-	}
-
-	if (temp_buffer != temp) {
-#ifdef DEBUG_REMOTE_MEMORY
-    	printf ("info(server)              free buffer      %x\n", temp_buffer);
-#endif
-    	ALLR_free(temp_buffer);
-	}
-
-	if (info_buffer && (info_buffer != info)) {
-#ifdef DEBUG_REMOTE_MEMORY
-    	printf ("info(server)              free buffer      %x\n", info_buffer);
-#endif
-    	ALLR_free(info_buffer);
 	}
 
 /* Send a response that includes the segment. */
@@ -2980,11 +2752,6 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
 	const ISC_STATUS status = this->send_response(sendL, stuff->p_info_object, 
 		response_len, status_vector, false);
 
-#ifdef DEBUG_REMOTE_MEMORY
-	printf("info(server)              free buffer      %x\n", buffer);
-#endif
-	ALLR_free(buffer);
-
 	return status;
 }
 
@@ -3004,11 +2771,7 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						sqldata->p_sqldata_statement,
-						isc_bad_req_handle);
+	getHandle(statement, sqldata->p_sqldata_statement);
 
 	USHORT msg_length;
 	const UCHAR* msg;
@@ -3046,16 +2809,16 @@ static RTR make_transaction (RDB rdb, FB_API_HANDLE handle)
  *	Create a local transaction handle.
  *
  **************************************/
-	RTR transaction = (RTR) ALLR_block(type_rtr, 0);
+	RTR transaction = new Rtr;
 	transaction->rtr_rdb = rdb;
 	transaction->rtr_handle = handle;
-	if (transaction->rtr_id = rdb->rdb_port->get_id(&transaction->rtr_header))
+	if (transaction->rtr_id = rdb->rdb_port->get_id(transaction))
 	{
 		transaction->rtr_next = rdb->rdb_transactions;
 		rdb->rdb_transactions = transaction;
 	}
 	else {
-		ALLR_free(transaction);
+		delete transaction;
 		transaction = NULL;
 	}
 
@@ -3078,11 +2841,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	RTR transaction;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						stuff->p_blob_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, stuff->p_blob_transaction);
 
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
@@ -3112,15 +2871,13 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	if (status_vector[1])
 		object = 0;
 	else {
-		RBL blob = (RBL) ALLR_block(type_rbl, 1);
+		RBL blob = new Rbl;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("open_blob(server)         allocate blob    %x\n", blob);
 #endif
-		blob->rbl_buffer_length = 1;
-		blob->rbl_buffer = blob->rbl_data;
 		blob->rbl_handle = handle;
 		blob->rbl_rdb = rdb;
-		if (blob->rbl_id = this->get_id(&blob->rbl_header))
+		if (blob->rbl_id = this->get_id(blob))
 		{
 			object = blob->rbl_id;
 			blob->rbl_rtr = transaction;
@@ -3131,7 +2888,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 		{
 			object = 0;
 			isc_cancel_blob(status_vector, &blob->rbl_handle);
-			ALLR_free(blob);
+			delete blob;
 			status_vector[0] = isc_arg_gds;
 			status_vector[1] = isc_too_many_handles;
 			status_vector[2] = isc_arg_end;
@@ -3157,11 +2914,7 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
 	RTR transaction;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						stuff->p_prep_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, stuff->p_prep_transaction);
 
 	if (!isc_prepare_transaction2(status_vector, &transaction->rtr_handle,
 								  stuff->p_prep_data.cstr_length,
@@ -3193,33 +2946,15 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (prepareL->p_sqlst_transaction)
 	{
-		CHECK_HANDLE_MEMBER(transaction,
-							RTR,
-							type_rtr,
-							prepareL->p_sqlst_transaction,
-							isc_bad_trans_handle);
+		getHandle(transaction, prepareL->p_sqlst_transaction);
 	}
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						prepareL->p_sqlst_statement,
-						isc_bad_req_handle);
+	getHandle(statement, prepareL->p_sqlst_statement);
 
-	UCHAR local_buffer[1024];
-	UCHAR *info, info_buffer[1024];
-	UCHAR* buffer;
-	if (prepareL->p_sqlst_buffer_length > sizeof(local_buffer))
-		buffer = ALLR_alloc((SLONG) prepareL->p_sqlst_buffer_length);
-	else
-		buffer = local_buffer;
+	Firebird::HalfStaticArray<UCHAR, 1024> local_buffer, info_buffer;
+	UCHAR* const info = info_buffer.getBuffer(prepareL->p_sqlst_items.cstr_length + 1);
+	UCHAR* const buffer = local_buffer.getBuffer(prepareL->p_sqlst_buffer_length);
 
 	// stuff isc_info_length in front of info items buffer
-	if (prepareL->p_sqlst_items.cstr_length + 1u > sizeof(info_buffer)) {
-		info = ALLR_alloc((SLONG) prepareL->p_sqlst_items.cstr_length + 1);
-	}
-	else {
-		info = info_buffer;
-	}
 	*info = isc_info_length;
 	memmove(info + 1, prepareL->p_sqlst_items.cstr_address, 
 		prepareL->p_sqlst_items.cstr_length);
@@ -3260,28 +2995,22 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 					 prepareL->p_sqlst_buffer_length,
 					 reinterpret_cast<char*>(buffer));
 
-	if (info != info_buffer) {
-		ALLR_free(info);
-	}
-
 	if (status_vector[1]) {
-		if (buffer != local_buffer)
-			ALLR_free(buffer);
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
 	REMOTE_reset_statement(statement);
 
-	statement->rsr_flags &= ~(RSR_blob | RSR_no_batch | RSR_defer_execute);
+	statement->rsr_flags &= ~(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
 	USHORT state = check_statement_type(statement);
 	if (state & STMT_BLOB) {
-		statement->rsr_flags |= RSR_blob;
+		statement->rsr_flags |= Rsr::BLOB;
 	}
 	if (state & STMT_NO_BATCH) {
-		statement->rsr_flags |= RSR_no_batch;
+		statement->rsr_flags |= Rsr::NO_BATCH;
 	}
-	if (state & STMT_DEFER_EXECUTE && (port_flags & PORT_lazy)) {
-		statement->rsr_flags |= RSR_defer_execute;
+	if ((state & STMT_DEFER_EXECUTE) && (port_flags & PORT_lazy)) {
+		statement->rsr_flags |= Rsr::DEFER_EXECUTE;
 	}
 	if (!(port_flags & PORT_lazy)) {
 		state = (state & STMT_BLOB) ? 1 : 0;
@@ -3309,10 +3038,6 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 							response_len,
 							status_vector,
 							false);
-
-	if (buffer != local_buffer) {
-		ALLR_free(buffer);
-	}
 
 	return status;
 }
@@ -3351,7 +3076,7 @@ static bool process_packet(rem_port* port,
 							string->str_data);
 				}
 				if (port->port_server->srvr_flags & SRVR_multi_client) {
-					port->port_state = state_broken;
+					port->port_state = rem_port::BROKEN;
 				}
 				else {
 					gds__log("SERVER/process_packet: connect reject, server exiting");
@@ -3582,11 +3307,11 @@ static bool process_packet(rem_port* port,
 		default:
 			gds__log("SERVER/process_packet: don't understand packet type %d",
 					receive->p_operation);
-			port->port_state = state_broken;
+			port->port_state = rem_port::BROKEN;
 			break;
 		}
 
-		if (port && port->port_state == state_broken) {
+		if (port && port->port_state == rem_port::BROKEN) {
 			if (!port->port_parent) {
 				gds__log("SERVER/process_packet: broken port, server exiting", 0);
 				port->disconnect(sendL, receive);
@@ -3712,11 +3437,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 	RBL blob;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(blob,
-						RBL,
-						type_rbl,
-						segment->p_sgmt_blob,
-						isc_bad_segstr_handle);
+	getHandle(blob, segment->p_sgmt_blob);
 
 	const UCHAR* p = segment->p_sgmt_segment.cstr_address;
 	USHORT length = segment->p_sgmt_segment.cstr_length;
@@ -3764,11 +3485,7 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
 	RTR transaction;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						stuff->p_slc_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, stuff->p_slc_transaction);
 
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))
@@ -3820,7 +3537,7 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 
 	if (!event)
 	{
-		event = (RVNT) ALLR_block(type_rvnt, 0);
+		event = new rvnt;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("que_events(server)        allocate event   %x\n", event);
 #endif
@@ -3870,13 +3587,9 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
  *	Receive a message.
  *
  **************************************/
-	rrq* requestL;
+	Rrq* requestL;
 
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						data->p_data_request,
-						isc_bad_req_handle);
+	getHandle(requestL, data->p_data_request);
 
 	const USHORT level = data->p_data_incarnation;
 	requestL = REMOTE_find_request(requestL, level);
@@ -3899,7 +3612,7 @@ ISC_STATUS rem_port::receive_after_start(	P_DATA*	data,
 /* Fill in packet to fool receive into thinking that it has been
    called directly by the client. */
 
-	const rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
+	const Rrq::rrq_repeat* tail = &requestL->rrq_rpt[msg_number];
 	const rem_fmt* format = tail->rrq_format;
 
 	data->p_data_message_number = msg_number;
@@ -3940,12 +3653,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
    message control block for the request and message type. */
    
 	ISC_STATUS_ARRAY status_vector;
-	rrq* requestL;
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						data->p_data_request,
-						isc_bad_req_handle);
+	Rrq* requestL;
+	getHandle(requestL, data->p_data_request);
 
 	const USHORT level = data->p_data_incarnation;
 	requestL = REMOTE_find_request(requestL, level);
@@ -3961,7 +3670,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		status_vector[2] = isc_arg_end;
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
-	rrq::rrq_repeat* tail = requestL->rrq_rpt + msg_number;
+	Rrq::rrq_repeat* tail = &requestL->rrq_rpt[msg_number];
 	const rem_fmt* format = tail->rrq_format;
 
 /* Get ready to ship the data out */
@@ -4036,29 +3745,29 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 			switch (direction) {
 			case blr_forward:
-				tail->rrq_flags &= ~RRQ_backward;
+				tail->rrq_flags &= ~Rrq::BACKWARD;
 				tail->rrq_absolute +=
-					(tail->rrq_flags & RRQ_absolute_backward) ?
+					(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ?
 						-offset : offset;
 				break;
 
 			case blr_backward:
-				tail->rrq_flags |= RRQ_backward;
+				tail->rrq_flags |= Rrq::BACKWARD;
 				tail->rrq_absolute +=
-					(tail->rrq_flags & RRQ_absolute_backward) ?
+					(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ?
 						offset : -offset;
 				break;
 
 			case blr_bof_forward:
-				tail->rrq_flags &= ~RRQ_backward;
-				tail->rrq_flags &= ~RRQ_absolute_backward;
+				tail->rrq_flags &= ~Rrq::BACKWARD;
+				tail->rrq_flags &= ~Rrq::ABSOLUTE_BACKWARD;
 				tail->rrq_absolute = offset;
 				direction = blr_forward;
 				break;
 
 			case blr_eof_backward:
-				tail->rrq_flags |= RRQ_backward;
-				tail->rrq_flags |= RRQ_absolute_backward;
+				tail->rrq_flags |= Rrq::BACKWARD;
+				tail->rrq_flags |= Rrq::ABSOLUTE_BACKWARD;
 				tail->rrq_absolute = offset;
 				direction = blr_backward;
 				break;
@@ -4135,7 +3844,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 			/* allocate a new message block and put it in the cache */
 
-			message = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
+			message = new Message(format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 			printf("receive_msg(server)       allocate message %x\n",
 					  message);
@@ -4178,12 +3887,12 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		{
 		case blr_forward:
 			tail->rrq_absolute +=
-				(tail->rrq_flags & RRQ_absolute_backward) ? -offset : offset;
+				(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
 			break;
 
 		case blr_backward:
 			tail->rrq_absolute +=
-				(tail->rrq_flags & RRQ_absolute_backward) ? offset : -offset;
+				(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
 			break;
 		}
 
@@ -4213,7 +3922,7 @@ static void release_blob(RBL blob)
 	RDB rdb = blob->rbl_rdb;
 	RTR transaction = blob->rbl_rtr;
 
-	rdb->rdb_port->port_objects[blob->rbl_id] = NULL;
+	rdb->rdb_port->releaseObject(blob->rbl_id);
 
 	for (RBL* p = &transaction->rtr_blobs; *p; p = &(*p)->rbl_next) {
 		if (*p == blob) {
@@ -4225,10 +3934,7 @@ static void release_blob(RBL blob)
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("release_blob(server)      free blob        %x\n", blob);
 #endif
-	if (blob->rbl_buffer != blob->rbl_data) {
-		ALLR_free(blob->rbl_buffer);
-	}
-	ALLR_free(blob);
+	delete blob;
 }
 
 
@@ -4254,11 +3960,11 @@ static void release_event( RVNT event)
 		}
 	}
 
-	ALLR_free(event);
+	delete event;
 }
 
 
-static void release_request( rrq* request)
+static void release_request( Rrq* request)
 {
 /**************************************
  *
@@ -4271,7 +3977,7 @@ static void release_request( rrq* request)
  *
  **************************************/
 	RDB rdb = request->rrq_rdb;
-	rdb->rdb_port->port_objects[request->rrq_id] = NULL;
+	rdb->rdb_port->releaseObject(request->rrq_id);
 	REMOTE_release_request(request);
 }
 
@@ -4288,15 +3994,13 @@ static void release_statement( RSR * statement)
  *	Release a GDML or SQL statement?
  *
  **************************************/
-	if ((*statement)->rsr_select_format)
-		ALLR_free((*statement)->rsr_select_format);
-	if ((*statement)->rsr_bind_format)
-		ALLR_free((*statement)->rsr_bind_format);
+	delete (*statement)->rsr_select_format;
+	delete (*statement)->rsr_bind_format;
 
 	stmt_release_exception(*statement);
 	REMOTE_release_messages((*statement)->rsr_message);
 
-	ALLR_free((*statement));
+	delete *statement;
 	*statement = NULL;
 }
 
@@ -4314,7 +4018,7 @@ static void release_sql_request( RSR statement)
  *
  **************************************/
 	RDB rdb = statement->rsr_rdb;
-	rdb->rdb_port->port_objects[statement->rsr_id] = NULL;
+	rdb->rdb_port->releaseObject(statement->rsr_id);
 
 	for (RSR* p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	{
@@ -4341,7 +4045,7 @@ static void release_transaction( RTR transaction)
  *
  **************************************/
 	RDB rdb = transaction->rtr_rdb;
-	rdb->rdb_port->port_objects[transaction->rtr_id] = NULL;
+	rdb->rdb_port->releaseObject(transaction->rtr_id);
 
 	while (transaction->rtr_blobs)
 		release_blob(transaction->rtr_blobs);
@@ -4357,13 +4061,13 @@ static void release_transaction( RTR transaction)
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("release_transact(server)  free transaction %x\n", transaction);
 #endif
-	ALLR_free(transaction);
+	delete transaction;
 }
 
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG scroll_cache(
-						rrq::rrq_repeat* tail,
+						Rrq::rrq_repeat* tail,
 						USHORT * direction, ULONG * offset)
 {
 /**************************************
@@ -4398,16 +4102,16 @@ static REM_MSG scroll_cache(
    for, save the last direction asked for by the next layer above */
 
 	if (*direction == blr_continue) {
-		if (tail->rrq_flags & RRQ_last_backward)
+		if (tail->rrq_flags & Rrq::LAST_BACKWARD)
 			*direction = blr_backward;
 		else
 			*direction = blr_forward;
 	}
 
 	if (*direction == blr_forward || *direction == blr_bof_forward)
-		tail->rrq_flags &= ~RRQ_last_backward;
+		tail->rrq_flags &= ~Rrq::LAST_BACKWARD;
 	else
-		tail->rrq_flags |= RRQ_last_backward;
+		tail->rrq_flags |= Rrq::LAST_BACKWARD;
 
 /* set to the first message; if it has no record, this means the cache is 
    empty and there is no point in trying to find the record here */
@@ -4421,9 +4125,9 @@ static REM_MSG scroll_cache(
 
 	if (
 		(*direction == blr_bof_forward
-		 && (tail->rrq_flags & RRQ_absolute_backward))
+		 && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD))
 		|| (*direction == blr_eof_backward
-			&& !(tail->rrq_flags & RRQ_absolute_backward)))
+			&& !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
 	{
 		return dump_cache(tail);
 	}
@@ -4449,8 +4153,8 @@ static REM_MSG scroll_cache(
 			*direction = blr_backward;
 	}
 
-	if ((*direction == blr_forward && (tail->rrq_flags & RRQ_backward)) ||
-		(*direction == blr_backward && !(tail->rrq_flags & RRQ_backward)))
+	if ((*direction == blr_forward && (tail->rrq_flags & Rrq::BACKWARD)) ||
+		(*direction == blr_backward && !(tail->rrq_flags & Rrq::BACKWARD)))
 	{
 		/* lookahead cache was in opposite direction from the scroll direction, 
 		   so increase the scroll amount by the amount we looked ahead, then 
@@ -4498,11 +4202,7 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
 	RBL blob;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(blob,
-						RBL,
-						type_rbl,
-						seek->p_seek_blob,
-						isc_bad_segstr_handle);
+	getHandle(blob, seek->p_seek_blob);
 
 	const SSHORT mode = seek->p_seek_mode;
 	const SLONG offset = seek->p_seek_offset;
@@ -4530,12 +4230,8 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	rrq* requestL;
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						data->p_data_request,
-						isc_bad_req_handle);
+	Rrq* requestL;
+	getHandle(requestL, data->p_data_request);
 
 	const USHORT number = data->p_data_message_number;
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
@@ -4704,7 +4400,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	// there's no point in keeping the connection open
 	if (exit_code == isc_shutdown || exit_code == isc_att_shutdown)
 	{
-		this->port_state = state_broken;
+		this->port_state = rem_port::BROKEN;
 	}
 
 	return exit_code;
@@ -4898,7 +4594,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 					   reinterpret_cast<const char*>(spb.getBuffer()));
 
 	if (!status_vector[1]) {
-		RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+		RDB rdb = new Rdb;
 		if (rdb)
 		{
 			this->port_context = rdb;
@@ -4907,7 +4603,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 #endif
 			rdb->rdb_port = this;
 			rdb->rdb_handle = handle;
-			rdb->rdb_flags |= RDB_service;
+			rdb->rdb_flags |= Rdb::SERVICE;
 		}
 		else
 		{
@@ -4993,11 +4689,7 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 	RSR statement;
 	ISC_STATUS_ARRAY status_vector;
 
-	CHECK_HANDLE_MEMBER(statement,
-						RSR,
-						type_rsr,
-						sqlcur->p_sqlcur_statement,
-						isc_bad_req_handle);
+	getHandle(statement, sqlcur->p_sqlcur_statement);
 
 	GDS_DSQL_SET_CURSOR(status_vector,
 						&statement->rsr_handle,
@@ -5032,12 +4724,7 @@ void set_server( rem_port* port, USHORT flags)
 	}
 
 	if (!server) {
-		server = (SRVR) ALLR_alloc((SLONG) sizeof(struct srvr));
-		server->srvr_next = servers;
-		servers = server;
-		server->srvr_port_type = port->port_type;
-		server->srvr_parent_port = port;
-		server->srvr_flags = flags;
+		servers = server = new srvr(servers, port, flags);
 	}
 
 	port->port_server = server;
@@ -5058,18 +4745,10 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 	RTR transaction;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						data->p_data_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, data->p_data_transaction);
 
-	rrq* requestL;
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						data->p_data_request,
-						isc_bad_req_handle);
+	Rrq* requestL;
+	getHandle(requestL, data->p_data_request);
 
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	REMOTE_reset_request(requestL, 0);
@@ -5102,18 +4781,10 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
  **************************************/
     ISC_STATUS_ARRAY status_vector;
 	RTR transaction;
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						data->p_data_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, data->p_data_transaction);
 
-	rrq* requestL;
-	CHECK_HANDLE_MEMBER(requestL,
-						rrq*,
-						type_rrq,
-						data->p_data_request,
-						isc_bad_req_handle);
+	Rrq* requestL;
+	getHandle(requestL, data->p_data_request);
 
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	const USHORT number = data->p_data_message_number;
@@ -5292,7 +4963,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 				{ // port_sync scope
 					Firebird::RefMutexGuard portGuard(*request->req_port->port_sync);
 
-					if (request->req_port->port_state != state_disconnected)
+					if (request->req_port->port_state != rem_port::DISCONNECTED)
 					{
 						rem_port* parent_port = request->req_port->port_server->srvr_parent_port;
 
@@ -5484,11 +5155,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 	RTR transaction;
 
-	CHECK_HANDLE_MEMBER(transaction,
-						RTR,
-						type_rtr,
-						trrq->p_trrq_transaction,
-						isc_bad_trans_handle);
+	getHandle(transaction, trrq->p_trrq_transaction);
 
 	RDB rdb = this->port_context;
 	if (bad_db(status_vector, rdb))

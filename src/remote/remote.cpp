@@ -29,7 +29,6 @@
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc.h"
-#include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/xdr_proto.h"
@@ -64,14 +63,14 @@ void REMOTE_cleanup_transaction( RTR transaction)
  *	receive while we still have something cached.
  *
  **************************************/
-	for (rrq* request = transaction->rtr_rdb->rdb_requests; request;
+	for (Rrq* request = transaction->rtr_rdb->rdb_requests; request;
 		 request = request->rrq_next) 
 	{
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
 			request->rrq_rtr = NULL;
 		}
-		for (rrq* level = request->rrq_levels; level; level = level->rrq_next)
+		for (Rrq* level = request->rrq_levels; level; level = level->rrq_next)
 			if (level->rrq_rtr == transaction) {
 				REMOTE_reset_request(level, 0);
 				level->rrq_rtr = NULL;
@@ -83,7 +82,7 @@ void REMOTE_cleanup_transaction( RTR transaction)
 	{
 		if (statement->rsr_rtr == transaction) {
 			REMOTE_reset_statement(statement);
-			statement->rsr_flags &= ~RSR_fetched;
+			statement->rsr_flags &= ~Rsr::FETCHED;
 			statement->rsr_rtr = NULL;
 		}
 	}
@@ -220,7 +219,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 }
 
 
-rrq* REMOTE_find_request(rrq* request, USHORT level)
+Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 {
 /**************************************
  *
@@ -245,8 +244,8 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 
 /* This is a new level -- make up a new request block. */
 
-	request->rrq_levels = (rrq*) ALLR_clone(&request->rrq_header);
-/* NOMEM: handled by ALLR_clone, FREE: REMOTE_remove_request() */
+	request->rrq_levels = request->clone();
+/* FREE: REMOTE_remove_request() */
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_find_request       allocate request %x\n",
 			  request->rrq_levels);
@@ -257,13 +256,13 @@ rrq* REMOTE_find_request(rrq* request, USHORT level)
 
 /* Allocate message block for known messages */
 
-	rrq::rrq_repeat* tail = request->rrq_rpt;
-	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+	Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
+	const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
 		const rem_fmt* format = tail->rrq_format;
 		if (!format)
 			continue;
-		REM_MSG msg = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
+		REM_MSG msg = new Message(format->fmt_length);
 		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_find_request       allocate message %x\n", msg);
@@ -373,7 +372,7 @@ rem_str* REMOTE_make_string(const SCHAR* input)
  *
  **************************************/
 	const USHORT length = strlen(input);
-	rem_str* string = (rem_str*) ALLR_block(type_str, length);
+	rem_str* string = FB_NEW_RPT(*getDefaultMemoryPool(), length) rem_str;
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("REMOTE_make_string        allocate string  %x\n", string);
 #endif
@@ -405,14 +404,14 @@ void REMOTE_release_messages( REM_MSG messages)
 			printf("REMOTE_release_messages   free message     %x\n",
 					  temp);
 #endif
-			ALLR_free(temp);
+			delete temp;
 			if (message == messages)
 				break;
 		}
 }
 
 
-void REMOTE_release_request( rrq* request)
+void REMOTE_release_request( Rrq* request)
 {
 /**************************************
  *
@@ -426,7 +425,7 @@ void REMOTE_release_request( rrq* request)
  **************************************/
 	RDB rdb = request->rrq_rdb;
 
-	for (rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
+	for (Rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 	{
 		if (*p == request) {
 			*p = request->rrq_next;
@@ -437,8 +436,8 @@ void REMOTE_release_request( rrq* request)
 /* Get rid of request and all levels */
 
 	for (;;) {
-		rrq::rrq_repeat* tail = request->rrq_rpt;
-		const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+		Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
+		const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 		for (; tail <= end; tail++)
 		{
 		    REM_MSG message = tail->rrq_message;
@@ -449,23 +448,23 @@ void REMOTE_release_request( rrq* request)
 						("REMOTE_release_request    free format      %x\n",
 						 tail->rrq_format);
 #endif
-					ALLR_free(tail->rrq_format);
+					delete tail->rrq_format;
 				}
 				REMOTE_release_messages(message);
 			}
 		}
-		rrq* next = request->rrq_levels;
+		Rrq* next = request->rrq_levels;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_release_request    free request     %x\n", request);
 #endif
-		ALLR_free(request);
+		delete request;
 		if (!(request = next))
 			break;
 	}
 }
 
 
-void REMOTE_reset_request( rrq* request, REM_MSG active_message)
+void REMOTE_reset_request( Rrq* request, REM_MSG active_message)
 {
 /**************************************
  *
@@ -479,8 +478,8 @@ void REMOTE_reset_request( rrq* request, REM_MSG active_message)
  *	some care to avoid zapping that message.
  *
  **************************************/
-	rrq::rrq_repeat* tail = request->rrq_rpt;
-	const rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
+	Rrq::rrq_repeat* tail = request->rrq_rpt.begin();
+	const Rrq::rrq_repeat* const end = tail + request->rrq_max_msg;
 	for (; tail <= end; tail++) {
 	    REM_MSG message = tail->rrq_message;
 		if (message != NULL && message != active_message) {
@@ -619,59 +618,6 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 }
 
 
-OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
-{
-/**************************************
- *
- *	R E M O T E _ s e t _ o b j e c t
- *
- **************************************
- *
- * Functional description
- *	Set an object into the object vector.
- *
- **************************************/
-
-/* If it fits, do it */
-
-	rem_vec* vector = port->port_object_vector;
-	if ((vector != NULL) && slot < vector->vec_count) {
-		vector->vec_object[slot] = object;
-		return slot;
-	}
-
-/* Prevent the creation of object handles that can't be
-   transferred by the remote protocol. */
-
-	if (slot + 10 > MAX_OBJCT_HANDLES)
-		return (OBJCT) NULL;
-
-	rem_vec* new_vector = (rem_vec*) ALLR_block(type_vec, slot + 10);
-	port->port_object_vector = new_vector;
-#ifdef DEBUG_REMOTE_MEMORY
-	printf("REMOTE_set_object         allocate vector  %x\n", new_vector);
-#endif
-	port->port_objects = new_vector->vec_object;
-	new_vector->vec_count = slot + 10;
-
-	if (vector) {
-		blk** p = new_vector->vec_object;
-		blk* const* q = vector->vec_object;
-		const blk* const* const end = q + (int) vector->vec_count;
-		while (q < end)
-			*p++ = *q++;
-#ifdef DEBUG_REMOTE_MEMORY
-		printf("REMOTE_release_request    free vector      %x\n", vector);
-#endif
-		ALLR_free(vector);
-	}
-
-	new_vector->vec_object[slot] = object;
-
-	return slot;
-}
-
-
 static void cleanup_memory( void *block)
 {
 /**************************************
@@ -769,13 +715,13 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 			}
 			rem_port* port = (rem_port*) xdrs->x_public;
 			Firebird::RefMutexGuard queGuard(*port->port_que_sync);
-			if (port->port_qoffset >= port->port_queue->getCount()) {
+			if (port->port_qoffset >= port->port_queue.getCount()) {
 				port->port_flags |= PORT_partial_data;
 				return FALSE;
 			}
-			xdrs->x_handy = (*port->port_queue)[port->port_qoffset].getCount();
+			xdrs->x_handy = port->port_queue[port->port_qoffset].getCount();
 			fb_assert(xdrs->x_handy <= port->port_buff_size);
-			memcpy(xdrs->x_base, (*port->port_queue)[port->port_qoffset].begin(), xdrs->x_handy);
+			memcpy(xdrs->x_base, port->port_queue[port->port_qoffset].begin(), xdrs->x_handy);
 			++port->port_qoffset;
 			xdrs->x_private = xdrs->x_base;
 		}

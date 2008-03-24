@@ -901,12 +901,10 @@ static bool alloc_cstring(XDR* xdrs,
 
 	if (!cstring->cstr_address) {
 		// fb_assert(!cstring->cstr_allocated);
-		if (!
-			(cstring->cstr_address =
-			 ALLR_alloc((SLONG) cstring->cstr_length)))
-		{
-			/* NOMEM: handled by ALLR_alloc() */
-			/* FREE:  in realloc case above & free_cstring() */
+		try {
+			cstring->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
+		}
+		catch (const Firebird::BadAlloc&) {
 			return false;
 		}
 
@@ -933,7 +931,7 @@ static void free_cstring( XDR* xdrs, CSTRING* cstring)
  **************************************/
 
 	if (cstring->cstr_allocated) {
-		ALLR_free(cstring->cstr_address);
+		delete[] cstring->cstr_address;
 		DEBUG_XDR_FREE(xdrs, cstring, cstring->cstr_address,
 					   cstring->cstr_allocated);
 	}
@@ -1186,7 +1184,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		   to start recording memory allocations for this packet. */
 
 		fb_assert(xop == XDR_ENCODE || xop == XDR_DECODE);
-		rem_vec* vector = ALLR_vector(&port->port_packet_vector, 0);
+		rem_vec* vector = A L L R _vector(&port->port_packet_vector, 0);
 
 		for (i = 0; i < vector->vec_count; i++)
 		{
@@ -1201,7 +1199,7 @@ static bool_t xdr_debug_packet( XDR* xdrs, enum xdr_op xop, PACKET* packet)
 		}
 
 		if (i >= vector->vec_count)
-			vector = ALLR_vector(&port->port_packet_vector, i);
+			vector = A L L R _vector(&port->port_packet_vector, i);
 
 		vector->vec_object[i] = (BLK) packet;
 	}
@@ -1286,7 +1284,7 @@ static bool_t xdr_message( XDR* xdrs, REM_MSG message, const rem_fmt* format)
 						  format->fmt_length);
 	}
 
-	const dsc* desc = format->fmt_desc;
+	const dsc* desc = format->fmt_desc.begin();
 	for (const dsc* const end = desc + format->fmt_count; desc < end; ++desc)
 	{
 		if (!xdr_datum(xdrs, desc, message->msg_address))
@@ -1363,10 +1361,10 @@ static bool_t xdr_request(
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 
-	if (!port->port_objects || request_id >= port->port_object_vector->vec_count)
+	if (request_id >= port->port_objects.getCount())
 		return FALSE;
 
-	rrq* request = (rrq*) port->port_objects[request_id];
+	Rrq* request = port->port_objects[request_id];
 
 	if (!request)
 		return FALSE;
@@ -1377,7 +1375,7 @@ static bool_t xdr_request(
 	if (message_number > request->rrq_max_msg)
 		return FALSE;
 
-	rrq::rrq_repeat* tail = &request->rrq_rpt[message_number];
+	Rrq::rrq_repeat* tail = &request->rrq_rpt[message_number];
 
 	REM_MSG message = tail->rrq_xdr;
 	if (!message)
@@ -1424,18 +1422,16 @@ static bool_t xdr_slice(
 		if (slice->lstr_length > slice->lstr_allocated &&
 			slice->lstr_allocated)
 		{
-			ALLR_free(slice->lstr_address);
+			delete slice->lstr_address;
 			DEBUG_XDR_FREE(xdrs, slice, slice->lstr_address, slice->lstr_allocated);
 			slice->lstr_address = NULL;
 		}
 		if (!slice->lstr_address) {
-			if (!
-				(slice->lstr_address =
-				 ALLR_alloc((SLONG) slice->lstr_length)))
-			{
-				/* NOMEM: handled by ALLR_alloc() */
-				/* FREE:  in realloc case above & XDR_FREE case of this routine */
-				return FALSE;
+			try {
+				slice->lstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
+			}
+			catch (const Firebird::BadAlloc&) {
+				return false;
 			}
 
 			slice->lstr_allocated = slice->lstr_length;
@@ -1446,7 +1442,7 @@ static bool_t xdr_slice(
 
 	case XDR_FREE:
 		if (slice->lstr_allocated) {
-			ALLR_free(slice->lstr_address);
+			delete[] slice->lstr_address;
 			DEBUG_XDR_FREE(xdrs, slice, slice->lstr_address, slice->lstr_allocated);
 		}
 		slice->lstr_address = NULL;
@@ -1518,16 +1514,14 @@ static bool_t xdr_sql_blr(
 	rem_port* port = (rem_port*) xdrs->x_public;
 	RSR statement;
 	if (statement_id >= 0) {
-		if (!port->port_objects)
+		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
-		if (static_cast<ULONG>(statement_id) >= port->port_object_vector->vec_count)
-			return FALSE;
-		if (!(statement = (RSR) port->port_objects[statement_id]))
+		if (!(statement = port->port_objects[statement_id]))
 			return FALSE;
 	}
 	else {
 		if (!(statement = port->port_statement))
-			statement = port->port_statement = (RSR) ALLR_block(type_rsr, 0);
+			statement = port->port_statement = new Rsr;
 	}
 
 	if ((xdrs->x_op == XDR_ENCODE) && !direction) {
@@ -1550,7 +1544,7 @@ static bool_t xdr_sql_blr(
 		if (*fmt_ptr
 			&& ((stmt_type == TYPE_IMMEDIATE) || blr->cstr_length != 0))
 		{
-			ALLR_free(*fmt_ptr);
+			delete *fmt_ptr;
 			*fmt_ptr = NULL;
 		}
 
@@ -1562,7 +1556,7 @@ static bool_t xdr_sql_blr(
 				(REM_MSG) PARSE_messages(blr->cstr_address, blr->cstr_length);
 			if (temp_msg != (REM_MSG) -1) {
 				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
-				ALLR_free(temp_msg);
+				delete temp_msg;
 			}
 		}
 	}
@@ -1579,8 +1573,7 @@ static bool_t xdr_sql_blr(
 	{
 		REMOTE_release_messages(message);
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
-		statement->rsr_buffer = message =
-			(REM_MSG) ALLR_block(type_msg, statement->rsr_fmt_length);
+		statement->rsr_buffer = message = new Message(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
 #ifdef SCROLLABLE_CURSORS
@@ -1611,11 +1604,9 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 	if (statement_id >= 0) {
-		if (!port->port_objects)
+		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
-		if (static_cast<ULONG>(statement_id) >= port->port_object_vector->vec_count)
-			return FALSE;
-		statement = (RSR) port->port_objects[statement_id];
+		statement = port->port_objects[statement_id];
 	}
 	else
 		statement = port->port_statement;
@@ -1744,26 +1735,18 @@ static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
 	rem_port* port = (rem_port*) xdrs->x_public;
 	RPR procedure = port->port_rpr;
 	if (!procedure)
-		procedure = port->port_rpr = (RPR) ALLR_block(type_rpr, 0);
+		procedure = port->port_rpr = new rpr;
 
 /* Parse the blr describing the message. */
 
-	if (procedure->rpr_in_msg) {
-		ALLR_free(procedure->rpr_in_msg);
-		procedure->rpr_in_msg = NULL;
-	}
-	if (procedure->rpr_in_format) {
-		ALLR_free(procedure->rpr_in_format);
-		procedure->rpr_in_format = NULL;
-	}
-	if (procedure->rpr_out_msg) {
-		ALLR_free(procedure->rpr_out_msg);
-		procedure->rpr_out_msg = NULL;
-	}
-	if (procedure->rpr_out_format) {
-		ALLR_free(procedure->rpr_out_format);
-		procedure->rpr_out_format = NULL;
-	}
+	delete procedure->rpr_in_msg;
+	procedure->rpr_in_msg = NULL;
+	delete procedure->rpr_in_format;
+	procedure->rpr_in_format = NULL;
+	delete procedure->rpr_out_msg;
+	procedure->rpr_out_msg = NULL;
+	delete procedure->rpr_out_format;
+	procedure->rpr_out_format = NULL;
 	
 	REM_MSG message = PARSE_messages(blr->cstr_address, blr->cstr_length);
 	if (message != (REM_MSG) -1) {
@@ -1788,7 +1771,7 @@ static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
 				{
 					REM_MSG temp = message;
 					message = message->msg_next;
-					ALLR_free(temp);
+					delete temp;
 				}
 				break;
 			}
@@ -1844,7 +1827,7 @@ static RSR get_statement( XDR * xdrs, SSHORT statement_id)
  *
  **************************************/
 
-	rsr* statement = NULL;
+	Rsr* statement = NULL;
 	rem_port* port = (rem_port*) xdrs->x_public;
 
 /* if the statement ID is -1, this seems to indicate that we are
@@ -1858,15 +1841,12 @@ else
 
 	fb_assert(statement_id >= -1);
 
-	if ((port->port_objects) &&
-		((SLONG) statement_id < (SLONG) port->port_object_vector->vec_count)
+	if (((ULONG) statement_id < port->port_objects.getCount())
 		&& (statement_id >= 0))
 	{
-		statement = (RSR) port->port_objects[(SLONG) statement_id];
+		statement = port->port_objects[statement_id];
 	}
 
-/* Check that what we found really is a statement structure */
-	fb_assert(!statement || (statement->rsr_header.blk_type == type_rsr));
 	return statement;
 }
 

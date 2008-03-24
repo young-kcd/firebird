@@ -67,13 +67,13 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		const USHORT msg_number = *blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
-		rem_fmt* format = (rem_fmt*) ALLR_block(type_fmt, count);
+		rem_fmt* format = new rem_fmt(count);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate format  %x\n", format);
 #endif
 		format->fmt_count = count;
 		USHORT offset = 0;
-		for (dsc* desc = format->fmt_desc; count; --count, ++desc) {
+		for (dsc* desc = format->fmt_desc.begin(); count; --count, ++desc) {
 			USHORT align = 4;
 			switch (*blr++) {
 			case blr_text:
@@ -197,11 +197,11 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 
 			default:
 				fb_assert(FALSE);
-				ALLR_free(format);
+				delete format;
 				while (next = message) {
 					message = message->msg_next;
-					ALLR_free(next->msg_address);
-					ALLR_free(next);
+					delete next->msg_address;
+					delete next;
 				}
 				return (REM_MSG) - 1;
 			}
@@ -216,7 +216,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		}
 		format->fmt_length = offset;
 		format->fmt_net_length = net_length;
-		next = (REM_MSG) ALLR_block(type_msg, format->fmt_length);
+		next = new Message(format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate message %x\n", next);
 #endif
@@ -286,8 +286,7 @@ const UCHAR* PARSE_prepare_messages(const UCHAR* blr, USHORT blr_length)
 
 			case blr_d_float:
 				if (new_blr == old_blr) {
-					new_blr = (UCHAR *) ALLR_alloc((SLONG) blr_length);
-					/* NOMEM: ALLR_alloc() handled */
+					new_blr = FB_NEW(*getDefaultMemoryPool()) UCHAR[blr_length];
 					/* FREE:  Never freed, blr_d_float is VMS specific */
 #ifdef DEBUG_REMOTE_MEMORY
 					printf

@@ -247,7 +247,6 @@ static rem_port*		aux_request(rem_port*, PACKET*);
 static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
 static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
 #endif // WIN_NT
-static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
 static void		exit_handler(void *);
 
@@ -393,7 +392,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+	RDB rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -531,7 +530,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	Firebird::string temp;
 	temp.printf("%s/P%d", port->port_version->str_data, 
 						  port->port_protocol & FB_PROTOCOL_MASK);
-	ALLR_free(port->port_version);
+	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE) {
@@ -605,9 +604,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 	if (host.hasData()) {
-		if (port->port_connection) {
-			ALLR_free(port->port_connection);
-		}
+		delete port->port_connection;
 		port->port_connection = REMOTE_make_string(host.c_str());
 	}
 	else {
@@ -1207,11 +1204,7 @@ static rem_port* alloc_port( rem_port* parent)
 		INET_initialized = true;
 	}
 
-	rem_port* port = (rem_port*) ALLR_block(type_port, INET_remote_buffer * 2);
-	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_sync->addRef();
-	port->port_type = port_inet;
-	port->port_state = state_pending;
+	rem_port* port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
 	REMOTE_get_timeout_params(port, 0);
 
 	TEXT buffer[BUFFER_SMALL];
@@ -1242,25 +1235,10 @@ static rem_port* alloc_port( rem_port* parent)
 					0,
 					XDR_DECODE);
 
-#ifdef REM_SERVER
-	port->port_queue = FB_NEW(*getDefaultMemoryPool())
-			Firebird::ObjectsArray< Firebird::Array< char > >(*getDefaultMemoryPool());
-	port->port_qoffset = 0;
-	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_que_sync->addRef();
-#endif
-
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) 
 	{
 		Firebird::MutexLockGuard guard(port_mutex);
-
-		port->port_parent = parent;
-		port->port_next = parent->port_clients;
-		port->port_handle = parent->port_handle;
-		port->port_server = parent->port_server;
-		port->port_server_flags = parent->port_server_flags;
-
-		parent->port_clients = parent->port_next = port;
+		port->linkParent(parent);
 	}
 
 	return port;
@@ -1337,10 +1315,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	}
 	address.sin_family = AF_INET;
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
-
-	int optval = 1;
-	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
-			   (SCHAR*) &optval, sizeof(optval));
 
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
@@ -1566,12 +1540,8 @@ static bool check_proxy(rem_port* port,
 				&& (!strcmp(source_user, user_name.c_str())
 					|| !strcmp(source_user, "*")))
 			{
-				ALLR_free(port->port_user_name);
-				const SLONG length = strlen(target_user);
-				rem_str* string = (rem_str*) ALLR_block(type_str, (int) length);
-				port->port_user_name = string;
-				string->str_length = length;
-				strncpy(string->str_data, target_user, length);
+				delete port->port_user_name;
+				port->port_user_name = REMOTE_make_string(target_user);
 				user_name = target_user;
 				result = true;
 				break;
@@ -1639,7 +1609,7 @@ static void disconnect( rem_port* port)
 /* If this is a sub-port, unlink it from it's parent */
 
 	bool defer_cleanup = false;
-	port->port_state = state_disconnected;
+	port->port_state = rem_port::DISCONNECTED;
 
 	rem_port* parent = port->port_parent;
 	if (parent != NULL) {
@@ -1664,7 +1634,7 @@ static void disconnect( rem_port* port)
 	gds__unregister_cleanup(exit_handler, (void *) port);
 
 	if (!defer_cleanup) {
-		cleanup_port(port);
+		delete port;
 	}
 
 #ifdef DEBUG
@@ -1684,60 +1654,6 @@ static void disconnect( rem_port* port)
 	return;
 }
 
-
-static void cleanup_port( rem_port* port)
-{
-/**************************************
- *
- *	c l e a n u p _ p o r t
- *
- **************************************
- *
- * Functional description
- *	Walk through the port structure freeing
- * 	allocated memory and then free the port.
- *
- **************************************/
-
-	if (port->port_version)
-		ALLR_free(port->port_version);
-
-	if (port->port_connection)
-		ALLR_free(port->port_connection);
-
-	if (port->port_user_name)
-		ALLR_free(port->port_user_name);
-
-	if (port->port_host)
-		ALLR_free(port->port_host);
-
-	if (port->port_object_vector)
-		ALLR_free(port->port_object_vector);
-
-	if (port->port_protocol_str)
-		ALLR_free(port->port_protocol_str);
-
-	if (port->port_address_str)
-		ALLR_free(port->port_address_str);
-
-#ifdef DEBUG_XDR_MEMORY
-	if (port->port_packet_vector)
-		ALLR_free(port->port_packet_vector);
-#endif
-
-#ifdef REM_SERVER
-	delete port->port_queue;
-	port->port_que_sync->release();
-#endif
-
-#ifdef TRUSTED_AUTH
-	delete port->port_trusted_auth;
-#endif
-
-	port->port_sync->release();
-	ALLR_free(port);
-	return;
-}
 
 static void exit_handler( void *arg)
 {
@@ -1765,9 +1681,9 @@ static void exit_handler( void *arg)
 #endif
 
 	for (rem_port* port = main_port; port; port = port->port_next) 
-		if (port->port_state != state_broken)
+		if (port->port_state != rem_port::BROKEN)
 		{
-			port->port_state = state_broken;
+			port->port_state = rem_port::BROKEN;
 			shutdown((int) port->port_handle, 2);
 			SOCLOSE((SOCKET) port->port_handle);
 		}
@@ -2101,7 +2017,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 			main_port->port_flags &= ~PORT_partial_data;
 
 			if (packet->p_operation == op_exit) {
-				main_port->port_state = state_broken;
+				main_port->port_state = rem_port::BROKEN;
 			}
 			break;
 		}
@@ -2147,9 +2063,9 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 		{
 			if (INET_shutting_down)
 			{
-				if (main_port->port_state != state_broken)
+				if (main_port->port_state != rem_port::BROKEN)
 				{
-					main_port->port_state = state_broken;
+					main_port->port_state = rem_port::BROKEN;
 					SOCKET s = (SOCKET) main_port->port_handle;
 					shutdown(s, 2);
 					SOCLOSE(s);
@@ -2324,7 +2240,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			unhook_disconnected_ports(main_port);
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
-				if (port->port_state == state_pending)
+				if (port->port_state == rem_port::PENDING)
 				{
 					/* Adjust down the port's keepalive timer. */
 
@@ -2592,7 +2508,7 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_state = state_broken;
+	port->port_state = rem_port::BROKEN;
 
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL) {
@@ -2987,7 +2903,7 @@ static rem_port* inet_try_connect(
 
 	rem_port* port = INET_connect(node_name, packet, status_vector, FALSE, &dpb);
 	if (!port) {
-		ALLR_free(rdb);
+		delete rdb;
 		return NULL;
 	}
 
@@ -2999,7 +2915,7 @@ static rem_port* inet_try_connect(
 		inet_error(port, "receive in try_connect", isc_net_connect_err,
 				   INET_ERRNO);
 		disconnect(port);
-		ALLR_free(rdb);
+		delete rdb;
 		return NULL;
 	}
 
@@ -3475,11 +3391,11 @@ static void unhook_disconnected_ports(rem_port* main_port)
 			Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 
 			if (portGuard.tryEnter()) {
-				if (port->port_state == state_disconnected) {
+				if (port->port_state == rem_port::DISCONNECTED) {
 					more = true;
 					unhook_port(port, port->port_parent);
 					portGuard.leave();
-					cleanup_port(port);
+					delete port;
 					break;
 				}
 				else {
