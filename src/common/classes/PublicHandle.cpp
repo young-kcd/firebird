@@ -22,6 +22,9 @@
 
 #include "firebird.h"
 #include "../jrd/gdsassert.h"
+#include "array.h"
+#include "rwlock.h"
+#include "init.h"
 #include "PublicHandle.h"
 
 namespace Firebird

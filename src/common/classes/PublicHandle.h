@@ -23,12 +23,12 @@
 #ifndef COMMON_PUBLIC_HANDLE
 #define COMMON_PUBLIC_HANDLE
 
-#include "../common/classes/array.h"
-#include "../common/classes/rwlock.h"
-#include "../common/classes/init.h"
-
 namespace Firebird
 {
+	class RWLock;
+	template <typename T, typename Storage> class Array;
+	template <typename T> class GlobalPtr;
+
 	class PublicHandle
 	{
 	public:
