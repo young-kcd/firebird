@@ -44,7 +44,7 @@ static const struct {
 	{335544341, "unknown information item"},		/* 21, infunk */
 	{335544342, "action cancelled by trigger (@1) to preserve data integrity"},		/* 22, integ_fail */
 	{335544343, "invalid request BLR at offset @1"},		/* 23, invalid_blr */
-	{335544344, "I/O error for file \"@2\""},		/* 24, io_error */
+	{335544344, "I/O error during \"@1\" operation for file \"@2\""},		/* 24, io_error */
 	{335544345, "lock conflict on no wait transaction"},		/* 25, lock_conflict */
 	{335544346, "corrupt system table"},		/* 26, metadata_corrupt */
 	{335544347, "validation error for column @1, value \"@2\""},		/* 27, not_valid */

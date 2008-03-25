@@ -32,9 +32,7 @@ the total length of a blob in a call to gds_$database_info.');
 ('infunk', NULL, NULL, NULL, 0, 21, NULL, 'unknown information item', NULL, NULL);
 ('integ_fail', NULL, NULL, NULL, 0, 22, NULL, 'action cancelled by trigger (@1) to preserve data integrity', NULL, NULL);
 ('invalid_blr', NULL, NULL, NULL, 0, 23, NULL, 'invalid request BLR at offset @1', NULL, NULL);
-('io_error', NULL, NULL, +++
-'The @2 is not a bug; it is a direct translation of %.0s"%s" in the original text that uses escape sequences for printf', +++
-0, 24, NULL, 'I/O error for file "@2"', +++
+('io_error', NULL, NULL, NULL, 0, 24, NULL, 'I/O error during "@1" operation for file "@2"', +++
 'Check secondary messages for more information.  The
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
