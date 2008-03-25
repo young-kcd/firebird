@@ -60,7 +60,6 @@ static int		accept_connection(rem_port*, P_CNCT *);
 static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
-static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
 static void		exit_handler(void*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
@@ -125,7 +124,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+	Rdb* rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -185,7 +184,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
-		ALLR_free(rdb);
+		delete rdb;
 		return NULL;
 	}
 
@@ -222,7 +221,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_free(rdb);
+			delete rdb;
 			return NULL;
 		}
 
@@ -259,7 +258,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 
 		port = WNET_connect(node_name, packet, status_vector, 0);
 		if (!port) {
-			ALLR_free(rdb);
+			delete rdb;
 			return NULL;
 		}
 
@@ -274,6 +273,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_connect_reject;
 		*status_vector++ = 0;
+		delete rdb;
 		disconnect(port);
 		return NULL;
 	}
@@ -286,7 +286,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 	Firebird::string temp;
 	temp.printf("%s/P%d", port->port_version->str_data, 
 						  port->port_protocol & FB_PROTOCOL_MASK);
-	ALLR_free(port->port_version);
+	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
@@ -325,9 +325,7 @@ rem_port* WNET_connect(const TEXT*		name,
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
 
-	if (port->port_connection) {
-		ALLR_free(port->port_connection);
-	}
+	delete port->port_connection;
 	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
 /* If we're a host, just make the connection */
@@ -449,8 +447,7 @@ rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 	status_vector[1] = 0;
 	status_vector[2] = isc_arg_end;
 
-	if (port->port_connection)
-		ALLR_free(port->port_connection);
+	delete port->port_connection;
 	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
 
 	port->port_handle = handle;
@@ -511,10 +508,7 @@ static int accept_connection( rem_port* port, P_CNCT * cnct)
 		case CNCT_user:
 			{
 				id.getString(name);
-				rem_str* string= (rem_str*) ALLR_block(type_str, name.length());
-				port->port_user_name = string;
-				string->str_length = name.length();
-				strcpy(string->str_data, name.c_str());
+				port->port_user_name = REMOTE_make_string(name.c_str());
 				break;
 			}
 
@@ -547,9 +541,7 @@ static rem_port* alloc_port( rem_port* parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port = (rem_port*) ALLR_block(type_port, BUFFER_SIZE * 2);
-	port->port_type = port_pipe;
-	port->port_state = state_pending;
+	rem_port* port = new rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -567,13 +559,6 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_request = aux_request;
 	port->port_buff_size = BUFFER_SIZE;
 
-	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_sync->addRef();
-#ifdef REM_SERVER
-	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_que_sync->addRef();
-#endif
-
 	xdrwnet_create(&port->port_send, port,
 				   &port->port_buffer[BUFFER_SIZE], BUFFER_SIZE, XDR_ENCODE);
 
@@ -582,16 +567,10 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (parent) 
 	{
-		port->port_parent = parent;
-		port->port_next = parent->port_clients;
-		parent->port_clients = parent->port_next = port;
-		port->port_handle = parent->port_handle;
-		port->port_server = parent->port_server;
-		port->port_server_flags = parent->port_server_flags;
-		if (port->port_connection){
-			ALLR_free(port->port_connection);
-		}
+		delete port->port_connection;
 		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
+
+		port->linkParent(parent);
 	}
 
 	return port;
@@ -780,57 +759,7 @@ static void disconnect(rem_port* port)
 		port->port_handle = 0;
 	}
 	gds__unregister_cleanup(exit_handler, port);
-	cleanup_port(port);
-}
-
-
-static void cleanup_port( rem_port* port)
-{
-/**************************************
- *
- *      c l e a n u p _ p o r t
- *
- **************************************
- *
- * Functional description
- *      Walk through the port structure freeing
- *      allocated memory and then free the port.
- *
- **************************************/
-
-	if (port->port_version)
-		ALLR_free(port->port_version);
-
-	if (port->port_connection)
-		ALLR_free(port->port_connection);
-
-	if (port->port_user_name)
-		ALLR_free(port->port_user_name);
-
-	if (port->port_protocol_str)
-		ALLR_free(port->port_protocol_str);
-
-	if (port->port_address_str)
-		ALLR_free(port->port_address_str);
-
-	if (port->port_host)
-		ALLR_free(port->port_host);
-
-	if (port->port_object_vector)
-		ALLR_free(port->port_object_vector);
-
-#ifdef DEBUG_XDR_MEMORY
-	if (port->port_packet_vector)
-		ALLR_free(port->port_packet_vector);
-#endif
-
-	port->port_sync->release();
-#ifdef REM_SERVER
-	port->port_que_sync->release();
-#endif
-
-	ALLR_free(port);
-	return;
+	delete port;
 }
 
 
@@ -1087,7 +1016,7 @@ static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_state = state_broken;
+	port->port_state = rem_port::BROKEN;
 
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL)

@@ -75,7 +75,7 @@
 
 #if defined(WIN_NT)
 #if !defined(EMBEDDED)
-#define XNET
+#define USE_XNET
 #endif
 #include "../jrd/isc_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
@@ -4635,7 +4635,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 		}
 	}
 
-#if defined(XNET)
+#if defined(USE_XNET)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */
@@ -4649,7 +4649,7 @@ static rem_port* analyze(Firebird::PathName&	file_name,
 							uv_flag);
 	}
 
-#endif /* XNET */
+#endif /* USE_XNET */
 
 #if defined(SUPERCLIENT) && !defined(EMBEDDED)
 /* Coerce host connections to loopback */
@@ -4733,7 +4733,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 		}
 	}
 
-#if defined(XNET)
+#if defined(USE_XNET)
 
 /* all remote attempts have failed, so access locally through the
    interprocess server */

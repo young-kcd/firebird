@@ -520,6 +520,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 		*status_vector++ = isc_connect_reject;
 		*status_vector++ = 0;
 		disconnect(port);
+		delete rdb;
 		return NULL;
 	}
 

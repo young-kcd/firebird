@@ -189,7 +189,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	// We need to establish a connection to a remote server.
 	// Allocate the necessary blocks and get ready to go.
 
-	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
+	RDB rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
@@ -248,7 +248,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 
 	rem_port* port = XNET_connect(node_name, packet, status_vector, 0);
 	if (!port) {
-		ALLR_free(rdb);
+		delete rdb;
 		return NULL;
 	}
 
@@ -284,7 +284,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
-			ALLR_free(rdb);
+			delete rdb;
 			return NULL;
 		}
 
@@ -320,7 +320,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		}
 
 		if (!(port = XNET_connect(node_name, packet, status_vector, 0))) {
-			ALLR_free(rdb);
+			delete rdb;
 			return NULL;
 		}
 
@@ -336,6 +336,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		*status_vector++ = isc_connect_reject;
 		*status_vector++ = isc_arg_end;
 		disconnect(port);
+		delete rdb;
 		return NULL;
 	}
 
@@ -348,7 +349,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	temp.printf("%s/P%d", port->port_version->str_data, 
 						  port->port_protocol & FB_PROTOCOL_MASK);
 
-	ALLR_free(port->port_version);
+	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
 	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
@@ -616,9 +617,7 @@ static rem_port* alloc_port(rem_port* parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* port = (rem_port*) ALLR_block(type_port, 0);
-	port->port_type = port_xnet;
-	port->port_state = state_pending;
+	rem_port* port = new rem_port(rem_port::XNET, 0);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -637,28 +636,15 @@ static rem_port* alloc_port(rem_port* parent,
 	port->port_buff_size = send_length;
 	port->port_status_vector = NULL;
 
-	port->port_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_sync->addRef();
-#ifdef REM_SERVER
-	port->port_que_sync = FB_NEW(*getDefaultMemoryPool()) Firebird::RefMutex();
-	port->port_que_sync->addRef();
-#endif
-
 	xdrxnet_create(&port->port_send, port, send_buffer,	send_length, XDR_ENCODE);
 	xdrxnet_create(&port->port_receive, port, receive_buffer, 0, XDR_DECODE);
 
 	if (parent) 
 	{
-		port->port_parent = parent;
-		port->port_next = parent->port_clients;
-		parent->port_clients = parent->port_next = port;
-		port->port_handle = parent->port_handle;
-		port->port_server = parent->port_server;
-		port->port_server_flags = parent->port_server_flags;
-		if (port->port_connection) {
-			ALLR_free(port->port_connection);
-		}
+		delete port->port_connection;
 		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
+
+		port->linkParent(parent);
 	}
 
 	return port;
@@ -701,7 +687,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		parent_xcc = (XCC) port->port_xcc;
 		xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+		xcc = new struct xcc;
 
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -787,7 +773,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 			if (xcc->xcc_event_recv_channel_empted) {
 				CloseHandle(xcc->xcc_event_recv_channel_empted);
 			}
-			ALLR_free(xcc);
+			delete xcc;
 		}
 		
 		return NULL;
@@ -826,7 +812,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		parent_xcc = (XCC) port->port_xcc;
 		xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+		xcc = new struct xcc;
 
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -925,7 +911,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 			if (xcc->xcc_event_recv_channel_empted) {
 				CloseHandle(xcc->xcc_event_recv_channel_empted);
 			}
-			ALLR_free(xcc);
+			delete xcc;
 		}
 		
 		return NULL;
@@ -965,7 +951,7 @@ static void cleanup_comm(XCC xcc)
 
 	XPM xpm = xcc->xcc_xpm;
 
-	ALLR_free(xcc);
+	delete xcc;
 
 	// if this was the last area for this map, unmap it
 
@@ -992,7 +978,7 @@ static void cleanup_comm(XCC xcc)
 					}
 				}
 			}
-			ALLR_free(xpm);
+			delete xpm;
 		}
 	}
 }
@@ -1015,41 +1001,8 @@ static void cleanup_port(rem_port* port)
 	if (port->port_xcc) {
 		cleanup_comm((XCC) port->port_xcc);
 	}
-	
-	if (port->port_version) {
-		ALLR_free(port->port_version);
-	}
 
-	if (port->port_connection) {
-		ALLR_free(port->port_connection);
-	}
-
-	if (port->port_user_name) {
-		ALLR_free(port->port_user_name);
-	}
-
-	if (port->port_host) {
-		ALLR_free(port->port_host);
-	}
-
-	if (port->port_object_vector) {
-		ALLR_free(port->port_object_vector);
-	}
-
-	if (port->port_protocol_str) {
-		ALLR_free(port->port_protocol_str);
-	}
-
-	if (port->port_address_str) {
-		ALLR_free(port->port_address_str);
-	}
-
-	port->port_sync->release();
-#ifdef REM_SERVER
-	port->port_que_sync->release();
-#endif
-
-	ALLR_free(port);
+	delete port;
 }
 
 
@@ -1185,7 +1138,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 					Firebird::system_call_failed::raise("MapViewOfFile");
 				}
 
-				xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
+				xpm = new struct xpm;
 
 				xpm->xpm_next = global_client_maps;
 				global_client_maps = xpm;
@@ -1199,7 +1152,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		} // xnet_mutex scope
 
 		// there's no thread structure, so make one
-		xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+		xcc = new struct xcc;
 
 		xcc->xcc_map_handle = xpm->xpm_handle;
 		xcc->xcc_mapped_addr =
@@ -1303,9 +1256,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			CloseHandle(file_handle);
 		}
 
-		if (xpm) {
-			ALLR_free(xpm);
-		}
+		delete xpm;
 
 		if (xcc) {
 			if (xcc->xcc_event_send_channel_filled) {
@@ -1320,7 +1271,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 			if (xcc->xcc_event_recv_channel_empted) {
 				CloseHandle(xcc->xcc_event_recv_channel_empted);
 			}
-			ALLR_free(xcc);
+			delete xcc;
 		}
 
 		return NULL;
@@ -1650,7 +1601,7 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_state = state_broken;
+	port->port_state = rem_port::BROKEN;
 
 	ISC_STATUS* status_vector = NULL;
 	if (port->port_context != NULL) {
@@ -2078,7 +2029,7 @@ void release_all()
 		nextxpm = nextxpm->xpm_next;
 		UnmapViewOfFile(xpm->xpm_address);
 		CloseHandle(xpm->xpm_handle);
-		ALLR_free(xpm);
+		delete xpm;
 	}
 
 	global_client_maps = NULL;
@@ -2151,7 +2102,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 
 	try
 	{
-		XPM xpm = (XPM) ALLR_alloc(sizeof(struct xpm));
+		XPM xpm = new struct xpm;
 
 		xpm->xpm_handle = map_handle;
 		xpm->xpm_address = map_address;
@@ -2418,7 +2369,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 	// allocate a communications control structure and fill it in
 
-	XCC xcc = (XCC) ALLR_alloc(sizeof(struct xcc));
+	XCC xcc = new struct xcc;
 
 	try {
 		UCHAR* p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
@@ -2546,7 +2497,7 @@ static rem_port* get_server_port(ULONG client_pid,
 				CloseHandle(xcc->xcc_event_send_channel_empted);
 			}
 
-			ALLR_free(xcc);
+			delete xcc;
 		}
 
 		throw;

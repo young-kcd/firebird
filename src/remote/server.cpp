@@ -938,8 +938,8 @@ static void attach_database(rem_port* port,
 
 			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
-				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
-					ServerAuth(file, l, dpb_buffer, attach_database2, operation);
+				port->port_trusted_auth = 
+					new ServerAuth(file, l, dpb_buffer, attach_database2, operation);
 				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
 
 				if (authSspi->accept(data) && authSspi->isActive())
@@ -4477,8 +4477,8 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 
 			if (canUseTrusted() && port->port_protocol >= PROTOCOL_VERSION11)
 			{
-				port->port_trusted_auth = FB_NEW(*getDefaultMemoryPool()) 
-					ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
+				port->port_trusted_auth = 
+					new ServerAuth(service_name, service_length, spb, attach_service2, op_trusted_auth);
 				AuthSspi* authSspi = port->port_trusted_auth->authSspi;
 
 				if (authSspi->accept(data) && authSspi->isActive())
