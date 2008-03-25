@@ -193,8 +193,8 @@ static jrd_nod* erase(thread_db*, jrd_nod*, SSHORT);
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, enum jrd_req::req_s);
 static void exec_sql(thread_db*, jrd_req*, DSC *);
 static void execute_procedure(thread_db*, jrd_nod*);
-static jrd_req* execute_triggers(thread_db*, trig_vec**, Record*, Record*,
-	enum jrd_req::req_ta);
+static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
+	enum jrd_req::req_ta, SSHORT);
 static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
@@ -214,7 +214,7 @@ static void trigger_failure(thread_db*, jrd_req*);
 static void validate(thread_db*, jrd_nod*);
 inline void verb_cleanup(thread_db*, jrd_tra*);
 inline void PreModifyEraseTriggers(thread_db*, trig_vec**, SSHORT, record_param*,
-	Record*, jrd_req::req_ta);
+	record_param*, jrd_req::req_ta);
 static void stuff_stack_trace(const jrd_req*);
 
 
@@ -593,7 +593,7 @@ void EXE_execute_db_triggers(thread_db* tdbb,
 		try
 		{
 			trigger = execute_triggers(tdbb, &tdbb->getDatabase()->dbb_triggers[type],
-				NULL, NULL, trigger_action);
+				NULL, NULL, trigger_action, ALL_TRIGS);
 			tdbb->setTransaction(old_transaction);
 		}
 		catch (...)
@@ -1247,7 +1247,7 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
 								   trig_vec** trigs, 
 								   SSHORT which_trig, 
 								   record_param* rpb, 
-								   Record* rec,
+								   record_param* rec,
 								   jrd_req::req_ta op)
 {
 /******************************************************
@@ -1270,7 +1270,7 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
 		tdbb->getTransaction()->tra_rpblist->PushRpb(rpb);
 	jrd_req* trigger = NULL;
 	if ((*trigs) && (which_trig != POST_TRIG)) {
-		trigger = execute_triggers(tdbb, trigs, rpb->rpb_record, rec, op);
+		trigger = execute_triggers(tdbb, trigs, rpb, rec, op, PRE_TRIG);
 	}
 	tdbb->getTransaction()->tra_rpblist->PopRpb(rpb, rpblevel);
 	if (trigger) {
@@ -1361,8 +1361,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (relation->rel_post_erase &&
 		which_trig != PRE_TRIG &&
 		(trigger = execute_triggers(tdbb, &relation->rel_post_erase,
-									rpb->rpb_record, NULL,
-									jrd_req::req_trigger_delete)))
+									rpb, NULL,
+									jrd_req::req_trigger_delete, POST_TRIG)))
 	{
 		trigger_failure(tdbb, trigger);
 	}
@@ -1603,9 +1603,9 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 
 static jrd_req* execute_triggers(thread_db* tdbb,
 								trig_vec** triggers,
-								Record* old_rec,
-								Record* new_rec,
-								enum jrd_req::req_ta trigger_action)
+								record_param* old_rpb,
+								record_param* new_rpb,
+								enum jrd_req::req_ta trigger_action, SSHORT which_trig)
 {
 /**************************************
  *
@@ -1627,6 +1627,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	jrd_tra* transaction = (tdbb->getRequest() ? tdbb->getRequest()->req_transaction : tdbb->getTransaction());
 	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
+	Record* old_rec = old_rpb ? old_rpb->rpb_record : NULL;
+	Record* new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
 	Record* null_rec = NULL;
 
@@ -1662,11 +1664,30 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 			trigger->req_rpb[0].rpb_record = old_rec ? old_rec : null_rec;
 			trigger->req_rpb[1].rpb_record = new_rec ? new_rec : null_rec;
 
+			if (old_rec && trigger_action != jrd_req::req_trigger_insert)
+			{
+				trigger->req_rpb[0].rpb_number = old_rpb->rpb_number;
+				trigger->req_rpb[0].rpb_number.setValid(true);
+			}
+			else
+				trigger->req_rpb[0].rpb_number.setValid(false);
+
+			if (new_rec && !(which_trig == PRE_TRIG && trigger_action == jrd_req::req_trigger_insert))
+			{
+				if (which_trig == PRE_TRIG && trigger_action == jrd_req::req_trigger_update)
+					new_rpb->rpb_number = old_rpb->rpb_number;
+
+				trigger->req_rpb[1].rpb_number = new_rpb->rpb_number;
+				trigger->req_rpb[1].rpb_number.setValid(true);
+			}
+			else
+				trigger->req_rpb[1].rpb_number.setValid(false);
+
 			if (tdbb->getRequest())
 				trigger->req_timestamp = tdbb->getRequest()->req_timestamp;
 			else
 				trigger->req_timestamp = timestamp;
-			
+
 			trigger->req_trigger_action = trigger_action;
 			EXE_start(tdbb, trigger, transaction);
 			trigger->req_attachment = NULL;
@@ -2960,7 +2981,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				++transaction->tra_save_point->sav_verb_count;
 
 			PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
-								which_trig, org_rpb, new_rpb->rpb_record, 
+								which_trig, org_rpb, new_rpb, 
 								jrd_req::req_trigger_update);
 
 			if (node->nod_arg[e_mod_validate]) {
@@ -2996,8 +3017,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			if (relation->rel_post_modify &&
 				which_trig != PRE_TRIG &&
 				(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
-											org_rpb->rpb_record, new_rpb->rpb_record,
-											jrd_req::req_trigger_update)))
+											org_rpb, new_rpb,
+											jrd_req::req_trigger_update, POST_TRIG)))
 			{
 				trigger_failure(tdbb, trigger);
 			}
@@ -3740,8 +3761,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_pre_store &&
 			(which_trig != POST_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_store,
-										NULL, rpb->rpb_record,
-										jrd_req::req_trigger_insert)))
+										NULL, rpb,
+										jrd_req::req_trigger_insert, PRE_TRIG)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -3785,8 +3806,8 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
-										NULL, rpb->rpb_record,
-										jrd_req::req_trigger_insert)))
+										NULL, rpb,
+										jrd_req::req_trigger_insert, POST_TRIG)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
