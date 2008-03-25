@@ -2137,9 +2137,10 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 			 rpb->rpb_stream_flags |= RPB_s_update;
 		}
 
-		// if no fields are referenced, mark the stream as not requiring record's data
+		// if no fields are referenced and this stream is not intended for update,
+		// mark the stream as not requiring record's data
 
-		if (!tail->csb_fields)
+		if (!tail->csb_fields && !(tail->csb_flags & csb_update))
 		{
 			 rpb->rpb_stream_flags |= RPB_s_no_data;
 		}
