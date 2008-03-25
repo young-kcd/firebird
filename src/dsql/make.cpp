@@ -1648,8 +1648,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	
 	DEV_BLKCHK(message, dsql_type_msg);
 	
-	if (sqlda_flag && sqlda_index && (sqlda_index <= message->msg_index) && 
-		!Config::getOldParameterOrdering()) 
+	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index) 
 	{
 		// This parameter possibly already here. Look for it
 		for (dsql_par* temp = message->msg_parameters; temp; temp = temp->par_next) {
@@ -1676,7 +1675,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 // If the parameter is used declared, set SQLDA index 
 	if (sqlda_flag) {
-		if (sqlda_index && !Config::getOldParameterOrdering()) {
+		if (sqlda_index) {
 			parameter->par_index = sqlda_index;
 			if (message->msg_index < sqlda_index)
 				message->msg_index = sqlda_index;
