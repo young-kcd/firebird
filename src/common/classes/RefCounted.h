@@ -40,6 +40,7 @@ namespace Firebird
 
 		virtual int release()
 		{
+			fb_assert(m_refCnt.value() > 0);
 			const int refCnt = --m_refCnt;
 			if (!refCnt)
 				delete this;
@@ -51,11 +52,36 @@ namespace Firebird
 
 		virtual ~RefCounted()
 		{
-			fb_assert(!m_refCnt.value());
+			fb_assert(m_refCnt.value() == 0);
 		}
 
 	private:
 		AtomicCounter m_refCnt;
+	};
+
+	// reference counted object guard
+	class Reference
+	{
+	public:
+		Reference(RefCounted& refCounted) :
+			r(&refCounted)
+		{
+			r->addRef();
+		}
+
+		~Reference()
+		{
+			try {
+				r->release();
+			}
+			catch (const Exception&)
+			{
+				DtorException::devHalt();
+			}
+		}
+
+	private:
+		RefCounted* r;
 	};
 
 } // namespace

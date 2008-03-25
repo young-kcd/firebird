@@ -529,7 +529,15 @@ typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
 struct rem_port : public Firebird::GlobalStorage
 {
-	/* port function pointers (C "emulation" of virtual functions) */
+	// sync objects
+	Firebird::RefMutex* const port_sync;
+	Firebird::Reference port_sync_reference;
+#ifdef REM_SERVER
+	Firebird::RefMutex* const port_que_sync;
+	Firebird::Reference port_que_reference;
+#endif
+
+	// port function pointers (C "emulation" of virtual functions)
 	int				(*port_accept)(rem_port*, p_cnct*);
 	void			(*port_disconnect)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
@@ -593,16 +601,20 @@ struct rem_port : public Firebird::GlobalStorage
 #ifdef REM_SERVER
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-	Firebird::RefMutex* const port_que_sync;
 #endif
 #ifdef TRUSTED_AUTH
 	ServerAuth*		port_trusted_auth;
 #endif
-	Firebird::RefMutex* const port_sync;
 	UCharArrayAutoPtr	port_buffer;
 
 public:
 	rem_port(rem_port_t t, size_t rpt) :
+		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
+		port_sync_reference(*port_sync),
+#ifdef REM_SERVER
+		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
+		port_que_reference(*port_que_sync),
+#endif
 		port_accept(0), port_disconnect(0), port_receive_packet(0), port_send_packet(0), 
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0), 
 		port_type(t), port_state(PENDING), 
@@ -620,19 +632,13 @@ public:
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0), 
 #ifdef REM_SERVER
 		port_queue(getPool()), port_qoffset(0), 
-		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 #endif
 #ifdef TRUSTED_AUTH
 		port_trusted_auth(0),
 #endif
-		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
 		memset (port_buffer, 0, rpt);
-		port_sync->addRef();
-#ifdef REM_SERVER
-		port_que_sync->addRef();
-#endif
 	}
 
 	~rem_port()
@@ -648,15 +654,9 @@ public:
 		delete port_packet_vector;
 #endif
 
-#ifdef REM_SERVER
-		port_que_sync->release();
-#endif
-
 #ifdef TRUSTED_AUTH
 		delete port_trusted_auth;
 #endif
-
-		port_sync->release();
 	}
 
 	void linkParent(rem_port* parent)

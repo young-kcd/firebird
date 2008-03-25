@@ -217,7 +217,7 @@ public:
 			}
 			catch (const Firebird::Exception&)
 			{
-				Firebird::MutexLockGuard::onDtorException();
+				DtorException::devHalt();
 			}
 			sync.release();
 		}
@@ -276,7 +276,7 @@ public:
 			}
 			catch (const Firebird::Exception&)
 			{
-				Firebird::MutexLockGuard::onDtorException();
+				DtorException::devHalt();
 			}
 		}
 
@@ -333,6 +333,7 @@ public:
 	}
 
 	mutable Sync* dbb_sync;				// Database sync primitive
+	Firebird::Reference dbb_sync_ref;	// Database reference to dbb_sync
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
@@ -465,7 +466,9 @@ public:
 
 private:
 	explicit Database(MemoryPool* p)
-	:	dbb_page_manager(*p),
+	:	dbb_sync(FB_NEW(*getDefaultMemoryPool()) Sync),
+		dbb_sync_ref(*dbb_sync),
+		dbb_page_manager(*p),
 		dbb_modules(*p),
 		dbb_filename(*p),
 		dbb_database_name(*p),
@@ -478,8 +481,6 @@ private:
 		dbb_charsets(*p),
 		dbb_functions(*p)
 	{
-		dbb_sync = FB_NEW(*getDefaultMemoryPool()) Sync;
-		dbb_sync->addRef();
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);
 		dbb_dyn_req.grow(drq_MAX);

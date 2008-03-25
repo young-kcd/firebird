@@ -65,8 +65,6 @@ namespace Jrd
 		{
 			MemoryPool::deletePool(dbb_pools[i]);
 		}
-
-		dbb_sync->release();
 	}
 
 	void Database::deletePool(MemoryPool* pool)

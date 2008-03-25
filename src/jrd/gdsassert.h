@@ -61,5 +61,19 @@
 
 #endif // DEV_BUILD 
 
+namespace DtorException {
+	inline void devHalt()
+	{
+		// If any guard's dtor is executed during exception processing,
+		// (remember - this guards live on the stack), exception 
+		// in leave() causes std::terminate() to be called, therefore
+		// loosing original exception information. Not good for us. 
+		// Therefore ignore in release and abort in debug.
+#ifdef DEV_BUILD
+		abort();
+#endif
+	}
+}
+
 #endif // JRD_GDSASSERT_H 
 

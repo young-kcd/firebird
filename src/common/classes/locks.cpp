@@ -103,12 +103,4 @@ void Mutex::initMutexes()
 
 #endif
 
-
-#ifdef DEV_BUILD
-void MutexLockGuard::halt()
-{
-	abort();
-}
-#endif
-
 } // namespace Firebird

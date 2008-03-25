@@ -32,6 +32,7 @@
 #include "firebird.h"
 #include "fb_atomic.h"
 #include "RefCounted.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
@@ -278,6 +279,8 @@ public:
 };
 
 
+class RefMutexGuard;	// forward declaration
+
 // RAII holder
 class MutexLockGuard
 {
@@ -295,63 +298,40 @@ public:
 		}
 		catch (const Exception&)
 		{
-			onDtorException();
+			DtorException::devHalt();
 		}
-	}
-
-	static void onDtorException()
-	{
-		// If LockGuard's dtor is executed during exception processing,
-		// (remember - this guards live on the stack), exception 
-		// in leave() causes std::terminate() to be called, therefore
-		// loosing original exception information. Not good for us. 
-		// Therefore ignore in release and abort in debug.
-#ifdef DEV_BUILD
-		halt();
-#endif
 	}
 
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
+
+	// Forbidden to avoid errors
 	MutexLockGuard(const RefMutex*);
-	MutexLockGuard(const RefMutex&);
 
-#ifdef DEV_BUILD
-	static void halt();
-#endif
+	// This constructor should be available only from RefMutexGuard
+	friend class RefMutexGuard;
+	explicit MutexLockGuard(RefMutex& refLock) 
+		: lock(&refLock)
+	{
+		lock->enter();
+	}
 
+private:
 	Mutex* lock;
 };
 
 
-class RefMutexGuard
+class RefMutexGuard : public Reference, public MutexLockGuard
 {
 public:
 	explicit RefMutexGuard(RefMutex& alock) 
-		: lock(&alock)
-	{
-		lock->addRef();
-		lock->enter();
-	}
-
-	~RefMutexGuard()
-	{
-		try {
-			lock->leave();
-		}
-		catch (const Exception&)
-		{
-			MutexLockGuard::onDtorException();
-		}
-		lock->release();
-	}
+		: Reference(alock), MutexLockGuard(alock)
+	{ }
 
 private:
 	// Forbid copy constructor
 	RefMutexGuard(const RefMutexGuard& source);
-	
-	RefMutex* lock;
 };
 
 
