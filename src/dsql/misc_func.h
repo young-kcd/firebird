@@ -28,12 +28,12 @@
 class InternalInfo {
 private:
 	struct InfoAttr {
-		char* alias_name;
+		const char* alias_name;
 		unsigned short req_mask;
 	};
 	static const InfoAttr attr_array[max_internal_id];
 public:
-	static char *getAlias(internal_info_id);
+	static const char* getAlias(internal_info_id);
 	static USHORT getMask(internal_info_id);
 };
 
