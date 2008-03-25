@@ -257,6 +257,7 @@ struct own
 	srq own_blocks;					// Lock requests blocking
 	SRQ_PTR own_pending_request;	// Request we're waiting on
 	SRQ_PTR own_process;			// Process we belong to
+	FB_THREAD_ID own_thread_id;		// Last thread attached to the owner
 	FB_UINT64 own_acquire_time;		// lhb_acquires when owner last tried acquire()
 	event_t own_wakeup;				// Wakeup event block
 	USHORT own_flags;				// Misc stuff

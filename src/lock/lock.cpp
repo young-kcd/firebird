@@ -1030,6 +1030,12 @@ static void acquire(SRQ_PTR owner_offset)
 	prior_active = LOCK_header->lhb_active_owner;
 	LOCK_header->lhb_active_owner = owner_offset;
 
+	if (owner_offset > 0)
+	{
+		own* const owner = (own*) SRQ_ABS_PTR(owner_offset);
+		owner->own_thread_id = getThreadId();
+	}
+
 	if (LOCK_header->lhb_length > LOCK_data.sh_mem_length_mapped
 #ifdef LOCK_DEBUG_REMAP
 		// If we're debugging remaps, force a remap every-so-often.
