@@ -397,26 +397,33 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 
 		// Validate range for datetime values
 
-		if (DTYPE_IS_DATE(from_desc->dsc_dtype)) {
-			Firebird::TimeStamp ts(true);
-			switch (from_desc->dsc_dtype) {
+		if (DTYPE_IS_DATE(from_desc->dsc_dtype))
+		{
+			switch (from_desc->dsc_dtype)
+			{
 				case dtype_sql_date:
-					ts.value().timestamp_date =
-						*(GDS_DATE*) from_desc->dsc_address;
+					if (!Firebird::TimeStamp::isValidDate(*(GDS_DATE*) from_desc->dsc_address))
+					{
+						ERR_post(isc_date_range_exceeded, 0);
+					}
 					break;
+
 				case dtype_sql_time:
-					ts.value().timestamp_time =
-						*(GDS_TIME*) from_desc->dsc_address;
+					if (!Firebird::TimeStamp::isValidTime(*(GDS_TIME*) from_desc->dsc_address))
+					{
+						ERR_post(isc_date_range_exceeded, 0);
+					}
 					break;
+
 				case dtype_timestamp:
-					ts.value() = *(GDS_TIMESTAMP*) from_desc->dsc_address;
+					if (!Firebird::TimeStamp::isValidTimeStamp(*(GDS_TIMESTAMP*) from_desc->dsc_address))
+					{
+						ERR_post(isc_date_range_exceeded, 0);
+					}
 					break;
+
 				default:
 					fb_assert(false);
-			}
-
-			if (!ts.isRangeValid()) {
-				ERR_post(isc_date_range_exceeded, 0);
 			}
 		}
 
@@ -1652,7 +1659,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	}
 
 	jrd_req* trigger = NULL;
-	Firebird::TimeStamp timestamp;
+	Firebird::TimeStamp timestamp(Firebird::TimeStamp::getCurrentTimeStamp());
 
 	try
 	{

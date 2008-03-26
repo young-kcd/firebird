@@ -397,16 +397,14 @@ namespace internal
 {
 	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
 	{
-		Firebird::TimeStamp(*date).decode(times_arg);
+		int fractions;
+		Firebird::TimeStamp::decode_timestamp(*date, times_arg, &fractions);
 	}
 
 	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
 	{
-		Firebird::TimeStamp temp(true);
-		temp.encode(times_arg);
-		*date = temp.value();
+		*date = Firebird::TimeStamp::encode_timestamp(times_arg, 0);
 	}
-
 
 	enum day_format {day_short, day_long};
 	const fb_len day_len[] = {4, 14};

@@ -479,7 +479,8 @@ private:
 		dbb_dyn_req(*p),
 		dbb_lock_owner_id(getLockOwnerId()),
 		dbb_charsets(*p),
-		dbb_functions(*p)
+		dbb_functions(*p),
+		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp())
 	{
 		dbb_pools.add(p);
 		dbb_internal.grow(irq_MAX);

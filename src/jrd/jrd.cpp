@@ -4862,7 +4862,8 @@ Attachment::Attachment(Database* dbb) :
 		att_network_protocol(*dbb->dbb_permanent),
 		att_remote_address(*dbb->dbb_permanent),
 		att_remote_process(*dbb->dbb_permanent),
-		att_dsql_cache(*dbb->dbb_permanent)
+		att_dsql_cache(*dbb->dbb_permanent),
+		att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp())
 {
 }
 

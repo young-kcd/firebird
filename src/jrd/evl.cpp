@@ -953,8 +953,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			{
 				const int precision = (int)(IPTR) node->nod_arg[0];
 				fb_assert(precision >= 0);
-				Firebird::TimeStamp::round_time(enc_times.timestamp_time,
-												precision);
+				Firebird::TimeStamp::round_time(enc_times.timestamp_time, precision);
 			}
 
 			switch (node->nod_type) {
@@ -2407,10 +2406,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 
 	value->vlu_misc.vlu_sql_date = d2;
 
-	Firebird::TimeStamp ts(true);
-	ts.value().timestamp_date = value->vlu_misc.vlu_sql_date;
-
-	if (!ts.isRangeValid()) {
+	if (!Firebird::TimeStamp::isValidDate(value->vlu_misc.vlu_sql_date)) {
 		ERR_post(isc_date_range_exceeded, 0);
 	}
 
@@ -2725,9 +2721,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		value->vlu_misc.vlu_timestamp.timestamp_date = d2 / (ISC_TICKS_PER_DAY);
 		value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
 
-		Firebird::TimeStamp ts(value->vlu_misc.vlu_timestamp);
-
-		if (!ts.isRangeValid()) {
+		if (!Firebird::TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp)) {
 			ERR_post(isc_date_range_exceeded, 0);
 		}
 
@@ -3504,13 +3498,13 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_misc.vlu_short = 0;
 		return &impure->vlu_desc;
 	}
-	tm times;
-	Firebird::TimeStamp timestamp(true);
 
-	switch (value->dsc_dtype) {
+	tm times = {0};
+	int fractions;
+
+	switch (value->dsc_dtype)
+	{
 	case dtype_sql_time:
-		timestamp.value().timestamp_time = *(GDS_TIME *) value->dsc_address;
-		timestamp.decode(&times);
 		if (extract_part != blr_extract_hour &&
 			extract_part != blr_extract_minute &&
 			extract_part != blr_extract_second &&
@@ -3518,10 +3512,12 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		{
 			ERR_post(isc_expression_eval_err, 0);
 		}
+		Firebird::TimeStamp::decode_time(*(GDS_TIME *) value->dsc_address,
+										 &times.tm_hour, &times.tm_min, &times.tm_sec,
+										 &fractions);
 		break;
+
 	case dtype_sql_date:
-		timestamp.value().timestamp_date = *(GDS_DATE *) value->dsc_address;
-		timestamp.decode(&times);
 		if (extract_part == blr_extract_hour ||
 			extract_part == blr_extract_minute ||
 			extract_part == blr_extract_second ||
@@ -3529,11 +3525,14 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		{
 			ERR_post(isc_expression_eval_err, 0);
 		}
+		Firebird::TimeStamp::decode_date(*(GDS_DATE *) value->dsc_address, &times);
 		break;
+
 	case dtype_timestamp:
-		timestamp.value() = *(GDS_TIMESTAMP *) value->dsc_address;
-		timestamp.decode(&times);
+		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) value->dsc_address,
+											  &times, &fractions);
 		break;
+
 	default:
 		ERR_post(isc_expression_eval_err, 0);
 		break;
@@ -3565,8 +3564,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		*(ULONG *) impure->vlu_desc.dsc_address =
-			times.tm_sec * ISC_TIME_SECONDS_PRECISION +
-			(timestamp.value().timestamp_time % ISC_TIME_SECONDS_PRECISION);
+			times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
 
 		if (extract_part == blr_extract_millisecond)
 			(*(ULONG *) impure->vlu_desc.dsc_address) /= ISC_TIME_SECONDS_PRECISION / 1000;

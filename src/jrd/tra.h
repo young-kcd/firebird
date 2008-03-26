@@ -100,7 +100,8 @@ public:
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_open_cursors(*p)
+		tra_open_cursors(*p),
+		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp())
 	{}
 
 	~jrd_tra()

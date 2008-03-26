@@ -190,7 +190,7 @@ public:
 	jrd_req(MemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
-		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
+		req_invariants(*pool), req_sql_text(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
 	{}
 

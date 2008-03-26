@@ -1337,7 +1337,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				}
 				else
 				{
-					cur_date = Firebird::TimeStamp().value().timestamp_date;
+					cur_date = Firebird::TimeStamp::getCurrentTimeStamp().value().timestamp_date;
 				}
 				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date = cur_date;
 			}
@@ -1743,17 +1743,23 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	fb_assert(DTYPE_IS_TEXT(to->dsc_dtype));
 
-/* Convert a date or time value into a timestamp for manipulation */
+	// Convert a date or time value into a timestamp for manipulation
 
-	Firebird::TimeStamp ts(true);
+	tm times = {0};
+	int	fractions;
 
-	switch (from->dsc_dtype) {
+	switch (from->dsc_dtype)
+	{
 	case dtype_sql_time:
-		ts.value().timestamp_time = *(GDS_TIME *) from->dsc_address;
+		Firebird::TimeStamp::decode_time(*(GDS_TIME *) from->dsc_address,
+										 &times.tm_hour, &times.tm_min, &times.tm_sec,
+										 &fractions);
 		break;
+
 	case dtype_sql_date:
-		ts.value().timestamp_date = *(GDS_DATE *) from->dsc_address;
+		Firebird::TimeStamp::decode_date(*(GDS_DATE *) from->dsc_address, &times);
 		break;
+
 	case dtype_timestamp:
 		/** Cannot call JRD_get_thread_data because that macro calls 
 			BUGCHECK i.e. ERR_bugcheck() which is not part of 
@@ -1761,34 +1767,34 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		tdbb = (thread_db*) ThreadData::getSpecific();
 		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 			version4 = (tdbb->getRequest()->req_flags & req_blr_version4) ? true : false;
-		ts.value() = *(GDS_TIMESTAMP *) from->dsc_address;
+
+		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) from->dsc_address,
+											  &times, &fractions);
 		break;
+
 	default:
 		fb_assert(false);
-		(*err) (isc_badblk, 0);	/* internal error */
+		(*err) (isc_badblk, 0);	// internal error
 		break;
 	}
 
-/* Decode the timestamp into human readable terms */
+	// Decode the timestamp into human readable terms
 
-	tm times;
-	ts.decode(&times);
-	
-	TEXT temp[30];			/* yyyy-mm-dd hh:mm:ss.tttt  OR
-							dd-MMM-yyyy hh:mm:ss.tttt */
+	TEXT temp[30];			// yyyy-mm-dd hh:mm:ss.tttt OR dd-MMM-yyyy hh:mm:ss.tttt
 	TEXT* p = temp;
 
-/* Make a textual date for data types that include it */
+	// Make a textual date for data types that include it
 
-	if (from->dsc_dtype != dtype_sql_time) {
-
-		if (from->dsc_dtype == dtype_sql_date || !version4) {
+	if (from->dsc_dtype != dtype_sql_time)
+	{
+		if (from->dsc_dtype == dtype_sql_date || !version4)
+		{
 			sprintf(p, "%4.4d-%2.2d-%2.2d",
 					times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
 		}
-		else {
-			/* Prior to BLR version 5 - timestamps where converted to
-			   text in the dd-Mon-yyyy format */
+		else
+		{
+			// Prior to BLR version 5 timestamps were converted to text in the dd-MMM-yyyy format
 			sprintf(p, "%d-%.3s-%d",
 					times.tm_mday,
 					FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
@@ -1797,35 +1803,31 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			p++;
 	}
 
-/* Put in a space to separate date & time components */
+	// Put in a space to separate date & time components
 
 	if ((from->dsc_dtype == dtype_timestamp) && (!version4))
 		*p++ = ' ';
 
-/* Add the time part for data types that include it */
+	// Add the time part for data types that include it
 
-	if (from->dsc_dtype != dtype_sql_date) {
-		if (from->dsc_dtype == dtype_sql_time || !version4) {
-			sprintf(p, "%2.2d:%2.2d:%2.2d.%4.4d",
-					times.tm_hour, times.tm_min, times.tm_sec,
-					(USHORT) (ts.value().timestamp_time %
-							  ISC_TIME_SECONDS_PRECISION));
-		}
-		else if (times.tm_hour || times.tm_min || times.tm_sec
-				 || ts.value().timestamp_time)
+	if (from->dsc_dtype != dtype_sql_date)
+	{
+		if (from->dsc_dtype == dtype_sql_time || !version4)
 		{
-			/* Timestamp formating prior to BLR Version 5 is slightly
-			   different */
+			sprintf(p, "%2.2d:%2.2d:%2.2d.%4.4d",
+					times.tm_hour, times.tm_min, times.tm_sec, fractions);
+		}
+		else if (times.tm_hour || times.tm_min || times.tm_sec || fractions)
+		{
+			// Timestamp formating prior to BLR Version 5 is slightly different
 			sprintf(p, " %d:%.2d:%.2d.%.4d",
-					times.tm_hour, times.tm_min, times.tm_sec,
-					(USHORT) (ts.value().timestamp_time %
-							  ISC_TIME_SECONDS_PRECISION));
+					times.tm_hour, times.tm_min, times.tm_sec, fractions);
 		}
 		while (*p)
 			p++;
 	}
 
-/* Move the text version of the date/time value into the destination */
+	// Move the text version of the date/time value into the destination
 
 	dsc desc;
 	MOVE_CLEAR(&desc, sizeof(desc));
@@ -1834,8 +1836,8 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	desc.dsc_ttype() = ttype_ascii;
 	desc.dsc_length = (p - temp);
 	if (from->dsc_dtype == dtype_timestamp && version4) {
-		/* Prior to BLR Version5, when a timestamp is converted to a string it
-		   is silently truncated if the destination string is not large enough */
+		// Prior to BLR Version5, when a timestamp is converted to a string it
+		// is silently truncated if the destination string is not large enough
 
 		fb_assert(to->dsc_dtype <= dtype_any_text);
 
@@ -2522,7 +2524,7 @@ static void string_to_datetime(
 							conversion_error(desc, err);
 
 					// fetch the current datetime
-					*date = Firebird::TimeStamp().value();
+					*date = Firebird::TimeStamp::getCurrentTimeStamp().value();
 
 					if (strcmp(temp, NOW) == 0)
 						return;
@@ -2665,7 +2667,7 @@ static void string_to_datetime(
 
 		// Fetch current date/time
 		tm times2;
-		Firebird::TimeStamp().decode(&times2);
+		Firebird::TimeStamp::getCurrentTimeStamp().decode(&times2);
 
 		// Handle defaulting of year
 
@@ -2711,10 +2713,9 @@ static void string_to_datetime(
 	// convert day/month/year to Julian and validate result
 	// This catches things like 29-Feb-1995 (not a leap year)
 
-	Firebird::TimeStamp ts(true);
-	ts.encode(&times);
+	Firebird::TimeStamp ts(times);
 
-	if (!ts.isRangeValid()) {
+	if (!ts.isValid()) {
 		(*err) (isc_date_range_exceeded, 0);
 	}
 

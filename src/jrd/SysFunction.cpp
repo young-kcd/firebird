@@ -1247,7 +1247,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	SLONG part = MOV_get_long(partDsc, 0);
 
-	TimeStamp timestamp(true);
+	TimeStamp timestamp;
 
 	switch (valueDsc->dsc_dtype)
 	{
@@ -1412,7 +1412,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	if (request->req_flags & req_null)	// return NULL if value2Dsc is NULL
 		return NULL;
 
-	TimeStamp timestamp1(true), timestamp2(true);
+	TimeStamp timestamp1, timestamp2;
 
 	switch (value1Dsc->dsc_dtype)
 	{

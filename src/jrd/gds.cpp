@@ -386,8 +386,7 @@ void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 }
 
 
-ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT*
-	code_class)
+ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* code_class)
 {
 /**************************************
  *
@@ -446,7 +445,7 @@ void API_ROUTINE isc_decode_sql_date(const GDS_DATE* date, void* times_arg)
  *	Convert from internal DATE format to UNIX time structure.
  *
  **************************************/
-	tm* times = (struct tm*) times_arg;
+	tm* const times = static_cast<struct tm*>(times_arg);
 	TimeStamp::decode_date(*date, times);
 }
 
@@ -463,13 +462,9 @@ void API_ROUTINE isc_decode_sql_time(const GDS_TIME* sql_time, void* times_arg)
  *	Convert from internal TIME format to UNIX time structure.
  *
  **************************************/
-	tm* times = (struct tm*) times_arg;
+	tm* const times = static_cast<struct tm*>(times_arg);
 	memset(times, 0, sizeof(*times));
-
-	const ULONG minutes = *sql_time / (ISC_TIME_SECONDS_PRECISION * 60);
-	times->tm_hour = minutes / 60;
-	times->tm_min = minutes % 60;
-	times->tm_sec = (*sql_time / ISC_TIME_SECONDS_PRECISION) % 60;
+	Firebird::TimeStamp::decode_time(*sql_time, &times->tm_hour, &times->tm_min, &times->tm_sec);
 }
 
 
@@ -488,8 +483,8 @@ void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg
  *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
-
-	Firebird::TimeStamp(*date).decode(static_cast<tm*>(times_arg));
+	tm* const times = static_cast<struct tm*>(times_arg);
+	Firebird::TimeStamp::decode_timestamp(*date, times);
 }
 
 
@@ -506,11 +501,7 @@ ISC_STATUS API_ROUTINE gds__encode(ISC_STATUS code, USHORT facility)
  *	dependent form.
  *
  **************************************/
-
-	if (!code)
-		return FB_SUCCESS;
-
-	return ENCODE_ISC_MSG(code, facility);
+	return (code ? ENCODE_ISC_MSG(code, facility) : FB_SUCCESS);
 }
 
 
@@ -529,9 +520,7 @@ void API_ROUTINE isc_encode_date(const void* times_arg, ISC_QUAD* date)
  *	isc_encode_timestamp
  *
  **************************************/
-	Firebird::TimeStamp temp(true);
-	temp.encode(static_cast<const tm*>(times_arg));
-	*date = (ISC_QUAD&)temp.value();
+	isc_encode_timestamp(times_arg, (ISC_TIMESTAMP*) date);
 }
 
 
@@ -547,8 +536,8 @@ void API_ROUTINE isc_encode_sql_date(const void* times_arg, GDS_DATE* date)
  *	Convert from UNIX time structure to internal date format.
  *
  **************************************/
-
-	*date = TimeStamp::encode_date((const struct tm*) times_arg);
+	const tm* const times = static_cast<const struct tm*>(times_arg);
+	*date = TimeStamp::encode_date(times);
 }
 
 
@@ -564,9 +553,8 @@ void API_ROUTINE isc_encode_sql_time(const void* times_arg, GDS_TIME* isc_time)
  *	Convert from UNIX time structure to internal TIME format.
  *
  **************************************/
-	const tm* times = (const struct tm*) times_arg;
-	*isc_time = ((times->tm_hour * 60 + times->tm_min) * 60 +
-				 times->tm_sec) * ISC_TIME_SECONDS_PRECISION;
+	const tm* const times = static_cast<const struct tm*>(times_arg);
+	*isc_time = Firebird::TimeStamp::encode_time(times->tm_hour, times->tm_min, times->tm_sec);
 }
 
 
@@ -585,9 +573,8 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
  *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
-	Firebird::TimeStamp temp(true);
-	temp.encode(static_cast<const tm*>(times_arg));
-	*date = temp.value();
+	const tm* const times = static_cast<const struct tm*>(times_arg);
+	*date = Firebird::TimeStamp::encode_timestamp(times);
 }
 
 
