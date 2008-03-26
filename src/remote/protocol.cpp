@@ -1841,8 +1841,7 @@ else
 
 	fb_assert(statement_id >= -1);
 
-	if (((ULONG) statement_id < port->port_objects.getCount())
-		&& (statement_id >= 0))
+	if (((ULONG) statement_id < port->port_objects.getCount()) && (statement_id >= 0))
 	{
 		statement = port->port_objects[statement_id];
 	}
