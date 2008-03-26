@@ -2689,12 +2689,16 @@ void DYN_define_local_field(Global*		gbl,
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				FLD IN RDB$FIELDS
+				
+				FLD.RDB$SYSTEM_FLAG = 0;
+				FLD.RDB$SYSTEM_FLAG.NULL = FALSE;
 				strcpy(FLD.RDB$FIELD_NAME, RFR.RDB$FIELD_SOURCE);
 				DYN_put_blr_blob(gbl, &blr, &FLD.RDB$COMPUTED_BLR);
 				if (source) {
 					DYN_put_text_blob(gbl, &source, &FLD.RDB$COMPUTED_SOURCE);
 				}
 				FLD.RDB$FIELD_TYPE = dtype;
+				FLD.RDB$FIELD_TYPE.NULL = FALSE;
 				if (lflag) {
 					FLD.RDB$FIELD_LENGTH = length;
 					FLD.RDB$FIELD_LENGTH.NULL = FALSE;
@@ -3000,6 +3004,9 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
+				
+				PS.RDB$SYSTEM_FLAG = 0;
+				PS.RDB$SYSTEM_FLAG.NULL = FALSE;
 				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
 				strcpy(P.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;

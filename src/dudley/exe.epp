@@ -981,6 +981,7 @@ static void add_field( DUDLEY_FLD field)
 		X.RDB$QUERY_HEADER.NULL = FALSE;
 		store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 	}
+	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	if (field->fld_system)
 		X.RDB$SYSTEM_FLAG = field->fld_system;
 	else
@@ -1256,6 +1257,7 @@ static void add_global_field( DUDLEY_FLD field)
 	X.RDB$FIELD_TYPE = (int) field->fld_dtype;
 	X.RDB$FIELD_LENGTH = field->fld_length;
 	X.RDB$FIELD_SCALE = field->fld_scale;
+	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	X.RDB$SYSTEM_FLAG = field->fld_system;
 	X.RDB$FIELD_SUB_TYPE = field->fld_sub_type;
 
@@ -1533,6 +1535,7 @@ static void add_relation( DUDLEY_REL relation)
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 
+	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	X.RDB$SYSTEM_FLAG = relation->rel_system;
 
 	END_STORE;
@@ -1803,6 +1806,7 @@ static void add_view( DUDLEY_REL relation)
 		else
 			X.RDB$DESCRIPTION.NULL = TRUE;
 
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$SYSTEM_FLAG = relation->rel_system;
 
 	END_STORE
@@ -1890,6 +1894,7 @@ static void add_view( DUDLEY_REL relation)
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 			}
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
 			else
@@ -3355,8 +3360,11 @@ static void modify_field( DUDLEY_FLD field)
 			if (field->fld_flags & fld_null_query_header)
 				X.RDB$QUERY_HEADER.NULL = TRUE;
 
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_flags & fld_explicit_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
+			else
+				X.RDB$SYSTEM_FLAG = 0;
 
 			if (field->fld_source)
 				MOVE_SYMBOL(field->fld_source, X.RDB$FIELD_SOURCE);
@@ -3425,8 +3433,11 @@ static void modify_global_field( DUDLEY_FLD field)
 					DDL_err(83, SafeArg() << name->sym_name);
 				/* msg 83: Unauthorized attempt to change field %s to or from blob */
 			}
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_flags & fld_explicit_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
+			else
+				X.RDB$SYSTEM_FLAG = 0;
 			
 			if (field->fld_flags & fld_null_description)
 				X.RDB$DESCRIPTION.NULL = TRUE;
@@ -3573,8 +3584,12 @@ static void modify_relation( DUDLEY_REL relation)
 				store_text(relation->rel_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
+			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (relation->rel_flags & rel_explicit_system)
 				X.RDB$SYSTEM_FLAG = relation->rel_system;
+			else
+				X.RDB$SYSTEM_FLAG = 0;
+				
 			if (relation->rel_filename) {
 				if (X.RDB$EXTERNAL_FILE.NULL)
 					DDL_err(86, SafeArg() << name->sym_string);
