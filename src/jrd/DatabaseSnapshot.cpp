@@ -401,26 +401,28 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
-	// Initialize record buffers
-	RecordBuffer* const dbb_buffer =
-		allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer =
-		allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer =
-		allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer =
-		allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer =
-		allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer =
-		allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer =
-		allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer =
-		allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
+
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
+
+	// Initialize record buffers
+	RecordBuffer* const dbb_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+	RecordBuffer* const att_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+	RecordBuffer* const tra_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+	RecordBuffer* const stmt_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+	RecordBuffer* const call_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+	RecordBuffer* const io_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+	RecordBuffer* const rec_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
+	RecordBuffer* const ctx_var_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
 
 	const Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -524,8 +526,15 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				fb_assert(false);
 			}
 
-			record = buffer->getTempRecord();
-			clearRecord(record);
+			if (buffer)
+			{
+				record = buffer->getTempRecord();
+				clearRecord(record);
+			}
+			else
+			{
+				record = NULL;
+			}
 		}
 		else
 		{
@@ -553,7 +562,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				}
 
 				// We need to return the database record only once
-				if (allowed && !database_processed)
+				if (record && allowed && !database_processed)
 				{
 					putField(record, fid, source, length);
 					fields_processed = true;
@@ -561,7 +570,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			}
 			// The generic logic that covers all relations
 			// except MON$DATABASE
-			else if (allowed)
+			else if (record && allowed)
 			{
 				putField(record, fid, source, length);
 				fields_processed = true;
@@ -621,6 +630,8 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 
 void DatabaseSnapshot::clearRecord(Record* record)
 {
+	fb_assert(record);
+
 	// Initialize all fields to NULLs
 	memset(record->rec_data, 0, record->rec_length);
 	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
