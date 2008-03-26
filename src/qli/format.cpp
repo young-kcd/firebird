@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
-#include "../common/classes/timestamp.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../jrd/ibase.h"

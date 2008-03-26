@@ -30,7 +30,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <limits.h>
-#include "../common/classes/timestamp.h"
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 #include "../jrd/perf.h"
@@ -38,11 +37,14 @@
 #include "../jrd/perf_proto.h"
 #include "../jrd/gdsassert.h"
 
+#ifdef HAVE_TIME_H
+#include <time.h>
+#endif
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif
 #ifdef HAVE_SYS_TIMEB_H
-# include <sys/timeb.h>
+#include <sys/timeb.h>
 #endif
 
 
