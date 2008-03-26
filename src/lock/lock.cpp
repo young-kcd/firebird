@@ -1322,7 +1322,7 @@ static THREAD_ENTRY_DECLARE blocking_action_thread(THREAD_ENTRY_PARAM arg)
 
 		release_mutex();
 
-		while (blocking_owners.getCount())
+		while (blocking_owners.getCount() && *process_offset_ptr)
 		{
 			const SRQ_PTR owner_offset = blocking_owners.pop();
 			acquire(owner_offset);
