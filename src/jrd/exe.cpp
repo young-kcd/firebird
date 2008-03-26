@@ -1361,8 +1361,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (relation->rel_post_erase &&
 		which_trig != PRE_TRIG &&
 		(trigger = execute_triggers(tdbb, &relation->rel_post_erase,
-									rpb, NULL,
-									jrd_req::req_trigger_delete, POST_TRIG)))
+									rpb, NULL, jrd_req::req_trigger_delete, POST_TRIG)))
 	{
 		trigger_failure(tdbb, trigger);
 	}
@@ -3017,8 +3016,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 			if (relation->rel_post_modify &&
 				which_trig != PRE_TRIG &&
 				(trigger = execute_triggers(tdbb, &relation->rel_post_modify,
-											org_rpb, new_rpb,
-											jrd_req::req_trigger_update, POST_TRIG)))
+											org_rpb, new_rpb, jrd_req::req_trigger_update, POST_TRIG)))
 			{
 				trigger_failure(tdbb, trigger);
 			}
@@ -3761,8 +3759,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_pre_store &&
 			(which_trig != POST_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_pre_store,
-										NULL, rpb,
-										jrd_req::req_trigger_insert, PRE_TRIG)))
+										NULL, rpb, jrd_req::req_trigger_insert, PRE_TRIG)))
 		{
 			trigger_failure(tdbb, trigger);
 		}
@@ -3806,8 +3803,7 @@ static jrd_nod* store(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		if (relation->rel_post_store &&
 			(which_trig != PRE_TRIG) &&
 			(trigger = execute_triggers(tdbb, &relation->rel_post_store,
-										NULL, rpb,
-										jrd_req::req_trigger_insert, POST_TRIG)))
+										NULL, rpb, jrd_req::req_trigger_insert, POST_TRIG)))
 		{
 			trigger_failure(tdbb, trigger);
 		}

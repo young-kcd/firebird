@@ -47,7 +47,7 @@ template <typename What>
 class ArrayDelete
 {
 public:
-	static void clear(What *ptr)
+	static void clear(What* ptr)
 	{
 		delete[] ptr;
 	}
