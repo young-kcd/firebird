@@ -4818,8 +4818,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	{
 		nullCheck(tra_handle, isc_bad_trans_handle);
 
-		if ((count <= 0) ||
-			(count > 0 && !vector))
+		if (count <= 0 || !vector)
 		{
 			Firebird::status_exception::raise(isc_bad_teb_form, isc_arg_end);
 		}
@@ -4829,6 +4828,12 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		for (n = 0, ptr = &transaction; n < count;
 			n++, ptr = &(*ptr)->next, vector++)
 		{
+			if (vector->teb_tpb_length < 0 ||
+				(vector->teb_tpb_length > 0 && !vector->teb_tpb))
+			{
+				Firebird::status_exception::raise(isc_bad_tpb_form, isc_arg_end);
+			}
+
 			dbb = translate<Attachment>(vector->teb_database);
 
 			if (CALL(PROC_START_TRANSACTION, dbb->implementation) (status,
