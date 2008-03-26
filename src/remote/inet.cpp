@@ -1317,6 +1317,10 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 	address.sin_family = AF_INET;
 	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
 
+	int optval = 1;
+	setsockopt((SOCKET) port->port_handle, SOL_SOCKET, SO_KEEPALIVE,
+			   (SCHAR*) &optval, sizeof(optval));
+
 	status = connect(n, (struct sockaddr *) &address, sizeof(address));
 	const int inetErrNo = INET_ERRNO;
 
