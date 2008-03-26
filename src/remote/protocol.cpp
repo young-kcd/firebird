@@ -1422,7 +1422,7 @@ static bool_t xdr_slice(
 		if (slice->lstr_length > slice->lstr_allocated &&
 			slice->lstr_allocated)
 		{
-			delete slice->lstr_address;
+			delete[] slice->lstr_address;
 			DEBUG_XDR_FREE(xdrs, slice, slice->lstr_address, slice->lstr_allocated);
 			slice->lstr_address = NULL;
 		}

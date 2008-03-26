@@ -667,7 +667,7 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 
 		send_and_receive(rdb, packet, user_status);
 		if (new_blr != blr) {
-			delete new_blr;
+			delete[] new_blr;
 		}
 		if (user_status[1]) {
 			return user_status[1];
