@@ -1,3 +1,71 @@
+2008-03-26 16:01  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.149):
+
+	Extra protection to avoid races at the server shutdown.
+
+2008-03-26 15:20  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.221):
+
+	Restore accidentally deleted lines
+
+2008-03-26 15:04  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.51):
+
+	Make sure that ODS is handled properly.
+
+2008-03-26 11:19  dimitr
+
+	* firebird2/src/: jrd/Database.h (1.14), jrd/cvt.cpp (1.91),
+	jrd/evl.cpp (1.253), jrd/exe.cpp (1.250), jrd/SysFunction.cpp
+	(1.37), jrd/gds.cpp (1.251), jrd/jrd.cpp (1.423), jrd/pag.cpp
+	(1.170), jrd/req.h (1.75), jrd/tra.h (1.74), extlib/fbudf/fbudf.cpp
+	(1.31), common/classes/timestamp.cpp (1.15),
+	common/classes/timestamp.h (1.14):
+
+	Changes in the TimeStamp class by Dmitry Kovalenko.
+
+2008-03-26 11:03  dimitr
+
+	* firebird2/src/: jrd/perf.cpp (1.40), qli/format.cpp (1.36),
+	jrd/msg_encode.h (1.4):
+
+	Misc.
+
+2008-03-26 09:53  hvlad
+
+	* firebird2/src/remote/: interface.cpp (1.175), protocol.cpp
+	(1.66):
+
+	Use delete[] for arrays. Noted by Claudio.
+
+2008-03-26 07:18  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.183):
+
+	Fixes by Dmitry Kovalenko.
+
+2008-03-26 03:37  asfernandes
+
+	* firebird2/src/remote/protocol.cpp (1.65):
+
+	Misc
+
+2008-03-26 03:13  asfernandes
+
+	* firebird2/src/: common/classes/auto.h (1.15), jrd/exe.cpp
+	(1.249):
+
+	Misc
+
+2008-03-26 03:07  robocop
+
+	* firebird2/src/: jrd/dyn_def.epp (1.165), dudley/exe.epp (1.66):
+
+	Write sysflag always.
+
 2008-03-25 20:41  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.248):
