@@ -84,6 +84,60 @@ namespace Firebird
 		RefCounted* r;
 	};
 
+	// controls reference counter of the object where points
+	template <typename T>
+	class RefPtr
+	{
+	public:
+		RefPtr() : ptr(0)
+		{ }
+
+		RefPtr(T* p) : ptr(p)
+		{
+			if (ptr)
+			{
+				ptr->addRef();
+			}
+		}
+
+		~RefPtr()
+		{
+			if (ptr)
+			{
+				ptr->release();
+			}
+		}
+
+		T* operator=(T* p)
+		{
+			if (ptr != p)
+			{
+				if (ptr)
+				{
+					ptr->release();
+				}
+				ptr = p;
+				if (ptr)
+				{
+					ptr->addRef();
+				}
+			}
+			return ptr;
+		}
+
+		operator T*() const
+		{
+			return ptr;
+		}
+
+		T* operator->() const
+		{
+			return ptr;
+		}
+
+	private:
+		T* ptr;
+	};
 } // namespace
 
 #endif // COMMON_REF_COUNTED_H

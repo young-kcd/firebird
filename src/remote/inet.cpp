@@ -308,7 +308,6 @@ static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
 
-static void		unhook_disconnected_ports(rem_port*);
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
@@ -1613,7 +1612,6 @@ static void disconnect( rem_port* port)
 
 /* If this is a sub-port, unlink it from it's parent */
 
-	bool defer_cleanup = false;
 	port->port_state = rem_port::DISCONNECTED;
 
 	rem_port* parent = port->port_parent;
@@ -1623,10 +1621,7 @@ static void disconnect( rem_port* port)
 			port->port_async = NULL;
 		}
 
-		defer_cleanup = (port->port_server_flags & SRVR_multi_client);
-		if (!defer_cleanup) {
-			unhook_port(port, parent);
-		}
+		unhook_port(port, parent);
 	}
 	else if (port->port_async) {
 		port->port_async->port_flags |= PORT_disconnect;
@@ -1638,9 +1633,7 @@ static void disconnect( rem_port* port)
 
 	gds__unregister_cleanup(exit_handler, (void *) port);
 
-	if (!defer_cleanup) {
-		delete port;
-	}
+	port->release();
 
 #ifdef DEBUG
 	if (INET_trace & TRACE_summary) {
@@ -2174,7 +2167,6 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 
 	Firebird::MutexLockGuard guard(port_mutex);
 
-	unhook_disconnected_ports(main_port);
 	for (rem_port* port = main_port; port; port = port->port_next) 
 	{
 #ifdef WIN_NT
@@ -2242,7 +2234,6 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 		{ // port_mutex scope
 			Firebird::MutexLockGuard guard(port_mutex);
-			unhook_disconnected_ports(main_port);
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
 				if (port->port_state == rem_port::PENDING)
@@ -3368,45 +3359,6 @@ static void unhook_port( rem_port* port, rem_port* parent)
 				parent->port_next = *ptr;
 			}
 			break;
-		}
-	}
-}
-
-static void unhook_disconnected_ports(rem_port* main_port)
-{
-/**************************************
- *
- *      u n h o o k _ d i s c o n n e c t e d _ p o r t s
- *
- **************************************
- *
- * Functional description
- *      Go through a list of ports and get rid of any
- *      that are disconnected.   Note that this must be
- *      done port_mutex control.
- *
- **************************************/
-
-	bool more = true;
-
-	while (more) {
-		more = false;
-		for (rem_port* port = main_port; port; port = port->port_next) 
-		{
-			Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
-
-			if (portGuard.tryEnter()) {
-				if (port->port_state == rem_port::DISCONNECTED) {
-					more = true;
-					unhook_port(port, port->port_parent);
-					portGuard.leave();
-					delete port;
-					break;
-				}
-				else {
-					portGuard.leave();
-				}
-			}
 		}
 	}
 }

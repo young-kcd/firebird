@@ -65,13 +65,15 @@
 #include "../jrd/scroll_cursors.h"
 
 
-typedef struct server_req_t
+typedef struct server_req_t : public Firebird::GlobalStorage
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
-	rem_port*		req_port;
+	Firebird::RefPtr<rem_port> req_port;
 	PACKET			req_send;
 	PACKET			req_receive;
+public:
+	server_req_t() : req_next(0), req_chain(0) { }
 } *SERVER_REQ;
 
 typedef struct srvr : public Firebird::GlobalStorage
@@ -305,6 +307,7 @@ static void free_request(SERVER_REQ request)
  **************************************/
 	Firebird::MutexLockGuard queGuard(request_que_mutex);
 
+	request->req_port = 0;
 	request->req_next = free_requests;
 	free_requests = request;
 }
@@ -339,9 +342,16 @@ static SERVER_REQ alloc_request()
 	else
 	{
 		/* No block on the free list - allocate some new memory */
-
-		while (!(request = (SERVER_REQ) gds__alloc((SLONG) sizeof(struct server_req_t))))
+		for(;;)
 		{
+			try
+			{
+				request = new server_req_t;
+				break;
+			}
+			catch (const Firebird::BadAlloc&)
+			{ }
+
 #if defined(DEV_BUILD) && defined(DEBUG)
 			if (request_count++ > 4)
 				Firebird::BadAlloc::raise();
@@ -1484,11 +1494,14 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	   See interface.cpp - event_thread(). */
 
 	PACKET *packet = &rdb->rdb_packet;
-	if ((this->port_async) &&
-		((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE)))
+	if (this->port_async)
 	{
-		packet->p_operation = op_disconnect;
-		this->port_async->send(packet);
+		if ((this->port_type == rem_port::XNET) || (this->port_type == rem_port::PIPE))
+		{
+			packet->p_operation = op_disconnect;
+			this->port_async->send(packet);
+		}
+		this->port_async->port_flags |= PORT_disconnect;
 	}
 
 	ISC_STATUS_ARRAY status_vector;
@@ -4429,6 +4442,8 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 		return;
 	}
 
+	Firebird::RefMutexGuard portGuard(*port->port_sync);
+
 	PACKET packet;
 	packet.p_operation = op_event;
 	P_EVENT* p_event = &packet.p_event;
@@ -5063,7 +5078,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						if (request->req_send.p_operation == op_void &&
 							request->req_receive.p_operation == op_void)
 						{
-							gds__free(request);
+							delete request;
 							request = 0;
 						}
 					}
@@ -5136,6 +5151,10 @@ int SRVR_shutdown()
 		Worker::wakeUpAll();
 		THREAD_SLEEP(100);
 	}
+
+#ifdef DEV_BUILD
+	gds__log("ports left=%d\n", rem_port::portCounter.value());
+#endif
 
 	return 0;
 }

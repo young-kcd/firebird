@@ -517,18 +517,16 @@ const USHORT PORT_server		= 0x0200;	// Server (not client) port
 
 /* Port itself */
 
-class port_interface
-{
-public:
-	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
-};
-
 //typedef XDR_INT (*t_event_ast)();
 typedef void (*t_event_ast)(rem_port*);
 typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
-struct rem_port : public Firebird::GlobalStorage
+struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 {
+#ifdef DEV_BUILD
+	static Firebird::AtomicCounter portCounter;
+#endif
+
 	// sync objects
 	Firebird::RefMutex* const port_sync;
 	Firebird::Reference port_sync_reference;
@@ -577,7 +575,7 @@ struct rem_port : public Firebird::GlobalStorage
 	int				port_channel;		/* handle for connection (from by OS) */
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 	Rdb*			port_context;
-	t_event_ast		port_ast;		/* AST for events */
+	t_event_ast		port_ast;			/* AST for events */
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
@@ -638,9 +636,14 @@ public:
 #endif
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
+		addRef();
 		memset (port_buffer, 0, rpt);
+#ifdef DEV_BUILD
+		++portCounter;
+#endif
 	}
 
+private:		// this is refCounted object
 	~rem_port()
 	{
 		delete port_version;
@@ -657,8 +660,13 @@ public:
 #ifdef TRUSTED_AUTH
 		delete port_trusted_auth;
 #endif
+
+#ifdef DEV_BUILD
+		--portCounter;
+#endif
 	}
 
+public:
 	void linkParent(rem_port* parent)
 	{
 		port_parent = parent;

@@ -36,6 +36,10 @@
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 
+#ifdef DEV_BUILD
+Firebird::AtomicCounter rem_port::portCounter = 0;
+#endif
+
 #ifdef REMOTE_DEBUG
 IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
