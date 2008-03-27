@@ -32,7 +32,7 @@
  *  Contributor(s):
  * 
  *
- *  $Id: config_root.cpp,v 1.1.2.2 2003-11-11 02:31:42 bellardo Exp $
+ *  $Id: config_root.cpp,v 1.1.2.3 2008-03-27 13:33:00 paulbeach Exp $
  */
 
 #include "firebird.h"
@@ -48,7 +48,7 @@
 #include "../jrd/os/path_utils.h"
 #include "../jrd/file_params.h"
 
-#include <CoreServices.framework/Frameworks/CarbonCore.framework/Headers/MacTypes.h>
+#include <CoreServices/CoreServices.h>
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 

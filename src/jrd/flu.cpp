@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.34.2.2 2008-03-19 14:06:31 paulbeach Exp $
+$Id: flu.cpp,v 1.34.2.3 2008-03-27 13:32:51 paulbeach Exp $
 */
 
 #include "firebird.h"
@@ -234,13 +234,13 @@ void FLU_unregister_module(MOD module)
 
 #ifdef DARWIN
 	/* Make sure the fini function gets called, if there is one */
-	symbol = NSLookupSymbolInModule(module->mod_handle, "__fini");
+	symbol = NSLookupSymbolInModule((__NSModule*)module->mod_handle, "__fini");
 	if (symbol != NULL)
 	{
 		fini = (void (*)(void)) NSAddressOfSymbol(symbol);
 		fini();
 	}
-	NSUnLinkModule (module->mod_handle, 0);
+	NSUnLinkModule ((__NSModule*)module->mod_handle, 0);
 #endif
 
 	gds__free(module);
@@ -717,13 +717,13 @@ if (!(mod = FLU_lookup_module (module)))
 
 /* Look for the symbol and return a pointer to the function if found */
 mod->mod_use_count++;
-symbol = NSLookupSymbolInModule(mod->mod_handle, name);
+symbol = NSLookupSymbolInModule((__NSModule*)mod->mod_handle, name);
 if (symbol == NULL)
 {
     /*printf("Failed to find function: %s in module %s, trying _%s\n", name, module, name);*/
     strcpy(absolute_module, "_");
     strncat(absolute_module, name, sizeof(absolute_module) - 2);
-    symbol = NSLookupSymbolInModule(mod->mod_handle, absolute_module);
+    symbol = NSLookupSymbolInModule((__NSModule*)mod->mod_handle, absolute_module);
     if (symbol == NULL)
     {
         /*printf("Failed to find symbol %s.  Giving up.\n", absolute_module);*/
@@ -897,7 +897,7 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 		return NULL;
 	}
 
-	if (!(mod->mod_handle = OPEN_HANDLE(absolute_module))) {
+	if (!(mod->mod_handle = OPEN_HANDLE((TEXT*)absolute_module))) {
 /*
  * Temporarily commented - what to do with dlerror() on NT ?
 #ifdef DEV_BUILD
