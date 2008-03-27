@@ -1615,8 +1615,7 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 
 	isc_drop_database(status_vector, &rdb->rdb_handle);
 
-	if (status_vector[1]
-		&& (status_vector[1] != isc_drdb_completed_with_errs))
+	if (status_vector[1] && (status_vector[1] != isc_drdb_completed_with_errs))
 	{
 		this->send_response(sendL, 0, 0, status_vector, false);
 		return;
@@ -2565,6 +2564,7 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
 
 	Firebird::HalfStaticArray<UCHAR, 4096> temp_buffer;
 	UCHAR* slice = 0;
+
 	if (stuff->p_slc_length) {
 		slice = temp_buffer.getBuffer(stuff->p_slc_length);
 		memset(slice, 0, stuff->p_slc_length);
