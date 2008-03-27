@@ -126,17 +126,17 @@ public:
 	static TimeStamp getCurrentTimeStamp();
 
 	// Validation routines
-	static bool TimeStamp::isValidDate(ISC_DATE ndate)
+	static bool isValidDate(ISC_DATE ndate)
 	{
 		return (ndate >= MIN_DATE && ndate <= MAX_DATE);
 	}
 
-	static bool TimeStamp::isValidTime(ISC_TIME ntime)
+	static bool isValidTime(ISC_TIME ntime)
 	{
 		return (ntime < 24 * 3600 * ISC_TIME_SECONDS_PRECISION);
 	}
 
-	static bool TimeStamp::isValidTimeStamp(ISC_TIMESTAMP ts)
+	static bool isValidTimeStamp(ISC_TIMESTAMP ts)
 	{
 		return (isValidDate(ts.timestamp_date) && isValidTime(ts.timestamp_time));
 	}
