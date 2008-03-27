@@ -1596,7 +1596,7 @@ static SSHORT open_files(TEXT * file1,
 #ifndef WIN_NT
 				signal(SIGPIPE, SIG_IGN);
 #endif
-				fil->fil_fd = reinterpret_cast<DESC>(GBAK_STDOUT_DESC);
+				fil->fil_fd = (DESC)(GBAK_STDOUT_DESC);
 				break;
 			}
 			else
