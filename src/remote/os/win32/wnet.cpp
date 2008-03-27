@@ -759,7 +759,7 @@ static void disconnect(rem_port* port)
 		port->port_handle = 0;
 	}
 	gds__unregister_cleanup(exit_handler, port);
-	delete port;
+	port->release();
 }
 
 

@@ -1002,7 +1002,7 @@ static void cleanup_port(rem_port* port)
 		cleanup_comm((XCC) port->port_xcc);
 	}
 
-	delete port;
+	port->release();
 }
 
 
