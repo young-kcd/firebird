@@ -357,6 +357,12 @@ void Service::stuffStatus(const ISC_STATUS* status_vector)
 			status++;
 		}
 
+		if (i == 1)		// We have a vector: isc_arg_gds, isc_arg_end.
+		{
+			i = 0;
+			status = svc_status;
+		}
+
 		for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
 		{
 			*status++ = status_vector[j];
