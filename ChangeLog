@@ -1,3 +1,74 @@
+2008-03-27 17:36  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.215):
+
+	fixed service status vector contents - related with CORE-1805
+
+2008-03-27 13:19  robocop
+
+	* firebird2/src/jrd/gdsassert.h (1.16):
+
+	Misc.
+
+2008-03-27 12:42  robocop
+
+	* firebird2/builds/win32/: msvc6/fbclient.dsp (1.60),
+	msvc6/fbclient_static.dsp (1.24), msvc6/fbembed.dsp (1.42),
+	msvc6/remote.dsp (1.25), msvc6/remote_classic.dsp (1.22),
+	msvc7/fbclient.vcproj (1.50), msvc7/fbclient_static.vcproj (1.22),
+	msvc7/fbembed.vcproj (1.36), msvc7/remote.vcproj (1.25),
+	msvc7/remote_classic.vcproj (1.26):
+
+	Update project files.
+
+2008-03-27 12:15  hvlad
+
+	* firebird2/src/remote/: xnet.cpp (1.107), os/win32/wnet.cpp
+	(1.52):
+
+	Replace "delete port" by "port->release()" as remote port is
+	RefCounted object now
+
+2008-03-27 11:14  alexpeshkoff
+
+	* firebird2/src/: common/classes/RefCounted.h (1.6),
+	remote/inet.cpp (1.222), remote/remote.cpp (1.55), remote/remote.h
+	(1.65), remote/server.cpp (1.188):
+
+	1. Make remote port RefCounted object.	2. Removed deferred cleanup
+	hack.  3. Fixed races when events are delivered - thanks to Vlad.
+
+2008-03-27 10:16  alexpeshkoff
+
+	* firebird2/src/jrd/SysFunction.cpp (1.38):
+
+	fixed declaration
+
+2008-03-27 10:14  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.424):
+
+	fixed gcc warning
+
+2008-03-27 10:11  alexpeshkoff
+
+	* firebird2/src/jrd/tra.h (1.75):
+
+	fixed gcc warning
+
+2008-03-27 03:41  asfernandes
+
+	* firebird2/src/: common/classes/timestamp.h (1.15), jrd/Database.h
+	(1.15), jrd/perf.cpp (1.41):
+
+	Remove warnings and errors in the GCC/Linux build
+
+2008-03-27 03:27  asfernandes
+
+	* firebird2/src/remote/server.cpp (1.187):
+
+	Misc
+
 2008-03-26 16:01  dimitr
 
 	* firebird2/src/lock/lock.cpp (1.149):
