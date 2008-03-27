@@ -123,22 +123,6 @@ SOURCE=..\..\..\src\jrd\perf.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\allr.cpp
-
-!IF  "$(CFG)" == "fbembed - Win32 Release"
-
-# ADD CPP /D "SUPERCLIENT"
-# SUBTRACT CPP /D "SUPERSERVER"
-
-!ELSEIF  "$(CFG)" == "fbembed - Win32 Debug"
-
-# ADD CPP /D "SUPERCLIENT"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\inet.cpp
 
 !IF  "$(CFG)" == "fbembed - Win32 Release"

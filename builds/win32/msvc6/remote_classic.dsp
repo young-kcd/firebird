@@ -86,10 +86,6 @@ LIB32=link.exe -lib
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\allr.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\os\win32\chop.cpp
 # End Source File
 # Begin Source File
@@ -156,10 +152,6 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # Begin Group "Header files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
-# Begin Source File
-
-SOURCE=..\..\..\src\remote\allr_proto.h
-# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\inet_proto.h

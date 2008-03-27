@@ -199,9 +199,6 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\remote\allr.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 			</File>
 			<File

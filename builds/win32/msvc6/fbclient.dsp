@@ -232,10 +232,6 @@ SOURCE=..\..\..\src\dsql\utld.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\remote\allr.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\remote\inet.cpp
 # End Source File
 # Begin Source File
