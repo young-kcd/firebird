@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: postfix.darwin,v 1.1.2.13 2008-02-18 11:44:33 paulbeach Exp $
+#$Id: postfix.darwin,v 1.1.2.14 2008-03-27 10:41:54 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 
@@ -23,12 +23,15 @@ darwin_setup_framework: FB_FW = ../gen/firebird/Firebird.framework
 darwin_setup_framework:
 	-$(RM) -rf $(FB_FW) ../gen/firebird/Firebird.framework
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Versions/A/Libraries
 	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
 	ln -s Versions/Current/Headers $(FB_FW)/Headers
 	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s Versions/Current/Libraries $(FB_FW)/Libraries
 	ln -s A $(FB_FW)/Versions/Current
 	ln -s ../../../include $(FB_FW)/Versions/A/Headers
 	ln -s ../../../lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	ln -s ../../../lib $(FB_FW)/Versions/A/Libraries
 	ln -s ../../../../../../firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
 	ln -s ../../../../../../bin $(FB_FW)/Resources/English.lproj/var/bin
@@ -39,15 +42,18 @@ darwin_setup_framework:
 	ln -s ../../../../../../help $(FB_FW)/Resources/English.lproj/var/help
 
 darwin_finish_cs_framework: FB_FW = ../gen/firebird/frameworks/FirebirdCS.framework
-darwin_finish_cs_framework: extlib
+darwin_finish_cs_framework:
 	-$(RM) -rf $(FB_FW)
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Versions/A/Libraries
 	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
 	ln -s Versions/Current/Headers $(FB_FW)/Headers
 	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s Versions/Current/Libraries $(FB_FW)/Libraries
 	ln -s A $(FB_FW)/Versions/Current
 	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
 	cp ../gen/firebird/lib/libfbembed.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/lib/libib_util.dylib $(FB_FW)/Versions/A/Libraries/libib_util.dylib
 	cp ../gen/firebird/firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
 	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
@@ -82,15 +88,18 @@ darwin_finish_cs_framework: extlib
 			$(FB_FW)/Resources/Readme.txt
 
 darwin_finish_ss_framework: FB_FW = ../gen/firebird/frameworks/FirebirdSS.framework
-darwin_finish_ss_framework: extlib
+darwin_finish_ss_framework: 
 	-$(RM) -rf $(FB_FW)
 	mkdir -p $(FB_FW)/Versions/A/Resources/English.lproj/var
+	mkdir -p $(FB_FW)/Versions/A/Libraries
 	ln -s Versions/Current/Firebird $(FB_FW)/Firebird
 	ln -s Versions/Current/Headers $(FB_FW)/Headers
 	ln -s Versions/Current/Resources $(FB_FW)/Resources
+	ln -s Versions/Current/Libraries $(FB_FW)/Libraries
 	ln -s A $(FB_FW)/Versions/Current
 	cp -r ../gen/firebird/include $(FB_FW)/Versions/A/Headers
 	cp ../gen/firebird/lib/libfbclient.dylib $(FB_FW)/Versions/A/Firebird
+	cp ../gen/firebird/lib/libib_util.dylib $(FB_FW)/Versions/A/Libraries/libib_util.dylib
 	cp ../gen/firebird/firebird.msg \
 			$(FB_FW)/Resources/English.lproj/var/firebird.msg
 	cp -r ../gen/firebird/UDF $(FB_FW)/Resources/English.lproj/var/UDF
@@ -111,8 +120,8 @@ darwin_finish_ss_framework: extlib
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
-	cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
+	#cp ../gen/firebird/bin/gds_drop $(FB_FW)/Resources/bin
+	#cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/qli $(FB_FW)/Resources/bin
