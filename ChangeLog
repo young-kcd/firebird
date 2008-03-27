@@ -1,3 +1,34 @@
+2008-03-27 16:35  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.2.16):
+
+	Missing conf file for Classic
+
+2008-03-27 16:11  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.2.15):
+
+	Fix minor build problems on MacOSX
+
+2008-03-27 14:42  paulbeach
+
+	* firebird2/src/burp/burp.cpp (1.33.2.5):
+
+	Fix compile problems on MacOSX
+
+2008-03-27 14:32  paulbeach
+
+	* firebird2/src/jrd/: flu.cpp (1.34.2.3), os/darwin/config_root.cpp
+	(1.1.2.3):
+
+	Fix compile problems
+
+2008-03-27 11:41  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.2.14):
+
+	No ib_util library in 1.5 .....
+
 2008-03-25 10:07  paulbeach
 
 	* firebird2/src/install/arch-specific/darwin/install-script
