@@ -63,7 +63,7 @@ namespace Firebird
 	class Reference
 	{
 	public:
-		Reference(RefCounted& refCounted) :
+		explicit Reference(RefCounted& refCounted) :
 			r(&refCounted)
 		{
 			r->addRef();
@@ -92,7 +92,7 @@ namespace Firebird
 		RefPtr() : ptr(0)
 		{ }
 
-		RefPtr(T* p) : ptr(p)
+		explicit RefPtr(T* p) : ptr(p)
 		{
 			if (ptr)
 			{
@@ -125,12 +125,12 @@ namespace Firebird
 			return ptr;
 		}
 
-		operator T*() const
+		operator T*()
 		{
 			return ptr;
 		}
 
-		T* operator->() const
+		T* operator->()
 		{
 			return ptr;
 		}

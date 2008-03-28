@@ -77,7 +77,7 @@ public:
 	}
 
 	bool operator !() const {
-		return ptr ? false : true;
+		return !ptr;
 	}
 
 	Where* operator->() {

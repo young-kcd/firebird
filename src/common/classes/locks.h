@@ -317,7 +317,6 @@ private:
 		lock->enter();
 	}
 
-private:
 	Mutex* lock;
 };
 
