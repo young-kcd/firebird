@@ -1,3 +1,87 @@
+2008-03-28 15:17  robocop
+
+	* firebird2/src/remote/server.cpp (1.190):
+
+	Misc.
+
+2008-03-28 14:36  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.176), parser.cpp (1.21),
+	remote.h (1.66), server.cpp (1.189):
+
+	Since Vlad and Alex did the hard work, I took the comment from Mike
+	(approx 6 years ago) and did the small change function->method.
+
+2008-03-28 14:33  robocop
+
+	* firebird2/src/jrd/perf.cpp (1.42):
+
+	Misc.
+
+2008-03-28 14:32  robocop
+
+	* firebird2/src/jrd/: jrd.h (1.231), tra.h (1.76):
+
+	const.
+
+2008-03-28 14:31  robocop
+
+	* firebird2/src/isql/isql.epp (1.239):
+
+	Do not crash on -pag 0 Instead, interpret it as SET HEADING OFF
+
+2008-03-28 14:26  robocop
+
+	* firebird2/src/extlib/fbudf/fbudf.cpp (1.32):
+
+	No need to provide parameters with default values.
+
+2008-03-28 14:26  robocop
+
+	* firebird2/src/common/classes/: timestamp.cpp (1.16), timestamp.h
+	(1.16):
+
+	const.
+
+2008-03-28 14:25  robocop
+
+	* firebird2/src/common/classes/: RefCounted.h (1.7), auto.h (1.16),
+	locks.h (1.46):
+
+	Misc.
+
+2008-03-28 14:21  robocop
+
+	* firebird2/src/jrd/: cvt.cpp (1.92), evl.cpp (1.254), exe.cpp
+	(1.251):
+
+	Introduce more specific errors for date-time operations.
+
+2008-03-28 14:17  robocop
+
+	* firebird2/: src/msgs/facilities2.sql (1.28),
+	src/msgs/messages2.sql (1.36), src/msgs/system_errors2.sql (1.24),
+	src/msgs/transmsgs.de_DE2.sql (1.5), src/msgs/transmsgs.fr_FR2.sql
+	(1.4), lang_helpers/gds_codes.ftn (1.70),
+	lang_helpers/gds_codes.pas (1.70), src/include/gen/codetext.h
+	(1.79), src/include/gen/iberror.h (1.81), src/include/gen/msgs.h
+	(1.101), src/include/gen/sql_code.h (1.85),
+	src/include/gen/sql_state.h (1.9):
+
+	Introduce more specific errors for date-time operations.
+
+2008-03-28 11:56  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.13):
+
+	typo
+
+2008-03-28 10:18  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.425):
+
+	Set transaction handle to NULL after successful commit or rollback
+
 2008-03-27 17:36  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.215):
