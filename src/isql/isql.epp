@@ -6799,6 +6799,14 @@ static processing_state parse_arg(int argc,
 					break;
 
 				case SWITCH_PAGE:
+					if (swarg_int < 0)
+					{
+						ISQL_msg_get(USAGE_RANGE, errbuf, SafeArg() << swarg_str << (s + 1));
+						STDERROUT(errbuf);
+						ret = ps_ERR;
+					}
+					else if (swarg_int == 0) // let's interpret -pag 0 as SET HEADING OFF
+						Heading = false;
 					Pagelength = swarg_int;
 					break;
 
@@ -6836,16 +6844,16 @@ static processing_state parse_arg(int argc,
 					break;
 
 				case SWITCH_CHARSET:
-				{
-					fb_utils::copy_terminate(Charset, swarg_str, sizeof(Charset));
-					const size_t lgth = strlen(Charset);
-					if (lgth < MAXCHARSET_SIZE) {
-						strcpy(ISQL_charset, Charset);
+					{
+						fb_utils::copy_terminate(Charset, swarg_str, sizeof(Charset));
+						const size_t lgth = strlen(Charset);
+						if (lgth < MAXCHARSET_SIZE) {
+							strcpy(ISQL_charset, Charset);
+						}
+						else
+							fb_utils::copy_terminate(ISQL_charset, Charset, MAXCHARSET_SIZE);
 					}
-					else
-						fb_utils::copy_terminate(ISQL_charset, Charset, MAXCHARSET_SIZE);
 					break;
-				}
 
 				case SWITCH_QUIET:
 					Quiet = true;
