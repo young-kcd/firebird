@@ -5968,6 +5968,7 @@ void JRD_commit_transaction(thread_db* tdbb, jrd_tra** transaction)
  *
  **************************************/
 	commit(tdbb, *transaction, false);
+	*transaction = NULL;
 }
 
 
@@ -6000,6 +6001,7 @@ void JRD_rollback_transaction(thread_db* tdbb, jrd_tra** transaction)
  *
  **************************************/
 	rollback(tdbb, *transaction, false);
+	*transaction = NULL;
 }
 
 
