@@ -613,6 +613,8 @@ static const struct {
 	{"tpb_reserv_temptbl", 335544909},
 	{"tpb_readtxn_after_writelock", 335544910},
 	{"tpb_writelock_after_readtxn", 335544911},
+	{"time_range_exceeded", 335544912},
+	{"datetime_range_exceeded", 335544913},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

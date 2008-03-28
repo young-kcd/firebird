@@ -411,14 +411,14 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 				case dtype_sql_time:
 					if (!Firebird::TimeStamp::isValidTime(*(GDS_TIME*) from_desc->dsc_address))
 					{
-						ERR_post(isc_date_range_exceeded, 0);
+						ERR_post(isc_time_range_exceeded, 0);
 					}
 					break;
 
 				case dtype_timestamp:
 					if (!Firebird::TimeStamp::isValidTimeStamp(*(GDS_TIMESTAMP*) from_desc->dsc_address))
 					{
-						ERR_post(isc_date_range_exceeded, 0);
+						ERR_post(isc_datetime_range_exceeded, 0);
 					}
 					break;
 
@@ -1633,8 +1633,8 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	jrd_tra* transaction = (tdbb->getRequest() ? tdbb->getRequest()->req_transaction : tdbb->getTransaction());
 	trig_vec* vector = *triggers;
 	jrd_req* result = NULL;
-	Record* old_rec = old_rpb ? old_rpb->rpb_record : NULL;
-	Record* new_rec = new_rpb ? new_rpb->rpb_record : NULL;
+	Record* const old_rec = old_rpb ? old_rpb->rpb_record : NULL;
+	Record* const new_rec = new_rpb ? new_rpb->rpb_record : NULL;
 
 	Record* null_rec = NULL;
 
@@ -1659,7 +1659,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	}
 
 	jrd_req* trigger = NULL;
-	Firebird::TimeStamp timestamp(Firebird::TimeStamp::getCurrentTimeStamp());
+	const Firebird::TimeStamp timestamp(Firebird::TimeStamp::getCurrentTimeStamp());
 
 	try
 	{

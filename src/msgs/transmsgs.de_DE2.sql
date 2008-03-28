@@ -737,6 +737,8 @@ segmented) blob.', 'daves', '1993-07-16 12:15:53')
 ('Table reservation @1 or @2 in TPB cannot be applied to @3 because it''s a temporary table', NULL, NULL, 0, 589, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Cannot set the transaction in read only mode after a table reservation isc_tpb_lock_write in TPB', NULL, NULL, 0, 590, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Cannot take a table reservation isc_tpb_lock_write in TPB because the transaction is in read only mode', NULL, NULL, 0, 591, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('value exceeds the range for a valid time', NULL, NULL, 0, 592, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('value exceeds the range for valid timestamps', NULL, NULL, 0, 593, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 -- QLI
 ('expected type', NULL, NULL, 1, 0, 'Erwartet: Typ', NULL, NULL, 'daves', '1993-07-16 12:15:59')
 ('bad block type', NULL, NULL, 1, 1, 'Block-Typ ist ungültig', NULL, NULL, 'daves', '1993-07-16 12:15:59')

@@ -2722,7 +2722,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		value->vlu_misc.vlu_timestamp.timestamp_time = (d2 % ISC_TICKS_PER_DAY);
 
 		if (!Firebird::TimeStamp::isValidTimeStamp(value->vlu_misc.vlu_timestamp)) {
-			ERR_post(isc_date_range_exceeded, 0);
+			ERR_post(isc_datetime_range_exceeded, 0);
 		}
 
 		// Make sure the TIME portion is non-negative

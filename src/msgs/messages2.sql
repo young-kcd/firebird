@@ -691,6 +691,8 @@ COMMIT WORK;
 ('tpb_reserv_temptbl', 'expand_view_lock', 'tra.cpp', NULL, 0, 589, NULL, 'Table reservation @1 or @2 in TPB cannot be applied to @3 because it''s a temporary table', NULL, NULL)
 ('tpb_readtxn_after_writelock', 'transaction_options', 'tra.cpp', NULL, 0, 590, NULL, 'Cannot set the transaction in read only mode after a table reservation isc_tpb_lock_write in TPB', NULL, NULL)
 ('tpb_writelock_after_readtxn', 'transaction_options', 'tra.cpp', NULL, 0, 591, NULL, 'Cannot take a table reservation isc_tpb_lock_write in TPB because the transaction is in read only mode', NULL, NULL)
+('time_range_exceeded', 'EXE_assignment', 'evl.cpp', NULL, 0, 592, NULL, 'value exceeds the range for a valid time', NULL, NULL)
+('datetime_range_exceeded', 'add_sql_timestamp', 'evl.cpp', NULL, 0, 593, NULL, 'value exceeds the range for valid timestamps', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

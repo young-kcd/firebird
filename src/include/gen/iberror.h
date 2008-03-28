@@ -647,6 +647,8 @@ const ISC_LONG isc_tpb_reserv_systbl                = 335544908L;
 const ISC_LONG isc_tpb_reserv_temptbl               = 335544909L;
 const ISC_LONG isc_tpb_readtxn_after_writelock      = 335544910L;
 const ISC_LONG isc_tpb_writelock_after_readtxn      = 335544911L;
+const ISC_LONG isc_time_range_exceeded              = 335544912L;
+const ISC_LONG isc_datetime_range_exceeded          = 335544913L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -919,7 +921,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 863;
+const ISC_LONG isc_err_max                          = 865;
 
 #else /* c definitions */
 
@@ -1536,6 +1538,8 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_tpb_reserv_temptbl               335544909L
 #define isc_tpb_readtxn_after_writelock      335544910L
 #define isc_tpb_writelock_after_readtxn      335544911L
+#define isc_time_range_exceeded              335544912L
+#define isc_datetime_range_exceeded          335544913L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1808,7 +1812,7 @@ const ISC_LONG isc_err_max                          = 863;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          863
+#define isc_err_max                          865
 
 #endif
 

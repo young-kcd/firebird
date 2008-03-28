@@ -612,6 +612,8 @@ static const struct {
 	{335544909, "HY000"}, // 589 tpb_reserv_temptbl 
 	{335544910, "HY000"}, // 590 tpb_readtxn_after_writelock 
 	{335544911, "HY000"}, // 591 tpb_writelock_after_readtxn 
+	{335544912, "22008"}, // 592 time_range_exceeded 
+	{335544913, "22008"}, // 593 datetime_range_exceeded 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

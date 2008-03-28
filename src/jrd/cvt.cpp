@@ -149,7 +149,7 @@ static void datetime_to_text(const dsc*, dsc*, FPTR_ERROR);
 static SSHORT decompose(const char*, USHORT, SSHORT, SLONG*, FPTR_ERROR);
 static void float_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void integer_to_text(const dsc*, dsc*, FPTR_ERROR);
-static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
+static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME,
 							   FPTR_ERROR);
 static double power_of_ten(const int);
 static SINT64 hex_to_value(const char*& string, const char* end);
@@ -1746,7 +1746,7 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	// Convert a date or time value into a timestamp for manipulation
 
 	tm times = {0};
-	int	fractions;
+	int	fractions = 0;
 
 	switch (from->dsc_dtype)
 	{
@@ -2365,10 +2365,9 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 }
 
 
-static void string_to_datetime(
-							   const dsc* desc,
+static void string_to_datetime(const dsc* desc,
 							   GDS_TIMESTAMP* date,
-							   EXPECT_DATETIME expect_type, FPTR_ERROR err)
+							   const EXPECT_DATETIME expect_type, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -2716,7 +2715,21 @@ static void string_to_datetime(
 	Firebird::TimeStamp ts(times);
 
 	if (!ts.isValid()) {
-		(*err) (isc_date_range_exceeded, 0);
+		switch (expect_type)
+		{
+			case expect_sql_date:
+				(*err)(isc_date_range_exceeded, 0);
+				break;
+			case expect_sql_time:
+				(*err)(isc_time_range_exceeded, 0);
+				break;
+			case expect_timestamp:
+				(*err)(isc_datetime_range_exceeded, 0);
+				break;
+			default: // this should never happen!
+				conversion_error(desc, err);
+				break;
+		}
 	}
 
 	if (expect_type != expect_sql_time) {
