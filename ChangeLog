@@ -1,3 +1,12 @@
+2008-03-28 11:00  paulbeach
+
+	* firebird2/builds/posix/: Makefile.in.extlib (1.10.2.9),
+	prefix.darwin (1.8.2.21), prefix.darwin_ppc (1.1.2.2):
+
+	We have been building ib_util on MacOSX as a bundle... this makes
+	it impossible to link UDF libraries against it.  It must be built
+	as a proper shared library.
+
 2008-03-27 16:35  paulbeach
 
 	* firebird2/builds/posix/postfix.darwin (1.1.2.16):
