@@ -464,7 +464,6 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 	SERVER_REQ request = NULL;
 	rem_port* port = NULL;		// Was volatile PORT port = NULL;
 
-	ISC_STATUS_ARRAY status_vector;
 	++cntServers;
 
 	try {
@@ -578,6 +577,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		catch (const Firebird::Exception& e)
 		{
 			gds__log("SRVR_multi_thread: shutting down due to unhandled exception");
+			ISC_STATUS_ARRAY status_vector;
 			Firebird::stuff_exception(status_vector, e);
 			gds__log_status(0, status_vector);
 
@@ -992,7 +992,6 @@ static void attach_database2(rem_port* port,
 							 int dl, 
 							 PACKET* send)
 {
-	ISC_STATUS_ARRAY status_vector;
     send->p_operation = op_accept;
 	FB_API_HANDLE handle = 0;
 
@@ -1042,6 +1041,8 @@ static void attach_database2(rem_port* port,
 
 	dpb = dpb_buffer.getBuffer();
 	dl = dpb_buffer.getBufferLength();
+
+	ISC_STATUS_ARRAY status_vector;
 
 	if (operation == op_attach)
 	{
@@ -1504,9 +1505,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		this->port_async->port_flags |= PORT_disconnect;
 	}
 
-	ISC_STATUS_ARRAY status_vector;
-
 	if (rdb->rdb_handle)
+	{
+		ISC_STATUS_ARRAY status_vector;
+		
 		if (!(rdb->rdb_flags & Rdb::SERVICE)) {
 #ifdef CANCEL_OPERATION
 			/* Prevent a pending or spurious cancel from aborting
@@ -1545,6 +1547,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		{
 			isc_service_detach(status_vector, &rdb->rdb_handle);
 		}
+	}
 
 	REMOTE_free_packet(this, sendL);
 	REMOTE_free_packet(this, receiveL);
@@ -2032,7 +2035,6 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
  *
  *****************************************/
 	RTR transaction = NULL;
-	ISC_STATUS_ARRAY status_vector;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (sqldata->p_sqldata_transaction)
@@ -2076,6 +2078,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
+	ISC_STATUS_ARRAY status_vector;
+	
 	GDS_DSQL_EXECUTE(status_vector,
 					 &handle,
 					 &statement->rsr_handle,
@@ -2141,7 +2145,6 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
  *
  *****************************************/
 	RSR statement;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2161,7 +2164,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			sqldata->p_sqldata_messages;
 	USHORT count2 = (statement->rsr_flags & Rsr::NO_BATCH) ? 0 : count;
 
-/* On first fetch, clear the end-of-stream flag & reset the message buffers */
+	// On first fetch, clear the end-of-stream flag & reset the message buffers
 
 	if (!(statement->rsr_flags & Rsr::FETCHED)) {
 		statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR);
@@ -2178,7 +2181,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 	}
 
-/* Get ready to ship the data out */
+	// Get ready to ship the data out
 
 	P_SQLDATA* response = &sendL->p_sqldata;
 	sendL->p_operation = op_fetch_response;
@@ -2188,7 +2191,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	ISC_STATUS s = 0;
 	REM_MSG message = NULL;
 
-/* Check to see if any messages are already sitting around */
+	// Check to see if any messages are already sitting around
+
+	ISC_STATUS_ARRAY status_vector;
 
 	while (true) {
 
@@ -2352,7 +2357,6 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
  *
  *****************************************/
 	RSR statement;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2376,6 +2380,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 	ISC_STATUS s = 0;
 	message = statement->rsr_buffer;
 
+	ISC_STATUS_ARRAY status_vector;
 	s = GDS_DSQL_FETCH(status_vector,
 					   &statement->rsr_handle,
 					   sqldata->p_sqldata_blr.cstr_length,
@@ -2463,7 +2468,6 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
  *
  **************************************/
 	RBL blob;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(blob, segment->p_sgmt_blob);
 
@@ -2486,6 +2490,8 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 	sendL->p_resp.p_resp_data.cstr_address = buffer;
 
 /* Be backwards compatible */
+
+	ISC_STATUS_ARRAY status_vector;
 
 	USHORT length;
 	if (this->port_flags & PORT_rpc)
@@ -2782,7 +2788,6 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
  *
  *****************************************/
 	RSR statement;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2799,6 +2804,8 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
 		msg = NULL;
 	}
 
+	ISC_STATUS_ARRAY status_vector;
+	
 	GDS_DSQL_INSERT(status_vector,
 					&statement->rsr_handle,
 					sqldata->p_sqldata_blr.cstr_length,
@@ -2954,7 +2961,6 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
  *****************************************/
 	RTR transaction = NULL;
 	RSR statement;
-	ISC_STATUS_ARRAY status_vector;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (prepareL->p_sqlst_transaction)
@@ -2995,6 +3001,8 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
  *  dialect = (combined) / 10 == 1
  */
 	const USHORT parser_version = (this->port_protocol < PROTOCOL_VERSION10) ? 1 : 2;
+
+	ISC_STATUS_ARRAY status_vector;
 
 	GDS_DSQL_PREPARE(status_vector,
 					 &handle,
@@ -3046,11 +3054,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
 
 	const ISC_STATUS status =
-		this->send_response(sendL,
-							state,
-							response_len,
-							status_vector,
-							false);
+		this->send_response(sendL, state, response_len, status_vector, false);
 
 	return status;
 }
@@ -3399,7 +3403,7 @@ static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
 	}
 	catch(const Firebird::status_exception& e)
 	{
-		ISC_STATUS_ARRAY status_vector;
+		// ISC_STATUS_ARRAY status_vector; It exists in the outer scope.
 		Firebird::stuff_exception(status_vector, e);
 		port->send_response(send, 0, 0, status_vector, false);
 		return;
@@ -3448,7 +3452,6 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
  *
  **************************************/
 	RBL blob;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(blob, segment->p_sgmt_blob);
 
@@ -3457,6 +3460,8 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 
 /* Do the signal segment version.  If it failed, just pass on the
    bad news. */
+
+	ISC_STATUS_ARRAY status_vector;
 
 	if (op == op_put_segment) {
 		isc_put_segment(status_vector, &blob->rbl_handle, length,
@@ -3665,7 +3670,6 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
    messages the client is willing to cope with.  Then locate the
    message control block for the request and message type. */
    
-	ISC_STATUS_ARRAY status_vector;
 	Rrq* requestL;
 	getHandle(requestL, data->p_data_request);
 
@@ -3673,8 +3677,9 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	requestL = REMOTE_find_request(requestL, level);
 	const USHORT msg_number = data->p_data_message_number;
 	USHORT count, count2;
-	count2 = count =
-		(this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
+	count2 = count = (this->port_flags & PORT_rpc) ? 1 : data->p_data_messages;
+	
+	ISC_STATUS_ARRAY status_vector;
 	
 	if (msg_number > requestL->rrq_max_msg)
 	{
@@ -4213,13 +4218,13 @@ ISC_STATUS rem_port::seek_blob(P_SEEK * seek, PACKET* sendL)
  *
  **************************************/
 	RBL blob;
-	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(blob, seek->p_seek_blob);
 
 	const SSHORT mode = seek->p_seek_mode;
 	const SLONG offset = seek->p_seek_offset;
 
+	ISC_STATUS_ARRAY status_vector;
 	SLONG result;
 	isc_seek_blob(status_vector, &blob->rbl_handle, mode, offset, &result);
 
@@ -4757,7 +4762,6 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
  * Functional description
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
 	RTR transaction;
 
 	getHandle(transaction, data->p_data_transaction);
@@ -4767,6 +4771,8 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	REMOTE_reset_request(requestL, 0);
+
+	ISC_STATUS_ARRAY status_vector;
 
 	isc_start_request(status_vector, &requestL->rrq_handle,
 					  &transaction->rtr_handle, data->p_data_incarnation);
@@ -4902,7 +4908,7 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
 }
 
 
-static void success( ISC_STATUS * status_vector)
+static void success( ISC_STATUS* status_vector)
 {
 /**************************************
  *
