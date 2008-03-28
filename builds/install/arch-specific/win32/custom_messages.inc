@@ -1,4 +1,4 @@
-en.MyAppName=Firebird Database Server 2.0
+en.MyAppName=Firebird Database Server %1
 en.ServerInstall=Full installation of Server and development tools.
 en.SuperServerInstall=Full installation of Super Server and development tools.
 en.ClassicServerInstall=Full installation of Classic Server and development tools.
@@ -44,17 +44,19 @@ en.InstalledProducts=Pre-installation analysis indicates that %s existing Firebi
 en.InstalledProdCountSingular=version has
 en.InstalledProdCountPlural=versions have
 
-en.FbRunning1=An existing Firebird %1 Server is running.
+en.FbRunning1=An existing Firebird %s Server is running.
 en.FbRunning2= You must close the application or stop the
 en.FbRunning3=         service before continuing.
 
 en.PreviousInstallBroken=   (Install appears broken due to version string mismatch.)
 en.PreviousInstallGood=   (Installation appears to be correct.)
 
-en.IconReadme=Firebird 2.0 Readme
-en.IconUninstall=Uninstall Firebird
+en.IconReadme=Firebird %1 Readme
+en.IconUninstall=Uninstall Firebird %1
 en.ReleaseNotes= release notes. (Requires Acrobat Reader.)
-en.Uninstall=Uninstall Firebird
+en.InstallationGuide= installation guide. (Requires Acrobat Reader.)
+en.BugFixes= bug fixes. (Requires Acrobat Reader.)
+en.Uninstall=Uninstall Firebird %1
 en.Winsock2Web1=Winsock 2 is not installed.
 en.Winsock2Web2=Would you like to Visit the Winsock 2 Update Home Page?
 en.NoWinsock2=Please Install Winsock 2 Update before continuing

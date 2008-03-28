@@ -1,6 +1,6 @@
 
 ==================================================
-Firebird Database Server 2.0.3
+Firebird Database Server 2.0.4
 ==================================================
 
   ** IMPORTANT **
@@ -12,9 +12,9 @@ Firebird Database Server 2.0.3
   ** ********* **
 
 This document is a guide to installing this package of
-Firebird 2.0.3 on the Win32 platform. These notes refer
+Firebird 2.0.4 on the Win32 platform. These notes refer
 to the installation package itself, rather than
-Firebird 2.0.3 in general.
+Firebird 2.0.4 in general.
 
 
 Contents

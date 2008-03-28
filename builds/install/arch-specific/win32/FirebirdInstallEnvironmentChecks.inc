@@ -646,12 +646,12 @@ begin
 end;
 
 //Detect any 1.5 or 2.0 server running with default ClassName or mutex
-function FirebirdDefaultServerRunning: boolean;
+function FirebirdDefaultServerRunning: String;
 var
   Handle: Integer;
   mutex_found: boolean;
 begin
-  result := False;
+  result := '';
   //Look for a running version of Firebird 1.5 or later
   Handle := FindWindowByClassName('FB_Disabled');
   if ( Handle = 0 ) then
@@ -660,11 +660,17 @@ begin
     Handle := FindWindowByClassName('FB_Guard');
 
   if (Handle > 0) then
-     result := True
+     result := '1.5'
   else begin
     mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
     if mutex_found then
-      result := true;
+      result := '2.0'
+    else begin
+      mutex_found := CheckForMutexes('FirebirdGuardianMutexDefaultInstance,FirebirdServerMutexDefaultInstance');
+      if mutex_found then
+        result := '2.1'
+    end;
+
   end;
 
 end;

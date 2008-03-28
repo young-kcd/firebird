@@ -1,4 +1,4 @@
-de.MyAppName=Firebird Datenbank Server 2.0
+de.MyAppName=Firebird Datenbank Server %1
 de.ServerInstall=Vollständige Installation des Server inkl. Entwicklungstools.
 de.SuperServerInstall=Vollständige Installation des Super Server inkl. Entwicklungstools.
 de.ClassicServerInstall=Vollständige Installation des Classic Server inkl. Entwicklungstools.
@@ -44,17 +44,19 @@ de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende F
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
-de.FbRunning1=Ein existierender Firebird %1 Server läuft.
+de.FbRunning1=Ein existierender Firebird %s Server läuft.
 de.FbRunning2= Sie müssen die Anwendung schließen oder den Dienst
 de.FbRunning3=         beenden, bevor Sie fortfahren können.
 
 de.PreviousInstallBroken=   (Die Installation scheint wegen eines Versionskonflikts fehlerhaft zu sein.)
 de.PreviousInstallGood=   (Die Installation scheint korrekt sein.)
 
-de.IconReadme=Firebird 2.0 Liesmich
-de.IconUninstall=Firebird Deinstallation
+de.IconReadme=Firebird %1 Liesmich
+de.IconUninstall=Firebird %1 Deinstallation
 de.ReleaseNotes= Release Hinweise. (Benötigt Acrobat Reader.)
-de.Uninstall=Firebird deinstallieren
+de.InstallationGuide= Installationsanleitung. (Benötigt Acrobat Reader.)
+de.BugFixes= Bugfixes. (Benötigt Acrobat Reader.)
+de.Uninstall=Firebird %1 deinstallieren
 de.Winsock2Web1=Winsock 2 ist nicht installiert.
 de.Winsock2Web2=Möchten Sie die Winsock 2 Update Home Page besuchen?
 de.NoWinsock2 = Bitte installieren Sie das Winsock 2 Update, bevor Sie fortfahren

@@ -25,8 +25,14 @@
 
 Function Prototypes
 
-  function UsingWin2k: boolean;
-  function UsingWinXP: boolean;
+  function IsVista: boolean;
+  function IsWin2k3: boolean;
+  function IsWinXP: boolean;
+  function IsWin2K: boolean;
+  function IsWinNT: boolean;
+  function IsWinME: boolean;
+  function IsWin98: boolean;
+  function IsWin95: boolean;
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
@@ -36,7 +42,9 @@ Function Prototypes
   function GetInstalledVersion(BinaryFile: String): Array of Integer;
   function ConvertIBVerStrToFbVerStr( VerStr: String) : String;
   function GetRegistryEntry(RegKey, RegEntry: string): String;
-
+  procedure CreateHelpDlg;
+  function ShowHelpDlg: Integer;
+  procedure CloseHelpDlg;
  *)
 
 (*
@@ -51,23 +59,107 @@ Windows NT versions:
 4.0.1381      Windows NT 4.0
 5.0.2195      Windows 2000
 5.01.2600     Windows XP
-5.2.3790      Windows 2003 Standard
+  or Windows XP 64-Bit Edition Version 2002 (Itanium)
+5.02.3790 Windows Server 2003
+  or Windows XP x64 Edition (AMD64/EM64T)
+  or Windows XP 64-Bit Edition Version 2003 (Itanium)
+6.0.6000 Windows Vista
+
 *)
 
-function UsingWin2k: boolean;
-//return true if using Win2k OR later
+Type TWindowsVersion = record
+    Major: Cardinal;             // Major version number
+    Minor: Cardinal;             // Minor version number
+    Build: Cardinal;             // Build number
+    NTPlatform: Boolean;         // True if an NT-based platform
+  end;
+
+procedure GetWindowsVersionEx(Version: TWindowsVersion);
+var
+  WinVer: Cardinal;
 begin
-  Result := (InstallOnThisVersion('0,5.0', '0,0') = irInstall);
+	WinVer := GetWindowsVersion;
+	Version.Major := WinVer shr 24;
+	Version.Minor := (WinVer shr 16) and $FF;
+	Version.Build :=  WinVer and $FFFF;
+	Version.NTPlatform := UsingWinNT;
 end;
 
-
-function UsingWinXP: boolean;
-// return true if using WinXP OR later.
-// Currently not used in this script.
+function IsVista: boolean;
+var
+  Version: TWindowsVersion;
 begin
-  Result := (InstallOnThisVersion('0,5.01', '0,0') = irInstall);
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 0) then
+     result := true;
 end;
 
+function IsWin2k3: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 2) then
+     result := true;
+end;
+
+function IsWinXP: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 1) then
+     result := true;
+end;
+
+function IsWin2K: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 5) and (Version.Minor = 0) then
+     result := true;
+end;
+
+function IsWinNT: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 0) then
+    if Version.NTPlatform then
+     result := true;
+end;
+
+function IsWinME: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 9) then
+//    if Version.NTPlatform then
+     result := true;
+end;
+
+function IsWin98: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 1) then
+//    if Version.NTPlatform then
+     result := true;
+end;
+
+function IsWin95: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 4) and (Version.Minor = 0) then
+    if not Version.NTPlatform then
+     result := true;
+end;
 
 const
   sWinSock2 = 'ws2_32.dll';
@@ -248,6 +340,59 @@ function GetRegistryEntry(RegKey, RegEntry: string): String;
 begin
   result := '';
   RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
+end;
+
+
+var
+  HelpDlg: TForm;
+
+procedure CreateHelpDlg;
+var
+  HelpFileName: String;
+  HelpMemo: TMemo;
+  OKButton: TButton;
+begin
+  ExtractTemporaryFile ('installation_scripted.txt');
+  HelpFileName := ExpandConstant ('{tmp}\installation_scripted.txt');
+  HelpDlg := TForm.create(nil);
+  with HelpDlg do begin
+      BorderStyle := bsDialog;
+      Position := poScreenCenter;
+      ClientWidth := 450;
+      ClientHeight := 550;
+      Caption := 'Firebird Installation - command-line parameters.';
+  end;
+  HelpMemo := TMemo.Create(HelpDlg);
+  with HelpMemo do begin
+      Parent := HelpDlg;
+      ScrollBars := ssVertical;
+      Lines.LoadFromFile(HelpFileName);
+      Align := alTop;
+      Height := 500;
+      ReadOnly := True;
+    end;
+  OKButton := TButton.create(HelpDlg);
+  with OKButton do begin
+      Parent := HelpDlg;
+      Left := (Parent.width  div 2) - width div 2;
+      top := Parent.ClientHeight - 40;
+      Caption := 'OK';
+      ModalResult := mrOK;
+  end;
+  HelpDlg.ActiveControl := OKButton;
+end;
+
+function ShowHelpDlg: Integer;
+begin
+  result := HelpDlg.ShowModal;
+end;
+
+procedure CloseHelpDlg;
+begin
+  with HelpDlg do begin
+     Close;
+     Free;
+  end;
 end;
 
 

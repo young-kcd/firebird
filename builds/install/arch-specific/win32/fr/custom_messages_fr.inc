@@ -1,4 +1,4 @@
-fr.MyAppName=Firebird Serveur SQL 2.0
+fr.MyAppName=Firebird Serveur SQL %1
 fr.ServerInstall=Installation complète Serveur et outils de dévelopement.
 fr.SuperServerInstall=Installation complète Super Serveur et outils de dévelopement.
 fr.ClassicServerInstall=Installation complète Serveur Classique et outils de dévelopement.
@@ -45,17 +45,19 @@ fr.InstalledProducts=Selon l'analyse de pré-installation il existe %s installati
 fr.InstalledProdCountSingular=
 fr.InstalledProdCountPlural=
 
-fr.FbRunning1=Une version de Firebird %1 Serveur est active.
+fr.FbRunning1=Une version de Firebird %s Serveur est active.
 fr.FbRunning2=   Vous devez fermer l'application ou arréter
 fr.FbRunning3=           le service pour continuer.
 
 fr.PreviousInstallBroken=   (L'installation semble être cassée à cause d'une disparité de la chaîne de version.)
 fr.PreviousInstallGood=   (L'installation semble être bonne.)
 
-fr.IconReadme=Firebird 2.0 Lisez Moi
-fr.IconUninstall=Désinstaller Firebird
+fr.IconReadme=Firebird %1 Lisez Moi
+fr.IconUninstall=Désinstaller Firebird %1
 fr.ReleaseNotes= notes de version. (Nécessite Acrobat Reader.)
-fr.Uninstall=Désinstaller Firebird
+fr.InstallationGuide= guide d'installation. (Nécessite Acrobat Reader.)
+fr.BugFixes= bug fixes. (Nécessite Acrobat Reader.)
+fr.Uninstall=Désinstaller Firebird %1
 fr.Winsock2Web1=Winsock 2 n'est pas installé.
 fr.Winsock2Web2=Voulez-vous visiter la page web de mise à jour de Winsock 2 ?
 fr.NoWinsock2 = S'il vous plait installez la mise à jour de Winsock 2 pour continuer

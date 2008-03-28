@@ -1,4 +1,4 @@
-ru.MyAppName=Сервер баз данных Firebird 2.0
+ru.MyAppName=Сервер баз данных Firebird %1
 ru.ServerInstall=Полная установка сервера и инструментов разработки
 ru.SuperServerInstall=Полная установка SuperServer и инструментов разработки
 ru.ClassicServerInstall=Полная установка Classic Server и инструментов разработки
@@ -15,14 +15,14 @@ ru.UseApplicationTaskMsg=Запускать в качестве &Приложения
 ru.TaskGroupDescription=Способ запуска сервера Firebird:
 ru.UseServiceTask=Запускать в качестве &Службы
 ru.AutoStartTask=&Автоматически запускать Firebird при каждой загрузке
-ru.CopyFbClientToSysTask=&Копировать клиентскую библиотеку &Firebird в каталог <system>
+ru.CopyFbClientToSysTask=&Копировать клиентскую библиотеку Firebird в каталог <system>
 ru.CopyFbClientAsGds32Task=&Создать GDS32.DLL для поддержки унаследованных приложений
 ru.InstallCPLAppletTask=&Установить Апплет Панели Управления
 ru.instreg=Обновление реестра
 ru.instclientCopyFbClient=Копирование fbclient.dll в системный каталог
 ru.instclientGenGds32=Создание gds32.dll в системном каталоге
-ru.instclientDecLibCountGds32="Декрементируем счетчик для общей библиотеки gds32 и удаляем его, если необходимо."
-ru.instclientDecLibCountFbClient="Декрементируем счетчик для общей библиотеки fbclient и удаляем его, если необходимо."
+ru.instclientDecLibCountGds32="Уменьшаем счетчик для общей библиотеки gds32 и удаляем ее, если необходимо."
+ru.instclientDecLibCountFbClient="Уменьшаем счетчик для общей библиотеки fbclient и удаляем ее, если необходимо."
 ru.instsvcSetup=Установка службы
 ru.instsvcStartQuestion=Запустить Службу Firebird?
 ru.instsvcStartMsg=Запуск сервера
@@ -44,17 +44,19 @@ ru.InstalledProducts=Предварительный анализ показывает, что найдено %s %s Firebi
 ru.InstalledProdCountSingular=установленных версий
 ru.InstalledProdCountPlural=установленных версий
 
-ru.FbRunning1=Обнаружен запущенный сервер Firebird %1.
+ru.FbRunning1=Обнаружен запущенный сервер Firebird %s.
 ru.FbRunning2=Вы должны закрыть приложение или остановить
 ru.FbRunning3=службу прежде, чем продолжите.
 
 ru.PreviousInstallBroken=   (Установка не удалась по причине несовпадения строки версии)
 ru.PreviousInstallGood=   (Установка прошла корректно)
 
-ru.IconReadme=Firebird 2.0 Readme
-ru.IconUninstall=Деинсталляция Firebird
+ru.IconReadme=Firebird %1 Readme
+ru.IconUninstall=Деинсталляция Firebird %1
 ru.ReleaseNotes= release notes. (Требуется Acrobat Reader.)
-ru.Uninstall=Деинсталляция Firebird
+ru.InstallationGuide= installation guide. (Требуется Acrobat Reader.)
+ru.BugFixes= bug fixes. (Требуется Acrobat Reader.)
+ru.Uninstall=Деинсталляция Firebird %1
 ru.Winsock2Web1=Не установлен Winsock 2.
 ru.Winsock2Web2=Хотите ли вы посетить домашнюю страницу обновления Winsock 2?
 ru.NoWinsock2=Пожалуйста, установите обновление Winsock 2 прежде, чем продолжить
