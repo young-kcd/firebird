@@ -234,7 +234,7 @@ ISC_TIME TimeStamp::encode_time(int hours, int minutes, int seconds, int fractio
 	return ((hours * 60 + minutes) * 60 + seconds) * ISC_TIME_SECONDS_PRECISION + fractions;
 }
 
-void TimeStamp::decode_timestamp(ISC_TIMESTAMP ts, struct tm* times, int* fractions)
+void TimeStamp::decode_timestamp(const ISC_TIMESTAMP ts, struct tm* times, int* fractions)
 {
 	decode_date(ts.timestamp_date, times);
 	decode_time(ts.timestamp_time, &times->tm_hour, &times->tm_min, &times->tm_sec, fractions);

@@ -126,17 +126,17 @@ public:
 	static TimeStamp getCurrentTimeStamp();
 
 	// Validation routines
-	static bool isValidDate(ISC_DATE ndate)
+	static bool isValidDate(const ISC_DATE ndate)
 	{
 		return (ndate >= MIN_DATE && ndate <= MAX_DATE);
 	}
 
-	static bool isValidTime(ISC_TIME ntime)
+	static bool isValidTime(const ISC_TIME ntime)
 	{
 		return (ntime < 24 * 3600 * ISC_TIME_SECONDS_PRECISION);
 	}
 
-	static bool isValidTimeStamp(ISC_TIMESTAMP ts)
+	static bool isValidTimeStamp(const ISC_TIMESTAMP ts)
 	{
 		return (isValidDate(ts.timestamp_date) && isValidTime(ts.timestamp_time));
 	}
@@ -148,11 +148,11 @@ public:
 
 	static void decode_date(ISC_DATE nday, struct tm* times);
 	static void decode_time(ISC_TIME ntime, int* hours, int* minutes, int* seconds, int* fractions = NULL);
-	static void decode_timestamp(ISC_TIMESTAMP ntimestamp, struct tm* times, int* fractions = NULL);
+	static void decode_timestamp(const ISC_TIMESTAMP ntimestamp, struct tm* times, int* fractions = NULL);
 
 	static void round_time(ISC_TIME& ntime, int precision);
 
-	static inline bool isLeapYear(int year)
+	static inline bool isLeapYear(const int year)
 	{
 		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 	}    
