@@ -84,7 +84,7 @@ typedef struct srvr : public Firebird::GlobalStorage
 	USHORT			srvr_flags;
 
 public:
-	srvr(srvr *servers, rem_port* port, USHORT flags) :
+	srvr(srvr* servers, rem_port* port, USHORT flags) :
 		srvr_next(servers), srvr_parent_port(port), 
 		srvr_port_type(port->port_type), srvr_flags(flags)
 	{ }
@@ -2165,7 +2165,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	if (!(statement->rsr_flags & Rsr::FETCHED)) {
 		statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR);
-		stmt_clear_exception(statement);
+		statement->clearException();
 		REM_MSG message = statement->rsr_message;
 		if (message != NULL) {
 			statement->rsr_buffer = message;
@@ -2323,7 +2323,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				/* If already have an error queued, don't overwrite it */
 				if (!(statement->rsr_flags & Rsr::STREAM_ERR)) {
 					statement->rsr_flags |= Rsr::STREAM_ERR;
-					stmt_save_exception(statement, status_vector, true);
+					statement->saveException(status_vector, true);
 				}
 			}
 			if (s == 100)
@@ -4010,7 +4010,7 @@ static void release_statement( RSR * statement)
 	delete (*statement)->rsr_select_format;
 	delete (*statement)->rsr_bind_format;
 
-	stmt_release_exception(*statement);
+	(*statement)->releaseException();
 	REMOTE_release_messages((*statement)->rsr_message);
 
 	delete *statement;

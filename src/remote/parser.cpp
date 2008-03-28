@@ -67,7 +67,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		const USHORT msg_number = *blr++;
 		USHORT count = *blr++;
 		count += (*blr++) << 8;
-		rem_fmt* format = new rem_fmt(count);
+		rem_fmt* const format = new rem_fmt(count);
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("PARSE_messages            allocate format  %x\n", format);
 #endif

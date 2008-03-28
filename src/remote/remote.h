@@ -215,7 +215,7 @@ struct rem_fmt : public Firebird::GlobalStorage
 	Firebird::Array<dsc> fmt_desc;
 
 public:
-	rem_fmt(size_t rpt) :
+	explicit rem_fmt(size_t rpt) :
 		fmt_length(0), fmt_net_length(0), fmt_count(0), 
 		fmt_version(0), fmt_desc(getPool(), rpt)
 	{
@@ -238,7 +238,7 @@ typedef struct Message : public Firebird::GlobalStorage
 	UCharArrayAutoPtr msg_buffer;	/* Allocated message */
 
 public:
-	Message(size_t rpt) :
+	explicit Message(size_t rpt) :
 		msg_next(0),
 #ifdef SCROLLABLE_CURSORS
 		msg_prior(0), msg_absolute(0), 
@@ -310,7 +310,7 @@ public:
 #endif
 
 public:
-	Rrq(size_t rpt) : 
+	explicit Rrq(size_t rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0), 
 		rrq_handle(0), rrq_id(0), rrq_max_msg(0), rrq_level(0), 
 		rrq_rpt(getPool(), rpt) 
@@ -374,6 +374,12 @@ public:
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0)
 		{ }
 
+	void saveException(const ISC_STATUS* status, bool overwrite);
+	void clearException();
+	ISC_STATUS haveException();
+	void raiseException();
+	void releaseException();
+
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
 } *RSR;
 
@@ -391,6 +397,8 @@ private:
 	} ptr;
 
 public:
+	RemoteObject() { ptr.rdb = 0; }
+	
 	template <typename R>
 	R* get(R* r)
 	{
@@ -401,62 +409,55 @@ public:
 		return r;
 	}
 
-public:
 	void operator=(Rdb* v) { ptr.rdb = v; }
 	void operator=(Rtr* v) { ptr.rtr = v; }
 	void operator=(Rbl* v) { ptr.rbl = v; }
 	void operator=(Rrq* v) { ptr.rrq = v; }
 	void operator=(Rsr* v) { ptr.rsr = v; }
 
-public:
 	operator Rdb*() { return get(ptr.rdb); }
 	operator Rtr*() { return get(ptr.rtr); }
 	operator Rbl*() { return get(ptr.rbl); }
 	operator Rrq*() { return get(ptr.rrq); }
 	operator Rsr*() { return get(ptr.rsr); }
 
-	bool isMissing() { return ptr.rdb == NULL; }
+	bool isMissing() const { return ptr.rdb == NULL; }
 	void release() { ptr.rdb = 0; }
 };
 
 
 
-// will be methods of remote statement class
-inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
+inline void Rsr::saveException(const ISC_STATUS* status, bool overwrite)
 {
-	if (!statement->rsr_status) {
-		statement->rsr_status = new Firebird::StatusHolder();
+	if (!rsr_status) {
+		rsr_status = new Firebird::StatusHolder();
 	}
-	if (overwrite || !statement->rsr_status->getError()) {
-		statement->rsr_status->save(status);
+	if (overwrite || !rsr_status->getError()) {
+		rsr_status->save(status);
 	}
 }
 
-inline void stmt_clear_exception(RSR statement)
+inline void Rsr::clearException()
 {
-	if (statement->rsr_status)
-		statement->rsr_status->clear();
+	if (rsr_status)
+		rsr_status->clear();
 }
 
-inline ISC_STATUS stmt_have_exception(RSR statement)
+inline ISC_STATUS Rsr::haveException()
 {
-	return (statement->rsr_status ?	
-		statement->rsr_status->getError() : 0);
+	return (rsr_status ? rsr_status->getError() : 0);
 }
 
-inline void stmt_raise_exception(RSR statement)
+inline void Rsr::raiseException()
 {
-	if (statement->rsr_status)
-		statement->rsr_status->raise();
+	if (rsr_status)
+		rsr_status->raise();
 }
 
-inline void stmt_release_exception(RSR statement)
+inline void Rsr::releaseException()
 {
-	if (statement->rsr_status) 
-	{
-		delete statement->rsr_status;
-		statement->rsr_status = NULL;
-	}
+	delete rsr_status;
+	rsr_status = NULL;
 }
 
 #include "../remote/xdr.h"
@@ -503,7 +504,7 @@ public:
 
 
 // port_flags
-const USHORT PORT_symmetric		= 0x0001;	// Server/client archiectures are symmetic
+const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
 const USHORT PORT_rpc			= 0x0002;	// Protocol is remote procedure call
 const USHORT PORT_async			= 0x0004;	// Port is asynchronous channel for events
 const USHORT PORT_no_oob		= 0x0008;	// Don't send out of band data
@@ -849,7 +850,7 @@ public:
 
 typedef bool (*t_rmtque_fn)(rem_port*, rmtque*, ISC_STATUS*, USHORT);
 
-typedef struct rmtque : public Firebird::GlobalStorage
+struct rmtque : public Firebird::GlobalStorage
 {
 	rmtque*				rmtque_next;	// Next entry in queue
 	void*				rmtque_parm;	// What request has response in queue
@@ -863,6 +864,6 @@ public:
 	rmtque() :
 		rmtque_next(0), rmtque_parm(0), rmtque_message(0), rmtque_rdb(0), rmtque_function(0)
 	{ }
-} *RMTQUE;
+};
 
 #endif // REMOTE_REMOTE_H

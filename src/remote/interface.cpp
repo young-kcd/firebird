@@ -1344,7 +1344,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		message->msg_address = in_msg;
 		statement->rsr_flags &= ~Rsr::FETCHED;
 		statement->rsr_format = statement->rsr_bind_format;
-		stmt_clear_exception(statement);
+		statement->clearException();
 
 		/* set up the packet for the other guy... */
 
@@ -1572,7 +1572,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 		message->msg_address = in_msg;
 
-		stmt_clear_exception(statement);
+		statement->clearException();
 
 		/* set up the packet for the other guy... */
 
@@ -1681,11 +1681,11 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		if (!(statement->rsr_flags & Rsr::FETCHED))
 		{
-			stmt_raise_exception(statement);
+			statement->raiseException();
 
 			statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
 			statement->rsr_rows_pending = 0;
-			stmt_clear_exception(statement);
+			statement->clearException();
 
 			REM_MSG message = statement->rsr_message;
 			if (message)
@@ -1779,7 +1779,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				   /* We've reached eof or there was an error */
 				   !(statement->rsr_flags & (Rsr::EOF_SET | Rsr::STREAM_ERR)) &&
 				   /* No error pending */
-				   (!stmt_have_exception(statement) )))
+				   (!statement->haveException() )))
 		{
 			/* set up the packet for the other guy... */
 
@@ -1835,10 +1835,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		/* We've either got data, or some is on the way, or we have an error, or we have EOF */
 
 		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
-			   || stmt_have_exception(statement)
+			   || statement->haveException()
 			   || statement->rsr_flags & (Rsr::EOF_SET));
 
-		while (!stmt_have_exception(statement)			/* received a database error */
+		while (!statement->haveException()			/* received a database error */
 			   &&!(statement->rsr_flags & (Rsr::EOF_SET))	/* reached end of cursor */
 			   &&!(statement->rsr_msgs_waiting >= 2)	/* Have looked ahead for end of batch */
 			   &&!(statement->rsr_rows_pending == 0))
@@ -2308,7 +2308,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 	try
 	{
-		stmt_raise_exception(statement);
+		statement->raiseException();
 
 		/* make sure the protocol supports it */
 
@@ -2361,7 +2361,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		if (!receive_response(rdb, packet)) {
 			return user_status[1];
 		}
-		stmt_raise_exception(statement);
+		statement->raiseException();
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -2402,7 +2402,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 
 	try
 	{
-		stmt_raise_exception(statement);
+		statement->raiseException();
 
 		/* make sure the protocol supports it */
 
@@ -2413,7 +2413,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		status = info(user_status, rdb, op_info_sql, statement->rsr_id, 0,
 					item_length, items, 0, 0, buffer_length, buffer);
 
-		stmt_raise_exception(statement);
+		statement->raiseException();
 	}
 	catch (const Firebird::Exception& ex)
 	{
@@ -4791,13 +4791,13 @@ static bool clear_stmt_que(rem_port* port, ISC_STATUS* user_status, RSR statemen
 			return false;
 
 		// We must receive isc_req_sync as we did fetch after EOF
-		fb_assert(stmt_have_exception(statement) == isc_req_sync);
+		fb_assert(statement->haveException() == isc_req_sync);
 	}
 
 	// hvlad: clear isc_req_sync error as it is received because of our batch 
 	// fetching code, not because of wrong client application
-	if (stmt_have_exception(statement) == isc_req_sync) {
-		stmt_clear_exception(statement);
+	if (statement->haveException() == isc_req_sync) {
+		statement->clearException();
 	}
 
 	return true;
@@ -4913,7 +4913,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 			/* save the status vector in a safe place */
 
-			stmt_save_exception(statement, tmp_status, false);
+			statement->saveException(tmp_status, false);
 
 			statement->rsr_rows_pending = 0;
 			--statement->rsr_batch_count;
@@ -6096,8 +6096,7 @@ static bool receive_packet_noqueue(rem_port* port,
 			if (!check_response(rdb, &p->packet)) 
 			{
 				// save error within the corresponding statement
-				stmt_save_exception(statement, 
-					p->packet.p_resp.p_resp_status_vector, false);
+				statement->saveException(p->packet.p_resp.p_resp_status_vector, false);
 			}
 			else
 			{
@@ -6149,7 +6148,7 @@ static bool receive_queued_packet(rem_port*		port,
 
 /* Grab first queue entry */
 
-	RMTQUE que_inst = port->port_receive_rmtque;
+	rmtque* que_inst = port->port_receive_rmtque;
 
 /* Receive the data */
 
@@ -6176,7 +6175,7 @@ static void enqueue_receive(rem_port* port,
  * Functional description
  *
  **************************************/
-	RMTQUE que_inst = new rmtque;
+	rmtque* const que_inst = new rmtque;
 
 /* Prepare a queue entry */
 
@@ -6187,7 +6186,7 @@ static void enqueue_receive(rem_port* port,
 	que_inst->rmtque_rdb = rdb;
 
 /* Walk to the end of the current queue */
-	RMTQUE* queptr = &port->port_receive_rmtque;
+	rmtque** queptr = &port->port_receive_rmtque;
 	while (*queptr)
 		queptr = &(*queptr)->rmtque_next;
 
@@ -6211,7 +6210,7 @@ static void dequeue_receive( rem_port* port)
 
 /* Grab first queue entry & de-queue it*/
 
-	RMTQUE que_inst = port->port_receive_rmtque;
+	rmtque* que_inst = port->port_receive_rmtque;
 	port->port_receive_rmtque = que_inst->rmtque_next;
 	que_inst->rmtque_next = NULL;
 
@@ -6376,7 +6375,7 @@ static void release_statement( RSR* statement)
 		delete (*statement)->rsr_user_select_format;
 	}
 	delete (*statement)->rsr_select_format;
-	stmt_release_exception(*statement);
+	(*statement)->releaseException();
 
 	REMOTE_release_messages((*statement)->rsr_message);
 	delete *statement;
