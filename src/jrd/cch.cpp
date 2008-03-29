@@ -633,6 +633,7 @@ pag* CCH_fake(thread_db* tdbb, WIN * window, SSHORT latch_wait)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	// This var is unused.
 	const SLONG attachment_lock_handle = BackupManager::attachment_lock_handle(tdbb);
 	if (window->win_page == HEADER_PAGE_NUMBER)
 		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
@@ -699,7 +700,7 @@ pag* CCH_fetch(
 		SCHAR page_type,
 		SSHORT checksum,
 		SSHORT latch_wait,
-		bool read_shadow)
+		const bool read_shadow)
 {
 /**************************************
  *
@@ -881,7 +882,7 @@ SSHORT CCH_fetch_lock(
 void CCH_fetch_page(
 					thread_db* tdbb,
 					WIN * window,
-					SSHORT compute_checksum, bool read_shadow)
+					SSHORT compute_checksum, const bool read_shadow)
 {
 /**************************************
  *
@@ -1526,7 +1527,7 @@ pag* CCH_handoff(
 		SSHORT	lock,
 		SCHAR	page_type,
 		SSHORT	latch_wait,
-		SSHORT	release_tail)
+		const bool release_tail)
 {
 /**************************************
  *
@@ -1799,7 +1800,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 
 	const SLONG attachment_lock_owner = BackupManager::attachment_lock_handle(tdbb);
 
-	bool was_marked = bdb->bdb_flags & BDB_marked;
+	const bool was_marked = bdb->bdb_flags & BDB_marked;
 	if (!was_marked)
 		dbb->dbb_backup_manager->checkout_dirty_page(tdbb, attachment_lock_owner);
 
@@ -1852,7 +1853,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	bdb->bdb_flags |= BDB_db_dirty;
 #endif
 
-	bool was_dirty = bdb->bdb_flags & BDB_dirty;
+	const bool was_dirty = bdb->bdb_flags & BDB_dirty;
 	bdb->bdb_flags |= (BDB_dirty | BDB_marked);
 
 	if (must_write || dbb->dbb_backup_manager->database_flush_in_progress())
@@ -2110,7 +2111,7 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	}
 }
 
-void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
+void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 {
 /**************************************
  *
@@ -2150,7 +2151,7 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 
 	if (bdb->bdb_use_count == 1)
 	{
-		bool marked = bdb->bdb_flags & BDB_marked;
+		const bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);		
 
 		if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
@@ -2367,7 +2368,7 @@ void CCH_shutdown_database(Database* dbb)
 #endif
 }
 
-void CCH_unwind(thread_db* tdbb, bool punt)
+void CCH_unwind(thread_db* tdbb, const bool punt)
 {
 /**************************************
  *
@@ -6515,7 +6516,7 @@ static bool write_page(
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
-		int backup_state = dbb->dbb_backup_manager->get_state();
+		const int backup_state = dbb->dbb_backup_manager->get_state();
 
 		if (bdb->bdb_page.getPageNum() >= 0) {
 			fb_assert(backup_state != nbak_state_unknown);
