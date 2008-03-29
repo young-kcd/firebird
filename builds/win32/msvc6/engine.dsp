@@ -264,6 +264,10 @@ SOURCE=..\..\..\src\jrd\gds.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\GlobalRWLock.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\gen\jrd\grant.cpp
 # End Source File
 # Begin Source File
@@ -825,6 +829,10 @@ SOURCE=..\..\..\src\jrd\gds_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\gdsassert.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\GlobalRWLock.h
 # End Source File
 # Begin Source File
 
