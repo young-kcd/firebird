@@ -282,7 +282,7 @@ public:
 	Symbol*	dbb_hash_table[HASH_SIZE];	/* keep this at the end */
 
 	// returns true if primary file is located on raw device
-	bool onRawDevice();
+	bool onRawDevice() const;
 	
 private:
 	explicit Database(MemoryPool& p)

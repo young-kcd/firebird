@@ -5929,7 +5929,7 @@ static void setup_NT_handlers()
 }
 #endif
 
-bool Database::onRawDevice()
+bool Database::onRawDevice() const
 {
 #ifdef SUPPORT_RAW_DEVICES
 	return PIO_on_raw_device(dbb_filename);
