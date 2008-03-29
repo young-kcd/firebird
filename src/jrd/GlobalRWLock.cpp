@@ -96,7 +96,7 @@ GlobalRWLock::~GlobalRWLock()
 	delete cached_lock;
 }
 
-bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle)
+bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle)
 {
 	SET_TDBB(tdbb);
 	fb_assert(owner_handle);
@@ -106,7 +106,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
-		size_t n;
+		size_t n = size_t(-1);
 		if (level == LCK_read) {
 			if (readers.find(owner_handle, n)) {
 				readers[n].entry_count++;
@@ -133,6 +133,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 				ObjectOwnerData ownerData;
 				ownerData.owner_handle = owner_handle;
 				ownerData.entry_count++;
+				fb_assert(n <= readers.getCount());
 				readers.insert(n, ownerData);
 			}
 			else
@@ -232,7 +233,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 
 // NOTE: unlock method must be signal safe
 // This function may be called in AST. The function doesn't wait.
-void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle)
+void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle)
 {
 	SET_TDBB(tdbb);
 

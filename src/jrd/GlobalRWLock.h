@@ -100,22 +100,22 @@ public:
 	// wait > 0 - infinite wait (may deadlock)
 	//
 	// This function returns false if it cannot take the lock
-	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle);
-	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait) {
+	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle);
+	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait) {
 		return lock(tdbb, level, wait, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
 	// NOTE: unlock method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
-	void unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle);
-	void unlock(thread_db* tdbb, locklevel_t level) {
+	void unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle);
+	void unlock(thread_db* tdbb, const locklevel_t level) {
 		unlock(tdbb, level, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
 	// Change the lock owner. The function doesn't wait.
 	void changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle);
 
-	SLONG getLockData() {
+	SLONG getLockData() const {
 		return cached_lock->lck_data;
 	}
 	void setLockData(thread_db* tdbb, SLONG lck_data);
