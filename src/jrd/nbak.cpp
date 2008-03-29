@@ -100,9 +100,10 @@ void NBackupState::blockingAstHandler(thread_db* tdbb)
 	if (!backup_manager->database_flush_in_progress() && cached_lock->lck_physical == LCK_read) {
 		CCH_flush_ast(tdbb);
 		NBAK_TRACE_AST(("database FLUSHED"));
-		}
-	GlobalRWLock::blockingAstHandler(tdbb);
 	}
+	GlobalRWLock::blockingAstHandler(tdbb);
+}
+
 /******************************** NBACKUP ALLOCATION TABLE SYNCHRONIZER ******************************/
 NBackupAlloc::NBackupAlloc(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan):
 	GlobalRWLock(tdbb, p, LCK_backup_alloc, 0, NULL)
@@ -187,7 +188,7 @@ void BackupManager::lock_shared_database(thread_db* tdbb, SSHORT wait)
 	if (!(tdbb->tdbb_flags & TDBB_backup_write_locked))
 		if (!database_lock->lock(tdbb, LCK_read, wait)) {
 			ERR_bugcheck_msg("Error: can't lock database on llRead");
-	} 
+		} 
 }
 
 void BackupManager::unlock_shared_database(thread_db* tdbb)
@@ -203,7 +204,7 @@ void BackupManager::lock_alloc_write(thread_db* tdbb, SSHORT wait)
 		ERR_bugcheck_msg("Error: lock allocation table on write");
 	}
 	NBAK_TRACE(("lock_alloc_write"));
-	}
+}
 
 void BackupManager::unlock_alloc_write(thread_db* tdbb)
 {
@@ -217,7 +218,7 @@ void BackupManager::lock_alloc(thread_db* tdbb, SSHORT wait)
 		ERR_bugcheck_msg("Error: lock allocation table on read");
 	} 
 	NBAK_TRACE(("lock_alloc"));
-	}
+}
 
 void BackupManager::unlock_alloc(thread_db* tdbb)
 {
@@ -368,8 +369,8 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			NBAK_TRACE(("invalid state %d", backup_state));
 			endLock.unlock(tdbb, LCK_write);
 			unlock_shared_database(tdbb);
-				return;
-			}
+			return;
+		}
 		unlock_shared_database(tdbb);
 		// Here backup state can be changed. Need to check it again after lock
 		lock_clean_database(tdbb, true, &window);
@@ -464,12 +465,12 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	// STEP 3. Change state in header to "normal"
 	// We finished. We need to reflect it in our database header page
 	try {
-	window.win_page = HEADER_PAGE;
-	window.win_flags = 0;
+		window.win_page = HEADER_PAGE;
+		window.win_flags = 0;
 		lock_clean_database(tdbb, true, &window);
 		database_locked = true;
 		header = (Ods::header_page*) window.win_buffer;
-	header_locked = true;
+		header_locked = true;
 
 		// Set state in database header
 		backup_state = nbak_state_normal;
@@ -617,7 +618,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page)
 		temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(empty_buffer);
 		if (!PIO_write(diff_file, &temp_bdb, (Ods::pag*)empty_buffer, status_vector)) {
 			return 0;
-	}
+		}
 	}
 
 	// Write new item to the allocation table
