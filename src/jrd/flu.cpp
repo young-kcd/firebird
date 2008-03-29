@@ -183,8 +183,7 @@ namespace Jrd
 		void* rc = m.lookupSymbol(symbol);
 		if (rc)
 		{
-			size_t pos;
-			if (!interest.find(m, pos))
+			if (!interest.exist(m))
 			{
 				interest.add(m);
 			}

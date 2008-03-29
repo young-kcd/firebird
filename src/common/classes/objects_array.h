@@ -310,11 +310,19 @@ namespace Firebird
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> >(p) { }
-		bool find(const ObjectKey& item, size_t& pos) const {
+		bool find(const ObjectKey& item, size_t& pos) const
+		{
 			const ObjectKey* const pItem = &item;
 			return static_cast<const SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp>*>(this)->find(pItem, pos);
+		}
+		bool exist(const ObjectKey& item) const
+		{
+			size_t pos;
+			return static_cast<const SortedArray<ObjectValue*,
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
+				ObjectCmp>*>(this)->find(&item, pos);
 		}
 		size_t add(const ObjectValue& item) {
 			return inherited::add(item);
