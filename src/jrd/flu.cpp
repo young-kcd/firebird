@@ -43,7 +43,7 @@
  *
  */
 /*
-$Id: flu.cpp,v 1.34.2.3 2008-03-27 13:32:51 paulbeach Exp $
+$Id: flu.cpp,v 1.34.2.4 2008-03-29 10:24:40 robocop Exp $
 */
 
 #include "firebird.h"
@@ -897,7 +897,7 @@ static MOD search_for_module(TEXT* module, TEXT* name, bool ShowAccessError)
 		return NULL;
 	}
 
-	if (!(mod->mod_handle = OPEN_HANDLE((TEXT*)absolute_module))) {
+	if (!(mod->mod_handle = OPEN_HANDLE(absolute_module.c_str()))) {
 /*
  * Temporarily commented - what to do with dlerror() on NT ?
 #ifdef DEV_BUILD
