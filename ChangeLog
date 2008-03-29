@@ -1,3 +1,35 @@
+2008-03-29 15:01  robocop
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.16), GlobalRWLock.h
+	(1.15):
+
+	const and check.
+
+2008-03-29 15:01  robocop
+
+	* firebird2/src/jrd/nbak.h (1.30):
+
+	const.
+
+2008-03-29 14:24  robocop
+
+	* firebird2/src/: common/classes/objects_array.h (1.21),
+	jrd/flu.cpp (1.64):
+
+	exist() shortcut.
+
+2008-03-29 14:01  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.190), cch_proto.h (1.28):
+
+	const.
+
+2008-03-29 13:34  robocop
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.88):
+
+	Style.
+
 2008-03-28 15:17  robocop
 
 	* firebird2/src/remote/server.cpp (1.190):
