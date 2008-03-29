@@ -1075,13 +1075,13 @@ static bool unix_error(
 		gds__log_status(0, status_vector);
 		return false;
 	}
-	else
-		ERR_post(isc_io_error,
-				 isc_arg_string, string,
-				 isc_arg_string, ERR_string(file->fil_string,
-											file->fil_length),
-				 isc_arg_gds,
-				 operation, isc_arg_unix, errno, 0);
+
+	ERR_post(isc_io_error,
+			 isc_arg_string, string,
+			 isc_arg_string, ERR_string(file->fil_string,
+										file->fil_length),
+			 isc_arg_gds,
+			 operation, isc_arg_unix, errno, 0);
 
 
     // Added a false for final return - which seems to be the answer,
@@ -1191,8 +1191,8 @@ int PIO_unlink (const Firebird::PathName& file_name)
 
 	if (PIO_on_raw_device(file_name))
 		return raw_devices_unlink_database(file_name);
-	else
-		return unlink(file_name.c_str());
+
+	return unlink(file_name.c_str());
 }
 
 
