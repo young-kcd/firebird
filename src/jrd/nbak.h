@@ -191,7 +191,7 @@ public:
 	void set_difference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
-	int get_state() {
+	int get_state() const {
 		return backup_state;
 	}
 	// Sets current backup state
@@ -255,7 +255,7 @@ public:
 
 	void shutdown(thread_db* tdbb);
 
-	bool database_flush_in_progress() {
+	bool database_flush_in_progress() const {
 //		NBAK_TRACE(("NBAK_state_blocking=%i", database_lock->flags & NBAK_state_blocking));
 		return database_lock->flags & NBAK_state_blocking;
 	}
