@@ -1800,7 +1800,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	bdb->bdb_flags |= BDB_db_dirty;
 #endif
 
-	bool was_dirty = bdb->bdb_flags & BDB_dirty;
+	const bool was_dirty = bdb->bdb_flags & BDB_dirty;
 	bdb->bdb_flags |= (BDB_dirty | BDB_marked);
 
 	if (must_write || dbb->dbb_backup_manager->database_flush_in_progress())
@@ -1809,7 +1809,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 	if (!was_marked) {
 		if (was_dirty) {
 			// Mark can be called many times without release
-			// Backup lock owner can ba database or attachment
+			// Backup lock owner can be database or attachment
 			fb_assert(bdb->bdb_backup_lock_owner == BackupManager::database_lock_handle(tdbb));
 			dbb->dbb_backup_manager->release_dirty_page(tdbb, bdb->bdb_backup_lock_owner);
 		}
@@ -6243,7 +6243,7 @@ static bool write_page(
 
 		/* write out page to main database file, and to any
 		   shadows, making a special case of the header page */
-		int backup_state = dbb->dbb_backup_manager->get_state();
+		const int backup_state = dbb->dbb_backup_manager->get_state();
 
 		if (bdb->bdb_page >= 0) {
 			fb_assert(backup_state != nbak_state_unknown);

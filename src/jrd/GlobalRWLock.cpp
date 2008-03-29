@@ -132,7 +132,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG o
 		}
 	}
 
-	bool all_compatible = !writer.entry_count && (level == LCK_read || readers.getCount() == 0);
+	const bool all_compatible = !writer.entry_count && (level == LCK_read || readers.getCount() == 0);
 
 	// We own the lock and all present requests are compatible with us
 	// In case of any congestion we force all requests through the lock

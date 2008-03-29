@@ -114,7 +114,7 @@ public:
 	// Change the lock owner. The function doesn't wait.
 	void changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle);
 
-	SLONG getLockData() {
+	SLONG getLockData() const {
 		return cached_lock->lck_data;
 	}
 	void setLockData(SLONG lck_data);
@@ -160,7 +160,7 @@ private:
 	class CountersLockHolder : public AstInhibit, public Firebird::MutexLockGuard
 	{
 	public:
-		CountersLockHolder(Firebird::Mutex& mtx)
+		explicit CountersLockHolder(Firebird::Mutex& mtx)
 			: AstInhibit(), MutexLockGuard(mtx) { }
 	};
 
