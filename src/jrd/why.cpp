@@ -6041,6 +6041,11 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 	YEntry status(NULL);
 	int rc = FB_SUCCESS;
 
+#ifdef DEV_BUILD
+	// ignore timeout in debug build: hard to debug something during 5-10 sec
+	timeout = 0;
+#endif
+
 	try
 	{
 		// Shutdown clients before providers
