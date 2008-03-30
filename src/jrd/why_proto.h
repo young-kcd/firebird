@@ -38,12 +38,12 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS*, FB_API_HANDLE*,
 ISC_STATUS API_ROUTINE isc_dsql_execute(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 										USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_m(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
-											const SCHAR*, USHORT, USHORT, SCHAR*);
+											const SCHAR*, USHORT, USHORT, const SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
 											XSQLDA*, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS*, FB_API_HANDLE*,
 											  FB_API_HANDLE*, USHORT, const SCHAR*,
-											  USHORT, USHORT, SCHAR*, USHORT,
+											  USHORT, USHORT, const SCHAR*, USHORT,
 											  SCHAR*, USHORT, USHORT,
 											  SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_immediate(ISC_STATUS*, FB_API_HANDLE*,
@@ -65,13 +65,13 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS*, FB_API_HANDLE*,
 												 FB_API_HANDLE*, USHORT,
 												 const SCHAR*, USHORT, USHORT,
 												 const SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, SCHAR*,
+												 const SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS*, FB_API_HANDLE*,
 												 FB_API_HANDLE*, USHORT,
 												 const SCHAR*, USHORT, USHORT,
 												 const SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, SCHAR*,
+												 const SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FB_API_HANDLE*, USHORT, XSQLDA*);
 #ifdef SCROLLABLE_CURSORS
@@ -238,7 +238,7 @@ ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS*, FB_API_HANDLE*,
 
 ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 											USHORT, const SCHAR*, USHORT,
-											SCHAR*, USHORT, SCHAR*);
+											const SCHAR*, USHORT, SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 											const SCHAR*, SSHORT, UCHAR*);

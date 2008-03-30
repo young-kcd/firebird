@@ -131,7 +131,7 @@ ISC_STATUS jrd8_transaction_info(ISC_STATUS*, Jrd::jrd_tra**,
 											   SCHAR*);
 ISC_STATUS jrd8_transact_request(ISC_STATUS*, Jrd::Attachment**,
 											   Jrd::jrd_tra**, USHORT, const SCHAR*,
-											   USHORT, SCHAR*, USHORT,
+											   USHORT, const SCHAR*, USHORT,
 											   SCHAR*);
 ISC_STATUS jrd8_unwind_request(ISC_STATUS *, Jrd::jrd_req**, SSHORT);
 int jrd8_shutdown_all(unsigned int);

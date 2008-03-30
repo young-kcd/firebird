@@ -1048,7 +1048,7 @@ const int PROC_ROLLBACK			= 18;
 const int PROC_SEND				= 19;
 const int PROC_START_AND_SEND	= 20;
 const int PROC_START			= 21;
-const int PROC_START_MULTIPLE	= 22;
+//const int PROC_START_MULTIPLE	= 22;
 const int PROC_START_TRANSACTION= 23;
 const int PROC_TRANSACTION_INFO	= 24;
 const int PROC_UNWIND			= 25;
@@ -1065,9 +1065,9 @@ const int PROC_TRANSACT_REQUEST	= 35;
 const int PROC_DROP_DATABASE	= 36;
 
 const int PROC_DSQL_ALLOCATE	= 37;
-const int PROC_DSQL_EXECUTE		= 38;
+//const int PROC_DSQL_EXECUTE		= 38;
 const int PROC_DSQL_EXECUTE2	= 39;
-const int PROC_DSQL_EXEC_IMMED	= 40;
+//const int PROC_DSQL_EXEC_IMMED	= 40;
 const int PROC_DSQL_EXEC_IMMED2	= 41;
 const int PROC_DSQL_FETCH		= 42;
 const int PROC_DSQL_FREE		= 43;
@@ -2517,7 +2517,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS* user_status,
 										  const SCHAR* blr,
 										  USHORT msg_type,
 										  USHORT msg_length,
-										  SCHAR* msg)
+										  const SCHAR* msg)
 {
 /**************************************
  *
@@ -2543,7 +2543,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 										   const SCHAR* in_blr,
 										   USHORT in_msg_type,
 										   USHORT in_msg_length,
-										   SCHAR* in_msg,
+										   const SCHAR* in_msg,
 										   USHORT out_blr_length,
 										   SCHAR* out_blr,
 										   USHORT out_msg_type,
@@ -2797,7 +2797,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 											const SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
-											SCHAR* in_msg,
+											const SCHAR* in_msg,
 											USHORT out_blr_length,
 											SCHAR* out_blr,
 											USHORT out_msg_type,
@@ -2908,7 +2908,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 											const SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
-											SCHAR* in_msg,
+											const SCHAR* in_msg,
 											USHORT out_blr_length,
 											SCHAR* out_blr,
 											USHORT out_msg_type,
@@ -4935,7 +4935,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 											USHORT blr_length,
 											const SCHAR* blr,
 											USHORT in_msg_length,
-											SCHAR* in_msg,
+											const SCHAR* in_msg,
 											USHORT out_msg_length,
 											SCHAR* out_msg)
 {

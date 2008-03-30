@@ -637,7 +637,7 @@ ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS*,
 										   unsigned short,
 										   const ISC_SCHAR*,
 										   unsigned short,
-										   ISC_SCHAR*,
+										   const ISC_SCHAR*,
 										   unsigned short,
 										   ISC_SCHAR*);
 
@@ -819,7 +819,7 @@ ISC_STATUS ISC_EXPORT isc_prepare(ISC_STATUS*,
 								  isc_db_handle*,
 								  isc_tr_handle*,
 								  const ISC_SCHAR*,
-								  short*,
+								  const short*,
 								  const ISC_SCHAR*,
 								  XSQLDA*);
 
@@ -835,7 +835,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute_m(ISC_STATUS*,
 										 const ISC_SCHAR*,
 										 unsigned short,
 										 unsigned short,
-										 ISC_SCHAR*);
+										 const ISC_SCHAR*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute2_m(ISC_STATUS*,
 										  isc_tr_handle*,
@@ -873,7 +873,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS*,
 											 const ISC_SCHAR*,
 											 unsigned short,
 											 unsigned short,
-											 ISC_SCHAR*,
+											 const ISC_SCHAR*,
 											 unsigned short,
 											 ISC_SCHAR*,
 											 unsigned short,

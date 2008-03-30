@@ -3189,7 +3189,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 								USHORT	blr_length,
 								const SCHAR*	blr,
 								USHORT	in_msg_length,
-								SCHAR*	in_msg,
+								const SCHAR*	in_msg,
 								USHORT	out_msg_length,
 								SCHAR*	out_msg)
 {

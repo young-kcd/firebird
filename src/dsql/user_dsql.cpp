@@ -970,7 +970,7 @@ ISC_STATUS API_ROUTINE isc_prepare(	ISC_STATUS*	status_vector,
 								FB_API_HANDLE*	db_handle,
 								FB_API_HANDLE*	tra_handle,
 								const SCHAR*	statement_name,
-								SSHORT*	sql_length,
+								const SSHORT*	sql_length,
 								const SCHAR*	sql,
 								SQLDA*	sqlda)
 {
@@ -1090,7 +1090,7 @@ ISC_STATUS API_ROUTINE gds__prepare(ISC_STATUS*	status_vector,
 								FB_API_HANDLE*	db_handle,
 								FB_API_HANDLE*	tra_handle,
 								const SCHAR*	statement_name,
-								SSHORT*	sql_length,
+								const SSHORT*	sql_length,
 								const SCHAR*	sql,
 								SQLDA*	sqlda)
 {
