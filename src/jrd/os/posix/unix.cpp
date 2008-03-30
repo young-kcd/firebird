@@ -1083,7 +1083,6 @@ static bool unix_error(
 			 isc_arg_gds,
 			 operation, isc_arg_unix, errno, 0);
 
-
     // Added a false for final return - which seems to be the answer,
     // but is better than what it was which was nothing ie random 
     // Most usages within here want it to return a failure.

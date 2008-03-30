@@ -513,7 +513,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 
@@ -1039,7 +1039,7 @@ void PAG_format_header()
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 	header->hdr_header.pag_type = pag_header;

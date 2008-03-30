@@ -1833,9 +1833,8 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		/* We've either got data, or some is on the way, or we have an error, or we have EOF */
 
-		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
-			   || statement->haveException()
-			   || statement->rsr_flags.test(Rsr::EOF_SET));
+		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0) ||
+			   statement->haveException() || statement->rsr_flags.test(Rsr::EOF_SET));
 
 		while (!statement->haveException()			/* received a database error */
 			   && !statement->rsr_flags.test(Rsr::EOF_SET)	/* reached end of cursor */
@@ -2361,6 +2360,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 		if (!receive_response(rdb, packet)) {
 			return user_status[1];
 		}
+
 		statement->raiseException();
 	}
 	catch (const Firebird::Exception& ex)
@@ -4837,9 +4837,9 @@ static bool batch_dsql_fetch(rem_port*	port,
 
 	fb_assert(que_inst->rmtque_function == batch_dsql_fetch);
 
-	RDB     rdb       = que_inst->rmtque_rdb;
-	Rsr*     statement = static_cast<Rsr*>(que_inst->rmtque_parm);
-	PACKET* packet    = &rdb->rdb_packet;
+	RDB rdb = que_inst->rmtque_rdb;
+	Rsr* statement = static_cast<Rsr*>(que_inst->rmtque_parm);
+	PACKET* packet = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
 

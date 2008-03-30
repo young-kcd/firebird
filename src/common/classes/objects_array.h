@@ -320,9 +320,7 @@ namespace Firebird
 		bool exist(const ObjectKey& item) const
 		{
 			size_t pos;
-			return static_cast<const SortedArray<ObjectValue*,
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
-				ObjectCmp>*>(this)->find(&item, pos);
+			return find(item, pos);
 		}
 		size_t add(const ObjectValue& item) {
 			return inherited::add(item);

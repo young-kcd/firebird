@@ -116,12 +116,15 @@ namespace Firebird
 				{
 					ptr->release();
 				}
+
 				ptr = p;
+
 				if (ptr)
 				{
 					ptr->addRef();
 				}
 			}
+
 			return ptr;
 		}
 

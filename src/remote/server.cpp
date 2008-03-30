@@ -342,7 +342,7 @@ static SERVER_REQ alloc_request()
 	else
 	{
 		/* No block on the free list - allocate some new memory */
-		for(;;)
+		for (;;)
 		{
 			try
 			{
@@ -5190,8 +5190,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	const UCHAR* blr = trrq->p_trrq_blr.cstr_address;
 	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
 	RPR procedure = this->port_rpr;
-	const UCHAR* in_msg =
-		(procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
+	const UCHAR* in_msg = (procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
 	const USHORT in_msg_length =
 		(procedure->rpr_in_format) ? procedure->rpr_in_format->fmt_length : 0;
 	UCHAR* out_msg =
