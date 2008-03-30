@@ -134,7 +134,7 @@ static bool batch_dsql_fetch(rem_port*, struct rmtque *,
 								ISC_STATUS *, USHORT);
 static bool check_response(RDB, PACKET *);
 static bool clear_queue(rem_port*, ISC_STATUS *);
-static bool clear_stmt_que(rem_port*, ISC_STATUS*, RSR);
+static bool clear_stmt_que(rem_port*, ISC_STATUS*, Rsr*);
 static void disconnect(rem_port*);
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG dump_cache(rem_port*, ISC_STATUS *, Rrq::rrq_repeat *);
@@ -144,7 +144,7 @@ static void enqueue_receive(rem_port*,
 							RDB, void*, Rrq::rrq_repeat*);
 static void dequeue_receive(rem_port*);
 static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM);
-static ISC_STATUS fetch_blob(ISC_STATUS*, RSR, USHORT, const UCHAR*, USHORT,
+static ISC_STATUS fetch_blob(ISC_STATUS*, Rsr*, USHORT, const UCHAR*, USHORT,
 						USHORT, UCHAR*);
 static RVNT find_event(rem_port*, SLONG);
 static bool get_new_dpb(Firebird::ClumpletWriter&, Firebird::string&, const ParametersSet&);
@@ -168,8 +168,8 @@ static void release_blob(RBL);
 static void release_event(RVNT);
 static bool release_object(RDB, P_OP, USHORT);
 static void release_request(Rrq*);
-static void release_statement(RSR *);
-static void release_sql_request(RSR);
+static void release_statement(Rsr**);
+static void release_sql_request(Rsr*);
 static void release_transaction(RTR);
 static ISC_STATUS return_success(RDB);
 #ifdef SCROLLABLE_CURSORS
@@ -1134,7 +1134,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, RDB* handle)
 
 ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 						 RDB*		db_handle,
-						 RSR*		stmt_handle)
+						 Rsr**		stmt_handle)
 {
 /**************************************
  *
@@ -1162,7 +1162,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 		if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION7)
 			return unsupported(user_status);
 
-		RSR statement;
+		Rsr* statement;
 		if (rdb->rdb_port->port_flags & PORT_lazy) {
 			*stmt_handle = statement = new Rsr;
 			statement->rsr_rdb = rdb;
@@ -1203,12 +1203,12 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 
 ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS*	user_status,
 						RTR*	rtr_handle,
-						RSR*	stmt_handle,
+						Rsr**	stmt_handle,
 						USHORT	blr_length,
-						UCHAR*	blr,
+						const UCHAR*	blr,
 						USHORT	msg_type,
 						USHORT	msg_length,
-						UCHAR*	msg)
+						const UCHAR*	msg)
 {
 /**************************************
  *
@@ -1229,12 +1229,12 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS*	user_status,
 
 ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 						 RTR*		rtr_handle,
-						 RSR*		stmt_handle,
+						 Rsr**		stmt_handle,
 						 USHORT		in_blr_length,
-						 UCHAR*		in_blr,
+						 const UCHAR*		in_blr,
 						 USHORT		in_msg_type,
 						 USHORT		in_msg_length,
-						 UCHAR*		in_msg,
+						 const UCHAR*		in_msg,
 						 USHORT		out_blr_length,
 						 UCHAR*		out_blr,
 						 USHORT		out_msg_type,
@@ -1254,7 +1254,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 
 /* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -1341,7 +1341,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 			message = statement->rsr_message = statement->rsr_buffer;
 		}
 
-		message->msg_address = in_msg;
+		message->msg_address = const_cast<UCHAR*>(in_msg); // safe, see server.cpp
 		statement->rsr_flags.unset(Rsr::FETCHED);
 		statement->rsr_format = statement->rsr_bind_format;
 		statement->clearException();
@@ -1354,7 +1354,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		sqldata->p_sqldata_statement = statement->rsr_id;
 		sqldata->p_sqldata_transaction = (transaction) ? transaction->rtr_id : 0;
 		sqldata->p_sqldata_blr.cstr_length = in_blr_length;
-		sqldata->p_sqldata_blr.cstr_address = in_blr;
+		sqldata->p_sqldata_blr.cstr_address = const_cast<UCHAR*>(in_blr); // safe, see server.cpp
 		sqldata->p_sqldata_message_number = in_msg_type;
 		sqldata->p_sqldata_messages = (statement->rsr_bind_format) ? 1 : 0;
 		sqldata->p_sqldata_out_blr.cstr_length = out_blr_length;
@@ -1460,7 +1460,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 							   const UCHAR* in_blr,
 							   USHORT in_msg_type,
 							   USHORT in_msg_length,
-							   UCHAR* in_msg,
+							   const UCHAR* in_msg,
 							   USHORT out_blr_length,
 							   UCHAR* out_blr,
 							   USHORT out_msg_type,
@@ -1518,7 +1518,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			return unsupported(user_status);
 		}
 
-		RSR statement = port->port_statement;
+		Rsr* statement = port->port_statement;
 		if (!statement) {
 			statement = port->port_statement = new Rsr;
 		}
@@ -1570,7 +1570,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 			message = statement->rsr_message = statement->rsr_buffer;
 		}
 
-		message->msg_address = in_msg;
+		message->msg_address = const_cast<UCHAR*>(in_msg); // safe, see server.cpp
 
 		statement->clearException();
 
@@ -1642,7 +1642,7 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMED2(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
-					  RSR* stmt_handle,
+					  Rsr** stmt_handle,
 					  USHORT blr_length,
 					  const UCHAR* blr,
 					  USHORT msg_type, USHORT msg_length, UCHAR* msg)
@@ -1661,7 +1661,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 /* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -1924,7 +1924,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT option)
+ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT option)
 {
 /**************************************
  *
@@ -1939,7 +1939,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 
 /* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -2018,8 +2018,8 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 }
 
 
-ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
-					   RSR * stmt_handle,
+ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
+					   Rsr** stmt_handle,
 					   USHORT blr_length,
 					   UCHAR * blr,
 					   USHORT msg_type, USHORT msg_length, UCHAR * msg)
@@ -2037,7 +2037,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 
 	/* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -2134,7 +2134,8 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * stmt_handle,	/* a remote statement block */
+ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle,
+						Rsr** stmt_handle,	// a remote statement block
 						USHORT length,
 						TEXT * string,
 						USHORT dialect,
@@ -2154,7 +2155,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 /* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 
 	RDB rdb = statement->rsr_rdb;
@@ -2270,7 +2271,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 
 ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
-						   RSR* stmt_handle, const TEXT* cursor, USHORT type)
+						   Rsr** stmt_handle, const TEXT* cursor, USHORT type)
 {
 /*****************************************
  *
@@ -2297,7 +2298,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 	/* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -2372,7 +2373,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 
 ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
-						 RSR* stmt_handle,
+						 Rsr** stmt_handle,
 						 SSHORT item_length,
 						 const SCHAR* items,
 						 SSHORT buffer_length, SCHAR* buffer)
@@ -2391,7 +2392,7 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 
 /* Check and validate handles, etc. */
 
-	RSR statement = *stmt_handle;
+	Rsr* statement = *stmt_handle;
 	CHECK_HANDLE(statement, type_rsr, isc_bad_req_handle);
 	RDB rdb = statement->rsr_rdb;
 	rem_port* port = rdb->rdb_port;
@@ -4252,7 +4253,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 							USHORT blr_length,
 							const UCHAR* blr,
 							USHORT in_msg_length,
-							UCHAR* in_msg,
+							const UCHAR* in_msg,
 							USHORT out_msg_length, UCHAR* out_msg)
 {
 /**************************************
@@ -4313,7 +4314,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 				case 0:
 					procedure->rpr_in_msg = message;
 					procedure->rpr_in_format = (rem_fmt*) message->msg_address;
-					message->msg_address = in_msg;
+					message->msg_address = const_cast<UCHAR*>(in_msg); // safe cast, see server.cpp
 					message = message->msg_next;
 					procedure->rpr_in_msg->msg_next = NULL;
 					break;
@@ -4765,7 +4766,7 @@ static rem_port* analyze_service(Firebird::PathName& service_name,
 	return port;
 }
 
-static bool clear_stmt_que(rem_port* port, ISC_STATUS* user_status, RSR statement)
+static bool clear_stmt_que(rem_port* port, ISC_STATUS* user_status, Rsr* statement)
 {
 /**************************************
  *
@@ -4837,7 +4838,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 	fb_assert(que_inst->rmtque_function == batch_dsql_fetch);
 
 	RDB     rdb       = que_inst->rmtque_rdb;
-	RSR     statement = static_cast<Rsr*>(que_inst->rmtque_parm);
+	Rsr*     statement = static_cast<Rsr*>(que_inst->rmtque_parm);
 	PACKET* packet    = &rdb->rdb_packet;
 
 	fb_assert(port == rdb->rdb_port);
@@ -5402,7 +5403,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 static ISC_STATUS fetch_blob(
 						 ISC_STATUS* user_status,
-						 RSR statement,
+						 Rsr* statement,
 						 USHORT blr_length,
 						 const UCHAR* blr,
 						 USHORT msg_type,
@@ -6083,7 +6084,7 @@ static bool receive_packet_noqueue(rem_port* port,
 		if (!port->receive(&p->packet))
 			return false;
 
-		RSR statement = NULL;
+		Rsr* statement = NULL;
 		if (bCheckResponse || bFreeStmt)
 		{
 			statement = port->port_objects[stmt_id];
@@ -6353,7 +6354,7 @@ static void release_request( Rrq* request)
 }
 
 
-static void release_statement( RSR* statement)
+static void release_statement( Rsr** statement)
 {
 /**************************************
  *
@@ -6382,7 +6383,7 @@ static void release_statement( RSR* statement)
 }
 
 
-static void release_sql_request( RSR statement)
+static void release_sql_request( Rsr* statement)
 {
 /**************************************
  *
@@ -6397,7 +6398,7 @@ static void release_sql_request( RSR statement)
 	RDB rdb = statement->rsr_rdb;
 	rdb->rdb_port->releaseObject(statement->rsr_id);
 
-	for (RSR* p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
+	for (Rsr** p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	{
 		if (*p == statement) {
 			*p = statement->rsr_next;

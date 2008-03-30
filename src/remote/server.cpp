@@ -131,7 +131,7 @@ static void		cancel_operation(rem_port*);
 #endif
 
 static bool		check_request(Rrq*, USHORT, USHORT);
-static USHORT	check_statement_type(RSR);
+static USHORT	check_statement_type(Rsr*);
 
 #ifdef SCROLLABLE_CURSORS
 static REM_MSG	dump_cache(Rrq::rrq_repeat*);
@@ -146,8 +146,8 @@ static bool		process_packet(rem_port* port,
 static void		release_blob(RBL);
 static void		release_event(RVNT);
 static void		release_request(Rrq*);
-static void		release_statement(RSR*);
-static void		release_sql_request(RSR);
+static void		release_statement(Rsr**);
+static void		release_sql_request(Rsr*);
 static void		release_transaction(RTR);
 
 #ifdef SCROLLABLE_CURSORS
@@ -776,7 +776,7 @@ static ISC_STATUS allocate_statement( rem_port* port, P_RLSE * allocate, PACKET*
 	else {
 		/* Allocate SQL request block */
 
-		RSR statement = new Rsr;
+		Rsr* statement = new Rsr;
 		statement->rsr_rdb = rdb;
 		statement->rsr_handle = handle;
 		if (statement->rsr_id = port->get_id(statement))
@@ -1278,7 +1278,7 @@ static bool check_request(Rrq* request,
 }
 
 
-static USHORT check_statement_type( RSR statement)
+static USHORT check_statement_type( Rsr* statement)
 {
 /**************************************
  *
@@ -1798,7 +1798,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
  *	Free a statement.
  *
  *****************************************/
-	RSR statement;
+	Rsr* statement;
 	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(statement, free_stmt->p_sqlfree_statement);
@@ -1907,9 +1907,9 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	}
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
-	UCHAR* in_msg = NULL;
+	const UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	UCHAR* in_blr;
+	const UCHAR* in_blr;
 	UCHAR* out_blr;
 	if (op == op_exec_immediate2)
 	{
@@ -1926,8 +1926,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		out_msg_type = exnow->p_sqlst_out_message_number;
 		if (this->port_statement->rsr_select_format)
 		{
-			out_msg_length =
-				this->port_statement->rsr_select_format->fmt_length;
+			out_msg_length = this->port_statement->rsr_select_format->fmt_length;
 			if (!this->port_statement->rsr_message->msg_address)
 			{
 				/* TMN: Obvious bugfix. Please look at your compilers warnings. */
@@ -1974,14 +1973,14 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 						   &rdb->rdb_handle,
 						   &handle,
 						   exnow->p_sqlst_SQL_str.cstr_length,
-						   reinterpret_cast<char*>(exnow->p_sqlst_SQL_str.cstr_address),
+						   reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
 						   (USHORT) ((exnow->p_sqlst_SQL_dialect * 10) +
 									 parser_version),
 						   in_blr_length,
-						   reinterpret_cast<char*>(in_blr),
+						   reinterpret_cast<const char*>(in_blr),
 						   in_msg_type,
 						   in_msg_length,
-						   reinterpret_cast<char*>(in_msg),
+						   reinterpret_cast<const char*>(in_msg),
 						   out_blr_length,
 						   reinterpret_cast<char*>(out_blr),
 						   out_msg_type,
@@ -2042,11 +2041,11 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		getHandle(transaction, sqldata->p_sqldata_transaction);
 	}
 
-	RSR statement;
+	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
-	UCHAR* in_msg = NULL;
+	const UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
 	USHORT out_msg_type, out_blr_length;
 	UCHAR* out_blr;
@@ -2084,10 +2083,10 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 					 &handle,
 					 &statement->rsr_handle,
 					 sqldata->p_sqldata_blr.cstr_length,
-					 reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
+					 reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 					 sqldata->p_sqldata_message_number,
 					 in_msg_length,
-					 reinterpret_cast<char*>(in_msg),
+					 reinterpret_cast<const char*>(in_msg),
 					 out_blr_length,
 					 reinterpret_cast<char*>(out_blr),
 					 out_msg_type,
@@ -2144,7 +2143,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
  *	Fetch next record from a dynamic SQL cursor.
  *
  *****************************************/
-	RSR statement;
+	Rsr* statement;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2318,7 +2317,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		s = GDS_DSQL_FETCH(status_vector,
 						   &statement->rsr_handle,
 						   sqldata->p_sqldata_blr.cstr_length,
-						   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
+						   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 						   sqldata->p_sqldata_message_number,
 						   msg_length,
 						   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
@@ -2356,7 +2355,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
  *	Fetch next record from a dynamic SQL cursor.
  *
  *****************************************/
-	RSR statement;
+	Rsr* statement;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2384,7 +2383,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 	s = GDS_DSQL_FETCH(status_vector,
 					   &statement->rsr_handle,
 					   sqldata->p_sqldata_blr.cstr_length,
-					   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
+					   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 					   sqldata->p_sqldata_message_number,
 					   msg_length,
 					   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
@@ -2635,7 +2634,7 @@ ISC_STATUS rem_port::info(P_OP op, P_INFO * stuff, PACKET* sendL)
  **************************************/
 	RBL blob;
 	RTR transaction;
-	RSR statement;
+	Rsr* statement;
 	ISC_STATUS_ARRAY status_vector;
 
 	RDB rdb = this->port_context;
@@ -2787,7 +2786,7 @@ ISC_STATUS rem_port::insert(P_SQLDATA * sqldata, PACKET* sendL)
  *	Insert next record into a dynamic SQL cursor.
  *
  *****************************************/
-	RSR statement;
+	Rsr* statement;
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -2960,7 +2959,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
  *
  *****************************************/
 	RTR transaction = NULL;
-	RSR statement;
+	Rsr* statement;
 
 /** Do not call CHECK_HANDLE if this is the start of a transaction **/
 	if (prepareL->p_sqlst_transaction)
@@ -4000,7 +3999,7 @@ static void release_request( Rrq* request)
 }
 
 
-static void release_statement( RSR * statement)
+static void release_statement( Rsr** statement)
 {
 /**************************************
  *
@@ -4023,7 +4022,7 @@ static void release_statement( RSR * statement)
 }
 
 
-static void release_sql_request( RSR statement)
+static void release_sql_request( Rsr* statement)
 {
 /**************************************
  *
@@ -4038,7 +4037,7 @@ static void release_sql_request( RSR statement)
 	RDB rdb = statement->rsr_rdb;
 	rdb->rdb_port->releaseObject(statement->rsr_id);
 
-	for (RSR* p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
+	for (Rsr** p = &rdb->rdb_sql_requests; *p; p = &(*p)->rsr_next)
 	{
 		if (*p == statement) {
 			*p = statement->rsr_next;
@@ -4706,7 +4705,7 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
  *	Set a cursor name for a dynamic request.
  *
  *****************************************/
-	RSR statement;
+	Rsr* statement;
 	ISC_STATUS_ARRAY status_vector;
 
 	getHandle(statement, sqlcur->p_sqlcur_statement);
@@ -5191,7 +5190,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	const UCHAR* blr = trrq->p_trrq_blr.cstr_address;
 	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
 	RPR procedure = this->port_rpr;
-	UCHAR* in_msg =
+	const UCHAR* in_msg =
 		(procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
 	const USHORT in_msg_length =
 		(procedure->rpr_in_format) ? procedure->rpr_in_format->fmt_length : 0;
@@ -5206,7 +5205,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 						 blr_length,
 						 reinterpret_cast<const char*>(blr),
 						 in_msg_length,
-						 reinterpret_cast<char*>(in_msg),
+						 reinterpret_cast<const char*>(in_msg),
 						 out_msg_length,
 						 reinterpret_cast<char*>(out_msg));
 

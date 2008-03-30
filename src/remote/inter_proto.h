@@ -52,12 +52,12 @@ ISC_STATUS	REM_detach_database(ISC_STATUS *, struct Rdb **);
 ISC_STATUS	REM_detach_service(ISC_STATUS *, struct Rdb **);
 ISC_STATUS	REM_drop_database(ISC_STATUS *, struct Rdb **);
 ISC_STATUS	REM_allocate_statement(ISC_STATUS *, struct Rdb **, struct Rsr **);
-ISC_STATUS	REM_execute(ISC_STATUS *, struct Rtr **, struct Rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
-ISC_STATUS	REM_execute2(ISC_STATUS *, struct Rtr **, struct Rsr **, USHORT, UCHAR *, USHORT, USHORT, UCHAR *, USHORT, UCHAR *, USHORT, USHORT, UCHAR *);
+ISC_STATUS	REM_execute(ISC_STATUS*, struct Rtr**, struct Rsr**, USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*);
+ISC_STATUS	REM_execute2(ISC_STATUS*, struct Rtr**, struct Rsr**, USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 ISC_STATUS	REM_execute_immediate(ISC_STATUS*, struct Rdb**, struct Rtr**,
 	USHORT, const TEXT*, USHORT, USHORT, const UCHAR*, USHORT, USHORT, UCHAR*);
 ISC_STATUS	REM_execute_immediate2(ISC_STATUS*, struct Rdb**, struct Rtr**,
-	USHORT, const TEXT*, USHORT, USHORT, const UCHAR*, USHORT, USHORT, UCHAR*,
+	USHORT, const TEXT*, USHORT, USHORT, const UCHAR*, USHORT, USHORT, const UCHAR*,
 	USHORT, UCHAR*, USHORT, USHORT, UCHAR*);
 ISC_STATUS	REM_fetch(ISC_STATUS*, struct Rsr**, USHORT, const UCHAR*, USHORT,
 	USHORT, UCHAR*);
@@ -96,7 +96,7 @@ ISC_STATUS	REM_start_and_send(ISC_STATUS *, struct Rrq **, struct Rtr **, USHORT
 ISC_STATUS	REM_start_request(ISC_STATUS *, struct Rrq **, struct Rtr **, USHORT);
 ISC_STATUS	REM_start_transaction(ISC_STATUS *, struct Rtr **, SSHORT, struct Rdb **, SSHORT, UCHAR *);
 ISC_STATUS	REM_transact_request(ISC_STATUS*, struct Rdb**, struct Rtr**,
-	USHORT, const UCHAR*, USHORT, UCHAR*, USHORT, UCHAR*);
+	USHORT, const UCHAR*, USHORT, const UCHAR*, USHORT, UCHAR*);
 ISC_STATUS	REM_transaction_info(ISC_STATUS*, struct Rtr**, SSHORT,
 	const UCHAR*, SSHORT, UCHAR*);
 ISC_STATUS	REM_unwind_request(ISC_STATUS *, struct Rrq **, USHORT);
