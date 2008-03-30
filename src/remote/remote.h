@@ -370,7 +370,7 @@ private:
 
 
 // remote SQL request
-typedef struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
+struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 {
 	Rsr*			rsr_next;
 	Rdb*			rsr_rdb;
@@ -421,7 +421,7 @@ public:
 	void releaseException();
 
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
-} *RSR;
+};
 
 
 // Makes it possible to safely store all handles in single array

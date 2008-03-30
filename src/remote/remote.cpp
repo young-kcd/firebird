@@ -81,7 +81,7 @@ void REMOTE_cleanup_transaction( RTR transaction)
 			}
 	}
 
-	for (RSR statement = transaction->rtr_rdb->rdb_sql_requests; statement;
+	for (Rsr* statement = transaction->rtr_rdb->rdb_sql_requests; statement;
 		 statement = statement->rsr_next)
 	{
 		if (statement->rsr_rtr == transaction) {
@@ -506,7 +506,7 @@ void REMOTE_reset_request( Rrq* request, REM_MSG active_message)
 }
 
 
-void REMOTE_reset_statement( RSR statement)
+void REMOTE_reset_statement( Rsr* statement)
 {
 /**************************************
  *

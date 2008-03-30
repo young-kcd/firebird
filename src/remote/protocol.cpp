@@ -81,7 +81,7 @@ typedef enum {
 
 static bool alloc_cstring(XDR *, CSTRING *);
 static void free_cstring(XDR *, CSTRING *);
-static RSR get_statement(XDR *, SSHORT);
+static Rsr* get_statement(XDR *, SSHORT);
 static bool_t xdr_cstring(XDR*, CSTRING*);
 static inline bool_t xdr_cstring_const(XDR*, CSTRING_CONST*);
 static bool_t xdr_datum(XDR *, const DSC*, BLOB_PTR *);
@@ -637,7 +637,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			   information (for example: blr info)
 			 */
 
-			RSR statement = NULL;
+			Rsr* statement = NULL;
 			statement = get_statement(xdrs, sqldata->p_sqldata_statement);
 			if (statement)
 				REMOTE_reset_statement(statement);
@@ -1512,7 +1512,7 @@ static bool_t xdr_sql_blr(
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
-	RSR statement;
+	Rsr* statement;
 	if (statement_id >= 0) {
 		if (static_cast<ULONG>(statement_id) >= port->port_objects.getCount())
 			return FALSE;
@@ -1597,7 +1597,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
  *	Map a formatted sql message.
  *
  **************************************/
-	RSR statement;
+	Rsr* statement;
 
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
@@ -1811,7 +1811,7 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 }
 
 
-static RSR get_statement( XDR * xdrs, SSHORT statement_id)
+static Rsr* get_statement( XDR * xdrs, SSHORT statement_id)
 {
 /**************************************
  *
