@@ -90,7 +90,7 @@ static USHORT	get_request_info(thread_db*, dsql_req*, SSHORT, UCHAR*);
 static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 							USHORT*);
 static dsql_dbb*	init(Attachment*);
-static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*);
+static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(thread_db*, dsql_req*, USHORT, const TEXT*, USHORT, USHORT);
 static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
@@ -1006,10 +1006,9 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR bpb[24];
 
 	dsql_blb* blob = request->req_blob;
-#pragma FB_COMPILER_MESSAGE("constness hack")
 	map_in_out(request, blob->blb_open_in_msg,
 			   in_blr_length, in_blr,
-			   in_msg_length, const_cast<UCHAR*>(in_msg));
+			   in_msg_length, NULL, in_msg);
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
@@ -1270,10 +1269,9 @@ static void execute_request(thread_db* tdbb,
 		JRD_start(tdbb, request->req_request, request->req_transaction, 0);
 	else
 	{
-#pragma FB_COMPILER_MESSAGE("constness hack")
 		map_in_out(request, message,
 				   in_blr_length, in_blr,
-				   in_msg_length, const_cast<UCHAR*>(in_msg));
+				   in_msg_length, NULL, in_msg);
 
 		JRD_start_and_send(tdbb,
 						   request->req_request,
@@ -2179,14 +2177,18 @@ static void map_in_out(	dsql_req*		request,
 						USHORT	blr_length,
 						const UCHAR*	blr,
 						USHORT	msg_length,
-						UCHAR*	dsql_msg_buf)
+						UCHAR*	dsql_msg_buf,
+						const UCHAR* in_dsql_msg_buf)
 {
-	dsql_par* parameter;
-
+	fb_assert((dsql_msg_buf != NULL) ^ (in_dsql_msg_buf != NULL));
+	fb_assert(!request || in_dsql_msg_buf);
+	
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
-/* When mapping data from the external world, request will be non-NULL.
-   When mapping data from an internal message, request will be NULL. */
+	// When mapping data from the external world, request will be non-NULL.
+	// When mapping data from an internal message, request will be NULL.
+
+	dsql_par* parameter;
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
@@ -2203,29 +2205,36 @@ static void map_in_out(	dsql_req*		request,
 				break;
 
 			SSHORT* flag = NULL;
-			dsql_par* null = parameter->par_null;
-			if (null != NULL)
+			dsql_par* const null_ind = parameter->par_null;
+			if (null_ind != NULL)
 			{
-				const USHORT null_offset = (IPTR) null->par_user_desc.dsc_address;
+				const USHORT null_offset = (IPTR) null_ind->par_user_desc.dsc_address;
 				length = null_offset + sizeof(SSHORT);
 				if (length > msg_length)
 					break;
 
 				if (!request) {
-					flag = (SSHORT *) (dsql_msg_buf + null_offset);
-					*flag = *((SSHORT *) null->par_desc.dsc_address);
+					flag = reinterpret_cast<SSHORT*>(dsql_msg_buf + null_offset);
+					*flag = *reinterpret_cast<const SSHORT*>(null_ind->par_desc.dsc_address);
 				}
 				else {
-					flag = (SSHORT *) null->par_desc.dsc_address;
-					*flag = *((SSHORT *) (dsql_msg_buf + null_offset));
+					flag = reinterpret_cast<SSHORT*>(null_ind->par_desc.dsc_address);
+					*flag = *reinterpret_cast<const SSHORT*>(in_dsql_msg_buf + null_offset);
 				}
 			}
 
-			desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
+
 			if (!request)
+			{
+				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
 				MOVD_move(&parameter->par_desc, &desc);
+			}
 			else if (!flag || *flag >= 0)
+			{
+				// Safe cast because desc is used as source only.
+				desc.dsc_address = const_cast<UCHAR*>(in_dsql_msg_buf) + (IPTR) desc.dsc_address;
 				MOVD_move(&desc, &parameter->par_desc);
+			}
 			else if (parameter->par_desc.isBlob())
 				memset(parameter->par_desc.dsc_address, 0, parameter->par_desc.dsc_length);
 
@@ -2248,10 +2257,10 @@ static void map_in_out(	dsql_req*		request,
 		((parameter = request->req_dbkey) != NULL))
 	{
 		MOVD_move(&dbkey->par_desc, &parameter->par_desc);
-		dsql_par* null = parameter->par_null;
-		if (null != NULL)
+		dsql_par* null_ind = parameter->par_null;
+		if (null_ind != NULL)
 		{
-			SSHORT* flag = (SSHORT *) null->par_desc.dsc_address;
+			SSHORT* flag = (SSHORT *) null_ind->par_desc.dsc_address;
 			*flag = 0;
 		}
 	}
@@ -2262,10 +2271,10 @@ static void map_in_out(	dsql_req*		request,
 		((parameter = request->req_rec_version) != NULL))
 	{
 		MOVD_move(&rec_version->par_desc, &parameter->par_desc);
-		dsql_par* null = parameter->par_null;
-		if (null != NULL)
+		dsql_par* null_ind = parameter->par_null;
+		if (null_ind != NULL)
 		{
-			SSHORT* flag = (SSHORT *) null->par_desc.dsc_address;
+			SSHORT* flag = (SSHORT *) null_ind->par_desc.dsc_address;
 			*flag = 0;
 		}
 	}
