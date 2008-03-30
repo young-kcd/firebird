@@ -6369,8 +6369,7 @@ static void release_statement( Rsr** statement)
 
 	delete (*statement)->rsr_bind_format;
 	if ((*statement)->rsr_user_select_format &&
-		(*statement)->rsr_user_select_format !=
-		(*statement)->rsr_select_format)
+		(*statement)->rsr_user_select_format != (*statement)->rsr_select_format)
 	{
 		delete (*statement)->rsr_user_select_format;
 	}

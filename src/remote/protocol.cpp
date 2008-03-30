@@ -1568,8 +1568,7 @@ static bool_t xdr_sql_blr(
 		return TRUE;
 
     REM_MSG message = statement->rsr_buffer;
-	if (!(message != 0) ||
-		statement->rsr_format->fmt_length > statement->rsr_fmt_length)
+	if (message == NULL || statement->rsr_format->fmt_length > statement->rsr_fmt_length)
 	{
 		REMOTE_release_messages(message);
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
