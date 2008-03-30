@@ -86,7 +86,7 @@ void REMOTE_cleanup_transaction( RTR transaction)
 	{
 		if (statement->rsr_rtr == transaction) {
 			REMOTE_reset_statement(statement);
-			statement->rsr_flags &= ~Rsr::FETCHED;
+			statement->rsr_flags.unset(Rsr::FETCHED);
 			statement->rsr_rtr = NULL;
 		}
 	}

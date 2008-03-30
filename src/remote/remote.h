@@ -330,6 +330,45 @@ public:
 };
 
 
+template <typename T>
+class RFlags
+{
+public:
+	RFlags() :
+		m_flags(0)
+	{
+		// Require base flags field to be unsigned.
+		// This is a compile-time assertion; it won't build if you use a signed flags field.
+		typedef int dummy[T(-1) > 0];
+	}
+	explicit RFlags(const T flags) :
+		m_flags(flags)
+	{}
+	bool test(const T flags) const
+	{
+		return m_flags & flags;
+	}
+	bool testExact(const T flags) const
+	{
+		return (m_flags & flags) == flags;
+	}
+	void set(const T flags)
+	{
+		m_flags |= flags;
+	}
+	void unset(const T flags)
+	{
+		m_flags &= ~flags;
+	}
+	void clear()
+	{
+		m_flags = 0;
+	}
+private:
+	T m_flags;
+};
+
+
 // remote SQL request
 typedef struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 {
@@ -345,7 +384,7 @@ typedef struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type
 	Message*		rsr_buffer;				/* Next buffer to use */
 	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
 	USHORT			rsr_id;
-	USHORT			rsr_flags;
+	RFlags<USHORT>	rsr_flags;
 	USHORT			rsr_fmt_length;
 
 	ULONG			rsr_rows_pending;	/* How many rows are pending */
@@ -354,6 +393,7 @@ typedef struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type
 	USHORT			rsr_batch_count; 	/* Count of batches in pipeline */
 
 public:
+	// Values for rsr_flags.
 	enum {
 		FETCHED = 1,		// Cleared by execute, set by fetch
 		EOF_SET = 2,		// End-of-stream encountered
@@ -370,7 +410,7 @@ public:
 		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_handle(0),
 		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0), 
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0), 
-		rsr_id(0), rsr_flags(0), rsr_fmt_length(0), 
+		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0)
 		{ }
 

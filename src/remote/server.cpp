@@ -1815,7 +1815,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 		statement = NULL;
 	}
 	else {
-		statement->rsr_flags &= ~Rsr::FETCHED;
+		statement->rsr_flags.unset(Rsr::FETCHED);
 		statement->rsr_rtr = NULL;
 		REMOTE_reset_statement(statement);
 		statement->rsr_message = statement->rsr_buffer;
@@ -2074,7 +2074,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		out_msg_type = 0;
 		out_blr = NULL;
 	}
-	statement->rsr_flags &= ~Rsr::FETCHED;
+	statement->rsr_flags.unset(Rsr::FETCHED);
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
@@ -2148,7 +2148,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	getHandle(statement, sqldata->p_sqldata_statement);
 
-	if (statement->rsr_flags & Rsr::BLOB) {
+	if (statement->rsr_flags.test(Rsr::BLOB)) {
 		return this->fetch_blob(sqldata, sendL);
 	}
 
@@ -2160,14 +2160,14 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		msg_length = 0;
 	}
 	USHORT count = ((this->port_flags & PORT_rpc) ||
-			(statement->rsr_flags & Rsr::NO_BATCH)) ? 1 :
+			statement->rsr_flags.test(Rsr::NO_BATCH)) ? 1 :
 			sqldata->p_sqldata_messages;
-	USHORT count2 = (statement->rsr_flags & Rsr::NO_BATCH) ? 0 : count;
+	USHORT count2 = statement->rsr_flags.test(Rsr::NO_BATCH) ? 0 : count;
 
 	// On first fetch, clear the end-of-stream flag & reset the message buffers
 
-	if (!(statement->rsr_flags & Rsr::FETCHED)) {
-		statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR);
+	if (!statement->rsr_flags.test(Rsr::FETCHED)) {
+		statement->rsr_flags.unset(Rsr::EOF_SET | Rsr::STREAM_ERR);
 		statement->clearException();
 		REM_MSG message = statement->rsr_message;
 		if (message != NULL) {
@@ -2198,19 +2198,19 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (true) {
 
 		/* Have we exhausted the cache & reached cursor EOF? */
-		if ((statement->rsr_flags & Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
-			statement->rsr_flags &= ~Rsr::EOF_SET;
+		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
+			statement->rsr_flags.unset(Rsr::EOF_SET);
 			s = 100;
 			count2 = 0;
 			break;
 		}
 
 		/* Have we exhausted the cache & have a pending error? */
-		if ((statement->rsr_flags & Rsr::STREAM_ERR)
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR)
 			&& !statement->rsr_msgs_waiting)
 		{
 			fb_assert(statement->rsr_status);
-			statement->rsr_flags &= ~Rsr::STREAM_ERR;
+			statement->rsr_flags.unset(Rsr::STREAM_ERR);
 			return this->send_response(sendL, 0, 0,
 								 statement->rsr_status->value(),
 								 false);
@@ -2236,7 +2236,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 							   msg_length,
 							   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
-			statement->rsr_flags |= Rsr::FETCHED;
+			statement->rsr_flags.set(Rsr::FETCHED);
 			if (s) {
 				if (s == 100 || s == 101)
 				{
@@ -2326,13 +2326,13 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		if (s) {
 			if (status_vector[1]) {
 				/* If already have an error queued, don't overwrite it */
-				if (!(statement->rsr_flags & Rsr::STREAM_ERR)) {
-					statement->rsr_flags |= Rsr::STREAM_ERR;
+				if (!statement->rsr_flags.test(Rsr::STREAM_ERR)) {
+					statement->rsr_flags.set(Rsr::STREAM_ERR);
 					statement->saveException(status_vector, true);
 				}
 			}
 			if (s == 100)
-				statement->rsr_flags |= Rsr::EOF_SET;
+				statement->rsr_flags.set(Rsr::EOF_SET);
 			break;
 		}
 		message->msg_address = message->msg_buffer;
@@ -3022,16 +3022,16 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	REMOTE_reset_statement(statement);
 
-	statement->rsr_flags &= ~(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
+	statement->rsr_flags.unset(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
 	USHORT state = check_statement_type(statement);
 	if (state & STMT_BLOB) {
-		statement->rsr_flags |= Rsr::BLOB;
+		statement->rsr_flags.set(Rsr::BLOB);
 	}
 	if (state & STMT_NO_BATCH) {
-		statement->rsr_flags |= Rsr::NO_BATCH;
+		statement->rsr_flags.set(Rsr::NO_BATCH);
 	}
 	if ((state & STMT_DEFER_EXECUTE) && (port_flags & PORT_lazy)) {
-		statement->rsr_flags |= Rsr::DEFER_EXECUTE;
+		statement->rsr_flags.set(Rsr::DEFER_EXECUTE);
 	}
 	if (!(port_flags & PORT_lazy)) {
 		state = (state & STMT_BLOB) ? 1 : 0;

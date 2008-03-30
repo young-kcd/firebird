@@ -1167,7 +1167,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS*	user_status,
 			*stmt_handle = statement = new Rsr;
 			statement->rsr_rdb = rdb;
 			statement->rsr_id = INVALID_OBJECT;
-			statement->rsr_flags |= Rsr::LAZY;
+			statement->rsr_flags.set(Rsr::LAZY);
 		}
 		else {
 			PACKET* packet = &rdb->rdb_packet;
@@ -1342,7 +1342,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		}
 
 		message->msg_address = in_msg;
-		statement->rsr_flags &= ~Rsr::FETCHED;
+		statement->rsr_flags.unset(Rsr::FETCHED);
 		statement->rsr_format = statement->rsr_bind_format;
 		statement->clearException();
 
@@ -1361,7 +1361,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		sqldata->p_sqldata_out_blr.cstr_address = out_blr;
 		sqldata->p_sqldata_out_message_number = out_msg_type;
 
-		if (out_msg_length || !(statement->rsr_flags & Rsr::DEFER_EXECUTE))
+		if (out_msg_length || !statement->rsr_flags.test(Rsr::DEFER_EXECUTE))
 		{
 			if (!send_packet(port, packet, user_status))
 				return user_status[1];
@@ -1679,11 +1679,11 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		/* On first fetch, clear the end-of-stream flag & reset the message buffers */
 
-		if (!(statement->rsr_flags & Rsr::FETCHED))
+		if (!statement->rsr_flags.test(Rsr::FETCHED))
 		{
 			statement->raiseException();
 
-			statement->rsr_flags &= ~(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
+			statement->rsr_flags.unset(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
 			statement->rsr_rows_pending = 0;
 			statement->clearException();
 
@@ -1701,8 +1701,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				}
 			}
 		}
-		else if ((statement->rsr_flags & Rsr::EOF_SET) && 
-				 (statement->rsr_flags & Rsr::PAST_EOF))
+		else if (statement->rsr_flags.testExact(Rsr::EOF_SET | Rsr::PAST_EOF))
 		{
 			user_status[0] = isc_arg_gds;
 			user_status[1] = isc_req_sync;
@@ -1725,7 +1724,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			}
 			else
 				statement->rsr_user_select_format = NULL;
-			if (statement->rsr_flags & Rsr::FETCHED)
+			if (statement->rsr_flags.test(Rsr::FETCHED))
 				blr_length = 0;
 			else {
 				delete statement->rsr_select_format;
@@ -1733,7 +1732,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			}
 		}
 
-		if (statement->rsr_flags & Rsr::BLOB) {
+		if (statement->rsr_flags.test(Rsr::BLOB)) {
 			status = fetch_blob(user_status, statement, blr_length, blr,
 								msg_type, msg_length, msg);
 			return status;
@@ -1759,16 +1758,16 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		/* Check to see if data is waiting.  If not, solicite data. */
 
-		if ((!(statement->rsr_flags & (Rsr::EOF_SET | Rsr::STREAM_ERR)) &&
+		if ((!statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
 			 (!statement->rsr_message->msg_address) &&
 			 (statement->rsr_rows_pending == 0))
-			|| (					/* Low in inventory */
+			|| (					// Low in inventory
 				   (statement->rsr_rows_pending <= statement->rsr_reorder_level) &&
 				   (statement->rsr_msgs_waiting <= statement->rsr_reorder_level)
 				   &&
-				   /* doing Batch, not RPC */
+				   // doing Batch, not RPC
 				   !(port->port_flags & PORT_rpc) &&
-				   /* not using named pipe on NT */
+				   // not using named pipe on NT
 				   /* Pipelining causes both server & client to 
 				      write at the same time. In named pipes, writes
 				      block for the other end to read -  and so when both
@@ -1776,10 +1775,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				      waiting indefinetly for the other end to read */
 				   (port->port_type != rem_port::PIPE) &&
 				   (port->port_type != rem_port::XNET) &&
-				   /* We've reached eof or there was an error */
-				   !(statement->rsr_flags & (Rsr::EOF_SET | Rsr::STREAM_ERR)) &&
-				   /* No error pending */
-				   (!statement->haveException() )))
+				   // We've reached eof or there was an error
+				   !statement->rsr_flags.test(Rsr::EOF_SET | Rsr::STREAM_ERR) &&
+				   // No error pending
+				   !statement->haveException() ))
 		{
 			/* set up the packet for the other guy... */
 
@@ -1836,12 +1835,12 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		fb_assert(statement->rsr_msgs_waiting || (statement->rsr_rows_pending > 0)
 			   || statement->haveException()
-			   || statement->rsr_flags & (Rsr::EOF_SET));
+			   || statement->rsr_flags.test(Rsr::EOF_SET));
 
 		while (!statement->haveException()			/* received a database error */
-			   &&!(statement->rsr_flags & (Rsr::EOF_SET))	/* reached end of cursor */
-			   &&!(statement->rsr_msgs_waiting >= 2)	/* Have looked ahead for end of batch */
-			   &&!(statement->rsr_rows_pending == 0))
+			   && !statement->rsr_flags.test(Rsr::EOF_SET)	/* reached end of cursor */
+			   && statement->rsr_msgs_waiting < 2	/* Have looked ahead for end of batch */
+			   && statement->rsr_rows_pending != 0)
 		{	/* Hit end of batch */
 			if (!receive_queued_packet(port, user_status, statement->rsr_id))
 			{
@@ -1851,7 +1850,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 		if (!statement->rsr_msgs_waiting)
 		{
-			if (statement->rsr_flags & Rsr::EOF_SET)
+			if (statement->rsr_flags.test(Rsr::EOF_SET))
 			{
 				// hvlad: we may have queued fetch packet but received EOF before start 
 				// handling of this packet. Handle it now. 
@@ -1862,14 +1861,14 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag. 
 				// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement 
 				// will be re-executed (and without roundtrip to remote server).
-				//statement->rsr_flags &= ~Rsr::EOF_SET;
-				statement->rsr_flags |= Rsr::PAST_EOF;
+				//statement->rsr_flags.unset(Rsr::EOF_SET);
+				statement->rsr_flags.set(Rsr::PAST_EOF);
 
 				return_success(rdb);
 				return 100;
 			}
 
-			if (statement->rsr_flags & Rsr::STREAM_ERR) {
+			if (statement->rsr_flags.test(Rsr::STREAM_ERR)) {
 
 				/* The previous batch of receives ended with an error status.
 				   We're all done returning data in the local queue.
@@ -1877,10 +1876,10 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				/* Stuff in the error result to the user's vector */
 
-				statement->rsr_flags &= ~Rsr::STREAM_ERR;
+				statement->rsr_flags.unset(Rsr::STREAM_ERR);
 
 				// hvlad: prevent subsequent fetches
-				statement->rsr_flags |= Rsr::EOF_SET | Rsr::PAST_EOF;
+				statement->rsr_flags.set(Rsr::EOF_SET | Rsr::PAST_EOF);
 
 				if (statement->rsr_status) {
 					memcpy(user_status, statement->rsr_status->value(), 
@@ -1956,13 +1955,13 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			return unsupported(user_status);
 		}
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			if (option == DSQL_drop) {
 				release_sql_request(statement);
 				*stmt_handle = NULL;
 			}
 			else {
-				statement->rsr_flags &= ~Rsr::FETCHED;
+				statement->rsr_flags.unset(Rsr::FETCHED);
 				statement->rsr_rtr = NULL;
 
 				if (!clear_queue(rdb->rdb_port, user_status))
@@ -2001,7 +2000,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS * user_status, RSR * stmt_handle, USHORT opt
 			*stmt_handle = NULL;
 		}
 		else {
-			statement->rsr_flags &= ~Rsr::FETCHED;
+			statement->rsr_flags.unset(Rsr::FETCHED);
 			statement->rsr_rtr = NULL;
 
 			if (!clear_queue(rdb->rdb_port, user_status))
@@ -2090,7 +2089,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 
 		PACKET* packet = &rdb->rdb_packet;
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			packet->p_operation = op_allocate_statement;
 			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
@@ -2112,14 +2111,14 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS * user_status,
 
 		message->msg_address = NULL;
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			if (!receive_response(rdb, packet))
 				return user_status[1];
 
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags &= ~Rsr::LAZY;
+			statement->rsr_flags.unset(Rsr::LAZY);
 		}
 
 		if (!receive_response(rdb, packet)) {
@@ -2197,7 +2196,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 
 		PACKET* packet = &rdb->rdb_packet;
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			packet->p_operation = op_allocate_statement;
 			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
@@ -2220,18 +2219,18 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 			return user_status[1];
 
-		statement->rsr_flags &= ~(Rsr::BLOB | Rsr::DEFER_EXECUTE);
+		statement->rsr_flags.unset(Rsr::BLOB | Rsr::DEFER_EXECUTE);
 
 		/* Set up for the response packet. */
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			if (!receive_response(rdb, packet))
 				return user_status[1];
 
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags &= ~Rsr::LAZY;
+			statement->rsr_flags.unset(Rsr::LAZY);
 		}
 
 		P_RESP* response = &packet->p_resp;
@@ -2244,16 +2243,16 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle, RSR * st
 		if (rdb->rdb_port->port_flags & PORT_lazy)
 		{
 			if (response->p_resp_object & STMT_BLOB) {
-				statement->rsr_flags |= Rsr::BLOB;
+				statement->rsr_flags.set(Rsr::BLOB);
 			}
 			if (response->p_resp_object & STMT_DEFER_EXECUTE) {
-				statement->rsr_flags |= Rsr::DEFER_EXECUTE;
+				statement->rsr_flags.set(Rsr::DEFER_EXECUTE);
 			}
 		}
 		else
 		{
 			if (response->p_resp_object)
-				statement->rsr_flags |= Rsr::BLOB;
+				statement->rsr_flags.set(Rsr::BLOB);
 		}
 
 		response->p_resp_data = temp;
@@ -2327,7 +2326,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 		PACKET* packet = &rdb->rdb_packet;
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			packet->p_operation = op_allocate_statement;
 			packet->p_rlse.p_rlse_object = rdb->rdb_id;
 
@@ -2348,14 +2347,14 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 			return user_status[1];
 		}
 
-		if (statement->rsr_flags & Rsr::LAZY) {
+		if (statement->rsr_flags.test(Rsr::LAZY)) {
 			if (!receive_response(rdb, packet))
 				return user_status[1];
 
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags &= ~Rsr::LAZY;
+			statement->rsr_flags.unset(Rsr::LAZY);
 		}
 
 		if (!receive_response(rdb, packet)) {
@@ -4867,7 +4866,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 		clear_queue = true;
 	}
 
-	statement->rsr_flags |= Rsr::FETCHED;
+	statement->rsr_flags.set(Rsr::FETCHED);
 	while (true)
 	{
 		/* Swallow up data. If a buffer isn't available, allocate another. */
@@ -4908,7 +4907,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 		}
 
 		if (packet->p_operation != op_fetch_response) {
-			statement->rsr_flags |= Rsr::STREAM_ERR;
+			statement->rsr_flags.set(Rsr::STREAM_ERR);
 			check_response(rdb, packet);
 
 			/* save the status vector in a safe place */
@@ -4929,7 +4928,7 @@ static bool batch_dsql_fetch(rem_port*	port,
 		{
 			if (packet->p_sqldata.p_sqldata_status == 100)
 			{
-				statement->rsr_flags |= Rsr::EOF_SET;
+				statement->rsr_flags.set(Rsr::EOF_SET);
 				statement->rsr_rows_pending = 0;
 #ifdef DEBUG
 				fprintf(stdout,
