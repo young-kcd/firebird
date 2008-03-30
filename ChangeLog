@@ -1,3 +1,73 @@
+2008-03-30 14:04  robocop
+
+	* firebird2/builds/posix/prefix.sinixz (1.29):
+
+	Remove obsolete SINIX-Z file.
+
+2008-03-30 13:30  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.180), protocol.cpp
+	(1.68):
+
+	Misc.
+
+2008-03-30 11:49  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.179), remote.cpp (1.58),
+	remote.h (1.69), server.cpp (1.193):
+
+	The boss prefers clean() instead of the sui generis unset().
+
+2008-03-30 11:44  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.238):
+
+	A half-backed solution to the const conflict problem. I hope the
+	cure is at least slightly better than the disease.
+
+2008-03-30 11:41  robocop
+
+	* firebird2/src/: dsql/user__proto.h (1.12), dsql/user_dsql.cpp
+	(1.53), jrd/ibase.h (1.132), jrd/jrd.cpp (1.426), jrd/jrd_proto.h
+	(1.67), jrd/why.cpp (1.185), jrd/why_proto.h (1.47):
+
+	Fixing the damn interface.
+
+2008-03-30 11:38  robocop
+
+	* firebird2/src/remote/: protocol.cpp (1.67), remote.cpp (1.57),
+	remote.h (1.68):
+
+	Cleanup.
+
+2008-03-30 11:37  robocop
+
+	* firebird2/src/remote/: inter_proto.h (1.18), interface.cpp
+	(1.178), server.cpp (1.192):
+
+	Fixing the damn interface.  Cleanup.
+
+2008-03-30 11:16  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.184):
+
+	Debugging enhancement
+
+2008-03-30 10:11  robocop
+
+	* firebird2/src/jrd/entry.h (1.32):
+
+	Put numbers because it was cumbersome to count entries to find the
+	correspondence with why.cpp's PROC_* mnemonics that are numbers.
+
+2008-03-30 05:02  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.177), remote.cpp (1.56),
+	remote.h (1.67), server.cpp (1.191):
+
+	Probably I could put RFlags with a better name elsewhere for
+	general usage, but for now I'll test the waters with Rsr.
+
 2008-03-29 15:01  robocop
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.16), GlobalRWLock.h
