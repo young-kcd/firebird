@@ -356,11 +356,11 @@ public:
 	{
 		m_flags |= flags;
 	}
-	void unset(const T flags)
+	void clear(const T flags)
 	{
 		m_flags &= ~flags;
 	}
-	void clear()
+	void reset()
 	{
 		m_flags = 0;
 	}

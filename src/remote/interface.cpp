@@ -1342,7 +1342,7 @@ ISC_STATUS GDS_DSQL_EXECUTE2(ISC_STATUS*	user_status,
 		}
 
 		message->msg_address = const_cast<UCHAR*>(in_msg); // safe, see server.cpp
-		statement->rsr_flags.unset(Rsr::FETCHED);
+		statement->rsr_flags.clear(Rsr::FETCHED);
 		statement->rsr_format = statement->rsr_bind_format;
 		statement->clearException();
 
@@ -1683,7 +1683,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 		{
 			statement->raiseException();
 
-			statement->rsr_flags.unset(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
+			statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR | Rsr::PAST_EOF);
 			statement->rsr_rows_pending = 0;
 			statement->clearException();
 
@@ -1861,7 +1861,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 				// hvlad: as we processed all queued packets at code above we can leave Rsr::EOF_SET flag. 
 				// It allows us to return EOF for all subsequent isc_dsql_fetch calls until statement 
 				// will be re-executed (and without roundtrip to remote server).
-				//statement->rsr_flags.unset(Rsr::EOF_SET);
+				//statement->rsr_flags.clear(Rsr::EOF_SET);
 				statement->rsr_flags.set(Rsr::PAST_EOF);
 
 				return_success(rdb);
@@ -1876,7 +1876,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 				/* Stuff in the error result to the user's vector */
 
-				statement->rsr_flags.unset(Rsr::STREAM_ERR);
+				statement->rsr_flags.clear(Rsr::STREAM_ERR);
 
 				// hvlad: prevent subsequent fetches
 				statement->rsr_flags.set(Rsr::EOF_SET | Rsr::PAST_EOF);
@@ -1961,7 +1961,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 				*stmt_handle = NULL;
 			}
 			else {
-				statement->rsr_flags.unset(Rsr::FETCHED);
+				statement->rsr_flags.clear(Rsr::FETCHED);
 				statement->rsr_rtr = NULL;
 
 				if (!clear_queue(rdb->rdb_port, user_status))
@@ -2000,7 +2000,7 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status, Rsr** stmt_handle, USHORT opti
 			*stmt_handle = NULL;
 		}
 		else {
-			statement->rsr_flags.unset(Rsr::FETCHED);
+			statement->rsr_flags.clear(Rsr::FETCHED);
 			statement->rsr_rtr = NULL;
 
 			if (!clear_queue(rdb->rdb_port, user_status))
@@ -2118,7 +2118,7 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags.unset(Rsr::LAZY);
+			statement->rsr_flags.clear(Rsr::LAZY);
 		}
 
 		if (!receive_response(rdb, packet)) {
@@ -2220,7 +2220,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle,
 		if (!send_packet(rdb->rdb_port, packet, user_status))
 			return user_status[1];
 
-		statement->rsr_flags.unset(Rsr::BLOB | Rsr::DEFER_EXECUTE);
+		statement->rsr_flags.clear(Rsr::BLOB | Rsr::DEFER_EXECUTE);
 
 		/* Set up for the response packet. */
 
@@ -2231,7 +2231,7 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS * user_status, RTR * rtr_handle,
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags.unset(Rsr::LAZY);
+			statement->rsr_flags.clear(Rsr::LAZY);
 		}
 
 		P_RESP* response = &packet->p_resp;
@@ -2355,7 +2355,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 			statement->rsr_id = packet->p_resp.p_resp_object;
 			SET_OBJECT(rdb, statement, statement->rsr_id);
 
-			statement->rsr_flags.unset(Rsr::LAZY);
+			statement->rsr_flags.clear(Rsr::LAZY);
 		}
 
 		if (!receive_response(rdb, packet)) {

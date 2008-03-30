@@ -1815,7 +1815,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 		statement = NULL;
 	}
 	else {
-		statement->rsr_flags.unset(Rsr::FETCHED);
+		statement->rsr_flags.clear(Rsr::FETCHED);
 		statement->rsr_rtr = NULL;
 		REMOTE_reset_statement(statement);
 		statement->rsr_message = statement->rsr_buffer;
@@ -2073,7 +2073,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		out_msg_type = 0;
 		out_blr = NULL;
 	}
-	statement->rsr_flags.unset(Rsr::FETCHED);
+	statement->rsr_flags.clear(Rsr::FETCHED);
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
@@ -2166,7 +2166,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	// On first fetch, clear the end-of-stream flag & reset the message buffers
 
 	if (!statement->rsr_flags.test(Rsr::FETCHED)) {
-		statement->rsr_flags.unset(Rsr::EOF_SET | Rsr::STREAM_ERR);
+		statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR);
 		statement->clearException();
 		REM_MSG message = statement->rsr_message;
 		if (message != NULL) {
@@ -2198,7 +2198,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		/* Have we exhausted the cache & reached cursor EOF? */
 		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting) {
-			statement->rsr_flags.unset(Rsr::EOF_SET);
+			statement->rsr_flags.clear(Rsr::EOF_SET);
 			s = 100;
 			count2 = 0;
 			break;
@@ -2209,7 +2209,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			&& !statement->rsr_msgs_waiting)
 		{
 			fb_assert(statement->rsr_status);
-			statement->rsr_flags.unset(Rsr::STREAM_ERR);
+			statement->rsr_flags.clear(Rsr::STREAM_ERR);
 			return this->send_response(sendL, 0, 0,
 								 statement->rsr_status->value(),
 								 false);
@@ -3021,7 +3021,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	REMOTE_reset_statement(statement);
 
-	statement->rsr_flags.unset(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
+	statement->rsr_flags.clear(Rsr::BLOB | Rsr::NO_BATCH | Rsr::DEFER_EXECUTE);
 	USHORT state = check_statement_type(statement);
 	if (state & STMT_BLOB) {
 		statement->rsr_flags.set(Rsr::BLOB);
