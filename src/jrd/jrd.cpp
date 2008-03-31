@@ -4883,7 +4883,7 @@ Attachment::~Attachment()
 PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 	jrd_tra* transaction, const Firebird::string& text)
 {
-	return new PreparedStatement(tdbb, pool, this, transaction, text);
+	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text);
 }
 
 

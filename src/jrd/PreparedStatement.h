@@ -42,7 +42,7 @@ class PreparedStatement
 friend class ResultSet;
 
 public:
-	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool, Attachment* attachment,
+	PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool, Attachment* attachment,
 		jrd_tra* transaction, const Firebird::string& text);
 	~PreparedStatement();
 
@@ -61,6 +61,7 @@ private:
 	void generateBlr(const dsc* desc);
 
 private:
+	Firebird::MemoryPool& pool;
 	dsql_req* request;
 	Firebird::Array<dsc> values;
 	Firebird::UCharBuffer blr;
