@@ -1,3 +1,26 @@
+2008-03-31 17:49  asfernandes
+
+	* firebird2/src/intl/: lc_narrow.cpp (1.30), lc_narrow.h (1.12):
+
+	Fixed CORE-1781 - LIKE, STARTING WITH and CONTAINING may incorrect
+	return true
+
+2008-03-31 03:51  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.6),
+	PreparedStatement.h (1.3), jrd.cpp (1.427):
+
+	Fix the pool usage
+
+2008-03-30 22:43  asfernandes
+
+	* firebird2/src/: common/classes/RefCounted.h (1.8),
+	common/classes/objects_array.h (1.22), jrd/pag.cpp (1.171),
+	jrd/os/posix/unix.cpp (1.89), remote/interface.cpp (1.181),
+	remote/protocol.cpp (1.69), remote/server.cpp (1.194):
+
+	Misc
+
 2008-03-30 14:04  robocop
 
 	* firebird2/builds/posix/prefix.sinixz (1.29):
