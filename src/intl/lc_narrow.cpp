@@ -749,13 +749,10 @@ ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG d
 
 		USHORT primary = coll->Primary;
 
-		if (obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first)
-		{
-			if (coll->IsExpand && coll->IsCompress)
-				primary += obj->texttype_impl->ignore_sum;
-			else
-				primary += obj->texttype_impl->primary_sum;
-		}
+		if (coll->IsExpand && coll->IsCompress)
+			primary += obj->texttype_impl->ignore_sum_canonic;
+		else
+			primary += obj->texttype_impl->primary_sum_canonic;
 
 		if ((obj->texttype_impl->texttype_flags & (TEXTTYPE_secondary_insensitive | TEXTTYPE_tertiary_insensitive)) == 0)
 		{
@@ -859,47 +856,47 @@ bool LC_NARROW_family2(
 			tt->texttype_impl->texttype_flags |= TEXTTYPE_disable_expansions;
 	}
 
+	int minPrimary = INT_MAX;
+	int maxIgnore = 0;
+	int maxPrimary = 0;
+
+	if (!(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))
+	{
+		while (compressTbl->CharPair[0])
+		{
+			if (compressTbl->NoCaseWeight.Primary > maxPrimary)
+				maxPrimary = compressTbl->NoCaseWeight.Primary;
+
+			if (compressTbl->NoCaseWeight.Primary < minPrimary)
+				minPrimary = compressTbl->NoCaseWeight.Primary;
+
+			++compressTbl;
+		}
+	}
+
+	for (int ch = 0; ch <= 255; ++ch)
+	{
+		const SortOrderTblEntry* coll =
+			&((const SortOrderTblEntry*)tt->texttype_impl->texttype_collation_table)[ch];
+
+		if (coll->IsExpand && coll->IsCompress)
+		{
+			if (coll->Primary > maxIgnore)
+				maxIgnore = coll->Primary;
+		}
+		else if (!((coll->IsExpand && !(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_expansions)) ||
+				   (coll->IsCompress && !(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))))
+		{
+			if (coll->Primary > maxPrimary)
+				maxPrimary = coll->Primary;
+
+			if (coll->Primary < minPrimary)
+				minPrimary = coll->Primary;
+		}
+	}
+
 	if (map.get("SPECIALS-FIRST", value) && (value == "0" || value == "1"))
 	{
-		int maxPrimary = 0;
-		int minPrimary = INT_MAX;
-		int maxIgnore = 0;
-
-		if (!(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))
-		{
-			while (compressTbl->CharPair[0])
-			{
-				if (compressTbl->NoCaseWeight.Primary > maxPrimary)
-					maxPrimary = compressTbl->NoCaseWeight.Primary;
-
-				if (compressTbl->NoCaseWeight.Primary < minPrimary)
-					minPrimary = compressTbl->NoCaseWeight.Primary;
-
-				++compressTbl;
-			}
-		}
-
-		for (int ch = 0; ch <= 255; ++ch)
-		{
-			const SortOrderTblEntry* coll =
-				&((const SortOrderTblEntry*)tt->texttype_impl->texttype_collation_table)[ch];
-
-			if (coll->IsExpand && coll->IsCompress)
-			{
-				if (coll->Primary > maxIgnore)
-					maxIgnore = coll->Primary;
-			}
-			else if (!((coll->IsExpand && !(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_expansions)) ||
-					   (coll->IsCompress && !(tt->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))))
-			{
-				if (coll->Primary > maxPrimary)
-					maxPrimary = coll->Primary;
-
-				if (coll->Primary < minPrimary)
-					minPrimary = coll->Primary;
-			}
-		}
-
 		if (maxIgnore > 0 && maxPrimary + maxIgnore - 1 <= 255)
 		{
 			++validAttributeCount;
@@ -911,6 +908,12 @@ bool LC_NARROW_family2(
 				tt->texttype_impl->primary_sum = maxIgnore - 1;
 			}
 		}
+	}
+
+	if (maxIgnore > 0 && maxPrimary + maxIgnore - 1 <= 255)
+	{
+		tt->texttype_impl->ignore_sum_canonic = minPrimary - 1;
+		tt->texttype_impl->primary_sum_canonic = maxIgnore - 1;
 	}
 
 	if (map.count() - validAttributeCount != 0)

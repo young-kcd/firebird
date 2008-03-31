@@ -45,7 +45,9 @@ namespace
 			  texttype_toupper_table(NULL),
 			  texttype_tolower_table(NULL),
 			  ignore_sum(0),
-			  primary_sum(0)
+			  primary_sum(0),
+			  ignore_sum_canonic(0),
+			  primary_sum_canonic(0)
 		{
 		}
 
@@ -58,6 +60,8 @@ namespace
 		const BYTE* texttype_tolower_table;
 		int ignore_sum;
 		int primary_sum;
+		int ignore_sum_canonic;
+		int primary_sum_canonic;
 	};
 }
 
