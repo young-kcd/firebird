@@ -69,6 +69,11 @@ static string getRootPathFromExePath()
 }
 #endif
 
+
+bool ConfigRoot::initialized = false;
+Firebird::InitInstance<string> ConfigRoot::install_dir;
+
+
 void ConfigRoot::osConfigRoot()
 {
 #if defined SUPERSERVER || defined EMBEDDED

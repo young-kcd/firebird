@@ -48,6 +48,11 @@ typedef Firebird::PathName string;
 
 //static const char *CONFIG_FILE = "firebird.conf";
 
+
+bool ConfigRoot::initialized = false;
+Firebird::InitInstance<string> ConfigRoot::install_dir;
+
+
 void ConfigRoot::osConfigRoot()
 {
 	// Check the environment variable

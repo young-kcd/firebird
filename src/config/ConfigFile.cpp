@@ -229,7 +229,7 @@ Element* ConfigFile::findGlobalAttribute(const char *attributeName)
 	return NULL;
 }
 
-const char* ConfigFile::getInstallDirectory(void)
+const char* ConfigFile::getInstallDirectory()
 {
 	return Config::getInstallDirectory();
 }
