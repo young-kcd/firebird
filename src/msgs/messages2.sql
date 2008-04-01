@@ -693,6 +693,7 @@ COMMIT WORK;
 ('tpb_writelock_after_readtxn', 'transaction_options', 'tra.cpp', NULL, 0, 591, NULL, 'Cannot take a table reservation isc_tpb_lock_write in TPB because the transaction is in read only mode', NULL, NULL)
 ('time_range_exceeded', 'EXE_assignment', 'evl.cpp', NULL, 0, 592, NULL, 'value exceeds the range for a valid time', NULL, NULL)
 ('datetime_range_exceeded', 'add_sql_timestamp', 'evl.cpp', NULL, 0, 593, NULL, 'value exceeds the range for valid timestamps', NULL, NULL)
+('string_truncation', 'CVT_move', 'cvt.cpp', NULL, 0, 594, NULL, 'string right truncation', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -1583,7 +1583,12 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				do {
 					if (*q++ != fill_char)
-						(*err) (isc_arith_except, 0);
+					{
+						(*err) (isc_arith_except,
+								isc_arg_gds, isc_string_truncation,
+								isc_arg_sql_state, "22001",
+								0);
+					}
 				} while (--l);
 			}
 			return;
