@@ -112,7 +112,6 @@ const bool USE_VALUE    = false;
 void GEN_expr( dsql_req* request, dsql_nod* node)
 {
 	UCHAR blr_operator;
-	dsql_nod* ddl_node;
 	dsql_ctx* context;
 	dsql_map* map;
 	dsql_var* variable;
