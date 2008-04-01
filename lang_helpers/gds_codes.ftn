@@ -1238,6 +1238,8 @@ C --
       PARAMETER (GDS__time_range_exceeded              = 335544912)
       INTEGER*4 GDS__datetime_range_exceeded         
       PARAMETER (GDS__datetime_range_exceeded          = 335544913)
+      INTEGER*4 GDS__string_truncation               
+      PARAMETER (GDS__string_truncation                = 335544914)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

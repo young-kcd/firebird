@@ -377,7 +377,7 @@ static const struct {
 	{335544674, "42000"}, // 354 del_last_field 
 	{335544675, "HY000"}, // 355 sort_err 
 	{335544676, "HY001"}, // 356 sort_mem_err 
-	{335544677, "HY001"}, // 357 version_err 
+	{335544677, "54000"}, // 357 version_err 
 	{335544678, "HY000"}, // 358 inval_key_posn 
 	{335544679, "HY000"}, // 359 no_segments_err 
 	{335544680, "XX000"}, // 360 crrp_data_err 
@@ -614,6 +614,7 @@ static const struct {
 	{335544911, "HY000"}, // 591 tpb_writelock_after_readtxn 
 	{335544912, "22008"}, // 592 time_range_exceeded 
 	{335544913, "22008"}, // 593 datetime_range_exceeded 
+	{335544914, "22001"}, // 594 string_truncation 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
@@ -795,8 +796,8 @@ static const struct {
 	{336397212, "HY000"}, // 924 dsql_no_array_computed 
 	{336397213, "00000"}, // 925 dsql_implicit_domain_name 
 	{336397214, "42000"}, // 926 dsql_only_can_subscript_array 
-	{336397215, "54000"}, // 927 dsql_max_sort_items 
-	{336397216, "54000"}, // 928 dsql_max_group_items 
+	{336397215, "54011"}, // 927 dsql_max_sort_items 
+	{336397216, "54011"}, // 928 dsql_max_group_items 
 	{336397217, "42000"}, // 929 dsql_conflicting_sort_field 
 	{336397218, "54001"}, // 930 dsql_derived_table_more_columns 
 	{336397219, "54001"}, // 931 dsql_derived_table_less_columns 

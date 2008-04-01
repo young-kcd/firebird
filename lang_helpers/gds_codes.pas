@@ -626,6 +626,7 @@ const
 	gds_tpb_writelock_after_readtxn      = 335544911;
 	gds_time_range_exceeded              = 335544912;
 	gds_datetime_range_exceeded          = 335544913;
+	gds_string_truncation                = 335544914;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
