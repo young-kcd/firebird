@@ -161,14 +161,6 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_dom_value:
-		if ((request->req_type != REQ_DDL) ||
-			!(ddl_node = request->req_ddl_node) ||
-			!(ddl_node->nod_type == nod_def_domain ||
-			  ddl_node->nod_type == nod_mod_domain))
-		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-					  isc_arg_gds, isc_dsql_domain_err, 0);
-		}
 		stuff(request, blr_fid);
 		stuff(request, 0);				// Context   
 		stuff_word(request, 0);			// Field id  

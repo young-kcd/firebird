@@ -1044,6 +1044,17 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return node;
 
 	case nod_dom_value:
+		{
+			const dsql_nod* const ddl_node =
+				(request->req_type == REQ_DDL) ? request->req_ddl_node : NULL;
+			if (!ddl_node ||
+				!(ddl_node->nod_type == nod_def_domain ||
+					ddl_node->nod_type == nod_mod_domain))
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
+						  isc_arg_gds, isc_dsql_domain_err, 0);
+			}
+		}
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_desc = input->nod_desc;
 		return node;
@@ -1054,9 +1065,11 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
 			USHORT req_mask = InternalInfo::getMask(id);
 			if (req_mask && !(request->req_flags & req_mask))
+			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err, // Token unknown
 					isc_arg_gds, isc_random, isc_arg_string, InternalInfo::getAlias(id), 0);
+			}
 		}
 		break;
 
