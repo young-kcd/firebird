@@ -23,8 +23,9 @@
 #ifndef JRD_PREPARED_STATEMENT_H
 #define JRD_PREPARED_STATEMENT_H
 
-#include "../common/classes/fb_string.h"
+#include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 
 struct dsc;
 
@@ -37,7 +38,7 @@ class dsql_req;
 class ResultSet;
 
 
-class PreparedStatement
+class PreparedStatement : public Firebird::PermanentStorage
 {
 friend class ResultSet;
 
@@ -61,7 +62,6 @@ private:
 	void generateBlr(const dsc* desc);
 
 private:
-	Firebird::MemoryPool& pool;
 	dsql_req* request;
 	Firebird::Array<dsc> values;
 	Firebird::UCharBuffer blr;

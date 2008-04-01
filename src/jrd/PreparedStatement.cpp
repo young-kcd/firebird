@@ -32,9 +32,9 @@
 namespace Jrd {
 
 
-PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& aPool,
+PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 			Attachment* attachment, jrd_tra* transaction, const Firebird::string& text)
-	: pool(aPool),
+	: Firebird::PermanentStorage(pool),
 	  values(pool),
 	  blr(pool),
 	  message(pool),
@@ -148,7 +148,7 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction)
 {
 	fb_assert(resultSet == NULL && request->req_receive);
-	return FB_NEW(pool) ResultSet(tdbb, this, transaction);
+	return FB_NEW(getPool()) ResultSet(tdbb, this, transaction);
 }
 
 
