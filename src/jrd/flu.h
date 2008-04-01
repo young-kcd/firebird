@@ -27,7 +27,6 @@
 #ifndef _JRD_FLU_H_
 #define _JRD_FLU_H_
 
-/* RITTER - changed HP10 to HPUX in the line below */
 #ifdef HPUX
 #define MODULE_HANDLE
 #include <dl.h>
@@ -45,6 +44,12 @@ typedef void *HMOD;
 #define MODULE_HANDLE
 #include <windows.h>
 typedef HMODULE HMOD;
+#endif
+
+#ifdef DARWIN
+#define MODULE_HANDLE
+#include <mach-o/dyld.h>
+typedef __NSModule* HMOD;
 #endif
 
 #ifndef MODULE_HANDLE
