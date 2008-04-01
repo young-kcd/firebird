@@ -55,7 +55,7 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 -- 22 Data Exception
 ('22', '000', 'Error in row')
 ('22', '001', 'String data, right truncation')
-('22', '002', 'Nulll value, no indicator parameter')
+('22', '002', 'Null value, no indicator parameter')
 ('22', '003', 'Numeric value out of range')
 ('22', '004', 'Null value not allowed')
 ('22', '005', 'Error in assignment')
