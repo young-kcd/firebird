@@ -153,22 +153,11 @@ private:
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 
-	class CountersLockHolder : public Database::AstInhibit {
+	class CountersLockHolder : public Database::AstInhibit, public Database::CheckoutLockGuard {
 	public:
 		CountersLockHolder(Database* dbb, Firebird::Mutex& alock) 
-			: Database::AstInhibit(dbb), lock(alock)
-		{ 
-			Database::Checkout dcoHolder(dbb);
-			lock.enter(); 
-		}
-
-		~CountersLockHolder() { lock.leave(); }
-
-	private:
-		// Forbid copy constructor
-		CountersLockHolder(const CountersLockHolder& source);
-
-		Firebird::Mutex& lock;
+			: Database::AstInhibit(dbb), Database::CheckoutLockGuard(dbb, alock)
+		{}
 	};
 
 	static int blocking_ast_cached_lock(void* ast_object);
