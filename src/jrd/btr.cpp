@@ -211,7 +211,8 @@ static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temp
 
 USHORT BTR_all(thread_db*		tdbb,
 			   jrd_rel*			relation,
-			   IndexDescAlloc**	csb_idx)
+			   IndexDescAlloc**	csb_idx,
+			   RelationPages* relPages)
 {
 /**************************************
  *
@@ -229,7 +230,6 @@ USHORT BTR_all(thread_db*		tdbb,
 	const Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	
-	RelationPages* relPages = relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 
 	index_root_page* root = fetch_root(tdbb, &window, relation, relPages);

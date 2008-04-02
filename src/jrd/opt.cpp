@@ -581,7 +581,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			if (relation && !relation->rel_file && !relation->isVirtual())
 			{
 				csb->csb_rpt[stream].csb_indices =
-					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx);
+					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx, 
+							relation->getPages(tdbb));
 				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
 			}

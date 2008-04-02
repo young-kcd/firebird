@@ -193,16 +193,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
-		tdbb->tdbb_flags |= TDBB_use_db_page_space;
-		USHORT idx_count = 0;
-		try {
-			idx_count = BTR_all(tdbb, this, &indices);
-		}
-		catch (...) {
-			tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
-			throw;
-		}
-		tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
+		USHORT idx_count = BTR_all(tdbb, this, &indices, &rel_pages_base);
 
 		index_desc* idx = indices->items, *const end = indices->items + idx_count;
 		for (; idx < end; idx++)

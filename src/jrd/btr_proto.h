@@ -32,7 +32,7 @@
 struct btree_exp;
 struct exp_index_buf;
 
-USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::IndexDescAlloc**);
+USHORT	BTR_all(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::IndexDescAlloc**, Jrd::RelationPages*);
 void	BTR_complement_key(Jrd::temporary_key*);
 void	BTR_create(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, USHORT, Jrd::sort_context*, Jrd::SelectivityList&);
 bool	BTR_delete_index(Jrd::thread_db*, Jrd::win*, USHORT);
