@@ -216,8 +216,8 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 
 	const ULONG base = oldest & ~TRA_MASK;
 
-	jrd_tra* trans =
-		FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra();
+	Firebird::AutoPtr<jrd_tra> trans =
+		FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra(dbb->dbb_permanent);
 
 /* Build transaction bitmap to scan for active transactions. */
 
@@ -227,8 +227,7 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 	temp_lock.lck_dbb = dbb;
 	temp_lock.lck_object = trans;
 	temp_lock.lck_type = LCK_tra;
-	temp_lock.lck_owner_handle =
-		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
 
@@ -239,14 +238,12 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 		if (state == tra_active) {
 			temp_lock.lck_key.lck_long = active;
 			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
-				delete trans;
 				return true;
 			}
 			LCK_release(tdbb, &temp_lock);
 		}
 	}
 
-	delete trans;
 	return false;
 #endif
 }

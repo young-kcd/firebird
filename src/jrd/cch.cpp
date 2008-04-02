@@ -4007,8 +4007,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment());
-	tdbb->getAttachment()->att_database = dbb;
+	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
