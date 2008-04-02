@@ -66,7 +66,7 @@
 
 #include <string.h>
 
-#if (defined SOLARIS || defined SCO_EV || defined LINUX || defined AIX_PPC || defined SINIXZ || defined FREEBSD || defined NETBSD || HPUX)
+#if (defined SOLARIS || defined SCO_EV || defined LINUX || defined AIX_PPC || defined FREEBSD || defined NETBSD || HPUX)
 #define DYNAMIC_SHARED_LIBRARIES
 #endif
 

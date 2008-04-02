@@ -88,10 +88,6 @@
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-/* EKU: SINIX-Z does not define INADDR_NONE */
-#ifndef INADDR_NONE
-#define INADDR_NONE (unsigned long)-1
-#endif
 #endif // !(defined VMS || defined WIN_NT)
 
 #if (defined DARWIN || defined HPUX)
@@ -2196,7 +2192,7 @@ static int parse_line(
 
 	if (strcmp(entry1, host_name))
 	{
-#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
+#if (defined UNIX) && !(defined NETBSD)
 		if (entry1[1] == '@')
 		{
 			if (!innetgr(&entry1[2], host_name, 0, 0))
@@ -2225,7 +2221,7 @@ static int parse_line(
 
 /* if they're in the user group: + they're in, - they're out */
 
-#if (defined UNIX) && !(defined SINIXZ) && !(defined NETBSD)
+#if (defined UNIX) && !(defined NETBSD)
 	if (entry2[1] == '@') {
 		if (innetgr(&entry2[2], 0, user_name, 0)) {
 			if (entry2[0] == '+')
@@ -3616,12 +3612,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
  *
  **************************************/
 
-#ifdef SINIXZ
-// Please systems with ill-defined send() function, like SINIX-Z.
-	char* data = const_cast<char*>(buffer);
-#else
 	const char* data = buffer;
-#endif
 	SSHORT length = buffer_length;
 
 	while (length) {
@@ -3670,11 +3661,8 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		int count = 0;
 		SSHORT n;
 		int inetErrNo;
-#ifdef SINIXZ
-		char* b = const_cast<char*>(buffer);
-#else
 		const char* b = buffer;
-#endif
+
 		while ((n = send((SOCKET) port->port_handle, b, 1, MSG_OOB)) == -1 &&
 				(INET_ERRNO == ENOBUFS || INTERRUPT_ERROR(INET_ERRNO)))
 		{

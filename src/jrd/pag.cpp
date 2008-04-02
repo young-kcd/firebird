@@ -256,10 +256,6 @@ const SSHORT CLASS		= CLASS_AIX_PPC;
 const SSHORT CLASS		= CLASS_WINDOWS_I386;
 #endif
 
-#ifdef SINIXZ
-const SSHORT CLASS		= CLASS_LINUX_I386;
-#endif
-
 #ifdef LINUX
 #ifdef i386
 const SSHORT CLASS		= CLASS_LINUX_I386;

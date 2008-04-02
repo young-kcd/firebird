@@ -252,7 +252,6 @@
 #undef AIX
 #define WIN_NT
 #undef SCO_EV
-#undef SINIXZ
 
 #define FB_PREFIX "c:\\Program Files\\Firebird\\"
 
