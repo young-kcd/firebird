@@ -746,10 +746,11 @@ PAG PAG_allocate(WIN * window)
 	
 	pag* new_page = 0; // NULL before the search for a new page.
 
-	// in ODS 11.1 we store in pip_header.reserved number of pages allocated
-	// from this pointer page
-	const bool isODS11_1 = (dbb->dbb_ods_version == ODS_VERSION11 && 
-							dbb->dbb_minor_version == 1);
+	// Starting from ODS 11.1 we store in pip_header.reserved number of pages 
+	// allocated from this pointer page. There is intention to create dedicated
+	// field at page_inv_page for this purpose in ODS 12.
+	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && 
+							dbb->dbb_minor_version >= 1);
 
 /* Find an allocation page with something on it */
 
@@ -780,7 +781,7 @@ PAG PAG_allocate(WIN * window)
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
 						if (new_page)
 						{
-							if (isODS11_1)
+							if (isODS11_x)
 							{
 								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page
@@ -2451,10 +2452,9 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
-	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
-							database->dbb_minor_version == 1);
-	if (! isODS11_1)
-	{
+	const bool isODS11_x = (database->dbb_ods_version == ODS_VERSION11 &&
+							database->dbb_minor_version >= 1);
+	if (!isODS11_x) {
 		return 0;
 	}
 
