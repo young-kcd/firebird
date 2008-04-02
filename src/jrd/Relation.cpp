@@ -107,7 +107,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 
 RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages)
 {
-	if (tdbb->tdbb_flags & TDBB_deferred)
+	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
 		return &rel_pages_base;
 
 	Database* dbb = tdbb->getDatabase();
@@ -193,16 +193,16 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
-		tdbb->tdbb_flags |= TDBB_deferred;
+		tdbb->tdbb_flags |= TDBB_use_db_page_space;
 		USHORT idx_count = 0;
 		try {
 			idx_count = BTR_all(tdbb, this, &indices);
 		}
 		catch (...) {
-			tdbb->tdbb_flags &= ~TDBB_deferred;
+			tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
 			throw;
 		}
-		tdbb->tdbb_flags &= ~TDBB_deferred;
+		tdbb->tdbb_flags &= ~TDBB_use_db_page_space;
 
 		index_desc* idx = indices->items, *const end = indices->items + idx_count;
 		for (; idx < end; idx++)

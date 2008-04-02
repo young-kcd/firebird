@@ -698,9 +698,10 @@ const USHORT TDBB_prc_being_dropped		= 4;	// Dropping a procedure
 const USHORT TDBB_backup_write_locked	= 8;    // BackupManager has write lock on LCK_backup_database
 const USHORT TDBB_stack_trace_done		= 16;	// PSQL stack trace is added into status-vector
 const USHORT TDBB_shutdown_manager		= 32;	// Server shutdown thread
-const USHORT TDBB_deferred				= 64;	// deferred work performed now
+const USHORT TDBB_dont_post_dfw			= 64;	// dont post DFW tasks as deferred work is performed now
 const USHORT TDBB_sys_error				= 128;	// error shouldn't be handled by the looper
 const USHORT TDBB_verb_cleanup			= 256;	// verb cleanup is in progress
+const USHORT TDBB_use_db_page_space		= 512;	// use database (not temporary) page space in GTT operations
 
 
 class ThreadContextHolder
