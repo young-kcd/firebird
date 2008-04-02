@@ -840,7 +840,9 @@ static void prt_lock(
 			lock->lbl_series, lock->lbl_parent, lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
-	if (lock->lbl_series == Jrd::LCK_bdb && lock->lbl_length == Jrd::PageNumber::getLockLen()) {
+	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) && 
+		lock->lbl_length == Jrd::PageNumber::getLockLen()) 
+	{
 		// Since fb 2.1 lock keys for page numbers (series == 3) contains
 		// page space number in high long of two-longs key. Lets print it
 		// in <page_space>:<page_number> format
