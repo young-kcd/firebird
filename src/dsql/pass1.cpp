@@ -4075,36 +4075,47 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 			return node;
 		}
 	}
-	else {
-		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
+	else 
+	{
+		const bool cfgRlxAlias = Config::getRelaxedAliasChecking();
+		bool rlxAlias = false;
+		for (;;)
 		{
-			dsql_ctx* context = stack.object();
-
-			if ((!context->ctx_relation ||
-					context->ctx_relation->rel_name != qualifier->str_data ||
-					context->ctx_internal_alias) &&
-				(!context->ctx_internal_alias ||
-					strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-						context->ctx_internal_alias) != 0))
+			for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 			{
-				continue;
+				dsql_ctx* context = stack.object();
+
+				if ((!context->ctx_relation ||
+						context->ctx_relation->rel_name != qualifier->str_data ||
+						!rlxAlias && context->ctx_internal_alias) &&
+					(!context->ctx_internal_alias ||
+						strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+							context->ctx_internal_alias) != 0))
+				{
+					continue;
+				}
+
+				if (!context->ctx_relation)
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+							  isc_arg_gds, isc_dsql_dbkey_from_non_table,
+							  0);
+				}
+
+				if (context->ctx_flags & CTX_null)
+					return MAKE_node(nod_null, 0);
+
+				dsql_nod* node = MAKE_node(nod_dbkey, 1);
+				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
+				rel_node->nod_arg[0] = (dsql_nod*) context;
+				node->nod_arg[0] = rel_node;
+				return node;
 			}
 
-			if (!context->ctx_relation)
-			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
-						  0);
-			}
-
-			if (context->ctx_flags & CTX_null)
-				return MAKE_node(nod_null, 0);
-
-			dsql_nod* node = MAKE_node(nod_dbkey, 1);
-			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-			rel_node->nod_arg[0] = (dsql_nod*) context;
-			node->nod_arg[0] = rel_node;
-			return node;
+			if (rlxAlias == cfgRlxAlias)
+				break;
+			
+			rlxAlias = cfgRlxAlias ;
 		}
 	}
 
