@@ -53,7 +53,7 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 ('21', 'S01', 'Insert value list does not match column list')
 ('21', 'S02', 'Degree of derived table does not match column list')
 -- 22 Data Exception
-('22', '000', 'Error in row')
+('22', '000', 'Data exception')
 ('22', '001', 'String data, right truncation')
 ('22', '002', 'Null value, no indicator parameter')
 ('22', '003', 'Numeric value out of range')
