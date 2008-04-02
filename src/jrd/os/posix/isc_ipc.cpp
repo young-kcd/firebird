@@ -136,10 +136,6 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 #define SIG_HOLD	SIG_DFL
 #endif
 
-// Not thread-safe 
-
-ULONG isc_enter_count = 0;
-
 void ISC_enter(void)
 {
 /**************************************
@@ -440,26 +436,14 @@ static SLONG overflow_handler(void* arg)
 	fprintf(stderr, "overflow_handler (%x)\n", arg);
 #endif
 
-/* If we're within ISC world (inside why-value) when the FPE occurs
- * we handle it (basically by ignoring it).  If it occurs outside of
- * ISC world, return back a code that tells signal_action to call any
- * customer provided handler.
- */
-	if (isc_enter_count) {
-		++overflow_count;
+	++overflow_count;
 #ifdef DEBUG_FPE_HANDLING
-		fprintf(stderr, "SIGFPE in isc code ignored %d\n",
-				   overflow_count);
+	fprintf(stderr, "SIGFPE in isc code ignored %d\n",
+			   overflow_count);
 #endif
-		/* We've "handled" the FPE - let signal_action know not to chain
-		   the signal to other handlers */
-		return SIG_informs_stop;
-	}
-	else {
-		/* We've NOT "handled" the FPE - let signal_action know to chain
-		   the signal to other handlers */
-		return SIG_informs_continue;
-	}
+	/* We've "handled" the FPE - let signal_action know not to chain
+	   the signal to other handlers */
+	return SIG_informs_stop;
 }
 
 static SIG que_signal(int signal_number,

@@ -464,7 +464,9 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 {
 	// dimitr: we should ignore autocommit for requests
 	// created by EXECUTE STATEMENT
-	if (request->req_transaction->tra_callback_count > 0)
+	// AP: also do nothing if request is cancelled and 
+	// transaction is already missing
+	if ((!request->req_transaction) || (request->req_transaction->tra_callback_count > 0))
 		return;
 
 	if (request->req_transaction->tra_flags & TRA_perform_autocommit)
@@ -5795,6 +5797,8 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 				break;
 			}
 		}
+
+		Service::shutdownServices();
 	}
 	catch (const Firebird::Exception&)
 	{

@@ -128,12 +128,18 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	const int exit_code = gbak(uSvc);
+	int exit_code = FB_SUCCESS;
 
-// Mark service thread as finished. 
-// If service is detached, cleanup memory being used by service. 
+	try {
+		exit_code = gbak(uSvc);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(uSvc->getStatus());
+		exit_code = FB_FAILURE;
+	}
+
 	uSvc->finish();
-
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 

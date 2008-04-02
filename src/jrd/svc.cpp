@@ -116,8 +116,9 @@ const int GET_BINARY	= 4;
 const TEXT SVC_TRMNTR	= '\377';
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
-// Option block for service parameter block
 namespace {
+
+	// Option block for service parameter block
 	struct Options {
 		Firebird::string	spb_sys_user_name;
 		Firebird::string	spb_user_name;
@@ -214,12 +215,19 @@ namespace {
 			}
 		}
 	};
+
+	// Generic mutex to synchronize services
+	Firebird::GlobalPtr<Firebird::Mutex> svc_mutex;
+
+	// All that we need to shutdown service threads when shutdown in progress
+	typedef Firebird::Array<Jrd::Service*> AllServices;
+	Firebird::GlobalPtr<AllServices> allServices;	// protected by svc_mutex
+	volatile bool svcShutdown = false;
+
 } // anonymous namespace
 
 
 using namespace Jrd;
-
-static Firebird::GlobalPtr<Firebird::Mutex> svc_mutex, thd_mutex;
 
 
 void Service::parseSwitches()
@@ -306,6 +314,7 @@ void Service::started()
 {
 	if (!(svc_flags & SVC_evnt_fired)) 
 	{
+		Firebird::MutexLockGuard guard(svc_mutex);
 		svc_flags |= SVC_evnt_fired;
 		svcStart.release();
 	}
@@ -347,6 +356,11 @@ void Service::putChar(char tag, char val)
 
 void Service::stuffStatus(const ISC_STATUS* status_vector)
 {
+	if (checkForShutdown())
+	{
+		return;
+	}
+
 	if (status_vector != svc_status) 
 	{
 		ISC_STATUS* status = svc_status;
@@ -372,6 +386,11 @@ void Service::stuffStatus(const ISC_STATUS* status_vector)
 
 void Service::stuffStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args)
 {
+	if (checkForShutdown())
+	{
+		return;
+	}
+
 	CMD_UTIL_put_svc_status(svc_status, facility, errcode, args);
 }
 
@@ -426,19 +445,15 @@ void test_cmd(USHORT, SCHAR *, TEXT **);
 #if !defined(BOOT_BUILD)
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
-int main_lock_print();
 THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 
 #define MAIN_GBAK		BURP_main
 #define MAIN_GFIX		ALICE_main
-#define MAIN_LOCK_PRINT	main_lock_print
 #define MAIN_GSTAT		main_gstat
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
-#define MAIN_LOCK_PRINT	NULL
 #define MAIN_GSTAT		NULL
-#define MAIN_GSEC		NULL
 #endif
 
 #if !defined(EMBEDDED) && !defined(BOOT_BUILD)
@@ -530,6 +545,13 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	svc_switches(getPool()), svc_perm_sw(getPool())
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
+
+	{
+		// Account service block in global array
+		Firebird::MutexLockGuard guard(svc_mutex);
+		checkForShutdown();
+		allServices->add(this);
+	}
 
 	// If the service name begins with a slash, ignore it.
 	if (*service_name == '/' || *service_name == '\\') {
@@ -658,7 +680,11 @@ void Service::detach()
 {
 	if (svc_do_shutdown) 
 	{
-		fb_shutdown(10 * 1000);	// 10 seconds
+		if (fb_shutdown(10 * 1000 /* 10 seconds */) == FB_SUCCESS)
+		{
+			Firebird::InstanceControl::registerShutdown(0);
+			exit(0);
+		}
 	}
 
 	if (svc_uses_security_database)
@@ -676,6 +702,53 @@ Service::~Service()
 #ifdef WIN_NT
 	CloseHandle((HANDLE) svc_handle);
 #endif
+	Firebird::MutexLockGuard guard(svc_mutex);
+	AllServices& all(allServices);
+	for (unsigned int pos = 0; pos < all.getCount(); ++pos)
+	{
+		if (all[pos] == this)
+		{
+			all.remove(pos);
+			break;
+		}
+	}
+}
+
+
+bool Service::checkForShutdown()
+{
+	if (svcShutdown)
+	{
+		Firebird::MutexLockGuard guard(svc_mutex);
+		if (svc_flags & SVC_shutdown)
+		{
+			// Here we avoid multiple exceptions thrown
+			return true;
+		}
+		svc_flags |= SVC_shutdown;
+		Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
+	}
+	return false;
+}
+
+
+void Service::shutdownServices()
+{
+	svcShutdown = true;
+	Firebird::MutexLockGuard guard(svc_mutex);
+	AllServices& all(allServices);
+	for (unsigned int pos = 0; pos < all.getCount(); )
+	{
+		if (all[pos]->svc_flags & SVC_thd_running)
+		{
+			svc_mutex->leave();
+			THD_sleep(1);
+			svc_mutex->enter();
+			pos = 0;
+			continue;
+		}
+		++pos;
+	}
 }
 
 
@@ -1519,8 +1592,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		Firebird::status_exception::raise(isc_bad_spb_form, 0);
 	}
 
-	{ // scope for locked thd_mutex
-		Firebird::MutexLockGuard guard(thd_mutex);
+	{ // scope for locked svc_mutex
+		Firebird::MutexLockGuard guard(svc_mutex);
 
 		if (svc_flags & SVC_thd_running) {
 			Firebird::status_exception::raise(isc_svc_in_use, isc_arg_string,
@@ -1536,7 +1609,6 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		{
 			svc_flags = 0;
 		}
-		svc_flags |= SVC_thd_running;
 	}
 
 	if (!svc_perm_sw.hasData())
@@ -1623,7 +1695,11 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 
 	if (serv->serv_thd) {
-		svc_flags &= ~SVC_evnt_fired;
+		{
+			Firebird::MutexLockGuard guard(svc_mutex);
+			svc_flags &= ~SVC_evnt_fired;
+			svc_flags |= SVC_thd_running;
+		}
 
 		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, (void *) &svc_handle);
 
@@ -1730,9 +1806,18 @@ UCHAR Service::dequeueByte()
 
 void Service::enqueueByte(UCHAR ch)
 {
+	if (checkForShutdown())
+	{
+		return;
+	}
+
 	// Wait for space in buffer while service is not detached.
 	while (full() && !(svc_flags & SVC_detached)) {
 		THREAD_SLEEP(1);
+		if (checkForShutdown())
+		{
+			return;
+		}
 	}
 
 	// Ensure that service is not detached.
@@ -1772,7 +1857,10 @@ void Service::get(SCHAR*	buffer,
 #endif
 
 	*return_length = 0;
-	svc_flags &= ~SVC_timeout;
+	{
+		Firebird::MutexLockGuard guard(svc_mutex);
+		svc_flags &= ~SVC_timeout;
+	}
 
 	while (length) {
 		if (empty())
@@ -1785,6 +1873,7 @@ void Service::get(SCHAR*	buffer,
 		const time_t elapsed_time = end_time - start_time;
 #endif
 		if ((timeout) && (elapsed_time >= timeout)) {
+			Firebird::MutexLockGuard guard(svc_mutex);
 			svc_flags &= SVC_timeout;
 			return;
 		}
@@ -1822,11 +1911,15 @@ void Service::finish(USHORT flag)
 {
 	if (flag == SVC_finished || flag == SVC_detached)
 	{
-		svc_mutex->enter();
+		Firebird::MutexLockGuard guard(svc_mutex);
+
 		svc_flags |= flag;
+		if (! (svc_flags & SVC_thd_running))
+		{
+			svc_flags |= SVC_finished;
+		}
 		if (svc_flags & SVC_finished && svc_flags & SVC_detached)
 		{
-			svc_mutex->leave();
 			delete this;
 			return;
 		}
@@ -1839,7 +1932,6 @@ void Service::finish(USHORT flag)
 #endif
 			svc_handle = 0;
 		}
-		svc_mutex->leave();
 	}
 }
 

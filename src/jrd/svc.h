@@ -76,14 +76,14 @@ const USHORT isc_action_max				= 14;
 //define isc_info_max                  67
 
 /* Bitmask values for the svc_flags variable */
-//const int SVC_eof			= 1;
-const int SVC_timeout		= 2;
-//const int SVC_forked		= 4;
-const int SVC_detached		= 8;
-const int SVC_finished		= 16;
-const int SVC_thd_running	= 32;
-const int SVC_evnt_fired	= 64;
-const int SVC_cmd_line		= 128;
+const int SVC_shutdown		= 0x1;
+const int SVC_timeout		= 0x2;
+//const int SVC_forked		= 0x4;
+const int SVC_detached		= 0x8;
+const int SVC_finished		= 0x10;
+const int SVC_thd_running	= 0x20;
+const int SVC_evnt_fired	= 0x40;
+const int SVC_cmd_line		= 0x80;
 
 // forward decl.
 class thread_db;
@@ -136,6 +136,8 @@ public:		// external interface with service
 
 	// Firebird log reader
 	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
+	// Shuts all service threads (should be called after databases shutdown)
+	static void shutdownServices();
 
 private:
 	// Service must have private destructor, called from finish
@@ -158,6 +160,8 @@ private:
 	// If both main thread and client thread are completed that is main thread is finished and 
 	// client is detached then free memory used by service.
 	void	finish(USHORT flag);
+	// Throws shutdown exception if global flag is set for it
+	bool	checkForShutdown();
 	// Transfer data from svc_stdout into buffer
 	void	get(SCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, USHORT* return_length);
 	// Designed to send output to a service - does nothing.

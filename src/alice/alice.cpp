@@ -98,10 +98,18 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 {
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	const int exit_code = alice(uSvc);
+	int exit_code = FB_SUCCESS;
+
+	try {
+		exit_code = alice(uSvc);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(uSvc->getStatus());
+		exit_code = FB_FAILURE;
+	}
 
 	uSvc->finish();
-
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 

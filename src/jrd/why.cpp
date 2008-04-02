@@ -91,6 +91,7 @@
 #include "../common/classes/auto.h"
 #include "../common/classes/init.h"
 #include "../common/classes/semaphore.h"
+#include "../common/classes/fb_atomic.h"
 #include "../jrd/constants.h"
 #include "../jrd/ThreadStart.h"
 #ifdef SCROLLABLE_CURSORS
@@ -129,6 +130,10 @@
 #define F_TLOCK		2
 #endif
 
+#ifdef HAVE_SYS_TIMEB_H
+#include <sys/timeb.h>
+#endif
+
 const int IO_RETRY	= 20;
 
 inline void init_status(ISC_STATUS* vector)
@@ -160,7 +165,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 }
 
 #if !defined (SUPERCLIENT)
-static bool shutdown_flag = false;
+static bool disableConnections = false;
 #endif
 
 typedef ISC_STATUS(*PTR) (ISC_STATUS* user_status, ...);
@@ -184,6 +189,7 @@ static SCHAR *alloc(SLONG);
 static void free_block(void*);
 static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
 										  const int proc, const ISC_STATUS specCode = 0);
+static FB_UINT64 getMilliTime();
 
 namespace Jrd {
 	class Attachment;
@@ -194,6 +200,9 @@ namespace Jrd {
 
 namespace
 {
+	// process shutdown flag
+	bool shutdownStarted = false;
+
 	// flags
 	const UCHAR HANDLE_TRANSACTION_limbo	= 0x01;
 	const UCHAR HANDLE_STATEMENT_prepared	= 0x02;
@@ -316,6 +325,11 @@ namespace
 	template <typename ToHandle>
 		ToHandle* translate(FB_API_HANDLE* handle)
 	{
+		if (shutdownStarted)
+		{
+			Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
+		}
+	
 		if (handle && *handle)
 		{
 			BaseHandle* rc = BaseHandle::translate(*handle);
@@ -325,8 +339,7 @@ namespace
 			}
 		}
 
-		Firebird::status_exception::raise(ToHandle::hError(), 
-										  isc_arg_end);
+		Firebird::status_exception::raise(ToHandle::hError(), isc_arg_end);
 		// compiler warning silencer
 		return 0;
 	}
@@ -535,7 +548,7 @@ namespace
 	Firebird::GlobalPtr<Firebird::RWLock> handleMappingLock;
 
 	Firebird::InitInstance<Firebird::SortedArray<Attachment*> > attachments;
-	Firebird::GlobalPtr<Firebird::Mutex> attachmentsMutex, shutdownMutex;
+	Firebird::GlobalPtr<Firebird::Mutex> attachmentsMutex, shutdownCallbackMutex;
 
 	class ShutChain : public Firebird::GlobalStorage
 	{
@@ -554,7 +567,7 @@ namespace
 	public:
 		static void add(FPTR_INT cb, const int m)
 		{
-			Firebird::MutexLockGuard guard(shutdownMutex);
+			Firebird::MutexLockGuard guard(shutdownCallbackMutex);
 
 			for (const ShutChain* chain = list; chain; chain = chain->next)
 			{
@@ -570,7 +583,7 @@ namespace
 		static int run(const int m)
 		{
 			int rc = FB_SUCCESS;
-			Firebird::MutexLockGuard guard(shutdownMutex);
+			Firebird::MutexLockGuard guard(shutdownCallbackMutex);
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
@@ -741,8 +754,9 @@ static const USHORT FPE_RESET_INIT_ONLY			= 0x0;	/* Don't reset FPE after init *
 static const USHORT FPE_RESET_NEXT_API_CALL		= 0x1;	/* Reset FPE on next gds call */
 static const USHORT FPE_RESET_ALL_API_CALL		= 0x2;	/* Reset FPE on all gds call */
 
+static Firebird::AtomicCounter isc_enter_count;
+
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
-extern ULONG isc_enter_count;
 static ULONG subsystem_usage = 0;
 static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #define SUBSYSTEM_USAGE_INCR	subsystem_usage++
@@ -850,7 +864,7 @@ namespace
 		}
 		killed = sig;
 #if !defined (SUPERCLIENT)
-		shutdown_flag = true;
+		disableConnections = true;
 #endif
 		shutdownSemaphore->release();		
 	}
@@ -1241,6 +1255,11 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
 
+		if (shutdownStarted)
+		{
+			Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
+		}
+
 		if (!file_name)
 		{
 			Firebird::status_exception::raise(isc_bad_db_format,
@@ -1256,7 +1275,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		}
 
 #if !defined (SUPERCLIENT)
-		if (shutdown_flag)
+		if (disableConnections)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
@@ -1427,7 +1446,6 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 
 		if (! CALL(PROC_CANCEL_BLOB, blob->implementation) (status, &blob->handle))
 		{
-			status.setPrimaryHandle(0);
 			delete blob;
 			*blob_handle = 0;
 		}
@@ -1536,7 +1554,6 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
 		status.setPrimaryHandle(blob);
 
 		CALL(PROC_CLOSE_BLOB, blob->implementation) (status, &blob->handle);
-		status.setPrimaryHandle(0);
 		delete blob;
 		*blob_handle = 0;
 	}
@@ -1602,7 +1619,6 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
 			}
 		}
 
-		status.setPrimaryHandle(0);
 		while (sub = transaction) {
 			transaction = sub->next;
 			delete sub;
@@ -1824,6 +1840,11 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
 
+		if (shutdownStarted)
+		{
+			Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
+		}
+
 		if (!file_name)
 		{
 			Firebird::status_exception::raise(isc_bad_db_format,
@@ -1839,7 +1860,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		}
 
 #if !defined (SUPERCLIENT)
-		if (shutdown_flag)
+		if (disableConnections)
 		{
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
@@ -2099,9 +2120,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 					statement->user_handle = &temp_handle;
 				}
 
-				subsystem_exit();
 				ISC_STATUS rc = GDS_DSQL_FREE(status, statement->user_handle, DSQL_drop);
-				subsystem_enter();
 
 				if (rc)
 				{
@@ -3227,6 +3246,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS * user_status,
 	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
+		status.setPrimaryHandle(statement);
 
 		if (CALL(PROC_DSQL_FREE, statement->implementation) (status,
 															 &statement->handle,
@@ -4509,6 +4529,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	{
 		nullCheck(public_handle, isc_bad_svc_handle);
 
+		if (shutdownStarted)
+		{
+			Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
+		}
+
 		if (!service_name) 
 		{
 			Firebird::status_exception::raise(isc_service_att_err,
@@ -4521,7 +4546,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		}
 
 #if !defined (SUPERCLIENT)
-		if (shutdown_flag) 
+		if (disableConnections) 
 		{
 			Firebird::status_exception::raise(isc_shutwarn, isc_arg_end);
 		}
@@ -5320,7 +5345,6 @@ static void exit_handler(event_t* why_eventL)
 
 	why_initialized = false;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
-	isc_enter_count = 0;
 	subsystem_usage = 0;
 	subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #endif
@@ -5921,8 +5945,8 @@ static void subsystem_enter(void) throw()
 
 	try 
 	{
+		++isc_enter_count;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
-		isc_enter_count++;
 		if (subsystem_usage == 0 ||
 			(subsystem_FPE_reset &
 			(FPE_RESET_NEXT_API_CALL | FPE_RESET_ALL_API_CALL)))
@@ -5975,8 +5999,8 @@ static void subsystem_exit(void) throw()
 		{
 			ISC_exit();
 		}
-		isc_enter_count--;
 #endif
+		--isc_enter_count;
 	}
 	catch(const Firebird::Exception&)
 	{
@@ -5996,15 +6020,15 @@ bool WHY_set_shutdown(bool flag)
  **************************************
  *
  * Functional description
- *	Set shutdown_flag to either TRUE or FALSE.
- *		TRUE = accept new connections
- *		FALSE= refuse new connections
+ *	Set disableConnections to either TRUE or FALSE.
+ *		TRUE = refuse new connections
+ *		FALSE= accept new connections
  *	Returns the prior state of the flag (server).
  *
  **************************************/
 
-	const bool old_flag = shutdown_flag;
-	shutdown_flag = flag;
+	const bool old_flag = disableConnections;
+	disableConnections = flag;
 	return old_flag;
 }
 
@@ -6017,13 +6041,24 @@ bool WHY_get_shutdown()
  **************************************
  *
  * Functional description
- *	Returns the current value of shutdown_flag.
+ *	Returns the current value of disableConnections.
  *
  **************************************/
 
-	return shutdown_flag;
+	return disableConnections;
 }
 #endif // !SUPERCLIENT
+
+
+static FB_UINT64 getMilliTime()
+{
+	struct timeb buf;
+	ftime(&buf);
+	FB_UINT64 rc = buf.time;
+	rc *= 1000;
+	rc += buf.millitm;
+	return rc;
+}
 
 
 int API_ROUTINE fb_shutdown(unsigned int timeout)
@@ -6052,6 +6087,42 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 		if (ShutChain::run(fb_shut_preproviders) != FB_SUCCESS)
 		{
 			return FB_FAILURE;	// Do not perform former shutdown
+		}
+
+		// shutdown yValve
+		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
+
+		FB_UINT64 timeLimit = getMilliTime() + timeout;
+
+		for (;;)
+		{
+			{ // cancel running requests
+				Firebird::MutexLockGuard guard(attachmentsMutex);
+
+				for (unsigned int i = 0; i < attachments().getCount(); ++i)
+				{
+					Attachment* att = attachments()[i];
+					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, CANCEL_raise);
+				}
+			}
+
+			if (isc_enter_count.value() < 2)
+			{
+				break;
+			}
+
+			if (timeout)
+			{
+				if (getMilliTime() > timeLimit)
+				{
+					const char errorMsg[] = "Firebird shutdown is still in progress after the specified timeout";
+					Firebird::status_exception::raise(isc_random,
+													  isc_arg_string, (ISC_STATUS) errorMsg,
+													  0);
+				}
+			}
+
+			THD_sleep(1);
 		}
 
 		// Shutdown providers

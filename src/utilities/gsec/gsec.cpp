@@ -101,11 +101,18 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSEC via the services manager
  **********************************************/
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	const int exit_code = gsec(uSvc);
+	int exit_code = FB_SUCCESS;
 
-/* Mark service thread as finished. */
+	try {
+		exit_code = gsec(uSvc);
+	}
+	catch (const Firebird::Exception& e)
+	{
+		e.stuff_exception(uSvc->getStatus());
+		exit_code = FB_FAILURE;
+	}
+
 	uSvc->finish();
-
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 
