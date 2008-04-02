@@ -280,10 +280,6 @@ const SSHORT CLASS		= CLASS_WINDOWS_AMD64;
 #endif
 #endif	// WIN_NT
 
-#ifdef SINIXZ
-const SSHORT CLASS		= CLASS_LINUX_I386;
-#endif
-
 #ifdef LINUX
 #if defined(i386) || defined(i586)
 const SSHORT CLASS		= CLASS_LINUX_I386;

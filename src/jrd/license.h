@@ -120,10 +120,6 @@
 #define FB_PLATFORM     "LI"	/* Linux on Intel */
 #endif
 
-#ifdef SINIXZ
-#define FB_PLATFORM     "SZ"	/* SINIX for PC  */
-#endif
-
 #ifdef FREEBSD
 #define FB_PLATFORM     "FB"	/* FreeBSD/i386 */
 #endif

@@ -33,11 +33,7 @@
 #else
 	INT_PARAMETER (LockMemSize,			  262144)		// bytes
 #endif
-#ifdef SINIXZ
-	INT_PARAMETER (LockSemCount,			  25)			// semaphores
-#else
 	INT_PARAMETER (LockSemCount,			  32)			// semaphores
-#endif
 	INT_PARAMETER (LockSignal,			  16)			// signal #
 	BOOL_PARAMETER (LockGrantOrder,		  true)
 	INT_PARAMETER (LockHashSlots,		  101)			// slots

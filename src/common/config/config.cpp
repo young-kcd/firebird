@@ -76,7 +76,7 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-#if defined(SINIXZ) || defined(FREEBSD) || defined(NETBSD)
+#if defined(FREEBSD) || defined(NETBSD)
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 25},			// semaphores
 #else
 	{TYPE_INTEGER,		"LockSemCount",				(ConfigValue) 32},			// semaphores

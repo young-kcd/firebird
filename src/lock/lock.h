@@ -64,10 +64,6 @@
 //#define SEMAPHORES      25
 //#endif
 //
-//#ifdef SINIXZ
-//#define SEMAPHORES      25
-//#endif
-//
 //#ifndef SEMAPHORES
 //#define SEMAPHORES      32
 //#endif

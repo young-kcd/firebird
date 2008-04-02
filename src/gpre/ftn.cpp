@@ -209,23 +209,6 @@ const char* const I4CONST_2			= "";
 const char* const COMMENT			= "*     ";
 const char* const INLINE_COMMENT	= "\n*                ";
 const char* const COMMA				= ",";
-#elif defined(SINIXZ)
-const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
-const char* const INCLUDE_FTN_FILE	= "include/gds.f";
-const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
-const char* const I2CONST_1			= "";
-const char* const I2CONST_2			= "";
-const char* const I2_1				= "";
-const char* const I2_2				= "";
-const char* const VAL_1				= "";
-const char* const VAL_2				= "";
-const char* const REF_1				= "";
-const char* const REF_2				= "";
-const char* const I4CONST_1			= "";
-const char* const I4CONST_2			= "";
-const char* const COMMENT			= "*     ";
-const char* const INLINE_COMMENT	= "\n*                ";
-const char* const COMMA				= ",";
 #elif defined(LINUX)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '/usr/firebird/include/gds.f\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";

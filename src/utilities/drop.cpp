@@ -362,7 +362,7 @@ static int sem_exclusive( SLONG key, SLONG count)
  **************************************/
 	int semid;
 
-#if !(defined sun || defined LINUX || defined FREEBSD || defined NETBSD || defined SINIXZ)
+#if !(defined sun || defined LINUX || defined FREEBSD || defined NETBSD)
 	return semget(key, (int) count, IPC_EXCL);
 #else
 	if ((semid = semget(key, (int) count, IPC_EXCL)) != -1)
