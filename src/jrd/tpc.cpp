@@ -239,30 +239,23 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 
 			// see if we can get a lock on the transaction; if we can't
 			// then we know it is still active
-			// We need to create this one in a pool since the
-			// receiver of this (ptr) checks its type.
-			// Please review this. This lock has _nothing_ to do in the
-			// permanent pool!
-			Firebird::AutoPtr<Lock> temp_lock(FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock);
-
-			//temp_lock.blk_type = type_lck;
-			temp_lock->lck_dbb = dbb;
-			temp_lock->lck_type = LCK_tra;
-			temp_lock->lck_owner_handle =
-				LCK_get_owner_handle(tdbb, temp_lock->lck_type);
-			temp_lock->lck_parent = dbb->dbb_lock;
-			temp_lock->lck_length = sizeof(SLONG);
-			temp_lock->lck_key.lck_long = number;
+			Lock temp_lock;
+			temp_lock.lck_dbb = dbb;
+			temp_lock.lck_type = LCK_tra;
+			temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+			temp_lock.lck_parent = dbb->dbb_lock;
+			temp_lock.lck_length = sizeof(SLONG);
+			temp_lock.lck_key.lck_long = number;
 
 			/* If we can't get a lock on the transaction, it must be active. */
 
-			if (!LCK_lock(tdbb, temp_lock, LCK_read, LCK_NO_WAIT)) {
+			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
 				INIT_STATUS(tdbb->tdbb_status_vector);
 				return tra_active;
 			}
 
 			INIT_STATUS(tdbb->tdbb_status_vector);
-			LCK_release(tdbb, temp_lock);
+			LCK_release(tdbb, &temp_lock);
 
 			/* as a last resort we must look at the TIP page to see
 			   whether the transaction is committed or dead; to minimize 
