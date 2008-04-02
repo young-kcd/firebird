@@ -1,3 +1,149 @@
+2008-04-02 16:27  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.365):
+
+	Fixed CORE-1817 : The RelaxedAliasChecking parameter has no effect
+	concerning RDB$DB_KEY
+
+2008-04-02 16:25  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.102), burp/burp.cpp (1.133),
+	common/classes/fb_atomic.h (1.9), jrd/jrd.cpp (1.428), jrd/svc.cpp
+	(1.216), jrd/svc.h (1.56), jrd/why.cpp (1.186),
+	jrd/os/posix/isc_ipc.cpp (1.30), utilities/gsec/gsec.cpp (1.82),
+	utilities/gstat/dba.epp (1.88):
+
+	Fixed problems with shutting down actively running engine - related
+	with CORE-1805.
+
+2008-04-02 15:55  hvlad
+
+	* firebird2/src/jrd/: Relation.cpp (1.12), btr.cpp (1.208),
+	btr_proto.h (1.41), opt.cpp (1.312):
+
+	Avoid manipulations with TDBB_use_db_page_space flag in
+	jrd_rel::getPagesInternal
+
+2008-04-02 15:46  hvlad
+
+	* firebird2/src/jrd/: Relation.cpp (1.11), dfw.epp (1.233), jrd.h
+	(1.232), vio.cpp (1.211):
+
+	Split TDBB_deferred flag by two separate flags as its used for two
+	different purposes now
+
+2008-04-02 14:47  dimitr
+
+	* firebird2/src/jrd/tpc.cpp (1.34):
+
+	Let's use a stack variable instead of a pool-allocated one. LCK
+	doesn't check for the memory block type for a long time already.
+
+2008-04-02 14:41  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.191), tra.cpp (1.164):
+
+	Corrections for the currently disabled code.
+
+2008-04-02 12:19  paulbeach
+
+	* firebird2/builds/posix/prefix.hpux (1.5):
+
+	No header for prefix.hpux
+
+2008-04-02 10:46  hvlad
+
+	* firebird2/src/: jrd/pag.cpp (1.172), utilities/nbackup.cpp
+	(1.65):
+
+	Make pip_header.reserved works in ODS 11.2 too
+
+2008-04-02 10:04  dimitr
+
+	* firebird2/src/msgs/sqlstates.sql (1.5):
+
+	Correction.
+
+2008-04-01 17:41  asfernandes
+
+	* firebird2/src/jrd/: PreparedStatement.cpp (1.7),
+	PreparedStatement.h (1.4):
+
+	Use PermanentStorage as per Alex recomendation
+
+2008-04-01 17:26  asfernandes
+
+	* firebird2/src/: config/ConfigFile.cpp (1.7), jrd/os/config_root.h
+	(1.15), jrd/os/darwin/config_root.cpp (1.10),
+	jrd/os/posix/config_root.cpp (1.16), jrd/os/win32/config_root.cpp
+	(1.22), jrd/os/win32/ibinitdll.cpp (1.18),
+	jrd/os/win32/mod_loader.cpp (1.10):
+
+	Improvement CORE-1814 - Change the root determination of the
+	embedded Windows engine and load DLLs with altered search path (to
+	search dependent DLLs on the same path of the loaded DLL)
+
+2008-04-01 15:46  dimitr
+
+	* firebird2/src/include/gen/ids.h (1.33):
+
+	Ooops. Wrong commit.
+
+2008-04-01 15:45  dimitr
+
+	* firebird2/: src/include/gen/codetext.h (1.80),
+	src/include/gen/iberror.h (1.82), src/include/gen/ids.h (1.32),
+	src/include/gen/msgs.h (1.102), src/include/gen/sql_code.h (1.86),
+	src/include/gen/sql_state.h (1.10), lang_helpers/gds_codes.ftn
+	(1.71), lang_helpers/gds_codes.pas (1.71):
+
+	More details about arithmetical exceptions.
+
+2008-04-01 14:56  dimitr
+
+	* firebird2/src/dsql/gen.cpp (1.141):
+
+	Misc.
+
+2008-04-01 14:34  dimitr
+
+	* firebird2/src/: msgs/facilities2.sql (1.29), msgs/messages2.sql
+	(1.37), msgs/system_errors2.sql (1.26), jrd/cvt.cpp (1.93):
+
+	More details about arithmetical exceptions.
+
+2008-04-01 14:24  dimitr
+
+	* firebird2/src/msgs/sqlstates.sql (1.4):
+
+	Misc.
+
+2008-04-01 14:10  dimitr
+
+	* firebird2/src/msgs/system_errors2.sql (1.25):
+
+	Misc.
+
+2008-04-01 14:04  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.255):
+
+	More details about arithmetical exceptions.
+
+2008-04-01 11:54  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.16):
+
+	Misc.
+
+2008-04-01 08:11  dimitr
+
+	* firebird2/src/dsql/: gen.cpp (1.140), pass1.cpp (1.364):
+
+	Fixed CORE-1811. A solution is to move the validation code from GEN
+	to PASS1 in order to catch bad things earlier. This differs from
+	the SAS solution, but hopefully it's more generic.
+
 2008-03-31 17:49  asfernandes
 
 	* firebird2/src/intl/: lc_narrow.cpp (1.30), lc_narrow.h (1.12):
