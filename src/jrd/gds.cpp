@@ -2309,9 +2309,11 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 							{
 								fb_utils::copy_terminate(sqlstate, new_state, FB_SQLSTATE_SIZE);
 
-								// 42000 is general syntax error, and HY000 is general API error.
-								// we may be able to find something more precise if we keep scanning.
-								if (strcmp("42000", sqlstate) != 0 && strcmp("HY000", sqlstate) != 0)
+								// 22000, 42000 and HY000 are general errors.
+								// We may be able to find something more precise if we keep scanning.
+								if (strcmp("22000", sqlstate) != 0 &&
+									strcmp("42000", sqlstate) != 0 &&
+									strcmp("HY000", sqlstate) != 0)
 								{
 									have_sqlstate = true;
 								}
