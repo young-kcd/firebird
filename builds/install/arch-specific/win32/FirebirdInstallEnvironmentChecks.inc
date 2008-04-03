@@ -662,7 +662,7 @@ begin
   if (Handle > 0) then
      result := '1.5'
   else begin
-    mutex_found := CheckForMutexes('FirebirdGuardianMutex,firebird_trace_mutex');
+    mutex_found := CheckForMutexes('FirebirdGuardianMutex');
     if mutex_found then
       result := '2.0'
     else begin
