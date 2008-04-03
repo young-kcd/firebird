@@ -214,8 +214,10 @@ class Jrd::BtrPageGCLock : public Lock
 {
 	// We want to put 8 bytes (PageNumber) in lock key. One long is already 
 	// reserved by Lock::lck_long, this is the second long. It is really unused 
-	// as second long used for 8-byte key already present because of alignment.
-	long unused;
+	// as second long needed for 8-byte key already "allocated" by compiler 
+	// because of alignment rules. Anyway, to be formally correct, let introduce 
+	// 4-byte field for guarantee we have space for lock key.
+	SLONG unused;
 
 public:
 	BtrPageGCLock(thread_db* tdbb)
