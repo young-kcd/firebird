@@ -1,3 +1,91 @@
+2008-04-03 17:01  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.224):
+
+	Fixed CORE-1807: fbserver assigned to non-canonical port
+
+2008-04-03 15:16  robocop
+
+	* firebird2/src/jrd/os/win32/ibinitdll.cpp (1.19):
+
+	Duplicate #include
+
+2008-04-03 15:14  robocop
+
+	* firebird2/src/: common/classes/fb_atomic.h (1.11), dsql/pass1.cpp
+	(1.366), jrd/why.cpp (1.188):
+
+	Misc.
+
+2008-04-03 13:13  hvlad
+
+	* firebird2/src/jrd/btr.cpp (1.211):
+
+	A little correction and more explanations in comment
+
+2008-04-03 13:02  dimitr
+
+	* firebird2/src/dsql/parse.y (1.264):
+
+	Misc.
+
+2008-04-03 12:17  robocop
+
+	* firebird2/src/remote/: inet.cpp (1.223), inet_proto.h (1.16),
+	inter_proto.h (1.19), interface.cpp (1.182), parser.cpp (1.22),
+	protocol.cpp (1.70), protocol.h (1.39), remote.cpp (1.59), remote.h
+	(1.70), server.cpp (1.195), xnet.cpp (1.108), xnet_proto.h (1.17),
+	os/win32/wnet.cpp (1.53), os/win32/wnet_proto.h (1.10):
+
+	Trying to fix the interface again.  Sorry for going back and forth
+	with constness, but in some cases it was impossible to ensure that
+	input params aren't overwritten, thus I took const away to avoid
+	making promises that can't be met (see the case of fetch that uses
+	a supposedly input-only param to return data). Overwriting memory
+	that was declared const initially is a serious error in C++ with
+	undefined outcome so we better do not lie.
+
+2008-04-03 11:05  dimitr
+
+	* firebird2/doc/sql.extensions/README.keywords (1.4):
+
+	Update.
+
+2008-04-03 10:13  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.252):
+
+	Treat 22000 as a generic sqlstate.
+
+2008-04-03 10:13  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.90):
+
+	Fixed CORE-1818: Temporary files used for temporary page spaces are
+	not deleted after use on Posix platform
+
+2008-04-03 10:10  dimitr
+
+	* firebird2/src/jrd/blb.cpp (1.160):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-03 03:11  asfernandes
+
+	* firebird2/src/: common/classes/fb_atomic.h (1.10), jrd/btr.cpp
+	(1.210), jrd/lck.h (1.39), jrd/svc.cpp (1.217), jrd/vio.cpp
+	(1.212), jrd/why.cpp (1.187), utilities/nbackup.cpp (1.66),
+	utilities/gstat/dba.epp (1.89):
+
+	Misc
+
+2008-04-03 01:46  hvlad
+
+	* firebird2/src/: jrd/btr.cpp (1.209), jrd/btr.h (1.46),
+	jrd/lck.cpp (1.82), jrd/lck.h (1.38), lock/print.cpp (1.66):
+
+	Implement CORE-1819 : More efficient solution for CORE-1300
+
 2008-04-02 16:27  hvlad
 
 	* firebird2/src/dsql/pass1.cpp (1.365):
