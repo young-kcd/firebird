@@ -912,11 +912,12 @@ rem_port* INET_connect(const TEXT* name,
 					break;
 			}
 		}
-		else {
-			inet_error(port, "bind", isc_net_connect_listen_err, INET_ERRNO);
-			disconnect(port);
-			return NULL;
-		}
+	}
+
+	if (n == -1) {
+		inet_error(port, "bind", isc_net_connect_listen_err, INET_ERRNO);
+		disconnect(port);
+		return NULL;
 	}
 
 	n = listen((SOCKET) port->port_handle, 5);
