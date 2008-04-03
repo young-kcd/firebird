@@ -100,7 +100,7 @@ static xdr_t::xdr_ops wnet_ops =
 };
 
 
-rem_port* WNET_analyze(Firebird::PathName& file_name,
+rem_port* WNET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
@@ -151,8 +151,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
-	cnct->p_cnct_file.cstr_address = 
-			reinterpret_cast<UCHAR*>(file_name.begin());
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 /* Note: prior to V3.1E a receivers could not in truth handle more
    then 5 protocol descriptions; however, this restriction does not 
@@ -161,7 +160,7 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 /* If we want user verification, we can't speak anything less than version 7 */
 
 	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -201,12 +200,12 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
 		cnct->p_cnct_file.cstr_length = file_name.length();
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		/* try again with next set of known protocols */
 
 	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -239,12 +238,12 @@ rem_port* WNET_analyze(Firebird::PathName& file_name,
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
 		cnct->p_cnct_file.cstr_length = file_name.length();
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		/* try again with next set of known protocols */
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -900,7 +899,7 @@ static int send_partial( rem_port* port, PACKET * packet)
 static int xdrwnet_create(
 						  XDR * xdrs,
 						  rem_port* port,
-						  UCHAR * buffer, USHORT length, enum xdr_op x_op)
+						  UCHAR* buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -914,7 +913,7 @@ static int xdrwnet_create(
  **************************************/
 
 	xdrs->x_public = (caddr_t) port;
-	xdrs->x_base = xdrs->x_private = (SCHAR *) buffer;
+	xdrs->x_base = xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
 	xdrs->x_handy = length;
 	xdrs->x_ops = &wnet_ops;
 	xdrs->x_op = x_op;
@@ -1425,7 +1424,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 		return wnet_error(port, "WriteFile truncated", isc_net_write_err, ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
-	packet_print("send", (UCHAR*)buffer, buffer_length);
+	packet_print("send", reinterpret_cast<const UCHAR*>(buffer), buffer_length);
 #endif
 
 	return TRUE;

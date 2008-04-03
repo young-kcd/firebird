@@ -86,10 +86,6 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
-/* EKU: SINIX-Z does not define INADDR_NONE */
-#ifndef INADDR_NONE
-#define INADDR_NONE (unsigned long)-1
-#endif
 #endif // !WIN_NT
 
 #if (defined DARWIN || defined HPUX)
@@ -282,11 +278,11 @@ static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	inet_read(XDR *);
 static bool_t	inet_setpostn(XDR *, u_int);
 static rem_port*		inet_try_connect(	PACKET*,
-									RDB,
-									Firebird::PathName&,
+									Rdb*,
+									const Firebird::PathName&,
 									const TEXT*,
 									ISC_STATUS*,
-									Firebird::ClumpletReader &);
+									Firebird::ClumpletReader&);
 static bool_t	inet_write(XDR *, int);
 #if !(defined WIN_NT)
 static int		parse_hosts(const TEXT*, const TEXT*, const TEXT*);
@@ -365,7 +361,7 @@ static int INET_max_clients;
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
 
 
-rem_port* INET_analyze(Firebird::PathName& file_name,
+rem_port* INET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
 					const TEXT*	node_name,
 					const TEXT*	user_string,
@@ -391,7 +387,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 /* We need to establish a connection to a remote server.  Allocate the necessary
    blocks and get ready to go. */
 
-	RDB rdb = new Rdb;
+	Rdb* rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 /* Pick up some user identification information */
@@ -430,7 +426,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 	P_CNCT*	cnct = &packet->p_cnct;
 
 	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -464,7 +460,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 		/* try again with next set of known protocols */
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -492,7 +488,7 @@ rem_port* INET_analyze(Firebird::PathName& file_name,
 		/* try again with next set of known protocols */
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -2449,7 +2445,7 @@ static int xdrinet_create(
  **************************************/
 
 	xdrs->x_public = (caddr_t) port;
-	xdrs->x_base = xdrs->x_private = (SCHAR *) buffer;
+	xdrs->x_base = xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
 	xdrs->x_handy = length;
 	xdrs->x_ops = (xdr_t::xdr_ops *) & inet_ops;
 	xdrs->x_op = x_op;
@@ -2865,8 +2861,8 @@ static bool_t inet_setpostn( XDR * xdrs, u_int bytecount)
 
 static rem_port* inet_try_connect(
 							 PACKET* packet,
-							 RDB rdb,
-							 Firebird::PathName& file_name,
+							 Rdb* rdb,
+							 const Firebird::PathName& file_name,
 							 const TEXT* node_name, 
 							 ISC_STATUS* status_vector,
 							 Firebird::ClumpletReader& dpb)
@@ -2891,8 +2887,7 @@ static rem_port* inet_try_connect(
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
-	cnct->p_cnct_file.cstr_address = 
-		reinterpret_cast<UCHAR*>(file_name.begin());
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 /* If we can't talk to a server, punt.  Let somebody else generate
    an error.  status_vector will have the network error info. */

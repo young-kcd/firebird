@@ -180,23 +180,23 @@ typedef enum
 	op_exit				= 2,	/* Remote end has exitted */
 	op_accept			= 3,	/* Server accepts connection */
 	op_reject			= 4,	/* Server rejects connection */
-	op_protocol			= 5,	/* Protocol selection */
+	//op_protocol			= 5,	/* Protocol selection */
 	op_disconnect		= 6,	/* Connect is going away */
-	op_credit			= 7,	/* Grant (buffer) credits */
-	op_continuation		= 8,	/* Continuation packet */
+	//op_credit			= 7,	/* Grant (buffer) credits */
+	//op_continuation		= 8,	/* Continuation packet */
 	op_response			= 9,	/* Generic response block */
 
 	/* Page server operations */
 
-	op_open_file		= 10,	/* Open file for page service */
-	op_create_file		= 11,	/* Create file for page service */
-	op_close_file		= 12,	/* Close file for page service */
-	op_read_page		= 13,	/* optionally lock and read page */
-	op_write_page		= 14,	/* write page and optionally release lock */
-	op_lock				= 15,	/* sieze lock */
-	op_convert_lock		= 16,	/* convert existing lock */
-	op_release_lock		= 17,	/* release existing lock */
-	op_blocking			= 18,	/* blocking lock message */
+	//op_open_file		= 10,	/* Open file for page service */
+	//op_create_file		= 11,	/* Create file for page service */
+	//op_close_file		= 12,	/* Close file for page service */
+	//op_read_page		= 13,	/* optionally lock and read page */
+	//op_write_page		= 14,	/* write page and optionally release lock */
+	//op_lock				= 15,	/* seize lock */
+	//op_convert_lock		= 16,	/* convert existing lock */
+	//op_release_lock		= 17,	/* release existing lock */
+	//op_blocking			= 18,	/* blocking lock message */
 
 	/* Full context server operations */
 
@@ -208,7 +208,7 @@ typedef enum
 	op_start_and_send	= 24,
 	op_send				= 25,
 	op_receive			= 26,
-	op_unwind			= 27,
+	op_unwind			= 27, // apparently unused, see protocol.cpp's case op_unwind
 	op_release			= 28,
 
 	op_transaction		= 29,	/* Transaction operations */
@@ -231,9 +231,9 @@ typedef enum
 
 	op_batch_segments	= 44,	/* Put a bunch of blob segments */
 
-	op_mgr_set_affinity		= 45,	/* Establish server affinity */
-	op_mgr_clear_affinity	= 46,	/* Break server affinity */
-	op_mgr_report			= 47,	/* Report on server */
+	//op_mgr_set_affinity		= 45,	/* Establish server affinity */
+	//op_mgr_clear_affinity	= 46,	/* Break server affinity */
+	//op_mgr_report			= 47,	/* Report on server */
 
 	op_que_events		= 48,	/* Que event notification request */
 	op_cancel_events	= 49,	/* Cancel event notification request */
@@ -344,9 +344,9 @@ typedef struct p_cnct
 	P_OP	p_cnct_operation;	/* OP_CREATE or OP_OPEN */
 	USHORT	p_cnct_cversion;	/* Version of connect protocol */
 	P_ARCH	p_cnct_client;		/* Architecture of client */
-	CSTRING	p_cnct_file;		/* File name */
+	CSTRING_CONST	p_cnct_file;		/* File name */
 	USHORT	p_cnct_count;		/* Protocol versions understood */
-	CSTRING	p_cnct_user_id;		/* User identification stuff */
+	CSTRING_CONST	p_cnct_user_id;		/* User identification stuff */
 	struct	p_cnct_repeat
 	{
 		USHORT	p_cnct_version;		/* Protocol version number */
@@ -421,8 +421,8 @@ typedef struct p_resp
 typedef struct p_atch
 {
 	OBJCT	p_atch_database;	/* Database object id */
-	CSTRING	p_atch_file;		/* File name */
-	CSTRING	p_atch_dpb;		/* Database parameter block */
+	CSTRING_CONST	p_atch_file;		/* File name */
+	CSTRING_CONST	p_atch_dpb;		/* Database parameter block */
 } P_ATCH;
 
 /* Compile request */
@@ -430,7 +430,7 @@ typedef struct p_atch
 typedef struct p_cmpl
 {
 	OBJCT	p_cmpl_database;	/* Database object id */
-	CSTRING	p_cmpl_blr;		/* Request blr */
+	CSTRING_CONST	p_cmpl_blr;		/* Request blr */
 } P_CMPL;
 
 /* Start Transaction */
@@ -438,7 +438,7 @@ typedef struct p_cmpl
 typedef struct p_sttr
 {
 	OBJCT	p_sttr_database;	/* Database object id */
-	CSTRING	p_sttr_tpb;		/* Transaction parameter block */
+	CSTRING_CONST	p_sttr_tpb;		/* Transaction parameter block */
 } P_STTR;
 
 /* Generic release block */
@@ -498,8 +498,8 @@ typedef struct p_seek {
 typedef struct p_info {
     OBJCT	p_info_object;		/* Object of information */
     USHORT	p_info_incarnation;	/* Incarnation of object */
-    CSTRING	p_info_items;		/* Information */
-    CSTRING	p_info_recv_items;	/* Receive information */
+    CSTRING_CONST	p_info_items;		/* Information */
+    CSTRING_CONST	p_info_recv_items;	/* Receive information */
     USHORT	p_info_buffer_length;	/* Target buffer length */
 } P_INFO;
 
@@ -507,7 +507,7 @@ typedef struct p_info {
 
 typedef struct p_event {
     OBJCT	p_event_database;	/* Database object id */
-    CSTRING	p_event_items;		/* Event description block */
+    CSTRING_CONST	p_event_items;		/* Event description block */
     FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
     SLONG	p_event_arg;		/* Argument to ast routine */
     SLONG	p_event_rid;		/* Client side id of remote event */
@@ -517,7 +517,7 @@ typedef struct p_event {
 
 typedef struct p_prep {
     OBJCT	p_prep_transaction;
-    CSTRING	p_prep_data;
+    CSTRING_CONST	p_prep_data;
 } P_PREP;
 
 /* Connect request block */
@@ -555,7 +555,7 @@ typedef struct p_slc {
 typedef struct p_slr {
     lstring	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
-    UCHAR	*p_slr_sdl;			/* *** not transfered *** */
+    UCHAR* p_slr_sdl;			/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
  
@@ -565,9 +565,10 @@ typedef struct p_sqlst {
     OBJCT	p_sqlst_transaction;	/* transaction object */
     OBJCT	p_sqlst_statement;	/* statement object */
     USHORT	p_sqlst_SQL_dialect;	/* the SQL dialect */
-    CSTRING	p_sqlst_SQL_str;	/* statement to be prepared */
+    CSTRING_CONST	p_sqlst_SQL_str;	/* statement to be prepared */
     USHORT	p_sqlst_buffer_length;	/* Target buffer length */
-    CSTRING	p_sqlst_items;		/* Information */
+    CSTRING_CONST	p_sqlst_items;		/* Information */
+    // This should be CSTRING_CONST
     CSTRING	p_sqlst_blr;		/* blr describing message */
     USHORT	p_sqlst_message_number;
     USHORT	p_sqlst_messages;	/* Number of messages */
@@ -578,6 +579,7 @@ typedef struct p_sqlst {
 typedef struct p_sqldata {
     OBJCT	p_sqldata_statement;	/* statement object */
     OBJCT	p_sqldata_transaction;	/* transaction object */
+    // This should be CSTRING_CONST, but fetch() has strange behavior.
     CSTRING	p_sqldata_blr;		/* blr describing message */
     USHORT	p_sqldata_message_number;
     USHORT	p_sqldata_messages;	/* Number of messages */
@@ -593,7 +595,7 @@ typedef struct p_sqlfree {
 
 typedef struct p_sqlcur {
     OBJCT	p_sqlcur_statement;	/* statement object */
-    CSTRING	p_sqlcur_cursor_name;	/* cursor name */
+    CSTRING_CONST	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
 } P_SQLCUR;
 

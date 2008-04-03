@@ -96,7 +96,7 @@ static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
 static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
 static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR *, SLONG);
-static bool_t xdr_trrq_blr(XDR *, CSTRING *);
+static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR *, USHORT);
 
 #ifdef NOT_USED_OR_REPLACED
@@ -299,10 +299,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			MAP(xdr_short,
 				reinterpret_cast<SSHORT&>(connect->p_cnct_cversion));
 			MAP(xdr_enum, reinterpret_cast<xdr_op&>(connect->p_cnct_client));
-			MAP(xdr_cstring, connect->p_cnct_file);
+			MAP(xdr_cstring_const, connect->p_cnct_file);
 			MAP(xdr_short, reinterpret_cast<SSHORT&>(connect->p_cnct_count));
 
-			MAP(xdr_cstring, connect->p_cnct_user_id);
+			MAP(xdr_cstring_const, connect->p_cnct_user_id);
 
 			const size_t CNCT_VERSIONS = FB_NELEM(connect->p_cnct_versions);
 			for (i = 0, tail = connect->p_cnct_versions;
@@ -359,8 +359,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		attach = &p->p_atch;
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(attach->p_atch_database));
-		MAP(xdr_cstring, attach->p_atch_file);
-		MAP(xdr_cstring, attach->p_atch_dpb);
+		MAP(xdr_cstring_const, attach->p_atch_file);
+		MAP(xdr_cstring_const, attach->p_atch_dpb);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -368,7 +368,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		compile = &p->p_cmpl;
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(compile->p_cmpl_database));
-		MAP(xdr_cstring, compile->p_cmpl_blr);
+		MAP(xdr_cstring_const, compile->p_cmpl_blr);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -491,7 +491,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		transaction = &p->p_sttr;
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(transaction->p_sttr_database));
-		MAP(xdr_cstring, transaction->p_sttr_tpb);
+		MAP(xdr_cstring_const, transaction->p_sttr_tpb);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -505,11 +505,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_object));
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(info->p_info_incarnation));
-		MAP(xdr_cstring, info->p_info_items);
+		MAP(xdr_cstring_const, info->p_info_items);
 		if (p->p_operation == op_service_info)
-			MAP(xdr_cstring, info->p_info_recv_items);
-		MAP(xdr_short,
-			reinterpret_cast<SSHORT&>(info->p_info_buffer_length));
+			MAP(xdr_cstring_const, info->p_info_recv_items);
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_buffer_length));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -518,7 +517,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(info->p_info_object));
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(info->p_info_incarnation));
-		MAP(xdr_cstring, info->p_info_items);
+		MAP(xdr_cstring_const, info->p_info_items);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -544,7 +543,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		prepare = &p->p_prep;
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(prepare->p_prep_transaction));
-		MAP(xdr_cstring, prepare->p_prep_data);
+		MAP(xdr_cstring_const, prepare->p_prep_data);
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
 
@@ -554,7 +553,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			P_EVENT* event = &p->p_event;
 			MAP(xdr_short,
 				reinterpret_cast<SSHORT&>(event->p_event_database));
-			MAP(xdr_cstring, event->p_event_items);
+			MAP(xdr_cstring_const, event->p_event_items);
 			
 			// Nickolay Samofatov: these values are parsed, but are ignored by the client.
 			// Values are useful only for debugging, anyway since upper words of pointers
@@ -689,8 +688,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_statement));
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_SQL_dialect));
-		MAP(xdr_cstring, prep_stmt->p_sqlst_SQL_str);
-		MAP(xdr_cstring, prep_stmt->p_sqlst_items);
+		MAP(xdr_cstring_const, prep_stmt->p_sqlst_SQL_str);
+		MAP(xdr_cstring_const, prep_stmt->p_sqlst_items);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_buffer_length));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
@@ -761,7 +760,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		sqlcur = &p->p_sqlcur;
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqlcur->p_sqlcur_statement));
-		MAP(xdr_cstring, sqlcur->p_sqlcur_cursor_name);
+		MAP(xdr_cstring_const, sqlcur->p_sqlcur_cursor_name);
 		MAP(xdr_short, reinterpret_cast<SSHORT&>(sqlcur->p_sqlcur_type));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 		return P_TRUE(xdrs, p);
@@ -779,7 +778,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_update_account_info:
 		{
 			p_update_account *stuff = &p->p_account_update;
-			MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_account_database));
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(stuff->p_account_database));
 			MAP(xdr_cstring_const, stuff->p_account_apb);
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
@@ -789,10 +788,10 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_authenticate_user:
 		{
 			p_authenticate *stuff = &p->p_authenticate_user;
-			MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_database));
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(stuff->p_auth_database));
 			MAP(xdr_cstring_const, stuff->p_auth_dpb);
 			MAP(xdr_cstring, stuff->p_auth_items);
-			MAP(xdr_short, reinterpret_cast < SSHORT & >(stuff->p_auth_buffer_length));
+			MAP(xdr_short, reinterpret_cast<SSHORT&>(stuff->p_auth_buffer_length));
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 			return P_TRUE(xdrs, p);
@@ -1221,9 +1220,7 @@ static bool_t xdr_longs( XDR* xdrs, CSTRING* cstring)
  *	Pass a vector of longs.
  *
  **************************************/
-	if (!xdr_short
-		(xdrs,
-		 reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
+	if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&cstring->cstr_length)))
 	{
 		return FALSE;
 	}
@@ -1435,8 +1432,7 @@ static bool_t xdr_slice(
 			}
 
 			slice->lstr_allocated = slice->lstr_length;
-			DEBUG_XDR_ALLOC(xdrs, slice, slice->lstr_address,
-							slice->lstr_allocated);
+			DEBUG_XDR_ALLOC(xdrs, slice, slice->lstr_address, slice->lstr_allocated);
 		}
 		break;
 
@@ -1710,7 +1706,7 @@ static bool_t xdr_status_vector(
 }
 
 
-static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
+static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 {
 /**************************************
  *
@@ -1732,9 +1728,9 @@ static bool_t xdr_trrq_blr( XDR* xdrs, CSTRING* blr)
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
-	RPR procedure = port->port_rpr;
+	Rpr* procedure = port->port_rpr;
 	if (!procedure)
-		procedure = port->port_rpr = new rpr;
+		procedure = port->port_rpr = new Rpr;
 
 /* Parse the blr describing the message. */
 
@@ -1799,7 +1795,7 @@ static bool_t xdr_trrq_message( XDR* xdrs, USHORT msg_type)
 		return TRUE;
 
 	rem_port* port = (rem_port*) xdrs->x_public;
-	RPR procedure = port->port_rpr;
+	Rpr* procedure = port->port_rpr;
 
 	if (msg_type == 1)
 		return xdr_message(xdrs, procedure->rpr_out_msg,

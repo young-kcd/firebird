@@ -53,7 +53,7 @@ static TEXT* attach_failures_ptr;
 static void cleanup_memory(void*);
 
 
-void REMOTE_cleanup_transaction( RTR transaction)
+void REMOTE_cleanup_transaction( Rtr* transaction)
 {
 /**************************************
  *
@@ -164,7 +164,7 @@ const USHORT MIN_PACKETS_PER_BATCH	= 2;	/* packets    - picked by SWAG */
 const USHORT DESIRED_ROWS_PER_BATCH	= 20;	/* data rows  - picked by SWAG */
 const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
-	USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
+	const USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
 #ifdef DEBUG
 	fprintf(stderr,
@@ -176,24 +176,22 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 	ULONG row_size;
 	if (port->port_flags & PORT_symmetric) {
 		/* Same architecture connection */
-		row_size = (ROUNDUP(format->fmt_length, 4)
-					+ op_overhead);
+		row_size = (ROUNDUP(format->fmt_length, 4) + op_overhead);
 	}
 	else {
 		/* Using XDR for data transfer */
-		row_size = (ROUNDUP(format->fmt_net_length, 4)
-					+ op_overhead);
+		row_size = (ROUNDUP(format->fmt_net_length, 4) + op_overhead);
 	}
 
 	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	/* data set */
 							 + buffer_used	/* used in 1st pkt */
 							 + (port->port_buff_size - 1))	/* to round up */
-							/port->port_buff_size);
+							/ port->port_buff_size);
 	if (num_packets > MAX_PACKETS_PER_BATCH) {
 		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	/* data set */
 								 + buffer_used	/* used in 1st pkt */
 								 + (port->port_buff_size - 1))	/* to round up */
-								/port->port_buff_size);
+								/ port->port_buff_size);
 	}
 	num_packets = MAX(num_packets, MIN_PACKETS_PER_BATCH);
 
@@ -299,7 +297,7 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 	USHORT n;
 
 	if (packet) {
-		xdrmem_create(&xdr, reinterpret_cast < char *>(packet),
+		xdrmem_create(&xdr, reinterpret_cast<char*>(packet),
 					  sizeof(PACKET), XDR_FREE);
 		xdr.x_public = (caddr_t) port;
 
@@ -427,7 +425,7 @@ void REMOTE_release_request( Rrq* request)
  *	Release a request block and friends.
  *
  **************************************/
-	RDB rdb = request->rrq_rdb;
+	Rdb* rdb = request->rrq_rdb;
 
 	for (Rrq** p = &rdb->rdb_requests; *p; p = &(*p)->rrq_next)
 	{

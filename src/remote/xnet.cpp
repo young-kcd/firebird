@@ -166,7 +166,7 @@ static void xnet_log_error(const char* err_msg)
 }
 
 
-rem_port* XNET_analyze(Firebird::PathName& file_name,
+rem_port* XNET_analyze(const Firebird::PathName& file_name,
 					   ISC_STATUS* status_vector,
 					   const TEXT* node_name,
 					   const TEXT* user_string,
@@ -189,7 +189,7 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	// We need to establish a connection to a remote server.
 	// Allocate the necessary blocks and get ready to go.
 
-	RDB rdb = new Rdb;
+	Rdb* rdb = new Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
@@ -217,15 +217,14 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
 	cnct->p_cnct_file.cstr_length = file_name.length();
-	cnct->p_cnct_file.cstr_address = 
-			reinterpret_cast<UCHAR*>(file_name.begin());
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 	// Note: prior to V3.1E a recievers could not in truth handle more
 	// then 5 protocol descriptions; however, the interprocess server 
 	// was created in 4.0 so this does not apply.
 
 	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
@@ -265,12 +264,12 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
 		cnct->p_cnct_file.cstr_length = file_name.length();
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
 		{
@@ -302,12 +301,12 @@ rem_port* XNET_analyze(Firebird::PathName& file_name,
 		cnct->p_cnct_cversion = CONNECT_VERSION2;
 		cnct->p_cnct_client = ARCHITECTURE;
 		cnct->p_cnct_file.cstr_length = file_name.length();
-		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 		// try again with next set of known protocols
 
 		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
-		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
 		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
 		{
@@ -1545,7 +1544,7 @@ static void server_shutdown(rem_port* port)
 #endif	// SUPERCLIENT
 
 
-static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR * buffer,
+static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR* buffer,
 						  USHORT length, enum xdr_op x_op)
 {
 /**************************************
@@ -1560,7 +1559,7 @@ static int xdrxnet_create(XDR * xdrs, rem_port* port, UCHAR * buffer,
  **************************************/
 
 	xdrs->x_public = (caddr_t) port;
-	xdrs->x_private = (SCHAR *) buffer;
+	xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
 	xdrs->x_base = xdrs->x_private;
 	xdrs->x_handy = length;
 	xdrs->x_ops = &xnet_ops;
@@ -2372,7 +2371,7 @@ static rem_port* get_server_port(ULONG client_pid,
 	XCC xcc = new struct xcc;
 
 	try {
-		UCHAR* p = (UCHAR *) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
+		UCHAR* p = (UCHAR*) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
 		memset(p, 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
 		xcc->xcc_next = NULL;
 		xcc->xcc_mapped_addr = p;

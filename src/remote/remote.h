@@ -85,7 +85,7 @@ struct rem_port;
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
 
 
-typedef struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
+struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
 {
 	USHORT			rdb_id;
 	USHORT			rdb_flags;
@@ -93,7 +93,7 @@ typedef struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type
 	rem_port*		rdb_port;			/* communication port */
 	struct Rtr*		rdb_transactions;	/* linked list of transactions */
 	struct Rrq*		rdb_requests;		/* compiled requests */
-	struct rvnt*	rdb_events;			/* known events */
+	struct Rvnt*	rdb_events;			/* known events */
 	struct Rsr*		rdb_sql_requests;	/* SQL requests */
 	ISC_STATUS*		rdb_status_vector;
 	PACKET			rdb_packet;			/* Communication structure */
@@ -112,10 +112,10 @@ public:
 	}
 
 	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
-} *RDB;
+};
 
 
-typedef struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
+struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
 {
 	Rdb*		rtr_rdb;
 	Rtr*		rtr_next;
@@ -131,10 +131,10 @@ public:
 	{ }
 
 	static ISC_STATUS badHandle() { return isc_bad_trans_handle; }
-} *RTR;
+};
 
 
-typedef struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
+struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
 {
 	Firebird::HalfStaticArray<UCHAR, BLOB_LENGTH> rbl_data;
 	Rdb*		rbl_rdb;
@@ -170,12 +170,12 @@ public:
 	{ }
 
 	static ISC_STATUS badHandle() { return isc_bad_segstr_handle; }
-} *RBL;
+};
 
 
-typedef struct rvnt : public Firebird::GlobalStorage
+struct Rvnt : public Firebird::GlobalStorage
 {
-	rvnt*		rvnt_next;
+	Rvnt*		rvnt_next;
 	Rdb*		rvnt_rdb;
 	FPTR_EVENT_CALLBACK	rvnt_ast;
 	void*		rvnt_arg;
@@ -186,12 +186,12 @@ typedef struct rvnt : public Firebird::GlobalStorage
 	SSHORT		rvnt_length;
 
 public:
-	rvnt() :
+	Rvnt() :
 		rvnt_next(0), rvnt_rdb(0), rvnt_ast(0), 
 		rvnt_arg(0), rvnt_id(0), rvnt_rid(0), 
 		rvnt_port(0), rvnt_items(0), rvnt_length(0)
 	{ }
-} *RVNT;
+};
 
 
 struct rem_str : public pool_alloc_rpt<SCHAR>
@@ -251,7 +251,7 @@ public:
 
 
 // remote stored procedure request
-typedef struct rpr : public Firebird::GlobalStorage
+struct Rpr : public Firebird::GlobalStorage
 {
 	Rdb*		rpr_rdb;
 	Rtr*		rpr_rtr;
@@ -262,13 +262,13 @@ typedef struct rpr : public Firebird::GlobalStorage
 	rem_fmt*	rpr_out_format;	/* Format of output message */
 
 public:
-	rpr() : 
+	Rpr() :
 		rpr_rdb(0), rpr_rtr(0), rpr_handle(0), 
 		rpr_in_msg(0), rpr_out_msg(0), rpr_in_format(0), rpr_out_format(0)
 	{ }
 
 	//ISC_STATUS badHandle() { return ; }
-} *RPR;
+};
 
 struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 {
@@ -344,11 +344,13 @@ public:
 	explicit RFlags(const T flags) :
 		m_flags(flags)
 	{}
+	// At least one bit in the parameter is 1 in the object.
 	bool test(const T flags) const
 	{
 		return m_flags & flags;
 	}
-	bool testExact(const T flags) const
+	// All bits received as parameter are 1 in the object.
+	bool testAll(const T flags) const
 	{
 		return (m_flags & flags) == flags;
 	}
@@ -630,7 +632,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_str*		port_passwd;
 	rem_str*		port_protocol_str;	// String containing protocol name for this port
 	rem_str*		port_address_str;	// Protocol-specific address string for the port
-	rpr*			port_rpr;			/* port stored procedure reference */
+	Rpr*			port_rpr;			/* port stored procedure reference */
 	Rsr*			port_statement;		/* Statement for execute immediate */
 	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
 	USHORT			port_requests_queued;	/* requests currently queued */
@@ -742,7 +744,7 @@ public:
 			   transferred by the remote protocol. */
 			if (id > MAX_OBJCT_HANDLES)
 			{
-				return (OBJCT)0;
+				return (OBJCT) 0;
 			}
 
 			port_objects.grow(id + 1);

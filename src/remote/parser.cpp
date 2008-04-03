@@ -222,7 +222,7 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 #endif
 		next->msg_next = message;
 		message = next;
-		message->msg_address = (UCHAR *) format;
+		message->msg_address = reinterpret_cast<UCHAR*>(format);
 		message->msg_number = msg_number;
 	}
 
