@@ -1,4 +1,14 @@
   ***************************
+  * v2.1 Final
+  ***************************
+
+    * Bugfix CORE-1818
+        Temporary files used for temporary page spaces are not deleted after use on Posix platform
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+
+  ***************************
   * v2.1 Release Candidate 2
   ***************************
 
