@@ -4115,7 +4115,7 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 			if (rlxAlias == cfgRlxAlias)
 				break;
 			
-			rlxAlias = cfgRlxAlias ;
+			rlxAlias = cfgRlxAlias;
 		}
 	}
 

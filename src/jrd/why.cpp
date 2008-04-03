@@ -6092,7 +6092,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 		// shutdown yValve
 		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
 
-		FB_UINT64 timeLimit = getMilliTime() + timeout;
+		const FB_UINT64 timeLimit = getMilliTime() + timeout;
 
 		for (;;)
 		{

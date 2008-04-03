@@ -129,9 +129,9 @@ private:
 namespace Firebird {
 
 // Highly inefficient, but safe and portable implementation
-// We keep it for DEV build to start doing ports, but should be avoid in release
+// We keep it for DEV build to start doing ports, but should be avoided in release
 #ifndef DEV_BUILD
-#pragma FB_COMPILER_MESSAGE("Generic AtomicCounter: implement appropriate for your platform!"
+#pragma FB_COMPILER_MESSAGE("Generic AtomicCounter: implement appropriate code for your platform!"
 #endif
 class AtomicCounter
 {
