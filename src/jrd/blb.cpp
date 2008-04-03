@@ -2579,7 +2579,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
-		ERR_post(isc_arith_except, 0);
+		ERR_post(isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 
 	blobAsText.dsc_address = buffer.begin();
 	blobAsText.dsc_length = (USHORT)len;
