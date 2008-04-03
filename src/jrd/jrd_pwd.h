@@ -120,4 +120,16 @@ private:
 	}
 };
 
+class DelayFailedLogin : public Firebird::Exception
+{
+private:
+	int seconds;
+public:
+	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer* sb = NULL) const throw();
+	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
+	static void raise(int sec);
+	DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
+	void sleep() const;
+};
+
 #endif /* JRD_PWD_H */
