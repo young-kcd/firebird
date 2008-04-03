@@ -513,7 +513,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token MILLISECOND
 %token MINVALUE
 %token MOD
-%token OS_NAME
 %token OVERLAY
 %token PAD
 %token PI
@@ -546,6 +545,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token FIRSTNAME
 %token LASTNAME
 %token MIDDLENAME
+%token OS_NAME
 %token SIMILAR
 %token UUID_TO_CHAR
 
@@ -4847,7 +4847,6 @@ non_reserved_word :
 	| MILLISECOND
 	| MINVALUE
 	| MOD
-	| OS_NAME
 	| OVERLAY
 	| PAD
 	| PI
@@ -4874,6 +4873,7 @@ non_reserved_word :
 	| FIRSTNAME
 	| MIDDLENAME
 	| LASTNAME
+	| OS_NAME
 	| UUID_TO_CHAR
 	;
 
