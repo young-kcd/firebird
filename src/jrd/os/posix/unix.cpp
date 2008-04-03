@@ -208,7 +208,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool overwrite, bool /*temporary*/, bool /*share_delete*/)
+jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool overwrite, bool temporary, bool /*share_delete*/)
 {
 /**************************************
  *
@@ -244,6 +244,25 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool ov
 				 isc_arg_string, "open O_CREAT",
 				 isc_arg_string, ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+	}
+
+	if (temporary
+#ifdef SUPPORT_RAW_DEVICES
+		&& (!PIO_on_raw_device(file_name))
+#endif
+				 )
+	{
+		int rc = unlink(file_name.c_str());	
+		// it's no use throwing an error if unlink() failed for temp file in release build
+#ifdef DEV_BUILD
+		if (rc < 0)
+		{
+			ERR_post(isc_io_error,
+					 isc_arg_string, "unlink",
+					 isc_arg_string, ERR_string(file_name),
+					 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+		}
+#endif
 	}
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
