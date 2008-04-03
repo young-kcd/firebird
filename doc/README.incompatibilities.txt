@@ -24,11 +24,11 @@ INSTALLATION/CONFIGURATION
 SECURITY
 --------------------------
 
-  * On Windows, the default authentication mode is "Mixed" which allows
+  * On Windows, the default authentication mode is "Mixed" which allows domain
+    users to attach databases without knowing the Firebird login/password. Also,
     privileged OS users (those included into Local Admins / Domain Admins groups)
-    to attach databases without knowing the Firebird login/password. If you
-    consider this insecure for your setup, change parameter Authentication in
-    firebird.conf.
+    would be treated as SYSDBA. If you consider this insecure for your setup,
+    change parameter Authentication in firebird.conf.
 
 SQL SYNTAX
 --------------------------
@@ -44,7 +44,7 @@ SQL EXECUTION RESULTS
 
   * Malformed UTF8 strings and blobs are no longer allowed. Also, in order to
     have the metadata stored in the database properly (i.e. in UTF8), please
-    make sure that DDL statements are transliterated into the connection charset.
+    make sure that DDL statements are encoded into the connection charset.
     Mixed usage of the NONE and other charsets is not recommended and may lead
     to unexpected runtime errors.
 
