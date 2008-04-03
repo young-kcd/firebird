@@ -212,13 +212,13 @@ static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temp
 
 class Jrd::BtrPageGCLock : public Lock
 {
-	// We want to put 8 bytes (PageNumber) in lock key, one long is already 
-	// reserved by Lock::lck_long this is the second long. It is really unused 
+	// We want to put 8 bytes (PageNumber) in lock key. One long is already 
+	// reserved by Lock::lck_long, this is the second long. It is really unused 
 	// as second long used for 8-byte key already present because of alignment.
 	long unused;
 
 public:
-	BtrPageGCLock(thread_db *tdbb)
+	BtrPageGCLock(thread_db* tdbb)
 	{
 		Database* dbb = tdbb->getDatabase();
 		lck_parent = dbb->dbb_lock;
@@ -239,18 +239,18 @@ public:
 		}
 	}
 
-	void disablePageGC(thread_db *tdbb, const PageNumber &page)
+	void disablePageGC(thread_db* tdbb, const PageNumber &page)
 	{
 		page.getLockStr(lck_key.lck_string);
 		LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
 	}
 
-	void enablePageGC(thread_db *tdbb)
+	void enablePageGC(thread_db* tdbb)
 	{
 		LCK_release(tdbb, this);
 	}
 
-	static bool isPageGCAllowed(thread_db *tdbb, const PageNumber &page)
+	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page)
 	{
 		BtrPageGCLock lock(tdbb);
 		page.getLockStr(lock.lck_key.lck_string);
@@ -4950,8 +4950,8 @@ static CONTENTS garbage_collect(thread_db* tdbb, WIN * window, SLONG parent_numb
 	// now refetch the original page and make sure it is still 
 	// below the threshold for garbage collection.
 	gc_page = (btree_page*) CCH_FETCH(tdbb, window, LCK_write, pag_index);
-	if ((gc_page->btr_length >= GARBAGE_COLLECTION_BELOW_THRESHOLD)
-		|| !BtrPageGCLock::isPageGCAllowed(tdbb, window->win_page) )
+	if (gc_page->btr_length >= GARBAGE_COLLECTION_BELOW_THRESHOLD ||
+		!BtrPageGCLock::isPageGCAllowed(tdbb, window->win_page))
 	{
 		CCH_RELEASE(tdbb, &parent_window);
 		CCH_RELEASE(tdbb, &left_window);

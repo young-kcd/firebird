@@ -718,8 +718,8 @@ void nbackup::backup_database(int level, const char* fname)
 		// How many pages are really used we know from pip_header.reserved
 		// where stored number of pages allocated from this pointer page.
 		// In ODS 12 it will be moved into corresponding field of page_inv_page.
-		const bool isODS11_x = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11)
-								&& (header->hdr_ods_minor_original >= 1);
+		const bool isODS11_x = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11) &&
+								(header->hdr_ods_minor_original >= 1);
 		ULONG lastPage = 1; // first PIP must be at page number 1
 		const ULONG pagesPerPIP = 
 			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;

@@ -6096,7 +6096,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 
 		for (;;)
 		{
-			{ // cancel running requests
+			{ // scope - cancel running requests
 				Firebird::MutexLockGuard guard(attachmentsMutex);
 
 				for (unsigned int i = 0; i < attachments().getCount(); ++i)

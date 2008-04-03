@@ -546,7 +546,7 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
 
-	{
+	{	// scope
 		// Account service block in global array
 		Firebird::MutexLockGuard guard(svc_mutex);
 		checkForShutdown();
@@ -704,6 +704,7 @@ Service::~Service()
 #endif
 	Firebird::MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
+
 	for (unsigned int pos = 0; pos < all.getCount(); ++pos)
 	{
 		if (all[pos] == this)
@@ -720,14 +721,17 @@ bool Service::checkForShutdown()
 	if (svcShutdown)
 	{
 		Firebird::MutexLockGuard guard(svc_mutex);
+
 		if (svc_flags & SVC_shutdown)
 		{
 			// Here we avoid multiple exceptions thrown
 			return true;
 		}
+
 		svc_flags |= SVC_shutdown;
 		Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
 	}
+
 	return false;
 }
 
@@ -735,8 +739,10 @@ bool Service::checkForShutdown()
 void Service::shutdownServices()
 {
 	svcShutdown = true;
+
 	Firebird::MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
+
 	for (unsigned int pos = 0; pos < all.getCount(); )
 	{
 		if (all[pos]->svc_flags & SVC_thd_running)
@@ -747,6 +753,7 @@ void Service::shutdownServices()
 			pos = 0;
 			continue;
 		}
+
 		++pos;
 	}
 }
@@ -1695,7 +1702,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	memset((void *) svc_status, 0, sizeof(ISC_STATUS_ARRAY));
 
 	if (serv->serv_thd) {
-		{
+		{	// scope
 			Firebird::MutexLockGuard guard(svc_mutex);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
@@ -1857,7 +1864,8 @@ void Service::get(SCHAR*	buffer,
 #endif
 
 	*return_length = 0;
-	{
+
+	{	// scope
 		Firebird::MutexLockGuard guard(svc_mutex);
 		svc_flags &= ~SVC_timeout;
 	}
@@ -1872,7 +1880,8 @@ void Service::get(SCHAR*	buffer,
 		time(&end_time);
 		const time_t elapsed_time = end_time - start_time;
 #endif
-		if ((timeout) && (elapsed_time >= timeout)) {
+		if ((timeout) && (elapsed_time >= timeout))
+		{
 			Firebird::MutexLockGuard guard(svc_mutex);
 			svc_flags &= SVC_timeout;
 			return;

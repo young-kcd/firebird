@@ -90,7 +90,7 @@ public:
 		lck_data(0)
 	{
 		lck_key.lck_long = 0;
-		lck_tail[0] = 0;	
+		lck_tail[0] = 0;
 	}
 
 	int		lck_test_field;
