@@ -2239,18 +2239,21 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			switch(verb)
 			{
 			case isc_dyn_user_add:
+				text.upper();
 				userData.operation = ADD_OPER;
 				text.copyTo(userData.user_name, sizeof(userData.user_name));
 				userData.user_name_entered = true;
 				break;
 
 			case isc_dyn_user_mod:
+				text.upper();
 				userData.operation = MOD_OPER;
 				text.copyTo(userData.user_name, sizeof(userData.user_name));
 				userData.user_name_entered = true;
 				break;
 
 			case isc_dyn_user_del:
+				text.upper();
 				userData.operation = DEL_OPER;
 				text.copyTo(userData.user_name, sizeof(userData.user_name));
 				userData.user_name_entered = true;
