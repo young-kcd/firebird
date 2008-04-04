@@ -26,6 +26,8 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
+ * 
+ * 2008.04.04 Roman Simakov - Added html output support
  *
  */
 
@@ -86,11 +88,44 @@ static void prt_request(OUTFILE, const lhb*, const lrq*);
 static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
 
+// HTML print functions
+bool sw_html_format = false;
+
+static void prt_html_begin(OUTFILE);
+static void prt_html_end(OUTFILE);
+
+static const TEXT preOwn[] = "own";
+static const TEXT preRequest[] = "request";
+static const TEXT preLock[] = "lock";
+
+class HtmlLink
+{
+public:
+	HtmlLink(const TEXT* prefix, const SLONG value)
+	{
+		if (sw_html_format && value)
+			sprintf(strBuffer, "<a href=\"#%s%"SLONGFORMAT"\">%6"SLONGFORMAT"</a>", prefix, value, value);		
+		else
+			sprintf(strBuffer, "%6"SLONGFORMAT, value);		
+	}
+	operator const TEXT*()
+	{
+		return strBuffer;
+	}
+private:
+	TEXT strBuffer[256];
+	HtmlLink(const HtmlLink&){}
+};
+
+
 static const TEXT history_names[][10] = {
 	"n/a", "ENQ", "DEQ", "CONVERT", "SIGNAL", "POST", "WAIT",
 	"DEL_PROC", "DEL_LOCK", "DEL_REQ", "DENY", "GRANT", "LEAVE",
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
+
+static const TEXT valid_switches[] = "Valid switches are: -o, -p, -l, -r, \
+		-a, -h, -n, -s <n>, -c, -i <n> <n>, -m \n";
 
 // The same table is in lock.cpp, maybe worth moving to a common file?
 static const UCHAR compatibility[LCK_max][LCK_max] =
@@ -109,8 +144,6 @@ static const UCHAR compatibility[LCK_max][LCK_max] =
 };
 
 //#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
-
-
 
 int CLIB_ROUTINE main( int argc, char *argv[])
 {
@@ -182,8 +215,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	while (--argc) {
 		SCHAR* p = *argv++;
 		if (*p++ != '-') {
-			FPRINTF(outfile,
-					"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>\n");
+			FPRINTF(outfile, valid_switches);
 			exit(FINI_OK);
 		}
 		SCHAR c;
@@ -296,10 +328,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					exit(FINI_OK);
 				}
 				break;
+				
+			case 'm':
+				sw_html_format = true;
+				break;
 
 			default:
-				FPRINTF(outfile,
-						"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>\n");
+				FPRINTF(outfile, valid_switches);
 				exit(FINI_OK);
 				break;
 			}
@@ -381,6 +416,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 /* Print lock activity report */
 
 	if (sw_interactive) {
+		sw_html_format = false;
 		prt_lock_activity(outfile, LOCK_header, sw_interactive, (USHORT) sw_seconds,
 						  (USHORT) sw_intervals);
 		exit(FINI_OK);
@@ -409,12 +445,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 /* Print lock header block */
+	prt_html_begin(outfile);
 
 	FPRINTF(outfile, "LOCK_HEADER BLOCK\n");
 	FPRINTF(outfile,
-			"\tVersion: %d, Active owner: %6"SLONGFORMAT", Length: %6"SLONGFORMAT
+			"\tVersion: %d, Active owner: %s, Length: %6"SLONGFORMAT
 			", Used: %6"SLONGFORMAT"\n",
-			LOCK_header->lhb_version, LOCK_header->lhb_active_owner,
+			LOCK_header->lhb_version, (const TEXT*)HtmlLink(preOwn, LOCK_header->lhb_active_owner),
 			LOCK_header->lhb_length, LOCK_header->lhb_used);
 
 	FPRINTF(outfile, "\tFlags: 0x%04X\n",
@@ -532,6 +569,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
+	prt_html_end(outfile);
+	
 	if (header)
 		gds__free(header);
 
@@ -805,11 +844,11 @@ static void prt_history(
 	{
 		if (history->his_operation)
 			FPRINTF(outfile,
-					"    %s:\towner = %6"ULONGFORMAT", lock = %6"ULONGFORMAT
-					", request = %6"ULONGFORMAT"\n",
+					"    %s:\towner = %s, lock = %s, request = %s\n",
 					history_names[history->his_operation],
-					history->his_process, history->his_lock,
-					history->his_request);
+					(const TEXT*)HtmlLink(preOwn, history->his_process), 
+					(const TEXT*)HtmlLink(preLock, history->his_lock),
+					(const TEXT*)HtmlLink(preRequest, history->his_request));
 		if (history->his_next == history_header)
 			break;
 	}
@@ -833,11 +872,17 @@ static void prt_lock(
 	if (sw_series && lock->lbl_series != sw_series)
 		return;
 
-	FPRINTF(outfile, "LOCK BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(lock));
+	if (!sw_html_format)
+		FPRINTF(outfile, "LOCK BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(lock));
+	else
+	{
+		const SLONG rel_lock = SRQ_REL_PTR(lock);
+		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">LOCK BLOCK %6"SLONGFORMAT"</a>\n",
+				preLock, rel_lock, rel_lock);
+	}
 	FPRINTF(outfile,
-			"\tSeries: %d, Parent: %6"ULONGFORMAT
-			", State: %d, size: %d length: %d data: %"ULONGFORMAT"\n",
-			lock->lbl_series, lock->lbl_parent, lock->lbl_state,
+			"\tSeries: %d, Parent: %s, State: %d, size: %d length: %d data: %"ULONGFORMAT"\n",
+			lock->lbl_series, (const TEXT*)HtmlLink(preLock, lock->lbl_parent), lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
 	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) && 
@@ -909,9 +954,9 @@ static void prt_lock(
 	SRQ_LOOP(lock->lbl_requests, que_inst) {
 		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 		FPRINTF(outfile,
-				"\t\tRequest %6"SLONGFORMAT", Owner: %6"SLONGFORMAT
-				", State: %d (%d), Flags: 0x%02X\n",
-				SRQ_REL_PTR(request), request->lrq_owner, request->lrq_state,
+				"\t\tRequest %s, Owner: %s, State: %d (%d), Flags: 0x%02X\n",
+				(const TEXT*)HtmlLink(preRequest, SRQ_REL_PTR(request)), 
+				(const TEXT*)HtmlLink(preOwn, request->lrq_owner), request->lrq_state,
 				request->lrq_requested, request->lrq_flags);
 	}
 
@@ -937,10 +982,18 @@ static void prt_owner(OUTFILE outfile,
  **************************************/
 	const prc* process = (prc*) SRQ_ABS_PTR(owner->own_process);
 
-	FPRINTF(outfile, "OWNER BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(owner));
-	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %6"SLONGFORMAT"\n",
+	if (!sw_html_format)
+		FPRINTF(outfile, "OWNER BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(owner));
+	else
+	{
+		const SLONG rel_owner = SRQ_REL_PTR(owner);
+		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">OWNER BLOCK %6"SLONGFORMAT"</a>\n", 
+				preOwn, rel_owner, rel_owner);
+	}
+	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %s\n",
 			owner->own_owner_id, owner->own_owner_type,
-			owner->own_pending_request);
+			(const TEXT*)HtmlLink(preRequest, owner->own_pending_request));
+	
 	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6d\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
@@ -1009,12 +1062,12 @@ static void prt_owner_wait_cycle(
 
 	for (i = 0; i < waiters->waitque_depth; i++)
 		if (SRQ_REL_PTR(owner) == waiters->waitque_entry[i]) {
-			FPRINTF(outfile, "%6"SLONGFORMAT" (potential deadlock).\n",
-					SRQ_REL_PTR(owner));
+			FPRINTF(outfile, "%s (potential deadlock).\n",
+					(const TEXT*)HtmlLink(preOwn, SRQ_REL_PTR(owner)));
 			return;
 		}
 
-	FPRINTF(outfile, "%6"SLONGFORMAT" waits on ", SRQ_REL_PTR(owner));
+	FPRINTF(outfile, "%s waits on ", (const TEXT*)HtmlLink(preOwn, SRQ_REL_PTR(owner)));
 
 	if (!owner->own_pending_request)
 		FPRINTF(outfile, "nothing.\n");
@@ -1094,10 +1147,17 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
  *
  **************************************/
 
-	FPRINTF(outfile, "REQUEST BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(request));
-	FPRINTF(outfile, "\tOwner: %6"SLONGFORMAT", Lock: %6"SLONGFORMAT
-			", State: %d, Mode: %d, Flags: 0x%02X\n",
-			request->lrq_owner, request->lrq_lock, request->lrq_state,
+	if (!sw_html_format)
+		FPRINTF(outfile, "REQUEST BLOCK %6"SLONGFORMAT"\n", SRQ_REL_PTR(request));
+	else
+	{
+		const SLONG rel_request = SRQ_REL_PTR(request);
+		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">REQUEST BLOCK %6"SLONGFORMAT"</a>\n", 
+				preRequest, rel_request, rel_request);
+	}
+	FPRINTF(outfile, "\tOwner: %s, Lock: %s, State: %d, Mode: %d, Flags: 0x%02X\n",
+			(const TEXT*)HtmlLink(preOwn, request->lrq_owner), 
+			(const TEXT*)HtmlLink(preLock, request->lrq_lock), request->lrq_state,
 			request->lrq_requested, request->lrq_flags);
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
 			request->lrq_ast_routine, request->lrq_ast_argument);
@@ -1170,4 +1230,43 @@ static void prt_que2(
 	FPRINTF(outfile, "%s:\tforward: %6"SLONGFORMAT
 			", backward: %6"SLONGFORMAT"\n", string,
 			que_inst->srq_forward - que_offset, que_inst->srq_backward - que_offset);
+}
+
+static void prt_html_begin(OUTFILE outfile)
+{
+	/**************************************
+	 *
+	 *      p r t _ h t m l _ b e g i n 
+	 *
+	 **************************************
+	 *
+	 * Functional description
+	 *      Print the html header if heeded
+	 *
+	 **************************************/
+	if (!sw_html_format)
+		return;
+	
+	FPRINTF(outfile, "<html><head><title>%s</title></head><body>", "Lock table");
+	FPRINTF(outfile, "<pre>");
+	
+}
+
+static void prt_html_end(OUTFILE outfile)
+{
+	/**************************************
+	 *
+	 *      p r t _ h t m l _ e n d
+	 *
+	 **************************************
+	 *
+	 * Functional description
+	 *      Print the html finishing items
+	 *
+	 **************************************/
+	if (!sw_html_format)
+		return;
+	
+	FPRINTF(outfile, "</pre>");
+	FPRINTF(outfile, "</body></html>");
 }
