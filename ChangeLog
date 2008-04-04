@@ -1,3 +1,186 @@
+2008-04-04 21:35  dimitr
+
+	* firebird2/src/msgs/system_errors2.sql (1.29):
+
+	Adjustments upon discussion with Bill.
+
+2008-04-04 20:26  dimitr
+
+	* firebird2/src/dsql/ddl.cpp (1.224):
+
+	Removed the wrong assert. Adriano, please make sure the rest of the
+	logic is ready for a zero field_string.  Test case: CREATE VIEW vt
+	(id) AS SELECT id, 5 FROM t;
+
+2008-04-04 18:59  dimitr
+
+	* firebird2/src/dsql/make.cpp (1.155):
+
+	Put an extra check. Does anyone think that the condition should be
+	"length > 0" instead?
+
+2008-04-04 18:53  dimitr
+
+	* firebird2/src/dsql/: ddl.cpp (1.223), node.h (1.105), parse.y
+	(1.265):
+
+	Simplify the optional default value parsing and processing. This
+	also fixes CORE-1512.
+
+2008-04-04 17:59  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.432), os/config_root.h (1.16):
+
+	Load ib_util.dll from the install directory, to fbembed.dll loaded
+	with altered search path be able to find it
+
+2008-04-04 17:45  alexpeshkoff
+
+	* firebird2/src/: jrd/dyn.epp (1.122), utilities/gsec/gsec.cpp
+	(1.83):
+
+	Fixed CORE-1810: Usernames with '.' character
+
+2008-04-04 17:37  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.431):
+
+	Fix the problem with ib_util.dll caused by CORE-1814
+
+2008-04-04 16:47  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.430), why.cpp (1.191):
+
+	Fixed forgotten terminator - thanks to Dmitry and Adriano
+
+2008-04-04 16:20  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.429), why.cpp (1.190):
+
+	Added message for shutdown timeout failure
+
+2008-04-04 16:15  roman-simakov
+
+	* firebird2/src/lock/print.cpp (1.67):
+
+	Added HTML format output for fb_lock_print
+
+2008-04-04 16:12  alexpeshkoff
+
+	* firebird2/lang_helpers/: gds_codes.ftn (1.73), gds_codes.pas
+	(1.73):
+
+	Added message for shutdown timeout failure
+
+2008-04-04 16:04  alexpeshkoff
+
+	* firebird2/src/: include/gen/codetext.h (1.82),
+	include/gen/iberror.h (1.84), include/gen/msgs.h (1.104),
+	include/gen/sql_code.h (1.88), include/gen/sql_state.h (1.12),
+	msgs/system_errors2.sql (1.28):
+
+	Added message for shutdown timeout failure
+
+2008-04-04 16:02  alexpeshkoff
+
+	* firebird2/configure.in (1.280):
+
+	no need manually adding libc to command line
+
+2008-04-04 15:43  robocop
+
+	* firebird2/src/: jrd/alt.cpp (1.70), jrd/ibase.h (1.133),
+	jrd/why.cpp (1.189), jrd/why_proto.h (1.48), remote/inter_proto.h
+	(1.20), remote/interface.cpp (1.183), remote/protocol.cpp (1.71),
+	remote/server.cpp (1.196):
+
+	It seems that finally the interfaces are synchronized.	The
+	compiler produces a lot of errors when linking why.cpp against
+	inter_proto.h (that has the real function signatures) instead of
+	entry.h, but it's the only way to verify that the parameters are
+	coherent.
+
+2008-04-04 15:25  alexpeshkoff
+
+	* firebird2/src/msgs/: facilities2.sql (1.31), messages2.sql
+	(1.39):
+
+	Added message for shutdown timeout failure
+
+2008-04-04 12:48  asfernandes
+
+	* firebird2/src/dsql/keywords.cpp (1.69):
+
+	Misc
+
+2008-04-04 12:13  dimitr
+
+	* firebird2/src/jrd/SysFunction.cpp (1.39):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-04 12:09  dimitr
+
+	* firebird2/src/jrd/: cvt.cpp (1.94), evl.cpp (1.256), intl.cpp
+	(1.106), mov.cpp (1.34):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-04 12:01  dimitr
+
+	* firebird2/src/jrd/: CharSet.cpp (1.7), CsConvert.h (1.11):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-04 11:56  dimitr
+
+	* firebird2/src/: dsql/gen.cpp (1.142), jrd/blb.cpp (1.161):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-04 11:50  dimitr
+
+	* firebird2/: src/msgs/facilities2.sql (1.30),
+	src/msgs/messages2.sql (1.38), src/msgs/system_errors2.sql (1.27),
+	src/include/gen/codetext.h (1.81), src/include/gen/iberror.h
+	(1.83), src/include/gen/msgs.h (1.103), src/include/gen/sql_code.h
+	(1.87), src/include/gen/sql_state.h (1.11),
+	lang_helpers/gds_codes.ftn (1.72), lang_helpers/gds_codes.pas
+	(1.72):
+
+	More changes targeted to a better error diagnostics.
+
+2008-04-04 11:42  alexpeshkoff
+
+	* firebird2/src/burp/: backup.epp (1.108), burp.cpp (1.134),
+	burp_proto.h (1.23), restore.epp (1.132):
+
+	1. Fixed CORE-1805: Database is not restored correctly using
+	Services API.  2. Made index activation independent from verbose
+	flag - helps with broken backups.
+
+2008-04-04 11:16  dimitr
+
+	* firebird2/src/: remote/os/win32/srvr_w32.cpp (1.51),
+	utilities/install/install_nt.h (1.17):
+
+	Server-side fix for CORE-1820.
+
+2008-04-04 04:14  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.keywords (1.5),
+	src/remote/inet.cpp (1.225):
+
+	Misc
+
+2008-04-04 02:51  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.239):
+
+	Comment the new assertions as it's being false when using
+	parameters in isql (UPDATE UserGroup SET ACL = ?) - to be reviewed
+	by Claudio
+
 2008-04-03 17:01  alexpeshkoff
 
 	* firebird2/src/remote/inet.cpp (1.224):
