@@ -652,6 +652,7 @@ const ISC_LONG isc_datetime_range_exceeded          = 335544913L;
 const ISC_LONG isc_string_truncation                = 335544914L;
 const ISC_LONG isc_blob_truncation                  = 335544915L;
 const ISC_LONG isc_numeric_out_of_range             = 335544916L;
+const ISC_LONG isc_shutdown_timeout                 = 335544917L;
 const ISC_LONG isc_gfix_db_name                     = 335740929L;
 const ISC_LONG isc_gfix_invalid_sw                  = 335740930L;
 const ISC_LONG isc_gfix_incmp_sw                    = 335740932L;
@@ -924,7 +925,7 @@ const ISC_LONG isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_LONG isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_LONG isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_LONG isc_utl_trusted_switch               = 337051649L;
-const ISC_LONG isc_err_max                          = 868;
+const ISC_LONG isc_err_max                          = 869;
 
 #else /* c definitions */
 
@@ -1546,6 +1547,7 @@ const ISC_LONG isc_err_max                          = 868;
 #define isc_string_truncation                335544914L
 #define isc_blob_truncation                  335544915L
 #define isc_numeric_out_of_range             335544916L
+#define isc_shutdown_timeout                 335544917L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1818,7 +1820,7 @@ const ISC_LONG isc_err_max                          = 868;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          868
+#define isc_err_max                          869
 
 #endif
 

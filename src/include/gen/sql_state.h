@@ -617,6 +617,7 @@ static const struct {
 	{335544914, "22001"}, // 594 string_truncation 
 	{335544915, "22001"}, // 595 blob_truncation 
 	{335544916, "22003"}, // 596 numeric_out_of_range 
+	{335544917, "HYT00"}, // 597 shutdown_timeout 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
