@@ -411,7 +411,9 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		ULONG size;
 
 		if (temp.getCharSet() == desc->getCharSet())
+		{
 			size = blob->blb_length;
+		}
 		else
 		{
 			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
@@ -423,7 +425,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, 0);
+			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, 0);
 
 		return size;
 	}

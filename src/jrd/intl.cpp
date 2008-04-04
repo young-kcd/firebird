@@ -608,7 +608,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 	}
 	else if (src_len == 0)
 		return (0);
@@ -797,13 +797,13 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, 0);
+		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 	}
 
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 
 	return 0;
 }

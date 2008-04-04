@@ -395,7 +395,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 						   later in this routine. */
 
 						if (exp >= SHORT_LIMIT)
-							(*err) (isc_arith_except, 0);
+							(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 					}
 					else if (*p == '-' && !digit_seen && !sign)
 						sign = -1;
@@ -428,7 +428,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 			   the user know...  */
 
 			if (ABSOLUT(scale) > DBL_MAX_10_EXP)
-				(*err)(isc_arith_except, 0);
+				(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 /*
   Repeated division is a good way to mung the least significant bits
@@ -470,7 +470,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
    the user know... */
 
 	if (ABSOLUT(dscale) > DBL_MAX_10_EXP)
-		(*err) (isc_arith_except, 0);
+		(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 	if (dscale > 0)
 		value *= power_of_ten(dscale);
@@ -541,12 +541,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		else if (scale < 0)
 			do {
 				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
-					(*err) (isc_arith_except, 0);
+					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 				val64 *= 10;
 			} while (++scale);
 
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		return (SLONG) val64;
 
 	case dtype_quad:
@@ -554,7 +554,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		high = ((SLONG *) p)[HIGH_WORD];
 		if ((value >= 0 && !high) || (value < 0 && high == -1))
 			break;
-		(*err) (isc_arith_except, 0);
+		(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		break;
 
 	case dtype_real:
@@ -588,12 +588,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		if (d < (double) LONG_MIN_real) {
 			if (d > (double) LONG_MIN_real - 1.)
 				return LONG_MIN;
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		}
 		if (d > (double) LONG_MAX_real) {
 			if (d < (double) LONG_MAX_real + 1.)
 				return LONG_MAX_int;
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		}
 		return (SLONG) d;
 
@@ -644,7 +644,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else if (scale < 0) {
 		do {
 			if (value > LONG_LIMIT || value < -LONG_LIMIT)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -851,7 +851,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			if (d < (double) QUAD_MAX_real + 1.)
 				return QUAD_MAX_int;
 
-			(*err)(isc_arith_except, 0);
+			(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		}
 		return QUAD_FROM_DOUBLE(d, err);
 
@@ -908,7 +908,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else {
 		do {
 			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -995,7 +995,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		   double, and thus will have no effect on the sum. */
 
 		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 		return (SINT64) d;
 
@@ -1046,7 +1046,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else if (scale < 0) {
 		do {
 			if (value > INT64_LIMIT || value < -INT64_LIMIT)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -1449,7 +1449,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			 */
 
 #ifdef SUPERCLIENT
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 #else
 			CHARSET_ID charset1, charset2;
 			if ((INTL_TTYPE(from) == ttype_dynamic) && (err == ERR_post))
@@ -1476,7 +1476,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					INTL_convert_string(to, from, err);
 					return;
 				}
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 			}
 #endif
 
@@ -1571,7 +1571,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
 					toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 				{
-					(*err)(isc_arith_except, 0);
+					(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
 				}
 			}
 #endif
@@ -1584,10 +1584,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				do {
 					if (*q++ != fill_char)
 					{
-						(*err) (isc_arith_except,
-								isc_arg_gds, isc_string_truncation,
-								isc_arg_sql_state, "22001",
-								0);
+						(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 					}
 				} while (--l);
 			}
@@ -1647,7 +1644,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		/* fb_assert(l <= MAX_SSHORT); */
 		*(SSHORT *) p = (SSHORT) l;
 		if (*(SSHORT *) p != l)
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 		return;
 
 	case dtype_long:
@@ -1671,7 +1668,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		{
 			double d_value = CVT_get_double(from, err);
 			if (ABSOLUT(d_value) > FLOAT_MAX)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			*(float*) p = (float) d_value;
 		}
 		return;
@@ -1936,7 +1933,7 @@ static SSHORT decompose(const char* string,
 		if (dtype == dtype_long)
 		{
 			if (value < LONG_MIN_int64 || value > LONG_MAX_int64)
-				(*err)(isc_arith_except, 0);
+				(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 			*return_value = (SLONG) value;
 		}
@@ -1959,11 +1956,13 @@ static SSHORT decompose(const char* string,
 			if (value >= limit_by_10) {
 				/* possibility of an overflow */
 				if (value > limit_by_10)
-					(*err) (isc_arith_except, 0);
+				{
+					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				}
 				else if (((*p > '8') && (sign == -1))
 						 || ((*p > '7') && (sign != -1)))
 				{
-					(*err) (isc_arith_except, 0);
+					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 				}
 			}
 
@@ -2019,7 +2018,7 @@ static SSHORT decompose(const char* string,
 				   applied to the value. */
 
 				if (exp >= SHORT_LIMIT)
-					(*err) (isc_arith_except, 0);
+					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			}
 			else if (*p == '-' && !digit_seen && !sign)
 				sign = -1;
@@ -2165,7 +2164,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			/* If we cannot print at least two digits, one on each side of the
 			   ".", report an overflow exception. */
 			if (precision < 2)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 			chars_printed = sprintf(temp, num_format, width, precision, d);
 
@@ -2177,7 +2176,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			if (chars_printed > width) {
 				precision -= (chars_printed - width);
 				if (precision < 2)
-					(*err) (isc_arith_except, 0);
+					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			    chars_printed = sprintf(temp, num_format, width, precision, d);
 			}
 		}

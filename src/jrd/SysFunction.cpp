@@ -951,7 +951,7 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			impure->vlu_misc.vlu_int64 = MOV_get_int64(value, value->dsc_scale);
 
 			if (impure->vlu_misc.vlu_int64 == MIN_SINT64)
-				status_exception::raise(isc_arith_except, 0);
+				status_exception::raise(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 			else if (impure->vlu_misc.vlu_int64 < 0) 
 				impure->vlu_misc.vlu_int64 = -impure->vlu_misc.vlu_int64;
 
@@ -981,7 +981,7 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 
 	SLONG code = MOV_get_long(value, 0);
 	if (!(code >= 0 && code <= 255))
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 	impure->vlu_misc.vlu_uchar = (UCHAR) code;
 	impure->vlu_desc.makeText(1, ttype_none, &impure->vlu_misc.vlu_uchar);
@@ -1577,7 +1577,7 @@ static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	if (impure->vlu_misc.vlu_double == HUGE_VAL)
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
 	return &impure->vlu_desc;
 }
@@ -1846,7 +1846,7 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	SINT64 divisor = MOV_get_int64(value2, 0);
 
 	if (divisor == 0)
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_gds, isc_exception_integer_divide_by_zero, 0);
 
 	SINT64 result = MOV_get_int64(value1, 0) % divisor;
 
@@ -1973,7 +1973,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	if (!value->isBlob() && !placing->isBlob())
 	{
 		if (len1 - length + len2 > static_cast<signed>(MAX_COLUMN_SIZE - sizeof(USHORT)))
-			status_exception::raise(isc_arith_except, 0);
+			status_exception::raise(isc_arith_except, isc_arg_gds, isc_imp_exc, 0);
 
 		dsc desc;
 		desc.makeText(len1 - length + len2, resultTextType);
@@ -2106,7 +2106,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	else
 	{
 		if (padLen * cs->maxBytesPerChar() > MAX_COLUMN_SIZE - sizeof(USHORT))
-			status_exception::raise(isc_arith_except, 0);
+			status_exception::raise(isc_arith_except, isc_arg_gds, isc_imp_exc, 0);
 
 		dsc desc;
 		desc.makeText(padLen * cs->maxBytesPerChar(), ttype);
