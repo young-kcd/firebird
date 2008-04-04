@@ -664,14 +664,12 @@ enum node_args {
 
 	e_dom_name = 0,			// nod_def_domain
 	e_dom_default,
-	e_dom_default_source,
 	e_dom_constraint,
 	e_dom_collate,
 	e_dom_count,
 
 	e_dfl_field = 0,		// nod_def_field
 	e_dfl_default,
-	e_dfl_default_source,
 	e_dfl_constraint,
 	e_dfl_collate,
 	e_dfl_domain,

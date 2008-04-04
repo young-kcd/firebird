@@ -1019,19 +1019,16 @@ db_file_list	: db_file
 domain_clause	: column_def_name
 		as_opt
 		data_type
-		begin_trigger
 		domain_default_opt
-		end_default_opt
 		domain_constraint_clause
 		collate_clause
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
-										  $1, $5, $6, make_list ($7), $8); }
+			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, $4, make_list ($5), $6); }
 		;
 
 /*
 rdomain_clause	: DOMAIN alter_column_name alter_domain_ops
 			{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
-							  $2, make_list ($3)); }
+					$2, make_list ($3)); }
 */
 
 as_opt	: AS
@@ -1040,8 +1037,8 @@ as_opt	: AS
 			{ $$ = NULL; }  
 		;
 
-domain_default	: DEFAULT begin_trigger default_value
-			{ $$ = $3; }
+domain_default	: DEFAULT begin_trigger default_value end_trigger
+			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		;
 
 domain_default_opt	: domain_default
@@ -1292,15 +1289,15 @@ table_element	: column_def
 /* column definition */
 
 column_def	: column_def_name data_type_or_domain domain_default_opt
-			end_default_opt column_constraint_clause collate_clause
+			column_constraint_clause collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, $3, $4, make_list ($5), $6, $2, NULL); }   
+					$1, $3, make_list ($4), $5, $2, NULL); }   
 		| column_def_name non_array_type def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, NULL, $3); }   
+					$1, NULL, NULL, NULL, NULL, $3); }   
 		| column_def_name def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, NULL, $2); }   
+					$1, NULL, NULL, NULL, NULL, $2); }   
 		;
 								 
 /* value does allow parens around it, but there is a problem getting the
@@ -1309,8 +1306,9 @@ column_def	: column_def_name data_type_or_domain domain_default_opt
 
 def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
 			{ 
-			lex.g_field->fld_flags |= FLD_computed;
-			$$ = make_node (nod_def_computed, 2, $4, $5); }
+				lex.g_field->fld_flags |= FLD_computed;
+				$$ = make_node (nod_def_computed, 2, $4, $5);
+			}
 		;
 
 computed_clause	: computed_by
@@ -1321,12 +1319,11 @@ computed_by	: COMPUTED BY
 		| COMPUTED
 		;
 
-data_type_or_domain	: data_type begin_trigger
-						  { $$ = NULL; }
-			| simple_column_name begin_string
-						  { $$ = make_node (nod_def_domain, (int) e_dom_count,
-											$1, NULL, NULL, NULL, NULL); }
-						;
+data_type_or_domain	: data_type
+			  { $$ = NULL; }
+		| simple_column_name
+			  { $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+		;
 
 collate_clause	: COLLATE symbol_collation_name
 			{ $$ = $2; }
@@ -1336,15 +1333,19 @@ collate_clause	: COLLATE symbol_collation_name
 
 
 column_def_name	: simple_column_name
-			{ lex.g_field_name = $1;
-			  lex.g_field = make_field ($1);
-			  $$ = (dsql_nod*) lex.g_field; }
+			{
+				lex.g_field_name = $1;
+				lex.g_field = make_field ($1);
+				$$ = (dsql_nod*) lex.g_field;
+			}
 		;
 
 simple_column_def_name  : simple_column_name
-				{ lex.g_field = make_field ($1);
-				  $$ = (dsql_nod*) lex.g_field; }
-			;
+			{
+				lex.g_field = make_field ($1);
+				$$ = (dsql_nod*) lex.g_field;
+			}
+		;
 
 
 data_type_descriptor :	init_data_type data_type
@@ -1555,9 +1556,9 @@ input_proc_parameters	: input_proc_parameter
 		;
 
 input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
-				begin_trigger default_par_opt end_default_opt
+				default_par_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $5, $6, NULL, $3, NULL, NULL); }   
+				$1, $4, NULL, $3, NULL, NULL); }   
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1567,13 +1568,13 @@ output_proc_parameters	: proc_parameter
 
 proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, NULL, NULL, NULL, $3, NULL, NULL); }   
+				$1, NULL, NULL, $3, NULL, NULL); }   
 		;
 
-default_par_opt	: DEFAULT begin_trigger default_value
-			{ $$ = $3; }
-		| '=' begin_trigger default_value
-			{ $$ = $3; }
+default_par_opt	: DEFAULT begin_trigger default_value end_trigger
+			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
+		| '=' begin_trigger default_value end_trigger
+			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
 		|
 			{ $$ = NULL; }
 		;
@@ -1601,21 +1602,13 @@ local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
 		;
 
-var_declaration_item	: column_def_name domain_or_non_array_type collate_clause var_init_opt
+var_declaration_item	: column_def_name domain_or_non_array_type collate_clause default_par_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, NULL, NULL, $3, NULL, NULL); }
+				$1, $4, NULL, $3, NULL, NULL); }
 		;
 
 var_decl_opt	: VARIABLE
 			{ $$ = NULL; }
-		|
-			{ $$ = NULL; }
-		;
-
-var_init_opt	: DEFAULT default_value
-			{ $$ = $2; }
-		| '=' default_value
-			{ $$ = $2; }
 		|
 			{ $$ = NULL; }
 		;
@@ -1969,12 +1962,6 @@ end_trigger	:
 					lex_position() - lex.beginning); }
 		;
 
-end_default_opt	:
-			{ $$ = (dsql_nod*) MAKE_string(lex.beginning, 
-					(yychar <= 0 ? lex_position() : lex.last_token) - lex.beginning); 
-			}
-		;
-
 
 check_opt	: WITH CHECK OPTION
 			{ $$ = make_node (nod_def_constraint, (int) e_cnstr_count, 
@@ -2205,12 +2192,12 @@ alter_domain_ops	: alter_domain_op
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-alter_domain_op	: SET domain_default end_trigger
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $2, $3); }			  
+alter_domain_op	: SET domain_default
+			{ $$ = $2; }
 		| ADD CONSTRAINT check_constraint
-			{ $$ = $3; } 
+			{ $$ = $3; }
 		| ADD check_constraint
-			{ $$ = $2; } 
+			{ $$ = $2; }
 		| DROP DEFAULT
 			{$$ = make_node (nod_del_default, (int) 0, NULL); }
 		| DROP CONSTRAINT
@@ -2252,9 +2239,8 @@ alter_op	: DROP simple_column_name drop_behaviour
 			}
 		| col_opt alter_col_name def_computed
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
-		| col_opt alter_col_name SET domain_default end_trigger
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-					make_node(nod_def_default, (int) e_dft_count, $4, $5), NULL); }
+		| col_opt alter_col_name SET domain_default
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, $4, NULL); }
 		| col_opt alter_col_name DROP DEFAULT
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
 					make_node(nod_del_default, (int) 0, NULL), NULL); }
@@ -2327,8 +2313,7 @@ col_opt	: ALTER
 alter_data_type_or_domain	: non_array_type
 			{ $$ = NULL; }
 		| simple_column_name
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
-					$1, NULL, NULL, NULL, NULL); }
+			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
 		;
 
 alter_col_name	: simple_column_name

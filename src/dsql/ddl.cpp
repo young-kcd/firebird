@@ -115,6 +115,7 @@ static void create_view_triggers(dsql_req*, dsql_nod*, dsql_nod*);
 static void define_computed(dsql_req*, dsql_nod*, dsql_fld*, dsql_nod*);
 static void define_constraint_trigger(dsql_req*, dsql_nod*);
 static void define_database(dsql_req*);
+static bool define_default(dsql_req*, const dsql_nod*);
 static void define_del_cascade_trg(dsql_req*, const dsql_nod*, const dsql_nod*,
 	const dsql_nod*, const char*, const char*);
 //static void define_del_default_trg(dsql_req*, dsql_nod*, dsql_nod*, dsql_nod*, TEXT*, TEXT*);
@@ -1413,6 +1414,38 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 }
 
 
+static bool define_default(dsql_req* request, const dsql_nod* node)
+{
+/*****************************************
+ *
+ *	d e f i n e _ d e f a u l t
+ *
+ *****************************************
+ *
+ * Function
+ *  Define default value for domain/column.
+ *  Returns whether it is specified as being NULL.
+ *
+ **************************************/
+	fb_assert(node && node->nod_type == nod_def_default);
+
+	dsql_nod* const value = PASS1_node(request, node->nod_arg[e_dft_default], false);
+	fb_assert(value);
+
+	request->begin_blr(isc_dyn_fld_default_value);
+	GEN_expr(request, value);
+	request->end_blr();
+
+	dsql_str* const string = (dsql_str*) node->nod_arg[e_dft_default_source];
+	fb_assert(string && string->str_length <= MAX_USHORT);
+
+	fix_default_source(string);
+	request->append_string(isc_dyn_fld_default_source, string->str_data, string->str_length);
+
+	return (value->nod_type == nod_null);
+}
+
+
 static void define_del_cascade_trg(	dsql_req*    request,
 									const dsql_nod*    element,
 									const dsql_nod*    for_columns,
@@ -1562,7 +1595,8 @@ static void define_set_default_trg(	dsql_req*    request,
 			if (default_node)
 			{
 				// case (1-a) above: there is a col. level default
-				GEN_expr(request, default_node);
+				fb_assert(default_node->nod_type == nod_def_default);
+				GEN_expr(request, default_node->nod_arg[e_dft_default]);
 				found_default = true;
 				search_for_default = false;
 			}
@@ -1730,20 +1764,7 @@ static void define_domain(dsql_req* request)
 	dsql_nod* node = element->nod_arg[e_dom_default];
 	if (node)
 	{
-		node = PASS1_node(request, node, false);
-		request->begin_blr(isc_dyn_fld_default_value);
-		GEN_expr(request, node);
-		request->end_blr();
-
-		dsql_str* string = (dsql_str*) element->nod_arg[e_dom_default_source];
-		if (string)
-		{
-			fb_assert(string->str_length <= MAX_USHORT);
-			fix_default_source(string);
-			request->append_string(	isc_dyn_fld_default_source,
-									string->str_data,
-									string->str_length);
-		}
+		define_default(request, node);
 	}
 
 	if (field->fld_ranges)
@@ -1987,22 +2008,7 @@ static void define_field(
 	dsql_nod* node = element->nod_arg[e_dfl_default];
 	if (node)
 	{
-		node = PASS1_node(request, node, false);
-		request->begin_blr(isc_dyn_fld_default_value);
-		if (node->nod_type == nod_null) {
-			default_null_flag = true;
-		}
-		GEN_expr(request, node);
-		request->end_blr();
-		dsql_str* string = (dsql_str*) element->nod_arg[e_dfl_default_source];
-		if (string)
-		{
-			fb_assert(string->str_length <= MAX_USHORT);
-			fix_default_source(string);
-			request->append_string(	isc_dyn_fld_default_source,
-									string->str_data,
-									string->str_length);
-		}
+		default_null_flag = define_default(request, node);
 	}
 
 	if (field->fld_ranges) {
@@ -2491,19 +2497,7 @@ static void define_procedure(dsql_req* request, NOD_TYPE op)
 			dsql_nod* node = parameter->nod_arg[e_dfl_default];
 			if (node)
 			{
-				node = PASS1_node(request, node, false);
-				request->begin_blr(isc_dyn_fld_default_value);
-				GEN_expr(request, node);
-				request->end_blr();
-				dsql_str* string = (dsql_str*) parameter->nod_arg[e_dfl_default_source];
-				if (string)
-				{
-					fb_assert(string->str_length <= MAX_USHORT);
-					fix_default_source(string);
-					request->append_string(isc_dyn_fld_default_source,
-											string->str_data,
-											string->str_length);
-				}
+				define_default(request, node);
 				defaults++;
 			}
 			else if (defaults) {
@@ -5303,40 +5297,12 @@ static void modify_domain( dsql_req* request)
 		switch (element->nod_type)
 		{
 		case nod_def_default:
-			{
-				check_one_call (repetition_count, 0, "DOMAIN DEFAULT");
-				// CVC: So do you want to crash me with ALTER DOMAIN dom SET; ???
-				dsql_nod* defVal = element->nod_arg[e_dft_default];
-				if (!defVal)
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-								isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-								isc_arg_number, (SLONG) domain_node->nod_line,
-								isc_arg_number,
-								(SLONG) domain_node->nod_column + domain_name->str_length + strlen(" DEFAULT"),
-								0);
-				}
-				// CVC End modification.
-				defVal = PASS1_node(request, defVal, false);
-
-				request->begin_blr(isc_dyn_fld_default_value);
-				GEN_expr(request, defVal);
-				request->end_blr();
-
-				string = (dsql_str*) element->nod_arg[e_dft_default_source];
-				if (string)
-				{
-					fb_assert(string->str_length <= MAX_USHORT);
-					fix_default_source(string);
-					request->append_string(	isc_dyn_fld_default_source,
-											string->str_data,
-											(USHORT) string->str_length);
-				}
-			}
+			check_one_call(repetition_count, 0, "DOMAIN DEFAULT");
+			define_default(request, element);
 			break;
 
 		case nod_def_constraint:
-			check_one_call (repetition_count, 1, "DOMAIN CONSTRAINT");
+			check_one_call(repetition_count, 1, "DOMAIN CONSTRAINT");
 			request->append_uchar(isc_dyn_single_validation);
 			request->begin_blr(isc_dyn_fld_validation_blr);
 
@@ -5398,12 +5364,12 @@ static void modify_domain( dsql_req* request)
 			}
 
 		case nod_delete_rel_constraint:
-			check_one_call (repetition_count, 4, "DOMAIN DROP CONSTRAINT");
+			check_one_call(repetition_count, 4, "DOMAIN DROP CONSTRAINT");
 			request->append_uchar(isc_dyn_del_validation);
 			break;
 
 		case nod_del_default:
-			check_one_call (repetition_count, 5, "DOMAIN DROP DEFAULT");
+			check_one_call(repetition_count, 5, "DOMAIN DROP DEFAULT");
 			request->append_uchar(isc_dyn_del_default);
 			break;
 
@@ -6243,7 +6209,8 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 
 		if (node)
 		{
-			node = PASS1_node(request, node, false);
+			fb_assert(node->nod_type == nod_def_default);
+			node = PASS1_node(request, node->nod_arg[e_dft_default], false);
 			GEN_expr(request, node);
 		}
 		else
@@ -6763,22 +6730,7 @@ static void modify_field(dsql_req*	request,
 		{
 			// We have the default or want to get rid of it.
 			if (defNod->nod_type == nod_def_default)
-			{
-				dsql_nod* defVal = defNod->nod_arg[e_dft_default];
-				// Shameful copy/paste from modify_domain.
-				defVal = PASS1_node(request, defVal, false);
-
-				request->begin_blr(isc_dyn_fld_default_value);
-				GEN_expr(request, defVal);
-				request->end_blr();
-
-				dsql_str* defValSrc = (dsql_str*) defNod->nod_arg[e_dft_default_source];
-				fb_assert(defValSrc->str_length <= MAX_USHORT);
-				fix_default_source(defValSrc);
-
-				request->append_string(isc_dyn_fld_default_source,
-					defValSrc->str_data, (USHORT) defValSrc->str_length);
-			}
+				define_default(request, defNod);
 			else if (defNod->nod_type == nod_del_default)
 				request->append_uchar(isc_dyn_del_default);
 			else
