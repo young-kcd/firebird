@@ -254,6 +254,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 #endif
 
+	CreateMutex(ISC_get_security_desc(), FALSE, SERVER_MUTEX);
+
 /* Initialize the service and
    Setup sig_mutex for the process
 */

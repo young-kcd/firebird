@@ -34,6 +34,8 @@ static const char* ISCGUARD_SERVICE			= "FirebirdGuardianDefaultInstance";
 static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - DefaultInstance";
 static const char* ISCGUARD_DISPLAY_DESCR	= "Firebird Server Guardian - www.firebirdsql.org";
 static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
+
+static const char* SERVER_MUTEX				= "FirebirdServerMutex";
 static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex";
 // Starting with 128 the service prams are user defined
 const DWORD SERVICE_CREATE_GUARDIAN_MUTEX	= 128;
