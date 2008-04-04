@@ -137,6 +137,7 @@ Firebird 2.1:
     BIN_SHR *
     BIN_XOR *
     CEIL
+    CEILING
     COS *
     COSH *
     COT *

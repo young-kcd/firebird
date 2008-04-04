@@ -828,8 +828,7 @@ rem_port* INET_connect(const TEXT* name,
 		if (INET_ERRNO == INET_ADDR_IN_USE) {
 			for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
 				sleep(10);
-				n = bind((SOCKET) port->port_handle,
-						 (struct sockaddr *) &address, sizeof(address));
+				n = bind((SOCKET) port->port_handle, (struct sockaddr *) &address, sizeof(address));
 				if (n == 0)
 					break;
 			}
