@@ -2180,8 +2180,8 @@ static void map_in_out(	dsql_req*		request,
 						UCHAR*	dsql_msg_buf,
 						const UCHAR* in_dsql_msg_buf)
 {
-	fb_assert((dsql_msg_buf != NULL) ^ (in_dsql_msg_buf != NULL));
-	fb_assert(!request || in_dsql_msg_buf);
+	///fb_assert((dsql_msg_buf != NULL) ^ (in_dsql_msg_buf != NULL));
+	///fb_assert(!request || in_dsql_msg_buf);
 	
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
