@@ -1486,7 +1486,9 @@ static void gen_constant( dsql_req* request, const dsc* desc, bool negate_value)
 			 */
 			ERRD_post(isc_sqlerr,
 					  isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_arith_except, 0);
+					  isc_arg_gds, isc_arith_except,
+					  isc_arg_gds, isc_numeric_out_of_range,
+					  0);
 		}
 
 		/* We and the lexer both agree that this is an SINT64 constant,

@@ -694,6 +694,8 @@ COMMIT WORK;
 ('time_range_exceeded', 'EXE_assignment', 'evl.cpp', NULL, 0, 592, NULL, 'value exceeds the range for a valid time', NULL, NULL)
 ('datetime_range_exceeded', 'add_sql_timestamp', 'evl.cpp', NULL, 0, 593, NULL, 'value exceeds the range for valid timestamps', NULL, NULL)
 ('string_truncation', 'CVT_move', 'cvt.cpp', NULL, 0, 594, NULL, 'string right truncation', NULL, NULL)
+('blob_truncation', 'move_to_string', 'blb.cpp', NULL, 0, 595, NULL, 'blob truncation when converting to a string: length limit exceeded', NULL, NULL)
+('numeric_out_of_range', NULL, NULL, NULL, 0, 596, NULL, 'numeric value is out of range', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

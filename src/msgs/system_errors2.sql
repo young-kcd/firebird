@@ -1,7 +1,7 @@
 -- Take note the new format uses FAC_CODE, NUMBER in the same order as messages2.sql.
 set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FAC_CODE, NUMBER, GDS_SYMBOL, SEVERITY, SEVERITY_TEXT) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 -- JRD
-(-802, '22', '003', 0, 1, 'arith_except', NULL, 'ERROR')
+(-802, '22', '000', 0, 1, 'arith_except', NULL, 'ERROR')
 (-901, 'HY', '000', 0, 2, 'bad_dbkey', NULL, 'ERROR')
 (-922, 'HY', '000', 0, 3, 'bad_db_format', NULL, 'ERROR')
 (-904, '08', '003', 0, 4, 'bad_db_handle', NULL, 'ERROR')
@@ -459,7 +459,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '22', '000', 0, 456, 'exception_float_stack_check', NULL, NULL)
 (-901, '22', '003', 0, 457, 'exception_float_underflow', NULL, NULL)
 (-901, '22', '012', 0, 458, 'exception_integer_divide_by_zero', NULL, NULL)
-(-901, '22', '000', 0, 459, 'exception_integer_overflow', NULL, NULL)
+(-901, '22', '003', 0, 459, 'exception_integer_overflow', NULL, NULL)
 (-901, 'HY', '000', 0, 460, 'exception_unknown', NULL, NULL)
 (-901, 'HY', '001', 0, 461, 'exception_stack_overflow', NULL, NULL)
 (-901, 'HY', '000', 0, 462, 'exception_sigsegv', NULL, NULL)
@@ -595,6 +595,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-833, '22', '008', 0, 592, 'time_range_exceeded', NULL, NULL)
 (-833, '22', '008', 0, 593, 'datetime_range_exceeded', NULL, NULL)
 (-802, '22', '001', 0, 594, 'string_truncation', NULL, NULL)
+(-802, '22', '001', 0, 595, 'blob_truncation', NULL, NULL)
+(-802, '22', '003', 0, 596, 'numeric_out_of_range', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

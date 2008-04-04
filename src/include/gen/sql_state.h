@@ -21,7 +21,7 @@ static const struct {
 	SLONG gds_code;
 	const char* sql_state;
 } gds__sql_states[] = {
-	{335544321, "22003"}, //   1 arith_except 
+	{335544321, "22000"}, //   1 arith_except 
 	{335544322, "HY000"}, //   2 bad_dbkey 
 	{335544323, "HY000"}, //   3 bad_db_format 
 	{335544324, "08003"}, //   4 bad_db_handle 
@@ -479,7 +479,7 @@ static const struct {
 	{335544776, "22000"}, // 456 exception_float_stack_check 
 	{335544777, "22003"}, // 457 exception_float_underflow 
 	{335544778, "22012"}, // 458 exception_integer_divide_by_zero 
-	{335544779, "22000"}, // 459 exception_integer_overflow 
+	{335544779, "22003"}, // 459 exception_integer_overflow 
 	{335544780, "HY000"}, // 460 exception_unknown 
 	{335544781, "HY001"}, // 461 exception_stack_overflow 
 	{335544782, "HY000"}, // 462 exception_sigsegv 
@@ -615,6 +615,8 @@ static const struct {
 	{335544912, "22008"}, // 592 time_range_exceeded 
 	{335544913, "22008"}, // 593 datetime_range_exceeded 
 	{335544914, "22001"}, // 594 string_truncation 
+	{335544915, "22001"}, // 595 blob_truncation 
+	{335544916, "22003"}, // 596 numeric_out_of_range 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

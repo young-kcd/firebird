@@ -616,6 +616,8 @@ static const struct {
 	{"time_range_exceeded", 335544912},
 	{"datetime_range_exceeded", 335544913},
 	{"string_truncation", 335544914},
+	{"blob_truncation", 335544915},
+	{"numeric_out_of_range", 335544916},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
