@@ -639,7 +639,7 @@ void general_on_error(void)
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print_status(isc_status);
+	BURP_print_status(isc_status, true);
 	BURP_abort();
 }
 

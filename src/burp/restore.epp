@@ -332,52 +332,50 @@ int RESTORE_restore (const TEXT* file_name,
 	{
 
 		// Block added to verbose index creation by Toni Martir 
-		if (tdgbl->gbl_sw_verbose)
-		{
-			EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
-			if (gds_status[1])
-				EXEC SQL SET TRANSACTION;
+		// Always try to activate deferred indices - it helps for some broken backups,
+		// and in normal cases doesn't take much time to look for such indices. AP-2008.
+		EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
+		if (gds_status[1])
+			EXEC SQL SET TRANSACTION;
 
-			// Activate first indexes that are not foreign keys 
-			FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
-				IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
-				IDS.RDB$FOREIGN_KEY MISSING
+		// Activate first indexes that are not foreign keys 
+		FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
+			IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
+			IDS.RDB$FOREIGN_KEY MISSING
 				
-				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
-					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
-					sizeof(index_name));
-				BURP_verbose(285, index_name);
-				// activating and creating deferred index %s
+			MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
+				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
+				sizeof(index_name));
+			BURP_verbose(285, index_name);
+			// activating and creating deferred index %s
+			MODIFY IDS USING
+				IDS.RDB$INDEX_INACTIVE = FALSE;
+			END_MODIFY;
+			ON_ERROR
+				general_on_error();
+			END_ERROR;
+
+			SAVE
+			// existing ON_ERROR continues past error, beck 
+			ON_ERROR
+				BURP_print (173, index_name);
+				BURP_print_status(isc_status);
 				MODIFY IDS USING
-					IDS.RDB$INDEX_INACTIVE = FALSE;
+					IDS.RDB$INDEX_INACTIVE = TRUE;
 				END_MODIFY;
 				ON_ERROR
-					general_on_error();
+					general_on_error ();
 				END_ERROR;
-
-				SAVE
-				// existing ON_ERROR continues past error, beck 
-				ON_ERROR
-					BURP_print (173, index_name);
-					BURP_print_status(isc_status);
-					MODIFY IDS USING
-						IDS.RDB$INDEX_INACTIVE = TRUE;
-					END_MODIFY;
-					ON_ERROR
-						general_on_error ();
-					END_ERROR;
-				END_ERROR;
-			END_FOR;
-			ON_ERROR
-				general_on_error ();
 			END_ERROR;
-			MISC_release_request_silent(req_handle1);
-			COMMIT;
-			ON_ERROR
-				general_on_error ();
-			END_ERROR;
-		}
-
+		END_FOR;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+		MISC_release_request_silent(req_handle1);
+		COMMIT;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
 
 		EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
 		if (gds_status[1])
@@ -403,8 +401,8 @@ int RESTORE_restore (const TEXT* file_name,
 				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
 				sizeof(index_name));
 			BURP_verbose(285, index_name);
-			
 			// activating and creating deferred index %s
+
 			bool fError = false;
 			isc_tr_handle activateIndexTran = 0;
 			ISC_STATUS_ARRAY local_status_vector;
@@ -1186,7 +1184,7 @@ void general_on_error()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print_status (isc_status);
+	BURP_print_status (isc_status, true);
 	BURP_abort ();
 }
 

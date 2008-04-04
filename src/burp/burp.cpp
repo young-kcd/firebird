@@ -1044,7 +1044,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		// Non-burp exception was caught
 		tdgbl->burp_throw = false;
 		e.stuff_exception(tdgbl->status_vector);
-		BURP_print_status(tdgbl->status_vector);
+		BURP_print_status(tdgbl->status_vector, true);
 		BURP_print(83);	// msg 83 Exiting before completion due to errors
 	}
 
@@ -1067,7 +1067,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		close_out_transaction(action, &tdgbl->global_trans);
 		if (isc_detach_database(tdgbl->status_vector, &tdgbl->db_handle))
 		{
-			BURP_print_status(tdgbl->status_vector);
+			BURP_print_status(tdgbl->status_vector, true);
 		}
 	}
 
@@ -1181,7 +1181,7 @@ void BURP_error_redirect(const ISC_STATUS* status_vector,
  *
  **************************************/
 
-	BURP_print_status(status_vector);
+	BURP_print_status(status_vector, true);
 	BURP_error(errcode, true, arg);
 }
 
@@ -1319,7 +1319,7 @@ void BURP_print(USHORT number,
 }
 
 
-void BURP_print_status(const ISC_STATUS* status_vector)
+void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
 {
 /**************************************
  *
@@ -1335,8 +1335,10 @@ void BURP_print_status(const ISC_STATUS* status_vector)
 	if (status_vector) {
 		const ISC_STATUS* vector = status_vector;
 
-		BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-		tdgbl->uSvc->stuffStatus(vector);
+		if (flagStuff) {
+			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
+			tdgbl->uSvc->stuffStatus(vector);
+		}
 
         SCHAR s[1024];
 		if (fb_interpret(s, sizeof(s), &vector)) {
@@ -1541,7 +1543,7 @@ static gbak_action open_files(const TEXT* file1,
 				// msg 13 REPLACE specified, but the first file %s is a database 
 				BURP_error(13, true, file1);
 				if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
-					BURP_print_status(status_vector);
+					BURP_print_status(status_vector, true);
 				}
 				return QUIT;
 			}
@@ -1558,7 +1560,7 @@ static gbak_action open_files(const TEXT* file1,
 				 (status_vector[1] != isc_io_error
 				  && status_vector[1] != isc_bad_db_format))
 		{
-			BURP_print_status(status_vector);
+			BURP_print_status(status_vector, true);
 			return QUIT;
 		}
 
@@ -1862,7 +1864,7 @@ static gbak_action open_files(const TEXT* file1,
 	{
 		if (sw_replace == IN_SW_BURP_C) {
 			if (isc_detach_database(status_vector, &tdgbl->db_handle)) {
-				BURP_print_status(status_vector);
+				BURP_print_status(status_vector, true);
 			}
 			BURP_error(14, true, *file2);
 			// msg 14 database %s already exists.  To replace it, use the -R switch 
