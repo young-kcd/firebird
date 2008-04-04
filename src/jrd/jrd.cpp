@@ -3083,7 +3083,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
 			{
-				Firebird::status_exception::raise(isc_shutdown_timeout);
+				Firebird::status_exception::raise(isc_shutdown_timeout, isc_arg_end);
 			}
 		}
 		else

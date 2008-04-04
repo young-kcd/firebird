@@ -6119,7 +6119,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 			{
 				if (getMilliTime() > timeLimit)
 				{
-					Firebird::status_exception::raise(isc_shutdown_timeout);
+					Firebird::status_exception::raise(isc_shutdown_timeout, isc_arg_end);
 				}
 			}
 
