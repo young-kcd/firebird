@@ -1244,6 +1244,8 @@ C --
       PARAMETER (GDS__blob_truncation                  = 335544915)
       INTEGER*4 GDS__numeric_out_of_range            
       PARAMETER (GDS__numeric_out_of_range             = 335544916)
+      INTEGER*4 GDS__shutdown_timeout                
+      PARAMETER (GDS__shutdown_timeout                 = 335544917)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
