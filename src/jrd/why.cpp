@@ -6119,10 +6119,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 			{
 				if (getMilliTime() > timeLimit)
 				{
-					const char errorMsg[] = "Firebird shutdown is still in progress after the specified timeout";
-					Firebird::status_exception::raise(isc_random,
-													  isc_arg_string, (ISC_STATUS) errorMsg,
-													  0);
+					Firebird::status_exception::raise(isc_shutdown_timeout);
 				}
 			}
 

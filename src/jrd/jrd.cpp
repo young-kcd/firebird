@@ -3083,10 +3083,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
 			{
-				const char errorMsg[] = "Server shutdown is still in progress after the specified timeout";
-				Firebird::status_exception::raise(isc_random,
-												  isc_arg_string, (ISC_STATUS) errorMsg,
-												  0);
+				Firebird::status_exception::raise(isc_shutdown_timeout);
 			}
 		}
 		else
