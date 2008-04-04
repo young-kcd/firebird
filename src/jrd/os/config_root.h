@@ -88,7 +88,8 @@ public:
 
 	virtual ~ConfigRoot() {}
 
-	const char *getInstallDirectory() const {
+	const char *getInstallDirectory() {
+		osConfigRoot();
 		return install_dir().c_str();
 	}
 

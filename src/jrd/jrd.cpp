@@ -163,7 +163,9 @@ namespace
 #ifdef WIN_NT
 			// Try to load ib_util.dll now because loading UDFs with altered search
 			// path will not search the server bin directory and will fail.
-			ibUtilModule = ModuleLoader::loadModule("ib_util.dll");
+			Firebird::PathName dir;
+			PathUtils::concatPath(dir, Config::getInstallDirectory(), "ib_util.dll");
+			ibUtilModule = ModuleLoader::loadModule(dir);
 #endif
 		}
 
