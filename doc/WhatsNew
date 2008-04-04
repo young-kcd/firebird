@@ -7,6 +7,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
  
+    * Bugfix CORE-1680
+        "gsec display" only shows some first users when there are many users (>50) in the security database  
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
 
   ***************************
   * v2.1 Release Candidate 2
