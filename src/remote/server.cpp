@@ -1909,7 +1909,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	USHORT in_msg_length = 0, out_msg_length = 0;
 	const UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
-	const UCHAR* in_blr;
+	UCHAR* in_blr;
 	UCHAR* out_blr;
 	if (op == op_exec_immediate2)
 	{
@@ -1977,7 +1977,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 						   (USHORT) ((exnow->p_sqlst_SQL_dialect * 10) +
 									 parser_version),
 						   in_blr_length,
-						   reinterpret_cast<const char*>(in_blr),
+						   reinterpret_cast<char*>(in_blr),
 						   in_msg_type,
 						   in_msg_length,
 						   reinterpret_cast<const char*>(in_msg),
@@ -2045,7 +2045,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 	getHandle(statement, sqldata->p_sqldata_statement);
 
 	USHORT in_msg_length = 0, out_msg_length = 0;
-	const UCHAR* in_msg = NULL;
+	UCHAR* in_msg = NULL;
 	UCHAR* out_msg = NULL;
 	USHORT out_msg_type, out_blr_length;
 	UCHAR* out_blr;
@@ -2086,7 +2086,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 					 reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
 					 sqldata->p_sqldata_message_number,
 					 in_msg_length,
-					 reinterpret_cast<const char*>(in_msg),
+					 reinterpret_cast<char*>(in_msg),
 					 out_blr_length,
 					 reinterpret_cast<char*>(out_blr),
 					 out_msg_type,
@@ -2230,7 +2230,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			s = GDS_DSQL_FETCH(status_vector,
 							   &statement->rsr_handle,
 							   sqldata->p_sqldata_blr.cstr_length,
-							   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
+							   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 							   sqldata->p_sqldata_message_number,
 							   msg_length,
 							   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
@@ -2317,7 +2317,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		s = GDS_DSQL_FETCH(status_vector,
 						   &statement->rsr_handle,
 						   sqldata->p_sqldata_blr.cstr_length,
-						   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
+						   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 						   sqldata->p_sqldata_message_number,
 						   msg_length,
 						   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
@@ -2383,7 +2383,7 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 	s = GDS_DSQL_FETCH(status_vector,
 					   &statement->rsr_handle,
 					   sqldata->p_sqldata_blr.cstr_length,
-					   reinterpret_cast<const char*>(sqldata->p_sqldata_blr.cstr_address),
+					   reinterpret_cast<char*>(sqldata->p_sqldata_blr.cstr_address),
 					   sqldata->p_sqldata_message_number,
 					   msg_length,
 					   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
@@ -5183,10 +5183,10 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 	
-	const UCHAR* blr = trrq->p_trrq_blr.cstr_address;
+	UCHAR* blr = trrq->p_trrq_blr.cstr_address;
 	const USHORT blr_length = trrq->p_trrq_blr.cstr_length;
 	Rpr* procedure = this->port_rpr;
-	const UCHAR* in_msg = (procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
+	UCHAR* in_msg = (procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
 	const USHORT in_msg_length =
 		(procedure->rpr_in_format) ? procedure->rpr_in_format->fmt_length : 0;
 	UCHAR* out_msg =
@@ -5198,9 +5198,9 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 						 &rdb->rdb_handle,
 						 &transaction->rtr_handle,
 						 blr_length,
-						 reinterpret_cast<const char*>(blr),
+						 reinterpret_cast<char*>(blr),
 						 in_msg_length,
-						 reinterpret_cast<const char*>(in_msg),
+						 reinterpret_cast<char*>(in_msg),
 						 out_msg_length,
 						 reinterpret_cast<char*>(out_msg));
 

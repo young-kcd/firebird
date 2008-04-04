@@ -94,7 +94,7 @@ static bool_t xdr_quad(XDR *, struct bid *);
 static bool_t xdr_request(XDR *, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, USHORT, const UCHAR*);
 static bool_t xdr_status_vector(XDR *, ISC_STATUS *, TEXT * strings[]);
-static bool_t xdr_sql_blr(XDR *, SLONG, CSTRING *, int, SQL_STMT_TYPE);
+static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR *, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
 static bool_t xdr_trrq_message(XDR *, USHORT);
@@ -643,7 +643,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		}
 
 		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, FALSE, TYPE_PREPARED);
+					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short,
@@ -653,7 +653,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 				return P_FALSE(xdrs, p);
 		}
 		if (p->p_operation == op_execute2) {
-			xdr_sql_blr(xdrs, (SLONG) - 1, &sqldata->p_sqldata_out_blr, TRUE,
+			xdr_sql_blr(xdrs, (SLONG) - 1, &sqldata->p_sqldata_out_blr, true,
 						TYPE_PREPARED);
 			MAP(xdr_short,
 				reinterpret_cast<SSHORT&>(sqldata->p_sqldata_out_message_number));
@@ -663,7 +663,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 	case op_exec_immediate2:
 		prep_stmt = &p->p_sqlst;
-		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_blr, FALSE,
+		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_blr, false,
 					TYPE_IMMEDIATE);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_message_number));
@@ -673,7 +673,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			if (!xdr_sql_message(xdrs, (SLONG) - 1))
 				return P_FALSE(xdrs, p);
 		}
-		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_out_blr, TRUE,
+		xdr_sql_blr(xdrs, (SLONG) - 1, &prep_stmt->p_sqlst_out_blr, true,
 					TYPE_IMMEDIATE);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(prep_stmt->p_sqlst_out_message_number));
@@ -700,7 +700,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, TRUE, TYPE_PREPARED);
+					&sqldata->p_sqldata_blr, true, TYPE_PREPARED);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short,
@@ -744,7 +744,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_statement));
 		xdr_sql_blr(xdrs, (SLONG) sqldata->p_sqldata_statement,
-					&sqldata->p_sqldata_blr, FALSE, TYPE_PREPARED);
+					&sqldata->p_sqldata_blr, false, TYPE_PREPARED);
 		MAP(xdr_short,
 			reinterpret_cast<SSHORT&>(sqldata->p_sqldata_message_number));
 		MAP(xdr_short,
@@ -1486,7 +1486,7 @@ static bool_t xdr_sql_blr(
 						  XDR* xdrs,
 						  SLONG statement_id,
 						  CSTRING* blr,
-						  int direction, SQL_STMT_TYPE stmt_type)
+						  bool direction, SQL_STMT_TYPE stmt_type)
 {
 /**************************************
  *
@@ -1528,7 +1528,7 @@ static bool_t xdr_sql_blr(
 
 /* Parse the blr describing the message. */
 
-	rem_fmt** fmt_ptr = (direction) ?
+	rem_fmt** fmt_ptr = direction ?
 		&statement->rsr_select_format : &statement->rsr_bind_format;
 
 	if (xdrs->x_op == XDR_DECODE) {

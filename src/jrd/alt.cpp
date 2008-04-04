@@ -558,7 +558,7 @@ ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
 							 SSHORT req_level)
 {
 	return isc_send(status_vector, req_handle, msg_type, msg_length, 
-					(const SCHAR*) msg, req_level);
+					static_cast<const SCHAR*>(msg), req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS* status_vector,

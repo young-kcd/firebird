@@ -2536,7 +2536,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_M(ISC_STATUS* user_status,
 										  const SCHAR* blr,
 										  USHORT msg_type,
 										  USHORT msg_length,
-										  const SCHAR* msg)
+										  SCHAR* msg)
 {
 /**************************************
  *
@@ -2562,7 +2562,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 										   const SCHAR* in_blr,
 										   USHORT in_msg_type,
 										   USHORT in_msg_length,
-										   const SCHAR* in_msg,
+										   SCHAR* in_msg,
 										   USHORT out_blr_length,
 										   SCHAR* out_blr,
 										   USHORT out_msg_type,
@@ -2630,6 +2630,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 }
 
 
+// Is this really API function? Where is it declared?
 ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS* user_status,
 										   FB_API_HANDLE* db_handle,
 										   FB_API_HANDLE* tra_handle,
@@ -2748,6 +2749,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 }
 
 
+// Is this really API function? Where is it declared?
 ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(ISC_STATUS* user_status,
 										   FB_API_HANDLE* db_handle,
 										   FB_API_HANDLE* tra_handle,
@@ -2757,7 +2759,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM_M(ISC_STATUS* user_status,
 										   USHORT blr_length,
 										   USHORT msg_type,
 										   USHORT msg_length,
-										   const SCHAR* blr,
+										   SCHAR* blr,
 										   SCHAR* msg)
 {
 /**************************************
@@ -2783,7 +2785,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMM_M(ISC_STATUS* user_status,
 											  const SCHAR* string,
 											  USHORT dialect,
 											  USHORT blr_length,
-											  const SCHAR* blr,
+											  SCHAR* blr,
 											  USHORT msg_type,
 											  USHORT msg_length,
 											  SCHAR* msg)
@@ -2813,7 +2815,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 											const SCHAR* string,
 											USHORT dialect,
 											USHORT in_blr_length,
-											const SCHAR* in_blr,
+											SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
 											const SCHAR* in_msg,
@@ -2924,7 +2926,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 											const SCHAR* string,
 											USHORT dialect,
 											USHORT in_blr_length,
-											const SCHAR* in_blr,
+											SCHAR* in_blr,
 											USHORT in_msg_type,
 											USHORT in_msg_length,
 											const SCHAR* in_msg,
@@ -3125,7 +3127,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 										FB_API_HANDLE* stmt_handle,
 										USHORT blr_length,
-										const SCHAR* blr,
+										SCHAR* blr,
 										USHORT msg_type,
 										USHORT msg_length,
 										SCHAR* msg)
@@ -3178,7 +3180,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
 										 FB_API_HANDLE* stmt_handle,
 										 USHORT blr_length,
-										 const SCHAR* blr,
+										 SCHAR* blr,
 										 USHORT msg_type,
 										 USHORT msg_length,
 										 SCHAR* msg,
@@ -4958,9 +4960,9 @@ ISC_STATUS API_ROUTINE GDS_TRANSACT_REQUEST(ISC_STATUS* user_status,
 											FB_API_HANDLE* db_handle,
 											FB_API_HANDLE* tra_handle,
 											USHORT blr_length,
-											const SCHAR* blr,
+											SCHAR* blr,
 											USHORT in_msg_length,
-											const SCHAR* in_msg,
+											SCHAR* in_msg,
 											USHORT out_msg_length,
 											SCHAR* out_msg)
 {
@@ -5389,7 +5391,7 @@ static void free_block(void* block)
  *
  **************************************/
 
-	gds__free((SLONG *) block);
+	gds__free(block);
 }
 
 
@@ -5643,6 +5645,8 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 		}
 		else if (!to || from == to)
 		{
+			// This code has no effect because jrd8_create_blob, jrd8_open_blob,
+			// REM_create_blob and REM_open_blob are defined as no_entrypoint in entry.h
 			CALL(proc, dbb->implementation) (status,
 											 &dbb->handle,
 											 &transaction->handle,

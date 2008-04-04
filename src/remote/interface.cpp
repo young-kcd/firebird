@@ -3734,7 +3734,7 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS* user_status,
 
 ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 				Rrq** req_handle,
-				USHORT msg_type, USHORT msg_length, UCHAR * msg, SSHORT level)
+				USHORT msg_type, USHORT msg_length, const UCHAR* msg, SSHORT level)
 {
 /**************************************
  *
@@ -3762,7 +3762,8 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 	try
 	{
 		REM_MSG message = request->rrq_rpt[msg_type].rrq_message;
-		message->msg_address = msg;
+		// We are lying here, but the interface shows for years this param as const
+		message->msg_address = const_cast<UCHAR*>(msg);
 
 		PACKET* packet = &rdb->rdb_packet;
 		packet->p_operation = op_send;
@@ -5004,7 +5005,7 @@ static bool batch_gds_receive(rem_port*		port,
 	// Queue errors within the batched request
 
 	ISC_STATUS_ARRAY tmp_status;
-	ISC_STATUS* save_status = packet->p_resp.p_resp_status_vector;
+	ISC_STATUS* const save_status = packet->p_resp.p_resp_status_vector;
 	packet->p_resp.p_resp_status_vector = tmp_status;
 
 	bool clear_queue = false;
@@ -5125,14 +5126,13 @@ static bool batch_gds_receive(rem_port*		port,
 
 		if (!clear_queue)
 			break;
+
 #ifdef SCROLLABLE_CURSORS
-		else {
 			/* if we are just trying to clear the queue, then NULL out the message 
 			   address so we don't get a record out of order--it would mess up 
 			   scrolling through the cache */
 
-			message->msg_address = NULL;
-		}
+		message->msg_address = NULL;
 #endif
 	}
 
