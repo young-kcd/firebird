@@ -1711,6 +1711,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
  **/
 dsql_str* MAKE_string(const char* str, int length)
 {
+	fb_assert(length >= 0);
 	return MAKE_tagged_string(str, length, NULL);
 }
 
