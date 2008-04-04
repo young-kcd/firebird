@@ -226,7 +226,8 @@ struct clean
 typedef clean *CLEAN;
 
 static Firebird::GlobalPtr<Firebird::Mutex> cleanup_handlers_mutex;
-static CLEAN	cleanup_handlers = NULL;
+static CLEAN cleanup_handlers = NULL;
+static Firebird::GlobalPtr<Firebird::Mutex> global_msg_mutex;
 static gds_msg* global_default_msg = NULL;
 static bool volatile initialized = false;
 
@@ -1319,6 +1320,8 @@ int API_ROUTINE gds__msg_close(void *handle)
 
 	gds_msg* messageL = static_cast<gds_msg*>(handle);
 
+	Firebird::MutexLockGuard guard(global_msg_mutex);
+
 	if (!messageL) {
 		if (!global_default_msg) {
 			return 0;
@@ -1439,6 +1442,9 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 // Handle default message file
 	int status = -1;
 	gds_msg* messageL = (gds_msg*) handle;
+
+	Firebird::MutexLockGuard guard(global_msg_mutex);
+
 	if (!messageL && !(messageL = global_default_msg)) {
 		/* Try environment variable setting first */
 
