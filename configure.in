@@ -490,7 +490,6 @@ AC_CHECK_HEADERS(semaphore.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
-AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
