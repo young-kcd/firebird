@@ -399,9 +399,9 @@ static const struct {
 	{335544696, "HY000"}, // 376 log_length_spec 
 	{335544697, "HY104"}, // 377 precision_err 
 	{335544698, "HY104"}, // 378 scale_nogt 
-	{335544699, "HY000"}, // 379 expec_short 
-	{335544700, "HY000"}, // 380 expec_long 
-	{335544701, "HY000"}, // 381 expec_ushort 
+	{335544699, "22003"}, // 379 expec_short 
+	{335544700, "22003"}, // 380 expec_long 
+	{335544701, "22003"}, // 381 expec_ushort 
 	{335544702, "22025"}, // 382 escape_invalid 
 	{335544703, "HY000"}, // 383 svcnoexe 
 	{335544704, "08006"}, // 384 net_lookup_err 
@@ -549,7 +549,7 @@ static const struct {
 	{335544846, "HY000"}, // 526 ctx_bad_argument 
 	{335544847, "37001"}, // 527 identifier_too_long 
 	{335544848, "HY000"}, // 528 except2 
-	{335544849, "42000"}, // 529 malformed_string 
+	{335544849, "22000"}, // 529 malformed_string 
 	{335544850, "07001"}, // 530 prc_out_param_mismatch 
 	{335544851, "42000"}, // 531 command_end_err2 
 	{335544852, "42000"}, // 532 partner_idx_incompat_type 
