@@ -696,6 +696,7 @@ COMMIT WORK;
 ('string_truncation', 'CVT_move', 'cvt.cpp', NULL, 0, 594, NULL, 'string right truncation', NULL, NULL)
 ('blob_truncation', 'move_to_string', 'blb.cpp', NULL, 0, 595, NULL, 'blob truncation when converting to a string: length limit exceeded', NULL, NULL)
 ('numeric_out_of_range', NULL, NULL, NULL, 0, 596, NULL, 'numeric value is out of range', NULL, NULL)
+('shutdown_timeout', NULL, NULL, NULL, 0, 597, NULL, 'Firebird shutdown is still in progress after the specified timeout', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
