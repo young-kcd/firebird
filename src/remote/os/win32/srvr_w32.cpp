@@ -250,6 +250,10 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 #endif
 
+	Firebird::string mutex_name;
+	mutex_name.printf(SERVER_MUTEX, instance);
+	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name.c_str());
+
 /* Initialize the service and
    Setup sig_mutex for the process
 */
