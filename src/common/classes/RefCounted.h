@@ -110,6 +110,27 @@ namespace Firebird
 
 		T* operator=(T* p)
 		{
+			return assign(p);
+		}
+
+		T* operator=(RefPtr &p)
+		{
+			return assign(p.ptr);
+		}
+
+		operator T*() const
+		{
+			return ptr;
+		}
+
+		T* operator->() const
+		{
+			return ptr;
+		}
+
+	private:
+		T* assign(T* p)
+		{
 			if (ptr != p)
 			{
 				if (ptr)
@@ -128,17 +149,6 @@ namespace Firebird
 			return ptr;
 		}
 
-		operator T*()
-		{
-			return ptr;
-		}
-
-		T* operator->()
-		{
-			return ptr;
-		}
-
-	private:
 		T* ptr;
 	};
 } // namespace
