@@ -1106,8 +1106,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			materialized_blob = true;
 		}
 		else {
-			if (transaction->tra_blobs.locate(source->bid_temp_id())) {
-				blobIndex = &transaction->tra_blobs.current();
+			if (transaction->tra_blobs->locate(source->bid_temp_id())) {
+				blobIndex = &transaction->tra_blobs->current();
 				if (blobIndex->bli_materialized)
 				{
 					if (blobIndex->bli_request) {
@@ -1143,11 +1143,11 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 					blb* newBlob = copy_blob(tdbb, source, destination,
 						bpb.getCount(), bpb.begin(), relPages->rel_pg_space_id);
 
-					transaction->tra_blobs.locate(newBlob->blb_temp_id);
-					BlobIndex* newBlobIndex = &transaction->tra_blobs.current();
+					transaction->tra_blobs->locate(newBlob->blb_temp_id);
+					BlobIndex* newBlobIndex = &transaction->tra_blobs->current();
 
-					transaction->tra_blobs.locate(oldTempID);
-					blobIndex = &transaction->tra_blobs.current();
+					transaction->tra_blobs->locate(oldTempID);
+					blobIndex = &transaction->tra_blobs->current();
 
 					newBlobIndex->bli_blob_object = blob;
 					blobIndex->bli_blob_object = newBlob;
@@ -1158,8 +1158,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 					BLB_cancel(tdbb, blob);
 					blob = newBlob;
 
-					transaction->tra_blobs.locate(blob->blb_temp_id);
-					blobIndex = &transaction->tra_blobs.current();
+					transaction->tra_blobs->locate(blob->blb_temp_id);
+					blobIndex = &transaction->tra_blobs->current();
 				}
 			}
 		}
@@ -1181,12 +1181,12 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (materialized_blob) {
 		// hvlad: we have possible thread switch in DPM_store_blob above and somebody 
 		// can modify transaction->tra_blobs therefore we must update our blobIndex 
-		if (!transaction->tra_blobs.locate(blob->blb_temp_id)) {
+		if (!transaction->tra_blobs->locate(blob->blb_temp_id)) {
 			// If we didn't find materialized blob in transaction blob index it
 			// means memory structures are inconsistent and crash is appropriate
 			BUGCHECK(305); // msg 305 Blobs accounting is inconsistent
 		}
-		blobIndex = &transaction->tra_blobs.current();
+		blobIndex = &transaction->tra_blobs->current();
 
 		blobIndex->bli_materialized = true;
 		blobIndex->bli_blob_id = *destination;
@@ -1287,8 +1287,8 @@ blb* BLB_open2(thread_db* tdbb,
 
 			/* Search the index of transaction blobs for a match */
 			const blb* new_blob = NULL;
-			if (transaction->tra_blobs.locate(blob_id->bid_temp_id())) {
-				current = &transaction->tra_blobs.current();
+			if (transaction->tra_blobs->locate(blob_id->bid_temp_id())) {
+				current = &transaction->tra_blobs->current();
 				if (!current->bli_materialized)
 					new_blob = current->bli_blob_object;
 				else
@@ -1918,7 +1918,7 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 		// Do not generate null blob ID
 		if (!transaction->tra_next_blob_id)
 			transaction->tra_next_blob_id++;
-	} while (!transaction->tra_blobs.add(BlobIndex(transaction->tra_next_blob_id, blob)));
+	} while (!transaction->tra_blobs->add(BlobIndex(transaction->tra_next_blob_id, blob)));
 	blob->blb_temp_id = transaction->tra_next_blob_id;
 
 	return blob;
@@ -2503,8 +2503,8 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 	// variables. - 2007-03-24
 
 	jrd_tra* transaction = tdbb->getRequest()->req_transaction;
-	if (transaction->tra_blobs.locate(blob_temp_id)) {
-		BlobIndex* current = &transaction->tra_blobs.current();
+	if (transaction->tra_blobs->locate(blob_temp_id)) {
+		BlobIndex* current = &transaction->tra_blobs->current();
 		if (current->bli_materialized) {
 			// Delete BLOB from request owned blob list
 			jrd_req* blob_request = current->bli_request;
@@ -2520,7 +2520,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			}
 
 			// Free materialized blob handle
-			transaction->tra_blobs.fastRemove();
+			transaction->tra_blobs->fastRemove();
 		}
 		else {
 			// But even in bad case when we cannot free blob immediately
@@ -2608,9 +2608,9 @@ static void release_blob(blb* blob, const bool purge_flag)
 
 	if (purge_flag)
 	{
-		if (transaction->tra_blobs.locate(blob->blb_temp_id))
+		if (transaction->tra_blobs->locate(blob->blb_temp_id))
 		{
-			jrd_req* blob_request = transaction->tra_blobs.current().bli_request;
+			jrd_req* blob_request = transaction->tra_blobs->current().bli_request;
 
 			if (blob_request)
 			{
@@ -2624,7 +2624,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 				}
 			}
 
-			transaction->tra_blobs.fastRemove();
+			transaction->tra_blobs->fastRemove();
 		} 
 		else
 		{

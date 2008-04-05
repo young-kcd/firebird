@@ -94,19 +94,29 @@ public:
 		tra_wait
 	};
 
-	explicit jrd_tra(MemoryPool* p) :
+	explicit jrd_tra(MemoryPool* p, jrd_tra* outer) :
 		tra_pool(p),
-		tra_blobs(p),
+		tra_blobs_tree(p),
+		tra_blobs(&tra_blobs_tree),
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
-		tra_open_cursors(*p)
-	{}
+		tra_open_cursors(*p),
+		tra_outer(outer)
+	{
+		if (outer)
+		{
+			fb_assert(p == outer->tra_pool);
+			tra_arrays = outer->tra_arrays;
+			tra_blobs = outer->tra_blobs;
+		}
+	}
 
 	~jrd_tra()
 	{
-		delete tra_temp_space;
+		if (!tra_outer)
+			delete tra_temp_space;
 	}
 
 	Attachment* tra_attachment;	/* database attachment */
@@ -118,7 +128,8 @@ public:
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
 	MemoryPool* tra_pool;		/* pool for transaction */
-	BlobIndexTree tra_blobs;		/* list of active blobs */
+	BlobIndexTree tra_blobs_tree;	// list of active blobs
+	BlobIndexTree* tra_blobs;		// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
 	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
@@ -141,6 +152,7 @@ public:
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
+	jrd_tra* tra_outer;			// outer transaction of an autonomous transaction
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage
@@ -156,6 +168,9 @@ public:
 
 	TempSpace* getTempSpace()
 	{
+		if (tra_outer)
+			return tra_outer->getTempSpace();
+
 		if (!tra_temp_space)
 			tra_temp_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_TEMP_SPACE);
 
