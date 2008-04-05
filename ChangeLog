@@ -1,3 +1,21 @@
+2008-04-05 16:55  roman-simakov
+
+	* firebird2/src/lock/print.cpp (1.68):
+
+	Completed HTML format output for fb_lock_print. Added links to que.
+
+2008-04-04 21:45  dimitr
+
+	* firebird2/src/include/gen/sql_state.h (1.13):
+
+	Adjustments upon discussion with Bill.
+
+2008-04-04 21:42  dimitr
+
+	* firebird2/src/jrd/gds.cpp (1.253):
+
+	Synchronization.
+
 2008-04-04 21:35  dimitr
 
 	* firebird2/src/msgs/system_errors2.sql (1.29):
