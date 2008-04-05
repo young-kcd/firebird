@@ -1656,6 +1656,11 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, (trans) ? LCK_NO_WAIT : LCK_WAIT))
 	{
+		// clear lock error from status vector
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[1] = 0;
+		tdbb->tdbb_status_vector[2] = isc_arg_end;
+
 		return true;
 	}
 
