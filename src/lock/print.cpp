@@ -85,8 +85,8 @@ static void prt_lock(OUTFILE, const lhb*, lbl*, USHORT);
 static void prt_owner(OUTFILE, const lhb*, const own*, bool, bool);
 static void prt_owner_wait_cycle(OUTFILE, const lhb*, const own*, USHORT, waitque*);
 static void prt_request(OUTFILE, const lhb*, const lrq*);
-static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
-static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT);
+static void prt_que(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT, const TEXT* prefix = NULL);
+static void prt_que2(OUTFILE, const lhb*, const SCHAR*, const srq*, USHORT, const TEXT* prefix = NULL);
 
 // HTML print functions
 bool sw_html_format = false;
@@ -103,7 +103,7 @@ class HtmlLink
 public:
 	HtmlLink(const TEXT* prefix, const SLONG value)
 	{
-		if (sw_html_format && value)
+		if (sw_html_format && value && prefix)
 			sprintf(strBuffer, "<a href=\"#%s%"SLONGFORMAT"\">%6"SLONGFORMAT"</a>", prefix, value, value);		
 		else
 			sprintf(strBuffer, "%6"SLONGFORMAT, value);		
@@ -520,7 +520,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			a_shb->shb_insert_prior);
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
-			OFFSET(own*, own_lhb_owners));
+			OFFSET(own*, own_lhb_owners), preOwn);
 	prt_que(outfile, LOCK_header, "\tFree owners",
 			&LOCK_header->lhb_free_owners, OFFSET(own*, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree locks",
@@ -948,7 +948,7 @@ static void prt_lock(
 			OFFSET(lbl*, lbl_lhb_hash));
 
 	prt_que(outfile, LOCK_header, "\tRequests", &lock->lbl_requests,
-			OFFSET(lrq*, lrq_lbl_requests));
+			OFFSET(lrq*, lrq_lbl_requests), preRequest);
 
 	const srq* que_inst;
 	SRQ_LOOP(lock->lbl_requests, que_inst) {
@@ -1010,7 +1010,7 @@ static void prt_owner(OUTFILE outfile,
 	}
 
 	prt_que(outfile, LOCK_header, "\tRequests", &owner->own_requests,
-			OFFSET(lrq*, lrq_own_requests));
+			OFFSET(lrq*, lrq_own_requests), preRequest);
 	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks,
 			OFFSET(lrq*, lrq_own_blocks));
 
@@ -1162,9 +1162,9 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
 			request->lrq_ast_routine, request->lrq_ast_argument);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_requests",
-			 &request->lrq_own_requests, OFFSET(lrq*, lrq_own_requests));
+			 &request->lrq_own_requests, OFFSET(lrq*, lrq_own_requests), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_lbl_requests",
-			 &request->lrq_lbl_requests, OFFSET(lrq*, lrq_lbl_requests));
+			 &request->lrq_lbl_requests, OFFSET(lrq*, lrq_lbl_requests), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_blocks  ",
 			 &request->lrq_own_blocks, OFFSET(lrq*, lrq_own_blocks));
 	FPRINTF(outfile, "\n");
@@ -1174,7 +1174,8 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 static void prt_que(
 					OUTFILE outfile,
 					const lhb* LOCK_header,
-					const SCHAR* string, const srq* que_inst, USHORT que_offset)
+					const SCHAR* string, const srq* que_inst, USHORT que_offset,
+					const TEXT* prefix)
 {
 /**************************************
  *
@@ -1198,16 +1199,17 @@ static void prt_que(
 	SRQ_LOOP((*que_inst), next)
 		++count;
 
-	FPRINTF(outfile, "%s (%ld):\tforward: %6"SLONGFORMAT
-			", backward: %6"SLONGFORMAT"\n", string, count,
-			que_inst->srq_forward - que_offset, que_inst->srq_backward - que_offset);
+	FPRINTF(outfile, "%s (%ld):\tforward: %s, backward: %s\n", string, count,
+			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset), 
+			(const TEXT*)HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }
 
 
 static void prt_que2(
 					 OUTFILE outfile,
 					 const lhb* LOCK_header,
-					 const SCHAR* string, const srq* que_inst, USHORT que_offset)
+					 const SCHAR* string, const srq* que_inst, USHORT que_offset,
+					 const TEXT* prefix)
 {
 /**************************************
  *
@@ -1227,9 +1229,9 @@ static void prt_que2(
 		return;
 	}
 
-	FPRINTF(outfile, "%s:\tforward: %6"SLONGFORMAT
-			", backward: %6"SLONGFORMAT"\n", string,
-			que_inst->srq_forward - que_offset, que_inst->srq_backward - que_offset);
+	FPRINTF(outfile, "%s:\tforward: %s, backward: %s\n", string,
+			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset),
+			(const TEXT*)HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }
 
 static void prt_html_begin(OUTFILE outfile)
