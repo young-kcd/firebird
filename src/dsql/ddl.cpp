@@ -3877,7 +3877,7 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 		}
 
 		// if not an expression, point to the proper base relation field,
-		// else make up an SQL field with generated global field for calculations */
+		// else make up an SQL field with generated global field for calculations
 
 		dsql_fld* rel_field = NULL;
 
