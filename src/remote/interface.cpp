@@ -5128,9 +5128,9 @@ static bool batch_gds_receive(rem_port*		port,
 			break;
 
 #ifdef SCROLLABLE_CURSORS
-			/* if we are just trying to clear the queue, then NULL out the message 
-			   address so we don't get a record out of order--it would mess up 
-			   scrolling through the cache */
+		// if we are just trying to clear the queue, then NULL out the message 
+		// address so we don't get a record out of order--it would mess up 
+		// scrolling through the cache
 
 		message->msg_address = NULL;
 #endif

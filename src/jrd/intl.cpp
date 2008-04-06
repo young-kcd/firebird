@@ -797,7 +797,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+		(*err)(isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 	}
 
 	if (from_fill)

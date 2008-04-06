@@ -630,7 +630,7 @@ static bool get_switches(
 
 				/* compare switch to switch name in table */
 
-				for(int l = 0; *p; ++l) {
+				for (int l = 0; *p; ++l) {
 					if (!*++p) {
 						if (l >= in_sw_tab->in_sw_min_length)
 							in_sw = in_sw_tab->in_sw;

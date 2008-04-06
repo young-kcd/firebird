@@ -113,7 +113,7 @@ namespace Firebird
 			return assign(p);
 		}
 
-		T* operator=(RefPtr &p)
+		T* operator=(RefPtr& p)
 		{
 			return assign(p.ptr);
 		}

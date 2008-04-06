@@ -152,7 +152,7 @@ public:
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
-	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
+	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage

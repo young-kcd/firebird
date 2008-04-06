@@ -6732,7 +6732,9 @@ static void modify_field(dsql_req*	request,
 			else if (defNod->nod_type == nod_del_default)
 				request->append_uchar(isc_dyn_del_default);
 			else
+			{
 				fb_assert(false);
+			}
 		}
 		else
 		{
