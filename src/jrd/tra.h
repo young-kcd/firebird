@@ -127,7 +127,7 @@ public:
 								   gargage-collected by this tx */
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
-	MemoryPool* tra_pool;		/* pool for transaction */
+	MemoryPool* const tra_pool;		/* pool for transaction */
 	BlobIndexTree tra_blobs_tree;	// list of active blobs
 	BlobIndexTree* tra_blobs;		// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
@@ -152,7 +152,7 @@ public:
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
-	jrd_tra* tra_outer;			// outer transaction of an autonomous transaction
+	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage

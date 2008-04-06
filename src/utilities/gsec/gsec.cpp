@@ -499,10 +499,6 @@ static bool get_switches(
  *	interesting switches in a switch table.
  *
  **************************************/
-	TEXT msg[MSG_LENGTH];
-	int l;
-	char quote;
-	SSHORT err_msg_no;
 
 /* look at each argument.   it's either a switch or a parameter.
    parameters must always follow a switch, but not all switches
@@ -521,6 +517,8 @@ static bool get_switches(
 		else if (*string != '-') {
 			/* this is not a switch, so it must be a parameter for
 			   the previous switch, if any */
+			char quote;
+			int l;
 
 			switch (last_sw) {
 			case IN_SW_GSEC_ADD:
@@ -632,8 +630,7 @@ static bool get_switches(
 
 				/* compare switch to switch name in table */
 
-				l = 0;
-				while (*p) {
+				for(int l = 0; *p; ++l) {
 					if (!*++p) {
 						if (l >= in_sw_tab->in_sw_min_length)
 							in_sw = in_sw_tab->in_sw;
@@ -642,7 +639,6 @@ static bool get_switches(
 					}
 					if (UPPER(*p) != *q++)
 						break;
-					l++;
 				}
 
 				/* end of input means we got a match.  stop looking */
@@ -657,6 +653,8 @@ static bool get_switches(
 			   appropriate specified flag is set (to later check for duplicates),
 			   and the applicable parameter value is set to its null value, in
 			   case the user really wants to remove an existing parameter. */
+
+			SSHORT err_msg_no;
 
 			switch (in_sw) {
 			case IN_SW_GSEC_ADD:
@@ -829,6 +827,7 @@ static bool get_switches(
 				break;
 			case IN_SW_GSEC_Z:
 				if (!tdsec->tsec_sw_version) {
+					TEXT msg[MSG_LENGTH];
 					msg_get(GsecMsg39, msg);
 					util_output("%s %s\n", msg, GDS_VERSION);
 				}
