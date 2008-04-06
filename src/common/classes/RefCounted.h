@@ -64,15 +64,15 @@ namespace Firebird
 	{
 	public:
 		explicit Reference(RefCounted& refCounted) :
-			r(&refCounted)
+			r(refCounted)
 		{
-			r->addRef();
+			r.addRef();
 		}
 
 		~Reference()
 		{
 			try {
-				r->release();
+				r.release();
 			}
 			catch (const Exception&)
 			{
@@ -81,7 +81,7 @@ namespace Firebird
 		}
 
 	private:
-		RefCounted* r;
+		RefCounted& r;
 	};
 
 	// controls reference counter of the object where points
@@ -118,18 +118,28 @@ namespace Firebird
 			return assign(p.ptr);
 		}
 
-		operator T*() const
+		operator T*() 
 		{
 			return ptr;
 		}
 
-		T* operator->() const
+		T* operator->() 
+		{
+			return ptr;
+		}
+
+		operator const T*() const
+		{
+			return ptr;
+		}
+
+		const T* operator->() const
 		{
 			return ptr;
 		}
 
 	private:
-		T* assign(T* p)
+		T* assign(T* const p)
 		{
 			if (ptr != p)
 			{
