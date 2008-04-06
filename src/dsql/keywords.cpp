@@ -33,7 +33,7 @@
 #include "dsql.tab.h"
 #include "keywords.h"
 
-// CVC: The latest column indicates whether the token as special handling in
+// CVC: The latest column indicates whether the token has special handling in
 // the parser. If it does, KEYWORD_stringIsAToken will return false.
 // I discovered isql was being fooled and put double quotes around those
 // special cases unnecessarily.

@@ -2614,7 +2614,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 		if (node->nod_type == nod_subtract2) {
 
-			/* mutlipy by 100,000 so that we can have the result as decimal (18,9)
+			/* multiply by 100,000 so that we can have the result as decimal (18,9)
 			 * We have 10 ^-4; to convert this to 10^-9 we need to multiply by
 			 * 100,000. Of course all this is true only because we are dividing
 			 * by SECONDS_PER_DAY
@@ -4244,7 +4244,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  * or in our ordered-pair notation,
  *      ( v1 * pow(10, -2*s2) / v2, s1 + s2 )
  *
- * To maximize the amount of information in the result, we scale up the
+ * To maximize the amount of information in the result, we scale up
  * the dividend as far as we can without causing overflow, then we perform
  * the division, then do any additional required scaling.
  *
