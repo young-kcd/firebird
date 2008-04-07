@@ -174,7 +174,7 @@ namespace
 #ifdef WIN_NT
 			delete ibUtilModule;
 			ibUtilModule = NULL;
-#endif;
+#endif
 		}
 	};
 
