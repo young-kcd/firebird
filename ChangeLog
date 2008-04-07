@@ -1,3 +1,43 @@
+2008-04-07 18:34  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.193):
+
+	Make sure cancel operation is not disabled when shutting down
+	firebird
+
+2008-04-07 18:30  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.h (1.31):
+
+	make sure status vector is initialized
+
+2008-04-07 17:26  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.433):
+
+	Almost misc
+
+2008-04-07 14:59  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/: CS/prototype.in
+	(1.8), SS/prototype.in (1.3):
+
+	Wrongly named libfbclient.so
+
+2008-04-07 12:52  alexpeshkoff
+
+	* firebird2/src/: alice/alice.cpp (1.103), burp/burp.cpp (1.135),
+	utilities/gsec/gsec.cpp (1.86), utilities/gstat/dba.epp (1.90):
+
+	Fix for CORE-1805: do not let svc_status blink during utility
+	operation, instead copy it at service exit time
+
+2008-04-06 23:58  hvlad
+
+	* firebird2/src/common/classes/RefCounted.h (1.11):
+
+	Corrections noted by Claudio
+
 2008-04-06 17:02  asfernandes
 
 	* firebird2/src/dsql/ddl.cpp (1.226):
