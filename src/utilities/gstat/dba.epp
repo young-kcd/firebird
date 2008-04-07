@@ -250,7 +250,7 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSTAT via the services manager
  **********************************************/
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	int exit_code = FB_SUCCESS;
+	int exit_code = FINI_OK;
 
 	try {
 		exit_code = gstat(uSvc);
@@ -306,7 +306,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	tdba thd_context(uSvc), *tddba;
 	tdba::putSpecific(tddba, &thd_context);
-	//tddba->dba_throw = true;
+	int exit_code = FINI_OK;
 
 	int argc = uSvc->argv.getCount();
 	const char** argv = uSvc->argv.begin();
@@ -315,17 +315,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	try {
 
-	// Perform some special handling when run as a Firebird service.  The
-	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout and stderr.
 	tddba->dba_status = tddba->dba_status_vector;
 	status_vector = tddba->dba_status;
-
-	const bool called_as_service = uSvc->isService();
-	if (called_as_service)
-	{
-		tddba->dba_status = uSvc->getStatus();
-	}
 
 	const char* name = NULL;
 
@@ -576,7 +567,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 	if (*password) 
 	{
-		dpb.insertBytes(called_as_service ? isc_dpb_password_enc : isc_dpb_password,
+		dpb.insertBytes(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 							password, strlen((char*) password));
 	}
 	if (*tr_user) 
@@ -858,13 +849,16 @@ int gstat(Firebird::UtilSvc* uSvc)
 		// used by service in case if client detached from the service 
 		uSvc->finish();
 
-		int exit_code = tddba->exit_code;
+		exit_code = tddba->exit_code;
 		tdba::restoreSpecific();
-
-		return exit_code;
 	}
 
-	return 0;
+	if ((exit_code != FINI_OK) && uSvc->isService())
+    {
+        memcpy(uSvc->getStatus(), tddba->dba_status, sizeof (ISC_STATUS_ARRAY));
+	}
+
+	return exit_code;
 }
 
 

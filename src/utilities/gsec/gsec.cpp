@@ -101,7 +101,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  *   Entrypoint for GSEC via the services manager
  **********************************************/
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	int exit_code = FB_SUCCESS;
+	int exit_code = FINI_OK;
 
 	try {
 		exit_code = gsec(uSvc);
@@ -130,6 +130,7 @@ int gsec(Firebird::UtilSvc* uSvc)
  *	the specified argv to SECURITY_exec_line (see below).
  *
  **************************************/
+	int exit_code = FINI_OK;
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 
 	TEXT stuff[MAXSTUFF];		// a place to put stuff in interactive mode
@@ -351,21 +352,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
-	if (tdsec->tsec_interactive)
-		gsec_exit(FINI_OK, tdsec);
-
-	gsec_exit(ret, tdsec);
-	return ret;					// silence compiler warning
-
+	gsec_exit(tdsec->tsec_interactive ? FINI_OK : ret, tdsec);
 	}	// try
 	catch (const Firebird::LongJump&) {
 		/* All calls to gsec_exit(), normal and error exits, wind up here */
-		const int exit_code = tdsec->tsec_exit_code;
+		exit_code = tdsec->tsec_exit_code;
 
 		tdsec->utilSvc->started();
 		tdsec->tsec_throw = false;
-
-		return exit_code;
 	}
 	catch (const Firebird::Exception& e) {
 		// Real exceptions are coming here
@@ -377,8 +371,15 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 		GSEC_print_status(status, false);
 
-		return 127;
+		exit_code = FINI_ERROR;
 	}
+
+	if ((exit_code != FINI_OK) && uSvc->isService())
+    {
+        memcpy(uSvc->getStatus(), tdsec->tsec_status, sizeof (ISC_STATUS_ARRAY));
+	}
+
+	return exit_code;
 }
 
 

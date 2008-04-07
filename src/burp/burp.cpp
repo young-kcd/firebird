@@ -128,7 +128,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	int exit_code = FB_SUCCESS;
+	int exit_code = FINI_OK;
 
 	try {
 		exit_code = gbak(uSvc);
@@ -490,11 +490,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	try {
 
 	tdgbl->status = tdgbl->status_vector;
-	if (uSvc->isService())
-	{
-		tdgbl->status = uSvc->getStatus();
-		uSvc->started();
-	}
+	uSvc->started();
 
 	if (argc <= 1) {
 		burp_usage();
@@ -1046,6 +1042,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 		e.stuff_exception(tdgbl->status_vector);
 		BURP_print_status(tdgbl->status_vector, true);
 		BURP_print(83);	// msg 83 Exiting before completion due to errors
+		exit_code = FINI_ERROR;
 	}
 
 	// Close the gbak file handles if they still open 
@@ -1092,6 +1089,11 @@ int gbak(Firebird::UtilSvc* uSvc)
 		gds_alloc_report(0, __FILE__, __LINE__);
 	}
 #endif
+
+	if ((exit_code != FINI_OK) && uSvc->isService())
+    {
+        memcpy(uSvc->getStatus(), tdgbl->status, sizeof (ISC_STATUS_ARRAY));
+	}
 
 	return exit_code;
 }

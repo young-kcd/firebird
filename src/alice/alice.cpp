@@ -98,7 +98,7 @@ static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 {
 	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
-	int exit_code = FB_SUCCESS;
+	int exit_code = FINI_OK;
 
 	try {
 		exit_code = alice(uSvc);
@@ -139,10 +139,6 @@ int alice(Firebird::UtilSvc* uSvc)
 #endif
 	tdgbl->ALICE_data.ua_tr_user = NULL;
 	tdgbl->ALICE_data.ua_tr_role = false;
-	if (uSvc->isService())
-	{
-		tdgbl->status = uSvc->getStatus();
-	}
 
 //  Start by parsing switches
 
@@ -533,6 +529,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		// Non-alice exception was caught
 		e.stuff_exception(tdgbl->status_vector);
 		ALICE_print_status(tdgbl->status_vector);
+		exit_code = FINI_ERROR;
 	}
 
 	tdgbl->uSvc->started();
@@ -545,6 +542,11 @@ int alice(Firebird::UtilSvc* uSvc)
 		gds_alloc_report(0, __FILE__, __LINE__);
 	}
 #endif
+
+	if ((exit_code != FINI_OK) && uSvc->isService())
+    {
+        memcpy(uSvc->getStatus(), tdgbl->status, sizeof (ISC_STATUS_ARRAY));
+	}
 
 	return exit_code;
 }
