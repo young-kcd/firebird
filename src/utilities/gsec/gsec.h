@@ -117,7 +117,10 @@ public:
 		: ThreadData(ThreadData::tddSEC), utilSvc(uf), 
 		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false), 
 		tsec_status(tsec_status_vector), tsec_interactive(false), 
-		tsec_sw_version(false) { }
+		tsec_sw_version(false) 
+	{
+		memset(tsec_status_vector, 0, sizeof(tsec_status_vector));
+	}
 
 	Firebird::UtilSvc*	utilSvc;
 	internal_user_data*	tsec_user_data;
