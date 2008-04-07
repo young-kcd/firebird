@@ -6106,6 +6106,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 				for (unsigned int i = 0; i < attachments().getCount(); ++i)
 				{
 					Attachment* att = attachments()[i];
+					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, CANCEL_enable);
 					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, CANCEL_raise);
 				}
 			}
