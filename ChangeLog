@@ -1,3 +1,42 @@
+2008-04-08 16:19  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.client.gbak (1.22),
+	Makefile.in.client.gfix (1.26), Makefile.in.client.gpre (1.29),
+	Makefile.in.client.gsec (1.12), Makefile.in.client.util (1.55),
+	Makefile.in.embed.gbak (1.22), Makefile.in.embed.gfix (1.26),
+	Makefile.in.embed.util (1.40), make.shared.variables (1.89):
+
+	Cleanup - always build utilities in std mode - no more
+	SUPERCLIENT/STD_UTIL macros.
+
+2008-04-08 16:18  alexpeshkoff
+
+	* firebird2/src/jrd/: ThreadStart.cpp (1.3), dfw.epp (1.234),
+	err.cpp (1.75), err_proto.h (1.28), event.cpp (1.70), isc_f_proto.h
+	(1.24), isc_file.cpp (1.118), jrd.cpp (1.434), jrd_proto.h (1.68),
+	pag.cpp (1.173), sdw.cpp (1.77):
+
+	Cleanup - avoid use of SUPERCLIENT macro in files, used by
+	utilities (and in some other places too).
+
+2008-04-08 15:19  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.embed.lockmgr (1.16):
+
+	cleanup
+
+2008-04-08 13:28  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.18):
+
+	cleanup
+
+2008-04-08 08:26  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.240):
+
+	It's harder to fix the assertion than to verify the code.
+
 2008-04-07 18:34  alexpeshkoff
 
 	* firebird2/src/jrd/why.cpp (1.193):
