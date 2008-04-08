@@ -30,7 +30,6 @@
 #
 ROOT=..
 ObjModuleType=std
-CFLAGS+=-DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform

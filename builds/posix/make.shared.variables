@@ -20,9 +20,6 @@ JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
-# These are in the win32 release but not unix one for super? 
-#err.cpp flu.cpp functions.cpp 
-
 JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \

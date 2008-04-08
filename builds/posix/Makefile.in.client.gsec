@@ -20,8 +20,7 @@
 #
 #
 ROOT=..
-ObjModuleType=superclient
-CFLAGS+=-DSUPERCLIENT -DSTD_UTIL
+ObjModuleType=std
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
