@@ -83,7 +83,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 	Database* dbb = GET_DBB();
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
-	if (!ISC_verify_database_access(file_name)) {
+	if (!JRD_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "additional database file",
 			isc_arg_string, ERR_cstring(file_name),
@@ -159,7 +159,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
-	if (!ISC_verify_database_access(file_name)) {
+	if (!JRD_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "database shadow",
 			isc_arg_string, ERR_cstring(file_name),
@@ -951,7 +951,7 @@ void SDW_start(const TEXT* file_name,
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
-	if (!ISC_verify_database_access(expanded_name)) {
+	if (!JRD_verify_database_access(expanded_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "database shadow",
 			isc_arg_string, ERR_cstring(expanded_name),

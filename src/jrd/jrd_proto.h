@@ -234,6 +234,7 @@ void JRD_unwind_request(Jrd::thread_db* tdbb, Jrd::jrd_req* request, SSHORT leve
 void JRD_compile(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_req** req_handle,
 	SSHORT blr_length, const UCHAR* blr, USHORT string_length, const char* string,
 	USHORT dbginfo_length, const UCHAR* dbginfo);
+bool JRD_verify_database_access(const Firebird::PathName&);
 
 #endif /* JRD_JRD_PROTO_H */
 

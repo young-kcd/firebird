@@ -5633,7 +5633,7 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 		return vdnSecurity;
 
 	// Check for .conf
-	if (!ISC_verify_database_access(name)) {
+	if (!JRD_verify_database_access(name)) {
 		status[0] = isc_arg_gds;
 		status[1] = isc_conf_access_denied;
 		status[2] = isc_arg_string;
@@ -6243,4 +6243,38 @@ void JRD_compile(thread_db* tdbb,
 	request->req_sql_text.assign(string, string_length);
 
 	*req_handle = request;
+}
+
+
+namespace {
+	class DatabaseDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getDatabaseAccess());
+		}
+	public:
+		explicit DatabaseDirectoryList(MemoryPool& p)
+			: DirectoryList(p)
+		{ 
+			initialize();
+		}
+	};
+	Firebird::InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
+}
+
+
+bool JRD_verify_database_access(const Firebird::PathName& name)
+{
+/**************************************
+ *
+ *      I S C _ v e r i f y _ d a t a b a s e _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Verify 'name' against DatabaseAccess entry of firebird.conf.
+ *
+ **************************************/
+	return iDatabaseDirectoryList().isPathInList(name);
 }

@@ -476,7 +476,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	}
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
-	if (!ISC_verify_database_access(file_name)) {
+	if (!JRD_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "additional database file",
 			isc_arg_string, ERR_cstring(file_name),
@@ -1622,7 +1622,7 @@ void PAG_init2(USHORT shadow_number)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
-		if (!ISC_verify_database_access(file_name)) {
+		if (!JRD_verify_database_access(file_name)) {
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "additional database file",
 				isc_arg_string, ERR_cstring(file_name),

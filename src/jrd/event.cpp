@@ -148,7 +148,6 @@ void EVENT_cancel(SLONG request_id)
 }
 
 
-#ifndef SUPERCLIENT
 SLONG EVENT_create_session(ISC_STATUS* status_vector)
 {
 /**************************************
@@ -181,7 +180,6 @@ SLONG EVENT_create_session(ISC_STATUS* status_vector)
 
 	return id;
 }
-#endif
 
 
 void EVENT_delete_session(SLONG session_id)

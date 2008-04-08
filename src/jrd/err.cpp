@@ -34,8 +34,6 @@
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include <errno.h>
-
-#if !defined(SUPERCLIENT)
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/val.h"
@@ -46,7 +44,6 @@
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
-#endif
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -64,7 +61,6 @@ static void internal_error(ISC_STATUS status, int number,
 static void internal_post(ISC_STATUS status, va_list args);
 
 
-#if !defined(SUPERCLIENT)
 void ERR_bugcheck(int number, const TEXT* file, int line)
 {
 /**************************************
@@ -84,10 +80,8 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
 
 	internal_error(isc_bug_check, number, file, line);
 }
-#endif
 
 
-#if !defined( SUPERCLIENT)
 void ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
@@ -108,10 +102,8 @@ void ERR_bugcheck_msg(const TEXT* msg)
 
 	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_corrupt(int number)
 {
 /**************************************
@@ -127,31 +119,8 @@ void ERR_corrupt(int number)
 
 	internal_error(isc_db_corrupt, number);
 }
-#endif
 
 
-const TEXT* ERR_cstring(const TEXT* in_string)
-{
-/**************************************
- *
- *	E R R _ c s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Copy a stack local string into an area that is
- *	guaranteed to exist for a reasonable length of time.
- *	Only strings that are to be placed in status vectors
- *	should use this routine.
- *	A circular buffer is used to hold these strings.  It
- *	is independent of the JRD allocator mechanism.
- *
- **************************************/
-	return Firebird::status_string(in_string);
-}
-
-
-#if !defined(SUPERCLIENT)
 void ERR_duplicate_error(IDX_E	code,
 						const jrd_rel*		relation,
 						USHORT index_number)
@@ -217,10 +186,8 @@ void ERR_duplicate_error(IDX_E	code,
 			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
 	}
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_error(int number)
 {
 /**************************************
@@ -242,10 +209,8 @@ void ERR_error(int number)
 
 	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_error_msg(const TEXT* msg)
 {
 /**************************************
@@ -263,10 +228,8 @@ void ERR_error_msg(const TEXT* msg)
 	DEBUG;
 	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
@@ -298,10 +261,8 @@ void ERR_log(int facility, int number, const TEXT* message)
 		tdbb->getAttachment()->att_filename.c_str() : "",
 		errmsg, 0);
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 bool ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -393,10 +354,8 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 	va_end(args);
 	return false;
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_post_nothrow(ISC_STATUS status, ...)
 /**************************************
  *
@@ -527,10 +486,8 @@ static void internal_post(ISC_STATUS status, va_list args)
 	}
 	return;
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 void ERR_punt(void)
 {
 /**************************************
@@ -560,31 +517,8 @@ void ERR_punt(void)
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 }
-#endif
 
 
-const TEXT* ERR_string(const TEXT* in_string, int length)
-{
-/**************************************
- *
- *	E R R _ s t r i n g
- *
- **************************************
- *
- * Functional description
- *	Copy a stack local string into an area that is
- *	guaranteed to exist for a reasonable length of time.
- *	Only strings that are to be placed in status vectors
- *	should use this routine.
- *	A circular buffer is used to hold these strings.  It
- *	is independent of the JRD allocator mechanism.
- *
- **************************************/
-	return Firebird::status_nstring(in_string, length);
-}
-
-
-#if !defined(SUPERCLIENT)
 void ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -607,10 +541,8 @@ void ERR_warning(ISC_STATUS status, ...)
 	DEBUG;
 	tdbb->getRequest()->req_flags |= req_warning;
 }
-#endif
 
 
-#if !defined(SUPERCLIENT)
 static void internal_error(ISC_STATUS status, int number, 
 						   const TEXT* file, int line)
 {
@@ -650,5 +582,4 @@ static void internal_error(ISC_STATUS status, int number,
 
 	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
-#endif
 

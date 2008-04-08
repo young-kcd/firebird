@@ -178,9 +178,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
 	// Do not make thread bound for superserver/client
-#if (!defined (SUPERCLIENT) && !defined (SUPERSERVER))
 	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
-#endif
 
 	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
 	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
@@ -267,14 +265,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	sigdelset(&new_mask, SIGALRM);
 	if (rval = thr_sigsetmask(SIG_SETMASK, &new_mask, &orig_mask))
 		Firebird::system_call_failed::raise("thr_sigsetmask", rval);
-#if (defined SUPERCLIENT || defined SUPERSERVER)
 	rval = thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_NEW_LWP,
 					 &thread_id);
-#else
-	rval =
-		thr_create(NULL, 0, THREAD_ENTRYPOINT, THREAD_ARG, THR_DETACHED | THR_BOUND,
-					 &thread_id);
-#endif
 	thr_sigsetmask(SIG_SETMASK, &orig_mask, NULL);
 
 	if (rval)

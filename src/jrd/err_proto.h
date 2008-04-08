@@ -24,6 +24,7 @@
 #ifndef JRD_ERR_PROTO_H
 #define JRD_ERR_PROTO_H
 
+#include "fb_exception.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 
@@ -59,7 +60,15 @@ void	ERR_punt(void);
 void	ERR_warning(ISC_STATUS, ...);
 void	ERR_log(int, int, const TEXT*);
 
-const TEXT*		ERR_cstring(const TEXT*);
+inline const TEXT*		ERR_string(const TEXT* in_string, int length)
+{
+	return Firebird::status_nstring(in_string, length);
+}
+inline const TEXT*		ERR_cstring(const TEXT* in_string)
+{
+	return Firebird::status_string(in_string);
+}
+
 inline const TEXT*		ERR_cstring(const Firebird::string& in_string)
 {
 	return ERR_cstring(in_string.c_str());
@@ -84,10 +93,6 @@ inline const TEXT*		ERR_string(const Firebird::MetaName& in_string)
 {
 	return ERR_cstring(in_string.c_str());
 }
-
-// AP: used ?
-
-const TEXT*		ERR_string(const TEXT*, int);
 
 #endif /* JRD_ERR_PROTO_H */
 
