@@ -35,10 +35,6 @@
 #include "../jrd/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
-#ifndef SUPERCLIENT
-#include "../common/classes/fb_string.h"
-#include "../jrd/jrd_pwd.h"
-#endif
 #include "../common/utils_proto.h"
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
