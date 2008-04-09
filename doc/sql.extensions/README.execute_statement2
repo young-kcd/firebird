@@ -1,0 +1,194 @@
+SQL Language Extension: EXECUTE STATEMENT
+
+   Extends already implemented EXECUTE STATEMENT with ability to query
+external Firebird's databases
+
+Authors:
+   Vlad Khorsun <hvlad@users.sourceforge.net>
+   Alex Peshkoff <pes@insi.yaroslavl.ru>
+
+
+Syntax and notes :
+
+[FOR] EXECUTE STATEMENT <query_text> [(<input_parameters>)]
+    [INTO <variables>]
+    [ON EXTERNAL [DATA SOURCE] <connection_string>]
+    [AS USER <user_name>]
+    [PASSWORD <password>]
+    [WITH AUTONOMOUS|COMMON TRANSACTION]
+
+- if you use both <query_text> and <input_parameters> then you must
+    enclose <query_text> into round brackets, for example :
+    EXECUTE STATEMENT (:sql) (p1 := 'abc', p2 := :second_param) ...
+    
+- both named and not named input parameters is supported. Mix of named and not
+	named input parameters inthe same statement is not allowed.
+
+- syntax of named input parameters :
+	<input_parameters> ::= 
+		  <named_parameter> 
+		| <input_parameters>, <named_parameter>
+		
+	<named_parameter> ::= 
+		  <parameter name> := <expression>
+
+	Syntax above introduced new parameter value binding operator ":=" to avoid 
+	clashes with future boolean expressions.
+	This syntax may be changed in release version.
+
+- <connection_string> is usual connection string accepted by isc_attach_database, 
+    i.e. [<host_name><protocol_delimiter>]database_path.
+    
+- connection to the external data source is made using the same character set as
+	current (local) connection is used.
+
+- if ON EXTERNAL DATA SOURCE is omitted then statement will be executed 
+    within current connection.
+
+- if <user_name> is omitted then CURRENT_USER is used
+
+- if <password> is omitted then :
+	a) if <user_name> is omitted, NULL or equal to CURRENT_USER value
+		then trusted autentication is performed, and
+		a1) for current connection - CURRENT_USER is effective user account
+		a2) for local database - CURRENT_USER is effective user account
+		a3) for remote database - operating system account under which engine
+			process is currently runs is effective user account.
+	b) else only isc_dpb_user_name will be present in DPB and native autentication 
+		is performed.
+
+- AUTONOMOUS TRANSACTION started new transaction with the same parameters as 
+	current transaction and this transaction is committed if statement executed ok 
+	or rolled back if statement executed with errors.
+
+- COMMON TRANSACTION started new transaction with the same parameters as current 
+	transaction or used already started transaction in this connection or used 
+	current transaction if current connection is used.
+    This transaction lifetime is bound to the lifetime of current (local) transaction 
+    and its commits\rolled back the same way as current transaction.
+
+- by default COMMON TRANSACTION is used
+
+
+    Examples :
+
+1. insert speed test
+
+RECREATE TABLE TTT (TRAN INT, CONN INT, ID INT);
+
+a) direct inserts
+
+EXECUTE BLOCK AS
+DECLARE N INT = 100000;
+BEGIN
+  WHILE (N > 0) DO
+  BEGIN
+    INSERT INTO TTT VALUES (CURRENT_TRANSACTION, CURRENT_CONNECTION, CURRENT_TRANSACTION);
+    N = N - 1;
+  END
+END
+
+
+b) inserts via prepared dynamic statement using named input parameters
+
+EXECUTE BLOCK AS
+DECLARE S VARCHAR(255);
+DECLARE N INT = 100000;
+BEGIN
+  S = 'INSERT INTO TTT VALUES (:a, :b, :a)';
+
+  WHILE (N > 0) DO
+  BEGIN
+    EXECUTE STATEMENT (:S) (a := CURRENT_TRANSACTION, b := CURRENT_CONNECTION)
+    WITH COMMON TRANSACTION;
+    N = N - 1;
+  END
+END
+
+
+c) inserts via prepared dynamic statement using not named input parameters
+EXECUTE BLOCK AS
+DECLARE S VARCHAR(255);
+DECLARE N INT = 100000;
+BEGIN
+  S = 'INSERT INTO TTT VALUES (?, ?, ?)';
+
+  WHILE (N > 0) DO
+  BEGIN
+    EXECUTE STATEMENT (:S) (CURRENT_TRANSACTION, CURRENT_CONNECTION, CURRENT_TRANSACTION);
+    N = N - 1;
+  END
+END
+
+
+
+2. connections and transactions test
+
+a) Execute this block few times in the same transaction - it will
+   create three new connections to the current database and reuse
+   it in every call. Transactions also reused.
+
+EXECUTE BLOCK RETURNS (CONN INT, TRAN INT, DB VARCHAR(255))
+AS
+DECLARE I INT = 0;
+DECLARE N INT = 3;
+DECLARE S VARCHAR(255);
+BEGIN
+  SELECT A.MON$ATTACHMENT_NAME FROM MON$ATTACHMENTS A
+   WHERE A.MON$ATTACHMENT_ID = CURRENT_CONNECTION
+    INTO :S;
+
+  WHILE (i < N) DO
+  BEGIN
+    DB = TRIM(CASE i - 3 * (I / 3) WHEN 0 THEN '\\.\' WHEN 1 THEN 'localhost:' ELSE '' END) || :S;
+
+    FOR EXECUTE STATEMENT 'SELECT CURRENT_CONNECTION, CURRENT_TRANSACTION FROM RDB$DATABASE'
+      INTO :CONN, :TRAN
+    ON EXTERNAL :DB 
+    AS USER CURRENT_USER PASSWORD 'masterkey' -- just for example
+    WITH COMMON TRANSACTION
+    DO SUSPEND;
+
+    i = i + 1;
+  END
+END
+
+b) Execute this block few times in the same transaction - it will
+   create three new connections to the current database on every call. 
+
+EXECUTE BLOCK RETURNS (CONN INT, TRAN INT, DB VARCHAR(255))
+AS
+DECLARE I INT = 0;
+DECLARE N INT = 3;
+DECLARE S VARCHAR(255);
+BEGIN
+  SELECT A.MON$ATTACHMENT_NAME FROM MON$ATTACHMENTS A
+   WHERE A.MON$ATTACHMENT_ID = CURRENT_CONNECTION
+    INTO :S;
+
+  WHILE (i < N) DO
+  BEGIN
+    DB = TRIM(CASE i - 3 * (I / 3) WHEN 0 THEN '\\.\' WHEN 1 THEN 'localhost:' ELSE '' END) || :S;
+
+    FOR EXECUTE STATEMENT 'SELECT CURRENT_CONNECTION, CURRENT_TRANSACTION FROM RDB$DATABASE'
+      INTO :CONN, :TRAN
+    ON EXTERNAL :DB 
+    WITH AUTONOMOUS TRANSACTION -- note autonomous transaction
+    DO SUSPEND;
+
+    i = i + 1;
+  END
+END
+
+
+3. input expressions evaluated only once
+
+EXECUTE BLOCK RETURNS (A INT, B INT, C INT)
+AS
+BEGIN
+  EXECUTE STATEMENT ('SELECT CAST(:X AS INT), CAST(:X AS INT), CAST(:X AS INT) FROM RDB$DATABASE')
+          (x := GEN_ID(G, 1))
+     INTO :A, :B, :C;
+
+  SUSPEND;
+END
