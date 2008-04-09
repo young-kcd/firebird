@@ -54,6 +54,8 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 
+#include "../common/classes/init.h"
+
 #ifdef SOLARIS
 #include <sys/utsname.h>
 #endif
@@ -70,12 +72,87 @@
 #include <aclapi.h>
 #include <lmcons.h>
 
-static USHORT os_type;
-static SECURITY_ATTRIBUTES security_attr;
+class SecurityAttributes
+{
+public:
+	explicit SecurityAttributes(MemoryPool& pool)
+	{
+		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
+		PACL pOldACL = NULL;
+		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
+						DACL_SECURITY_INFORMATION,
+						NULL, NULL, &pOldACL, NULL, NULL);
+
+		// NULL pOldACL means all privileges. If we assign pNewACL in this case 
+		// we'll lost all privileges except assigned SYNCHRONIZE
+		if (pOldACL) 
+		{
+			SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
+			PSID pSID = NULL;
+			AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
+									 0, 0, 0, 0, 0, 0, 0, &pSID);
+
+			EXPLICIT_ACCESS ea;
+			memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
+			ea.grfAccessPermissions = SYNCHRONIZE;
+			ea.grfAccessMode = GRANT_ACCESS;
+			ea.grfInheritance = NO_INHERITANCE;
+			ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
+			ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+			ea.Trustee.ptstrName  = (LPTSTR) pSID;
+
+			PACL pNewACL = NULL;
+			SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
+
+			SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
+							DACL_SECURITY_INFORMATION,
+							NULL, NULL, pNewACL, NULL);
+
+			if (pSID) {
+				FreeSid(pSID);
+			}
+			if (pNewACL) {
+				LocalFree(pNewACL);
+			}
+		}
+
+		// Create and initialize the default security descriptor
+		// to be assigned to various IPC objects.
+		//
+		// WARNING!!! The absent DACL means full access granted
+		// to everyone, this is a huge security risk!
+
+		PSECURITY_DESCRIPTOR p_security_desc = pool.allocate(SECURITY_DESCRIPTOR_MIN_LENGTH);
+
+		attributes.nLength = sizeof(attributes);
+		attributes.lpSecurityDescriptor = p_security_desc;
+		attributes.bInheritHandle = TRUE;
+
+		if (!InitializeSecurityDescriptor(p_security_desc, SECURITY_DESCRIPTOR_REVISION) ||
+			!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
+		{
+			delete p_security_desc;
+			attributes.lpSecurityDescriptor = NULL;
+		}
+	}
+
+	~SecurityAttributes()
+	{
+		delete attributes.lpSecurityDescriptor;
+	}
+
+	operator LPSECURITY_ATTRIBUTES()
+	{
+		return attributes.lpSecurityDescriptor ? &attributes : NULL;
+	}
+
+private:
+	SECURITY_ATTRIBUTES attributes;
+};
+
+static Firebird::InitInstance<SecurityAttributes> security_attributes;
 
 #endif // WIN_NT
-
-static TEXT user_name[256];
 
 
 #ifdef HAVE_SIGNAL_H
@@ -490,26 +567,6 @@ void ISC_prefix_msg(TEXT* string, const TEXT* root)
 }
 
 
-void ISC_set_user(const TEXT* string)
-{
-/**************************************
- *
- *      I S C _ s e t _ u s e r
- *
- **************************************
- *
- * Functional description
- *      Set user name for feeble operating system that don't
- *      support the concept, or support it badly.
- *
- **************************************/
-// CVC: And including a buffer overflow, too?
-// Using static data, not thread safe. Probably deprecated?
-	strncpy(user_name, string, sizeof(user_name));
-	user_name[sizeof(user_name) - 1] = 0;
-}
-
-
 #ifdef UNIX
 #ifdef AIX_PPC
 #define _UNIX95
@@ -571,81 +628,6 @@ SLONG ISC_get_user_group_id(const TEXT* user_group_name)
 #ifdef WIN_NT
 LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 {
-	if (security_attr.lpSecurityDescriptor)
-	{
-		return &security_attr;
-	}
-
-	// This is our first call. Ensure that our process has
-	// the SYNCHRONIZE privilege granted to everyone.
-
-	PACL pOldACL = NULL;
-	GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
-					DACL_SECURITY_INFORMATION,
-					NULL, NULL, &pOldACL, NULL, NULL);
-
-	// NULL pOldACL means all privileges. If we assign pNewACL in this case 
-	// we'll lost all privileges except assigned SYNCHRONIZE
-	if (pOldACL) 
-	{
-		SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
-		PSID pSID = NULL;
-		AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
-								0, 0, 0, 0, 0, 0, 0, &pSID);
-
-		EXPLICIT_ACCESS ea;
-		memset(&ea, 0, sizeof(EXPLICIT_ACCESS));
-		ea.grfAccessPermissions = SYNCHRONIZE;
-		ea.grfAccessMode = GRANT_ACCESS;
-		ea.grfInheritance = NO_INHERITANCE;
-		ea.Trustee.TrusteeForm = TRUSTEE_IS_SID;
-		ea.Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-		ea.Trustee.ptstrName  = (LPTSTR) pSID;
-
-		PACL pNewACL = NULL;
-		SetEntriesInAcl(1, &ea, pOldACL, &pNewACL);
-
-		SetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
-						DACL_SECURITY_INFORMATION,
-						NULL, NULL, pNewACL, NULL);
-
-		if (pSID) {
-			FreeSid(pSID);
-		}
-		if (pNewACL) {
-			LocalFree(pNewACL);
-		}
-	}
-
-	// Create and initialize the default security descriptor
-	// to be assigned to various IPC objects.
-	//
-	// WARNING!!! The absent DACL means full access granted
-	// to everyone, this is a huge security risk!
-
-	PSECURITY_DESCRIPTOR p_security_desc =
-		(PSECURITY_DESCRIPTOR) gds__alloc(SECURITY_DESCRIPTOR_MIN_LENGTH);
-/* FREE: apparently never freed */
-	if (!p_security_desc)		/* NOMEM: */
-	{
-		return NULL;
-	}
-#ifdef DEBUG_GDS_ALLOC
-	gds_alloc_flag_unfreed((void *) p_security_desc);
-#endif
-
-	if (!InitializeSecurityDescriptor(p_security_desc,
-									  SECURITY_DESCRIPTOR_REVISION) ||
-		!SetSecurityDescriptorDacl(p_security_desc, TRUE, NULL, FALSE))
-	{
-		gds__free(p_security_desc);
-		return NULL;
-	}
-
-	security_attr.nLength = sizeof(security_attr);
-	security_attr.lpSecurityDescriptor = p_security_desc;
-	security_attr.bInheritHandle = TRUE;
-
-	return &security_attr;
+	return security_attributes();
 }
 #endif

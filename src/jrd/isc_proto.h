@@ -32,7 +32,6 @@ TEXT*	ISC_get_host(TEXT *, USHORT);
 const TEXT*	ISC_get_host(Firebird::string&);
 bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
-void	ISC_set_user(const TEXT*);
 SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 void	ISC_prefix(TEXT*, const TEXT*);
 void	ISC_prefix_lock(TEXT*, const TEXT*);
