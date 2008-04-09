@@ -1168,7 +1168,6 @@ gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
-gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
 gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
