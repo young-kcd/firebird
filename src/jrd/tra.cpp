@@ -2171,8 +2171,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 	if (level == 0)
 	{
 		fb_assert(!relation->rel_view_rse && !relation->rel_view_contexts.getCount());
-		// Reject explicit attempts to take locks on virtual tables, but RDB$ADMIN role
-		// can do that for whatever is needed.
+		// Reject explicit attempts to take locks on virtual tables.
 		if (relation->isVirtual())
 		{
 			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_virtualtbl,
