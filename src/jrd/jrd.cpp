@@ -6268,7 +6268,7 @@ bool JRD_verify_database_access(const Firebird::PathName& name)
 {
 /**************************************
  *
- *      I S C _ v e r i f y _ d a t a b a s e _ a c c e s s
+ *      J R D _ v e r i f y _ d a t a b a s e _ a c c e s s
  *
  **************************************
  *
