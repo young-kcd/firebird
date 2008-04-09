@@ -35,6 +35,7 @@ class thread_db;
 class jrd_tra;
 class Attachment;
 class dsql_req;
+class dsql_msg;
 class ResultSet;
 
 
@@ -58,8 +59,9 @@ public:
 		return request;
 	}
 
+	static void parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc> &values, Firebird::UCharBuffer &blr, Firebird::UCharBuffer &msg);
 private:
-	void generateBlr(const dsc* desc);
+	static void generateBlr(const dsc* desc, Firebird::UCharBuffer &blr);
 
 private:
 	dsql_req* request;

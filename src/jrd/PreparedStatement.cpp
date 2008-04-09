@@ -52,71 +52,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 		int paramCount = 0;
 		size_t msgLength = 0;
 
-		if (request->req_receive)
-		{
-			for (const dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
-			{
-				if (!par->par_index)
-					continue;
-
-				if (type_alignments[par->par_desc.dsc_dtype])
-					msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-				msgLength += par->par_desc.dsc_length;
-				msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
-				msgLength += sizeof(SSHORT);
-
-				++paramCount;
-			}
-
-			paramCount *= 2;
-
-			blr.add(blr_version5);
-			blr.add(blr_begin);
-			blr.add(blr_message);
-			blr.add(0);
-			blr.add(paramCount);
-			blr.add(paramCount >> 8);
-
-			values.resize(paramCount);
-			message.resize(msgLength);
-
-			msgLength = 0;
-
-			int i = 0;
-
-			for (int j = 1; j <= paramCount / 2; ++j)
-			{
-				for (const dsql_par* par = request->req_receive->msg_parameters; par; par = par->par_next)
-				{
-					if (par->par_index != j)
-						continue;
-
-					if (type_alignments[par->par_desc.dsc_dtype])
-						msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
-					values[i] = par->par_desc;
-					values[i].dsc_address = message.begin() + msgLength;
-					msgLength += par->par_desc.dsc_length;
-
-					generateBlr(&values[i]);
-
-					++i;
-
-					// Calculate the NULL indicator offset
-					if (type_alignments[dtype_short])
-						msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
-					values[i].makeShort(0);
-					values[i].dsc_address = message.begin() + msgLength;
-					msgLength += sizeof(SSHORT);
-
-					// Generate BLR for the NULL indicator
-					blr.add(blr_short);
-					blr.add(0);
-
-					++i;
-				}
-			}
-
-			blr.add(blr_end);
+		if (request->req_receive) {
+			parseDsqlMessage(request->req_receive, values, blr, message);
 		}
 	}
 	catch (const Firebird::Exception&)
@@ -158,7 +95,80 @@ int PreparedStatement::getResultCount() const
 }
 
 
-void PreparedStatement::generateBlr(const dsc* desc)
+void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc> &values, 
+	Firebird::UCharBuffer &blr, Firebird::UCharBuffer &msg)
+{
+	int paramCount = 0;
+	size_t msgLength = 0;
+
+	// Parameters in dsqlMsg->msg_parameters linked in descending order by par_index.
+	// To generate correct BLR we must walk params in ascending par_index order. So 
+	// store all params in array and walk array in reverse order.
+
+	Firebird::HalfStaticArray<dsql_par*, 16> params;
+	for (dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next) {
+		if (par->par_index)
+			params.add(par);
+	}
+
+	paramCount = params.getCount();
+	int i = paramCount - 1;
+	for (; i >= 0; i--)
+	{
+		const dsql_par* par = params[i];
+
+		if (type_alignments[par->par_desc.dsc_dtype])
+			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
+		msgLength += par->par_desc.dsc_length;
+		msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
+		msgLength += sizeof(SSHORT);
+	}
+
+	paramCount *= 2;
+
+	blr.add(blr_version5);
+	blr.add(blr_begin);
+	blr.add(blr_message);
+	blr.add(0);
+	blr.add(paramCount);
+	blr.add(paramCount >> 8);
+
+	values.resize(paramCount);
+	msg.resize(msgLength);
+
+	msgLength = 0;
+	dsc *value = values.begin();
+	for (i = paramCount / 2 - 1; i >= 0; i--)
+	{
+		const dsql_par* par = params[i];
+
+		if (type_alignments[par->par_desc.dsc_dtype])
+			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
+		*value = par->par_desc;
+		value->dsc_address = msg.begin() + msgLength;
+		msgLength += par->par_desc.dsc_length;
+
+		generateBlr(value, blr);
+		value++;
+
+		// Calculate the NULL indicator offset
+		if (type_alignments[dtype_short])
+			msgLength = FB_ALIGN(msgLength, type_alignments[dtype_short]);
+		value->makeShort(0);
+		value->dsc_address = msg.begin() + msgLength;
+		// set NULL indicator value
+		*((SSHORT*)value->dsc_address) = -1;
+		msgLength += sizeof(SSHORT);
+
+		// Generate BLR for the NULL indicator
+		generateBlr(value, blr);
+		value++;
+	}
+
+	blr.add(blr_end);
+}
+
+void PreparedStatement::generateBlr(const dsc* desc, Firebird::UCharBuffer &blr)
 {
 	USHORT length = 0;
 
