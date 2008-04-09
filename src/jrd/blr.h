@@ -355,5 +355,6 @@
 
 #define blr_auto_trans		(unsigned char)187
 #define blr_similar			(unsigned char)188
+#define blr_exec_stmt		(unsigned char)189
 
 #endif // JRD_BLR_H

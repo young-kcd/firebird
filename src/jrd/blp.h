@@ -222,6 +222,7 @@ static const struct
 	{"sys_function", function},
 	{"auto_trans", one},
 	{"similar", similar},
+	{"exec_stmt", exec_stmt},
 	{0, 0}
 };
 

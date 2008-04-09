@@ -513,6 +513,20 @@ const int e_sysfun_length	= 2;
 const int e_auto_trans_action	= 0;
 const int e_auto_trans_length	= 1;
 
+// nod_exec_stmt
+const int e_exec_stmt_stmt_sql		= 0;
+const int e_exec_stmt_data_src		= 1;
+const int e_exec_stmt_user			= 2;
+const int e_exec_stmt_password		= 3;
+const int e_exec_stmt_proc_block	= 4;
+const int e_exec_stmt_fixed_count	= 5;
+
+const int e_exec_stmt_extra_inputs		= 0;
+const int e_exec_stmt_extra_input_names	= 1;
+const int e_exec_stmt_extra_outputs		= 2;
+const int e_exec_stmt_extra_tran		= 3;
+const int e_exec_stmt_extra_count		= 4;
+
 // Request resources
 
 struct Resource

@@ -65,6 +65,7 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/ods.h"
 #include "../jrd/exe.h"
+#include "../jrd/extds/ExtDS.h"
 #include "../jrd/val.h"
 #include "../jrd/rse.h"
 #include "../jrd/all.h"
@@ -5491,6 +5492,8 @@ static void purge_attachment(thread_db*		tdbb,
 
 		tdbb->tdbb_status_vector = original_status;
 	}
+
+	EDS::Manager::manager->jrdAttachmentEnd(tdbb, attachment);
 
 	const ULONG att_flags = attachment->att_flags;
 	attachment->att_flags |= ATT_shutdown;

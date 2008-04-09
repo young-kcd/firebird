@@ -280,6 +280,7 @@ const int op_relation	= 20;
 const int op_exec_into	= 21;
 const int op_cursor_stmt	= 22;
 const int op_byte_opt_verb	= 23;
+const int op_exec_stmt	= 24;
 
 static const UCHAR
 	/* generic print formats */
@@ -337,7 +338,9 @@ static const UCHAR
 	strlength[] = { op_byte, op_line, op_verb, 0},
 	trim[] = { op_byte, op_byte_opt_verb, op_verb, 0},
 	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
-	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0};
+	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0},
+	exec_stmt[] = { op_exec_stmt, 0};
+
 
 #include "../jrd/blp.h"
 
@@ -3288,6 +3291,67 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			}
 			while (n-- > 0) {
 				blr_print_verb(control, level);
+			}
+			break;
+		}
+
+		case op_exec_stmt: 
+		{
+			int inputs = blr_print_word(control);
+			int outputs = blr_print_word(control);
+			offset = blr_print_line(control, offset);
+			
+			blr_print_verb(control, level);		// query expression
+			offset = blr_print_line(control, offset);
+
+			blr_print_verb(control, level);		// external data source
+			offset = blr_print_line(control, offset);
+
+			blr_print_verb(control, level);		// user 
+			offset = blr_print_line(control, offset);
+
+			blr_print_verb(control, level);		// password
+			offset = blr_print_line(control, offset);
+
+			blr_indent(control, level);
+			blr_print_word(control);			// transaction behavior
+
+			const bool singleton = blr_print_byte(control);	// singleton flag
+			offset = blr_print_line(control, offset);
+
+			if (!singleton) 
+			{
+				blr_print_verb(control, level);
+				offset = blr_print_line(control, offset);
+			}
+			bool named = false;
+			if (inputs)
+			{
+				blr_indent(control, level);
+				named = (blr_print_byte(control) != 0);	// named parameters flag
+				offset = blr_print_line(control, offset);
+			}
+			while (inputs + outputs) 
+			{
+				if (inputs)
+				{
+					// input param name
+					if (named)
+					{
+						blr_indent(control, level);
+						int len = BLR_BYTE;
+						while (len--) 
+							blr_print_char(control);
+						
+						offset = blr_print_line(control, offset);
+					}
+					--inputs;
+				}
+				else {
+					--outputs;
+				}
+				blr_print_verb(control, level);		// param expression
+				offset = blr_print_line(control, offset);
 			}
 			break;
 		}

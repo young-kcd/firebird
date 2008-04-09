@@ -361,7 +361,11 @@ enum nod_t
 	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
-	nod_del_user
+	nod_del_user,
+	nod_exec_stmt,	//290
+	nod_exec_stmt_inputs,
+	nod_tran_params,
+	nod_named_param
 };
 
 /* enumerations of the arguments to a node, offsets
@@ -422,6 +426,25 @@ enum node_args {
 	e_exec_into_list,
 	e_exec_into_label,
 	e_exec_into_count,
+
+	e_exec_stmt_sql = 0,	// nod_exec_stmt
+	e_exec_stmt_inputs,
+	e_exec_stmt_outputs,
+	e_exec_stmt_proc_block,
+	e_exec_stmt_data_src,
+	e_exec_stmt_user,
+	e_exec_stmt_pwd,
+	e_exec_stmt_tran,
+	e_exec_stmt_label,
+	e_exec_stmt_count,
+	
+	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
+	e_exec_stmt_inputs_params,
+	e_exec_stmt_inputs_count,
+
+	e_named_param_name = 0,	// nod_named_param
+	e_named_param_expr,
+	e_named_param_count,
 
 	e_internal_info = 0,	// nod_internal_info
 	e_internal_info_count,
@@ -1061,7 +1084,11 @@ enum nod_flags_vals {
 	NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS	= 2,
 	NOD_GLOBAL_TEMP_TABLE_DELETE_ROWS	= 3,
 
-	NOD_SPECIAL_SYNTAX		= 1	// nod_sys_function
+	NOD_SPECIAL_SYNTAX		= 1,	// nod_sys_function
+
+	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
+	NOD_TRAN_COMMON = 2,
+	NOD_TRAN_2PC = 3
 };
 
 } // namespace

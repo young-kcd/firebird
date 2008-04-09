@@ -38,6 +38,7 @@
 #include "../jrd/btr.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
+#include "../jrd/extds/ExtDS.h"
 #include "../jrd/rse.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/jrd_pwd.h"
@@ -392,6 +393,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, true, retaining_flag, false);
 
 /* If this is a commit retaining, and no updates have been performed,
    and no events have been posted (via stored procedures etc)
@@ -1206,6 +1209,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, false, retaining_flag, false /*force_flag ?*/);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 

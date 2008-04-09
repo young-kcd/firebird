@@ -43,6 +43,10 @@
 #include "../jrd/DatabaseSnapshot.h"
 #include "../jrd/TempSpace.h"
 
+namespace EDS {
+class Transaction;
+};
+
 namespace Jrd {
 
 class blb;
@@ -153,6 +157,9 @@ public:
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
 	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
+
+	EDS::Transaction *tra_ext_common;
+	//Transaction *tra_ext_two_phase;
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage

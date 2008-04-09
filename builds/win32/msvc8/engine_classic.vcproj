@@ -403,6 +403,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\ExtDS.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\filters.cpp"
 				>
 			</File>
@@ -451,6 +455,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\InternalDS.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intl.cpp"
 				>
 			</File>
@@ -480,6 +488,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\extds\IscDS.cpp"
 				>
 			</File>
 			<File
@@ -931,6 +943,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\ExtDS.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\include\fb_api_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\include\fb_blk.h"
 				>
 			</File>
@@ -1035,6 +1055,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\extds\InternalDS.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\intl.h"
 				>
 			</File>
@@ -1084,6 +1108,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_signal.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\extds\IscDS.h"
 				>
 			</File>
 			<File

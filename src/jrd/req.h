@@ -35,6 +35,9 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
+namespace EDS {
+class Statement;
+};
 
 namespace Jrd {
 
@@ -189,7 +192,7 @@ class jrd_req : public pool_alloc_rpt<record_param, type_req>
 public:
 	jrd_req(MemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
+		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_ext_stmt(NULL),
 		req_invariants(*pool), req_sql_text(*pool), req_domain_validation(NULL),
 		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
 	{}
@@ -244,6 +247,7 @@ public:
 	jrd_nod*	req_next;			/* next node for execution */
 	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
 	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
+	EDS::Statement*	req_ext_stmt;	// head of list of active dynamic statements
 	vec<RecordSource*>* 		req_cursors;	/* Vector of named cursors, if any */
 	Firebird::Array<jrd_nod*>	req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT		req_label;			/* label for leave */

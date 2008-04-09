@@ -47,6 +47,7 @@
 #include "../jrd/val.h"
 #include "../jrd/align.h"
 #include "../jrd/exe.h"
+#include "../jrd/extds/ExtDS.h"
 #include "../jrd/lls.h"
 #include "../jrd/rse.h"	// for MAX_STREAMS
 #include "../jrd/scl.h"
@@ -2818,6 +2819,63 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = parse(tdbb, csb, STATEMENT);
 		for (n = 2/*e_exec_into_list*/; n < node->nod_count; n++)
 			*arg++ = parse(tdbb, csb, VALUE);
+		break;
+
+	case blr_exec_stmt:
+		{
+			const USHORT inputs = BLR_WORD;
+			const USHORT outputs = BLR_WORD;
+			n = inputs + outputs + e_exec_stmt_fixed_count; 
+
+			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
+			node->nod_count = n;
+			arg = node->nod_arg;
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_user	
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_password	
+			const UCHAR tra_mode = BLR_BYTE;		// e_exec_stmt_tran		
+			if (BLR_BYTE != 0) {
+				// external transaction parameters is not implemented currently
+				syntax_error(csb, "external transaction parameters");
+			}
+
+			if (BLR_BYTE)	// singleton flag
+				*arg++ = 0;								// e_exec_stmt_proc_block
+			else
+				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
+
+			// input parameters and its names
+			const bool haveNames = (inputs && (BLR_BYTE == 1));
+			EDS::ParamNames* paramNames = NULL;
+			for (n = e_exec_stmt_fixed_count; n < e_exec_stmt_fixed_count + inputs; n++)
+			{
+				if (haveNames)
+				{
+					Firebird::string name;
+					if (par_name(csb, name))
+					{
+						Firebird::MemoryPool &pool = csb->csb_pool;
+						if (!paramNames) {
+							paramNames = FB_NEW (pool) EDS::ParamNames(pool);
+						}
+						Firebird::string *newName = FB_NEW (pool) Firebird::string(pool, name);
+						paramNames->add(newName);
+					}
+				}
+				*arg++ = parse(tdbb, csb, VALUE);
+			}
+
+			// output parameters
+			for (; n < node->nod_count; n++) {
+				*arg++ = parse(tdbb, csb, VALUE);
+			}
+
+			*arg++ = (jrd_nod*) (IPTR) inputs;		// e_exec_stmt_extra_inputs	
+			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
+			*arg++ = (jrd_nod*) (IPTR) outputs;		// e_exec_stmt_extra_outputs	
+			*arg++ = (jrd_nod*) (IPTR) tra_mode;	// e_exec_stmt_extra_tran
+		}
 		break;
 
 	case blr_post_arg:

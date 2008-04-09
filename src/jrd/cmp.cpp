@@ -5329,6 +5329,10 @@ static jrd_nod* pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node
 		csb->csb_exec_sta.push(node);
 		break;
 
+	case nod_exec_stmt:
+		csb->csb_impure += sizeof(void**);
+		break;
+
 	default:
 		// note: no fb_assert(false); here as too many nodes are missing
 		break;

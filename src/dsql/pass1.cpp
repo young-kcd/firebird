@@ -1096,6 +1096,16 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_not:
 		return pass1_not(request, input, proc_flag, true);
 
+	case nod_tran_params:
+		return input;
+
+	case nod_named_param:
+		node = MAKE_node(input->nod_type, input->nod_count);
+		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
+		node->nod_arg[e_named_param_expr] =
+			PASS1_node(request, input->nod_arg[e_named_param_expr], proc_flag);
+		return node;
+
 	default:
 		break;
 	}
@@ -1722,6 +1732,62 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 		node->nod_arg[e_exec_into_list] =
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
+		return pass1_savepoint(request, node);
+
+	case nod_exec_stmt:
+		node = MAKE_node(input->nod_type, input->nod_count);
+		node->nod_arg[e_exec_stmt_sql] =
+			PASS1_node(request, input->nod_arg[e_exec_stmt_sql], proc_flag);
+		node->nod_arg[e_exec_stmt_inputs] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_inputs], proc_flag);
+
+		// check params names uniqueness, if present
+		if (node->nod_arg[e_exec_stmt_inputs])
+		{
+			const int cnt = node->nod_arg[e_exec_stmt_inputs]->nod_count;
+			StrArray names(*getDefaultMemoryPool(), cnt);
+
+			dsql_nod **prm = node->nod_arg[e_exec_stmt_inputs]->nod_arg;
+			if ((*prm)->nod_arg[e_named_param_name]) {
+				for (int i = 0; i < cnt; i++, prm++)
+				{
+					dsql_str *name = (dsql_str*) (*prm)->nod_arg[e_named_param_name];
+					size_t pos;
+					if (names.find(name->str_data, pos)) {
+						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+								  isc_arg_gds, isc_dsql_duplicate_spec,
+								  isc_arg_string, name->str_data, 0);
+					}
+					names.add(name->str_data);
+				}
+			}
+		}
+
+		node->nod_arg[e_exec_stmt_outputs] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_outputs], proc_flag);
+		
+		if (input->nod_arg[e_exec_stmt_proc_block])
+		{
+			request->req_loop_level++;
+			node->nod_arg[e_exec_stmt_label] = pass1_label(request, input);
+			node->nod_arg[e_exec_stmt_proc_block] =
+				PASS1_statement(request, input->nod_arg[e_exec_stmt_proc_block], proc_flag);
+			request->req_loop_level--;
+			request->req_labels.pop();
+		}
+
+		node->nod_arg[e_exec_stmt_data_src] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_data_src], proc_flag);
+
+		node->nod_arg[e_exec_stmt_user] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_user], proc_flag);
+
+		node->nod_arg[e_exec_stmt_pwd] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_pwd], proc_flag);
+
+		node->nod_arg[e_exec_stmt_tran] = 
+			PASS1_node(request, input->nod_arg[e_exec_stmt_tran], proc_flag);
+
 		return pass1_savepoint(request, node);
 
 	case nod_exit:
@@ -6505,6 +6571,9 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 		break;
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
+		break;
+	case nod_exec_stmt:
+		label = input->nod_arg[e_exec_stmt_label];
 		break;
 	case nod_while:
 		label = input->nod_arg[e_while_label];
@@ -11556,6 +11625,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_del_user:
 		verb = "del_user";
+		break;
+
+	case nod_exec_stmt:
+		verb = "exec_stmt";
 		break;
 
 	default:
