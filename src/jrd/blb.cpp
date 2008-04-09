@@ -290,7 +290,6 @@ blb* BLB_create2(thread_db* tdbb,
 		blob->blb_flags |= BLB_stream;
 
 	if (type & isc_bpb_storage_temp) {
-		// must be the same value as in VIO\jrd_rel::getPages
 		blob->blb_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
 	}
 	else {
