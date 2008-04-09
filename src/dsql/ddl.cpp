@@ -6954,7 +6954,7 @@ void dsql_req::append_string(UCHAR verb, const char* string, USHORT length)
 	}
 
 	if (string) {
-		for (; *string && length--; string++) {
+		for (; length-- && *string; string++) {
 			append_uchar(*string);
 		}
 	}
