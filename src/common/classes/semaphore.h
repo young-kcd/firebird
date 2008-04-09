@@ -212,7 +212,7 @@ public:
 		// Wait with timeout
 		struct timespec timeout;
 		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
 		int errcode = 0;
 		do {
 			int rc = sem_timedwait(sem, &timeout);
@@ -292,7 +292,7 @@ public:
 		milliseconds += seconds * 1000;
 		timespec timeout;
 		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
 		timespec* t = &timeout;
 
 		sembuf sb;
@@ -463,7 +463,7 @@ public:
 		// Wait with timeout
 		timespec timeout;
 		timeout.tv_sec = time(NULL) + milliseconds / 1000;
-		timeout.tv_nsec = (milliseconds % 1000) * 1000;
+		timeout.tv_nsec = (milliseconds % 1000) * 1000000;
 		err2 = pthread_mutex_lock(&mu);
 
 		if (err2 == 0)
