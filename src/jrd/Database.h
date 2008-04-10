@@ -453,11 +453,7 @@ public:
 
 	MemoryPool* createPool()
 	{
-#ifdef SUPERSERVER
-		MemoryPool* pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
-#else
-		MemoryPool* pool = MemoryPool::createPool(dbb_permanent);
-#endif
+		MemoryPool* const pool = MemoryPool::createPool(dbb_permanent, dbb_memory_stats);
 		dbb_pools.add(pool);
 		return pool;
 	}
