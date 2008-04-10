@@ -45,7 +45,7 @@
 
 namespace EDS {
 class Transaction;
-};
+}
 
 namespace Jrd {
 
