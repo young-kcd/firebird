@@ -78,10 +78,11 @@ public:
 	explicit SecurityAttributes(MemoryPool& pool)
 	{
 		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
+		PSECURITY_DESCRIPTOR pOldSD;
 		PACL pOldACL = NULL;
 		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
 						DACL_SECURITY_INFORMATION,
-						NULL, NULL, &pOldACL, NULL, NULL);
+						NULL, NULL, &pOldACL, NULL, &pOldSD);
 
 		// NULL pOldACL means all privileges. If we assign pNewACL in this case 
 		// we'll lost all privileges except assigned SYNCHRONIZE
@@ -114,6 +115,10 @@ public:
 			if (pNewACL) {
 				LocalFree(pNewACL);
 			}
+		}
+
+		if (pOldSD) {
+			LocalFree(pOldSD);
 		}
 
 		// Create and initialize the default security descriptor
