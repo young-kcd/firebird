@@ -45,10 +45,6 @@
 #include "../jrd/drq.h"
 #include "../include/gen/iberror.h"
 
-#if defined(UNIX) && defined(SUPERSERVER)
-#include <setjmp.h>
-#endif
-
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"

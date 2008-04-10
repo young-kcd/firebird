@@ -39,9 +39,6 @@
 #include "../jrd/all.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/val.h"
-#if defined(UNIX) && defined(SUPERSERVER)
-#include <setjmp.h>
-#endif
 
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
