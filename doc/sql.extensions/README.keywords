@@ -119,6 +119,7 @@ Firebird 2.1:
     DISCONNECT
     GLOBAL
     INSENSITIVE
+    START
 
   Added as non-reserved words:
 
