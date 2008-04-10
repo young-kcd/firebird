@@ -186,8 +186,6 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db *tdbb, bool ret
 	}
 	else
 	{
-		Attachment *att = m_IntConnection.getJrdAtt();
-
 		EngineCallbackGuard guard(tdbb, *this);
 		if (retain)
 			jrd8_commit_retaining(status, &m_transaction);
@@ -205,8 +203,6 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 	}
 	else
 	{
-		Attachment *att = m_IntConnection.getJrdAtt();
-
 		EngineCallbackGuard guard(tdbb, *this);
 		if (retain)
 			jrd8_rollback_retaining(status, &m_transaction);
@@ -473,7 +469,6 @@ void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, UCharBu
 USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 {
 	fb_assert(m_blob);
-	Attachment *att = m_connection.getJrdAtt();
 
 	USHORT result = 0;
 	ISC_STATUS_ARRAY status = {0};
@@ -496,7 +491,6 @@ USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 void InternalBlob::write(thread_db *tdbb, char *buff, USHORT len)
 {
 	fb_assert(m_blob);
-	Attachment *att = m_connection.getJrdAtt();
 
 	ISC_STATUS_ARRAY status = {0};
 	{
