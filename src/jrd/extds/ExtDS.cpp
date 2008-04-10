@@ -51,8 +51,8 @@ namespace EDS {
 GlobalPtr<Manager> Manager::manager;
 
 Manager::Manager(MemoryPool &pool) :
-	PermanentStorage(*getDefaultMemoryPool()),
-	m_providers(getPool())
+	PermanentStorage(pool),
+	m_providers(pool)
 {
 }
 
@@ -68,8 +68,7 @@ Manager::~Manager()
 
 void Manager::addProvider(Provider* provider)
 {
-	size_t pos;
-	if (m_providers.find(Provider::generate(0, provider), pos))
+	if (m_providers.exist(Provider::generate(0, provider)))
 		return;
 
 	provider->initialize();
@@ -152,6 +151,7 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 {
 	Connection **conn_ptr = m_connections.begin();
 	Connection **end = m_connections.end();
+
 	for (; conn_ptr < end; conn_ptr++)
 	{
 		Connection *conn = *conn_ptr;
@@ -172,34 +172,40 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 		throw;
 	}
 	m_connections.add(conn);
+
 	return conn;
 }
 
-// hvlad: in current implementation i didn't return connections in pool as 
-// i have not implemented way to delete long idle connections.
+// hvlad: in current implementation I didn't return connections in pool as 
+// I have not implemented way to delete long idle connections.
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
 	conn.detach(tdbb);
 	Connection **ptr = m_connections.begin();
 	Connection **end = m_connections.end();
+
 	for (; ptr < end; ptr++)
+	{
 		if (*ptr == &conn)
 		{
 			m_connections.remove(ptr);
 			Connection::deleteConnection(tdbb, &conn);
 			return;
 		}
+	}
 }
 
 void Provider::clearConnections(thread_db *tdbb)
 {
 	Connection **ptr = m_connections.begin();
 	Connection **end = m_connections.end();
+
 	for (; ptr < end; ptr++)
 	{
 		Connection::deleteConnection(tdbb, *ptr);
 		*ptr = NULL;
 	}
+
 	m_connections.clear();
 }
 
@@ -247,6 +253,7 @@ void Connection::deleteTransaction(Transaction *tran)
 {
 	Transaction **tran_ptr = m_transactions.begin();
 	Transaction **end = m_transactions.end();
+
 	for (; tran_ptr < end; tran_ptr++)
 	{
 		if (tran == *tran_ptr)
@@ -257,7 +264,7 @@ void Connection::deleteTransaction(Transaction *tran)
 		}
 	}
 
-	if (!m_used_stmts && !m_transactions.getCount() && !m_deleting)
+	if (!m_used_stmts && m_transactions.getCount() == 0 && !m_deleting)
 		m_provider.releaseConnection(JRD_get_thread_data(), *this);
 }
 
@@ -265,8 +272,7 @@ Statement* Connection::createStatement(const string &sql)
 {
 	m_used_stmts++;
 
-	Statement **stmt_ptr = &m_freeStatements;
-	for (; *stmt_ptr; stmt_ptr = &(*stmt_ptr)->m_nextFree)
+	for (Statement **stmt_ptr = &m_freeStatements; *stmt_ptr; stmt_ptr = &(*stmt_ptr)->m_nextFree)
 	{
 		Statement *stmt = *stmt_ptr;
 		if (stmt->getSql() == sql)
@@ -295,6 +301,7 @@ Statement* Connection::createStatement(const string &sql)
 void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 {
 	fb_assert(stmt && !stmt->isActive());
+
 	if (m_free_stmts < MAX_CACHED_STMTS)
 	{
 		stmt->m_nextFree = m_freeStatements;
@@ -305,7 +312,9 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 	{
 		Statement **stmt_ptr = m_statements.begin();
 		Statement **end = m_statements.end();
-		for (; stmt_ptr < end; stmt_ptr++) {
+
+		for (; stmt_ptr < end; stmt_ptr++)
+		{
 			if (stmt == *stmt_ptr)
 			{
 				m_statements.remove(stmt_ptr);
@@ -314,9 +323,10 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 			}
 		}
 	}
+
 	m_used_stmts--;
 
-	if (!m_used_stmts && !m_transactions.getCount() && !m_deleting)
+	if (!m_used_stmts && m_transactions.getCount() == 0 && !m_deleting)
 		m_provider.releaseConnection(JRD_get_thread_data(), *this);
 }
 
@@ -324,6 +334,7 @@ void Connection::clearStatements(thread_db *tdbb)
 {
 	Statement **stmt_ptr = m_statements.begin();
 	Statement **end = m_statements.end();
+
 	for (; stmt_ptr < end; stmt_ptr++)
 	{
 		Statement *stmt = *stmt_ptr;
@@ -331,6 +342,7 @@ void Connection::clearStatements(thread_db *tdbb)
 			stmt->close(tdbb);
 		Statement::deleteStatement(tdbb, stmt);
 	}
+
 	m_statements.clear();
 
 	fb_assert(!m_used_stmts);
@@ -338,11 +350,11 @@ void Connection::clearStatements(thread_db *tdbb)
 	m_free_stmts = m_used_stmts = 0;
 }
 
-Transaction* Connection::findTransaction(thread_db *tdbb, 
-	TraScope traScope) const
+Transaction* Connection::findTransaction(thread_db *tdbb, TraScope traScope) const
 {
 	jrd_tra *tran = tdbb->getTransaction();
 	Transaction *ext_tran = NULL;
+
 	switch (traScope)
 	{
 	case traCommon :
@@ -407,24 +419,25 @@ void Transaction::generateTPB(thread_db *tdbb, ClumpletWriter &tpb,
 	{
 	case traReadCommited: 
 		tpb.insertTag(isc_tpb_read_committed);
-	break;
+		break;
 	
 	case traReadCommitedRecVersions: 
 		tpb.insertTag(isc_tpb_read_committed);
 		tpb.insertTag(isc_tpb_rec_version);
-	break;
+		break;
 	
 	case traConcurrency: 
 		tpb.insertTag(isc_tpb_concurrency);
-	break;
+		break;
 	
 	case traConsistency: 
 		tpb.insertTag(isc_tpb_consistency);
-	break;
+		break;
 	}
 
 	tpb.insertTag(readOnly ? isc_tpb_read : isc_tpb_write);
 	tpb.insertTag(wait ? isc_tpb_wait : isc_tpb_nowait);
+
 	if (wait && lockTimeout)
 		tpb.insertInt(isc_tpb_lock_timeout, lockTimeout);
 }
@@ -463,6 +476,7 @@ void Transaction::prepare(thread_db *tdbb, int info_len, const char* info)
 {
 	ISC_STATUS_ARRAY status = {0};
 	doPrepare(status, tdbb, info_len, info);
+
 	if (status[1]) {
 		m_connection.raise(status, tdbb, "transaction start");
 	}
@@ -496,8 +510,7 @@ void Transaction::rollback(thread_db *tdbb, bool retain)
 	}
 }
 
-Transaction* Transaction::getTransaction(thread_db *tdbb, 
-		Connection *conn, TraScope tra_scope)
+Transaction* Transaction::getTransaction(thread_db *tdbb, Connection *conn, TraScope tra_scope)
 {
 	jrd_tra *tran = tdbb->getTransaction();
 	Transaction *ext_tran = conn->findTransaction(tdbb, tra_scope);
@@ -541,6 +554,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 {
 	Transaction** ext_tran = &transaction->tra_ext_common;
 	Transaction* tran = *ext_tran;
+
 	while (tran)
 	{
 		Transaction* next = tran->m_nextTran;
@@ -551,7 +565,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 			else
 				tran->rollback(tdbb, retain);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			if (!force || commit)
 				throw;
@@ -627,7 +641,9 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, string &sql, bool na
 	m_outDescs.clear();
 	clearNames();
 
-	string sql2(getPool()), *readySql = &sql;
+	string sql2(getPool());
+	string *readySql = &sql;
+
 	if (named && !(m_provider.getFlags() & prvNamedParams))
 	{
 		preprocess(sql, sql2);
@@ -639,7 +655,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, string &sql, bool na
 		doPrepare(tdbb, *readySql);
 		m_transaction = NULL;
 	}
-	catch(...)
+	catch (...)
 	{
 		m_transaction = NULL;
 		throw;
@@ -748,11 +764,11 @@ void Statement::deallocate(thread_db *tdbb)
 }
 
 
-typedef enum {ttNone, ttWhite, ttComment, ttString, ttParamMark, ttIdent, ttOther} tokenType;
+typedef enum {ttNone, ttWhite, ttComment, ttString, ttParamMark, ttIdent, ttOther} TokenType;
 
-tokenType getToken(const char **begin, const char *end)
+static TokenType getToken(const char **begin, const char *end)
 {
-	tokenType ret = ttNone;
+	TokenType ret = ttNone;
 	const char *p = *begin;
 
 	char c = *p++;
@@ -845,7 +861,7 @@ void Statement::preprocess(string &sql, string &ret)
 	bool passAsIs = true, execBlock = false;
 	const char *p = sql.begin(), *end = sql.end();
 	const char *start = p;
-	tokenType tok = getToken(&p, end);
+	TokenType tok = getToken(&p, end);
 
 	const char *i = start;
 	while (p < end && (tok == ttComment || tok == ttWhite)) 
@@ -924,7 +940,7 @@ void Statement::preprocess(string &sql, string &ret)
 				ERR_post(isc_random, isc_arg_string, "Parameter name expected", 0);
 			}
 			ret += '?';
-		break;
+			break;
 
 		case ttIdent:
 			if (execBlock)
@@ -944,11 +960,11 @@ void Statement::preprocess(string &sql, string &ret)
 		case ttString:
 		case ttOther:
 			ret += string(start, p - start);
-		break;
+			break;
 
 		case ttNone: 
 			ERR_post(isc_random, isc_arg_string, "parse error", 0);
-		break;
+			break;
 		}
 	}
 	return;
@@ -975,8 +991,10 @@ void Statement::setInParams(thread_db *tdbb, int count, const string *const *nam
 
 			int num = 0;
 			for (; num < count; num++)
+			{
 				if (*names[num] == *sqlName)
 					break;
+			}
 
 			if (num == count) 
 			{
@@ -1009,9 +1027,13 @@ void Statement::doSetInParams(thread_db *tdbb, int count, const string *const *n
 
 	jrd_nod **jrdVar = params;
 	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
+
 	for (int i = 0; i < count; i++, jrdVar++)
 	{
-		dsc *src = NULL, &dst = m_inDescs[i * 2], &null = m_inDescs[i * 2 + 1];
+		dsc *src = NULL;
+		dsc &dst = m_inDescs[i * 2];
+		dsc &null = m_inDescs[i * 2 + 1];
+
 		if (!paramDescs.get(*jrdVar, src))
 		{
 			src = EVL_expr(tdbb, *jrdVar);
@@ -1079,7 +1101,8 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 */
 
 		// build the src descriptor
-		const dsc &src = m_outDescs[i * 2], &null = m_outDescs[i * 2 + 1];
+		const dsc &src = m_outDescs[i * 2];
+		const dsc &null = m_outDescs[i * 2 + 1];
 		const dsc *local = &src;
 		dsc localDsc;
 		bid localBlobID;
@@ -1098,8 +1121,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 	}
 }
 
-// read external blob (src), store it as temporary local blob and put local blob_id 
-// into dst
+// read external blob (src), store it as temporary local blob and put local blob_id into dst
 void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 {
 	blb *destBlob = NULL;
@@ -1243,6 +1265,7 @@ void Statement::bindToRequest(jrd_req* request, Statement** impure)
 		this->m_nextInReq = request->req_ext_stmt;
 		request->req_ext_stmt->m_prevInReq = this;
 	}
+
 	request->req_ext_stmt = this;
 	m_boundReq = request;
 	m_ReqImpure = impure;
@@ -1276,10 +1299,13 @@ void EngineCallbackGuard::init(thread_db *tdbb, Connection &conn)
 {
 	m_tdbb = tdbb;
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
+
 	if (m_tdbb->getTransaction()) {
 		m_tdbb->getTransaction()->tra_callback_count++;
 	}
+
 	m_tdbb->getDatabase()->dbb_sync->unlock();
+
 	if (m_mutex) {
 		m_mutex->enter();
 	}
@@ -1290,10 +1316,12 @@ EngineCallbackGuard::~EngineCallbackGuard()
 	if (m_mutex) {
 		m_mutex->leave();
 	}
+
 	m_tdbb->getDatabase()->dbb_sync->lock();
+
 	if (m_tdbb->getTransaction()) {
 		m_tdbb->getTransaction()->tra_callback_count--;
 	}
 }
 
-} // namespace EDS 
+} // namespace EDS
