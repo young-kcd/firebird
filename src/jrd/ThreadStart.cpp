@@ -177,7 +177,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-	// Do not make thread bound for superserver/client
 	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
 
 	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
