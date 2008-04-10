@@ -155,7 +155,7 @@
 //#define DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef powerpc 
+#ifdef __ppc__ 
 #define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #ifdef i386
