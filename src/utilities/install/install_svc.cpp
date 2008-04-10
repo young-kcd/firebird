@@ -331,7 +331,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		switches.printf("-s %s", instance);
 
     if (sw_arch == ARCH_SCS)
-		switches += " -d";
+		switches += " -m";
 
 	switch (sw_command)
 	{
