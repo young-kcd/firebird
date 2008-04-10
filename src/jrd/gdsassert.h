@@ -17,39 +17,31 @@
  * Contributor(s): ______________________________________.
  * CVC: Do not override local fb_assert like the ones in gpre and dsql.
  */
+
 #ifndef JRD_GDSASSERT_H
 #define JRD_GDSASSERT_H
-
 
 #include "../jrd/gds_proto.h"
 
 #ifdef DEV_BUILD
 
 #include <stdlib.h>		// abort()
-
 #include <stdio.h>
 
+#define FB_ASSERT_FAILURE_STRING	"Assertion (%s) failure: %s %"LINEFORMAT"\n"
 
-/* fb_assert() has been made into a generic version that works across
- * gds components.  Previously, the fb_assert() defined here was only
- * usable within the engine.
- * 1996-Feb-09 David Schnepper 
- */
-
-#define FB_GDS_ASSERT_FAILURE_STRING	"GDS Assertion (%s) failure: %s %"LINEFORMAT"\n"
-
-#ifdef SUPERSERVER
+#ifdef SUPERCLIENT
 
 #if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {gds__log (FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
 #else	// !SUPERSERVER
 
 #if !defined(fb_assert)
-#define fb_assert(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
-#define fb_assert_continue(ex)	{if (!(ex)) {fprintf (stderr, FB_GDS_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
+#define fb_assert(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
+#define fb_assert_continue(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
 #endif	// SUPERSERVER
