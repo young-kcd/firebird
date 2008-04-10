@@ -155,11 +155,10 @@ static void		error(ISC_STATUS*, TEXT*, ISC_STATUS);
 static bool		event_blocked(USHORT count, const event_t* const* events, const SLONG* values);
 
 #ifdef UNIX
+static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
 static SLONG	find_key(ISC_STATUS *, TEXT *);
-#ifdef SUPERSERVER
 static void		longjmp_sig_handler(int);
 #endif
-#endif // UNIX
 
 #if defined(WIN_NT)
 static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
@@ -809,7 +808,6 @@ int ISC_event_wait(SSHORT count,
 #endif // WIN_NT
 
 
-#ifdef SUPERSERVER
 #ifdef UNIX
 void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 {
@@ -886,7 +884,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 	}
 	abort();
 }
-#endif /* UNIX */
+#endif // UNIX
 
 
 #ifdef WIN_NT
@@ -909,8 +907,6 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
  **************************************/
 	ULONG result = 0;
 	bool is_critical = true;
-	
-	thread_db* tdbb = JRD_get_thread_data();
 
 	if (!err_msg)
 	{
@@ -1008,7 +1004,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		ERR_post(isc_exception_stack_overflow, 0);
+		Firebird::status_exception::raise(isc_exception_stack_overflow, 0);
 		/* This will never be called, but to be safe it's here */
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;
@@ -1068,9 +1064,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 
 	return result;
 }
-
-#endif /* WIN_NT */
-#endif /* SUPERSERVER */
+#endif // WIN_NT
 
 
 #ifdef WIN_NT
@@ -2967,13 +2961,12 @@ void ISC_set_timer(
 #endif
 
 
-#ifdef SUPERSERVER
 #ifdef UNIX
-void ISC_sync_signals_set()
+void ISC_sync_signals_set(void* arg)
 {
 /**************************************
  *
- *	I S C _ s y n c _ s i g n a l s _ s e t( U N I X )
+ *	I S C _ s y n c _ s i g n a l s _ s e t ( U N I X )
  *
  **************************************
  *
@@ -2981,18 +2974,16 @@ void ISC_sync_signals_set()
  *	Set all the synchronous signals for a particular thread
  *
  **************************************/
+	sigjmp_buf* const sigenv = static_cast<sigjmp_buf*>(arg);
+	TLS_SET(sigjmp_ptr, sigenv);
 
 	sigset(SIGILL, longjmp_sig_handler);
 	sigset(SIGFPE, longjmp_sig_handler);
 	sigset(SIGBUS, longjmp_sig_handler);
 	sigset(SIGSEGV, longjmp_sig_handler);
 }
-#endif /* UNIX */
-#endif /* SUPERSERVER */
 
 
-#ifdef SUPERSERVER
-#ifdef UNIX
 void ISC_sync_signals_reset()
 {
 /**************************************
@@ -3012,8 +3003,7 @@ void ISC_sync_signals_reset()
 	sigset(SIGBUS, SIG_DFL);
 	sigset(SIGSEGV, SIG_DFL);
 }
-#endif /* UNIX */
-#endif /* SUPERSERVER */
+#endif // UNIX
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
@@ -3177,7 +3167,6 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 #endif
 
 
-#ifdef SUPERSERVER
 #ifdef UNIX
 void longjmp_sig_handler(int sig_num)
 {
@@ -3192,18 +3181,9 @@ void longjmp_sig_handler(int sig_num)
  *
  **************************************/
 
-/* Note: we can only do this since we know that we
-   will only be going to JRD, specifically fun and blf.
-   If we were to make this generic, we would need to
-   actually hang the sigsetjmp menber off of THDD, and
-   make sure that it is set properly for all sub-systems. */
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-	siglongjmp(tdbb->tdbb_sigsetjmp, sig_num);
+	siglongjmp(*TLS_GET(sigjmp_ptr), sig_num);
 }
-#endif /* UNIX */
-#endif /* SUPERSERVER */
+#endif // UNIX
 
 
 #ifdef WIN_NT
@@ -3246,4 +3226,4 @@ static void make_object_name(
 	fb_utils::prefix_kernel_object_name(buffer, bufsize);
 #endif
 }
-#endif
+#endif // WIN_NT

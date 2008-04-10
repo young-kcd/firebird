@@ -616,10 +616,6 @@ public:
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
 
-#if defined(UNIX) && defined(SUPERSERVER)
-	sigjmp_buf tdbb_sigsetjmp;
-#endif
-
 	MemoryPool* getDefaultPool()
 	{
 		return tdbb_default;

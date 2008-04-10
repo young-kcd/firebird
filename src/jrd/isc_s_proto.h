@@ -41,7 +41,7 @@ int		ISC_event_wait(SSHORT, event_t* const*, const SLONG*, const SLONG);
 
 #ifdef WIN_NT
 void*	ISC_make_signal(bool, bool, int, int);
-#endif /* WIN_NT */
+#endif
 
 typedef void (*FPTR_INIT_GLOBAL_REGION)(void*, struct sh_mem*, bool);
 UCHAR*	ISC_map_file(ISC_STATUS*, const TEXT*, FPTR_INIT_GLOBAL_REGION,
@@ -61,18 +61,15 @@ UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
 void	ISC_unmap_object(ISC_STATUS *, SH_MEM, UCHAR **, SLONG);
 #endif
 
-#ifdef SUPERSERVER
 #ifdef UNIX
 void	ISC_exception_post(ULONG, const TEXT*);
-void	ISC_sync_signals_set(void);
-void	ISC_sync_signals_reset(void);
-#endif /* UNIX */
+void	ISC_sync_signals_set(void*);
+void	ISC_sync_signals_reset();
+#endif
 
 #ifdef WIN_NT
 ULONG	ISC_exception_post(ULONG, const TEXT*);
-#endif /* WIN_NT */
-
-#endif /* SUPERSERVER */
+#endif
 
 UCHAR*	ISC_remap_file(ISC_STATUS *, struct sh_mem *, SLONG, bool);
 void	ISC_reset_timer(FPTR_VOID_PTR, void *, SLONG *, void **);
