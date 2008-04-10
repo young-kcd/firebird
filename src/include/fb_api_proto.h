@@ -503,7 +503,7 @@ struct FirebirdApiPointers
 	prototype_isc_rollback_transaction *isc_rollback_transaction;
 	prototype_isc_start_multiple *isc_start_multiple;
 	prototype_isc_start_transaction *isc_start_transaction;
-	prototype_isc_reconnect_transaction*        isc_reconnect_transaction;
+	prototype_isc_reconnect_transaction* isc_reconnect_transaction;
 	prototype_isc_sqlcode *isc_sqlcode;
 	prototype_isc_sql_interprete *isc_sql_interprete;
 	prototype_isc_transaction_info *isc_transaction_info;

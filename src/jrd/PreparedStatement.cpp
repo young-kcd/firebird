@@ -95,8 +95,8 @@ int PreparedStatement::getResultCount() const
 }
 
 
-void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc> &values, 
-	Firebird::UCharBuffer &blr, Firebird::UCharBuffer &msg)
+void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
+	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
 {
 	int paramCount = 0;
 	size_t msgLength = 0;
@@ -113,6 +113,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 
 	paramCount = params.getCount();
 	int i = paramCount - 1;
+
 	for (; i >= 0; i--)
 	{
 		const dsql_par* par = params[i];
@@ -137,7 +138,8 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	msg.resize(msgLength);
 
 	msgLength = 0;
-	dsc *value = values.begin();
+	dsc* value = values.begin();
+
 	for (i = paramCount / 2 - 1; i >= 0; i--)
 	{
 		const dsql_par* par = params[i];
@@ -157,7 +159,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 		value->makeShort(0);
 		value->dsc_address = msg.begin() + msgLength;
 		// set NULL indicator value
-		*((SSHORT*)value->dsc_address) = -1;
+		*((SSHORT*) value->dsc_address) = -1;
 		msgLength += sizeof(SSHORT);
 
 		// Generate BLR for the NULL indicator
@@ -168,7 +170,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	blr.add(blr_end);
 }
 
-void PreparedStatement::generateBlr(const dsc* desc, Firebird::UCharBuffer &blr)
+void PreparedStatement::generateBlr(const dsc* desc, Firebird::UCharBuffer& blr)
 {
 	USHORT length = 0;
 

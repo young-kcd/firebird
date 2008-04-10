@@ -59,9 +59,10 @@ public:
 		return request;
 	}
 
-	static void parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc> &values, Firebird::UCharBuffer &blr, Firebird::UCharBuffer &msg);
+	static void parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values, Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg);
+
 private:
-	static void generateBlr(const dsc* desc, Firebird::UCharBuffer &blr);
+	static void generateBlr(const dsc* desc, Firebird::UCharBuffer& blr);
 
 private:
 	dsql_req* request;

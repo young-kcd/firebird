@@ -1728,93 +1728,98 @@ for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 //			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
 //		;
 
-exec_sql	: EXECUTE STATEMENT exec_stmt_inputs
-				ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-			{
-				$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-						($3)->nod_arg[0], ($3)->nod_arg[1], 0, 0, $4, $5, $6, $7, 0);
-			}
-		;
+exec_sql
+	: EXECUTE STATEMENT exec_stmt_inputs
+			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+		{
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+					($3)->nod_arg[0], ($3)->nod_arg[1], 0, 0, $4, $5, $6, $7, 0);
+		}
+	;
 
-exec_into	: EXECUTE STATEMENT exec_stmt_inputs INTO variable_list
-				ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-			{
-				$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-						($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($5), 0, $6, $7, $8, $9, 0);
-			}
-		;
+exec_into
+	: EXECUTE STATEMENT exec_stmt_inputs INTO variable_list
+			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+		{
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($5), 0, $6, $7, $8, $9, 0);
+		}
+	;
 
-for_exec_into	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs INTO variable_list 
-				ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-				DO proc_block 
-			{
-				$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-						($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($7), $13, $8, $9, $10, $11, $1);
-			}
-		;
+for_exec_into
+	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs INTO variable_list 
+			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+			DO proc_block 
+		{
+			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
+					($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($7), $13, $8, $9, $10, $11, $1);
+		}
+	;
 
-exec_stmt_inputs	:  value 
-			{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $1, NULL); }
-		|
-			'(' value ')' '(' named_params_list ')'
-			{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
-		|
-			'(' value ')' '(' not_named_params_list ')'
-			{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
-		;
+exec_stmt_inputs
+	: value 
+		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $1, NULL); }
+	| '(' value ')' '(' named_params_list ')'
+		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
+	| '(' value ')' '(' not_named_params_list ')'
+		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
+	;
 
-named_params_list	: named_param
-		|	named_params_list ',' named_param
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+named_params_list
+	: named_param
+	| named_params_list ',' named_param
+		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-named_param : symbol_variable_name BIND_PARAM value
-			  { $$ = make_node (nod_named_param, e_named_param_count, $1, $3); }
-		;
+named_param
+	: symbol_variable_name BIND_PARAM value
+		  { $$ = make_node (nod_named_param, e_named_param_count, $1, $3); }
+	;
 
-not_named_params_list	: not_named_param
-		|	not_named_params_list ',' not_named_param
-			{ $$ = make_node (nod_list, 2, $1, $3); }
-		;
+not_named_params_list
+	: not_named_param
+	| not_named_params_list ',' not_named_param
+		{ $$ = make_node (nod_list, 2, $1, $3); }
+	;
 
-not_named_param : value
-			  { $$ = make_node (nod_named_param, e_named_param_count, NULL, $1); }
-		;
+not_named_param
+	: value
+		{ $$ = make_node (nod_named_param, e_named_param_count, NULL, $1); }
+	;
 
-ext_datasrc_opt :
-			ON EXTERNAL DATA SOURCE value
-			{ $$ = $5; }
-		|
-			ON EXTERNAL value
-			{ $$ = $3; }
-		|
-			{ $$ = make_node (nod_null, 0, NULL); }
-		;
+ext_datasrc_opt
+	: ON EXTERNAL DATA SOURCE value
+		{ $$ = $5; }
+	| ON EXTERNAL value
+		{ $$ = $3; }
+	|
+		{ $$ = make_node (nod_null, 0, NULL); }
+	;
 
-ext_user_opt : AS USER value
-			{ $$ = $3; }
-		|
-			{ $$ = make_node (nod_null, 0, NULL); }
-		;
+ext_user_opt
+	: AS USER value
+		{ $$ = $3; }
+	|
+		{ $$ = make_node (nod_null, 0, NULL); }
+	;
 
-ext_pwd_opt : PASSWORD value
-			{ $$ = $2; }
-		|
-			{ $$ = make_node (nod_null, 0, NULL); }
-		;
-		
-ext_tran_opt :
-		WITH AUTONOMOUS TRANSACTION
-			{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_AUTONOMOUS, 1, NULL); }
-		|
-		WITH COMMON TRANSACTION
-			{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
-		|
-		//WITH TWO_PHASE TRANSACTION
-		//	{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_2PC, 1, NULL); }
-		//|
-			{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
-		;
+ext_pwd_opt
+	: PASSWORD value
+		{ $$ = $2; }
+	|
+		{ $$ = make_node (nod_null, 0, NULL); }
+	;
+
+ext_tran_opt
+	: WITH AUTONOMOUS TRANSACTION
+		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_AUTONOMOUS, 1, NULL); }
+	| WITH COMMON TRANSACTION
+		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
+	// | WITH TWO_PHASE TRANSACTION
+	//		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_2PC, 1, NULL); }
+	|
+		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
+	;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, $8); }

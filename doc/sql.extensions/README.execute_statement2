@@ -1,7 +1,7 @@
 SQL Language Extension: EXECUTE STATEMENT
 
    Extends already implemented EXECUTE STATEMENT with ability to query
-external Firebird's databases
+external Firebird's databases.
 
 Authors:
    Vlad Khorsun <hvlad@users.sourceforge.net>
@@ -22,7 +22,7 @@ Syntax and notes :
     EXECUTE STATEMENT (:sql) (p1 := 'abc', p2 := :second_param) ...
     
 - both named and not named input parameters is supported. Mix of named and not
-	named input parameters inthe same statement is not allowed.
+	named input parameters in the same statement is not allowed.
 
 - syntax of named input parameters :
 	<input_parameters> ::= 

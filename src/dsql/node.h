@@ -362,7 +362,7 @@ enum nod_t
 	nod_add_user,
 	nod_mod_user,
 	nod_del_user,
-	nod_exec_stmt,	//290
+	nod_exec_stmt,	// 290
 	nod_exec_stmt_inputs,
 	nod_tran_params,
 	nod_named_param

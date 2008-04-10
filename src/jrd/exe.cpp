@@ -1621,28 +1621,28 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	EDS::Statement** stmt_ptr = (EDS::Statement**) ((char*) request + node->nod_impure);
 	EDS::Statement* stmt = *stmt_ptr;
 
-	int inputs = (SHORT) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
-	int outputs = (SHORT) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
-	jrd_nod **node_inputs = node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs;
-	jrd_nod **node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
-	jrd_nod *node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
+	int inputs = (SHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
+	int outputs = (SHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
+	jrd_nod** node_inputs = node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs;
+	jrd_nod** node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
+	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		fb_assert(*stmt_ptr == 0);
 
-		EDS::ParamNames *inputs_names = (EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
-		EDS::TraScope tra_scope = (EDS::TraScope) (IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
+		EDS::ParamNames* inputs_names = (EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
+		EDS::TraScope tra_scope = (EDS::TraScope)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
 
-		dsc *dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
-		dsc *dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
-		dsc *dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
-		dsc *dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
+		dsc* dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
+		dsc* dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
+		dsc* dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
+		dsc* dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
 
 		Firebird::MemoryPool *pool = tdbb->getDefaultPool();
 
 		MoveBuffer buffer;
-		UCHAR *p = 0;
+		UCHAR* p = NULL;
 		SSHORT len = 0;
 		if (dsc_sql) {
 			len = MOV_make_string2(tdbb, dsc_sql, dsc_sql->getTextType(), &p, buffer);
@@ -1650,21 +1650,21 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		Firebird::string sSql((char*) p, len);
 		sSql.trim();
 
-		p = 0; len = 0; buffer.clear();
+		p = NULL; len = 0; buffer.clear();
 		if (dsc_dataSrc) {
 			len = MOV_make_string2(tdbb, dsc_dataSrc, dsc_dataSrc->getTextType(), &p, buffer);
 		}
 		Firebird::string sDataSrc((char*) p, len);
 		sDataSrc.trim();
 
-		p = 0; len = 0; buffer.clear();
+		p = NULL; len = 0; buffer.clear();
 		if (dsc_user) {
 			len = MOV_make_string2(tdbb, dsc_user, dsc_user->getTextType(), &p, buffer);
 		}
 		Firebird::string sUser((char*) p, len);
 		sUser.trim();
 
-		p = 0;  len = 0; buffer.clear();
+		p = NULL; len = 0; buffer.clear();
 		if (dsc_pwd) {
 			len = MOV_make_string2(tdbb, dsc_pwd, dsc_pwd->getTextType(), &p, buffer);
 		}
@@ -1681,7 +1681,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 		stmt->bindToRequest(request, stmt_ptr);
 
-		const Firebird::string *const *inp_names = inputs_names ? inputs_names->begin() : NULL;
+		const Firebird::string* const * inp_names = inputs_names ? inputs_names->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputs_names != NULL);
 		if (stmt->isSelectable())
 			stmt->open(tdbb, tran, inputs, inp_names, node_inputs, !node_proc_block);
