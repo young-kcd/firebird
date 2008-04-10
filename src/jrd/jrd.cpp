@@ -6253,7 +6253,7 @@ namespace {
 	class DatabaseDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString(void) const {
+		const Firebird::PathName getConfigString() const {
 			return Firebird::PathName(Config::getDatabaseAccess());
 		}
 	public:
