@@ -43,14 +43,11 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, Firebird::MemoryPool& pool
 	request = DSQL_allocate_statement(tdbb, attachment);
 	try
 	{
-		const Database* const dbb = tdbb->getDatabase();
-		const int dialect = dbb->dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
+		const Database& dbb = *tdbb->getDatabase();
+		const int dialect = dbb.dbb_flags & DBB_DB_SQL_dialect_3 ? SQL_DIALECT_V6 : SQL_DIALECT_V5;
 
 		DSQL_prepare(tdbb, transaction, &request, text.length(), text.c_str(), dialect,
 			0, NULL, 0, NULL);
-
-		int paramCount = 0;
-		size_t msgLength = 0;
 
 		if (request->req_receive) {
 			parseDsqlMessage(request->req_receive, values, blr, message);
@@ -98,26 +95,31 @@ int PreparedStatement::getResultCount() const
 void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
 	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
 {
-	int paramCount = 0;
-	size_t msgLength = 0;
-
 	// Parameters in dsqlMsg->msg_parameters linked in descending order by par_index.
 	// To generate correct BLR we must walk params in ascending par_index order. So 
 	// store all params in array and walk array in reverse order.
 
-	Firebird::HalfStaticArray<dsql_par*, 16> params;
-	for (dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next) {
+	Firebird::HalfStaticArray<const dsql_par*, 16> params;
+	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
+	{
 		if (par->par_index)
 			params.add(par);
 	}
 
-	paramCount = params.getCount();
+	size_t msgLength = 0;
+	int paramCount = params.getCount();
 	int i = paramCount - 1;
-
+	
 	for (; i >= 0; i--)
 	{
 		const dsql_par* par = params[i];
-
+#ifdef DEV_BUILD
+		// Verify that par_index is ascending when going in reverse order
+		if (i < paramCount - 1)
+		{
+			fb_assert(par->par_index > params[i + 1]->par_index);
+		}
+#endif
 		if (type_alignments[par->par_desc.dsc_dtype])
 			msgLength = FB_ALIGN(msgLength, type_alignments[par->par_desc.dsc_dtype]);
 		msgLength += par->par_desc.dsc_length;
