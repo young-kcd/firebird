@@ -37,14 +37,14 @@
 #define fb_assert_continue(ex)	{if (!(ex)) {fprintf(stderr, FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
-#else	// !SUPERSERVER
+#else	// !SUPERCLIENT
 
 #if !defined(fb_assert)
 #define fb_assert(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__); abort();}}
 #define fb_assert_continue(ex)	{if (!(ex)) {gds__log(FB_ASSERT_FAILURE_STRING, #ex, __FILE__, __LINE__);}}
 #endif
 
-#endif	// SUPERSERVER
+#endif	// SUPERCLIENT
 
 #else	// DEV_BUILD
 
