@@ -156,6 +156,7 @@
 //#define BSD_UNIX
 #define UNIX
 #ifdef __ppc__ 
+#define powerpc
 #define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #ifdef i386
