@@ -492,6 +492,10 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 					*pserver_flag |= SRVR_inet;
 					break;
 
+				case 'M':
+					*pserver_flag |= SRVR_multi_client;
+					break;
+
 				case 'N':
 					*pserver_flag |= SRVR_no_icon;
 					break;
@@ -587,10 +591,6 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 		*pserver_flag |= SRVR_wnet;
 		*pserver_flag |= SRVR_inet;
 		*pserver_flag |= SRVR_xnet;
-	}
-
-	if (*pserver_flag & SRVR_debug) {
-		*pserver_flag |= SRVR_multi_client;
 	}
 
 	return connection_handle;
