@@ -40,7 +40,7 @@ public:
 		Provider(prvName),
 		m_api_loaded(false)
 	{
-		memset(&m_api, 0, sizeof(m_api) );
+		memset(&m_api, 0, sizeof(m_api));
 	}
 
 	virtual void initialize()
@@ -49,7 +49,7 @@ public:
 			loadAPI();
 	}
 
-	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) {};
+	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) {}
 	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err);
 
 protected:
@@ -59,6 +59,7 @@ protected:
 
 	FirebirdApiPointers m_api;
 	bool m_api_loaded;
+
 public:
 	virtual ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS *,
 										  short,
@@ -621,6 +622,6 @@ private:
 	ISC_QUAD m_blob_id;
 };
 
-}; // namespace EDS
+} // namespace EDS
 
 #endif // EXTDS_ISC_H

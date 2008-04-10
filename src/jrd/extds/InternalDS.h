@@ -40,7 +40,7 @@ public:
 	~InternalProvider()
 	{}
 
-	virtual void initialize() {};
+	virtual void initialize() {}
 	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
 	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err);
 
@@ -97,7 +97,7 @@ protected:
 	  Transaction(conn),
 	  m_IntConnection(conn),
 	  m_transaction(0)
-	 {}
+	{}
 
 	virtual ~InternalTransaction() {}
 
@@ -169,6 +169,6 @@ private:
 	Jrd::bid m_blob_id;
 };
 
-}; // namespace EDS
+} // namespace EDS
 
 #endif // EXTDS_INTERNAL_H

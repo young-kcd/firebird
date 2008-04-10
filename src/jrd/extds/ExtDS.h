@@ -142,7 +142,7 @@ protected:
 const int prvMultyStmts		= 0x0001;	// supports many active statements per connection
 const int prvMultyTrans		= 0x0002;	// supports many active transactions per connection
 const int prvNamedParams	= 0x0004;	// supports named parameters
-const int prvTrustedAuth	= 0x0008;	// supports trusted athentication
+const int prvTrustedAuth	= 0x0008;	// supports trusted authentication
 
 
 class Connection : public Firebird::PermanentStorage
@@ -183,12 +183,12 @@ public:
 	const Firebird::string getDataSourceName() const
 	{ return m_provider.getName() + "::" + m_dbName; }
 
-	// Get error description from provider and put it with additional contex
+	// Get error description from provider and put it with additional context
 	// info into locally raised exception
 	void raise(ISC_STATUS* status, Jrd::thread_db *tdbb, const char* sWhere);
 
 	// Transactions management within connection scope : put newly created
-	// trasaction into m_transactions array and delete not needed transaction
+	// transaction into m_transactions array and delete not needed transaction
 	// immediately (as we didn't pooled transactions)
 	Transaction* createTransaction();
 	void deleteTransaction(Transaction *tran);
@@ -221,7 +221,7 @@ protected:
 	int	m_used_stmts;
 	int	m_free_stmts;
 	bool m_deleting;
-	int m_sqlDialect;	// must be filled in in attach call
+	int m_sqlDialect;	// must be filled in attach call
 };
 
 
@@ -406,10 +406,10 @@ class Blob : public Firebird::PermanentStorage
 protected:
 	Blob(Connection &conn) : 
 		 PermanentStorage(conn.getProvider()->getPool())
-	{};
+	{}
 
 public:
-	~Blob() {};
+	~Blob() {}
 
 public:
 	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
@@ -450,6 +450,6 @@ private:
 	Firebird::Mutex *m_mutex;
 };
 
-}; // namespace EDS
+} // namespace EDS
 
 #endif // EXTDS_H
