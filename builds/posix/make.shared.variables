@@ -27,10 +27,10 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
 		DataTypeUtil.cpp dfw.cpp divorce.cpp \
-		err.cpp iberr.cpp \
-		event.cpp evl.cpp exe.cpp ext.cpp \
+		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp IntlUtil.cpp \
+		iberr.cpp idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
+		IntlUtil.cpp \
 		jrd.cpp Database.cpp lck.cpp \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		ods.cpp plugin_manager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
@@ -38,8 +38,8 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
 		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
-		unicode_util.cpp RuntimeStatistics.cpp \
-		DebugInterface.cpp
+		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
+		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)

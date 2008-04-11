@@ -3324,6 +3324,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				blr_print_verb(control, level);
 				offset = blr_print_line(control, offset);
 			}
+
 			bool named = false;
 			if (inputs)
 			{
@@ -3331,6 +3332,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				named = (blr_print_byte(control) != 0);	// named parameters flag
 				offset = blr_print_line(control, offset);
 			}
+
 			while (inputs + outputs) 
 			{
 				if (inputs)

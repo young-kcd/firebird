@@ -2848,6 +2848,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			// input parameters and its names
 			const bool haveNames = (inputs && (BLR_BYTE == 1));
 			EDS::ParamNames* paramNames = NULL;
+
 			for (n = e_exec_stmt_fixed_count; n < e_exec_stmt_fixed_count + inputs; n++)
 			{
 				if (haveNames)
@@ -2855,11 +2856,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 					Firebird::string name;
 					if (par_name(csb, name))
 					{
-						Firebird::MemoryPool &pool = csb->csb_pool;
+						Firebird::MemoryPool& pool = csb->csb_pool;
 						if (!paramNames) {
 							paramNames = FB_NEW (pool) EDS::ParamNames(pool);
 						}
-						Firebird::string *newName = FB_NEW (pool) Firebird::string(pool, name);
+						Firebird::string* newName = FB_NEW (pool) Firebird::string(pool, name);
 						paramNames->add(newName);
 					}
 				}
@@ -2871,10 +2872,10 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 				*arg++ = parse(tdbb, csb, VALUE);
 			}
 
-			*arg++ = (jrd_nod*) (IPTR) inputs;		// e_exec_stmt_extra_inputs	
+			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs	
 			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
-			*arg++ = (jrd_nod*) (IPTR) outputs;		// e_exec_stmt_extra_outputs	
-			*arg++ = (jrd_nod*) (IPTR) tra_mode;	// e_exec_stmt_extra_tran
+			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
+			*arg++ = (jrd_nod*)(IPTR) tra_mode;		// e_exec_stmt_extra_tran
 		}
 		break;
 

@@ -69,6 +69,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db *tdbb, Attachment* att)
 
 	Connection **ptr = m_connections.end();
 	Connection **begin = m_connections.begin();
+
 	for (ptr--; ptr >= begin; ptr--)
 	{
 		InternalConnection *conn = (InternalConnection*) *ptr;
@@ -82,7 +83,9 @@ void InternalProvider::getRemoteError(ISC_STATUS* status, string &err)
 	err = "";
 
 	char buff[512];
-	const ISC_STATUS* p = status, *end = status + ISC_STATUS_LENGTH;
+	const ISC_STATUS* p = status;
+	const ISC_STATUS* end = status + ISC_STATUS_LENGTH;
+
 	while (p < end)
 	{
 		const ISC_STATUS code = *p ? p[1] : 0;
@@ -302,11 +305,18 @@ void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
 		// forbidden ?
 		break;
 
-	case REQ_INSERT: case REQ_DELETE: case REQ_UPDATE: 
-	case REQ_UPDATE_CURSOR: case REQ_DELETE_CURSOR: case REQ_DDL: 
-	case REQ_GET_SEGMENT: case REQ_PUT_SEGMENT: 
-	case REQ_EXEC_PROCEDURE: case REQ_SET_GENERATOR: 
-	case REQ_SAVEPOINT: case REQ_EXEC_BLOCK:
+	case REQ_INSERT:
+	case REQ_DELETE:
+	case REQ_UPDATE:
+	case REQ_UPDATE_CURSOR:
+	case REQ_DELETE_CURSOR:
+	case REQ_DDL:
+	case REQ_GET_SEGMENT:
+	case REQ_PUT_SEGMENT:
+	case REQ_EXEC_PROCEDURE:
+	case REQ_SET_GENERATOR:
+	case REQ_SAVEPOINT:
+	case REQ_EXEC_BLOCK:
 		break;
 	}
 }
@@ -382,7 +392,7 @@ void InternalStatement::doClose(thread_db *tdbb, bool drop)
 void InternalStatement::putExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 {
 	if (m_transaction->getScope() == traCommon)
-		MOV_move(tdbb, (dsc*)&src, &dst);
+		MOV_move(tdbb, (dsc*) &src, &dst);
 	else
 		Statement::putExtBlob(tdbb, src, dst);
 }
@@ -534,4 +544,4 @@ void InternalBlob::cancel(thread_db *tdbb)
 }
 
 
-}; // namespace EDS
+} // namespace EDS

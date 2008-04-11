@@ -84,13 +84,13 @@ public:
 						DACL_SECURITY_INFORMATION,
 						NULL, NULL, &pOldACL, NULL, &pOldSD);
 
-		// NULL pOldACL means all privileges. If we assign pNewACL in this case 
+		// NULL pOldACL means all privileges. If we assign pNewACL in this case
 		// we'll lost all privileges except assigned SYNCHRONIZE
 		if (pOldACL) 
 		{
-			SID_IDENTIFIER_AUTHORITY SIDAuth = SECURITY_WORLD_SID_AUTHORITY;
+			SID_IDENTIFIER_AUTHORITY sidAuth = SECURITY_WORLD_SID_AUTHORITY;
 			PSID pSID = NULL;
-			AllocateAndInitializeSid(&SIDAuth, 1, SECURITY_WORLD_RID,
+			AllocateAndInitializeSid(&sidAuth, 1, SECURITY_WORLD_RID,
 									 0, 0, 0, 0, 0, 0, 0, &pSID);
 
 			EXPLICIT_ACCESS ea;

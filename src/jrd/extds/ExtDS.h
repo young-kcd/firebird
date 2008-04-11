@@ -27,6 +27,7 @@
 #include "../../common/classes/array.h"
 #include "../../common/classes/ClumpletWriter.h"
 #include "../../common/classes/locks.h"
+#include "../../common/utils_proto.h"
 
 
 namespace Jrd {
@@ -75,7 +76,7 @@ private:
 	{
 	public:
 		static bool greaterThan(const Firebird::string* s1, const Firebird::string* s2) {
-			return stricmp(s1->c_str(), s2->c_str()) > 0;
+			return fb_utils::stricmp(s1->c_str(), s2->c_str()) > 0;
 		}
 	};
 

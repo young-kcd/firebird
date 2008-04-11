@@ -1150,7 +1150,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 			{
 				if (haveNames)
 				{
-					dsql_str* name = (dsql_str*)(*ptr)->nod_arg[e_named_param_name];
+					dsql_str* name = (dsql_str*) (*ptr)->nod_arg[e_named_param_name];
 					stuff_cstring(request, name->str_data);
 				}
 				GEN_expr(request, (*ptr)->nod_arg[e_named_param_expr]);

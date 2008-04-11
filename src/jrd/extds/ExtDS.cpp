@@ -1125,7 +1125,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 {
 	blb *destBlob = NULL;
-	AutoPtr<Blob> extBlob = m_connection.createBlob();
+	AutoPtr<Blob> extBlob(m_connection.createBlob());
 	try
 	{
 		extBlob->open(tdbb, *m_transaction, src, NULL);
@@ -1169,7 +1169,7 @@ void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 void Statement::putExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 {
 	blb* srcBlob = NULL;
-	AutoPtr<Blob> extBlob = m_connection.createBlob();
+	AutoPtr<Blob> extBlob(m_connection.createBlob());
 	try
 	{
 		extBlob->create(tdbb, *m_transaction, dst, NULL);

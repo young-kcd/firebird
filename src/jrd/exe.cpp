@@ -1621,8 +1621,8 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	EDS::Statement** stmt_ptr = (EDS::Statement**) ((char*) request + node->nod_impure);
 	EDS::Statement* stmt = *stmt_ptr;
 
-	int inputs = (SHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
-	int outputs = (SHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
+	int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
+	int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
 	jrd_nod** node_inputs = node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs;
 	jrd_nod** node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
 	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
