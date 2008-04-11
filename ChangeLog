@@ -1,3 +1,56 @@
+2008-04-11 17:35  asfernandes
+
+	* firebird2/src/burp/: backup.epp (1.109), burp.h (1.89),
+	restore.epp (1.134):
+
+	Improvement CORE-789 - Collation backup of RDB$DEFAULT_COLLATE_NAME
+
+2008-04-11 14:57  asfernandes
+
+	* firebird2/src/: burp/burp.cpp (1.136), burp/burp.h (1.88),
+	burp/burpswi.h (1.21), burp/restore.epp (1.133),
+	msgs/facilities2.sql (1.32), msgs/messages2.sql (1.40),
+	remote/parser.cpp (1.23):
+
+	Feature CORE-1831 - Creation of GBAK restore switches FIX_FSS_DATA
+	and FIX_FSS_METADATA
+
+2008-04-11 13:37  asfernandes
+
+	* firebird2/src/jrd/extds/IscDS.cpp (1.2):
+
+	Misc
+
+2008-04-11 05:45  robocop
+
+	* firebird2/src/dsql/make.cpp (1.156):
+
+	The "unnamed field" bug strikes again.	:-(
+
+2008-04-11 03:38  asfernandes
+
+	* firebird2/: configure.in (1.282),
+	builds/posix/make.shared.variables (1.90), src/dsql/gen.cpp
+	(1.145), src/jrd/exe.cpp (1.256), src/jrd/gds.cpp (1.255),
+	src/jrd/isc.cpp (1.78), src/jrd/isc_sync.cpp (1.131),
+	src/jrd/par.cpp (1.190), src/jrd/extds/ExtDS.cpp (1.3),
+	src/jrd/extds/ExtDS.h (1.3), src/jrd/extds/InternalDS.cpp (1.3):
+
+	1) Fix Linux build 2) Misc
+
+2008-04-10 21:41  asfernandes
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.2):
+
+	Misc
+
+2008-04-10 20:54  asfernandes
+
+	* firebird2/src/jrd/extds/: ExtDS.h (1.2), InternalDS.h (1.2),
+	IscDS.h (1.2):
+
+	Misc
+
 2008-04-10 20:05  dimitr
 
 	* firebird2/src/utilities/install/install_svc.cpp (1.38):
