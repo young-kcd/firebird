@@ -691,6 +691,24 @@ int gbak(Firebird::UtilSvc* uSvc)
 					// msg 183 expected blocking factor, encountered "%s"  
 				}
 			}
+			else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_DATA)
+			{
+				if (++itr >= argc)
+				{
+					BURP_error(304, true);
+					// Character set parameter missing
+				} 
+				tdgbl->gbl_sw_fix_fss_data = argv[itr];
+			}
+			else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_METADATA)
+			{
+				if (++itr >= argc)
+				{
+					BURP_error(304, true);
+					// Character set parameter missing
+				} 
+				tdgbl->gbl_sw_fix_fss_metadata = argv[itr];
+			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_SE) 
 			{
 				if (++itr >= argc)

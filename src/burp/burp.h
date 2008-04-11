@@ -825,6 +825,10 @@ public:
 	bool		gbl_sw_deactivate_indexes;
 	bool		gbl_sw_kill;
 	USHORT		gbl_sw_blk_factor;
+	const SCHAR*	gbl_sw_fix_fss_data;
+	USHORT		gbl_sw_fix_fss_data_id;
+	const SCHAR*	gbl_sw_fix_fss_metadata;
+	USHORT		gbl_sw_fix_fss_metadata_id;
 	bool		gbl_sw_no_reserve;
 	bool		gbl_sw_old_descriptions;
 	bool		gbl_sw_convert_ext_tables;

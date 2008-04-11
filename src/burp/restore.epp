@@ -52,6 +52,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/SafeArg.h"
+#include "memory_routines.h"
 
 using MsgFormat::SafeArg;
 
@@ -1035,6 +1036,12 @@ void create_database(BurpGlobals*	tdgbl,
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	ISC_STATUS_ARRAY status_vector;
+
+	if (tdgbl->gbl_sw_fix_fss_metadata)
+	{
+		dpb.insertString(isc_dpb_lc_ctype, tdgbl->gbl_sw_fix_fss_metadata,
+			strlen(tdgbl->gbl_sw_fix_fss_metadata));
+	}
 
 	if (isc_create_database (status_vector, 0, file_name,
 							 &DB, dpb.getBufferLength(), 
@@ -2504,7 +2511,12 @@ rec_type get_data(BurpGlobals*	tdgbl,
 				add_byte(blr, blr_text2);
 			else
 				add_byte(blr, blr_varying2);
-			add_word(blr, field->fld_character_set_id);
+
+			if (tdgbl->gbl_sw_fix_fss_data && field->fld_character_set_id == CS_UNICODE_FSS)
+				add_word(blr, tdgbl->gbl_sw_fix_fss_data_id);
+			else
+				add_word(blr, field->fld_character_set_id);
+
 			add_word(blr, field->fld_length);
 			if (dtype == blr_varying)
 				length += sizeof(USHORT);
@@ -2529,8 +2541,21 @@ rec_type get_data(BurpGlobals*	tdgbl,
 		case blr_blob:
 			alignment = type_alignments[dtype_blob];
 			length = type_lengths[dtype_blob];
-			add_byte(blr, blr_quad);
-			add_byte(blr, 0);
+
+			if (tdgbl->gbl_sw_fix_fss_data && !(field->fld_flags & FLD_array) &&
+				field->fld_sub_type == isc_blob_text &&
+				field->fld_character_set_id == CS_UNICODE_FSS)
+			{
+				add_byte(blr, blr_blob2);
+				add_word(blr, field->fld_sub_type);
+				add_word(blr, tdgbl->gbl_sw_fix_fss_data_id);
+			}
+			else
+			{
+				add_byte(blr, blr_quad);
+				add_byte(blr, 0);
+			}
+
 			break;
 
 		default:
@@ -4034,6 +4059,16 @@ bool get_global_field(BurpGlobals* tdgbl)
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
+			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
+				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
+				!X.RDB$CHARACTER_LENGTH.NULL &&
+				(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying))
+			{
+				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+				X.RDB$CHARACTER_SET_ID = CS_NONE;
+				X.RDB$COLLATION_ID = 0;
+			}
+
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
@@ -4359,6 +4394,16 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
+
+			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
+				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
+				!X.RDB$CHARACTER_LENGTH.NULL &&
+				(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying))
+			{
+				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+				X.RDB$CHARACTER_SET_ID = CS_NONE;
+				X.RDB$COLLATION_ID = 0;
+			}
 
 		END_STORE;
 		ON_ERROR
@@ -5981,7 +6026,37 @@ void get_source_blob(BurpGlobals*	tdgbl,
 	else
 		local_trans = gds_trans;
 
-	if (!blob.create(DB, local_trans, blob_id))
+	bool ok;
+
+	if (tdgbl->gbl_sw_fix_fss_metadata)
+	{
+		UCHAR bpb[15];
+		UCHAR* p = bpb;
+
+		*p++ = isc_bpb_version1;
+
+		*p++ = isc_bpb_source_type;
+		*p++ = 2;
+		put_short(p, isc_blob_text);
+		p += 2;
+		*p++ = isc_bpb_source_interp;
+		*p++ = 1;
+		*p++ = tdgbl->gbl_sw_fix_fss_metadata_id;
+
+		*p++ = isc_bpb_target_type;
+		*p++ = 2;
+		put_short(p, isc_blob_text);
+		p += 2;
+		*p++ = isc_bpb_target_interp;
+		*p++ = 1;
+		*p++ = CS_UNICODE_FSS;
+
+		ok = blob.create(DB, local_trans, blob_id, p - bpb, bpb);
+	}
+	else
+		ok = blob.create(DB, local_trans, blob_id);
+
+	if (!ok)
 	{
 		BURP_error_redirect (status_vector, 37);
 		// msg 37 isc_create_blob failed 
@@ -7302,6 +7377,58 @@ bool restore(BurpGlobals*	tdgbl,
 
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
+
+	if (tdgbl->gbl_sw_fix_fss_data)
+	{
+		bool found = false;
+		Firebird::string name = tdgbl->gbl_sw_fix_fss_data;
+		name.upper();
+
+		req_handle3 = 0;
+
+		FOR (REQUEST_HANDLE req_handle3)
+			X IN RDB$CHARACTER_SETS
+			WITH X.RDB$CHARACTER_SET_NAME EQ name.c_str()
+
+			tdgbl->gbl_sw_fix_fss_data_id = X.RDB$CHARACTER_SET_ID;
+			found = true;
+
+		END_FOR;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+
+		MISC_release_request_silent(req_handle3);
+
+		if (!found)
+			BURP_error(305, true, SafeArg() << tdgbl->gbl_sw_fix_fss_data);
+	}
+
+	if (tdgbl->gbl_sw_fix_fss_metadata)
+	{
+		bool found = false;
+		Firebird::string name = tdgbl->gbl_sw_fix_fss_metadata;
+		name.upper();
+
+		req_handle3 = 0;
+
+		FOR (REQUEST_HANDLE req_handle3)
+			X IN RDB$CHARACTER_SETS
+			WITH X.RDB$CHARACTER_SET_NAME EQ name.c_str()
+
+			tdgbl->gbl_sw_fix_fss_metadata_id = X.RDB$CHARACTER_SET_ID;
+			found = true;
+
+		END_FOR;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+
+		MISC_release_request_silent(req_handle3);
+
+		if (!found)
+			BURP_error(305, true, SafeArg() << tdgbl->gbl_sw_fix_fss_metadata);
+	}
 
 	// If this should be a multi-file database, add the files
 

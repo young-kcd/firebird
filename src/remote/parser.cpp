@@ -176,6 +176,20 @@ REM_MSG PARSE_messages(const UCHAR* blr, USHORT blr_length)
 		align = type_alignments [dtype_blob];
 		break;
 */
+			case blr_blob2:
+				{
+					desc->dsc_dtype = dtype_blob;
+					desc->dsc_length = sizeof(SLONG) * 2;
+					desc->dsc_sub_type = *blr++;
+					desc->dsc_sub_type += (*blr++) << 8;
+
+					USHORT textType = *blr++;
+					textType += (*blr++) << 8;
+					desc->setTextType(textType);
+
+					align = type_alignments[dtype_blob];
+				}
+				break;
 
 			case blr_timestamp:
 				desc->dsc_dtype = dtype_timestamp;
