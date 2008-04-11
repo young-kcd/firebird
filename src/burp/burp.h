@@ -37,6 +37,9 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/ThreadData.h"
 #include "../common/UtilSvc.h"
+#include "../common/classes/array.h"
+#include "../common/classes/fb_pair.h"
+#include "../common/classes/MetaName.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -799,7 +802,11 @@ class BurpGlobals : public ThreadData
 {
 public:
 	BurpGlobals(Firebird::UtilSvc* us) 
-		: ThreadData(ThreadData::tddGBL), flag_on_line(true), uSvc(us), firstMap(true)
+		: ThreadData(ThreadData::tddGBL),
+		  defaultCollations(*getDefaultMemoryPool()),
+		  flag_on_line(true),
+		  uSvc(us),
+		  firstMap(true)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -810,6 +817,8 @@ public:
 								// would be set to FINI_OK (==0) in exit_local
 	}
 
+	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
+		defaultCollations;
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
 	bool		gbl_sw_verbose;
