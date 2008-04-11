@@ -2056,8 +2056,29 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			while (node->nod_type == nod_negate)
 				node = node->nod_arg[0];
 				
-			if (node->nod_type == nod_constant || node->nod_type == nod_null)
+			switch (node->nod_type)
+			{
+			case nod_constant:
+			case nod_null:
 				name_alias = "CONSTANT";
+				break;
+			case nod_add:
+			case nod_add2:
+				name_alias = "ADD";
+				break;
+			case nod_subtract:
+			case nod_subtract2:
+				name_alias = "SUBTRACT";
+				break;
+			case nod_multiply:
+			case nod_multiply2:
+				name_alias = "MULTIPLY";
+				break;
+			case nod_divide:
+			case nod_divide2:
+				name_alias = "DIVIDE";
+				break;
+			}
 		}
 		break;
 	case nod_add:
