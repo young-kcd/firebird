@@ -1,3 +1,88 @@
+2008-04-12 18:07  asfernandes
+
+	* firebird2/src/dsql/: errd.cpp (1.45), errd_proto.h (1.12),
+	hsh.cpp (1.42):
+
+	Small cleanup
+
+2008-04-12 17:48  asfernandes
+
+	* firebird2/src/jrd/blob_filter.cpp (1.38):
+
+	Do not intermix CHECK_FOR_EXCEPTIONS with status_exception::raise -
+	thanks to Claudio
+
+2008-04-12 17:31  asfernandes
+
+	* firebird2/src/jrd/blob_filter.cpp (1.37):
+
+	Even in the internal filters we do not assign anything to
+	ctl_status, so don't change how things should fail
+
+2008-04-12 15:40  robocop
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.14), src/jrd/SysFunction.cpp (1.41):
+
+	I consider useful to be able to add weeks or get differences in
+	weeks without going back and forth with *7 or /7, but if others
+	want to follow the standard literally and leave week only as week
+	number in a year...
+
+2008-04-12 14:43  robocop
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.13):
+
+	Update doc for DATEADD and DATEDIFF.
+
+2008-04-12 14:27  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.40):
+
+	- Enable week for dateAdd and dates or timestamps, since it's
+	simply adding 7 days.  - Enable hour, minute, second and
+	millisecond for dateAdd and dates.  The quantity added or
+	substracted should account at least for one day to produce effect
+	(IE adding 23 hours to a date doesn't increment it).  - Enable week
+	for dateDiff and dates or timestamps.  - Enable hour, minute,
+	second and millisecond for dateDiff and dates.
+
+	To be checked by Adriano.
+
+2008-04-12 14:19  robocop
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.4), ExtDS.h (1.4),
+	InternalDS.h (1.3), IscDS.cpp (1.3), IscDS.h (1.3):
+
+	Corrections, const style, etc.	To be reviewed by Vlad.
+
+2008-04-12 13:57  robocop
+
+	* firebird2/src/jrd/: isc.cpp (1.79), par.cpp (1.191), req.h
+	(1.77):
+
+	Misc.
+
+2008-04-12 13:56  robocop
+
+	* firebird2/src/jrd/: evl.cpp (1.258), exe.cpp (1.257):
+
+	const and style.
+
+2008-04-12 13:54  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.370):
+
+	Use array notation.
+
+2008-04-12 06:11  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.164), blf_proto.h (1.16),
+	blob_filter.cpp (1.36):
+
+	Changed blob filter functions to throw exceptions instead of return
+	status codes
+
 2008-04-11 17:35  asfernandes
 
 	* firebird2/src/burp/: backup.epp (1.109), burp.h (1.89),
