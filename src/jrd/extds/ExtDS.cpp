@@ -413,7 +413,7 @@ Transaction::~Transaction()
 }
 
 void Transaction::generateTPB(thread_db *tdbb, ClumpletWriter &tpb, 
-		TraModes traMode, bool readOnly, bool wait, int lockTimeout)
+		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
 {
 	switch (traMode)
 	{
@@ -623,7 +623,7 @@ void Statement::deleteStatement(Jrd::thread_db *tdbb, Statement *stmt)
 	delete stmt;
 }
 
-void Statement::prepare(thread_db *tdbb, Transaction *tran, string &sql, bool named)
+void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, bool named)
 {
 	fb_assert(!m_active);
 
@@ -642,7 +642,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, string &sql, bool na
 	clearNames();
 
 	string sql2(getPool());
-	string *readySql = &sql;
+	const string* readySql = &sql;
 
 	if (named && !(m_provider.getFlags() & prvNamedParams))
 	{
@@ -666,7 +666,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, string &sql, bool na
 }
 
 void Statement::execute(thread_db *tdbb, Transaction *tran, int in_count, 
-	const string *const *in_names, jrd_nod **in_params, int out_count, jrd_nod **out_params)
+	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod **out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
@@ -679,7 +679,7 @@ void Statement::execute(thread_db *tdbb, Transaction *tran, int in_count,
 }
 
 void Statement::open(thread_db *tdbb, Transaction *tran, int in_count, 
-	const string *const *in_names, jrd_nod **in_params, bool singleton)
+	const string* const* in_names, jrd_nod** in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -856,14 +856,14 @@ static TokenType getToken(const char **begin, const char *end)
 	return ret;
 }
 
-void Statement::preprocess(string &sql, string &ret)
+void Statement::preprocess(const string& sql, string& ret)
 {
 	bool passAsIs = true, execBlock = false;
 	const char *p = sql.begin(), *end = sql.end();
-	const char *start = p;
+	const char* start = p;
 	TokenType tok = getToken(&p, end);
 
-	const char *i = start;
+	const char* i = start;
 	while (p < end && (tok == ttComment || tok == ttWhite)) 
 	{
 		i = p;
@@ -926,8 +926,10 @@ void Statement::preprocess(string &sql, string &ret)
 
 				int n = 0;
 				for (; n < m_sqlParamNames.getCount(); n++)
+				{
 					if ((*m_sqlParamNames[n]) == ident)
 						break;
+				}
 
 				if (n >= m_sqlParamNames.getCount())
 				{
@@ -970,7 +972,7 @@ void Statement::preprocess(string &sql, string &ret)
 	return;
 }
 
-void Statement::setInParams(thread_db *tdbb, int count, const string *const *names, jrd_nod **params)
+void Statement::setInParams(thread_db *tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	m_error = (names && (m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1014,7 +1016,7 @@ void Statement::setInParams(thread_db *tdbb, int count, const string *const *nam
 	}
 }
 
-void Statement::doSetInParams(thread_db *tdbb, int count, const string *const *names, jrd_nod **params)
+void Statement::doSetInParams(thread_db *tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	if (count != getInputs()) 
 	{
@@ -1025,7 +1027,7 @@ void Statement::doSetInParams(thread_db *tdbb, int count, const string *const *n
 	if (!count)
 		return;
 
-	jrd_nod **jrdVar = params;
+	jrd_nod** jrdVar = params;
 	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
 
 	for (int i = 0; i < count; i++, jrdVar++)

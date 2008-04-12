@@ -36,7 +36,7 @@ class IscProvider : public Provider
 public:
 	friend class EngineCallbackGuard;
 
-	IscProvider(const char* prvName) :
+	explicit IscProvider(const char* prvName) :
 		Provider(prvName),
 		m_api_loaded(false)
 	{
@@ -439,10 +439,10 @@ public:
 										   unsigned short,
 										   char *);
 
-	virtual ISC_LONG ISC_EXPORT isc_vax_integer(char *,
+	virtual ISC_LONG ISC_EXPORT isc_vax_integer(const char *,
 									short);
 
-	virtual ISC_INT64 ISC_EXPORT isc_portable_integer(unsigned char *,
+	virtual ISC_INT64 ISC_EXPORT isc_portable_integer(const unsigned char *,
 										  short);
 
 	virtual ISC_STATUS ISC_EXPORT isc_seek_blob(ISC_STATUS *,
@@ -484,7 +484,7 @@ public:
 class FBProvider : public IscProvider 
 {
 public:
-	FBProvider(const char* prvName) :
+	explicit FBProvider(const char* prvName) :
 		IscProvider(prvName)
 	{
 		m_flags = (prvMultyStmts | prvMultyTrans | prvTrustedAuth);
@@ -500,7 +500,7 @@ class IscConnection : public Connection
 	friend class IscProvider;
 
 protected:
-	IscConnection(IscProvider &prov);
+	explicit IscConnection(IscProvider &prov);
 	virtual ~IscConnection();
 
 public:
@@ -544,7 +544,7 @@ public:
 	{ return m_handle; }
 
 protected:
-	IscTransaction(IscConnection &conn) :
+	explicit IscTransaction(IscConnection &conn) :
 	  Transaction(conn),
 	  m_iscConnection(conn),
 	  m_iscProvider(*(IscProvider*) conn.getProvider()),
@@ -573,7 +573,7 @@ public:
 	{ return m_handle; }
 
 protected:
-	IscStatement(IscConnection &conn);
+	explicit IscStatement(IscConnection &conn);
 	virtual ~IscStatement();
 
 protected:
@@ -600,7 +600,7 @@ class IscBlob : public Blob
 {
 	friend class IscConnection;
 protected:
-	IscBlob(IscConnection &conn);
+	explicit IscBlob(IscConnection &conn);
 
 public:
 	~IscBlob();

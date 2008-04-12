@@ -57,7 +57,7 @@ extern const char *INTERNAL_PROVIDER_NAME;
 class Manager : public Firebird::PermanentStorage
 {
 public:
-	Manager(Firebird::MemoryPool &pool);
+	explicit Manager(Firebird::MemoryPool &pool);
 	~Manager();
 
 	void addProvider(Provider *provider);
@@ -98,7 +98,7 @@ class Provider : public Firebird::GlobalStorage
 	friend class EngineCallbackGuard;
 
 public:
-	Provider(const char* prvName);
+	explicit Provider(const char* prvName);
 	virtual ~Provider();
 
 	// return existing or create new Connection
@@ -151,7 +151,7 @@ class Connection : public Firebird::PermanentStorage
 protected:
 	friend class EngineCallbackGuard;
 
-	Connection(Provider &prov);
+	explicit Connection(Provider &prov);
 	virtual ~Connection();
 
 public:
@@ -190,7 +190,7 @@ public:
 
 	// Transactions management within connection scope : put newly created
 	// transaction into m_transactions array and delete not needed transaction
-	// immediately (as we didn't pooled transactions)
+	// immediately (as we didn't pool transactions)
 	Transaction* createTransaction();
 	void deleteTransaction(Transaction *tran);
 
@@ -232,7 +232,7 @@ protected:
 	friend class Connection;
 
 	// Create and delete only via parent Connection
-	Transaction(Connection &conn);
+	explicit Transaction(Connection &conn);
 	virtual ~Transaction();
 
 public:
@@ -262,7 +262,7 @@ public:
 
 protected:
 	virtual void generateTPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb,
-		TraModes traMode, bool readOnly, bool wait, int lockTimeout);
+		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const;
 
 	virtual void doStart(ISC_STATUS* status, Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb) = 0;
 	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db *tdbb, int info_len, const char* info) = 0;
@@ -284,7 +284,7 @@ protected:
 	friend class Connection;
 
 	// Create and delete only via parent Connection
-	Statement(Connection &conn);
+	explicit Statement(Connection &conn);
 	virtual ~Statement();
 
 public:
@@ -299,11 +299,12 @@ public:
 	Transaction* getTransaction() 
 	{ return m_transaction; }
 
-	void prepare(Jrd::thread_db *tdbb, Transaction *tran, Firebird::string &sql, bool named);
+	void prepare(Jrd::thread_db *tdbb, Transaction *tran, const Firebird::string& sql, bool named);
 	void execute(Jrd::thread_db *tdbb, Transaction *tran, int in_count, 
-		const Firebird::string *const *in_names, Jrd::jrd_nod **in_params, int out_count, Jrd::jrd_nod **out_params);
+		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params,
+		int out_count, Jrd::jrd_nod** out_params);
 	void open(Jrd::thread_db *tdbb, Transaction *tran, int in_count, 
-		const Firebird::string *const *in_names, Jrd::jrd_nod **in_params, bool singleton);
+		const Firebird::string* const* in_names, Jrd::jrd_nod** in_params, bool singleton);
 	bool fetch(Jrd::thread_db *tdbb, int out_count, Jrd::jrd_nod **out_params);
 	void close(Jrd::thread_db *tdbb);
 	void deallocate(Jrd::thread_db *tdbb);
@@ -342,12 +343,12 @@ protected:
 	virtual bool doFetch(Jrd::thread_db *tdbb) = 0;
 	virtual void doClose(Jrd::thread_db *tdbb, bool drop) = 0;
 
-	void setInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names, 
-		Jrd::jrd_nod **params);
+	void setInParams(Jrd::thread_db *tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
 	virtual void getOutParams(Jrd::thread_db *tdbb, int count, Jrd::jrd_nod **params);
 
-	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names, 
-		Jrd::jrd_nod **params);
+	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
 
 	virtual void putExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
 	virtual void getExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
@@ -356,7 +357,7 @@ protected:
 	// and remember correspondence between logical parameter names and unnamed
 	// placeholders numbers. This is needed only if provider didn't support
 	// named parameters natively.
-	void preprocess(Firebird::string &sql, Firebird::string &ret);
+	void preprocess(const Firebird::string& sql, Firebird::string& ret);
 	void clearNames();
 
 
@@ -405,7 +406,7 @@ class Blob : public Firebird::PermanentStorage
 {
 	friend class Connection;
 protected:
-	Blob(Connection &conn) : 
+	explicit Blob(Connection &conn) : 
 		 PermanentStorage(conn.getProvider()->getPool())
 	{}
 

@@ -31,7 +31,7 @@ namespace EDS {
 class InternalProvider : public Provider
 {
 public:
-	InternalProvider(const char* prvName) :
+	explicit InternalProvider(const char* prvName) :
 		Provider(prvName)
 	{
 		m_flags = (prvMultyStmts | prvMultyTrans);
@@ -54,7 +54,7 @@ class InternalConnection : public Connection
 protected:
 	friend class InternalProvider;
 
-	InternalConnection(InternalProvider &prov) : 
+	explicit InternalConnection(InternalProvider &prov) : 
 	  Connection(prov),
 	  m_attachment(0)
 	{}
@@ -93,7 +93,7 @@ class InternalTransaction : public Transaction
 protected:
 	friend class InternalConnection;
 
-	InternalTransaction(InternalConnection &conn) :
+	explicit InternalTransaction(InternalConnection &conn) :
 	  Transaction(conn),
 	  m_IntConnection(conn),
 	  m_transaction(0)
@@ -121,7 +121,7 @@ class InternalStatement : public Statement
 protected:
 	friend class InternalConnection;
 
-	InternalStatement(InternalConnection &conn);
+	explicit InternalStatement(InternalConnection &conn);
 	~InternalStatement();
 
 protected:
@@ -150,7 +150,7 @@ class InternalBlob : public Blob
 {
 	friend class InternalConnection;
 protected:
-	InternalBlob(InternalConnection &conn);
+	explicit InternalBlob(InternalConnection &conn);
 
 public:
 	~InternalBlob();
