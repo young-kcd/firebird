@@ -153,9 +153,9 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 static void add10msec(ISC_TIMESTAMP* v, int msec, SINT64 multiplier)
 {
-	SINT64 full = msec * multiplier;
-	int days = full / (oneDay * ISC_TIME_SECONDS_PRECISION);
-	int secs = full % (oneDay * ISC_TIME_SECONDS_PRECISION);
+	const SINT64 full = msec * multiplier;
+	const int days = full / (oneDay * ISC_TIME_SECONDS_PRECISION);
+	const int secs = full % (oneDay * ISC_TIME_SECONDS_PRECISION);
 
 	v->timestamp_date += days;
 
@@ -1245,7 +1245,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	if (request->req_flags & req_null)	// return NULL if valueDsc is NULL
 		return NULL;
 
-	SLONG part = MOV_get_long(partDsc, 0);
+	const SLONG part = MOV_get_long(partDsc, 0);
 
 	TimeStamp timestamp;
 
@@ -1265,7 +1265,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		case dtype_sql_date:
 			timestamp.value().timestamp_date = *(GDS_DATE *) valueDsc->dsc_address;
-
+			/*
 			if (part == blr_extract_hour ||
 				part == blr_extract_minute ||
 				part == blr_extract_second ||
@@ -1273,6 +1273,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			{
 				status_exception::raise(isc_expression_eval_err, 0);
 			}
+			*/
 			break;
 
 		case dtype_timestamp:
@@ -1287,7 +1288,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	tm times;
 	timestamp.decode(&times);
 
-	SLONG quantity = MOV_get_long(quantityDsc, 0);
+	const SLONG quantity = MOV_get_long(quantityDsc, 0);
 
 	switch (part)
 	{
@@ -1308,11 +1309,11 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			{
 				int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-				int y = quantity / 12;
-				int m = quantity % 12;
+				const int y = quantity / 12;
+				const int m = quantity % 12;
 
-				int ld = md[times.tm_mon] - times.tm_mday;
-				int lm = times.tm_mon;
+				const int ld = md[times.tm_mon] - times.tm_mday;
+				const int lm = times.tm_mon;
 				times.tm_year += y;
 
 				if ((times.tm_mon += m) > 11)
@@ -1326,7 +1327,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 					times.tm_mon += 12;
 				}
 
-				int ly = times.tm_year + 1900;
+				const int ly = times.tm_year + 1900;
 
 				if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
 					md[1]++;
@@ -1346,21 +1347,39 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		case blr_extract_day:
 			timestamp.value().timestamp_date += quantity;
 			break;
+			
+		case blr_extract_week:
+			timestamp.value().timestamp_date += quantity * 7;
+			break;
+
+		// TO DO: detect overflow in the following cases.
 
 		case blr_extract_hour:
-			add10msec(&timestamp.value(), quantity, 3600 * ISC_TIME_SECONDS_PRECISION);
+			if (valueDsc->dsc_dtype == dtype_sql_date)
+				timestamp.value().timestamp_date += quantity / 24;
+			else
+				add10msec(&timestamp.value(), quantity, 3600 * ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_minute:
-			add10msec(&timestamp.value(), quantity, 60 * ISC_TIME_SECONDS_PRECISION);
+			if (valueDsc->dsc_dtype == dtype_sql_date)
+				timestamp.value().timestamp_date += quantity / 1440; // 1440 == 24 * 60
+			else
+				add10msec(&timestamp.value(), quantity, 60 * ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_second:
-			add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
+			if (valueDsc->dsc_dtype == dtype_sql_date)
+				timestamp.value().timestamp_date += quantity / oneDay;
+			else
+				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION);
 			break;
 
 		case blr_extract_millisecond:
-			add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000);
+			if (valueDsc->dsc_dtype == dtype_sql_date)
+				timestamp.value().timestamp_date += quantity / (oneDay * 1000);
+			else
+				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000);
 			break;
 
 		default:
@@ -1456,7 +1475,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	timestamp1.decode(&times1);
 	timestamp2.decode(&times2);
 
-	SLONG part = MOV_get_long(partDsc, 0);
+	const SLONG part = MOV_get_long(partDsc, 0);
 
 	switch (part)
 	{
@@ -1476,14 +1495,13 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			break;
 	}
 
-	SINT64 result;
-
 	// ASF: throw error if at least one value is "incomplete" from the EXTRACT POV
 	switch (part)
 	{
 		case blr_extract_year:
 		case blr_extract_month:
 		case blr_extract_day:
+		case blr_extract_week:
 			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
 				status_exception::raise(isc_expression_eval_err, 0);
 			break;
@@ -1492,18 +1510,30 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_minute:
 		case blr_extract_second:
 		case blr_extract_millisecond:
-			if (value1Dsc->dsc_dtype == dtype_sql_date || value2Dsc->dsc_dtype == dtype_sql_date)
-				status_exception::raise(isc_expression_eval_err, 0);
+			{
+				//if (value1Dsc->dsc_dtype == dtype_sql_date || value2Dsc->dsc_dtype == dtype_sql_date)
+				//	status_exception::raise(isc_expression_eval_err, 0);
 
-			// ASF: also throw error if one value is TIMESTAMP and the other is TIME
-			if (value1Dsc->dsc_dtype != value2Dsc->dsc_dtype)
-				status_exception::raise(isc_expression_eval_err, 0);
+				// ASF: also throw error if one value is TIMESTAMP and the other is TIME
+				// CVC: Or if one value is DATE and the other is TIME.
+				const int type1 = value1Dsc->dsc_dtype;
+				const int type2 = value2Dsc->dsc_dtype;
+				if (type1 == dtype_timestamp && type2 == dtype_sql_time ||
+					type1 == dtype_sql_time && type2 == dtype_timestamp ||
+					type1 == dtype_sql_date && type2 == dtype_sql_time ||
+					type1 == dtype_sql_time && type2 == dtype_sql_date)
+				{
+					status_exception::raise(isc_expression_eval_err, 0);
+				}
+			}
 			break;
 
 		default:
 			status_exception::raise(isc_expression_eval_err, 0);
 			break;
 	}
+
+	SINT64 result;
 
 	switch (part)
 	{
@@ -1519,16 +1549,22 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_day:
 			result = timestamp2.value().timestamp_date - timestamp1.value().timestamp_date;
 			break;
+			
+		case blr_extract_week:
+			result = (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) / 7;
+			break;
 
+		// TO DO: detect overflow in the following cases.
+		
 		case blr_extract_hour:
-			result = 24 * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
+			result = SINT64(24) * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
 				ISC_TIME_SECONDS_PRECISION / 3600;
 			break;
 
 		case blr_extract_minute:
-			result = 24 * 60 * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
+			result = SINT64(24) * 60 * (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date);
 			result += ((SINT64) timestamp2.value().timestamp_time -
 				(SINT64) timestamp1.value().timestamp_time) /
 				ISC_TIME_SECONDS_PRECISION / 60;
