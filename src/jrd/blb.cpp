@@ -329,7 +329,7 @@ blb* BLB_create2(thread_db* tdbb,
 	}
 
 	if (filter_required) {
-		if (BLF_create_blob(tdbb,
+		BLF_create_blob(tdbb,
 							transaction,
 							&blob->blb_filter,
 							blob_id,
@@ -340,10 +340,7 @@ blb* BLB_create2(thread_db* tdbb,
 							// from the control struct instead. Maybe y-valve has a special case.
 							// Otherwise, blob_filter's sig would be like any filter.
 							reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-							filter))
-		{
-			ERR_punt();
-		}
+							filter);
 		blob->blb_flags |= BLB_temporary;
 		return blob;
 	}
@@ -638,8 +635,6 @@ USHORT BLB_get_segment(thread_db* tdbb,
 			
 		switch (status)
 		{
-		    case 0: // nothing, all ok
-		        break;
 			case isc_segstr_eof:
 				blob->blb_flags |= BLB_eof;
 				break;
@@ -647,7 +642,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 				blob->blb_fragment_size = 1;
 				break;
 			default:
-				ERR_punt();
+				fb_assert(status == 0);
 		}
 
 		return tmp_len;
@@ -1421,17 +1416,14 @@ blb* BLB_open2(thread_db* tdbb,
 	if (filter_required)
 	{
 		BlobControl* control = 0;
-		if (BLF_open_blob(tdbb,
+		BLF_open_blob(tdbb,
 						  transaction,
 						  &control,
 						  blob_id,
 						  bpb_length,
 						  bpb,
 						  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-						  filter))
-		{
-			ERR_punt();
-		}
+						  filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;
@@ -1494,9 +1486,7 @@ void BLB_put_segment(thread_db* tdbb, blb* blob, const UCHAR* seg, USHORT segmen
 		IBERROR(195);			/* msg 195 cannot update old blob */
 
 	if (blob->blb_filter) {
-		if (BLF_put_segment(tdbb, &blob->blb_filter, segment_length, segment))
-			ERR_punt();
-
+		BLF_put_segment(tdbb, &blob->blb_filter, segment_length, segment);
 		return;
 	}
 
