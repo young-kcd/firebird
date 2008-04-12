@@ -1674,7 +1674,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		Firebird::string sPwd((char*) p, len);
 		sPwd.trim();
 
-		EDS::Connection* conn = EDS::Manager::manager->getConnection(tdbb, 
+		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, 
 			sDataSrc, sUser, sPwd, tra_scope);
 
 		stmt = conn->createStatement(sSql);

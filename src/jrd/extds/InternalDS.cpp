@@ -54,7 +54,7 @@ public:
 	RegisterInternalProvider()
 	{
 		InternalProvider* provider = new InternalProvider(INTERNAL_PROVIDER_NAME);
-		Manager::manager->addProvider(provider);
+		Manager::addProvider(provider);
 	}
 };
 

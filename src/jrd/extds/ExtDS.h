@@ -60,34 +60,18 @@ public:
 	explicit Manager(Firebird::MemoryPool &pool);
 	~Manager();
 
-	void addProvider(Provider *provider);
-	Provider* getProvider(const Firebird::string &prvName);
-	Connection* getConnection(Jrd::thread_db *tdbb, 
+	static void addProvider(Provider *provider);
+	static Provider* getProvider(const Firebird::string &prvName);
+	static Connection* getConnection(Jrd::thread_db *tdbb, 
 		const Firebird::string &dataSource, const Firebird::string &user, 
 		const Firebird::string &pwd, TraScope tra_scope);
 
 	// Notify providers when some jrd attachment is about to be released
-	void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
+	static void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
 
-	static Firebird::GlobalPtr<Manager> manager;
 private:
-
-	class StringPtrComparator
-	{
-	public:
-		static bool greaterThan(const Firebird::string* s1, const Firebird::string* s2) {
-			return fb_utils::stricmp(s1->c_str(), s2->c_str()) > 0;
-		}
-	};
-
-	typedef Firebird::SortedArray<
-		Provider*, 
-		Firebird::EmptyStorage<Provider*>, 
-		const Firebird::string*,
-		Provider,
-		StringPtrComparator> PrvArray;
-
-	PrvArray m_providers;
+	static Firebird::GlobalPtr<Manager> manager;
+	static Provider* m_providers;
 };
 
 
@@ -95,6 +79,7 @@ private:
 
 class Provider : public Firebird::GlobalStorage
 {
+	friend class Manager;
 	friend class EngineCallbackGuard;
 
 public:
@@ -135,6 +120,8 @@ protected:
 	Firebird::Mutex m_mutex;
 
 	Firebird::string m_name;
+	Provider* m_next;
+
 	Firebird::Array<Connection*> m_connections;
 	int m_flags; 
 };

@@ -5493,7 +5493,7 @@ static void purge_attachment(thread_db*		tdbb,
 		tdbb->tdbb_status_vector = original_status;
 	}
 
-	EDS::Manager::manager->jrdAttachmentEnd(tdbb, attachment);
+	EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
 
 	const ULONG att_flags = attachment->att_flags;
 	attachment->att_flags |= ATT_shutdown;

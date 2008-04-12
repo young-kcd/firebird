@@ -49,42 +49,48 @@ namespace EDS {
 // Manager
 
 GlobalPtr<Manager> Manager::manager;
+Provider* Manager::m_providers = NULL;
 
 Manager::Manager(MemoryPool &pool) :
-	PermanentStorage(pool),
-	m_providers(pool)
+	PermanentStorage(pool)
 {
 }
 
 Manager::~Manager()
 {
-	for (Provider** prv = m_providers.begin(); prv < m_providers.end(); prv++)
+	while (m_providers)
 	{
-		delete *prv;
-		*prv = NULL;
+		Provider* to_delete = m_providers;
+		m_providers = m_providers->m_next;
+		delete to_delete;
 	}
-	m_providers.clear();
 }
 
 void Manager::addProvider(Provider* provider)
 {
-	if (m_providers.exist(Provider::generate(0, provider)))
-		return;
+	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+		if (prv->m_name == provider->m_name) {
+			return;
+		}
+	}
 
+	provider->m_next = m_providers;
+	m_providers = provider;
 	provider->initialize();
-	m_providers.add(provider);
 }
 
 Provider* Manager::getProvider(const string &prvName)
 {
-	size_t pos;
-	if (!m_providers.find(&prvName, pos))
-	{
-		string err;
-		err.printf("External Data Source provider ''%s'' not found", prvName.c_str());
-		ERR_post(isc_random, isc_arg_string, ERR_cstring(err), 0);
+	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+		if (prv->m_name == prvName) {
+			return prv;
+		}
 	}
-	return m_providers[pos];
+
+	string err;
+	err.printf("External Data Source provider ''%s'' not found", prvName.c_str());
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(err), 0);
+	return NULL; 
 }
 
 Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource, 
@@ -126,8 +132,9 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 
 void Manager::jrdAttachmentEnd(thread_db *tdbb, Jrd::Attachment* att)
 {
-	for (Provider** prv = m_providers.begin(); prv < m_providers.end(); prv++)
-		(*prv)->jrdAttachmentEnd(tdbb, att);
+	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+		prv->jrdAttachmentEnd(tdbb, att);
+	}
 }
 
 // Provider
