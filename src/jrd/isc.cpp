@@ -78,7 +78,7 @@ public:
 	explicit SecurityAttributes(MemoryPool& pool)
 	{
 		// Ensure that our process has the SYNCHRONIZE privilege granted to everyone
-		PSECURITY_DESCRIPTOR pOldSD;
+		PSECURITY_DESCRIPTOR pOldSD = NULL;
 		PACL pOldACL = NULL;
 		GetSecurityInfo(GetCurrentProcess(), SE_KERNEL_OBJECT,
 						DACL_SECURITY_INFORMATION,

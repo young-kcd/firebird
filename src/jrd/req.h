@@ -37,7 +37,7 @@
 
 namespace EDS {
 class Statement;
-};
+}
 
 namespace Jrd {
 

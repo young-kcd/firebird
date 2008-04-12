@@ -2845,7 +2845,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			else
 				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
 
-			// input parameters and its names
+			// input parameters and their names
 			const bool haveNames = (inputs && (BLR_BYTE == 1));
 			EDS::ParamNames* paramNames = NULL;
 
