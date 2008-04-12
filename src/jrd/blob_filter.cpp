@@ -169,9 +169,10 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 	control->ctl_buffer_length = buffer_length;
 
 	ISC_STATUS status;
-	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 
+	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 	status = (*control->ctl_source) (isc_blob_filter_get_segment, control);
+	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 
 	if (!status || status == isc_segment)
 		*length = control->ctl_segment_length;
@@ -188,8 +189,6 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 
 		Firebird::status_exception::raise(localStatus);
 	}
-
-	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 
 	return status;
 }
@@ -280,10 +279,11 @@ void BLF_put_segment(thread_db* tdbb,
 	control->ctl_buffer = const_cast<UCHAR*>(buffer);
 	control->ctl_buffer_length = length;
 
-	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
-
 	ISC_STATUS status;
+
+	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 	status = (*control->ctl_source) (isc_blob_filter_put_segment, control);
+	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 
 	if (status)
 	{
@@ -295,8 +295,6 @@ void BLF_put_segment(thread_db* tdbb,
 
 		Firebird::status_exception::raise(localStatus);
 	}
-
-	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 }
 
 // SEH moved to separate function to avoid conflicts 
