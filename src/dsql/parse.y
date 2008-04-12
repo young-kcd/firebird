@@ -1738,21 +1738,23 @@ exec_sql
 	;
 
 exec_into
-	: EXECUTE STATEMENT exec_stmt_inputs INTO variable_list
+	: EXECUTE STATEMENT exec_stmt_inputs 
 			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+			INTO variable_list
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($5), 0, $6, $7, $8, $9, 0);
+					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($9), 0, $4, $5, $6, $7, 0);
 		}
 	;
 
 for_exec_into
-	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs INTO variable_list 
+	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs 
 			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+			INTO variable_list 
 			DO proc_block 
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($7), $13, $8, $9, $10, $11, $1);
+					($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($11), $13, $6, $7, $8, $9, $1);
 		}
 	;
 
