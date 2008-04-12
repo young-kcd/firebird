@@ -318,8 +318,8 @@ void IscTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool retain
 
 IscStatement::IscStatement(IscConnection &conn) :
 	Statement(conn),
-	m_iscConnection(conn),
 	m_iscProvider(*(IscProvider*) conn.getProvider()),
+	m_iscConnection(conn),
 	m_handle(0),
 	m_in_xsqlda(NULL),
 	m_out_xsqlda(NULL)

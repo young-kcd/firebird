@@ -546,8 +546,8 @@ public:
 protected:
 	explicit IscTransaction(IscConnection &conn) :
 	  Transaction(conn),
-	  m_iscConnection(conn),
 	  m_iscProvider(*(IscProvider*) conn.getProvider()),
+	  m_iscConnection(conn),
 	  m_handle(0)
 	{}
 

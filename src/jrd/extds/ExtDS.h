@@ -398,7 +398,7 @@ protected:
 	{}
 
 public:
-	~Blob() {}
+	virtual ~Blob() {}
 
 public:
 	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
