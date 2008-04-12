@@ -1621,8 +1621,8 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	EDS::Statement** stmt_ptr = (EDS::Statement**) ((char*) request + node->nod_impure);
 	EDS::Statement* stmt = *stmt_ptr;
 
-	int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
-	int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
+	const int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
+	const int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
 	jrd_nod** node_inputs = node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs;
 	jrd_nod** node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
 	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
@@ -1631,37 +1631,43 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 	{
 		fb_assert(*stmt_ptr == 0);
 
-		EDS::ParamNames* inputs_names = (EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
-		EDS::TraScope tra_scope = (EDS::TraScope)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
+		const EDS::ParamNames* inputs_names = (EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
+		const EDS::TraScope tra_scope = (EDS::TraScope)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
 
 		MoveBuffer buffer;
 		UCHAR* p = NULL;
 		SSHORT len = 0;
-		dsc* dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
+		const dsc* dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
 		if (dsc_sql && !(request->req_flags & req_null)) {
 			len = MOV_make_string2(tdbb, dsc_sql, dsc_sql->getTextType(), &p, buffer);
 		}
 		Firebird::string sSql((char*) p, len);
 		sSql.trim();
 
-		p = NULL; len = 0; buffer.clear();
-		dsc* dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
+		p = NULL;
+		len = 0;
+		buffer.clear();
+		const dsc* dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
 		if (dsc_dataSrc && !(request->req_flags & req_null)) {
 			len = MOV_make_string2(tdbb, dsc_dataSrc, dsc_dataSrc->getTextType(), &p, buffer);
 		}
 		Firebird::string sDataSrc((char*) p, len);
 		sDataSrc.trim();
 
-		p = NULL; len = 0; buffer.clear();
-		dsc* dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
+		p = NULL;
+		len = 0;
+		buffer.clear();
+		const dsc* dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
 		if (dsc_user && !(request->req_flags & req_null)) {
 			len = MOV_make_string2(tdbb, dsc_user, dsc_user->getTextType(), &p, buffer);
 		}
 		Firebird::string sUser((char*) p, len);
 		sUser.trim();
 
-		p = NULL; len = 0; buffer.clear();
-		dsc* dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
+		p = NULL;
+		len = 0;
+		buffer.clear();
+		const dsc* dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
 		if (dsc_pwd && !(request->req_flags & req_null)) {
 			len = MOV_make_string2(tdbb, dsc_pwd, dsc_pwd->getTextType(), &p, buffer);
 		}

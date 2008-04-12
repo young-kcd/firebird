@@ -1892,7 +1892,7 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 /* Handle the fixed length data types first.  They're easy. */
 
-	dsc from = *desc;
+	const dsc from = *desc;
 	value->vlu_desc = *desc;
 	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
 
