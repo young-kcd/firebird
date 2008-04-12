@@ -278,7 +278,7 @@ void HSHD_remove(DSQL_SYM symbol)
 		}
 	}
 
-	ERRD_error(-1, "HSHD_remove failed");
+	ERRD_error("HSHD_remove failed");
 }
 
 

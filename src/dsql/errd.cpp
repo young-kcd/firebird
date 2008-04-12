@@ -103,9 +103,8 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 void ERRD_bugcheck(const char* text)
 {
 	TEXT s[MAXPATHLEN + 120];
-
 	fb_utils::snprintf(s, sizeof(s), "INTERNAL: %s", text);	// TXNN
-	ERRD_error(-1, s);
+	ERRD_error(s);
 }
 
 
@@ -125,27 +124,15 @@ void ERRD_bugcheck(const char* text)
     @param text
 
  **/
-void ERRD_error(int code, const char* text)
+void ERRD_error(const char* text)
 {
 	TEXT s[MAXPATHLEN + 140];
-
-	thread_db* tdbb = JRD_get_thread_data();
-
 	fb_utils::snprintf(s, sizeof(s), "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
-    if (status_vector) {
-        *status_vector++ = isc_arg_gds;
-        *status_vector++ = isc_random;
-        *status_vector++ = isc_arg_cstring;
-        *status_vector++ = strlen(s);
-        *status_vector++ = reinterpret_cast<ISC_STATUS>(s);
-        *status_vector++ = isc_arg_end;
-    }
-
-    ERRD_punt();
-
+	Firebird::status_exception::raise(
+        isc_random, isc_arg_cstring, strlen(s), ERR_cstring(s),
+        isc_arg_end);
 }
 
 
