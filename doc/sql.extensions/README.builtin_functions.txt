@@ -276,7 +276,7 @@ Format:
     DATEADD( <number> <timestamp_part> TO <date_time> )
     DATEADD( <timestamp_part>, <number>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
+    timestamp_part ::= { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND }
 
 Notes:
     1) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
@@ -304,7 +304,7 @@ Format:
     DATEDIFF( <timestamp_part> FROM <date_time> TO <date_time> )
     DATEDIFF( <timestamp_part>, <date_time>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
+    timestamp_part ::= { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND }
 
 Notes:
     1) Returns positive value if the second value is greater than the first one,

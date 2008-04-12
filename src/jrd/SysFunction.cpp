@@ -1348,9 +1348,9 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			timestamp.value().timestamp_date += quantity;
 			break;
 			
-		case blr_extract_week:
-			timestamp.value().timestamp_date += quantity * 7;
-			break;
+		//case blr_extract_week:
+		//	timestamp.value().timestamp_date += quantity * 7;
+		//	break;
 
 		// TO DO: detect overflow in the following cases.
 
@@ -1501,7 +1501,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_year:
 		case blr_extract_month:
 		case blr_extract_day:
-		case blr_extract_week:
+		//case blr_extract_week:
 			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
 				status_exception::raise(isc_expression_eval_err, 0);
 			break;
@@ -1550,9 +1550,9 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			result = timestamp2.value().timestamp_date - timestamp1.value().timestamp_date;
 			break;
 			
-		case blr_extract_week:
-			result = (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) / 7;
-			break;
+		//case blr_extract_week:
+		//	result = (timestamp2.value().timestamp_date - timestamp1.value().timestamp_date) / 7;
+		//	break;
 
 		// TO DO: detect overflow in the following cases.
 		
