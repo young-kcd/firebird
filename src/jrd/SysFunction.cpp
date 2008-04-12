@@ -442,7 +442,10 @@ static void makeAbs(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 			break;
 
 		case dtype_long:
-			result->makeInt64(value->dsc_scale);
+			if (dataTypeUtil->getDialect() == 1)
+				result->makeDouble();
+			else
+				result->makeInt64(value->dsc_scale);
 			break;
 
 		case dtype_real:
