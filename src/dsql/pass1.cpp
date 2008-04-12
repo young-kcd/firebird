@@ -3818,6 +3818,17 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 
 		INTL_ASSIGN_TTYPE(&constant->nod_desc, resolved->intlsym_ttype);
 	}
+	else
+	{
+		const Firebird::MetaName charSetName = METD_get_charset_name(request,
+			constant->nod_desc.getCharSet());
+
+		const dsql_intlsym* sym = METD_get_charset(request, charSetName.length(), charSetName.c_str());
+		fb_assert(sym && sym->intlsym_charset_id == constant->nod_desc.getCharSet());
+
+		if (sym)
+			constant->nod_desc.setTextType(sym->intlsym_ttype);
+	}
 
 	USHORT adjust = 0;
 	if (constant->nod_desc.dsc_dtype == dtype_varying)
