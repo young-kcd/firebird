@@ -161,7 +161,7 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
  *	Get segment from a blob filter.
  *
  **************************************/
-	ISC_STATUS_ARRAY localStatus = {0};
+	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -178,8 +178,16 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 	else
 		*length = 0;
 
-	if (status && status != isc_segment && status != isc_segstr_eof) 
+	if (status && status != isc_segment && status != isc_segstr_eof)
+	{
+		if (status != localStatus[1])
+		{
+			localStatus[1] = status;
+			localStatus[2] = isc_arg_end;
+		}
+
 		Firebird::status_exception::raise(localStatus);
+	}
 
 	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 
@@ -262,7 +270,7 @@ void BLF_put_segment(thread_db* tdbb,
  *
  **************************************/
 
-	ISC_STATUS_ARRAY localStatus = {0};
+	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -278,7 +286,15 @@ void BLF_put_segment(thread_db* tdbb,
 	status = (*control->ctl_source) (isc_blob_filter_put_segment, control);
 
 	if (status)
+	{
+		if (status != localStatus[1])
+		{
+			localStatus[1] = status;
+			localStatus[2] = isc_arg_end;
+		}
+
 		Firebird::status_exception::raise(localStatus);
+	}
 
 	END_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
 }
@@ -345,7 +361,7 @@ static void open_blob(
 	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
 	prior->ctl_source = callback;
 
-	ISC_STATUS_ARRAY localStatus = {0};
+	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
 	prior->ctl_status = localStatus;
 
 	prior->ctl_internal[0] = dbb;
@@ -392,6 +408,13 @@ static void open_blob(
 	else
 	{
 		BLF_close_blob(tdbb, &control);
+
+		if (status != localStatus[1])
+		{
+			localStatus[1] = status;
+			localStatus[2] = isc_arg_end;
+		}
+
 		Firebird::status_exception::raise(localStatus);
 	}
 }
