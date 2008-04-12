@@ -11,11 +11,11 @@ Authors:
 Syntax and notes :
 
 [FOR] EXECUTE STATEMENT <query_text> [(<input_parameters>)]
-    [INTO <variables>]
     [ON EXTERNAL [DATA SOURCE] <connection_string>]
     [AS USER <user_name>]
     [PASSWORD <password>]
     [WITH AUTONOMOUS|COMMON TRANSACTION]
+    [INTO <variables>]
 
 - if you use both <query_text> and <input_parameters> then you must
     enclose <query_text> into round brackets, for example :
@@ -143,10 +143,10 @@ BEGIN
     DB = TRIM(CASE i - 3 * (I / 3) WHEN 0 THEN '\\.\' WHEN 1 THEN 'localhost:' ELSE '' END) || :S;
 
     FOR EXECUTE STATEMENT 'SELECT CURRENT_CONNECTION, CURRENT_TRANSACTION FROM RDB$DATABASE'
+      ON EXTERNAL :DB 
+      AS USER CURRENT_USER PASSWORD 'masterkey' -- just for example
+      WITH COMMON TRANSACTION
       INTO :CONN, :TRAN
-    ON EXTERNAL :DB 
-    AS USER CURRENT_USER PASSWORD 'masterkey' -- just for example
-    WITH COMMON TRANSACTION
     DO SUSPEND;
 
     i = i + 1;
@@ -171,9 +171,9 @@ BEGIN
     DB = TRIM(CASE i - 3 * (I / 3) WHEN 0 THEN '\\.\' WHEN 1 THEN 'localhost:' ELSE '' END) || :S;
 
     FOR EXECUTE STATEMENT 'SELECT CURRENT_CONNECTION, CURRENT_TRANSACTION FROM RDB$DATABASE'
+      ON EXTERNAL :DB 
+      WITH AUTONOMOUS TRANSACTION -- note autonomous transaction
       INTO :CONN, :TRAN
-    ON EXTERNAL :DB 
-    WITH AUTONOMOUS TRANSACTION -- note autonomous transaction
     DO SUSPEND;
 
     i = i + 1;
@@ -188,7 +188,7 @@ AS
 BEGIN
   EXECUTE STATEMENT ('SELECT CAST(:X AS INT), CAST(:X AS INT), CAST(:X AS INT) FROM RDB$DATABASE')
           (x := GEN_ID(G, 1))
-     INTO :A, :B, :C;
+    INTO :A, :B, :C;
 
   SUSPEND;
 END
