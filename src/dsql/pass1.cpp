@@ -1747,11 +1747,11 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			const int cnt = node->nod_arg[e_exec_stmt_inputs]->nod_count;
 			StrArray names(*getDefaultMemoryPool(), cnt);
 
-			dsql_nod** prm = node->nod_arg[e_exec_stmt_inputs]->nod_arg;
-			if ((*prm)->nod_arg[e_named_param_name]) {
-				for (int i = 0; i < cnt; i++, prm++)
+			const dsql_nod* const* prm = node->nod_arg[e_exec_stmt_inputs]->nod_arg;
+			if (prm[0]->nod_arg[e_named_param_name]) {
+				for (int i = 0; i < cnt; i++)
 				{
-					dsql_str* name = (dsql_str*) (*prm)->nod_arg[e_named_param_name];
+					dsql_str* name = (dsql_str*) prm[i]->nod_arg[e_named_param_name];
 
 					if (names.exist(name->str_data)) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
