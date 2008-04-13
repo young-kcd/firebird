@@ -330,8 +330,10 @@ void InternalStatement::doExecute(thread_db *tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 		jrd8_execute(status, &transaction, &m_request, 
-			m_inBlr.getCount(), (SCHAR*) m_inBlr.begin(), 0, m_in_buffer.getCount(), (SCHAR*) m_in_buffer.begin(), 
-			m_outBlr.getCount(), (SCHAR*) m_outBlr.begin(), 0, m_out_buffer.getCount(), (SCHAR*) m_out_buffer.begin());
+			m_inBlr.getCount(), reinterpret_cast<const SCHAR*>(m_inBlr.begin()),
+			0, m_in_buffer.getCount(), reinterpret_cast<const SCHAR*>(m_in_buffer.begin()),
+			m_outBlr.getCount(), (SCHAR*) m_outBlr.begin(),
+			0, m_out_buffer.getCount(), (SCHAR*) m_out_buffer.begin());
 	}
 
 	if (status[1]) {
@@ -348,8 +350,8 @@ void InternalStatement::doOpen(thread_db *tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 		jrd8_execute(status, &transaction, &m_request, 
-			m_inBlr.getCount(), (SCHAR*) m_inBlr.begin(), 0, 
-			m_in_buffer.getCount(), (SCHAR*) m_in_buffer.begin(), 
+			m_inBlr.getCount(), reinterpret_cast<const SCHAR*>(m_inBlr.begin()),
+			0, m_in_buffer.getCount(), reinterpret_cast<const SCHAR*>(m_in_buffer.begin()),
 			0, NULL, 0, 0, NULL);
 	}
 	if (status[1]) {
@@ -365,7 +367,7 @@ bool InternalStatement::doFetch(thread_db *tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 		res = jrd8_fetch(status, &m_request, 
-			m_outBlr.getCount(), (SCHAR*) m_outBlr.begin(), 0, 
+			m_outBlr.getCount(), reinterpret_cast<const SCHAR*>(m_outBlr.begin()), 0,
 			m_out_buffer.getCount(), (SCHAR*) m_out_buffer.begin());
 	}
 	if (status[1]) {
@@ -389,10 +391,10 @@ void InternalStatement::doClose(thread_db *tdbb, bool drop)
 	}
 }
 
-void InternalStatement::putExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
+void InternalStatement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
 {
 	if (m_transaction->getScope() == traCommon)
-		MOV_move(tdbb, (dsc*) &src, &dst);
+		MOV_move(tdbb, &src, &dst);
 	else
 		Statement::putExtBlob(tdbb, src, dst);
 }
@@ -425,7 +427,7 @@ InternalBlob::~InternalBlob()
 	fb_assert(!m_blob);
 }
 
-void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCharBuffer *bpb)
+void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
@@ -439,7 +441,7 @@ void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCh
 		EngineCallbackGuard guard(tdbb, m_connection);
 
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
-		UCHAR *bpb_buff = bpb ? bpb->begin() : NULL;
+		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		jrd8_open_blob2(status, &att, &transaction, &m_blob, &m_blob_id, 
 			bpb_len, bpb_buff);
@@ -450,7 +452,7 @@ void InternalBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCh
 	fb_assert(m_blob);
 }
 
-void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, UCharBuffer *bpb)
+void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_blob);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
@@ -464,7 +466,7 @@ void InternalBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, UCharBu
 		EngineCallbackGuard guard(tdbb, m_connection);
 
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
-		UCHAR *bpb_buff = bpb ? bpb->begin() : NULL;
+		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		jrd8_create_blob2(status, &att, &transaction, &m_blob, &m_blob_id, 
 			bpb_len, bpb_buff);
@@ -484,7 +486,7 @@ USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_connection);
-		jrd8_get_segment(status, &m_blob, &result, len, (UCHAR*) buff);
+		jrd8_get_segment(status, &m_blob, &result, len, reinterpret_cast<UCHAR*>(buff));
 	}
 	if (status[1] == isc_segstr_eof) {
 		fb_assert(result == 0);
@@ -498,14 +500,14 @@ USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 	return result;
 }
 
-void InternalBlob::write(thread_db *tdbb, char *buff, USHORT len)
+void InternalBlob::write(thread_db *tdbb, const char* buff, USHORT len)
 {
 	fb_assert(m_blob);
 
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, m_connection);
-		jrd8_put_segment(status, &m_blob, len, (UCHAR*) buff);
+		jrd8_put_segment(status, &m_blob, len, reinterpret_cast<const UCHAR*>(buff));
 	}
 	if (status[1]) {
 		m_connection.raise(status, tdbb, "jrd8_put_segment");

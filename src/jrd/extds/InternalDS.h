@@ -131,7 +131,7 @@ protected:
 	virtual bool doFetch(Jrd::thread_db *tdbb);
 	virtual void doClose(Jrd::thread_db *tdbb, bool drop);
 
-	virtual void putExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
+	virtual void putExtBlob(Jrd::thread_db *tdbb, dsc &src, dsc &dst);
 	virtual void getExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
 
 	InternalTransaction* getIntTransaction()
@@ -156,10 +156,10 @@ public:
 	~InternalBlob();
 
 public:
-	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, Firebird::UCharBuffer *bpb);
-	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, Firebird::UCharBuffer *bpb);
+	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, const Firebird::UCharBuffer* bpb);
+	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, const Firebird::UCharBuffer* bpb);
 	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len);
-	virtual void write(Jrd::thread_db *tdbb, char *buff, USHORT len);
+	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len);
 	virtual void close(Jrd::thread_db *tdbb);
 	virtual void cancel(Jrd::thread_db *tdbb);
 

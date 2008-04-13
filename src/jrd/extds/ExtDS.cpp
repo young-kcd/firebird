@@ -68,7 +68,7 @@ Manager::~Manager()
 
 void Manager::addProvider(Provider* provider)
 {
-	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+	for (const Provider* prv = m_providers; prv; prv = prv->m_next) {
 		if (prv->m_name == provider->m_name) {
 			return;
 		}
@@ -1110,9 +1110,9 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 */
 
 		// build the src descriptor
-		const dsc &src = m_outDescs[i * 2];
+		dsc &src = m_outDescs[i * 2];
 		const dsc &null = m_outDescs[i * 2 + 1];
-		const dsc *local = &src;
+		dsc* local = &src;
 		dsc localDsc;
 		bid localBlobID;
 
@@ -1126,7 +1126,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 		} 
 
 		// and assign to the target
-		EXE_assignment(tdbb, *jrdVar, (dsc*) local, srcNull, NULL, NULL);
+		EXE_assignment(tdbb, *jrdVar, local, srcNull, NULL, NULL);
 	}
 }
 
@@ -1158,7 +1158,7 @@ void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 			if (!length) 
 				break;
 
-			BLB_put_segment(tdbb, destBlob, (UCHAR*) buff, length);
+			BLB_put_segment(tdbb, destBlob, reinterpret_cast<const UCHAR*>(buff), length);
 		}
 
 		extBlob->close(tdbb);
@@ -1175,7 +1175,7 @@ void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 }
 
 // read local blob, store it as external blob and put external blob_id in dst
-void Statement::putExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
+void Statement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
 {
 	blb* srcBlob = NULL;
 	AutoPtr<Blob> extBlob(m_connection.createBlob());
@@ -1196,7 +1196,7 @@ void Statement::putExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 
 		while (true) 
 		{
-			USHORT length = BLB_get_segment(tdbb, srcBlob, (UCHAR*)buff, srcBlob->blb_max_segment);
+			USHORT length = BLB_get_segment(tdbb, srcBlob, reinterpret_cast<UCHAR*>(buff), srcBlob->blb_max_segment);
 			if (srcBlob->blb_flags & BLB_eof) {
 				break;
 			}

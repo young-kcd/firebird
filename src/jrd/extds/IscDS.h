@@ -63,13 +63,13 @@ protected:
 public:
 	virtual ISC_STATUS ISC_EXPORT isc_attach_database(ISC_STATUS *,
 										  short,
-										  char *,
+										  const char*,
 										  isc_db_handle *,
 										  short,
-										  char *);
+										  const char*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_array_gen_sdl(ISC_STATUS *,
-										ISC_ARRAY_DESC *,
+										const ISC_ARRAY_DESC*,
 										short *,
 										char *,
 										short *);
@@ -78,47 +78,47 @@ public:
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
+										  const ISC_ARRAY_DESC*,
 										  void *,
 										  ISC_LONG *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_array_lookup_bounds(ISC_STATUS *,
 											  isc_db_handle *,
 											  isc_tr_handle *,
-											  char *,
-											  char *,
+											  const char*,
+											  const char*,
 											  ISC_ARRAY_DESC *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_array_lookup_desc(ISC_STATUS *,
 											isc_db_handle *,
 											isc_tr_handle *,
-											char *,
-											char *,
+											const char*,
+											const char*,
 											ISC_ARRAY_DESC *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_array_set_desc(ISC_STATUS *,
-										 char *,
-										 char *,
-										 short *,
-										 short *,
-										 short *,
+										 const char*,
+										 const char*,
+										 const short*,
+										 const short*,
+										 const short*,
 										 ISC_ARRAY_DESC *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_array_put_slice(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
+										  const ISC_ARRAY_DESC*,
 										  void *,
 										  ISC_LONG *);
 
 	virtual void ISC_EXPORT isc_blob_default_desc(ISC_BLOB_DESC *,
-									  unsigned char *,
-									  unsigned char *);
+									  const unsigned char*,
+									  const unsigned char*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_blob_gen_bpb(ISC_STATUS *,
-									   ISC_BLOB_DESC *,
-									   ISC_BLOB_DESC *,
+									   const ISC_BLOB_DESC*,
+									   const ISC_BLOB_DESC*,
 									   unsigned short,
 									   unsigned char *,
 									   unsigned short *);
@@ -126,21 +126,21 @@ public:
 	virtual ISC_STATUS ISC_EXPORT isc_blob_info(ISC_STATUS *,
 									isc_blob_handle *,
 									short,
-									char *,
+									const char*,
 									short,
 									char *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_blob_lookup_desc(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
-										   unsigned char *,
-										   unsigned char *,
+										   const unsigned char*,
+										   const unsigned char*,
 										   ISC_BLOB_DESC *,
 										   unsigned char *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_blob_set_desc(ISC_STATUS *,
-										unsigned char *,
-										unsigned char *,
+										const unsigned char*,
+										const unsigned char*,
 										short,
 										short,
 										short,
@@ -174,33 +174,33 @@ public:
 									   isc_blob_handle *,
 									   ISC_QUAD *,
 									   short,
-									   char *);
+									   const char*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_create_database(ISC_STATUS *,
 										  short,
-										  char *,
+										  const char*,
 										  isc_db_handle *,
 										  short,
-										  char *,
+										  const char*,
 										  short);
 
 	virtual ISC_STATUS ISC_EXPORT isc_database_info(ISC_STATUS *,
 										isc_db_handle *,
 										short,
-										char *,
+										const char*,
 										short,
 										char *);
 
-	virtual void ISC_EXPORT isc_decode_date(ISC_QUAD *,
+	virtual void ISC_EXPORT isc_decode_date(const ISC_QUAD*,
 								void *);
 
-	virtual void ISC_EXPORT isc_decode_sql_date(ISC_DATE *,
+	virtual void ISC_EXPORT isc_decode_sql_date(const ISC_DATE*,
 									void *);
 
-	virtual void ISC_EXPORT isc_decode_sql_time(ISC_TIME *,
+	virtual void ISC_EXPORT isc_decode_sql_time(const ISC_TIME*,
 									void *);
 
-	virtual void ISC_EXPORT isc_decode_timestamp(ISC_TIMESTAMP *,
+	virtual void ISC_EXPORT isc_decode_timestamp(const ISC_TIMESTAMP*,
 									 void *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_detach_database(ISC_STATUS *,
@@ -231,7 +231,7 @@ public:
 										   isc_db_handle *,
 										   isc_tr_handle *,
 										   unsigned short,
-										   char *,
+										   const char*,
 										   unsigned short,
 										   XSQLDA *,
 										   XSQLDA *);
@@ -253,7 +253,7 @@ public:
 												 isc_db_handle *,
 												 isc_tr_handle *,
 												 unsigned short,
-												 char *,
+												 const char*,
 												 unsigned short,
 												 XSQLDA *);
 
@@ -277,32 +277,32 @@ public:
 									   isc_tr_handle *,
 									   isc_stmt_handle *,
 									   unsigned short,
-									   char *,
+									   const char*,
 									   unsigned short,
 									   XSQLDA *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_dsql_set_cursor_name(ISC_STATUS *,
 											   isc_stmt_handle *,
-											   char *,
+											   const char*,
 											   unsigned short);
 
 	virtual ISC_STATUS ISC_EXPORT isc_dsql_sql_info(ISC_STATUS *,
 										isc_stmt_handle *,
 										short,
-										const char *,
+										const char*,
 										short,
 										char *);
 
-	virtual void ISC_EXPORT isc_encode_date(void *,
+	virtual void ISC_EXPORT isc_encode_date(const void*,
 								ISC_QUAD *);
 
-	virtual void ISC_EXPORT isc_encode_sql_date(void *,
+	virtual void ISC_EXPORT isc_encode_sql_date(const void*,
 									ISC_DATE *);
 
-	virtual void ISC_EXPORT isc_encode_sql_time(void *,
+	virtual void ISC_EXPORT isc_encode_sql_time(const void*,
 									ISC_TIME *);
 
-	virtual void ISC_EXPORT isc_encode_timestamp(void *,
+	virtual void ISC_EXPORT isc_encode_timestamp(const void*,
 									 ISC_TIMESTAMP *);
 
 	virtual ISC_LONG ISC_EXPORT_VARARG isc_event_block(char * *,
@@ -312,7 +312,7 @@ public:
 	virtual void ISC_EXPORT isc_event_counts(ISC_ULONG *,
 								 short,
 								 char *,
-								 char *);
+								 const char*);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
 	virtual void ISC_EXPORT_VARARG isc_expand_dpb(char * *,
@@ -321,7 +321,7 @@ public:
 	virtual int ISC_EXPORT isc_modify_dpb(char * *,
 							  short *,
 							  unsigned short,
-							  char *,
+							  const char*,
 							  short);
 
 	virtual ISC_LONG ISC_EXPORT isc_free(char *);
@@ -337,9 +337,9 @@ public:
 									isc_tr_handle *,
 									ISC_QUAD *,
 									short,
-									char *,
+									const char*,
 									short,
-									ISC_LONG *,
+									const ISC_LONG*,
 									ISC_LONG,
 									void *,
 									ISC_LONG *);
@@ -359,31 +359,31 @@ public:
 									 isc_blob_handle *,
 									 ISC_QUAD *,
 									 ISC_USHORT,
-									 ISC_UCHAR *);
+									 const ISC_UCHAR*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_prepare_transaction2(ISC_STATUS *,
 											   isc_tr_handle *,
 											   ISC_USHORT,
-											   ISC_UCHAR *);
+											   const ISC_UCHAR*);
 
 	virtual void ISC_EXPORT isc_print_sqlerror(ISC_SHORT,
-								   ISC_STATUS *);
+								   const ISC_STATUS*);
 
-	virtual ISC_STATUS ISC_EXPORT isc_print_status(ISC_STATUS *);
+	virtual ISC_STATUS ISC_EXPORT isc_print_status(const ISC_STATUS*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_put_segment(ISC_STATUS *,
 									  isc_blob_handle *,
 									  unsigned short,
-									  char *);
+									  const char*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_put_slice(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
 									ISC_QUAD *,
 									short,
-									char *,
+									const char*,
 									short,
-									ISC_LONG *,
+									const ISC_LONG*,
 									ISC_LONG,
 									void *);
 
@@ -391,7 +391,7 @@ public:
 									 isc_db_handle *,
 									 ISC_LONG *,
 									 ISC_USHORT,
-									 ISC_UCHAR *,
+									 const ISC_UCHAR*,
 									 isc_callback,
 									 void *);
 
@@ -414,9 +414,9 @@ public:
                                                    isc_db_handle *,
                                                    isc_tr_handle *,
                                                    short, 
-                                                   char*);
+                                                   const char*);
 
-	virtual ISC_LONG ISC_EXPORT isc_sqlcode(ISC_STATUS *);
+	virtual ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
 	virtual void ISC_EXPORT isc_sql_interprete(short,
 								   char *,
@@ -425,7 +425,7 @@ public:
 	virtual ISC_STATUS ISC_EXPORT isc_transaction_info(ISC_STATUS *,
 										   isc_tr_handle *,
 										   short,
-										   char *,
+										   const char*,
 										   short,
 										   char *);
 
@@ -439,10 +439,10 @@ public:
 										   unsigned short,
 										   char *);
 
-	virtual ISC_LONG ISC_EXPORT isc_vax_integer(const char *,
+	virtual ISC_LONG ISC_EXPORT isc_vax_integer(const char*,
 									short);
 
-	virtual ISC_INT64 ISC_EXPORT isc_portable_integer(const unsigned char *,
+	virtual ISC_INT64 ISC_EXPORT isc_portable_integer(const unsigned char*,
 										  short);
 
 	virtual ISC_STATUS ISC_EXPORT isc_seek_blob(ISC_STATUS *,
@@ -455,10 +455,10 @@ public:
 
 	virtual ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS *,
 										 unsigned short,
-										 char *,
+										 const char*,
 										 isc_svc_handle *,
 										 unsigned short,
-										 char *);
+										 const char*);
 
 	virtual ISC_STATUS ISC_EXPORT isc_service_detach(ISC_STATUS *,
 										 isc_svc_handle *);
@@ -467,9 +467,9 @@ public:
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
 										char *);
 
@@ -477,7 +477,7 @@ public:
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
-										char *);
+										const char*);
 };
 
 
@@ -607,11 +607,11 @@ public:
 
 public:
 	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
-		Firebird::UCharBuffer *bpb);
+		const Firebird::UCharBuffer* bpb);
 	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, 
-		Firebird::UCharBuffer *bpb);
+		const Firebird::UCharBuffer* bpb);
 	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len);
-	virtual void write(Jrd::thread_db *tdbb, char *buff, USHORT len);
+	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len);
 	virtual void close(Jrd::thread_db *tdbb);
 	virtual void cancel(Jrd::thread_db *tdbb);
 

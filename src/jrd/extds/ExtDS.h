@@ -337,7 +337,7 @@ protected:
 	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string* const* names,
 		Jrd::jrd_nod** params);
 
-	virtual void putExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
+	virtual void putExtBlob(Jrd::thread_db *tdbb, dsc &src, dsc &dst);
 	virtual void getExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
 
 	// Preprocess user sql string : replace parameter names by placeholders (?)
@@ -402,11 +402,11 @@ public:
 
 public:
 	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
-		Firebird::UCharBuffer *bpb) = 0;
+		const Firebird::UCharBuffer *bpb) = 0;
 	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, 
-		Firebird::UCharBuffer *bpb) = 0;
+		const Firebird::UCharBuffer* bpb) = 0;
 	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len) = 0;
-	virtual void write(Jrd::thread_db *tdbb, char *buff, USHORT len) = 0;
+	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len) = 0;
 	virtual void close(Jrd::thread_db *tdbb) = 0;
 	virtual void cancel(Jrd::thread_db *tdbb) = 0;
 };

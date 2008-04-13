@@ -19,13 +19,13 @@
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_attach_database(ISC_STATUS *,
 										  short,
-										  char *,
+										  const char*,
 										  isc_db_handle *,
 										  short,
-										  char *);
+										  const char*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_array_gen_sdl(ISC_STATUS *,
-										ISC_ARRAY_DESC *,
+										const ISC_ARRAY_DESC*,
 										short *,
 										char *,
 										short *);
@@ -34,47 +34,47 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_array_get_slice(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
+										  const ISC_ARRAY_DESC*,
 										  void *,
 										  ISC_LONG *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_array_lookup_bounds(ISC_STATUS *,
 											  isc_db_handle *,
 											  isc_tr_handle *,
-											  char *,
-											  char *,
+											  const char*,
+											  const char*,
 											  ISC_ARRAY_DESC *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_array_lookup_desc(ISC_STATUS *,
 											isc_db_handle *,
 											isc_tr_handle *,
-											char *,
-											char *,
+											const char*,
+											const char*,
 											ISC_ARRAY_DESC *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_array_set_desc(ISC_STATUS *,
-										 char *,
-										 char *,
-										 short *,
-										 short *,
-										 short *,
+										 const char*,
+										 const char*,
+										 const short*,
+										 const short*,
+										 const short*,
 										 ISC_ARRAY_DESC *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_array_put_slice(ISC_STATUS *,
 										  isc_db_handle *,
 										  isc_tr_handle *,
 										  ISC_QUAD *,
-										  ISC_ARRAY_DESC *,
+										  const ISC_ARRAY_DESC*,
 										  void *,
 										  ISC_LONG *);
 
 typedef void ISC_EXPORT prototype_isc_blob_default_desc(ISC_BLOB_DESC *,
-									  unsigned char *,
-									  unsigned char *);
+									  const unsigned char*,
+									  const unsigned char*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_blob_gen_bpb(ISC_STATUS *,
-									   ISC_BLOB_DESC *,
-									   ISC_BLOB_DESC *,
+									   const ISC_BLOB_DESC*,
+									   const ISC_BLOB_DESC*,
 									   unsigned short,
 									   unsigned char *,
 									   unsigned short *);
@@ -82,21 +82,21 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_blob_gen_bpb(ISC_STATUS *,
 typedef ISC_STATUS ISC_EXPORT prototype_isc_blob_info(ISC_STATUS *,
 									isc_blob_handle *,
 									short,
-									char *,
+									const char*,
 									short,
 									char *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_blob_lookup_desc(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
-										   unsigned char *,
-										   unsigned char *,
+										   const unsigned char*,
+										   const unsigned char*,
 										   ISC_BLOB_DESC *,
 										   unsigned char *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_blob_set_desc(ISC_STATUS *,
-										unsigned char *,
-										unsigned char *,
+										const unsigned char*,
+										const unsigned char*,
 										short,
 										short,
 										short,
@@ -130,33 +130,33 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_create_blob2(ISC_STATUS *,
 									   isc_blob_handle *,
 									   ISC_QUAD *,
 									   short,
-									   char *);
+									   const char*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_create_database(ISC_STATUS *,
 										  short,
-										  char *,
+										  const char*,
 										  isc_db_handle *,
 										  short,
-										  char *,
+										  const char*,
 										  short);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_database_info(ISC_STATUS *,
 										isc_db_handle *,
 										short,
-										char *,
+										const char*,
 										short,
 										char *);
 
-typedef void ISC_EXPORT prototype_isc_decode_date(ISC_QUAD *,
+typedef void ISC_EXPORT prototype_isc_decode_date(const ISC_QUAD*,
 								void *);
 
-typedef void ISC_EXPORT prototype_isc_decode_sql_date(ISC_DATE *,
+typedef void ISC_EXPORT prototype_isc_decode_sql_date(const ISC_DATE*,
 									void *);
 
-typedef void ISC_EXPORT prototype_isc_decode_sql_time(ISC_TIME *,
+typedef void ISC_EXPORT prototype_isc_decode_sql_time(const ISC_TIME*,
 									void *);
 
-typedef void ISC_EXPORT prototype_isc_decode_timestamp(ISC_TIMESTAMP *,
+typedef void ISC_EXPORT prototype_isc_decode_timestamp(const ISC_TIMESTAMP*,
 									 void *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_detach_database(ISC_STATUS *,
@@ -187,7 +187,7 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_exec_immed2(ISC_STATUS *,
 										   isc_db_handle *,
 										   isc_tr_handle *,
 										   unsigned short,
-										   char *,
+										   const char*,
 										   unsigned short,
 										   XSQLDA *,
 										   XSQLDA *);
@@ -209,7 +209,7 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_execute_immediate(ISC_STATUS *,
 												 isc_db_handle *,
 												 isc_tr_handle *,
 												 unsigned short,
-												 char *,
+												 const char*,
 												 unsigned short,
 												 XSQLDA *);
 
@@ -233,32 +233,32 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_prepare(ISC_STATUS *,
 									   isc_tr_handle *,
 									   isc_stmt_handle *,
 									   unsigned short,
-									   char *,
+									   const char*,
 									   unsigned short,
 									   XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_set_cursor_name(ISC_STATUS *,
 											   isc_stmt_handle *,
-											   char *,
+											   const char*,
 											   unsigned short);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_sql_info(ISC_STATUS *,
 										isc_stmt_handle *,
 										short,
-										const char *,
+										const char*,
 										short,
 										char *);
 
-typedef void ISC_EXPORT prototype_isc_encode_date(void *,
+typedef void ISC_EXPORT prototype_isc_encode_date(const void*,
 								ISC_QUAD *);
 
-typedef void ISC_EXPORT prototype_isc_encode_sql_date(void *,
+typedef void ISC_EXPORT prototype_isc_encode_sql_date(const void*,
 									ISC_DATE *);
 
-typedef void ISC_EXPORT prototype_isc_encode_sql_time(void *,
+typedef void ISC_EXPORT prototype_isc_encode_sql_time(const void*,
 									ISC_TIME *);
 
-typedef void ISC_EXPORT prototype_isc_encode_timestamp(void *,
+typedef void ISC_EXPORT prototype_isc_encode_timestamp(const void*,
 									 ISC_TIMESTAMP *);
 
 typedef ISC_LONG ISC_EXPORT_VARARG prototype_isc_event_block(char * *,
@@ -268,7 +268,7 @@ typedef ISC_LONG ISC_EXPORT_VARARG prototype_isc_event_block(char * *,
 typedef void ISC_EXPORT prototype_isc_event_counts(ISC_ULONG *,
 								 short,
 								 char *,
-								 char *);
+								 const char*);
 
 /* 17 May 2001 - isc_expand_dpb is DEPRECATED */
 typedef void ISC_EXPORT_VARARG prototype_isc_expand_dpb(char * *,
@@ -277,7 +277,7 @@ typedef void ISC_EXPORT_VARARG prototype_isc_expand_dpb(char * *,
 typedef int ISC_EXPORT prototype_isc_modify_dpb(char * *,
 							  short *,
 							  unsigned short,
-							  char *,
+							  const char*,
 							  short);
 
 typedef ISC_LONG ISC_EXPORT prototype_isc_free(char *);
@@ -293,9 +293,9 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_get_slice(ISC_STATUS *,
 									isc_tr_handle *,
 									ISC_QUAD *,
 									short,
-									char *,
+									const char*,
 									short,
-									ISC_LONG *,
+									const ISC_LONG*,
 									ISC_LONG,
 									void *,
 									ISC_LONG *);
@@ -315,31 +315,31 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_open_blob2(ISC_STATUS *,
 									 isc_blob_handle *,
 									 ISC_QUAD *,
 									 ISC_USHORT,
-									 ISC_UCHAR *);
+									 const ISC_UCHAR*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_prepare_transaction2(ISC_STATUS *,
 											   isc_tr_handle *,
 											   ISC_USHORT,
-											   ISC_UCHAR *);
+											   const ISC_UCHAR*);
 
 typedef void ISC_EXPORT prototype_isc_print_sqlerror(ISC_SHORT,
-								   ISC_STATUS *);
+								   const ISC_STATUS*);
 
-typedef ISC_STATUS ISC_EXPORT prototype_isc_print_status(ISC_STATUS *);
+typedef ISC_STATUS ISC_EXPORT prototype_isc_print_status(const ISC_STATUS*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_put_segment(ISC_STATUS *,
 									  isc_blob_handle *,
 									  unsigned short,
-									  char *);
+									  const char*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_put_slice(ISC_STATUS *,
 									isc_db_handle *,
 									isc_tr_handle *,
 									ISC_QUAD *,
 									short,
-									char *,
+									const char*,
 									short,
-									ISC_LONG *,
+									const ISC_LONG*,
 									ISC_LONG,
 									void *);
 
@@ -347,7 +347,7 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_que_events(ISC_STATUS *,
 									 isc_db_handle *,
 									 ISC_LONG *,
 									 ISC_USHORT,
-									 ISC_UCHAR *,
+									 const ISC_UCHAR*,
 									 isc_callback,
 									 void *);
 
@@ -370,9 +370,9 @@ typedef ISC_STATUS ISC_EXPORT_VARARG prototype_isc_reconnect_transaction(ISC_STA
                                                    isc_db_handle *,
                                                    isc_tr_handle *,
                                                    short, 
-                                                   char*);
+                                                   const char*);
 
-typedef ISC_LONG ISC_EXPORT prototype_isc_sqlcode(ISC_STATUS *);
+typedef ISC_LONG ISC_EXPORT prototype_isc_sqlcode(const ISC_STATUS*);
 
 typedef void ISC_EXPORT prototype_isc_sql_interprete(short,
 								   char *,
@@ -381,7 +381,7 @@ typedef void ISC_EXPORT prototype_isc_sql_interprete(short,
 typedef ISC_STATUS ISC_EXPORT prototype_isc_transaction_info(ISC_STATUS *,
 										   isc_tr_handle *,
 										   short,
-										   char *,
+										   const char*,
 										   short,
 										   char *);
 
@@ -395,10 +395,10 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_transact_request(ISC_STATUS *,
 										   unsigned short,
 										   char *);
 
-typedef ISC_LONG ISC_EXPORT prototype_isc_vax_integer(char *,
+typedef ISC_LONG ISC_EXPORT prototype_isc_vax_integer(const char*,
 									short);
 
-typedef ISC_INT64 ISC_EXPORT prototype_isc_portable_integer(unsigned char *,
+typedef ISC_INT64 ISC_EXPORT prototype_isc_portable_integer(const unsigned char*,
 										  short);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_seek_blob(ISC_STATUS *,
@@ -411,10 +411,10 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_seek_blob(ISC_STATUS *,
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_service_attach(ISC_STATUS *,
 										 unsigned short,
-										 char *,
+										 const char*,
 										 isc_svc_handle *,
 										 unsigned short,
-										 char *);
+										 const char*);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_service_detach(ISC_STATUS *,
 										 isc_svc_handle *);
@@ -423,9 +423,9 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_service_query(ISC_STATUS *,
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
-										char *,
+										const char*,
 										unsigned short,
 										char *);
 
@@ -433,7 +433,7 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_service_start(ISC_STATUS *,
 										isc_svc_handle *,
 										isc_resv_handle *,
 										unsigned short,
-										char *);
+										const char*);
 
 struct FirebirdApiPointers
 {

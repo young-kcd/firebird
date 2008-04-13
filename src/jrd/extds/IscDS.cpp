@@ -164,8 +164,9 @@ void IscConnection::attach(thread_db *tdbb, const string &dbName, const string &
 	ISC_STATUS_ARRAY status = {0};
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		m_iscProvider.isc_attach_database(status, m_dbName.length(), (char*) m_dbName.c_str(), 
-			&m_handle, m_dpb.getBufferLength(), (char*) m_dpb.getBuffer());
+		m_iscProvider.isc_attach_database(status, m_dbName.length(), m_dbName.c_str(),
+			&m_handle, m_dpb.getBufferLength(),
+			reinterpret_cast<const char*>(m_dpb.getBuffer()));
 	}
 	if (status[1]) {
 		raise(status, tdbb, "attach");
@@ -175,7 +176,7 @@ void IscConnection::attach(thread_db *tdbb, const string &dbName, const string &
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 		
-		char info[] = {isc_info_db_sql_dialect, isc_info_end};
+		const char info[] = {isc_info_db_sql_dialect, isc_info_end};
 		m_iscProvider.isc_database_info(status, &m_handle, sizeof(info), info, sizeof(buff), buff);
 	}
 	if (status[1]) {
@@ -368,7 +369,7 @@ void IscStatement::doPrepare(thread_db *tdbb, const string &sql)
 
 		if (!sWhereError) {
 			if (m_iscProvider.isc_dsql_prepare(status, &h_tran, &m_handle, sql.length(), 
-				(char*) sql.c_str(), m_connection.getSqlDialect(), m_out_xsqlda)) 
+				sql.c_str(), m_connection.getSqlDialect(), m_out_xsqlda))
 			{
 				sWhereError = "isc_dsql_prepare";
 			}
@@ -571,7 +572,7 @@ IscBlob::~IscBlob()
 	fb_assert(!m_handle);
 }
 
-void IscBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCharBuffer *bpb)
+void IscBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_handle);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
@@ -586,7 +587,7 @@ void IscBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCharBuf
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
 
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
-		ISC_UCHAR *bpb_buff = bpb ? bpb->begin() : NULL;
+		const ISC_UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		m_iscProvider.isc_open_blob2(status, &h_db, &h_tran, &m_handle, &m_blob_id, 
 			bpb_len, bpb_buff);
@@ -597,7 +598,7 @@ void IscBlob::open(thread_db *tdbb, Transaction &tran, const dsc &desc, UCharBuf
 	fb_assert(m_handle);
 }
 
-void IscBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, UCharBuffer *bpb)
+void IscBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, const UCharBuffer* bpb)
 {
 	fb_assert(!m_handle);
 	fb_assert(sizeof(m_blob_id) == desc.dsc_length);
@@ -610,7 +611,7 @@ void IscBlob::create(thread_db *tdbb, Transaction &tran, dsc &desc, UCharBuffer 
 		EngineCallbackGuard guard(tdbb, m_iscConnection);
 
 		short bpb_len = bpb ? bpb->getCount() : 0;
-		char *bpb_buff = bpb ? (char*) bpb->begin() : NULL;
+		const char* bpb_buff = bpb ? reinterpret_cast<const char*>(bpb->begin()) : NULL;
 
 		m_iscProvider.isc_create_blob2(status, &h_db, &h_tran, &m_handle, &m_blob_id, 
 			bpb_len, bpb_buff);
@@ -644,7 +645,7 @@ USHORT IscBlob::read(thread_db *tdbb, char *buff, USHORT len)
 	return result;
 }
 
-void IscBlob::write(thread_db *tdbb, char *buff, USHORT len)
+void IscBlob::write(thread_db *tdbb, const char* buff, USHORT len)
 {
 	fb_assert(m_handle);
 
@@ -703,8 +704,8 @@ ISC_STATUS IscProvider::notImplemented(ISC_STATUS* status) const
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(ISC_STATUS *user_status, 
-	short file_length, char *file_name, isc_db_handle *public_handle, 
-	short dpb_length, char *dpb)
+	short file_length, const char* file_name, isc_db_handle *public_handle,
+	short dpb_length, const char* dpb)
 {
 	if (!m_api.isc_attach_database)
 		return notImplemented(user_status);
@@ -714,7 +715,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(ISC_STATUS *user_status,
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_array_gen_sdl(ISC_STATUS *user_status,
-	ISC_ARRAY_DESC *, short *, char *, short *)
+	const ISC_ARRAY_DESC*, short *, char *, short *)
 {
 	return notImplemented(user_status);
 }
@@ -723,7 +724,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_array_get_slice(ISC_STATUS *user_status,
 									  isc_db_handle *,
 									  isc_tr_handle *,
 									  ISC_QUAD *,
-									  ISC_ARRAY_DESC *,
+									  const ISC_ARRAY_DESC*,
 									  void *,
 									  ISC_LONG *)
 {
@@ -733,8 +734,8 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_array_get_slice(ISC_STATUS *user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_array_lookup_bounds(ISC_STATUS *user_status,
 										  isc_db_handle *,
 										  isc_tr_handle *,
-										  char *,
-										  char *,
+										  const char*,
+										  const char*,
 										  ISC_ARRAY_DESC *)
 {
 	return notImplemented(user_status);
@@ -743,19 +744,19 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_array_lookup_bounds(ISC_STATUS *user_stat
 ISC_STATUS ISC_EXPORT IscProvider::isc_array_lookup_desc(ISC_STATUS *user_status,
 										isc_db_handle *,
 										isc_tr_handle *,
-										char *,
-										char *,
+										const char*,
+										const char*,
 										ISC_ARRAY_DESC *)
 {
 	return notImplemented(user_status);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_array_set_desc(ISC_STATUS *user_status,
-									 char *,
-									 char *,
-									 short *,
-									 short *,
-									 short *,
+									 const char*,
+									 const char*,
+									 const short*,
+									 const short*,
+									 const short*,
 									 ISC_ARRAY_DESC *)
 {
 	return notImplemented(user_status);
@@ -765,7 +766,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_array_put_slice(ISC_STATUS *user_status,
 									  isc_db_handle *,
 									  isc_tr_handle *,
 									  ISC_QUAD *,
-									  ISC_ARRAY_DESC *,
+									  const ISC_ARRAY_DESC*,
 									  void *,
 									  ISC_LONG *)
 {
@@ -773,15 +774,15 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_array_put_slice(ISC_STATUS *user_status,
 }
 
 void ISC_EXPORT IscProvider::isc_blob_default_desc(ISC_BLOB_DESC *,
-								  unsigned char *,
-								  unsigned char *)
+								  const unsigned char*,
+								  const unsigned char*)
 {
 	return;
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_blob_gen_bpb(ISC_STATUS *user_status,
-								   ISC_BLOB_DESC *,
-								   ISC_BLOB_DESC *,
+								   const ISC_BLOB_DESC*,
+								   const ISC_BLOB_DESC*,
 								   unsigned short,
 								   unsigned char *,
 								   unsigned short *)
@@ -792,7 +793,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_blob_gen_bpb(ISC_STATUS *user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_blob_info(ISC_STATUS *user_status,
 								isc_blob_handle *blob_handle,
 								short item_length,
-								char *items,
+								const char* items,
 								short buffer_length,
 								char *buffer)
 {
@@ -806,8 +807,8 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_blob_info(ISC_STATUS *user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_blob_lookup_desc(ISC_STATUS *user_status,
 									   isc_db_handle *,
 									   isc_tr_handle *,
-									   unsigned char *,
-									   unsigned char *,
+									   const unsigned char*,
+									   const unsigned char*,
 									   ISC_BLOB_DESC *,
 									   unsigned char *)
 {
@@ -815,8 +816,8 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_blob_lookup_desc(ISC_STATUS *user_status,
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_blob_set_desc(ISC_STATUS *user_status,
-									unsigned char *,
-									unsigned char *,
+									const unsigned char*,
+									const unsigned char*,
 									short,
 									short,
 									short,
@@ -887,7 +888,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_create_blob2(ISC_STATUS *user_status,
 								  isc_blob_handle *blob_handle,
 								  ISC_QUAD *blob_id,
 								  short bpb_length,
-								  char *bpb)
+								  const char* bpb)
 {
 	if (!m_api.isc_create_blob2)
 		return notImplemented(user_status);
@@ -898,10 +899,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_create_blob2(ISC_STATUS *user_status,
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_create_database(ISC_STATUS *user_status,
 									  short,
-									  char *,
+									  const char*,
 									  isc_db_handle *,
 									  short,
-									  char *,
+									  const char*,
 									  short)
 {
 	return notImplemented(user_status);
@@ -910,7 +911,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_create_database(ISC_STATUS *user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_database_info(ISC_STATUS *user_status,
 									isc_db_handle *db_handle,
 									short info_len,
-									char *info,
+									const char* info,
 									short res_len,
 									char *res)
 {
@@ -921,25 +922,25 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_database_info(ISC_STATUS *user_status,
 			info_len, info, res_len, res);
 }
 
-void ISC_EXPORT IscProvider::isc_decode_date(ISC_QUAD *,
+void ISC_EXPORT IscProvider::isc_decode_date(const ISC_QUAD*,
 							void *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_decode_sql_date(ISC_DATE *,
+void ISC_EXPORT IscProvider::isc_decode_sql_date(const ISC_DATE*,
 								void *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_decode_sql_time(ISC_TIME *,
+void ISC_EXPORT IscProvider::isc_decode_sql_time(const ISC_TIME*,
 								void *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_decode_timestamp(ISC_TIMESTAMP *,
+void ISC_EXPORT IscProvider::isc_decode_timestamp(const ISC_TIMESTAMP*,
 								 void *)
 {
 	return;
@@ -1000,7 +1001,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_exec_immed2(ISC_STATUS *user_status,
 									   isc_db_handle *,
 									   isc_tr_handle *,
 									   unsigned short,
-									   char *,
+									   const char*,
 									   unsigned short,
 									   XSQLDA *,
 									   XSQLDA *)
@@ -1033,7 +1034,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute_immediate(ISC_STATUS *user_s
 											 isc_db_handle *,
 											 isc_tr_handle *,
 											 unsigned short,
-											 char *,
+											 const char*,
 											 unsigned short,
 											 XSQLDA *)
 {
@@ -1073,7 +1074,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_insert(ISC_STATUS *user_status,
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_prepare(ISC_STATUS *user_status,
 	isc_tr_handle *tra_handle, isc_stmt_handle *stmt_handle, unsigned short length,
-	char *str, unsigned short dialect, XSQLDA *sqlda)
+	const char* str, unsigned short dialect, XSQLDA *sqlda)
 {
 	if (!m_api.isc_dsql_prepare)
 		return notImplemented(user_status);
@@ -1084,14 +1085,14 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_prepare(ISC_STATUS *user_status,
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_set_cursor_name(ISC_STATUS *user_status,
 										   isc_stmt_handle *,
-										   char *,
+										   const char*,
 										   unsigned short)
 {
 	return notImplemented(user_status);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_sql_info(ISC_STATUS *user_status,
-	isc_stmt_handle *stmt_handle, short items_len, const char *items, 
+	isc_stmt_handle *stmt_handle, short items_len, const char* items,
 	short buffer_len, char *buffer)
 {
 	if (!m_api.isc_dsql_sql_info)
@@ -1101,25 +1102,25 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_sql_info(ISC_STATUS *user_status,
 				buffer_len, buffer);
 }
 
-void ISC_EXPORT IscProvider::isc_encode_date(void *,
+void ISC_EXPORT IscProvider::isc_encode_date(const void*,
 							ISC_QUAD *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_encode_sql_date(void *,
+void ISC_EXPORT IscProvider::isc_encode_sql_date(const void*,
 								ISC_DATE *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_encode_sql_time(void *,
+void ISC_EXPORT IscProvider::isc_encode_sql_time(const void*,
 								ISC_TIME *)
 {
 	return;
 }
 
-void ISC_EXPORT IscProvider::isc_encode_timestamp(void *,
+void ISC_EXPORT IscProvider::isc_encode_timestamp(const void*,
 								 ISC_TIMESTAMP *)
 {
 	return;
@@ -1135,7 +1136,7 @@ ISC_LONG ISC_EXPORT_VARARG IscProvider::isc_event_block(char * *,
 void ISC_EXPORT IscProvider::isc_event_counts(ISC_ULONG *,
 							 short,
 							 char *,
-							 char *)
+							 const char*)
 {
 	return;
 }
@@ -1150,7 +1151,7 @@ void ISC_EXPORT_VARARG IscProvider::isc_expand_dpb(char * *,
 int ISC_EXPORT IscProvider::isc_modify_dpb(char * *,
 						  short *,
 						  unsigned short,
-						  char *,
+						  const char*,
 						  short)
 {
 	return 0;
@@ -1179,9 +1180,9 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_get_slice(ISC_STATUS *user_status,
 								isc_tr_handle *,
 								ISC_QUAD *,
 								short,
-								char *,
+								const char*,
 								short,
-								ISC_LONG *,
+								const ISC_LONG*,
 								ISC_LONG,
 								void *,
 								ISC_LONG *)
@@ -1214,7 +1215,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_open_blob2(ISC_STATUS *user_status,
 								isc_blob_handle *blob_handle,
 								ISC_QUAD *blob_id,
 								ISC_USHORT bpb_length,
-								ISC_UCHAR *bpb)
+								const ISC_UCHAR* bpb)
 {
 	if (!m_api.isc_open_blob2)
 		return notImplemented(user_status);
@@ -1226,18 +1227,18 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_open_blob2(ISC_STATUS *user_status,
 ISC_STATUS ISC_EXPORT IscProvider::isc_prepare_transaction2(ISC_STATUS *user_status,
 										   isc_tr_handle *,
 										   ISC_USHORT,
-										   ISC_UCHAR *)
+										   const ISC_UCHAR*)
 {
 	return notImplemented(user_status);
 }
 
 void ISC_EXPORT IscProvider::isc_print_sqlerror(ISC_SHORT,
-							   ISC_STATUS *)
+							   const ISC_STATUS*)
 {
 	return;
 }
 
-ISC_STATUS ISC_EXPORT IscProvider::isc_print_status(ISC_STATUS *)
+ISC_STATUS ISC_EXPORT IscProvider::isc_print_status(const ISC_STATUS*)
 {
 	return isc_unavailable;
 }
@@ -1245,7 +1246,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_print_status(ISC_STATUS *)
 ISC_STATUS ISC_EXPORT IscProvider::isc_put_segment(ISC_STATUS *user_status,
 								  isc_blob_handle *blob_handle,
 								  unsigned short buffer_length,
-								  char *buffer)
+								  const char* buffer)
 {
 	if (!m_api.isc_put_segment)
 		return notImplemented(user_status);
@@ -1259,9 +1260,9 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_put_slice(ISC_STATUS *user_status,
 								isc_tr_handle *,
 								ISC_QUAD *,
 								short,
-								char *,
+								const char*,
 								short,
-								ISC_LONG *,
+								const ISC_LONG*,
 								ISC_LONG,
 								void *)
 {
@@ -1272,7 +1273,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_que_events(ISC_STATUS *user_status,
 								 isc_db_handle *,
 								 ISC_LONG *,
 								 ISC_USHORT,
-								 ISC_UCHAR *,
+								 const ISC_UCHAR*,
 								 isc_callback,
 								 void *)
 {
@@ -1344,12 +1345,12 @@ ISC_STATUS ISC_EXPORT_VARARG IscProvider::isc_reconnect_transaction(ISC_STATUS *
                                                isc_db_handle *,
                                                isc_tr_handle *,
                                                short, 
-                                               char*)
+                                               const char*)
 {
 	return notImplemented(user_status);
 }
 
-ISC_LONG ISC_EXPORT IscProvider::isc_sqlcode(ISC_STATUS *)
+ISC_LONG ISC_EXPORT IscProvider::isc_sqlcode(const ISC_STATUS*)
 {
 	return isc_unavailable;
 }
@@ -1364,7 +1365,7 @@ void ISC_EXPORT IscProvider::isc_sql_interprete(short,
 ISC_STATUS ISC_EXPORT IscProvider::isc_transaction_info(ISC_STATUS *user_status,
 									   isc_tr_handle *,
 									   short,
-									   char *,
+									   const char*,
 									   short,
 									   char *)
 {
@@ -1384,12 +1385,12 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_transact_request(ISC_STATUS *user_status,
 	return notImplemented(user_status);
 }
 
-ISC_LONG ISC_EXPORT IscProvider::isc_vax_integer(const char *p, short len)
+ISC_LONG ISC_EXPORT IscProvider::isc_vax_integer(const char* p, short len)
 {
 	return ::isc_vax_integer(p, len);
 }
 
-ISC_INT64 ISC_EXPORT IscProvider::isc_portable_integer(const unsigned char *p, short len)
+ISC_INT64 ISC_EXPORT IscProvider::isc_portable_integer(const unsigned char* p, short len)
 {
 	return ::isc_portable_integer(p, len);
 }
@@ -1405,10 +1406,10 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_seek_blob(ISC_STATUS *user_status,
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_service_attach(ISC_STATUS *user_status,
 									 unsigned short,
-									 char *,
+									 const char*,
 									 isc_svc_handle *,
 									 unsigned short,
-									 char *)
+									 const char*)
 {
 	return notImplemented(user_status);
 }
@@ -1423,9 +1424,9 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_service_query(ISC_STATUS *user_status,
 									isc_svc_handle *,
 									isc_resv_handle *,
 									unsigned short,
-									char *,
+									const char*,
 									unsigned short,
-									char *,
+									const char*,
 									unsigned short,
 									char *)
 {
@@ -1436,7 +1437,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_service_start(ISC_STATUS *user_status,
 									isc_svc_handle *,
 									isc_resv_handle *,
 									unsigned short,
-									char *)
+									const char*)
 {
 	return notImplemented(user_status);
 }
