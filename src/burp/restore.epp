@@ -2124,7 +2124,6 @@ bool get_character_set(BurpGlobals* tdgbl)
 			{
 				switch (attribute)
 				{
-
 				case att_charset_name:
 					X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$CHARACTER_SET_NAME);
@@ -7629,6 +7628,7 @@ bool restore(BurpGlobals*	tdgbl,
 				if (tdgbl->defaultCollations[i].first == CS.RDB$CHARACTER_SET_NAME)
 				{
 					MODIFY CS;
+						CS.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
 						strcpy(CS.RDB$DEFAULT_COLLATE_NAME,
 							tdgbl->defaultCollations[i].second.c_str());
 					END_MODIFY;

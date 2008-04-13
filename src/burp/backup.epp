@@ -2634,7 +2634,7 @@ void write_character_sets(void)
 			put_numeric (att_charset_id, X.RDB$CHARACTER_SET_ID);
 			if (X.RDB$SYSTEM_FLAG)
 				put_numeric (att_charset_sysflag, X.RDB$SYSTEM_FLAG);
-			if (!X.RDB$DESCRIPTION.NULL)	//// TOFIX: mover para fora do IF
+			if (!X.RDB$DESCRIPTION.NULL)
 			{
 				put_source_blob (att_charset_description, att_charset_description,
 					X.RDB$DESCRIPTION);

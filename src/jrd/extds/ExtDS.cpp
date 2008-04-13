@@ -188,6 +188,7 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
 	conn.detach(tdbb);
+
 	size_t pos;
 	if (m_connections.find(&conn, pos))
 	{
@@ -195,6 +196,7 @@ void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPoo
 		Connection::deleteConnection(tdbb, &conn);
 		return;
 	}
+
 	fb_assert(false);
 }
 
@@ -662,8 +664,8 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 	m_sql.trim();
 }
 
-void Statement::execute(thread_db *tdbb, Transaction *tran, int in_count, 
-	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod **out_params)
+void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count, 
+	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
@@ -675,7 +677,7 @@ void Statement::execute(thread_db *tdbb, Transaction *tran, int in_count,
 	getOutParams(tdbb, out_count, out_params);
 }
 
-void Statement::open(thread_db *tdbb, Transaction *tran, int in_count, 
+void Statement::open(thread_db* tdbb, Transaction* tran, int in_count, 
 	const string* const* in_names, jrd_nod** in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
@@ -778,14 +780,14 @@ static TokenType getToken(const char **begin, const char *end)
 
 	case '\'':
 	case '"':
-	{
 		while (p < end)
+		{
 			if (*p++ == c) {
 				ret = ttString;
 				break;
 			}
-	}
-	break;
+		}
+		break;
 	
 	case '/':
 		if (p < end && *p == '*') 
@@ -803,7 +805,7 @@ static TokenType getToken(const char **begin, const char *end)
 		else {
 			ret = ttOther;
 		}
-	break;
+		break;
 
 	case '-':
 		if (p < end && *p == '-') {
@@ -818,7 +820,7 @@ static TokenType getToken(const char **begin, const char *end)
 		else {
 			ret = ttOther;
 		}
-	break;
+		break;
 
 	default:
 		if (classes(c) & CHR_DIGIT)
@@ -980,7 +982,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db *tdbb, int count, const string* const* names, jrd_nod** params)
+void Statement::setInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	m_error = (names && (m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1024,7 +1026,7 @@ void Statement::setInParams(thread_db *tdbb, int count, const string* const* nam
 	}
 }
 
-void Statement::doSetInParams(thread_db *tdbb, int count, const string* const* names, jrd_nod** params)
+void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	if (count != getInputs()) 
 	{

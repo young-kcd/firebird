@@ -500,7 +500,7 @@ USHORT InternalBlob::read(thread_db *tdbb, char *buff, USHORT len)
 	return result;
 }
 
-void InternalBlob::write(thread_db *tdbb, const char* buff, USHORT len)
+void InternalBlob::write(thread_db* tdbb, const char* buff, USHORT len)
 {
 	fb_assert(m_blob);
 

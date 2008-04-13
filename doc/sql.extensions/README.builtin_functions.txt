@@ -282,7 +282,7 @@ Notes:
     1) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
     2) YEAR, MONTH and DAY could not be used with time values.
     3) All timestamp_part values could be used with timestamp values.
-    4) When using hour, minute, second and millisecond for dateAdd and dates, the quantity added or
+    4) When using hour, minute, second and millisecond for DATEADD and dates, the quantity added or
         substracted should account at least for one day to produce effect (IE adding 23 hours to a date
         doesn't increment it).
 

@@ -330,17 +330,17 @@ blb* BLB_create2(thread_db* tdbb,
 
 	if (filter_required) {
 		BLF_create_blob(tdbb,
-							transaction,
-							&blob->blb_filter,
-							blob_id,
-							bpb_length,
-							bpb,
-							// CVC: This cast is very suspicious to me.
-							// We have to research if seek really gets params
-							// from the control struct instead. Maybe y-valve has a special case.
-							// Otherwise, blob_filter's sig would be like any filter.
-							reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-							filter);
+						transaction,
+						&blob->blb_filter,
+						blob_id,
+						bpb_length,
+						bpb,
+						// CVC: This cast is very suspicious to me.
+						// We have to research if seek really gets params
+						// from the control struct instead. Maybe y-valve has a special case.
+						// Otherwise, blob_filter's sig would be like any filter.
+						reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
+						filter);
 		blob->blb_flags |= BLB_temporary;
 		return blob;
 	}
@@ -1417,13 +1417,13 @@ blb* BLB_open2(thread_db* tdbb,
 	{
 		BlobControl* control = 0;
 		BLF_open_blob(tdbb,
-						  transaction,
-						  &control,
-						  blob_id,
-						  bpb_length,
-						  bpb,
-						  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
-						  filter);
+					  transaction,
+					  &control,
+					  blob_id,
+					  bpb_length,
+					  bpb,
+					  reinterpret_cast<FPTR_BFILTER_CALLBACK>(blob_filter),
+					  filter);
 		blob->blb_filter = control;
 		blob->blb_max_segment = control->ctl_max_segment;
 		blob->blb_count = control->ctl_number_segments;

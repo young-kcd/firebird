@@ -614,7 +614,7 @@ USHORT IscBlob::read(thread_db *tdbb, char *buff, USHORT len)
 	return result;
 }
 
-void IscBlob::write(thread_db *tdbb, const char* buff, USHORT len)
+void IscBlob::write(thread_db* tdbb, const char* buff, USHORT len)
 {
 	fb_assert(m_handle);
 
@@ -672,8 +672,8 @@ ISC_STATUS IscProvider::notImplemented(ISC_STATUS* status) const
 	return status[1];
 }
 
-ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(ISC_STATUS *user_status, 
-	short file_length, const char* file_name, isc_db_handle *public_handle,
+ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(ISC_STATUS* user_status, 
+	short file_length, const char* file_name, isc_db_handle* public_handle,
 	short dpb_length, const char* dpb)
 {
 	if (!m_api.isc_attach_database)
@@ -683,8 +683,8 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_attach_database(ISC_STATUS *user_status,
 			public_handle, dpb_length, dpb);
 }
 
-ISC_STATUS ISC_EXPORT IscProvider::isc_array_gen_sdl(ISC_STATUS *user_status,
-	const ISC_ARRAY_DESC*, short *, char *, short *)
+ISC_STATUS ISC_EXPORT IscProvider::isc_array_gen_sdl(ISC_STATUS* user_status,
+	const ISC_ARRAY_DESC*, short*, char*, short*)
 {
 	return notImplemented(user_status);
 }
