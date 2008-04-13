@@ -1,3 +1,96 @@
+2008-04-13 16:53  asfernandes
+
+	* firebird2/src/burp/restore.epp (1.136):
+
+	Fix BLOBs when using -FIX_FSS_DATA NONE
+
+2008-04-13 16:43  asfernandes
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.9):
+
+	Fix Linux build
+
+2008-04-13 16:38  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.15), src/burp/backup.epp (1.110), src/burp/burp.h (1.90),
+	src/burp/restore.epp (1.135), src/jrd/blb.cpp (1.165),
+	src/jrd/extds/ExtDS.cpp (1.8), src/jrd/extds/InternalDS.cpp (1.7),
+	src/jrd/extds/IscDS.cpp (1.8):
+
+	1) Misc 2) Remove temp. comment found by Claudio
+
+2008-04-13 12:03  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.7), ExtDS.h (1.8),
+	InternalDS.cpp (1.6), InternalDS.h (1.5), IscDS.cpp (1.7), IscDS.h
+	(1.6):
+
+	Corrections, noted by Claudio and Adriano : use Array::find, better
+	handling of broken comments inside statement text, make
+	getRemoteError cons, avoid problems with sqlTypeToDscType non
+	threadsafe initialization.
+
+2008-04-13 10:11  robocop
+
+	* firebird2/src/: jrd/extds/ExtDS.cpp (1.6), jrd/extds/ExtDS.h
+	(1.7), jrd/extds/InternalDS.cpp (1.5), jrd/extds/InternalDS.h
+	(1.4), jrd/extds/IscDS.cpp (1.6), jrd/extds/IscDS.h (1.5),
+	include/fb_api_proto.h (1.4):
+
+	Fix EXECUTE STATEMENT regarding the constness of the interface.
+
+2008-04-13 08:38  robocop
+
+	* firebird2/: src/jrd/event.h (1.22),
+	src/misc/upgrade/v2.1/metadata_charset.txt (1.3),
+	doc/sql.extensions/README.execute_statement2 (1.4), src/jrd/tra.cpp
+	(1.169):
+
+	Misc.
+
+2008-04-13 00:55  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.42):
+
+	Fixed CORE-1828 - Error with ABS in dialect 1
+
+2008-04-13 00:27  asfernandes
+
+	* firebird2/src/jrd/extds/: ExtDS.h (1.6), IscDS.cpp (1.5), IscDS.h
+	(1.4):
+
+	Fix warnings
+
+2008-04-13 00:26  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.371):
+
+	Use the collation defined in RDB$DEFAULT_COLLATE_NAME in strings
+	constants
+
+2008-04-12 23:19  hvlad
+
+	* firebird2/src/jrd/: exe.cpp (1.258), jrd.cpp (1.438),
+	extds/ExtDS.cpp (1.5), extds/ExtDS.h (1.5), extds/InternalDS.cpp
+	(1.4), extds/IscDS.cpp (1.4):
+
+	Make provider's registration not dependent from existance of
+	EDS::Manager instance. Noted by Adriano.
+
+2008-04-12 23:13  hvlad
+
+	* firebird2/doc/sql.extensions/README.execute_statement2 (1.3):
+
+	Update documentation.
+
+2008-04-12 23:12  hvlad
+
+	* firebird2/src/dsql/parse.y (1.268):
+
+	Make INTO clause of new EXECUTE STATEMENT consistent with other
+	statements - move it at last position. By agreement in fb-devel.
+
 2008-04-12 18:07  asfernandes
 
 	* firebird2/src/dsql/: errd.cpp (1.45), errd_proto.h (1.12),
