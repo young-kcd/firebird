@@ -14,14 +14,14 @@ Syntax and notes :
     [ON EXTERNAL [DATA SOURCE] <connection_string>]
     [AS USER <user_name>]
     [PASSWORD <password>]
-    [WITH AUTONOMOUS|COMMON TRANSACTION]
+    [WITH AUTONOMOUS | COMMON TRANSACTION]
     [INTO <variables>]
 
 - if you use both <query_text> and <input_parameters> then you must
     enclose <query_text> into round brackets, for example :
     EXECUTE STATEMENT (:sql) (p1 := 'abc', p2 := :second_param) ...
     
-- both named and not named input parameters is supported. Mix of named and not
+- both named and not named input parameters are supported. Mix of named and not
 	named input parameters in the same statement is not allowed.
 
 - syntax of named input parameters :
@@ -38,7 +38,7 @@ Syntax and notes :
 
 - <connection_string> is usual connection string accepted by isc_attach_database, 
     i.e. [<host_name><protocol_delimiter>]database_path.
-    
+
 - connection to the external data source is made using the same character set as
 	current (local) connection is used.
 
@@ -53,7 +53,7 @@ Syntax and notes :
 		a1) for current connection - CURRENT_USER is effective user account
 		a2) for local database - CURRENT_USER is effective user account
 		a3) for remote database - operating system account under which engine
-			process is currently runs is effective user account.
+			process is currently run is effective user account.
 	b) else only isc_dpb_user_name will be present in DPB and native autentication 
 		is performed.
 
@@ -64,8 +64,8 @@ Syntax and notes :
 - COMMON TRANSACTION started new transaction with the same parameters as current 
 	transaction or used already started transaction in this connection or used 
 	current transaction if current connection is used.
-    This transaction lifetime is bound to the lifetime of current (local) transaction 
-    and its commits\rolled back the same way as current transaction.
+	This transaction lifetime is bound to the lifetime of current (local) transaction 
+	and its commits\rolled back the same way as current transaction.
 
 - by default COMMON TRANSACTION is used
 
@@ -126,7 +126,7 @@ END
 
 a) Execute this block few times in the same transaction - it will
    create three new connections to the current database and reuse
-   it in every call. Transactions also reused.
+   it in every call. Transactions are also reused.
 
 EXECUTE BLOCK RETURNS (CONN INT, TRAN INT, DB VARCHAR(255))
 AS

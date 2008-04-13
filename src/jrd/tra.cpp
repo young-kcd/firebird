@@ -2689,7 +2689,7 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	ISC_STATUS_ARRAY status_vector = {0};
 	isc_db_handle db_handle = 0;
 
-	isc_attach_database(status_vector, 0, (char*)database,
+	isc_attach_database(status_vector, 0, (const char*) database,
 						&db_handle, dpb.getBufferLength(),
 						reinterpret_cast<const char*>(dpb.getBuffer()));
 
