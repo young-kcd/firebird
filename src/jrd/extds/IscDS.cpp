@@ -60,37 +60,12 @@ public:
 
 static RegisterFBProvider reg;
 
-const SSHORT sqlType[] =
-{
-/* dtype_unknown	*/ -1,
-/* dtype_text		*/ SQL_TEXT,
-/* dtype_cstring	*/ -1,
-/* dtype_varying	*/ SQL_VARYING,
-/* dtype_none1		*/ -1,
-/* dtype_none2		*/ -1,
-/* dtype_packed		*/ -1,
-/* dtype_byte		*/ -1,
-/* dtype_short		*/ SQL_SHORT,
-/* dtype_long		*/ SQL_LONG,
-/* dtype_quad		*/ SQL_QUAD,
-/* dtype_real		*/ SQL_FLOAT,
-/* dtype_double		*/ SQL_DOUBLE,
-/* dtype_d_float	*/ -1,				// Fix to use in VMS
-/* dtype_sql_date	*/ SQL_TYPE_DATE,
-/* dtype_sql_time	*/ SQL_TYPE_TIME,
-/* dtype_timestamp	*/ SQL_TIMESTAMP,
-/* dtype_blob		*/ SQL_BLOB,
-/* dtype_array		*/ SQL_ARRAY,		// Not supported for a while
-/* dtype_int64		*/ SQL_INT64
-};
-
-static InitInstance<GenericMap<Pair<NonPooled<SSHORT, UCHAR> > > > sqlTypeToDscType;
 static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &descs);
-
+static UCHAR sqlTypeToDscType(SSHORT sqlType);
 
 // 	IscProvider
 
-void IscProvider::getRemoteError(ISC_STATUS* status, string &err)
+void IscProvider::getRemoteError(ISC_STATUS* status, string &err) const
 {
 	err = "";
 
@@ -325,12 +300,6 @@ IscStatement::IscStatement(IscConnection &conn) :
 	m_in_xsqlda(NULL),
 	m_out_xsqlda(NULL)
 {
-	// initialize sqlTypeToDscType in the first call to this function
-	if (sqlTypeToDscType().count() == 0)
-	{
-		for (int i = 0; i < FB_NELEM(sqlType); ++i)
-			sqlTypeToDscType().put(sqlType[i], static_cast<UCHAR>(i));
-	}
 }
 
 IscStatement::~IscStatement()
@@ -1550,8 +1519,7 @@ static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &
 	XSQLVAR* xVar = xsqlda->sqlvar;
     for (; i < xsqlda->sqld; xVar++, i++)
 	{
-		UCHAR dtype;
-		sqlTypeToDscType().get((xVar->sqltype & ~1), dtype);
+		UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		xVar->sqltype |= 1;
 
 		if (type_alignments[dtype])
@@ -1575,9 +1543,7 @@ static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &
 	xVar = xsqlda->sqlvar;
     for (i = 0; i < xsqlda->sqld; xVar++, i++)
 	{
-		UCHAR dtype;
-		sqlTypeToDscType().get((xVar->sqltype & ~1), dtype);
-
+		UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		if (type_alignments[dtype])
 			offset = FB_ALIGN(offset, type_alignments[dtype]);
 
@@ -1607,5 +1573,59 @@ static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &
 		offset += sizeof(SSHORT);
 	}
 }
+
+
+static UCHAR sqlTypeToDscType(SSHORT sqlType)
+{
+	switch (sqlType)
+	{
+	case SQL_VARYING:
+		return dtype_varying;
+		break;
+	case SQL_TEXT:
+		return dtype_text;
+		break;
+	case SQL_DOUBLE:
+		return dtype_double;
+		break;
+	case SQL_FLOAT:
+		return dtype_real;
+		break;
+	case SQL_D_FLOAT:
+		return dtype_d_float;
+		break;
+	case SQL_TYPE_DATE:
+		return dtype_sql_date;
+		break;
+	case SQL_TYPE_TIME:
+		return dtype_sql_time;
+		break;
+	case SQL_TIMESTAMP:
+		return dtype_timestamp;
+		break;
+	case SQL_BLOB:
+		return dtype_blob;
+		break;
+	case SQL_ARRAY:
+		return dtype_array;
+		break;
+	case SQL_LONG:
+		return dtype_long;
+		break;
+	case SQL_SHORT:
+		return dtype_short;
+		break;
+	case SQL_INT64:
+		return dtype_int64;
+		break;
+	case SQL_QUAD:
+		return dtype_quad;
+		break;
+	default:
+		return dtype_unknown;
+	}
+}
+
+
 
 } // namespace EDS

@@ -106,7 +106,7 @@ public:
 	{ return m_flags; }
 
 	// Interprete status and put error description into passed string
-	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) = 0;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) const = 0;
 
 	static const Firebird::string* generate(const void*, const Provider* item) 
 	{ return &item->m_name; }

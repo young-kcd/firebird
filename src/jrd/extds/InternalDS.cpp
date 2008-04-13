@@ -78,7 +78,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db *tdbb, Attachment* att)
 	}
 }
 
-void InternalProvider::getRemoteError(ISC_STATUS* status, string &err)
+void InternalProvider::getRemoteError(ISC_STATUS* status, string &err) const 
 {
 	err = "";
 

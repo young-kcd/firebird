@@ -188,18 +188,14 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
 	conn.detach(tdbb);
-	Connection **ptr = m_connections.begin();
-	Connection **end = m_connections.end();
-
-	for (; ptr < end; ptr++)
+	size_t pos;
+	if (m_connections.find(&conn, pos))
 	{
-		if (*ptr == &conn)
-		{
-			m_connections.remove(ptr);
-			Connection::deleteConnection(tdbb, &conn);
-			return;
-		}
+		m_connections.remove(pos);
+		Connection::deleteConnection(tdbb, &conn);
+		return;
 	}
+	fb_assert(false);
 }
 
 void Provider::clearConnections(thread_db *tdbb)
@@ -258,17 +254,14 @@ Transaction* Connection::createTransaction()
 
 void Connection::deleteTransaction(Transaction *tran)
 {
-	Transaction **tran_ptr = m_transactions.begin();
-	Transaction **end = m_transactions.end();
-
-	for (; tran_ptr < end; tran_ptr++)
+	size_t pos;
+	if (m_transactions.find(tran, pos))
 	{
-		if (tran == *tran_ptr)
-		{
-			m_transactions.remove(tran_ptr);
-			delete tran;
-			break;
-		}
+		m_transactions.remove(pos);
+		delete tran;
+	}
+	else {
+		fb_assert(false);
 	}
 
 	if (!m_used_stmts && m_transactions.getCount() == 0 && !m_deleting)
@@ -317,17 +310,14 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 	}
 	else
 	{
-		Statement **stmt_ptr = m_statements.begin();
-		Statement **end = m_statements.end();
-
-		for (; stmt_ptr < end; stmt_ptr++)
+		size_t pos;
+		if (m_statements.find(stmt, pos))
 		{
-			if (stmt == *stmt_ptr)
-			{
-				m_statements.remove(stmt_ptr);
-				Statement::deleteStatement(tdbb, stmt);
-				break;
-			}
+			m_statements.remove(pos);
+			Statement::deleteStatement(tdbb, stmt);
+		}
+		else {
+			fb_assert(false);
 		}
 	}
 
@@ -771,7 +761,7 @@ void Statement::deallocate(thread_db *tdbb)
 }
 
 
-typedef enum {ttNone, ttWhite, ttComment, ttString, ttParamMark, ttIdent, ttOther} TokenType;
+typedef enum {ttNone, ttWhite, ttComment, ttBrokenComment, ttString, ttParamMark, ttIdent, ttOther} TokenType;
 
 static TokenType getToken(const char **begin, const char *end)
 {
@@ -789,9 +779,8 @@ static TokenType getToken(const char **begin, const char *end)
 	case '\'':
 	case '"':
 	{
-		const char q = c;
 		while (p < end)
-			if (*p++ == q) {
+			if (*p++ == c) {
 				ret = ttString;
 				break;
 			}
@@ -799,7 +788,10 @@ static TokenType getToken(const char **begin, const char *end)
 	break;
 	
 	case '/':
-		if (p < end && *p == '*') {
+		if (p < end && *p == '*') 
+		{
+			ret = ttBrokenComment;
+			p++;
 			while (p < end) {
 				if (*p++ == '*' && p < end && *p == '/') {
 					p++;
@@ -970,6 +962,15 @@ void Statement::preprocess(const string& sql, string& ret)
 		case ttOther:
 			ret += string(start, p - start);
 			break;
+
+		case ttBrokenComment:
+			{
+				Firebird::string s;
+				s = "Unclosed comment found near \"" + Firebird::string(start, min(16, end - start)) + "\"";
+				ERR_post(isc_random, isc_arg_string, ERR_string(s), isc_arg_end);
+			}
+			break;
+
 
 		case ttNone: 
 			ERR_post(isc_random, isc_arg_string, "parse error", 0);
