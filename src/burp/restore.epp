@@ -4080,10 +4080,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
-				!X.RDB$CHARACTER_LENGTH.NULL &&
-				(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying))
+				((!X.RDB$CHARACTER_LENGTH.NULL &&
+				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
+				 X.RDB$FIELD_TYPE == blr_blob))
 			{
-				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+				if (X.RDB$FIELD_TYPE != blr_blob)
+					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+
 				X.RDB$CHARACTER_SET_ID = CS_NONE;
 				X.RDB$COLLATION_ID = 0;
 			}
@@ -4416,10 +4419,13 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
 				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
-				!X.RDB$CHARACTER_LENGTH.NULL &&
-				(X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying))
+				((!X.RDB$CHARACTER_LENGTH.NULL &&
+				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
+				 X.RDB$FIELD_TYPE == blr_blob))
 			{
-				X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+				if (X.RDB$FIELD_TYPE != blr_blob)
+					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
+
 				X.RDB$CHARACTER_SET_ID = CS_NONE;
 				X.RDB$COLLATION_ID = 0;
 			}
