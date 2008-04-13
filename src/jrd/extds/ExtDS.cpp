@@ -968,7 +968,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		case ttBrokenComment:
 			{
 				Firebird::string s;
-				s = "Unclosed comment found near \"" + Firebird::string(start, min(16, end - start)) + "\"";
+				s = "Unclosed comment found near \"" + Firebird::string(start, MIN(16, end - start)) + "\"";
 				ERR_post(isc_random, isc_arg_string, ERR_string(s), isc_arg_end);
 			}
 			break;
