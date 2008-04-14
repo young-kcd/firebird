@@ -1,3 +1,72 @@
+2008-04-14 17:22  asfernandes
+
+	* firebird2/src/: dsql/parse.y (1.272), jrd/evl.cpp (1.259):
+
+	1) Fix another possible invalid memory access in parse.y and the
+	memcpy problem reported by valgrind 2) Misc
+
+2008-04-14 16:26  robocop
+
+	* firebird2/src/dsql/parse.y (1.271):
+
+	Minor cleanup.
+
+2008-04-14 15:35  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.270):
+
+	Hope this fix a problem detected by valgrind
+
+2008-04-14 15:21  robocop
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.17), src/jrd/SysFunction.cpp (1.44):
+
+	Enable WEEK for dateAdd and dateDiff.
+
+2008-04-14 15:01  robocop
+
+	* firebird2/src/dsql/: node.h (1.108), pass1.cpp (1.372):
+
+	Mark dead code.
+
+2008-04-14 13:08  robocop
+
+	* firebird2/: src/dsql/keywords.cpp (1.72), src/dsql/parse.y
+	(1.269), doc/sql.extensions/README.builtin_functions.txt (1.16),
+	src/jrd/SysFunction.cpp (1.43):
+
+	- Let BIN_AND, BIN_OR and BIN_XOR take two params as minimum.  -
+	Implement BIN_NOT.
+
+2008-04-14 11:45  alexpeshkoff
+
+	* firebird2/src/jrd/entry.h (1.33):
+
+	Implemented remote cancel operation call.
+
+2008-04-14 11:45  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.226), inter_proto.h (1.21),
+	interface.cpp (1.185), protocol.cpp (1.72), protocol.h (1.40),
+	remote.h (1.71), server.cpp (1.197):
+
+	Implemented remote cancel operation call. Switched to
+	PROTOCOL_VERSION12.
+
+2008-04-14 11:40  alexpeshkoff
+
+	* firebird2/configure.in (1.283):
+
+	cleanup
+
+2008-04-14 09:05  robocop
+
+	* firebird2/src/dsql/make.cpp (1.157):
+
+	Better fix for the "unnamed field" bug. Thanks to Adriano for
+	discovering a case that shouldn't be matched.
+
 2008-04-13 16:53  asfernandes
 
 	* firebird2/src/burp/restore.epp (1.136):
