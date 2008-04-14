@@ -155,8 +155,9 @@ static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
 static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPSEL
 static const int CLASS_LINUX_MIPS = 30;    // LINUX/MIPS
 static const int CLASS_DARWIN_X64 = 31;   // Darwin/x64
+static const int CLASS_SOLARIS_AMD64 = 32;	//Solaris/amd64
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_DARWIN_X64;
+static const int CLASS_MAX = CLASS_SOLARIS_AMD64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -243,14 +244,20 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_DARWIN_I386
 	archLittleEndian, // CLASS_LINUX_MIPSEL
 	archBigEndian,  // CLASS_LINUX_MIPS
-	archLittleEndian  // CLASS_DARWIN_X64
+	archLittleEndian,  // CLASS_DARWIN_X64
+	archLittleEndian  // CLASS_SOLARIS_AMD64
+
 };
 
 #ifdef sun
 #ifdef i386
 const SSHORT CLASS		= CLASS_SOLARIS_I386;
-#else
+#endif
+#ifdef sparc
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
+#endif
+#ifdef AMD64
+const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
 #endif
 #endif
 

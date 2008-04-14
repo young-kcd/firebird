@@ -115,7 +115,7 @@ typedef enum
 	arch_alliant	= 6,
 	arch_msdos		= 7,
 	arch_sun4		= 8,
-	arch_sun386		= 9,
+	arch_sunx86		= 9,
 	arch_hpux		= 10,
 	arch_hpmpexl	= 11,
 	arch_mac		= 12,

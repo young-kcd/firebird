@@ -213,6 +213,24 @@ dnl CPU_TYPE=x86_64
     RT_LIB_CHECK=true
     ;;
 
+  x86_64-pc-solaris*)
+    MAKEFILE_PREFIX=solx86gcc_64
+    INSTALL_PREFIX=solaris
+    PLATFORM=solx86
+    AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
+    AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
+    LOCK_MANAGER_FLG=N
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    PTHREAD_CFLAGS=-threads
+    PTHREAD_LIBS=-lthread
+    ICU_PLATFORM=SOLARISX86GCC
+    service_thread_CS=true
+    libdir=/usr/lib/amd64
+    CPU_TYPE=amd64
+    RT_LIB_CHECK=true
+    ;;
+
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
     INSTALL_PREFIX=solaris
@@ -520,7 +538,7 @@ AC_CHECK_HEADERS(semaphore.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
-AC_CHECK_LIB(c, main)
+dnl AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \

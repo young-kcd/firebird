@@ -47,8 +47,8 @@ const P_ARCH ARCHITECTURE	= arch_vms;
 #elif defined(sun)
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
-#	elif defined(i386)
-const P_ARCH ARCHITECTURE	= arch_sun386;
+#elif (defined i386 || defined AMD64)
+const P_ARCH ARCHITECTURE	= arch_sunx86;
 #	else
 const P_ARCH ARCHITECTURE	= arch_sun;
 #	endif
@@ -64,7 +64,7 @@ const P_ARCH ARCHITECTURE	= arch_linux;
 const P_ARCH ARCHITECTURE	= arch_freebsd;
 #elif defined(NETBSD)
 const P_ARCH ARCHITECTURE	= arch_netbsd;
-#elif defined(DARWIN)
+#elif defined(DARWIN) && defined(powerpc)
 const P_ARCH ARCHITECTURE	= arch_darwin_ppc;
 #elif defined(WIN_NT) && defined(AMD64)
 const P_ARCH ARCHITECTURE	= arch_winnt_64;
