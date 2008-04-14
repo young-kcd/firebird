@@ -24,7 +24,6 @@ AC_SUBST(CPU_TYPE)
 
 
 dnl EKU: set appropiate defaults for each platform
-dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
