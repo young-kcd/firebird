@@ -5684,7 +5684,7 @@ int Parser::yylexAux()
 			// of the actual resulting hex string.  Allocate a second 
 			// temporary buffer for it.
 		
-			int nibble = (charlen & 1);  // IS_ODD(charlen)
+			bool nibble = (charlen & 1);  // IS_ODD(charlen)
 			Firebird::string temp;
 
 			// Re-scan over the hex string we got earlier, converting 
@@ -5708,13 +5708,13 @@ int Parser::yylexAux()
 				if (nibble)
 				{
 					byte = (byte << 4) + (UCHAR) c;
-					nibble = 0;
+					nibble = false;
 					temp.append(1, (char) byte);
 				}
 				else 
 				{
 					byte = c;
-					nibble = 1;
+					nibble = true;
 				}
 			}
 
@@ -5817,8 +5817,7 @@ int Parser::yylexAux()
 				// of the actual resulting hex string.  Allocate a second
 				// temporary buffer for it.
 
-				int nibble = (charlen & 1);  // IS_ODD(temp.length)
-				int hexlen = charlen / 2 + nibble;
+				bool nibble = (charlen & 1);  // IS_ODD(temp.length)
 
 				// Re-scan over the hex string we got earlier, converting
 				// adjacent bytes into nibble values.  Every other nibble,
@@ -5843,13 +5842,13 @@ int Parser::yylexAux()
 					if (nibble)
 					{
 						byte = (byte << 4) + (UCHAR) c;
-						nibble = 0;
+						nibble = false;
 						value = (value << 8) + byte;
 					}
 					else 
 					{
 						byte = c;
-						nibble = 1;
+						nibble = true;
 					}
 				}
 
