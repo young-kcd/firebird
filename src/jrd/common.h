@@ -347,16 +347,16 @@
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define RISC_ALIGNMENT
-#else /* sparc */
+#endif /* sparc */
 
 #ifdef i386
 #define I386
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
-#else /* i386 */
-#define IMPLEMENTATION  isc_info_db_impl_isc_sun_68k /* 28 */
-#endif /* i386 */
+#endif
 
-#endif /* sparc */
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 71 */
+#endif /* AMD64 */
 
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))

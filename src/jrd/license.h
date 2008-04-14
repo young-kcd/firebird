@@ -86,6 +86,9 @@
 #ifdef i386
 #define FB_PLATFORM     "SI"
 #endif /* i386 */
+#ifdef AMD64
+#define FB_PLATFORM	"SI"
+#endif
 #ifndef FB_PLATFORM
 #define FB_PLATFORM	"S3"
 #endif

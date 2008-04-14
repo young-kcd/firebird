@@ -140,8 +140,9 @@ static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 //static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64 - not ported yet
 static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
+static const int CLASS_SOLARIS_AMD64 = 29;	//Solaris/amd64
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_DARWIN_I386;
+static const int CLASS_MAX = CLASS_SOLARIS_AMD64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -225,14 +226,19 @@ static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archLittleEndian, // CLASS_FREEBSD_AMD64
 	archLittleEndian, // CLASS_WINDOWS_AMD64
 	archBigEndian,    // CLASS_LINUX_PPC
-	archLittleEndian  // CLASS_DARWIN_I386
+	archLittleEndian, // CLASS_DARWIN_I386
+	archLittleEndian  // CLASS_SOLARIS_AMD64
 };
 
 #ifdef sun
 #ifdef i386
 const SSHORT CLASS		= CLASS_SOLARIS_I386;
-#else
+#endif
+#ifdef sparc
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
+#endif
+#ifdef AMD64
+const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
 #endif
 #endif
 

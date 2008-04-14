@@ -195,6 +195,7 @@ enum  info_db_implementations
 	isc_info_db_impl_winnt_amd64 = 68,
 	isc_info_db_impl_linux_ppc = 69,
 	isc_info_db_impl_darwin_x86 = 70,
+	isc_info_db_impl_sun_amd64 = 71,
 
 	isc_info_db_impl_last_value   /* Leave this LAST! */
 };
