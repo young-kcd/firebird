@@ -1,4 +1,4 @@
-Firebird Adatbázis Szerver 2.1 RC2
+Firebird Adatbázis Szerver 2.1
 ===================================================
 
 

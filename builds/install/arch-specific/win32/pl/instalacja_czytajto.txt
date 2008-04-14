@@ -1,4 +1,4 @@
-Serwer baz danych Firebird 2.1 RC2
+Serwer baz danych Firebird 2.1
 ==================================================
 
 

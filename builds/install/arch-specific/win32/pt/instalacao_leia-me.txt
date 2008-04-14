@@ -1,4 +1,4 @@
-Servidor SQL Firebird 2.1 RC2
+Servidor SQL Firebird 2.1
 ==================================================
 
 

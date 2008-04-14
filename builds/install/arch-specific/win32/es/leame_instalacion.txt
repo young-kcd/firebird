@@ -1,4 +1,4 @@
-Firebird Database Server 2.1 RC2
+Firebird Database Server 2.1
 ==================================================
 
 

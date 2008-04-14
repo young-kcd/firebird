@@ -1,4 +1,4 @@
-Firebird Serveur Bases de données 2.1 RC2
+Firebird Serveur Bases de données 2.1
 ==================================================
 
 ** NOTE IMPORTANTE **

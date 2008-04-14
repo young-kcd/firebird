@@ -1,6 +1,6 @@
 
 ======================================
-Firebird 2.1.0 RC2 (Windows Felépítés)
+Firebird 2.1.0  (Windows Felépítés)
 ======================================
 
 o Bevezetés
