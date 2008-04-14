@@ -2052,9 +2052,13 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			// Otherwise, we need to test here for most of the other node types.
 			// However, we need to be recursive only if we agree things like -gen_id()
 			// should be given the GEN_ID alias, too.
+			int level = 0;
 			const dsql_nod* node = item->nod_arg[0];
 			while (node->nod_type == nod_negate)
+			{
 				node = node->nod_arg[0];
+				++level;
+			}
 				
 			switch (node->nod_type)
 			{
@@ -2062,6 +2066,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			case nod_null:
 				name_alias = "CONSTANT";
 				break;
+			/*
 			case nod_add:
 			case nod_add2:
 				name_alias = "ADD";
@@ -2070,13 +2075,16 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			case nod_subtract2:
 				name_alias = "SUBTRACT";
 				break;
+			*/
 			case nod_multiply:
 			case nod_multiply2:
-				name_alias = "MULTIPLY";
+				if (!level)
+					name_alias = "MULTIPLY";
 				break;
 			case nod_divide:
 			case nod_divide2:
-				name_alias = "DIVIDE";
+				if (!level)
+					name_alias = "DIVIDE";
 				break;
 			}
 		}
