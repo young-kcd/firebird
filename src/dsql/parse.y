@@ -5741,7 +5741,7 @@ int Parser::yylexAux()
 	// to an integer, and the result returned to the caller.  The
 	// token is identified as a NUMBER if it's a 32-bit or less
 	// value, or a NUMBER64INT if it requires a 64-bit number.
-	if ((c == '0') && (lex.ptr < lex.end) && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
+	if ((c == '0') && (lex.ptr + 1 < lex.end) && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
 		(classes(lex.ptr[1]) & CHR_HEX))
 	{
 		bool hexerror = false;

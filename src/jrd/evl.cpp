@@ -1936,42 +1936,41 @@ void EVL_make_value(thread_db* tdbb, const dsc* desc, impure_value* value)
 		break;
 	}
 
-	{ // scope
-		UCHAR temp[128], *address;
-		USHORT ttype;
+	UCHAR temp[128];
+	UCHAR* address;
+	USHORT ttype;
 
-/* Get string.  If necessary, get_string will convert the string into a
-   temporary buffer.  Since this will always be the result of a conversion,
-   this isn't a serious problem. */
+	// Get string.  If necessary, get_string will convert the string into a
+	// temporary buffer.  Since this will always be the result of a conversion,
+	// this isn't a serious problem.
 
-		const USHORT length =
-			MOV_get_string_ptr(&from, &ttype, &address,
-							   reinterpret_cast<vary*>(temp),
-							   sizeof(temp));
+	const USHORT length =
+		MOV_get_string_ptr(&from, &ttype, &address,
+						   reinterpret_cast<vary*>(temp),
+						   sizeof(temp));
 
-/* Allocate a string block of sufficient size. */
-		VaryingString* string = value->vlu_string;
-		if (string && string->str_length < length) {
-			delete string;
-			string = NULL;
-		}
+	// Allocate a string block of sufficient size.
+	VaryingString* string = value->vlu_string;
+	if (string && string->str_length < length) {
+		delete string;
+		string = NULL;
+	}
 
-		if (!string) {
-			string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
-			string->str_length = length;
-		}
+	if (!string) {
+		string = value->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) VaryingString();
+		string->str_length = length;
+	}
 
-		value->vlu_desc.dsc_dtype = dtype_text;
-		value->vlu_desc.dsc_length = length;
-		UCHAR* target = string->str_data;
-		value->vlu_desc.dsc_address = target;
-		value->vlu_desc.dsc_sub_type = 0;
-		value->vlu_desc.dsc_scale = 0;
-		INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
+	value->vlu_desc.dsc_dtype = dtype_text;
+	value->vlu_desc.dsc_length = length;
+	UCHAR* target = string->str_data;
+	value->vlu_desc.dsc_address = target;
+	value->vlu_desc.dsc_sub_type = 0;
+	value->vlu_desc.dsc_scale = 0;
+	INTL_ASSIGN_TTYPE(&value->vlu_desc, ttype);
 
-		if (address && length)
-			memcpy(target, address, length);
-	} // scope
+	if (address && length && target != address)
+		memcpy(target, address, length);
 }
 
 
