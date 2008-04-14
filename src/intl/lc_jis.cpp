@@ -65,8 +65,8 @@ TEXTTYPE_ENTRY(JIS220_init)
 		//cache->texttype_fn_str_to_lower = sjis_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -80,8 +80,8 @@ TEXTTYPE_ENTRY(JIS230_init)
 		//cache->texttype_fn_str_to_lower = famasc_str_to_lower;
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 

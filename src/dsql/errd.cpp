@@ -41,7 +41,6 @@
 #include "../dsql/sqlda.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
-#include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
 
@@ -59,9 +58,8 @@
 //#undef IBERROR
 
 #include "../jrd/gds_proto.h"
+#include "../jrd/thd.h"
 #include "../common/utils_proto.h"
-
-using namespace Jrd;
 
 
 #ifdef DEV_BUILD
@@ -103,8 +101,9 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 void ERRD_bugcheck(const char* text)
 {
 	TEXT s[MAXPATHLEN + 120];
+
 	fb_utils::snprintf(s, sizeof(s), "INTERNAL: %s", text);	// TXNN
-	ERRD_error(s);
+	ERRD_error(-1, s);
 }
 
 
@@ -124,15 +123,27 @@ void ERRD_bugcheck(const char* text)
     @param text
 
  **/
-void ERRD_error(const char* text)
+void ERRD_error( int code, const char* text)
 {
 	TEXT s[MAXPATHLEN + 140];
+
+	tsql* tdsql = DSQL_get_thread_data();
+
 	fb_utils::snprintf(s, sizeof(s), "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	Firebird::status_exception::raise(
-        isc_random, isc_arg_cstring, strlen(s), ERR_cstring(s),
-        isc_arg_end);
+	ISC_STATUS* status_vector = tdsql->tsql_status;
+    if (status_vector) {
+        *status_vector++ = isc_arg_gds;
+        *status_vector++ = isc_random;
+        *status_vector++ = isc_arg_cstring;
+        *status_vector++ = strlen(s);
+        *status_vector++ = reinterpret_cast<ISC_STATUS>(s);
+        *status_vector++ = isc_arg_end;
+    }
+
+    ERRD_punt();
+
 }
 
 
@@ -153,7 +164,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 
 	va_start(args, status);
 
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
 	int indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
@@ -208,7 +219,6 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 			break;
 
 		case isc_arg_interpreted: 
-		case isc_arg_sql_state:
             pszTmp = va_arg(args, char*);
             status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
 			break;
@@ -253,7 +263,7 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	ISC_STATUS* status_vector = ((tsql*) DSQL_get_thread_data())->tsql_status;
 
 // stuff the status into temp buffer 
 	ISC_STATUS_ARRAY tmp_status;
@@ -315,7 +325,7 @@ void ERRD_post(ISC_STATUS status, ...)
 	if (warning_indx) {
 		// copy current warning(s) to a temp buffer 
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		memcpy(warning_status, &status_vector[warning_indx],
+		MOVE_FASTER(&status_vector[warning_indx], warning_status,
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
@@ -326,12 +336,12 @@ void ERRD_post(ISC_STATUS status, ...)
 	i = err_status_len + tmp_status_len;
 	if (i < ISC_STATUS_LENGTH)
 	{
-		memcpy(&status_vector[err_status_len], tmp_status,
+		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
 					sizeof(ISC_STATUS) * tmp_status_len);
 		// copy current warning(s) to the status_vector 
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
-			memcpy(&status_vector[i - 1], warning_status,
+			MOVE_FASTER(warning_status, &status_vector[i - 1],
 						sizeof(ISC_STATUS) * warning_count);
 
 		}
@@ -352,19 +362,19 @@ void ERRD_post(ISC_STATUS status, ...)
  **/
 void ERRD_punt(const ISC_STATUS* local)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 // copy local status into user status
 	if (local) {
-		UTLD_copy_status(local, tdbb->tdbb_status_vector);
+		UTLD_copy_status(local, tdsql->tsql_status);
 	}
 
 // Save any strings in a permanent location 
 
-	UTLD_save_status_strings(tdbb->tdbb_status_vector);
+	UTLD_save_status_strings(tdsql->tsql_status);
 
 // Give up whatever we were doing and return to the user. 
 
-	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+	Firebird::status_exception::raise(tdsql->tsql_status);
 }
 

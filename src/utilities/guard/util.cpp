@@ -151,9 +151,11 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 		{
 			if (shutting_down)
 				return -2;
-			continue;
+			else
+				continue;
 		}
-		return (errno);
+		else
+			return (errno);
 	}
 
 /* Check for very specific conditions before we assume the child

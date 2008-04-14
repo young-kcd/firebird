@@ -73,10 +73,15 @@ const UCHAR TAG_RECORD	= '\xFE'; //-2U;
 
 const size_t DatabaseSnapshot::SharedMemory::VERSION = 1;
 const size_t DatabaseSnapshot::SharedMemory::DEFAULT_SIZE = 1048576;
+const size_t DatabaseSnapshot::SharedMemory::SEMAPHORES = 1;
 
 
 DatabaseSnapshot::SharedMemory::SharedMemory()
 {
+#ifdef UNIX
+	handle.sh_mem_semaphores = SEMAPHORES;
+#endif
+
 	TEXT filename[MAXPATHLEN];
 	gds__prefix_lock(filename, MONITOR_FILE);
 
@@ -328,14 +333,14 @@ void DatabaseSnapshot::SharedMemory::init(void* arg, SH_MEM_T* shmemData, bool i
 	header->allocated = 0;
 
 #ifndef WIN_NT
-	checkMutex("init", ISC_mutex_init(&header->mutex));
+	checkMutex("init", ISC_mutex_init(&header->mutex, shmemData->sh_mem_mutex_arg));
 #endif
 }
 
 
 // DatabaseSnapshot class
 
-GlobalPtr<Mutex> DatabaseSnapshot::initMutex;
+Mutex DatabaseSnapshot::initMutex;
 DatabaseSnapshot::SharedMemory* DatabaseSnapshot::dump = NULL;
 int DatabaseSnapshot::pid = getpid();
 
@@ -363,37 +368,38 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 int DatabaseSnapshot::blockingAst(void* ast_object)
 {
 	Database* dbb = static_cast<Database*>(ast_object);
+	fb_assert(dbb);
 
-	try
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
+
+	Lock* lock = dbb->dbb_monitor_lock;
+	fb_assert(lock);
+
+	tdbb->setDatabase(lock->lck_dbb);
+	tdbb->setAttachment(lock->lck_attachment);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
+	if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 	{
-		Lock* lock = dbb->dbb_monitor_lock;
+		try {
+			// Write the data to the shared memory
+			dumpData(tdbb, true);
 
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(lock->lck_dbb);
-		tdbb->setAttachment(lock->lck_attachment);
-
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
-		{
-			try {
-				// Write the data to the shared memory
-				dumpData(tdbb, true);
-
-				// Release the lock and mark dbb as requesting a new one
-				LCK_release(tdbb, lock);
-				dbb->dbb_ast_flags |= DBB_monitor_off;
-			}
-			catch (const Exception&) {
-				gds__log("Unexpected exception at the AST level");
-			}
+			// Release the lock and mark dbb as requesting a new one
+			LCK_release(tdbb, lock);
+			dbb->dbb_ast_flags |= DBB_monitor_off;
+		}
+		catch (const Exception&) {
+			gds__log("Unexpected exception at the AST level");
 		}
 	}
-	catch (const Firebird::Exception&)
-	{} // no-op
 
+	JRD_restore_thread_data();
 	return 0;
 }
 
@@ -401,28 +407,24 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
-
 	// Initialize record buffers
 	RecordBuffer* const dbb_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_database);
 	RecordBuffer* const att_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_attachments);
 	RecordBuffer* const tra_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_transactions);
 	RecordBuffer* const stmt_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_statements);
 	RecordBuffer* const call_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_calls);
 	RecordBuffer* const io_stat_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_io_stats);
 	RecordBuffer* const rec_stat_buffer =
-		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
-	RecordBuffer* const ctx_var_buffer =
-		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+		allocBuffer(tdbb, pool, rel_mon_rec_stats);
+
+	Database* const dbb = tdbb->getDatabase();
+	fb_assert(dbb);
 
 	const Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -519,22 +521,12 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			case rel_mon_rec_stats:
 				buffer = rec_stat_buffer;
 				break;
-			case rel_mon_ctx_vars:
-				buffer = ctx_var_buffer;
-				break;
 			default:
 				fb_assert(false);
 			}
 
-			if (buffer)
-			{
-				record = buffer->getTempRecord();
-				clearRecord(record);
-			}
-			else
-			{
-				record = NULL;
-			}
+			record = buffer->getTempRecord();
+			clearRecord(record);
 		}
 		else
 		{
@@ -562,7 +554,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				}
 
 				// We need to return the database record only once
-				if (record && allowed && !database_processed)
+				if (allowed && !database_processed)
 				{
 					putField(record, fid, source, length);
 					fields_processed = true;
@@ -570,7 +562,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			}
 			// The generic logic that covers all relations
 			// except MON$DATABASE
-			else if (record && allowed)
+			else if (allowed)
 			{
 				putField(record, fid, source, length);
 				fields_processed = true;
@@ -630,8 +622,6 @@ RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb,
 
 void DatabaseSnapshot::clearRecord(Record* record)
 {
-	fb_assert(record);
-
 	// Initialize all fields to NULLs
 	memset(record->rec_data, 0, record->rec_length);
 	const size_t null_bytes = (record->rec_format->fmt_count + 7) >> 3;
@@ -850,8 +840,6 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 		if (broadcast || attachment == self_attachment)
 		{
 			putAttachment(attachment, *writer, dbb->generateId());
-			putContextVars(attachment->att_context_vars, *writer,
-						   attachment->att_attachment_id, true);
 
 			// Transaction information
 
@@ -859,8 +847,6 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 				transaction; transaction = transaction->tra_next)
 			{
 				putTransaction(transaction, *writer, dbb->generateId());
-				putContextVars(transaction->tra_context_vars, *writer,
-							   transaction->tra_number, false);
 			}
 
 			// Request information
@@ -1002,7 +988,7 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	writer.insertInt(f_mon_db_backup_state, temp);
 	// statistics
 	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
-	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
+	putStatistics(&database->dbb_stats, writer, stat_id, stat_database);
 }
 
 
@@ -1061,7 +1047,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	writer.insertInt(f_mon_att_gc, temp);
 	// statistics
 	writer.insertBigInt(f_mon_att_stat_id, getGlobalId(stat_id));
-	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
+	putStatistics(&attachment->att_stats, writer, stat_id, stat_attachment);
 }
 
 
@@ -1116,7 +1102,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	writer.insertInt(f_mon_tra_auto_undo, temp);
 	// statistics
 	writer.insertBigInt(f_mon_tra_stat_id, getGlobalId(stat_id));
-	putStatistics(transaction->tra_stats, writer, stat_id, stat_transaction);
+	putStatistics(&transaction->tra_stats, writer, stat_id, stat_transaction);
 }
 
 
@@ -1160,7 +1146,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));
-	putStatistics(request->req_stats, writer, stat_id, stat_statement);
+	putStatistics(&request->req_stats, writer, stat_id, stat_statement);
 }
 
 
@@ -1216,14 +1202,16 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	writer.insertInt(f_mon_call_src_column, request->req_src_column);
 	// statistics
 	writer.insertBigInt(f_mon_call_stat_id, getGlobalId(stat_id));
-	putStatistics(request->req_stats, writer, stat_id, stat_call);
+	putStatistics(&request->req_stats, writer, stat_id, stat_call);
 }
 
-void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
+void DatabaseSnapshot::putStatistics(const RuntimeStatistics* statistics,
 									 Firebird::ClumpletWriter& writer,
 									 int stat_id,
 									 int stat_group)
 {
+	fb_assert(statistics);
+
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
@@ -1232,50 +1220,32 @@ void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
 	writer.insertBigInt(f_mon_io_stat_id, id);
 	writer.insertInt(f_mon_io_stat_group, stat_group);
 	writer.insertBigInt(f_mon_io_page_reads,
-						statistics.getValue(RuntimeStatistics::PAGE_READS));
+						statistics->getValue(RuntimeStatistics::PAGE_READS));
 	writer.insertBigInt(f_mon_io_page_writes,
-						statistics.getValue(RuntimeStatistics::PAGE_WRITES));
+						statistics->getValue(RuntimeStatistics::PAGE_WRITES));
 	writer.insertBigInt(f_mon_io_page_fetches,
-						statistics.getValue(RuntimeStatistics::PAGE_FETCHES));
+						statistics->getValue(RuntimeStatistics::PAGE_FETCHES));
 	writer.insertBigInt(f_mon_io_page_marks,
-						statistics.getValue(RuntimeStatistics::PAGE_MARKS));
+						statistics->getValue(RuntimeStatistics::PAGE_MARKS));
 
 	// logical I/O statistics
 	writer.insertByte(TAG_RECORD, rel_mon_rec_stats);
 	writer.insertBigInt(f_mon_rec_stat_id, id);
 	writer.insertInt(f_mon_rec_stat_group, stat_group);
 	writer.insertBigInt(f_mon_rec_seq_reads,
-						statistics.getValue(RuntimeStatistics::RECORD_SEQ_READS));
+						statistics->getValue(RuntimeStatistics::RECORD_SEQ_READS));
 	writer.insertBigInt(f_mon_rec_idx_reads,
-						statistics.getValue(RuntimeStatistics::RECORD_IDX_READS));
+						statistics->getValue(RuntimeStatistics::RECORD_IDX_READS));
 	writer.insertBigInt(f_mon_rec_inserts,
-						statistics.getValue(RuntimeStatistics::RECORD_INSERTS));
+						statistics->getValue(RuntimeStatistics::RECORD_INSERTS));
 	writer.insertBigInt(f_mon_rec_updates,
-						statistics.getValue(RuntimeStatistics::RECORD_UPDATES));
+						statistics->getValue(RuntimeStatistics::RECORD_UPDATES));
 	writer.insertBigInt(f_mon_rec_deletes,
-						statistics.getValue(RuntimeStatistics::RECORD_DELETES));
+						statistics->getValue(RuntimeStatistics::RECORD_DELETES));
 	writer.insertBigInt(f_mon_rec_backouts,
-						statistics.getValue(RuntimeStatistics::RECORD_BACKOUTS));
+						statistics->getValue(RuntimeStatistics::RECORD_BACKOUTS));
 	writer.insertBigInt(f_mon_rec_purges,
-						statistics.getValue(RuntimeStatistics::RECORD_PURGES));
+						statistics->getValue(RuntimeStatistics::RECORD_PURGES));
 	writer.insertBigInt(f_mon_rec_expunges,
-						statistics.getValue(RuntimeStatistics::RECORD_EXPUNGES));
-}
-
-void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
-									  Firebird::ClumpletWriter& writer,
-									  int object_id, bool is_attachment)
-{
-	for (bool found = variables.getFirst(); found; found = variables.getNext())
-	{
-		writer.insertByte(TAG_RECORD, rel_mon_ctx_vars);
-
-		if (is_attachment)
-			writer.insertInt(f_mon_ctx_var_att_id, object_id);
-		else
-			writer.insertInt(f_mon_ctx_var_tra_id, object_id);
-
-		writer.insertString(f_mon_ctx_var_name, variables.current()->first);
-		writer.insertString(f_mon_ctx_var_value, variables.current()->second);
-	}
+						statistics->getValue(RuntimeStatistics::RECORD_EXPUNGES));
 }

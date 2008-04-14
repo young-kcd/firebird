@@ -802,36 +802,6 @@ static void get_procedure_args(const char* proc_name)
 				END_FOR 
 			}
 
-			char relationName[BUFFER_LENGTH128] = "";
-			char relationField[BUFFER_LENGTH128] = "";
-
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
-			{
-				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
-
-					if (!PRM2.RDB$RELATION_NAME.NULL)
-					{
-						fb_utils::exact_name(PRM2.RDB$RELATION_NAME);
-						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$RELATION_NAME, relationName, DBL_QUOTE);
-						else
-							strcpy(relationName, PRM2.RDB$RELATION_NAME);
-					}
-
-					if (!PRM2.RDB$FIELD_NAME.NULL)
-					{
-						fb_utils::exact_name(PRM2.RDB$FIELD_NAME);
-						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$FIELD_NAME, relationField, DBL_QUOTE);
-						else
-							strcpy(relationField, PRM2.RDB$FIELD_NAME);
-					}
-
-				END_FOR 
-			}
-
 			if (first_time)
 			{
 				first_time = false;
@@ -860,26 +830,19 @@ static void get_procedure_args(const char* proc_name)
 
 			isqlGlob.printf("%s ", SQL_identifier);
 
-			const bool basedOnColumn = relationName[0] && relationField[0];
-			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
-				basedOnColumn)
+			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 			{
 				if (prm_mech == prm_mech_type_of)
 					isqlGlob.printf("TYPE OF ");
 
-				if (basedOnColumn)
-					isqlGlob.printf("%s.%s", relationName, relationField);
-				else
+				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
-					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					{
-						ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-						isqlGlob.prints(SQL_identifier);
-					}
-					else
-						isqlGlob.prints(FLD.RDB$FIELD_NAME);
+					ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+					isqlGlob.prints(SQL_identifier);
 				}
+				else
+					isqlGlob.prints(FLD.RDB$FIELD_NAME);
 
 				// International character sets
 				// Print only the collation
@@ -1094,53 +1057,38 @@ static processing_state list_all_grants2(bool show_role_list,
 		FOR XX IN RDB$ROLES
 			SORTED BY XX.RDB$ROLE_NAME
 
-			bool system_flag = false;
-			if (isqlGlob.major_ods >= ODS_VERSION11) 
+			if (first_role)
 			{
-				FOR SF IN RDB$ROLES
-					WITH SF.RDB$ROLE_NAME = XX.RDB$ROLE_NAME 
-					 AND SF.RDB$SYSTEM_FLAG > 0
-					 
-					system_flag = true;
-					
-				END_FOR
+				isqlGlob.printf("%s/* Grant roles for this database */%s",
+						 NEWLINE,
+						 NEWLINE);
+				first_role = false;
 			}
 
-			if (! system_flag)
+			// Null terminate name string
+			fb_utils::exact_name(XX.RDB$ROLE_NAME);
+			fb_utils::exact_name(XX.RDB$OWNER_NAME);
+
+			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
 			{
-				if (first_role)
-				{
-					isqlGlob.printf("%s/* Grant roles for this database */%s",
-							 NEWLINE,
-							 NEWLINE);
-					first_role = false;
-				}
-
-				// Null terminate name string
-				fb_utils::exact_name(XX.RDB$ROLE_NAME);
-				fb_utils::exact_name(XX.RDB$OWNER_NAME);
-
-				if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
-				{
-					isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
-							 NEWLINE,
-							 XX.RDB$ROLE_NAME,
-							 XX.RDB$OWNER_NAME,
-							 NEWLINE);
-					strcpy (prev_owner, XX.RDB$OWNER_NAME);
-				}
-
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				{
-
-					ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 SQL_identifier, NEWLINE);
-				}
-				else
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 XX.RDB$ROLE_NAME, NEWLINE);
+				isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
+						 NEWLINE,
+						 XX.RDB$ROLE_NAME,
+						 XX.RDB$OWNER_NAME,
+						 NEWLINE);
+				strcpy (prev_owner, XX.RDB$OWNER_NAME);
 			}
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+
+				ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
+				isqlGlob.printf("CREATE ROLE %s;%s",
+						 SQL_identifier, NEWLINE);
+			}
+			else
+				isqlGlob.printf("CREATE ROLE %s;%s",
+						 XX.RDB$ROLE_NAME, NEWLINE);
 
 		END_FOR
 		ON_ERROR

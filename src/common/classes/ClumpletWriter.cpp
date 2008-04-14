@@ -190,7 +190,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	}
 	
 	// Check length according to clumplet type
-	const ClumpletType t = getClumpletType(tag);
+	ClumpletType t = getClumpletType(tag);
 	UCHAR lenSize = 0;
 	switch (t)
 	{
@@ -366,3 +366,4 @@ bool ClumpletWriter::deleteWithTag(UCHAR tag)
 }
 
 } // namespace
+

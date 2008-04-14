@@ -32,12 +32,23 @@
 #ifndef JRD_EXE_H
 #define JRD_EXE_H
 
+#include "../jrd/jrd_blks.h"
 #include "../jrd/blb.h"
 #include "../jrd/Relation.h"
 #include "../common/classes/array.h"
 #include "../common/classes/MetaName.h"
 
 #include "gen/iberror.h"
+
+#define NODE(type, name, keyword) type,
+
+enum nod_t {
+#include "../jrd/nod.h"
+	nod_MAX
+#undef NODE
+};
+
+typedef nod_t NOD_T;
 
 #include "../jrd/dsc.h"
 #include "../jrd/rse.h"
@@ -62,16 +73,6 @@ class VaryingString;
 struct dsc;
 
 namespace Jrd {
-
-#define NODE(type, name, keyword) type,
-
-enum nod_t {
-#include "../jrd/nod.h"
-	nod_MAX
-#undef NODE
-};
-
-typedef nod_t NOD_T;
 
 class jrd_rel;
 class jrd_nod;
@@ -189,7 +190,6 @@ public:
 	USHORT	nod_count;
 	dsc		asb_desc;
 	USHORT	asb_length;
-	bool	asb_intl;
 	sort_key_def* asb_key_desc;	/* for the aggregate   */
 	UCHAR	asb_key_data[1];
 };
@@ -509,24 +509,6 @@ const int e_sysfun_function	= 1;
 const int e_sysfun_count	= 1;
 const int e_sysfun_length	= 2;
 
-// nod_auto_trans
-const int e_auto_trans_action	= 0;
-const int e_auto_trans_length	= 1;
-
-// nod_exec_stmt
-const int e_exec_stmt_stmt_sql		= 0;
-const int e_exec_stmt_data_src		= 1;
-const int e_exec_stmt_user			= 2;
-const int e_exec_stmt_password		= 3;
-const int e_exec_stmt_proc_block	= 4;
-const int e_exec_stmt_fixed_count	= 5;
-
-const int e_exec_stmt_extra_inputs		= 0;
-const int e_exec_stmt_extra_input_names	= 1;
-const int e_exec_stmt_extra_outputs		= 2;
-const int e_exec_stmt_extra_tran		= 3;
-const int e_exec_stmt_extra_count		= 4;
-
 // Request resources
 
 struct Resource
@@ -573,7 +555,7 @@ struct AccessItem
 {
 	Firebird::MetaName		acc_security_name;
 	SLONG					acc_view_id;
-	Firebird::MetaName		acc_name, acc_r_name;
+	Firebird::MetaName		acc_name;
 	const TEXT*				acc_type;
 	SecurityClass::flags_t	acc_mask;
 
@@ -597,17 +579,13 @@ struct AccessItem
 		if ((v = i1.acc_name.compare(i2.acc_name)) != 0)
 			return v > 0;
 
-		if ((v = i1.acc_r_name.compare(i2.acc_r_name)) != 0)
-			return v > 0;
-
 		return false; // Equal
 	}
 
 	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
-		const Firebird::MetaName& name, const TEXT* type, 
-		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
-	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name), 
-		acc_r_name(relName), acc_type(type), acc_mask(mask)
+		const Firebird::MetaName& name, const TEXT* type, SecurityClass::flags_t mask)
+	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
+		acc_type(type), acc_mask(mask)
 	{}
 };
 
@@ -691,10 +669,6 @@ struct Item
 
 struct FieldInfo
 {
-	FieldInfo()
-		: nullable(false), defaultValue(0), validation(0)
-	{}
-
 	bool nullable;
 	jrd_nod* defaultValue;
 	jrd_nod* validation;
@@ -711,7 +685,7 @@ struct ItemInfo
 	{
 	}
 
-	explicit ItemInfo(MemoryPool& p)
+	ItemInfo(MemoryPool& p)
 		: name(p),
 		  field(p),
 		  nullable(true),

@@ -100,15 +100,15 @@ public:
 	// wait > 0 - infinite wait (may deadlock)
 	//
 	// This function returns false if it cannot take the lock
-	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle);
-	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait) {
+	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle);
+	bool lock(thread_db* tdbb, locklevel_t level, SSHORT wait) {
 		return lock(tdbb, level, wait, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
 	// NOTE: unlock method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
-	void unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle);
-	void unlock(thread_db* tdbb, const locklevel_t level) {
+	void unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle);
+	void unlock(thread_db* tdbb, locklevel_t level) {
 		unlock(tdbb, level, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
@@ -118,12 +118,11 @@ public:
 	SLONG getLockData() const {
 		return cached_lock->lck_data;
 	}
-	void setLockData(thread_db* tdbb, SLONG lck_data);
+	void setLockData(SLONG lck_data);
 
-	// Release physical lock if possible. Use to force refetch
+	// Release phisical lock if possible. Use to force refetch
 	// Returns true if lock was released
 	bool tryReleaseLock(thread_db* tdbb);
-
 protected:
 	Lock* cached_lock;
 	// Flag to indicate that somebody is waiting via lock manager.
@@ -139,7 +138,6 @@ protected:
 	virtual void invalidate(thread_db* tdbb, bool ast_handler) {}
 
 	virtual void blockingAstHandler(thread_db* tdbb);
-
 private:
 	Firebird::Mutex lockMutex;	// Protects status of logical lock, counters and blocking flag
 	lck_owner_t		physicalLockOwner;	// Holds cached lock
@@ -153,11 +151,30 @@ private:
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 
-	class CountersLockHolder : public Database::AstInhibit, public Database::CheckoutLockGuard {
+	// In current implementation, threads are not used along with signals
+	// Anyways, if we own mutex only with signals disabled this code
+	// becomes signal-safe even in presense of threads.
+	//
+	class EngineMutexLockGuard {
 	public:
-		CountersLockHolder(Database* dbb, Firebird::Mutex& alock) 
-			: Database::AstInhibit(dbb), Database::CheckoutLockGuard(dbb, alock)
-		{}
+		explicit EngineMutexLockGuard(Firebird::Mutex& alock) 
+			: lock(&alock) 
+		{ 
+			ThreadExit te;
+			lock->enter(); 
+		}
+		~EngineMutexLockGuard() { lock->leave(); }
+	private:
+		// Forbid copy constructor
+		EngineMutexLockGuard(const EngineMutexLockGuard& source);
+		Firebird::Mutex* lock;
+	};
+
+	class CountersLockHolder : public AstInhibit, public EngineMutexLockGuard
+	{
+	public:
+		explicit CountersLockHolder(Firebird::Mutex& mtx)
+			: AstInhibit(), EngineMutexLockGuard(mtx) { }
 	};
 
 	static int blocking_ast_cached_lock(void* ast_object);

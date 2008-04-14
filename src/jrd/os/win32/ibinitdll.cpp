@@ -19,37 +19,29 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
 #include <windows.h>
-#include "../common/classes/fb_string.h"
-#include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
-
-using namespace Firebird;
+#include "../jrd/common.h"
+#include "../../utilities/install/registry.h"
+#include "../jrd/jrd_proto.h"
+#include "../jrd/thread_proto.h"
 
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-#if defined(EMBEDDED)
-	switch (reason)
-	{
-		case DLL_PROCESS_ATTACH:
-		{
-			char filename[MAX_PATH];
-			GetModuleFileName(h, filename, sizeof(filename));
+	switch (reason)	{
 
-			PathName dir, file;
-			PathUtils::splitLastComponent(dir, file, filename);
-
-			ConfigRoot::setInstallDirectory(dir.c_str());
-
-			break;
-		}
-	}
+	case DLL_PROCESS_DETACH:
+#ifdef EMBEDDED
+		JRD_shutdown_all(false);
 #endif
+		break;
+
+	default:
+		break;
+	}
 
 	return TRUE;
 }

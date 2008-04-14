@@ -59,13 +59,19 @@
 #include <string.h>
 #endif
 
-const int FTOK_KEY = 15;
+const int FTOK_KEY		= 15;
 
-static SLONG get_key(TEXT *);
-static void remove_resource(const TEXT*, SLONG, const TEXT*);
 #ifndef HAVE_MMAP
-static void dummy_init();
+static void dummy_init(void);
+#endif
+static SLONG get_key(TEXT *);
+static void remove_resource(const TEXT*, SLONG, SLONG, const TEXT*);
+static int sem_exclusive(SLONG, SLONG);
+#ifndef HAVE_MMAP
 static int shm_exclusive(SLONG, SLONG);
+#endif
+#ifdef MANAGER_PROCESS
+static void shut_manager(const TEXT*);
 #endif
 
 static int orig_argc;
@@ -132,18 +138,24 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		printf("gds_drop version %s\n", GDS_VERSION);
 
 	if (sw_events)
-		remove_resource(EVENT_FILE, Config::getEventMemSize(), "events");
+		remove_resource(EVENT_FILE, Config::getEventMemSize(), EVENT_SEMAPHORES,
+						"events");
 
 	if (sw_lockmngr)
-		remove_resource(LOCK_FILE, Config::getLockMemSize(), "lock manager");
+		remove_resource(LOCK_FILE, Config::getLockMemSize(), Config::getLockSemCount(),
+						"lock manager");
 
+#ifdef MANAGER_PROCESS
+	if (sw_shutmngr)
+		shut_manager("lock manager");
+#endif
 
 	exit(FINI_OK);
 }
 
 
 #ifndef HAVE_MMAP
-static void dummy_init()
+static void dummy_init(void)
 {
 /**************************************
  *
@@ -188,7 +200,7 @@ static SLONG get_key( TEXT * filename)
 #ifndef HAVE_MMAP
 static void remove_resource(
 							const TEXT* filename,
-							SLONG shm_length, const TEXT* label)
+							SLONG shm_length, SLONG sem_count, const TEXT* label)
 {
 /**************************************
  *
@@ -202,9 +214,25 @@ static void remove_resource(
 	ISC_STATUS_ARRAY status_vector;
 	SH_MEM_T shmem_data;
 	TEXT expanded_filename[MAXPATHLEN];
+	pid_t pid;
+
+#ifdef MANAGER_PROCESS
+/* Shutdown lock manager process so that shared memory
+   and semaphores can be attached exclusively. */
+
+	if (!(strcmp(label, "lock manager"))) {
+		if (!(pid = vfork())) {
+			execl(orig_argv[0], orig_argv[0], "-s", 0);
+			_exit(FINI_ERROR);
+		}
+        // wait(pid)  // this is wrong wait takes a *int anyway.
+		waitpid(pid, 0, 0);
+	}
+#endif
 
 	gds__prefix_lock(expanded_filename, filename);
 
+	shmem_data.sh_mem_semaphores = sem_count;
 	if (!ISC_map_file
 #ifdef HP11
 		(status_vector, expanded_filename,
@@ -227,10 +255,12 @@ static void remove_resource(
 		return;
 	}
 
-	SLONG shmid;
-	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1) 
+	SLONG shmid, semid;
+	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1 ||
+		(semid = sem_exclusive(key, sem_count)) == -1) 
 	{
-		printf("\n***File for %s is currently in use.\n", label);
+		printf("\n***File or semaphores for %s are currently in use.\n",
+				  label);
 		return;
 	}
 
@@ -239,6 +269,12 @@ static void remove_resource(
 				  errno);
 	else
 		printf("Successfully removed %s file.\n", label);
+
+	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
+		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+				  label, errno);
+	else
+		printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
 
@@ -246,7 +282,7 @@ static void remove_resource(
 #ifdef HAVE_MMAP
 static void remove_resource(
 							const TEXT* filename,
-							SLONG shm_length, const TEXT* label)
+							SLONG shm_length, SLONG sem_count, const TEXT* label)
 {
 /**************************************
  *
@@ -257,7 +293,29 @@ static void remove_resource(
  * Functional description
  *
  **************************************/
+	ISC_STATUS_ARRAY status_vector;
 	TEXT expanded_filename[MAXPATHLEN];
+	int pid;
+#ifdef DARWIN
+	union  semun semctlArg;
+#endif
+
+#ifdef MANAGER_PROCESS
+/* Shutdown lock manager process so that shared memory
+   and semaphores can be attached exclusively. */
+
+	if (!(strcmp(label, "lock manager"))) {
+		if (!(pid = vfork())) {
+			execl(orig_argv[0], orig_argv[0], "-s", 0);
+			_exit(FINI_ERROR);
+		}
+#ifdef SCO_EV					/* 5.5 SCO Port: SCO needs waitpid() to function properly */
+		waitpid(pid, 0, 0);
+#else
+		waitpid(pid, NULL, 0);
+#endif
+	}
+#endif
 
 	gds__prefix_lock(expanded_filename, filename);
 
@@ -267,8 +325,52 @@ static void remove_resource(
 				  label);
 		return;
 	}
+
+	const SLONG semid = sem_exclusive(key, sem_count);
+	if (semid == -1) {
+		printf("\n***Semaphores for %s are currently in use.\n", label);
+		return;
+	}
+
+#ifdef DARWIN
+	semctlArg.val = 0;
+	if (semctl(semid, sem_count, IPC_RMID, semctlArg) == -1)
+#else
+	if (semctl(semid, sem_count, IPC_RMID, 0) == -1)
+#endif
+		printf("\n***Error trying to drop %s semaphores.  ERRNO = %d.\n",
+				  label, errno);
+	else
+		printf("Successfully removed %s semaphores.\n", label);
 }
 #endif
+
+
+static int sem_exclusive( SLONG key, SLONG count)
+{
+/**************************************
+ *
+ *	s e m  _ e x c l u s i v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check to see if we are the only ones accessing
+ *	semaphores.  Return a semaphore id if so,
+ *	-1 otherwise.
+ *
+ **************************************/
+	int semid;
+
+#if !(defined sun || defined LINUX || defined FREEBSD || defined NETBSD)
+	return semget(key, (int) count, IPC_EXCL);
+#else
+	if ((semid = semget(key, (int) count, IPC_EXCL)) != -1)
+		return semid;
+	else
+		return semget(key, (int) count, IPC_EXCL | IPC_CREAT);
+#endif
+}
 
 
 #ifndef HAVE_MMAP
@@ -289,7 +391,8 @@ static int shm_exclusive( SLONG key, SLONG length)
 	struct shmid_ds buf;
 
 	const int id = shmget(key, (int) length, IPC_ALLOC);
-	if (id == -1 || shmctl(id, IPC_STAT, &buf) == -1 || buf.shm_nattch != 1)
+	if (id == -1 ||
+		shmctl(id, IPC_STAT, &buf) == -1 || buf.shm_nattch != 1)
 	{
 		return -1;
 	}
@@ -297,3 +400,38 @@ static int shm_exclusive( SLONG key, SLONG length)
 	return id;
 }
 #endif
+
+
+#ifdef MANAGER_PROCESS
+static void shut_manager(const TEXT* label)
+{
+/**************************************
+ *
+ *	s h u t _ m a n a g e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Shut down the lock manager process preparatory
+ *	to releasing shared resources.
+ *
+ **************************************/
+	ISC_STATUS_ARRAY status_vector;
+	SLONG owner_handle;
+
+	if (!(strcmp(label, "lock manager"))) {
+		owner_handle = 0;
+		LOCK_init(status_vector, false, getpid(), 0, &owner_handle);
+
+		/* In case if lock manager is not running, LOCK_init starts it.
+		   It takes time for the manager to be started, hence immediately
+		   following LOCK_shut_manager can not shut it down, because there is
+		   no manager running yet. To avoid this situation sleep for
+		   a second before calling LOCK_shut_manager */
+		sleep(1);
+
+		LOCK_shut_manager();
+	}
+}
+#endif
+

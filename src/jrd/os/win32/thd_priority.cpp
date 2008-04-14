@@ -33,8 +33,8 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/common.h"
-#include "../jrd/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
+#include "../jrd/thd.h"
 #ifdef WIN_NT
 #include <windows.h> // HANDLE
 #endif
@@ -49,7 +49,7 @@
 
 // #define DEBUG_THREAD_PSCHED
 
-Firebird::GlobalPtr<Firebird::Mutex> ThreadPriorityScheduler::mutex;
+Firebird::Mutex ThreadPriorityScheduler::mutex;
 ThreadPriorityScheduler* ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
 ThreadPriorityScheduler::OperationMode 
@@ -109,8 +109,9 @@ void ThreadPriorityScheduler::Cleanup(void*)
 
 void ThreadPriorityScheduler::cleanup() 
 {
-	Firebird::MutexLockGuard guard(mutex);
+	mutex.enter();
 	opMode = Stopping;
+	mutex.leave();
 }
 
 void ThreadPriorityScheduler::attach()
@@ -124,13 +125,10 @@ void ThreadPriorityScheduler::attach()
 		{
 			Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
 		}
-
-		{	// scope for MutexLockGuard
-			Firebird::MutexLockGuard guard(mutex);
-			next = chain;
-			chain = this;
-		}
-
+		mutex.enter();
+		next = chain;
+		chain = this;
+		mutex.leave();
 #ifdef DEBUG_THREAD_PSCHED
 		gds__log("^ handle=%p priority=%d", handle, 
 				flags & THPS_BOOSTED ? 
@@ -154,7 +152,7 @@ void ThreadPriorityScheduler::detach()
 {
 	if (active)
 	{
-		Firebird::MutexLockGuard guard(mutex);
+		mutex.enter();
 		TLS_SET(currentScheduler, 0);
 		if (opMode == ShutdownComplete)
 		{
@@ -175,6 +173,7 @@ void ThreadPriorityScheduler::detach()
 		{
 			toDetach->add(this);
 		}
+		mutex.leave();
 	}
 	else
 	{
@@ -270,8 +269,9 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 
 		if (toDetach->getCount() > 0) 
 		{
-			Firebird::MutexLockGuard guard(mutex);
+			mutex.enter();
 			doDetach();
+			mutex.leave();
 		}
 	}
 	return 0;
@@ -297,8 +297,8 @@ start_label:
 		delete m;
 		if (*pt)
 			goto start_label;
-
-		break;
+		else
+			break;
 	}
 }
 

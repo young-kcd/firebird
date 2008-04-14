@@ -31,11 +31,6 @@
 #include "../jrd/pag.h"
 #endif
 
-#include "../jrd/que.h"
-#include "../jrd/lls.h"
-#include "../jrd/pag.h"
-#include "../jrd/isc.h"
-
 //#define CCH_DEBUG
 
 #ifdef CCH_DEBUG
@@ -60,6 +55,7 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
+//class BlockingThread;
 class Database;
 
 /* Page buffer cache size constraints. */
@@ -90,7 +86,7 @@ struct bcb_repeat
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
 public:
-	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
+	BufferControl(MemoryPool& p) : bcb_memory(p) { }
 	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
@@ -107,7 +103,6 @@ public:
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk 
 #ifdef SUPERSERVER_V2
 	PageBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
 #endif
@@ -144,6 +139,7 @@ public:
 #endif 
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
+	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
 	PageNumber	bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
@@ -165,7 +161,6 @@ public:
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
 	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
-	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
 	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
 };
 
@@ -251,7 +246,7 @@ class LatchWait : public pool_alloc<type_lwt>
 	thread_db*		lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	que				lwt_waiters;	/* latch queue */
-	event_t			lwt_event;		/* grant event to wait on */
+	struct event_t	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
 

@@ -121,8 +121,13 @@ bool MET_database(DBB db,
 	   ** some padding in the buffer.
 	 */
 
+#ifndef REQUESTER
 	JRDMET_init(db);
 	return true;
+#else
+	fb_assert(0);
+	return false;
+#endif
 }
 
 

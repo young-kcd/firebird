@@ -47,10 +47,11 @@
 #include "../jrd/val.h"
 #include "../jrd/align.h"
 #include "../jrd/exe.h"
-#include "../jrd/extds/ExtDS.h"
 #include "../jrd/lls.h"
 #include "../jrd/rse.h"	// for MAX_STREAMS
+
 #include "../jrd/scl.h"
+#include "../jrd/all.h"
 #include "../jrd/req.h"
 #include "../jrd/blb.h"
 #include "../jrd/intl.h"
@@ -62,6 +63,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/par_proto.h"
+#include "../jrd/thd.h"
 #include "../common/utils_proto.h"
 #include "../jrd/SysFunction.h"
 
@@ -355,10 +357,19 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_dtype = dtype_d_float;
+		desc->dsc_length = sizeof(double);
+		break;
+#endif
 
 	case blr_blob2:
 		{
@@ -426,72 +437,6 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 			dep_node->nod_type = nod_dependency;
 			dep_node->nod_arg[e_dep_object] = (jrd_nod*) name;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_field;
-			csb->csb_dependencies.push(dep_node);
-
-			break;
-		}
-
-	case blr_column_name:
-	case blr_column_name2:
-		{
-			const bool fullDomain = (BLR_BYTE == blr_domain_full);
-			Firebird::MetaName* relationName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *relationName);
-			Firebird::MetaName* fieldName = FB_NEW(csb->csb_pool) Firebird::MetaName(csb->csb_pool);
-			par_name(csb, *fieldName);
-
-			FieldInfo fieldInfo;
-			Firebird::MetaName fieldSource = MET_get_relation_field(tdbb, *relationName, *fieldName, desc, &fieldInfo);
-			bool exist = csb->csb_map_field_info.get(fieldSource, fieldInfo);
-
-			if (!exist)
-				csb->csb_map_field_info.put(fieldSource, fieldInfo);
-
-			if (itemInfo)
-			{
-				itemInfo->field = fieldSource;
-
-				if (fullDomain)
-				{
-					itemInfo->nullable = fieldInfo.nullable;
-					itemInfo->fullDomain = true;
-				}
-				else
-					itemInfo->nullable = true;
-			}
-
-			if (dtype == blr_column_name2)
-			{
-				USHORT ttype = BLR_WORD;
-
-				switch (desc->dsc_dtype)
-				{
-					case dtype_cstring:
-					case dtype_text:
-					case dtype_varying:
-						INTL_ASSIGN_TTYPE(desc, ttype);
-						break;
-
-					case dtype_blob:
-						desc->dsc_scale = ttype & 0xFF;		// BLOB character set
-						desc->dsc_flags = ttype & 0xFF00;	// BLOB collation
-						break;
-
-					default:
-						error(csb, isc_collation_requires_text, 0);
-						break;
-				}
-			}
-
-			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*) MET_lookup_relation(tdbb, *relationName);
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_relation;
-
-			dep_node->nod_arg[e_dep_field] = PAR_make_node(tdbb, 1);
-			dep_node->nod_arg[e_dep_field]->nod_type = nod_literal;
-			dep_node->nod_arg[e_dep_field]->nod_arg[0] = (jrd_nod*) fieldName->c_str();
-
 			csb->csb_dependencies.push(dep_node);
 
 			break;
@@ -809,13 +754,12 @@ static void error(CompilerScratch* csb, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case isc_arg_number:
@@ -1108,8 +1052,9 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
 		if (csb->csb_g_flags & csb_reuse_context) {
 			return tail->csb_stream;
 		}
-
-		error(csb, isc_ctxinuse, 0);
+		else {
+			error(csb, isc_ctxinuse, 0);
+		}
 	}
 
 	const SSHORT stream = csb->nextStream(false);
@@ -1424,27 +1369,27 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
 	if (is_column)
 	{
-		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
+ 		jrd_rel* temp_rel = csb->csb_rpt[stream].csb_relation;
 
 		if (temp_rel)
 		{
 			jrd_fld* field;
 
 			if (id < (int) temp_rel->rel_fields->count() && (field = (*temp_rel->rel_fields)[id]))
-			{
+ 			{
 				if (field->fld_default_value && field->fld_not_null)
 					node->nod_arg[e_fld_default_value] = field->fld_default_value;
-			}
-			else
-			{
+ 			}
+ 			else
+ 			{
 				if (temp_rel->rel_flags & REL_system)
 				{
 					node = PAR_make_node(tdbb, 0);
 					node->nod_type = nod_null;
-				}
-			}
-		}
-	}
+ 				}
+ 			}
+ 		}
+ 	}
 
 	return node;
 }
@@ -1467,7 +1412,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
-	UserFunction* function = FUN_lookup_function(tdbb, name,
+	UserFunction* function = FUN_lookup_function(name,
 					!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment));
 	if (!function) {
 		if (tdbb->tdbb_flags & TDBB_prc_being_dropped) {
@@ -1477,9 +1422,10 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 			anode->nod_arg[e_fun_args] = par_args(tdbb, csb, VALUE);
 			return anode;
 		}
-
-		csb->csb_running -= count;
-		error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
+		else {
+			csb->csb_running -= count;
+			error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name), 0);
+		}
 	}
 
 	UserFunction* homonyms;
@@ -2441,17 +2387,17 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 				if (!rse->rse_jointype ||
 					(rse->rse_count == 2 && rse->rse_boolean))
 				{
-					// Convert right outer joins to left joins to avoid
-					// RIGHT JOIN handling at lower engine levels
-					if (rse->rse_jointype == blr_right) {
-						// Swap sub-streams
-						jrd_nod* temp = rse->rse_relation[0];
-						rse->rse_relation[0] = rse->rse_relation[1];
-						rse->rse_relation[1] = temp;
+						// Convert right outer joins to left joins to avoid
+						// RIGHT JOIN handling at lower engine levels
+						if (rse->rse_jointype == blr_right) {
+							// Swap sub-streams
+							jrd_nod* temp = rse->rse_relation[0];
+							rse->rse_relation[0] = rse->rse_relation[1];
+							rse->rse_relation[1] = temp;
 
-						rse->rse_jointype = blr_left;
-					}
-					return (jrd_nod*) rse;
+							rse->rse_jointype = blr_left;
+						}
+						return (jrd_nod*) rse;
 				}
 			}
 			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
@@ -2786,18 +2732,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		*arg++ = parse(tdbb, csb, sub_type);
 		break;
 
-	case blr_similar:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
-		if (BLR_BYTE != 0)
-			*arg++ = parse(tdbb, csb, sub_type);	// escape
-		else	// without escape
-		{
-			*arg++ = NULL;
-			--node->nod_count;
-		}
-		break;
-
 	case blr_agg_list:
 	case blr_agg_list_distinct:
 		*arg++ = parse(tdbb, csb, sub_type);
@@ -2819,64 +2753,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = parse(tdbb, csb, STATEMENT);
 		for (n = 2/*e_exec_into_list*/; n < node->nod_count; n++)
 			*arg++ = parse(tdbb, csb, VALUE);
-		break;
-
-	case blr_exec_stmt:
-		{
-			const USHORT inputs = BLR_WORD;
-			const USHORT outputs = BLR_WORD;
-			n = inputs + outputs + e_exec_stmt_fixed_count; 
-
-			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
-			node->nod_count = n;
-			arg = node->nod_arg;
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_user	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_password	
-			const UCHAR tra_mode = BLR_BYTE;		// e_exec_stmt_tran		
-			if (BLR_BYTE != 0) {
-				// external transaction parameters is not implemented currently
-				syntax_error(csb, "external transaction parameters");
-			}
-
-			if (BLR_BYTE)	// singleton flag
-				*arg++ = 0;								// e_exec_stmt_proc_block
-			else
-				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
-
-			// input parameters and their names
-			const bool haveNames = (inputs && (BLR_BYTE == 1));
-			EDS::ParamNames* paramNames = NULL;
-
-			for (n = e_exec_stmt_fixed_count; n < e_exec_stmt_fixed_count + inputs; n++)
-			{
-				if (haveNames)
-				{
-					Firebird::string name;
-					if (par_name(csb, name))
-					{
-						Firebird::MemoryPool& pool = csb->csb_pool;
-						if (!paramNames) {
-							paramNames = FB_NEW (pool) EDS::ParamNames(pool);
-						}
-						Firebird::string* newName = FB_NEW (pool) Firebird::string(pool, name);
-						paramNames->add(newName);
-					}
-				}
-				*arg++ = parse(tdbb, csb, VALUE);
-			}
-
-			// output parameters
-			for (; n < node->nod_count; n++) {
-				*arg++ = parse(tdbb, csb, VALUE);
-			}
-
-			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs	
-			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
-			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
-			*arg++ = (jrd_nod*)(IPTR) tra_mode;		// e_exec_stmt_extra_tran
-		}
 		break;
 
 	case blr_post_arg:
@@ -3342,13 +3218,6 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node = par_sys_function(tdbb, csb);
 		break;
 
-	case blr_auto_trans:
-		n = BLR_BYTE;
-		if (n != 0)	// Reserved for future improvements. Should be 0 for now.
-			syntax_error(csb, "0");
-		node->nod_arg[e_auto_trans_action] = parse(tdbb, csb, sub_type);
-		break;
-
 	default:
 		syntax_error(csb, elements[expected]);
 	}
@@ -3453,13 +3322,12 @@ static void warning(CompilerScratch* csb, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case isc_arg_cstring:
 			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 		case isc_arg_number:

@@ -140,7 +140,9 @@ static const char* const NULL_STRING	= "(char *)0";
 static const char* const NULL_STATUS	= "NULL";
 static const char* const NULL_SQLDA		= "NULL";
 
-#ifdef DARWIN
+#ifdef VMS
+static const char* const GDS_INCLUDE	= "\"firebird:[syslib]ibase.h\"";
+#elif defined(DARWIN)
 static const char* const GDS_INCLUDE	= "<Firebird/ibase.h>";
 #else
 static const char* const GDS_INCLUDE	= "<ibase.h>";
@@ -235,7 +237,6 @@ void C_CXX_action(const act* action, int column)
 	case ACT_release:
 	case ACT_rfinish:
 	case ACT_rollback:
-	case ACT_rollback_retain_context:
 	case ACT_s_fetch:
 	case ACT_s_start:
 	case ACT_select:
@@ -450,9 +451,6 @@ void C_CXX_action(const act* action, int column)
 		gen_finish(action, column);
 		break;
 	case ACT_rollback:
-		gen_trans(action, column);
-		break;
-	case ACT_rollback_retain_context:
 		gen_trans(action, column);
 		break;
 	case ACT_routine:
@@ -3448,19 +3446,12 @@ static void gen_tpb(tpb* tpb_buffer, int column)
 static void gen_trans( const act* action, int column)
 {
 
-	if (action->act_type == ACT_commit_retain_context) {
+	if (action->act_type == ACT_commit_retain_context)
 		printa(column, "isc_commit_retaining (%s, (FB_API_HANDLE*) &%s);",
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : gpreGlob.transaction_name);
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(column, "isc_rollback_retaining (%s, (FB_API_HANDLE*) &%s);",
-			   status_vector(action),
-			   (action->act_object) ?
-			   		(const TEXT*) (action->act_object) : gpreGlob.transaction_name);
-	}
-	else {
+	else
 		printa(column, "isc_%s_transaction (%s, (FB_API_HANDLE*) &%s);",
 			   (action->act_type == ACT_commit) ?
 			   		"commit" : (action->act_type == ACT_rollback) ?
@@ -3468,7 +3459,6 @@ static void gen_trans( const act* action, int column)
 				status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : gpreGlob.transaction_name);
-	}
 
 	set_sqlcode(action, column);
 }
@@ -3704,7 +3694,7 @@ static void make_ok_test( const act* action, const gpre_req* request, int column
 
 static void make_port(const gpre_port* port, int column)
 {
-	printa(column, "struct isc_%d_struct {", port->por_ident);
+	printa(column, "struct {");
 
 	for (const ref* reference = port->por_references; reference;
 		 reference = reference->ref_next)

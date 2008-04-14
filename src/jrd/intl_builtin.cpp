@@ -1497,7 +1497,6 @@ static INTL_BOOL cs_unicode_fss_init(charset* csptr, const ASCII* charset_name, 
 	IntlUtil::initConvert(&csptr->charset_from_unicode, internal_unicode_to_fss);
 	csptr->charset_fn_length = internal_fss_length;
 	csptr->charset_fn_substring = internal_fss_substring;
-	csptr->charset_fn_well_formed = cs_utf8_well_formed;
 
 	return true;
 }

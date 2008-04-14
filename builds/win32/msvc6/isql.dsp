@@ -105,10 +105,6 @@ SOURCE=..\..\..\src\isql\show.epp
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\ColList.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\isql\Extender.cpp
 # End Source File
 # Begin Source File
@@ -117,15 +113,7 @@ SOURCE=..\..\..\gen\isql\extract.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\InputDevices.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\isql\isql.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\OptionsBase.cpp
 # End Source File
 # Begin Source File
 
@@ -145,19 +133,7 @@ SOURCE=..\..\..\src\common\utils.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\ColList.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\Extender.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\isql\extra_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\InputDevices.h
 # End Source File
 # Begin Source File
 
@@ -170,10 +146,6 @@ SOURCE=..\..\..\src\isql\isql_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\isql\isql_res.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\OptionsBase.h
 # End Source File
 # Begin Source File
 

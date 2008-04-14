@@ -43,16 +43,6 @@ public:
 	}
 };
 	
-template <typename What>
-class ArrayDelete
-{
-public:
-	static void clear(What* ptr)
-	{
-		delete[] ptr;
-	}
-};
-	
 template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr {
 private:
@@ -77,7 +67,7 @@ public:
 	}
 
 	bool operator !() const {
-		return !ptr;
+		return ptr ? false : true;
 	}
 
 	Where* operator->() {

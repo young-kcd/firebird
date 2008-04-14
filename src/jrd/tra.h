@@ -32,20 +32,16 @@
  * to define the types this header uses.
  */
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/GenericMap.h"
-#include "../jrd/exe.h"
 #include "../jrd/rpb_chain.h"
+#include "../jrd/exe.h"
 #include "../jrd/blb.h" // For bid structure
 #include "../jrd/sbm.h" // For bid structure
 
 #include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/TempSpace.h"
-
-namespace EDS {
-class Transaction;
-}
 
 namespace Jrd {
 
@@ -58,8 +54,6 @@ class Record;
 class VerbAction;
 class ArrayField;
 class Attachment;
-class DeferredWork;
-class dsql_opn;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
@@ -87,41 +81,22 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 /* Transaction block */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
-const char* const TRA_TEMP_SPACE = "fb_trans_";
 
 class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
 {
-public:
+    public:
 	enum wait_t {
 		tra_no_wait,
 		tra_probe,
 		tra_wait
 	};
 
-	explicit jrd_tra(MemoryPool* p, jrd_tra* outer) :
-		tra_pool(p),
-		tra_blobs_tree(p),
-		tra_blobs(&tra_blobs_tree),
-		tra_resources(*p),
-		tra_context_vars(*p),
-		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
-		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
-		tra_open_cursors(*p),
-		tra_outer(outer)
-	{
-		if (outer)
-		{
-			fb_assert(p == outer->tra_pool);
-			tra_arrays = outer->tra_arrays;
-			tra_blobs = outer->tra_blobs;
-		}
-	}
-
-	~jrd_tra()
-	{
-		if (!tra_outer)
-			delete tra_temp_space;
-	}
+	jrd_tra(MemoryPool& p) :
+		tra_blobs(&p),
+		tra_resources(p),
+		tra_context_vars(p),
+		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT)
+	{}
 
 	Attachment* tra_attachment;	/* database attachment */
 	SLONG tra_number;			/* transaction number */
@@ -131,9 +106,8 @@ public:
 								   gargage-collected by this tx */
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
-	MemoryPool* const tra_pool;		/* pool for transaction */
-	BlobIndexTree tra_blobs_tree;	// list of active blobs
-	BlobIndexTree* tra_blobs;		// pointer to actual list of active blobs
+	JrdMemoryPool* tra_pool;		/* pool for transaction */
+	BlobIndexTree tra_blobs;		/* list of active blobs */
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
 	Lock*		tra_lock;		/* lock for transaction */
 	Lock*		tra_cancel_lock;	/* lock to cancel the active request */
@@ -143,7 +117,7 @@ public:
 	Savepoint*	tra_save_free;	/* free savepoints */
 	SLONG tra_save_point_number;	/* next save point number to use */
 	ULONG tra_flags;
-	DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
+	class DeferredWork*	tra_deferred_work;	/* work deferred to commit time */
 	ResourceList tra_resources;		/* resource existence list */
 	Firebird::StringMap tra_context_vars; // Context variables for the transaction
 	traRpbList* tra_rpblist;	/* active record_param's of given transaction */
@@ -151,37 +125,15 @@ public:
 	UCHAR tra_callback_count;	/* callback count for 'execute statement' */
 	SSHORT tra_lock_timeout;	/* in seconds, -1 means infinite, 0 means NOWAIT */
 	ULONG tra_next_blob_id;     // ID of the previous blob or array created in this transaction
-	const Firebird::TimeStamp tra_timestamp; // transaction start time
+	Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;		// Doubly linked list of requests active in this transaction
 	DatabaseSnapshot* tra_db_snapshot; // Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
-	Firebird::Array<dsql_req*> tra_open_cursors;
-	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
-
-	EDS::Transaction *tra_ext_common;
-	//Transaction *tra_ext_two_phase;
-
-private:
-	TempSpace* tra_temp_space;	// temp space storage
-
-public:
 	UCHAR tra_transactions[1];
 
-public:
 	SSHORT getLockWait() const
 	{
 		return -tra_lock_timeout;
-	}
-
-	TempSpace* getTempSpace()
-	{
-		if (tra_outer)
-			return tra_outer->getTempSpace();
-
-		if (!tra_temp_space)
-			tra_temp_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_TEMP_SPACE);
-
-		return tra_temp_space;
 	}
 };
 
@@ -194,6 +146,7 @@ const ULONG TRA_system			= 1L;		/* system transaction */
 //const ULONG TRA_update			= 2L;		// update is permitted 
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
 const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
+// How can RLCK_reserve_relation test for it if it's not set anywhere?
 //const ULONG TRA_reserving		= 16L;		// relations explicityly locked
 const ULONG TRA_degree3			= 32L;		/* serializeable transaction */
 //const ULONG TRA_committing		= 64L;		// commit in progress

@@ -29,6 +29,7 @@
 #include "../remote/remote.h"
 #include "../remote/xdr.h"
 #include "../jrd/common.h"
+#include "../remote/allr_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
@@ -44,6 +45,10 @@
 #undef		SWAP_DOUBLE
 #else
 #error "Define SWAP_DOUBLE for your platform correctly !"
+#endif
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 #ifdef BURP
@@ -288,16 +293,29 @@ bool_t xdr_double(XDR * xdrs, double *ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+#endif
 	union {
 		double temp_double;
 		SLONG temp_long[2];
-		SSHORT temp_short[4]; // Not used.
+		SSHORT temp_short[4];
 	} temp;
 
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
+#ifdef VAX_FLOAT
+		if (temp.temp_double != 0)
+			temp.temp_short[0] -= 0x20;
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+#endif
 #ifdef SWAP_DOUBLE
 		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
 			PUTLONG(xdrs, &temp.temp_long[0]))
@@ -328,6 +346,18 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 			return FALSE;
 		}
 #endif
+#ifdef VAX_FLOAT
+		t1 = temp.temp_short[0];
+		temp.temp_short[0] = temp.temp_short[1];
+		temp.temp_short[1] = t1;
+		t1 = temp.temp_short[2];
+		temp.temp_short[2] = temp.temp_short[3];
+		temp.temp_short[3] = t1;
+		if (!temp.temp_long[1] && !(temp.temp_long[0] ^ 0x8000))
+			temp.temp_long[0] = 0;
+		else if (temp.temp_long[1] || temp.temp_long[0])
+			temp.temp_short[0] += 0x20;
+#endif
 		*ip = temp.temp_double;
 		return TRUE;
 
@@ -337,6 +367,42 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 
 	return FALSE;
 }
+
+
+#ifdef VMS
+bool_t xdr_d_float(xdrs, ip)
+	 XDR *xdrs;
+	 double *ip;
+{
+/**************************************
+ *
+ *	x d r _ d _ f l o a t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map from external to internal representation (or vice versa).
+ *
+ **************************************/
+	double temp;
+
+	switch (xdrs->x_op)
+	{
+	case XDR_ENCODE:
+		temp = MTH$CVT_D_G(ip);
+		return xdr_double(xdrs, &temp);
+
+	case XDR_DECODE:
+		if (!xdr_double(xdrs, ip))
+			return FALSE;
+		*ip = MTH$CVT_G_D(ip);
+		return TRUE;
+
+	case XDR_FREE:
+		return TRUE;
+	}
+}
+#endif
 
 
 bool_t xdr_enum(XDR * xdrs, enum_t * ip)
@@ -385,14 +451,51 @@ bool_t xdr_float(XDR * xdrs, float *ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+#ifdef VAX_FLOAT
+	SSHORT t1;
+	union {
+		float temp_float;
+		SLONG temp_long;
+		USHORT temp_short[2];
+	} temp;
+#endif
+
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
+#ifdef VAX_FLOAT
+		temp.temp_float = *ip;
+		if (temp.temp_float)
+		{
+			t1 = temp.temp_short[0];
+			temp.temp_short[0] = temp.temp_short[1];
+			temp.temp_short[1] = t1 - 0x100;
+		}
+		if (!PUTLONG(xdrs, &temp))
+			return FALSE;
+		return TRUE;
+#else
 		return PUTLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_DECODE:
+#ifdef VAX_FLOAT
+		if (!GETLONG(xdrs, &temp))
+			return FALSE;
+		if (!(temp.temp_long ^ 0x80000000))
+			temp.temp_long = 0;
+		else if (temp.temp_long)
+		{
+			t1 = temp.temp_short[1];
+			temp.temp_short[1] = temp.temp_short[0];
+			temp.temp_short[0] = t1 + 0x100;
+		}
+		*ip = temp.temp_float;
+		return TRUE;
+#else
 #pragma FB_COMPILER_MESSAGE("BUGBUG! No way float* and SLONG* are compatible!")
 		return GETLONG(xdrs, reinterpret_cast<SLONG*>(ip));
+#endif
 
 	case XDR_FREE:
 		return TRUE;
@@ -745,7 +848,7 @@ int xdr_union(	XDR*			xdrs,
 	// can have any size.
 	int enum_value = *dscmp;
 	const bool_t bOK = xdr_int(xdrs, &enum_value);
-	*dscmp = static_cast<enum_t>(enum_value);
+	*dscmp = static_cast < enum_t >(enum_value);
 
 	if (!bOK)
 	{

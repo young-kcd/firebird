@@ -31,6 +31,8 @@
 #ifndef JRD_FIL_H
 #define JRD_FIL_H
 
+#include "../jrd/thd.h"
+
 /* Defined the directory list structures. */
 
 /* Temporary workfile directory list. */

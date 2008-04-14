@@ -37,6 +37,7 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
@@ -53,8 +54,8 @@
 #include "../jrd/inf_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
-#include "../common/utils_proto.h"
 
 using MsgFormat::SafeArg;
 
@@ -130,18 +131,18 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 		/* 32 bytes allocated for size of of a metadata name */
 		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1
 			+ MAX_SQL_IDENTIFIER_SIZE;
-		UCHAR blr[blr_size];
+		SCHAR blr[blr_size];
 		fb_assert(strlen(generator_name) < MAX_SQL_IDENTIFIER_SIZE);
 
-		UCHAR* p = blr;
+		char* p = blr;
 		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
 		p += sizeof(gen_id_blr1);
 		*p++ = strlen(generator_name);
-		memcpy(p, generator_name, p[-1]);
+		strcpy(p, generator_name);
 		p += p[-1];
 		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
 		p += sizeof(gen_id_blr2);
-		req_handle = CMP_compile2(tdbb, blr, TRUE);
+		req_handle = CMP_compile2(tdbb, reinterpret_cast<const UCHAR*>(blr), TRUE);
 	}
 	*request = req_handle;
 	SINT64 value;
@@ -464,96 +465,6 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 		DYN_error_punt(true, 83);
 		/* msg 83: "Generation of trigger name failed" */
 	}
-}
-
-
-bool DYN_UTIL_find_field_source(thread_db* tdbb,
-								Global* gbl,
-								const Firebird::MetaName& view_name,
-								USHORT context,
-								const TEXT* local_name,
-								TEXT* output_field_name)
-{
-/**************************************
- *
- *	D Y N _U T I L _ f i n d _ f i e l d _ s o u r c e
- *
- **************************************
- *
- * Functional description
- *	Find the original source for a view field.
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	jrd_req* request = NULL;
-
-	/* CVC: It seems the logic of this function was changed over time. It's unlikely
-	it will cause a failure that leads to call DYN_error_punt(), unless the request finds
-	problems due to database corruption or unexpected ODS changes. Under normal
-	circumstances, it will return either true or false. When true, we found a field source
-	for the view's name/context/field and are loading this value in the last parameter,
-	that can be used against rdb$fields' rdb$field_name. */
-
-	bool found = false;
-
-	try {
-		request = CMP_find_request(tdbb, drq_l_fld_src2, DYN_REQUESTS);
-
-		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			VRL IN RDB$VIEW_RELATIONS CROSS
-				RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
-				WITH VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
-				VRL.RDB$VIEW_CONTEXT EQ context AND
-				RFR.RDB$FIELD_NAME EQ local_name
-
-			if (!DYN_REQUEST(drq_l_fld_src2)) {
-				DYN_REQUEST(drq_l_fld_src2) = request;
-			}
-
-			found = true;
-			fb_utils::exact_name_limit(RFR.RDB$FIELD_SOURCE, sizeof(RFR.RDB$FIELD_SOURCE));
-			strcpy(output_field_name, RFR.RDB$FIELD_SOURCE);
-		END_FOR;
-		if (!DYN_REQUEST(drq_l_fld_src2)) {
-			DYN_REQUEST(drq_l_fld_src2) = request;
-		}
-
-		if (!found)
-		{
-			request = CMP_find_request(tdbb, drq_l_fld_src3, DYN_REQUESTS);
-
-			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-				VRL IN RDB$VIEW_RELATIONS CROSS
-					PPR IN RDB$PROCEDURE_PARAMETERS
-					WITH VRL.RDB$RELATION_NAME EQ PPR.RDB$PROCEDURE_NAME AND
-					VRL.RDB$VIEW_NAME EQ view_name.c_str() AND
-					VRL.RDB$VIEW_CONTEXT EQ context AND
-					PPR.RDB$PARAMETER_NAME EQ local_name
-
-				if (!DYN_REQUEST(drq_l_fld_src3)) {
-					DYN_REQUEST(drq_l_fld_src3) = request;
-				}
-
-				found = true;
-				fb_utils::exact_name_limit(PPR.RDB$FIELD_SOURCE, sizeof(PPR.RDB$FIELD_SOURCE));
-				strcpy(output_field_name, PPR.RDB$FIELD_SOURCE);
-			END_FOR;
-			if (!DYN_REQUEST(drq_l_fld_src3)) {
-				DYN_REQUEST(drq_l_fld_src3) = request;
-			}
-		}
-	}
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, -1);
-		DYN_error_punt(true, 80);
-		/* msg 80: "Specified domain or source field does not exist" */
-	}
-
-	return found;
 }
 
 

@@ -28,7 +28,6 @@
 #include "../common/classes/array.h"
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
-#include "../common/classes/init.h"
 
 class TempSpace : public Firebird::File {
 public:
@@ -95,8 +94,8 @@ private:
 		{
 			if ((offset < this->size) && (offset + _size <= this->size))
 				return ptr + offset;
-
-			return NULL;
+			else
+				return NULL;
 		}
 		
 		bool sameFile(const TempFile* file) const
@@ -168,7 +167,7 @@ private:
 	Segment* freeSegments;
 	Segment* notUsedSegments;
 
-	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
+	static Firebird::Mutex initMutex;
 	static Firebird::TempDirectoryList* tempDirs;
 	static size_t minBlockSize;
 	static offset_t globalCacheUsage;

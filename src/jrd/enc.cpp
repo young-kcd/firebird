@@ -10,8 +10,6 @@
 #include "../jrd/enc_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../common/classes/locks.h"
-#include "../common/classes/alloc.h"
-#include "../common/classes/init.h"
 
 /*
 #ifdef HAVE_UNISTD_H
@@ -429,7 +427,7 @@ static C_block CF6464[64 / CHUNKBITS][1 << CHUNKBITS];
 
 /* ==================================== */
 
-static Firebird::GlobalPtr<Firebird::Mutex> cryptMutex;
+static Firebird::Mutex cryptMutex;
 
 static C_block constdatablock;	/* encryption constant */
 const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);

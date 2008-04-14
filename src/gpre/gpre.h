@@ -54,7 +54,17 @@
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
- * Stephen W. Boyd       - Added support for new features.
+ * 2006.08.31 Stephen W. Boyd        - Added support for RM/Cobol
+ * 2006.10.12 Stephen W. Boyd        - Added support for FOR UPDATE WITH LOCK
+ *
+ * Added -noqli switch to suppress parsing of QLI keywords.  This was
+ * causing problems with Cobol programs since the QLI and Cobol reserved word
+ * lists intersect.
+ * Stephen W. Boyd 21.Mar.2007
+ *
+ * 2007.05.23 Stephen W. Boyd		- Added support for SQL "first n" and "skip n" clauses
+ * 2007.06.15 Stephen W. Boyd		- Added support for CURRENT_CONNECTION, CURRENT_ROLE,
+ *									  CURRENT_TRANSACTION and CURRENT_USER context variables.
 */
 
 #ifndef GPRE_GPRE_H
@@ -79,6 +89,10 @@
 #if (defined HPUX && defined HP10) || defined SCO_UNIX
 #define ALSYS_ADA
 #endif
+#endif
+
+#ifdef VMS
+#define EITHER_CASE
 #endif
 
 /* If the C compiler supports the ANSI const directive, we emit it before
@@ -222,7 +236,7 @@ const size_t FLTR_LEN = sizeof(fltr);
 typedef enum nod_t {
 	nod_field = 1, nod_literal, nod_value,
 	nod_and, nod_or, nod_not,
-	nod_eq, nod_equiv, nod_ne, nod_ge,
+	nod_eq, nod_ne, nod_ge,
 	nod_le, nod_gt, nod_lt,
 	nod_containing, nod_matches, nod_any,
 	nod_unique, nod_plus, nod_times,
@@ -252,10 +266,7 @@ typedef enum nod_t {
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
-	nod_lowcase, nod_nullif, nod_current_connection,
-	nod_current_role, nod_current_transaction,
-	nod_coalesce, nod_case, nod_case1,
-	nod_substring,
+	nod_lowcase, nod_current_connection, nod_current_role, nod_current_transaction,
 	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 
@@ -613,7 +624,6 @@ typedef enum act_t {
 	ACT_release,
 	ACT_rfinish,
 	ACT_rollback,
-	ACT_rollback_retain_context,
 	ACT_routine,
 	ACT_segment,
 	ACT_segment_length,

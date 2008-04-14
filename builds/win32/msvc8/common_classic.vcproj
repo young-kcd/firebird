@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="8,00"
 	Name="common_classic"
 	ProjectGUID="{F5746066-8613-4811-B27C-0ED70FF9F0FF}"
 	>
@@ -335,10 +335,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp"
 				>
 			</File>
@@ -355,19 +351,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\PublicHandle.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 			<File
@@ -380,10 +368,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.cpp"
 				>
 			</File>
 		</Filter>

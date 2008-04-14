@@ -42,11 +42,11 @@
 #include <ctype.h>
 #include <string.h>
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../jrd/constants.h"
 #include "../jrd/align.h"
+#include "../dsql/alld_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
@@ -54,17 +54,15 @@
 #include "../dsql/misc_func.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/DataTypeUtil.h"
-#include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/ini.h"
+#include "../jrd/thd.h"
 #include "../jrd/dsc_proto.h"
 #include "../jrd/cvt_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
 
-using namespace Jrd;
-using namespace Dsql;
 
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -93,9 +91,9 @@ static const char* db_key_name = "DB_KEY";
 
 dsql_nod* MAKE_const_slong(SLONG value)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
 	node->nod_desc.dsc_dtype = dtype_long;
 	node->nod_desc.dsc_length = sizeof(SLONG);
@@ -123,9 +121,9 @@ dsql_nod* MAKE_const_slong(SLONG value)
  **/
 dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(),
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(),
 						(numeric_flag == CONSTANT_TIMESTAMP ||
 						  numeric_flag == CONSTANT_SINT64) ? 2 : 1) dsql_nod;
 	node->nod_type = nod_constant;
@@ -162,12 +160,12 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 	case CONSTANT_SINT64:
 		{
-			// We convert the string to an int64.  We treat the two adjacent
-			// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-			// 64-bit integer: if we ever port to a platform which requires
-			// 8-byte alignment of int64 data, we will have to force 8-byte
-			// alignment of node->nod_arg, which is now only guaranteed
-			// 4-byte alignment.    -- ChrisJ 1999-02-20
+			/* We convert the string to an int64.  We treat the two adjacent
+			   32-bit words node->nod_arg[0] and node->nod_arg[1] as a
+			   64-bit integer: if we ever port to a platform which requires
+			   8-byte alignment of int64 data, we will have to force 8-byte
+			   alignment of node->nod_arg, which is now only guaranteed
+			   4-byte alignment.    -- ChrisJ 1999-02-20 */
 
 			node->nod_desc.dsc_dtype = dtype_int64;
 			node->nod_desc.dsc_length = sizeof(SINT64);
@@ -175,96 +173,28 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_sub_type = 0;
 			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
-			// Now convert the string to an int64.  We can omit testing for
-			// overflow, because we would never have gotten here if yylex
-			// hadn't recognized the string as a valid 64-bit integer value.
-			// We *might* have "9223372936854775808", which works an an int64
-			// only if preceded by a '-', but that issue is handled in GEN_expr,
-			// and need not be addressed here.
+			/* Now convert the string to an int64.  We can omit testing for
+			   overflow, because we would never have gotten here if yylex
+			   hadn't recognized the string as a valid 64-bit integer value.
+			   We *might* have "9223372936854775808", which works an an int64
+			   only if preceded by a '-', but that issue is handled in GEN_expr,
+			   and need not be addressed here. */
 
-			// Recent change to support hex numeric constants means the input
-			// string now can be X8000000000000000, for example.
-			// Hex constants coming through this code are guaranteed to be
-			// valid - they start with X and contains only 0-9, A-F.
-			// And, they will fit in a SINT64 without overflow.
-			
-			SINT64 value = 0;
+			FB_UINT64 value = 0;
 			const char* p = constant->str_data;
 
-			if (*p == 'X')
-			{
-				// oh no, a hex string!
-				*p++; // skip the 'X' part.
-				UCHAR byte = 0;
-				int nibble = ((strlen(p)) & 1);
-				SSHORT c;
-
-				// hex string is already upper-cased
-				while ((isdigit(*p)) || ((*p >= 'A') && (*p <= 'F')))
-				{
-					// Now convert the character to a nibble
-					if (*p >= 'A')
-						c = (*p - 'A') + 10;
-					else
-						c = (*p - '0');
-
-					if (nibble)
-					{
-						byte = (byte << 4) + (UCHAR) c;
-						nibble = 0;
-						value = (value << 8) + byte;
-					}
-					else
-					{
-						byte = c;
-						nibble = 1;
-					}
-
-					*p++;
+			while (isdigit(*p))
+				value = 10 * value + (*(p++) - '0');
+			if (*p++ == '.') {
+				while (isdigit(*p)) {
+					value = 10 * value + (*p++ - '0');
+					node->nod_desc.dsc_scale--;
 				}
-
-				// if value is negative, then GEN_constant (from dsql/gen.cpp)
-				// is going to want 2 nodes: nod_negate (to hold the minus)
-				// and nod_constant as a child to hold the value.
-				if (value < 0)
-				{
-					value = -value;
-					*(SINT64*) node->nod_desc.dsc_address = value;
-					dsql_nod* sub = node;
-					node = MAKE_node(nod_negate, 1);
-					node->nod_arg[0] = sub;
-				}
-				else
-					*(SINT64*) node->nod_desc.dsc_address = value;
-			} // hex constant
-			else
-			{
-				// good old-fashioned base-10 number from SQLParse.cpp
-
-				// We convert the string to an int64.  We treat the two adjacent
-				// 32-bit words node->nod_arg[0] and node->nod_arg[1] as a
-				// 64-bit integer: if we ever port to a platform which requires
-				// 8-byte alignment of int64 data, we will have to force 8-byte
-				// alignment of node->nod_arg, which is now only guaranteed
-				// 4-byte alignment.    -- ChrisJ 1999-02-20
-				const char* p = constant->str_data;
-
-				while (isdigit(*p))
-					value = 10 * value + (*(p++) - '0');
-
-				if (*p++ == '.')
-				{
-					while (isdigit(*p))
-					{
-						value = 10 * value + (*p++ - '0');
-						node->nod_desc.dsc_scale--;
-					}
-				}
-
-				*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
 			}
+
+			*(FB_UINT64*) (node->nod_desc.dsc_address) = value;
+			break;
 		}
-		break;
 
 	case CONSTANT_DATE:
 	case CONSTANT_TIME:
@@ -338,9 +268,9 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
  **/
 dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_nod;
 	node->nod_type = nod_constant;
 
 	DEV_BLKCHK(constant, dsql_type_str);
@@ -1524,7 +1454,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
 					  isc_arg_gds, isc_dsql_only_can_subscript_array,
-					  isc_arg_string, field->fld_name.c_str(), 0);
+					  isc_arg_string, field->fld_name, 0);
 		}
 
 		MAKE_desc_from_field(&node->nod_desc, field);
@@ -1554,24 +1484,6 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	}
 
 	return node;
-}
-
-
-/**
-  
- 	MAKE_field_name
-  
-    @brief	Make up a field name node.
- 
-
-    @param field_name
-
- **/
-dsql_nod* MAKE_field_name(const char* field_name)
-{
-    dsql_nod* const field_node = MAKE_node(nod_field_name, (int) e_fln_count);
-    field_node->nod_arg[e_fln_name] = (dsql_nod*) MAKE_cstring(field_name);
-	return field_node;
 }
 
 
@@ -1613,9 +1525,9 @@ dsql_nod* MAKE_list(DsqlNodStack& stack)
  **/
 dsql_nod* MAKE_node(NOD_TYPE type, int count)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_count = count;
 
@@ -1648,7 +1560,8 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	
 	DEV_BLKCHK(message, dsql_type_msg);
 	
-	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index) 
+	if (sqlda_flag && sqlda_index && (sqlda_index <= message->msg_index) && 
+		!Config::getOldParameterOrdering()) 
 	{
 		// This parameter possibly already here. Look for it
 		for (dsql_par* temp = message->msg_parameters; temp; temp = temp->par_next) {
@@ -1657,9 +1570,9 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		}
 	}
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par;
+	dsql_par* parameter = FB_NEW(*tdsql->getDefaultPool()) dsql_par;
 	parameter->par_message = message;
 	parameter->par_next = message->msg_parameters;
 	message->msg_parameters = parameter;
@@ -1675,7 +1588,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 // If the parameter is used declared, set SQLDA index 
 	if (sqlda_flag) {
-		if (sqlda_index) {
+		if (sqlda_index && !Config::getOldParameterOrdering()) {
 			parameter->par_index = sqlda_index;
 			if (message->msg_index < sqlda_index)
 				message->msg_index = sqlda_index;
@@ -1711,7 +1624,6 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
  **/
 dsql_str* MAKE_string(const char* str, int length)
 {
-	fb_assert(length >= 0);
 	return MAKE_tagged_string(str, length, NULL);
 }
 
@@ -1738,18 +1650,18 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 	fb_assert(name);
 	fb_assert(length > 0);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_sym* symbol = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_sym;
+	dsql_sym* symbol = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_sym;
 	symbol->sym_type = type;
-	symbol->sym_object = object;
+	symbol->sym_object = (BLK) object;
 	symbol->sym_dbb = database;
 	symbol->sym_length = length;
 	TEXT* p = symbol->sym_name;
 	symbol->sym_string = p;
 
 	if (length)
-		memcpy(p, name, length);
+		MOVE_FAST(name, p, length);
 
 	HSHD_insert(symbol);
 
@@ -1772,9 +1684,9 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
  **/
 dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* charset)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_str* string = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
+	dsql_str* string = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_str;
 	string->str_charset = charset;
 	string->str_length  = length;
 	memcpy(string->str_data, strvar, length);
@@ -1826,9 +1738,9 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_var* variable = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(name)) dsql_var;
+	dsql_var* variable = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(name)) dsql_var;
 	dsql_nod* node = MAKE_node(nod_variable, e_var_count);
 	node->nod_arg[e_var_variable] = (dsql_nod*) variable;
 	variable->var_msg_number = msg_number;
@@ -1841,7 +1753,6 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 
 	return node;
 }
-
 
 /**
 
@@ -1906,7 +1817,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	switch (item->nod_type) {
 	case nod_field:
 		field = (dsql_fld*) item->nod_arg[e_fld_field];
-		name_alias = field->fld_name.c_str();
+		name_alias = field->fld_name;
 		context = (dsql_ctx*) item->nod_arg[e_fld_context];
 		break;
 	case nod_dbkey:
@@ -1919,7 +1830,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		alias = item->nod_arg[e_alias_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
+			parameter->par_name = field->fld_name;
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
@@ -1937,7 +1848,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		alias = item->nod_arg[e_derived_field_value];
 		if (alias->nod_type == nod_field) {
 			field = (dsql_fld*) alias->nod_arg[e_fld_field];
-			parameter->par_name = field->fld_name.c_str();
+			parameter->par_name = field->fld_name;
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
@@ -1957,7 +1868,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			switch (map_node->nod_type) {
 			case nod_field:
 				field = (dsql_fld*) map_node->nod_arg[e_fld_field];
-				name_alias = field->fld_name.c_str();
+				name_alias = field->fld_name;
 				context = (dsql_ctx*) map_node->nod_arg[e_fld_context];
 				break;
 			case nod_alias:
@@ -1966,7 +1877,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				alias = map_node->nod_arg[e_alias_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name.c_str();
+					parameter->par_name = field->fld_name;
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
@@ -1976,7 +1887,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				alias = map_node->nod_arg[e_derived_field_value];
 				if (alias->nod_type == nod_field) {
 					field = (dsql_fld*) alias->nod_arg[e_fld_field];
-					parameter->par_name = field->fld_name.c_str();
+					parameter->par_name = field->fld_name;
 					context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 				}
 				break;
@@ -2007,13 +1918,13 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_variable:
 		{
 			dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
-			name_alias = variable->var_field->fld_name.c_str();
+			name_alias = variable->var_field->fld_name;
 			break;
 		}
 	case nod_udf: 
 		{
 			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
-			name_alias = userFunc->udf_name.c_str();
+			name_alias = userFunc->udf_name;
 			break;
 		}
 	case nod_sys_function:
@@ -2052,41 +1963,12 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			// Otherwise, we need to test here for most of the other node types.
 			// However, we need to be recursive only if we agree things like -gen_id()
 			// should be given the GEN_ID alias, too.
-			int level = 0;
 			const dsql_nod* node = item->nod_arg[0];
 			while (node->nod_type == nod_negate)
-			{
 				node = node->nod_arg[0];
-				++level;
-			}
 				
-			switch (node->nod_type)
-			{
-			case nod_constant:
-			case nod_null:
+			if (node->nod_type == nod_constant || node->nod_type == nod_null)
 				name_alias = "CONSTANT";
-				break;
-			/*
-			case nod_add:
-			case nod_add2:
-				name_alias = "ADD";
-				break;
-			case nod_subtract:
-			case nod_subtract2:
-				name_alias = "SUBTRACT";
-				break;
-			*/
-			case nod_multiply:
-			case nod_multiply2:
-				if (!level)
-					name_alias = "MULTIPLY";
-				break;
-			case nod_divide:
-			case nod_divide2:
-				if (!level)
-					name_alias = "DIVIDE";
-				break;
-			}
 		}
 		break;
 	case nod_add:
@@ -2180,13 +2062,13 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	{
 		if (context->ctx_relation)
 		{
-			parameter->par_rel_name = context->ctx_relation->rel_name.c_str();
-			parameter->par_owner_name = context->ctx_relation->rel_owner.c_str();
+			parameter->par_rel_name = context->ctx_relation->rel_name;
+			parameter->par_owner_name = context->ctx_relation->rel_owner;
 		}
 		else if (context->ctx_procedure)
 		{
-			parameter->par_rel_name = context->ctx_procedure->prc_name.c_str();
-			parameter->par_owner_name = context->ctx_procedure->prc_owner.c_str();
+			parameter->par_rel_name = context->ctx_procedure->prc_name;
+			parameter->par_owner_name = context->ctx_procedure->prc_owner;
 		}
 
 		parameter->par_rel_alias = context->ctx_alias;

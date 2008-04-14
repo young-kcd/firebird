@@ -53,6 +53,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	Run the shared cache manager.
  *
  **************************************/
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
 /* Perform some special handling when run as a Firebird service.  The
    first switch can be "-svc" (lower case!) or it can be "-svc_re" followed

@@ -42,7 +42,9 @@
 
 #include "../remote/protocol.h"
 
-#if defined(sun)
+#ifdef VMS
+const P_ARCH ARCHITECTURE	= arch_vms;
+#elif defined(sun)
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
 #	elif defined(i386)

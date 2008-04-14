@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../common/classes/fb_atomic.h"
-#include "../common/classes/auto.h"
 #include "../common/classes/tree.h"
 #include "../common/classes/locks.h"
 #ifdef HAVE_STDLIB_H
@@ -263,7 +262,7 @@ private:
 	void removeFreeBlock(MemoryBlock* blk);
 	
 	void free_blk_extent(MemoryBlock* blk);
-
+	
 	// Allocates small block from this pool. Pool must be locked during call
 	void* internal_alloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
@@ -285,7 +284,7 @@ private:
 
 	inline void increment_mapping(size_t size);
 	inline void decrement_mapping(size_t size);
-
+	
 protected:
 	// Do not allow to create and destroy pool directly from outside
 	MemoryPool(MemoryPool* _parent, MemoryStats &_stats, void* first_extent, void* root_page);
@@ -293,24 +292,29 @@ protected:
 	// This should never be called
 	~MemoryPool() {
 	}
-
+	
+	// Used to create MemoryPool descendants
+	static MemoryPool* internal_create(size_t instance_size, 
+		MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
+	
 public:
 	// Default statistics group for process
 	static MemoryStats* default_stats_group;
 
 	// Pool created for process
 	static MemoryPool* processMemoryPool;
-
+	
 	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL,
-								  MemoryStats& stats = *default_stats_group);
-
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group) {
+		return internal_create(sizeof(MemoryPool), parent, stats);
+	}
+	
 	// Set context pool for current thread of execution
 	static MemoryPool* setContextPool(MemoryPool* newPool);
-
+	
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
-
+	
 	// Set statistics group for pool. Usage counters will be decremented from 
 	// previously set group and added to new
 	void setStatsGroup(MemoryStats& stats);
@@ -318,22 +322,16 @@ public:
 	// Deallocate pool and all its contents
 	static void deletePool(MemoryPool* pool);
 
-	// Just a helper for AutoPtr. Does the same as above.
-	static void clear(MemoryPool* pool)
-	{
-		deletePool(pool);
-	}
-
 	// Allocate memory block. Result is not zero-initialized.
 	// It case of problems this method throws Firebird::BadAlloc
-	void* allocate(size_t size
+	void* allocate(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	);
 
 	// Allocate memory block. In case of problems this method returns NULL
-	void* allocate_nothrow(size_t size
+	void* allocate_nothrow(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
@@ -358,12 +356,12 @@ public:
 	}
 	
 	// Allocate zero-initialized block of memory
-	void* calloc(size_t size
+	void* calloc(size_t size, SSHORT type = 0
 #ifdef DEBUG_GDS_ALLOC
 		, const char* file = NULL, int line = 0
 #endif
 	) {
-		void* result = allocate(size
+		void* result = allocate(size, type
 #ifdef DEBUG_GDS_ALLOC
 			, file, line
 #endif
@@ -372,9 +370,10 @@ public:
 		return result;	
 	}
 
-	// Initialize and finalize global memory pool
-	static void init();
-	static void cleanup();
+	/// Returns the type associated with the allocated memory.
+	static SSHORT blk_type(const void* mem) {
+		return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_type;
+	}
 	
 	/// Returns the pool the memory was allocated from.
 	//static MemoryPool* blk_pool(const void* mem) {
@@ -434,7 +433,7 @@ inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::
 // Global versions of operators new and delete
 inline void* operator new(size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s
+	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -442,7 +441,7 @@ inline void* operator new(size_t s) THROW_BAD_ALLOC
 }
 inline void* operator new[](size_t s) THROW_BAD_ALLOC
 {
-	return getDefaultMemoryPool()->allocate(s
+	return getDefaultMemoryPool()->allocate(s, 0
 #ifdef DEBUG_GDS_ALLOC
 	  ,__FILE__, __LINE__
 #endif
@@ -469,10 +468,10 @@ inline void operator delete[](void* mem) throw()
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
-	return pool.allocate(s, file, line);
+	return pool.allocate(s, 0, file, line);
 }
 inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) {
-	return pool.allocate(s, file, line);
+	return pool.allocate(s, 0, file, line);
 }
 #define FB_NEW(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
@@ -490,27 +489,6 @@ inline void* operator new[](size_t s, Firebird::MemoryPool& pool) {
 
 namespace Firebird
 {
-	// Global storage makes it possible to use new and delete for classes,
-	// based on it, to behave traditionally, i.e. get memory from permanent pool.
-	class GlobalStorage {
-	public:
-		void* operator new(size_t size)
-		{
-			return getDefaultMemoryPool()->allocate(size);
-		}
-
-		void operator delete(void* mem)
-		{
-			getDefaultMemoryPool()->deallocate(mem);
-		}
-
-		MemoryPool& getPool() const 
-		{ 
-			return *getDefaultMemoryPool();
-		}
-	};
-	
-
 	// Permanent storage is used as base class for all objects,
 	// performing memory allocation in methods other than 
 	// constructors of this objects. Permanent means that pool,
@@ -544,9 +522,7 @@ namespace Firebird
 		}
 		explicit AutoStorage(MemoryPool& p) : PermanentStorage(p) { }
 	};
-
-	typedef AutoPtr<MemoryPool, MemoryPool> AutoMemoryPool;
-
+	
 } // namespace Firebird
 
 

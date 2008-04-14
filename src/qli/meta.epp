@@ -78,7 +78,6 @@ static qli_syntax* parse_blr(UCHAR **, qli_symbol*);
 static qli_syntax* parse_blr_blob(ISC_QUAD&, qli_symbol*);
 static void purge_relation(qli_rel*);
 static void put_dyn_string(qli_rlb*, const TEXT*);
-static void release_request(DBB db, FB_API_HANDLE& request_handle);
 static void rollback_update(DBB);
 static void set_capabilities(DBB);
 static DBB setup_update(DBB);
@@ -966,11 +965,9 @@ int MET_get_datatype( USHORT blr_datatype)
 
 
 #ifdef DEV_BUILD
-void MET_index_info(DBB db,
-					const SCHAR* relation_name,
+void MET_index_info(const SCHAR* relation_name,
 					const SCHAR* index_name,
-					SCHAR* const buffer,
-					size_t bufsize)
+					SCHAR* buffer)
 {
 /**************************************
  *
@@ -995,18 +992,15 @@ void MET_index_info(DBB db,
 
 		const SCHAR* p;
 		if (b == buffer) {
-			for (p = fb_utils::exact_name(IDX.RDB$INDEX_NAME); *p;) {
+			// CVC: warning: not dialect 3 aware.
+			for (p = IDX.RDB$INDEX_NAME; *p && *p != ' ';) {
 				*b++ = *p++;
 			}
 			*b++ = ' ';
 			*b++ = '(';
 		}
-
-		p = fb_utils::exact_name(SEG.RDB$FIELD_NAME);
-		if (p + strlen(p) + 2 > buffer + bufsize)
-			break;
-			
-		while (*p) {
+		// CVC: warning: not dialect 3 aware.
+		for (p = SEG.RDB$FIELD_NAME; *p && *p != ' ';) {
 			*b++ = *p++;
 		}
 
@@ -1017,9 +1011,11 @@ void MET_index_info(DBB db,
 		ERRQ_database_error(NULL, gds_status);
 	END_ERROR;
 
-	release_request(db, request_handle);
+	if (request_handle)
+		if (isc_release_request(gds_status, &request_handle))
+			ERRQ_database_error(NULL, gds_status);
 
-	// back up over the last space and finish off
+// back up over the last space and finish off
 
 	b--;
 	*b++ = ')';
@@ -2253,8 +2249,13 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 
 	execute_dynamic_ddl(target->rel_database, rlb);
 
-	release_request(source->rel_database, req1);
-	release_request(source->rel_database, req2);
+	if (req1)
+		if (isc_release_request(gds_status, &req1))
+			ERRQ_database_error(source->rel_database, gds_status);
+	if (req2)
+		if (isc_release_request(gds_status, &req2))
+			ERRQ_database_error(source->rel_database, gds_status);
+	//return TRUE;
 }
 
 
@@ -2322,7 +2323,7 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 					&& (A.RDB$FIELD_SUB_TYPE != Y.RDB$FIELD_SUB_TYPE)))
 				{
 
-					TEXT* name = ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
+					TEXT* name = (TEXT*) ALLQ_malloc((SLONG) sizeof(Y.RDB$FIELD_NAME));
 					strcpy(name, Y.RDB$FIELD_NAME);
 					rollback_update(target->rel_database);
 					// CVC: When is this memory deallocated?
@@ -2476,9 +2477,16 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 		execute_dynamic_ddl(target->rel_database, rlb);
 	}
 
-	release_request(source->rel_database, req1);
-	release_request(target->rel_database, req2);
-	release_request(source->rel_database, req3);
+	if (req1)
+		if (isc_release_request(gds_status, &req1))
+			ERRQ_database_error(source->rel_database, gds_status);
+	if (req2)
+		if (isc_release_request(gds_status, &req2))
+			ERRQ_database_error(target->rel_database, gds_status);
+	if (req3)
+		if (isc_release_request(gds_status, &req3))
+			ERRQ_database_error(source->rel_database, gds_status);
+	//return TRUE;
 }
 
 
@@ -2609,7 +2617,7 @@ static void execute_dynamic_ddl( DBB database, qli_rlb* rlb)
  *	Execute a ddl command, for better or for worse.
  *
  **************************************/
-	const USHORT length = rlb->rlb_data - rlb->rlb_base;
+	const USHORT length = (UCHAR *) rlb->rlb_data - (UCHAR *) rlb->rlb_base;
 
 	if (QLI_blr)
 		PRETTY_print_dyn(rlb->rlb_base, NULL, NULL, 0);
@@ -2855,12 +2863,13 @@ static void install( dbb* old_dbb)
 		ERRQ_database_error(new_dbb, gds_status);
 	END_ERROR;
 
-	release_request(new_dbb, request);
+	if (request)
+		if (isc_release_request(gds_status, &request))
+			ERRQ_database_error(new_dbb, gds_status);
 
-	// Pick up functions, if appropriate
+// Pick up functions, if appropriate
 
-	if (new_dbb->dbb_capabilities & DBB_cap_functions)
-	{
+	if (new_dbb->dbb_capabilities & DBB_cap_functions) {
 		FB_API_HANDLE request2 = 0;
 		FOR(REQUEST_HANDLE request) X IN DB.RDB$FUNCTIONS
 		    qli_symbol* fsymbol = make_symbol(X.RDB$FUNCTION_NAME, sizeof(X.RDB$FUNCTION_NAME));
@@ -2904,8 +2913,12 @@ static void install( dbb* old_dbb)
 		ON_ERROR
 			ERRQ_database_error(new_dbb, gds_status);
 		END_ERROR;
-		release_request(new_dbb, request);
-		release_request(new_dbb, request2);
+		if (request)
+			if (isc_release_request(gds_status, &request))
+				ERRQ_database_error(new_dbb, gds_status);
+		if (request2)
+			if (isc_release_request(gds_status, &request2))
+				ERRQ_database_error(new_dbb, gds_status);
 	}
 }
 
@@ -3238,20 +3251,16 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		constant->con_desc.dsc_scale = scale;
 		constant->con_desc.dsc_length = length;
 		constant->con_desc.dsc_address = p = constant->con_data;
-		switch (dtype)
-		{
-		case dtype_text:
+		if (dtype == dtype_text)
 			while (l--)
 				*p++ = BLR_BYTE;
-			break;
-		case dtype_short:
-			*(SSHORT*) p = gds__vax_integer(blr, l);
+		else if (dtype == dtype_short) {
+			*(SSHORT *) p = gds__vax_integer(blr, l);
 			blr += l;
-			break;
-		case dtype_long:
-			*(SLONG*) p = gds__vax_integer(blr, l);
+		}
+		else if (dtype == dtype_long) {
+			*(SLONG *) p = gds__vax_integer(blr, l);
 			blr += l;
-			break;
 		}
 		node = make_node(nod_constant, 1);
 		node->syn_count = 0;
@@ -3266,10 +3275,8 @@ static qli_syntax* parse_blr( UCHAR ** ptr, qli_symbol* symbol)
 		node = make_node(operatr, args);
 		arg = node->syn_arg;
 		while (--args >= 0)
-		{
 			if (!(*arg++ = parse_blr(&blr, symbol)))
 				return NULL;
-		}
 	}
 
 	*ptr = blr;
@@ -3400,16 +3407,6 @@ static void put_dyn_string( qli_rlb* rlb, const TEXT* string)
 }
 
 
-static void release_request(DBB db, FB_API_HANDLE& request_handle)
-{
-	if (request_handle)
-	{
-		if (isc_release_request(gds_status, &request_handle))
-			ERRQ_database_error(db, gds_status);
-	}
-}
-
-
 static void rollback_update( DBB database)
 {
 /**************************************
@@ -3469,7 +3466,11 @@ static void set_capabilities( DBB database)
 		END_ERROR;
 	}
 
-	release_request(database, req);
+	if (req)
+	{
+		if (isc_release_request(gds_status, &req))
+			ERRQ_database_error(database, gds_status);
+	}
 }
 
 

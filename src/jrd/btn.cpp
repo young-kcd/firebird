@@ -346,21 +346,21 @@ UCHAR* getPointerFirstNode(btree_page* page, IndexJumpInfo* jumpInfo)
  *  node is returned.
  *
  **************************************/
-	if (page->btr_header.pag_flags & btr_jump_info)
-	{
+	if (page->btr_header.pag_flags & btr_jump_info) {
 		if (jumpInfo) {
 			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
 			return readJumpInfo(jumpInfo, pointer);
 		}
-
-		IndexJumpInfo jumpInformation;
-		UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
-		readJumpInfo(&jumpInformation, pointer);
-
-		return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
+		else {
+			IndexJumpInfo jumpInformation;
+			UCHAR* pointer = reinterpret_cast<UCHAR*>(page->btr_nodes);
+			readJumpInfo(&jumpInformation, pointer);
+			return reinterpret_cast<UCHAR*>(page) + jumpInformation.firstNodeOffset;
+		}
 	}
-
-	return reinterpret_cast<UCHAR*>(page->btr_nodes);
+	else {
+		return reinterpret_cast<UCHAR*>(page->btr_nodes);
+	}
 }
 
 
@@ -422,7 +422,7 @@ UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expa
 	// starting at the end of the page, find the
 	// first node that is not an end marker
 	UCHAR* pointer = ((UCHAR*) page + page->btr_length);
-	const UCHAR flags = page->btr_header.pag_flags;
+	const UCHAR flags = page->pag_flags;
 	IndexNode node;
 	while (true) {
 		pointer = previousNode(&node, pointer, flags, &enode);

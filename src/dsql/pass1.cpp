@@ -143,12 +143,11 @@
 #include <stdio.h>
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
+#include "../jrd/thd.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
-#include "../jrd/jrd.h"
 #include "../jrd/constants.h"
-#include "../jrd/intl_classes.h"
+#include "../dsql/alld_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
@@ -158,8 +157,6 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/dsc_proto.h"
-#include "../jrd/intl_proto.h"
-#include "../jrd/jrd_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/SysFunction.h"
@@ -168,11 +165,8 @@
 #include "../common/utils_proto.h"
 #include "../common/config/config.h"
 
-using namespace Jrd;
-using namespace Dsql;
-
 #ifdef DEV_BUILD
-static void DSQL_pretty(const dsql_nod*, int);
+void DSQL_pretty(const dsql_nod*, int);
 #endif
 
 
@@ -242,7 +236,7 @@ static dsql_nod* pass1_insert(dsql_req*, dsql_nod*, bool, bool);
 static dsql_nod* pass1_join(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_label(dsql_req*, dsql_nod*);
 static dsql_nod* pass1_lookup_alias(dsql_req*, const dsql_str*, dsql_nod*, bool);
-static dsql_nod* pass1_make_derived_field(dsql_req*, thread_db*, dsql_nod*);
+static dsql_nod* pass1_make_derived_field(dsql_req*, tsql*, dsql_nod*);
 static dsql_nod* pass1_merge(dsql_req*, dsql_nod*, bool);
 static dsql_nod* pass1_not(dsql_req*, const dsql_nod*, bool, bool);
 static void	pass1_put_args_on_stack(dsql_req*, dsql_nod*, DsqlNodStack&, bool);
@@ -323,13 +317,13 @@ dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(relation_node, dsql_type_nod);
 
-	thread_db* const tdbb = JRD_get_thread_data();
+	tsql* const tdsql = DSQL_get_thread_data();
 
 	dsql_rel* relation = NULL;
 	dsql_prc* procedure = NULL;
 
-	// figure out whether this is a relation or a procedure
-	// and give an error if it is neither
+/* figure out whether this is a relation or a procedure
+   and give an error if it is neither */
 
 	dsql_str* relation_name;
 	switch (relation_node->nod_type)
@@ -345,9 +339,9 @@ dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 		break;
 	}
 
-	// CVC: Let's skim the context, too.
-	if (relation_name && relation_name->str_data) {
-		fb_utils::exact_name((TEXT*) relation_name->str_data);
+    // CVC: Let's skim the context, too.
+    if (relation_name && relation_name->str_data) {
+        fb_utils::exact_name((TEXT*) relation_name->str_data);
 	}
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
@@ -405,8 +399,8 @@ dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 	}
 
 	// Set up context block.
-	dsql_ctx* context = FB_NEW(*tdbb->getDefaultPool())
-		dsql_ctx(*tdbb->getDefaultPool());
+	dsql_ctx* context = FB_NEW(*tdsql->getDefaultPool())
+		dsql_ctx(*tdsql->getDefaultPool());
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = request;
@@ -469,12 +463,12 @@ dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 				// alias %s conflicts with an alias in the same statement.
 			}
 			else if (conflict->ctx_procedure) {
-				conflict_name = conflict->ctx_procedure->prc_name.c_str();
+				conflict_name = conflict->ctx_procedure->prc_name;
 				error_code = isc_procedure_conflict_error;
 				// alias %s conflicts with a procedure in the same statement.
 			}
 			else if (conflict->ctx_relation) {
-				conflict_name = conflict->ctx_relation->rel_name.c_str();
+				conflict_name = conflict->ctx_relation->rel_name;
 				error_code = isc_relation_conflict_err;
 				// alias %s conflicts with a relation in the same statement.
 			}
@@ -505,14 +499,14 @@ dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node)
 			if (count > procedure->prc_in_count ||
 				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
-				ERRD_post(isc_prcmismat, isc_arg_string,
-							relation_name->str_data, 0);
+                    ERRD_post(isc_prcmismat, isc_arg_string,
+                              relation_name->str_data, 0);
 			}
 
 			if (count)
 			{
 				// Initialize this stack variable, and make it look like a node
-				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdbb->getDefaultPool(), 0) dsql_nod);
+				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_nod);
 
 				dsql_nod* const* input = context->ctx_proc_inputs->nod_arg;
 				for (dsql_fld* field = procedure->prc_inputs;
@@ -590,13 +584,13 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
 
-	case nod_coalesce:
+    case nod_coalesce:
 		return pass1_coalesce(request, input, proc_flag);
 
 	case nod_derived_field:
 		return input;
 
-	case nod_simple_case:
+    case nod_simple_case:
 		return pass1_simple_case(request, input, proc_flag);
 
 	case nod_searched_case:
@@ -738,9 +732,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 			return pass1_field(request, input, false, NULL);
 
 	case nod_variable:
-		node = MAKE_node (input->nod_type, e_var_count);
-		node->nod_arg[0] = input->nod_arg[0];
-		node->nod_desc = input->nod_desc;
+        node = MAKE_node (input->nod_type, e_var_count);
+        node->nod_arg[0] = input->nod_arg[0];
+        node->nod_desc = input->nod_desc;
 		return node;
 
 	case nod_var_name:
@@ -771,8 +765,6 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		dsql_nod* cte = request->findCTE(rel_name);
 		if (cte)
 		{
-			cte->nod_flags |= NOD_DT_CTE_USED;
-
 			if ((request->req_flags & REQ_CTE_recursive) && 
 				 request->req_curr_ctes.hasData() && 
 				 (request->req_curr_ctes.object() == cte)) 
@@ -783,7 +775,7 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 						0);
 			}
 
-			for (DsqlNodStack::const_iterator stack(request->req_curr_ctes); stack.hasData(); ++stack)
+			for (DsqlNodStack::iterator stack(request->req_curr_ctes); stack.hasData(); ++stack)
 			{
 				dsql_nod* cte1 = stack.object();
 				if (cte1 == cte) {
@@ -816,8 +808,10 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			return derived_node;
 		}
-
-		return pass1_relation(request, input);
+		else 
+		{
+			return pass1_relation(request, input);
+		}
 	}
 
 	case nod_constant:
@@ -835,6 +829,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 					(dsql_msg*) ((dsql_par*) input->nod_arg[e_par_parameter])->par_message :
 					request->req_send),
 				true, true,
+				// Pass 0 here to restore older parameter
+				// ordering behavior unconditionally.
 				(USHORT)(IPTR) input->nod_arg[e_par_index],
 				NULL);
 		node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) ((dsql_par*) node->nod_arg[e_par_parameter])->par_index;
@@ -1042,17 +1038,6 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return node;
 
 	case nod_dom_value:
-		{
-			const dsql_nod* const ddl_node =
-				(request->req_type == REQ_DDL) ? request->req_ddl_node : NULL;
-			if (!ddl_node ||
-				!(ddl_node->nod_type == nod_def_domain ||
-					ddl_node->nod_type == nod_mod_domain))
-			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-						  isc_arg_gds, isc_dsql_domain_err, 0);
-			}
-		}
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_desc = input->nod_desc;
 		return node;
@@ -1063,11 +1048,9 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 				*reinterpret_cast<internal_info_id*>(input->nod_arg[0]->nod_desc.dsc_address);
 			USHORT req_mask = InternalInfo::getMask(id);
 			if (req_mask && !(request->req_flags & req_mask))
-			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err, // Token unknown
 					isc_arg_gds, isc_random, isc_arg_string, InternalInfo::getAlias(id), 0);
-			}
 		}
 		break;
 
@@ -1095,16 +1078,6 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 	case nod_not:
 		return pass1_not(request, input, proc_flag, true);
-
-	case nod_tran_params:
-		return input;
-
-	case nod_named_param:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
-		node->nod_arg[e_named_param_expr] =
-			PASS1_node(request, input->nod_arg[e_named_param_expr], proc_flag);
-		return node;
 
 	default:
 		break;
@@ -1173,7 +1146,6 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		break;
 
 	case nod_like:
-	case nod_similar:
 		if (node->nod_count == 3) {
 			sub3 = node->nod_arg[2];
 		}
@@ -1270,17 +1242,13 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	}
 #endif
 
-	dsql_nod* node = NULL;
+	dsql_nod* node;
 	const DsqlContextStack::iterator base(*request->req_context);
 
 // Dispatch on node type.  Fall thru on easy ones
 
 	switch (input->nod_type)
 	{
-	case nod_def_database:
-		request->req_type = REQ_CREATE_DB;
-		return input;
-
 	case nod_def_relation:
 	case nod_redef_relation:
 	case nod_mod_relation:
@@ -1301,6 +1269,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_del_exception:
 	case nod_grant:
 	case nod_revoke:
+	case nod_def_database:
 	case nod_mod_database:
 	case nod_def_generator:
 	case nod_del_generator:
@@ -1318,10 +1287,9 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_set_statistics:
 	case nod_comment:
 	case nod_mod_udf:
-	case nod_mod_role:
-	case nod_add_user:
-	case nod_mod_user:
-	case nod_del_user:
+		request->req_type = REQ_DDL;
+		return input;
+
 	case nod_def_collation:
 	case nod_del_collation:
 		request->req_type = REQ_DDL;
@@ -1342,7 +1310,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		return input;
 
 	case nod_def_procedure:
-	case nod_redef_procedure:
+    case nod_redef_procedure:
 	case nod_mod_procedure:
 	case nod_replace_procedure:
 		{
@@ -1373,14 +1341,11 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 								const dsql_fld* field2 =
 									(dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
 								DEV_BLKCHK(field2, dsql_type_fld);
-
-								if (field->fld_name == field2->fld_name)
-								{
+								if (!strcmp(field->fld_name, field2->fld_name))
 									ERRD_post(isc_sqlerr, isc_arg_number,
 											  (SLONG) - 901, isc_arg_gds,
 											  isc_dsql_var_conflict, isc_arg_string,
-											  field->fld_name.c_str(), 0);
-								}
+											  field->fld_name, 0);
 							}
 						}
 
@@ -1394,14 +1359,11 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 								const dsql_fld* field2 =
 									(dsql_fld*) (*ptr2)->nod_arg[e_dfl_field];
 								DEV_BLKCHK(field2, dsql_type_fld);
-
-								if (field->fld_name == field2->fld_name)
-								{
+								if (!strcmp(field->fld_name, field2->fld_name))
 									ERRD_post(isc_sqlerr, isc_arg_number,
 											  (SLONG) - 901, isc_arg_gds,
 											  isc_dsql_var_conflict, isc_arg_string,
-											  field->fld_name.c_str(), 0);
-								}
+											  field->fld_name, 0);
 							}
 						}
 					}
@@ -1475,7 +1437,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 
 			if (count) {
 				// Initialize this stack variable, and make it look like a node
-				Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
+	            Firebird::AutoPtr<dsql_nod> desc_node(FB_NEW_RPT(*getDefaultMemoryPool(), 0) dsql_nod);
 
 				dsql_nod* const* ptr = node->nod_arg[e_exe_inputs]->nod_arg;
 				for (const dsql_fld* field = procedure->prc_inputs;
@@ -1554,20 +1516,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		} // end scope
 		return node;
 
-	case nod_auto_trans:
-		{
-			const bool auto_trans = request->req_flags & REQ_in_auto_trans_block;
-			request->req_flags |= REQ_in_auto_trans_block;
-
-			node = MAKE_node(input->nod_type, input->nod_count);
-			node->nod_arg[e_auto_trans_action] =
-				PASS1_statement(request, input->nod_arg[e_auto_trans_action], proc_flag);
-
-			if (!auto_trans)
-				request->req_flags &= ~REQ_in_auto_trans_block;
-		}
-		break;
-
 	case nod_for_select:
 		{
 			node = MAKE_node(input->nod_type, input->nod_count);
@@ -1603,17 +1551,16 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				}
 			}
 
-			if (input->nod_arg[e_flp_action])
-			{
-				// CVC: Let's add the ability to BREAK the for_select same as the while,
-				// but only if the command is FOR SELECT, otherwise we have singular SELECT
+			if (input->nod_arg[e_flp_action]) {
+	            // CVC: Let's add the ability to BREAK the for_select same as the while,
+	            // but only if the command is FOR SELECT, otherwise we have singular SELECT
 				request->req_loop_level++;
 				node->nod_arg[e_flp_label] = pass1_label(request, input);
 				node->nod_arg[e_flp_action] =
 					PASS1_statement(request, input->nod_arg[e_flp_action], proc_flag);
 				request->req_loop_level--;
 				request->req_labels.pop();
-			}
+	        }
 
 			if (cursor) {
 				request->req_cursor_number--;
@@ -1711,14 +1658,13 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			PASS1_node(request, input->nod_arg[e_pst_argument], proc_flag);
 		return node;
 
-	case nod_exec_sql:
+    case nod_exec_sql:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_sql_stmnt] =
 			PASS1_node(request, input->nod_arg[e_exec_sql_stmnt], proc_flag);
 		return pass1_savepoint(request, node);
 
-	// CVC: This node seems obsolete.
-	case nod_exec_into:
+    case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_into_stmnt] =
 			PASS1_node(request, input->nod_arg[e_exec_into_stmnt], proc_flag);
@@ -1729,93 +1675,29 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 				PASS1_statement(request, input->nod_arg[e_exec_into_block], proc_flag);
 			request->req_loop_level--;
 			request->req_labels.pop();
-		}
+        }
 
 		node->nod_arg[e_exec_into_list] =
 			PASS1_node(request, input->nod_arg[e_exec_into_list], proc_flag);
 		return pass1_savepoint(request, node);
 
-	case nod_exec_stmt:
-		node = MAKE_node(input->nod_type, input->nod_count);
-		node->nod_arg[e_exec_stmt_sql] =
-			PASS1_node(request, input->nod_arg[e_exec_stmt_sql], proc_flag);
-		node->nod_arg[e_exec_stmt_inputs] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_inputs], proc_flag);
-
-		// check params names uniqueness, if present
-		if (node->nod_arg[e_exec_stmt_inputs])
-		{
-			const int cnt = node->nod_arg[e_exec_stmt_inputs]->nod_count;
-			StrArray names(*getDefaultMemoryPool(), cnt);
-
-			const dsql_nod* const* prm = node->nod_arg[e_exec_stmt_inputs]->nod_arg;
-			if (prm[0]->nod_arg[e_named_param_name]) {
-				for (int i = 0; i < cnt; i++)
-				{
-					dsql_str* name = (dsql_str*) prm[i]->nod_arg[e_named_param_name];
-
-					if (names.exist(name->str_data)) {
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-								  isc_arg_gds, isc_dsql_duplicate_spec,
-								  isc_arg_string, name->str_data, 0);
-					}
-					names.add(name->str_data);
-				}
-			}
-		}
-
-		node->nod_arg[e_exec_stmt_outputs] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_outputs], proc_flag);
-		
-		if (input->nod_arg[e_exec_stmt_proc_block])
-		{
-			request->req_loop_level++;
-			node->nod_arg[e_exec_stmt_label] = pass1_label(request, input);
-			node->nod_arg[e_exec_stmt_proc_block] =
-				PASS1_statement(request, input->nod_arg[e_exec_stmt_proc_block], proc_flag);
-			request->req_loop_level--;
-			request->req_labels.pop();
-		}
-
-		node->nod_arg[e_exec_stmt_data_src] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_data_src], proc_flag);
-
-		node->nod_arg[e_exec_stmt_user] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_user], proc_flag);
-
-		node->nod_arg[e_exec_stmt_pwd] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_pwd], proc_flag);
-
-		node->nod_arg[e_exec_stmt_tran] = 
-			PASS1_node(request, input->nod_arg[e_exec_stmt_tran], proc_flag);
-
-		return pass1_savepoint(request, node);
-
 	case nod_exit:
 		return input;
 
-	case nod_breakleave:
+    case nod_breakleave:
 		if (!request->req_loop_level)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_token_err,	// Token unknown
 				isc_arg_gds, isc_random, isc_arg_string, "BREAK/LEAVE", 0);
 		input->nod_arg[e_breakleave_label] = pass1_label(request, input);
-		return input;
+        return input;
 
 	case nod_return:
-		if (request->req_flags & REQ_trigger)	// triggers only
+		if (request->req_flags & REQ_trigger) // triggers only
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
 					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
-		}
-
-		if (request->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
-		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-					  isc_arg_gds, isc_dsql_unsupported_in_auto_trans,
-					  isc_arg_string, "SUSPEND",
-					  0);
 		}
 
 		request->req_flags |= REQ_selectable;
@@ -1862,8 +1744,8 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			node->nod_arg[e_while_cond] =
 				PASS1_node(request, input->nod_arg[e_while_cond], proc_flag);
 
-			// CVC: loop numbers should be incremented before analyzing the body
-			// to preserve nesting <==> increasing level number
+	        /* CVC: loop numbers should be incremented before analyzing the body
+	           to preserve nesting <==> increasing level number. */
 			request->req_loop_level++;
 			node->nod_arg[e_while_label] = pass1_label(request, input);
 			node->nod_arg[e_while_action] =
@@ -1954,29 +1836,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 	case nod_cursor_open:
 	case nod_cursor_close:
 	case nod_cursor_fetch:
-		if (request->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
-		{
-			const char* stmt = NULL;
-
-			switch (input->nod_type)
-			{
-				case nod_cursor_open:
-					stmt = "OPEN CURSOR";
-					break;
-				case nod_cursor_close:
-					stmt = "CLOSE CURSOR";
-					break;
-				case nod_cursor_fetch:
-					stmt = "FETCH CURSOR";
-					break;
-			}
-
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-					  isc_arg_gds, isc_dsql_unsupported_in_auto_trans,
-					  isc_arg_string, stmt,
-					  0);
-		}
-
 		// resolve the cursor
 		input->nod_arg[e_cur_stmt_id] =
 			pass1_cursor_name(request, (dsql_str*) input->nod_arg[e_cur_stmt_id],
@@ -2238,7 +2097,6 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 		case nod_between:
 		case nod_like:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_missing:
 		case nod_add:
@@ -2286,7 +2144,9 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 				return (aggregate_found2(request, node->nod_arg[1], current_level,
 					deepest_level, ignore_sub_selects));
 			}
-			return false;
+			else {
+				return false;
+			}
 
 		case nod_constant:
 			return false;
@@ -2328,7 +2188,7 @@ static bool aggregate_found2(const dsql_req* request, const dsql_nod* node,
 static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 	const dsql_str* name, const DsqlContextStack& ambiguous_contexts)
 {
-	// If there are no relations or only 1 there's no ambiguity, thus return.
+    // If there are no relations or only 1 there's no ambiguity, thus return.
 	if (ambiguous_contexts.getCount() < 2) {
 		return node;
 	}
@@ -2345,28 +2205,28 @@ static dsql_nod* ambiguity_check(dsql_req* request, dsql_nod* node,
 		const dsql_ctx* context = stack.object();
 		const dsql_rel* relation = context->ctx_relation;
 		const dsql_prc* procedure = context->ctx_procedure;
-		if (strlen(b) > (sizeof(buffer) - 50)) {
+        if (strlen(b) > (sizeof(buffer) - 50)) {
 			// Buffer full
-			break;
+            break;
 		}
 		// if this is the second loop add "and " before relation.
-		if (++loop > 2) {
-			strcat(buffer, "and ");
+        if (++loop > 2) {
+            strcat(buffer, "and ");
 		}
 		// Process relation when present.
 		if (relation) {
 			if (!(relation->rel_flags & REL_view)) {
-				strcat(buffer, "table ");
+		        strcat(buffer, "table ");
 			}
 			else {
 				strcat(buffer, "view ");
 			}
-			strcat(buffer, relation->rel_name.c_str());
+	        strcat(buffer, relation->rel_name);
 		}
 		else if (procedure) {
 			// Process procedure when present.
 			strcat(b, "procedure ");
-			strcat(b, procedure->prc_name.c_str());
+			strcat(b, procedure->prc_name);
 		}
 		else {
 			// When there's no relation and no procedure it's a derived table.
@@ -2472,14 +2332,14 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 			case nod_def_field:
 				field = (dsql_fld*) (*ptr)->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name.c_str();
+				name = field->fld_name;
 			break;
 
 			case nod_param_val:
 				temp = (*ptr)->nod_arg[e_prm_val_fld];
 				field = (dsql_fld*) temp->nod_arg[e_dfl_field];
 				DEV_BLKCHK(field, dsql_type_fld);
-				name = field->fld_name.c_str();
+				name = field->fld_name;
 			break;
 
 			case nod_cursor:
@@ -2557,7 +2417,9 @@ static dsql_nod* explode_fields(dsql_rel* relation)
 			continue;
 		}
 
-		stack.push(MAKE_field_name(field->fld_name.c_str()));
+		dsql_nod* nod = MAKE_node(nod_field_name, e_fld_count);
+		nod->nod_arg[e_fln_name] = (dsql_nod*) MAKE_cstring(field->fld_name);
+		stack.push(nod);
 	}
 
 	return MAKE_list(stack);
@@ -2596,9 +2458,9 @@ static dsql_nod* explode_outputs( dsql_req* request, const dsql_prc* procedure)
 		p_node->nod_arg[e_par_index] = (dsql_nod*) (IPTR) parameter->par_index;
 		p_node->nod_arg[e_par_parameter] = (dsql_nod*) parameter;
 		MAKE_desc_from_field(&parameter->par_desc, field);
-		parameter->par_name = parameter->par_alias = field->fld_name.c_str();
-		parameter->par_rel_name = procedure->prc_name.c_str();
-		parameter->par_owner_name = procedure->prc_owner.c_str();
+		parameter->par_name = parameter->par_alias = field->fld_name;
+		parameter->par_rel_name = procedure->prc_name;
+		parameter->par_owner_name = procedure->prc_owner;
 	}
 
 	return node;
@@ -2628,9 +2490,7 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 
 		if (elem1->nod_type == nod_field)
 		{
-			const Firebird::MetaName& n1 =
-				reinterpret_cast<dsql_fld*>(elem1->nod_arg[e_fld_field])->fld_name;
-				
+			const char* n1 = reinterpret_cast<dsql_fld*>(elem1->nod_arg[e_fld_field])->fld_name;
 			for (int j = i + 1; j < fields->nod_count; ++j)
 			{
 				const dsql_nod* elem2 = fields->nod_arg[j];
@@ -2639,15 +2499,13 @@ static void field_appears_once(const dsql_nod* fields, const dsql_nod* old_field
 
 				if (elem2->nod_type == nod_field)
 				{
-					const Firebird::MetaName& n2 =
-						reinterpret_cast<dsql_fld*>(elem2->nod_arg[e_fld_field])->fld_name;
-						
-					if (n1 == n2)
+					const char* n2 = reinterpret_cast<dsql_fld*>(elem2->nod_arg[e_fld_field])->fld_name;
+					if (strcmp(n1, n2) == 0)
 					{
 						const dsql_ctx* tmp_ctx = (dsql_ctx*) elem2->nod_arg[e_fld_context];
 						const dsql_rel* bad_rel = tmp_ctx ? tmp_ctx->ctx_relation : 0;
-						field_duplication(bad_rel ? bad_rel->rel_name.c_str() : 0,
-										n2.c_str(),
+						field_duplication(bad_rel ? bad_rel->rel_name : 0,
+										n2,
 										is_insert ? old_fields->nod_arg[j]: old_fields->nod_arg[j]->nod_arg[1], 
 										statement);
 					}
@@ -2781,12 +2639,13 @@ static dsql_par* find_dbkey(const dsql_req* request, const dsql_nod* relation_na
 		if (context) {
 			DEV_BLKCHK(context, dsql_type_ctx);
 			const dsql_rel* relation = context->ctx_relation;
-			if (relation->rel_name == rel_name->str_data)
+			if (!strcmp(reinterpret_cast<const char*>(rel_name->str_data),
+				relation->rel_name))
 			{
 				if (candidate)
 					return NULL;
-
-				candidate = parameter;
+				else
+					candidate = parameter;
 			}
 		}
 	}
@@ -2822,12 +2681,13 @@ static dsql_par* find_record_version(const dsql_req* request, const dsql_nod* re
 		if (context) {
 			DEV_BLKCHK(context, dsql_type_ctx);
 			const dsql_rel* relation = context->ctx_relation;
-			if (relation->rel_name == rel_name->str_data)
+			if (!strcmp(reinterpret_cast<const char*>(rel_name->str_data),
+				relation->rel_name))
 			{
 				if (candidate)
 					return NULL;
-
-				candidate = parameter;
+				else
+					candidate = parameter;
 			}
 		}
 	}
@@ -2851,9 +2711,8 @@ static dsql_ctx* get_context(const dsql_nod* node)
 
 	if (node->nod_type == nod_relation)
 		return (dsql_ctx*) node->nod_arg[e_rel_context];
-
-	// nod_derived_table
-	return (dsql_ctx*) node->nod_arg[e_derived_table_context];
+	else	// nod_derived_table
+		return (dsql_ctx*) node->nod_arg[e_derived_table_context];
 }
 
 
@@ -2900,9 +2759,9 @@ static bool get_object_and_field(const dsql_nod* node,
 	DEV_BLKCHK(context, dsql_type_ctx);
 	
 	if (context->ctx_relation)
-		*obj_name = context->ctx_relation->rel_name.c_str();
+		*obj_name = context->ctx_relation->rel_name;
 	else if (context->ctx_procedure)
-		*obj_name = context->ctx_procedure->prc_name.c_str();
+		*obj_name = context->ctx_procedure->prc_name;
 	else
 		*obj_name = NULL;
 		
@@ -3119,7 +2978,6 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_not:
 		case nod_unique:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_rse:
 		case nod_join:
@@ -3239,8 +3097,9 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		{
 			return node_match(node1->nod_arg[e_cast_source], node2->nod_arg[e_cast_source], ignore_map_cast);
 		}
-
-		return node_match(node1->nod_arg[e_cast_source], node2, ignore_map_cast);
+		else {
+			return node_match(node1->nod_arg[e_cast_source], node2, ignore_map_cast);
+		}
 	}
 
 	if (ignore_map_cast && node1->nod_type == nod_map) {
@@ -3254,23 +3113,24 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			}
 			return node_match(map1->map_node, map2->map_node, ignore_map_cast);
 		}
-
-		return node_match(map1->map_node, node2, ignore_map_cast);
+		else {
+			return node_match(map1->map_node, node2, ignore_map_cast);
+		}
 	}
 
 	// We don't care about the alias itself but only about its field.
 	if ((node1->nod_type == nod_alias) || (node2->nod_type == nod_alias)) {
-		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias))
-		{
+		if ((node1->nod_type == nod_alias) && (node2->nod_type == nod_alias)) {
 			return node_match(node1->nod_arg[e_alias_value],
 				node2->nod_arg[e_alias_value], ignore_map_cast);
 		}
-
-		if (node1->nod_type == nod_alias) {
-			return node_match(node1->nod_arg[e_alias_value], node2, ignore_map_cast);
-		}
-		if (node2->nod_type == nod_alias) {
-			return node_match(node1, node2->nod_arg[e_alias_value], ignore_map_cast);
+		else {
+			if (node1->nod_type == nod_alias) {
+				return node_match(node1->nod_arg[e_alias_value], node2, ignore_map_cast);
+			}
+			if (node2->nod_type == nod_alias) {
+				return node_match(node1, node2->nod_arg[e_alias_value], ignore_map_cast);
+			}
 		}
 	}
 
@@ -3292,12 +3152,13 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			return node_match(node1->nod_arg[e_derived_field_value],
 				node2->nod_arg[e_derived_field_value], ignore_map_cast);
 		}
-
-		if (node1->nod_type == nod_derived_field) {
-			return node_match(node1->nod_arg[e_derived_field_value], node2, ignore_map_cast);
-		}
-		if (node2->nod_type == nod_derived_field) {
-			return node_match(node1, node2->nod_arg[e_derived_field_value], ignore_map_cast);
+		else {
+			if (node1->nod_type == nod_derived_field) {
+				return node_match(node1->nod_arg[e_derived_field_value], node2, ignore_map_cast);
+			}
+			if (node2->nod_type == nod_derived_field) {
+				return node_match(node1, node2->nod_arg[e_derived_field_value], ignore_map_cast);
+			}
 		}
 	}
 
@@ -3379,8 +3240,9 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 		if (node1->nod_count == 2) {
 			return node_match(node1->nod_arg[1], node2->nod_arg[1], ignore_map_cast);
 		}
-
-		return true;
+		else {
+			return true;
+		}
 	}
 
 	if ((node1->nod_type == nod_agg_count)		||
@@ -3572,7 +3434,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	PASS1_make_context(request, input->nod_arg[e_blb_relation]);
 	dsql_nod* field = pass1_field(request, input->nod_arg[e_blb_field], false, NULL);
@@ -3583,11 +3445,11 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 	request->req_type = (input->nod_type == nod_get_segment) ?
 		REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
 
-	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;
+	dsql_blb* blob = FB_NEW(*tdsql->getDefaultPool()) dsql_blb;
 	request->req_blob = blob;
 	blob->blb_field = field;
 	blob->blb_open_in_msg = request->req_send;
-	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg;
+	blob->blb_open_out_msg = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 	blob->blb_segment_msg = request->req_receive;
 
 // Create a parameter for the blob segment
@@ -3728,10 +3590,11 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
 	DEV_BLKCHK(sub1, dsql_type_nod);
 	DEV_BLKCHK(collation, dsql_type_str);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_nod* node = MAKE_node(nod_cast, e_cast_count);
-	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool()) dsql_fld(*tdbb->getDefaultPool());
+	dsql_fld* field = FB_NEW_RPT(*tdsql->getDefaultPool(), 1) dsql_fld;
+	field->fld_name[0] = 0;
 	node->nod_arg[e_cast_target] = (dsql_nod*) field;
 	node->nod_arg[e_cast_source] = sub1;
 	MAKE_desc(request, &sub1->nod_desc, sub1, NULL);
@@ -3767,7 +3630,6 @@ static dsql_nod* pass1_collate( dsql_req* request, dsql_nod* sub1,
  **/
 static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 {
-	thread_db* tdbb = JRD_get_thread_data();
 
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -3819,17 +3681,6 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 
 		INTL_ASSIGN_TTYPE(&constant->nod_desc, resolved->intlsym_ttype);
 	}
-	else
-	{
-		const Firebird::MetaName charSetName = METD_get_charset_name(request,
-			constant->nod_desc.getCharSet());
-
-		const dsql_intlsym* sym = METD_get_charset(request, charSetName.length(), charSetName.c_str());
-		fb_assert(sym && sym->intlsym_charset_id == constant->nod_desc.getCharSet());
-
-		if (sym)
-			constant->nod_desc.setTextType(sym->intlsym_ttype);
-	}
 
 	USHORT adjust = 0;
 	if (constant->nod_desc.dsc_dtype == dtype_varying)
@@ -3839,23 +3690,22 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 		
 	constant->nod_desc.dsc_length -= adjust;
 
-	CharSet* charSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&constant->nod_desc));
+	USHORT length;
 
-	if (!charSet->wellFormed(string->str_length,
-			constant->nod_desc.dsc_address, NULL))
-	{
-		ERRD_post(isc_sqlerr,
-				  isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_malformed_string,
-				  0);
-	}
-	else
-	{
-		constant->nod_desc.dsc_length =
-			charSet->length(string->str_length, constant->nod_desc.dsc_address, true) *
-			charSet->maxBytesPerChar();
+	ISC_STATUS_ARRAY status_vector = {0};
+
+	THREAD_EXIT();
+	const ISC_STATUS s =
+		gds__intl_function(status_vector, &request->req_dbb->dbb_database_handle,
+			INTL_FUNCTION_CHAR_LENGTH, INTL_GET_CHARSET(&constant->nod_desc),
+			string->str_length, constant->nod_desc.dsc_address, &length);
+	THREAD_ENTER();
+
+	if (s) {
+		ERRD_punt(status_vector);
 	}
 
+	constant->nod_desc.dsc_length = length * METD_get_charset_bpc(request, INTL_GET_CHARSET(&constant->nod_desc));
 	constant->nod_desc.dsc_length += adjust;
 
 	return constant;
@@ -3915,7 +3765,7 @@ static dsql_ctx* pass1_cursor_context( dsql_req* request, const dsql_nod* cursor
 			DEV_BLKCHK(candidate, dsql_type_ctx);
 			const dsql_rel* relation = candidate->ctx_relation;
 			DEV_BLKCHK(rname, dsql_type_str);
-			if (relation->rel_name == rname->str_data)
+			if (!strcmp(rname->str_data, relation->rel_name))
 			{
 				if (context)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
@@ -4142,9 +3992,6 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 						  0);
 			}
 
-			if (context->ctx_flags & CTX_null)
-				return MAKE_node(nod_null, 0);
-
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
 			rel_node->nod_arg[0] = (dsql_nod*) context;
@@ -4152,47 +3999,34 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 			return node;
 		}
 	}
-	else 
-	{
-		const bool cfgRlxAlias = Config::getRelaxedAliasChecking();
-		bool rlxAlias = false;
-		for (;;)
+	else {
+		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 		{
-			for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
+			dsql_ctx* context = stack.object();
+
+			if ((!context->ctx_relation ||
+					strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+						context->ctx_relation->rel_name) != 0 ||
+					context->ctx_internal_alias) &&
+				(!context->ctx_internal_alias ||
+					strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+						context->ctx_internal_alias) != 0))
 			{
-				dsql_ctx* context = stack.object();
-
-				if ((!context->ctx_relation ||
-						context->ctx_relation->rel_name != qualifier->str_data ||
-						!rlxAlias && context->ctx_internal_alias) &&
-					(!context->ctx_internal_alias ||
-						strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-							context->ctx_internal_alias) != 0))
-				{
-					continue;
-				}
-
-				if (!context->ctx_relation)
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-							  isc_arg_gds, isc_dsql_dbkey_from_non_table,
-							  0);
-				}
-
-				if (context->ctx_flags & CTX_null)
-					return MAKE_node(nod_null, 0);
-
-				dsql_nod* node = MAKE_node(nod_dbkey, 1);
-				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-				rel_node->nod_arg[0] = (dsql_nod*) context;
-				node->nod_arg[0] = rel_node;
-				return node;
+				continue;
 			}
 
-			if (rlxAlias == cfgRlxAlias)
-				break;
-			
-			rlxAlias = cfgRlxAlias;
+			if (!context->ctx_relation)
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
+						  0);
+			}
+
+			dsql_nod* node = MAKE_node(nod_dbkey, 1);
+			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
+			rel_node->nod_arg[0] = (dsql_nod*) context;
+			node->nod_arg[0] = rel_node;
+			return node;
 		}
 	}
 
@@ -4683,7 +4517,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	dsql_nod* node = MAKE_node (nod_derived_table, e_derived_table_count);
 	dsql_str* alias = (dsql_str*) input->nod_arg[e_derived_table_alias];
@@ -4704,7 +4538,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 	// Put special contexts (NEW/OLD) also on the stack
 	for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 	{
-		dsql_ctx* local_context = stack.object();
+	    dsql_ctx* local_context = stack.object();
 		if ((local_context->ctx_scope_level < request->req_scope_level) || 
 			(local_context->ctx_flags & CTX_system))
 		{
@@ -4854,7 +4688,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 		// to generate one from the field_name.
 		for (int count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
 			dsql_nod* select_item =
-				pass1_make_derived_field(request, tdbb, rse->nod_arg[e_rse_items]->nod_arg[count]);
+				pass1_make_derived_field(request, tdsql, rse->nod_arg[e_rse_items]->nod_arg[count]);
 
 			// Auto-create dummy column name for pass1_any()
 			if (ignoreColumnChecks && (select_item->nod_type != nod_derived_field)) {
@@ -4866,7 +4700,7 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, bool pr
 				// Construct dummy fieldname
 				char fieldname[25];
 				sprintf (fieldname, "f%d", count);
-				dsql_str* field_alias = FB_NEW_RPT(*tdbb->getDefaultPool(),
+				dsql_str* field_alias = FB_NEW_RPT(*tdsql->getDefaultPool(),
 					strlen(fieldname)) dsql_str;
 				strcpy(field_alias->str_data, fieldname);
 				field_alias->str_length = strlen(fieldname);
@@ -5037,7 +4871,7 @@ static void pass1_expand_select_node(dsql_req* request, dsql_nod* node, DsqlNodS
 	}
 	else if (node->nod_type == nod_derived_table) {
 		// AB: Derived table support
-		thread_db* tdbb = JRD_get_thread_data();
+		tsql* tdsql = DSQL_get_thread_data();
 		dsql_nod* sub_items = node->nod_arg[e_derived_table_rse]->nod_arg[e_rse_items];
 		dsql_nod** ptr = sub_items->nod_arg;
 		for (const dsql_nod* const* const end = ptr + sub_items->nod_count;
@@ -5171,7 +5005,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 	DEV_BLKCHK(name, dsql_type_str);
 	DEV_BLKCHK(qualifier, dsql_type_str);
 
-	// CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
+    // CVC: Let's strip trailing blanks or comparisons may fail in dialect 3.
 	if (name && name->str_data) {
 		fb_utils::exact_name((TEXT*) name->str_data);
 	}
@@ -5285,7 +5119,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 
 					for (; field; field = field->fld_next)
 					{
-						if (field->fld_name == name->str_data)
+						if (!strcmp(reinterpret_cast<const char*>(name->str_data), field->fld_name))
 						{
 							if (!qualifier)
 							{
@@ -5314,7 +5148,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 					if (field || using_field) {
 						// Intercept any reference to a field with datatype that
 						// did not exist prior to V6 and post an error
-	
+
 						if (request->req_client_dialect <= SQL_DIALECT_V5 && field &&
 							(field->fld_dtype == dtype_sql_date ||
 							 field->fld_dtype == dtype_sql_time ||
@@ -5323,7 +5157,7 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 								ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
 										  isc_arg_gds, isc_dsql_field_err,
 										  isc_arg_gds, isc_random,
-										  isc_arg_string, field->fld_name.c_str(),
+										  isc_arg_string, field->fld_name,
 										  isc_arg_gds,
 										  isc_sql_dialect_datatype_unsupport,
 										  isc_arg_number, (SLONG) request->req_client_dialect,
@@ -5465,10 +5299,10 @@ static dsql_nod* pass1_field( dsql_req* request, dsql_nod* input,
 	// Clean up stack
 	ambiguous_ctx_stack.clear();
 
-	if (node)
+    if (node)
 	{
-		return node;
-	}
+        return node;
+    }
 
 	field_unknown(qualifier ? (TEXT*) qualifier->str_data : NULL,
 				name ? (TEXT*) name->str_data : NULL, input);
@@ -5572,7 +5406,6 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_not:
 		case nod_unique:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_list:
 		case nod_join:
@@ -5638,7 +5471,12 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 					switch (match_type) {
 						case FIELD_MATCH_TYPE_LOWER_EQUAL:
 						case FIELD_MATCH_TYPE_EQUAL:
-							return current_scope_level_equal;
+							if (current_scope_level_equal) {
+								return true;
+							}
+							else {
+								return false;
+							}
 
 						case FIELD_MATCH_TYPE_HIGHER_EQUAL:
 							return true;
@@ -5805,7 +5643,6 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_not:
 		case nod_unique:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_list:
 			{
@@ -6001,7 +5838,6 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_not:
 		case nod_unique:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_list:
 		case nod_join:
@@ -6179,42 +6015,41 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool proc_fla
 	// If there isn't a field list, generate one
 
 	dsql_nod* fields = input->nod_arg[e_ins_fields];
-	if (fields)
-	{
+	if (fields) {
 		const dsql_nod* old_fields = fields; // for error reporting.
 		fields = PASS1_node(request, fields, false);
 		// We do not allow cases like INSERT INTO T(f1, f2, f1)...
 		field_appears_once(fields, old_fields, true, "INSERT");
 			
-		// begin IBO hack
+        // begin IBO hack
 		// 02-May-2004, Nickolay Samofatov. Do not constify ptr further e.g. to
 		// const dsql_nod* const* .... etc. It chokes GCC 3.4.0
-		dsql_nod** ptr = fields->nod_arg;
-		for (const dsql_nod* const* const end = ptr + fields->nod_count;
+        dsql_nod** ptr = fields->nod_arg;
+        for (const dsql_nod* const* const end = ptr + fields->nod_count;
 			ptr < end; ptr++)
 		{
-			const dsql_ctx* tmp_ctx = 0;
-			DEV_BLKCHK (*ptr, dsql_type_nod);
-			const dsql_nod* temp2 = *ptr;
-			if (temp2->nod_type == nod_field &&
-				(tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_fld_context]) != 0 &&
-				tmp_ctx->ctx_relation &&
-				relation->rel_name != tmp_ctx->ctx_relation->rel_name)
+            const dsql_ctx* tmp_ctx = 0;
+            DEV_BLKCHK (*ptr, dsql_type_nod);
+            const dsql_nod* temp2 = *ptr;
+            if (temp2->nod_type == nod_field &&
+                (tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_fld_context]) != 0 &&
+                tmp_ctx->ctx_relation &&
+                strcmp (tmp_ctx->ctx_relation->rel_name, relation->rel_name))
 			{
 
-				const dsql_rel* bad_rel = tmp_ctx->ctx_relation;
-				const dsql_fld* bad_fld = (dsql_fld*) temp2->nod_arg[e_fld_field];
-				// At this time, "fields" has been replaced by the processed list in
-				// the same variable, so we refer again to input->nod_arg[e_ins_fields].
-				// CVC: After three years, made old_fields for that purpose.
+                const dsql_rel* bad_rel = tmp_ctx->ctx_relation;
+                const dsql_fld* bad_fld = (dsql_fld*) temp2->nod_arg[e_fld_field];
+                // At this time, "fields" has been replaced by the processed list in
+                // the same variable, so we refer again to input->nod_arg[e_ins_fields].
+                // CVC: After three years, made old_fields for that purpose.
 
-				field_unknown(bad_rel ? bad_rel->rel_name.c_str() : NULL,
-								bad_fld ? bad_fld->fld_name.c_str() : NULL,
-								old_fields->nod_arg[ptr - fields->nod_arg]);
-			}
-		}
-		// end IBO hack
-	}
+                field_unknown(bad_rel ? (TEXT*) bad_rel->rel_name : NULL,
+                             bad_fld ? (TEXT*) bad_fld->fld_name : NULL,
+                             old_fields->nod_arg[ptr - fields->nod_arg]);
+            }
+        }
+        // end IBO hack
+    }
 	else
 		fields = PASS1_node(request, explode_fields(relation), false);
 
@@ -6393,7 +6228,7 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 							break;
 
 						case nod_field:
-							name = reinterpret_cast<dsql_fld*>(item->nod_arg[e_fld_field])->fld_name.c_str();
+							name = reinterpret_cast<dsql_fld*>(item->nod_arg[e_fld_field])->fld_name;
 							break;
 
 						case nod_derived_field:
@@ -6412,7 +6247,10 @@ static dsql_nod* pass1_join(dsql_req* request, dsql_nod* input, bool proc_flag)
 						{
 							if (leftNames.exist(name))
 							{
-								matched.push(MAKE_field_name(name));
+								item = MAKE_node(nod_field_name, e_fln_count);
+								item->nod_arg[e_fln_name] =
+									reinterpret_cast<dsql_nod*>(MAKE_cstring(name));
+								matched.push(item);
 							}
 						}
 					}
@@ -6581,12 +6419,8 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 	case nod_for_select:
 		label = input->nod_arg[e_flp_label];
 		break;
-	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
-		break;
-	case nod_exec_stmt:
-		label = input->nod_arg[e_exec_stmt_label];
 		break;
 	case nod_while:
 		label = input->nod_arg[e_while_label];
@@ -6700,8 +6534,9 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 			case nod_field:
 				{
 					dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
-					if (field->fld_name == name->str_data)
+					if (!strcmp(field->fld_name, name->str_data)) {
 						matchingNode = node;
+					}
 				}
 				break;
 
@@ -6790,11 +6625,11 @@ static dsql_nod* pass1_lookup_alias(dsql_req* request, const dsql_str* name, dsq
 
 
     @param request
-    @param tdbb
+    @param tdsql
     @param select_item
 
  **/
-static dsql_nod* pass1_make_derived_field(dsql_req* request, thread_db* tdbb,
+static dsql_nod* pass1_make_derived_field(dsql_req* request, tsql* tdsql,
 	dsql_nod* select_item)
 {
 	DEV_BLKCHK(select_item, dsql_type_nod);
@@ -6818,9 +6653,9 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, thread_db* tdbb,
 				DEV_BLKCHK(field, dsql_type_fld);
 
 				// Copy fieldname to a new string.
-				dsql_str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), field->fld_name.length()) dsql_str;
-				strcpy(alias->str_data, field->fld_name.c_str());
-				alias->str_length = field->fld_name.length();
+				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(field->fld_name)) dsql_str;
+				strcpy(alias->str_data, field->fld_name);
+				alias->str_length = strlen(field->fld_name);
 
 				// Create a derived field and hook in.
 				dsql_nod* derived_field = MAKE_node(nod_derived_field, e_derived_field_count);
@@ -6835,7 +6670,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, thread_db* tdbb,
 			{
 				// Copy aliasname to a new string.
 				const dsql_str* alias_alias = (dsql_str*) select_item->nod_arg[e_alias_alias];
-				dsql_str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), strlen(alias_alias->str_data)) dsql_str;
+				dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), strlen(alias_alias->str_data)) dsql_str;
 				strcpy(alias->str_data, alias_alias->str_data);
 				alias->str_length = strlen(alias_alias->str_data);
 
@@ -6852,7 +6687,7 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, thread_db* tdbb,
 			{
 				// Aggregate's have map on top.
 				dsql_map* map = (dsql_map*) select_item->nod_arg[e_map_map];
-				dsql_nod* derived_field = pass1_make_derived_field(request, tdbb, map->map_node);
+				dsql_nod* derived_field = pass1_make_derived_field(request, tdsql, map->map_node);
 
 				// If we had succesfully made a derived field node change it
 				// with orginal map.
@@ -6862,14 +6697,15 @@ static dsql_nod* pass1_make_derived_field(dsql_req* request, thread_db* tdbb,
 					derived_field->nod_desc = select_item->nod_desc;
 					return derived_field;
 				}
-
-				return select_item;
+				else {
+					return select_item;
+				}
 			}
 
 		case nod_via :
 			{
 				// Try to generate derived field from sub-select
-				dsql_nod* derived_field = pass1_make_derived_field(request, tdbb,
+				dsql_nod* derived_field = pass1_make_derived_field(request, tdsql,
 					select_item->nod_arg[e_via_value_1]);
 				derived_field->nod_arg[e_derived_field_value] = select_item;
 				return derived_field;
@@ -7354,9 +7190,9 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 				{
 					// AB: Pretty ugly huh?
 					// make up a dummy context to hold the resultant relation.
-					thread_db* tdbb = JRD_get_thread_data();
-					dsql_ctx* new_context = FB_NEW(*tdbb->getDefaultPool())
-						dsql_ctx(*tdbb->getDefaultPool());
+					tsql* tdsql = DSQL_get_thread_data();
+					dsql_ctx* new_context = FB_NEW(*tdsql->getDefaultPool())
+						dsql_ctx(*tdsql->getDefaultPool());
 					new_context->ctx_context = context->ctx_context;
 					new_context->ctx_relation = relation;
 
@@ -7370,7 +7206,7 @@ static dsql_nod* pass1_alias_list(dsql_req* request, dsql_nod* alias_list)
 						alias_length += static_cast<USHORT>(((dsql_str*) *aliasArg)->str_length);
 					}
 
-					dsql_str* alias = FB_NEW_RPT(*tdbb->getDefaultPool(), alias_length) dsql_str;
+					dsql_str* alias = FB_NEW_RPT(*tdsql->getDefaultPool(), alias_length) dsql_str;
 					alias->str_length = alias_length;
 
 					TEXT* p = new_context->ctx_alias = (TEXT*) alias->str_data;
@@ -7475,7 +7311,8 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
 		// save the context in case there is an alias of the same name;
 		// also to check that there is no self-join in the query.
 		if (context->ctx_relation &&
-			context->ctx_relation->rel_name == alias->str_data)
+			!strcmp(context->ctx_relation->rel_name,
+					reinterpret_cast<const char*>(alias->str_data)))
 		{
 			if (relation_context) {
 				/* the table %s is referenced twice; use aliases to differentiate */
@@ -7507,7 +7344,7 @@ static dsql_ctx* pass1_alias(dsql_req* request, DsqlContextStack& stack, dsql_st
  **/
 static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* input2)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	DEV_BLKCHK(input1, dsql_type_str);
 	DEV_BLKCHK(input2, dsql_type_str);
@@ -7522,7 +7359,7 @@ static dsql_str* pass1_alias_concat(const dsql_str* input1, const dsql_str* inpu
 	if (input2) {
 		length += input2->str_length;
 	}
-	dsql_str* output = FB_NEW_RPT(*tdbb->getDefaultPool(), length) dsql_str;
+	dsql_str* output = FB_NEW_RPT(*tdsql->getDefaultPool(), length) dsql_str;
 	output->str_length = length;
 	TEXT* ptr = output->str_data;
 	if (input1) {
@@ -7560,8 +7397,8 @@ static dsql_rel* pass1_base_table( dsql_req* request, const dsql_rel* relation,
 	DEV_BLKCHK(alias, dsql_type_str);
 
 	return METD_get_view_relation(request,
-								  relation->rel_name.c_str(),
-								  alias->str_data);
+								  relation->rel_name,
+								  alias->str_data, 0);
 }
 
 
@@ -7739,7 +7576,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order, dsql_type_nod);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	if (input->nod_type == nod_select_expr)
 	{
@@ -7755,10 +7592,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 						update_lock, input->nod_flags);
 
 			if (node_with)
-			{
-				request->checkUnusedCTEs();
 				request->clearCTEs();
-			}
 
 			return ret;
 		} 
@@ -7779,8 +7613,10 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 
 		return pass1_union(request, input, order, rows, flags);
 	}
-
-	fb_assert(input->nod_type == nod_query_spec);
+	else
+	{
+		fb_assert(input->nod_type == nod_query_spec);
+	}
 
 	// Save the original base of the context stack and process relations
 
@@ -7811,21 +7647,21 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 				  isc_arg_gds, isc_token_err,	// Token unknown
 				  isc_arg_gds, isc_random, isc_arg_string, "ROWS", 0);
 	}
-	else if (node || (node = rows) ) {
+    else if (node || (node = rows) ) {
 		const int length_index = rows ? e_rows_length : e_limit_length;
 		const int skip_index = rows ? e_rows_skip : e_limit_skip;
 
-		if (node->nod_arg[length_index]) {
-			dsql_nod* sub = PASS1_node(request, node->nod_arg[length_index], false);
-			rse->nod_arg[e_rse_first] = sub;
-			set_parameter_type(request, sub, node, false);
-		}
-		if (node->nod_arg[skip_index]) {
-			dsql_nod* sub = PASS1_node(request, node->nod_arg[skip_index], false);
-			rse->nod_arg[e_rse_skip] = sub;
-			set_parameter_type(request, sub, node, false);
-		}
-	}
+        if (node->nod_arg[length_index]) {
+            dsql_nod* sub = PASS1_node(request, node->nod_arg[length_index], false);
+            rse->nod_arg[e_rse_first] = sub;
+            set_parameter_type(request, sub, node, false);
+        }
+        if (node->nod_arg[skip_index]) {
+            dsql_nod* sub = PASS1_node(request, node->nod_arg[skip_index], false);
+            rse->nod_arg[e_rse_skip] = sub;
+            set_parameter_type(request, sub, node, false);
+        }
+    }
 
 	// Process boolean, if any
 
@@ -7895,8 +7731,8 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
 		}
 
-		parent_context = FB_NEW(*tdbb->getDefaultPool())
-			dsql_ctx(*tdbb->getDefaultPool());
+		parent_context = FB_NEW(*tdsql->getDefaultPool())
+			dsql_ctx(*tdsql->getDefaultPool());
 		parent_context->ctx_context = request->req_context_number++;
 		parent_context->ctx_scope_level = request->req_scope_level;
 		aggregate = MAKE_node(nod_aggregate, e_agg_count);
@@ -7941,7 +7777,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 				isc_arg_gds, isc_dsql_agg_group_err, 0);
 			// Cannot use an aggregate in a GROUP BY clause
 		}
-	}
+    }
 
 	// Parse a user-specified access PLAN
 	rse->nod_arg[e_rse_plan] =
@@ -8361,7 +8197,7 @@ static dsql_nod* pass1_sort( dsql_req* request, dsql_nod* input, dsql_nod* selec
 			}
 			// substitute ordinal with appropriate field
 			node1 = PASS1_node(request, selectList->nod_arg[position - 1], false);
-		}
+        }
 		else {
 			node1 = PASS1_node(request, node1, false);
 		}
@@ -8518,11 +8354,10 @@ static void pass1_udf_args(dsql_req* request, dsql_nod* input,
 	DEV_BLKCHK(input, dsql_type_nod);
 
 	if (input->nod_type != nod_list) {
-		dsql_nod* temp = PASS1_node(request, input, proc_flag);
-		if (arg_pos < userFunc->udf_arguments.getCount()) {
-			dsql_nod temp2;
-			temp2.nod_desc = userFunc->udf_arguments[arg_pos];
-			set_parameter_type(request, temp, &temp2, false);
+		dsql_nod* temp = PASS1_node (request, input, proc_flag);
+		dsql_nod* args = userFunc->udf_arguments;
+		if (args && args->nod_count > arg_pos) {
+			set_parameter_type(request, temp, args->nod_arg[arg_pos], false);
 		}
 		else {
 			// We should complain here in the future! The parameter is
@@ -8565,7 +8400,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(order_list, dsql_type_nod);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	// set up the rse node for the union.
 	dsql_nod* union_rse = MAKE_node(nod_rse, e_rse_count);
@@ -8574,12 +8409,12 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	union_node->nod_flags = input->nod_flags;
 
 	// generate a context for the union itself.
-	dsql_ctx* union_context = FB_NEW(*tdbb->getDefaultPool())
-		dsql_ctx(*tdbb->getDefaultPool());
+	dsql_ctx* union_context = FB_NEW(*tdsql->getDefaultPool())
+		dsql_ctx(*tdsql->getDefaultPool());
 
 	if (input->nod_flags & NOD_UNION_RECURSIVE) {
 		union_context->ctx_context = request->req_recursive_ctx_id;
-	}
+    }
 	else {
 		union_context->ctx_context = request->req_context_number++;
 	}
@@ -8595,10 +8430,10 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 			request->req_scope_level++;
 			*uptr = pass1_rse(request, *ptr, NULL, NULL, NULL, 0);
 			request->req_scope_level--;
-			while (*(request->req_context) != base)
+	        while (*(request->req_context) != base)
 			{
-				request->req_union_context.push(request->req_context->pop());
-			}
+	            request->req_union_context.push(request->req_context->pop());
+	        }
 
 			// Push recursive context after initial select has been processed.
 			// Corresponding pop occurs in pass1_derived_table
@@ -8681,7 +8516,7 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 		    dsql_nod* map_node = MAKE_node(nod_map, e_map_count);
 			*ptr = map_node;
 			map_node->nod_arg[e_map_context] = (dsql_nod*) union_context;
-			dsql_map* map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
+			dsql_map* map = FB_NEW(*tdsql->getDefaultPool()) dsql_map;
 			map_node->nod_arg[e_map_map] = (dsql_nod*) map;
 
 			// set up the dsql_map* between the sub-rses and the union context.
@@ -8741,16 +8576,16 @@ static dsql_nod* pass1_union( dsql_req* request, dsql_nod* input,
 	}
 
 	if (rows) {
-		if (rows->nod_arg[e_rows_length]) {
-			dsql_nod* sub = PASS1_node(request, rows->nod_arg[e_rows_length], false);
-			union_rse->nod_arg[e_rse_first] = sub;
-			set_parameter_type(request, sub, rows, false);
-		}
-		if (rows->nod_arg[e_rows_skip]) {
-			dsql_nod* sub = PASS1_node(request, rows->nod_arg[e_rows_skip], false);
-			union_rse->nod_arg[e_rse_skip] = sub;
-			set_parameter_type(request, sub, rows, false);
-		}
+        if (rows->nod_arg[e_rows_length]) {
+            dsql_nod* sub = PASS1_node(request, rows->nod_arg[e_rows_length], false);
+            union_rse->nod_arg[e_rse_first] = sub;
+            set_parameter_type(request, sub, rows, false);
+        }
+        if (rows->nod_arg[e_rows_skip]) {
+            dsql_nod* sub = PASS1_node(request, rows->nod_arg[e_rows_skip], false);
+            union_rse->nod_arg[e_rse_skip] = sub;
+            set_parameter_type(request, sub, rows, false);
+        }
 	}
 
 	// PROJECT on all the select items unless UNION ALL was specified.
@@ -8829,10 +8664,9 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 							cast_node = select_item;
 						}
 						else {
-							thread_db* tdbb = JRD_get_thread_data();
+							tsql* tdsql = DSQL_get_thread_data();
 							cast_node = MAKE_node(nod_cast, e_cast_count);
-							dsql_fld* afield = FB_NEW(*tdbb->getDefaultPool())
-								dsql_fld(*tdbb->getDefaultPool());
+							dsql_fld* afield = FB_NEW_RPT(*tdsql->getDefaultPool(), 0) dsql_fld;
 							cast_node->nod_arg[e_cast_target] = (dsql_nod*) afield;
 							// We want to leave the ALIAS node on his place, because a UNION
 							// uses the select_items from the first sub-rse to determine the
@@ -8859,10 +8693,10 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 								// Create new node for alias and copy fieldname
 								alias_node = MAKE_node(nod_alias, e_alias_count);
 								// Copy fieldname to a new string.
-								dsql_str* str_alias = FB_NEW_RPT(*tdbb->getDefaultPool(),
-									sub_field->fld_name.length()) dsql_str;
-								strcpy(str_alias->str_data, sub_field->fld_name.c_str());
-								str_alias->str_length = sub_field->fld_name.length();
+								dsql_str* str_alias = FB_NEW_RPT(*tdsql->getDefaultPool(),
+									strlen(sub_field->fld_name)) dsql_str;
+								strcpy(str_alias->str_data, sub_field->fld_name);
+								str_alias->str_length = strlen(sub_field->fld_name);
 								alias_node->nod_arg[e_alias_alias] = (dsql_nod*) str_alias;
 							}
 						}
@@ -9245,7 +9079,7 @@ static dsql_nod* pass1_update_or_insert(dsql_req* request, dsql_nod* input, bool
 
 		// get the base table name if there is only one
 		if (base_rel)
-			base_name = MAKE_cstring(base_rel->rel_name.c_str());
+			base_name = MAKE_cstring(base_rel->rel_name);
 		else
 			ERRD_post(isc_upd_ins_with_complex_view, 0);
 	}
@@ -9486,14 +9320,13 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 	DEV_BLKCHK(request, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	const dsql_str* var_name = 0;
+    const dsql_str* var_name = 0;
 	if (input->nod_type == nod_field_name) {
-		if (input->nod_arg[e_fln_context])
-		{
+		if (input->nod_arg[e_fln_context]) {
 			if (request->req_flags & REQ_trigger) // triggers only
 				return pass1_field(request, input, false, NULL);
-
-			field_unknown(0, 0, input);
+			else
+				field_unknown(0, 0, input);
 		}
 		var_name = (dsql_str*) input->nod_arg[e_fln_name];
 	}
@@ -9502,7 +9335,7 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 
 	DEV_BLKCHK(var_name, dsql_type_str);
 
-	dsql_nod* var_nodes;
+    dsql_nod* var_nodes;
 	if (request->req_flags & REQ_procedure) // procedures and triggers
 	{
 		dsql_nod* procedure_node = request->req_ddl_node;
@@ -9582,31 +9415,25 @@ static dsql_nod* pass1_variable( dsql_req* request, dsql_nod* input)
 		dsql_nod* var_node;
 
 		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_dcls])
-		{
 			if (var_node = resolve_variable_name(var_nodes, var_name))
 				return var_node;
-		}
 
 		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_inputs])
-		{
 			if (var_node = resolve_variable_name(var_nodes, var_name))
 				return var_node;
-		}
 
 		if (var_nodes = request->req_blk_node->nod_arg[e_exe_blk_outputs])
-		{
 			if (var_node = resolve_variable_name(var_nodes, var_name))
 				return var_node;
-		}
 	}
 
-	// field unresolved
-	// CVC: That's all [the fix], folks!
+    // field unresolved
+    // CVC: That's all [the fix], folks!
 
-	if (var_name)
-		field_unknown(0, (TEXT*) var_name->str_data, input);
-	else
-		field_unknown(0, 0, input);
+    if (var_name)
+        field_unknown(0, (TEXT*) var_name->str_data, input);
+    else
+        field_unknown(0, 0, input);
 
 	return NULL;
 }
@@ -9628,7 +9455,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 	DEV_BLKCHK(node, dsql_type_nod);
 	DEV_BLKCHK(context, dsql_type_ctx);
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 // Check to see if the item has already been posted
 
@@ -9639,7 +9466,7 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 			break;
 
 	if (!map) {
-		map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
+		map = FB_NEW(*tdsql->getDefaultPool()) dsql_map;
 		map->map_position = (USHORT) count;
 		map->map_next = context->ctx_map;
 		context->ctx_map = map;
@@ -9715,8 +9542,9 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 				if (lcontext->ctx_scope_level == context->ctx_scope_level) {
 					return post_map(field, context);
 				}
-
-				return field;
+				else {
+					return field;
+				}
 			}
 
 		case nod_map:
@@ -9833,7 +9661,6 @@ static dsql_nod* remap_field(dsql_req* request, dsql_nod* field,
 		case nod_between:
 		case nod_like:
 		case nod_containing:
-		case nod_similar:
 		case nod_starting:
 		case nod_exists:
 		case nod_singular:
@@ -10029,9 +9856,9 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 		return NULL;
 	}
 
-	// if there is no qualifier, then we cannot match against
-	// a context of a different scoping level
-	// AB: Yes we can, but the scope level where the field is has priority.
+// if there is no qualifier, then we cannot match against
+// a context of a different scoping level
+// AB: Yes we can, but the scope level where the field is has priority.
 //	if (!qualifier && context->ctx_scope_level != request->req_scope_level) {
 //		return NULL;
 //	}
@@ -10046,14 +9873,14 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 		return NULL;
 	}
 
-	const TEXT* table_name = NULL;
+	TEXT* table_name = NULL;
 	if (context->ctx_internal_alias && resolveByAlias) {
 		table_name = context->ctx_internal_alias;
 	}
-	// AB: For a check constraint we should ignore the alias if the alias
-	// contains the "NEW" alias. This is because it is possible
-	// to reference a field by the complete table-name as alias
-	// (see EMPLOYEE table in examples for a example).
+// AB: For a check constraint we should ignore the alias if the alias
+//     contains the "NEW" alias. This is because it is possible
+//     to reference a field by the complete table-name as alias
+//     (see EMPLOYEE table in examples for a example).
 	if (isCheckConstraint && table_name)
 	{
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
@@ -10072,11 +9899,14 @@ static dsql_fld* resolve_context( dsql_req* request, const dsql_str* qualifier,
 		}
 	}
 	if (table_name == NULL) {
-		if (relation)
-			table_name = relation->rel_name.c_str();
-		else
-			table_name = procedure->prc_name.c_str();
+		if (relation) {
+			table_name = relation->rel_name;
+		}
+		else {
+			table_name = procedure->prc_name;
+		}
 	}
+	fb_utils::exact_name(table_name);
 
 // If a context qualifier is present, make sure this is the proper context
 	if (qualifier && strcmp(reinterpret_cast<const char*>(qualifier->str_data), table_name)) {
@@ -10111,21 +9941,17 @@ static dsql_nod* resolve_using_field(dsql_req* request, dsql_str* name, DsqlNodS
 		field_unknown(qualifier.c_str(), name->str_data, flawedNode);
 	}
 
-	switch (node->nod_type)
-	{
-	case nod_derived_field:
+	if (node->nod_type == nod_derived_field)
 		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_derived_field_context]);
-		break;
-	case nod_field:
+	else if (node->nod_type == nod_field)
 		ctx = reinterpret_cast<dsql_ctx*>(node->nod_arg[e_fln_context]);
-		break;
-	case nod_alias:
+	else if (node->nod_type == nod_alias)
+	{
 		fb_assert(node->nod_count >= (int) e_alias_imp_join - 1);
 		ctx = reinterpret_cast<ImplicitJoin*>(node->nod_arg[e_alias_imp_join])->visibleInContext;
-		break;
-	default:
-		fb_assert(false);
 	}
+	else
+		fb_assert(false);
 
 	return node;
 }
@@ -10145,9 +9971,6 @@ static dsql_nod* resolve_using_field(dsql_req* request, dsql_str* name, DsqlNodS
  **/
 static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* node, bool force_varchar)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-	Attachment* att = tdbb->getAttachment();
-
 	DEV_BLKCHK(in_node, dsql_type_nod);
 	DEV_BLKCHK(node, dsql_type_nod);
 
@@ -10164,11 +9987,12 @@ static bool set_parameter_type(dsql_req* request, dsql_nod* in_node, dsql_nod* n
 
 				MAKE_desc(request, &in_node->nod_desc, node, NULL);
 
-				if (att->att_charset != CS_NONE && att->att_charset != CS_BINARY)
+				if (request->req_dbb->dbb_att_charset != CS_NONE &&
+					request->req_dbb->dbb_att_charset != CS_BINARY)
 				{
-					const USHORT fromCharSet = in_node->nod_desc.getCharSet();
-					const USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
-						fromCharSet : att->att_charset;
+					USHORT fromCharSet = in_node->nod_desc.getCharSet();
+					USHORT toCharSet = (fromCharSet == CS_NONE || fromCharSet == CS_BINARY) ?
+						fromCharSet : request->req_dbb->dbb_att_charset;
 
 					if (in_node->nod_desc.dsc_dtype <= dtype_any_text)
 					{
@@ -10332,7 +10156,7 @@ static void set_parameters_name( dsql_nod* list_node, const dsql_nod* rel_node)
 	DEV_BLKCHK(context, dsql_type_ctx);
 	const dsql_rel* relation = context->ctx_relation;
 
-	dsql_nod** ptr = list_node->nod_arg;
+    dsql_nod** ptr = list_node->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list_node->nod_count;
 		 ptr < end; ptr++)
 	{
@@ -10390,8 +10214,8 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 			DEV_BLKCHK(parameter, dsql_type_par);
 			const dsql_fld* field = (dsql_fld*) fld_node->nod_arg[e_fld_field];
 			DEV_BLKCHK(field, dsql_type_fld);
-			parameter->par_name = field->fld_name.c_str();
-			parameter->par_rel_name = relation->rel_name.c_str();
+			parameter->par_name = field->fld_name;
+			parameter->par_rel_name = relation->rel_name;
 			return;
 		}
 
@@ -10513,27 +10337,10 @@ void dsql_req::clearCTEs()
 }
 
 
-void dsql_req::checkUnusedCTEs() const
-{
-	for (size_t i = 0; i < req_ctes.getCount(); i++)
-	{
-		const dsql_nod* cte = req_ctes[i];
-
-		if (!(cte->nod_flags & NOD_DT_CTE_USED))
-		{
-			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
-
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				isc_arg_gds, isc_dsql_cte_not_used, 
-				isc_arg_string, cte_name->str_data, 0);
-		}
-	}
-}
-
 // Returns false for hidden fields and true for non-hidden.
 // For non-hidden, change "node" if the field is part of an
 // implicit join.
-bool dsql_ctx::getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node)
+bool dsql_ctx::getImplicitJoinField(const TEXT* name, dsql_nod*& node)
 {
 	ImplicitJoin* impJoin;
 	if (ctx_imp_join.get(name, impJoin))
@@ -10543,1128 +10350,9 @@ bool dsql_ctx::getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& n
 			node = impJoin->value;
 			return true;
 		}
-
-		return false;
+		else
+			return false;
 	}
 
 	return true;
 }
-
-#ifdef DSQL_DEBUG
-
-static void trace_line(const char* message, ...) {
-	char buffer[1024];
-	va_list params;
-	va_start(params, message);
-	VSNPRINTF(buffer, sizeof(buffer), message, params);
-	va_end(params);
-	buffer[sizeof(buffer) - 1] = 0;
-	gds__trace_raw(buffer);
-}
-
-/**
-  
- 	DSQL_pretty
-  
-    @brief	Pretty print a node tree.
-
-
-    @param node
-    @param column
-
- **/
-void DSQL_pretty(const dsql_nod* node, int column)
-{
-	TEXT buffer[1024];
-
-	TEXT* p = buffer;
-	p += sprintf(p, "%p ", (void*) node);
-
-	if (column) {
-		USHORT l = column * 3;
-		do {
-			*p++ = ' ';
-		} while (--l);
-	}
-
-	*p = 0;
-
-	if (!node) {
-		trace_line("%s *** null ***\n", buffer);
-		return;
-	}
-
-	switch (node->getType()) {
-	case (TEXT) dsql_type_str:
-		trace_line("%sSTRING: \"%s\"\n", buffer, ((dsql_str*) node)->str_data);
-		return;
-
-	case (TEXT) dsql_type_fld:
-		trace_line("%sFIELD: %s\n", buffer, ((dsql_fld*) node)->fld_name.c_str());
-		return;
-
-	case (TEXT) dsql_type_sym:
-		trace_line("%sSYMBOL: %s\n", buffer, ((dsql_sym*) node)->sym_string);
-		return;
-
-	case (TEXT) dsql_type_nod:
-		break;
-
-	default:
-		trace_line("%sUNKNOWN BLOCK TYPE\n", buffer);
-		return;
-	}
-
-	TEXT s[64];
-	const dsql_str* string;
-	const TEXT* verb;
-	const dsql_nod* const* ptr = node->nod_arg;
-	const dsql_nod* const* const end = ptr + node->nod_count;
-
-	switch (node->nod_type) {
-	case nod_abort:
-		verb = "abort";
-		break;
-	case nod_agg_average:
-		verb = "agg_average";
-		break;
-	case nod_agg_count:
-		verb = "agg_count";
-		break;
-/* count2
-	case nod_agg_distinct: verb = "agg_distinct";	break;
-*/
-	case nod_agg_max:
-		verb = "agg_max";
-		break;
-	case nod_agg_min:
-		verb = "agg_min";
-		break;
-	case nod_agg_total:
-		verb = "agg_total";
-		break;
-	case nod_agg_list:
-		verb = "agg_list";
-		break;
-	case nod_add:
-		verb = "add";
-		break;
-	case nod_alias:
-		verb = "alias";
-		break;
-	case nod_ansi_all:
-	case nod_all:
-		verb = "all";
-		break;
-	case nod_and:
-		verb = "and";
-		break;
-	case nod_ansi_any:
-	case nod_any:
-		verb = "any";
-		break;
-	case nod_array:
-		verb = "array element";
-		break;
-	case nod_assign:
-		verb = "assign";
-		break;
-	case nod_average:
-		verb = "average";
-		break;
-	case nod_between:
-		verb = "between";
-		break;
-	case nod_cast:
-		verb = "cast";
-		break;
-	case nod_collate:
-		verb = "collate";
-		break;
-	case nod_concatenate:
-		verb = "concatenate";
-		break;
-	case nod_containing:
-		verb = "containing";
-		break;
-	//case nod_count:
-	//	verb = "count";
-	//	break;
-	case nod_current_date:
-		verb = "current_date";
-		break;
-	case nod_current_time:
-		verb = "current_time";
-		break;
-	case nod_current_timestamp:
-		verb = "current_timestamp";
-		break;
-	case nod_cursor:
-		verb = "cursor";
-		break;
-	case nod_dbkey:
-		verb = "dbkey";
-		break;
-	case nod_rec_version:
-		verb = "record_version";
-		break;
-	case nod_def_database:
-		verb = "define database";
-		break;
-	case nod_def_field:
-		verb = "define field";
-		break;
-	case nod_def_generator:
-		verb = "define generator";
-		break;
-	case nod_def_filter:
-		verb = "define filter";
-		break;
-	case nod_def_index:
-		verb = "define index";
-		break;
-	case nod_def_relation:
-		verb = "define relation";
-		break;
-	// CVC: New node redef_relation.
-	case nod_redef_relation:
-		verb = "redefine relation";
-		break;
-	case nod_def_view:
-		verb = "define view";
-		break;
-	case nod_redef_view:
-		verb = "redefine view";
-		break;
-	case nod_mod_view:
-		verb = "modify view";
-		break;
-	case nod_replace_view:
-		verb = "replace view";
-		break;
-	case nod_delete:
-		verb = "delete";
-		break;
-	case nod_del_field:
-		verb = "delete field";
-		break;
-	case nod_del_filter:
-		verb = "delete filter";
-		break;
-	case nod_del_generator:
-		verb = "delete generator";
-		break;
-	case nod_del_index:
-		verb = "delete index";
-		break;
-	case nod_del_relation:
-		verb = "delete relation";
-		break;
-	// CVC: New node del_view.
-	case nod_del_view:
-		verb = "delete view";
-		break;
-	case nod_def_procedure:
-		verb = "define procedure";
-		break;
-	case nod_mod_procedure:
-		verb = "modify procedure";
-		break;
-	case nod_replace_procedure:
-		verb = "replace procedure";
-		break;
-	// CVC: New node redef_procedure.
-	case nod_redef_procedure:
-		verb = "redefine procedure";
-		break;
-	case nod_del_procedure:
-		verb = "delete procedure";
-		break;
-	case nod_def_trigger:
-		verb = "define trigger";
-		break;
-	case nod_mod_trigger:
-		verb = "modify trigger";
-		break;
-	case nod_replace_trigger:
-		verb = "replace trigger";
-		break;
-	case nod_redef_trigger:
-		verb = "redefine trigger";
-		break;
-	case nod_del_trigger:
-		verb = "delete trigger";
-		break;
-	case nod_divide:
-		verb = "divide";
-		break;
-	case nod_eql_all:
-	case nod_eql_any:
-	case nod_eql:
-		verb = "eql";
-		break;
-	case nod_equiv:
-		verb = "equiv";
-		break;
-	case nod_erase:
-		verb = "erase";
-		break;
-	case nod_execute:
-		verb = "execute";
-		break;
-	case nod_exec_procedure:
-		verb = "execute procedure";
-		break;
-	case nod_exec_block: 
-		verb = "execute block";
-		break;
-	case nod_exists:
-		verb = "exists";
-		break;
-	case nod_extract:
-		verb = "extract";
-		break;
-	case nod_flag:
-		verb = "flag";
-		break;
-	case nod_foreign:
-		verb = "foreign key";
-		break;
-	case nod_gen_id:
-		verb = "gen_id";
-		break;
-	case nod_geq_all:
-	case nod_geq_any:
-	case nod_geq:
-		verb = "geq";
-		break;
-	case nod_get_segment:
-		verb = "get segment";
-		break;
-	case nod_grant:
-		verb = "grant";
-		break;
-	case nod_gtr_all:
-	case nod_gtr_any:
-	case nod_gtr:
-		verb = "gtr";
-		break;
-	case nod_insert:
-		verb = "insert";
-		break;
-	case nod_internal_info:
-		verb = "internal info";
-		break;
-	case nod_join:
-		verb = "join";
-		break;
-	case nod_join_full:
-		verb = "join_full";
-		break;
-	case nod_join_left:
-		verb = "join_left";
-		break;
-	case nod_join_right:
-		verb = "join_right";
-		break;
-	case nod_strlen:
-		verb = "strlen";
-		break;
-	case nod_leq_all:
-	case nod_leq_any:
-	case nod_leq:
-		verb = "leq";
-		break;
-	case nod_like:
-		verb = "like";
-		break;
-	case nod_list:
-		verb = "list";
-		break;
-	case nod_lss_all:
-	case nod_lss_any:
-	case nod_lss:
-		verb = "lss";
-		break;
-	case nod_max:
-		verb = "max";
-		break;
-	case nod_min:
-		verb = "min";
-		break;
-	case nod_missing:
-		verb = "missing";
-		break;
-	case nod_modify:
-		verb = "modify";
-		break;
-	case nod_mod_database:
-		verb = "modify database";
-		break;
-	case nod_mod_field:
-		verb = "modify field";
-		break;
-	case nod_mod_relation:
-		verb = "modify relation";
-		break;
-	case nod_multiply:
-		verb = "multiply";
-		break;
-	case nod_negate:
-		verb = "negate";
-		break;
-	case nod_neq_all:
-	case nod_neq_any:
-	case nod_neq:
-		verb = "neq";
-		break;
-	case nod_not:
-		verb = "not";
-		break;
-	case nod_null:
-		verb = "null";
-		break;
-	case nod_or:
-		verb = "or";
-		break;
-	case nod_order:
-		verb = "order";
-		break;
-	case nod_primary:
-		verb = "primary key";
-		break;
-	case nod_procedure_name:
-		verb = "procedure name";
-		break;
-	case nod_put_segment:
-		verb = "put segment";
-		break;
-	case nod_relation_name:
-		verb = "relation name";
-		break;
-	case nod_rel_proc_name:
-		verb = "rel/proc name";
-		break;
-	case nod_return:
-		verb = "return";
-		break;
-	case nod_revoke:
-		verb = "revoke";
-		break;
-	case nod_rse:
-		verb = "rse";
-		break;
-	case nod_select:
-		verb = "select";
-		break;
-	case nod_select_expr:
-		verb = "select expr";
-		break;
-	case nod_similar:
-		verb = "similar";
-		break;
-	case nod_starting:
-		verb = "starting";
-		break;
-	case nod_store:
-		verb = "store";
-		break;
-	case nod_substr:
-		verb = "substr";
-		break;
-	case nod_subtract:
-		verb = "subtract";
-		break;
-	case nod_trim:
-		verb = "trim";
-		break;
-	case nod_total:
-		verb = "total";
-		break;
-	case nod_update:
-		verb = "update";
-		break;
-	case nod_union:
-		verb = "union";
-		break;
-	case nod_unique:
-		verb = "unique";
-		break;
-	case nod_upcase:
-		verb = "upcase";
-		break;
-	case nod_lowcase:
-		verb = "lowcase";
-		break;
-	case nod_singular:
-		verb = "singular";
-		break;
-	case nod_user_name:
-		verb = "user_name";
-		break;
-	// CVC: New node current_role.
-	case nod_current_role:
-		verb = "current_role";
-		break;
-	case nod_via:
-		verb = "via";
-		break;
-
-	case nod_coalesce:
-		verb = "coalesce";
-		break;
-
-	case nod_simple_case:
-		verb = "simple_case";
-		break;
-
-	case nod_searched_case:
-		verb = "searched_case";
-		break;
-
-	case nod_add2:
-		verb = "add2";
-		break;
-	case nod_agg_total2:
-		verb = "agg_total2";
-		break;
-	case nod_divide2:
-		verb = "divide2";
-		break;
-	case nod_gen_id2:
-		verb = "gen_id2";
-		break;
-	case nod_multiply2:
-		verb = "multiply2";
-		break;
-	case nod_subtract2:
-		verb = "subtract2";
-		break;
-	case nod_limit:
-		verb = "limit";
-		break;
-	case nod_rows:
-		verb = "rows";
-		break;
-	/* IOL:	missing	node types */
-	case nod_on_error:
-		verb = "on error";
-		break;
-	case nod_block:
-		verb = "block";
-		break;
-	case nod_default:
-		verb = "default";
-		break;
-	case nod_plan_expr:
-		verb = "plan";
-		break;
-	case nod_index:
-		verb = "index";
-		break;
-	case nod_index_order:
-		verb = "order";
-		break;
-	case nod_plan_item:
-		verb = "item";
-		break;
-	case nod_natural:
-		verb = "natural";
-		break;
-	case nod_join_inner:
-		verb = "join_inner";
-		break;
-	// SKIDDER: some more missing node types 
-	case nod_commit:
-		verb = "commit";
-		break;
-	case nod_rollback:
-		verb = "rollback";
-		break;
-	case nod_trans:
-		verb = "trans";
-		break;
-	case nod_def_default:
-		verb = "def_default";
-		break;
-	case nod_del_default:
-		verb = "del_default";
-		break;
-	case nod_def_domain:
-		verb = "def_domain";
-		break;
-	case nod_mod_domain:
-		verb = "mod_domain";
-		break;
-	case nod_del_domain:
-		verb = "del_domain";
-		break;
-	case nod_def_constraint:
-		verb = "def_constraint";
-		break;
-/*
-	case nod_def_trigger_msg:
-		verb = "def_trigger_msg";
-		break;
-	case nod_mod_trigger_msg:
-		verb = "mod_trigger_msg";
-		break;
-	case nod_del_trigger_msg:
-		verb = "del_trigger_msg";
-		break;
-*/
-	case nod_def_exception:
-		verb = "def_exception";
-		break;
-	case nod_redef_exception:
-		verb = "redef_exception";
-		break;
-	case nod_mod_exception:
-		verb = "mod_exception";
-		break;
-	case nod_replace_exception:
-		verb = "replace_exception";
-		break;
-	case nod_del_exception:
-		verb = "del_exception";
-		break;
-	case nod_def_shadow:
-		verb = "def_shadow";
-		break;
-	case nod_del_shadow:
-		verb = "del_shadow";
-		break;
-	case nod_def_udf:
-		verb = "def_udf";
-		break;
-	case nod_del_udf:
-		verb = "del_udf";
-		break;
-	case nod_rel_constraint:
-		verb = "rel_constraint";
-		break;
-	case nod_delete_rel_constraint:
-		verb = "delete_rel_constraint";
-		break;
-	case nod_references:
-		verb = "references";
-		break;
-	case nod_proc_obj:
-		verb = "proc_obj";
-		break;
-	case nod_trig_obj:
-		verb = "trig_obj";
-		break;
-	case nod_view_obj:
-		verb = "view_obj";
-		break;
-	case nod_exit:
-		verb = "exit";
-		break;
-	case nod_if:
-		verb = "if";
-		break;
-	case nod_erase_current:
-		verb = "erase_current";
-		break;
-	case nod_modify_current:
-		verb = "modify_current";
-		break;
-	case nod_post:
-		verb = "post";
-		break;
-	case nod_sqlcode:
-		verb = "sqlcode";
-		break;
-	case nod_gdscode:
-		verb = "gdscode";
-		break;
-	case nod_exception:
-		verb = "exception";
-		break;
-	case nod_exception_stmt:
-		verb = "exception_stmt";
-		break;
-	case nod_start_savepoint:
-		verb = "start_savepoint";
-		break;
-	case nod_end_savepoint:
-		verb = "end_savepoint";
-		break;
-	case nod_dom_value:
-		verb = "dom_value";
-		break;
-	case nod_user_group:
-		verb = "user_group";
-		break;
-	case nod_from:
-		verb = "from";
-		break;
-	case nod_agg_average2:
-		verb = "agg_average2";
-		break;
-	case nod_access:
-		verb = "access";
-		break;
-	case nod_wait:
-		verb = "wait";
-		break;
-	case nod_isolation:
-		verb = "isolation";
-		break;
-	case nod_version:
-		verb = "version";
-		break;
-	case nod_table_lock:
-		verb = "table_lock";
-		break;
-	case nod_lock_mode:
-		verb = "lock_mode";
-		break;
-	case nod_reserve:
-		verb = "reserve";
-		break;
-	case nod_retain:
-		verb = "retain";
-		break;
-	case nod_page_size:
-		verb = "page_size";
-		break;
-	case nod_file_length:
-		verb = "file_length";
-		break;
-	case nod_file_desc:
-		verb = "file_desc";
-		break;
-	case nod_dfl_charset:
-		verb = "dfl_charset";
-		break;
-	case nod_password:
-		verb = "password";
-		break;
-	case nod_lc_ctype:
-		verb = "lc_ctype";
-		break;
-	case nod_udf_return_value:
-		verb = "udf_return_value";
-		break;
-	case nod_def_computed:
-		verb = "def_computed";
-		break;
-	case nod_merge_plan:
-		verb = "merge_plan";
-		break;
-	case nod_set_generator:
-		verb = "set_generator";
-		break;
-	case nod_set_generator2:
-		verb = "set_generator2";
-		break;
-	case nod_mod_index:
-		verb = "mod_index";
-		break;
-	case nod_idx_active:
-		verb = "idx_active";
-		break;
-	case nod_idx_inactive:
-		verb = "idx_inactive";
-		break;
-	case nod_restrict:
-		verb = "restrict";
-		break;
-	case nod_cascade:
-		verb = "cascade";
-		break;
-	case nod_set_statistics:
-		verb = "set_statistics";
-		break;
-	case nod_ref_upd_del:
-		verb = "ref_upd_del";
-		break;
-	case nod_ref_trig_action:
-		verb = "ref_trig_action";
-		break;
-	case nod_def_role:
-		verb = "def_role";
-		break;
-	case nod_role_name:
-		verb = "role_name";
-		break;
-	case nod_grant_admin:
-		verb = "grant_admin";
-		break;
-	case nod_del_role:
-		verb = "del_role";
-		break;
-	case nod_mod_domain_type:
-		verb = "mod_domain_type";
-		break;
-	case nod_mod_field_name:
-		verb = "mod_field_name";
-		break;
-	case nod_mod_field_type:
-		verb = "mod_field_type";
-		break;
-	case nod_mod_field_pos:
-		verb = "mod_field_pos";
-		break;
-	case nod_udf_param:
-		verb = "udf_param";
-		break;
-	case nod_exec_sql:
-		verb = "exec_sql";
-		break;
-	case nod_for_update:
-		verb = "for_update";
-		break;
-	case nod_user_savepoint:
-		verb = "user_savepoint";
-		break;
-	case nod_release_savepoint:
-		verb = "release_savepoint";
-		break;
-	case nod_undo_savepoint:
-		verb = "undo_savepoint";
-		break;
-	case nod_difference_file:
-		verb = "difference_file";
-		break;
-	case nod_drop_difference:
-		verb = "drop_difference";
-		break;
-	case nod_begin_backup:
-		verb = "begin_backup";
-		break;
-	case nod_end_backup:
-		verb = "end_backup";
-		break;
-	case nod_derived_table:
-		verb = "derived_table";
-		break;
-
-	// CVC: This node seems obsolete.
-	case nod_exec_into:
-		verb = "exec_into";
-		break;
-
-	case nod_breakleave:
-		verb = "breakleave";
-		break;
-
-	case nod_for_select:
-		verb = "for_select";
-		break;
-
-	case nod_while:
-		verb = "while";
-		break;
-
-	case nod_label:
-		verb = "label";
-		DSQL_pretty(node->nod_arg[e_label_name], column + 1);
-		trace_line("%s   number %d\n", buffer,
-			(int)(IPTR)node->nod_arg[e_label_number]);
-		return;
-
-	case nod_derived_field:
-		verb = "derived_field";
-		trace_line("%s%s\n", buffer, verb);
-		DSQL_pretty(node->nod_arg[e_derived_field_value], column + 1);
-		DSQL_pretty(node->nod_arg[e_derived_field_name], column + 1);
-		trace_line("%s   scope %d\n", buffer,
-			(USHORT)(U_IPTR)node->nod_arg[e_derived_field_scope]);
-		return;
-
-	case nod_aggregate:
-		{
-			verb = "aggregate";
-			trace_line("%s%s\n", buffer, verb);
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
-			trace_line("%s   context %d\n", buffer, context->ctx_context);
-			dsql_map* map = context->ctx_map;
-			if (map != NULL)
-				trace_line("%s   map\n", buffer);
-			while (map) {
-				trace_line("%s      position %d\n", buffer, map->map_position);
-				DSQL_pretty(map->map_node, column + 2);
-				map = map->map_next;
-			}
-			DSQL_pretty(node->nod_arg[e_agg_group], column + 1);
-			DSQL_pretty(node->nod_arg[e_agg_rse], column + 1);
-			return;
-		}
-
-	case nod_constant:
-		verb = "constant";
-		if (node->nod_desc.dsc_address) {
-			if (node->nod_desc.dsc_dtype == dtype_text)
-				sprintf(s, "constant \"%s\"", node->nod_desc.dsc_address);
-			else
-				sprintf(s, "constant %"SLONGFORMAT, node->getSlong());
-			verb = s;
-		}
-		break;
-
-	case nod_field:
-		{
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_fld_context];
-			const dsql_rel* relation = context->ctx_relation;
-			const dsql_prc* procedure = context->ctx_procedure;
-			const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
-			trace_line("%sfield %s.%s, context %d\n", buffer,
-				(relation != NULL ?
-					relation->rel_name.c_str() :
-					(procedure != NULL ?
-						procedure->prc_name.c_str() :
-						"unknown_db_object")),
-				field->fld_name.c_str(), context->ctx_context);
-			return;
-		}
-	
-	case nod_field_name:
-		trace_line("%sfield name: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_fln_context];
-		if (string)
-			trace_line("%s.", string->str_data);
-		string = (dsql_str*) node->nod_arg[e_fln_name];
-		if (string != 0) {
-			trace_line("%s\"\n", string->str_data);
-		}
-		else {
-			trace_line("%s\"\n", "*");
-		}
-		return;
-
-	case nod_map:
-		{
-			verb = "map";
-			trace_line("%s%s\n", buffer, verb);
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
-			trace_line("%s   context %d\n", buffer, context->ctx_context);
-			for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map;
-				map = map->map_next)
-			{
-				trace_line("%s   position %d\n", buffer, map->map_position);
-				DSQL_pretty(map->map_node, column + 1);
-			}
-			return;
-		}
-
-	case nod_relation:
-		{
-			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_rel_context];
-			const dsql_rel* relation = context->ctx_relation;
-			const dsql_prc* procedure = context->ctx_procedure;
-			if ( relation != NULL ) {
-				trace_line("%srelation %s, context %d\n",
-					buffer, relation->rel_name.c_str(), context->ctx_context);
-			}
-			else if ( procedure != NULL ) {
-				trace_line("%sprocedure %s, context %d\n",
-					buffer, procedure->prc_name.c_str(), context->ctx_context);
-			}
-			else {
-				trace_line("%sUNKNOWN DB OBJECT, context %d\n",
-					buffer, context->ctx_context);
-			}
-			return;
-		}
-
-	case nod_variable:
-		{
-			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-			// Adding variable->var_variable_number to display, obviously something
-			// is missing from the printf, and Im assuming this was it.
-			// (anyway can't be worse than it was MOD 05-July-2002.
-			trace_line("%svariable %s %d\n", buffer, variable->var_name, variable->var_variable_number);
-			return;
-		}
-
-	case nod_var_name:
-		trace_line("%svariable name: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_vrn_name];
-		trace_line("%s\"\n", string->str_data);
-		return;
-
-	case nod_parameter:
-		if (node->nod_column) {
-			trace_line("%sparameter: %d\n",	buffer,
-				(USHORT)(IPTR)node->nod_arg[e_par_index]);
-		}
-		else {
-			const dsql_par* param = (dsql_par*) node->nod_arg[e_par_parameter];
-			trace_line("%sparameter: %d\n",	buffer, param->par_index);
-		}
-		return;
-
-	case nod_udf:
-		trace_line ("%sfunction: \"", buffer);
-		/* nmcc: how are we supposed to tell which type of nod_udf this is ?? */
-		/* CVC: The answer is that nod_arg[0] can be either the udf name or the
-		pointer to udf struct returned by METD_get_function, so we should resort
-		to the block type. The replacement happens in pass1_udf(). */
-		switch (node->nod_arg[e_udf_name]->getType()) {
-		case dsql_type_udf:
-			trace_line ("%s\"\n", ((dsql_udf*) node->nod_arg[e_udf_name])->udf_name.c_str());
-			break;
-		case dsql_type_str:
-			string = (dsql_str*) node->nod_arg[e_udf_name];
-			trace_line ("%s\"\n", string->str_data);
-			break;
-		default:
-			trace_line ("%s\"\n", "<ERROR>");
-			break;
-		}
-		ptr++;
-
-		if (node->nod_count == 2) {
-			DSQL_pretty (*ptr, column + 1);
-		}
-		return;
-
-	case nod_cursor_open:
-		verb = "cursor_open";
-		break;
-	case nod_cursor_fetch:
-		verb = "cursor_fetch";
-		break;
-	case nod_cursor_close:
-		verb = "cursor_close";
-		break;
-	case nod_fetch_seek:
-		verb = "fetch_seek";
-		break;
-
-	case nod_param_val:
-		verb = "param_val"; // do we need more here?
-		break;
-		
-	case nod_query_spec:
-		verb = "query_spec";
-		break;
-		
-	case nod_comment:
-		verb = "comment";
-		break;
-		
-	case nod_mod_udf:
-		verb = "mod_udf";
-		break;
-
-	case nod_def_collation:
-		verb = "def_collation";
-		break;
-
-	case nod_del_collation:
-		verb = "del_collation";
-		break;
-
-	case nod_collation_from:
-		verb = "collation_from";
-		break;
-
-	case nod_collation_from_external:
-		verb = "collation_from_external";
-		break;
-
-	case nod_collation_attr:
-		verb = "collation_attr";
-		break;
-
-	case nod_collation_specific_attr:
-		verb = "collation_specific_attr";
-		break;
-		
-	case nod_returning:
-		verb = "returning";
-		break;
-		
-	case nod_tra_misc:
-		verb = "tra_misc";
-		break;
-
-	case nod_lock_timeout:
-		verb = "lock_timeout"; // maybe show the timeout value?
-		break;
-
-	case nod_src_info:
-		verb = "src_info"; 
-		break;
-
-	case nod_with:
-		verb = "with";
-		break;
-
-	case nod_update_or_insert:
-		verb = "update_or_insert";
-		break;
-
-	case nod_merge:
-		verb = "merge";
-		break;
-
-	case nod_merge_when:
-		verb = "merge_when";
-		break;
-
-	case nod_merge_update:
-		verb = "merge_update";
-		break;
-
-	case nod_merge_insert:
-		verb = "merge_insert";
-		break;
-
-	case nod_sys_function:
-		trace_line("%ssystem function: \"", buffer);
-		string = (dsql_str*) node->nod_arg[e_sysfunc_name];
-		trace_line("%s\"\n", string->str_data);
-		ptr++;
-
-		if (node->nod_count == 2)
-			DSQL_pretty(*ptr, column + 1);
-		return;
-		
-	case nod_mod_role:
-		verb = "mod_role";
-		break;
-
-	case nod_add_user:
-		verb = "add_user";
-		break;
-
-	case nod_mod_user:
-		verb = "mod_user";
-		break;
-
-	case nod_del_user:
-		verb = "del_user";
-		break;
-
-	case nod_exec_stmt:
-		verb = "exec_stmt";
-		break;
-
-	default:
-		sprintf(s, "unknown type %d", node->nod_type);
-		verb = s;
-	}
-
-	if (node->nod_desc.dsc_dtype) {
-		trace_line("%s%s (%d,%d,%p)\n",
-				buffer, verb,
-				node->nod_desc.dsc_dtype,
-				node->nod_desc.dsc_length, node->nod_desc.dsc_address);
-	}
-	else {
-		trace_line("%s%s\n", buffer, verb);
-	}
-	++column;
-
-	while (ptr < end) {
-		DSQL_pretty(*ptr++, column);
-	}
-
-	return;
-}
-#endif

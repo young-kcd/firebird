@@ -29,10 +29,10 @@
 #ifndef JRD_PIO_H
 #define JRD_PIO_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../jrd/thread_proto.h"
 #include "../common/classes/rwlock.h"
-#include "../common/classes/array.h"
 
 namespace Jrd {
 
@@ -56,6 +56,28 @@ class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 
 #endif
 
+
+#ifdef VMS
+
+class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
+{
+    public:
+	jrd_file*	fil_next;		/* Next file in database */
+	ULONG fil_min_page;			/* Minimum page number in file */
+	ULONG fil_max_page;			/* Maximum page number in file */
+	USHORT fil_sequence;		/* Sequence number of file */
+	USHORT fil_fudge;			/* Fudge factor for page relocation */
+	int fil_desc;
+	int fil_trace;				/* Trace file, if any */
+	Firebird::Mutex fil_mutex;
+	USHORT fil_length;			/* Length of expanded file name */
+	USHORT fil_fid[3];			/* File id */
+	USHORT fil_did[3];			/* Directory id */
+	USHORT fil_flags;
+	SCHAR fil_string[1];		/* Expanded file name */
+};
+
+#endif
 
 #ifdef WIN_NT
 #ifdef SUPERSERVER_V2
@@ -122,23 +144,30 @@ const UCHAR PIOB_success	= 2;	/* I/O successfully completed */
 const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 #endif
 
-static const int ZERO_BUF_SIZE = 1024 * 128;
+// This class ensures that all actions in the appropriate scope
+// are performed outside the engine. Used in many PIO routines.
 
-class HugeStaticBuffer 
+class ThreadExit
 {
 public:
-	explicit HugeStaticBuffer(MemoryPool& p)
-		: zeroArray(p), 
-		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+	ThreadExit()
 	{
-		memset(zeroBuff, 0, ZERO_BUF_SIZE);
+#ifdef SUPERSERVER
+		THREAD_EXIT();
+#endif
 	}
 
-	const char* get() { return zeroBuff; }
+	~ThreadExit()
+	{
+#ifdef SUPERSERVER
+		THREAD_ENTER();
+#endif
+	}
 
 private:
-	Firebird::Array<char> zeroArray;
-	char* const zeroBuff;
+	// prohibited
+	ThreadExit(const ThreadExit&);
+	ThreadExit& operator=(const ThreadExit&);
 };
 
 } //namespace Jrd

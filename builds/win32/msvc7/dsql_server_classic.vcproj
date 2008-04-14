@@ -81,7 +81,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG,_LIB,_WINDOWS,WIN32,DEV_BUILD,_X86_"
+				PreprocessorDefinitions="DEBUG,_DEBUG,_LIB,_WINDOWS,WIN32,DEV_BUILD,_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -128,6 +128,9 @@
 		<Filter
 			Name="DSQL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			<File
+				RelativePath="..\..\..\src\dsql\alld.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\ddl.cpp">
 			</File>
@@ -208,7 +211,16 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl">
 			<File
+				RelativePath="..\..\..\src\dsql\all.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\alld_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\array_proto.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\blk.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\blob_proto.h">

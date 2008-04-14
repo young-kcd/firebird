@@ -27,7 +27,6 @@ EXPORTS
 	gds__blob_size	@4
 	gds__cancel_blob	@5
 	gds__cancel_events	@6
-	gds__cancel_operation
 	gds__close	@7
 	gds__close_blob	@8
 	gds__commit_retaining	@9
@@ -124,9 +123,6 @@ EXPORTS
 
     gds_alloc_flag_unfreed
     gds_alloc_report
-
-	fb_shutdown
-	fb_shutdown_callback
 
 	perf_format	@100
 	perf_get_info	@101
@@ -246,7 +242,6 @@ EXPORTS
 	isc_sqlcode	@165
 	isc_sql_interprete	@164
 	isc_sqlcode_s		@278
-	fb_sqlstate			@279
 
 	; Event functions
 

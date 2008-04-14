@@ -58,6 +58,10 @@ void BLB_release_array(Jrd::ArrayField*);
 void BLB_scalar(Jrd::thread_db*, Jrd::jrd_tra*, const Jrd::bid*, USHORT, const SLONG*, Jrd::impure_value*);
 
 
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+void BLB_map_blobs(Jrd::thread_db*, Jrd::blb*, Jrd::blb*);
+#endif
+
 class AutoBlb
 {
 public:

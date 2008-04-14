@@ -11,7 +11,6 @@ Authors:
     Adriano dos Santos Fernandes <adrianosf@uol.com.br>
     Oleg Loa <loa@mail.ru>
     Alexey Karyakin <aleksey.karyakin@mail.ru>
-    Claudio Valderrama C. <cvalde at usa.net>
 
 
 ---
@@ -142,24 +141,10 @@ Function:
     Returns the result of a binary AND operation performed on all arguments.
 
 Format:
-    BIN_AND( <number>, <number> [, <number> ...] )
+    BIN_AND( <number> [, <number> ...] )
 
 Example:
     select bin_and(flags, 1) from x;
-
-
--------
-BIN_NOT
--------
-
-Function:
-    Returns the result of a bitwise NOT operation performed on its argument.
-
-Format:
-    BIN_NOT( <number> )
-
-Example:
-    select bin_not(flags) from x;
 
 
 ------
@@ -170,7 +155,7 @@ Function:
     Returns the result of a binary OR operation performed on all arguments.
 
 Format:
-    BIN_OR( <number>, <number> [, <number> ...] )
+    BIN_OR( <number> [, <number> ...] )
 
 Example:
     select bin_or(flags1, flags2) from x;
@@ -212,7 +197,7 @@ Function:
     Returns the result of a binary XOR operation performed on all arguments.
 
 Format:
-    BIN_XOR( <number>, <number> [, <number> ...] )
+    BIN_XOR( <number> [, <number> ...] )
 
 Example:
     select bin_xor(flags1, flags2) from x;
@@ -291,15 +276,12 @@ Format:
     DATEADD( <number> <timestamp_part> TO <date_time> )
     DATEADD( <timestamp_part>, <number>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
+    timestamp_part ::= { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND }
 
 Notes:
-    1) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
-    2) YEAR, MONTH and DAY could not be used with time values.
+    1) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
+    2) HOUR, MINUTE and SECOND could not be used with date values.
     3) All timestamp_part values could be used with timestamp values.
-    4) When using hour, minute, second and millisecond for DATEADD and dates, the quantity added or
-        subtracted should account at least for one day to produce effect (IE adding 23 hours to a date
-        doesn't increment it).
 
 Example:
     select dateadd(-1 day for current_date) as yesterday
@@ -318,19 +300,13 @@ Format:
     DATEDIFF( <timestamp_part> FROM <date_time> TO <date_time> )
     DATEDIFF( <timestamp_part>, <date_time>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
-
 Notes:
     1) Returns positive value if the second value is greater than the first one,
 	   negative when the first one is greater or zero when they are equal.
     2) Comparison of date with time values is invalid.
-    3) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
-    4) YEAR, MONTH and DAY could not be used with time values.
+    3) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
+    4) HOUR, MINUTE and SECOND could not be used with date values.
     5) All timestamp_part values could be used with timestamp values.
-
-Example:
-    select datediff(week from cast('yesterday' as timestamp) - 7 to current_timestamp)
-	    from rdb$database;
 
 
 ------

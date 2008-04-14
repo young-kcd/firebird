@@ -27,7 +27,11 @@
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
 
+#ifdef VMS
+const int BLOCK_SIZE = 512;
+#else
 const int BLOCK_SIZE = 1024;
+#endif
 
 const int MAXSYMLEN = 257;		// max length of symbol + terminator
 const int MAX_PAGE_LEN = 16384;	// max allowable length for a database page
@@ -607,9 +611,7 @@ struct DudleyGlobals {
 	bool DDL_extract;
 	bool DDL_trace;
 	bool DDL_version;
-#ifdef TRUSTED_AUTH
 	bool DDL_trusted;
-#endif
 	const TEXT* DDL_prompt;
 	const TEXT* DDL_file_name;
 	TEXT DYN_file_name[256];

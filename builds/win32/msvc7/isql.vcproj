@@ -148,9 +148,6 @@
 			Name="ISQL files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
 			<File
-				RelativePath="..\..\..\src\isql\ColList.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\isql\Extender.cpp">
 			</File>
 			<File
@@ -160,13 +157,7 @@
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\isql\InputDevices.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\gen\isql\isql.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\isql\OptionsBase.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\gen\isql\show.cpp">

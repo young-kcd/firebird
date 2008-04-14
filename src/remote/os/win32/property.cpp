@@ -48,6 +48,7 @@
 #include "../remote/os/win32/window.rh"
 #include "../remote/os/win32/property.rh"
 
+#include "../jrd/svc_proto.h"
 #include "../remote/os/win32/window_proto.h"
 #include "../remote/os/win32/propty_proto.h"
 #include "../remote/os/win32/ibconfig.h"
@@ -57,7 +58,7 @@
 #include "../remote/os/win32/ibsvrhlp.h"
 #include "../remote/os/win32/chop_proto.h"
 
-#include "../common/thd.h"			/* get jrd_proto.h to declare the function */
+#include "../jrd/thd.h"			/* get jrd_proto.h to declare the function */
 #include "../jrd/jrd_proto.h"	/* JRD_num_attachments() */
 #include <stdio.h>				/* sprintf() */
 
@@ -327,7 +328,7 @@ static void RefreshUserCount(HWND hDlg)
 	ULONG num_dbs = 0;
 	HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 
-	JRD_num_attachments(NULL, 0, JRD_info_none, &num_att, &num_dbs);
+	JRD_num_attachments(NULL, 0, 0, &num_att, &num_dbs);
 
 	char szText[MSG_STRINGLEN];
 	sprintf(szText, "%d", num_att);

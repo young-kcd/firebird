@@ -152,7 +152,7 @@ static const int relfields[] =
 #undef END_RELATION
 
 //******************************
-// types.h
+// types.h and intlnames.h
 //******************************
 
 /* obtain field types */
@@ -165,9 +165,76 @@ struct rtyp {
 
 #define TYPE(text, type, field)	{ text, type, field },
 
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+				{name, cs_id, nam_charset_name},
+#define CSALIAS(name, cs_id)	{name, cs_id, nam_charset_name},
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr)
+#define END_CHARSET
+
 static const rtyp types[] = {
 #include "../jrd/types.h"
+#include "../jrd/intlnames.h"
 	{NULL, 0, 0}
 };
 
 #undef TYPE
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+
+
+#ifndef GPRE
+/* obtain international names */
+
+struct initcharset {
+	const UCHAR* init_charset_name;
+	SSHORT init_charset_id;
+	USHORT init_charset_bytes_per_char;
+};
+
+typedef initcharset CS_TYPE;
+
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+	{ (const UCHAR *) (name), (cs_id), (bytes)},
+#define CSALIAS(name, cs_id)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr)
+#define END_CHARSET
+
+static const CS_TYPE cs_types[] = {
+#include "../jrd/intlnames.h"
+	{NULL, 0, 0}
+};
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+
+struct initcollation {
+	const UCHAR *init_collation_name;
+	const UCHAR *init_collation_base_name;
+	SSHORT init_collation_charset;
+	SSHORT init_collation_id;
+	USHORT init_collation_attributes;
+	const char* init_collation_specific_attributes;
+};
+
+typedef initcollation COLL_TYPE;
+
+#define CHARSET(name, cs_id, coll_id, bytes, num, s1, s2, attr) \
+	{ (const UCHAR *) (name), NULL, (cs_id), (coll_id), (attr), NULL },
+#define CSALIAS(name, cs_id)
+#define COLLATION(name, base_name, cc_id, cs_id, coll_id, sym, attr, specific_attr) \
+	{ (const UCHAR *) (name), (const UCHAR *) (base_name), (cs_id), (coll_id), (attr), (specific_attr) },
+#define END_CHARSET
+
+static const COLL_TYPE coll_types[] = {
+#include "../jrd/intlnames.h"
+	{NULL, NULL, 0, 0, 0, NULL}
+};
+#undef CHARSET
+#undef CSALIAS
+#undef COLLATION
+#undef END_CHARSET
+#endif
+

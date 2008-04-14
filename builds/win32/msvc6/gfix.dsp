@@ -109,7 +109,7 @@ SOURCE=..\..\..\src\alice\alice.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\alice\aliceMain.cpp
+SOURCE=..\..\..\src\alice\all.cpp
 # End Source File
 # Begin Source File
 
@@ -143,10 +143,6 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 
 SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
 # End Group
 # Begin Group "Header files"
 
@@ -162,6 +158,14 @@ SOURCE=..\..\..\src\alice\alice_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\aliceswi.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\alice\all.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\alice\all_proto.h
 # End Source File
 # Begin Source File
 

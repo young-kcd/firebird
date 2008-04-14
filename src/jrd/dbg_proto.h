@@ -33,7 +33,7 @@ namespace Jrd
 	class SortMap;
 }
 
-class MemoryPool;
+class JrdMemoryPool;
 struct blk;
 
 int DBG_supervisor(int);
@@ -49,7 +49,7 @@ int DBG_eval(int);
 int DBG_examine(int *);
 int DBG_init(void);
 int DBG_open(void);
-int DBG_pool(MemoryPool*);
+int DBG_pool(JrdMemoryPool*);
 int DBG_pretty(const Jrd::jrd_nod*, int);
 int DBG_rpb(Jrd::record_param*);
 int DBG_smb(Jrd::SortMap*, int);

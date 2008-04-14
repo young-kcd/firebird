@@ -131,6 +131,11 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	command line.
  *
  **************************************/
+	//TEXT buffer[256];
+
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
 // CVC: Notice that gdef is NEVER run as a service! It doesn't make sense.
 /* Perform some special handling when run as a Firebird service.  The
@@ -175,9 +180,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	dudleyGlob.DDL_dynamic = false;
 	dudleyGlob.DDL_trace = false;
 	dudleyGlob.DDL_version = false;
-#ifdef TRUSTED_AUTH
 	dudleyGlob.DDL_trusted = false;
-#endif
 	dudleyGlob.DDL_default_user = NULL;
 	dudleyGlob.DDL_default_password = NULL;
 
@@ -402,6 +405,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 	if (dudleyGlob.DDL_actions && ((dudleyGlob.DDL_errors && dudleyGlob.DDL_interactive) || dudleyGlob.DDL_quit)) {
 		rewind(stdin);
+		//*buffer = 0;
 		if (dudleyGlob.DDL_errors > 1)
 			DDL_msg_partial(7, SafeArg() << dudleyGlob.DDL_errors);	/* msg 7: \n%d errors during input. */
 		else if (dudleyGlob.DDL_errors)

@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="gpre_boot"
 	ProjectGUID="{8348521F-4480-4A1D-AE3B-E260235E9860}"
 	RootNamespace="gpre_boot"
@@ -436,6 +436,10 @@
 				RelativePath="..\..\..\src\jrd\isc_sync.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
@@ -595,6 +599,4 @@
 			</File>
 		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

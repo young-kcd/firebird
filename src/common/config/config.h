@@ -78,43 +78,50 @@ class Config
 		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
 		KEY_GUARDIAN_OPTION,						// 4
 		KEY_CPU_AFFINITY_MASK,						// 5
-		KEY_TCP_REMOTE_BUFFER_SIZE,					// 6
-		KEY_TCP_NO_NAGLE,							// 7
-		KEY_DEFAULT_DB_CACHE_PAGES,					// 8
-		KEY_CONNECTION_TIMEOUT,						// 9
-		KEY_DUMMY_PACKET_INTERVAL,					// 10
-		KEY_LOCK_MEM_SIZE,							// 11
-		KEY_LOCK_GRANT_ORDER,						// 12
-		KEY_LOCK_HASH_SLOTS,						// 13
-		KEY_LOCK_ACQUIRE_SPINS,						// 14
-		KEY_EVENT_MEM_SIZE,							// 15
-		KEY_DEADLOCK_TIMEOUT,						// 16
-		KEY_PRIORITY_SWITCH_DELAY,					// 17
-		KEY_USE_PRIORITY_SCHEDULER,					// 18
-		KEY_PRIORITY_BOOST,							// 19
-		KEY_REMOTE_SERVICE_NAME,					// 20
-		KEY_REMOTE_SERVICE_PORT,					// 21
-		KEY_REMOTE_PIPE_NAME,						// 22
-		KEY_IPC_NAME,								// 23
-		KEY_MAX_UNFLUSHED_WRITES,					// 24
-		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 25
-		KEY_PROCESS_PRIORITY_LEVEL,					// 26
-		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 27
-		KEY_REMOTE_AUX_PORT,						// 28
-		KEY_REMOTE_BIND_ADDRESS,					// 29
-		KEY_EXTERNAL_FILE_ACCESS,					// 30
-		KEY_DATABASE_ACCESS,						// 31
-		KEY_UDF_ACCESS,								// 32
-		KEY_TEMP_DIRECTORIES,						// 33
- 		KEY_BUGCHECK_ABORT,							// 34
-		KEY_LEGACY_HASH,							// 35
-		KEY_GC_POLICY,								// 36
-		KEY_REDIRECTION,							// 37
-		KEY_OLD_COLUMN_NAMING,						// 38
-		KEY_AUTH_METHOD,							// 39
-		KEY_DATABASE_GROWTH_INCREMENT,				// 40
-		KEY_MAX_FILESYSTEM_CACHE,					// 41
-		KEY_RELAXED_ALIAS_CHECKING					// 42
+		KEY_OLD_PARAMETER_ORDERING,					// 6
+		KEY_TCP_REMOTE_BUFFER_SIZE,					// 7
+		KEY_TCP_NO_NAGLE,							// 8
+		KEY_DEFAULT_DB_CACHE_PAGES,					// 9
+		KEY_CONNECTION_TIMEOUT,						// 10
+		KEY_DUMMY_PACKET_INTERVAL,					// 11
+		KEY_LOCK_MEM_SIZE,							// 12
+		KEY_LOCK_SEM_COUNT,							// 13
+		KEY_LOCK_SIGNAL,							// 14
+		KEY_LOCK_GRANT_ORDER,						// 15
+		KEY_LOCK_HASH_SLOTS,						// 16
+		KEY_LOCK_ACQUIRE_SPINS,						// 17
+		KEY_EVENT_MEM_SIZE,							// 18
+		KEY_DEADLOCK_TIMEOUT,						// 19
+		KEY_SOLARIS_STALL_VALUE,					// 20
+		KEY_TRACE_MEMORY_POOLS,						// 21	
+		KEY_PRIORITY_SWITCH_DELAY,					// 22
+		KEY_USE_PRIORITY_SCHEDULER,					// 23
+		KEY_PRIORITY_BOOST,							// 24
+		KEY_REMOTE_SERVICE_NAME,					// 25
+		KEY_REMOTE_SERVICE_PORT,					// 26
+		KEY_REMOTE_PIPE_NAME,						// 27
+		KEY_IPC_NAME,								// 28
+		KEY_MAX_UNFLUSHED_WRITES,					// 29
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 30
+		KEY_PROCESS_PRIORITY_LEVEL,					// 31
+		KEY_CREATE_INTERNAL_WINDOW,					// 32
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 33
+		KEY_REMOTE_AUX_PORT,						// 34
+		KEY_REMOTE_BIND_ADDRESS,					// 35
+		KEY_EXTERNAL_FILE_ACCESS,					// 36
+		KEY_DATABASE_ACCESS,						// 37
+		KEY_UDF_ACCESS,								// 38
+		KEY_TEMP_DIRECTORIES,						// 39
+ 		KEY_BUGCHECK_ABORT,							// 40
+		KEY_TRACE_DSQL,								// 41
+		KEY_LEGACY_HASH,							// 42
+		KEY_GC_POLICY,								// 43
+		KEY_REDIRECTION,							// 44
+		KEY_OLD_COLUMN_NAMING,						// 45
+		KEY_AUTH_METHOD,							// 46
+		KEY_DATABASE_GROWTH_INCREMENT,				// 47
+		KEY_MAX_FILESYSTEM_CACHE,					// 48
+		KEY_RELAXED_ALIAS_CHECKING					// 49
 	};
 
 public:
@@ -165,6 +172,11 @@ public:
 	static int getCpuAffinityMask();
 
 	/*
+		Old parameter ordering for backward compatibility with FB1/IB6.X
+	*/
+	static bool getOldParameterOrdering();
+
+	/*
 		XDR buffer size
 	*/
 	static int getTcpRemoteBufferSize();
@@ -195,6 +207,16 @@ public:
 	static int getLockMemSize();
 
 	/*
+		Lock manager semaphore count
+	*/
+	static int getLockSemCount();
+
+	/*
+		Lock manager signal number
+	*/
+	static int getLockSignal();
+
+	/*
 		Lock manager grant order
 	*/
 	static bool getLockGrantOrder();
@@ -223,6 +245,11 @@ public:
 		Solaris stall value
 	*/
 	static int getSolarisStallValue();
+
+	/*
+		Trace memory pools
+	*/
+	static bool getTraceMemoryPools();
 
 	/*
 		Priority switch delay
@@ -275,6 +302,11 @@ public:
 	static int getProcessPriorityLevel();
 
 	/*
+		Create window for IPC stuff
+	*/
+	static bool getCreateInternalWindow();
+
+	/*
 		Complete boolean evaluation
 	*/
 	static bool getCompleteBooleanEvaluation();
@@ -308,6 +340,11 @@ public:
 		Temporary directories list
 	*/
 	static const char *getTempDirectories();
+
+	/*
+		DSQL trace bitmask
+	*/
+	static int getTraceDSQL();
 
  	/*
  		Abort on BUGCHECK and structured exceptions

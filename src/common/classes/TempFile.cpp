@@ -57,6 +57,8 @@ static const char* DEFAULT_PATH =
 	"/tmp/";
 #elif defined(WIN_NT)
 	"c:\\temp\\";
+#elif defined(VMS)
+	"SYS$SCRATCH:";
 #else
 	NULL;
 #endif

@@ -248,7 +248,6 @@ const int BULK_PROMPT				= 156;		// "BULK> "
 const int NO_CONNECTED_USERS		= 157;   	// There are no connected users
 const int USERS_IN_DB				= 158;      // Users in the database
 const int OUTPUT_TRUNCATED			= 159;      // Output was truncated
-const int VALID_OPTIONS             = 160;      // Valid options are:
 
 // Initialize types
 
@@ -362,6 +361,10 @@ public:
 };
 
 extern IsqlGlobals isqlGlob;
+
+#ifdef VMS
+#include <descrip.h>
+#endif
 
 static const char* SCRATCH = "fb_query_";
 

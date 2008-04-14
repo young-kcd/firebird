@@ -32,6 +32,7 @@
 #include "../jrd/file_params.h"
 
 #include "../jrd/svc_undoc.h"
+#include "../jrd/svc_proto.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../remote/os/win32/window_proto.h"
 
@@ -324,8 +325,7 @@ BOOL ReadFBSettings(HWND hDlg)
 	hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 	char* const pchPtr = szService + strlen(szService);
 	strcat(szService, "anonymous");
-	char spb[] = {isc_spb_version1};
-	isc_service_attach(pdwStatus, 0, szService, &hService, sizeof(spb), spb);
+	isc_service_attach(pdwStatus, 0, szService, &hService, 0, "");
 
 	*pchPtr = '\0';
 
@@ -566,12 +566,13 @@ BOOL ValidateUser(HWND hParentWnd)
 		PrintCfgStatus(NULL, IDS_CFGNOT_SYSDBA, hParentWnd);
 		return FALSE;
 	}
-
-	szSysDbaPasswd[0] = '\0';
-	return (DialogBox
-			((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
-			 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
-			 (DLGPROC) PasswordDlgProc) > 0);
+	else {
+		szSysDbaPasswd[0] = '\0';
+		return (DialogBox
+				((HINSTANCE) GetWindowLongPtr(hParentWnd, GWLP_HINSTANCE),
+				 MAKEINTRESOURCE(PASSWORD_DLG), hParentWnd,
+				 (DLGPROC) PasswordDlgProc) > 0);
+	}
 }
 
 BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
@@ -616,7 +617,9 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 		if (wParam == IDOK) {
 			char szPassword[PASSWORD_LEN];
 			ISC_STATUS_ARRAY pdwStatus;
+			isc_svc_handle hService = NULL;
 			char szSpb[SPB_BUFLEN];
+			HCURSOR hOldCursor = NULL;
 
 			szPassword[0] = '\0';
 
@@ -626,8 +629,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			FillSysdbaSPB(szSpb, szPassword);
 
 			// Attach service to check for password validity
-			HCURSOR hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
-			isc_svc_handle hService = NULL;
+			hOldCursor = SetCursor(LoadCursor(NULL, IDC_WAIT));
 			isc_service_attach(pdwStatus, 0, "query_server",
 							   &hService, (USHORT) strlen(szSpb), szSpb);
 			SetCursor(hOldCursor);
@@ -647,14 +649,18 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 			SetFocus(GetDlgItem(hDlg, IDC_DBAPASSWORD));
 			return TRUE;
 		}
-		if (wParam == IDCANCEL) {
-			EndDialog(hDlg, 0);
-			return TRUE;
+		else {
+			if (wParam == IDCANCEL) {
+				EndDialog(hDlg, 0);
+				return TRUE;
+			}
 		}
 		break;
 	case WM_CLOSE:
-		EndDialog(hDlg, 0);
-		return TRUE;
+		{
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
 	default:
 		return FALSE;
 	}

@@ -24,36 +24,18 @@
 #ifndef JRD_SCL_H
 #define JRD_SCL_H
 
-#include "../common/classes/MetaName.h"
-#include "../common/classes/tree.h"
-
 namespace Jrd {
 
-// Security class definition
+/* Security class definition */
 
-class SecurityClass
+class SecurityClass : public pool_alloc_rpt<SCHAR, type_scl>
 {
-public:
+    public:
     typedef USHORT flags_t;
-
-	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name) :
-		scl_flags(0), scl_name(pool, name) {}
-
-	flags_t scl_flags;			// Access permissions
-	const Firebird::MetaName scl_name;
-
-	static const Firebird::MetaName& generate(const void*, const SecurityClass* item) { 
-		return item->scl_name;
-	}
+	SecurityClass* scl_next;	/* Next security class in system */
+	flags_t scl_flags;			/* Access permissions */
+	TEXT scl_name[2];
 };
-
-typedef Firebird::BePlusTree<
-	SecurityClass*, 
-	Firebird::MetaName, 
-	Firebird::MemoryPool, 
-	SecurityClass
-> SecurityClassList;
-
 
 const SecurityClass::flags_t SCL_read			= 1;		/* Read access */
 const SecurityClass::flags_t SCL_write			= 2;		/* Write access */
@@ -77,8 +59,6 @@ const SecurityClass::flags_t SCL_execute		= 8192;
 const USHORT USR_locksmith	= 1;		/* User has great karma */
 const USHORT USR_dba		= 2;		/* User has DBA privileges */
 const USHORT USR_owner		= 4;		/* User owns database */
-const USHORT USR_trole		= 8;		/* Role was set by trusted auth */
-
 
 class UserId
 {
@@ -95,7 +75,7 @@ public:
 
 	bool locksmith() const
 	{
-		return usr_flags & (USR_locksmith | USR_owner | USR_dba);
+		return usr_flags & (USR_locksmith | USR_owner);
 	}
 
 	UserId() :	usr_user_id(0), usr_group_id(0), 

@@ -31,7 +31,79 @@
 #ifndef JRD_ISC_H
 #define JRD_ISC_H
 
+// For AST_THREAD
+#include "../jrd/common.h"
+#include "../jrd/sch_proto.h"
+
+// For AstInhibit
+#include "../jrd/os/isc_i_proto.h"
+
+/* Defines for semaphore and shared memory removal */
+
+const USHORT ISC_SEM_REMOVE		= 1;
+const USHORT ISC_MEM_REMOVE		= 2; // tested but never set
+
 // Firebird platform-specific synchronization data structures
+
+#ifdef VMS
+struct itm {
+	SSHORT itm_length;
+	SSHORT itm_code;
+	SCHAR *itm_buffer;
+	SSHORT *itm_return_length;
+};
+
+typedef itm ITM;
+
+struct event_t {
+	SLONG event_pid;
+	SLONG event_count;
+};
+
+struct wait {
+	USHORT wait_count;
+	event_t* wait_events;
+	SLONG *wait_values;
+};
+
+typedef wait WAIT;
+
+/* Lock status block */
+
+struct lock_status {
+	SSHORT lksb_status;
+	SSHORT lksb_reserved;
+	SLONG lksb_lock_id;
+	SLONG lksb_value[4];
+};
+
+/* Poke block (for asynchronous poking) */
+
+struct poke {
+	struct poke *poke_next;
+	lock_status poke_lksb;
+	SLONG poke_parent_id;
+	USHORT poke_value;
+	USHORT poke_use_count;
+};
+
+typedef poke* POKE;
+
+#define SH_MEM_STRUCTURE_DEFINED
+struct sh_mem {
+	int sh_mem_system_flag;
+	UCHAR *sh_mem_address;
+	SLONG sh_mem_length_mapped;
+	SLONG sh_mem_mutex_arg;
+	SLONG sh_mem_handle;
+	SLONG sh_mem_retadr[2];
+	SLONG sh_mem_channel;
+	TEXT sh_mem_filename[MAXPATHLEN];
+};
+typedef struct sh_mem SH_MEM_T;
+typedef struct sh_mem* SH_MEM;
+#endif // VMS
+
 
 #ifdef UNIX
 #define MTX_STRUCTURE_DEFINED
@@ -41,7 +113,7 @@
 // to avoid circular dependencies in h-files.
 // Alex Peshkov. Tue 08 Jun 2004 02:22:08 PM MSD.
 
-#ifdef SOLARIS_MT
+#if  defined(SOLARIS_MT)
 #include <thread.h>
 #define COND_STRUCT cond_t
 #define MUTEX_STRUCT mutex_t
@@ -60,12 +132,24 @@
 #define MUTEX_STRUCT SCHAR
 #endif
 
+#ifdef MULTI_THREAD
 struct mtx {
 	MUTEX_STRUCT mtx_mutex[1];
 };
 typedef mtx MTX_T;
 typedef mtx* MTX;
+#else
+struct mtx {
+	SLONG mtx_semid;
+	SSHORT mtx_semnum;
+	SCHAR mtx_use_count;
+	SCHAR mtx_wait;
+};
+typedef mtx MTX_T;
+typedef mtx* MTX;
+#endif // MULTI_THREAD
 
+#ifdef MULTI_THREAD
 struct event_t
 {
 	SLONG event_semid;
@@ -73,12 +157,23 @@ struct event_t
 	MUTEX_STRUCT event_mutex[1];
 	COND_STRUCT event_semnum[1];
 };
+#else
+struct event_t
+{
+	SLONG event_semid;
+	SLONG event_count;
+	SSHORT event_semnum;
+};
+#endif // MULTI_THREAD
+
 
 #define SH_MEM_STRUCTURE_DEFINED
 struct sh_mem
 {
+	int sh_mem_semaphores;
 	UCHAR *sh_mem_address;
 	SLONG sh_mem_length_mapped;
+	SLONG sh_mem_mutex_arg;
 	SLONG sh_mem_handle;
 };
 typedef sh_mem SH_MEM_T;
@@ -121,9 +216,10 @@ typedef mtx *MTX;
 struct event_t
 {
 	SLONG		event_pid;
-	SLONG		event_id;
 	SLONG		event_count;
+	SLONG		event_type;
 	void*		event_handle;
+	event_t*	event_shared;
 };
 
 #define SH_MEM_STRUCTURE_DEFINED
@@ -131,6 +227,7 @@ struct sh_mem
 {
 	UCHAR*	sh_mem_address;
 	SLONG	sh_mem_length_mapped;
+	SLONG	sh_mem_mutex_arg;
 	void*	sh_mem_handle;
 	void*	sh_mem_object;
 	void*	sh_mem_interest;
@@ -164,6 +261,7 @@ struct sh_mem
 {
 	UCHAR*	sh_mem_address;
 	SLONG	sh_mem_length_mapped;
+	SLONG	sh_mem_mutex_arg;
 	SLONG	sh_mem_handle;
 };
 typedef sh_mem SH_MEM_T;
@@ -180,7 +278,7 @@ typedef ULONG THD_T;
 
 // Interprocess communication configuration structure
 // This was used to read to and write from the Config dialog when the server
-// or the guardian is showing an icon in the tray.
+//  or the guardian is showing an icon in the tray.
 
 /*
 struct ipccfg
@@ -194,5 +292,105 @@ struct ipccfg
 
 typedef ipccfg *IPCCFG;
 */
+
+/* AST thread scheduling macros */
+
+#ifdef AST_THREAD
+inline void AST_ALLOC() {
+	SCH_ast(AST_alloc);
+}
+inline void AST_INIT() {
+	SCH_ast(AST_init);
+}
+inline void AST_FINI() {
+	SCH_ast(AST_fini);
+}
+inline void AST_CHECK() {
+	SCH_ast(AST_check);
+}
+inline void AST_DISABLE() {
+	SCH_ast(AST_disable);
+}
+inline void AST_ENABLE() {
+	SCH_ast(AST_enable);
+}
+inline void AST_ENTER() {
+	SCH_ast(AST_enter);
+}
+inline void AST_EXIT() {
+	SCH_ast(AST_exit);
+}
+#else
+inline void AST_ALLOC() {
+}
+inline void AST_INIT() {
+}
+inline void AST_FINI() {
+}
+inline void AST_CHECK() {
+}
+inline void AST_DISABLE() {
+}
+inline void AST_ENABLE() {
+}
+inline void AST_ENTER() {
+}
+inline void AST_EXIT() {
+}
+#endif
+
+
+namespace Jrd {
+#ifdef MULTI_THREAD
+
+	// This class inhibits AST processing.
+
+	class AstInhibit
+	{
+	public:
+		// Constructor inhibits processing.
+		AstInhibit() : enabled(false)
+		{
+			AST_DISABLE();
+		}
+
+		// Destructor re-enables processing.
+		~AstInhibit()
+		{
+			enable();
+		}
+
+		// Let one re-enable processing in advance.
+		void enable()
+		{
+			if (enabled)
+				return;
+
+			enabled = true;
+
+			AST_ENABLE();
+		}
+
+	private:
+		// Forbid copy constructor
+		AstInhibit(const AstInhibit&);
+		bool enabled;
+	};
+#else // MULTI_THREAD
+	class AstInhibit : public SignalInhibit
+	//
+	// This class inhibits signals' processing.
+	//
+	{
+	public:
+		AstInhibit() { }
+
+	private:
+		// Forbid copy constructor
+		AstInhibit(const AstInhibit&);
+	};
+#endif // MULTI_THREAD
+} // namespace Jrd
+
 
 #endif // JRD_ISC_H

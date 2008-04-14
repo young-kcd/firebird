@@ -26,11 +26,11 @@
 
 blk*	ALLQ_alloc(plb*, UCHAR, int);
 blk*	ALLQ_extend(blk**, int);
-void	ALLQ_fini();
-void	ALLQ_free(void*);
-void	ALLQ_init();
+void	ALLQ_fini(void);
+void	ALLQ_free(SCHAR*);
+void	ALLQ_init(void);
 SCHAR*	ALLQ_malloc(SLONG);
-plb*	ALLQ_pool();
+plb*	ALLQ_pool(void);
 void	ALLQ_push(blk*, qli_lls**);
 blk*	ALLQ_pop(qli_lls**);
 void	ALLQ_release(frb*);

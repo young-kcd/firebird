@@ -33,7 +33,7 @@
 
 // Static definitions/initializations
 
-Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
+Firebird::Mutex TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
 size_t TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
@@ -379,14 +379,16 @@ TempFile* TempSpace::setupFile(size_t size)
 			}
 		}
 
+		if (!file)
+		{
+			file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
+			tempFiles.add(file);
+		}
+
+		fb_assert(file);
+
 		try
 		{
-			if (!file)
-			{
-				file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
-				tempFiles.add(file);
-			}
-
 			file->extend(size);
 		}
 		catch (const Firebird::system_call_failed&)
@@ -522,7 +524,10 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 char* TempSpace::inMemory(offset_t begin, size_t size) const
 {
 	const Block* block = findBlock(begin);
-	return block ? block->inMemory(begin, size) : NULL;
+	if (block)
+		return block->inMemory(begin, size);
+	else
+		return NULL;
 }
 
 //
@@ -537,7 +542,6 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
 	const Block* block = findBlock(local_offset);
-
 	while (block && (begin + size <= end))
 	{
 		char* mem = block->inMemory(local_offset, size);
@@ -545,12 +549,13 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 		{
 			return mem;
 		}
-
-		begin += block->size - local_offset;
-		local_offset = 0;
-		block = block->next;
+		else 
+		{
+			begin += block->size - local_offset;
+			local_offset = 0;
+			block = block->next;
+		}
 	}
-
 	begin = save_begin;
 	return NULL;
 }

@@ -113,6 +113,7 @@ typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+typedef IPTR LOCK_OWNER_T; /* Data type for the Owner ID for the lock manager */
 /* CVC: internal usage. I suspect the only reason to return int is that
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */

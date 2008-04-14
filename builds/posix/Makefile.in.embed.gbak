@@ -29,7 +29,13 @@
 #
 #
 ROOT=..
-ObjModuleType=std
+SERVICES_THREADED=@service_thread_CS@
+ifeq ($(SERVICES_THREADED),true)
+    ObjModuleType=superclient
+    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+else
+    ObjModuleType=std
+endif
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -39,10 +45,9 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp jrd/path_utils.cpp \
-					 common/UtilSvc.cpp jrd/ThreadData.cpp
+GBAK_Other_Sources = remote/xdr.cpp jrd/sdl.cpp jrd/path_utils.cpp
 GBAK_Files = backup.epp  restore.epp \
-			 burp.cpp canonical.cpp misc.cpp mvol.cpp burpMain.cpp
+			 burp.cpp canonical.cpp misc.cpp mvol.cpp
 GBAK_Sources = $(addprefix burp/, $(GBAK_Files)) $(GBAK_Other_Sources)
 GBAK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GBAK_Sources))))
 

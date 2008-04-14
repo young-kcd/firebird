@@ -59,17 +59,14 @@ namespace Firebird {
 //     GenericMap<Pair<Full<string, string> > >
 //
 template <typename KeyValuePair, typename KeyComparator = DefaultComparator<FB_TYPENAME_OPT KeyValuePair::first_type> >
-class GenericMap : public AutoStorage
-{
+class GenericMap : public AutoStorage {
 public:
 	typedef typename KeyValuePair::first_type KeyType;
 	typedef typename KeyValuePair::second_type ValueType;
 
 	GenericMap() : tree(&getPool()), mCount(0) { }
-	explicit GenericMap(MemoryPool& a_pool)
-		: AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
-	~GenericMap()
-	{
+	GenericMap(MemoryPool& a_pool) : AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
+	~GenericMap() {
 		clear();
 	}
 
@@ -84,8 +81,7 @@ public:
 		}
 	}
 
-	void takeOwnership(GenericMap& from)
-	{
+	void takeOwnership(GenericMap& from) {
 		clear();
 
 		tree = from.tree;
@@ -103,8 +99,7 @@ public:
 	}
 
 	// Clear the map
-	void clear()
-	{
+	void clear() {
 		if (tree.getFirst()) {
 			while (true) {
 				KeyValuePair* temp = tree.current();
@@ -119,8 +114,7 @@ public:
 	}
 
 	// Returns true if value existed
-	bool remove(const KeyType& key)
-	{
+	bool remove(const KeyType& key) {
 		if (tree.locate(key)) {
 			KeyValuePair* var = tree.current();
 			tree.fastRemove();
@@ -133,8 +127,7 @@ public:
 	}
 
 	// Returns true if value existed previously
-	bool put(const KeyType& key, const ValueType& value)
-	{
+	bool put(const KeyType& key, const ValueType& value) {
 		if (tree.locate(key)) {
 			tree.current()->second = value;
 			return true;
@@ -147,8 +140,7 @@ public:
 	}
 
 	// Returns pointer to the added empty value or null when key already exists
-	ValueType* put(const KeyType& key)
-	{
+	ValueType* put(const KeyType& key) {
 		if (tree.locate(key)) {
 			return 0;
 		}
@@ -161,8 +153,7 @@ public:
 	}
 
 	// Returns true if value is found
-	bool get(const KeyType& key, ValueType& value)
-	{
+	bool get(const KeyType& key, ValueType& value) {
 		if (tree.locate(key)) {
 			value = tree.current()->second;
 			return true;

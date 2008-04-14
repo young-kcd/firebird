@@ -24,7 +24,8 @@
 #ifndef UTILITIES_GSEC_H
 #define UTILITIES_GSEC_H
 
-#include "../jrd/ThreadData.h"
+#include "../jrd/ibsetjmp.h"
+#include "../jrd/thd.h"
 #include "../jrd/jrd_pwd.h"
 
 const USHORT GSEC_MSG_FAC	= 18;
@@ -49,6 +50,15 @@ const int NAME_LEN		= 33;
 const int PASS_LEN		= MAX_PASSWORD_LENGTH + 1;
 const int _SERVER_LEN	= 128;
 const int DATABASE_LEN  = _SERVER_LEN + MAXPATHLEN;
+
+#if !(defined REMOTE_REMOTE_H || defined JRD_JRD_H)
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
+#endif
+
+#include "../jrd/svc.h"
+#include "../jrd/svc_proto.h"
 
 struct internal_user_data {
 	int		operation;		/* what's to be done */
@@ -81,10 +91,11 @@ struct internal_user_data {
 	TEXT	dba_user_name [USER_NAME_LEN];	/* the user's name */
 	bool	dba_user_name_entered;	/* user name entered flag */
 	bool	dba_user_name_specified;/* database specified flag */
+#ifdef TRUSTED_SERVICES
 	TEXT	dba_trust_user_name [USER_NAME_LEN];	/* the trusted dba user's name */
 	bool	dba_trust_user_name_entered;	/* trusted dba user name entered flag */
 	bool	dba_trust_user_name_specified;/* trusted dba user name specified flag */
-	bool	trusted_role;	/* use trusted role to authenticate */
+#endif
 	TEXT	dba_password [NAME_LEN];	/* the user's name */
 	bool	dba_password_entered;	/* user name entered flag */
 	bool	dba_password_specified;	/* database specified flag */
@@ -105,44 +116,63 @@ struct internal_user_data {
 	}
 };
 
-namespace Firebird
-{
-	class UtilSvc;
-}
+#ifndef SERVICE_THREAD
+class tsec;
+extern tsec* gdsec;
+#endif
 
 class tsec : public ThreadData
 {
 public:
-	explicit tsec(Firebird::UtilSvc* uf) 
-		: ThreadData(ThreadData::tddSEC), utilSvc(uf), 
-		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false), 
-		tsec_status(tsec_status_vector), tsec_interactive(false), 
-		tsec_sw_version(false) 
+	tsec(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
+		: ThreadData(ThreadData::tddSEC), 
+		tsec_output_proc(outProc), tsec_output_data(outData)
 	{
-		memset(tsec_status_vector, 0, sizeof(tsec_status_vector));
+		tsec_user_data = 0;
+		tsec_exit_code = 0;
+		tsec_throw = false;
+		tsec_status = tsec_status_vector;
+		tsec_interactive = false;
+		tsec_sw_version = false;
+		tsec_service_gsec = false;
+		tsec_service_thd = false;
+		tsec_output_file = 0;
+		tsec_service_blk = 0;
 	}
 
-	Firebird::UtilSvc*	utilSvc;
 	internal_user_data*	tsec_user_data;
 	int					tsec_exit_code;
 	bool				tsec_throw;
-	ISC_STATUS_ARRAY	tsec_status_vector;
 	ISC_STATUS*			tsec_status;
+	ISC_STATUS_ARRAY	tsec_status_vector;
 	bool				tsec_interactive;
 	bool				tsec_sw_version;
-	
-	static inline tsec* getSpecific() 
-	{
+	bool				tsec_service_gsec;
+	bool				tsec_service_thd;
+	Jrd::pfn_svc_output	tsec_output_proc;
+	Jrd::Service*		tsec_output_data;
+	FILE*				tsec_output_file;
+	Jrd::Service*		tsec_service_blk;
+#ifdef SERVICE_THREAD
+	static inline tsec* getSpecific() {
 		return (tsec*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(tsec* tdsec) 
-	{
+	static inline void putSpecific(tsec* tdsec) {
 		tdsec->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific() 
-	{
+	static inline void restoreSpecific() {
 		ThreadData::restoreSpecific();
 	}
+#else
+	static inline tsec* getSpecific() {
+		return gdsec;
+	}
+	static inline void putSpecific(tsec* tdsec) {
+		gdsec = tdsec;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
 
 

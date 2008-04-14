@@ -551,6 +551,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/val.h"
 #include "../jrd/btr.h"
 #include "../jrd/btn.h"
+#include "../jrd/all.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
 #include "../jrd/rse.h"
@@ -564,6 +565,8 @@ VI. ADDITIONAL NOTES
 #include "../jrd/jrd_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/thread_proto.h"
@@ -684,7 +687,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
  *	Validate a database.
  *
  **************************************/
-	MemoryPool* val_pool = NULL;
+	JrdMemoryPool* val_pool = 0;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -692,7 +695,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 
 	try {
 
-	val_pool = dbb->createPool();
+	val_pool = JrdMemoryPool::createPool();
 	Jrd::ContextPoolHolder context(tdbb, val_pool);
 
 	vdr control;
@@ -735,12 +738,12 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	}	// try
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		dbb->deletePool(val_pool);
+		JrdMemoryPool::deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 		return false;
 	}
 
-	dbb->deletePool(val_pool);
+	JrdMemoryPool::deletePool(val_pool);
 	return true;
 }
 
@@ -1704,16 +1707,18 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 	// If the index & relation contain different sets of records we
 	// have a corrupt index
 	if (control && (control->vdr_flags & vdr_records)) {
-		Database::Checkout dcoHolder(dbb);
+		THREAD_EXIT();
 		RecordBitmap::Accessor accessor(control->vdr_rel_records);
 		if (accessor.getFirst()) 
 			do {
 				SINT64 next_number = accessor.current();
 				if (!RecordBitmap::test(control->vdr_idx_records, next_number)) {
+					THREAD_ENTER();
 					return corrupt(tdbb, control, VAL_INDEX_MISSING_ROWS,
 								   relation, id + 1);
 				}
 			} while (accessor.getNext());
+		THREAD_ENTER();
 	}
 
 	return rtn_ok;
@@ -1997,7 +2002,7 @@ static RTN walk_record(thread_db* tdbb,
 			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
 		}
 		while (p < end) {
-			const signed char c = *p++;
+			const char c = *p++;
 			if (c >= 0) {
 				record_length += c;
 				p += c;

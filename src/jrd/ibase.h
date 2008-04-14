@@ -83,7 +83,6 @@ typedef ISC_LONG isc_resv_handle;
 typedef void (*ISC_PRINT_CALLBACK) (void*, ISC_SHORT, const char*);
 typedef void (*ISC_VERSION_CALLBACK)(void*, const char*);
 typedef void (*ISC_EVENT_CALLBACK)(void*, ISC_USHORT, const ISC_UCHAR*);
-typedef int (*FB_SHUTDOWN_CALLBACK)();
 
 /*******************************************************************/
 /* Blob id structure                                               */
@@ -174,7 +173,7 @@ typedef struct bstream
 /* it's more accurate to use void* than int* as the blob pointer    */
 /********************************************************************/
 
-#if !defined(JRD_VAL_H)
+#if !defined(JRD_VAL_H) && !defined(REQUESTER)
 /* Blob passing structure */
 
 /* This enum applies to parameter "mode" in blob_lseek */
@@ -194,7 +193,7 @@ typedef struct blobcallback {
     ISC_LONG (*blob_lseek)
 		(void* hnd, ISC_USHORT mode, ISC_LONG offset);
 }  *BLOBCALLBACK;
-#endif /* !defined(JRD_VAL_H) */
+#endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
 
 
 /********************************************************************/
@@ -595,30 +594,25 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 ISC_EVENT_CALLBACK,
 									 void*);
 
-ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS*,
-											 isc_tr_handle*);
+ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
+											 isc_tr_handle *);
 
-ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS*,
-											   isc_tr_handle*);
+ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS *,
+											   isc_tr_handle *);
 
-ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS*,
-										 isc_tr_handle*,
+ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS *,
+										 isc_tr_handle *,
 										 short,
 										 void *);
 
-ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS*,
-												   isc_tr_handle*,
+ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
+												   isc_tr_handle *,
 												   short, ...);
-
-ISC_STATUS ISC_EXPORT fb_disconnect_transaction(ISC_STATUS*, isc_tr_handle*);
 
 ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
 void ISC_EXPORT isc_sqlcode_s(const ISC_STATUS*,
 							  ISC_ULONG*);
-
-void ISC_EXPORT fb_sqlstate(char*,
-							const ISC_STATUS*);
 
 void ISC_EXPORT isc_sql_interprete(short,
 								   ISC_SCHAR*,
@@ -635,7 +629,7 @@ ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS*,
 										   isc_db_handle*,
 										   isc_tr_handle*,
 										   unsigned short,
-										   ISC_SCHAR*,
+										   const ISC_SCHAR*,
 										   unsigned short,
 										   ISC_SCHAR*,
 										   unsigned short,
@@ -819,7 +813,7 @@ ISC_STATUS ISC_EXPORT isc_prepare(ISC_STATUS*,
 								  isc_db_handle*,
 								  isc_tr_handle*,
 								  const ISC_SCHAR*,
-								  const short*,
+								  short*,
 								  const ISC_SCHAR*,
 								  XSQLDA*);
 
@@ -844,7 +838,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute2_m(ISC_STATUS*,
 										  const ISC_SCHAR*,
 										  unsigned short,
 										  unsigned short,
-										  ISC_SCHAR*,
+										  const ISC_SCHAR*,
 										  unsigned short,
 										  ISC_SCHAR*,
 										  unsigned short,
@@ -858,7 +852,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate_m(ISC_STATUS*,
 												   const ISC_SCHAR*,
 												   unsigned short,
 												   unsigned short,
-												   ISC_SCHAR*,
+												   const ISC_SCHAR*,
 												   unsigned short,
 												   unsigned short,
 												   ISC_SCHAR*);
@@ -870,10 +864,10 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS*,
 											 const ISC_SCHAR*,
 											 unsigned short,
 											 unsigned short,
-											 ISC_SCHAR*,
-											 unsigned short,
-											 unsigned short,
 											 const ISC_SCHAR*,
+											 unsigned short,
+											 unsigned short,
+											 ISC_SCHAR*,
 											 unsigned short,
 											 ISC_SCHAR*,
 											 unsigned short,
@@ -883,7 +877,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS*,
 ISC_STATUS ISC_EXPORT isc_dsql_fetch_m(ISC_STATUS*,
 									   isc_stmt_handle*,
 									   unsigned short,
-									   ISC_SCHAR*,
+									   const ISC_SCHAR*,
 									   unsigned short,
 									   unsigned short,
 									   ISC_SCHAR*);
@@ -1126,12 +1120,6 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 										isc_resv_handle*,
 										unsigned short,
 										const ISC_SCHAR*);
-
-
-int ISC_EXPORT fb_shutdown(unsigned int);
-ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
-										   FB_SHUTDOWN_CALLBACK,
-										   const int);
 
 
 /********************************/

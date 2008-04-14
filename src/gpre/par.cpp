@@ -1000,12 +1000,16 @@ TEXT* PAR_native_value(bool array_ref,
 	}
 
 	int length = string - buffer;
-	string = (SCHAR *) MSC_alloc(length + 1);
+	SCHAR* const s2 = string = (SCHAR *) MSC_alloc(length + 1);
+	const SCHAR* s1 = buffer;
 
-	if (length)
-		memcpy(string, buffer, length); // MSC_alloc filled the string with zeroes.
+	if (length) {
+		do {
+			*string++ = *s1++;
+		} while (--length);
+	}
 
-	return string;
+	return s2;
 }
 
 
@@ -1229,8 +1233,7 @@ static bool match_parentheses()
 {
 	USHORT paren_count = 0;
 
-	if (MSC_match(KW_LEFT_PAREN))
-	{
+	if (MSC_match(KW_LEFT_PAREN)) {
 		paren_count++;
 		while (paren_count) {
 			if (MSC_match(KW_RIGHT_PAREN))
@@ -1242,8 +1245,8 @@ static bool match_parentheses()
 		}
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -2119,7 +2122,7 @@ static act* par_for()
 		PAR_get_token();
 
 		if (!MSC_match(KW_IN)) {
-			MSC_free(symbol);
+			MSC_free((UCHAR *) symbol);
 			return NULL;
 		}
 		if (dup_symbol) {
@@ -2911,29 +2914,26 @@ static act* par_start_transaction()
 			trans->tra_flags |= TRA_ro;
 			continue;
 		}
-		if (MSC_match(KW_READ_WRITE))
+		else if (MSC_match(KW_READ_WRITE))
 			continue;
 
 		if (MSC_match(KW_CONSISTENCY)) {
 			trans->tra_flags |= TRA_con;
 			continue;
 		}
-
-// ***    if (MSC_match (KW_READ_COMMITTED))
+// ***    else if (MSC_match (KW_READ_COMMITTED))
 // { 
 // trans->tra_flags |= TRA_read_committed;
 // continue;
 // } **
-
-		if (MSC_match(KW_CONCURRENCY))
+		else if (MSC_match(KW_CONCURRENCY))
 			continue;
 
 		if (MSC_match(KW_NO_WAIT)) {
 			trans->tra_flags |= TRA_nw;
 			continue;
 		}
-
-		if (MSC_match(KW_WAIT))
+		else if (MSC_match(KW_WAIT))
 			continue;
 
 		if (MSC_match(KW_AUTOCOMMIT)) {
@@ -2943,8 +2943,8 @@ static act* par_start_transaction()
 
 		if (gpreGlob.sw_language == lang_cobol || gpreGlob.sw_language == lang_fortran)
 			break;
-
-		CPR_s_error("transaction keyword");
+		else
+			CPR_s_error("transaction keyword");
 	}
 
 //  send out for the list of reserved relations 
@@ -3120,7 +3120,7 @@ static act* par_variable()
 	if (!is_null)
 		return action;
 
-//  We've got a explicit null flag reference rather than a field
+//  We've got a explicit null flag referernce rather than a field
 //  reference.  If there's already a null reference for the field,
 //  use it; otherwise make one up. 
 

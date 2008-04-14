@@ -57,9 +57,16 @@ inline bool DTYPE_IS_EXACT(UCHAR d) {
 	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
 }
 
+#ifdef VMS
+inline bool DTYPE_IS_APPROX(UCHAR d) {
+	return ((d == dtype_double) || (d == dtype_real) || (d == dtype_d_float));
+}
+#else
 inline bool DTYPE_IS_APPROX(UCHAR d) {
 	return ((d == dtype_double) || (d == dtype_real));
 }
+#endif
+
 
 inline bool DTYPE_IS_NUMERIC(UCHAR d) {
 	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));

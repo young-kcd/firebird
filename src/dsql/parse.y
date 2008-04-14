@@ -83,16 +83,15 @@
 
 #include "gen/iberror.h"
 #include "../dsql/dsql.h"
-#include "../dsql/node.h"
 #include "../jrd/ibase.h"
 #include "../jrd/flags.h"
-#include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/hsh_proto.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/keywords.h"
 #include "../dsql/misc_func.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intlobj_new.h"
 
@@ -121,6 +120,7 @@ const int UNSIGNED	= 2;
 // Using this option causes build problems on Win32 with bison 1.28
 //#define YYSTACK_USE_ALLOCA 1
 
+typedef dsql_nod* YYSTYPE;
 #define YYSTYPE YYSTYPE
 #if defined(DEBUG) || defined(DEV_BUILD)
 #define YYDEBUG		1
@@ -137,24 +137,34 @@ inline SLONG trigger_type_suffix(const int slot1, const int slot2, const int slo
 }
 
 
+dsql_nod* DSQL_parse;
+
+
+#define YYPARSE_PARAM_TYPE
+#define YYPARSE_PARAM USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous
+
 #include "../dsql/chars.h"
 
 const int MAX_TOKEN_LEN = 256;
 
-using namespace Jrd;
-using namespace Dsql;
-
+static const TEXT* lex_position();
 #ifdef NOT_USED_OR_REPLACED
 static bool		long_int(dsql_nod*, SLONG*);
 #endif
 static dsql_fld*	make_field (dsql_nod*);
 static dsql_fil*	make_file();
+static dsql_nod*	make_list (dsql_nod*);
+static dsql_nod*	make_node (NOD_TYPE, int, ...);
+static dsql_nod*	make_parameter (void);
+static dsql_nod*	make_flag_node (NOD_TYPE, SSHORT, int, ...);
 static void	prepare_console_debug (int, int  *);
 #ifdef NOT_USED_OR_REPLACED
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
 static void	stack_nodes (dsql_nod*, DsqlNodStack&);
+inline static int	yylex (USHORT, USHORT, USHORT, bool*);
 
+static void	yyerror(const TEXT*);
 static void	yyabandon (SLONG, ISC_STATUS);
 
 inline void check_bound(const char* const to, const char* const string)
@@ -168,6 +178,37 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 	check_bound(to, string); 
 	*to++ = ch;
 }
+
+struct LexerState {
+	/* This is, in fact, parser state. Not used in lexer itself */
+	dsql_fld* g_field;
+	dsql_fil* g_file;
+	dsql_nod* g_field_name;
+	int dsql_debug;
+	
+	/* Actual lexer state begins from here */
+	const TEXT* beginning;
+	const TEXT* ptr;
+	const TEXT* end;
+	const TEXT* last_token;
+	const TEXT* line_start;
+	const TEXT* last_token_bk;
+	const TEXT* line_start_bk;
+	SSHORT	lines, att_charset;
+	SSHORT	lines_bk;
+	int  prev_keyword;
+	USHORT	param_number;
+	
+	int yylex (
+		USHORT	client_dialect,
+		USHORT	db_dialect,
+		USHORT	parser_version,
+		bool* stmt_ambiguous);
+};
+
+/* Get ready for thread-safety. Move this to BISON object pointer when we 
+   switch to generating "pure" reenterant parser. */
+static LexerState lex;
 
 %}
 
@@ -385,7 +426,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 /* New tokens added v6.0 */
 
 %token COLUMN
-%token KW_TYPE
+%token TYPE
 %token EXTRACT
 %token YEAR
 %token MONTH
@@ -537,24 +578,6 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token TEMPORARY 
 %token TRUNC
 %token WEEK
-
-// tokens added for Firebird 2.5
-
-%token AUTONOMOUS
-%token CHAR_TO_UUID
-%token FIRSTNAME
-%token LASTNAME
-%token MIDDLENAME
-%token OS_NAME
-%token SIMILAR
-%token UUID_TO_CHAR
-// new execute statement
-%token COMMON
-%token DATA
-%token SOURCE
-%token TWO_PHASE
-%token BIND_PARAM
-%token BIN_NOT
 
 /* precedence declarations for expression evaluation */
 
@@ -820,11 +843,11 @@ arg_desc	: init_data_type udf_data_type param_mechanism
 param_mechanism :
 			{ $$ = NULL; } /* Beware: ddl.cpp converts this to mean FUN_reference. */
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (FUN_descriptor); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
 		| BY SCALAR_ARRAY
-			{ $$ = MAKE_const_slong (FUN_scalar_array); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_scalar_array); }
 		| KW_NULL
-			{ $$ = MAKE_const_slong (FUN_ref_with_null); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_ref_with_null); }
 		;
 
 return_value1	: return_value
@@ -841,16 +864,16 @@ return_value	: init_data_type udf_data_type return_mechanism
 		;
 
 return_mechanism :
-			{ $$ = MAKE_const_slong (FUN_reference); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_reference); }
 		| BY KW_VALUE
-			{ $$ = MAKE_const_slong (FUN_value); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_value); }
 		| BY KW_DESCRIPTOR
-			{ $$ = MAKE_const_slong (FUN_descriptor); }
+			{ $$ = MAKE_const_slong (Jrd::FUN_descriptor); }
 		| FREE_IT
-			{ $$ = MAKE_const_slong (-1 * FUN_reference); }
+			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_reference); }
 										 /* FUN_refrence with FREE_IT is -ve */
 		| BY KW_DESCRIPTOR FREE_IT
-			{ $$ = MAKE_const_slong (-1 * FUN_descriptor); }
+			{ $$ = MAKE_const_slong (-1 * Jrd::FUN_descriptor); }
 		;
 
 
@@ -902,8 +925,6 @@ create_clause	: EXCEPTION exception_clause
 			{ $$ = $2; }
 		| COLLATION collation_clause
 			{ $$ = $2; }
-		| USER create_user_clause
-			{ $$ = $2; }
 		;
 
 
@@ -937,8 +958,10 @@ replace_clause	: PROCEDURE replace_procedure_clause
 			{ $$ = $2; }
 		| TRIGGER replace_trigger_clause
 			{ $$ = $2; }
+/*
 		| VIEW replace_view_clause
 			{ $$ = $2; }
+*/
 		| EXCEPTION replace_exception_clause
 			{ $$ = $2; }
 		;
@@ -1026,16 +1049,19 @@ db_file_list	: db_file
 domain_clause	: column_def_name
 		as_opt
 		data_type
+		begin_trigger
 		domain_default_opt
+		end_default_opt
 		domain_constraint_clause
 		collate_clause
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, $4, make_list ($5), $6); }
+			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
+										  $1, $5, $6, make_list ($7), $8); }
 		;
 
 /*
 rdomain_clause	: DOMAIN alter_column_name alter_domain_ops
 			{ $$ = make_node (nod_mod_domain, (int) e_alt_count,
-					$2, make_list ($3)); }
+							  $2, make_list ($3)); }
 */
 
 as_opt	: AS
@@ -1044,8 +1070,8 @@ as_opt	: AS
 			{ $$ = NULL; }  
 		;
 
-domain_default	: DEFAULT begin_trigger default_value end_trigger
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
+domain_default	: DEFAULT begin_trigger default_value
+			{ $$ = $3; }
 		;
 
 domain_default_opt	: domain_default
@@ -1296,15 +1322,15 @@ table_element	: column_def
 /* column definition */
 
 column_def	: column_def_name data_type_or_domain domain_default_opt
-			column_constraint_clause collate_clause
+			end_default_opt column_constraint_clause collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, $3, make_list ($4), $5, $2, NULL); }   
+					$1, $3, $4, make_list ($5), $6, $2, NULL); }   
 		| column_def_name non_array_type def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, $3); }   
+					$1, NULL, NULL, NULL, NULL, NULL, $3); }   
 		| column_def_name def_computed
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-					$1, NULL, NULL, NULL, NULL, $2); }   
+					$1, NULL, NULL, NULL, NULL, NULL, $2); }   
 		;
 								 
 /* value does allow parens around it, but there is a problem getting the
@@ -1313,9 +1339,8 @@ column_def	: column_def_name data_type_or_domain domain_default_opt
 
 def_computed	: computed_clause '(' begin_trigger value end_trigger ')'
 			{ 
-				lex.g_field->fld_flags |= FLD_computed;
-				$$ = make_node (nod_def_computed, 2, $4, $5);
-			}
+			lex.g_field->fld_flags |= FLD_computed;
+			$$ = make_node (nod_def_computed, 2, $4, $5); }
 		;
 
 computed_clause	: computed_by
@@ -1326,11 +1351,12 @@ computed_by	: COMPUTED BY
 		| COMPUTED
 		;
 
-data_type_or_domain	: data_type
-			  { $$ = NULL; }
-		| simple_column_name
-			  { $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
-		;
+data_type_or_domain	: data_type begin_trigger
+						  { $$ = NULL; }
+			| simple_column_name begin_string
+						  { $$ = make_node (nod_def_domain, (int) e_dom_count,
+											$1, NULL, NULL, NULL, NULL); }
+						;
 
 collate_clause	: COLLATE symbol_collation_name
 			{ $$ = $2; }
@@ -1340,34 +1366,23 @@ collate_clause	: COLLATE symbol_collation_name
 
 
 column_def_name	: simple_column_name
-			{
-				lex.g_field_name = $1;
-				lex.g_field = make_field ($1);
-				$$ = (dsql_nod*) lex.g_field;
-			}
+			{ lex.g_field_name = $1;
+			  lex.g_field = make_field ($1);
+			  $$ = (dsql_nod*) lex.g_field; }
 		;
 
 simple_column_def_name  : simple_column_name
-			{
-				lex.g_field = make_field ($1);
-				$$ = (dsql_nod*) lex.g_field;
-			}
-		;
+				{ lex.g_field = make_field ($1);
+				  $$ = (dsql_nod*) lex.g_field; }
+			;
 
 
 data_type_descriptor :	init_data_type data_type
 			{ $$ = $1; }
-		| KW_TYPE OF column_def_name
+		| TYPE OF column_def_name
 			{
 				((dsql_fld*) $3)->fld_type_of_name = ((dsql_fld*) $3)->fld_name;
 				$$ = $3;
-			}
-		| KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
-			{
-				lex.g_field = make_field(NULL);
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
-				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-				$$ = (dsql_nod*) lex.g_field;
 			}
 		| column_def_name
 			{
@@ -1563,9 +1578,9 @@ input_proc_parameters	: input_proc_parameter
 		;
 
 input_proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
-				default_par_opt
+				begin_trigger default_par_opt end_default_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, NULL, $3, NULL, NULL); }   
+				$1, $5, $6, NULL, $3, NULL, NULL); }   
 		;
 
 output_proc_parameters	: proc_parameter
@@ -1575,13 +1590,13 @@ output_proc_parameters	: proc_parameter
 
 proc_parameter	: simple_column_def_name domain_or_non_array_type collate_clause
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, NULL, NULL, $3, NULL, NULL); }   
+				$1, NULL, NULL, NULL, $3, NULL, NULL); }   
 		;
 
-default_par_opt	: DEFAULT begin_trigger default_value end_trigger
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
-		| '=' begin_trigger default_value end_trigger
-			{ $$ = make_node (nod_def_default, (int) e_dft_count, $3, $4); }
+default_par_opt	: DEFAULT begin_trigger default_value
+			{ $$ = $3; }
+		| '=' begin_trigger default_value
+			{ $$ = $3; }
 		|
 			{ $$ = NULL; }
 		;
@@ -1609,13 +1624,21 @@ local_declaration_item	: var_declaration_item
 		| cursor_declaration_item
 		;
 
-var_declaration_item	: column_def_name domain_or_non_array_type collate_clause default_par_opt
+var_declaration_item	: column_def_name domain_or_non_array_type collate_clause var_init_opt
 			{ $$ = make_node (nod_def_field, (int) e_dfl_count, 
-				$1, $4, NULL, $3, NULL, NULL); }
+				$1, $4, NULL, NULL, $3, NULL, NULL); }
 		;
 
 var_decl_opt	: VARIABLE
 			{ $$ = NULL; }
+		|
+			{ $$ = NULL; }
+		;
+
+var_init_opt	: DEFAULT default_value
+			{ $$ = $2; }
+		| '=' default_value
+			{ $$ = $2; }
 		|
 			{ $$ = NULL; }
 		;
@@ -1689,18 +1712,11 @@ simple_proc_statement	: assignment
 			{ $$ = make_node (nod_exit, 0, NULL); }
 		;
 
-complex_proc_statement
-	: in_autonomous_transaction
-	| if_then_else
-	| while
-	| for_select
-	| for_exec_into
-	;
-
-in_autonomous_transaction
-	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
-		{ $$ = make_node(nod_auto_trans, (int) e_auto_trans_count, $5); }
-	;
+complex_proc_statement	: if_then_else
+		| while
+		| for_select
+		| for_exec_into
+		;
 
 excp_statement	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, $2, NULL); }
@@ -1712,117 +1728,22 @@ raise_statement	: EXCEPTION
 			{ $$ = make_node (nod_exception_stmt, (int) e_xcp_count, NULL, NULL); }
 		;
 
-//exec_sql	: EXECUTE STATEMENT value
-//			{ $$ = make_node (nod_exec_sql, (int) e_exec_sql_count, $3); }
-//		;
+exec_sql	: EXECUTE STATEMENT value
+			{ $$ = make_node (nod_exec_sql, (int) e_exec_sql_count, $3); }
+		;
 
 for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 			{ $$ = make_node (nod_for_select, (int) e_flp_count, $3,
 					  make_list ($5), $6, $8, $1); }
 		;
 
-//for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block 
-//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
-//		;
-//
-//exec_into	: EXECUTE STATEMENT value INTO variable_list
-//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
-//		;
+for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc_block 
+			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $5, $9, make_list ($7), $1); }
+		;
 
-exec_sql
-	: EXECUTE STATEMENT exec_stmt_inputs
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], 0, 0, $4, $5, $6, $7, 0);
-		}
-	;
-
-exec_into
-	: EXECUTE STATEMENT exec_stmt_inputs 
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-			INTO variable_list
-		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($9), 0, $4, $5, $6, $7, 0);
-		}
-	;
-
-for_exec_into
-	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs 
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
-			INTO variable_list 
-			DO proc_block 
-		{
-			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($11), $13, $6, $7, $8, $9, $1);
-		}
-	;
-
-exec_stmt_inputs
-	: value 
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $1, NULL); }
-	| '(' value ')' '(' named_params_list ')'
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
-	| '(' value ')' '(' not_named_params_list ')'
-		{ $$ = make_node (nod_exec_stmt_inputs, e_exec_stmt_inputs_count, $2, make_list ($5)); }
-	;
-
-named_params_list
-	: named_param
-	| named_params_list ',' named_param
-		{ $$ = make_node (nod_list, 2, $1, $3); }
-	;
-
-named_param
-	: symbol_variable_name BIND_PARAM value
-		  { $$ = make_node (nod_named_param, e_named_param_count, $1, $3); }
-	;
-
-not_named_params_list
-	: not_named_param
-	| not_named_params_list ',' not_named_param
-		{ $$ = make_node (nod_list, 2, $1, $3); }
-	;
-
-not_named_param
-	: value
-		{ $$ = make_node (nod_named_param, e_named_param_count, NULL, $1); }
-	;
-
-ext_datasrc_opt
-	: ON EXTERNAL DATA SOURCE value
-		{ $$ = $5; }
-	| ON EXTERNAL value
-		{ $$ = $3; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
-	;
-
-ext_user_opt
-	: AS USER value
-		{ $$ = $3; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
-	;
-
-ext_pwd_opt
-	: PASSWORD value
-		{ $$ = $2; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
-	;
-
-ext_tran_opt
-	: WITH AUTONOMOUS TRANSACTION
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_AUTONOMOUS, 1, NULL); }
-	| WITH COMMON TRANSACTION
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
-	// | WITH TWO_PHASE TRANSACTION
-	//		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_2PC, 1, NULL); }
-	|
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
-	;
+exec_into	: EXECUTE STATEMENT value INTO variable_list
+			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
+		;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
 			{ $$ = make_node (nod_if, (int) e_if_count, $3, $6, $8); }
@@ -2030,6 +1951,7 @@ rview_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 					  $1, $2, $5, $6, $7); }   
 		;		
 
+/*
 replace_view_clause	: symbol_view_name column_parens_opt AS begin_string select_expr
 															check_opt end_trigger
 			{ $$ = make_node (nod_replace_view, (int) e_view_count, 
@@ -2041,6 +1963,7 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_ex
  			{ $$ = make_node (nod_mod_view, (int) e_view_count, 
 					  $1, $2, $5, $6, $7); }   
  		;		
+*/
 
 
 /* these rules will capture the input string for storage in metadata */
@@ -2062,6 +1985,12 @@ begin_trigger	:
 end_trigger	:
 			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
 					lex_position() - lex.beginning); }
+		;
+
+end_default_opt	:
+			{ $$ = (dsql_nod*) MAKE_string(lex.beginning, 
+					(yychar <= 0 ? lex_position() : lex.last_token) - lex.beginning); 
+			}
 		;
 
 
@@ -2265,8 +2194,10 @@ alter_clause	: EXCEPTION alter_exception_clause
 		| TABLE simple_table_name alter_ops
 			{ $$ = make_node (nod_mod_relation, (int) e_alt_count, 
 						$2, make_list ($3)); }
+/*
  		| VIEW alter_view_clause
  			{ $$ = $2; }
+*/
 		| TRIGGER alter_trigger_clause
 			{ $$ = $2; }
 		| PROCEDURE alter_procedure_clause
@@ -2283,10 +2214,6 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $2; }
 		| EXTERNAL FUNCTION alter_udf_clause
 			{ $$ = $3; }
-		| ROLE alter_role_clause
-			{ $$ = $2; }
-		| USER alter_user_clause
-			{ $$ = $2; }
 		;
 
 alter_domain_ops	: alter_domain_op
@@ -2294,19 +2221,19 @@ alter_domain_ops	: alter_domain_op
 			{ $$ = make_node (nod_list, 2, $1, $2); }
 		;
 
-alter_domain_op	: SET domain_default
-			{ $$ = $2; }
+alter_domain_op	: SET domain_default end_trigger
+			{ $$ = make_node (nod_def_default, (int) e_dft_count, $2, $3); }			  
 		| ADD CONSTRAINT check_constraint
-			{ $$ = $3; }
+			{ $$ = $3; } 
 		| ADD check_constraint
-			{ $$ = $2; }
+			{ $$ = $2; } 
 		| DROP DEFAULT
 			{$$ = make_node (nod_del_default, (int) 0, NULL); }
 		| DROP CONSTRAINT
 			{ $$ = make_node (nod_delete_rel_constraint, (int) 1, NULL); }
 		| TO simple_column_name
 			{ $$ = $2; }
-		| KW_TYPE init_data_type non_array_type 
+		| TYPE init_data_type non_array_type 
 			{ $$ = make_node (nod_mod_domain_type, 2, $2); }
 		;
 
@@ -2332,20 +2259,14 @@ alter_op	: DROP simple_column_name drop_behaviour
 				MAKE_const_slong((IPTR) $4)); }
 		| col_opt alter_column_name TO simple_column_name
 			{ $$ = make_node(nod_mod_field_name, 2, $2, $4); }
-		| col_opt alter_col_name KW_TYPE alter_data_type_or_domain
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL, NULL); }
-		| col_opt alter_col_name KW_TYPE non_array_type def_computed
-			{
-				// Due to parser hacks, we should not pass $4 (non_array_type) to make_node. 
-				$$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $5);
-			}
-		| col_opt alter_col_name def_computed
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, NULL, $3); }
-		| col_opt alter_col_name SET domain_default
-			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL, $4, NULL); }
+		| col_opt alter_col_name TYPE alter_data_type_or_domain
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, $4, NULL); }
+		| col_opt alter_col_name SET domain_default end_trigger
+			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
+					make_node(nod_def_default, (int) e_dft_count, $4, $5)); }
 		| col_opt alter_col_name DROP DEFAULT
 			{ $$ = make_node(nod_mod_field_type, e_mod_fld_type_count, $2, NULL,
-					make_node(nod_del_default, (int) 0, NULL), NULL); }
+					make_node(nod_del_default, (int) 0, NULL)); }
 		;
 
 alter_column_name  : keyword_or_column
@@ -2415,7 +2336,8 @@ col_opt	: ALTER
 alter_data_type_or_domain	: non_array_type
 			{ $$ = NULL; }
 		| simple_column_name
-			{ $$ = make_node (nod_def_domain, (int) e_dom_count, $1, NULL, NULL, NULL); }
+			{ $$ = make_node (nod_def_domain, (int) e_dom_count,
+					$1, NULL, NULL, NULL, NULL); }
 		;
 
 alter_col_name	: simple_column_name
@@ -2452,20 +2374,6 @@ alter_sequence_clause	: symbol_generator_name RESTART WITH signed_long_integer
 alter_udf_clause    : symbol_UDF_name entry_op module_op
 			{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
 			;
-
-alter_role_clause	: symbol_role_name alter_role_action OS_NAME os_security_name
-			{ $$ = make_node(nod_mod_role, e_mod_role_count, $4, $1, $2); }
-			;
-
-alter_role_action	: ADD
-			{ $$ = MAKE_const_slong (isc_dyn_map_role); }
-		| DROP
-			{ $$ = MAKE_const_slong (isc_dyn_unmap_role); }
-		;
-	
-os_security_name	: STRING
-			{ $$ = $1; }
-		;
 
 entry_op	: ENTRY_POINT sql_string
 			{ $$ = $2; }
@@ -2560,8 +2468,6 @@ drop_clause	: EXCEPTION symbol_exception_name
 			{ $$ = make_node (nod_del_generator, (int) 1, $2); }
 		| COLLATION symbol_collation_name
 			{ $$ = make_node (nod_del_collation, (int) 1, $2); }
-		| USER drop_user_clause
-			{ $$ = $2; }
 		;
 
 
@@ -2583,13 +2489,8 @@ domain_or_non_array_type_name
 	;
 
 domain_type
-	:	KW_TYPE OF symbol_column_name
+	:	TYPE OF symbol_column_name
 			{ lex.g_field->fld_type_of_name = ((dsql_str*) $3)->str_data; }
-	|	KW_TYPE OF COLUMN symbol_column_name '.' symbol_column_name
-			{
-				lex.g_field->fld_type_of_name = ((dsql_str*) $6)->str_data;
-				lex.g_field->fld_type_of_table = ((dsql_str*) $4);
-			}
 	|	symbol_column_name
 			{
 				lex.g_field->fld_type_of_name = ((dsql_str*) $1)->str_data;
@@ -2670,7 +2571,7 @@ non_charset_simple_type	: national_character_type
 			}
 		| DATE
 			{ 
-			stmt_ambiguous = true;
+			*stmt_ambiguous = true;
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
@@ -3301,7 +3202,7 @@ lock_clause : WITH LOCK
 select_expr	: with_clause select_expr_body order_clause rows_clause
 				{ $$ = make_node (nod_select_expr, (int) e_sel_count, $2, $3, $4, $1); }
  		;
- 
+
 with_clause	: WITH RECURSIVE with_list
 				{ $$ = make_flag_node (nod_with, NOD_UNION_RECURSIVE, 1, make_list($3)); }
 			| WITH with_list
@@ -3925,7 +3826,6 @@ predicate : comparison_predicate
 		| quantified_predicate
 		| exists_predicate
 		| containing_predicate
-		| similar_predicate
 		| starting_predicate
 		| singular_predicate
 		| trigger_action_predicate
@@ -4033,17 +3933,6 @@ containing_predicate	: value CONTAINING value
 		{ $$ = make_node (nod_not, 1, make_node (nod_containing, 2, $1, $4)); }
 	;
 
-similar_predicate
-	: value SIMILAR TO value
-		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, NULL); }
-	| value NOT SIMILAR TO value
-		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, NULL)); }
-	| value SIMILAR TO value ESCAPE value
-		{ $$ = make_node(nod_similar, e_similar_count, $1, $4, $6); }
-	| value NOT SIMILAR TO value ESCAPE value
-		{ $$ = make_node(nod_not, 1, make_node(nod_similar, e_similar_count, $1, $5, $7)); }
-	;
-
 starting_predicate	: value STARTING value
 		{ $$ = make_node (nod_starting, 2, $1, $3); }
 	| value NOT STARTING value
@@ -4096,48 +3985,6 @@ table_subquery	: '(' column_select ')'
 			{ $$ = $2; } 
 		;
 
-/* USER control SQL interface */
-
-create_user_clause : symbol_user_name passwd_clause firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_add_user, (int) e_user_count, $1, $2, $3, $4, $5); }
-	;
-
-alter_user_clause : symbol_user_name passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $2, $3, $4, $5); }
-	| symbol_user_name SET passwd_opt firstname_opt middlename_opt lastname_opt
-		{ $$ = make_node(nod_mod_user, (int) e_user_count, $1, $3, $4, $5, $6); }
-	;
-
-drop_user_clause : symbol_user_name
-		{ $$ = make_node(nod_del_user, (int) e_del_user_count, $1); }
-
-passwd_clause : PASSWORD sql_string
-		{ $$ = $2; }
-	;
-	
-passwd_opt : passwd_clause
-		{ $$ = $1; }
-	|
-		{ $$ = NULL; }
-	;
-
-firstname_opt : FIRSTNAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
-	;
-
-middlename_opt : MIDDLENAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
-	;
-
-lastname_opt : LASTNAME sql_string
-		{ $$ = $2; }
-	|
-		{ $$ = NULL; }
-	;
 
 /* value types */
 
@@ -4466,12 +4313,17 @@ aggregate_function	: COUNT '(' '*' ')'
 			{ $$ = make_flag_node (nod_agg_list, NOD_AGG_DISTINCT, 2, $4, $5); }
 		;
 
-delimiter_opt
-	: ',' value
-		{ $$ = $2; }
-	|
-		{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
-	;
+delimiter_opt	: ',' delimiter_value
+			{ $$ = $2; }
+		|
+			{ $$ = MAKE_str_constant (MAKE_cstring(","), lex.att_charset); }
+		;
+
+delimiter_value	: sql_string
+			{ $$ = MAKE_str_constant ((dsql_str*) $1, lex.att_charset); }
+		| parameter
+		| variable
+		;
 
 numeric_value_function
 	: extract_expression
@@ -4520,13 +4372,11 @@ system_function_std_syntax
 	| ATAN
 	| ATAN2
 	| BIN_AND
-	| BIN_NOT
 	| BIN_OR
 	| BIN_SHL
 	| BIN_SHR
 	| BIN_XOR
 	| CEIL
-	| CHAR_TO_UUID
 	| COS
 	| COSH
 	| COT
@@ -4558,7 +4408,6 @@ system_function_std_syntax
 	| TAN
 	| TANH
 	| TRUNC
-	| UUID_TO_CHAR
 	;
 
 system_function_special_syntax
@@ -4860,16 +4709,16 @@ valid_symbol_name	: SYMBOL
 /* list of non-reserved words */
 
 non_reserved_word :
-	ACTION					// added in IB 5.0/
+	ACTION					/* added in IB 5.0 */
 	| CASCADE
 	| FREE_IT
 	| RESTRICT
 	| ROLE
-	| KW_TYPE				// added in IB 6.0
-	| KW_BREAK				// added in FB 1.0
+	| TYPE					/* added in IB 6.0 */
+	| KW_BREAK				/* added in FB 1.0 */
 	| KW_DESCRIPTOR
 	| SUBSTRING
-	| COALESCE				// added in FB 1.5
+	| COALESCE				/* added in FB 1.5 */
 	| LAST
 	| LEAVE
 	| LOCK
@@ -4881,7 +4730,7 @@ non_reserved_word :
 	| DELETING
 	| FIRST
 	| SKIP
-	| BLOCK					// added in FB 2.0
+	| BLOCK					/* added in FB 2.0 */
 	| BACKUP
 	| KW_DIFFERENCE
 	| IIF
@@ -4898,7 +4747,7 @@ non_reserved_word :
 	| UNDO
 	| REQUESTS
 	| TIMEOUT
-	| ABS					// added in FB 2.1
+	| ABS					/* added in FB 2.1 */
 	| ACCENT
 	| ACOS
 	| ALWAYS
@@ -4956,18 +4805,6 @@ non_reserved_word :
 	| TEMPORARY
 	| TRUNC
 	| WEEK
-	| AUTONOMOUS			// added in FB 2.5
-	| CHAR_TO_UUID
-	| FIRSTNAME
-	| MIDDLENAME
-	| LASTNAME
-	| OS_NAME
-	| UUID_TO_CHAR
-	| COMMON				// new execute statement
-	| DATA
-	| SOURCE
-	| TWO_PHASE
-	| BIN_NOT
 	;
 
 %%
@@ -4981,7 +4818,7 @@ non_reserved_word :
  */
 
 
-void LEX_dsql_init(MemoryPool& pool)
+void LEX_dsql_init (void)
 {
 /**************************************
  *
@@ -4996,13 +4833,13 @@ void LEX_dsql_init(MemoryPool& pool)
  **************************************/
 	for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 	{
-		DSQL_SYM symbol = FB_NEW_RPT(pool, 0) dsql_sym;
+		DSQL_SYM symbol = FB_NEW_RPT(*DSQL_permanent_pool, 0) dsql_sym;
 		symbol->sym_string = (TEXT *) token->tok_string;
 		symbol->sym_length = strlen(token->tok_string);
 		symbol->sym_type = SYM_keyword;
 		symbol->sym_keyword = token->tok_ident;
 		symbol->sym_version = token->tok_version;
-		dsql_str* str = FB_NEW_RPT(pool, symbol->sym_length) dsql_str;
+		dsql_str* str = FB_NEW_RPT(*DSQL_permanent_pool, symbol->sym_length) dsql_str;
 		str->str_length = symbol->sym_length;
 		strncpy((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
 		symbol->sym_object = (void *) str;
@@ -5011,7 +4848,38 @@ void LEX_dsql_init(MemoryPool& pool)
 }
 
 
-const TEXT* Parser::lex_position()
+void LEX_string (
+	const TEXT* string,
+	USHORT	length,
+	SSHORT	character_set)
+{
+/**************************************
+ *
+ *	L E X _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize LEX to process a string.
+ *
+ **************************************/
+
+	lex.line_start = lex.ptr = string;
+	lex.end = string + length;
+	lex.lines = 1;
+	lex.att_charset = character_set;
+	lex.line_start_bk = lex.line_start;
+	lex.lines_bk = lex.lines;
+	lex.param_number = 1;
+	lex.prev_keyword = -1;
+#ifdef DSQL_DEBUG
+	if (DSQL_debug & 32)
+		dsql_trace("Source DSQL string:\n%.*s", (int)length, string);
+#endif
+}
+
+
+static const TEXT* lex_position (void)
 {
 /**************************************
  *
@@ -5071,19 +4939,20 @@ static dsql_fld* make_field (dsql_nod* field_name)
  *	Make a field block of given name.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	if (field_name == NULL)
 	{
-		dsql_fld* field = FB_NEW(*tdbb->getDefaultPool())
-			dsql_fld(*tdbb->getDefaultPool());
-		field->fld_name = INTERNAL_FIELD_NAME;
+		dsql_fld* field =
+			FB_NEW_RPT(*tdsql->getDefaultPool(), sizeof (INTERNAL_FIELD_NAME)) dsql_fld;
+		strcpy (field->fld_name, INTERNAL_FIELD_NAME);
 		return field;
 	}
 	const dsql_str* string = (dsql_str*) field_name->nod_arg[1];
-	dsql_fld* field = FB_NEW(*tdbb->getDefaultPool())
-		dsql_fld(*tdbb->getDefaultPool());
-	field->fld_name = string->str_data;
+	dsql_fld* field =
+		FB_NEW_RPT(*tdsql->getDefaultPool(), strlen ((SCHAR*) string->str_data)) dsql_fld;
+	strcpy (field->fld_name, (TEXT*) string->str_data);
+	field->fld_type_of_name = NULL;
 	field->fld_explicit_collation = false;
 	field->fld_not_nullable = false;
 	field->fld_full_domain = false;
@@ -5104,15 +4973,15 @@ static dsql_fil* make_file()
  *	Make a file block
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 		   
-	dsql_fil* temp_file = FB_NEW(*tdbb->getDefaultPool()) dsql_fil;
+	dsql_fil* temp_file = FB_NEW(*tdsql->getDefaultPool()) dsql_fil;
 
 	return temp_file;
 }
 
 
-dsql_nod* Parser::make_list (dsql_nod* node)
+static dsql_nod* make_list (dsql_nod* node)
 {
 /**************************************
  *
@@ -5124,7 +4993,7 @@ dsql_nod* Parser::make_list (dsql_nod* node)
  *	Collapse nested list nodes into single list.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 	if (node)
 	{
@@ -5133,12 +5002,12 @@ dsql_nod* Parser::make_list (dsql_nod* node)
 		USHORT l = stack.getCount();
 
 		const dsql_nod* old = node;
-		node = FB_NEW_RPT(*tdbb->getDefaultPool(), l) dsql_nod;
+		node = FB_NEW_RPT(*tdsql->getDefaultPool(), l) dsql_nod;
 		node->nod_count = l;
 		node->nod_type = nod_list;
 		node->nod_line = (USHORT) lex.lines_bk;
 		node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
-		if (old->getType() == dsql_type_nod)
+		if (MemoryPool::blk_type(old) == dsql_type_nod)
 		{
 			node->nod_flags = old->nod_flags;
 		}
@@ -5152,7 +5021,7 @@ dsql_nod* Parser::make_list (dsql_nod* node)
 }
 
 
-dsql_nod* Parser::make_parameter()
+static dsql_nod* make_parameter (void)
 {
 /**************************************
  *
@@ -5165,9 +5034,9 @@ dsql_nod* Parser::make_parameter()
  *	Any change should also be made to function below
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_par_count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), e_par_count) dsql_nod;
 	node->nod_type = nod_parameter;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -5178,7 +5047,9 @@ dsql_nod* Parser::make_parameter()
 }
 
 
-dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
+static dsql_nod* make_node (NOD_TYPE	type,
+						   int count,
+						   ...)
 {
 /**************************************
  *
@@ -5191,9 +5062,9 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
  *	Any change should also be made to function below
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_line = (USHORT) lex.lines_bk;
 	node->nod_column = (USHORT) (lex.last_token_bk - lex.line_start_bk + 1);
@@ -5210,7 +5081,10 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
 }
 
 
-dsql_nod* Parser::make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...)
+static dsql_nod* make_flag_node (NOD_TYPE	type,
+								SSHORT	flag,
+								int		count,
+								...)
 {
 /**************************************
  *
@@ -5222,9 +5096,9 @@ dsql_nod* Parser::make_flag_node(NOD_TYPE type, SSHORT flag, int count, ...)
  *	Make a node of given type. Set flag field
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
-	dsql_nod* node = FB_NEW_RPT(*tdbb->getDefaultPool(), count) dsql_nod;
+	dsql_nod* node = FB_NEW_RPT(*tdsql->getDefaultPool(), count) dsql_nod;
 	node->nod_type = type;
 	node->nod_flags = flag;
 	node->nod_line = (USHORT) lex.lines_bk;
@@ -5401,86 +5275,97 @@ static void stack_nodes (dsql_nod*	node,
 		stack_nodes (*ptr, stack);
 }
 
-int Parser::yylex()
+inline static int yylex (
+	USHORT	client_dialect,
+	USHORT	db_dialect,
+	USHORT	parser_version,
+	bool* stmt_ambiguous)
 {
-	lex.prev_keyword = yylexAux();
+	lex.prev_keyword =
+		lex.yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
 	return lex.prev_keyword;
 }
 
-int Parser::yylexAux()
+int LexerState::yylex (
+	USHORT	client_dialect,
+	USHORT	db_dialect,
+	USHORT	parser_version,
+	bool* stmt_ambiguous)
 {
 /**************************************
  *
- *	y y l e x A u x
+ *	y y l e x
  *
  **************************************
  *
  * Functional description: lexer.
  *
  **************************************/
-	UCHAR tok_class;
-	char string[MAX_TOKEN_LEN];
-	SSHORT c;
+	UCHAR	tok_class;
+	char  string[MAX_TOKEN_LEN];
+	SSHORT	c;
 
 	/* Find end of white space and skip comments */
 
 	for (;;)
 	{
-		if (lex.ptr >= lex.end)
+		if (ptr >= end)
 			return -1;
 
-		c = *lex.ptr++;
+		c = *ptr++;
 
 		/* Process comments */
 
 		if (c == '\n') {
-			lex.lines++;
-			lex.line_start = lex.ptr;
+			lines++;
+			line_start = ptr;
 			continue;
 		}
 
-		if ((c == '-') && (lex.ptr < lex.end) && (*lex.ptr == '-'))
+		if ((c == '-') && (*ptr == '-'))
 		{
+			
 			/* single-line */
 			
-			lex.ptr++;
-			while (lex.ptr < lex.end) {
-				if ((c = *lex.ptr++) == '\n') {
-					lex.lines++;
-					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
+			ptr++;
+			while (ptr < end) {
+				if ((c = *ptr++) == '\n') {
+					lines++;
+					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
 					break;
 				}
 			}
-			if (lex.ptr >= lex.end)
+			if (ptr >= end)
 				return -1;
 			continue;
 		}
-		else if ((c == '/') && (lex.ptr < lex.end) && (*lex.ptr == '*'))
+		else if ((c == '/') && (*ptr == '*'))
 		{
+			
 			/* multi-line */
 			
-			const TEXT& start_block = lex.ptr[-1];
-			lex.ptr++;
-			while (lex.ptr < lex.end) {
-				if ((c = *lex.ptr++) == '*') {
-					if (*lex.ptr == '/')
+			const TEXT& start_block = ptr[-1];
+			ptr++;
+			while (ptr < end) {
+				if ((c = *ptr++) == '*') {
+					if (*ptr == '/')
 						break;
 				}
 				if (c == '\n') {
-					lex.lines++;
-					lex.line_start = lex.ptr /* + 1*/; /* CVC: +1 left out. */
+					lines++;
+					line_start = ptr /* + 1*/; /* CVC: +1 left out. */
 
 				}
 			}
-			if (lex.ptr >= lex.end)
+			if (ptr >= end)
 			{
 				// I need this to report the correct beginning of the block,
 				// since it's not a token really.
-				lex.last_token = &start_block;
+				last_token = &start_block;
 				yyerror("unterminated block comment");
 				return -1;
 			}
-			lex.ptr++;
+			ptr++;
 			continue;
 		}
 
@@ -5492,7 +5377,7 @@ int Parser::yylexAux()
 
 	/* Depending on tok_class of token, parse token */
 
-	lex.last_token = lex.ptr - 1;
+	last_token = ptr - 1;
 
 	if (tok_class & CHR_INTRODUCER)
 	{
@@ -5500,11 +5385,11 @@ int Parser::yylexAux()
 		 * to become the name of the character set
 		 */
 		char* p = string;
-		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
+		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
 		{
-			if (lex.ptr >= lex.end)
+			if (ptr >= end)
 				return -1;
-			check_copy_incr(p, UPPER7(*lex.ptr), string);
+			check_copy_incr(p, UPPER7(*ptr), string);
 		}
 		
 		check_bound(p, string);
@@ -5528,7 +5413,7 @@ int Parser::yylexAux()
 		char* p;
 		for (p = buffer; ; ++p)
 		{
-			if (lex.ptr >= lex.end)
+			if (ptr >= end)
 			{
 				if (buffer != string)
 					gds__free (buffer);
@@ -5536,12 +5421,12 @@ int Parser::yylexAux()
 				return -1;
 			}
 			// Care about multi-line constants and identifiers
-			if (*lex.ptr == '\n') {
-				lex.lines++;
-				lex.line_start = lex.ptr + 1;
+			if (*ptr == '\n') {
+				lines++;
+				line_start = ptr + 1;
 			}
-			/* *lex.ptr is quote - if next != quote we're at the end */
-			if ((*lex.ptr == c) && ((++lex.ptr == lex.end) || (*lex.ptr != c)))
+			/* *ptr is quote - if next != quote we're at the end */
+			if ((*ptr == c) && ((++ptr == end) || (*ptr != c)))
 				break;
 			if (p > buffer_end)
 			{
@@ -5561,11 +5446,11 @@ int Parser::yylexAux()
 				buffer_len = 2 * buffer_len;
 				buffer_end = buffer + buffer_len - 1;
 			}
-			*p = *lex.ptr++;
+			*p = *ptr++;
 		}
 		if (c == '"')
 		{
-			stmt_ambiguous = true; /* string delimited by double quotes could be
+			*stmt_ambiguous = true; /* string delimited by double quotes could be
 					**   either a string constant or a SQL delimited
 					**   identifier, therefore marks the SQL
 					**   statement as ambiguous  */
@@ -5623,251 +5508,10 @@ int Parser::yylexAux()
  *   ptr points to the next character.
  */
 
-	fb_assert(lex.ptr <= lex.end);
-
-	// Hexadecimal string constant.  This is treated the same as a
-	// string constant, but is defined as: X'bbbb'
-	//
-	// Where the X is a literal 'x' or 'X' character, followed
-	// by a set of nibble values in single quotes.  The nibble
-	// can be 0-9, a-f, or A-F, and is converted from the hex.
-	// If an odd number of nibbles is given, a leading '0' is
-	// assumed. 
-	//
-	// The resulting value is stored in a string descriptor and
-	// returned to the parser as a string.  This can be stored
-	// in a character or binary item.
-	if ((c == 'x' || c == 'X') && (lex.ptr < lex.end) && *lex.ptr == '\'')
-	{
-		bool hexerror = false;
-
-		// Remember where we start from, to rescan later.
-		// Also we'll need to know the length of the buffer.
-		
-		const char* hexstring = (char*) ++lex.ptr;
-		int charlen = 0;
-
-		// Time to scan the string. Make sure the characters are legal,
-		// and find out how long the hex digit string is.
-		
-		for (;;)
-		{
-			if (lex.ptr >= lex.end)	// Unexpected EOS
-			{
-				hexerror = true;
-				break;
-			}
-			
-			c = *lex.ptr;
-			
-			if (c == '\'')			// Trailing quote, done
-			{
-				++lex.ptr;			// Skip the quote
-				break;
-			}
-
-			if (!(classes(c) & CHR_HEX))	// Illegal character
-			{
-				hexerror = true;
-				break;
-			}
-
-			++charlen;	// Okay, just count 'em
-			++lex.ptr;	// and advance...
-		}
-
-		// If we made it this far with no error, then convert the string.
-		if (!hexerror)
-		{
-			// At this point, see if the string length is odd.  If so, 
-			// we'll assume a leading zero.  Then figure out the length
-			// of the actual resulting hex string.  Allocate a second 
-			// temporary buffer for it.
-		
-			int nibble = (charlen & 1);  // IS_ODD(charlen)
-			Firebird::string temp;
-
-			// Re-scan over the hex string we got earlier, converting 
-			// adjacent bytes into nibble values.  Every other nibble, 
-			// write the saved byte to the temp space.  At the end of 
-			// this, the temp.space area will contain the binary 
-			// representation of the hex constant.
-			
-			UCHAR byte = 0;
-			for (int i = 0; i < charlen; i++)
-			{
-				c = UPPER7(hexstring[i]);
-
-				// Now convert the character to a nibble
-			
-				if (c >= 'A')
-					c = (c - 'A') + 10;
-				else
-					c = (c - '0');
-			
-				if (nibble)
-				{
-					byte = (byte << 4) + (UCHAR) c;
-					nibble = 0;
-					temp.append(1, (char) byte);
-				}
-				else 
-				{
-					byte = c;
-					nibble = 1;
-				}
-			}
-
-			dsql_str* string = MAKE_string((char*) temp.c_str(), temp.length());
-			string->str_charset = "BINARY";
-			yylval = (dsql_nod*) string;
-			
-			return STRING;	
-		}  // if (!hexerror)...
-		
-		// If we got here, there was a parsing error.  Set the
-		// position back to where it was before we messed with
-		// it.  Then fall through to the next thing we might parse.
-
-		c = *lex.last_token;
-		lex.ptr = lex.last_token + 1;
-	}
-
-	// Hexadecimal numeric constants - 0xBBBBBB
-	//
-	// where the '0' and the 'X' (or 'x') are literal, followed
-	// by a set of nibbles, using 0-9, a-f, or A-F.  Odd numbers
-	// of nibbles assume a leading '0'.  The result is converted
-	// to an integer, and the result returned to the caller.  The
-	// token is identified as a NUMBER if it's a 32-bit or less
-	// value, or a NUMBER64INT if it requires a 64-bit number.
-	if ((c == '0') && (lex.ptr < lex.end) && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
-		(classes(lex.ptr[1]) & CHR_HEX))
-	{
-		bool hexerror = false;
-
-		// Remember where we start from, to rescan later.
-		// Also we'll need to know the length of the buffer.
-
-		++lex.ptr;  // Skip the 'X' and point to the first digit
-		const char* hexstring = (char*) lex.ptr;
-		int charlen = 0;
-
-		// Time to scan the string. Make sure the characters are legal,
-		// and find out how long the hex digit string is.
-
-		for (;;)
-		{
-			if (lex.ptr >= lex.end)			// Unexpected EOS
-			{
-				hexerror = true;
-				break;
-			}
-
-			c = *lex.ptr;
-
-			if (!(classes(c) & CHR_HEX))	// End of digit string
-				break;
-
-			++charlen;			// Okay, just count 'em
-			++lex.ptr;			// and advance...
-
-			if (charlen > 16)	// Too many digits...
-			{
-				hexerror = true;
-				break;
-			}
-		}
-
-		// we have a valid hex token. Now give it back, either as
-		// an NUMBER or NUMBER64BIT.
-		if (!hexerror)
-		{
-			// if charlen > 8 (something like FFFF FFFF 0, w/o the spaces)
-			// then we have to return a NUMBER64BIT. We'll make a string
-			// node here, and let make.cpp worry about converting the
-			// string to a number and building the node later.
-			if (charlen > 8)
-			{
-				char cbuff[32];
-				cbuff[0] = 'X';
-				strncpy(&cbuff[1], hexstring, charlen);
-				cbuff[charlen + 1] = '\0';
-
-				char* p = &cbuff[1];
-
-				while (*p != '\0')
-				{
-					if ((*p >= 'a') && (*p <= 'f'))
-						*p = UPPER(*p);
-					p++;
-				}
-
-				yylval = (dsql_nod*) MAKE_string(cbuff, strlen(cbuff));
-				return NUMBER64BIT;
-			}
-			else
-			{
-				// we have an integer value. we'll return NUMBER.
-				// but we have to make a number value to be compatible
-				// with existing code.
-
-				// See if the string length is odd.  If so,
-				// we'll assume a leading zero.  Then figure out the length
-				// of the actual resulting hex string.  Allocate a second
-				// temporary buffer for it.
-
-				int nibble = (charlen & 1);  // IS_ODD(temp.length)
-				int hexlen = charlen / 2 + nibble;
-
-				// Re-scan over the hex string we got earlier, converting
-				// adjacent bytes into nibble values.  Every other nibble,
-				// write the saved byte to the temp space.  At the end of
-				// this, the temp.space area will contain the binary
-				// representation of the hex constant.
-
-				UCHAR byte = 0;
-				SINT64 value = 0;
-
-				for (int i = 0; i < charlen; i++)
-				{
-					c = UPPER(hexstring[i]);
-
-					// Now convert the character to a nibble
-
-					if (c >= 'A')
-						c = (c - 'A') + 10;
-					else
-						c = (c - '0');
-
-					if (nibble)
-					{
-						byte = (byte << 4) + (UCHAR) c;
-						nibble = 0;
-						value = (value << 8) + byte;
-					}
-					else 
-					{
-						byte = c;
-						nibble = 1;
-					}
-				}
-
-				yylval = (dsql_nod*)(long) value;
-				return NUMBER;
-			} // integer value
-		}  // if (!hexerror)...
-
-		// If we got here, there was a parsing error.  Set the
-		// position back to where it was before we messed with
-		// it.  Then fall through to the next thing we might parse.
-
-		c = *lex.last_token;
-		lex.ptr = lex.last_token + 1;
-	} // headecimal numeric constants
+	fb_assert(ptr <= end);
 
 	if ((tok_class & CHR_DIGIT) ||
-		((c == '.') && (lex.ptr < lex.end) && (classes(*lex.ptr) & CHR_DIGIT)))
+		((c == '.') && (ptr < end) && (classes(*ptr) & CHR_DIGIT)))
 	{
 		/* The following variables are used to recognize kinds of numbers. */
 
@@ -5880,9 +5524,9 @@ int Parser::yylexAux()
 		FB_UINT64 number		= 0;
 		FB_UINT64 limit_by_10	= MAX_SINT64 / 10;
 
-		for (--lex.ptr ; lex.ptr < lex.end ; lex.ptr++)
+		for (--ptr ; ptr < end ; ptr++)
 		{
-			c = *lex.ptr;
+			c = *ptr;
 			if (have_exp_digit && (! (classes(c) & CHR_DIGIT)))
 				/* First non-digit after exponent and digit terminates
 				 the token. */
@@ -5953,10 +5597,10 @@ int Parser::yylexAux()
 
 			if (have_exp_digit)
 			{
-				yylval = (dsql_nod*) MAKE_string(lex.last_token, lex.ptr - lex.last_token);
-				lex.last_token_bk = lex.last_token;
-				lex.line_start_bk = lex.line_start;
-				lex.lines_bk = lex.lines;
+				yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
+				last_token_bk = last_token;
+				line_start_bk = line_start;
+				lines_bk = lines;
 
 				return FLOAT_NUMBER;
 			}
@@ -5990,17 +5634,17 @@ int Parser::yylexAux()
 						 */
 						ERRD_post_warning( isc_dsql_warning_number_ambiguous,
 							   isc_arg_string,
-							   ERR_string( lex.last_token, lex.ptr - lex.last_token ),
+							   ERR_string( last_token, ptr - last_token ),
 							   isc_arg_end );
 						ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
 							   isc_arg_end );
 					}
 
-					yylval = (dsql_nod*) MAKE_string(lex.last_token, lex.ptr - lex.last_token);
+					yylval = (dsql_nod*) MAKE_string(last_token, ptr - last_token);
 
-					lex.last_token_bk = lex.last_token;
-					lex.line_start_bk = lex.line_start;
-					lex.lines_bk = lex.lines;
+					last_token_bk = last_token;
+					line_start_bk = line_start;
+					lines_bk = lines;
 
 					if (client_dialect < SQL_DIALECT_V6_TRANSITION)
 						return FLOAT_NUMBER;
@@ -6019,8 +5663,8 @@ int Parser::yylexAux()
 
 	/* Restore the status quo ante, before we started our unsuccessful
 	   attempt to recognize a number. */
-	lex.ptr = lex.last_token;
-	c   = *lex.ptr++;
+	ptr = last_token;
+	c   = *ptr++;
 	/* We never touched tok_class, so it doesn't need to be restored. */
 
 	/* end of number-recognition code */
@@ -6030,41 +5674,41 @@ int Parser::yylexAux()
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
+		for (; ptr < end && classes(*ptr) & CHR_IDENT; ptr++)
 		{
-			if (lex.ptr >= lex.end)
+			if (ptr >= end)
 				return -1;
-			check_copy_incr(p, UPPER (*lex.ptr), string);
+			check_copy_incr(p, UPPER (*ptr), string);
 		}
 
 		check_bound(p, string);
 		*p = 0;
 		dsql_sym* sym =
 			HSHD_lookup (NULL, (TEXT *) string, (SSHORT)(p - string), SYM_keyword, parser_version);
-		if (sym && (sym->sym_keyword != COMMENT || lex.prev_keyword == -1))
+		if (sym && (sym->sym_keyword != COMMENT || prev_keyword == -1))
 		{
 			yylval = (dsql_nod*) sym->sym_object;
-			lex.last_token_bk = lex.last_token;
-			lex.line_start_bk = lex.line_start;
-			lex.lines_bk = lex.lines;
+			last_token_bk = last_token;
+			line_start_bk = line_start;
+			lines_bk = lines;
 			return sym->sym_keyword;
 		}
 		yylval = (dsql_nod*) MAKE_string(string, p - string);
-		lex.last_token_bk = lex.last_token;
-		lex.line_start_bk = lex.line_start;
-		lex.lines_bk = lex.lines;
+		last_token_bk = last_token;
+		line_start_bk = line_start;
+		lines_bk = lines;
 		return SYMBOL;
 	}
 
 	/* Must be punctuation -- test for double character punctuation */
 
-	if (lex.last_token + 1 < lex.end)
+	if (last_token + 1 < end)
 	{
 		dsql_sym* sym =
-			HSHD_lookup (NULL, lex.last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
+			HSHD_lookup (NULL, last_token, (SSHORT) 2, SYM_keyword, (USHORT) parser_version);
 		if (sym)
 		{
-			++lex.ptr;
+			++ptr;
 			return sym->sym_keyword;
 		}
 	}
@@ -6075,7 +5719,7 @@ int Parser::yylexAux()
 }
 
 
-void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
+static void yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YYPOSN&)
 {
 /**************************************
  *
@@ -6118,7 +5762,7 @@ void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YY
 
 // The argument passed to this function is ignored. Therefore, messages like
 // "syntax error" and "yacc stack overflow" are never seen.
-void Parser::yyerror(const TEXT* error_string)
+static void yyerror(const TEXT* error_string)
 {
 	YYSTYPE errt_value =  0;
 	YYPOSN errt_posn = -1;

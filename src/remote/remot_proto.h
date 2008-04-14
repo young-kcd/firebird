@@ -24,22 +24,20 @@
 #ifndef REMOTE_REMOT_PROTO_H
 #define REMOTE_REMOT_PROTO_H
 
-namespace Firebird
-{
-	class ClumpletReader;
-};
+struct blk;
 
-void		REMOTE_cleanup_transaction (struct Rtr *);
+void		REMOTE_cleanup_transaction (struct rtr *);
 ULONG		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
-void		REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb);
-struct Rrq*	REMOTE_find_request (struct Rrq *, USHORT);
+void		REMOTE_get_timeout_params (rem_port*, const UCHAR*, USHORT);
+struct rrq*	REMOTE_find_request (struct rrq *, USHORT);
 void		REMOTE_free_packet (rem_port*, struct packet *, bool = false);
 struct rem_str*	REMOTE_make_string (const SCHAR*);
-void		REMOTE_release_messages (struct Message *);
-void		REMOTE_release_request (struct Rrq *);
-void		REMOTE_reset_request (struct Rrq *, struct Message *);
-void		REMOTE_reset_statement (struct Rsr *);
+void		REMOTE_release_messages (struct message *);
+void		REMOTE_release_request (struct rrq *);
+void		REMOTE_reset_request (struct rrq *, struct message *);
+void		REMOTE_reset_statement (struct rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
+OBJCT		REMOTE_set_object (rem_port*, blk*, OBJCT);
 bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
 
 #endif // REMOTE_REMOT_PROTO_H

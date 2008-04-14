@@ -178,7 +178,7 @@ void ConfigFile::loadConfig()
 		{
 			Firebird::string Msg = "Missing configuration file: " + 
 				configFile.ToString() + ", exiting";
-			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg.c_str());
+			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg);
 			Firebird::fatal_exception::raise(Msg.c_str());
 		}
 #endif //EXCEPTION_ON_NO_CONF
@@ -204,7 +204,7 @@ void ConfigFile::loadConfig()
 				inputLine + "\"").ToString();
 			Firebird::Syslog::Record(fExceptionOnError ? 
 					Firebird::Syslog::Error :
-					Firebird::Syslog::Warning, Msg.c_str());
+					Firebird::Syslog::Warning, Msg);
 #ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif

@@ -51,10 +51,10 @@
 #include "../jrd/ini_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/obj.h"
 #include "../jrd/acl.h"
 #include "../jrd/irq.h"
-#include "../jrd/IntlManager.h"
 
 using namespace Jrd;
 
@@ -67,10 +67,10 @@ const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 #ifdef NOT_USED_OR_REPLACED
 static void add_generator(TEXT*, jrd_req**);
 #endif
-static void add_global_fields(thread_db*, USHORT);
+static void add_global_fields(USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
 static void add_new_triggers(USHORT, USHORT);
-static void add_relation_fields(thread_db*, USHORT);
+static void add_relation_fields(USHORT);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
 #ifdef NOT_USED_OR_REPLACED
@@ -344,8 +344,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
-	// Store DATABASE record
-
 	STORE(REQUEST_HANDLE handle1) X IN RDB$DATABASE
 		X.RDB$RELATION_ID = (int) USER_DEF_REL_INIT_ID;
 		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
@@ -362,37 +360,15 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	CMP_release(tdbb, handle1);
 	handle1 = NULL;
 
-	// Store ADMIN_ROLE record
-
-	STORE(REQUEST_HANDLE handle1) X IN RDB$ROLES
-		PAD (ADMIN_ROLE, X.RDB$ROLE_NAME);
-		X.RDB$ROLE_NAME.NULL = FALSE;
-		if (string.length()) {
-			PAD (string.c_str(), X.RDB$OWNER_NAME);
-		}
-		else {
-			PAD (SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
-		}
-		X.RDB$OWNER_NAME.NULL = FALSE;
-		X.RDB$DESCRIPTION.NULL = TRUE;
-		X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;	// Mark it as privileged role
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
-	END_STORE
-
-	CMP_release(tdbb, handle1);
-	handle1 = NULL;
-
-	// Create indices for system relations
+/* Create indices for system relations */
 	add_index_set(dbb, false, 0, 0);
 
-	// Create parameter types
+/* Create parameter types */
 
 	handle1 = NULL;
 
 	for (const rtyp* type = types; type->rtyp_name; ++type)
 	{
-		// this STORE should be compatible with two below,
-		// as they use the same compiled request
 		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
 			PAD(names[type->rtyp_field], X.RDB$FIELD_NAME);
 			PAD(type->rtyp_name, X.RDB$TYPE_NAME);
@@ -401,38 +377,13 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		END_STORE;
 	}
 
-	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
-		 charSet->name; ++charSet)
-	{
-		// this STORE should be compatible with one above and below,
-		// as they use the same compiled request
-		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
-			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
-			PAD(charSet->name, X.RDB$TYPE_NAME);
-			X.RDB$TYPE = charSet->id;
-			X.RDB$SYSTEM_FLAG = RDB_system;
-		END_STORE;
-	}
-
-	for (const IntlManager::CharSetAliasDefinition* alias = IntlManager::defaultCharSetAliases;
-		alias->name; ++alias)
-	{
-		// this STORE should be compatible with two above,
-		// as they use the same compiled request
-		STORE(REQUEST_HANDLE handle1) X IN RDB$TYPES
-			PAD(names[nam_charset_name], X.RDB$FIELD_NAME);
-			PAD(alias->name, X.RDB$TYPE_NAME);
-			X.RDB$TYPE = alias->charSetId;
-			X.RDB$SYSTEM_FLAG = RDB_system;
-		END_STORE;
-	}
-
 	CMP_release(tdbb, handle1);
 
-	// Store symbols for international character sets & collations
+/* Store symbols for international character sets & collations */
+
 	store_intlnames(tdbb, dbb);
 
-	// Create generators to be used by system triggers
+/* Create generators to be used by system triggers */
 
 	handle1 = NULL;
 	for (const gen* generator = generators; generator->gen_name; generator++)
@@ -441,7 +392,8 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 	}
 	CMP_release(tdbb, handle1);
 
-	// Adjust the value of the hidden generator RDB$GENERATORS
+// Adjust the value of the hidden generator RDB$GENERATORS
+
 	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
 
 /* store system-defined triggers */
@@ -468,9 +420,9 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 	store_functions(tdbb, dbb);
 
-	DFW_perform_system_work(tdbb);
+	DFW_perform_system_work();
 
-	add_relation_fields(tdbb, 0);
+	add_relation_fields(0);
 
 /*
 ====================================================================
@@ -544,7 +496,7 @@ USHORT INI_get_trig_flags(const TEXT* trig_name)
 }
 
 
-void INI_init()
+void INI_init(void)
 {
 /**************************************
  *
@@ -603,11 +555,6 @@ void INI_init()
 		{
 			const gfld* gfield = &gfields[fld[RFLD_F_ID]];
 			desc->dsc_length = gfield->gfld_length;
-			if (gfield->gfld_dtype == dtype_varying)
-			{
-				fb_assert(desc->dsc_length <= MAX_USHORT - sizeof(USHORT));
-				desc->dsc_length += sizeof(USHORT);
-			}
 			desc->dsc_dtype = gfield->gfld_dtype;
 			desc->dsc_sub_type = gfield->gfld_sub_type;
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
@@ -621,7 +568,7 @@ void INI_init()
 }
 
 
-void INI_init2()
+void INI_init2(void)
 {
 /**************************************
  *
@@ -747,13 +694,6 @@ void INI_init2()
 					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_1)
 						n = init2_helper(fld, n, relation);
 				}
-				else if ((fld[RFLD_F_NAME] == nam_f_name ||
-						  fld[RFLD_F_NAME] == nam_r_name) &&
-						 relfld[RFLD_R_NAME] == nam_proc_parameters)
-				{
-					if (ENCODE_ODS(major_version, minor_original) >= ODS_11_2)
-						n = init2_helper(fld, n, relation);
-				}
 				else
 					n = init2_helper(fld, n, relation);
 			}
@@ -770,19 +710,12 @@ void INI_init2()
 					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 
-					// In ODS11 length of RDB$MESSAGES are enlarged from 80 to 1023 bytes
+					/* In ODS11 length of RDB$MESSAGES are
+						enlarged from 80 to 1023 bytes	*/
 					if ((fld[RFLD_F_NAME] == nam_msg) &&
 						(major_version < ODS_VERSION11))
 					{
 						desc->dsc_length = 80;
-					}
-
-					// In ODS prior to 11.2 all varchar columns were actually
-					// two bytes shorter than defined in fields.h
-					if (desc->dsc_dtype == dtype_varying &&
-						ENCODE_ODS(major_version, minor_original) < ODS_11_2)
-					{
-						desc->dsc_length -= sizeof(USHORT);
 					}
 
 					format->fmt_length += desc->dsc_length;
@@ -843,13 +776,13 @@ void INI_update_database()
                which holds their information needs to have an additional field
                to define which major ODS version they belong to.
                PENDING WORK.
-                 add_global_fields (tdbb, major_version, minor_version);
-                 add_relation_fields (tdbb, major_version, minor_version);
+                 add_global_fields (major_version, minor_version);
+                 add_relation_fields (major_version, minor_version);
                Look at add_new_triggers() for reference.
      ***/
 
-		add_global_fields(tdbb, minor_version);
-		add_relation_fields(tdbb, minor_version);
+		add_global_fields(minor_version);
+		add_relation_fields(minor_version);
 	}
 
 	add_index_set(dbb, true, major_version, minor_version);
@@ -888,7 +821,7 @@ void INI_update_database()
 	dbb->dbb_minor_version = header->hdr_ods_minor;
 	CCH_RELEASE(tdbb, &window);
 
-	DFW_perform_system_work(tdbb);
+	DFW_perform_system_work();
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -923,7 +856,7 @@ static void add_generator(TEXT* generator_name, jrd_req** handle)
 }
 #endif
 
-static void add_global_fields(thread_db* tdbb, USHORT minor_version)
+static void add_global_fields( USHORT minor_version)
 {
 /**************************************
  *
@@ -938,7 +871,7 @@ static void add_global_fields(thread_db* tdbb, USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	thread_db* tdbb = JRD_get_thread_data();
 
 /* add desired global fields to system relations  */
 
@@ -955,7 +888,7 @@ static void add_global_fields(thread_db* tdbb, USHORT minor_version)
 		CMP_release(tdbb, handle);
 	}
 
-	DFW_perform_system_work(tdbb);
+	DFW_perform_system_work();
 }
 
 
@@ -1102,7 +1035,7 @@ static void add_new_triggers(USHORT major_version, USHORT minor_version)
 }
 
 
-static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
+static void add_relation_fields( USHORT minor_version)
 {
 /**************************************
  *
@@ -1117,7 +1050,7 @@ static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
  *	ODS change.
  *
  **************************************/
-	SET_TDBB(tdbb);
+	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
 /* add desired fields to system relations, forcing a new format version */
@@ -1160,7 +1093,7 @@ static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
 		CMP_release(tdbb, m_handle);
 	}
 
-	DFW_perform_system_work(tdbb);
+	DFW_perform_system_work();
 }
 
 
@@ -1263,8 +1196,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
-				sizeof(CLS.RDB$SECURITY_CLASS));
+        jrd_vtof((char*)sec_class_name, CLS.RDB$SECURITY_CLASS,
+                 sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_1;
 	END_STORE;
 
@@ -1274,8 +1207,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 
 	STORE(REQUEST_HANDLE handle1)
 		CLS IN RDB$SECURITY_CLASSES
-		jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
-				sizeof(CLS.RDB$SECURITY_CLASS));
+        jrd_vtof(default_class.c_str(), CLS.RDB$SECURITY_CLASS,
+                 sizeof(CLS.RDB$SECURITY_CLASS));
 		CLS.RDB$ACL = blob_id_2;
 	END_STORE;
 
@@ -1287,8 +1220,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 		WITH REL.RDB$RELATION_NAME EQ rel_name
 		MODIFY REL USING
 			REL.RDB$DEFAULT_CLASS.NULL = FALSE;
-			jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
-					sizeof(REL.RDB$DEFAULT_CLASS));
+            jrd_vtof(default_class.c_str(), REL.RDB$DEFAULT_CLASS,
+                     sizeof(REL.RDB$DEFAULT_CLASS));
 		END_MODIFY;
 
 	END_FOR;
@@ -1520,6 +1453,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 			else
 			{
 				X.RDB$FIELD_TYPE = (int) blr_varying;
+				X.RDB$FIELD_LENGTH -= sizeof(USHORT);
 			}
 			if (gfield->gfld_sub_type == dsc_text_type_metadata)
 			{
@@ -1595,15 +1529,13 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	SET_TDBB(tdbb);
 
 	jrd_req* handle = NULL;
-
-	for (const IntlManager::CharSetDefinition* charSet = IntlManager::defaultCharSets;
-		 charSet->name; ++charSet)
+	for (const CS_TYPE* csptr = cs_types; csptr->init_charset_name; csptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$CHARACTER_SETS USING
-			PAD(charSet->name, X.RDB$CHARACTER_SET_NAME);
-			PAD(charSet->name, X.RDB$DEFAULT_COLLATE_NAME);
-			X.RDB$CHARACTER_SET_ID = charSet->id;
-			X.RDB$BYTES_PER_CHARACTER = charSet->maxBytes;
+			PAD(csptr->init_charset_name, X.RDB$CHARACTER_SET_NAME);
+			PAD(csptr->init_charset_name, X.RDB$DEFAULT_COLLATE_NAME);
+			X.RDB$CHARACTER_SET_ID = csptr->init_charset_id;
+			X.RDB$BYTES_PER_CHARACTER = csptr->init_charset_bytes_per_char;
 			X.RDB$SYSTEM_FLAG = RDB_system;
 		END_STORE;
 	}
@@ -1613,32 +1545,31 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 
 	jrd_tra* trans = dbb->dbb_sys_trans;
 
-	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
-		collation->name; ++collation)
+	for (const COLL_TYPE* collptr = coll_types; collptr->init_collation_name; collptr++)
 	{
 		STORE(REQUEST_HANDLE handle) X IN RDB$COLLATIONS USING
-			PAD(collation->name, X.RDB$COLLATION_NAME);
+			PAD(collptr->init_collation_name, X.RDB$COLLATION_NAME);
 
-			if (collation->baseName)
+			if (collptr->init_collation_base_name)
 			{
 				X.RDB$BASE_COLLATION_NAME.NULL = false;
-				PAD(collation->baseName, X.RDB$BASE_COLLATION_NAME);
+				PAD(collptr->init_collation_base_name, X.RDB$BASE_COLLATION_NAME);
 			}
 			else
 				X.RDB$BASE_COLLATION_NAME.NULL = true;
 
-			X.RDB$CHARACTER_SET_ID = collation->charSetId;
-			X.RDB$COLLATION_ID = collation->collationId;
+			X.RDB$CHARACTER_SET_ID = collptr->init_collation_charset;
+			X.RDB$COLLATION_ID = collptr->init_collation_id;
 			X.RDB$SYSTEM_FLAG = RDB_system;
-			X.RDB$COLLATION_ATTRIBUTES = collation->attributes;
+			X.RDB$COLLATION_ATTRIBUTES = collptr->init_collation_attributes;
 
-			if (collation->specificAttributes)
+			if (collptr->init_collation_specific_attributes)
 			{
 				blb* blob = BLB_create(tdbb, trans, &X.RDB$SPECIFIC_ATTRIBUTES);
 				BLB_put_segment(tdbb,
 								blob,
-								reinterpret_cast<const UCHAR*>(collation->specificAttributes),
-								strlen(collation->specificAttributes));
+								reinterpret_cast<const UCHAR*>(collptr->init_collation_specific_attributes),
+								strlen(collptr->init_collation_specific_attributes));
 				BLB_close(tdbb, blob);
 				X.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
 			}
@@ -1654,7 +1585,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 
 static void store_function_argument(
 	thread_db* tdbb, Database* dbb,
-	jrd_req*& handle,
+    jrd_req* &handle,
 	const char* function_name, SLONG argument_position, SLONG mechanism, SLONG type, SLONG scale,
 	SLONG length, SLONG sub_type, SLONG charset, SLONG precision, SLONG char_length)
 {
@@ -1675,7 +1606,7 @@ static void store_function_argument(
 
 static void store_function(
 	thread_db* tdbb, Database* dbb,
-	jrd_req*& handle,
+    jrd_req* &handle,
 	const char* function_name, const char* module, const char* entrypoint, SLONG argument)
 {
 	STORE(REQUEST_HANDLE handle) F IN RDB$FUNCTIONS

@@ -88,31 +88,14 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	if (len == 0)
 		return svc_error(GetLastError(), "GetModuleFileName", NULL);
 
-	fb_assert(len <= sizeof(directory));
-
 	// Get to the last '\' (this one precedes the filename part). There is
 	// always one after a call to GetModuleFileName().
 	TEXT* p = directory + len;
-
-	while (p != directory)
-	{
-		--p;
-
-		if ((*p) == '\\')
-			break;
-	}
+	do {--p;} while (*p != '\\');
 
 	// Get to the previous '\' (this one should precede the supposed 'bin\\' part).
 	// There is always an additional '\' OR a ':'.
-	while (p != directory)
-	{
-		--p;
-
-		if ((*p) == '\\' || (*p) == ':')
-			break;
-	}
-
-	// Truncate directory path
+	do {--p;} while (*p != '\\' && *p != ':');
 	*p = '\0';
 
 	TEXT full_username[128];
@@ -178,10 +161,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				case 'C':
 					sw_arch = ARCH_CS;
 					break;
-				
-				case 'M':
-					sw_arch = ARCH_SCS;
-					break;
 
 				case 'L':
 					if (++argv < end)
@@ -238,14 +217,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			strncat(full_username, username, sizeof(full_username) - (cnlen + 1));
 		}
 		else
-		{
 			strncpy(full_username, username, sizeof(full_username));
-		}
-
 		full_username[sizeof(full_username) - 1] = '\0';
-
 		CharToOem(full_username, oem_username);
-		
 		username = full_username;
 
 		if (password == 0)
@@ -253,12 +227,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
 			const TEXT* const pass_end = p + sizeof(keyb_password) - 1;	// keep room for '\0'
-			
 			while (p < pass_end && (*p++ = getch()) != '\r')
 				putch('*'); // Win32 only
-			
 			*(p - 1) = '\0';	// Cuts at '\r'
-			
 			printf("\n");
 			OemToChar(keyb_password, keyb_password);
 			password = keyb_password;
@@ -287,26 +258,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		}
 	}
 
-	DWORD dwScmManagerAccess = SC_MANAGER_ALL_ACCESS;
-
-	switch (sw_command)
-	{
-		case COMMAND_INSTALL:
-		case COMMAND_REMOVE:
-			dwScmManagerAccess = SC_MANAGER_CREATE_SERVICE;
-			break;
-
-		case COMMAND_START:
-		case COMMAND_STOP:
-			dwScmManagerAccess = SC_MANAGER_CONNECT;
-			break;
-
-		case COMMAND_QUERY:
-			dwScmManagerAccess = SC_MANAGER_ENUMERATE_SERVICE;
-			break;
-    }
-
-	const SC_HANDLE manager = OpenSCManager(NULL, NULL, dwScmManagerAccess);
+	SC_HANDLE manager = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (manager == NULL)
 	{
 		svc_error(GetLastError(), "OpenSCManager", NULL);
@@ -330,29 +282,16 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	else
 		switches.printf("-s %s", instance);
 
-    if (sw_arch == ARCH_SCS)
-		switches += " -m";
-
 	switch (sw_command)
 	{
 		case COMMAND_INSTALL:
 			/* First, lets do the guardian, if it has been specified */
 			if (sw_guardian)
 			{
-				status = SERVICES_install(manager,
-										  guard_service_name.c_str(),
-										  guard_display_name.c_str(),
-										  ISCGUARD_DISPLAY_DESCR,
-										  ISCGUARD_EXECUTABLE,
-										  directory,
-										  switches.c_str(),
-										  NULL,
-										  sw_startup,
-										  username,
-										  password,
-										  false, // interactive_mode
-										  true, // auto_restart
-										  svc_error);
+				status = SERVICES_install(manager, guard_service_name.c_str(),
+					guard_display_name.c_str(), ISCGUARD_DISPLAY_DESCR,
+					ISCGUARD_EXECUTABLE, directory, switches.c_str(), NULL,
+					sw_startup, username, password, false, true, svc_error);
 
 				status2 = FB_SUCCESS;
 
@@ -374,20 +313,10 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 
 			/* do the install of the server */
-			status = SERVICES_install(manager,
-									  remote_service_name.c_str(),
-									  remote_display_name.c_str(),
-									  REMOTE_DISPLAY_DESCR,
-									  REMOTE_EXECUTABLE,
-									  directory,
-									  switches.c_str(),
-									  NULL,
-									  sw_startup,
-									  username,
-									  password,
-									  sw_interactive,
-									  !sw_guardian,
-									  svc_error);
+			status = SERVICES_install(manager, remote_service_name.c_str(),
+				remote_display_name.c_str(), REMOTE_DISPLAY_DESCR,
+				REMOTE_EXECUTABLE, directory, switches.c_str(), NULL,
+				sw_startup, username, password, sw_interactive, !sw_guardian, svc_error);
 
 			status2 = FB_SUCCESS;
 
@@ -465,7 +394,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		case COMMAND_START:
 			/* Test for use of the guardian. If so, start the guardian else start the server */
 			service = OpenService(manager, guard_service_name.c_str(),
-								  SERVICE_START);
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -499,7 +428,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		case COMMAND_STOP:
 			/* Test for use of the guardian. If so, stop the guardian else stop the server */
 			service = OpenService(manager, guard_service_name.c_str(),
-								  SERVICE_STOP);
+								  SERVICE_ALL_ACCESS);
 			if (service)
 			{
 				CloseServiceHandle(service);
@@ -632,9 +561,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 	if (manager == NULL)
 		return;
 
-	SC_HANDLE service =
-		OpenService(manager, name, SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG);
-
+	SC_HANDLE service = OpenService(manager, name, SERVICE_ALL_ACCESS);
 	if (service)
 	{
 		printf("\n%s IS installed.\n", display_name);
@@ -701,7 +628,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 		else
 			svc_error(GetLastError(), "QueryServiceConfig", NULL);
 		if (qsc)
-			delete[] (UCHAR*) qsc;
+			delete [] (UCHAR*)qsc;
 
 		CloseServiceHandle(service);
 	}
@@ -768,7 +695,7 @@ static void usage_exit(void)
  *
  **************************************/
 	printf("\nUsage:\n");
-	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] | -m[ultithreaded] ]\n");
+	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
@@ -788,3 +715,4 @@ static void usage_exit(void)
 
 	exit(FINI_ERROR);
 }
+

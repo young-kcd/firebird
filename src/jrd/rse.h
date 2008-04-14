@@ -28,6 +28,7 @@
 
 // This is really funny: class rse is not defined here but in exe.h!!!
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../common/classes/array.h"
@@ -408,7 +409,7 @@ public:
 	};
 	Firebird::HalfStaticArray<opt_conjunct, OPT_STATIC_ITEMS> opt_conjuncts;
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
-	OptimizerBlk(MemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
+	OptimizerBlk(JrdMemoryPool* pool) : opt_conjuncts(*pool), opt_streams(*pool) {}
 };
 
 // values for opt_stream_flags

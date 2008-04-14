@@ -52,6 +52,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
@@ -80,8 +81,7 @@ namespace {
 			return Firebird::PathName(Config::getExternalFileAccess());
 		}
 	public:
-		explicit ExternalFileDirectoryList(MemoryPool& p)
-			: DirectoryList(p)
+		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
 		{
 			initialize();
 		}

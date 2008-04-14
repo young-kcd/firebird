@@ -32,7 +32,7 @@
 #  
 # 
 
-#  Install script for FirebirdSQL database engine
+#  Install script for Firebird database engine
 
 #------------------------------------------------------------------------
 # copyIfExists

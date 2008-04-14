@@ -1,11 +1,5 @@
-Firebird Serveur Bases de données 2.5 pre alpha
+Firebird Serveur Bases de données 2.1
 ==================================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
 
 ** NOTE IMPORTANTE **
 

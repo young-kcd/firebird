@@ -32,13 +32,13 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -DNAMESPACE=Vulcan $(THR_FLAGS)
+CFLAGS:= $(CFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan -DNAMESPACE=Vulcan
 ifeq ($(STD_ICU),false)
   CFLAGS:= $(CFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
 endif
 
 ifeq ($(IsProdTypeBuild),Y)
-  CFLAGS:= $(CFLAGS) $(PROD_FLAGS)
+  CFLAGS:= $(CFLAGS) $(PROD_FLAGS) -DPROD_BUILD
 else
   CFLAGS:= $(CFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif

@@ -88,7 +88,7 @@ namespace BTreeNode {
 	bool keyEquality(USHORT length, const UCHAR* data, const Ods::IndexNode* indexNode);
 
 #ifdef SCROLLABLE_CURSORS
-	UCHAR* lastNode(Ods::btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
+	UCHAR* lastNode(btree_page* page, exp_index_buf* expanded_page, btree_exp** expanded_node);
 #endif
 
 	UCHAR* nextNode(Ods::IndexNode* node, UCHAR* pointer, 

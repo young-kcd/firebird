@@ -25,7 +25,9 @@
 #include <string.h>
 #include "../jrd/common.h"
 #include <stdarg.h>
+#ifndef REQUESTER
 #include "../jrd/jrd.h"
+#endif
 #include "../jrd/ibase.h"
 #include "../jrd/val.h"
 #include "../jrd/sdl.h"
@@ -38,6 +40,7 @@ const int COMPILE_SIZE	= 256;
 using namespace Jrd;
 
 struct sdl_arg {
+	//USHORT sdl_arg_mode; // unused
 	Ods::InternalArrayDesc* sdl_arg_desc;
 	const UCHAR* sdl_arg_sdl;
 	UCHAR* sdl_arg_array;
@@ -332,6 +335,7 @@ const UCHAR* SDL_prepare_slice(const UCHAR* sdl, USHORT sdl_length)
 
 int	SDL_walk(ISC_STATUS* status_vector,
 		const UCHAR* sdl,
+		//bool mode, // Unused, always got true, passed to sdl_arg_mode that's unused
 		UCHAR* array,
 		Ods::InternalArrayDesc* array_desc,
 		SLONG* variables,
@@ -352,6 +356,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 	USHORT n, offset;
 	sdl_arg arg;
 
+	//arg.sdl_arg_mode = mode ? TRUE: FALSE; // Unused
 	arg.sdl_arg_array = array;
 	arg.sdl_arg_sdl = sdl;
 	arg.sdl_arg_desc = array_desc;
@@ -596,8 +601,7 @@ static ISC_STATUS error(ISC_STATUS * status_vector, ...)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS) va_arg(args, TEXT*);
+			*p++ = (ISC_STATUS) va_arg(args, TEXT *);
 			break;
 
 /****
@@ -975,10 +979,19 @@ static const UCHAR* sdl_desc(const UCHAR* ptr, DSC* desc)
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_dtype = dtype_double;
 		desc->dsc_length = sizeof(double);
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_dtype = dtype_d_float;
+		desc->dsc_length = sizeof(double);
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_dtype = dtype_timestamp;

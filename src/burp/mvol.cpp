@@ -44,8 +44,14 @@
 #include "../burp/mvol_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/thd.h"
+#ifndef VMS
 #include <fcntl.h>
 #include <sys/types.h>
+#else
+#include <types.h>
+#include <file.h>
+#endif
 
 #if (defined WIN_NT)
 #include <io.h>  // isatty
@@ -62,12 +68,17 @@ using MsgFormat::SafeArg;
 
 const int open_mask	= 0666;
 
+#ifdef VMS
+const char* TERM_INPUT	= "sys$input";
+const char* TERM_OUTPUT	= "sys$error";
+#else
 #ifdef WIN_NT
 const char* TERM_INPUT	= "CONIN$";
 const char* TERM_OUTPUT	= "CONOUT$";
 #else
 const char* TERM_INPUT	= "/dev/tty";
 const char* TERM_OUTPUT	= "/dev/tty";
+#endif
 #endif
 
 const int MAX_HEADER_SIZE	= 512;
@@ -252,7 +263,7 @@ void MVOL_init_write(const char*		database_name, // unused?
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
-			BURP_error(269, true, tdgbl->action->act_file->fil_name.c_str());
+			BURP_error(269, true, tdgbl->action->act_file->fil_name);
 			// msg 269 can't write a header record to file %s 
 		}
 		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
@@ -286,25 +297,28 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			break;
 		}
 
-		if (!tdgbl->mvol_io_cnt || errno == EIO)
 		{
-			tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
-			if (tdgbl->mvol_io_cnt > 0)
+			if (!tdgbl->mvol_io_cnt || errno == EIO)
 			{
-				break;
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
+				if (tdgbl->mvol_io_cnt > 0)
+				{
+					break;
+				}
 			}
-		}
-		else if (!SYSCALL_INTERRUPTED(errno))
-		{
-			if (cnt)
+
+			else if (!SYSCALL_INTERRUPTED(errno))
 			{
-				BURP_error_redirect(0, 220);
+				if (cnt)
+				{
+					BURP_error_redirect(0, 220);
 				// msg 220 Unexpected I/O error while reading from backup file 
-			}
-			else
-			{
-				BURP_error_redirect(0, 50);
+				}
+				else
+				{
+					BURP_error_redirect(0, 50);
 				// msg 50 unexpected end of file on backup file 
+				}
 			}
 		}
 	}
@@ -338,21 +352,23 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		tdgbl->mvol_io_ptr = tdgbl->mvol_io_buffer;
 		if (tdgbl->mvol_io_cnt > 0)
 			break;
-
-		if (!tdgbl->mvol_io_cnt)
+		else
 		{
-			tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
-			if (tdgbl->mvol_io_cnt > 0)
-				break;
-		}
-		else if (GetLastError() != ERROR_HANDLE_EOF)
-		{
-			if (cnt)
-				BURP_error_redirect(NULL, 220);
+			if (!tdgbl->mvol_io_cnt)
+			{
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_READ, false);
+				if (tdgbl->mvol_io_cnt > 0)
+					break;
+			}
+			else if (GetLastError() != ERROR_HANDLE_EOF)
+			{
+				if (cnt)
+					BURP_error_redirect(NULL, 220);
 				// msg 220 Unexpected I/O error while reading from backup file 
-			else
-				BURP_error_redirect(NULL, 50);
+				else
+					BURP_error_redirect(NULL, 50);
 				// msg 50 unexpected end of file on backup file 
+			}
 		}
 	}
 
@@ -372,7 +388,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 // Read a chunk of data from the IO buffer.
 // Return a pointer to the first position NOT read into.
 //
-UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
+UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR * ptr, ULONG count)
 {
 // To handle tape drives & Multi-volume boundaries, use the normal
 // read function, instead of doing a more optimal bulk read.
@@ -389,7 +405,7 @@ UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
 			count--;
 		}
 
-		const ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
 
 		// Copy data from the IO buffer 
 
@@ -429,7 +445,7 @@ void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 			count--;
 		}
 
-		const ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
 
 		// Skip ahead in current buffer 
 
@@ -446,7 +462,7 @@ void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 // detect if it's a tape, rewind if so
 // and set the buffer size
 //
-DESC MVOL_open(const char* name, ULONG mode, ULONG create)
+DESC MVOL_open(const char * name, ULONG mode, ULONG create)
 {
 	HANDLE handle;
 	TAPE_GET_MEDIA_PARAMETERS param;
@@ -510,17 +526,18 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 //
 // Write a buffer's worth of data.
 //
-UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
+UCHAR MVOL_write(UCHAR c, int *io_cnt, UCHAR ** io_ptr)
 {
-	const UCHAR* ptr;
-	SLONG cnt = 0;
+	UCHAR *ptr;
+	SLONG left, cnt;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	const ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
-	ULONG left = size_to_write;
+	ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
 
-	for (ptr = tdgbl->mvol_io_buffer; left > 0; ptr += cnt, left -= cnt)
+	for (ptr = tdgbl->mvol_io_buffer, left = size_to_write;
+		 left > 0;
+		 ptr += cnt, left -= cnt)
 	{
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
@@ -562,7 +579,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 		DWORD err = 0;
 		// Assumes DWORD <==> ULONG
 		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite,
-					   reinterpret_cast<DWORD*>(&cnt), NULL))
+					   reinterpret_cast <DWORD *>(&cnt), NULL)) 
 		{
 			err = GetLastError();
 		}
@@ -607,9 +624,9 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 						
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
 						BURP_print(272, SafeArg() <<
-									tdgbl->action->act_file->fil_name.c_str() <<
+									tdgbl->action->act_file->fil_name <<
 									tdgbl->action->act_file->fil_length <<
-									tdgbl->action->act_file->fil_next->fil_name.c_str());
+									tdgbl->action->act_file->fil_next->fil_name);
 						// msg 272 Warning -- free disk space exhausted for file %s,
 						// the rest of the bytes (%d) will be written to file %s
 						tdgbl->action->act_file->fil_next->fil_length +=
@@ -627,7 +644,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 					continue;
 				}
 
-				if (tdgbl->uSvc->isService())
+				if (tdgbl->gbl_sw_service_gbak)
 				{
 					BURP_error(270, true);
 					// msg 270 free disk space exhausted
@@ -694,9 +711,9 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 
 	tdgbl->mvol_io_buffer_size = tdgbl->mvol_actual_buffer_size;
 
-	UCHAR* newptr = tdgbl->mvol_io_buffer + left;
-	*newptr++ = c;
-	*io_ptr = newptr;
+	ptr = tdgbl->mvol_io_buffer + left;
+	*ptr++ = c;
+	*io_ptr = ptr;
 	*io_cnt = tdgbl->mvol_io_buffer_size - 1 - left;
 
 	return c;
@@ -708,7 +725,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 // Write a chunk of data to the IO buffer.
 // Return a pointer to the first position NOT written from.
 //
-const UCHAR* MVOL_write_block(BurpGlobals* tdgbl, const UCHAR* ptr, ULONG count)
+const UCHAR *MVOL_write_block(BurpGlobals* tdgbl, const UCHAR * ptr, ULONG count)
 {
 // To handle tape drives & Multi-volume boundaries, use the normal
 // write function, instead of doing a more optimal bulk write.
@@ -724,7 +741,7 @@ const UCHAR* MVOL_write_block(BurpGlobals* tdgbl, const UCHAR* ptr, ULONG count)
 			count--;
 		}
 
-		const ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
+		ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
 
 		// Copy data to the IO buffer
 
@@ -947,15 +964,15 @@ static void prompt_for_name(SCHAR* name, int length)
 
 // Unless we are operating as a service, stdin can't necessarily be trusted.
 // Get a location to read from.
-	fb_assert(!tdgbl->uSvc->isService());
 
-	if (isatty(fileno(stdout)) ||
+	if (tdgbl->gbl_sw_service_gbak ||
+		isatty(fileno(stdout)) ||
 		!(term_out = fopen(TERM_OUTPUT, "w")))
 	{
 		term_out = stdout;
 	}
-
-	if (isatty(fileno(stdin)) ||
+	if (tdgbl->gbl_sw_service_gbak ||
+		isatty(fileno(stdin)) ||
 		!(term_in = fopen(TERM_INPUT, "r")))
 	{
 		term_in = stdin;
@@ -986,6 +1003,10 @@ static void prompt_for_name(SCHAR* name, int length)
 		BURP_msg_get(228, msg);	// "  Name: "
 		fprintf(term_out, msg);
 
+		if (tdgbl->gbl_sw_service_gbak)
+		{
+			putc('\001', term_out);
+		}
 		fflush(term_out);
 		if (fgets(name, length, term_in) == NULL)
 		{
@@ -1340,7 +1361,7 @@ bool MVOL_split_hdr_write(void)
 
 	sprintf(buffer, "%s%.24s      , file No. %4d of %4d, %-27.27s",
 			HDR_SPLIT_TAG, ctime(&seconds), tdgbl->action->act_file->fil_seq,
-			tdgbl->action->act_total, tdgbl->action->act_file->fil_name.c_str());
+			tdgbl->action->act_total, tdgbl->action->act_file->fil_name);
 
 #ifdef WIN_NT
 	DWORD bytes_written = 0;
@@ -1398,3 +1419,4 @@ bool MVOL_split_hdr_read(void)
 
 	return false;
 }
+

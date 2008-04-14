@@ -31,6 +31,10 @@
 #include "../burp/burp_proto.h"
 #include "../burp/misc_proto.h"
 
+#ifdef SERVICE_THREAD
+#include "../jrd/thd.h"
+#endif
+
 
 UCHAR *MISC_alloc_burp(ULONG size)
 {

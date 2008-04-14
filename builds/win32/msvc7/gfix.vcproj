@@ -152,7 +152,7 @@
 				RelativePath="..\..\..\gen\alice\alice_meta.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\alice\aliceMain.cpp">
+				RelativePath="..\..\..\src\alice\all.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\exe.cpp">
@@ -177,7 +177,7 @@
 				RelativePath="..\..\..\src\common\classes\locks.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -191,6 +191,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\aliceswi.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\all.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\all_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\exe_proto.h">

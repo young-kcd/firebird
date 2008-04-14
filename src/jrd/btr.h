@@ -29,6 +29,7 @@
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
@@ -50,7 +51,6 @@ template <typename T> class vec;
 class jrd_req;
 struct temporary_key;
 class jrd_tra;
-class BtrPageGCLock;
 
 enum idx_null_state {
   idx_nulls_none,
@@ -137,7 +137,6 @@ struct index_insertion {
 	temporary_key*	iib_key;		/* varying string for insertion */
 	RecordBitmap* iib_duplicates;	/* spare bit map of duplicates */
 	jrd_tra*	iib_transaction;	/* insertion transaction */
-	BtrPageGCLock*	iib_dont_gc_lock;	// lock to prevent removal of splitted page
 };
 
 

@@ -64,6 +64,7 @@ addLibs() {
 
 	rm -f $libTarget
 	touch $libTarget
+	echo "#!/bin/sh" >>$libTarget
 	for i in posixLibrary.sh classicLibrary.sh linuxLibrary.sh
 	do
 		echo "# $i" >>$libTarget
@@ -130,7 +131,6 @@ copyFiles() {
     mkdir -p $TargetDir/usr/include
 
     cp -f $BuiltFBDir/bin/fb_inet_server $DestDir/bin/fb_inet_server 
-    cp -f $BuiltFBDir/bin/fb_smp_server $DestDir/bin/fb_smp_server 
 
     cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
     cp $BuiltFBDir/bin/gdef $DestDir/bin/gdef 

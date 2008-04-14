@@ -39,7 +39,18 @@ if "%VS_VER%"=="msvc6" (
 @echo.
 @echo Building empbuild.fdb
 @copy /y %FB_OUTPUT_DIR%\bin\isql.exe %FB_GEN_DIR%\examples\ > nul
+
+:: this is a dummy define - in practice we probably always want to build
+:: examples with the server we have just built, rather than whatever server
+:: seems to be available.
+@if defined FBBUILD_USE_INSTALLED_HOST (
 @copy /y %FB_OUTPUT_DIR%\bin\fbclient.dll %FB_GEN_DIR%\examples\ > nul
+) else (
+@copy /y %FB_OUTPUT_DIR%\bin\fbembed.dll %FB_GEN_DIR%\examples\fbclient.dll > nul
+@copy /y %FB_OUTPUT_DIR%\bin\icu*.dll %FB_GEN_DIR%\examples\ > nul
+@copy /y %FB_OUTPUT_DIR%\firebird.msg %FB_GEN_DIR%\examples\ > nul
+)
+
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.sql   %FB_GEN_DIR%\examples\ > nul
 @copy /y %FB_ROOT_PATH%\examples\empbuild\*.inp   %FB_GEN_DIR%\examples\ > nul
 

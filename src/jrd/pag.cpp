@@ -69,7 +69,6 @@
 #endif
 
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 #include "../jrd/fil.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
@@ -85,6 +84,7 @@
 #include "../jrd/tra.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
+#include "../jrd/all.h"
 #endif
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -96,6 +96,7 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"
@@ -182,8 +183,7 @@ enum ArchitectureType {
 // compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
 // This is why we declare all such builds "Unknown" for ODS10.
 
-static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
-{
+static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 	archUnknown, // CLASS_UNKNOWN
 	archUnknown, // CLASS_APOLLO_68K
 	archUnknown, // CLASS_SOLARIS_SPARC
@@ -211,8 +211,7 @@ static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
 	archUnknown  // CLASS_LINUX_AMD64
 };
 
-static const ArchitectureType archMatrix[CLASS_MAX + 1] =
-{
+static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archUnknown,      // CLASS_UNKNOWN
 	archUnknown,      // CLASS_APOLLO_68K
 	archBigEndian,    // CLASS_SOLARIS_SPARC
@@ -243,7 +242,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,    // CLASS_LINUX_PPC
 	archLittleEndian, // CLASS_DARWIN_I386
 	archLittleEndian, // CLASS_LINUX_MIPSEL
-	archBigEndian,	  // CLASS_LINUX_MIPS
+	archBigEndian,  // CLASS_LINUX_MIPS
 	archLittleEndian  // CLASS_DARWIN_X64
 };
 
@@ -257,6 +256,10 @@ const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
 
 #ifdef HPUX
 const SSHORT CLASS		= CLASS_HPUX_PA;
+#endif
+
+#ifdef VMS
+const SSHORT CLASS		= CLASS_VMS_VAX;
 #endif
 
 #ifdef AIX
@@ -476,7 +479,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	}
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
-	if (!JRD_verify_database_access(file_name)) {
+	if (!ISC_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "additional database file",
 			isc_arg_string, ERR_cstring(file_name),
@@ -513,7 +516,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 
@@ -584,7 +587,6 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
  *	RETURNS
  *		TRUE - modified page
  *		FALSE - nothing done
- * CVC: Nobody checks the result of this function!
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -600,7 +602,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 	if (*p != HDR_end)
 		return FALSE;
 
-	// We are at HDR_end, add the entry
+/* We are at HDR_end, add the entry */
 
 	const int free_space = dbb->dbb_page_size - header->hdr_end;
 
@@ -610,13 +612,13 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 		*p++ = static_cast<UCHAR>(type);
 		*p++ = static_cast<UCHAR>(len);
 
-		if (len) {
-			if (entry) {
+		if (len)
+		{
+			if (entry)
 				memcpy(p, entry, len);
-			}
-			else {
+			else
 				memset(p, 0, len);
-			}
+
 			p += len;
 		}
 
@@ -746,11 +748,10 @@ PAG PAG_allocate(WIN * window)
 	
 	pag* new_page = 0; // NULL before the search for a new page.
 
-	// Starting from ODS 11.1 we store in pip_header.reserved number of pages 
-	// allocated from this pointer page. There is intention to create dedicated
-	// field at page_inv_page for this purpose in ODS 12.
-	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && 
-							dbb->dbb_minor_version >= 1);
+	// in ODS 11.1 we store in pip_header.reserved number of pages allocated
+	// from this pointer page
+	const bool isODS11_1 = (dbb->dbb_ods_version == ODS_VERSION11 && 
+							dbb->dbb_minor_version == 1);
 
 /* Find an allocation page with something on it */
 
@@ -781,7 +782,7 @@ PAG PAG_allocate(WIN * window)
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
 						if (new_page)
 						{
-							if (isODS11_x)
+							if (isODS11_1)
 							{
 								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page
@@ -931,7 +932,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 /* Get new attachment id */
 
 	if (dbb->dbb_flags & DBB_read_only) {
-		attachment->att_attachment_id = dbb->dbb_attachment_id + fb_utils::genReadOnlyId();
+		attachment->att_attachment_id = ++dbb->dbb_attachment_id;
 	}
 	else {
 		window.win_page = HEADER_PAGE_NUMBER;
@@ -1040,7 +1041,7 @@ void PAG_format_header()
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 	header->hdr_header.pag_type = pag_header;
@@ -1585,17 +1586,17 @@ void PAG_init2(USHORT shadow_number)
 				case HDR_file:
 					file_length = p[1];
 					file_name = buf;
-					memcpy(buf, p + 2, file_length);
+					MOVE_FAST(p + 2, buf, file_length);
 					break;
 
 				case HDR_last_page:
-					memcpy(&last_page, p + 2, sizeof(last_page));
+					MOVE_FAST(p + 2, &last_page, sizeof(last_page));
 					break;
 
 				case HDR_sweep_interval:
 					// CVC: Let's copy it always.
 					//if (!(dbb->dbb_flags & DBB_read_only))
-						memcpy(&dbb->dbb_sweep_interval, p + 2, sizeof(SLONG));
+						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval, sizeof(SLONG));
 					break;
 				}
 			}
@@ -1622,7 +1623,7 @@ void PAG_init2(USHORT shadow_number)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
-		if (!JRD_verify_database_access(file_name)) {
+		if (!ISC_verify_database_access(file_name)) {
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "additional database file",
 				isc_arg_string, ERR_cstring(file_name),
@@ -2326,7 +2327,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		{
 			try 
 			{
-				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
+				PIO_extend(file, extPages, dbb->dbb_page_size);
 				break;
 			}
 			catch (Firebird::status_exception) 
@@ -2406,9 +2407,8 @@ void PageManager::releaseLocks()
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
-	USHORT result;
 #ifdef SUPERSERVER
-	result = TEMP_PAGE_SPACE;
+	return TEMP_PAGE_SPACE;
 #else
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -2435,14 +2435,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		att->att_temp_pg_lock = lock;
 	}
 	
-	result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
+	return (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 #endif
-
-	if (!this->findPageSpace(result)) {
-		PAG_attach_temp_pages(tdbb, result);
-	}
-
-	return result;
 }
 
 ULONG PAG_page_count(Database* database, PageCountCallback* cb)
@@ -2459,19 +2453,20 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
-	const bool isODS11_x = (database->dbb_ods_version == ODS_VERSION11 &&
+	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
 							database->dbb_minor_version >= 1);
-	if (!isODS11_x) {
+	if (! isODS11_1)
+	{
 		return 0;
 	}
 
 	Firebird::Array<BYTE> temp;
-	page_inv_page* pip = (Ods::page_inv_page*) // can't reinterpret_cast<> here
-		FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
-
-	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	page_inv_page* pip = (Ods::page_inv_page*) 
+						 // can't reinterpret_cast<> here
+			FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+	PageSpace* pageSpace = 
+		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
-
 	ULONG pageNo = pageSpace->ppFirst;
 	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
 

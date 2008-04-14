@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- * 
+ *
  */
  
 #ifndef CLASSES_FB_ATOMIC_H
@@ -78,8 +78,6 @@ private:
 
 #elif defined(__GNUC__) && (defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(__x86_64__))
 
-namespace Firebird {
-
 // Assembler version for x86 and AMD64. Note it uses xaddl thus it requires i486
 class AtomicCounter
 {
@@ -120,8 +118,6 @@ private:
 	volatile counter_type counter;
 };
 
-} // namespace Firebird
-
 #else
 
 # include "../common/classes/locks.h"
@@ -129,10 +125,6 @@ private:
 namespace Firebird {
 
 // Highly inefficient, but safe and portable implementation
-// We keep it for DEV build to start doing ports, but should be avoided in release
-#ifndef DEV_BUILD
-#pragma FB_COMPILER_MESSAGE("Generic AtomicCounter: implement appropriate code for your platform!"
-#endif
 class AtomicCounter
 {
 public:

@@ -1,13 +1,7 @@
 
-============================================
-Firebird 2.5.0 pre alpha (Windows Felépítés)
 ======================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
+Firebird 2.1.0  (Windows Felépítés)
+======================================
 
 o Bevezetés
 o Felhasználás

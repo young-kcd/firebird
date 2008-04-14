@@ -320,6 +320,10 @@ SOURCE=..\..\..\src\jrd\IntlUtil.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\inuse.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\isc.cpp
 # End Source File
 # Begin Source File
@@ -350,6 +354,10 @@ SOURCE=..\..\..\src\jrd\jrd.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\lck.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\log.cpp
 # End Source File
 # Begin Source File
 
@@ -411,10 +419,6 @@ SOURCE=..\..\..\src\jrd\plugin_manager.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\PreparedStatement.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\pwd.cpp
 # End Source File
 # Begin Source File
@@ -431,10 +435,6 @@ SOURCE=..\..\..\src\jrd\Relation.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ResultSet.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\rlck.cpp
 # End Source File
 # Begin Source File
@@ -448,6 +448,10 @@ SOURCE=..\..\..\src\jrd\rse.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\RuntimeStatistics.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\sch.cpp
 # End Source File
 # Begin Source File
 
@@ -492,6 +496,10 @@ SOURCE=..\..\..\src\jrd\svc.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sym.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\SysFunction.cpp
 # End Source File
 # Begin Source File
@@ -513,10 +521,6 @@ SOURCE=..\..\..\src\jrd\os\win32\thd_priority.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ThreadStart.cpp
 # End Source File
 # Begin Source File
 
@@ -598,6 +602,10 @@ SOURCE=..\..\..\src\jrd\blb_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\blf_proto.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\blk.h
 # End Source File
 # Begin Source File
 
@@ -941,6 +949,10 @@ SOURCE=..\..\..\src\jrd\IntlUtil.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\inuse_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\irq.h
 # End Source File
 # Begin Source File
@@ -1010,6 +1022,18 @@ SOURCE=..\..\..\src\jrd\lls.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\lnmdef.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\log.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\log2.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\log_proto.h
 # End Source File
 # Begin Source File
 
@@ -1137,10 +1161,6 @@ SOURCE=..\..\..\src\jrd\pragma.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\PreparedStatement.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\prv_m_bypass.h
 # End Source File
 # Begin Source File
@@ -1177,10 +1197,6 @@ SOURCE=..\..\..\src\jrd\relations.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ResultSet.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\req.h
 # End Source File
 # Begin Source File
@@ -1206,6 +1222,10 @@ SOURCE=..\..\..\src\jrd\RuntimeStatistics.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\sbm.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\sch_proto.h
 # End Source File
 # Begin Source File
 
@@ -1286,6 +1306,10 @@ SOURCE=..\..\..\src\jrd\svc_undoc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\syidef.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\sym.h
 # End Source File
 # Begin Source File
 

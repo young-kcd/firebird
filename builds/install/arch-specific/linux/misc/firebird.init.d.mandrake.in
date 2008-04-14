@@ -25,18 +25,18 @@ FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
+MANAGER=$FIREBIRD/bin/fbmgr.bin
 
 export FIREBIRD LD_LIBRARY_PATH
 
 # Check the file is there and is executable.
-[ -x $FIREBIRD/bin/fbmgr.bin ] || exit 1
+[ -x $MANAGER ] || exit 1
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FULLNAME "
-
-	runuser -s /bin/bash $FBRunUser -c "$FIREBIRD/bin/fbmgr.bin -pidfile $pidfile -start -forever"
+	echo $MANAGER -pidfile $pidfile -start -forever | su $FBRunUser
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && success || failure
 	echo

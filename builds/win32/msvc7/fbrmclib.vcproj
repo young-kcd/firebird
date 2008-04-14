@@ -24,7 +24,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;WIN32;_X86_;GDS32_EXPORTS"
+				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;WIN32;_X86_;GDS32_EXPORTS"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -42,7 +42,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386 /SECTION:.edata,RD"
+				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fbrmclib.dll"
 				LinkIncremental="1"
@@ -98,7 +98,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;I386;_X86_=1;WIN32;_X86_;GDS32_EXPORTS"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386;_X86_=1;WIN32;_X86_;GDS32_EXPORTS"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="FALSE"
@@ -115,7 +115,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/MACHINE:I386 /SECTION:.edata,RD"
+				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="..\..\..\temp\release\firebird\bin\fbrmclib.dll"
 				LinkIncremental="1"
@@ -163,9 +163,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
 			</File>
 		</Filter>
 		<Filter

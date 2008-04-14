@@ -30,6 +30,7 @@
 #
 ROOT=..
 ObjModuleType=std
+CFLAGS+=-DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -59,7 +60,7 @@ Dependencies = $(AllObjects:.o=.d)
 gpre : $(LIBFBCLIENT_SO) $(GPRE)
 
 $(GPRE):	$(GPRE_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 include $(ROOT)/gen/make.shared.targets

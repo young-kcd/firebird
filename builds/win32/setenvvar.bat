@@ -16,16 +16,11 @@
 
 @echo off
 
-:: Default target CPU architecture is the native environment
-if NOT DEFINED FB_PROCESSOR_ARCHITECTURE (
-set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
-)
-
 ::===============================
 ::Set up the compiler environment
 if DEFINED VS80COMNTOOLS (
 @devenv /? >nul 2>nul
-@if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+@if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
 ) else (
 if DEFINED VS71COMNTOOLS (
 @devenv /? >nul 2>nul
@@ -70,8 +65,8 @@ if DEFINED VS71COMNTOOLS (
 :: If MSVC >= 8 then we can test for processor architecture
 :: We certainly don't want to try and set platform=x64 if MSVC7 is installed
 @if %MSVC_VERSION% GEQ 8 (
-@if "%FB_PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=Win32)
-@if "%FB_PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
+@if "%PROCESSOR_ARCHITECTURE%"=="x86" (set FB_TARGET_PLATFORM=Win32)
+@if "%PROCESSOR_ARCHITECTURE%"=="AMD64" (set FB_TARGET_PLATFORM=x64)
 )
 
 

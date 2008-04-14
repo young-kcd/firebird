@@ -172,8 +172,6 @@
 #define FB15_cur_ver GetEnv("FBBUILD_FB15_CUR_VER")
 #define FB20_cur_ver GetEnv("FBBUILD_FB20_CUR_VER")
 #define FB21_cur_ver GetEnv("FBBUILD_FB21_CUR_VER")
-#define FB25_cur_ver GetEnv("FBBUILD_FB25_CUR_VER")
-#define FB_cur_ver FB25_cur_ver
 
 ; We can save space by shipping a pdb package that just includes
 ; the pdb files. It would then upgrade an existing installation,
@@ -269,7 +267,7 @@ Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#Script
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
 Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
-Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
 [Messages]
@@ -284,7 +282,7 @@ it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 ru.BeveledLabel=Ðóññêèé
-si.BeveledLabel=Slovenski
+;si.BeveledLabel=Slovenski
 #endif
 
 [CustomMessages]
@@ -299,7 +297,7 @@ si.BeveledLabel=Slovenski
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
 #include "ru\custom_messages_ru.inc"
-#include "si\custom_messages_si.inc"
+;#include "si\custom_messages_si.inc"
 #endif
 
 #ifdef iss_debug
@@ -390,21 +388,20 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
+Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
+Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
 #endif
-Name: {group}\{cm:Uninstall,{#FB_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
+Name: {group}\{cm:Uninstall,{#FB21_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 #ifdef files
@@ -425,7 +422,7 @@ Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
 Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
 Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+;Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -771,7 +768,7 @@ begin
   end
 
   CommandLine:=GetCmdTail;
-  
+
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
     (pos('/?',Uppercase(CommandLine)) > 0) or
     (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
@@ -780,7 +777,7 @@ begin
     CloseHelpDlg;
     result := False;
     Exit;
-    
+
   end;
 
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
@@ -831,11 +828,11 @@ begin
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
-      
+
 #ifdef setuplogging
   if OkToCopyLog then
     FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
-    
+
   RestartReplace (ExpandConstant ('{log}'), '');
 #endif /* setuplogging */
 

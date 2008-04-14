@@ -1190,10 +1190,6 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1185, 'cvc', '2006-10-01 03:20:51', 8, 20, 'could not find PRIMARY KEY index in specified table', NULL, NULL, 'c_pg');
 (1186, 'cvc', '2007-10-03 05:28:09', 17, 102, '               TRIGGER, VERSION, VIEW', NULL, NULL, 'c_pg');
 (1187, 'cvc', '2007-11-20 02:42:50', 0, 76, 'column @1 is not defined in table @1', NULL, 'An undefined external function was referenced in blr.', 'c_pg')
-(1188, 'alexpeshkoff', '2007-12-21 19:03:07', 12, 249, 'writing SQL role: @1', NULL, NULL, 'c_pg');
-(1189, 'alexpeshkoff', '2007-12-21 19:03:07', 12, 251, 'restoring SQL role: @1', NULL, NULL, 'c_pg');
-(1190, 'dimitr', '2008-03-12 08:02:00', 17, 0, 'Statement failed, SQLCODE = @1', NULL, NULL, 'c_pg')
-(1191, 'dimitr', '2008-03-17 12:33:42', 8, 15, 'STORE RDB$INDICES failed', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

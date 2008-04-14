@@ -77,7 +77,7 @@ namespace {
 } // namespace
 
 namespace Firebird {
-	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
+	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(-1);
 
 	AbstractString::AbstractString(const AbstractString& v) {
 		initialize(v.length());

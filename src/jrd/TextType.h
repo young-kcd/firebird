@@ -75,6 +75,24 @@ public:
 					ULONG dstLen,
 					UCHAR* dst);
 
+	const UCHAR* getSqlMatchAnyCanonic() const { return sqlMatchAnyCanonic; }
+	const UCHAR* getSqlMatchOneCanonic() const { return sqlMatchOneCanonic; }
+	const UCHAR* getGdmlMatchOneCanonic() const { return gdmlMatchOneCanonic; }
+	const UCHAR* getGdmlMatchAnyCanonic() const { return gdmlMatchAnyCanonic; }
+	const UCHAR* getGdmlQuoteCanonic() const { return gdmlQuoteCanonic; }
+	const UCHAR* getGdmlNotCanonic() const { return gdmlNotCanonic; }
+	const UCHAR* getGdmlRangeCanonic() const { return gdmlRangeCanonic; }
+	const UCHAR* getGdmlClassStartCanonic() const { return gdmlClassStartCanonic; }
+	const UCHAR* getGdmlClassEndCanonic() const { return gdmlClassEndCanonic; }
+	const UCHAR* getGdmlSubstituteCanonic() const { return gdmlSubstituteCanonic; }
+	const UCHAR* getGdmlFlagSetCanonic() const { return gdmlFlagSetCanonic; }
+	const UCHAR* getGdmlFlagClearCanonic() const { return gdmlFlagClearCanonic; }
+	const UCHAR* getGdmlCommaCanonic() const { return gdmlCommaCanonic; }
+	const UCHAR* getGdmlLParenCanonic() const { return gdmlLParenCanonic; }
+	const UCHAR* getGdmlRParenCanonic() const { return gdmlRParenCanonic; }
+	const UCHAR* getGdmlUpperSCanonic() const { return gdmlUpperSCanonic; }
+	const UCHAR* getGdmlLowerSCanonic() const { return gdmlLowerSCanonic; }
+
 	USHORT getType() const
 	{
 		return type;
@@ -104,85 +122,23 @@ protected:
 
 private:
 	TTYPE_ID type;
-
-public:
-	enum
-	{
-		CHAR_ASTERISK = 0,
-		CHAR_AT,
-		CHAR_CIRCUMFLEX,
-		CHAR_COLON,
-		CHAR_COMMA,
-		CHAR_EQUAL,
-		CHAR_MINUS,
-		CHAR_PERCENT,
-		CHAR_PLUS,
-		CHAR_QUESTION_MARK,
-		CHAR_SPACE,
-		CHAR_TILDE,
-		CHAR_UNDERLINE,
-		CHAR_VERTICAL_BAR,
-		CHAR_OPEN_BRACE,
-		CHAR_CLOSE_BRACE,
-		CHAR_OPEN_BRACKET,
-		CHAR_CLOSE_BRACKET,
-		CHAR_OPEN_PAREN,
-		CHAR_CLOSE_PAREN,
-		CHAR_LOWER_S,
-		CHAR_UPPER_S,
-		CHAR_COUNT,		// last
-
-		// aliases
-		CHAR_SQL_MATCH_ANY = CHAR_PERCENT,
-		CHAR_SQL_MATCH_ONE = CHAR_UNDERLINE
-	};
-
-	const UCHAR* getCanonicalChar(int ch) const
-	{
-		return reinterpret_cast<const UCHAR*>(&canonicalChars[ch]);
-	}
-
-	const UCHAR* getCanonicalNumbers(int* count = NULL) const
-	{
-		if (count)
-			*count = 10;
-		return reinterpret_cast<const UCHAR*>(canonicalNumbers);
-	}
-
-	const UCHAR* getCanonicalLowerLetters(int* count = NULL) const
-	{
-		if (count)
-			*count = 26;
-		return reinterpret_cast<const UCHAR*>(canonicalLowerLetters);
-	}
-
-	const UCHAR* getCanonicalUpperLetters(int* count = NULL) const
-	{
-		if (count)
-			*count = 26;
-		return reinterpret_cast<const UCHAR*>(canonicalUpperLetters);
-	}
-
-	const UCHAR* getCanonicalWhiteSpaces(int* count = NULL) const
-	{
-		if (count)
-			*count = 6;
-		return reinterpret_cast<const UCHAR*>(canonicalWhiteSpaces);
-	}
-
-	const UCHAR* getCanonicalSpace(int* count = NULL) const
-	{
-		if (count)
-			*count = 1;
-		return getCanonicalChar(CHAR_SPACE);
-	}
-
-private:
-	ULONG canonicalChars[CHAR_COUNT];
-	ULONG canonicalNumbers[10];
-	ULONG canonicalLowerLetters[26];
-	ULONG canonicalUpperLetters[26];
-	ULONG canonicalWhiteSpaces[6];
+	UCHAR sqlMatchAnyCanonic[sizeof(ULONG)];
+	UCHAR sqlMatchOneCanonic[sizeof(ULONG)];
+	UCHAR gdmlMatchOneCanonic[sizeof(ULONG)];
+	UCHAR gdmlMatchAnyCanonic[sizeof(ULONG)];
+	UCHAR gdmlQuoteCanonic[sizeof(ULONG)];
+	UCHAR gdmlNotCanonic[sizeof(ULONG)];
+	UCHAR gdmlRangeCanonic[sizeof(ULONG)];
+	UCHAR gdmlClassStartCanonic[sizeof(ULONG)];
+	UCHAR gdmlClassEndCanonic[sizeof(ULONG)];
+	UCHAR gdmlSubstituteCanonic[sizeof(ULONG)];
+	UCHAR gdmlFlagSetCanonic[sizeof(ULONG)];
+	UCHAR gdmlFlagClearCanonic[sizeof(ULONG)];
+	UCHAR gdmlCommaCanonic[sizeof(ULONG)];
+	UCHAR gdmlLParenCanonic[sizeof(ULONG)];
+	UCHAR gdmlRParenCanonic[sizeof(ULONG)];
+	UCHAR gdmlUpperSCanonic[sizeof(ULONG)];
+	UCHAR gdmlLowerSCanonic[sizeof(ULONG)];
 };
 
 }	// namespace Jrd
