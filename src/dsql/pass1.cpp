@@ -1717,6 +1717,7 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 			PASS1_node(request, input->nod_arg[e_exec_sql_stmnt], proc_flag);
 		return pass1_savepoint(request, node);
 
+	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_into_stmnt] =
@@ -6580,6 +6581,7 @@ static dsql_nod* pass1_label(dsql_req* request, dsql_nod* input)
 	case nod_for_select:
 		label = input->nod_arg[e_flp_label];
 		break;
+	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
 		break;
@@ -11340,6 +11342,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "derived_table";
 		break;
 
+	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		verb = "exec_into";
 		break;

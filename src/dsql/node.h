@@ -315,6 +315,7 @@ enum nod_t
 	nod_release_savepoint, // 240
 	nod_undo_savepoint,
 	nod_label, // label support
+	// CVC: This node seems obsolete.
 	nod_exec_into, // EXECUTE STATEMENT INTO
 	nod_difference_file,
 	nod_drop_difference,
@@ -421,6 +422,7 @@ enum node_args {
 	e_exec_sql_stmnt = 0,	// nod_exec_sql
 	e_exec_sql_count,
 
+	// CVC: This node seems obsolete.
 	e_exec_into_stmnt = 0,	// nod_exec_into
 	e_exec_into_block,
 	e_exec_into_list,
