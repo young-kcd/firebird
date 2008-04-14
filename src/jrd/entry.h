@@ -209,7 +209,7 @@ ENTRYPOINT( jrd8_rollback_retaining,
             REM_rollback_retaining)
 // 53
 ENTRYPOINT( jrd8_cancel_operation,
-			/* REM_cancel_operation */ no_entrypoint)
+			REM_cancel_operation)
 // 54
 ENTRYPOINT( jrd8_shutdown_all,
 			/* REM_shutdown_all */ no_entrypoint)
