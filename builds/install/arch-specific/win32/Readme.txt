@@ -21,11 +21,24 @@ Welcome to Firebird 2.1.
 Intended Users
 ==============
 
-This release candidate is intended for experienced
-Firebird users. It has been reasonably well tested and
-all new features should now be properly documented.
+Firebird 2.1 has undergone extensive testing and is
+intended for widespread production use. However, users
+are recommended to follow standard practices before
+deploying this release on a production server. ie:
 
-Do not use this release in a production environment.
+ o Please make sure you read the installation
+   readme and the release notes.
+
+ o If you have data you value remember to back it up
+   prior to installing this release.
+
+ o It is recommended that you remove any previous
+   version prior to installation. Uninstallation
+   preserves configuration files and log files.
+
+ o It is recommended that you carry out your own
+   tests in a development environment prior to
+   production deployment.
 
 
 Known Issues
@@ -80,12 +93,6 @@ Before you report a bug:
 	news://news.atkin.com/
 
 
-Please don't use the Firebird-devel list for technical
-support unless the question specifically relates to a
-new feature in Firebird 2.1
-
-
-Happy Testing!
 
 From the Firebird team.
 
