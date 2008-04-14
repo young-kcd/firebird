@@ -141,10 +141,24 @@ Function:
     Returns the result of a binary AND operation performed on all arguments.
 
 Format:
-    BIN_AND( <number> [, <number> ...] )
+    BIN_AND( <number>, <number> [, <number> ...] )
 
 Example:
     select bin_and(flags, 1) from x;
+
+
+-------
+BIN_NOT
+-------
+
+Function:
+    Returns the result of a bitwise NOT operation performed on its argument.
+
+Format:
+    BIN_NOT( <number> )
+
+Example:
+    select bin_not(flags) from x;
 
 
 ------
@@ -155,7 +169,7 @@ Function:
     Returns the result of a binary OR operation performed on all arguments.
 
 Format:
-    BIN_OR( <number> [, <number> ...] )
+    BIN_OR( <number>, <number> [, <number> ...] )
 
 Example:
     select bin_or(flags1, flags2) from x;
@@ -197,7 +211,7 @@ Function:
     Returns the result of a binary XOR operation performed on all arguments.
 
 Format:
-    BIN_XOR( <number> [, <number> ...] )
+    BIN_XOR( <number>, <number> [, <number> ...] )
 
 Example:
     select bin_xor(flags1, flags2) from x;

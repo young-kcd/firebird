@@ -57,6 +57,7 @@ enum Function
 	funBinShl,
 	funBinShr,
 	funBinXor,
+	funBinNot,
 	funMaxValue,
 	funMinValue,
 	funLPad,
@@ -1055,7 +1056,12 @@ static dsc* evlBin(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			return NULL;
 
 		if (i == 0)
-			impure->vlu_misc.vlu_int64 = MOV_get_int64(value, 0);
+		{
+			if ((Function)(IPTR) function->misc == funBinNot)
+				impure->vlu_misc.vlu_int64 = ~MOV_get_int64(value, 0);
+			else
+				impure->vlu_misc.vlu_int64 = MOV_get_int64(value, 0);
+		}
 		else
 		{
 			switch ((Function)(IPTR) function->misc)
@@ -2931,11 +2937,12 @@ const SysFunction SysFunction::functions[] =
 		SF("ASIN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) asin),
 		SF("ATAN", 1, 1, setParamsDouble, makeDoubleResult, evlStdMath, (VoidPtrStdMathFunc) atan),
 		SF("ATAN2", 2, 2, setParamsDouble, makeDoubleResult, evlAtan2, NULL),
-		SF("BIN_AND", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd),
-		SF("BIN_OR", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr),
+		SF("BIN_AND", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinAnd),
+		SF("BIN_OR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinOr),
 		SF("BIN_SHL", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShl),
 		SF("BIN_SHR", 2, 2, setParamsInteger, makeBinShift, evlBinShift, (void*) funBinShr),
-		SF("BIN_XOR", 1, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor),
+		SF("BIN_XOR", 2, -1, setParamsInteger, makeBin, evlBin, (void*) funBinXor),
+		SF("BIN_NOT", 1, 1, setParamsInteger, makeBin, evlBin, (void*) funBinNot),
 		SF("CEIL", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
 		SF("CEILING", 1, 1, setParamsDouble, makeCeilFloor, evlCeil, NULL),
 		SF("CHAR_TO_UUID", 1, 1, setParamsCharToUuid, makeUuid, evlCharToUuid, NULL),
@@ -3154,8 +3161,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 
 void SysFunction::checkArgsMismatch(int count) const
 {
-	if (count < minArgCount ||
-		(maxArgCount != -1 && count > maxArgCount))
+	if (count < minArgCount || (maxArgCount != -1 && count > maxArgCount))
 	{
 		status_exception::raise(isc_funmismat, isc_arg_string, name.c_str(), 0);
 	}

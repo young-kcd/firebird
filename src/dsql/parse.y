@@ -554,6 +554,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token SOURCE
 %token TWO_PHASE
 %token BIND_PARAM
+%token BIN_NOT
 
 /* precedence declarations for expression evaluation */
 
@@ -4519,6 +4520,7 @@ system_function_std_syntax
 	| ATAN
 	| ATAN2
 	| BIN_AND
+	| BIN_NOT
 	| BIN_OR
 	| BIN_SHL
 	| BIN_SHR
@@ -4965,6 +4967,7 @@ non_reserved_word :
 	| DATA
 	| SOURCE
 	| TWO_PHASE
+	| BIN_NOT
 	;
 
 %%

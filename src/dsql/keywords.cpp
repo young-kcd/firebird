@@ -84,6 +84,7 @@ static const TOK tokens[] =
 	{BETWEEN, "BETWEEN", 1, false},
 	{BIGINT, "BIGINT", 2, false},
 	{BIN_AND, "BIN_AND", 2, false},
+	{BIN_NOT, "BIN_NOT", 2, false},
 	{BIN_OR, "BIN_OR", 2, false},
 	{BIN_SHL, "BIN_SHL", 2, false},
 	{BIN_SHR, "BIN_SHR", 2, false},
