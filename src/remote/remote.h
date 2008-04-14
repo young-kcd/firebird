@@ -266,8 +266,6 @@ public:
 		rpr_rdb(0), rpr_rtr(0), rpr_handle(0), 
 		rpr_in_msg(0), rpr_out_msg(0), rpr_in_format(0), rpr_out_format(0)
 	{ }
-
-	//ISC_STATUS badHandle() { return ; }
 };
 
 struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
@@ -577,6 +575,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::RefMutex* const port_que_sync;
 	Firebird::Reference port_que_reference;
 #endif
+	Firebird::RefMutex* const port_write_sync;
+	Firebird::Reference port_write_reference;
 
 	// port function pointers (C "emulation" of virtual functions)
 	int				(*port_accept)(rem_port*, p_cnct*);
@@ -605,6 +605,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	rem_port*		port_next;			/* next client port */
 	rem_port*		port_parent;		/* parent port (for client ports) */
 	rem_port*		port_async;			/* asynchronous sibling port */
+	rem_port*		port_async_receive;	/* async packets receiver */
 	struct srvr*	port_server;		/* server of port */
 	USHORT			port_server_flags;	/* TRUE if server */
 	USHORT			port_protocol;		/* protocol version number */
@@ -656,10 +657,12 @@ public:
 		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 		port_que_reference(*port_que_sync),
 #endif
+		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
+		port_write_reference(*port_write_sync),
 		port_accept(0), port_disconnect(0), port_receive_packet(0), port_send_packet(0), 
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0), 
-		port_type(t), port_state(PENDING), 
-		port_client_arch(arch_generic), port_clients(0), port_next(0), port_parent(0), port_async(0), 
+		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic), 
+		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0), 
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0), 
 		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0), 
@@ -884,6 +887,7 @@ public:
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
+	bool		asyncReceive(UCHAR* buffer, SSHORT dataSize);
 };
 
 

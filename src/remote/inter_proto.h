@@ -36,6 +36,7 @@ ISC_STATUS	REM_blob_info(ISC_STATUS* user_status, struct Rbl** blob_handle,
 	SSHORT buffer_length, UCHAR* buffer);
 ISC_STATUS	REM_cancel_blob(ISC_STATUS* user_status, struct Rbl** blob_handle);
 ISC_STATUS	REM_cancel_events(ISC_STATUS* user_status, struct Rdb** handle, SLONG* id);
+ISC_STATUS	REM_cancel_operation(ISC_STATUS* user_status, struct Rdb** handle, USHORT kind);
 ISC_STATUS	REM_close_blob(ISC_STATUS* user_status, struct Rbl** blob_handle);
 ISC_STATUS	REM_commit_transaction(ISC_STATUS* user_status, struct Rtr** rtr_handle);
 ISC_STATUS	REM_commit_retaining(ISC_STATUS* user_status, struct Rtr** rtr_handle);

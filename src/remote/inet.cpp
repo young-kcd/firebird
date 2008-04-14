@@ -357,6 +357,8 @@ static bool INET_initialized = false;
 static bool INET_shutting_down = false;
 static SLCT INET_select = { 0, 0, 0 };
 static int INET_max_clients;
+static rem_port *inet_async_receive = 0;
+
 
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
 
@@ -432,7 +434,8 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 	{
 		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, MAX_PTYPE, 1),
 		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, MAX_PTYPE, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, MAX_PTYPE, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, MAX_PTYPE, 4)
 #ifdef SCROLLABLE_CURSORS
 		,
 		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, MAX_PTYPE, 99)
@@ -1184,7 +1187,6 @@ static rem_port* alloc_port( rem_port* parent)
 		}
 		gds__register_cleanup(exit_handler, 0);
 #endif
-
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW ||
 		    INET_remote_buffer > MAX_DATA_HW)
@@ -1198,6 +1200,10 @@ static rem_port* alloc_port( rem_port* parent)
 		fb_shutdown_callback(0, shut_preproviders, fb_shut_preproviders);
 
 		INET_initialized = true;
+
+		// This should go AFTER 'INET_initialized = true' to avoid recursion
+		inet_async_receive = alloc_port(0);
+		inet_async_receive->port_flags |= PORT_server;
 	}
 
 	rem_port* port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
@@ -1220,6 +1226,7 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_connect = aux_connect;
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
+	port->port_async_receive = inet_async_receive;
 
 	xdrinet_create(	&port->port_send, port,
 					&port->port_buffer[INET_remote_buffer],

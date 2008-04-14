@@ -255,6 +255,7 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 #define GDS_TRANSACT_REQUEST	REM_transact_request
 #define GDS_TRANSACTION_INFO	REM_transaction_info
 #define GDS_UNWIND		REM_unwind_request
+#define GDS_CANCEL_OPERATION	REM_cancel_operation
 
 /* DSQL definitions */
 
@@ -6812,6 +6813,8 @@ static bool send_packet(rem_port* port,
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
 
+	Firebird::RefMutexGuard guard(*port->port_write_sync);
+
 	// Send packets that were deferred
 
 	for (rem_que_packet* p = port->port_deferred_packets->begin();
@@ -6855,6 +6858,8 @@ static bool send_partial_packet(rem_port*		port,
 	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_net_write_err;
 	user_status[2] = isc_arg_end;
+
+	Firebird::RefMutexGuard guard(*port->port_write_sync);
 
 	// Send packets that were deferred
 
@@ -6993,5 +6998,54 @@ static void zap_packet(PACKET* packet)
  **************************************/
 
 	memset(packet, 0, sizeof(struct packet));
+}
+
+
+ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT kind)
+{
+/*************************************
+ * 
+ * 	G D S _ C A N C E L _ O P E R A T I O N
+ *
+ **************************************
+ *
+ * Functional description
+ *	Asynchronously cancel requests, running with db_handle on remote server.
+ *
+ **************************************/
+	Rdb* rdb = *db_handle;
+	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
+	rem_port* port = rdb->rdb_port;
+
+	if (port->port_protocol < PROTOCOL_VERSION12)
+	{
+		user_status[0] = isc_arg_gds;
+		user_status[1] = isc_wish_list;
+		user_status[2] = isc_arg_end;
+
+		return user_status[1];
+	}
+
+	// This is async operation - should not lock port_sync
+	rdb->rdb_status_vector = user_status;
+
+	try
+	{
+		PACKET packet;
+		packet.p_operation = op_cancel;
+		P_CANCEL_OP* cancel = &packet.p_cancel_op;
+		cancel->p_co_kind = kind;
+
+		if (!send_packet(rdb->rdb_port, &packet, user_status)) 
+		{
+			return user_status[1];
+		}
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		return Firebird::stuff_exception(user_status, ex);
+	}
+
+	return return_success(rdb);
 }
 

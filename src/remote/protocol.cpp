@@ -276,6 +276,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	P_SQLDATA *sqldata;
 	P_TRRQ *trrq;
 	P_TRAU *trau;
+	P_CANCEL_OP *cancel_op;
 #ifdef DEBUG
 	xdr_save_size = xdrs->x_handy;
 #endif
@@ -800,6 +801,13 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 	case op_trusted_auth:
 		trau = &p->p_trau;
 		MAP(xdr_cstring, trau->p_trau_data);
+		DEBUG_PRINTSIZE(xdrs, p->p_operation);
+
+		return P_TRUE(xdrs, p);
+
+	case op_cancel:
+		cancel_op = &p->p_cancel_op;
+		MAP(xdr_short, reinterpret_cast<SSHORT&>(cancel_op->p_co_kind));
 		DEBUG_PRINTSIZE(xdrs, p->p_operation);
 
 		return P_TRUE(xdrs, p);

@@ -93,6 +93,12 @@ const USHORT FB_PROTOCOL_MASK = ~FB_PROTOCOL_FLAG;
 
 const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
+// Protocol 12 has support for asynchronous call op_cancel. 
+// Currently implemented asynchronously only for TCP/IP 
+// on superserver and superclassic.
+
+const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
+
 #ifdef SCROLLABLE_CURSORS
 This Protocol includes support for scrollable cursors
 and is purposely being undefined so that changes can be made
@@ -292,6 +298,8 @@ typedef enum
 
 	op_partial				= 89,	// packet is not complete - delay processing
 	op_trusted_auth			= 90,
+	
+	op_cancel				= 91,
 
 	op_max
 } P_OP;
@@ -617,6 +625,10 @@ struct p_authenticate {
 	USHORT			p_auth_buffer_length;	// Target buffer length
 };
 
+typedef struct p_cancel_op {
+    USHORT	p_co_kind;			// Kind of cancelation
+} P_CANCEL_OP;
+
 
 
 /* Generalize packet (sic!) */
@@ -656,6 +668,7 @@ typedef struct packet {
 	P_TRAU	p_trau;		/* Trusted authentication */
 	p_update_account p_account_update;
 	p_authenticate p_authenticate_user;
+	P_CANCEL_OP p_cancel_op;	/* cancel operation */
 
 public:
 	packet()

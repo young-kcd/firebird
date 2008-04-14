@@ -127,7 +127,7 @@ static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
 #ifdef CANCEL_OPERATION
-static void		cancel_operation(rem_port*);
+static void		cancel_operation(rem_port*, USHORT);
 #endif
 
 static bool		check_request(Rrq*, USHORT, USHORT);
@@ -440,7 +440,7 @@ static bool link_request(rem_port* port, SERVER_REQ request)
 	{
 #ifdef CANCEL_OPERATION
 		if (operation == op_exit || operation == op_disconnect)
-			cancel_operation(port);
+			cancel_operation(port, CANCEL_raise);
 #endif
 		return true;
 	}
@@ -496,26 +496,29 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				// We have a request block - now get some information to stick into it
 				if (!(port = main_port->select_multi(buffer, bufSize, &dataSize)))
 				{
-					if (!shutting_down) {
+					if (!shutting_down) 
+					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}
 					return;
 				}
 				if (dataSize)
 				{
+					if (port->asyncReceive(buffer, dataSize))
+					{
+						continue;
+					}
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 				}
 			
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
-
 				if (portLocked || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
 
-//					gds__log("queue=%d", port->port_queue->getCount());
 					if (dataSize) 
 					{
 						fb_assert(portLocked);
@@ -524,13 +527,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
-//						gds__log("dats=%d", dataSize);
 
 						if (request->req_receive.p_operation == op_partial)
 						{
 							port->setRecvState(recvState);
 							portGuard.leave();
-//							gds__log("Partial");
 
 							free_request(request);
 							request = 0;
@@ -538,16 +539,18 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							continue;
 						}
 						if (!port->haveRecvData())
+						{
 							port->clearRecvQue();
+						}
 					}
 					else
 					{
 						request->req_receive.p_operation = op_exit;
 					}
-//					gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
 
 					request->req_port = port;
-					if (portLocked) {
+					if (portLocked) 
+					{
 						portGuard.leave();
 					}
 
@@ -692,7 +695,8 @@ static bool accept_connection(rem_port* port,
 			 protocol->p_cnct_version == PROTOCOL_VERSION8 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION9 ||
 			 protocol->p_cnct_version == PROTOCOL_VERSION10 ||
-			 protocol->p_cnct_version == PROTOCOL_VERSION11
+			 protocol->p_cnct_version == PROTOCOL_VERSION11 ||
+			 protocol->p_cnct_version == PROTOCOL_VERSION12
 #ifdef SCROLLABLE_CURSORS
 			 || protocol->p_cnct_version == PROTOCOL_SCROLLABLE_CURSORS
 #endif
@@ -1220,7 +1224,7 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 
 #ifdef CANCEL_OPERATION
-static void cancel_operation( rem_port* port)
+static void cancel_operation( rem_port* port, USHORT kind)
 {
 /**************************************
  *
@@ -1246,8 +1250,7 @@ static void cancel_operation( rem_port* port)
 		if (!(rdb->rdb_flags & Rdb::SERVICE))
 		{
 			ISC_STATUS_ARRAY status_vector;
-			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
-								  CANCEL_raise);
+			gds__cancel_operation(status_vector, &rdb->rdb_handle, kind);
 		}
 	}
 }
@@ -1514,8 +1517,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 			/* Prevent a pending or spurious cancel from aborting
 			   a good, clean detach from the database. */
 
-			gds__cancel_operation(status_vector, (FB_API_HANDLE*) &rdb->rdb_handle,
-								  CANCEL_disable);
+			gds__cancel_operation(status_vector, &rdb->rdb_handle, CANCEL_disable);
 #endif
 			while (rdb->rdb_requests)
 				release_request(rdb->rdb_requests);
@@ -3317,6 +3319,12 @@ static bool process_packet(rem_port* port,
 		case op_dummy:
 			sendL->p_operation = op_dummy;
 			port->send(sendL);
+			break;
+
+		case op_cancel:
+#ifdef CANCEL_OPERATION
+			cancel_operation(port, receive->p_cancel_op.p_co_kind);
+#endif
 			break;
 
 		default:
@@ -5158,6 +5166,60 @@ int SRVR_shutdown()
 #endif
 
 	return 0;
+}
+
+
+bool rem_port::asyncReceive(UCHAR* buffer, SSHORT dataSize)
+{
+/**************************************
+ *
+ *	a s y n c R e c e i v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	If possible, accept incoming data asynchronously
+ *
+ **************************************/
+	if (! port_async_receive)
+	{
+		return false;
+	}
+	if (haveRecvData())
+	{
+		// We have no reliable way to distinguish network packet that start
+		// from the beginning of XDR packet or in the middle of it.
+		// Therefore try to process asynchronously only if there is no data
+		// waiting in port queue. This can lead to fallback to synchronous 
+		// processing of async command (i.e. with some delay), but reliably 
+		// protects from spurious protocol breakage.
+		return false;
+	}
+
+	// we may work safely with port_async_receive here - noone except this function
+	// should use it, and access is only from main listener thread
+
+	port_async_receive->clearRecvQue();
+	port_async_receive->port_receive.x_handy = 0;
+	memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
+
+	// It's required, that async packets follow simple rule:
+	// single xdr packet fits into single network packet.
+	PACKET asyncPacket;
+	port_async_receive->receive(&asyncPacket);
+
+	switch(asyncPacket.p_operation)
+	{
+	case op_cancel:
+#ifdef CANCEL_OPERATION
+		cancel_operation(this, asyncPacket.p_cancel_op.p_co_kind);
+#endif
+		break;
+	default:
+		return false;
+	}
+
+	return true;
 }
 
 
