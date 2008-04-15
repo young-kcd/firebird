@@ -2447,11 +2447,21 @@ static void show_db()
 	}
 
 	FOR DBB IN RDB$DATABASE
-		WITH DBB.RDB$CHARACTER_SET_NAME NOT MISSING
-		AND DBB.RDB$CHARACTER_SET_NAME NE " "
-		isqlGlob.printf("Default Character set: %s%s",
-				 DBB.RDB$CHARACTER_SET_NAME,
-				 NEWLINE);
+		CROSS CS IN RDB$CHARACTER_SETS
+		WITH CS.RDB$CHARACTER_SET_NAME EQ DBB.RDB$CHARACTER_SET_NAME
+
+		fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
+		fb_utils::exact_name(CS.RDB$DEFAULT_COLLATE_NAME);
+
+		isqlGlob.printf("Default Character set: %s", DBB.RDB$CHARACTER_SET_NAME);
+
+		if (!CS.RDB$DEFAULT_COLLATE_NAME.NULL &&
+			strcmp(CS.RDB$DEFAULT_COLLATE_NAME, DBB.RDB$CHARACTER_SET_NAME) != 0)
+		{
+			isqlGlob.printf(" (with Default Collation %s)", CS.RDB$DEFAULT_COLLATE_NAME);
+		}
+
+		isqlGlob.printf("%s", NEWLINE);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(isc_status);
