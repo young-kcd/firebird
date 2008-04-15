@@ -3897,7 +3897,7 @@ Firebird::string AlterCharSetNode::print()
 
 void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 {
-	if (dsqlRequest->req_dbb)	// do not run in CREATE DATABASE
+	if (dsqlRequest && dsqlRequest->req_dbb)	// do not run in CREATE DATABASE
 	{
 		METD_drop_charset(dsqlRequest, charSet);
 		MET_dsql_cache_release(tdbb, SYM_intlsym_charset, charSet);

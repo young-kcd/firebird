@@ -1119,7 +1119,8 @@ class DdlNode : public Node
 {
 public:
 	DdlNode(MemoryPool& pool)
-		: Node(pool)
+		: Node(pool),
+		  dsqlRequest(NULL)
 	{
 	}
 
