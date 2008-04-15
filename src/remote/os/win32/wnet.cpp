@@ -56,7 +56,7 @@ const char* EVENT_PIPE_SUFFIX	= "event";
 Firebird::AtomicCounter event_counter;
 
 
-static int		accept_connection(rem_port*, P_CNCT *);
+static int		accept_connection(rem_port*, const P_CNCT*);
 static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
@@ -477,7 +477,7 @@ rem_port* WNET_server(void *handle)
 }
 
 
-static int accept_connection( rem_port* port, P_CNCT * cnct)
+static int accept_connection( rem_port* port, const P_CNCT* cnct)
 {
 /**************************************
  *

@@ -232,7 +232,7 @@ typedef struct slct
 	fd_set	slct_fdset;
 } SLCT;
 
-static int		accept_connection(rem_port*, P_CNCT *);
+static int		accept_connection(rem_port*, const P_CNCT*);
 #ifdef HAVE_SETITIMER
 static void		alarm_handler(int);
 #endif
@@ -975,7 +975,7 @@ void INET_set_clients( int count)
 
 
 static int accept_connection(rem_port* port,
-							 P_CNCT* cnct)
+							 const P_CNCT* cnct)
 {
 /**************************************
  *

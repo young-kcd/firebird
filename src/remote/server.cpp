@@ -115,7 +115,7 @@ static void		attach_database2(rem_port*, P_OP, const char*, int,
 static void		attach_service2(rem_port*, P_OP, const char*, int, 
 								const UCHAR*, int, PACKET*);
 #ifdef TRUSTED_AUTH
-static void		trusted_auth(rem_port*, P_TRAU*, PACKET*);
+static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
 static bool		canUseTrusted();
 #endif
 
@@ -3367,7 +3367,7 @@ static bool process_packet(rem_port* port,
 
 
 #ifdef TRUSTED_AUTH
-static void trusted_auth(rem_port* port, P_TRAU* p_trau, PACKET* send)
+static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 {
 /**************************************
  *
@@ -5169,7 +5169,7 @@ int SRVR_shutdown()
 }
 
 
-bool rem_port::asyncReceive(UCHAR* buffer, SSHORT dataSize)
+bool rem_port::asyncReceive(const UCHAR* buffer, SSHORT dataSize)
 {
 /**************************************
  *

@@ -579,7 +579,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	Firebird::Reference port_write_reference;
 
 	// port function pointers (C "emulation" of virtual functions)
-	int				(*port_accept)(rem_port*, p_cnct*);
+	int				(*port_accept)(rem_port*, const p_cnct*);
 	void			(*port_disconnect)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
@@ -887,7 +887,7 @@ public:
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
-	bool		asyncReceive(UCHAR* buffer, SSHORT dataSize);
+	bool		asyncReceive(const UCHAR* buffer, SSHORT dataSize);
 };
 
 
