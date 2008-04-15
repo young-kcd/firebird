@@ -39,6 +39,7 @@ namespace Jrd {
 	class dsql_str;
 };
 
+void METD_drop_charset(Jrd::dsql_req*, const Firebird::MetaName&);
 void METD_drop_collation(Jrd::dsql_req*, const Jrd::dsql_str*);
 void METD_drop_function(Jrd::dsql_req*, const Jrd::dsql_str*);
 void METD_drop_procedure(Jrd::dsql_req*, const Jrd::dsql_str*);

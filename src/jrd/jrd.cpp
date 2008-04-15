@@ -5844,20 +5844,17 @@ void thread_db::setRequest(jrd_req* val)
 }
 
 
-void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
-	USHORT ddl_length, const UCHAR* ddl)
+void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 {
 /**************************************
  *
- *	J R D _ d d l
+ *	J R D _ a u t o c o m m i t _ d d l
  *
  **************************************
  *
  * Functional description
  *
  **************************************/
-
-	DYN_ddl(attachment, transaction, ddl_length, ddl);
 
 	// Perform an auto commit for autocommit transactions.
 	// This is slightly tricky. If the commit retain works,
@@ -5893,6 +5890,24 @@ void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
 			throw;
 		}
 	}
+}
+
+
+void JRD_ddl(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tra* transaction,
+	USHORT ddl_length, const UCHAR* ddl)
+{
+/**************************************
+ *
+ *	J R D _ d d l
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	DYN_ddl(attachment, transaction, ddl_length, ddl);
+	JRD_autocommit_ddl(tdbb, transaction);
 }
 
 

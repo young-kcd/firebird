@@ -210,6 +210,7 @@ void	JRD_print_procedure_info(Jrd::thread_db*, const char*);
 #endif
 
 
+void JRD_autocommit_ddl(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction);
 void JRD_ddl(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, Jrd::jrd_tra* transaction,
 	USHORT ddl_length, const UCHAR* ddl);
 void JRD_receive(Jrd::thread_db* tdbb, Jrd::jrd_req* request, USHORT msg_type, USHORT msg_length,

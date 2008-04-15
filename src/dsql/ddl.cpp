@@ -372,8 +372,17 @@ void DDL_execute(dsql_req* request)
 	if (string)
 		MET_dsql_cache_release(tdbb, sym_type, string->str_data);
 
-	JRD_ddl(tdbb, request->req_dbb->dbb_attachment, request->req_transaction,
-		request->req_blr_data.getCount(), request->req_blr_data.begin());
+	if (type == nod_class_node)
+	{
+		reinterpret_cast<Node*>(request->req_ddl_node->nod_arg[0])->execute(tdbb,
+			request->req_transaction);
+		JRD_autocommit_ddl(tdbb, request->req_transaction);
+	}
+	else
+	{
+		JRD_ddl(tdbb, request->req_dbb->dbb_attachment, request->req_transaction,
+			request->req_blr_data.getCount(), request->req_blr_data.begin());
+	}
 }
 
 
@@ -1400,8 +1409,11 @@ request->append_number(isc_dyn_rel_sql_protection, 1);
 				break;
 			case nod_dfl_charset:
 				name = (dsql_str*) element->nod_arg[0];
-				request->append_cstring(isc_dyn_fld_character_set_name,
-							name->str_data);
+				request->append_cstring(isc_dyn_fld_character_set_name, name->str_data);
+				break;
+			case nod_dfl_collate:
+				name = (dsql_str*) element->nod_arg[0];
+				request->append_cstring(isc_dyn_fld_collation, name->str_data);
 				break;
 
 			default:

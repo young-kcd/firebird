@@ -31,7 +31,7 @@ namespace Jrd {
 
 class dsql_nod;
 
-class Parser
+class Parser : public Firebird::PermanentStorage
 {
 private:
 	typedef int Yshort;
@@ -79,7 +79,7 @@ private:
 	};
 
 public:
-	Parser(USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
+	Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
 		const TEXT* string, USHORT length, SSHORT characterSet);
 	~Parser();
 
@@ -117,6 +117,7 @@ private:
 	YYSTYPE make_list (YYSTYPE node);
 	YYSTYPE make_parameter();
 	YYSTYPE make_node(Dsql::nod_t type, int count, ...);
+	YYSTYPE makeClassNode(Node* node);
 	YYSTYPE make_flag_node(Dsql::nod_t type, SSHORT flag, int count, ...);
 // end - defined in parse.y
 

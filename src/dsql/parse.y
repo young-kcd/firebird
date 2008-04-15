@@ -1154,6 +1154,15 @@ collation_specific_attribute_opt :
 				MAKE_constant((dsql_str*)$1, CONSTANT_STRING)); }
 		;
 
+// ALTER CHARACTER SET
+
+alter_charset_clause
+	: symbol_character_set_name SET DEFAULT COLLATION symbol_collation_name
+		{
+			$$ = makeClassNode(FB_NEW(getPool()) AlterCharSetNode(getPool(),
+				((dsql_str*) $1)->str_data, ((dsql_str*) $5)->str_data));
+		}
+	;
 
 /* CREATE DATABASE */
 
@@ -1205,6 +1214,11 @@ db_rem_desc	: db_rem_option
 db_rem_option   : db_file  
 		| DEFAULT CHARACTER SET symbol_character_set_name
 			{ $$ = make_node (nod_dfl_charset, 1, $4);} 
+		| DEFAULT CHARACTER SET symbol_character_set_name COLLATION symbol_collation_name
+			{ $$ = make_node (nod_list, 2,
+				make_node (nod_dfl_charset, 1, $4),
+				make_node (nod_dfl_collate, 1, $6));
+			} 
 		| KW_DIFFERENCE KW_FILE sql_string
 			{ $$ = make_node (nod_difference_file, 1, $3); }
 		;
@@ -2287,6 +2301,8 @@ alter_clause	: EXCEPTION alter_exception_clause
 			{ $$ = $2; }
 		| USER alter_user_clause
 			{ $$ = $2; }
+		| CHARACTER SET alter_charset_clause
+			{ $$ = $3; }
 		;
 
 alter_domain_ops	: alter_domain_op
@@ -5207,6 +5223,12 @@ dsql_nod* Parser::make_node(NOD_TYPE type, int count, ...)
 
 	va_end(ptr);
 	return node;
+}
+
+
+dsql_nod* Parser::makeClassNode(Node* node)
+{
+	return make_node(nod_class_node, 1, reinterpret_cast<dsql_nod*>(node));
 }
 
 

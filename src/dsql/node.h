@@ -38,6 +38,8 @@
 #ifndef DSQL_NODE_H
 #define DSQL_NODE_H
 
+#include "../dsql/dsql.h"
+
 // an enumeration of the possible node types in a syntax tree
 
 namespace Dsql {
@@ -366,7 +368,9 @@ enum nod_t
 	nod_exec_stmt,	// 290
 	nod_exec_stmt_inputs,
 	nod_tran_params,
-	nod_named_param
+	nod_named_param,
+	nod_dfl_collate,
+	nod_class_node
 };
 
 /* enumerations of the arguments to a node, offsets
@@ -1091,6 +1095,63 @@ enum nod_flags_vals {
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,
 	NOD_TRAN_2PC = 3
+};
+
+class Node : public Firebird::PermanentStorage
+{
+public:
+	Node(MemoryPool& pool)
+		: PermanentStorage(pool)
+	{
+	}
+
+	virtual ~Node()
+	{
+	}
+
+public:
+	virtual void pass1(dsql_req* request) = 0;
+	virtual Firebird::string print() = 0;
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
+};
+
+class DdlNode : public Node
+{
+public:
+	DdlNode(MemoryPool& pool)
+		: Node(pool)
+	{
+	}
+
+public:
+	virtual void pass1(dsql_req* aDsqlRequest)
+	{
+		dsqlRequest = aDsqlRequest;
+		dsqlRequest->req_type = REQ_DDL;
+	}
+
+protected:
+	dsql_req* dsqlRequest;
+};
+
+class AlterCharSetNode : public DdlNode
+{
+public:
+	AlterCharSetNode(MemoryPool& pool, const Firebird::MetaName& aCharSet,
+				const Firebird::MetaName& aDefaultCollation)
+		: DdlNode(pool),
+		  charSet(getPool(), aCharSet),
+		  defaultCollation(getPool(), aDefaultCollation)
+	{
+	}
+
+public:
+	virtual Firebird::string print();
+	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
+
+private:
+	Firebird::MetaName charSet;
+	Firebird::MetaName defaultCollation;
 };
 
 } // namespace

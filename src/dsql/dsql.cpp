@@ -2524,8 +2524,8 @@ static dsql_req* prepare(thread_db* tdbb,
 
 	// Parse the SQL statement.  If it croaks, return 
 
-	Parser parser(client_dialect, request->req_dbb->dbb_db_SQL_dialect, parser_version,
-		string, string_length, tdbb->getAttachment()->att_charset);
+	Parser parser(*tdbb->getDefaultPool(), client_dialect, request->req_dbb->dbb_db_SQL_dialect,
+		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
 

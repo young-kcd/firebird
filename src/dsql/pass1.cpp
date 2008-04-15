@@ -1327,6 +1327,10 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input, bool proc_flag)
 		request->req_type = REQ_DDL;
 		return input;
 
+	case nod_class_node:
+		reinterpret_cast<Node*>(input->nod_arg[0])->pass1(request);
+		return input;
+
 	case nod_def_trigger:
 	case nod_redef_trigger:
 	case nod_mod_trigger:
@@ -11644,6 +11648,13 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_exec_stmt:
 		verb = "exec_stmt";
 		break;
+
+	case nod_class_node:
+		{
+			Firebird::string s = reinterpret_cast<Node*>(node->nod_arg[0])->print();
+			trace_line("%s", s.c_str());
+		}
+		return;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);

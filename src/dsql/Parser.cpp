@@ -22,13 +22,15 @@
 
 #include "firebird.h"
 #include "../dsql/Parser.h"
+#include "../jrd/jrd.h"
 
 using namespace Jrd;
 
 
-Parser::Parser(USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
+Parser::Parser(MemoryPool& pool, USHORT aClientDialect, USHORT aDbDialect, USHORT aParserVersion,
 			const TEXT* string, USHORT length, SSHORT characterSet)
-	: client_dialect(aClientDialect),
+	: PermanentStorage(pool),
+	  client_dialect(aClientDialect),
 	  db_dialect(aDbDialect),
 	  parser_version(aParserVersion),
 	  stmt_ambiguous(false)
