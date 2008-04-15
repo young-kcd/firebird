@@ -11633,6 +11633,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "mod_role";
 		break;
 
+	case nod_auto_trans:
+		verb = "auto_trans";
+		break;
+
 	case nod_add_user:
 		verb = "add_user";
 		break;
