@@ -357,7 +357,7 @@ static bool INET_initialized = false;
 static bool INET_shutting_down = false;
 static SLCT INET_select = { 0, 0, 0 };
 static int INET_max_clients;
-static rem_port *inet_async_receive = 0;
+static rem_port* inet_async_receive = NULL;
 
 
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;

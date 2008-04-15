@@ -5439,7 +5439,7 @@ int Parser::yylexAux()
 			continue;
 		}
 
-		if ((c == '-') && (lex.ptr < lex.end) && (*lex.ptr == '-'))
+		if (c == '-' && lex.ptr < lex.end && *lex.ptr == '-')
 		{
 			/* single-line */
 			
@@ -5455,7 +5455,7 @@ int Parser::yylexAux()
 				return -1;
 			continue;
 		}
-		else if ((c == '/') && (lex.ptr < lex.end) && (*lex.ptr == '*'))
+		else if (c == '/' && lex.ptr < lex.end && *lex.ptr == '*')
 		{
 			/* multi-line */
 			
@@ -5637,7 +5637,7 @@ int Parser::yylexAux()
 	// The resulting value is stored in a string descriptor and
 	// returned to the parser as a string.  This can be stored
 	// in a character or binary item.
-	if ((c == 'x' || c == 'X') && (lex.ptr < lex.end) && *lex.ptr == '\'')
+	if ((c == 'x' || c == 'X') && lex.ptr < lex.end && *lex.ptr == '\'')
 	{
 		bool hexerror = false;
 
@@ -5741,7 +5741,7 @@ int Parser::yylexAux()
 	// to an integer, and the result returned to the caller.  The
 	// token is identified as a NUMBER if it's a 32-bit or less
 	// value, or a NUMBER64INT if it requires a 64-bit number.
-	if ((c == '0') && (lex.ptr + 1 < lex.end) && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
+	if (c == '0' && lex.ptr + 1 < lex.end && (*lex.ptr == 'x' || *lex.ptr == 'X') &&
 		(classes(lex.ptr[1]) & CHR_HEX))
 	{
 		bool hexerror = false;
