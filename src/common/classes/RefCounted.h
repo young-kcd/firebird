@@ -100,6 +100,14 @@ namespace Firebird
 			}
 		}
 
+		RefPtr(const RefPtr& r) : ptr(r.ptr)
+		{
+			if (ptr)
+			{
+				ptr->addRef();
+			}
+		}
+
 		~RefPtr()
 		{
 			if (ptr)
@@ -113,9 +121,9 @@ namespace Firebird
 			return assign(p);
 		}
 
-		T* operator=(RefPtr& p)
+		T* operator=(RefPtr& r)
 		{
-			return assign(p.ptr);
+			return assign(r.ptr);
 		}
 
 		operator T*() 
@@ -137,6 +145,26 @@ namespace Firebird
 		{
 			return ptr;
 		}
+
+		operator bool() const
+		{
+			return ptr ? true : false;
+		}			
+
+		bool operator !() const
+		{
+			return ptr ? false : true;
+		}			
+
+		bool operator ==(const RefPtr& r) const
+		{
+			return ptr == r.ptr;
+		}			
+
+		bool operator !=(const RefPtr& r) const
+		{
+			return ptr != r.ptr;
+		}			
 
 	private:
 		T* assign(T* const p)
