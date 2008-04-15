@@ -118,6 +118,10 @@
 #define IMPLEMENTATION  isc_info_db_impl_i386 /* 60 */
 #endif /* i386 */
 
+#ifdef ARM
+#define IMPLEMENTATION  isc_info_db_impl_linux_arm
+#endif /* ARM */
+
 #ifdef sparc
 #define IMPLEMENTATION  isc_info_db_impl_linux_sparc /* 65  */
 #define RISC_ALIGNMENT
