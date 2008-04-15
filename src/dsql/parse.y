@@ -2060,22 +2060,26 @@ alter_view_clause	: symbol_view_name column_parens_opt AS begin_string select_ex
 /* these rules will capture the input string for storage in metadata */
 
 begin_string	: 
-			{ lex.beginning = lex_position(); }
+			{ lex.beginnings.push(lex_position()); }
 		;
 /*
 end_string	:
-			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
-				   (lex_position() == lex.end) ?
-				   lex_position() - lex.beginning : lex.last_token - lex.beginning);}
+			{ 
+				const TEXT* start = lex.beginnings.pop();
+				$$ = (dsql_nod*) MAKE_string(start, 
+					(lex_position() == lex.end) ? lex_position() - start : lex.last_token - start);
+			}
 		;
 */
 begin_trigger	: 
-			{ lex.beginning = lex.last_token; }
+			{ lex.beginnings.push(lex.last_token); }
 		;
 
 end_trigger	:
-			{ $$ = (dsql_nod*) MAKE_string(lex.beginning,
-					lex_position() - lex.beginning); }
+			{ 
+				const TEXT* start = lex.beginnings.pop();
+				$$ = (dsql_nod*) MAKE_string(start, lex_position() - start); 
+			}
 		;
 
 

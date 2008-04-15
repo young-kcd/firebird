@@ -26,6 +26,7 @@
 #include "../jrd/common.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../common/classes/stack.h"
 
 namespace Jrd {
 
@@ -65,7 +66,12 @@ private:
 		int dsql_debug;
 	
 		// Actual lexer state begins from here
-		const TEXT* beginning;
+
+		// hvlad: if at some day 16 levels of nesting would be not enough
+		// then someone must add LexerState constructor and pass memory 
+		// pool into Stack's constructor or change Capacity value in template 
+		// instantiation below
+		Firebird::Stack<const TEXT*> beginnings;
 		const TEXT* ptr;
 		const TEXT* end;
 		const TEXT* last_token;
