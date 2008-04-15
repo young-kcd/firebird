@@ -100,7 +100,7 @@ namespace Firebird
 			}
 		}
 
-		RefPtr(const RefPtr& r) : ptr(r.ptr)
+		RefPtr(RefPtr& r) : ptr(r.ptr)
 		{
 			if (ptr)
 			{
