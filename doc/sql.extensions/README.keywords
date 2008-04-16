@@ -192,6 +192,7 @@ Firebird 2.5:
   Added as non-reserved words:
 
     AUTONOMOUS *
+    BIN_NOT *
     CHAR_TO_UUID *
     FIRSTNAME *
     LASTNAME *
