@@ -1101,37 +1101,66 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		return;
 
 	case nod_exec_stmt:
+		{ // scope
+		const bool old_syntax = 
+			(node->nod_arg[e_exec_stmt_inputs] == NULL) &&
+			(node->nod_arg[e_exec_stmt_data_src]->nod_type == nod_null) &&
+			(node->nod_arg[e_exec_stmt_user]->nod_type == nod_null) &&
+			(node->nod_arg[e_exec_stmt_pwd]->nod_type == nod_null) &&
+			(node->nod_arg[e_exec_stmt_tran]->nod_flags == NOD_TRAN_COMMON);
+
+		const bool old_exec_into = old_syntax && node->nod_arg[e_exec_stmt_outputs];
+
 		if (node->nod_arg[e_exec_stmt_proc_block]) {
 			stuff(request, blr_label);
 			stuff(request, (int)(IPTR) node->nod_arg[e_exec_stmt_label]->nod_arg[e_label_number]);
 		}
-		stuff(request, blr_exec_stmt);
+
+		if (old_syntax) {
+			if (old_exec_into) {
+				stuff(request, blr_exec_into);
+			}
+			else {
+				stuff(request, blr_exec_sql);
+			}
+		}
+		else {
+			stuff(request, blr_exec_stmt);
+		}
 
 		// counts of input and output parameters
-		temp = node->nod_arg[e_exec_stmt_inputs];
-		stuff_word(request, temp ? temp->nod_count : 0);
-
-		temp = node->nod_arg[e_exec_stmt_outputs];
-		stuff_word(request, temp ? temp->nod_count : 0);
+		if (!old_syntax)
+		{
+			temp = node->nod_arg[e_exec_stmt_inputs];
+			stuff_word(request, temp ? temp->nod_count : 0);
+		}
+		if (!old_syntax || old_exec_into)
+		{
+			temp = node->nod_arg[e_exec_stmt_outputs];
+			stuff_word(request, temp->nod_count);
+		}
 
 		// query expression
 		GEN_expr(request, node->nod_arg[e_exec_stmt_sql]);
 
-		// external data source, user and password
-		GEN_expr(request, node->nod_arg[e_exec_stmt_data_src]);
-		GEN_expr(request, node->nod_arg[e_exec_stmt_user]);
-		GEN_expr(request, node->nod_arg[e_exec_stmt_pwd]);
+		if (!old_syntax)
+		{
+			// external data source, user and password
+			GEN_expr(request, node->nod_arg[e_exec_stmt_data_src]);
+			GEN_expr(request, node->nod_arg[e_exec_stmt_user]);
+			GEN_expr(request, node->nod_arg[e_exec_stmt_pwd]);
 
-		// statement's transaction behavior
-		stuff(request, (UCHAR) node->nod_arg[e_exec_stmt_tran]->nod_flags);
-		stuff(request, 0); // transaction parameters equal to current transaction 
+			// statement's transaction behavior
+			stuff(request, (UCHAR) node->nod_arg[e_exec_stmt_tran]->nod_flags);
+			stuff(request, 0); // transaction parameters equal to current transaction 
+		}
 
 		// singleton flag and proc block body
 		if (node->nod_arg[e_exec_stmt_proc_block]) {
 			stuff(request, 0);		// non-singleton
 			GEN_statement(request, node->nod_arg[e_exec_stmt_proc_block]);
 		}
-		else {
+		else if (!old_syntax || old_exec_into) {
 			stuff(request, 1);		// singleton
 		}
 
@@ -1164,6 +1193,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 				GEN_expr(request, *ptr);
 			}
 		}
+		} // scope of case nod_exec_stmt
 		return;
 	
 	case nod_return:
