@@ -130,7 +130,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 
 	// Create a pool for DYN to operate in.  It will be released when
 	// the routine exits.
-	MemoryPool* tempPool = dbb->createPool();
+	MemoryPool* const tempPool = dbb->createPool();
 	Jrd::ContextPoolHolder context(tdbb, tempPool);
 
 	try {
@@ -160,8 +160,12 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 			}
 		}
 
+		dbb->deletePool(tempPool);
+
 		ERR_punt();
 	}
+
+	dbb->deletePool(tempPool);
 }
 
 
