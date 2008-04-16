@@ -3719,10 +3719,10 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			memmove(rpb, p, sizeof(record_param));
 			p += sizeof(record_param);
 
-			if (!rpb->rpb_record) {
+			if (rec)
+			{
 				rpb->rpb_record = rec;
 			}
-			fb_assert(rpb->rpb_record == rec);
 		}
 		delete[] tmp;
 
