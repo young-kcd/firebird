@@ -299,7 +299,7 @@ static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
 static void		select_port(rem_port*, SLCT*, RemPortPtr&);
-static rem_port*        select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length);
+static void		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
@@ -2040,7 +2040,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	return main_port;
 }
 
-static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length)
+static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
 {
 /**************************************
  *
@@ -2059,7 +2059,6 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 	
 	for (;;) 
 	{
-		RemPortPtr port;
 		select_port(main_port, &INET_select, port);
 		if (port == main_port) 
 		{
@@ -2079,7 +2078,7 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 				{
 					*length = 0;
 				}
-				return port;
+				return;
 			}
 			
 			continue;
@@ -2092,7 +2091,7 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 				if (port->port_flags & PORT_async ||
 					port->port_protocol < PROTOCOL_VERSION8) continue;
 				*length = 0;
-				return port;
+				return;
 			}
 
 			if (!packet_receive(port, buffer, bufsize, length))
@@ -2102,11 +2101,12 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 				}
 				*length = 0;
 			}
-			return port;
+			return;
 		}
 		if (!select_wait(main_port, &INET_select))
 		{
-			return NULL;
+			port = NULL;
+			return;
 		}
 	}
 }

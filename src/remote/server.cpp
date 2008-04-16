@@ -462,7 +462,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  *
  **************************************/
 	SERVER_REQ request = NULL;
-	rem_port* port = NULL;		// Was volatile PORT port = NULL;
+	RemPortPtr port;		// Was volatile PORT port = NULL;
 
 	++cntServers;
 
@@ -494,7 +494,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 				SSHORT dataSize;
 				// We have a request block - now get some information to stick into it
-				if (!(port = main_port->select_multi(buffer, bufSize, &dataSize)))
+				main_port->select_multi(buffer, bufSize, &dataSize, port);
+				if (!port)
 				{
 					if (!shutting_down) 
 					{
@@ -506,6 +507,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				{
 					if (port->asyncReceive(buffer, dataSize))
 					{
+						port = 0;
 						continue;
 					}
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
@@ -587,7 +589,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			/* If we got as far as having a port allocated before the error, disconnect it
 			 * gracefully.
 			 */
-			if (port != NULL)
+			if (port)
 			{
 /*
 #if defined(DEV_BUILD) && defined(DEBUG)

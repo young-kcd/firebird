@@ -658,9 +658,9 @@ rem_port* rem_port::receive(PACKET* pckt)
 	return (*this->port_receive_packet)(this, pckt);
 }
 
-rem_port* rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length)
+void rem_port::select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
 {
-	return (*this->port_select_multi)(this, buffer, bufsize, length);
+	(*this->port_select_multi)(this, buffer, bufsize, length, port);
 }
 
 XDR_INT rem_port::send(PACKET* pckt)
