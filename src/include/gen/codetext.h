@@ -783,6 +783,7 @@ static const struct {
 	{"dsql_cte_nested_with", 336397234},
 	{"dsql_col_more_than_once_using", 336397235},
 	{"dsql_unsupp_feature_dialect", 336397236},
+	{"dsql_cte_not_used", 336397237},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},
