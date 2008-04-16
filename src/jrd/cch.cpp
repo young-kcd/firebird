@@ -726,12 +726,11 @@ pag* CCH_fetch(
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (window->win_page == HEADER_PAGE_NUMBER) {
+	if (window->win_page == HEADER_PAGE_NUMBER) 
 		tdbb->getDatabase()->dbb_backup_manager->lock_shared_database(tdbb, true);
-	}
 	
 	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
-	
+
 	// FETCH_LOCK will return 0, 1, -1 or -2
 	
 	const SSHORT fetch_lock_return =
@@ -934,87 +933,35 @@ void CCH_fetch_page(
    persistant (more than 3 times) error out of the routine by
    calling CCH_unwind, and eventually punting out. */
    
+	{ // scope
 
-	dbb->dbb_backup_manager->lock_shared_database(tdbb, true); 
-	bool database_locked = true;
-	const int bak_state = dbb->dbb_backup_manager->get_state();
-	fb_assert(bak_state != nbak_state_unknown);
+		BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
 
-	ULONG diff_page = 0;
-	if (!isTempPage && bak_state != nbak_state_normal) {
-		dbb->dbb_backup_manager->lock_alloc(tdbb, true);
-		diff_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
-		dbb->dbb_backup_manager->unlock_alloc(tdbb);
-		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page));
-	}
+		const int bak_state = dbb->dbb_backup_manager->get_state();
+		fb_assert(bak_state != nbak_state_unknown);
 
-	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
-	// then we maintain actual page in difference file. Always read it from there.
-	if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
-	{
-		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
-			bdb->bdb_page, bak_state, diff_page));
-		// Read page from disk as normal
-		while (!PIO_read(file, bdb, page, status)) {
-			if (isTempPage || !read_shadow) {
-				break;
-			}
-
-			if (!CCH_rollover_to_shadow(dbb, file, false)) {
-				PAGE_LOCK_RELEASE(bdb->bdb_lock);
-				if (database_locked) {
-					dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-					database_locked = false;
-				}
-
-				CCH_unwind(tdbb, true);
-			}
-			if (file != pageSpace->file) {
-				file = pageSpace->file;
-			}
-			else {
-				if (retryCount++ == 3) {
-					fprintf(stderr,
-							   "IO error loop Unwind to avoid a hang\n");
-					PAGE_LOCK_RELEASE(bdb->bdb_lock);
-					if (database_locked) {
-						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-						database_locked = false;
-					}
-					CCH_unwind(tdbb, true);
-				}
-			}
+		ULONG diff_page = 0;
+		if (!isTempPage && bak_state != nbak_state_normal) {
+			dbb->dbb_backup_manager->lock_alloc(tdbb, true);
+			diff_page = dbb->dbb_backup_manager->get_page_index(tdbb, bdb->bdb_page.getPageNum());
+			dbb->dbb_backup_manager->unlock_alloc(tdbb);
+			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d", bdb->bdb_page, bak_state, diff_page));
 		}
-	}
-	else
-	{
-		NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
-			bdb->bdb_page, bak_state, diff_page));
-		if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
-			PAGE_LOCK_RELEASE(bdb->bdb_lock);
-			if (database_locked) {
-				dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-				database_locked = false;
-			}
-			CCH_unwind(tdbb, true);
-		}
-		if (page->pag_type == pag_undefined) {
-			// Page was marked as allocated inside the difference file, but not really used
-			// this is very rare, but possible case (after certain errors). 
-			// Read (or re-read) page from database
-			NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK", 
+
+		// In merge mode, if we are reading past beyond old end of file and page is in .delta file
+		// then we maintain actual page in difference file. Always read it from there.
+		if (isTempPage || bak_state == nbak_state_normal || !diff_page) 
+		{
+			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DISK",
 				bdb->bdb_page, bak_state, diff_page));
+			// Read page from disk as normal
 			while (!PIO_read(file, bdb, page, status)) {
-				if (!read_shadow) {
+				if (isTempPage || !read_shadow) {
 					break;
 				}
 
 				if (!CCH_rollover_to_shadow(dbb, file, false)) {
 					PAGE_LOCK_RELEASE(bdb->bdb_lock);
-					if (database_locked) {
-						dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-						database_locked = false;
-					}
 					CCH_unwind(tdbb, true);
 				}
 				if (file != pageSpace->file) {
@@ -1025,21 +972,49 @@ void CCH_fetch_page(
 						fprintf(stderr,
 								   "IO error loop Unwind to avoid a hang\n");
 						PAGE_LOCK_RELEASE(bdb->bdb_lock);
-						if (database_locked) {
-							dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-							database_locked = false;
-						}
 						CCH_unwind(tdbb, true);
 					}
 				}
 			}
 		}
-	}
-	
-	if (database_locked) {
-		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-		database_locked = false;
-	}
+		else
+		{
+			NBAK_TRACE(("Reading page %d, state=%d, diff page=%d from DIFFERENCE", 
+				bdb->bdb_page, bak_state, diff_page));
+			if (!dbb->dbb_backup_manager->read_difference(tdbb, diff_page, page)) {
+				PAGE_LOCK_RELEASE(bdb->bdb_lock);
+				CCH_unwind(tdbb, true);
+			}
+			if (page->pag_type == pag_undefined) {
+				// Page was marked as allocated inside the difference file, but not really used
+				// this is very rare, but possible case (after certain errors). 
+				// Read (or re-read) page from database
+				NBAK_TRACE(("Re-reading page %d, state=%d, diff page=%d from DISK", 
+					bdb->bdb_page, bak_state, diff_page));
+				while (!PIO_read(file, bdb, page, status)) {
+					if (!read_shadow) {
+						break;
+					}
+
+					if (!CCH_rollover_to_shadow(dbb, file, false)) {
+						PAGE_LOCK_RELEASE(bdb->bdb_lock);
+						CCH_unwind(tdbb, true);
+					}
+					if (file != pageSpace->file) {
+						file = pageSpace->file;
+					}
+					else {
+						if (retryCount++ == 3) {
+							fprintf(stderr,
+									   "IO error loop Unwind to avoid a hang\n");
+							PAGE_LOCK_RELEASE(bdb->bdb_lock);
+							CCH_unwind(tdbb, true);
+						}
+					}
+				}
+			}
+		}
+	} // scope
 
 #ifndef NO_CHECKSUM
 	if (((compute_checksum == 1)
@@ -2154,12 +2129,13 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 		const bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);		
 
-		if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
+		if (bdb->bdb_page == HEADER_PAGE_NUMBER)
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-		}
 
-		if (marked) {
-			if (bdb->bdb_flags & BDB_dirty) {
+		if (marked) 
+		{
+			if (bdb->bdb_flags & BDB_dirty) 
+			{
 				fb_assert(bdb->bdb_backup_lock_owner == BackupManager::attachment_lock_handle(tdbb));
 				const SLONG database_lock_handle = BackupManager::database_lock_handle(tdbb);
 				dbb->dbb_backup_manager->change_dirty_page_owner(tdbb, 

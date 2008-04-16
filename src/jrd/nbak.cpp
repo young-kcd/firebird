@@ -244,11 +244,10 @@ void BackupManager::begin_backup(thread_db* tdbb)
 	WIN window(HEADER_PAGE_NUMBER);
 
 	bool header_locked = false;
-	bool database_locked = false;
 
-	try {
-		lock_clean_database(tdbb, true, &window);
-		database_locked = true;
+	try 
+	{
+		CleanDatabaseHolder cdbHolder(tdbb, this, true, &window);
 		Ods::header_page* header = (Ods::header_page*) window.win_buffer;
 		header_locked = true;
 		NBAK_TRACE(("header locked"));
@@ -257,8 +256,6 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		if (backup_state != nbak_state_normal) {
 			NBAK_TRACE(("end backup - invalid state %d", backup_state));
 			CCH_RELEASE(tdbb, &window);
-			unlock_clean_database(tdbb);
-
 			return;
 		}
 
@@ -311,17 +308,13 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		backup_state = newState;
 		current_scn = adjusted_scn;
 
-		database_locked = false;
-		unlock_clean_database(tdbb);
-
 		// All changes go to the difference file now
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Firebird::Exception&) 
+	{
 		backup_state = nbak_state_unknown;
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
-		if (database_locked)
-			unlock_clean_database(tdbb);
 		throw;
 	}
 }
@@ -389,7 +382,6 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	WIN window(HEADER_PAGE_NUMBER);
 	Ods::header_page* header;
 
-	bool database_locked = false;
 	bool header_locked = false;
 
 	ULONG adjusted_scn; // We use this value to prevent race conditions.
@@ -397,25 +389,28 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 						// for some instants and anything is possible at
 						// that times.
 
-	try {
+	try 
+	{
 		// Check state under PR lock of backup state for speed
-		lock_shared_database(tdbb, true);
-		// Nobody is doing end_backup but database isn't in merge state. 
-		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) {
-			NBAK_TRACE(("invalid state %d", backup_state));
-			endLock.unlock(tdbb, LCK_write);
-			unlock_shared_database(tdbb);
-			return;
+		{ // scope
+			SharedDatabaseHolder sdbHolder(tdbb, this);
+			// Nobody is doing end_backup but database isn't in merge state. 
+			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) 
+			{
+				NBAK_TRACE(("invalid state %d", backup_state));
+				endLock.unlock(tdbb, LCK_write);
+				return;
+			}
 		}
-		unlock_shared_database(tdbb);
-		// Here backup state can be changed. Need to check it again after lock
-		lock_clean_database(tdbb, true, &window);
-		database_locked = true;
 
-		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) {
+		// Here backup state can be changed. Need to check it again after lock
+
+		CleanDatabaseHolder cdbHolder(tdbb, this, true, &window);
+
+		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) 
+		{
 			NBAK_TRACE(("invalid state %d", backup_state));
 			endLock.unlock(tdbb, LCK_write);
-			unlock_clean_database(tdbb);
 			return;
 		}
 		header = (Ods::header_page*) window.win_buffer;
@@ -436,18 +431,11 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		CCH_RELEASE(tdbb, &window);
 		header_locked = false;
 		NBAK_TRACE(("Setting state %d in header page is over", backup_state));
-
-		if (database_locked) {
-			unlock_clean_database(tdbb);
-			database_locked = false;
-		}
 	}
 	catch (const Firebird::Exception&) {
 		backup_state = nbak_state_unknown;
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
-		if (database_locked)
-			unlock_clean_database(tdbb);
 		endLock.unlock(tdbb, LCK_write);
 		throw;
 	}
@@ -457,11 +445,13 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
 	// Release write state lock and get read lock. 
 	// Merge process should not inhibit normal operations.
-	lock_shared_database(tdbb, true);
-	database_locked = true;
-	NBAK_TRACE(("database locked to merge"));
 
-	try {
+	try 
+	{
+		NBAK_TRACE(("database locked to merge"));
+
+		SharedDatabaseHolder sdbHolder(tdbb, this);
+
 		NBAK_TRACE(("Merge. State=%d, current_scn=%d, adjusted_scn=%d",
 			backup_state, current_scn, adjusted_scn));	
 
@@ -484,16 +474,10 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 			} while (all.getNext());
 		}
 
-		if (database_locked)
-			unlock_shared_database(tdbb);
-		database_locked = false;
-
 		NBAK_TRACE(("Merging is over. Database unlocked"));
 	}
 	catch (const Firebird::Exception&) {
 		endLock.unlock(tdbb, LCK_write);
-		if (database_locked)
-			unlock_shared_database(tdbb);
 		throw;
 	}
 
@@ -502,8 +486,9 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 	try {
 		window.win_page = HEADER_PAGE;
 		window.win_flags = 0;
-		lock_clean_database(tdbb, true, &window);
-		database_locked = true;
+
+		CleanDatabaseHolder cdbHolder(tdbb, this, true, &window);
+
 		header = (Ods::header_page*) window.win_buffer;
 		header_locked = true;
 
@@ -533,8 +518,6 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		}
 		unlink(diff_name.c_str());
 
-		if (database_locked)
-			unlock_clean_database(tdbb);
 		NBAK_TRACE(("backup is over"));
 		endLock.unlock(tdbb, LCK_write);
 	}
@@ -543,8 +526,6 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 		endLock.unlock(tdbb, LCK_write);
 		if (header_locked)
 			CCH_RELEASE(tdbb, &window);
-		if (database_locked)
-			unlock_clean_database(tdbb);
 		throw;
 	}
 

@@ -177,6 +177,25 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
 
 class BackupManager {
 public:
+	class SharedDatabaseHolder
+	{
+	public:
+		explicit SharedDatabaseHolder(thread_db* _tdbb, BackupManager* bm)
+			: backupManager(bm), tdbb(_tdbb)
+		{
+			backupManager->lock_shared_database(tdbb, true);
+		}
+		~SharedDatabaseHolder()
+		{
+			backupManager->unlock_shared_database(tdbb);
+		}
+	private:
+		SharedDatabaseHolder(const SharedDatabaseHolder&);
+
+		BackupManager* backupManager;
+		thread_db* tdbb;
+	};
+
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
@@ -212,21 +231,14 @@ public:
 	// does nothing (so it can be used for recovery on database startup). 
 	void end_backup(thread_db* tdbb, bool recover);
 	
-	// Function for force all connections to flush their caches
-	// and prevent them from marking new dirty pages
-	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
-	void unlock_clean_database(thread_db* tdbb);
-
 	void lock_shared_database(thread_db* tdbb, SSHORT wait);
 	void unlock_shared_database(thread_db* tdbb);
 
 	// Prevent allocation table from modification by other threads/processes
-	// You may or may not call unlock function in case this functions fail
 	void lock_alloc(thread_db* tdbb, SSHORT wait);
-	void lock_alloc_write(thread_db* tdbb, SSHORT wait);
-
-	// Remove our interest in static allocation table
 	void unlock_alloc(thread_db* tdbb);
+
+	void lock_alloc_write(thread_db* tdbb, SSHORT wait);
 	void unlock_alloc_write(thread_db* tdbb);
 
 	// Return page index in difference file that can be used in 
@@ -286,6 +298,31 @@ private:
 	NBackupState* database_lock;
 
 	void generate_filename();
+
+	// Function for force all connections to flush their caches
+	// and prevent them from marking new dirty pages
+	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
+	void unlock_clean_database(thread_db* tdbb);
+
+	class CleanDatabaseHolder
+	{
+	public:
+		explicit CleanDatabaseHolder(thread_db* _tdbb, BackupManager* bm, 
+			SSHORT wait, Jrd::WIN* window)
+			: backupManager(bm), tdbb(_tdbb)
+		{
+			backupManager->lock_clean_database(tdbb, wait, window);
+		}
+		~CleanDatabaseHolder()
+		{
+			backupManager->unlock_clean_database(tdbb);
+		}
+	private:
+		CleanDatabaseHolder(const CleanDatabaseHolder&);
+
+		BackupManager* backupManager;
+		thread_db* tdbb;
+	};
 };
 
 } //namespace Jrd

@@ -1078,8 +1078,8 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	case 2:
 		return true;
 	case 3:
-		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
-		try {
+		{
+			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(isc_no_meta_update,
@@ -1087,11 +1087,6 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-		}
-		catch (const Firebird::Exception&) {
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-			throw;
 		}
 
 		return false;
@@ -1130,20 +1125,17 @@ static bool delete_difference(	thread_db*	tdbb,
 	case 2:
 		return true;
 	case 3:
-		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
-		try {
+		{
+			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
+
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		}
-		catch (const Firebird::Exception&) {
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-			throw;
-		}
+
 		return false;
 	}
 

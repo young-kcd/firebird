@@ -456,23 +456,15 @@ static void check_backup_state(thread_db* tdbb)
 {
 	Database* dbb = tdbb->getDatabase();
 
-	dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
+	BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
 
-	try {
-		if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
-		{
-			ERR_post(isc_bad_shutdown_mode,
-					 isc_arg_string,
-					 ERR_cstring(dbb->dbb_filename.c_str()),
-					 0);
-		}
+	if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
+	{
+		ERR_post(isc_bad_shutdown_mode,
+				 isc_arg_string,
+				 ERR_cstring(dbb->dbb_filename.c_str()),
+				 0);
 	}
-	catch (const Firebird::Exception&) {
-		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-		throw;
-	}
-
-	dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 }
 
 
