@@ -1100,7 +1100,7 @@ enum nod_flags_vals {
 class Node : public Firebird::PermanentStorage
 {
 public:
-	Node(MemoryPool& pool)
+	explicit Node(MemoryPool& pool)
 		: PermanentStorage(pool)
 	{
 	}
@@ -1111,14 +1111,14 @@ public:
 
 public:
 	virtual void pass1(dsql_req* request) = 0;
-	virtual Firebird::string print() = 0;
+	virtual Firebird::string print() const = 0;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
 };
 
 class DdlNode : public Node
 {
 public:
-	DdlNode(MemoryPool& pool)
+	explicit DdlNode(MemoryPool& pool)
 		: Node(pool),
 		  dsqlRequest(NULL)
 	{
@@ -1147,7 +1147,7 @@ public:
 	}
 
 public:
-	virtual Firebird::string print();
+	virtual Firebird::string print() const;
 	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
 
 private:

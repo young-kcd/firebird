@@ -153,7 +153,7 @@ namespace Firebird
 
 		bool operator !() const
 		{
-			return ptr ? false : true;
+			return !ptr;
 		}			
 
 		bool operator ==(const RefPtr& r) const

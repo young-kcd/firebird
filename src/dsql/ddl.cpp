@@ -6270,12 +6270,12 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 			if (parameter->nod_type == nod_def_field)
 			{
 				dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
-				dsql_nod** rest = ptr;
+				const dsql_nod* const* rest = ptr;
 				while (++rest != end)
 				{
 					if ((*rest)->nod_type == nod_def_field)
 					{
-						dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
+						const dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
 						if (field->fld_name == rest_field->fld_name)
 						{
 							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,

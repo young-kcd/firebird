@@ -3883,7 +3883,7 @@ static void modify_err_punt(thread_db* tdbb,
 //-------------------------
 
 
-Firebird::string AlterCharSetNode::print()
+Firebird::string AlterCharSetNode::print() const
 {
 	Firebird::string s;
 	s.printf(
