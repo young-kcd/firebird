@@ -48,7 +48,7 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 	try
 	{
-		Database* dbb = globalRWLock->cached_lock->lck_dbb;
+		Database* dbb = globalRWLock->getDatabase();
 
 		Database::SyncGuard dsGuard(dbb, true);
 
@@ -68,11 +68,9 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 						   lck_owner_t default_logical_lock_owner, bool lock_caching)
 	: PermanentStorage(p), internal_blocking(0), external_blocking(false), 
 	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner), 
-	  lockCaching(lock_caching), readers(p)
+	  lockCaching(lock_caching), readers(p), dbb(tdbb->getDatabase())
 {
 	SET_TDBB(tdbb);
-
-	Database* dbb = tdbb->getDatabase();
 
 	cached_lock = FB_NEW_RPT(getPool(), lockLen) Lock();
 	cached_lock->lck_type = static_cast<lck_t>(lckType);

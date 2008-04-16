@@ -124,6 +124,11 @@ public:
 	// Returns true if lock was released
 	bool tryReleaseLock(thread_db* tdbb);
 
+	Database* getDatabase() const
+	{
+		return dbb;
+	}
+
 protected:
 	Lock* cached_lock;
 	// Flag to indicate that somebody is waiting via lock manager.
@@ -148,6 +153,8 @@ private:
 	// true - unlock keep cached lock and release by AST. 
 	// false - unlock releases cached lock if possible
 	bool	lockCaching;
+
+	Database* dbb;
 
 	Firebird::SortedArray<ObjectOwnerData, Firebird::EmptyStorage<ObjectOwnerData>, 
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
