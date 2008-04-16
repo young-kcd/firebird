@@ -298,7 +298,7 @@ static bool_t	packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
-static rem_port*		select_port(rem_port*, SLCT *);
+static void		select_port(rem_port*, SLCT*, RemPortPtr&);
 static rem_port*        select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
@@ -2059,7 +2059,8 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 	
 	for (;;) 
 	{
-		rem_port* port = select_port(main_port, &INET_select);
+		RemPortPtr port;
+		select_port(main_port, &INET_select, port);
 		if (port == main_port) 
 		{
 			if (INET_shutting_down)
@@ -2093,7 +2094,7 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 				*length = 0;
 				return port;
 			}
-			
+
 			if (!packet_receive(port, buffer, bufsize, length))
 			{
 				if (port->port_flags & PORT_disconnect) {
@@ -2150,7 +2151,7 @@ static rem_port* select_accept( rem_port* main_port)
 	return 0;
 }
 
-static rem_port* select_port( rem_port* main_port, SLCT * selct)
+static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
 {
 /**************************************
  *
@@ -2170,7 +2171,7 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 
 	Firebird::MutexLockGuard guard(port_mutex);
 
-	for (rem_port* port = main_port; port; port = port->port_next) 
+	for (port = main_port; port; port = port->port_next) 
 	{
 #ifdef WIN_NT
 		const SOCKET n = (SOCKET) port->port_handle;
@@ -2187,14 +2188,12 @@ static rem_port* select_port( rem_port* main_port, SLCT * selct)
 			port->port_dummy_timeout = port->port_dummy_packet_interval;
 			FD_CLR(n, &selct->slct_fdset);
 			--selct->slct_count;
-			return port;
+			return;
 		}
 		if (port->port_dummy_timeout < 0) {
-			return port;
+			return;
 		}
 	}
-
-	return NULL;
 }
 
 static int select_wait( rem_port* main_port, SLCT * selct)

@@ -69,7 +69,7 @@ typedef struct server_req_t : public Firebird::GlobalStorage
 {
 	server_req_t*	req_next;
 	server_req_t*	req_chain;
-	Firebird::RefPtr<rem_port> req_port;
+	RemPortPtr		req_port;
 	PACKET			req_send;
 	PACKET			req_receive;
 public:

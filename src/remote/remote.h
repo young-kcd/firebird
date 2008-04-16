@@ -562,6 +562,8 @@ const USHORT PORT_server		= 0x0200;	// Server (not client) port
 typedef void (*t_event_ast)(rem_port*);
 typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
 
+typedef Firebird::RefPtr<rem_port> RemPortPtr;
+
 struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 {
 #ifdef DEV_BUILD
