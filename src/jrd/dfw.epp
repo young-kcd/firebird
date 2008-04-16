@@ -1724,12 +1724,20 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
-					SelectivityList selectivity(*tdbb->getDefaultPool());
-					const USHORT id = IDX.RDB$INDEX_ID - 1;
-					IDX_statistics(tdbb, relation, id, selectivity);
-					DFW_update_index(work->dfw_name.c_str(), id, selectivity);
+					// no need to recalculate statistics for base instance of GTT 
+					RelationPages* relPages = relation->getPages(tdbb, -1, false);
+					const bool isTempInstance = relation->isTemporary() && 
+						relPages && (relPages->rel_instance_id != 0);
+					
+					if (isTempInstance || !relation->isTemporary())
+					{
+						SelectivityList selectivity(*tdbb->getDefaultPool());
+						const USHORT id = IDX.RDB$INDEX_ID - 1;
+						IDX_statistics(tdbb, relation, id, selectivity);
+						DFW_update_index(work->dfw_name.c_str(), id, selectivity);
 
-					EXE_unwind(tdbb, request);
+						EXE_unwind(tdbb, request);
+					}
 					return false;
 				}
 				if (IDX.RDB$INDEX_ID)
