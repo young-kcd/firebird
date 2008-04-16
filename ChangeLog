@@ -1,3 +1,112 @@
+2008-04-16 18:02  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.276):
+
+	Misc
+
+2008-04-16 17:40  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.123):
+
+	Fixed CORE-1840.
+
+2008-04-16 17:28  asfernandes
+
+	* firebird2/src/dsql/dsql.cpp (1.242):
+
+	Fixed the bug reported by Claudio - crash when getting plan of DDL
+	requests
+
+2008-04-16 16:19  hvlad
+
+	* firebird2/src/remote/: inet.cpp (1.230), remote.cpp (1.60),
+	remote.h (1.74), server.cpp (1.200):
+
+	Ensure port can't be deleted ... addition
+
+2008-04-16 15:08  hvlad
+
+	* firebird2/src/dsql/gen.cpp (1.147):
+
+	Generate old blr codes (blr_exec_sql or blr_exec_into) if given
+	EXEC STMT statement is compatible with old syntax. Per Adriano
+	request.
+
+2008-04-16 14:48  hvlad
+
+	* firebird2/src/remote/: inet.cpp (1.229), remote.h (1.73),
+	server.cpp (1.199):
+
+	Ensure port can't be deleted by another thread while receiving data
+	(usual socket disconnect event) during disconnect. Just hold one
+	more reference to it.
+
+2008-04-16 14:11  alexpeshkoff
+
+	* firebird2/src/jrd/rse.cpp (1.148):
+
+	Fixed CORE-1839: AV when sorting by field, calculated using
+	resursive CTE
+
+2008-04-16 13:46  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.236):
+
+	Fixed bug CORE-1838 : SET STATISTICS INDEX on index of GTT may
+	wrongly change index id by maximum available number for database
+	page size
+
+2008-04-16 12:59  robocop
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.18):
+
+	Misc.
+
+2008-04-16 12:38  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.230), dsql.h (1.129), gen.cpp
+	(1.146), make.cpp (1.158), make_proto.h (1.30):
+
+	Do not use flags for values that are exclusive (can't be combined).
+
+2008-04-16 11:25  robocop
+
+	* firebird2/src/: common/classes/RefCounted.h (1.14), dsql/ddl.cpp
+	(1.229), dsql/node.h (1.111), jrd/dyn_mod.epp (1.99):
+
+	Misc.
+
+2008-04-16 11:16  roman-simakov
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.17), GlobalRWLock.h
+	(1.17), cch.cpp (1.193), nbak.cpp (1.79):
+
+	1. Fixed unlocking header page while CCH_release. Thanks to Vlad.
+	2. Fixed writing page while nbackup merge state is stalled.  3.
+	Fixed using dead dbb in AST handler while somebody is changing
+	cached lock of the GlobalRWLock.
+
+2008-04-16 10:46  roman-simakov
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.52), cch.cpp (1.192),
+	dfw.epp (1.235), nbak.cpp (1.78), nbak.h (1.31), shut.cpp (1.55):
+
+	Replaced nbackup dirty pages locking with RAII classes
+
+2008-04-16 04:09  asfernandes
+
+	* firebird2/: src/jrd/SysFunction.cpp (1.45),
+	doc/sql.extensions/README.keywords (1.7):
+
+	Misc
+
+2008-04-15 21:45  hvlad
+
+	* firebird2/src/dsql/: Parser.h (1.6), parse.y (1.275):
+
+	Fixed CORE-1837 : Procedure text is stored truncated in system
+	tables if any variable have default value
+
 2008-04-15 17:55  asfernandes
 
 	* firebird2/src/isql/: extract.epp (1.91), show.epp (1.129):
