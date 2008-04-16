@@ -220,7 +220,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 
 	case nod_variable:
 		variable = (dsql_var*) node->nod_arg[e_var_variable];
-		if (variable->var_flags & VAR_input) {
+		if (variable->var_type == VAR_input) {
 			stuff(request, blr_parameter2);
 			stuff(request, variable->var_msg_number);
 			stuff_word(request, variable->var_msg_item);

@@ -1821,7 +1821,7 @@ dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
  **/
 dsql_nod* MAKE_variable(dsql_fld* field,
 				  const TEXT* name,
-				  USHORT type,
+				  const dsql_var_type type,
 				  USHORT msg_number, USHORT item_number, USHORT local_number)
 {
 	DEV_BLKCHK(field, dsql_type_fld);
@@ -1836,7 +1836,8 @@ dsql_nod* MAKE_variable(dsql_fld* field,
 	variable->var_variable_number = local_number;
 	variable->var_field = field;
 	strcpy(variable->var_name, name);
-	variable->var_flags = type;
+	variable->var_flags = 0;
+	variable->var_type = type;
 	MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;

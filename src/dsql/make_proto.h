@@ -44,6 +44,15 @@ namespace Jrd {
 		CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
 		CONSTANT_SINT64		= 6  // stored as a SINT64
 	};
+	
+	// Parameters to MAKE_variable
+	enum dsql_var_type
+	{
+		VAR_input,
+		VAR_output,
+		VAR_local
+	};
+
 };
 
 
@@ -64,8 +73,9 @@ Jrd::dsql_sym* MAKE_symbol(Jrd::dsql_dbb*, const TEXT*, USHORT,
 						   Jrd::sym_type, Jrd::dsql_req*);
 Jrd::dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
 Jrd::dsql_nod* MAKE_trigger_type(Jrd::dsql_nod*, Jrd::dsql_nod*);
-Jrd::dsql_nod* MAKE_variable(Jrd::dsql_fld*, const TEXT*, USHORT, USHORT,
-								 USHORT, USHORT);
+Jrd::dsql_nod* MAKE_variable(Jrd::dsql_fld*, const TEXT*,
+								const Jrd::dsql_var_type type, USHORT,
+								USHORT, USHORT);
 
 #endif // DSQL_MAKE_PROTO_H
 

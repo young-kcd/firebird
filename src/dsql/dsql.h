@@ -313,18 +313,13 @@ class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		//!< Field on which variable is based
-	USHORT	var_flags;
+	USHORT	var_flags;			// Reserved
+	//dsql_var_type	var_type;	// Too cumbersome to compile the right data type.
+	int		var_type;			// Input, output or local var.
 	USHORT	var_msg_number;		//!< Message number containing variable
 	USHORT	var_msg_item;		//!< Item number in message
 	USHORT	var_variable_number;	//!< Local variable number
 	TEXT	var_name[2];
-};
-
-// values used in var_flags
-enum var_flags_vals {
-	VAR_input	= 1,
-	VAR_output	= 2,
-	VAR_local	= 4
 };
 
 
