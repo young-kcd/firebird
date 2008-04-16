@@ -765,6 +765,8 @@ dsql_nod* PASS1_node(dsql_req* request, dsql_nod* input, bool proc_flag)
 		dsql_nod* cte = request->findCTE(rel_name);
 		if (cte)
 		{
+			cte->nod_flags |= NOD_DT_CTE_USED;
+
 			if ((request->req_flags & REQ_CTE_recursive) && 
 				 request->req_curr_ctes.hasData() && 
 				 (request->req_curr_ctes.object() == cte)) 
