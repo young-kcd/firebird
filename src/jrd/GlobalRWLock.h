@@ -124,7 +124,7 @@ public:
 	// Returns true if lock was released
 	bool tryReleaseLock(thread_db* tdbb);
 
-	Database* getDatabase() const
+	Database* getDatabase()
 	{
 		return dbb;
 	}
