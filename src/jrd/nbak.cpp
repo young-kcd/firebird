@@ -697,6 +697,8 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, Ods::p
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
+	// Check that diff page is not allocation page
+	fb_assert(diff_page % (database->dbb_page_size/sizeof(ULONG)));
 	if (!PIO_write(diff_file, &temp_bdb, page, status))
 		return false;
 	return true;

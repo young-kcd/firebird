@@ -2180,14 +2180,14 @@ void CCH_release(thread_db* tdbb, WIN * window, bool release_tail)
 		window->win_flags &= ~WIN_garbage_collect;
 	}
 
+	if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
+		dbb->dbb_backup_manager->unlock_shared_database(tdbb);
+	}
+
 	if (bdb->bdb_use_count == 1)
 	{
 		bool marked = bdb->bdb_flags & BDB_marked;
 		bdb->bdb_flags &= ~(BDB_writer | BDB_marked | BDB_faked);		
-
-		if (bdb->bdb_page == HEADER_PAGE_NUMBER) {
-			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
-		}
 
 		if (marked) {
 			if (bdb->bdb_flags & BDB_dirty) {
@@ -6670,7 +6670,7 @@ static bool write_page(
 			const bool isTempPage = pageSpace->isTemporary();
 
 			if (!isTempPage && (backup_state == nbak_state_stalled ||
-					backup_state == nbak_state_merge) ) 
+				(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
 			{
 				const bool res = 
 					dbb->dbb_backup_manager->write_difference(status, 
