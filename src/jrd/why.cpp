@@ -5025,7 +5025,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS * user_status,
 		}
 		if (handle && dbb)
 		{
-			CALL(PROC_ROLLBACK, dbb->implementation) (temp, handle);
+			CALL(PROC_ROLLBACK, dbb->implementation) (temp, &handle);
 		}
 	}
 
