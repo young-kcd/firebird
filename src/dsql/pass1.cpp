@@ -7598,7 +7598,10 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 						update_lock, input->nod_flags);
 
 			if (node_with)
+			{
+				request->checkUnusedCTEs();
 				request->clearCTEs();
+			}
 
 			return ret;
 		} 
@@ -10340,6 +10343,23 @@ void dsql_req::clearCTEs()
 	req_flags &= ~REQ_CTE_recursive;
 	req_ctes.clear();
 	req_cte_aliases.clear();
+}
+
+
+void dsql_req::checkUnusedCTEs()
+{
+	for (size_t i = 0; i < req_ctes.getCount(); i++)
+	{
+		dsql_nod* cte = req_ctes[i];
+		if (!(cte->nod_flags & NOD_DT_CTE_USED))
+		{
+			const dsql_str* cte_name = (dsql_str*) cte->nod_arg[e_derived_table_alias];
+
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
+				isc_arg_gds, isc_dsql_cte_not_used, 
+				isc_arg_string, cte_name->str_data, 0);
+		}
+	}
 }
 
 
