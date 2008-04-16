@@ -154,6 +154,7 @@ static void	prepare_console_debug (int, int  *);
 static bool	short_int(dsql_nod*, SLONG*, SSHORT);
 #endif
 static void	stack_nodes (dsql_nod*, DsqlNodStack&);
+static Firebird::MetaName toName(dsql_nod* node);
 
 static void	yyabandon (SLONG, ISC_STATUS);
 
@@ -1159,8 +1160,8 @@ collation_specific_attribute_opt :
 alter_charset_clause
 	: symbol_character_set_name SET DEFAULT COLLATION symbol_collation_name
 		{
-			$$ = makeClassNode(FB_NEW(getPool()) AlterCharSetNode(getPool(),
-				((dsql_str*) $1)->str_data, ((dsql_str*) $5)->str_data));
+			$$ = makeClassNode(FB_NEW(getPool())
+					AlterCharSetNode(getPool(), toName($1), toName($5)));
 		}
 	;
 
@@ -5024,7 +5025,7 @@ void LEX_dsql_init(MemoryPool& pool)
 		symbol->sym_version = token->tok_version;
 		dsql_str* str = FB_NEW_RPT(pool, symbol->sym_length) dsql_str;
 		str->str_length = symbol->sym_length;
-		strncpy((char*)str->str_data, (char*)symbol->sym_string, symbol->sym_length);
+		strncpy((char*) str->str_data, (char*) symbol->sym_string, symbol->sym_length);
 		symbol->sym_object = (void *) str;
 		HSHD_insert(symbol);
 	}
@@ -5078,6 +5079,7 @@ static bool long_int(dsql_nod* string,
 	return true;
 }
 #endif
+
 
 static dsql_fld* make_field (dsql_nod* field_name)
 {
@@ -5425,6 +5427,11 @@ static void stack_nodes (dsql_nod*	node,
 	dsql_nod** ptr = node->nod_arg;
 	for (const dsql_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 		stack_nodes (*ptr, stack);
+}
+
+static Firebird::MetaName toName(dsql_nod* node)
+{
+	return Firebird::MetaName(((dsql_str*) node)->str_data);
 }
 
 int Parser::yylex()
