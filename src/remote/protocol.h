@@ -179,7 +179,7 @@ const USHORT STMT_DEFER_EXECUTE	= 4;
 
 /* Operation (packet) types */
 
-typedef enum
+enum P_OP
 {
 	op_void				= 0,	/* Packet has been voided */
 	op_connect			= 1,	/* Connect to remote server */
@@ -302,7 +302,7 @@ typedef enum
 	op_cancel				= 91,
 
 	op_max
-} P_OP;
+};
 
 
 /* Count String Structure */

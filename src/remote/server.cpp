@@ -43,6 +43,7 @@
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/serve_proto.h"
+#include "../remote/xdr_proto.h"
 #ifdef WIN_NT
 #include "../remote/os/win32/cntl_proto.h"
 #include <stdlib.h>
@@ -463,7 +464,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  **************************************/
 	SERVER_REQ request = NULL;
 	RemPortPtr port;		// Was volatile PORT port = NULL;
+	PACKET asyncPacket;
 
+	zap_packet(&asyncPacket, true);
 	++cntServers;
 
 	try {
@@ -501,11 +504,11 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}
-					return;
+					break;
 				}
 				if (dataSize)
 				{
-					if (port->asyncReceive(buffer, dataSize))
+					if (port->asyncReceive(&asyncPacket, buffer, dataSize))
 					{
 						port = 0;
 						continue;
@@ -640,6 +643,10 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 		}
 
+		if (main_port->port_async_receive)
+		{
+			REMOTE_free_packet(main_port->port_async_receive, &asyncPacket);
+		}
 	}
 	catch (const Firebird::Exception&) {
 		/* Some kind of unhandled error occured during server setup.  In lieu
@@ -5171,7 +5178,7 @@ int SRVR_shutdown()
 }
 
 
-bool rem_port::asyncReceive(const UCHAR* buffer, SSHORT dataSize)
+bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize)
 {
 /**************************************
  *
@@ -5198,23 +5205,32 @@ bool rem_port::asyncReceive(const UCHAR* buffer, SSHORT dataSize)
 		return false;
 	}
 
-	// we may work safely with port_async_receive here - noone except this function
-	// should use it, and access is only from main listener thread
+	switch(getOperation(buffer, dataSize))
+	{
+	case op_cancel:
+		break;
+	default:
+		return false;
+	}
 
-	port_async_receive->clearRecvQue();
-	port_async_receive->port_receive.x_handy = 0;
-	memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
+	{ // scope for guard
+		static Firebird::GlobalPtr<Firebird::Mutex> mutex;
+		Firebird::MutexLockGuard guard(mutex);
 
-	// It's required, that async packets follow simple rule:
-	// single xdr packet fits into single network packet.
-	PACKET asyncPacket;
-	port_async_receive->receive(&asyncPacket);
+		port_async_receive->clearRecvQue();
+		port_async_receive->port_receive.x_handy = 0;
+		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
-	switch(asyncPacket.p_operation)
+		// It's required, that async packets follow simple rule:
+		// single xdr packet fits into single network packet.
+		port_async_receive->receive(asyncPacket);
+	}
+
+	switch(asyncPacket->p_operation)
 	{
 	case op_cancel:
 #ifdef CANCEL_OPERATION
-		cancel_operation(this, asyncPacket.p_cancel_op.p_co_kind);
+		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
 #endif
 		break;
 	default:

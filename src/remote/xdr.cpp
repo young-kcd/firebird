@@ -885,6 +885,28 @@ static bool_t mem_getlong( XDR * xdrs, SLONG * lp)
 }
 
 
+SLONG getOperation(const void* data, size_t size)
+{
+/**************************************
+ *
+ *	m e m _ g e t l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch an operation from buffer in network format
+ *
+ **************************************/
+	if (size < sizeof(SLONG))
+	{
+		return op_void;
+	}
+
+	SLONG* p = (SLONG*)data;
+	return ntohl(*((SLONG*)data));
+}
+
+
 static u_int mem_getpostn( XDR * xdrs)
 {
 /**************************************
