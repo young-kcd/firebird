@@ -2179,7 +2179,7 @@ static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
 #else
 		const int n = (int) port->port_handle;
 		if (n < 0 || n >= FD_SETSIZE) {
-			return port;
+			return;
 		}		
 		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
