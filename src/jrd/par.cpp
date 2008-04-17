@@ -2805,20 +2805,59 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_exec_sql:
-		*arg++ = parse(tdbb, csb, sub_type);
+		{
+			n = e_exec_stmt_fixed_count; 
+
+			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
+			node->nod_count = n;
+			node->nod_type = nod_exec_stmt;
+			set_type = false;
+
+			arg = node->nod_arg;
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = NULL;		// e_exec_stmt_data_src	
+			*arg++ = NULL;		// e_exec_stmt_user	
+			*arg++ = NULL;		// e_exec_stmt_password	
+			*arg++ = NULL;		// e_exec_stmt_proc_block;
+
+			*arg++ = NULL;		// e_exec_stmt_extra_inputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_input_names
+			*arg++ = NULL;		// e_exec_stmt_extra_outputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_tran
+		}
 		break;
 
 	case blr_exec_into:
-		n = BLR_WORD + 2; // e_exec_into_count - 1
-		node = PAR_make_node(tdbb, n);
-		arg = node->nod_arg;
-		*arg++ = parse(tdbb, csb, VALUE);
-		if (BLR_BYTE) // singleton
-			*arg++ = 0;
-		else
-			*arg++ = parse(tdbb, csb, STATEMENT);
-		for (n = 2/*e_exec_into_list*/; n < node->nod_count; n++)
-			*arg++ = parse(tdbb, csb, VALUE);
+		{
+			const USHORT outputs = BLR_WORD;
+			n = outputs + e_exec_stmt_fixed_count; 
+
+			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
+			node->nod_count = n;
+			node->nod_type = nod_exec_stmt;
+			set_type = false;
+
+			arg = node->nod_arg;
+			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = NULL;		// e_exec_stmt_data_src	
+			*arg++ = NULL;		// e_exec_stmt_user	
+			*arg++ = NULL;		// e_exec_stmt_password	
+
+			if (BLR_BYTE)	// singleton flag
+				*arg++ = NULL;							// e_exec_stmt_proc_block
+			else
+				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
+
+			// output parameters
+			for (n = e_exec_stmt_fixed_count; n < node->nod_count; n++) {
+				*arg++ = parse(tdbb, csb, VALUE);
+			}
+
+			*arg++ = NULL;		// e_exec_stmt_extra_inputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_input_names
+			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_tran
+		}
 		break;
 
 	case blr_exec_stmt:

@@ -197,6 +197,7 @@ static void execute_procedure(thread_db*, jrd_nod*);
 static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	enum jrd_req::req_ta, SSHORT);
+static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
 static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
@@ -1623,59 +1624,38 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 	const int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
 	const int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
-	jrd_nod** node_inputs = node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs;
-	jrd_nod** node_outputs = node->nod_arg + e_exec_stmt_fixed_count + inputs;
+	
+	jrd_nod** node_inputs = inputs ? 
+		node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs : NULL;
+
+	jrd_nod** node_outputs = outputs ? 
+		node->nod_arg + e_exec_stmt_fixed_count + inputs : NULL;
+	
 	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		fb_assert(*stmt_ptr == 0);
 
-		const EDS::ParamNames* inputs_names = (EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
-		const EDS::TraScope tra_scope = (EDS::TraScope)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
+		const EDS::ParamNames* inputs_names = 
+			(EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
+		
+		const jrd_nod* tra_node = node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
+		const EDS::TraScope tra_scope = tra_node ? (EDS::TraScope)(IPTR) tra_node : EDS::traCommon;
 
-		MoveBuffer buffer;
-		UCHAR* p = NULL;
-		SSHORT len = 0;
-		const dsc* dsc_sql = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_stmt_sql]);
-		if (dsc_sql && !(request->req_flags & req_null)) {
-			len = MOV_make_string2(tdbb, dsc_sql, dsc_sql->getTextType(), &p, buffer);
-		}
-		Firebird::string sSql((char*) p, len);
-		sSql.trim();
+		Firebird::string sSql;
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_stmt_sql], sSql);
 
-		p = NULL;
-		len = 0;
-		buffer.clear();
-		const dsc* dsc_dataSrc = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_data_src]);
-		if (dsc_dataSrc && !(request->req_flags & req_null)) {
-			len = MOV_make_string2(tdbb, dsc_dataSrc, dsc_dataSrc->getTextType(), &p, buffer);
-		}
-		Firebird::string sDataSrc((char*) p, len);
-		sDataSrc.trim();
+		Firebird::string sDataSrc;
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_data_src], sDataSrc);
 
-		p = NULL;
-		len = 0;
-		buffer.clear();
-		const dsc* dsc_user = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_user]);
-		if (dsc_user && !(request->req_flags & req_null)) {
-			len = MOV_make_string2(tdbb, dsc_user, dsc_user->getTextType(), &p, buffer);
-		}
-		Firebird::string sUser((char*) p, len);
-		sUser.trim();
+		Firebird::string sUser;
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_user], sUser);
 
-		p = NULL;
-		len = 0;
-		buffer.clear();
-		const dsc* dsc_pwd = EVL_expr(tdbb, node->nod_arg[e_exec_stmt_password]);
-		if (dsc_pwd && !(request->req_flags & req_null)) {
-			len = MOV_make_string2(tdbb, dsc_pwd, dsc_pwd->getTextType(), &p, buffer);
-		}
-		Firebird::string sPwd((char*) p, len);
-		sPwd.trim();
+		Firebird::string sPwd;
+		get_string(tdbb, request, node->nod_arg[e_exec_stmt_password], sPwd);
 
-		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, 
-			sDataSrc, sUser, sPwd, tra_scope);
+		EDS::Connection* conn = EDS::Manager::getConnection(tdbb, sDataSrc, sUser, sPwd, tra_scope);
 
 		stmt = conn->createStatement(sSql);
 
@@ -1835,6 +1815,20 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return trigger;
 	}
+}
+
+
+static void get_string(thread_db* tdbb, jrd_req* request, jrd_nod* node, Firebird::string& str)
+{
+	MoveBuffer buffer;
+	UCHAR* p = NULL;
+	SSHORT len = 0;
+	const dsc* dsc = node ? EVL_expr(tdbb, node) : NULL;
+	if (dsc && !(request->req_flags & req_null)) {
+		len = MOV_make_string2(tdbb, dsc, dsc->getTextType(), &p, buffer);
+	}
+	str = Firebird::string((char*) p, len);
+	str.trim();
 }
 
 
