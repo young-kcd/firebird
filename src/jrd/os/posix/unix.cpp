@@ -80,24 +80,6 @@ using namespace Jrd;
 #endif
 // which will force use of pread/pwrite even for CS.
 
-/* SUPERSERVER uses a mutex to allow atomic seek/read(write) sequences.
-   When possible, it uses "positioned" read (write) calls to avoid a seek
-   and allow multiple threads to overlap database I/O. This functions also
-   help at some OSs with broken read/write calls. */
-#if defined SUPERSERVER || defined BROKEN_IO_64
-#if (defined PREAD && defined PWRITE) || defined HAVE_AIO_H
-#define PREAD_PWRITE
-#endif
-#endif
-
-#ifdef SUPERSERVER
-#define THD_IO_MUTEX_LOCK(mutx)		mutx.enter()
-#define THD_IO_MUTEX_UNLOCK(mutx)	mutx.leave()
-#else
-#define THD_IO_MUTEX_LOCK(mutx)
-#define THD_IO_MUTEX_UNLOCK(mutx)
-#endif
-
 #define IO_RETRY	20
 
 #ifdef O_SYNC
@@ -136,7 +118,7 @@ using namespace Jrd;
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
 static bool unix_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
-#if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
+#if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
@@ -336,14 +318,13 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
-
 #ifndef SUPERSERVER_V2
+	Firebird::MutexLockGuard guard(main_file->fil_mutex);
+
 	Database::Checkout dcoHolder(dbb, true);
 	for (jrd_file* file = main_file; file; file = file->fil_next) {
 		if (file->fil_desc != -1) {	/* This really should be an error */
-			THD_IO_MUTEX_LOCK(file->fil_mutex);
 			fsync(file->fil_desc);
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
 		}
 	}
 #endif
@@ -464,24 +445,11 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		unix_error("PIO_header", file, isc_io_read_err, 0);
 
 	for (i = 0; i < IO_RETRY; i++) {
-#ifndef PREAD_PWRITE
-		THD_IO_MUTEX_LOCK(file->fil_mutex);
-
-		if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST 0, 0)) == -1) {
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-			unix_error("lseek", file, isc_io_read_err, 0);
-		}
-#endif
 #ifdef ISC_DATABASE_ENCRYPTION
 		if (dbb->dbb_encrypt_key) {
 			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
 
-#ifdef PREAD_PWRITE
 			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1) {
-#else
-			if ((bytes = read(file->fil_desc, spare_buffer, length)) == (FB_UINT64) -1) {
-				THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 				if (SYSCALL_INTERRUPTED(errno))
 					continue;
 				unix_error("read", file, isc_io_read_err, 0);
@@ -492,12 +460,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		}
 		else
 #endif /* ISC_DATABASE_ENCRYPTION */
-#ifdef PREAD_PWRITE
 		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1) {
-#else
-		if ((bytes = read(file->fil_desc, address, length)) == (FB_UINT64) -1) {
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (SYSCALL_INTERRUPTED(errno))
 				continue;
 			unix_error("read", file, isc_io_read_err, 0);
@@ -521,9 +484,6 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			unix_error("read_retry", file, isc_io_read_err, 0);
 		}
 	}
-#ifndef PREAD_PWRITE
-	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 }
 
 // we need a class here only to return memory on shutdown and avoid
@@ -579,21 +539,12 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		{
 			if (!(file = seek_file(file, &bdb, &offset, status_vector)))
 				return false;
-#ifdef PREAD_PWRITE
 			if ((written = pwrite(file->fil_desc, zeros().get(), to_write, LSEEK_OFFSET_CAST offset)) == to_write)
 				break;
-#else
-			if ((written = write(file->fil_desc, zeros().get(), to_write)) == to_write)
-				break;
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (written == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
 
-#ifndef PREAD_PWRITE
-		THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 
 		leftPages -= write_pages;
 		i += write_pages;
@@ -709,19 +660,12 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
-#ifdef PREAD_PWRITE
             if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size) 
-#else
-			if ((bytes = read(file->fil_desc, spare_buffer, size)) == size)
-#endif
 			{
 				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
 									 spare_buffer, size, page);
 				break;
 			}
-#ifndef PREAD_PWRITE
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("read", file, isc_io_read_err, status_vector);
 		}
@@ -732,22 +676,13 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
-#ifdef PREAD_PWRITE
 			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
-#else
-			if ((bytes = read(file->fil_desc, page, size)) == size)
-				break;
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("read", file, isc_io_read_err, status_vector);
 		}
 	}
 
-#ifndef PREAD_PWRITE
-	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 
 	if (i == IO_RETRY) {
 		if (bytes == 0) {
@@ -804,14 +739,8 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
-#ifdef PREAD_PWRITE
 			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
-#else
-			if ((bytes = write(file->fil_desc, spare_buffer, size)) == size)
-				break;
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
@@ -822,22 +751,13 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
-#ifdef PREAD_PWRITE
 			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
 				break;
-#else
-			if ((bytes = write(file->fil_desc, page, size)) == size)
-				break;
-			THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 			if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
 				return unix_error("write", file, isc_io_write_err, status_vector);
 		}
 	}
 
-#ifndef PREAD_PWRITE
-	THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-#endif
 
 	// posix_fadvise(file->desc, offset, size, POSIX_FADV_DONTNEED);
 	return true;
@@ -887,18 +807,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
 		return 0;
     }
 
-#ifdef PREAD_PWRITE
 	*offset = lseek_offset;
-#else
-	THD_IO_MUTEX_LOCK(file->fil_mutex);
-
-	if ((lseek(file->fil_desc, LSEEK_OFFSET_CAST lseek_offset, 0)) == (off_t)-1)
-	{
-		THD_IO_MUTEX_UNLOCK(file->fil_mutex);
-		unix_error("lseek", file, isc_io_access_err, status_vector);
-		return 0;
-	}
-#endif
 
 	return file;
 }
@@ -1110,7 +1019,7 @@ static bool unix_error(
     return false;
 }
 
-#if defined PREAD_PWRITE && !(defined HAVE_PREAD && defined HAVE_PWRITE)
+#if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 
 /* pread() and pwrite() behave like read() and write() except that they
    take an additional 'offset' argument. The I/O takes place at the specified
@@ -1190,7 +1099,7 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 	return (aio_return(&io));	/* return I/O status */
 }
 
-#endif /* PREAD_PWRITE && !(HAVE_PREAD && HAVE_PWRITE)*/
+#endif /* !(HAVE_PREAD && HAVE_PWRITE)*/
 
 
 #ifdef SUPPORT_RAW_DEVICES
