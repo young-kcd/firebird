@@ -944,24 +944,33 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:
-			switch (item) {
-			case isc_info_svc_get_env:
-				gds__prefix(buffer, "");
-				break;
-			case isc_info_svc_get_env_lock:
-				gds__prefix_lock(buffer, "");
-				break;
-			case isc_info_svc_get_env_msg:
-				gds__prefix_msg(buffer, "");
-			}
+			if (svc_user_flag & SVC_user_dba)
+			{
+				switch (item) 
+				{
+				case isc_info_svc_get_env:
+					gds__prefix(buffer, "");
+					break;
+				case isc_info_svc_get_env_lock:
+					gds__prefix_lock(buffer, "");
+					break;
+				case isc_info_svc_get_env_msg:
+					gds__prefix_msg(buffer, "");
+				}
 
-			/* Note: it is safe to use strlen to get a length of "buffer"
-			   because gds_prefix[_lock|_msg] return a zero-terminated
-			   string
-			 */
-			info = INF_put_item(item, strlen(buffer), buffer, info, end);
-			if (!info) {
-				return 0;
+				/* Note: it is safe to use strlen to get a length of "buffer"
+				   because gds_prefix[_lock|_msg] return a zero-terminated
+				   string
+				 */
+				info = INF_put_item(item, strlen(buffer), buffer, info, end);
+				if (!info) 
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				need_admin_privs(&status, "isc_info_svc_get_env");
 			}
 			break;
 
@@ -1340,26 +1349,34 @@ void Service::query(USHORT			send_item_length,
 		case isc_info_svc_get_env:
 		case isc_info_svc_get_env_lock:
 		case isc_info_svc_get_env_msg:
-			switch (item) {
-			case isc_info_svc_get_env:
-				gds__prefix(PathBuffer, "");
-				break;
-			case isc_info_svc_get_env_lock:
-				gds__prefix_lock(PathBuffer, "");
-				break;
-			case isc_info_svc_get_env_msg:
-				gds__prefix_msg(PathBuffer, "");
-			}
-
-			/* Note: it is safe to use strlen to get a length of "buffer"
-			   because gds_prefix[_lock|_msg] return a zero-terminated
-			   string
-			 */
-			if (!(info = INF_put_item(item, strlen(PathBuffer),
-									  PathBuffer, info, end)))
+			if (svc_user_flag & SVC_user_dba)
 			{
-				return;
+				switch (item) {
+				case isc_info_svc_get_env:
+					gds__prefix(PathBuffer, "");
+					break;
+				case isc_info_svc_get_env_lock:
+					gds__prefix_lock(PathBuffer, "");
+					break;
+				case isc_info_svc_get_env_msg:
+					gds__prefix_msg(PathBuffer, "");
+				}
+
+				/* Note: it is safe to use strlen to get a length of "buffer"
+				   because gds_prefix[_lock|_msg] return a zero-terminated
+				   string
+				 */
+				if (!(info = INF_put_item(item, strlen(PathBuffer),
+										  PathBuffer, info, end)))
+				{
+					return;
+				}
 			}
+			/*
+			 * Can not return error for service v.1 => simply ignore request
+			else
+				need_admin_privs(&status, "isc_info_svc_get_env");
+			 */
 			break;
 
 #ifdef SUPERSERVER
