@@ -106,6 +106,7 @@
 #define isc_dpb_trusted_auth			  73
 #define isc_dpb_process_name              74
 #define isc_dpb_trusted_role			  75
+#define isc_dpb_org_filename			  76
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
