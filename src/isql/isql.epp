@@ -3508,13 +3508,19 @@ static void copy_str(TEXT** output_str,
 	switch (str_flag) {
 	case SINGLE_QUOTED_STRING:
 		slen = str_end - temp_local_stmt_str;
-		strncpy(temp_str, temp_local_stmt_str, slen);
+		if (temp_str != temp_local_stmt_str)
+		{
+			strncpy(temp_str, temp_local_stmt_str, slen);
+		}
 		*output_str = temp_str + slen;
 		*input_str = str_end;
 		break;
 	case DOUBLE_QUOTED_STRING:
 		slen = str_begin - temp_local_stmt_str;
-		strncpy(temp_str, temp_local_stmt_str, slen);
+		if (temp_str != temp_local_stmt_str)
+		{
+			strncpy(temp_str, temp_local_stmt_str, slen);
+		}
 		temp_str += slen;
 		*temp_str = SINGLE_QUOTE;
 		temp_str++;
@@ -3546,7 +3552,10 @@ static void copy_str(TEXT** output_str,
 		break;
 	case NO_MORE_STRING:
 		slen = strlen(temp_local_stmt_str);
-		strncpy(temp_str, temp_local_stmt_str, slen);
+		if (temp_str != temp_local_stmt_str)
+		{
+			strncpy(temp_str, temp_local_stmt_str, slen);
+		}
 		temp_str += slen;
 		*temp_str = '\0';
 		*done = true;
