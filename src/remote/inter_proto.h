@@ -28,9 +28,8 @@
 extern "C" {
 #endif
 
-ISC_STATUS	REM_attach_database(ISC_STATUS* user_status, SSHORT file_length,
-	const SCHAR* file_name, struct Rdb** handle,
-	SSHORT dpb_length, const SCHAR* dpb, const UCHAR* expanded_filename);
+ISC_STATUS	REM_attach_database(ISC_STATUS* user_status, const TEXT* file_name, struct Rdb** handle,
+	SSHORT dpb_length, const SCHAR* dpb);
 ISC_STATUS	REM_blob_info(ISC_STATUS* user_status, struct Rbl** blob_handle,
 	SSHORT item_length, const UCHAR* items,
 	SSHORT buffer_length, UCHAR* buffer);
@@ -45,9 +44,8 @@ ISC_STATUS	REM_compile_request(ISC_STATUS* user_status, struct Rdb** db_handle,
 ISC_STATUS	REM_create_blob2(ISC_STATUS* user_status, struct Rdb** db_handle,
 	struct Rtr** rtr_handle,
 	struct Rbl** blob_handle, BID blob_id, USHORT bpb_length, const UCHAR* bpb);
-ISC_STATUS	REM_create_database(ISC_STATUS* user_status, SSHORT file_length, 
-	const SCHAR* file_name, struct Rdb** handle,
-	SSHORT dpb_length, const SCHAR* dpb, SSHORT db_type, const UCHAR* expanded_filename);
+ISC_STATUS	REM_create_database(ISC_STATUS* user_status, const TEXT* file_name, struct Rdb** handle,
+	SSHORT dpb_length, const SCHAR* dpb);
 ISC_STATUS	REM_database_info(ISC_STATUS* user_status, struct Rdb** handle,
 	SSHORT item_length, const UCHAR* items,
 	SSHORT buffer_length, UCHAR* buffer);
@@ -123,7 +121,7 @@ ISC_STATUS	REM_seek_blob(ISC_STATUS* user_status, struct Rbl** blob_handle, SSHO
 	SLONG offset, SLONG* result);
 ISC_STATUS	REM_send(ISC_STATUS* user_status, struct Rrq** req_handle, USHORT msg_type,
 	USHORT msg_length, const UCHAR* msg, SSHORT level);
-ISC_STATUS	REM_service_attach(ISC_STATUS* user_status, USHORT service_length, const TEXT* service_name,
+ISC_STATUS	REM_service_attach(ISC_STATUS* user_status, const TEXT* service_name,
 	Rdb** handle, USHORT spb_length, const UCHAR* spb);
 ISC_STATUS	REM_service_detach(ISC_STATUS* user_status, Rdb** handle);
 ISC_STATUS	REM_service_query(ISC_STATUS* user_status, Rdb** svc_handle, ULONG* reserved,
