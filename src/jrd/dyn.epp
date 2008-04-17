@@ -182,8 +182,11 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 #endif
 #endif
 
+		JrdMemoryPool::deletePool(tempPool);
 		ERR_punt();
 	}
+
+	JrdMemoryPool::deletePool(tempPool);
 }
 
 
