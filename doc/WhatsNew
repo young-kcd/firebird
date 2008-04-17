@@ -2,6 +2,12 @@
   * v2.0.4
   **************************
 
+    * Bugfix CORE-1820
+        Setup program doesn't detect a running server
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
     * Fixed bug CORE-1775
         Bad performance of the security checking during prepare
       Contributor(s):
