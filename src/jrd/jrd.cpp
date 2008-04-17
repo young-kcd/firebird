@@ -424,6 +424,7 @@ public:
 	Firebird::string	dpb_remote_address;
 	Firebird::string	dpb_trusted_login;
 	Firebird::PathName	dpb_remote_process;
+	Firebird::PathName	dpb_org_filename;
 
 public:
 	DatabaseOptions()
@@ -586,13 +587,11 @@ void JRD_print_pools(const char* filename)
 }
 
 
-ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
-								SSHORT	_file_length,
-								const TEXT*	_file_name,
-								Attachment**	handle,
-								SSHORT	dpb_length,
-								const UCHAR*	dpb,
-								const TEXT* _expanded_filename)
+ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+								const TEXT* filename,
+								Attachment** handle,
+								SSHORT dpb_length,
+								const UCHAR* dpb)
 {
 /**************************************
  *
@@ -612,21 +611,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		return handle_error(user_status, isc_bad_db_handle);
 	}
 
-	Firebird::PathName file_name(_file_name, 
-		_file_length ? _file_length : strlen(_file_name));
-	Firebird::PathName expanded_name(file_name);
-
-	// Resolve given alias name
-	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
-	if (is_alias)
-	{
-		ISC_expand_filename(expanded_name, false);
-	}
-	else
-	{
-		expanded_name = _expanded_filename;
-	}
-
 	UserId userId;
 	DatabaseOptions options;
 	bool invalid_client_SQL_dialect = false;
@@ -644,6 +628,22 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	{
 		e.stuff_exception(user_status);
 		return user_status[1];
+	}
+
+	Firebird::PathName file_name =
+		options.dpb_org_filename.length() ?  options.dpb_org_filename : filename;
+
+	Firebird::PathName expanded_name;
+
+	// Resolve given alias name
+	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+	if (is_alias)
+	{
+		ISC_expand_filename(expanded_name, false);
+	}
+	else
+	{
+		expanded_name = filename;
 	}
 
 	// Check database against conf file.
@@ -788,7 +788,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		first = true;
 		dbb->dbb_filename = expanded_name;
 		dbb->dbb_flags |= options.dpb_flags;
-		
+
 		// NS: Use alias as database ID only if accessing database using file name is not possible.
 		//
 		// This way we:
@@ -799,7 +799,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
-			
+
 		// Extra LCK_init() done to keep the lock table until the
 		// database is shutdown() after the last detach.
 		LCK_init(tdbb, LCK_OWNER_database);
@@ -1566,14 +1566,11 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 }
 
 
-ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
-								USHORT	_file_length,
-								const TEXT*	_file_name,
-								Attachment**	handle,
-								USHORT	dpb_length,
-								const UCHAR*	dpb,
-								USHORT	db_type,
-								const TEXT*	_expanded_filename)
+ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
+							   const TEXT* filename,
+							   Attachment** handle,
+							   USHORT dpb_length,
+							   const UCHAR* dpb)
 {
 /**************************************
  *
@@ -1590,21 +1587,6 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	if (*handle)
 	{
 		return handle_error(user_status, isc_bad_db_handle);
-	}
-
-	Firebird::PathName file_name(_file_name, 
-		_file_length ? _file_length : strlen(_file_name));
-	Firebird::PathName expanded_name(file_name);
-
-	// Resolve given alias name
-	const bool is_alias = ResolveDatabaseAlias(expanded_name, expanded_name);
-	if (is_alias)
-	{
-		ISC_expand_filename(expanded_name, false);
-	}
-	else
-	{
-		expanded_name = _expanded_filename;
 	}
 
 	UserId userId;
@@ -1626,6 +1608,22 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	{
 		e.stuff_exception(user_status);
 		return user_status[1];
+	}
+
+	Firebird::PathName file_name =
+		options.dpb_org_filename.length() ?  options.dpb_org_filename : filename;
+
+	Firebird::PathName expanded_name;
+
+	// Resolve given alias name
+	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
+	if (is_alias)
+	{
+		ISC_expand_filename(expanded_name, false);
+	}
+	else
+	{
+		expanded_name = filename;
 	}
 
 	// Check database against conf file.
@@ -1766,8 +1764,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	{
 		if (options.dpb_overwrite)
 		{
-			if (GDS_ATTACH_DATABASE(user_status, _file_length, _file_name, handle,
-					dpb_length, dpb, _expanded_filename) == isc_adm_task_denied)
+			if (GDS_ATTACH_DATABASE(user_status, filename, handle, dpb_length, dpb) == isc_adm_task_denied)
 			{
 				throw;
 			}
@@ -2800,11 +2797,10 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 
 
 ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
-							USHORT service_length,
-							const TEXT* service_name,
-							Service** svc_handle,
-							USHORT spb_length,
-							const SCHAR* spb)
+							  const TEXT* service_name,
+							  Service** svc_handle,
+							  USHORT spb_length,
+							  const SCHAR* spb)
 {
 /**************************************
  *
@@ -2823,8 +2819,7 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		if (*svc_handle)
 			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 
-		*svc_handle = new Service(service_length, service_name, spb_length,
-			reinterpret_cast<const UCHAR*>(spb));
+		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
 	{
@@ -4501,6 +4496,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_no_db_triggers:
 			dpb_no_db_triggers = rdr.getInt() != 0;
+			break;
+
+		case isc_dpb_org_filename:
+			rdr.getPath(dpb_org_filename);
 			break;
 
 		default:

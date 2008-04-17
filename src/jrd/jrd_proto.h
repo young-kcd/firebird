@@ -41,9 +41,8 @@ namespace Jrd {
 
 extern "C" {
 
-ISC_STATUS jrd8_attach_database(ISC_STATUS*, SSHORT, const TEXT*,
-											  Jrd::Attachment**, SSHORT,
-											  const UCHAR*, const TEXT*);
+ISC_STATUS jrd8_attach_database(ISC_STATUS*, const TEXT*,
+								Jrd::Attachment**, SSHORT, const UCHAR*);
 ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT,
 										const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, Jrd::blb **);
@@ -64,10 +63,8 @@ ISC_STATUS jrd8_compile_request(ISC_STATUS*, Jrd::Attachment**,
 ISC_STATUS jrd8_create_blob2(ISC_STATUS*, Jrd::Attachment**,
 										   Jrd::jrd_tra**, Jrd::blb**,
 										   Jrd::bid*, USHORT, const UCHAR*);
-ISC_STATUS jrd8_create_database(ISC_STATUS*, USHORT, const TEXT*,
-											  Jrd::Attachment**, USHORT,
-											  const UCHAR*, USHORT,
-											  const TEXT*);
+ISC_STATUS jrd8_create_database(ISC_STATUS*, const TEXT*,
+								Jrd::Attachment**, USHORT, const UCHAR*);
 ISC_STATUS jrd8_database_info(ISC_STATUS*, Jrd::Attachment**, SSHORT,
 											const SCHAR*, SSHORT, SCHAR*);
 ISC_STATUS jrd8_ddl(ISC_STATUS*, Jrd::Attachment**, Jrd::jrd_tra**,
@@ -108,8 +105,8 @@ ISC_STATUS jrd8_seek_blob(ISC_STATUS *, Jrd::blb **, SSHORT,
 										SLONG, SLONG *);
 ISC_STATUS jrd8_send(ISC_STATUS *, Jrd::jrd_req**, USHORT, USHORT,
 								   SCHAR *, SSHORT);
-ISC_STATUS jrd8_service_attach(ISC_STATUS*, USHORT, const SCHAR*,
-											 Jrd::Service**, USHORT, const SCHAR*);
+ISC_STATUS jrd8_service_attach(ISC_STATUS*, const TEXT*,
+							   Jrd::Service**, USHORT, const SCHAR*);
 ISC_STATUS jrd8_service_detach(ISC_STATUS *, Jrd::Service**);
 ISC_STATUS jrd8_service_query(ISC_STATUS*, Jrd::Service**, ULONG*,
 											USHORT, const SCHAR*,

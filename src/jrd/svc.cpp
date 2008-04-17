@@ -533,7 +533,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 #endif // SERVER_CAPABILITIES
 
 
-Service::Service(USHORT	service_length, const TEXT* service_name,
+Service::Service(const TEXT* service_name,
 				 USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()), 
 	svc_handle(0), svc_status(svc_status_array), 
@@ -556,22 +556,19 @@ Service::Service(USHORT	service_length, const TEXT* service_name,
 	// If the service name begins with a slash, ignore it.
 	if (*service_name == '/' || *service_name == '\\') {
 		service_name++;
-		if (service_length)
-			service_length--;
 	}
 
 	// Find the service by looking for an exact match.
-	const Firebird::string misc_buf(service_name,
-		service_length ? service_length : strlen(service_name));
+	const Firebird::string svcname(service_name);
 	const serv_entry* serv;
 	for (serv = services; serv->serv_name; serv++) {
-		if (misc_buf == serv->serv_name)
+		if (svcname == serv->serv_name)
 			break;
 	}
 
 	if (!serv->serv_name) {
 		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
-										 isc_arg_string, ERR_string(misc_buf), 0);
+										  isc_arg_string, ERR_string(svcname), 0);
 	}
 
 	// Process the service parameter block.

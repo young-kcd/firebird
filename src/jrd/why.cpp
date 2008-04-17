@@ -1225,12 +1225,12 @@ static const SCHAR sql_prepare_info2[] =
 };
 
 
-ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
-										   SSHORT	file_length,
-										   const TEXT*	file_name,
-										   FB_API_HANDLE*	public_handle,
-										   SSHORT	dpb_length,
-										   const SCHAR*	dpb)
+ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
+										   SSHORT file_length,
+										   const TEXT* file_name,
+										   FB_API_HANDLE* public_handle,
+										   SSHORT dpb_length,
+										   const SCHAR* dpb)
 {
 /**************************************
  *
@@ -1280,7 +1280,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
 		}
-#endif /* !SUPERCLIENT */
+#endif // !SUPERCLIENT
 
 		SUBSYSTEM_USAGE_INCR;
 
@@ -1289,34 +1289,15 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-		Firebird::PathName temp_filename(file_name, 
+		Firebird::PathName org_filename(file_name,
 			file_length ? file_length : strlen(file_name));
-		temp_filename.rtrim();
-		file_length = temp_filename.length();
+		org_filename.rtrim();
+
 		Firebird::PathName expanded_filename;
 
-		if (!ISC_check_if_remote(temp_filename, true))
+		if (!set_path(org_filename, expanded_filename))
 		{
-			Firebird::PathName database_filename;
-			if (ResolveDatabaseAlias(temp_filename, database_filename))
-			{
-				ISC_expand_filename(database_filename, false);
-				expanded_filename = database_filename;
-			}
-			else if (set_path(temp_filename, expanded_filename))
-			{
-				temp_filename = expanded_filename;
-				file_length = temp_filename.length();
-			}
-			else
-			{
-				expanded_filename = temp_filename;
-				ISC_expand_filename(expanded_filename, true);
-			}
-		}
-		else
-		{
-			expanded_filename = temp_filename;
+			expanded_filename = org_filename;
 			ISC_expand_filename(expanded_filename, true);
 		}
 
@@ -1325,13 +1306,16 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 
 		setLogin(newDpb);
 
+		if (org_filename != expanded_filename && !newDpb.find(isc_dpb_org_filename))
+		{
+			newDpb.insertPath(isc_dpb_org_filename, org_filename);
+		}
+
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, temp_filename.length(), 
-												temp_filename.c_str(),
+			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, expanded_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
-												reinterpret_cast<const char*>(newDpb.getBuffer()),
-												expanded_filename.c_str()))
+												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
 				attachment = new Attachment(handle, public_handle, n);
 				attachment->db_path = expanded_filename;
@@ -1865,7 +1849,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			Firebird::status_exception::raise(isc_shutwarn,
 											  isc_arg_end);
 		}
-#endif /* !SUPERCLIENT */
+#endif // !SUPERCLIENT
 
 		SUBSYSTEM_USAGE_INCR;
 
@@ -1874,33 +1858,15 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-		Firebird::PathName temp_filename(file_name, 
+		Firebird::PathName org_filename(file_name,
 			file_length ? file_length : strlen(file_name));
-		temp_filename.rtrim();
-		file_length = temp_filename.length();
+		org_filename.rtrim();
+
 		Firebird::PathName expanded_filename;
 
-		if (!ISC_check_if_remote(temp_filename, true))
+		if (!set_path(org_filename, expanded_filename))
 		{
-			Firebird::PathName database_filename;
-			if (ResolveDatabaseAlias(temp_filename, database_filename))
-			{
-				ISC_expand_filename(database_filename, false);
-				expanded_filename = database_filename;
-			}
-			else if (set_path(temp_filename, expanded_filename))
-			{
-				temp_filename = expanded_filename;
-			}
-			else
-			{
-				expanded_filename = temp_filename;
-				ISC_expand_filename(expanded_filename, true);
-			}
-		}
-		else
-		{
-			expanded_filename = temp_filename;
+			expanded_filename = org_filename;
 			ISC_expand_filename(expanded_filename, true);
 		}
 
@@ -1909,25 +1875,28 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		setLogin(newDpb);
 
+		if (org_filename != expanded_filename && !newDpb.find(isc_dpb_org_filename))
+		{
+			newDpb.insertPath(isc_dpb_org_filename, org_filename);
+		}
+
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
-			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, temp_filename.length(), 
-												temp_filename.c_str(),
+			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, expanded_filename.c_str(),
 												&handle, newDpb.getBufferLength(), 
-												reinterpret_cast<const char*>(newDpb.getBuffer()), 
-												0, expanded_filename.c_str()))
+												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
 #ifdef WIN_NT
-            	/* Now we can expand, the file exists. */
-				expanded_filename = temp_filename;
-	            ISC_expand_filename (expanded_filename, true);
+            	// Now we can expand, the file exists
+				expanded_filename = org_filename;
+	            ISC_expand_filename(expanded_filename, true);
 #endif
 
 				attachment = new Attachment(handle, public_handle, n);
 #ifdef WIN_NT
 				attachment->db_path = expanded_filename;
 #else
-				attachment->db_path = temp_filename;
+				attachment->db_path = org_filename;
 #endif
 
 				status[0] = isc_arg_gds;
@@ -4552,23 +4521,19 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		{
 			Firebird::status_exception::raise(isc_shutwarn, isc_arg_end);
 		}
-#endif /* !SUPERCLIENT */
+#endif // !SUPERCLIENT
 
 		SUBSYSTEM_USAGE_INCR;
 
-		USHORT org_length = service_length;
-		if (org_length) {
-			const TEXT* p = service_name + org_length - 1;
-			while (*p == ' ')
-				p--;
-			org_length = p - service_name + 1;
-		}
+		Firebird::string svcname(service_name,
+			service_length ? service_length : strlen(service_name));
+		svcname.rtrim();
 
 		ISC_STATUS* ptr = status;
 		for (n = 0; n < SUBSYSTEMS; n++) 
 		{
 			if (!CALL(PROC_SERVICE_ATTACH, n) (ptr,
-											   org_length, service_name,
+											   svcname.c_str(),
 											   &handle, 
 											   spb_length, spb))
 			{
