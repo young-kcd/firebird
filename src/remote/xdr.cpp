@@ -889,7 +889,7 @@ SLONG getOperation(const void* data, size_t size)
 {
 /**************************************
  *
- *	m e m _ g e t l o n g
+ *	g e t O p e r a t i o n
  *
  **************************************
  *
