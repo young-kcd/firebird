@@ -69,17 +69,16 @@ namespace Jrd
 
 	void Database::deletePool(MemoryPool* pool)
 	{
-		fb_assert(pool);
-
-		for (size_t i = 0; i < dbb_pools.getCount(); ++i)
+		if (pool)
 		{
-			if (dbb_pools[i] == pool)
+			size_t pos;
+			if (dbb_pools.find(pool, pos))
 			{
-				dbb_pools.remove(i);
-				break;
+				dbb_pools.remove(pos);
 			}
+
+			MemoryPool::deletePool(pool);
 		}
-		MemoryPool::deletePool(pool);
 	}
 
 } // namespace
