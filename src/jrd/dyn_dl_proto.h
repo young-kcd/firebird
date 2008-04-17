@@ -24,7 +24,6 @@
 #ifndef JRD_DYN_DL_PROTO_H
 #define JRD_DYN_DL_PROTO_H
 
-void	DYN_delete_collation(Jrd::Global*, const UCHAR**);
 void	DYN_delete_constraint(Jrd::Global*, const UCHAR**, const Firebird::MetaName*);
 void	DYN_delete_dimensions(Jrd::Global*, const UCHAR**, const Firebird::MetaName*, Firebird::MetaName*);
 void	DYN_delete_exception(Jrd::Global*, const UCHAR**);

@@ -64,6 +64,7 @@ EXPORTS
 	_ISC_EXPAND_DPB                @31
 	_ISC_FORMAT_IMPLEMENTATION     @32
 	_ISC_SET_LOGIN                 @33
+	_ISC_SET_PATH                  @34
 	_ISC_SET_SINGLE_USER           @35
 
 

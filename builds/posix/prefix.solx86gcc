@@ -18,6 +18,8 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
+# $Id: prefix.solx86gcc,v 1.19.4.2 2007-08-31 10:49:16 paulbeach Exp $
+#
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
@@ -31,6 +33,8 @@ SFIO_LDFLAGS=@SFIO_LDFLAGS@
 ifdef SFIO
 COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
 endif
+
+COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) 
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
@@ -52,9 +56,7 @@ LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print fbsvcmgr
-CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
 
 Physical_IO_Module=os/posix/unix.cpp
-
-UNDEF_PLATFORM = -Wl,-z,defs

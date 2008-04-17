@@ -138,9 +138,9 @@ define trigger grant_trigger for rdb$user_privileges pre store 0
 		    end
 		if rel.rdb$security_class missing
 		    modify rel
-			rel.rdb$security_class = "SQL$" | gen_id (RDB$SECURITY_CLASS, 1);
+			rel.rdb$security_class = "SQL$" | rel.rdb$relation_name;
 		    end_modify
-		else if rel.rdb$security_class not starting "SQL$"
+		else if rel.rdb$security_class != "SQL$" | rel.rdb$relation_name
 		    abort 3;
 	    end_for;
 	    if new.rdb$field_name not missing
@@ -172,9 +172,9 @@ define trigger grant_trigger for rdb$user_privileges pre store 0
 			abort 2;
 		if prc.rdb$security_class missing
 		    modify prc
-			prc.rdb$security_class = "SQL$" | gen_id (RDB$SECURITY_CLASS, 1);
+			prc.rdb$security_class = "SQL$" | prc.rdb$procedure_name;
 		    end_modify
-		else if prc.rdb$security_class not starting "SQL$"
+		else if prc.rdb$security_class != "SQL$" | prc.rdb$procedure_name
 		    abort 3;
 	    end_for;
     end;

@@ -36,7 +36,8 @@ SLONG	SDL_compute_subscript(ISC_STATUS*, const Ods::InternalArrayDesc*,
 							  USHORT, const SLONG*);
 ISC_STATUS SDL_info(ISC_STATUS*, const UCHAR*, sdl_info*, SLONG*);
 const UCHAR* SDL_prepare_slice(const UCHAR*, USHORT);
-int		SDL_walk(ISC_STATUS*, const UCHAR*, UCHAR*,
+int		SDL_walk(ISC_STATUS*, const UCHAR*, //bool,
+				UCHAR*,
 				Ods::InternalArrayDesc*, SLONG*,
 				SDL_walk_callback, array_slice*);
 

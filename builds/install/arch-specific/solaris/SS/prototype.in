@@ -69,6 +69,7 @@ f none @prefix@/bin/gsec=$SRCDIR/bin/gsec 0755 root root
 f none @prefix@/bin/isql=$SRCDIR/bin/isql 0755 root root
 f none @prefix@/bin/gpre=$SRCDIR/bin/gpre 0755 root root
 #f none @prefix@/bin/gds_drop=$SRCDIR/bin/gds_drop 0755 root root
+#f none @prefix@/bin/gds_relay=$SRCDIR/bin/gds_relay 0755 root root
 f none @prefix@/bin/gstat=$SRCDIR/bin/gstat 0755 root root
 f none @prefix@/bin/fbserver=$SRCDIR/bin/fbserver 0755 root root
 f none @prefix@/bin/fbguard=$SRCDIR/bin/fbguard 0755 root root
@@ -78,8 +79,6 @@ f none @prefix@/bin/gdef=$SRCDIR/bin/gdef 0755 root root
 f none @prefix@/bin/qli=$SRCDIR/bin/qli 6777 root root
 # from 2.0
 f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 6777 root root
-# from 2.1
-f none @prefix@/bin/fbsvcmgr=$SRCDIR/bin/fbsvcmgr 0755 root root
 
 # upgrade
 
@@ -89,9 +88,6 @@ f none @prefix@/upgrade/ib_udf_params.txt=$SRCDIR/../../src/misc/upgrade/v2/ib_u
 f none @prefix@/upgrade/ib_udf_upgrade.sql=$SRCDIR/../../src/misc/upgrade/v2/ib_udf_upgrade.sql 0644 root root
 f none @prefix@/upgrade/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 root root
 f none @prefix@/upgrade/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 root root
-f none @prefix@/upgrade/metadata_charset.txt=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset.txt 0644 root root
-f none @prefix@/upgrade/metadata_charset_create.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_create.sql 0644 root root
-f none @prefix@/upgrade/metadata_charset_drop.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata/charset_drop.sql 0644 root root
 
 # examples
 
@@ -163,10 +159,10 @@ f none @prefix@/examples/README=$SRCDIR/examples/README 0644 root root
 
 f none @prefix@/examples/functions.c=$SRCDIR/examples/functions.c 0644 root root
 
+d none @prefix@/lib 0755 root root
 
 # lib
 
-d none @prefix@/lib 0755 root root
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 root root
 s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2
@@ -208,36 +204,28 @@ d none @prefix@/doc 0755 root root
 d none @prefix@/doc/sql.extensions 0755 root root
 f none @prefix@/doc/sql.extensions/README.PSQL_stack_trace=$SRCDIR/../../doc/sql.extensions/README.PSQL_stack_trace.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.aggregate_tracking=$SRCDIR/../../doc/sql.extensions/README.aggregate_tracking 0644 root root
-f none @prefix@/doc/sql.extensions/README.builtin_functions=$SRCDIR/../../doc/sql.extensions/README.builtin_functions.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.case=$SRCDIR/../../doc/sql.extensions/README.case 0644 root root
 f none @prefix@/doc/sql.extensions/README.coalesce=$SRCDIR/../../doc/sql.extensions/README.coalesce 0644 root root
-f none @prefix@/doc/sql.extensions/README.common_table_expressions=$SRCDIR/../../doc/sql.extensions/README.common_table_expressions 0644 root root
 f none @prefix@/doc/sql.extensions/README.context_variables=$SRCDIR/../../doc/sql.extensions/README.context_variables 0644 root root
 f none @prefix@/doc/sql.extensions/README.context_variables2=$SRCDIR/../../doc/sql.extensions/README.context_variables2 0644 root root
 f none @prefix@/doc/sql.extensions/README.current_time=$SRCDIR/../../doc/sql.extensions/README.current_time 0644 root root
 f none @prefix@/doc/sql.extensions/README.cursors=$SRCDIR/../../doc/sql.extensions/README.cursors 0644 root root
 f none @prefix@/doc/sql.extensions/README.data_type_results_of_aggregations=$SRCDIR/../../doc/sql.extensions/README.data_type_results_of_aggregations.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.data_types=$SRCDIR/../../doc/sql.extensions/README.data_types 0644 root root
-f none @prefix@/doc/sql.extensions/README.db_triggers=$SRCDIR/../../doc/sql.extensions/README.db_triggers.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.ddl=$SRCDIR/../../doc/sql.extensions/README.ddl.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.default_parameters=$SRCDIR/../../doc/sql.extensions/README.default_parameters 0644 root root
 f none @prefix@/doc/sql.extensions/README.derived_tables=$SRCDIR/../../doc/sql.extensions/README.derived_tables.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.distinct=$SRCDIR/../../doc/sql.extensions/README.distinct 0644 root root
-f none @prefix@/doc/sql.extensions/README.domains_psql=$SRCDIR/../../doc/sql.extensions/README.domains_psql.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.exception_handling=$SRCDIR/../../doc/sql.extensions/README.exception_handling 0644 root root
 f none @prefix@/doc/sql.extensions/README.execute_block=$SRCDIR/../../doc/sql.extensions/README.execute_block 0644 root root
 f none @prefix@/doc/sql.extensions/README.execute_statement=$SRCDIR/../../doc/sql.extensions/README.execute_statement 0644 root root
 f none @prefix@/doc/sql.extensions/README.explicit_locks=$SRCDIR/../../doc/sql.extensions/README.explicit_locks 0644 root root
 f none @prefix@/doc/sql.extensions/README.expression_indices=$SRCDIR/../../doc/sql.extensions/README.expression_indices 0644 root root
-f none @prefix@/doc/sql.extensions/README.global_temporary_tables=$SRCDIR/../../doc/sql.extensions/README.global_temporary_tables 0644 root root
 f none @prefix@/doc/sql.extensions/README.iif=$SRCDIR/../../doc/sql.extensions/README.iif 0644 root root
 f none @prefix@/doc/sql.extensions/README.isc_info_xxx=$SRCDIR/../../doc/sql.extensions/README.isc_info_xxx 0644 root root
-f none @prefix@/doc/sql.extensions/README.joins=$SRCDIR/../../doc/sql.extensions/README.joins.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.keywords=$SRCDIR/../../doc/sql.extensions/README.keywords 0644 root root
 f none @prefix@/doc/sql.extensions/README.leave_labels=$SRCDIR/../../doc/sql.extensions/README.leave_labels 0644 root root
 f none @prefix@/doc/sql.extensions/README.length=$SRCDIR/../../doc/sql.extensions/README.length 0644 root root
-f none @prefix@/doc/sql.extensions/README.list=$SRCDIR/../../doc/sql.extensions/README.list 0644 root root
-f none @prefix@/doc/sql.extensions/README.merge=$SRCDIR/../../doc/sql.extensions/README.merge.txt 0644 root root
 f none @prefix@/doc/sql.extensions/README.null_value=$SRCDIR/../../doc/sql.extensions/README.null_value 0644 root root
 f none @prefix@/doc/sql.extensions/README.nullif=$SRCDIR/../../doc/sql.extensions/README.nullif 0644 root root
 f none @prefix@/doc/sql.extensions/README.order_by_expressions_nulls=$SRCDIR/../../doc/sql.extensions/README.order_by_expressions_nulls 0644 root root
@@ -250,7 +238,6 @@ f none @prefix@/doc/sql.extensions/README.sequence_generators=$SRCDIR/../../doc/
 f none @prefix@/doc/sql.extensions/README.set_transaction=$SRCDIR/../../doc/sql.extensions/README.set_transaction.txt
 f none @prefix@/doc/sql.extensions/README.trim=$SRCDIR/../../doc/sql.extensions/README.trim 0644 root root
 f none @prefix@/doc/sql.extensions/README.universal_triggers=$SRCDIR/../../doc/sql.extensions/README.universal_triggers 0644 root root
-f none @prefix@/doc/sql.extensions/README.update_or_insert=$SRCDIR/../../doc/sql.extensions/README.update_or_insert 0644 root root
 f none @prefix@/doc/sql.extensions/README.view_updates=$SRCDIR/../../doc/sql.extensions/README.view_updates 0644 root root
 f none @prefix@/doc/Firebird-2.0-QuickStart.pdf=$SRCDIR/../../doc/Firebird-2.0-QuickStart.pdf 0644 root root
 f none @prefix@/doc/ReleaseNotes.pdf=$SRCDIR/../../doc/ReleaseNotes.pdf 0644 root root
@@ -266,10 +253,7 @@ f none @prefix@/doc/README.instsvc=$SRCDIR/../../doc/README.instsvc 0644 root ro
 f none @prefix@/doc/README.intl=$SRCDIR/../../doc/README.intl 0644 root root
 f none @prefix@/doc/README.isql_enhancements=$SRCDIR/../../doc/README.isql_enhancements.txt 0644 root root
 f none @prefix@/doc/README.makefiles=$SRCDIR/../../doc/README.makefiles 0644 root root
-f none @prefix@/doc/README.monitoring_tables=$SRCDIR/../../doc/README.monitoring_tables 0644 root root
-f none @prefix@/doc/README.performance_monitoring=$SRCDIR/../../doc/README.performance_monitoring 0644 root root
 f none @prefix@/doc/README.sha1=$SRCDIR/../../doc/README.sha1 0644 root root
-f none @prefix@/doc/README.trusted_authentication=$SRCDIR/../../doc/README.trusted_authentication 0644 root root
 f none @prefix@/doc/README.user=$SRCDIR/../../doc/README.user 0644 root root
 f none @prefix@/doc/README.user.embedded=$SRCDIR/../../doc/README.user.embedded 0644 root root
 f none @prefix@/doc/README.user.troubleshooting=$SRCDIR/../../doc/README.user.troubleshooting 0644 root root

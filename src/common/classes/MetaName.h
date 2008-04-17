@@ -71,8 +71,6 @@ public:
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	bool isEmpty() const { return count == 0; }
-	bool hasData() const { return count != 0; }
 
 	int compare(const char* s, size_t l) const;
 	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
@@ -104,7 +102,7 @@ public:
 	LoopMetaName(char* s) : Firebird::MetaName(s), 
 		flag(true), target(s) { }
 	~LoopMetaName() { strcpy(target, c_str()); }
-	operator bool() const { return flag; }
+	operator bool() { return flag; }
 	void stop() { flag = false; }
 };
 #define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())

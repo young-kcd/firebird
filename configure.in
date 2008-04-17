@@ -24,6 +24,7 @@ AC_SUBST(CPU_TYPE)
 
 
 dnl EKU: set appropiate defaults for each platform
+dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
@@ -34,13 +35,10 @@ dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
 ICU_PLATFORM=LinuxRedHat
 
-dnl Should system editline and/or icu be used 
-STD_EDITLINE=false
-STD_ICU=false
-RPM64=
+dnl Should Classic Server run services as thread or as process?
+dnl Default - run as processes (empty value).
+service_thread_CS=""
 
-dnl Test for realtime library presence?
-RT_LIB_CHECK=false
 
 case "$target" in
   i686-*-darwin*)
@@ -54,7 +52,6 @@ case "$target" in
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
-dnl CPU_TYPE=x86_64
     ;;
 
   powerpc-*-darwin*)
@@ -81,7 +78,7 @@ dnl CPU_TYPE=x86_64
     ;;
 
   *-gentoo-freebsd*)
-    MAKEFILE_PREFIX=freebsd
+    MAKEFILE_PREFIX=freebsd 
     PLATFORM=GENTOOFREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     LOCK_MANAGER_FLG=Y
@@ -98,30 +95,6 @@ dnl CPU_TYPE=x86_64
     SHRLIB_EXT=so
     ;;
 
-  mips-*-linux*)
-    MAKEFILE_PREFIX=linux_mips
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
-    ;;
-
-  mipsel-*-linux*)
-    MAKEFILE_PREFIX=linux_mipsel
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
-    ;;
-
   x86_64*-*-linux*)
     MAKEFILE_PREFIX=linux_amd64
     INSTALL_PREFIX=linux
@@ -132,19 +105,6 @@ dnl CPU_TYPE=x86_64
     SHRLIB_EXT=so
     libdir=/usr/lib64
     CPU_TYPE=amd64
-	RPM64='()(64bit)'
-    ;;
-
-  arm*-*-linux*)
-    MAKEFILE_PREFIX=linux_arm
-    INSTALL_PREFIX=linux
-    PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
-    EDITLINE_FLG=Y
-    SHRLIB_EXT=so
-    STD_EDITLINE=true
-    STD_ICU=true
     ;;
 
   sparc*-*-linux*)
@@ -157,20 +117,20 @@ dnl CPU_TYPE=x86_64
     SHRLIB_EXT=so
     ;;
 
-  powerpc*-*-linux*)
-    MAKEFILE_PREFIX=linux_powerpc
-    INSTALL_PREFIX=linux
+  i*86*-*-linux*)
+    MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
-    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    AC_DEFINE(LINUX)
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
 
-  i*86*-*-linux*)
-    MAKEFILE_PREFIX=linux
+  powerpc*-*-linux*)
+    MAKEFILE_PREFIX=linux_ppc
+    INSTALL_PREFIX=linux
     PLATFORM=LINUX
-    AC_DEFINE(LINUX)
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
@@ -216,7 +176,7 @@ dnl CPU_TYPE=x86_64
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
-    RT_LIB_CHECK=true
+    service_thread_CS=true
     ;;
 
   sparc-sun-solaris*)
@@ -230,7 +190,7 @@ dnl CPU_TYPE=x86_64
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
-    RT_LIB_CHECK=true
+    service_thread_CS=true
     ;;
 
   i*-sni-sysv4)
@@ -252,6 +212,7 @@ dnl CPU_TYPE=x86_64
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
 	ICU_PLATFORM=MinGW
+    service_thread_CS=true
     ;;
 
   *)
@@ -267,8 +228,8 @@ AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
+AC_SUBST(service_thread_CS)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
-AC_SUBST(RPM64)
 
 
 dnl Some controllable options
@@ -298,11 +259,9 @@ AC_ARG_ENABLE(debug,
 AC_SUBST(PROD_BUILD_FLG)
 
 dnl Find out how to use threads on this platform
-pre_acx_pthread_cflags=$CFLAGS
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
-CFLAGS=$pre_acx_pthread_cflags
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
@@ -319,6 +278,30 @@ if test "$RAW_DEVICES_FLG" = "Y"; then
     [Define this if databases on raw devices should be supported])
 fi
 
+MANAGER_PROCESS_TARGET=
+if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
+  dnl The lock manager process is only need on systems, that do not support
+  dnl sending signals to process groups (man 2 kill).
+  AC_ARG_WITH(lock-manager,
+    [  --with-lock-manager     build lock manager],
+    [case "$withval" in
+       yes) LOCK_MANAGER_FLG=Y;;
+       no)  LOCK_MANAGER_FLG=N;;
+       *)   AC_MSG_ERROR(bad value '${withval}' for --with-lock-manager);;
+     esac])
+
+  if test "$LOCK_MANAGER_FLG" = "Y"; then
+    dnl EKU: we should determine the necessity by target system
+    dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
+    dnl      manager process
+    dnl EKU: is this really true???
+    AC_DEFINE(MANAGER_PROCESS, 1,
+      [Define this if the lock manager process is needed])
+    MANAGER_PROCESS_TARGET=lock_mgr
+  fi
+fi
+AC_SUBST(MANAGER_PROCESS_TARGET)
+
 AC_ARG_WITH(editline,
   [  --with-editline         support fancy command line editing],
   [case "$withval" in
@@ -326,32 +309,7 @@ AC_ARG_WITH(editline,
      no)  EDITLINE_FLG=N;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-editline);;
    esac])
-AC_ARG_WITH(system-editline,
-  [  --with-system-editline  use OS supplied libeditline],
-  [case "$withval" in
-     yes) STD_EDITLINE=true;;
-     no)  STD_EDITLINE=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-editline);;
-   esac])
-
-# not need editline in default libs, but need to test for its presence
-saveLIBS=$LIBS
-if test "$STD_EDITLINE" = "true"; then
-  AC_CHECK_LIB(editline, readline, EDITLINE_FLG=Y, STD_EDITLINE=false)
-fi
-LIBS=$saveLIBS
-
-AC_SUBST(STD_EDITLINE)
 AC_SUBST(EDITLINE_FLG)
-
-AC_ARG_WITH(system-icu,
-  [  --with-system-icu       use OS supplied ICU],
-  [case "$withval" in
-     yes) STD_ICU=true;;
-     no)  STD_ICU=false;;
-     *)   AC_MSG_ERROR(bad value '${withval}' for --with-system-icu);;
-   esac])
-AC_SUBST(STD_ICU)
 
 FB_SERVICE_NAME=gds_db
 FB_SERVICE_PORT=3050
@@ -385,7 +343,7 @@ AC_ARG_WITH(gpre-ada,
 AC_ARG_WITH(gpre-cobol,
   [  --with-gpre-cobol       support COBOL in gpre (default=no)],
   [case "$withval" in
-     yes) XE_APPEND(cob.cpp rmc.cpp,GPRE_LANGUAGE_MODULES)
+     yes) XE_APPEND(cob.cpp,GPRE_LANGUAGE_MODULES)
           AC_DEFINE(GPRE_COBOL, 1, [Define this if GPRE should support COBOL]);;
      no)  ;;
      *)   AC_MSG_ERROR(bad value '${withval}' for --with-gpre-cobol);;
@@ -424,6 +382,7 @@ AC_LIBTOOL_DLOPEN
 AC_LIBTOOL_WIN32_DLL
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
+AC_PROG_YACC
 
 
 dnl Check for system header files
@@ -454,9 +413,8 @@ AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 AC_CHECK_HEADERS(sys/timeb.h)
 AC_CHECK_HEADERS(sys/param.h)
-AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(sys/ioctl.h)
-AC_CHECK_HEADERS(limits.h)
+AC_CHECK_HEADERS(sys/mount.h)
 AC_CHECK_HEADERS(setjmp.h)
 AC_CHECK_HEADERS(stdarg.h)
 AC_CHECK_HEADERS(stdlib.h)
@@ -465,7 +423,7 @@ AC_CHECK_HEADERS(signal.h sys/signal.h sys/siginfo.h)
 if test "$EDITLINE_FLG" = "Y"; then
   AC_CHECK_HEADERS(termio.h termios.h)
   AC_HEADER_DIRENT
-  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if editline is in use])
+  AC_DEFINE(HAVE_EDITLINE_H, 1, [Define this if internal editline.h is in use])
 fi
 AC_CHECK_HEADERS(unistd.h)
 if test "$ac_cv_header_unistd_h" = "yes"; then
@@ -494,13 +452,12 @@ AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
 AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
-AC_CHECK_HEADERS(sys/resource.h)
 AC_CHECK_HEADERS(sys/sem.h)
 AC_CHECK_HEADERS(semaphore.h)
 
-
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
+AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
@@ -508,20 +465,10 @@ if test "$EDITLINE_FLG" = "Y"; then
 			AC_CHECK_LIB(termcap, tgetent, TERMLIB=termcap, \
 				AC_CHECK_LIB(tinfo, tgetent, TERMLIB=tinfo, \
 					AC_MSG_ERROR(termcap support not found)))))  
+	AC_SUBST(EDITLINE_A, -leditline)
 	AC_SUBST(TERMLIB)
 	XE_APPEND(-l$TERMLIB, LIBS)
 fi
-if test "$RT_LIB_CHECK" = "true"; then
-	AC_CHECK_LIB(rt, main)
-fi
-
-dnl check for INFINITY in math.h
-dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
-AC_TRY_COMPILE([#define _ISOC99_SOURCE 1
-#include <math.h>],
-    [double x = INFINITY;],
-    [AC_DEFINE(HAVE_INFINITY, 1,
-       [Define this if INFINITY is defined in math.h])])
 
 dnl check for va_copy() in stdarg.h
 dnl _ISOC99_SOURCE is defined to emulate C++ compilation in plain-C conftest.c
@@ -609,6 +556,7 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
+
 if test "$ac_cv_header_semaphore_h" = "yes"; then
 savedFlags="$CFLAGS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -745,6 +693,7 @@ case "$PLATFORM" in
     if test "$EDITLINE_FLG" = "Y"; then
   	AC_CHECK_LIB(termcap, main, XE_APPEND(-ltermcap,EDITLINE_A))
     fi
+  	AC_CHECK_LIB(rt, main)
 
     AC_CHECK_TYPES([caddr_t])
 
@@ -843,7 +792,6 @@ mkdir -p gen/gpre
 mkdir -p gen/iscguard
 mkdir -p gen/isql
 mkdir -p gen/jrd
-mkdir -p gen/jrd/extds
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
@@ -875,7 +823,6 @@ dnl #### TEMP ######### directories for .o and .d
 dnl # by module name
 
 mkdir -p temp/boot/alice
-mkdir -p temp/boot/auth/trusted
 mkdir -p temp/boot/burp
 mkdir -p temp/boot/common/classes
 mkdir -p temp/boot/common/config
@@ -890,7 +837,6 @@ mkdir -p temp/boot/ipserver
 mkdir -p temp/boot/iscguard
 mkdir -p temp/boot/isql
 mkdir -p temp/boot/jrd
-mkdir -p temp/boot/jrd/extds
 mkdir -p temp/boot/jrd/os/posix
 mkdir -p temp/boot/jrd/os/win32
 mkdir -p temp/boot/jrd/os/darwin
@@ -912,7 +858,6 @@ mkdir -p temp/boot/utilities/rebuild
 mkdir -p temp/boot/vulcan
 
 mkdir -p temp/std/alice
-mkdir -p temp/std/auth/trusted
 mkdir -p temp/std/burp
 mkdir -p temp/std/common/classes
 mkdir -p temp/std/common/config
@@ -927,7 +872,6 @@ mkdir -p temp/std/ipserver
 mkdir -p temp/std/iscguard
 mkdir -p temp/std/isql
 mkdir -p temp/std/jrd
-mkdir -p temp/std/jrd/extds
 mkdir -p temp/std/jrd/os/posix
 mkdir -p temp/std/jrd/os/win32
 mkdir -p temp/std/jrd/os/darwin
@@ -947,9 +891,9 @@ mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
 mkdir -p temp/std/utilities/rebuild
 mkdir -p temp/std/vulcan
+mkdir -p temp/std/extern/editline
 
 mkdir -p temp/superclient/alice
-mkdir -p temp/superclient/auth/trusted
 mkdir -p temp/superclient/burp
 mkdir -p temp/superclient/common/classes
 mkdir -p temp/superclient/common/config
@@ -964,7 +908,6 @@ mkdir -p temp/superclient/ipserver
 mkdir -p temp/superclient/iscguard
 mkdir -p temp/superclient/isql
 mkdir -p temp/superclient/jrd
-mkdir -p temp/superclient/jrd/extds
 mkdir -p temp/superclient/jrd/os/posix
 mkdir -p temp/superclient/jrd/os/win32
 mkdir -p temp/superclient/jrd/os/darwin
@@ -986,7 +929,6 @@ mkdir -p temp/superclient/utilities/rebuild
 mkdir -p temp/superclient/vulcan
 
 mkdir -p temp/superserver/alice
-mkdir -p temp/superserver/auth/trusted
 mkdir -p temp/superserver/burp
 mkdir -p temp/superserver/common/classes
 mkdir -p temp/superserver/common/config
@@ -1001,7 +943,6 @@ mkdir -p temp/superserver/ipserver
 mkdir -p temp/superserver/iscguard
 mkdir -p temp/superserver/isql
 mkdir -p temp/superserver/jrd
-mkdir -p temp/superserver/jrd/extds
 mkdir -p temp/superserver/jrd/os/posix
 mkdir -p temp/superserver/jrd/os/win32
 mkdir -p temp/superserver/jrd/os/darwin
@@ -1141,6 +1082,7 @@ case "$PLATFORM" in
   DARWIN)
     ;;
 esac
+
 if test -f ${MAKE_SRC_DIR}/postfix.${MAKEFILE_POSTFIX};then
 	POSTFIX_FILE=gen/make.platform.postfix:${MAKE_SRC_DIR}/postfix.${MAKEFILE_POSTFIX}
 	POSTFIX_INCLUDE='include $(ROOT)/gen/make.platform.postfix'
@@ -1167,7 +1109,6 @@ gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
 gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
 gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
-gen/Makefile.smp_server:${MAKE_SRC_DIR}/Makefile.in.smp_server
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
@@ -1184,6 +1125,7 @@ gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
+gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
 gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
@@ -1194,13 +1136,9 @@ gen/Makefile.embed.qli:${MAKE_SRC_DIR}/Makefile.in.embed.qli
 gen/Makefile.embed.gpre:${MAKE_SRC_DIR}/Makefile.in.embed.gpre
 gen/Makefile.install:builds/install/arch-specific/${INSTALL_PREFIX}/Makefile.in
 Makefile:Makefile.in
+gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline
+gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu
 )
-if test "$STD_EDITLINE" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.editline:${MAKE_SRC_DIR}/Makefile.in.extern.editline)
-fi
-if test "$STD_ICU" = "false"; then
-  AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
-fi
 
 
 
@@ -1208,14 +1146,11 @@ if test "$PROD_BUILD_FLG" = N; then
   DEBUG_ICU=--enable-debug
 fi
 
-if test "$STD_ICU" = "true"; then
-AC_OUTPUT
-else
 AC_OUTPUT
 (cd extern/icu/source
 chmod +x runConfigureICU configure install-sh
 ./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
-fi
+
 
 dnl Print out the build configuration (the most interesting thing)
 echo

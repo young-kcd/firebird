@@ -19,7 +19,6 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #ifndef DSQL_DSQL_PROTO_H
@@ -27,60 +26,57 @@
 
 #include "../common/classes/fb_string.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
-	class dsql_req;
 }
 
-Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*,
-									   Jrd::Attachment*);
-void DSQL_execute(Jrd::thread_db*,
-				  Jrd::jrd_tra**, Jrd::dsql_req*,
-				  USHORT, const UCHAR*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*,
-				  USHORT, USHORT, UCHAR*);
-void DSQL_execute_immediate(Jrd::thread_db*,
-							Jrd::Attachment*,
-							Jrd::jrd_tra**,
-							USHORT, const TEXT*, USHORT,
-							USHORT, const UCHAR*,
-							USHORT, USHORT, const UCHAR*,
-							USHORT, UCHAR*,
-							USHORT, USHORT, UCHAR*);
+class dsql_req;
+
+ISC_STATUS dsql8_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, dsql_req**);
+ISC_STATUS dsql8_execute(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
+									   USHORT, const SCHAR*, USHORT, USHORT,
+									   SCHAR*, USHORT, SCHAR*, USHORT,
+									   USHORT, SCHAR*);
+ISC_STATUS dsql8_execute_immediate(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
+												 USHORT, const TEXT*, USHORT,
+												 USHORT, const SCHAR*, USHORT,
+												 USHORT, SCHAR*, USHORT,
+												 SCHAR*, USHORT, USHORT,
+												 SCHAR*);
 #ifdef SCROLLABLE_CURSORS
-ISC_STATUS DSQL_fetch(Jrd::thread_db*,
-					  Jrd::dsql_req*,
-					  USHORT, const UCHAR*,
-					  USHORT, USHORT, UCHAR*,
-					  USHORT, SLONG);
+ISC_STATUS dsql8_fetch(ISC_STATUS*, dsql_req**, USHORT, const SCHAR*,
+									 USHORT, USHORT, SCHAR*, USHORT, SLONG);
 #else
-ISC_STATUS DSQL_fetch(Jrd::thread_db*,
-					  Jrd::dsql_req*,
-					  USHORT, const UCHAR*,
-					  USHORT, USHORT, UCHAR*);
+ISC_STATUS dsql8_fetch(ISC_STATUS*, dsql_req**, USHORT, const SCHAR*,
+									 USHORT, USHORT, SCHAR*);
 #endif // SCROLLABLE_CURSORS 
-void DSQL_free_statement(Jrd::thread_db*,
-						 Jrd::dsql_req*,
-						 USHORT);
-void DSQL_insert(Jrd::thread_db*,
-			     Jrd::dsql_req*,
-				 USHORT, const UCHAR*,
-				 USHORT, USHORT, const UCHAR*);
-void DSQL_prepare(Jrd::thread_db*,
-				  Jrd::jrd_tra*,
-				  Jrd::dsql_req**,
-				  USHORT, const TEXT*,
-				  USHORT, USHORT, const UCHAR*,
-				  USHORT, UCHAR*);
-void DSQL_set_cursor(Jrd::thread_db*,
-					 Jrd::dsql_req*,
-					 const TEXT*,
-					 USHORT);
-void DSQL_sql_info(Jrd::thread_db*,
-				   Jrd::dsql_req*,
-				   USHORT, const UCHAR*,
-				   USHORT, UCHAR*);
+ISC_STATUS dsql8_free_statement(ISC_STATUS*, dsql_req**,
+											  USHORT);
+ISC_STATUS dsql8_insert(ISC_STATUS*, dsql_req**, USHORT,
+									  const SCHAR*, USHORT, USHORT, const SCHAR*);
+ISC_STATUS dsql8_prepare(ISC_STATUS*, FB_API_HANDLE*, dsql_req**,
+									   USHORT, const TEXT*, USHORT, USHORT,
+									   const SCHAR*, USHORT, SCHAR*);
+ISC_STATUS dsql8_set_cursor(ISC_STATUS*, dsql_req**, const TEXT*,
+										  USHORT);
+ISC_STATUS dsql8_sql_info(ISC_STATUS*, dsql_req**, USHORT,
+										const SCHAR*, USHORT, SCHAR*);
+
+ISC_STATUS callback_execute_immediate(ISC_STATUS* status,
+									Jrd::Attachment* jrd_attachment_handle,
+									Jrd::jrd_tra* jrd_transaction_handle,
+									const Firebird::string& sql_operator);
+
+
+#ifdef __cplusplus
+} // extern "C" 
+#endif
+
 
 #endif //  DSQL_DSQL_PROTO_H
+

@@ -31,6 +31,8 @@
 #ifndef JRD_FIL_H
 #define JRD_FIL_H
 
+#include "../jrd/thd.h"
+
 /* Defined the directory list structures. */
 
 /* Temporary workfile directory list. */
@@ -44,11 +46,12 @@ struct dir_list {
 };
 
 struct mutexed_dir_list {
-	dir_list* mdls_dls;			/* Pointer to the directory list */
-	Firebird::Mutex mdls_mutex;	/* Mutex for directory list. Must
+	dir_list* mdls_dls;				/* Pointer to the directory list */
+	bool mdls_mutex_init;
+	MUTX_T mdls_mutex[1];		/* Mutex for directory list. Must
 								   be locked before list operations */
 	mutexed_dir_list()
-		: mdls_dls(NULL) {}
+		: mdls_dls(0), mdls_mutex_init(false) {}
 };
 
 /* external function directory list */

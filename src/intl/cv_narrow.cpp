@@ -126,8 +126,10 @@ ULONG CV_wc_to_wc(csconvert* obj,
 	while ((src_len > 1) && (dest_len > 1)) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
 		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)[
-			((const USHORT*) obj->csconvert_impl->csconvert_misc)[
-				(USHORT) uni / 256] + (uni % 256)];
+												   ((const USHORT*) obj->csconvert_impl->
+													csconvert_misc)[(USHORT)
+																	uni / 256]
+												   + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -152,9 +154,9 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 					   ULONG src_len,
 					   const BYTE* src_ptr,
 					   ULONG dest_len,
-					   BYTE* dest_ptr,
-					   USHORT* err_code,
-					   ULONG* err_position)
+					   BYTE *dest_ptr,
+					   USHORT *err_code,
+					   ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);

@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\isql_embed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
 # ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "EMBEDDED" /FR /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
@@ -65,7 +65,7 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\isql_embed"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MD /W3 /GX /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "NOMSG" /D "DEV_BUILD" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MD /W3 /GR /GX /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "NOMSG" /D "DEV_BUILD" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX
 # ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_CONSOLE" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /D "EMBEDDED" /FR /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -105,27 +105,11 @@ SOURCE=..\..\..\src\isql\show.epp
 # End Group
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\ColList.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\Extender.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\isql\extract.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\InputDevices.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\gen\isql\isql.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\OptionsBase.cpp
 # End Source File
 # Begin Source File
 
@@ -141,19 +125,7 @@ SOURCE=..\..\..\src\common\utils.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=..\..\..\src\isql\ColList.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\Extender.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\isql\extra_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\InputDevices.h
 # End Source File
 # Begin Source File
 
@@ -166,10 +138,6 @@ SOURCE=..\..\..\src\isql\isql_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\isql\isql_res.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\isql\OptionsBase.h
 # End Source File
 # Begin Source File
 

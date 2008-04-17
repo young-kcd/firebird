@@ -35,8 +35,10 @@
 #include "../jrd/ibase.h"
 //#include "../jrd/license.h"
 #include "../alice/alice.h"
+#include "../alice/all.h"
 #include "../alice/alice_meta.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/thd.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../alice/alice_proto.h"
@@ -79,7 +81,7 @@ static const rfr_tab_t rfr_table[] = {
 static inline void return_error(const ISC_STATUS* user_status)
 {
 	ALICE_print_status(gds_status);
-	Firebird::LongJump::raise();
+	Firebird::status_exception::raise();
 }
 
 /*____________________________________________________________
@@ -365,7 +367,7 @@ static TDR get_description(ISC_QUAD* blob_id)
 			break;
 
 		default:
-			ALICE_print(108);
+			ALICE_print(108, 0, 0, 0, 0, 0);
 			// msg 108: Transaction description item unknown.
 
 			if (length) {

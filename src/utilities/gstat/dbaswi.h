@@ -25,7 +25,6 @@
 #define DBA_DBASWI_H
 
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 
 /* Switch handling constants.  Note that the first IN_SW_DATA_ITEMS
    switch constants refer to data items.  The remaining switch constants
@@ -44,11 +43,6 @@ const int IN_SW_DBA_PASSWORD	= 9;	/* password */
 const int IN_SW_DBA_RECORD		= 10;	/* analyze record versions */
 const int IN_SW_DBA_RELATION	= 11;	/* analyze specific relations */
 const int IN_SW_DBA_NOCREATION	= 12;	/* don't print creation date */
-const int IN_SW_DBA_TRUSTEDUSER	= 13;	/* trusted user name */
-const int IN_SW_DBA_TRUSTEDROLE	= 14;	/* use predefined trusted role */
-#ifdef TRUSTED_AUTH
-const int IN_SW_DBA_TRUSTEDAUTH	= 15;	/* trusted user name */
-#endif
 
 static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_DATAIDX,		0,				"ALL",		0,0,0,	FALSE,	22,	0, NULL},	/* msg 22: -a      analyze data and index pages */
@@ -63,12 +57,7 @@ static struct in_sw_tab_t dba_in_sw_table [] = {
     {IN_SW_DBA_RELATION,	isc_spb_sts_table,	"TABLE",	0,0,0,	FALSE,	35,	0, NULL},	/* msg 35: -t      tablename */
     {IN_SW_DBA_VERSION,		0,				"Z",		0,0,0,	FALSE,	28,	0, NULL},	/* msg 28: -z      display version number */
 	// special switch to avoid including creation date, only for tests (no message)
-    {IN_SW_DBA_NOCREATION,	isc_spb_sts_nocreation,	"NOCREATION",	0,0,0,	FALSE,	0,	0, NULL},	/* msg (ignored) -n suppress creation date */
-    {IN_SW_DBA_TRUSTEDUSER,		0,				TRUSTED_USER_SWITCH,	0,0,0,	FALSE,	0,	0, NULL},	/* msg 0 - ignored */
-    {IN_SW_DBA_TRUSTEDROLE,		0,				TRUSTED_ROLE_SWITCH,	0,0,0,	FALSE,	0,	0, NULL},	/* msg 0 - ignored */
-#ifdef TRUSTED_AUTH
-    {IN_SW_DBA_TRUSTEDAUTH,		0,				"TRUSTED",	0,0,0,	FALSE,	36,	0, NULL},	/* msg 36: -tr     use trusted authentication */
-#endif
+    {IN_SW_DBA_NOCREATION,	isc_spb_sts_nocreation,	"NOCREATION",	0,0,0,	FALSE,	0,	0, NULL},	/* msg 35: -n suppress creation date */
     {IN_SW_DBA_0,		0,				NULL,		0,0,0,	FALSE,	0,	0, NULL}		/* End of List */
 };
 #endif /* DBA_DBASWI_H */

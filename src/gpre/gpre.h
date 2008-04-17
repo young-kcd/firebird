@@ -54,8 +54,7 @@
  *
  * 2002.10.30 Sean Leyne - Removed support for obsolete "PC_PLATFORM" define
  *
- * Stephen W. Boyd       - Added support for new features.
-*/
+ */
 
 #ifndef GPRE_GPRE_H
 #define GPRE_GPRE_H
@@ -65,7 +64,6 @@
 #include <stdio.h>
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 
 #ifdef GPRE_FORTRAN
 #if defined AIX || defined AIX_PPC || defined sun
@@ -79,6 +77,10 @@
 #if (defined HPUX && defined HP10) || defined SCO_UNIX
 #define ALSYS_ADA
 #endif
+#endif
+
+#ifdef VMS
+#define EITHER_CASE
 #endif
 
 /* If the C compiler supports the ANSI const directive, we emit it before
@@ -101,9 +103,9 @@ const int MAX_EVENT_SIZE = 16; // event names use 15 chars from old docs.
 // Values for SQL dialects.
 #include "../dsql/sqlda_pub.h"
 
-// Language options
+/* Language options */
 
-enum lang_t
+typedef enum lang_t
 {
 	lang_undef,
 	lang_internal,
@@ -118,16 +120,7 @@ enum lang_t
 	lang_cplusplus,
 	lang_cpp,
 	lang_internal_cxx
-};
-
-// Cobol dialect options
-enum cob_t
-{
-	cob_vms,					// VMS
-	cob_ansi,					// ANSI-85
-	cob_rmc						// RM/Cobol
-};
-
+} LANG_T;
 
 //___________________________________________________________________
 // Test if input language is cpp based.
@@ -143,8 +136,7 @@ enum cob_t
 // and lang_internal.
 //
 
-bool isLangCpp(lang_t lang);
-bool isAnsiCobol(cob_t dialect);
+bool isLangCpp(LANG_T lang);
 
 
 /* Structure used by Fortran and Basic to determine whether or not
@@ -222,7 +214,7 @@ const size_t FLTR_LEN = sizeof(fltr);
 typedef enum nod_t {
 	nod_field = 1, nod_literal, nod_value,
 	nod_and, nod_or, nod_not,
-	nod_eq, nod_equiv, nod_ne, nod_ge,
+	nod_eq, nod_ne, nod_ge,
 	nod_le, nod_gt, nod_lt,
 	nod_containing, nod_matches, nod_any,
 	nod_unique, nod_plus, nod_times,
@@ -236,7 +228,7 @@ typedef enum nod_t {
 	nod_label, nod_leave, nod_loop,
 	nod_max, nod_min, nod_count,
 	nod_total, nod_average, nod_list,
-	nod_deferred, nod_missing, nod_between,
+	nod_defered, nod_missing, nod_between,
 	nod_union, nod_map, nod_starting,
 	nod_like, nod_agg_count, nod_agg_max,
 	nod_agg_min, nod_agg_total, nod_agg_average,
@@ -252,10 +244,7 @@ typedef enum nod_t {
 	nod_natural, nod_index_order, nod_ansi_all,
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
-	nod_lowcase, nod_nullif, nod_current_connection,
-	nod_current_role, nod_current_transaction,
-	nod_coalesce, nod_case, nod_case1,
-	nod_substring,
+	nod_lowcase,
 	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 
@@ -354,6 +343,8 @@ const size_t VAL_LEN = sizeof(val);
 /* Array information block.  Used to hold info about an array field.
    Note: the dimension (dim) block used to hold dimension information.
    The preferred mechanism is the repeating tail on the array block. */
+
+const int MAX_ARRAY_DIMENSIONS = 16;
 
 struct ary {
 	USHORT ary_dtype;			/* data type of array */
@@ -613,7 +604,6 @@ typedef enum act_t {
 	ACT_release,
 	ACT_rfinish,
 	ACT_rollback,
-	ACT_rollback_retain_context,
 	ACT_routine,
 	ACT_segment,
 	ACT_segment_length,
@@ -908,8 +898,6 @@ struct gpre_rse {
 	USHORT rse_type;			/* node type */
 	gpre_nod* rse_boolean;		/* boolean expression, if present */
 	gpre_nod* rse_first;		/* "first n" clause, if present */
-	gpre_nod* rse_sqlfirst;		/* SQL "first n" clause if present */
-	gpre_nod* rse_sqlskip;		/* SQL "skip n" clause if present */
 	gpre_nod* rse_reduced;		/* projection clause, if present */
 	gpre_nod* rse_sort;			/* sort clause, if present */
 	gpre_nod* rse_fields;		/* list of fields */
@@ -935,9 +923,7 @@ inline size_t RSE_LEN(const size_t cnt)
 }
 
 enum rse_flags_vals {
-	RSE_singleton = 1,
-	RSE_for_update = 2,
-	RSE_with_lock = 4
+	RSE_singleton = 1
 };
 
 
@@ -1464,7 +1450,7 @@ enum udf_flags_vals {
 };
 
 
-// Update block -- used for (at least) MODIFY
+/* Update block -- used for (at least) MODIFY */
 
 struct upd {
 	USHORT upd_level;			/* reference level */
@@ -1483,12 +1469,11 @@ const size_t UPD_LEN = sizeof(upd);
 #include "../jrd/dsc.h"
 #include "parse.h"
 
-// GPRE wide globals
+/* GPRE wide globals */
 
 struct GpreGlobals
 {
-	cob_t sw_cob_dialect;
-	const TEXT* sw_cob_dformat;
+	bool sw_ansi;
 	bool sw_auto;
 	bool sw_sql;
 	bool sw_raw;
@@ -1499,14 +1484,12 @@ struct GpreGlobals
 	bool sw_external;
 	bool sw_version;
 	bool sw_d_float;
-	bool sw_no_qli;
 	USHORT sw_sql_dialect;
 	USHORT sw_know_interp;
 	USHORT sw_server_version;
 	USHORT sw_ods_version;
 	bool override_case;
 	bool dialect_specified;
-	bool trusted_auth;
 
 	SSHORT sw_interp;
 	USHORT compiletime_db_dialect;
@@ -1515,25 +1498,25 @@ struct GpreGlobals
 	const TEXT* ada_null_address;
 	DBB isc_databases;
 	const TEXT* default_user;
-	const TEXT* default_password;
+	TEXT* default_password;
 	const TEXT* default_lc_ctype;
 	gpre_req* requests;
 	gpre_lls* events;
 	FILE *out_file;
-	lang_t sw_language;
+	LANG_T sw_language;
 	int errors_global;
 	act* global_functions;
 	dbd global_db_list[MAX_DATABASES];
 	USHORT global_db_count;
 	INTLSYM text_subtypes;
 
-	// ada_flags fields definition
+/* ada_flags fields definition */
 
 	int ADA_create_database;	// the flag is set when there is a
-								// create database SQL statement in
-								// user program, and is used to
-								// generate additional "with" and
-								// "function" declarations
+									// create database SQL statement in
+									// user program, and is used to
+									// generate additional "with" and
+									// "function" declarations
 
 	USHORT ada_flags;
 	// from gpre.cpp
@@ -1556,7 +1539,6 @@ struct GpreGlobals
 
 extern GpreGlobals gpreGlob;
 
-
 #ifndef fb_assert
 #ifdef DEV_BUILD
 #undef fb_assert
@@ -1573,7 +1555,7 @@ extern GpreGlobals gpreGlob;
 #define assert_IS_ACT(x) fb_assert(!(x) || ((x)->act_type >= 0 && (x)->act_type < ACT_LASTACT))
 
 
-class gpre_exception: public Firebird::LongJump
+class gpre_exception: public std::exception
 {
 	char msg[MAXPATHLEN << 1];
 public:
@@ -1588,7 +1570,7 @@ public:
 	}
 	const char* what() const throw()
 	{
-		return msg[0] ? msg : "gpre_exception";
+		return msg;
 	}
 };
 

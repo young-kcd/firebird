@@ -66,6 +66,7 @@ static void format_tip(tx_inv_page*, int, SLONG);
 static void get_next_file(RBDB, header_page*);
 static void get_range(TEXT***, const TEXT* const* const, ULONG*, ULONG*);
 static void get_switch(TEXT**, SWC);
+static void move(const SCHAR*, SCHAR*, SSHORT);
 static header_page* open_database(RBDB, ULONG);
 static void print_db_header(FILE*, const header_page*);
 static void rebuild(RBDB);
@@ -115,6 +116,10 @@ int main( int argc, char *argv[])
 	pg_size = p_lower_bound = c_lower_bound = d_lower_bound = 0;
 	p_upper_bound = c_upper_bound = d_upper_bound = BIG_NUMBER;
 	USHORT pg_type = 0;
+
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
 	const TEXT* const* const end = argv + argc;
 	++argv;
@@ -188,7 +193,9 @@ int main( int argc, char *argv[])
 	}
 
 	if (db_in) {
-		rbdb = (RBDB) RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in) + 1));
+		rbdb =
+			(RBDB)
+			RBDB_alloc((SLONG) (sizeof(struct rbdb) + strlen(db_in) + 1));
 		strcpy(rbdb->rbdb_file.fil_name, db_in);
 		rbdb->rbdb_file.fil_length = strlen(db_in);
 		if (header = open_database(rbdb, pg_size))
@@ -299,7 +306,7 @@ PAG CCH_release(WIN * x)
 #endif
 
 
-void* RBDB_alloc(SLONG size)
+SCHAR *RBDB_alloc(SLONG size)
 {
 /**************************************
  *
@@ -311,7 +318,13 @@ void* RBDB_alloc(SLONG size)
  *	Allocate and zero a piece of memory.
  *
  **************************************/
-	return memset(gds__alloc(size), 0, size);
+	char* const block = gds__alloc(size);
+	char* p = block;
+	do {
+		*p++ = 0;
+	} while (--size);
+
+	return block;
 }
 
 
@@ -365,7 +378,7 @@ PAG RBDB_read(RBDB rbdb, SLONG page_number)
  **************************************/
 	int file = rbdb->rbdb_file.fil_file;
 
-	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) rbdb->rbdb_page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)rbdb->rbdb_page_size);
 	if (lseek (file, offset, 0) == -1)
 		db_error(errno);
 
@@ -402,7 +415,7 @@ void RBDB_write( RBDB rbdb, PAG page, SLONG page_number)
 	const ULONG page_size = rbdb->rbdb_page_size;
 	int fd = rbdb->rbdb_file.fil_file;
 
-	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) page_size);
+	const UINT64 offset = ((UINT64)page_number) * ((UINT64)page_size);
 	if (lseek (fd, offset, 0) == -1)
 		db_error(errno);
 	if (write(fd, page, page_size) == -1)
@@ -480,10 +493,8 @@ static USHORT compute_checksum( RBDB rbdb, PAG page)
 /* If the page is all zeros, return an artificial checksum */
 
 	for (p = (ULONG *) page; p < end;)
-	{
 		if (*p++)
 			return checksum;
-	}
 
 /* Page is all zeros -- invent a checksum */
 
@@ -861,6 +872,24 @@ static void get_switch( TEXT** argv, SWC token)
 }
 
 
+static void move(const SCHAR* from, SCHAR* to, SSHORT length)
+{
+/**************************************
+ *
+ *	m o v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move some stuff.
+ *
+ **************************************/
+	do {
+		*to++ = *from++;
+	} while (--length);
+}
+
+
 static header_page* open_database( RBDB rbdb, ULONG pg_size)
 {
 /**************************************
@@ -998,17 +1027,17 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 			break;
 
 		case HDR_last_page:
-			memcpy(&number, p + 2, sizeof(number));
+			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tLast logical page: %ld\n", number);
 			break;
 /*
 		case HDR_unlicensed:
-			memcpy(&number, p + 2, sizeof(number));
+			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tUnlicensed accesses: %ld\n", number);
 			break;
 */
 		case HDR_sweep_interval:
-			memcpy(&number, p + 2, sizeof(number));
+			move(p + 2, &number, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
 			break;
 

@@ -26,8 +26,6 @@
 
 #include "../jrd/common.h"
 
-namespace Jrd {
-
 // possible symbol types 
 
 enum sym_type {
@@ -40,8 +38,7 @@ enum sym_type {
 	SYM_stream,
 	SYM_udf,
 	SYM_procedure,
-	SYM_intlsym_charset,
-	SYM_intlsym_collation,
+	SYM_intlsym,
 	SYM_eof
 };
 
@@ -52,7 +49,7 @@ typedef sym_type SYM_TYPE;
 class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
 public:
 	void *sym_dbb;				// generic DB structure handle 
-	const TEXT *sym_string;			// address of asciz string 
+	TEXT *sym_string;			// address of asciz string 
 	USHORT sym_length;			// length of string (exc. term.) 
 	SYM_TYPE sym_type;			// symbol type 
 	USHORT sym_keyword;			// keyword number, if keyword 
@@ -63,8 +60,6 @@ public:
 	TEXT sym_name[2];			// space for name, if necessary 
 };
 typedef dsql_sym *DSQL_SYM;
-
-} // namespace
 
 #endif // DSQL_SYM_H
 

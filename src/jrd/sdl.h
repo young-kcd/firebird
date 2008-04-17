@@ -33,8 +33,8 @@ struct sdl_info {
 	Firebird::MetaName	sdl_info_relation;
 	dsc				sdl_info_element;
 	USHORT			sdl_info_dimensions;
-	SLONG			sdl_info_lower[MAX_ARRAY_DIMENSIONS];
-	SLONG			sdl_info_upper[MAX_ARRAY_DIMENSIONS];
+	SLONG			sdl_info_lower[16];
+	SLONG			sdl_info_upper[16];
 };
 
 

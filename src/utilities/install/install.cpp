@@ -96,8 +96,7 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we intend to install to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-//	lstrcat(fbdll, "\\bin\\");
-	lstrcat(fbdll, "\\");
+	lstrcat(fbdll, "\\bin\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD newverMS = 0, newverLS = 0;
@@ -187,7 +186,8 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		if (werr != ERROR_ALREADY_EXISTS)
 		{
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "MoveFile(_FBCLIENT.DLL, 'target')");
+			return (*err_handler) (werr,
+				"MoveFile(_FBCLIENT.DLL, 'target')");
 		}
 		
 		// Failed moving because a destination target file already exists
@@ -263,7 +263,8 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "WritePrivateProfileString(delete 'target')");
+			return (*err_handler) (werr,
+				"WritePrivateProfileString(delete 'target')");
 		}
 
 		if (WritePrivateProfileString("rename", starget, sworkfile,
@@ -271,16 +272,19 @@ USHORT CLIENT_install(const TEXT * rootdir, USHORT client, bool sw_force,
 		{
 			ULONG werr = GetLastError();
 			DeleteFile(workfile);
-			return (*err_handler) (werr, "WritePrivateProfileString(replace 'target')");
+			return (*err_handler) (werr,
+				"WritePrivateProfileString(replace 'target')");
 		}
 
 		IncrementSharedCount(target, err_handler);
 		return FB_INSTALL_COPY_REQUIRES_REBOOT;
 	}
-
-	// Straight plain MoveFile succeeded immediately.
-	IncrementSharedCount(target, err_handler);
-	return FB_SUCCESS;
+	else
+	{
+		// Straight plain MoveFile succeeded immediately.
+		IncrementSharedCount(target, err_handler);
+		return FB_SUCCESS;
+	}
 }
 
 USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
@@ -321,8 +325,7 @@ USHORT CLIENT_remove(const TEXT * rootdir, USHORT client, bool sw_force,
 	// number that we could have installed to WinSysDir.
 	TEXT fbdll[MAXPATHLEN];
 	lstrcpy(fbdll, rootdir);
-//	lstrcat(fbdll, "\\bin\\");
-	lstrcat(fbdll, "\\");
+	lstrcat(fbdll, "\\bin\\");
 	lstrcat(fbdll, FBCLIENT_NAME);
 
 	DWORD ourverMS = 0, ourverLS = 0;
@@ -404,8 +407,13 @@ USHORT CLIENT_query(USHORT client, ULONG& verMS, ULONG& verLS,
 
 	DWORD type, size = sizeof(sharedCount);
 	sharedCount = 0;
-	RegQueryValueEx(hkey, target, NULL, &type,
+	keystatus = RegQueryValueEx(hkey, target, NULL, &type,
 		reinterpret_cast<BYTE*>(&sharedCount), &size);
+	if (keystatus != ERROR_SUCCESS)
+	{
+		RegCloseKey(hkey);
+		return (*err_handler) (keystatus, "RegQueryValueEx");
+	}
 	RegCloseKey(hkey);
 
 	return FB_SUCCESS;
@@ -749,16 +757,17 @@ USHORT DecrementSharedCount(const TEXT* filename, bool sw_force,
 		RegCloseKey(hkey);
 		return FB_SUCCESS;
 	}
-
-	status = RegDeleteValue(hkey, filename);
-	if (status != ERROR_SUCCESS)
+	else
 	{
+		status = RegDeleteValue(hkey, filename);
+		if (status != ERROR_SUCCESS)
+		{
+			RegCloseKey(hkey);
+			return (*err_handler) (status, "RegDeleteValue");
+		}
 		RegCloseKey(hkey);
-		return (*err_handler) (status, "RegDeleteValue");
+		return FB_INSTALL_SHARED_COUNT_ZERO;
 	}
-
-	RegCloseKey(hkey);
-	return FB_INSTALL_SHARED_COUNT_ZERO;
 }
 
 }	// namespace { }

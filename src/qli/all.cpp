@@ -53,8 +53,7 @@
 
 #define BLKDEF(type, root, tail) { sizeof(root), tail },
 
-static const struct 
-{
+static struct {
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
 } block_sizes[] = {
@@ -95,7 +94,11 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	if (tail)
 		size += count * tail;
 
+#ifndef VMS
 	size = FB_ALIGN(size, ALIGNMENT);
+#else
+	size = ((size + ALIGNMENT - 1) & ~(ALIGNMENT - 1));
+#endif
 
 	if (size <= 4 || size > 65535)
 		ERRQ_bugcheck(2);			// Msg2 bad block size
@@ -107,12 +110,10 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	FRB* best;
 	size_t best_tail;
 
-	while (true) 
-	{
+	while (true) {
 		best = NULL;
 		best_tail = 32767;
 		for (FRB* ptr = &pool->plb_free; (free = *ptr); ptr = &free->frb_next)
-		{
 			if (free->frb_next && (SCHAR *) free >= (SCHAR *) free->frb_next)
 				ERRQ_bugcheck(434);	// memory pool free list is incorrect
 			else if ((tail = free->frb_header.blk_length - size) >= 0
@@ -123,7 +124,6 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 				if (tail == 0)
 					break;
 			}
-		}
 		if (best)
 			break;
 		extend_pool(pool, size);
@@ -157,7 +157,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 }
 
 
-BLK ALLQ_extend(BLK* pointer, int size)
+BLK ALLQ_extend(BLK * pointer, int size)
 {
 /**************************************
  *
@@ -173,7 +173,8 @@ BLK ALLQ_extend(BLK* pointer, int size)
 	BLK new_blk = (BLK) ALLQ_alloc((PLB) global_pools->vec_object[block->blk_pool_id],
 						   block->blk_type, size);
 	const int length = MIN(block->blk_length, new_blk->blk_length) - sizeof(blk);
-	memcpy((SCHAR*) new_blk + sizeof(blk), (SCHAR*) block + sizeof(blk), length);
+	MOVQ_fast((SCHAR*) block + sizeof(blk),
+			  (SCHAR*) new_blk + sizeof(blk), length);
 	ALLQ_release((FRB) block);
 
 	if (new_blk->blk_type == (SCHAR) type_vec)
@@ -187,7 +188,7 @@ BLK ALLQ_extend(BLK* pointer, int size)
 }
 
 
-void ALLQ_fini()
+void ALLQ_fini(void)
 {
 /**************************************
  *
@@ -216,7 +217,7 @@ void ALLQ_fini()
 }
 
 
-void ALLQ_free(void* memory)
+void ALLQ_free( SCHAR * memory)
 {
 /**************************************
  *
@@ -233,7 +234,7 @@ void ALLQ_free(void* memory)
 }
 
 
-void ALLQ_init()
+void ALLQ_init(void)
 {
 /**************************************
  *
@@ -245,10 +246,9 @@ void ALLQ_init()
  *	Initialize the pool system.
  *
  **************************************/
-	qli_vec temp_vector[2];
-	memset(temp_vector, 0, sizeof(temp_vector));
+	ISC_STATUS_ARRAY temp_vector;
 
-	global_pools = temp_vector;
+	global_pools = (qli_vec*) temp_vector;
 	global_pools->vec_count = 1;
 	global_pools->vec_object[0] = NULL;
 
@@ -286,7 +286,7 @@ SCHAR *ALLQ_malloc(SLONG size)
 }
 
 
-PLB ALLQ_pool()
+PLB ALLQ_pool(void)
 {
 /**************************************
  *
@@ -305,10 +305,8 @@ PLB ALLQ_pool()
 // Start by assigning a pool id
 
 	for (pool_id = 0; pool_id < global_pools->vec_count; pool_id++)
-	{
 		if (!(global_pools->vec_object[pool_id]))
 			break;
-	}
 
 	if (pool_id >= global_pools->vec_count)
 		ALLQ_extend((BLK*) &global_pools, pool_id + 10);

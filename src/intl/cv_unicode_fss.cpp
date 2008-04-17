@@ -255,9 +255,9 @@ ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
 								ULONG src_len,
 								const UCHAR* src_ptr,
 								ULONG dest_len,
-								UCHAR* dest_ptr,
-								USHORT* err_code,
-								ULONG* err_position)
+								UCHAR *dest_ptr,
+								USHORT *err_code,
+								ULONG *err_position)
 {
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
@@ -287,7 +287,7 @@ ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-	// See if we're only after a length estimate
+/* See if we're only after a length estimate */
 	if (fss_str == NULL)
 		return ((ULONG) (unicode_len + 1) / 2 * 3);	/* worst case - all han character input */
 

@@ -61,7 +61,7 @@ public:
 	{ }
 
 	// Pooled constructor
-	explicit SparseBitmap(MemoryPool& p) :
+	SparseBitmap(MemoryPool& p) : 
 		AutoStorage(p), singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 
@@ -117,17 +117,17 @@ public:
 			}
 		}
 
-		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
 
 		Bucket bucket;
 		bucket.start_value = val_aligned;
 		bucket.bits = bit_mask;
-		if (tree.isPositioned(val_aligned) || !tree.add(bucket)) 
+		if (!tree.add(bucket))
 		{
-			fb_assert(tree.isPositioned(val_aligned));
 			tree.current().bits |= bit_mask;
 		}
+									
 	}
 
 	bool clear(T value) {
@@ -141,9 +141,9 @@ public:
 			return false;
 		}
 
-		const T val_aligned = value & ~(T)(BUNCH_BITS - 1);
-		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
-			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		T val_aligned = value & ~(T)(BUNCH_BITS-1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		if (tree.locate(val_aligned)) {
 			Bucket *current_bucket = &tree.current();
 			if (current_bucket->bits & bit_mask) {
 				current_bucket->bits &= ~bit_mask;
@@ -158,13 +158,14 @@ public:
 	bool test(T value) {
 		if (singular) {
 			fb_assert(tree.isEmpty());
-			return (value == singular_value);
+			return value == singular_value;
 		}
 
-		const T val_aligned = value & ~(T) (BUNCH_BITS - 1);
-		if (tree.isPositioned(val_aligned) || tree.locate(val_aligned)) {
-			const BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
-			return tree.current().bits & bit_mask;
+		T val_aligned = value & ~(T) (BUNCH_BITS - 1);
+		BUNCH_T bit_mask = BUNCH_ONE << (value - val_aligned);
+		BitmapTreeAccessor i(&tree); // Use accessor to be const-correct
+		if (i.locate(val_aligned)) {
+			return i.current().bits & bit_mask;
 		}
 		return false;
 	}
@@ -375,7 +376,6 @@ public:
 				}
 			}
 			fb_assert(false); // Invalid constant is used ?
-			return false;
 		}
 
 		// If method returns false it means list is empty and 

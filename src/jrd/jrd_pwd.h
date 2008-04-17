@@ -28,6 +28,8 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
+#include "../jrd/smp_impl.h"
+#include "../jrd/thd.h"
 #include "../jrd/sha.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -39,8 +41,6 @@ const size_t MAX_PASSWORD_LENGTH = 64;		// used to store passwords internally
 static const char* PASSWORD_SALT  = "9z";	// for old ENC_crypt()
 const size_t SALT_LENGTH = 12;				// measured after base64 coding
 
-namespace Jrd {
-
 class SecurityDatabase
 {
 	struct user_record {
@@ -51,9 +51,16 @@ class SecurityDatabase
 	};
 
 public:
+
 	static void getPath(TEXT* path_buffer)
 	{
-		static const char* USER_INFO_NAME = "security2.fdb";
+		static const char* USER_INFO_NAME =
+#ifdef VMS
+					"[sysmgr]security2.fdb";
+#else
+					"security2.fdb";
+#endif
+
 		gds__prefix(path_buffer, USER_INFO_NAME);
 	}
 
@@ -86,10 +93,11 @@ public:
 	}
 
 private:
+
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
-	Firebird::Mutex mutex;
+	V4Mutex mutex;
 
 	ISC_STATUS_ARRAY status;
 
@@ -111,46 +119,23 @@ private:
 	{
 		lookup_db = 0;
 	}
-
-public:
-	// Shuts SecurityDatabase in case of errors during attach or create.
-	// When attachment is created, control is passed to it using clear.
-	class InitHolder
-	{
-	public:
-		InitHolder()
-			: shutdown(true)
-		{
-			SecurityDatabase::initialize();
-		}
-		
-		void clear()
-		{
-			shutdown = false;
-		}
-		
-		~InitHolder()
-		{
-			if (shutdown)
-			{
-				SecurityDatabase::shutdown();
-			}
-		}
-
-	private:
-		bool shutdown;
-	};
 };
 
-class DelayFailedLogin : public Firebird::Exception
+namespace Jrd {
+
+class DelayFailedLogin : public Firebird::status_exception
 {
 private:
 	int seconds;
-
 public:
-	explicit DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
-
-	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer* sb = NULL) const throw();
+	explicit DelayFailedLogin(int sec) throw()
+		: Firebird::status_exception(), seconds(sec) 
+	{
+		ISC_STATUS temp[] = {isc_arg_gds, 
+							isc_login,
+							isc_arg_end};
+		set_status(temp, false);
+	}
 	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
 	static void raise(int sec);
 	void sleep() const;

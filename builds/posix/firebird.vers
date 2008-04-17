@@ -36,7 +36,6 @@ global:
 	gds__blob_size;
 	gds__cancel_blob;
 	gds__cancel_events;
-	gds__cancel_operation;
 	gds__close;
 	gds__close_blob;
 	gds__commit_retaining;
@@ -112,6 +111,7 @@ global:
 	gds__start_multiple;
 	gds__start_request;
 	gds__start_transaction;
+	gds__temp_dir;
 	gds__temp_file;
 	gds__thread_enable;
 	gds__thread_enter;
@@ -250,7 +250,6 @@ global:
 	isc_print_status;
 	isc_sqlcode;
 	isc_sql_interprete;
-	fb_sqlstate;
 
 # Event functions
 
@@ -289,7 +288,6 @@ global:
 	isc_start_multiple;
 	isc_start_transaction;
 	isc_transaction_info;
-	fb_disconnect_transaction;
 
 # Other functions
 
@@ -334,11 +332,6 @@ global:
 	BLOB_text_load;
 	Bopen;
 
-# Server shutdown support
-
-	fb_shutdown;
-	fb_shutdown_callback;
-
 # Other misc functions
 
 	isc_ftof;
@@ -359,6 +352,18 @@ global:
 
 	KEYWORD_stringIsAToken;
 	KEYWORD_getTokens;
+
+#--------------------------------------
+#functions needed by Solaris utilities
+	SCH_ast;
+
+#commented it out with new style of thd //Konstantin
+#
+#	THD_mutex_lock;
+#	THD_mutex_unlock;
+#	THD_mutex_destroy;
+#	THD_mutex_init;
+#--------------------------------------
 
 local:
 	*;

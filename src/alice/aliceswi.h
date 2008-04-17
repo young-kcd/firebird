@@ -24,7 +24,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 
 // switch definitions 
 
@@ -107,12 +106,7 @@ enum alice_switches
 	IN_SW_ALICE_HIDDEN_FORCE		=	40,
 	IN_SW_ALICE_HIDDEN_TRAN			=	41,
 	IN_SW_ALICE_HIDDEN_ATTACH		=	42,
-	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43,
-#ifdef TRUSTED_AUTH
-	IN_SW_ALICE_TRUSTED_AUTH		=	44,
-#endif
-	IN_SW_ALICE_TRUSTED_SVC			=	45,
-	IN_SW_ALICE_TRUSTED_ROLE		=	46
+	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43
 };
 
 static const char* ALICE_SW_ASYNC	= "async";
@@ -218,16 +212,6 @@ static in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_TRAN, 0, "tran", sw_tran,
 	sw_shut, 0, FALSE, 48, 0, NULL},
 	// msg 48: \t-tran\t\tshutdown transaction startup 
-#ifdef TRUSTED_AUTH
-	{IN_SW_ALICE_TRUSTED_AUTH, 0, "trusted", 0, 
-	0, 0, FALSE, 115, 0, NULL},
-	// msg 115: 	-trusted	use trusted authentication
-#endif
-	// We should better use #defines here, but alice wants lower case
-	{IN_SW_ALICE_TRUSTED_SVC, 0, /*TRUSTED_USER_SWITCH*/ "trusted_svc", 0, 
-	0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_TRUSTED_ROLE, 0, /*TRUSTED_ROLE_SWITCH*/ "trusted_role", 0, 
-	0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_ALICE_USE, 0, "use", sw_use,
 	0, ~(sw_use | sw_user | sw_password), FALSE, 49, 0, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions 

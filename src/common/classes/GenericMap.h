@@ -59,68 +59,27 @@ namespace Firebird {
 //     GenericMap<Pair<Full<string, string> > >
 //
 template <typename KeyValuePair, typename KeyComparator = DefaultComparator<FB_TYPENAME_OPT KeyValuePair::first_type> >
-class GenericMap : public AutoStorage
-{
+class GenericMap : public AutoStorage {
 public:
 	typedef typename KeyValuePair::first_type KeyType;
 	typedef typename KeyValuePair::second_type ValueType;
 
 	GenericMap() : tree(&getPool()), mCount(0) { }
-	explicit GenericMap(MemoryPool& a_pool)
-		: AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
-	~GenericMap()
-	{
-		clear();
-	}
-
-	void assign(GenericMap& v)
-	{
-		clear();
-
-		for (bool found = v.getFirst(); found; found = v.getNext())
-		{
-			KeyValuePair* current_pair = v.current();
-			put(current_pair->first, current_pair->second);
-		}
-	}
-
-	void takeOwnership(GenericMap& from)
-	{
-		clear();
-
-		tree = from.tree;
-		mCount = from.mCount;
-
-		if (from.tree.getFirst()) {
-			while (true) {
-				bool haveMore = from.tree.fastRemove();
-				if (!haveMore)
-					break;
-			}
-		}
-
-		from.mCount = 0;
-	}
-
-	// Clear the map
-	void clear()
-	{
+	GenericMap(MemoryPool& a_pool) : AutoStorage(a_pool), tree(&getPool()), mCount(0) { }
+	~GenericMap() {
 		if (tree.getFirst()) {
 			while (true) {
 				KeyValuePair* temp = tree.current();
 				bool haveMore = tree.fastRemove();
 				delete temp;
-				if (!haveMore)
-					break;
+				if (!haveMore) break;
 			}
 		}
-
-		mCount = 0;
 	}
 
 	// Returns true if value existed
-	bool remove(const KeyType& key)
-	{
+	bool remove(const KeyType& key) {
+
 		if (tree.locate(key)) {
 			KeyValuePair* var = tree.current();
 			tree.fastRemove();
@@ -133,36 +92,22 @@ public:
 	}
 
 	// Returns true if value existed previously
-	bool put(const KeyType& key, const ValueType& value)
-	{
+	bool put(const KeyType& key, const ValueType& value) {
+
 		if (tree.locate(key)) {
 			tree.current()->second = value;
 			return true;
 		}
 
-		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool(), key, value);
+		KeyValuePair *var = FB_NEW(getPool()) KeyValuePair(getPool(), key, value);
 		tree.add(var);
 		mCount++;
 		return false;
 	}
 
-	// Returns pointer to the added empty value or null when key already exists
-	ValueType* put(const KeyType& key)
-	{
-		if (tree.locate(key)) {
-			return 0;
-		}
-
-		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool());
-		var->first = key;
-		tree.add(var);
-		mCount++;
-		return &var->second;
-	}
-
 	// Returns true if value is found
-	bool get(const KeyType& key, ValueType& value)
-	{
+	bool get(const KeyType& key, ValueType& value) {
+
 		if (tree.locate(key)) {
 			value = tree.current()->second;
 			return true;
@@ -170,16 +115,6 @@ public:
 
 		return false;
 	}
-
-	bool getFirst() { return tree.getFirst(); }
-	
-	bool getLast() { return tree.getLast(); }
-	
-	bool getNext() { return tree.getNext(); }
-	
-	bool getPrev() { return tree.getPrev(); }
-
-	KeyValuePair* current() const { return tree.current(); }
 
 	bool exist(const KeyType& key)
 	{

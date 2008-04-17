@@ -66,6 +66,10 @@
 #pragma warning(disable:4996)  // 'identificator' was declared deprecated
 
 
+#ifndef _X86_
+#define _X86_
+#endif
+
 #define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
 
 /* Headers */
@@ -89,7 +93,6 @@
 #define HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_PARAM_H
 #undef HAVE_SYS_IOCTL_H
-#define HAVE_LIMITS_H
 #define HAVE_SETJMP_H
 #define HAVE_STDARG_H
 #define HAVE_STDLIB_H
@@ -169,7 +172,6 @@
 
 /* Types */
 #undef HAVE_SOCKLEN_T
-#undef HAVE_INFINITY
 
 /* gettimeofday accepts second (timezone) argument */
 #undef GETTIMEOFDAY_RETURNS_TIMEZONE
@@ -178,33 +180,21 @@
 #undef _FILE_OFFSET_BITS
 #undef _LARGE_FILES
 
-/* target architecture */
-#if defined(_M_IX86)
-/* sizeof(void *) */
+/* sizeof(void *) = 8 ==> HAS_64BIT_POINTERS */
 #define SIZEOF_VOID_P 4
-/* alignment of long */
-#define ALIGNMENT 4
-#elif defined(_M_AMD64)
-#define AMD64
-/* sizeof(void *) */
-#define SIZEOF_VOID_P 8
-/* alignment of long */
-#define ALIGNMENT 8
-#else
-#error unknown target platform
-#endif
-
-/* sizeof(long) */
 #define SIZEOF_LONG 4
-
-/* alignment of double */
-#define DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN
 
 /* Is struct xdr_ops defined? */
 #undef HAVE_STRUCT_XDR_OPS
+
+/* alignment of long */
+#define ALIGNMENT 4
+
+/* alignment of double */
+#define DOUBLE_ALIGN 8
 
 /* Functions */
 #define snprintf _snprintf
@@ -262,6 +252,7 @@
 #undef AIX
 #define WIN_NT
 #undef SCO_EV
+#undef SINIXZ
 
 #define FB_PREFIX "c:\\Program Files\\Firebird\\"
 

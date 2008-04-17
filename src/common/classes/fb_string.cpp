@@ -77,7 +77,7 @@ namespace {
 } // namespace
 
 namespace Firebird {
-	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
+	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(-1);
 
 	AbstractString::AbstractString(const AbstractString& v) {
 		initialize(v.length());
@@ -187,11 +187,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (memcmp(endL, s, l) == 0) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}
@@ -205,11 +206,12 @@ namespace Firebird {
 			lastpos = pos;
 		}
 		const_pointer start = c_str();
-		for (const_pointer endL = &start[lastpos]; endL >= start; --endL)
-		{
+		const_pointer endL = &start[lastpos];
+		while (endL >= start) {
 			if (*endL == c) {
 				return endL - start;
 			}
+			--endL;
 		}
 		return npos;
 	}

@@ -24,6 +24,7 @@
 #ifndef JRD_BLF_H
 #define JRD_BLF_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 namespace Jrd {
@@ -65,7 +66,7 @@ public:
 	void*	ctl_internal[3];			/* Firebird internal-use only */
 	Firebird::string	ctl_exception_message;	/* Message to use in case of filter exception */
 public:
-	explicit BlobControl(MemoryPool& p)
+	BlobControl(MemoryPool& p) 
 		: ctl_exception_message(p) { }
 	BlobControl() 
 		: ctl_exception_message() { }

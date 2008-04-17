@@ -27,10 +27,11 @@
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
 #include "../utilities/install/install_nt.h"
+#include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../common/classes/fb_string.h"
-#include "../common/classes/init.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/gds_proto.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -48,9 +49,12 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 static DWORD current_state;
 static ThreadEntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
-static Firebird::GlobalPtr<Firebird::string> service_name;
-static Firebird::GlobalPtr<Firebird::string> remote_name;
+static const TEXT* service_name;
 static HANDLE stop_event_handle;
+#ifdef NOT_USED_OR_REPLACED
+static MUTX_T thread_mutex[1];
+static thread* threads;
+#endif
 
 
 void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
@@ -66,13 +70,11 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
  **************************************/
 
 	main_handler = handler;
-	MemoryPool& pool = *getDefaultMemoryPool();
-	service_name->printf(ISCGUARD_SERVICE, name);
-	remote_name->printf(REMOTE_SERVICE, name);
+	service_name = name;
 }
 
 
-void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
+void CNTL_main_thread( SLONG argc, SCHAR* argv[])
 {
 /**************************************
  *
@@ -83,10 +85,29 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * Functional description
  *
  **************************************/
-	service_handle =
-		RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
+	DWORD last_error = 0;
+
+	service_handle = RegisterServiceCtrlHandler(service_name, control_thread);
 	if (!service_handle)
 		return;
+
+// THD_mutex_init (thread_mutex);
+
+#if (defined SUPERCLIENT || defined SUPERSERVER)
+	int flag = SRVR_multi_client;
+#else
+	int flag = 0;
+#endif
+
+/* Parse the command line looking for any additional arguments. */
+
+	argv++;
+
+	while (--argc) {
+		const TEXT* p = *argv++;
+		if (*p++ == '-')
+			parse_switch(p, &flag);
+	}
 
 /* start everything, and wait here for ever, or at
  * least until we get the stop event indicating that
@@ -97,14 +118,13 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
 	if (report_status(SERVICE_START_PENDING, NO_ERROR, 1, 3000) &&
 		(stop_event_handle = CreateEvent(NULL, TRUE, FALSE, NULL)) != NULL &&
 		report_status(SERVICE_START_PENDING, NO_ERROR, 2, 3000) &&
-		!gds__thread_start(main_handler, NULL, 0, 0, 0)
+		!gds__thread_start(main_handler, (void *) flag, 0, 0, 0)
 		&& report_status(SERVICE_RUNNING, NO_ERROR, 0, 0))
 	{
 		failure = false;
 		temp = WaitForSingleObject(stop_event_handle, INFINITE);
 	}
 
-	DWORD last_error = 0;
 	if (failure || temp == WAIT_FAILED)
 		last_error = GetLastError();
 
@@ -115,17 +135,21 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * do the same.  We could not do this in the control_thread
  * since the Services Control Manager is single threaded,
  * and thus can only process one request at the time. */
-	SERVICE_STATUS status_info;
-	SC_HANDLE hScManager = 0, hService = 0;
-	hScManager =
-		OpenSCManager(NULL, NULL, GENERIC_READ);
-	hService = OpenService(hScManager, remote_name->c_str(),
-		GENERIC_READ | GENERIC_EXECUTE);
-	ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
-	CloseServiceHandle(hScManager);
-	CloseServiceHandle(hService);
+	{
+		SERVICE_STATUS status_info;
+		SC_HANDLE hScManager = 0, hService = 0;
+		hScManager =
+			OpenSCManager(NULL, NULL, GENERIC_READ);
+		hService = OpenService(hScManager, REMOTE_SERVICE,
+			GENERIC_READ | GENERIC_EXECUTE);
+		ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
+		CloseServiceHandle(hScManager);
+		CloseServiceHandle(hService);
+	}
 
 	report_status(SERVICE_STOPPED, last_error, 0, 0);
+
+// THD_mutex_destroy (thread_mutex);
 }
 
 void CNTL_shutdown_service(const TEXT* message)
@@ -142,9 +166,9 @@ void CNTL_shutdown_service(const TEXT* message)
 	const char* strings[2];
 	char buffer[BUFFER_SMALL];
 
-	sprintf(buffer, "%s error: %lu", service_name->c_str(), GetLastError());
+	sprintf(buffer, "%s error: %lu", service_name, GetLastError());
 
-	HANDLE event_source = RegisterEventSource(NULL, service_name->c_str());
+	HANDLE event_source = RegisterEventSource(NULL, service_name);
 	if (event_source) {
 		strings[0] = buffer;
 		strings[1] = message;
@@ -184,7 +208,7 @@ void CNTL_stop_service(const TEXT* service) // unused param
 	}
 
 	SC_HANDLE service_handleL =
-		OpenService(servicemgr_handle, service_name->c_str(),
+		OpenService(servicemgr_handle, service_name,
 			GENERIC_READ | GENERIC_EXECUTE);
 
 	if (service_handleL == NULL) {
@@ -224,7 +248,6 @@ static void WINAPI control_thread( DWORD action)
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
-	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
 		SetEvent(stop_event_handle);
 		return;
@@ -237,6 +260,46 @@ static void WINAPI control_thread( DWORD action)
 	}
 
 	report_status(state, NO_ERROR, 0, 0);
+}
+
+
+static void parse_switch(const TEXT* switches, int* flag)
+{
+/**************************************
+ *
+ *	p a r s e _ s w i t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+	TEXT c;
+
+	while (c = *switches++)
+		switch (UPPER(c)) {
+		case 'B':
+			*flag |= SRVR_high_priority;
+			break;
+
+		case 'I':
+			*flag |= SRVR_inet;
+			break;
+
+		case 'R':
+			*flag &= ~SRVR_high_priority;
+			break;
+
+		case 'W':
+			*flag |= SRVR_wnet;
+			break;
+		}
+
+#if (defined SUPERCLIENT || defined SUPERSERVER)
+	*flag |= SRVR_multi_client;
+#else
+	*flag &= ~SRVR_multi_client;
+#endif
 }
 
 

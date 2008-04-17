@@ -33,6 +33,9 @@ const SSHORT IB_PREFIX_TYPE			= 0;
 const SSHORT IB_PREFIX_LOCK_TYPE	= 1;
 const SSHORT IB_PREFIX_MSG_TYPE		= 2;
 
+// Needed in common/config/dir_list.cpp
+const ULONG ALLROOM			= -1UL;	 /* use all available space */
+
 // flags for gds_alloc_report
 const ULONG ALLOC_dont_report	= 1L << 0;	/* Don't report this block */
 const ULONG ALLOC_silent		= 1L << 1;	/* Don't report new leaks */
@@ -104,7 +107,7 @@ SLONG	API_ROUTINE gds__get_prefix(SSHORT, const TEXT*);
 ISC_STATUS	API_ROUTINE gds__print_status(const ISC_STATUS*);
 USHORT	API_ROUTINE gds__parse_bpb(USHORT, const UCHAR*, USHORT*, USHORT*);
 USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
-	USHORT*, USHORT*, bool*, bool*, bool*, bool*);
+									  USHORT*, USHORT*);
 SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
 							   const USHORT length2);
 int		API_ROUTINE gds__print_blr(const UCHAR*,
@@ -115,9 +118,10 @@ void	API_ROUTINE gds__qtoq(const void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
+void	API_ROUTINE gds__temp_dir(TEXT*);
 void*	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
 	BOOLEAN = FALSE);
-void	API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
+void		API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*,
 											  SLONG);
 SLONG	API_ROUTINE gds__vax_integer(const UCHAR*, SSHORT);
@@ -134,11 +138,17 @@ void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
 void	gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
-void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
+void	gds__print_pool(class JrdMemoryPool*, const TEXT*, ...);
 
 
 #if (defined SOLARIS && !defined(MAP_ANON))
 UCHAR*   mmap_anon(SLONG);
+#endif
+
+
+
+#ifdef VMS
+int		unlink(const SCHAR*);
 #endif
 
 

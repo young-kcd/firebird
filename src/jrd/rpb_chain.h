@@ -66,7 +66,7 @@ class traRpbList : public traRpbArray
 {
 public:
 	traRpbList(Firebird::MemoryPool& p) : 
-		traRpbArray(p) {}
+		traRpbArray(p, 16) {}
 	int PushRpb(record_param* value);
 	bool PopRpb(record_param* value, int Level);
 };

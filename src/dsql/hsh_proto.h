@@ -24,11 +24,13 @@
 #ifndef DSQL_HSH_PROTO_H
 #define DSQL_HSH_PROTO_H
 
+void HSHD_fini(void);
 void HSHD_finish(const void*);
-void HSHD_insert(Jrd::dsql_sym*);
-Jrd::DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, Jrd::SYM_TYPE, USHORT);
-void HSHD_remove(Jrd::dsql_sym*);
-void HSHD_set_flag(const void *, const TEXT*, SSHORT, Jrd::SYM_TYPE, SSHORT);
+void HSHD_init(void);
+void HSHD_insert(dsql_sym*);
+DSQL_SYM HSHD_lookup(const void*, const TEXT*, SSHORT, SYM_TYPE, USHORT);
+void HSHD_remove(dsql_sym*);
+void HSHD_set_flag(const void *, const TEXT*, SSHORT, SYM_TYPE, SSHORT);
 
 #endif //DSQL_HSH_PROTO_H
 

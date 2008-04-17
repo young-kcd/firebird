@@ -33,7 +33,7 @@
 				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,WIN32,_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\alice_ss/alice.pch"
 				AssemblerListingLocation="..\..\..\temp\release\alice_ss/"
 				ObjectFile="..\..\..\temp\release\alice_ss/"
@@ -86,7 +86,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\alice_ss/alice.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\alice_ss/"
 				ObjectFile="..\..\..\temp\debug\alice_ss/"
@@ -133,6 +133,9 @@
 				RelativePath="..\..\..\src\alice\alice.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\alice\all.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\alice\exe.cpp">
 			</File>
 			<File
@@ -169,7 +172,16 @@
 				RelativePath="..\..\..\src\alice\aliceswi.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\alice\all.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\all_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\alice\alloc.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\blk.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\alice\exe_proto.h">

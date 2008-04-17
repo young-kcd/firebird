@@ -85,8 +85,6 @@ public:
 	ULONG flags; 
 
 	NBackupState(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
-	virtual ~NBackupState() { }
-
 protected:
 	BackupManager *backup_manager;
 	virtual void blockingAstHandler(thread_db* tdbb);
@@ -99,7 +97,6 @@ class NBackupAlloc: public GlobalRWLock
 {
 public:
 	NBackupAlloc(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan);
-	virtual ~NBackupAlloc() { }
 
 protected:
 	BackupManager *backup_manager;
@@ -112,7 +109,7 @@ const UATOM NBAK_state_blocking		= 1;	// Changing the blocking state. All pages 
 const SATOM nbak_state_normal	= 0x0;     // Normal mode. Changes are simply written to main files
 const SATOM nbak_state_stalled	= 0x400;   // 1024 Main files are locked. Changes are written to diff file
 const SATOM nbak_state_merge	= 0x800;   // 2048 Merging changes from diff file into main files
-const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk 
+const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read from disk
 
 /*
  *  The functional responsibilities of NBAK are:
@@ -162,7 +159,7 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  
  *  To change backup state, engine takes LCK_backup_database lock first, forcing all
  *  dirty pages to the disk, modifies the header page reflecting the state change,
- *  and releases the lock allowing transaction processing to continue.
+ *  and releases the lock allowing transation processing to continue.
  *  
  *  LCK_backup_alloc is used to protect mapping table between difference file
  *  (.delta) and the database. To add new page to the mapping attachment needs to
@@ -177,25 +174,6 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
 
 class BackupManager {
 public:
-	class SharedDatabaseHolder
-	{
-	public:
-		explicit SharedDatabaseHolder(thread_db* _tdbb, BackupManager* bm)
-			: backupManager(bm), tdbb(_tdbb)
-		{
-			backupManager->lock_shared_database(tdbb, true);
-		}
-		~SharedDatabaseHolder()
-		{
-			backupManager->unlock_shared_database(tdbb);
-		}
-	private:
-		SharedDatabaseHolder(const SharedDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
-
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
@@ -210,7 +188,7 @@ public:
 	void set_difference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
-	int get_state() const {
+	int get_state() {
 		return backup_state;
 	}
 	// Sets current backup state
@@ -222,23 +200,30 @@ public:
 	ULONG get_current_scn() const {
 		return current_scn;
 	}
-	
+
 	// Initialize and open difference file for writing
 	void begin_backup(thread_db* tdbb);
-	
+
 	// Merge difference file to main files (if needed) and unlink() difference 
 	// file then. If merge is already in progress method silently returns false and 
 	// does nothing (so it can be used for recovery on database startup). 
 	void end_backup(thread_db* tdbb, bool recover);
-	
+
+	// Function for force all connections to flush their caches
+	// and prevent them from marking new dirty pages
+	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
+	void unlock_clean_database(thread_db* tdbb);
+
 	void lock_shared_database(thread_db* tdbb, SSHORT wait);
 	void unlock_shared_database(thread_db* tdbb);
 
 	// Prevent allocation table from modification by other threads/processes
+	// You may or may not call unlock function in case this functions fail
 	void lock_alloc(thread_db* tdbb, SSHORT wait);
-	void unlock_alloc(thread_db* tdbb);
-
 	void lock_alloc_write(thread_db* tdbb, SSHORT wait);
+
+	// Remove our interest in static allocation table
+	void unlock_alloc(thread_db* tdbb);
 	void unlock_alloc_write(thread_db* tdbb);
 
 	// Return page index in difference file that can be used in 
@@ -247,11 +232,11 @@ public:
 
 	// Return next page index in the difference file to be allocated
 	ULONG allocate_difference_page(thread_db* tdbb, ULONG db_page);
-	
+
 	// Must have ISC_STATUS because it is called from write_page
 	bool write_difference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
 	bool read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
-	
+
 	// Routines to declare and release interest in the database file
 	void checkout_dirty_page(thread_db* tdbb, SLONG owner_handle);
 	void release_dirty_page(thread_db* tdbb, SLONG owner_handle);
@@ -267,7 +252,7 @@ public:
 
 	void shutdown(thread_db* tdbb);
 
-	bool database_flush_in_progress() const {
+	bool database_flush_in_progress() {
 //		NBAK_TRACE(("NBAK_state_blocking=%i", database_lock->flags & NBAK_state_blocking));
 		return database_lock->flags & NBAK_state_blocking;
 	}
@@ -275,9 +260,6 @@ public:
 	// Make appropriate information up-to-date
 	bool actualize_state(thread_db* tdbb);
 	bool actualize_alloc(thread_db* tdbb);
-	
-	// Get size (in pages) of locked database file
-	ULONG getPageCount();
 
 	// Subsystem finalization. Called from shutdown()
 	~BackupManager();
@@ -298,31 +280,6 @@ private:
 	NBackupState* database_lock;
 
 	void generate_filename();
-
-	// Function for force all connections to flush their caches
-	// and prevent them from marking new dirty pages
-	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
-	void unlock_clean_database(thread_db* tdbb);
-
-	class CleanDatabaseHolder
-	{
-	public:
-		explicit CleanDatabaseHolder(thread_db* _tdbb, BackupManager* bm, 
-			SSHORT wait, Jrd::WIN* window)
-			: backupManager(bm), tdbb(_tdbb)
-		{
-			backupManager->lock_clean_database(tdbb, wait, window);
-		}
-		~CleanDatabaseHolder()
-		{
-			backupManager->unlock_clean_database(tdbb);
-		}
-	private:
-		CleanDatabaseHolder(const CleanDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
 };
 
 } //namespace Jrd

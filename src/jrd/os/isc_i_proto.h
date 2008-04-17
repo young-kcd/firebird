@@ -34,10 +34,44 @@ int		ISC_kill(SLONG, SLONG, void *);
 #else
 // And that are functions to manage UNIX signals
 int		ISC_kill(SLONG, SLONG);
-bool	ISC_signal(int, FPTR_VOID_PTR, void *);
-void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
+void ISC_signal(int, FPTR_VOID_PTR, void *);
+void ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
 void	ISC_signal_init(void);
 
-#endif // JRD_ISC_I_PROTO_H
+class SignalInhibit
+//
+// This class inhibits signals' processing during I/O 
+// activity and re-enables it afterwards.
+//
+{
+public:
+#ifndef WIN_NT
+	// Constructor inhibits processing of signals.  
+	// Signals will be retained until signals are 
+	// eventually re-enabled, then re-posted.
+    SignalInhibit() throw();
+	// Destructor enables signal processing
+	// and re-posts any pending signals.
+    ~SignalInhibit() throw()
+	{
+	    enable();
+	}
+	// Let one re-enable signals in advance
+	void enable() throw();
+#else
+	// Just stubs
+    SignalInhibit() throw() { }
+    ~SignalInhibit() throw() { }
+	void enable() throw() { }
+#endif
+private:
+	// Forbid copy constructor
+	SignalInhibit(const SignalInhibit&);
+#ifndef WIN_NT
+	bool enabled;
+#endif
+};
+
+#endif /* JRD_ISC_I_PROTO_H */

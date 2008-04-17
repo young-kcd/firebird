@@ -168,7 +168,7 @@ ISC_STATUS API_ROUTINE isc_array_lookup_bounds(ISC_STATUS* status,
 
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
 	ISC_ARRAY_BOUND* tail = desc->array_desc_bounds;
 
@@ -525,7 +525,7 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
  **************************************/
 	ISC_STATUS_ARRAY isc_status = {0};
 	isc_db_handle DB = *db_handle;
-	isc_req_handle handle = 0;
+	isc_req_handle handle = NULL;
 
     copy_exact_name (field_name, desc->array_desc_field_name,
                      sizeof(desc->array_desc_field_name));

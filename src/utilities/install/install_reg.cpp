@@ -55,7 +55,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
  **************************************
  *
  * Functional description
- *	Install or remove Firebird.
+ *	Install or remove InterBase.
  *
  **************************************/
 	TEXT directory[MAXPATHLEN];

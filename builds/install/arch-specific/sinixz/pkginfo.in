@@ -1,0 +1,8 @@
+LANG=En_US.ASCII
+PKG="firebird2"
+NAME="Firebird Database"
+ARCH="i386"
+VERSION="@FIREBIRD_VERSION@"
+LOAD="@FIREBIRD_PACKAGE_VERSION@"
+CATEGORY="application"
+VENDOR="Fujitsu Siemens Computers"

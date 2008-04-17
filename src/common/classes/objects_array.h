@@ -110,7 +110,6 @@ namespace Firebird
 		public:
 			const_iterator() : lst(0), pos(0) { }
 			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
-			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
 /*
 			const_iterator& operator=(const ObjectsArray& a)
 			{
@@ -253,25 +252,6 @@ namespace Firebird
 			}
 			inherited::clear(); 
 		}
-		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L) 
-		{
-			while (this->count > L.count) 
-			{
-				delete inherited::pop();
-			}
-			for (size_t i = 0; i < L.count; i++) 
-			{
-				if (i < this->count)
-				{
-					(*this)[i] = L[i];
-				}
-				else 
-				{
-					add(L[i]);
-				}
-			}
-			return *this;
-		}
 	};
 
 	// Template to convert object value to index directly
@@ -281,7 +261,7 @@ namespace Firebird
 		static const T& generate(const void* sender, const T* Item) { return Item; }
 	};
 
-	// Template for default value comparator
+	// Template for default value comparsion
 	template <typename T>
 	class ObjectComparator {
 	public:
@@ -304,30 +284,17 @@ namespace Firebird
 		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> > inherited;
-
 	public:
 		explicit SortedObjectsArray(MemoryPool& p) : 
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp> >(p) { }
-		bool find(const ObjectKey& item, size_t& pos) const
-		{
+		bool find(const ObjectKey& item, size_t& pos) const {
 			const ObjectKey* const pItem = &item;
 			return static_cast<const SortedArray<ObjectValue*, 
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
-		bool exist(const ObjectKey& item) const
-		{
-			size_t pos;
-			return find(item, pos);
-		}
-		size_t add(const ObjectValue& item) {
-			return inherited::add(item);
-		}
-
-	private:
-		ObjectValue& add();	// Unusable when sorted
 	};
 
 } // namespace Firebird

@@ -28,13 +28,7 @@
 #include "../jrd/os/pio.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
-#include "../jrd/pag.h"
 #endif
-
-#include "../jrd/que.h"
-#include "../jrd/lls.h"
-#include "../jrd/pag.h"
-#include "../jrd/isc.h"
 
 //#define CCH_DEBUG
 
@@ -60,6 +54,7 @@ class Precedence;
 class thread_db;
 struct que;
 class BufferDesc;
+//class BlockingThread;
 class Database;
 
 /* Page buffer cache size constraints. */
@@ -67,17 +62,12 @@ class Database;
 const ULONG MIN_PAGE_BUFFERS = 50;
 const ULONG MAX_PAGE_BUFFERS = 131072;
 
-#define DIRTY_LIST
-//#define DIRTY_TREE
-
-#ifdef DIRTY_TREE
 /* AVL-balanced tree node */
 
 struct BalancedTreeNode {
 	BufferDesc* bdb_node;
 	SSHORT comp;
 };
-#endif // DIRTY_TREE
 
 /* BufferControl -- Buffer control block -- one per system */
 
@@ -90,17 +80,11 @@ struct bcb_repeat
 class BufferControl : public pool_alloc_rpt<bcb_repeat, type_bcb>
 {
 public:
-	explicit BufferControl(MemoryPool& p) : bcb_memory(p) { }
+	BufferControl(MemoryPool& p) : bcb_memory(p) { }
 	UCharStack	bcb_memory;			/* Large block partitioned into buffers */
 	que			bcb_in_use;			/* Que of buffers in use */
 	que			bcb_empty;			/* Que of empty buffers */
-#ifdef DIRTY_TREE
 	BufferDesc*	bcb_btree;			/* root of dirty page btree */
-#endif 
-#ifdef DIRTY_LIST
-	que			bcb_dirty;			// que of dirty buffers
-	SLONG		bcb_dirty_count;	// count of pages in dirty page btree 
-#endif 
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	SSHORT		bcb_flags;			/* see below */
@@ -117,7 +101,7 @@ public:
 const int BCB_keep_pages	= 1;	/* set during btc_flush(), pages not removed from dirty binary tree */
 const int BCB_cache_writer	= 2;	/* cache writer thread has been started */
 //const int BCB_checkpoint_db	= 4;	// WAL has requested a database checkpoint
-const int BCB_writer_start  = 4;    // cache writer thread is starting now
+const int BCB_writer_start	= 4;	// cache writer thread is starting now
 const int BCB_writer_active	= 8;	/* no need to post writer event count */
 #ifdef SUPERSERVER_V2
 const int BCB_cache_reader	= 16;	/* cache reader thread has been started */
@@ -132,28 +116,22 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 
 class BufferDesc : public pool_alloc<type_bdb>
 {
-public:
-	BufferDesc() : bdb_page(0, 0) {};
-
+    public:
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
 	que			bdb_que;				/* Buffer que */
 	que			bdb_in_use;				/* queue of buffers in use */
-#ifdef DIRTY_LIST
-	que			bdb_dirty;				// dirty pages LRU queue
-#endif 
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
-	PageNumber	bdb_page;				/* Database page number in buffer */
+	//BlockingThread*	bdb_blocked;		// Blocked attachments block 
+	SLONG		bdb_page;				/* Database page number in buffer */
 	SLONG		bdb_incarnation;
 	ULONG		bdb_transactions;		/* vector of dirty flags to reduce commit overhead */
 	SLONG		bdb_mark_transaction;	/* hi-water mark transaction to defer header page I/O */
-#ifdef DIRTY_TREE
 	BufferDesc*	bdb_left;				/* dirty page binary tree link */
 	BufferDesc*	bdb_right;				/* dirty page binary tree link */
 	BufferDesc*	bdb_parent;				/* dirty page binary tree link */
 	SSHORT		bdb_balance;			/* AVL-tree balance (-1, 0, 1) */
-#endif
 	que			bdb_lower;				/* lower precedence que */
 	que			bdb_higher;				/* higher precedence que */
 	que			bdb_waiters;			/* latch wait que */
@@ -171,7 +149,6 @@ public:
 
 /* bdb_flags */
 
-// to clear BDB_dirty use clear_page_dirty_flag()
 const int BDB_dirty				= 1;		/* page has been updated but not written yet */
 const int BDB_garbage_collect	= 2;		/* left by scan for garbage collector */
 const int BDB_writer			= 4;		/* someone is updating the page */
@@ -251,7 +228,7 @@ class LatchWait : public pool_alloc<type_lwt>
 	thread_db*		lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	que				lwt_waiters;	/* latch queue */
-	event_t			lwt_event;		/* grant event to wait on */
+	struct event_t	lwt_event;		/* grant event to wait on */
 	USHORT			lwt_flags;
 };
 

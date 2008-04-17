@@ -36,9 +36,6 @@
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
 
-using MsgFormat::SafeArg;
-
-
 DATABASE DB1 = EXTERN FILENAME "yachts.lnk";
 DATABASE DB = EXTERN FILENAME "yachts.lnk";
 
@@ -144,7 +141,7 @@ void PRO_copy_procedure(
 		old_blob = PRO_fetch_procedure(old_database, old_name);
 
 	if (!old_blob)
-		ERRQ_print_error(70, old_name);
+		ERRQ_print_error(70, old_name, NULL, NULL, NULL, NULL);
 // Msg 70 procedure \"%s\" is undefined 
 
 	if (new_database != old_database)
@@ -156,8 +153,7 @@ void PRO_copy_procedure(
 
 	DB1 = new_database->dbb_handle;
 
-	// create blob parameter block since procedure is a text blob
-	// But nothing was done! The bpb is empty.
+// create blob parameter block since procedure is a text blob
 
 	UCHAR bpb[20];
 	UCHAR* p = bpb;
@@ -353,7 +349,7 @@ FB_API_HANDLE PRO_fetch_procedure( DBB database, const TEXT* proc)
 
 	FOR(REQUEST_HANDLE database->dbb_lookup_blob) X IN DB.QLI$PROCEDURES WITH
 		X.QLI$PROCEDURE_NAME EQ name
-        blob = PRO_open_blob(database, X.QLI$PROCEDURE);
+        blob = PRO_open_blob(database, &X.QLI$PROCEDURE);
 	END_FOR
 
 	return blob;
@@ -412,7 +408,8 @@ void PRO_invoke( DBB database, const TEXT* name)
 	if (database) {
 		if (!(blob = PRO_fetch_procedure(database, name)))
 		{
-			ERRQ_print_error(71, SafeArg() << name << database->dbb_symbol->sym_string);
+			ERRQ_print_error(71, name, database->dbb_symbol->sym_string, NULL,
+							 NULL, NULL);
 		}
 // Msg 71 procedure \"%s\" is undefined in database %s 
 	}
@@ -425,7 +422,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 		}
 
 	if (!blob)
-		ERRQ_print_error(72, name);
+		ERRQ_print_error(72, name, NULL, NULL, NULL, NULL);
 // Msg 72 procedure \"%s\" is undefined 
 
 	LEX_procedure((dbb*)database, blob);
@@ -433,7 +430,7 @@ void PRO_invoke( DBB database, const TEXT* name)
 }
 
 
-FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD& blob_id)
+FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD* blob_id)
 {
 /**************************************
  *
@@ -454,7 +451,7 @@ FB_API_HANDLE PRO_open_blob( DBB database, ISC_QUAD& blob_id)
 	USHORT bpb_length = p - bpb;
 
 	if (isc_open_blob2(status_vector, &database->dbb_handle,
-						&database->dbb_proc_trans, &blob, &blob_id,
+						&database->dbb_proc_trans, &blob, blob_id,
 						bpb_length, bpb))
 	{
 		ERRQ_database_error(database, status_vector);
@@ -552,7 +549,7 @@ void PRO_scan( DBB database, extract_fn_t routine, void* arg)
 			p++;
 		}
         (*routine) (arg, X.QLI$PROCEDURE_NAME, p - X.QLI$PROCEDURE_NAME,
-			database, X.QLI$PROCEDURE);
+			database, &X.QLI$PROCEDURE);
 	END_FOR
 }
 
@@ -577,15 +574,14 @@ void PRO_setup( DBB dbb)
 		IBERROR(77);
 // Msg 77 database handle required
 
-	// If we don't have a QLI$PROCEDURES relation, and can't get one, punt
-	/* CVC: We consider VMS dead.
+// If we don't have a QLI$PROCEDURES relation, and can't get one, punt 
+
 	if (dbb->dbb_type == isc_info_db_impl_rdb_vms &&
 		!(dbb->dbb_flags & DBB_procedures))
 	{
 		IBERROR(78);
-		// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases
 	}
-	*/
+// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases 
 
 	DB = dbb->dbb_handle;
 
@@ -857,7 +853,8 @@ static void probe( DBB database, const TEXT* name)
 	if (blob) {
 		ISC_STATUS_ARRAY status_vector;
 		isc_close_blob(status_vector, &blob);
-		ERRQ_print_error(76, SafeArg() << name << database->dbb_symbol->sym_string);
+		ERRQ_print_error(76, name, database->dbb_symbol->sym_string, NULL,
+						 NULL, NULL);
 		// Msg 76 procedure name \"%s\" in use in database %s
 	}
 }

@@ -27,7 +27,6 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
- * Adriano dos Santos Fernandes
  */
 
 #ifndef JRD_BLR_H
@@ -58,16 +57,7 @@
 #define blr_sql_date		(unsigned char)12
 #define blr_sql_time		(unsigned char)13
 #define blr_int64               (unsigned char)16
-#define blr_blob2			(unsigned char)17
-#define blr_domain_name		(unsigned char)18
-#define blr_domain_name2	(unsigned char)19
-#define blr_not_nullable	(unsigned char)20
-#define blr_column_name		(unsigned char)21
-#define blr_column_name2	(unsigned char)22
-
-// first sub parameter for blr_domain_name[2]
-#define blr_domain_type_of	(unsigned char)0
-#define blr_domain_full		(unsigned char)1
+#define blr_blob2		(unsigned char)17
 
 /* Historical alias for pre V6 applications */
 #define blr_date		blr_timestamp
@@ -270,33 +260,18 @@
 
 /* sub parameters for blr_extract */
 
-#define blr_extract_year		(unsigned char)0
-#define blr_extract_month		(unsigned char)1
-#define blr_extract_day			(unsigned char)2
-#define blr_extract_hour		(unsigned char)3
-#define blr_extract_minute		(unsigned char)4
-#define blr_extract_second		(unsigned char)5
-#define blr_extract_weekday		(unsigned char)6
-#define blr_extract_yearday		(unsigned char)7
-#define blr_extract_millisecond	(unsigned char)8
-#define blr_extract_week		(unsigned char)9
+#define blr_extract_year	(unsigned char)0
+#define blr_extract_month	(unsigned char)1
+#define blr_extract_day		(unsigned char)2
+#define blr_extract_hour	(unsigned char)3
+#define blr_extract_minute	(unsigned char)4
+#define blr_extract_second	(unsigned char)5
+#define blr_extract_weekday	(unsigned char)6
+#define blr_extract_yearday	(unsigned char)7
 
 #define blr_current_date	(unsigned char)160
 #define blr_current_timestamp	(unsigned char)161
 #define blr_current_time	(unsigned char)162
-
-/* These codes reuse BLR code space */
-
-#define blr_post_arg		(unsigned char)163
-#define blr_exec_into		(unsigned char)164
-#define blr_user_savepoint	(unsigned char)165
-#define blr_dcl_cursor		(unsigned char)166
-#define blr_cursor_stmt		(unsigned char)167
-#define blr_current_timestamp2	(unsigned char)168
-#define blr_current_time2	(unsigned char)169
-#define blr_agg_list		(unsigned char)170
-#define blr_agg_list_distinct	(unsigned char)171
-#define blr_modify2			(unsigned char)172
 
 /* FB 1.0 specific BLR */
 
@@ -316,21 +291,32 @@
 #define blr_lowcase			(unsigned char)181
 #define blr_strlen			(unsigned char)182
 
-/* sub parameter for blr_strlen */
+/* sub parameters for blr_length */
+
 #define blr_strlen_bit		(unsigned char)0
 #define blr_strlen_char		(unsigned char)1
 #define blr_strlen_octet	(unsigned char)2
 
 #define blr_trim			(unsigned char)183
 
-/* first sub parameter for blr_trim */
+/* sub parameters for blr_trim */
+
 #define blr_trim_both		(unsigned char)0
 #define blr_trim_leading	(unsigned char)1
 #define blr_trim_trailing	(unsigned char)2
 
-/* second sub parameter for blr_trim */
 #define blr_trim_spaces		(unsigned char)0
 #define blr_trim_characters	(unsigned char)1
+
+/* These codes reuse BLR code space */
+
+#define blr_post_arg		(unsigned char)163
+#define blr_exec_into		(unsigned char)164
+#define blr_user_savepoint	(unsigned char)165
+#define blr_dcl_cursor		(unsigned char)166
+#define blr_cursor_stmt		(unsigned char)167
+#define blr_current_timestamp2	(unsigned char)168
+#define blr_current_time2	(unsigned char)169
 
 /* These codes are actions for user-defined savepoints */
 
@@ -345,16 +331,4 @@
 #define blr_cursor_close		(unsigned char)1
 #define blr_cursor_fetch		(unsigned char)2
 
-/* FB 2.1 specific BLR */
-
-#define blr_init_variable	(unsigned char)184
-#define blr_recurse			(unsigned char)185
-#define blr_sys_function	(unsigned char)186
-
-// FB 2.5 specific BLR
-
-#define blr_auto_trans		(unsigned char)187
-#define blr_similar			(unsigned char)188
-#define blr_exec_stmt		(unsigned char)189
-
-#endif // JRD_BLR_H
+#endif /* JRD_BLR_H */

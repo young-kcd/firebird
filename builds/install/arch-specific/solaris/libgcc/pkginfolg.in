@@ -6,4 +6,3 @@ CATEGORY="library"
 VENDOR="www.firebirdsql.org"
 BASEDIR=/usr/local/firebird/lib
 EMAIL=pbeach at ibphoenix.com
-

@@ -46,7 +46,7 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
     const ULONG src_start = src_len;
 	*err_code = 0;
 
-	// See if we're only after a length estimate
+/* See if we're only after a length estimate */
 	if (p_dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
 
@@ -188,23 +188,24 @@ INTL_BOOL CVBIG5_check_big5(charset* cs,
  **************************************/
 	const UCHAR* big5_str_start = big5_str;
 
-	while (big5_len--)
-	{
+	while (big5_len--) {
 		const UCHAR c1 = *big5_str;
-		if (BIG51(c1))	// Is it  BIG-5
-		{
+		if (BIG51(c1)) {		/* Is it  BIG-5 */
 			if (big5_len == 0)	/* truncated BIG-5 */
 			{
 				if (offending_position)
 					*offending_position = big5_str - big5_str_start;
 				return (false);
 			}
-
-			big5_str += 2;
-			big5_len -= 1;
+			else {
+				big5_str += 2;
+				big5_len -= 1;
+			}
 		}
-		else	// it is a ASCII
+		else {					/* it is a ASCII */
+
 			big5_str++;
+		}
 	}
 	return (true);
 }

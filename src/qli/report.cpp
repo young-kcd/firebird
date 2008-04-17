@@ -103,7 +103,8 @@ void RPT_report( qli_nod* loop)
 		report->rpt_buffer = (UCHAR *) string->str_data;
 	}
 
-	memcpy(report->rpt_buffer, message->msg_buffer, (SLONG) message->msg_length);
+	MOVQ_fast((SCHAR*) message->msg_buffer, (SCHAR*) report->rpt_buffer,
+			  (SLONG) message->msg_length);
 
 	qli_brk* control;
 	if (control = report->rpt_top_rpt)
@@ -189,13 +190,15 @@ static void bottom_break( qli_brk* control, qli_prt* print)
  *	Force all lower breaks then take break.
  *
  **************************************/
+	qli_lls* stack;
+
 	if (!control)
 		return;
 
 	if (control->brk_next)
 		bottom_break(control->brk_next, print);
 
-	for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+	for (stack = control->brk_statisticals; stack; stack = stack->lls_next)
 		EVAL_break_compute((qli_nod*) stack->lls_object);
 
 	FMT_print((qli_nod*) control->brk_line, print);
@@ -214,11 +217,11 @@ static void increment_break( qli_brk* control)
  *	Toss another record into running computations.
  *
  **************************************/
+	qli_lls* stack;
+
 	for (; control; control = control->brk_next)
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
-			EVAL_break_increment((qli_nod*) stack->lls_object);
-	}
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next) EVAL_break_increment((qli_nod*) stack->lls_object);
 }
 
 
@@ -234,11 +237,11 @@ static void initialize_break( qli_brk* control)
  *	Execute a control break.
  *
  **************************************/
+	qli_lls* stack;
+
 	for (; control; control = control->brk_next)
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
-			EVAL_break_init((qli_nod*) stack->lls_object);
-	}
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next) EVAL_break_init((qli_nod*) stack->lls_object);
 }
 
 
@@ -256,23 +259,21 @@ static bool test_break(qli_brk* control,
  *	Check to see if there has been a control break for an expression.
  *
  **************************************/
-	DSC desc1, desc2;
+	DSC desc1, desc2, *ptr1, *ptr2;
+	UCHAR *p2;
 
 // Evaluate the two versions of the expression
 
-	dsc* ptr1 = EVAL_value((qli_nod*) control->brk_field);
-	if (ptr1)
+	if (ptr1 = EVAL_value((qli_nod*) control->brk_field))
 		desc1 = *ptr1;
 
-	UCHAR* const buf = message->msg_buffer;
+	UCHAR* p1 = message->msg_buffer;
 	message->msg_buffer = report->rpt_buffer;
 
-	dsc* ptr2 = EVAL_value((qli_nod*) control->brk_field);
-	if (ptr2)
+	if (ptr2 = EVAL_value((qli_nod*) control->brk_field))
 		desc2 = *ptr2;
 
-	// An error in EVAL_value will prevent msg_buffer from being restored to its old value.
-	message->msg_buffer = buf;
+	message->msg_buffer = p1;
 
 // Check for consistently missing
 
@@ -282,15 +283,18 @@ static bool test_break(qli_brk* control,
 /* Both fields are present.  Check values.  Luckily, there's no need
    to worry about datatypes. */
 
-	const UCHAR* p1 = desc1.dsc_address;
-	const UCHAR* p2 = desc2.dsc_address;
+	p1 = desc1.dsc_address;
+	p2 = desc2.dsc_address;
 	USHORT l = desc1.dsc_length;
 
 	if (desc1.dsc_dtype == dtype_varying)
 		l = 2 + *(USHORT *) p1;
 
 	if (l)
-		return memcmp(p1, p2, l) != 0;
+		do {
+			if (*p1++ != *p2++)
+				return true;
+		} while (--l);
 
 	return false;
 }
@@ -308,9 +312,11 @@ static void top_break( qli_brk* control, qli_prt* print)
  *	Execute a control break.
  *
  **************************************/
-	for (; control; control = control->brk_next) 
-	{
-		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
+	qli_lls* stack;
+
+	for (; control; control = control->brk_next) {
+		for (stack = control->brk_statisticals; stack;
+			 stack = stack->lls_next)
 		{
 			EVAL_break_compute((qli_nod*) stack->lls_object);
 		}

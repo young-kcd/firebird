@@ -138,7 +138,7 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 		if (PARSE_match(KW_OVER)) {
 			for (;;) {
 				if (!stack->lls_next) {
-					PARSE_error(234, 0);	/* msg 234: OVER can only be used in CROSS expressions */
+					PARSE_error(234, NULL, NULL);	/* msg 234: OVER can only be used in CROSS expressions */
 				}
 				boolean = PARSE_make_node(nod_eql, 2);
 				field_sym = PARSE_symbol(tok_ident);
@@ -184,7 +184,7 @@ DUDLEY_NOD EXPR_rse(bool view_flag)
 		}
 	if (PARSE_match(KW_SORTED)) {
 		if (view_flag)
-			PARSE_error(319, 0);	/* msg 234: Unexpected sort clause */
+			PARSE_error(319, NULL, NULL);	/* msg 234: Unexpected sort clause */
 		PARSE_match(KW_BY);
 		node->nod_arg[s_rse_sort] = parse_sort();
 	}
@@ -252,7 +252,7 @@ DUDLEY_NOD EXPR_statement(void)
 		node->nod_count = 0;
 		number = PARSE_number();
 		if (number > 255)
-			PARSE_error(235, 0);	/* msg 235: abort code cannot exceed 255 */
+			PARSE_error(235, NULL, NULL);	/* msg 235: abort code cannot exceed 255 */
 		node->nod_arg[0] = (DUDLEY_NOD) (IPTR) number;
 	}
 	else if (PARSE_match(KW_ERASE)) {
@@ -404,12 +404,12 @@ static CON make_numeric_constant( const TEXT* string, USHORT length)
 			else if (*p == '.') {
 				*q++ = *p;
 				if (fraction)
-					DDL_err(237);	/* msg 237: too many decimal points */
+					DDL_err(237, NULL, NULL, NULL, NULL, NULL);	/* msg 237: too many decimal points */
 				else
 					fraction = true;
 			}
 			else
-				DDL_err(238);	/* msg 238: unrecognized character in numeric string */
+				DDL_err(238, NULL, NULL, NULL, NULL, NULL);	/* msg 238: unrecognized character in numeric string */
 	}
 	return constant;
 }

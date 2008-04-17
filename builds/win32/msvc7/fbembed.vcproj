@@ -28,7 +28,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\fbembed/"
 				ObjectFile="..\..\..\temp\debug\fbembed/"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\debug\firebird\bin\fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -101,7 +101,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="..\..\..\temp\release\fbembed/fbembed.pch"
 				AssemblerListingLocation="..\..\..\temp\release\fbembed/"
@@ -116,7 +116,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="mpr.lib ws2_32.lib version.lib icuuc.lib"
+				AdditionalDependencies="mpr.lib ws2_32.lib version.lib icuuc.lib icuin.lib"
 				OutputFile="..\..\..\temp\release\firebird/bin/fbembed.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -182,6 +182,21 @@
 		<Filter
 			Name="REMOTE files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+				</FileConfiguration>
+			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 				<FileConfiguration
@@ -345,15 +360,6 @@
 						Name="VCResourceCompilerTool"
 						AdditionalIncludeDirectories="..\..\..\src\jrd;$(NoInherit)"/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="AuthSspi">
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\trusted\AuthSspi.h">
 			</File>
 		</Filter>
 		<File

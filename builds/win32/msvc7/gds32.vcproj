@@ -32,7 +32,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;GDS32"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\release\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\release\gds32/"
 				ObjectFile="..\..\..\temp\release\gds32/"
@@ -98,7 +98,7 @@
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="FALSE"
+				RuntimeTypeInfo="TRUE"
 				PrecompiledHeaderFile="..\..\..\temp\debug\gds32/gds32.pch"
 				AssemblerListingLocation="..\..\..\temp\debug\gds32/"
 				ObjectFile="..\..\..\temp\debug\gds32/"
@@ -178,24 +178,9 @@
 				</FileConfiguration>
 			</File>
 		</Filter>
-		<Filter
-			Name="COMMON files">
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
-			</File>
-		</Filter>
+		<File
+			RelativePath="..\defs\gds32.def">
+		</File>
 		<File
 			RelativePath="..\defs\gds32.def">
 		</File>

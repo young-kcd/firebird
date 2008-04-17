@@ -24,7 +24,6 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../jrd/plugin_manager.h"
 #include "../jrd/os/path_utils.h"
 #include "../common/config/config.h"
@@ -312,7 +311,7 @@ void PluginManager::load_engine_plugins()
 	enginePluginManager().addSearchPath(ENGINE_PLUGIN_DIR);
 	enginePluginManager().loadAllPlugins();
 	
-	const Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
+	Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
 	for (PluginManager::iterator itr = enginePluginManager().begin();
 	    itr != enginePluginManager().end(); ++itr)
 	{

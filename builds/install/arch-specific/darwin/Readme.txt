@@ -5,7 +5,6 @@ All the standard command line executables are installed in /Library/Frameworks/F
 Please note that every MacOS X user you want to have access to your database MUST have read/write permissions on the .fdb file.
 
 The release notes can be found in the doc directory  Generic documentation for Firebird can be found on the IBPhoenix web site at www.ibphoenix.com, as well as at the Firebird website. There is also a yahoo group named "ib-support" if you have any problems with Firebird.
-
 Thanks to:
 John Bellardo (Original MacOSX port for Firebird)
 David Pugh (Firebird 1.5.3 Port)

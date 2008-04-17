@@ -1,6 +1,6 @@
 Title Firebird Database
-Version 2.5.0
-Description Firebird 2.5.0
+Version 2.0.3
+Description Firebird 2.0.3
 DefaultLocation /tmp/install
 DeleteWarning 
 

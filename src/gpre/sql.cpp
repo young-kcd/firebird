@@ -976,7 +976,7 @@ void SQL_relation_name(TEXT* r_name,
 
 	gpre_sym* symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_database);
 	if (symbol) {
-		if (strlen(symbol->sym_name) >= unsigned(NAME_SIZE))
+		if (strlen(symbol->sym_name) >= NAME_SIZE)
 			PAR_error("Database alias too long");
 			
 		strcpy(db_name, symbol->sym_name); // this is the alias, not the path
@@ -2182,8 +2182,8 @@ static act* act_declare(void)
 		PAR_get_token();
 		if (MSC_match(KW_FUNCTION))
 			return (act_declare_udf());
-
-		CPR_s_error("FUNCTION");
+		else
+			CPR_s_error("FUNCTION");
 		break;
 	}
 
@@ -2245,6 +2245,16 @@ static act* act_declare(void)
 			symbol->sym_type =
 				(delimited) ? SYM_delimited_cursor : SYM_cursor;
 			request->req_rse = SQE_select(request, false);
+			if (MSC_match(KW_FOR)) {
+				if (!MSC_match(KW_UPDATE))
+					CPR_s_error("UPDATE");
+				if (!MSC_match(KW_OF))
+					CPR_s_error("OF");
+
+				do {
+					CPR_token();
+				} while (MSC_match(KW_COMMA));
+			}
 			EXP_rse_cleanup(request->req_rse);
 		}
 		else if (MSC_match(KW_READ)) {
@@ -2473,8 +2483,7 @@ static act* act_declare_udf(void)
 
 	gpre_fld** ptr = &udf_declaration->decl_udf_arg_list;
 	while (true) {
-		if (MSC_match(KW_RETURNS))
-		{
+		if (MSC_match(KW_RETURNS)) {
 			if (MSC_match(KW_PARAMETER)) {
 				const SLONG return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
@@ -2496,14 +2505,15 @@ static act* act_declare_udf(void)
 			}
 			break;
 		}
-
-		gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
-		field->fld_flags |= (FLD_meta | FLD_meta_cstring);
-		SQL_par_field_dtype(request, field, true);
-		SQL_adjust_field_dtype(field);
-		*ptr = field;
-		ptr = &(field->fld_next);
-		MSC_match(KW_COMMA);
+		else {
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
+			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
+			SQL_par_field_dtype(request, field, true);
+			SQL_adjust_field_dtype(field);
+			*ptr = field;
+			ptr = &(field->fld_next);
+			MSC_match(KW_COMMA);
+		}
 	}
 
 	if (MSC_match(KW_ENTRY_POINT))
@@ -2559,7 +2569,7 @@ static act* act_delete(void)
 			CPR_s_error("OF <cursor>");
 		gpreGlob.requests = request->req_next;
 		gpreGlob.cur_routine->act_object = (REF) request->req_routine; // Beware global var
-		MSC_free(request);
+		MSC_free((UCHAR *) request);
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
 			(!transaction || !request->req_trans ||
@@ -2568,11 +2578,14 @@ static act* act_delete(void)
 			if (transaction)
 				PAR_error("different transaction for select and delete");
 			else {				// does not specify transaction clause in      
-				//   "delete ... where current of cursor" stmt
-				const size_t trans_nm_len = strlen(request->req_trans);
-				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
-				memcpy(str_2, request->req_trans, trans_nm_len);
+				//   "delete ... where cuurent of cursor" stmt 
+				SSHORT trans_nm_len = strlen(request->req_trans);
+				SCHAR* str_2 = (SCHAR*) MSC_alloc(trans_nm_len + 1);
 				transaction = str_2;
+				const SCHAR* str_1 = request->req_trans;
+				do {
+					*str_2++ = *str_1++;
+				} while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
@@ -3805,7 +3818,7 @@ static act* act_open_blob( ACT_T act_op, gpre_sym* symbol)
 
 		/*
 		 *  Even if no FILTER was specified, we set one up for the special
-		 *  case of Firebird TEXT blobs, in order to do character set
+		 *  case of InterBase TEXT blobs, in order to do character set
 		 *  transliteration from the column-declared character set of the
 		 *  blob to the process character set (CS_dynamic).
 		 *
@@ -4345,10 +4358,6 @@ static act* act_transaction( enum act_t type)
 	else if ((type == ACT_commit) && (MSC_match(KW_RETAIN))) {
 		MSC_match(KW_SNAPSHOT);
 		action->act_type = type = ACT_commit_retain_context;
-	}
-	else if ((type == ACT_rollback) && (MSC_match(KW_RETAIN))) {
-		MSC_match(KW_SNAPSHOT);
-		action->act_type = type = ACT_rollback_retain_context;
 	}
 
 	return action;
@@ -5009,8 +5018,7 @@ static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 			|| ((*fld_ptr)->nod_type == nod_array))
 		{
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
-			if ((*fld_ptr)->nod_count > 2)
-				slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
+			slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
 		}
 
 		REF reference = NULL;
@@ -5183,7 +5191,7 @@ static void pair( GPRE_NOD expr, GPRE_NOD field_expr)
 
 static void par_array( gpre_fld* field)
 {
-	USHORT i = 0;
+	SSHORT i = 0;
 
 //  Pick up ranges 
 
@@ -5329,21 +5337,19 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 		gpreGlob.token_global.tok_keyword = KW_none;
 
 	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_cursor);
-
 	if (!symbol)
 		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_delimited_cursor);
-
 	if (symbol) {
 		PAR_get_token();
 		if (symbol_ptr)
 			*symbol_ptr = symbol;
 		return (gpre_req*) symbol->sym_object;
 	}
-
-	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
-	if (symbol)
-		PAR_error("DSQL cursors require DSQL update & delete statements");
-
+	else {
+		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
+		if (symbol)
+			PAR_error("DSQL cursors require DSQL update & delete statements");
+	}
 	CPR_s_error("<cursor name>");
 	return NULL;				// silence compiler
 }
@@ -5611,6 +5617,7 @@ static bool par_into( DYN statement)
 
 static void par_options(const TEXT** transaction)
 {
+
 	*transaction = NULL;
 
 	if (!MSC_match(KW_TRANSACTION))
@@ -5919,8 +5926,7 @@ static bool par_transaction_modes(gpre_tra* trans,
 								  bool expect_iso)
 {
 
-	if (MSC_match(KW_READ))
-	{
+	if (MSC_match(KW_READ)) {
 		if (MSC_match(KW_ONLY)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
@@ -5928,8 +5934,7 @@ static bool par_transaction_modes(gpre_tra* trans,
 			trans->tra_flags |= TRA_ro;
 			return true;
 		}
-
-		if (MSC_match(KW_WRITE)) {
+		else if (MSC_match(KW_WRITE)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
 
@@ -5944,11 +5949,12 @@ static bool par_transaction_modes(gpre_tra* trans,
 		if (MSC_match(KW_NO)) {
 			if (MSC_match(KW_VERSION))
 				return true;
-			if (MSC_match(KW_WAIT)) {
+			else if (MSC_match(KW_WAIT)) {
 				trans->tra_flags |= TRA_nw;
 				return true;
 			}
-			CPR_s_error("WAIT or VERSION");
+			else
+				CPR_s_error("WAIT or VERSION");
 		}
 
 		if (MSC_match(KW_VERSION))
@@ -5956,14 +5962,15 @@ static bool par_transaction_modes(gpre_tra* trans,
 
 		return true;
 	}
-
-	if (MSC_match(KW_SNAPSHOT)) {
+	else if (MSC_match(KW_SNAPSHOT)) {
 		if (MSC_match(KW_TABLE)) {
 			trans->tra_flags |= TRA_con;
 
 			MSC_match(KW_STABILITY);
+			return true;
 		}
-		return true;
+		else
+			return true;
 	}
 	return false;
 }
@@ -6042,18 +6049,20 @@ static USHORT resolve_dtypes(KWWORDS typ,
 		break;
 
 	case KW_TIME:
-		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6))
-		{
+		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6)) {
 			sprintf(err_mesg,
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
 			return dtype_unknown;	// TMN: FIX FIX
 			/* return; */
 		}
-		return dtype_sql_time;
+		else
+			return dtype_sql_time;
+		break;
 
 	case KW_TIMESTAMP:
 		return dtype_timestamp;
+		break;
 
 	default:
 		sprintf(err_mesg, "resolve_dtypes(): Unknown dtype %d\n", typ);

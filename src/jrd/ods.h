@@ -101,10 +101,8 @@ const USHORT ODS_CURRENT10		= 1;
 
 /* Minor versions for ODS 11 */
 
-const USHORT ODS_CURRENT11_0	= 0;		/* Firebird 2.0 features */
-const USHORT ODS_CURRENT11_1	= 1;		/* Firebird 2.1 features */
-const USHORT ODS_CURRENT11_2	= 2;		/* Firebird 2.? features */
-const USHORT ODS_CURRENT11		= 2;
+const USHORT ODS_CURRENT11_0	= 0;		/* Firebird 2.0 features. */
+const USHORT ODS_CURRENT11		= 0;
 
 /* useful ODS macros. These are currently used to flag the version of the
    system triggers and system indices in ini.e */
@@ -120,8 +118,6 @@ const USHORT ODS_9_1		= ENCODE_ODS(ODS_VERSION9, 1);
 const USHORT ODS_10_0		= ENCODE_ODS(ODS_VERSION10, 0);
 const USHORT ODS_10_1		= ENCODE_ODS(ODS_VERSION10, 1);
 const USHORT ODS_11_0		= ENCODE_ODS(ODS_VERSION11, 0);
-const USHORT ODS_11_1		= ENCODE_ODS(ODS_VERSION11, 1);
-const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
@@ -140,13 +136,13 @@ inline USHORT DECODE_ODS_MINOR(USHORT ods_version) {
 const USHORT ODS_VERSION = ODS_VERSION11;		// Current ODS major version -- always
 												// the highest.
 
-const USHORT ODS_RELEASED = ODS_CURRENT11_0;	// The lowest stable minor version
+const USHORT ODS_RELEASED = ODS_CURRENT11;		// The lowest stable minor version
 												// number for this ODS_VERSION!
 
 const USHORT ODS_CURRENT = ODS_CURRENT11;		// The highest defined minor version
 												// number for this ODS_VERSION!
 
-const USHORT ODS_CURRENT_VERSION = ODS_11_2;	// Current ODS version in use which includes
+const USHORT ODS_CURRENT_VERSION = ODS_11_0;	// Current ODS version in use which includes
 												// both major and minor ODS versions!
 
 
@@ -169,17 +165,12 @@ const SCHAR pag_ids			= 9;		/* Gen-ids */
 const SCHAR pag_log			= 10;		// Write ahead log information DEPRECATED
 const SCHAR pag_max			= 10;		/* Max page type */
 
-/* Pre-defined page numbers */
-
-const SLONG HEADER_PAGE		= 0;
-const SLONG LOG_PAGE		= 2;
-
-/* Page size limits */
+const SCHAR HEADER_PAGE		= 0;
+const SCHAR LOG_PAGE			= 2;
 
 const USHORT MIN_PAGE_SIZE		= 1024;
 const USHORT MAX_PAGE_SIZE		= 16384;
 const USHORT DEFAULT_PAGE_SIZE	= 4096;
-const USHORT MIN_NEW_PAGE_SIZE	= 4096;
 
 namespace Ods {
 
@@ -188,12 +179,12 @@ namespace Ods {
 struct pag
 {
 	SCHAR pag_type;
-	UCHAR pag_flags;
+	SCHAR pag_flags;
 	USHORT pag_checksum;
 	ULONG pag_generation;
 	// We renamed pag_seqno for SCN number usage to avoid major ODS version bump
-	ULONG pag_scn;			// WAL seqno of last update, now used by nbackup
-	ULONG reserved;			// Was used for WAL
+	ULONG pag_scn;			/* WAL seqno of last update */
+	ULONG reserved;			/* Was used for WAL */
 };
 
 typedef pag *PAG;
@@ -214,7 +205,7 @@ struct blob_page
 #define BLP_SIZE	OFFSETA(Ods::blob_page*, blp_page)
 
 // pag_flags
-const UCHAR blp_pointers	= 1;		/* Blob pointer page, not data page */
+const SCHAR blp_pointers	= 1;		/* Blob pointer page, not data page */
 
 
 /* B-tree node */
@@ -275,14 +266,14 @@ struct IndexJumpInfo {
 };
 
 // pag_flags
-const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
-const UCHAR btr_not_propogated	= 2;	// page is not propogated upward
-const UCHAR btr_descending		= 8;	// Page/bucket is part of a descending index
-const UCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
-const UCHAR btr_large_keys		= 32;	// AB: 2003-index-structure enhancement
-const UCHAR btr_jump_info		= 64;	// AB: 2003-index-structure enhancement
+const SCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
+const SCHAR btr_not_propogated	= 2;	// page is not propogated upward
+const SCHAR btr_descending		= 8;	// Page/bucket is part of a descending index
+const SCHAR btr_all_record_number	= 16;	// Non-leaf-nodes will contain record number information
+const SCHAR btr_large_keys		= 32;	// AB: 2003-index-structure enhancement
+const SCHAR btr_jump_info		= 64;	// AB: 2003-index-structure enhancement
 
-const UCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
+const SCHAR BTR_FLAG_COPY_MASK = (btr_descending | btr_all_record_number | btr_large_keys | btr_jump_info);
 
 /* Data Page */
 
@@ -301,9 +292,9 @@ struct data_page
 #define DPG_SIZE	(sizeof (Ods::data_page) - sizeof (Ods::data_page::dpg_repeat))
 
 // pag_flags
-const UCHAR dpg_orphan	= 1;		/* Data page is NOT in pointer page */
-const UCHAR dpg_full	= 2;		/* Pointer page is marked FULL */
-const UCHAR dpg_large	= 4;		/* Large object is on page */
+const SCHAR dpg_orphan	= 1;		/* Data page is NOT in pointer page */
+const SCHAR dpg_full	= 2;		/* Pointer page is marked FULL */
+const SCHAR dpg_large	= 4;		/* Large object is on page */
 
 
 /* Index root page */
@@ -336,7 +327,8 @@ struct irtd : public irtd_ods10 {
 	float irtd_selectivity;
 };
 
-// irtd_itype
+typedef irtd IRTD;
+
 const USHORT irt_unique		= 1;
 const USHORT irt_descending	= 2;
 const USHORT irt_in_progress= 4;
@@ -459,7 +451,7 @@ struct pointer_page
 };
 
 // pag_flags
-const UCHAR ppg_eof		= 1;			/* Last pointer page in relation */
+const USHORT ppg_eof		= 1;			/* Last pointer page in relation */
 
 /* Transaction Inventory Page */
 
@@ -497,6 +489,8 @@ struct rhd {
 	UCHAR rhd_data[1];
 };
 
+typedef rhd *RHD;
+
 #define RHD_SIZE	OFFSETA (Ods::rhd*, rhd_data)
 
 /* Record header for fragmented record */
@@ -512,8 +506,9 @@ struct rhdf {
 	UCHAR rhdf_data[1];			/* Blob data */
 };
 
-#define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
+typedef rhdf *RHDF;
 
+#define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
 
 /* Record header for blob header */
 
@@ -526,13 +521,15 @@ struct blh {
 	SLONG blh_count;			/* Total number of segments */
 	SLONG blh_length;			/* Total length of data */
 	USHORT blh_sub_type;		/* Blob sub-type */
-	UCHAR blh_charset;			// Blob charset (since ODS 11.1)
-	UCHAR blh_unused;
+	USHORT blh_unused;
 	SLONG blh_page[1];			/* Page vector for blob pages */
 };
 
+typedef blh *BLH;
+
 #define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
-// rhd_flags, rhdf_flags and blh_flags
+
+// rhdf_flags
 
 const USHORT rhd_deleted		= 1;		/* record is logically deleted */
 const USHORT rhd_chain			= 2;		/* record is an old version */
@@ -544,7 +541,6 @@ const USHORT rhd_delta			= 32;		/* prior version is differences only */
 const USHORT rhd_large			= 64;		/* object is large */
 const USHORT rhd_damaged		= 128;		/* object is known to be damaged */
 const USHORT rhd_gc_active		= 256;		/* garbage collecting dead record version */
-
 
 
 /* Log page */

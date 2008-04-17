@@ -77,8 +77,7 @@ enum processing_state {
 	EXTRACT		=	7,
 	EXTRACTALL	=	8,
 	FETCH		=	9,
-	OBJECT_NOT_FOUND = 10,
-	ERR_BUFFER_OVERFLOW = 11
+	OBJECT_NOT_FOUND = 10
 };
 
 // Which blob subtypes to print 
@@ -200,7 +199,7 @@ const int NO_PROCS					= 88;		// There are no stored procedures in this database
 const int NO_TRIGGERS_ON_REL		= 89;		// There are no triggers on table %s in this database 
 const int NO_REL_OR_TRIGGER			= 90;		// There is no table or trigger %s in this database 
 const int NO_TRIGGERS				= 91;		// There are no triggers in this database 
-const int NO_TRIGGER				= 121;      // There is no trigger %s in this database
+const int NO_TRIGGER                = 121;      // There is no trigger %s in this database
 const int NO_CHECKS_ON_REL			= 92;		// There are no check constraints on table %s in this database 
 const int NO_COMMENTS				= 115;		// There are no comments for objects in this database.
 const int BUFFER_OVERFLOW			= 94;		// An isql command exceeded maximum buffer size 
@@ -237,23 +236,10 @@ const int USAGE_NOTINT				= 143;		// usage: argument "%s" for switch "%s" is not
 const int USAGE_RANGE				= 144;		// usage: value "%s" for switch "%s" is out of range
 const int USAGE_DUPSW				= 145;		// usage: switch "%s" or its equivalent used more than once
 const int USAGE_DUPDB				= 146;		// usage: more than one database name: "%s", "%s"
-const int NO_DEPENDENCIES			= 147;		// No dependencies for %s were found
-const int NO_COLLATION				= 148;		// There is no collation %s in this database 
-const int NO_COLLATIONS				= 149;		// There are no collations in this database 
-const int MSG_COLLATIONS			= 150;		// Collations:
-const int NO_SECCLASS				= 151;      // There are no security classes for %s
-const int NO_DB_WIDE_SECCLASS		= 152;      // There is no database-wide security class
-const int CANNOT_GET_SRV_VER		= 153;		// Cannot get server version without database connection
-const int BULK_PROMPT				= 156;		// "BULK> "
-const int NO_CONNECTED_USERS		= 157;   	// There are no connected users
-const int USERS_IN_DB				= 158;      // Users in the database
-const int OUTPUT_TRUNCATED			= 159;      // Output was truncated
-const int VALID_OPTIONS             = 160;      // Valid options are:
 
 // Initialize types
 
-struct sqltypes
-{
+struct sqltypes {
 	SSHORT type;
 	SCHAR type_name[WORDLENGTH];
 };
@@ -272,9 +258,9 @@ const int VARCHAR		= 37;
 const int CSTRING		= 40;
 const int BLOB_ID		= 45;
 const int BLOB			= 261;
-//const int SQL_DATE	= 12;
-//const int SQL_TIME	= 13;
-const int BIGINT		= 16;
+//const int SQL_DATE      = 12;
+//const int SQL_TIME      = 13;
+const int BIGINT        = 16;
 
 static const sqltypes Column_types[] = {
 	{SMALLINT, "SMALLINT"},		// NTX: keyword
@@ -338,7 +324,7 @@ static const char* UDF_param_types[] = {
 	" BY DESCRIPTOR",		// keyword in FB, internally VMS descriptor
 	"",						// BY ISC_DESCRIPTOR => BLOB
 	" BY SCALAR_ARRAY",		// keyword in FB v2
-	" NULL",				// BY REFERENCE WITH NULL, but only appends NULL to the type
+	" NULL",                 // BY REFERENCE WITH NULL, but only appends NULL to the type
 	" ERROR-type-unknown"
 };
 
@@ -356,14 +342,21 @@ public:
 	USHORT db_SQL_dialect;
 	// from isql.epp
 	USHORT major_ods;
-	USHORT minor_ods;
 	void printf(const char* buffer, ...);
 	void prints(const char* buffer);
 };
 
 extern IsqlGlobals isqlGlob;
 
-static const char* SCRATCH = "fb_query_";
+#ifdef VMS
+#include <descrip.h>
+#endif
+
+#ifdef SMALL_FILE_NAMES
+static const char* SCRATCH		= "fb_q";
+#else
+static const char* SCRATCH		= "fb_query_";
+#endif
 
 inline void STDERROUT(const char* st, bool cr = true)
 {

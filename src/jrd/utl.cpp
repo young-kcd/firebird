@@ -55,15 +55,26 @@
 #include "../jrd/event.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#include "../jrd/blb_proto.h"
+#endif
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
-#include "../common/classes/TempFile.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#ifdef VMS
+#include <file.h>
+#include <perror.h>
+#include <descrip.h>
+#include <types.h>
+#include <stat.h>
+
+#else /* !VMS */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -73,6 +84,18 @@
 #include <process.h>
 #else
 #include <sys/file.h>
+#endif
+
+#endif /* VMS */
+
+#ifdef VMS
+#ifdef __ALPHA
+static const char* EDT_IMAGE	= "TPUSHR";
+static const char* EDT_SYMBOL	= "TPU$EDIT";
+#else
+static const char* EDT_IMAGE	= "EDTSHR";
+static const char* EDT_SYMBOL	= "EDT$EDIT";
+#endif
 #endif
 
 /* Bug 7119 - BLOB_load will open external file for read in BINARY mode. */
@@ -104,6 +127,10 @@ static int get_ods_version(FB_API_HANDLE*, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
 static int load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, FILE*);
 
+
+#ifdef VMS
+static int display(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE);
+#endif
 
 /* Blob info stuff */
 
@@ -207,14 +234,9 @@ static const TEXT* const impl_implementation[] = {
     "Firebird/linux Sparc",	/* 65 */
     "Firebird/linux AMD64",	/* 66 */
     "Firebird/FreeBSD/amd64",	/* 67 */
-    "Firebird/x86-64/Windows NT",   /* 68 */
+    NULL, // "Firebird/x86-64/Windows NT",   /* 68 */		//Windows/amd64 - not ported yet
     "Firebird/linux PowerPC",	/* 69 */
-	"Firebird/Darwin/Intel",	/* 70 */
-    "Firebird/linux MIPSEL",	/* 71 */
-    "Firebird/linux MIPS",		/* 72 */
-	"Firebird/Darwin/Intel64",	/* 73 */
-	"Firebird/sun/amd64",		/* 74 */
-	"Firebird/linux ARM"		/* 75 */
+	"Firebird/Darwin/Intel"	/* 70 */
 };
 
 
@@ -222,6 +244,32 @@ static const TEXT* const impl_implementation[] = {
 extern "C" {
 #endif
 /* Avoid C++ linkage API functions*/
+
+
+#ifdef VMS
+ISC_STATUS API_ROUTINE gds__attach_database_d(
+										  ISC_STATUS* user_status,
+										  struct dsc$descriptor_s* file_name,
+										  void** handle,
+										  SSHORT dpb_length,
+	const SCHAR* dpb, SSHORT db_type)
+{
+/**************************************
+ *
+ *	g d s _ $ a t t a c h _ d a t a b a s e _ d
+ *
+ **************************************
+ *
+ * Functional description
+ *	An attach database for COBOL to call
+ *
+ **************************************/
+
+	return gds_attach_database(user_status, file_name->dsc$w_length,
+							   file_name->dsc$a_pointer, handle, dpb_length,
+							   dpb, db_type);
+}
+#endif
 
 
 int API_ROUTINE gds__blob_size(
@@ -252,13 +300,13 @@ int API_ROUTINE gds__blob_size(
 		return FALSE;
 	}
 
-	const UCHAR* p = reinterpret_cast<UCHAR*>(buffer);
-	UCHAR item;
-	while ((item = *p++) != isc_info_end)
-	{
-		const USHORT l = gds__vax_integer(p, 2);
+	const TEXT* p = buffer;
+	char item;
+	while ((item = *p++) != isc_info_end) {
+		const USHORT l =
+			gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2);
 		p += 2;
-		const SLONG n = gds__vax_integer(p, l);
+		const SLONG n = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), l);
 		p += l;
 		switch (item) {
 		case isc_info_blob_max_segment:
@@ -445,7 +493,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
  *	i s c _ m o d i f y _ d p b
  *
  **************************************
- * CVC: This is exactly the same logic as isc_expand_dpb, but for one param.
+ * CVC: This is exactly the same login than isc_expand_dpb, but for one param.
  * However, the difference is that when presented with a dpb type it that's
  * unknown, it returns FB_FAILURE immediately. In contrast, isc_expand_dpb
  * doesn't complain and instead treats those as integers and tries to skip
@@ -501,6 +549,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
    for the new dpb and copy the old one over */
 
 	UCHAR* new_dpb;
+	UCHAR* p;
 	if (new_dpb_length > *dpb_size)
 	{
 		/* Note: gds__free done by GPRE generated code */
@@ -514,12 +563,19 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 			return FB_FAILURE;		/* NOMEM: not really handled */
 		}
 
-		memcpy(new_dpb, dpb, *dpb_size);
+		p = new_dpb;
+		const UCHAR* q = reinterpret_cast<const UCHAR*>(*dpb);
+		for (SSHORT length = *dpb_size; length; length--)
+		{
+			*p++ = *q++;
+		}
+
 	}
 	else
+	{
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
-
-	UCHAR* p = new_dpb + *dpb_size;
+		p = new_dpb + *dpb_size;
+	}
 
 	if (!*dpb_size)
 	{
@@ -604,6 +660,41 @@ int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
 }
 #endif
 
+
+#ifdef VMS
+int API_ROUTINE gds__edit(const TEXT* file_name, USHORT type)
+{
+/**************************************
+ *
+ *	g d s _ $ e d i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Open a blob, dump it to a file, allow the user to edit the
+ *	window, and dump the data back into a blob.  If the user
+ *	bails out, return FALSE, otherwise return TRUE.
+ *
+ **************************************/
+	struct dsc$descriptor_s desc, symbol, image;
+	struct stat before, after;
+
+	stat(file_name, &before);
+	ISC_make_desc(file_name, &desc, 0);
+	ISC_make_desc(EDT_SYMBOL, &symbol, 0);
+	ISC_make_desc(EDT_IMAGE, &image, 0);
+
+	int (*editor)(dsc$descriptor_s, dsc$descriptor_s);
+	lib$find_image_symbol(&image, &symbol, &editor);
+	int status = (*editor) (&desc, &desc);
+	stat(file_name, &after);
+
+	return (before.st_ctime != after.st_ctime ||
+			before.st_ino[0] != after.st_ino[0] ||
+			before.st_ino[1] != after.st_ino[1] ||
+			before.st_ino[2] != after.st_ino[2]);
+}
+#endif
 
 SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 								   UCHAR ** result_buffer,
@@ -902,12 +993,28 @@ void API_ROUTINE gds__map_blobs(int* handle1, int* handle2)
  **************************************
  *
  * Functional description
- *	Deprecated API function.
+ *	Map an old blob to a new blob.
+ *	This call is intended for use by REPLAY,
+ *	and is probably not generally useful
+ *	for anyone else.
  *
  **************************************/
+
+#ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
+#ifndef SUPERCLIENT
+/* Note: gds__map_blobs is almost like an API call,
+   it needs a thread_db structure setup for it in order
+   to function properly.  This currently does
+   not function.
+   1996-Nov-06 David Schnepper  */
+	deliberate_compile_error++;
+	BLB_map_blobs(NULL, handle1, handle2);
+#endif
+#endif
 }
 
 
+#if !(defined REQUESTER)
 void API_ROUTINE isc_set_debug(int value)
 {
 /**************************************
@@ -923,6 +1030,7 @@ void API_ROUTINE isc_set_debug(int value)
 
 #pragma FB_COMPILER_MESSAGE("Empty function?!")
 }
+#endif
 
 
 void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
@@ -955,14 +1063,13 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 
 	if (*dpb && *dpb_size) {
 	    const UCHAR* p = *dpb;
-		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
-		{
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
 			const int item = *p++;
-			switch (item)
-			{
-			case isc_dpb_version1:
+
+			if (item == isc_dpb_version1)
 				continue;
 
+			switch (item) {
 			case isc_dpb_sys_user_name:
 			case isc_dpb_user_name:
 				user_seen = true;
@@ -1018,16 +1125,20 @@ void API_ROUTINE isc_set_single_user(const UCHAR** dpb,
 
 	if ((*dpb) && (*dpb_size)) {
 		const UCHAR* p = *dpb;
-		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;)
-		{
+		for (const UCHAR* const end_dpb = p + *dpb_size; p < end_dpb;) {
+
 			const int item = *p++;
-			switch (item)
-			{
-			case isc_dpb_version1:
+
+			if (item == isc_dpb_version1)
 				continue;
+
+			switch (item) {
+
 			case isc_dpb_reserved:
+
 				single_user_seen = true;
 				break;
+
 			}
 
 /* Get the length and increment past the parameter. */
@@ -1219,7 +1330,7 @@ void API_ROUTINE isc_format_implementation(
 }
 
 
-uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
+U_IPTR API_ROUTINE isc_baddress(SCHAR* object)
 {
 /**************************************
  *
@@ -1232,11 +1343,11 @@ uintptr_t API_ROUTINE isc_baddress(SCHAR* object)
  *
  **************************************/
 
-	return (uintptr_t) object;
+	return (U_IPTR) object;
 }
 
 
-void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
+void API_ROUTINE isc_baddress_s(const SCHAR* object, U_IPTR* address)
 {
 /**************************************
  *
@@ -1249,8 +1360,27 @@ void API_ROUTINE isc_baddress_s(const SCHAR* object, uintptr_t* address)
  *
  **************************************/
 
-	*address = (uintptr_t) object;
+	*address = (U_IPTR) object;
 }
+
+
+#ifdef VMS
+void API_ROUTINE gds__wake_init(void)
+{
+/**************************************
+ *
+ *	g d s _ $ w a k e _ i n i t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set up to be awakened by another process thru a blocking AST.
+ *
+ **************************************/
+
+	ISC_wake_init();
+}
+#endif
 
 
 int API_ROUTINE BLOB_close(BSTREAM* bstream)
@@ -1273,13 +1403,11 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 	if (bstream->bstr_mode & BSTR_output) {
 		const USHORT l = (bstream->bstr_ptr - bstream->bstr_buffer);
 		if (l > 0)
-		{
 			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
 								 bstream->bstr_buffer)) 
 			{
 				return FALSE;
 			}
-		}
 	}
 
 	isc_close_blob(status_vector, &bstream->bstr_blob);
@@ -1309,7 +1437,7 @@ int API_ROUTINE blob__display(
  *	PASCAL callable version of EDIT_blob.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_display(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 						*transaction, temp.c_str());
@@ -1333,7 +1461,17 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  *
  **************************************/
 
+/* On VMS use the system library routines to do the output */
+
+#ifdef VMS
+	return display(blob_id, database, transaction);
+#else
+
+/* On UNIX, just dump the file to stdout */
+
 	return dump(blob_id, database, transaction, stdout);
+
+#endif
 }
 
 
@@ -1448,7 +1586,7 @@ int API_ROUTINE blob__edit(
  *	into an internal edit call.
  *
  **************************************/
-	const Firebird::MetaName temp(field_name, *name_length);
+	Firebird::MetaName temp(field_name, *name_length);
 
 	return BLOB_edit(reinterpret_cast<ISC_QUAD*>(blob_id), *database,
 					 *transaction, temp.c_str());
@@ -1500,9 +1638,8 @@ int API_ROUTINE BLOB_get(BSTREAM* bstream)
 			return *bstream->bstr_ptr++ & 0377;
 
 		isc_get_segment(status_vector, &bstream->bstr_blob,
-			// safe - cast from short, alignment is OK
-			reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
-			bstream->bstr_length, bstream->bstr_buffer);
+						 reinterpret_cast<USHORT*>(&bstream->bstr_cnt),
+						 bstream->bstr_length, bstream->bstr_buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			bstream->bstr_ptr = 0;
 			bstream->bstr_cnt = 0;
@@ -1626,29 +1763,24 @@ BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
 	FB_API_HANDLE blob = 0;
 	ISC_STATUS_ARRAY status_vector;
 
-	switch (*mode)
-	{
-	case 'w':
-	case 'W':
+	if (*mode == 'w' || *mode == 'W') {
 		if (isc_create_blob2(status_vector, &database, &transaction, &blob,
 							  blob_id, bpb_length,
 							  reinterpret_cast<const char*>(bpb)))
 		{
 			return NULL;
 		}
-		break;
-	case 'r':
-	case 'R':
+	}
+	else if (*mode == 'r' || *mode == 'R') {
 		if (isc_open_blob2(status_vector, &database, &transaction, &blob,
 							blob_id, bpb_length,
 							bpb))
 		{
 			return NULL;
 		}
-		break;
-	default:
-		return NULL;
 	}
+	else
+		return NULL;
 
 	BSTREAM* bstream = BLOB_open(blob, NULL, 0);
 
@@ -1760,6 +1892,57 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 #endif
 
 
+#ifdef VMS
+static display(ISC_QUAD* blob_id, FB_API_HANDLE database, FB_API_HANDLE transaction)
+{
+/**************************************
+ *
+ *	d i s p l a y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Display a file on VMS
+ *
+ **************************************/
+	ISC_STATUS_ARRAY status_vector;
+
+/* Open the blob.  If it failed, what the hell -- just return failure */
+
+	int* blob = NULL;
+	if (isc_open_blob(status_vector, &database, &transaction, &blob, blob_id)) {
+		isc_print_status(status_vector);
+		return FALSE;
+	}
+
+/* Copy data from blob to scratch file */
+
+	struct dsc$descriptor_s desc;
+	SCHAR buffer[256];
+	const SSHORT short_length = sizeof(buffer);
+	for (;;) {
+		USHORT l = 0;
+		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
+		if (status_vector[1] && status_vector[1] != isc_segment) {
+			if (status_vector[1] != isc_segstr_eof)
+				isc_print_status(status_vector);
+			break;
+		}
+		buffer[l] = 0;
+		ISC_make_desc(buffer, &desc, 0);
+		lib$put_output(&desc);
+	}
+
+/* Close the blob */
+
+	isc_close_blob(status_vector, &blob);
+
+	return TRUE;
+}
+#endif /* VMS */
+
+
+
 static int dump(ISC_QUAD* blob_id,
 				FB_API_HANDLE database, 
 				FB_API_HANDLE transaction, 
@@ -1797,21 +1980,18 @@ static int dump(ISC_QUAD* blob_id,
 
 	for (;;) {
 		USHORT l = 0;
-		isc_get_segment(status_vector, &blob, &l, short_length, buffer);
+		isc_get_segment(status_vector, &blob, &l,
+						 short_length, buffer);
 		if (status_vector[1] && status_vector[1] != isc_segment) {
 			if (status_vector[1] != isc_segstr_eof)
 				isc_print_status(status_vector);
 			break;
 		}
-		/*
 		const TEXT* p = buffer;
 		if (l)
 			do {
 				fputc(*p++, file);
 			} while (--l);
-		*/
-		if (l)
-			fwrite(buffer, 1, l, file);
 	}
 
 /* Close the blob */
@@ -1865,29 +2045,40 @@ static int edit(ISC_QUAD* blob_id,
    Would have saved me a lot of time, if I had seen this earlier :-(
    FSG 15.Oct.2000
 */
-	Firebird::PathName tmpf = TempFile::create(buffer);
-	if (tmpf.empty()) {
-		return FALSE;
-	}
+	TEXT file_name[50];
+	sprintf(file_name, "%sXXXXXX", buffer);
 
-	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
-	if (!file) {
-		unlink(tmpf.c_str());
+	FILE* file;
+
+#ifdef HAVE_MKSTEMP
+	const int fd = mkstemp(file_name);
+	if (!(file = fdopen(fd, "w+"))) {
+		close(fd);
 		return FALSE;
 	}
+#else
+	if (mktemp(file_name) == (char *)0)
+		return FALSE;
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE)))
+		return FALSE;
+	fclose(file);
+
+	if (!(file = fopen(file_name, FOPEN_WRITE_TYPE_TEXT)))
+		return FALSE;
+#endif
 
 	if (!dump(blob_id, database, transaction, file)) {
 		fclose(file);
-		unlink(tmpf.c_str());
+		unlink(file_name);
 		return FALSE;
 	}
 
 	fclose(file);
 
-	if (type = gds__edit(tmpf.c_str(), type)) {
+	if (type = gds__edit(file_name, type)) {
 
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT))) {
-			unlink(tmpf.c_str());
+		if (!(file = fopen(file_name, FOPEN_READ_TYPE_TEXT))) {
+			unlink(file_name);
 			return FALSE;
 		}
 
@@ -1897,7 +2088,7 @@ static int edit(ISC_QUAD* blob_id,
 
 	}
 
-	unlink(tmpf.c_str());
+	unlink(file_name);
 
 	return type;
 }
@@ -2163,13 +2354,11 @@ static int load(ISC_QUAD* blob_id,
 
 	const SSHORT l = p - buffer;
 	if (l != 0)
-	{
 		if (isc_put_segment(status_vector, &blob, l, buffer)) {
 			isc_print_status(status_vector);
 			isc_close_blob(status_vector, &blob);
 			return FALSE;
 		}
-	}
 
 	isc_close_blob(status_vector, &blob);
 
@@ -2187,18 +2376,65 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-	if (!dpb.find(isc_dpb_trusted_auth))
+	Firebird::string username;
+	if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
 	{
-		Firebird::string username;
-		if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
-		{
-			setTag(dpb, isc_dpb_user_name, username.c_str());
-		}
-
-		Firebird::string password;
-		if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
-		{
-			setTag(dpb, isc_dpb_password, password.c_str());
-		}
+		setTag(dpb, isc_dpb_user_name, username.c_str());
 	}
+
+	Firebird::string password;
+	if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
+	{
+		setTag(dpb, isc_dpb_password, password.c_str());
+	}
+}
+
+BOOLEAN iscSetPath(const Firebird::PathName& file_name, Firebird::PathName& expanded_name)
+{
+/**************************************
+ *
+ *	i s c _ s e t _ p a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set a prefix to a filename based on 
+ *	the ISC_PATH user variable.
+ *
+ **************************************/
+
+/* look for the environment variables to tack 
+   onto the beginning of the database path */
+
+	Firebird::PathName pathname;
+	if (!fb_utils::readenv("ISC_PATH", pathname))
+	{
+		return FALSE;
+	}
+
+/* if the file already contains a remote node
+   or any path at all forget it */
+
+	if (file_name.find_first_of(":/\\") != Firebird::PathName::npos)
+	{
+		return FALSE;
+	}
+
+/* concatenate the strings */
+
+	expanded_name = pathname;
+
+    /* CVC: Make the concatenation work if no slash is present. */
+	if (expanded_name.length() > 0)
+	{
+		const char c = expanded_name[expanded_name.length() - 1];
+	    if (c != ':' && c != '/' && c != '\\')
+		{
+        	expanded_name += "/";
+    	}
+	}
+
+	expanded_name += file_name;
+
+	return TRUE;
 }

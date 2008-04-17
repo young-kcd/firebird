@@ -48,15 +48,10 @@
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
 #ifdef DEBUG_GDS_ALLOC
-inline void PATTERN_FILL(void* ptr, size_t size, unsigned int pattern) 
-{
-	for (size_t i = 0; i < size / sizeof(unsigned int); i++)
-	{
-		((unsigned int*) ptr)[i] = pattern;
-	}
-}
+# define PATTERN_FILL(ptr, size, pattern) for (size_t _i = 0; _i < size / sizeof(unsigned int); _i++) \
+	((unsigned int*)(ptr))[_i] = (pattern)
 #else
-inline void PATTERN_FILL(void *, size_t, unsigned int) { }
+# define PATTERN_FILL(ptr, size, pattern) ((void)0)
 #endif
 
 // TODO (in order of importance):
@@ -123,7 +118,7 @@ inline size_t FB_MAX(size_t M, size_t N)
 {
 	return M > N ? M : N;
 }
-
+  
 // Size in bytes, must be aligned according to ALLOC_ALIGNMENT
 // It should also be a multiply of page size
 const size_t EXTENT_SIZE = 65536;
@@ -135,6 +130,13 @@ const size_t REDIRECT_THRESHOLD = 32768;
 
 // Declare thread-specific variable for context memory pool
 TLS_DECLARE(MemoryPool*, contextPool);
+
+// Helper function to reduce code size, since many compilers
+// generate quite a bit of code at the point of the throw.
+void pool_out_of_memory()
+{
+	throw std::bad_alloc();
+}
 
 // Support for memory mapping facilities
 #if defined(WIN_NT)
@@ -163,8 +165,8 @@ int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 // Extents cache is not used when DEBUG_GDS_ALLOC or USE_VALGRIND is enabled.
 // This slows down things a little due to frequent syscalls mapping/unmapping 
 // memory but allows to detect more allocation errors
-Vector<void*, MAP_CACHE_SIZE> extents_cache;
-Mutex* cache_mutex;		// Will be initialized manually in MemoryPool::init
+Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
+Mutex cache_mutex;
 
 // avoid races during initialization
 size_t map_page_size = 0;
@@ -177,6 +179,7 @@ inline size_t get_map_page_size()
 	}
 	return map_page_size;
 }
+
 #endif
 
 #ifdef USE_VALGRIND
@@ -233,9 +236,9 @@ inline void MemoryPool::decrement_mapping(size_t size)
 	mapped_memory -= size;
 }
 
-MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
+MemoryPool* MemoryPool::setContextPool(MemoryPool *newPool)
 {
-	MemoryPool* const old = TLS_GET(contextPool);
+	MemoryPool* old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
 	return old;
 }
@@ -245,46 +248,30 @@ MemoryPool* MemoryPool::getContextPool()
 	return TLS_GET(contextPool);
 }
 
-// Default stats group and default pool
-MemoryStats* MemoryPool::default_stats_group = NULL;
-MemoryPool* MemoryPool::processMemoryPool = NULL;
+// Initialize default stats group
+MemoryStats* MemoryPool::default_stats_group = 0;
 
-// Initialize process memory pool (called from InstanceControl).
-// At this point also set contextMemoryPool for main thread 
-// (or all process in case of no threading).
-
-void MemoryPool::init()
-{
-#if defined(WIN_NT) || defined(HAVE_MMAP)
-	static char mtxBuffer[sizeof(Mutex) + ALLOC_ALIGNMENT];
-	cache_mutex =
-		new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) mtxBuffer)) Mutex;
+// Initialize process memory pool to avoid possible race conditions.
+// At this point also set contextMemoryPool for main thread (or all
+// process in case of no threading).
+namespace {
+	char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
+	MemoryPool* createProcessMemoryPool()
+	{
+		MemoryPool::default_stats_group = 
+			new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
+		MemoryPool* p = MemoryPool::createPool();
+		fb_assert(p);
+#ifndef SUPERCLIENT
+		MemoryPool::setContextPool(p);
 #endif
+		return p;
+	}
+} // anonymous namespace
+MemoryPool* MemoryPool::processMemoryPool = createProcessMemoryPool();
 
-	static char msBuffer[sizeof(MemoryStats) + ALLOC_ALIGNMENT];
-	MemoryPool::default_stats_group =
-		new((void*)(IPTR) MEM_ALIGN((size_t)(IPTR) msBuffer)) MemoryStats;
 
-	// Now it's safe to actually create MemoryPool
-	processMemoryPool = MemoryPool::createPool();
-	fb_assert(processMemoryPool);
-}
-
-// Should be last routine, called by InstanceControl,
-// being therefore the very last routine in firebird module.
-
-void MemoryPool::cleanup()
-{
-	deletePool(processMemoryPool);
-	processMemoryPool = 0;
-	default_stats_group = 0;
-
-#if defined(WIN_NT) || defined(HAVE_MMAP)
-	cache_mutex->~Mutex();
-#endif
-}
-
-void MemoryPool::setStatsGroup(MemoryStats& statsL)
+void MemoryPool::setStatsGroup(MemoryStats &statsL)
 {
 	// This locking pattern is necessary to ensure thread-safety of this routine.
 	// It is deadlock-free only as long other code takes locks in the same order.
@@ -335,7 +322,7 @@ void MemoryPool::updateSpare()
 			spareLeafs.add(temp);
 		}
 		while ( (int) spareNodes.getCount() <= freeBlocks.level + 1 &&
-				spareNodes.getCount() < spareNodes.getCapacity() )
+				spareNodes.getCount() < spareNodes.getCapacity() ) 
 		{
 			void* temp = internal_alloc(MEM_ALIGN(sizeof(FreeBlocksTree::NodeList)), TYPE_TREEPAGE);
 			if (!temp)
@@ -380,7 +367,7 @@ void* MemoryPool::external_alloc(size_t &size)
 	);
 	return result;
 }
-
+	
 void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 {
 	// Set access protection for block to prevent memory from deleted pool being accessed
@@ -395,7 +382,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 	// In normal case all blocks pass through queue of sufficent length by themselves
 	if (pool_destroying) {
 		// Synchronize delayed free queue using extents mutex
-		MutexLockGuard guard(*cache_mutex);
+		cache_mutex.enter();
 
 		// Extend circular buffer if possible
 		if (delayedExtentCount < FB_NELEM(delayedExtents)) {
@@ -404,6 +391,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 			item->size = size;
 			item->handle = handle;
 			delayedExtentCount++;
+			cache_mutex.leave();
 			return;
 		}
 
@@ -425,6 +413,8 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 		delayedExtentsPos++;
 		if (delayedExtentsPos >= FB_NELEM(delayedExtents))
 			delayedExtentsPos = 0;
+
+		cache_mutex.leave();
 	}
 	else {
 		// Let Valgrind forget about unmapped block
@@ -442,13 +432,14 @@ void* MemoryPool::external_alloc(size_t &size)
 	// This method is assumed to return NULL in case it cannot alloc
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		MutexLockGuard guard(*cache_mutex);
+		cache_mutex.enter();
 		void *result = NULL;
 		if (extents_cache.getCount()) {
 			// Use most recently used object to encourage caching
 			result = extents_cache[extents_cache.getCount() - 1];
 			extents_cache.shrink(extents_cache.getCount() - 1);
 		}
+		cache_mutex.leave();
 		if (result) {
 			return result;
 		}
@@ -480,7 +471,7 @@ void* MemoryPool::external_alloc(size_t &size)
 	size = FB_ALIGN(size, get_map_page_size());
 	void *result = NULL;
 #  ifdef MAP_ANONYMOUS
-
+    
 	result = mmap(0, size, PROT_READ | PROT_WRITE, 
 					MAP_PRIVATE | MAP_ANON , -1, 0);
 	if (result == MAP_FAILED) {
@@ -511,11 +502,13 @@ void* MemoryPool::external_alloc(size_t &size)
 void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
-		MutexLockGuard guard(*cache_mutex);
+		cache_mutex.enter();
 		if (extents_cache.getCount() < extents_cache.getCapacity()) {
 			extents_cache.add(blk);
+			cache_mutex.leave();
 			return;
 		}
+		cache_mutex.leave();
 	}
 # endif
 # if defined WIN_NT
@@ -546,7 +539,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 			spareLeafs.getCount()) 
 		{
 			if (!spareLeafs.getCount())
-				Firebird::BadAlloc::raise();
+				pool_out_of_memory();
 			void *temp = spareLeafs[spareLeafs.getCount() - 1];
 			spareLeafs.shrink(spareLeafs.getCount() - 1);
 			needSpare = true;
@@ -554,7 +547,7 @@ void* MemoryPool::tree_alloc(size_t size) {
 		}
 	if (size == sizeof(FreeBlocksTree::NodeList)) {
 		if (!spareNodes.getCount())
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		void *temp = spareNodes[spareNodes.getCount() - 1];
 		spareNodes.shrink(spareNodes.getCount() - 1);
 		needSpare = true;
@@ -573,7 +566,7 @@ void MemoryPool::tree_free(void* block) {
 	needSpare = true;
 }
 
-void* MemoryPool::allocate_nothrow(size_t size
+void* MemoryPool::allocate_nothrow(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, const char* file, int line
 #endif
@@ -594,7 +587,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		if (redirect_amount + size < REDIRECT_THRESHOLD) {
 			parent->lock.enter();
 			// Allocate block from parent
-			void* result = parent->internal_alloc(size + MEM_ALIGN(sizeof(MemoryRedirectList)), 0
+			void* result = parent->internal_alloc(size + MEM_ALIGN(sizeof(MemoryRedirectList)), type
 #ifdef DEBUG_GDS_ALLOC
 			  , file, line
 #endif
@@ -643,7 +636,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 				size_t ext_size = EXTENT_SIZE;
 				MemoryExtent *extent = (MemoryExtent*)external_alloc(ext_size);
 				fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
-
+	
 				if (!extent) {
 					lock.leave();
 					return NULL;
@@ -652,7 +645,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 				extent->mxt_prev = NULL;
 				extents = extent;
 				increment_mapping(EXTENT_SIZE);
-
+		
 				MemoryBlock* hdr = (MemoryBlock*) ((char*)extent +
 					MEM_ALIGN(sizeof(MemoryExtent)));
 				hdr->mbk_pool = this;
@@ -661,7 +654,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 				hdr->mbk_small.mbk_length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
 				hdr->mbk_small.mbk_prev_length = 0;
 				spareLeafs.add((char*)hdr + MEM_ALIGN(sizeof(MemoryBlock)));
-
+				
 				MemoryBlock* blk = (MemoryBlock *)((char*)extent +
 					MEM_ALIGN(sizeof(MemoryExtent)) +
 					MEM_ALIGN(sizeof(MemoryBlock)) +
@@ -699,7 +692,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		increment_mapping(ext_size);
 		blk->mbk_pool = this;
 		blk->mbk_flags = MBK_LARGE | MBK_USED;
-		blk->mbk_type = 0;
+		blk->mbk_type = type;
 		blk->mbk_large_length = size + MEM_ALIGN(sizeof(MemoryRedirectList));
 #ifdef DEBUG_GDS_ALLOC
 		blk->mbk_file = file;
@@ -712,7 +705,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		list->mrl_prev = NULL;
 		list->mrl_next = os_redirected;
 		os_redirected = blk;
-
+		
 		// Update usage statistics
 		increment_usage(size);
 		lock.leave();
@@ -726,7 +719,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		return result;
 	}
 	// Otherwise use conventional allocator
-	void* result = internal_alloc(size, 0
+	void* result = internal_alloc(size, type
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
@@ -747,18 +740,18 @@ void* MemoryPool::allocate_nothrow(size_t size
 	return result;
 }
 
-void* MemoryPool::allocate(size_t size
+void* MemoryPool::allocate(size_t size, SSHORT type
 #ifdef DEBUG_GDS_ALLOC
 	, const char* file, int line
 #endif
 ) {
-	void* result = allocate_nothrow(size
+	void* result = allocate_nothrow(size, type
 #ifdef DEBUG_GDS_ALLOC
 		, file, line
 #endif
 	);
 	if (!result)
-		Firebird::BadAlloc::raise();
+		pool_out_of_memory();
 	return result;
 }
 
@@ -833,7 +826,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 			{
 				blk_used_memory += blk->mbk_small.mbk_length;
 			}
-
+			
 			mem_assert(blk->mbk_small.mbk_prev_length == prev_length); // Prev is correct ?
 			bool foundPending = false;
 			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
@@ -882,7 +875,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 			}
 			mem_assert(!(foundTree && foundPending)); // Block shouldn't be present both in
 												   // pending list and in tree list
-
+			
 			if (!(blk->mbk_flags & MBK_USED)) {
 				mem_assert(foundTree || foundPending); // Block is free. Should be somewhere
 			}
@@ -893,7 +886,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 				break;
 		}
 	}
-
+	
 	// Verify large blocks
 	for (MemoryBlock *large = os_redirected; large; large = block_list_large(large)->mrl_next)
 	{
@@ -928,11 +921,11 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 		// Check block flags for correctness
 		mem_assert(!(blk->mbk_flags & (MBK_LARGE | MBK_PARENT | MBK_USED | MBK_DELAYED)));
 	}
-
+	
 	// Verify memory usage accounting
 	mem_assert(blk_mapped_memory == mapped_memory);
 	lock.leave();
-
+	
 	if (parent) {
 		parent->lock.enter();
 		// Verify redirected blocks
@@ -991,22 +984,33 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 		if (blk->mbk_flags & MBK_DELAYED)
 			strcat(flags, " DELAYED");
 
-		const int size =
+		int size =
 			blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length : blk->mbk_small.mbk_length;
-
+#ifdef DEBUG_GDS_ALLOC
 		if (blk->mbk_flags & MBK_USED)
 		{
-#ifdef DEBUG_GDS_ALLOC
-			if (!filter_path || blk->mbk_file &&
-				!strncmp(filter_path, blk->mbk_file, filter_len))
+			if (!filter_path || blk->mbk_file
+				&& !strncmp(filter_path, blk->mbk_file, filter_len))
 			{
-				fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
-					mem, flags, size, blk->mbk_file, blk->mbk_line);
+				if (blk->mbk_type > 0)
+					fprintf(file, "%p%s: size=%d type=%d allocated at %s:%d\n",
+						mem, flags, size, blk->mbk_type, blk->mbk_file, blk->mbk_line);
+				else if (blk->mbk_type == 0)
+					fprintf(file, "%p%s: size=%d allocated at %s:%d\n",
+						mem, flags, size, blk->mbk_file, blk->mbk_line);
+				else
+					fprintf(file, "%p%s: size=%d type=%d\n",
+						mem, flags, size, blk->mbk_type);
 			}
-#else
-			fprintf(file, "%p%s: size=%d\n", mem, flags, size);
-#endif
 		}
+#else
+		if (blk->mbk_type && (blk->mbk_flags & MBK_USED))
+			fprintf(file, "%p%s: size=%d type=%d\n",
+				mem, flags, size, blk->mbk_type);
+#endif
+		else
+			fprintf(file, "%p%s: size=%d\n",
+				mem, flags, size);
 	}
 }
 
@@ -1028,7 +1032,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only,
 	lock.enter();
 	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
 		this, (long)used_memory.value(), (long)mapped_memory);
-
+		
 	const size_t filter_len = filter_path ? strlen(filter_path) : 0;
 	// Print extents
 	for (MemoryExtent *extent = extents; extent; extent = extent->mxt_next) {
@@ -1061,7 +1065,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only,
 	fprintf(file, "********* End of output for pool %p.\n", this);
 }
 
-MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats) 
+MemoryPool* MemoryPool::internal_create(size_t instance_size, MemoryPool* parent, MemoryStats &stats) 
 {
 	MemoryPool *pool;
 #ifndef USE_VALGRIND
@@ -1070,14 +1074,14 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 	// difficult to make memory pass through any delayed free list in this case
 	if (parent) {
 		parent->lock.enter();
-		const size_t size = MEM_ALIGN(sizeof(MemoryPool) + sizeof(MemoryRedirectList));
+		const size_t size = MEM_ALIGN(instance_size + sizeof(MemoryRedirectList));
 		void* mem = parent->internal_alloc(size, TYPE_POOL);
 		if (!mem) {
 			parent->lock.leave();
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		}
 		pool = new(mem) MemoryPool(parent, stats, NULL, NULL);
-
+		
 		MemoryBlock* blk = ptrToBlock(mem);
 		blk->mbk_pool = pool;
 		blk->mbk_flags |= MBK_PARENT;
@@ -1096,7 +1100,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 		// This is the exact initial layout of memory pool in the first extent //
 		// MemoryExtent
 		// MemoryBlock
-		// MemoryPool
+		// MemoryPool (instance_size)
 		// MemoryBlock
 		// FreeBlocksTree::ItemList
 		// MemoryBlock
@@ -1107,34 +1111,34 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 		size_t ext_size = EXTENT_SIZE;
 		char* mem = (char *)external_alloc(ext_size);
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
-
+	
 		if (!mem)
-			Firebird::BadAlloc::raise();
+			pool_out_of_memory();
 		((MemoryExtent *)mem)->mxt_next = NULL;
 		((MemoryExtent *)mem)->mxt_prev = NULL;
-
+		
 		pool = new(mem +
 			MEM_ALIGN(sizeof(MemoryExtent)) +
 			MEM_ALIGN(sizeof(MemoryBlock))) 
 		MemoryPool(NULL, stats, mem, mem + 
 			MEM_ALIGN(sizeof(MemoryExtent)) + 
 			MEM_ALIGN(sizeof(MemoryBlock)) + 
-			MEM_ALIGN(sizeof(MemoryPool)) + 
+			MEM_ALIGN(instance_size) + 
 			MEM_ALIGN(sizeof(MemoryBlock)));
-
+		
 		pool->increment_mapping(EXTENT_SIZE);
-
+		
 		MemoryBlock *poolBlk = (MemoryBlock*) (mem + MEM_ALIGN(sizeof(MemoryExtent)));
 		poolBlk->mbk_pool = pool;
 		poolBlk->mbk_flags = MBK_USED;
 		poolBlk->mbk_type = TYPE_POOL;
-		poolBlk->mbk_small.mbk_length = MEM_ALIGN(sizeof(MemoryPool));
+		poolBlk->mbk_small.mbk_length = MEM_ALIGN(instance_size);
 		poolBlk->mbk_small.mbk_prev_length = 0;
-
+	
 		MemoryBlock* hdr = (MemoryBlock*) (mem +
 			MEM_ALIGN(sizeof(MemoryExtent)) +
 			MEM_ALIGN(sizeof(MemoryBlock)) +
-			MEM_ALIGN(sizeof(MemoryPool)));
+			MEM_ALIGN(instance_size));
 		hdr->mbk_pool = pool;
 		hdr->mbk_flags = MBK_USED;
 		hdr->mbk_type = TYPE_LEAFPAGE;
@@ -1143,13 +1147,13 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 		MemoryBlock* blk = (MemoryBlock *)(mem +
 			MEM_ALIGN(sizeof(MemoryExtent)) +
 			MEM_ALIGN(sizeof(MemoryBlock)) +
-			MEM_ALIGN(sizeof(MemoryPool)) +
+			MEM_ALIGN(instance_size) +
 			MEM_ALIGN(sizeof(MemoryBlock)) +
 			MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
 		int blockLength = EXTENT_SIZE -
 			MEM_ALIGN(sizeof(MemoryExtent)) -
 			MEM_ALIGN(sizeof(MemoryBlock)) -
-			MEM_ALIGN(sizeof(MemoryPool)) -
+			MEM_ALIGN(instance_size) -
 			MEM_ALIGN(sizeof(MemoryBlock)) -
 			MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
 			MEM_ALIGN(sizeof(MemoryBlock));
@@ -1164,11 +1168,11 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 		pool->freeBlocks.add(temp);
 		pool->updateSpare();
 	}
-
+	
 #ifdef USE_VALGRIND
 	pool->delayedFreeCount = 0;
 	pool->delayedFreePos = 0;
-
+	
 	VALGRIND_CREATE_MEMPOOL(pool, VALGRIND_REDZONE, 0);
 #endif
 
@@ -1177,9 +1181,6 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 
 void MemoryPool::deletePool(MemoryPool* pool)
 {
-	if (!pool)
-		return;
-
 #ifdef USE_VALGRIND
 	VALGRIND_DESTROY_MEMPOOL(pool);
 
@@ -1191,13 +1192,13 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	// Adjust usage
 	pool->decrement_usage(pool->used_memory.value());
 	pool->decrement_mapping(pool->mapped_memory);
-
+	
 	// Free mutex
 	pool->lock.~Mutex();
-
+	
 	// Order of deallocation is of significance because
 	// we delete our pool in process
-
+	
 	// Deallocate all large blocks redirected to OS
 	MemoryBlock *large = pool->os_redirected;
 	while (large) {
@@ -1206,9 +1207,9 @@ void MemoryPool::deletePool(MemoryPool* pool)
 		external_free(large, ext_size, true);
 		large = next;
 	}
-
+	
 	MemoryPool *parent = pool->parent;
-
+	
 	// Delete all extents now
 	MemoryExtent *extent = pool->extents;
 	while (extent) {
@@ -1218,7 +1219,7 @@ void MemoryPool::deletePool(MemoryPool* pool)
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size	
 		extent = next;
 	}
-
+	
 	// Deallocate blocks redirected to parent
 	// IF parent is set then pool was allocated from it and is not deleted at this point yet
 	if (parent) {		
@@ -1262,8 +1263,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 	// This method assumes already aligned block sizes
 	fb_assert(size % ALLOC_ALIGNMENT == 0);
 	// Make sure block can fit into extent
-	fb_assert(size <= EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
-
+	fb_assert(size < EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent)));
+	
 	// Lookup a block greater or equal than size in freeBlocks tree
 	MemoryBlock* blk;
 	if (freeBlocks.locate(locGreatEqual, size)) {
@@ -1397,7 +1398,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		size_t ext_size = EXTENT_SIZE;
 		MemoryExtent* extent = (MemoryExtent *)external_alloc(ext_size);
 		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
-
+	
 		if (!extent) {
 			return NULL;
 		}
@@ -1407,7 +1408,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		extent->mxt_next = extents;
 		extent->mxt_prev = NULL;
 		extents = extent;
-
+			
 		blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
 		blk->mbk_pool = this;
 		blk->mbk_flags = MBK_USED;
@@ -1464,8 +1465,7 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 	BlockInfo info = {blk->mbk_small.mbk_length, fragmentToAdd};
 	try {
 		freeBlocks.add(info);
-	}
-	catch (const Firebird::Exception&) {
+	} catch(const std::exception&) {
 		// Add item to the list of pending free blocks in case of critically-low memory condition
 		PendingFreeBlock* temp = blockToPtr<PendingFreeBlock*>(blk);
 		temp->next = pendingFree;
@@ -1532,7 +1532,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 void MemoryPool::free_blk_extent(MemoryBlock *blk)
 {
 	MemoryExtent *extent = (MemoryExtent *)((char *)blk - MEM_ALIGN(sizeof(MemoryExtent)));
-
+	
 	// Delete extent from the doubly linked list
 	if (extent->mxt_prev)
 		extent->mxt_prev->mxt_next = extent->mxt_next;
@@ -1553,7 +1553,7 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk)
 void MemoryPool::internal_deallocate(void *block)
 {
 	MemoryBlock *blk = ptrToBlock(block);
-
+	
 	// This method is normally called for used blocks from our pool. Also it may
 	// be called for free blocks in pendingFree list by updateSpare routine. 
 	// Such blocks must have mbk_prev_fragment equal to NULL.
@@ -1624,7 +1624,7 @@ void MemoryPool::deallocate(void *block)
 		return;
 
 	MemoryBlock* blk = ptrToBlock(block);
-
+	
 	fb_assert(blk->mbk_flags & MBK_USED);
 	fb_assert(blk->mbk_pool == this);
 
@@ -1725,7 +1725,7 @@ void MemoryPool::deallocate(void *block)
 	}
 
 	lock.enter();
-
+	
 	if (blk->mbk_flags & MBK_LARGE) {
 		// Delete block from list of redirected blocks
 		MemoryRedirectList *list = block_list_large(blk);
@@ -1748,7 +1748,7 @@ void MemoryPool::deallocate(void *block)
 		lock.leave();
 		return;
 	}
-
+	
 	// Deallocate small block from this pool
 #ifndef USE_VALGRIND
 	decrement_usage(blk->mbk_small.mbk_length);
@@ -1756,17 +1756,19 @@ void MemoryPool::deallocate(void *block)
 	internal_deallocate(block);
 	if (needSpare)
 		updateSpare();
-
+	
 	lock.leave();
 }
 
 MemoryPool& AutoStorage::getAutoMemoryPool() { 
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
+#ifdef EMBEDDED
 	if (! p)
 	{
 		p = getDefaultMemoryPool();
 	}
+#endif //EMBEDDED
 #else //SUPERCLIENT
 	MemoryPool* p = getDefaultMemoryPool();
 #endif //SUPERCLIENT
@@ -1795,3 +1797,44 @@ void AutoStorage::ProbeStack() const {
 #endif
 
 } // namespace Firebird
+
+/******************************** Global functions *****************************/
+
+void* operator new(size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void* operator new[](size_t s) THROW_BAD_ALLOC
+{
+#if defined(DEV_BUILD)
+// Do not complain here. It causes client tools to crash on Red Hat 8.0
+//	fprintf(stderr, "You MUST allocate all memory from a pool.  Don't use the default global new[]().\n");
+#endif	// DEV_BUILD
+//	return getDefaultMemoryPool()->->calloc(s, 0
+	return getDefaultMemoryPool()->allocate(s, 0
+#ifdef DEBUG_GDS_ALLOC
+	  ,__FILE__, __LINE__
+#endif
+	);
+}
+
+void operator delete(void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+
+void operator delete[](void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+

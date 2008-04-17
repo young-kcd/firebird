@@ -27,9 +27,11 @@
 #  Contributor(s):
 # 
 #
+#  $Id: Makefile.in.client.gfix,v 1.17 2005-12-20 12:14:52 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
+CFLAGS+=-DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -39,14 +41,13 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
-GFIX_Other_Sources = jrd/isc.cpp jrd/ThreadData.cpp jrd/path_utils.cpp common/UtilSvc.cpp
+GFIX_Other_Sources = jrd/isc.cpp jrd/ThreadData.cpp
 
-GFIX_Files = alice_meta.epp alice.cpp exe.cpp tdr.cpp aliceMain.cpp
+GFIX_Files = alice_meta.epp alice.cpp all.cpp exe.cpp tdr.cpp
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))
 
-AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) \
- $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
+AllObjects = $(GFIX_Objects) $(CLUMPLETS_Objects)
 
 Dependencies = $(AllObjects:.o=.d) 
 
@@ -56,8 +57,8 @@ Dependencies = $(AllObjects:.o=.d)
 
 gfix : $(LIBFBCLIENT_SO) $(GFIX)
 
-$(GFIX):	$(AllObjects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+$(GFIX):	$(GFIX_Objects) $(CLUMPLETS_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
+	$(LD) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 include $(ROOT)/gen/make.shared.targets

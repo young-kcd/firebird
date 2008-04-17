@@ -23,6 +23,9 @@
 #ifndef CONFIG_CONFIG_FILE_H
 #define CONFIG_CONFIG_FILE_H
 
+#include <functional>
+#include <map>
+
 #include "../../common/classes/alloc.h"
 #include "../../common/classes/fb_pair.h"
 #include "../../common/classes/objects_array.h"

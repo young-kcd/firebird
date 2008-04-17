@@ -22,7 +22,7 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
+ * 
  *
  */
 
@@ -56,11 +56,11 @@ private:
 	Mutex blockedReadersLock;
 	HANDLE writers_event, readers_semaphore;
 
-	void init()
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+public:
+	RWLock() : lock(0), blockedReaders(0), blockedWriters(0)
 	{ 
-		lock = 0;
-		blockedReaders = 0;
-		blockedWriters = 0;
 		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
 			INT_MAX, NULL); 
 		if (readers_semaphore == NULL)
@@ -69,13 +69,6 @@ private:
 		if (writers_event == NULL)
 			system_call_failed::raise("CreateEvent");
 	}
-
-	// Forbid copy constructor
-	RWLock(const RWLock& source);
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (readers_semaphore && !CloseHandle(readers_semaphore))
@@ -170,6 +163,8 @@ public:
 
 #else
 
+#ifdef MULTI_THREAD
+
 #ifdef SOLARIS_MT
 
 #include <thread.h>
@@ -185,18 +180,14 @@ private:
 	rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-
-	void init()
-	{ 
+public:
+	RWLock()
+	{		
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
 			system_call_failed::raise("rwlock_init");
 		}
 	}
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(Firebird::MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (rwlock_destroy(&lock))
@@ -255,17 +246,14 @@ public:
 namespace Firebird
 {
 
-class MemoryPool;
-
 class RWLock
 {
 private:
 	pthread_rwlock_t lock;
 	// Forbid copy constructor
 	RWLock(const RWLock& source);
-
-	void init()
-	{ 
+public:
+	RWLock() {		
 #if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
@@ -281,10 +269,6 @@ private:
 			system_call_failed::raise("pthread_rwlock_init");
 #endif
 	}
-
-public:
-	RWLock() { init(); }
-	explicit RWLock(class MemoryPool&) { init(); }
 	~RWLock()
 	{
 		if (pthread_rwlock_destroy(&lock))
@@ -334,6 +318,32 @@ public:
 
 #endif /*solaris threading (not posix)*/
 
+#else
+
+namespace Firebird {
+
+// Non-threaded version
+class RWLock
+{
+private:
+	// Forbid copy constructor
+	RWLock(const RWLock& source);
+public:
+	RWLock() {		
+	}
+	~RWLock() {	}
+	void beginRead() { }
+	bool tryBeginRead() { return true; }
+	void endRead() { }
+	bool tryBeginWrite() { return true; }
+	void beginWrite() {	}
+	void endWrite() { }
+};
+
+} // namespace Firebird
+
+#endif /*MULTI_THREAD*/
+
 #endif /*!WIN_NT*/
 
 namespace Firebird {
@@ -342,17 +352,7 @@ namespace Firebird {
 class ReadLockGuard {
 public:
 	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
-	~ReadLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endRead();
-			lock = NULL;
-		}
-	}
-
+	~ReadLockGuard() { lock->endRead(); }
 private:
 	// Forbid copy constructor
 	ReadLockGuard(const ReadLockGuard& source);
@@ -363,17 +363,7 @@ private:
 class WriteLockGuard {
 public:
 	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
-	~WriteLockGuard() { release(); }
-
-	void release()
-	{
-		if (lock)
-		{
-			lock->endWrite();
-			lock = NULL;
-		}
-	}
-
+	~WriteLockGuard() { lock->endWrite(); }
 private:
 	// Forbid copy constructor
 	WriteLockGuard(const WriteLockGuard& source);

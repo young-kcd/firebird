@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\debug\remote_cs"
 # PROP Intermediate_Dir "..\..\..\temp\debug\remote_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /GR /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /GR /ZI /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /D "DEV_BUILD" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -63,9 +63,9 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\remote_cs"
 # PROP Intermediate_Dir "..\..\..\temp\release\remote_cs"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "NOMSG" /D "_X86_" /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /GX /GR /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "NOMSG" /D "_X86_" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GX /GR /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_LIB" /D "WIN32" /D "_MBCS" /D "_X86_" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -84,6 +84,10 @@ LIB32=link.exe -lib
 # Begin Group "REMOTE files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\allr.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\os\win32\chop.cpp
@@ -154,6 +158,10 @@ SOURCE=..\..\..\src\remote\xnet.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\..\..\src\remote\allr_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\remote\inet_proto.h
 # End Source File
 # Begin Source File
@@ -199,18 +207,6 @@ SOURCE=..\..\..\src\remote\xnet.h
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\xnet_proto.h
-# End Source File
-# End Group
-# Begin Group "AuthSspi"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
 # End Source File
 # End Group
 # End Target

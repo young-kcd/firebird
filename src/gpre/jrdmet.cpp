@@ -24,12 +24,14 @@
 //  There however is still a bunch of constness errors in this file
 //  
 //
+//____________________________________________________________
+//
+//	$Id: jrdmet.cpp,v 1.19 2004-08-21 09:21:08 robocop Exp $
 //
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/ods.h"
 
 #include "../gpre/gpre.h"
@@ -48,7 +50,7 @@
 
 void JRDMET_init( DBB db)
 {
-	const int* relfld = relfields;
+	const UCHAR* relfld = relfields;
 
 	while (relfld[RFLD_R_NAME]) {
 		gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
@@ -64,7 +66,7 @@ void JRDMET_init( DBB db)
 		symbol->sym_string = names[relfld[RFLD_R_NAME]];
 		HSH_insert(symbol);
 
-		const int* fld = relfld + RFLD_RPT;
+		const UCHAR* fld = relfld + RFLD_RPT;
 		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH) 
 		{
 			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?

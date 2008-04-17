@@ -34,6 +34,8 @@
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
 #include <errno.h>
+
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/val.h"
@@ -42,8 +44,11 @@
 #include "../jrd/req.h"
 #include "../jrd/rse.h"
 #include "../jrd/tra.h"
+#include "../jrd/all_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
+#endif
+#include "../jrd/thd.h"
 #include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -61,6 +66,7 @@ static void internal_error(ISC_STATUS status, int number,
 static void internal_post(ISC_STATUS status, va_list args);
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_bugcheck(int number, const TEXT* file, int line)
 {
 /**************************************
@@ -80,8 +86,10 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
 
 	internal_error(isc_bug_check, number, file, line);
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_bugcheck_msg(const TEXT* msg)
 {
 /**************************************
@@ -98,12 +106,15 @@ void ERR_bugcheck_msg(const TEXT* msg)
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
+
 	CCH_shutdown_database(dbb);
 
 	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_corrupt(int number)
 {
 /**************************************
@@ -119,8 +130,31 @@ void ERR_corrupt(int number)
 
 	internal_error(isc_db_corrupt, number);
 }
+#endif
 
 
+const TEXT* ERR_cstring(const TEXT* in_string)
+{
+/**************************************
+ *
+ *	E R R _ c s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy a stack local string into an area that is
+ *	guaranteed to exist for a reasonable length of time.
+ *	Only strings that are to be placed in status vectors
+ *	should use this routine.
+ *	A circular buffer is used to hold these strings.  It
+ *	is independent of the JRD allocator mechanism.
+ *
+ **************************************/
+	return Firebird::status_string(in_string);
+}
+
+
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_duplicate_error(IDX_E	code,
 						const jrd_rel*		relation,
 						USHORT index_number)
@@ -167,13 +201,13 @@ void ERR_duplicate_error(IDX_E	code,
 
 	case idx_e_foreign_target_doesnt_exist:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name), 
+			 	 isc_arg_string, ERR_string(relation->rel_name), 
 			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
 		break;
 
 	case idx_e_foreign_references_present:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name),
+			 	 isc_arg_string, ERR_string(relation->rel_name),
 			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
 		break;
 
@@ -181,13 +215,15 @@ void ERR_duplicate_error(IDX_E	code,
 		if (constraint.length() > 0)
 			ERR_post(isc_unique_key_violation,
 					 isc_arg_string, constraint_name,
-					 isc_arg_string, ERR_cstring(relation->rel_name), 0);
+					 isc_arg_string, ERR_string(relation->rel_name), 0);
 		else
 			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
 	}
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_error(int number)
 {
 /**************************************
@@ -209,8 +245,10 @@ void ERR_error(int number)
 
 	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_error_msg(const TEXT* msg)
 {
 /**************************************
@@ -228,8 +266,10 @@ void ERR_error_msg(const TEXT* msg)
 	DEBUG;
 	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_log(int facility, int number, const TEXT* message)
 {
 /**************************************
@@ -257,12 +297,14 @@ void ERR_log(int facility, int number, const TEXT* message)
 	const size_t len = strlen(errmsg);
 	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 
-	gds__log("Database: %s\n\t%s", (tdbb && tdbb->getAttachment()) ?
-		tdbb->getAttachment()->att_filename.c_str() : "",
+	gds__log("Database: %s\n\t%s", (tdbb && tdbb->tdbb_attachment) ?
+		tdbb->tdbb_attachment->att_filename.c_str() : "",
 		errmsg, 0);
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 bool ERR_post_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -322,7 +364,6 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 				break;
 
 			case isc_arg_interpreted:
-			case isc_arg_sql_state:
 				status_vector[indx++] = va_arg(args, ISC_STATUS);
 				break;
 
@@ -349,13 +390,16 @@ bool ERR_post_warning(ISC_STATUS status, ...)
 		va_end(args);
 		return true;
 	}
-
-	/* not enough free space */
-	va_end(args);
-	return false;
+	else {
+		/* not enough free space */
+		va_end(args);
+		return false;
+	}
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_post_nothrow(ISC_STATUS status, ...)
 /**************************************
  *
@@ -411,16 +455,17 @@ static void internal_post(ISC_STATUS status, va_list args)
  *  Used in ERR_post and ERR_post_nothrow
  *
  **************************************/
+	ISC_STATUS_ARRAY tmp_status, warning_status;
+	int i, tmp_status_len = 0, status_len = 0, err_status_len = 0;
+	int warning_count = 0, warning_indx = 0;
 
 	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
-	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS_function(tmp_status, status, args);
 
 /* calculate length of the status */
-	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -429,17 +474,16 @@ static void internal_post(ISC_STATUS status, va_list args)
 		 status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector just stuff the status */
-		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
+		MOVE_FASTER(tmp_status, status_vector,
+					sizeof(ISC_STATUS) * tmp_status_len);
 		return;
 	}
 
-	int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
-	/* check for duplicated error code */
-	int i;
+/* check for duplicated error code */
 	for (i = 0; i < ISC_STATUS_LENGTH; i++) {
 		if (status_vector[i] == isc_arg_end && i == status_len)
 			break;				/* end of argument list */
@@ -459,16 +503,13 @@ static void internal_post(ISC_STATUS status, va_list args)
 	}
 
 /* if the status_vector has only warnings then adjust err_status_len */
-	int err_status_len = i;
-	if (err_status_len == 2 && warning_indx)
+	if ((err_status_len = i) == 2 && warning_indx)
 		err_status_len = 0;
 
-	ISC_STATUS_ARRAY warning_status;
-	int warning_count = 0;
 	if (warning_indx) {
 		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		memcpy(warning_status, &status_vector[warning_indx],
+		MOVE_FASTER(&status_vector[warning_indx], warning_status,
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
@@ -477,17 +518,20 @@ static void internal_post(ISC_STATUS status, va_list args)
    and first warning */
 
 	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
-		memcpy(&status_vector[err_status_len], tmp_status,
+		MOVE_FASTER(tmp_status, &status_vector[err_status_len],
 					sizeof(ISC_STATUS) * tmp_status_len);
 		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
-			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
+			MOVE_FASTER(warning_status, &status_vector[i - 1],
+						sizeof(ISC_STATUS) * warning_count);
 		}
 	}
 	return;
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined(SUPERCLIENT))
 void ERR_punt(void)
 {
 /**************************************
@@ -502,12 +546,12 @@ void ERR_punt(void)
  **************************************/
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	Database* dbb = tdbb->tdbb_database;
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(tdbb->getAttachment()->att_filename.hasData() ?
-						tdbb->getAttachment()->att_filename.c_str() : NULL,
+		gds__log_status(tdbb->tdbb_attachment->att_filename.hasData() ?
+			tdbb->tdbb_attachment->att_filename.c_str() : "Database unknown in ERR_punt on bugcheck",
 			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{
@@ -517,8 +561,31 @@ void ERR_punt(void)
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 }
+#endif
 
 
+const TEXT* ERR_string(const TEXT* in_string, int length)
+{
+/**************************************
+ *
+ *	E R R _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Copy a stack local string into an area that is
+ *	guaranteed to exist for a reasonable length of time.
+ *	Only strings that are to be placed in status vectors
+ *	should use this routine.
+ *	A circular buffer is used to hold these strings.  It
+ *	is independent of the JRD allocator mechanism.
+ *
+ **************************************/
+	return Firebird::status_nstring(in_string, length);
+}
+
+
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 void ERR_warning(ISC_STATUS status, ...)
 {
 /**************************************
@@ -539,10 +606,12 @@ void ERR_warning(ISC_STATUS status, ...)
 
 	STUFF_STATUS(tdbb->tdbb_status_vector, status);
 	DEBUG;
-	tdbb->getRequest()->req_flags |= req_warning;
+	tdbb->tdbb_request->req_flags |= req_warning;
 }
+#endif
 
 
+#if ( !defined( REQUESTER) && !defined( SUPERCLIENT))
 static void internal_error(ISC_STATUS status, int number, 
 						   const TEXT* file, int line)
 {
@@ -582,4 +651,5 @@ static void internal_error(ISC_STATUS status, int number,
 
 	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
+#endif
 

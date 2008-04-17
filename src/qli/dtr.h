@@ -29,7 +29,7 @@
 
 const USHORT QLI_MSG_FAC	= 1;
 
-#define IBERROR(number)		ERRQ_error (number)
+#define IBERROR(number)		ERRQ_error (number, NULL, NULL, NULL, NULL, NULL)
 
 #define ALLOCD(type)		ALLQ_alloc (QLI_default_pool, type, 0)
 #define ALLOCDV(type, repeat)	ALLQ_alloc (QLI_default_pool, type, repeat)
@@ -320,10 +320,10 @@ const USHORT DBB_prepared	= 32;		// User transaction has been prepared
 // Bits in dbb_capabilities 
 
 const ULONG DBB_cap_extern_file		= 1;	// supports the concept of external files 
-const ULONG DBB_cap_files			= 2;	// uses the Firebird concept of multi-file
-const ULONG DBB_cap_security		= 4;	// Firebird style security classes
+const ULONG DBB_cap_files			= 2;	// uses the Interbase concept of multi-file 
+const ULONG DBB_cap_security		= 4;	// InterBase style security classes 
 /* const ULONG DBB_cap_triggers		= 8;	-- OBSOLETE: triggers (old style) */
-const ULONG DBB_cap_idx_inactive	= 16;	// Firebird index inactive flag
+const ULONG DBB_cap_idx_inactive	= 16;	// Interbase index inactive flag 
 const ULONG DBB_cap_multi_trans		= 32;	// Database supports multiple transactions 
 const ULONG DBB_cap_single_trans	= 64;	// Database supports only a single transaction 
 const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates 
@@ -499,10 +499,6 @@ EXTERN USHORT	QLI_count;
 EXTERN bool		QLI_explain;
 EXTERN bool		QLI_hex_output;
 #endif
-#ifdef TRUSTED_AUTH
-EXTERN bool		QLI_trusted;
-#endif
-EXTERN bool		QLI_exit;
 
 EXTERN jmp_buf QLI_env;					// Error return environment 
 
@@ -536,6 +532,11 @@ EXTERN qli_req*	QLI_requests;			// Requests in statement
 #undef EXTERN
 
 #include "../qli/all_proto.h"
+
+inline bool isNullBlob(const ISC_QUAD* id)
+{
+	return !id->gds_quad_high && !id->gds_quad_low;
+}
 
 #endif // QLI_DTR_H
 

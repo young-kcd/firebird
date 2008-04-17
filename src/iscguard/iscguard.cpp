@@ -42,7 +42,7 @@
 #include "../remote/os/win32/window.h"
 #include "../remote/os/win32/chop_proto.h"
 #include "../common/config/config.h"
-#include "../common/classes/init.h"
+#include "../common/utils_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>			/* _beginthread */
@@ -88,13 +88,15 @@ LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 HINSTANCE hInstance_gbl;
 HWND hPSDlg, hWndGbl;
 static int nRestarts = 0;		/* the number of times the server was restarted */
-static bool service_flag = true;
-static TEXT instance[MAXPATHLEN];
-static Firebird::GlobalPtr<Firebird::string> service_name;
-static Firebird::GlobalPtr<Firebird::string> remote_name;
-static Firebird::GlobalPtr<Firebird::string> mutex_name;
+bool service_flag = true;
 /* unsigned short shutdown_flag = FALSE; */
-static log_info* log_entry;
+log_info* log_entry;
+
+/* contains the guardian service */
+static const SERVICE_TABLE_ENTRY service_table[] = {
+	{const_cast<CHAR*>(ISCGUARD_SERVICE), (LPSERVICE_MAIN_FUNCTION) CNTL_main_thread},
+	{NULL, NULL}
+};
 
 
 int WINAPI WinMain(
@@ -122,13 +124,8 @@ int WINAPI WinMain(
 /* service_flag is TRUE for NT false for 95 */
 	service_flag = (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
 
-	if (service_flag) {
-		strcpy(instance, FB_DEFAULT_INSTANCE);
+	if (service_flag)
 		service_flag = parse_args(lpszCmdLine);
-		service_name->printf(ISCGUARD_SERVICE, instance);
-		remote_name->printf(REMOTE_SERVICE, instance);
-		mutex_name->printf(GUARDIAN_MUTEX, instance);
-	}
 
 /* set the global HINSTANCE as we need it in WINDOW_main */
 	hInstance_gbl = hInstance;
@@ -140,15 +137,11 @@ int WINAPI WinMain(
 
 /* since the flag is set we run as a service */
 	if (service_flag) {
-		CNTL_init(WINDOW_main, instance);
-
-		const SERVICE_TABLE_ENTRY service_table[] = {
-			{const_cast<char*>(service_name->c_str()), CNTL_main_thread},
-			{NULL, NULL}
-		};
-
-		// BRS There is a error in MinGW (3.1.0) headers
-		// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+		CNTL_init(WINDOW_main, ISCGUARD_SERVICE);
+//
+// BRS There is a error in MinGW (3.1.0) headers 
+// the parameter of StartServiceCtrlDispatcher is declared const in msvc headers
+//
 #if defined(MINGW)
 		if (!StartServiceCtrlDispatcher(const_cast<SERVICE_TABLE_ENTRY*>(service_table)))
 #else
@@ -164,6 +157,7 @@ int WINAPI WinMain(
 	}
 
 	return (TRUE);
+
 }
 
 static bool parse_args(LPCSTR lpszArgs)
@@ -181,11 +175,10 @@ static bool parse_args(LPCSTR lpszArgs)
 * Returns
 *      A value of true or false depending on if -s is specified.
 *      CVC: Service is the default for NT, use -a for application.
-*
+*      
 *
 **************************************/
-	bool is_service = true;
-	bool delimited = false;
+	bool return_value = true;
 
 	for (const char* p = lpszArgs; *p; p++) {
 		if (*p++ == '-') {
@@ -193,49 +186,17 @@ static bool parse_args(LPCSTR lpszArgs)
 			while (c = *p++) {
 				switch (UPPER(c)) {
 				case 'A':
-					is_service = false;
-					break;
-
-				case 'S':
-					delimited = false;
-					while (*p && *p == ' ')
-						p++;
-					if (*p && *p == '"') {
-						p++;
-						delimited = true;
-					}
-
-					if (delimited) {
-						char* pi = instance;
-						const char* pend = instance + sizeof(instance) - 1;
-						while (*p && *p != '"' && pi < pend) {
-							*pi++ = *p++;
-						}
-						*pi++ = '\0';
-						if (*p && *p == '"')
-							p++;
-					}
-					else {
-						if (*p && *p != '-') {
-							char* pi = instance;
-							const char* pend = instance + sizeof(instance) - 1;
-							while (*p && *p != ' ' && pi < pend) {
-								*pi++ = *p++;
-							}
-							*pi++ = '\0';
-						}
-					}
+					return_value = false;
 					break;
 
 				default:
-					is_service = true;
+					return_value = true;
 					break;
 				}
 			}
 		}
 	}
-
-	return is_service;
+	return return_value;
 }
 
 static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
@@ -249,28 +210,11 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
  * Functional description
  *
  *      This function is where the actual service code starts.
- * Do all the window init stuff, then fork off a thread for starting
+ * Do all the window init stuff, then fork off a thread for starting 
  * the server.
  *
  **************************************/
-
-	unsigned long thread_id = 0;
-
-/* If we're a service, don't create a window */
-	if (service_flag) {
-		gds__thread_start(start_and_watch_server, 0,
-				THREAD_medium, 0, &thread_id);
-
-		if (thread_id == (DWORD) -1) {
-			/* error starting server thread */
-			char szMsgString[256];
-			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
-			gds__log(szMsgString);
-		}
-
-		return 0;
-	}
-
+ 
 /* Make sure that there is only 1 instance of the guardian running */
 	HWND hWnd = FindWindow(GUARDIAN_CLASS_NAME, GUARDIAN_APP_NAME);
 	if (hWnd) {
@@ -315,7 +259,8 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 	hWndGbl = hWnd;
 
 /* begin a new thread for calling the start_and_watch_server */
-	gds__thread_start(start_and_watch_server, 0,
+	unsigned long thread_id = 0;
+	gds__thread_start(start_and_watch_server, 0, 
 			THREAD_medium, 0, &thread_id);
 
 	if (thread_id == (DWORD) -1) {
@@ -328,10 +273,12 @@ static THREAD_ENTRY_DECLARE WINDOW_main(THREAD_ENTRY_PARAM)
 		return 0;
 	}
 
-	SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
-	UpdateWindow(hWnd);
+	if (!service_flag) {
+		SendMessage(hWnd, WM_COMMAND, IDM_CANCEL, 0);
+		UpdateWindow(hWnd);
+	}
 
-	MSG message;
+    MSG message;
 	while (GetMessage(&message, NULL, 0, 0)) {
 		if (hPSDlg) {			/* If property sheet dialog is open */
 			/* Check if the message is property sheet dialog specific */
@@ -374,7 +321,7 @@ static LRESULT CALLBACK WindowFunc(
 	static HINSTANCE hInstance = NULL;
 	static unsigned long thread_id;
 
-	hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
+	hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
 	switch (message) {
 	case WM_CLOSE:
 		{
@@ -450,7 +397,7 @@ static LRESULT CALLBACK WindowFunc(
 
 	case WM_SWITCHICONS:
 		nRestarts++;
-		gds__thread_start(swap_icons, hWnd,
+		gds__thread_start(swap_icons, hWnd, 
 				THREAD_medium, 0, &thread_id);
 		break;
 
@@ -477,7 +424,7 @@ static LRESULT CALLBACK WindowFunc(
 		if (!service_flag) {
 			HICON hIcon = (HICON) LoadImage(hInstance, MAKEINTRESOURCE(IDI_IBGUARD),
 									  IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
-
+									  
 			NOTIFYICONDATA nid;
 			nid.cbSize = sizeof(NOTIFYICONDATA);
 			nid.hWnd = hWnd;
@@ -577,12 +524,16 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
  *
  * Functional description
  *
- *      This function is where the server process is created and
+ *      This function is where the server process is created and 
  * the thread waits for this process to exit.
  *
  **************************************/
 	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
 
+	const char* server_name = FBSERVER;
+	char prog_name[MAXPATHLEN + 128];
+	char path1[MAXPATHLEN];
+	char path[MAXPATHLEN];
 	HANDLE procHandle = NULL;
 	bool done = true;
 	const UINT error_mode = SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
@@ -591,13 +542,9 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 
 /* get the guardian startup information */
 	const short option = Config::getGuardianOption();
-
-	char prefix_buffer[MAXPATHLEN];
-	GetModuleFileName(NULL, prefix_buffer, sizeof(prefix_buffer));
-	Firebird::PathName path = prefix_buffer;
-	path = path.substr(0, path.rfind(PathUtils::dir_sep) + 1) + FBSERVER;
-	path = "\"" + path + "\"";
-	Firebird::PathName prog_name = path + " -a -n";
+	gds__prefix(path1, "");
+	fb_utils::snprintf(prog_name, sizeof(prog_name), "\"%s%s%s\" -a -n", path1, "bin\\", server_name);
+	fb_utils::snprintf(path, sizeof(path), "%s%s%s", path1, "bin\\", FBSERVER);
 
 /* if the guardian is set to FOREVER then set the error mode */
 	UINT old_error_mode = 0;
@@ -620,7 +567,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				}
 			}
 
-			procHandle = CreateMutex(NULL, FALSE, mutex_name->c_str());
+			procHandle = CreateMutex(NULL, FALSE, GUARDIAN_MUTEX);
 
 			/* start as a service.  If the service can not be found or
 			   fails to start, close the handle to the mutex and set
@@ -629,7 +576,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				hScManager = OpenSCManager(NULL, NULL, GENERIC_READ);
 			if (!hService)
 				hService =
-					OpenService(hScManager, remote_name->c_str(),
+					OpenService(hScManager, REMOTE_SERVICE,
 								GENERIC_READ | GENERIC_EXECUTE);
 			success = StartService(hService, 0, NULL);
 			if (success != TRUE)
@@ -659,8 +606,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				sa.nLength = sizeof(sa);
 				sa.lpSecurityDescriptor = NULL;
 				sa.bInheritHandle = TRUE;
-				success = CreateProcess(NULL, const_cast<char*>(prog_name.c_str()),
-										&sa, NULL, FALSE, 0,
+				success = CreateProcess(NULL, prog_name, &sa, NULL, FALSE, 0, 
 										NULL, NULL, &si, &pi);
 				if (success != TRUE)
 					error = GetLastError();
@@ -689,7 +635,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			/* error creating new process */
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_CANT_START_THREAD, szMsgString, 256);
-			sprintf(out_buf, "%s : %s errno : %d", path.c_str(), szMsgString, error);
+			sprintf(out_buf, "%s : %s errno : %d", path, szMsgString, error);
 			write_log(IDS_CANT_START_THREAD, out_buf);
 
 			if (service_flag) {
@@ -699,12 +645,12 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				 */
 				WaitForSingleObject(procHandle, 1000);
 				CloseHandle(procHandle);
-				hService = OpenService(hScManager, remote_name->c_str(),
+				hService = OpenService(hScManager, REMOTE_SERVICE,
 					GENERIC_READ | GENERIC_EXECUTE);
 				ControlService(hService, SERVICE_CONTROL_STOP, &status_info);
 				CloseServiceHandle(hScManager);
 				CloseServiceHandle(hService);
-				CNTL_stop_service(service_name->c_str());
+				CNTL_stop_service(ISCGUARD_SERVICE);
 			}
 			else {
 				MessageBox(NULL, out_buf, NULL, MB_OK);
@@ -715,7 +661,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 		else {
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_STARTING_GUARD, szMsgString, 256);
-			sprintf(out_buf, "%s: %s\n", szMsgString, path.c_str());
+			sprintf(out_buf, "%s: %s\n", szMsgString, path);
 			write_log(IDS_LOG_START, out_buf);
 		}
 
@@ -727,7 +673,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				Sleep(100);
 			}
 
-			const int ret_val = WaitForSingleObject(procHandle, INFINITE);
+       		const int ret_val = WaitForSingleObject(procHandle, INFINITE);
 			if (ret_val == WAIT_ABANDONED)
 				exit_status = CRASHED;
 			else if (ret_val == WAIT_OBJECT_0)
@@ -746,7 +692,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			if (exit_status == STARTUP_ERROR) {
 				char szMsgString[256];
 				LoadString(hInstance_gbl, IDS_STARTUP_ERROR, szMsgString, 256);
-				sprintf(out_buf, "%s: %s (%lu)\n", path.c_str(), szMsgString,
+				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_STARTUP_ERROR, out_buf);
 				done = true;
@@ -755,7 +701,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			else {
 				char szMsgString[256];
 				LoadString(hInstance_gbl, IDS_ABNORMAL_TERM, szMsgString, 256);
-				sprintf(out_buf, "%s: %s (%lu)\n", path.c_str(), szMsgString,
+				sprintf(out_buf, "%s: %s (%lu)\n", path, szMsgString,
 						exit_status);
 				write_log(IDS_LOG_TERM, out_buf);
 
@@ -770,7 +716,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 			/* Normal shutdown - ie: via ibmgr - don't restart the server */
 			char szMsgString[256];
 			LoadString(hInstance_gbl, IDS_NORMAL_TERM, szMsgString, 256);
-			sprintf(out_buf, "%s: %s\n", path.c_str(), szMsgString);
+			sprintf(out_buf, "%s: %s\n", path, szMsgString);
 			write_log(IDS_LOG_STOP, out_buf);
 			done = true;
 		}
@@ -784,7 +730,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 	if (service_flag) {
 		CloseServiceHandle(hScManager);
 		CloseServiceHandle(hService);
-		CNTL_stop_service(service_name->c_str());
+		CNTL_stop_service(ISCGUARD_SERVICE);
 	}
 	else
 		PostMessage(hWndGbl, WM_CLOSE, 0, 0);
@@ -861,10 +807,10 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to
+ *               are identified within the LPARAM which will be pointer to 
  *               the NMDR structure
  *****************************************************************************/
-	HINSTANCE hInstance = (HINSTANCE) GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hDlg, GWL_HINSTANCE);
 
 	switch (unMsg) {
 	case WM_INITDIALOG:
@@ -880,7 +826,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			 */
 			SetDlgItemInt(hDlg, IDC_RESTARTS, nRestarts, FALSE);
 
-			/* get the path to the exe.
+			/* get the path to the exe.  
 			   Make sure that it is null terminated */
 			GetModuleFileName(hInstance, szWindowText, sizeof(szWindowText));
 			char* pszPtr = strrchr(szWindowText, '\\');
@@ -931,8 +877,8 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				ListView_InsertColumn(hWndLog, index, &lvC);
 			}
 
-			log_info* liTemp = log_entry->next;
-			LV_ITEM lvI;
+            log_info* liTemp = log_entry->next;
+            LV_ITEM lvI;
 			lvI.cchTextMax = sizeof(liTemp->log_action);
 			lvI.mask = LVIF_TEXT;
 			for (index = 0; liTemp->log_action;
@@ -973,7 +919,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 	case WM_NOTIFY:
 		switch (((LPNMHDR) lParam)->code) {
 		case PSN_KILLACTIVE:
-			SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
+			SetWindowLong(hDlg, DWL_MSGRESULT, FALSE);
 			break;
 		case PSN_HELP:
 #ifdef NOT_USED_OR_REPLACED
@@ -1000,7 +946,7 @@ THREAD_ENTRY_DECLARE  swap_icons(THREAD_ENTRY_PARAM param)
 	Firebird::ContextPoolHolder threadContext(getDefaultMemoryPool());
 
 	HWND hWnd = static_cast<HWND>(param);
-	HINSTANCE hInstance = (HINSTANCE) GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
+	HINSTANCE hInstance = (HINSTANCE) GetWindowLong(hWnd, GWL_HINSTANCE);
 	HICON hIconNormal = (HICON) LoadImage(hInstance,
 									MAKEINTRESOURCE(IDI_IBGUARD),
 									IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
@@ -1028,16 +974,16 @@ displayed, stop animating the icon
 */
 	while (!hPSDlg) {
 		if (!Shell_NotifyIcon(NIM_MODIFY, &nidAlert))
-			SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconAlert);
+			SetClassLong(hWnd, GCL_HICON, (long) hIconAlert);
 		Sleep(500);
 
 		if (!Shell_NotifyIcon(NIM_MODIFY, &nidNormal))
-			SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
+			SetClassLong(hWnd, GCL_HICON, (long) hIconNormal);
 		Sleep(500);
 	}
 /* Make sure that the icon is normal */
 	if (!Shell_NotifyIcon(NIM_MODIFY, &nidNormal))
-		SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR) hIconNormal);
+		SetClassLong(hWnd, GCL_HICON, (long) hIconNormal);
 
 	if (hIconNormal)
 		DestroyIcon(hIconNormal);
@@ -1099,7 +1045,7 @@ void write_log(int log_action, const char* buff)
 	}
 
 	if (service_flag) {	/* on NT */
-		HANDLE hLog = RegisterEventSource(NULL, service_name->c_str());
+		HANDLE hLog = RegisterEventSource(NULL, ISCGUARD_SERVICE);
 		if (!hLog)
 			gds__log("Error opening Windows NT Event Log");
 		else {
@@ -1108,7 +1054,7 @@ void write_log(int log_action, const char* buff)
 			LoadString(hInstance_gbl, log_action + 1, tmp_buff,
 					   sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
-
+			
 			LPVOID lpMsgBuf;
 			FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 						  FORMAT_MESSAGE_ARGUMENT_ARRAY |
@@ -1119,7 +1065,7 @@ void write_log(int log_action, const char* buff)
 					strlen(static_cast<const char*>(lpMsgBuf)) - 1);
 			LocalFree(lpMsgBuf);
 			WORD wLogType;
-
+			
 			switch (log_action) {
 			case IDS_LOG_START:
 			case IDS_LOG_STOP:
@@ -1128,7 +1074,7 @@ void write_log(int log_action, const char* buff)
 			default:
 				wLogType = EVENTLOG_ERROR_TYPE;
 			}
-
+			
 			if (!ReportEvent
 				(hLog, wLogType, 0, log_action + 1, NULL, 1, 0,
 				 const_cast<const char**>(act_buff), NULL))
@@ -1157,7 +1103,7 @@ void write_log(int log_action, const char* buff)
 void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
 /****************************************************************
- *
+ *                                              
  *  H e l p C m d
  *
  ****************************************************************
@@ -1168,7 +1114,7 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *              nId       - The help message Id.
  *
  *  Description:  Invoke the Windows Help facility with context of nId.
- *
+ *      
  *****************************************************************/
 	char szPathFileName[1024 + 256 + 1];
 
@@ -1186,3 +1132,4 @@ void HelpCmd(HWND hWnd, HINSTANCE hInst, WPARAM wId)
 	return;
 }
 #endif
+

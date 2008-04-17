@@ -37,8 +37,6 @@
 #include "../qli/picst_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/utl_proto.h"
-#include "../common/classes/UserBlob.h"
-#include "../jrd/gdsassert.h"
 
 
 static SLONG execute_any(qli_nod*);
@@ -256,7 +254,7 @@ void EVAL_break_increment( qli_nod* node)
 		}
 		return;
 	}
-	if (desc2->dsc_missing)
+	else if (desc2->dsc_missing)
 		return;
 
 	node->nod_arg[e_stt_default] = (qli_nod*) (IPTR) count;
@@ -353,12 +351,14 @@ dsc* EVAL_value(qli_nod* node)
  *	Evaluate a value node.
  *
  **************************************/
+	qli_fld* field;
 	DSC *values[4];
+	UCHAR *p;
+	double d1;
 
 // Start by evaluating sub-expressions (where appropriate) 
 
 	dsc* desc = &node->nod_desc;
-	fb_assert(node->nod_count < 5);
 	qli_nod** ptr = node->nod_arg;
 	const qli_nod* const* const end_ptr = ptr + node->nod_count;
 
@@ -384,11 +384,9 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_variable:
-		{
-			qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
-			desc->dsc_missing =
-				(field->fld_flags & FLD_missing) ? DSC_missing : 0;
-		}
+		field = (qli_fld*) node->nod_arg[e_fld_field];
+		desc->dsc_missing =
+			(field->fld_flags & FLD_missing) ? DSC_missing : 0;
 		return desc;
 
 	case nod_field:
@@ -409,7 +407,7 @@ dsc* EVAL_value(qli_nod* node)
 		}
 		desc->dsc_missing = FALSE;
 		if (node->nod_flags & nod_date) {
-			double d1 = MOVQ_date_to_double(values[0]) + MOVQ_get_double(values[1]);
+			d1 = MOVQ_date_to_double(values[0]) + MOVQ_get_double(values[1]);
 			MOVQ_double_to_date(d1, (SLONG*) desc->dsc_address);
 		}
 		else if (desc->dsc_dtype == dtype_long)
@@ -510,8 +508,8 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_prompt:
 		if (!prompt[0][0]) {
-			ERRQ_msg_get(499, prompt[0], sizeof(prompt[0]));	// Msg499 Re-enter
-			ERRQ_msg_get(500, prompt[1], sizeof(prompt[1]));	// Msg500 Enter
+			ERRQ_msg_get(499, prompt[0]);	// Msg499 Re-enter
+			ERRQ_msg_get(500, prompt[1]);	// Msg500 Enter
 		}
 		return execute_prompt(node);
 
@@ -545,24 +543,23 @@ dsc* EVAL_value(qli_nod* node)
 				else
 					*(double *) desc->dsc_address += MOVQ_get_double(desc2);
 			}
+			return desc;
 		}
-		return desc;
 
 	case nod_format:
-		{
-			UCHAR* p = desc->dsc_address;
-			PIC_edit(values[0], (pics*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
+		p = desc->dsc_address;
+		PIC_edit(values[0], (pics*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
 				 desc->dsc_length);
-			desc->dsc_length = p - desc->dsc_address;
-		}
+		desc->dsc_length = p - desc->dsc_address;
 		return desc;
-
 	case nod_user_name:
 		IBERROR(31);			// Msg31 user name is supported only in RSEs temporarily
 
 	case nod_parameter:
 	case nod_position:
+
 	case nod_substr:
+
 	case nod_via:
 
 	default:
@@ -630,18 +627,18 @@ static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* va
 	TEXT* p = avary->vary_string;
 	length1 = MIN(length1, desc->dsc_length - 2);
 	length2 = MAX(MIN(length2, desc->dsc_length - 2 - length1), 0);
-	fb_assert(static_cast<ULONG>(length1) + length2 <= MAX_USHORT - 2)
 
 	if (length1)
-	{
-		memcpy(p, address1, length1);
-		p += length1;
-	}
+		do {
+			*p++ = *address1++;
+		} while (--length1);
 
 	if (length2)
-		memcpy(p, address2, length2);
+		do {
+			*p++ = *address2++;
+		} while (--length2);
 
-	avary->vary_length = length1 + length2;
+	avary->vary_length = p - avary->vary_string;
 
 	return desc;
 }
@@ -680,7 +677,7 @@ static DSC *execute_edit( qli_nod* node)
 	const TEXT* field_name = (TEXT *) node->nod_arg[e_edt_name];
 	BLOB_edit(id, dbb->dbb_handle, dbb->dbb_transaction, field_name);
 
-	node->nod_desc.dsc_missing = UserBlob::blobIsNull(*id) ? DSC_missing : 0;
+	node->nod_desc.dsc_missing = isNullBlob(id) ? DSC_missing : 0;
 
 	return &node->nod_desc;
 }
@@ -787,7 +784,7 @@ static DSC *execute_prompt( qli_nod* node)
 			return desc;
 		}
 
-		ERRQ_msg_put(32);	// Msg32 Input value is too long
+		ERRQ_msg_put(32, NULL, NULL, NULL, NULL, NULL);	// Msg32 Input value is too long
 		reprompt = TRUE;
 	}
 }
@@ -863,7 +860,7 @@ static bool like(
 		p1++;
 	}
 
-	return l1 ? false : true;
+	return (l1) ? false : true;
 }
 
 
@@ -929,7 +926,7 @@ static bool matches(
 		p1++;
 	}
 
-	return l1 ? false: true;
+	return (l1) ? false: true;
 }
 
 
@@ -1041,18 +1038,15 @@ static bool sleuth_check(
 			else {
 				++match;
 				for (;;)
-				{
 					if (sleuth_check(flags, search, end_search, match, end_match))
 						return true;
-					if (search < end_search) 
-					{
+					else if (search < end_search) {
 						const UCHAR d = *search++;
 						if (c != cond_upper(d, flags))
 							return false;
 					}
 					else
 						return false;
-				}
 			}
 		}
 		else if (c == '?')
@@ -1065,21 +1059,16 @@ static bool sleuth_check(
 				if (++match >= end_match)
 					return true;
 				for (;;)
-				{
 					if (sleuth_check(flags, search, end_search, match, end_match))
 						return true;
-					if (++search >= end_search)
+					else if (++search >= end_search)
 						return false;
-				}
 			}
 		else if (c == '[') {
 			const UCHAR* char_class = match;
 			while (*match++ != ']')
-			{
 				if (match >= end_match)
 					return false;
-			}
-
 			const UCHAR* const end_class = match - 1;
 			if (match >= end_match || *match != '*') {
 				if (!sleuth_class(flags, char_class, end_class, *search++))
@@ -1088,17 +1077,14 @@ static bool sleuth_check(
 			else {
 				++match;
 				for (;;)
-				{
 					if (sleuth_check(flags, search, end_search, match, end_match))
 						return true;
-					if (search < end_search) 
-					{
+					else if (search < end_search) {
 						if (!sleuth_class(flags, char_class, end_class, *search++))
 							return false;
 					}
 					else
 						return false;
-				}
 			}
 		}
 		else if (c == '+') {
@@ -1190,6 +1176,8 @@ static int sleuth_merge(
  *	is not a bug.
  *
  **************************************/
+	UCHAR c;
+
 	UCHAR* comb = combined;
 	UCHAR* vector[128];
 	UCHAR** v = vector;
@@ -1199,7 +1187,7 @@ static int sleuth_merge(
 // Parse control string into substitution strings and initializing string
 
 	while (control < end_control) {
-		UCHAR c = *control++;
+		c = *control++;
 		if (*control == '=') {
 			UCHAR** end_vector = vector + c;
 			while (v <= end_vector)
@@ -1227,10 +1215,8 @@ static int sleuth_merge(
 
 // Interpret matching string, substituting where appropriate
 
-	UCHAR c;
-	while (c = *match++) 
-	{
-	    const UCHAR* p;
+	while (c = *match++) {
+	    UCHAR* p;
 
 		// if we've got a defined character, slurp the definition
 		if (c <= max_op && (p = vector[c])) {
@@ -1358,10 +1344,9 @@ static bool string_function(
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
 			return false;
-			
-		if (l2)
-			return memcmp(p1, p2, l2) == 0;
-
+		while (--l2 >= 0)
+			if (*p1++ != *p2++)
+				return false;
 		return true;
 	}
 
@@ -1403,7 +1388,11 @@ static bool string_function(
 
 // Handle MATCHES
 
-	return node->nod_type == nod_matches && matches(p1, l1, p2, l2);
+	if (node->nod_type == nod_matches)
+		if (matches(p1, l1, p2, l2))
+			return true;
+
+	return false;
 }
 
 

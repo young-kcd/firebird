@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# $Id: install-script,v 1.1.2.12 2008-02-18 11:58:26 paulbeach Exp $
+#
 # Script args:
 # $0: full path to script
 # $1: full path to top level package dir, no trailing slash
@@ -245,6 +247,7 @@ fi
 echo "Install the saved aliases.conf file"
 if test -f /tmp/fb-aliases.conf; then
 	mv -f /tmp/fb-aliases.conf "$FB_RES/English.lproj/var/aliases.conf"
+	rm -f /temp/fb-aliases.conf
 fi
 
 #Install the saved UDF libraries, if any

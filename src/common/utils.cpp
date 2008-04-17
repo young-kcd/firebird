@@ -25,7 +25,6 @@
 // =====================================
 // Utility functions
 
-#include "firebird.h"
 #include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -39,43 +38,9 @@
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/locks.h"
-#include "../common/classes/init.h"
-#include "../jrd/constants.h"
-
-#ifdef WIN_NT
-#include <direct.h>
-#endif
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 namespace fb_utils
 {
-
-bool implicit_name(const char* name, const char* prefix, int prefix_len);
-
-
-char* copy_terminate(char* dest, const char* src, size_t bufsize)
-{
-/**************************************
- *
- * c o p y _ t e r m i n a t e
- *
- **************************************
- *
- * Functional description
- *	Do the same as strncpy but ensure the null terminator is written.
- *
- **************************************/
-	if (!bufsize) // Was it a joke?
-		return dest;
-		
-	--bufsize;
-	strncpy(dest, src, bufsize);
-	dest[bufsize] = 0;
-	return dest;
-}
 
 
 char* exact_name(char* const str)
@@ -138,61 +103,6 @@ char* exact_name_limit(char* const str, size_t bufsize)
 		--p;
 	*(p + 1) = '\0';
 	return str;
-}
-
-
-// *****************************
-// i m p l i c i t _ d o m a i n
-// *****************************
-// Determines if a domain or index is of the form RDB$<n[...n]>[<spaces>]
-// This may be true for implicit domains and for unique and non-unique indices except PKs.
-bool implicit_domain(const char* domain_name)
-{
-	return implicit_name(domain_name, IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ i n t e g r i t y
-// ***********************************
-// Determines if a table integrity constraint domain is of the form INTEG_<n[...n]>[<spaces>]
-bool implicit_integrity(const char* integ_name)
-{
-	return implicit_name(integ_name, IMPLICIT_INTEGRITY_PREFIX, IMPLICIT_INTEGRITY_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ p k
-// ***********************************
-// Determines if an index is of the form RDB$PRIMARY<n[...n]>[<spaces>]
-bool implicit_pk(const char* pk_name)
-{
-	return implicit_name(pk_name, IMPLICIT_PK_PREFIX, IMPLICIT_PK_PREFIX_LEN);
-}
-
-
-// ***********************************
-// i m p l i c i t _ n a m e
-// ***********************************
-// Determines if a name is of the form prefix<n[...n]>[<spaces>]
-// where prefix has a fixed known length.
-bool implicit_name(const char* name, const char* prefix, int prefix_len)
-{
-	if (strncmp(name, prefix, prefix_len) != 0)
-		return false;
-
-	int i = prefix_len;
-	while (name[i] >= '0' && name[i] <= '9')
-		++i;
-
-	if (i == prefix_len) // 'prefix' alone isn't valid
-		return false;
-
-	while (name[i] == ' ')
-		++i;
-
-	return !name[i]; // we reached null term
 }
 
 
@@ -285,39 +195,10 @@ int snprintf(char* buffer, size_t count, const char* format...)
 	return rc;
 }
 
-// *******************
-// c l e a n u p _ p a s s w d
-// *******************
-// Copy password to newly allocated place and replace existing one in argv with spaces.
-// Allocated space is released upon exit from utility.
-// This is planned leak of a few bytes of memory in utilities.
-// This function is deprecated. Use UtilSvc::hidePasswd(ArgvType&, int) whenever possible.
-// However, there are several usages through fb_utils::get_passwd(char* arg);
-char* cleanup_passwd(char* arg)
-{
-	if (! arg) 
-	{
-		return arg;
-	}
-
-	const int lpass = strlen(arg);
-	char* savePass = (char*) gds__alloc(lpass + 1);
-	if (! savePass)
-	{
-		// No clear idea, how will it work if there is no memory 
-		// for password, but let others think. As a minimum avoid AV.
-		return arg;
-	}
-	memcpy(savePass, arg, lpass + 1);
-	memset(arg, ' ', lpass);
-	return savePass;
-}
-
-
 #ifdef WIN_NT
 
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
-static bool isGlobalKernelPrefix();
+static bool isTerminalServicesEnabled();
 
 // hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
 // names of all kernel objects we use. For Win9x we must not add this prefix. 
@@ -326,21 +207,18 @@ static bool isGlobalKernelPrefix();
 
 void prefix_kernel_object_name(char* name, size_t bufsize)
 {
-	static bool bGlobalPrefix = false;
+	static bool bTSEnabled = false;
 	static bool bInitDone = false;
 
 	if (!bInitDone)
 	{
-		bGlobalPrefix = isGlobalKernelPrefix();
+		bTSEnabled = isTerminalServicesEnabled();
 		bInitDone = true;
 	}
 
-	// Backwards compatibility feature with Firebird 2.0.3 and earlier. 
-	// If the name already contains some prefix (specified by the user, as was 
-	// recommended in firebird.conf) additional prefix is not added
-	if (bGlobalPrefix && !strchr(name, '\\'))
+	if (bTSEnabled)
 	{
-		const char* prefix = "Global\\";
+		const char *prefix = "Global\\";
 		const size_t len_prefix = strlen(prefix);
 		const size_t len_name = strlen(name) + 1;
 
@@ -354,34 +232,6 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 	}
 }
 
-
-// Simply handle guardian.
-class DynLibHandle
-{
-public:
-	explicit DynLibHandle(HMODULE mod)
-		: m_handle(mod)
-	{}
-	~DynLibHandle()
-	{
-		if (m_handle)
-			FreeLibrary(m_handle);
-	}
-	operator HMODULE() const
-	{
-		return m_handle;
-	}
-	/* The previous conversion is invoked with !object so this is enough.
-	bool operator!() const
-	{
-		return !m_handle;
-	}
-	*/
-private:
-	HMODULE m_handle;
-};
-
-
 // hvlad: two functions below got from 
 // http://msdn2.microsoft.com/en-us/library/aa380797.aspx
 // and slightly adapted for our coding style
@@ -392,79 +242,67 @@ private:
 //   compatibility with Windows Me/98/95.
 //   ------------------------------------------------------------- 
 
-bool isGlobalKernelPrefix() 
+bool isTerminalServicesEnabled() 
 {
-	// The strategy of this function is as follows: use Global\ kernel namespace 
-	// for engine objects if we can. This can be prevented by either lack of OS support 
-	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
-
-	const DWORD dwVersion = GetVersion();
+	DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
 	if (!(dwVersion & 0x80000000)) 
 	{
-		if (LOBYTE(LOWORD(dwVersion)) <= 4) // This is Windows NT 4.0 or earlier.
+		// Is it Windows 2000 or greater?
+		if (LOBYTE(LOWORD(dwVersion)) > 4) 
+		{
+			return true; 
+
+			// hvlad: for now we don't need such complex check but i 
+			// preserved code in case we will need it later
+
+/***
+			// On Windows 2000 and later, use the VerifyVersionInfo and 
+			// VerSetConditionMask functions. Don't static link because 
+			// it won't load on earlier systems.
+
+			HMODULE hmodNtDll = GetModuleHandleA("ntdll.dll");
+			if (hmodNtDll) 
+			{
+				typedef ULONGLONG (WINAPI *PFnVerSetCondition) (ULONGLONG, ULONG, UCHAR);
+				typedef BOOL (WINAPI *PFnVerifyVersionA) (POSVERSIONINFOEXA, DWORD, DWORDLONG);
+
+				PFnVerSetCondition pfnVerSetCondition = 
+					(PFnVerSetCondition) GetProcAddress(hmodNtDll, "VerSetConditionMask");
+
+				if (pfnVerSetCondition != NULL) 
+				{
+					DWORDLONG dwlCondition = (*pfnVerSetCondition) (0, VER_SUITENAME, VER_AND);
+
+					// Get a VerifyVersionInfo pointer.
+					HMODULE hmodK32 = GetModuleHandleA( "KERNEL32.DLL" );
+					if (hmodK32) 
+					{
+						PFnVerifyVersionA pfnVerifyVersionA = 
+							(PFnVerifyVersionA) GetProcAddress(hmodK32, "VerifyVersionInfoA") ;
+
+						if (pfnVerifyVersionA != NULL) 
+						{
+							OSVERSIONINFOEXA osVersion;
+
+							ZeroMemory(&osVersion, sizeof(osVersion));
+							osVersion.dwOSVersionInfoSize = sizeof(osVersion);
+							osVersion.wSuiteMask = VER_SUITE_TERMINAL;
+
+							return (*pfnVerifyVersionA) (&osVersion, VER_SUITENAME, dwlCondition);
+						}
+					}
+				}
+			}
+
+			return false;
+***/
+		}
+		else  // This is Windows NT 4.0 or earlier.
+		{
 			return validateProductSuite("Terminal Server");
-
-		// Is it Windows 2000 or greater? It is possible to use Global\ prefix on any
-		// version of Windows from Windows 2000 and up
-		// Check if we have enough privileges to create global handles.
-		// If not fall back to creating local ones.
-		// The API for that is the NT thing, so we have to get addresses of the 
-		// functions dynamically to avoid troubles on Windows 9X platforms
-
-		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
-		
-		if (!hmodAdvApi) {
-			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
-			return false;
 		}
-		
-		typedef BOOL (WINAPI *PFnOpenProcessToken) (HANDLE, DWORD, PHANDLE);
-		typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
-		typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
-
-		PFnOpenProcessToken pfnOpenProcessToken = 
-			(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
-		PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
-			(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
-		PFnPrivilegeCheck pfnPrivilegeCheck = 
-			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
-
-		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
-			// Should never happen, really
-			gds__log("Cannot access privilege management API");
-			return false;
-		}
-
-		HANDLE hProcess = GetCurrentProcess();
-		HANDLE hToken;
-		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
-			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
-			return false;
-		}
-
-		PRIVILEGE_SET ps;
-		memset(&ps, 0, sizeof(ps));
-		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
-		ps.PrivilegeCount = 1;
-		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0) {
-			// Failure here means we're running on old version of Windows 2000 or XP
-			// which always allow creating global handles
-			CloseHandle(hToken);
-			return true;
-		}
-
-		BOOL checkResult;
-		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
-			gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
-			CloseHandle(hToken);
-			return false;
-		}
-
-		CloseHandle(hToken);
-
-		return checkResult; 
 	}
 
 	return false;
@@ -629,53 +467,4 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 }
 
 #endif // WIN_NT
-
-// *******************************
-// g e t _ p r o c e s s _ n a m e
-// *******************************
-// Return the name of the current process
-
-Firebird::PathName get_process_name()
-{
-	char buffer[MAXPATHLEN];
-
-#if defined(WIN_NT)
-	const int len = GetModuleFileName(NULL, buffer, sizeof(buffer));
-#elif defined(HAVE__PROC_SELF_EXE)
-    const int len = readlink("/proc/self/exe", buffer, sizeof(buffer));
-#else
-	const int len = 0;
-#endif
-
-	if (len <= 0)
-		buffer[0] = 0;
-	else if (len < sizeof(buffer))
-		buffer[len] = 0;
-	else
-		buffer[len - 1] = 0;
-
-	return buffer;
-}
-
-SLONG genReadOnlyId()
-{
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
-	static SLONG cnt = 0;
-	return ++cnt;
-}
-
-void getCwd(Firebird::PathName& pn)
-{
-	char* buffer = pn.getBuffer(MAXPATHLEN);
-#if defined(WIN_NT)
-	_getcwd(buffer, MAXPATHLEN);
-#elif defined(HAVE_GETCWD)
-	getcwd(buffer, MAXPATHLEN);
-#else
-	getwd(buffer);
-#endif
-	pn.recalculate_length();
-}
-
 } // namespace fb_utils

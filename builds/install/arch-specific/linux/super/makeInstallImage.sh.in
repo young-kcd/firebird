@@ -30,6 +30,7 @@
 #   Contributor(s):
 #  
 # 
+#   $Id: makeInstallImage.sh.in,v 1.17.4.1 2006-05-19 12:19:27 alexpeshkoff Exp $
 # 
 
 # Script to copy install files from the build/transport area
@@ -115,10 +116,7 @@ copyFiles() {
     mkdir $DestDir/doc/sql.extensions
     mkdir $DestDir/UDF 
     mkdir $DestDir/misc
-    mkdir $DestDir/misc/upgrade
-	for i in ib_udf metadata security; do
-		mkdir $DestDir/misc/upgrade/$i
-	done
+    mkdir $DestDir/upgrade
 
     mkdir -p $TargetDir@libdir@
     mkdir -p $TargetDir/usr/include
@@ -141,7 +139,6 @@ copyFiles() {
     cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
     copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
     cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
-    copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
     copyIfExists $BuiltFBDir/bin/security.gbak $DestDir/bin/security.gbak 
     cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
     cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup
@@ -202,10 +199,7 @@ copyFiles() {
     cp $BuildRootDir/doc/README.user $DestDir/README
     
 #	Copy various upgrade stuff
-    cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
-    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
-    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		$DestDir/misc/upgrade/security/
-    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	$DestDir/misc/upgrade/metadata/
+    cp $BuildRootDir/src/misc/upgrade/v2/* $DestDir/upgrade/
 
 #   Miscellaneous config and startup files
     cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf

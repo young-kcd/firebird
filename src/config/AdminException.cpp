@@ -31,7 +31,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <stdarg.h>
-#include "../common/classes/alloc.h"
 #include "AdminException.h"
 
 #ifdef _WIN32
@@ -60,7 +59,7 @@ AdminException::AdminException(const char *txt, ...)
 		text = buffer;
 		delete [] buffer;
 		}
-	else if (static_cast<unsigned>(ret) >= sizeof (temp))
+	else if (ret >= sizeof (temp))
 		{
 		int l = ret + 1;
 		char *buffer = new char [l];

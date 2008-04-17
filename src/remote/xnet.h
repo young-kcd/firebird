@@ -41,7 +41,7 @@
 const DWORD XNET_CONNECT_TIMEOUT	= 10000;
 
 // Receive wait timeout (ms)
-const DWORD XNET_RECV_WAIT_TIMEOUT	= 500;
+const DWORD XNET_RECV_WAIT_TIMEOUT	= 10000;
 
 // Send wait timeout (ms)
 const DWORD XNET_SEND_WAIT_TIMEOUT	= XNET_RECV_WAIT_TIMEOUT;
@@ -74,7 +74,7 @@ typedef struct xpm {
     USHORT      xpm_flags;					// flag word
     CADDR_T     xpm_address;				// address of mapped memory
     UCHAR       xpm_ids[XPS_MAX_NUM_CLI];	// ids
-    ULONG       xpm_timestamp;				// timestamp to avoid map name conflicts
+    time_t      xpm_timestamp;				// timestamp to avoid map name confilcts
 } *XPM;
 
 // Mapped structure flags
@@ -93,9 +93,9 @@ typedef struct xch
 {
     ULONG		xch_length;					// message length
     ULONG		xch_size;					// channel data size
-    USHORT		xch_flags;					// flags
-	ULONG		xch_dummy1;					// for binary compatibility
-	ULONG		xch_dummy2;					// with 32-bit builds
+    USHORT      xch_flags;					// flags
+    UCHAR       *xch_buffer;				// message
+    UCHAR 	    *xch_client_ptr;			// client pointer to xch buffers
 } *XCH;
 
 // Thread connection control block
@@ -157,7 +157,7 @@ typedef struct {
 	ULONG pages_per_slot;
 	ULONG map_num;
 	ULONG slot_num;
-	ULONG timestamp;
+	time_t timestamp;
 } XNET_RESPONSE, *PXNET_RESPONSE;
 
 // XNET_CONNECT_RESPONZE_SIZE - amount of bytes server writes on connect response

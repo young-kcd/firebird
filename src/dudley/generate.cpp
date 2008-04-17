@@ -39,7 +39,7 @@ static inline void check_blr(str* blr, const int l)
 	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
 		&& !TRN_get_buffer(blr, l) )
 	{
-		DDL_err(289);
+		DDL_err (289, NULL, NULL, NULL, NULL, NULL);
 	}
 }
 
@@ -281,7 +281,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		case dtype_sql_time:
 		case dtype_sql_date:
 		default:
-			DDL_err(95);
+			DDL_err(95, NULL, NULL, NULL, NULL, NULL);
 			// msg 95: GENERATE_blr: dtype not supported
 		}
 		p = (const char*) constant->con_data;
@@ -540,7 +540,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 //		break;
 
 	default:
-		DDL_err(96);
+		DDL_err(96, NULL, NULL, NULL, NULL, NULL);
 		// msg 96: GENERATE_blr: node not supported
 		return;
 	}

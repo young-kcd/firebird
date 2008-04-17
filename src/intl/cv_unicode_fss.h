@@ -24,12 +24,12 @@
  /* Note: all routines have cousins in jrd/intl.cpp */
 
 ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj, ULONG src_len, const UCHAR* src_ptr,
-								  ULONG dest_len, UCHAR* dest_ptr,
-								  USHORT* err_code, ULONG* err_position);
+								  ULONG dest_len, UCHAR *dest_ptr,
+								  USHORT *err_code, ULONG *err_position);
 
 ULONG CS_UTFFSS_unicode_to_fss(csconvert* obj, ULONG unicode_len, const UCHAR* unicode_str,
-							   ULONG fss_len, UCHAR* fss_str,
-							   USHORT* err_code, ULONG* err_position);
+							   ULONG fss_len, UCHAR *fss_str,
+							   USHORT *err_code, ULONG *err_position);
 
 struct Fss_table {
 	int cmask;

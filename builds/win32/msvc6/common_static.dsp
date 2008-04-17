@@ -40,8 +40,8 @@ RSC=rc.exe
 # PROP Output_Dir "..\..\..\temp\debug\common_static"
 # PROP Intermediate_Dir "..\..\..\temp\debug\common_static"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D "SUPERSERVER" /D "BOOT_BUILD" /YX /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /D "DEV_BUILD" /D "SUPERSERVER" /D "BOOT_BUILD" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -63,8 +63,8 @@ LIB32=link.exe -lib
 # PROP Output_Dir "..\..\..\temp\release\common_static"
 # PROP Intermediate_Dir "..\..\..\temp\release\common_static"
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /D "BOOT_BUILD" /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /GR /GX /Ot /Oi /Op /Oy /Ob2 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /D "SUPERSERVER" /D "BOOT_BUILD" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -99,10 +99,6 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 
 SOURCE=..\..\..\src\common\fb_exception.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\StatusHolder.cpp
-# End Source File
 # End Group
 # Begin Group "CONFIG files"
 
@@ -129,10 +125,6 @@ SOURCE=..\..\..\src\common\config\dir_list.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\BaseStream.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\classes\fb_string.cpp
 # End Source File
 # Begin Source File
@@ -149,19 +141,7 @@ SOURCE=..\..\..\src\jrd\os\win32\mod_loader.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\MsgPrint.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\os\win32\path_utils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.cpp
 # End Source File
 # Begin Source File
 
@@ -169,15 +149,7 @@ SOURCE=..\..\..\src\common\classes\timestamp.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\UserBlob.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\utils.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\UtilSvc.cpp
 # End Source File
 # End Group
 # Begin Group "Header files"
@@ -190,10 +162,6 @@ SOURCE=..\..\..\src\common\classes\alloc.h
 # Begin Source File
 
 SOURCE=..\..\..\src\common\classes\array.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\BaseStream.h
 # End Source File
 # Begin Source File
 
@@ -225,27 +193,7 @@ SOURCE=..\..\..\src\common\classes\MetaName.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\common\classes\MsgPrint.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\SafeArg.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\StatusHolder.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\TempFile.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\common\classes\timestamp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\common\classes\UserBlob.h
 # End Source File
 # Begin Source File
 

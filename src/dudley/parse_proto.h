@@ -28,7 +28,6 @@
 
 void		PARSE_actions(void);
 void		PARSE_error(USHORT, const TEXT*, const TEXT*);
-void		PARSE_error(USHORT, int, int = 0);
 FUNC		PARSE_function(int);
 enum kwwords PARSE_keyword(void);
 DUDLEY_NOD	PARSE_make_list(dudley_lls*);

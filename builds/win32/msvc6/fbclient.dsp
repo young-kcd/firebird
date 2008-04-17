@@ -42,8 +42,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\fbclient"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GDS32_EXPORTS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "GOVERNOR" /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -69,8 +69,8 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\fbclient"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "IPSERV" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /I "../../../src" /D "_DEBUG" /D "DEV_BUILD" /D "_WINDOWS" /D "_USRDLL" /D "GDS32_EXPORTS" /D "CLIENT" /D "SUPERCLIENT" /D "NOMSG" /D "IPSERV" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /GZ /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "CLIENT" /D "SUPERCLIENT" /D "GOVERNOR" /D "I386" /D _X86_=1 /D "WIN32" /D "_MBCS" /D "_X86_" /FR /FD /EHc- /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
@@ -115,6 +115,10 @@ SOURCE=..\..\..\src\jrd\alt.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cvt.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\jrd\dls.cpp
 # End Source File
 # Begin Source File
 
@@ -163,6 +167,10 @@ SOURCE=..\..\..\src\jrd\perf.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sch.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\sdl.cpp
 # End Source File
 # Begin Source File
@@ -185,10 +193,6 @@ SOURCE=..\..\..\src\jrd\thd.cpp
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ThreadStart.cpp
 # End Source File
 # Begin Source File
 
@@ -230,6 +234,10 @@ SOURCE=..\..\..\src\dsql\utld.cpp
 # Begin Group "REMOTE files"
 
 # PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\remote\allr.cpp
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\remote\inet.cpp
@@ -292,6 +300,10 @@ SOURCE=..\..\..\src\jrd\db_alias.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\dls_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\dsc.h
 # End Source File
 # Begin Source File
@@ -336,6 +348,10 @@ SOURCE=..\..\..\src\jrd\perf_proto.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\jrd\sch_proto.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\jrd\sdl.h
 # End Source File
 # Begin Source File
@@ -370,18 +386,6 @@ SOURCE=..\..\..\src\jrd\version.rc
 
 !ENDIF 
 
-# End Source File
-# End Group
-# Begin Group "AuthSspi"
-
-# PROP Default_Filter ""
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.cpp
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\auth\trusted\AuthSspi.h
 # End Source File
 # End Group
 # Begin Source File

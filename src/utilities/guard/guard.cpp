@@ -15,7 +15,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- *
+ * $Id: guard.cpp,v 1.8.12.4 2007-11-22 12:30:43 alexpeshkoff Exp $
  */
  /* contains the main() and not shared routines for ibguard */
 
@@ -25,10 +25,6 @@
 
 #ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif
 
 #ifdef HAVE_SYS_TYPES_H
@@ -41,11 +37,7 @@
 
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
-#else
-int errno = -1;
 #endif
-
-#include <time.h>
 
 #include "../jrd/common.h"
 #include "../jrd/divorce.h"
@@ -66,15 +58,6 @@ const char* INTERBASE_USER		= "interbase";
 const char* FIREBIRD_USER		= "firebird";
 const char* INTERBASE_USER_SHORT= "interbas";
 
-volatile sig_atomic_t shutting_down;
-
-
-void shutdown_handler(int)
-{
-	shutting_down = 1;
-}
-
-
 int CLIB_ROUTINE main( int argc, char **argv)
 {
 /**************************************
@@ -94,8 +77,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
 	bool done = true;
 	const TEXT* prog_name = argv[0];
-	const TEXT* pidfilename = 0;
-	int guard_exit_code = 0;
+	TEXT* pidfilename = 0;
 
 	const TEXT* const* const end = argc + argv;
 	argv++;
@@ -161,53 +143,25 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 /* move the server name into the argument to be passed */
 	TEXT process_name[1024];
-	process_name[0] = '\0';
 	TEXT* server_args[2];
 	server_args[0] = process_name;
 	server_args[1] = NULL;
-
-	shutting_down = 0;
-	if (UTIL_set_handler(SIGTERM, shutdown_handler, false) < 0) {
-		fprintf(stderr, "%s: Cannot set signal handler (error %d).\n",
-			prog_name, errno);
-		exit(-5);
-	}
-	if (UTIL_set_handler(SIGINT, shutdown_handler, false) < 0) {
-		fprintf(stderr, "%s: Cannot set signal handler (error %d).\n",
-			prog_name, errno);
-		exit(-5);
-	}
-
+	
 // detach from controlling tty
 	divorce_terminal(0);
 
-	time_t timer = 0;
-
 	do {
 		int ret_code;
-
-		if (shutting_down) {
-			// don't start a child
-			break;
-		}
-
-		if (timer == time(0))
-		{
-			// don't let fbserver restart too often - avoid log overflow
-			sleep(1);
-			continue;
-		}
-		timer = time(0);
 
 		gds__log("%s: guardian starting %s\n",
 				 prog_name, SUPER_SERVER_BINARY);
 		pid_t child_pid = UTIL_start_process(SUPER_SERVER_BINARY, server_args);
 		if (child_pid == -1) {
 			/* could not fork the server */
-			gds__log("%s: guardian could not start %s\n",
-				prog_name, process_name);
-			fprintf(stderr, "%s: Could not start %s\n",
-				prog_name, process_name);
+			gds__log("%s: guardian could not start %s\n", prog_name,
+					 server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
+			fprintf(stderr, "%s: Could not start %s\n", prog_name,
+					   server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
 			UTIL_ex_unlock(fd_guard);
 			exit(-4);
 		}
@@ -220,74 +174,54 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				fclose(pf);
 			}
 			else {
-				gds__log("%s: guardian could not open %s for writing, error %d\n",
-						 prog_name, pidfilename, errno);
+				gds__log("%s: guardian could not open %s for writing, error %d\n", 
+						 prog_name, pidfilename, 
+#ifdef HAVE_ERRNO_H
+						 errno
+#else
+						 -1
+#endif
+						 );
 			}
 		}
 
 		/* wait for child to die, and evaluate exit status */
-		bool shutdown_child = true;
-		if (!shutting_down) {
-			ret_code = UTIL_wait_for_child(child_pid, shutting_down);
-			shutdown_child = (ret_code == -2);
-		}
-		if (shutting_down) {
-			if (shutdown_child) {
-				ret_code = UTIL_shutdown_child(child_pid, 3, 1);
-				if (ret_code < 0) {
-					gds__log(
-						"%s: error while shutting down %s (%d)\n",
-						prog_name, process_name, errno);
-					guard_exit_code = -6;
-				}
-				else if (ret_code == 1) {
-					gds__log(
-						"%s: %s killed (did not terminate)\n",
-						prog_name, process_name);
-				}
-				else if (ret_code == 2) {
-					gds__log(
-						"%s: unable to shutdown %s\n",
-						prog_name, process_name);
-				}
-				else {
-					gds__log(
-						"%s: %s terminated\n",
-						 prog_name, process_name);
-				}
-			}
-			break;
-		}
+		ret_code = UTIL_wait_for_child(child_pid);
 		if (ret_code != NORMAL_EXIT) {
 			/* check for startup error */
 			if (ret_code == STARTUP_ERROR) {
 				gds__log("%s: %s terminated due to startup error (%d)\n",
-						 prog_name, process_name, ret_code);
+						 prog_name, server_args[1] ? server_args[1] :
+						 SUPER_SERVER_BINARY, ret_code);
 				if (option == IGNORE) {
 					gds__log
 						("%s: %s terminated due to startup error (%d)\n Trying again\n",
-						 prog_name, process_name, ret_code);
+						 prog_name,
+						 server_args[1] ? server_args[1] :
+						 SUPER_SERVER_BINARY, ret_code);
 
 					done = false;	/* Try it again, Sam (even if it is a startup error) FSG 8.11.2000 */
 				}
 				else {
 					gds__log("%s: %s terminated due to startup error (%d)\n",
-							 prog_name, process_name, ret_code);
+							 prog_name, server_args[1] ? server_args[1] :
+							 SUPER_SERVER_BINARY, ret_code);
 
 					done = true;	/* do not restart we have a startup problem */
 				}
 			}
 			else {
-				gds__log("%s: %s terminated abnormally (%d)\n",
-						prog_name, process_name, ret_code);
+				gds__log("%s: %s terminated abnormally (%d)\n", prog_name,
+						 server_args[1] ? server_args[1] :
+						 SUPER_SERVER_BINARY, ret_code);
 				if (option == FOREVER || option == IGNORE)
 					done = false;
 			}
 		}
 		else {
 			/* Normal shutdown - eg: via ibmgr - don't restart the server */
-			gds__log("%s: %s normal shutdown.\n",
-					prog_name, process_name); 
+			gds__log("%s: %s normal shutdown.\n", prog_name,
+					 server_args[1] ? server_args[1] : SUPER_SERVER_BINARY);
 			done = true;
 		}
 	} while (!done);
@@ -296,5 +230,5 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		remove(pidfilename);
 	}
 	UTIL_ex_unlock(fd_guard);
-	exit(guard_exit_code);
+	exit(0);
 }								/* main */

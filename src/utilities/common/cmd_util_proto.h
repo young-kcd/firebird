@@ -24,15 +24,17 @@
 #ifndef UTILITIES_CMD_UTIL_PROTO_H
 #define UTILITIES_CMD_UTIL_PROTO_H
 
-#include "../common/classes/SafeArg.h"
 
-void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
+extern "C" {
+ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  facility,
 							 USHORT  errcode,
-							 const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+							 USHORT arg1_t, const void* arg1,
+							 USHORT arg2_t, const void* arg2,
+							 USHORT arg3_t, const void* arg3,
+							 USHORT arg4_t, const void* arg4,
+							 USHORT arg5_t, const void* arg5);
 
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value);
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const char* value);
-
-#endif // UTILITIES_CMD_UTIL_PROTO_H
+}
+#endif /* UTILITIES_CMD_UTIL_PROTO_H */
 

@@ -42,8 +42,7 @@
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
 
-    function HasWI30: boolean;
-    function HasNotWI30: boolean;
+
  *)
 
 
@@ -498,7 +497,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,33);
+SetArrayLength(SharedFileArray,29);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -541,10 +540,7 @@ if UsingWinNT then
 else
   SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
-SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
-SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
-SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
-SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
+
 
 end;
 
@@ -684,7 +680,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := IsTaskSelected('InstallCPLAppletTask') ;
+     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
 end;
 
 
@@ -705,7 +701,7 @@ begin
   if ConfigureFirebird then begin
     //If one of these is false then either the commandline switch was passed
     //or the user unchecked the Copy client as GDS32 box
-    result := ( (not NoLegacyClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
+    result := ( (not NoLegacyClient) AND (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) );
   end;
 end;
 
@@ -720,8 +716,7 @@ end;
 function CopyFbClientLib: boolean;
 begin
 //Note that the default for this is the opposite to CopyGds32.
-  //result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
-    result := ( (not CopyFbClient) AND (IsTaskSelected('CopyFbClientToSysTask') ));
+  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
 end;
 
 
@@ -733,24 +728,4 @@ begin
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
 
-function HasWI30: boolean;
-//We need at least Windows Installer 3.0 available if we
-//are installing the msi bundles for the VC8 CRT libraries.
-var
-  VersionStr: String;
-  VerInt: array of Integer;
-begin
-  Result := False;
-  VersionStr := WIVersion;
-  DecodeVersion(VersionStr, VerInt);
-  if (VerInt[0] >= 3) then
-    Result := True;
-
-end;
-
-function HasNotWI30: boolean;
-//Used to check if O/S does NOT have minimum version of Windows Installer
-begin
-  result := NOT HasWI30;
-end;
 

@@ -1,5 +1,5 @@
 /*
- *      PROGRAM:        Firebird Windows platforms
+ *      PROGRAM:        InterBase Window platforms
  *      MODULE:         ibinitdll.cpp
  *      DESCRIPTION:    DLL entry/exit function
  *
@@ -19,37 +19,47 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
 #include <windows.h>
-#include "../common/classes/fb_string.h"
-#include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
+#include "../jrd/common.h"
+#include "../../utilities/install/registry.h"
+#include "../jrd/thread_proto.h"
 
-using namespace Firebird;
+HINSTANCE hIBDLLInstance;
 
+#ifdef SUPERSERVER
+
+#ifdef  _MSC_VER
+BOOL WINAPI _CRT_INIT(HINSTANCE, DWORD, LPVOID);
+#else
+BOOL WINAPI _CRT_INIT(HINSTANCE HIdummy, DWORD DWdummy, LPVOID LPVdummy)
+{
+	return TRUE;
+}
+#endif
+
+#else /* SUPERSERVER */
 
 BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
-#if defined(EMBEDDED)
-	switch (reason)
-	{
-		case DLL_PROCESS_ATTACH:
-		{
-			char filename[MAX_PATH];
-			GetModuleFileName(h, filename, sizeof(filename));
+	/* save instance value */
+	hIBDLLInstance = h;
 
-			PathName dir, file;
-			PathUtils::splitLastComponent(dir, file, filename);
+	switch (reason)	{
 
-			ConfigRoot::setInstallDirectory(dir.c_str());
+	case DLL_PROCESS_ATTACH:
+		break;
 
-			break;
-		}
-	}
+	case DLL_PROCESS_DETACH:
+#ifdef EMBEDDED
+		JRD_shutdown_all(false);
 #endif
+		break;
+	}
 
 	return TRUE;
 }
+
+#endif /* SUPERSERVER */

@@ -41,8 +41,8 @@ RSC=rc.exe
 # PROP Intermediate_Dir "..\..\..\temp\debug\gfix"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "DEV_BUILD" /D "SUPERCLIENT" /FD /GZ /c
+# ADD BASE CPP /nologo /W3 /Gm /GR /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /D "DEV_BUILD" /D "SUPERCLIENT" /FD /GZ /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -65,9 +65,9 @@ LINK32=link.exe
 # PROP Intermediate_Dir "..\..\..\temp\release\gfix"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
+# ADD BASE CPP /nologo /MDd /W3 /Gm /GR /GX /Zi /Od /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FD /GZ /c
 # SUBTRACT BASE CPP /YX
-# ADD CPP /nologo /MD /W3 /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
+# ADD CPP /nologo /MD /W3 /GR /GX /Ot /Og /Oi /Op /Oy /Ob1 /I "../../../src/include" /I "../../../src/include/gen" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D "SUPERCLIENT" /FD /EHc- /c
 # ADD BASE RSC /l 0x41d /d "_DEBUG"
 # ADD RSC /l 0x41d /d "_DEBUG"
 BSC32=bscmake.exe
@@ -87,29 +87,17 @@ LINK32=link.exe
 # Begin Group "ALICE files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
-# Begin Group "epp Files"
-
-# PROP Default_Filter "epp"
-# Begin Source File
-
-SOURCE=..\..\..\src\alice\alice_meta.epp
-# End Source File
-# End Group
-# Begin Group "Generated files"
-
-# PROP Default_Filter "cpp"
-# Begin Source File
-
-SOURCE=..\..\..\gen\alice\alice_meta.cpp
-# End Source File
-# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\alice.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\alice\aliceMain.cpp
+SOURCE=..\..\..\gen\alice\alice_meta.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\alice\all.cpp
 # End Source File
 # Begin Source File
 
@@ -143,10 +131,6 @@ SOURCE=..\..\..\src\common\classes\locks.cpp
 
 SOURCE=..\..\..\src\jrd\thd.cpp
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ThreadData.cpp
-# End Source File
 # End Group
 # Begin Group "Header files"
 
@@ -162,6 +146,14 @@ SOURCE=..\..\..\src\alice\alice_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\alice\aliceswi.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\alice\all.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\alice\all_proto.h
 # End Source File
 # Begin Source File
 
