@@ -1137,7 +1137,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		if (!old_syntax || old_exec_into)
 		{
 			temp = node->nod_arg[e_exec_stmt_outputs];
-			stuff_word(request, temp->nod_count);
+			stuff_word(request, temp ? temp->nod_count : 0);
 		}
 
 		// query expression
