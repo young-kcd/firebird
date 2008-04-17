@@ -1,3 +1,125 @@
+2008-04-17 19:09  alexpeshkoff
+
+	* firebird2/src/remote/xdr.cpp (1.34):
+
+	comment
+
+2008-04-17 19:05  alexpeshkoff
+
+	* firebird2/src/remote/: protocol.h (1.41), remote.h (1.75),
+	server.cpp (1.201), xdr.cpp (1.33), xdr_proto.h (1.14):
+
+	Fixed memory leak in rem_port::asyncReceive() and optimized it's
+	performance.  Get it ready for non-IP protocols.
+
+2008-04-17 18:25  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.231):
+
+	fixed gcc compilation
+
+2008-04-17 18:02  dimitr
+
+	* firebird2/src/include/consts_pub.h (1.16):
+
+	1) Simplified the internal provider API a little.  2) Passed the
+	original filename (possibly an alias) via DPB. This way it can be
+	transmitted through the remote subsystem.
+
+	Hopefully, this should fix CORE-1105, CORE-1390 and CORE-1566 at
+	once.  Although a better hope would be that it won't break anything
+	else :-)
+
+2008-04-17 16:32  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.91):
+
+	Cleaned up support of 10-15 years old OSs without async IO
+
+2008-04-17 16:22  dimitr
+
+	* firebird2/src/remote/: inter_proto.h (1.22), interface.cpp
+	(1.186):
+
+	1) Simplified the internal provider API a little.  2) Passed the
+	original filename (possibly an alias) via DPB. This way it can be
+	transmitted through the remote subsystem.
+
+	Hopefully, this should fix CORE-1105, CORE-1390 and CORE-1566 at
+	once.  Although a better hope would be that it won't break anything
+	else :-)
+
+2008-04-17 16:05  dimitr
+
+	* firebird2/src/jrd/: jrd.cpp (1.440), jrd_proto.h (1.70), svc.cpp
+	(1.219), svc.h (1.57), why.cpp (1.194):
+
+	1) Simplified the internal provider API a little.  2) Passed the
+	original filename (possibly an alias) via DPB. This way it can be
+	transmitted through the remote subsystem.
+
+	Hopefully, this should fix CORE-1105, CORE-1390 and CORE-1566 at
+	once.  Although a better hope would be that it won't break anything
+	else :-)
+
+2008-04-17 15:50  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.218):
+
+	Fixed CORE-1845: Some standard calls show server installation
+	directory to regular users
+
+2008-04-17 15:13  alexpeshkoff
+
+	* firebird2/src/include/gen/iberror.h (1.85):
+
+	Fixed CORE-1844: Valgrind often reports "Conditional jump or move
+	depends on uninitialised value(s)" in check_status_vector()
+
+2008-04-17 14:53  alexpeshkoff
+
+	* firebird2/src/misc/codes.epp (1.24):
+
+	Fixed CORE-1844: Valgrind often reports "Conditional jump or move
+	depends on uninitialised value(s)" in check_status_vector()
+
+2008-04-17 13:06  hvlad
+
+	* firebird2/src/jrd/: exe.cpp (1.259), par.cpp (1.192):
+
+	Use new EXEC STMT implemetation for all three BLR verb's.
+
+2008-04-17 12:57  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.240):
+
+	No use copying when src==dest (make valgrind happy)
+
+2008-04-17 12:47  hvlad
+
+	* firebird2/src/dsql/gen.cpp (1.148):
+
+	Correct my mistake
+
+2008-04-17 09:54  dimitr
+
+	* firebird2/src/jrd/tra.cpp (1.170):
+
+	Misc.
+
+2008-04-17 09:52  dimitr
+
+	* firebird2/src/jrd/Database.cpp (1.6):
+
+	Make Database::deletePool() consistent with
+	MemoryPool::deletePool() regarding NULL pointers.
+
+2008-04-17 09:30  dimitr
+
+	* firebird2/src/remote/os/win32/srvr_w32.cpp (1.53):
+
+	Correction.
+
 2008-04-16 18:02  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.276):
