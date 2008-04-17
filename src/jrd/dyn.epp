@@ -164,8 +164,11 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		}
 
 		dbb->dbb_mutexes[DBB_MUTX_dyn].leave();
+		JrdMemoryPool::deletePool(tempPool);
 		ERR_punt();
 	}
+
+	JrdMemoryPool::deletePool(tempPool);
 }
 
 
