@@ -1035,7 +1035,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		}
 
 		const SLONG number = trans->tra_number;
-		MemoryPool* tra_pool = trans->tra_pool;
+		MemoryPool* const tra_pool = trans->tra_pool;
 		delete trans;
 		dbb->deletePool(tra_pool);
 
@@ -1188,10 +1188,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 
 	// Release the transaction pool
 
-	MemoryPool* tra_pool = transaction->tra_outer ? NULL : transaction->tra_pool;
+	MemoryPool* const tra_pool = transaction->tra_outer ? NULL : transaction->tra_pool;
 	delete transaction;
-	if (tra_pool)
-		dbb->deletePool(tra_pool);
+	dbb->deletePool(tra_pool);
 }
 
 
