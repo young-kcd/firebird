@@ -1091,6 +1091,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	dsc* values[3];
 
 	if (node->nod_count) {
+		fb_assert(node->nod_count <= 3);
 		dsc** v = values;
 		jrd_nod** ptr = node->nod_arg;
 		for (const jrd_nod* const* const end = ptr + node->nod_count;
