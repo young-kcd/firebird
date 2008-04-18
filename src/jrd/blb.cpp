@@ -210,7 +210,7 @@ void BLB_close(thread_db* tdbb, class blb* blob)
 	{
 		Database* dbb = tdbb->getDatabase();
 
-		blob->blb_temp_size = dbb->dbb_page_size - blob->blb_space_remaining;
+		blob->blb_temp_size = BLP_SIZE + blob->blb_clump_size - blob->blb_space_remaining;
 
 		if (blob->blb_temp_size > 0)
 		{
@@ -348,9 +348,10 @@ blb* BLB_create2(thread_db* tdbb,
 	blob->blb_space_remaining = blob->blb_clump_size;
 	blob->blb_flags |= BLB_temporary;
 
-/* Set up for a "small" blob -- a blob that fits on an ordinary data page */
+/* Set up for a "small" blob -- a blob that fits on an ordinary blob page */
 
 	blob_page* page = (blob_page*) blob->getBuffer();
+	memset(page, 0, BLP_SIZE);	// initialize page header with NULLs
 	page->blp_header.pag_type = pag_blob;
 	blob->blb_segment = (UCHAR *) page->blp_page;
 
