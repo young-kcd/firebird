@@ -140,85 +140,85 @@ static const TEXT* const impl_class[] = {
 
 static const TEXT* const impl_implementation[] = {
 	NULL,						/* 0 */
-    "Rdb/VMS",				/* 1 */
-    "Rdb/ELN target",		/* 2 */
-    "Rdb/ELN development",	/* 3 */
-    "Rdb/VMS Y",			/* 4 */
-    "Rdb/ELN Y",			/* 5 */
-    "JRI",					/* 6 */
-    "JSV",					/* 7 */
-    NULL,					/* 8 */
-    NULL,					/* 9 */
-    NULL, // "Firebird/apollo",     /* 10 */
-    NULL, // "Firebird/ultrix",		/* 11 */
-    "Firebird/vms",		/* 12 */
-    "Firebird/sun",		/* 13 */
-    NULL, // "Firebird/OS2",        /* 14 */
-    NULL,					/* 15 */
-    NULL,					/* 16 */
-    NULL,					/* 17 */
-    NULL,					/* 18 */
-    NULL,					/* 19 */
-    NULL,					/* 20 */
-    NULL,					/* 21 */
-    NULL,					/* 22 */
-    NULL,					/* 23 */
-    NULL,					/* 24 */
-    NULL, // "Firebird/apollo",     /* 25 */
-    NULL, // "Firebird/ultrix",		/* 26 */
-    "Firebird/vms",		/* 27 */
-    "Firebird/sun",		/* 28 */
-    NULL, // "Firebird/OS2",        /* 29 */
-    "Firebird/sun4",		/* 30 */
-    NULL, // "Firebird/hpux800",	/* 31 */
-    "Firebird/sun386",		/* 32 */
-    "Firebird:ORACLE/vms",	/* 33 */
-    NULL, // "Firebird/mac/aux",    /* 34 */
-    "Firebird/ibm/aix",	/* 35 */
-    NULL, // "Firebird/mips/ultrix",	/* 36 */
-    NULL, // "Firebird/xenix",      /* 37 */
-    NULL, // "Firebird/AViiON",		/* 38 */
-    NULL, // "Firebird/hp/mpexl",	/* 39 */
-    NULL, // "Firebird/hp/ux300",	/* 40 */
-    NULL, // "Firebird/sgi",		/* 41 */
-    "Firebird/sco/unix",	/* 42 */
-    NULL, // "Firebird/Cray",       /* 43 */
-    NULL, // "Firebird/imp",        /* 44 */
-    NULL, // "Firebird/delta",      /* 45 */
-    NULL, // "Firebird/NeXT",       /* 46 */
-    NULL, // "Firebird/DOS",		/* 47 */
-    NULL, // "Firebird/m88k",       /* 48 */
-    NULL, // "Firebird/UNIXWARE",	/* 49 */
-    "Firebird/x86/Windows NT",	/* 50 */
-    NULL, // "Firebird/epson",      /* 51 */
-    NULL, // "Firebird/DEC/OSF",	/* 52 */
-    "Firebird/Alpha/OpenVMS",	/* 53 */
-    NULL, // "Firebird/NetWare",	/* 54 */
-    "Firebird/Windows",	/* 55 */
-    NULL, // "Firebird/NCR3000",    /* 56 */
-    NULL, // "Firebird/PPC/Windows NT", /* 57 */
-    NULL, // "Firebird/DG_X86",		/* 58 */
-    "Firebird/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
-    "Firebird/linux Intel",	/* 60 */
-    "Firebird/FreeBSD/i386",	/* 61 */
-    "Firebird/NetBSD/i386",	/* 62 */
-    "Firebird/Darwin/PowerPC",	/* 63 */
-    "Firebird/SINIX-Z",	/* 64 */
-    "Firebird/linux Sparc",	/* 65 */
-    "Firebird/linux AMD64",	/* 66 */
-    "Firebird/FreeBSD/amd64",	/* 67 */
-    "Firebird/x86-64/Windows NT",   /* 68 */
-    "Firebird/linux PowerPC",	// 69
+	"Rdb/VMS",				/* 1 */
+	"Rdb/ELN target",		/* 2 */
+	"Rdb/ELN development",	/* 3 */
+	"Rdb/VMS Y",			/* 4 */
+	"Rdb/ELN Y",			/* 5 */
+	"JRI",					/* 6 */
+	"JSV",					/* 7 */
+	NULL,					/* 8 */
+	NULL,					/* 9 */
+	NULL, // "Firebird/apollo",     /* 10 */
+	NULL, // "Firebird/ultrix",		/* 11 */
+	"Firebird/vms",		/* 12 */
+	"Firebird/sun",		/* 13 */
+	NULL, // "Firebird/OS2",        /* 14 */
+	NULL,					/* 15 */
+	NULL,					/* 16 */
+	NULL,					/* 17 */
+	NULL,					/* 18 */
+	NULL,					/* 19 */
+	NULL,					/* 20 */
+	NULL,					/* 21 */
+	NULL,					/* 22 */
+	NULL,					/* 23 */
+	NULL,					/* 24 */
+	NULL, // "Firebird/apollo",     /* 25 */
+	NULL, // "Firebird/ultrix",		/* 26 */
+	"Firebird/vms",		/* 27 */
+	"Firebird/sun",		/* 28 */
+	NULL, // "Firebird/OS2",        /* 29 */
+	"Firebird/sun4",		/* 30 */
+	NULL, // "Firebird/hpux800",	/* 31 */
+	"Firebird/sun386",		/* 32 */
+	"Firebird:ORACLE/vms",	/* 33 */
+	NULL, // "Firebird/mac/aux",    /* 34 */
+	"Firebird/ibm/aix",	/* 35 */
+	NULL, // "Firebird/mips/ultrix",	/* 36 */
+	NULL, // "Firebird/xenix",      /* 37 */
+	NULL, // "Firebird/AViiON",		/* 38 */
+	NULL, // "Firebird/hp/mpexl",	/* 39 */
+	NULL, // "Firebird/hp/ux300",	/* 40 */
+	NULL, // "Firebird/sgi",		/* 41 */
+	"Firebird/sco/unix",	/* 42 */
+	NULL, // "Firebird/Cray",       /* 43 */
+	NULL, // "Firebird/imp",        /* 44 */
+	NULL, // "Firebird/delta",      /* 45 */
+	NULL, // "Firebird/NeXT",       /* 46 */
+	NULL, // "Firebird/DOS",		/* 47 */
+	NULL, // "Firebird/m88k",       /* 48 */
+	NULL, // "Firebird/UNIXWARE",	/* 49 */
+	"Firebird/x86/Windows NT",	/* 50 */
+	NULL, // "Firebird/epson",      /* 51 */
+	NULL, // "Firebird/DEC/OSF",	/* 52 */
+	"Firebird/Alpha/OpenVMS",	/* 53 */
+	NULL, // "Firebird/NetWare",	/* 54 */
+	"Firebird/Windows",	/* 55 */
+	NULL, // "Firebird/NCR3000",    /* 56 */
+	NULL, // "Firebird/PPC/Windows NT", /* 57 */
+	NULL, // "Firebird/DG_X86",		/* 58 */
+	"Firebird/SCO_SV Intel",	/* 59 *//* 5.5 SCO Port */
+	"Firebird/linux Intel",	/* 60 */
+	"Firebird/FreeBSD/i386",	/* 61 */
+	"Firebird/NetBSD/i386",	/* 62 */
+	"Firebird/Darwin/PowerPC",	/* 63 */
+	"Firebird/SINIX-Z",	/* 64 */
+	"Firebird/linux Sparc",	/* 65 */
+	"Firebird/linux AMD64",	/* 66 */
+	"Firebird/FreeBSD/amd64",	/* 67 */
+	"Firebird/x86-64/Windows NT",   /* 68 */
+	"Firebird/linux PowerPC",	// 69
 	"Firebird/Darwin/Intel",	// 70
-    "Firebird/linux MIPSEL",	// 71
-    "Firebird/linux MIPS",		// 72
+	"Firebird/linux MIPSEL",	// 71
+	"Firebird/linux MIPS",		// 72
 	"Firebird/Darwin/Intel64",	// 73
 	"Firebird/sun/amd64",		// 74
 	"Firebird/linux ARM"		// 75
 };
 
 
-#if (defined SOLARIS ) || (defined __cplusplus) 
+#if (defined SOLARIS ) || (defined __cplusplus)
 extern "C" {
 #endif
 /* Avoid C++ linkage API functions*/
@@ -246,7 +246,7 @@ int API_ROUTINE gds__blob_size(
 
 	if (isc_blob_info(status_vector, b, sizeof(blob_items),
 					   blob_items,
-					   sizeof(buffer), buffer)) 
+					   sizeof(buffer), buffer))
 	{
 		isc_print_status(status_vector);
 		return FALSE;
@@ -633,7 +633,7 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 
 	va_start(ptr, count);
 
-/* calculate length of event parameter block, 
+/* calculate length of event parameter block,
    setting initial length to include version
    and counts for each argument */
 
@@ -697,7 +697,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
 {
 /**************************************
  *
- *	g d s _ $ e v e n t _ b l o c k _ a 
+ *	g d s _ $ e v e n t _ b l o c k _ a
  *
  **************************************
  *
@@ -709,7 +709,7 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
  *
  **************************************/
 
-/* calculate length of event parameter block, 
+/* calculate length of event parameter block,
    setting initial length to include version
    and counts for each argument */
 
@@ -948,9 +948,9 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 	if (!fb_utils::readenv("ISC_USER", username) && !fb_utils::readenv("ISC_PASSWORD", password))
 		return;
 
-/* figure out whether the username or 
+/* figure out whether the username or
    password have already been specified */
-   
+
 	bool user_seen = false, password_seen = false;
 
 	if (*dpb && *dpb_size) {
@@ -980,7 +980,7 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 		}
 	}
 
-	if (username.length() && !user_seen) 
+	if (username.length() && !user_seen)
 	{
 		if (password.length() && !password_seen)
 			isc_expand_dpb_internal(dpb, dpb_size,
@@ -1079,7 +1079,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle,
 							  handle,
 							  sizeof(info),
 							  info,
-							  buf_len, reinterpret_cast<char*>(buf))) 
+							  buf_len, reinterpret_cast<char*>(buf)))
 		{
 			if (buf != buffer)
 				gds__free(buf);
@@ -1275,7 +1275,7 @@ int API_ROUTINE BLOB_close(BSTREAM* bstream)
 		if (l > 0)
 		{
 			if (isc_put_segment(status_vector, &bstream->bstr_blob, l,
-								 bstream->bstr_buffer)) 
+								 bstream->bstr_buffer))
 			{
 				return FALSE;
 			}
@@ -1318,7 +1318,7 @@ int API_ROUTINE blob__display(
 
 int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 							 FB_API_HANDLE database,
-							 FB_API_HANDLE transaction, 
+							 FB_API_HANDLE transaction,
 							 const TEXT* field_name)
 {
 /**************************************
@@ -1329,7 +1329,7 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  *
  * Functional description
  *	Open a blob, dump it to a file, allow the user to read the
- *	window. 
+ *	window.
  *
  **************************************/
 
@@ -1358,9 +1358,9 @@ int API_ROUTINE blob__dump(
 	TEXT temp[129];
 	USHORT l = *name_length;
 	if (l != 0) {
-        if (l >= sizeof(temp))
+		if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
-			
+
 		memcpy(temp, file_name, l);
 	}
 	temp[l] = 0;
@@ -1372,7 +1372,7 @@ int API_ROUTINE blob__dump(
 
 int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
-							   FB_API_HANDLE transaction, 
+							   FB_API_HANDLE transaction,
 							   const SCHAR* file_name)
 {
 /**************************************
@@ -1403,7 +1403,7 @@ int API_ROUTINE BLOB_text_dump(ISC_QUAD* blob_id,
 
 int API_ROUTINE BLOB_dump(ISC_QUAD* blob_id,
 						  FB_API_HANDLE database,
-						  FB_API_HANDLE transaction, 
+						  FB_API_HANDLE transaction,
 						  const SCHAR* file_name)
 {
 /**************************************
@@ -1457,7 +1457,7 @@ int API_ROUTINE blob__edit(
 
 int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 						  FB_API_HANDLE database,
-						  FB_API_HANDLE transaction, 
+						  FB_API_HANDLE transaction,
 						  const SCHAR* field_name)
 {
 /**************************************
@@ -1536,9 +1536,9 @@ int API_ROUTINE blob__load(
 	TEXT temp[129];
 	USHORT l = *name_length;
 	if (l != 0) {
-        if (l >= sizeof(temp))
+		if (l >= sizeof(temp))
 			l = sizeof(temp) - 1;
-			
+
 		memcpy(temp, file_name, l);
 	}
 	temp[l] = 0;
@@ -1550,7 +1550,7 @@ int API_ROUTINE blob__load(
 
 int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 							   FB_API_HANDLE database,
-							   FB_API_HANDLE transaction, 
+							   FB_API_HANDLE transaction,
 							   const TEXT* file_name)
 {
 /**************************************
@@ -1560,7 +1560,7 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
  **************************************
  *
  * Functional description
- *	Load a  blob with the contents of a file.  
+ *	Load a  blob with the contents of a file.
  *      This call does CR/LF translation on NT.
  *      Return TRUE is successful.
  *
@@ -1578,8 +1578,8 @@ int API_ROUTINE BLOB_text_load(ISC_QUAD* blob_id,
 
 
 int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
-						  FB_API_HANDLE database, 
-						  FB_API_HANDLE transaction, 
+						  FB_API_HANDLE database,
+						  FB_API_HANDLE transaction,
 						  const TEXT* file_name)
 {
 /**************************************
@@ -1605,7 +1605,7 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 
 
 BSTREAM* API_ROUTINE Bopen(ISC_QUAD* blob_id,
-						   FB_API_HANDLE database, 
+						   FB_API_HANDLE database,
 						   FB_API_HANDLE transaction,
 						   const SCHAR* mode)
 {
@@ -1735,7 +1735,7 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
  *	stick in the final character, then
  *	compute the length and send off the
  *	segment.  Finally, set up the buffer
- *	block and retun TRUE if all is well. 
+ *	block and retun TRUE if all is well.
  *
  **************************************/
 	if (!bstream->bstr_buffer)
@@ -1755,14 +1755,14 @@ int API_ROUTINE BLOB_put(SCHAR x, BSTREAM* bstream)
 	return TRUE;
 }
 
-#if (defined SOLARIS ) || (defined __cplusplus) 
+#if (defined SOLARIS ) || (defined __cplusplus)
 } //extern "C" {
 #endif
 
 
 static int dump(ISC_QUAD* blob_id,
-				FB_API_HANDLE database, 
-				FB_API_HANDLE transaction, 
+				FB_API_HANDLE database,
+				FB_API_HANDLE transaction,
 				FILE* file)
 {
 /**************************************
@@ -1824,8 +1824,8 @@ static int dump(ISC_QUAD* blob_id,
 
 static int edit(ISC_QUAD* blob_id,
 				FB_API_HANDLE database,
-				FB_API_HANDLE transaction, 
-				SSHORT type, 
+				FB_API_HANDLE transaction,
+				SSHORT type,
 				const SCHAR* field_name)
 {
 /**************************************
@@ -2114,13 +2114,13 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 
 
 static int load(ISC_QUAD* blob_id,
-				FB_API_HANDLE database, 
-				FB_API_HANDLE transaction, 
+				FB_API_HANDLE database,
+				FB_API_HANDLE transaction,
 				FILE* file)
 {
 /**************************************
  *
- *     l o a d  
+ *     l o a d
  *
  **************************************
  *
@@ -2202,3 +2202,4 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 		}
 	}
 }
+
