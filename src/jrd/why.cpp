@@ -2071,30 +2071,10 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 	try 
 	{
 		Attachment* dbb = translate<Attachment>(handle);
+
 		{ // guard scope
 			Firebird::MutexLockGuard guard(dbb->mutex);
 			size_t i;
-
-#if defined(SUPERSERVER) && !defined(EMBEDDED)
-
-			// Drop all DSQL statements to reclaim DSQL memory pools.
-			while ((i = dbb->statements.getCount()))
-			{
-				FB_API_HANDLE temp_handle;
-				Statement* statement = dbb->statements[i - 1];
-				if (!statement->user_handle) {
-					temp_handle = statement->public_handle;
-					statement->user_handle = &temp_handle;
-				}
-
-				ISC_STATUS rc = GDS_DSQL_FREE(status, statement->user_handle, DSQL_drop);
-
-				if (rc)
-				{
-					return status[1];
-				}
-			}
-#endif
 
 			if (CALL(proc, dbb->implementation) (status, &dbb->handle) && 
 			    status[1] != specCode)
@@ -2109,13 +2089,11 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 				delete dbb->requests[i - 1];
 			}
 
-#ifndef SUPERSERVER
 			while ((i = dbb->statements.getCount()))
 			{
 				release_dsql_support(dbb->statements[i - 1]->das);
 				delete dbb->statements[i - 1];
 			}
-#endif
 
 			while ((i = dbb->blobs.getCount()))
 			{
