@@ -45,7 +45,8 @@ const int LOCK_WRITER_OFFSET = 50000;
 
 // Should work pretty fast if atomic operations are native.
 // This is not the case for Win95
-class RWLock {
+class RWLock
+{
 private:
 	AtomicCounter lock; // This is the actual lock
 	           // -50000 - writer is active
@@ -128,12 +129,14 @@ public:
 	}
 	void beginRead()
 	{
-		if (!tryBeginRead()) {
+		if (!tryBeginRead())
+		{
 			{ // scope block
 				MutexLockGuard guard(blockedReadersLock);
 				++blockedReaders;
 			}
-			while (!tryBeginRead()) {
+			while (!tryBeginRead())
+			{
 				if (WaitForSingleObject(readers_semaphore, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
 			}
@@ -148,8 +151,10 @@ public:
 		if (!tryBeginWrite()) {
 			++blockedWriters;
 			while (!tryBeginWrite())
+			{
 				if (WaitForSingleObject(writers_event, INFINITE) != WAIT_OBJECT_0)
 					system_call_failed::raise("WaitForSingleObject");
+			}
 			--blockedWriters;
 		}
 	}
@@ -339,7 +344,8 @@ public:
 namespace Firebird {
 
 // RAII holder of read lock
-class ReadLockGuard {
+class ReadLockGuard
+{
 public:
 	ReadLockGuard(RWLock &alock) : lock(&alock) { lock->beginRead(); }
 	~ReadLockGuard() { release(); }
@@ -360,7 +366,8 @@ private:
 };
 
 // RAII holder of write lock
-class WriteLockGuard {
+class WriteLockGuard
+{
 public:
 	WriteLockGuard(RWLock &alock) : lock(&alock) { lock->beginWrite(); }
 	~WriteLockGuard() { release(); }

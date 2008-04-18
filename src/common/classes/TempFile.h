@@ -27,7 +27,8 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
 
-class TempFile : public Firebird::File {
+class TempFile : public Firebird::File
+{
 public:
 	TempFile(MemoryPool& pool,
 			 const Firebird::PathName& prefix,

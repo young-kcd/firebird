@@ -118,7 +118,8 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
-void ClumpletReader::usage_mistake(const char* what) const {
+void ClumpletReader::usage_mistake(const char* what) const
+{
 #ifdef DEBUG_CLUMPLETS
 	dump();
 #endif
@@ -126,7 +127,8 @@ void ClumpletReader::usage_mistake(const char* what) const {
 		"Internal error when using clumplet API: %s", what);
 }
 
-void ClumpletReader::invalid_structure(const char* what) const {
+void ClumpletReader::invalid_structure(const char* what) const
+{
 #ifdef DEBUG_CLUMPLETS
 	dump();
 #endif
@@ -136,7 +138,7 @@ void ClumpletReader::invalid_structure(const char* what) const {
 
 UCHAR ClumpletReader::getBufferTag() const
 {
-	const UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* const buffer_end = getBufferEnd();
 	const UCHAR* buffer_start = getBuffer();
 	
 	switch (kind) 
@@ -327,7 +329,7 @@ void ClumpletReader::adjustSpbState()
 size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) const
 {
 	const UCHAR* clumplet = getBuffer() + cur_offset;
-	const UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* const buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -398,7 +400,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		break;
 	}
 
-	size_t total = 1 + lengthSize + dataSize;	
+	const size_t total = 1 + lengthSize + dataSize;
 	if (clumplet + total > buffer_end) {
 		invalid_structure("buffer end before end of clumplet - clumplet too long");
 		size_t delta = total - (buffer_end - clumplet);
@@ -461,7 +463,7 @@ bool ClumpletReader::find(UCHAR tag)
 UCHAR ClumpletReader::getClumpTag() const
 {
 	const UCHAR* clumplet = getBuffer() + cur_offset;
-	const UCHAR* buffer_end = getBufferEnd();
+	const UCHAR* const buffer_end = getBufferEnd();
 
 	// Check for EOF
 	if (clumplet >= buffer_end) {
@@ -529,7 +531,7 @@ SINT64 ClumpletReader::getBigInt() const
 string& ClumpletReader::getString(string& str) const
 {
 	const UCHAR* ptr = getBytes();
-	size_t length = getClumpLength();
+	const size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
 	if (str.length() + 1 < length)
@@ -542,7 +544,7 @@ string& ClumpletReader::getString(string& str) const
 PathName& ClumpletReader::getPath(PathName& str) const
 {
 	const UCHAR* ptr = getBytes();
-	size_t length = getClumpLength();
+	const size_t length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
 	if (str.length() + 1 < length)
@@ -555,7 +557,7 @@ PathName& ClumpletReader::getPath(PathName& str) const
 bool ClumpletReader::getBoolean() const
 {
 	const UCHAR* ptr = getBytes();
-	size_t length = getClumpLength();
+	const size_t length = getClumpLength();
 	if (length > 1) {
 		invalid_structure("length of boolean exceeds 1 byte");
 		return false;

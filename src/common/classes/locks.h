@@ -89,14 +89,16 @@ protected:
 	CRITICAL_SECTION spinlock;
 
 public:
-	Mutex() {
+	Mutex()
+	{
 		InitializeCriticalSection(&spinlock);
 	}
 	explicit Mutex(MemoryPool&) {
 		InitializeCriticalSection(&spinlock);
 	}
 
-	~Mutex() {
+	~Mutex()
+	{
 #ifdef DEV_BUILD
 		if (spinlock.OwningThread != 0)
 			DebugBreak();
@@ -104,15 +106,18 @@ public:
 		DeleteCriticalSection(&spinlock);
 	}
 
-	void enter() {
+	void enter()
+	{
 		EnterCriticalSection(&spinlock);
 	}
 
-	bool tryEnter() {
+	bool tryEnter()
+	{
 		return TryEnterCS::tryEnter(&spinlock);
 	}
 
-	void leave() {
+	void leave()
+	{
 #ifdef DEV_BUILD
 		if ((DWORD)spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
@@ -160,23 +165,28 @@ private:
 	mutex_t mlock;
 
 public:
-	Mutex() {
+	Mutex()
+	{
 		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
-	explicit Mutex(MemoryPool&) {
+	explicit Mutex(MemoryPool&)
+	{
 		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
-	~Mutex() {
+	~Mutex()
+	{
 		if (mutex_destroy(&mlock))
 			system_call_failed::raise("mutex_destroy");
 	}
-	void enter() {
+	void enter()
+	{
 		if (mutex_lock(&mlock))
 			system_call_failed::raise("mutex_lock");
 	}
-	void leave() {
+	void leave()
+	{
 		if (mutex_unlock(&mlock))
 			system_call_failed::raise("mutex_unlock");
 	}
@@ -197,7 +207,8 @@ private:
 	static pthread_mutexattr_t attr;
 
 private:
-	void init() {
+	void init()
+	{
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_init", rc);
@@ -206,17 +217,20 @@ private:
 public:
 	Mutex() { init(); }
 	explicit Mutex(MemoryPool&) { init(); }
-	~Mutex() {
+	~Mutex()
+	{
 		int rc = pthread_mutex_destroy(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
-	void enter() {
+	void enter()
+	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
 	}
-	bool tryEnter() {
+	bool tryEnter()
+	{
 		int rc = pthread_mutex_trylock(&mlock);
 		if (rc == EBUSY)
 			return false;
@@ -224,7 +238,8 @@ public:
 			system_call_failed::raise("pthread_mutex_trylock", rc);
 		return true;
 	}
-	void leave() {
+	void leave()
+	{
 		int rc = pthread_mutex_unlock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_unlock", rc);
@@ -240,23 +255,28 @@ class Spinlock
 private:
 	pthread_spinlock_t spinlock;
 public:
-	Spinlock() {
+	Spinlock()
+	{
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
-	explicit Spinlock(MemoryPool&) {
+	explicit Spinlock(MemoryPool&)
+	{
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
-	~Spinlock() {
+	~Spinlock()
+	{
 		if (pthread_spin_destroy(&spinlock))
 			system_call_failed::raise("pthread_spin_destroy");
 	}
-	void enter() {
+	void enter()
+	{
 		if (pthread_spin_lock(&spinlock))
 			system_call_failed::raise("pthread_spin_lock");
 	}
-	void leave() {
+	void leave()
+	{
 		if (pthread_spin_unlock(&spinlock))
 			system_call_failed::raise("pthread_spin_unlock");
 	}
@@ -338,11 +358,13 @@ template <typename T>
 class DefaultRefCounted
 {
 public:
-	static int addRef(T* object) {
+	static int addRef(T* object)
+	{
 		return object->addRef();
 	}
 
-	static int release(T* object) {
+	static int release(T* object)
+	{
 		return object->release();
 	}
 };
@@ -351,11 +373,13 @@ template <typename T>
 class NotRefCounted
 {
 public:
-	static int addRef(T*) {
+	static int addRef(T*)
+	{
 		return 0;
 	}
 
-	static int release(T*) {
+	static int release(T*)
+	{
 		return 0;
 	}
 };

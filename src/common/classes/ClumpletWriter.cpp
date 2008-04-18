@@ -257,7 +257,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	}
 
 	// Insert the data
-	size_t saved_offset = cur_offset;
+	const size_t saved_offset = cur_offset;
 	dynamic_buffer.insert(cur_offset++, tag);
 	switch (lenSize)
 	{

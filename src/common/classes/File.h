@@ -29,7 +29,8 @@ typedef FB_UINT64 offset_t;
 
 namespace Firebird {
 
-class File {
+class File
+{
 public:
 	virtual ~File() {}
 

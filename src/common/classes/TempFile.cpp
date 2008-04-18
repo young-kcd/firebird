@@ -278,8 +278,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!ReadFile(handle, buffer, length, &bytes, NULL) ||
-		bytes != length)
+	if (!ReadFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
 		Firebird::system_call_failed::raise("ReadFile");
 	}
@@ -306,8 +305,7 @@ size_t TempFile::write(offset_t offset, void* buffer, size_t length)
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!WriteFile(handle, buffer, length, &bytes, NULL) ||
-		bytes != length)
+	if (!WriteFile(handle, buffer, length, &bytes, NULL) || bytes != length)
 	{
 		Firebird::system_call_failed::raise("WriteFile");
 	}
