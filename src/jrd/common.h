@@ -429,7 +429,6 @@ typedef unsigned __int64 FB_UINT64;
 #define API_ROUTINE     __stdcall
 #define API_ROUTINE_VARARG      __cdecl
 #define CLIB_ROUTINE    __cdecl
-#define INTERNAL_API_ROUTINE	API_ROUTINE
 
 #define SYNC_WRITE_DEFAULT
 
@@ -509,7 +508,6 @@ typedef unsigned __int64 FB_UINT64;
 #ifndef API_ROUTINE
 #define API_ROUTINE
 #define API_ROUTINE_VARARG
-#define INTERNAL_API_ROUTINE	API_ROUTINE
 #endif
 
 #ifndef CLIB_ROUTINE
