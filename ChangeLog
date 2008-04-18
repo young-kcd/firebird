@@ -1,3 +1,84 @@
+2008-04-18 20:34  dimitr
+
+	* firebird2/src/jrd/common.h (1.168):
+
+	Cleanup.
+
+2008-04-18 18:15  alexpeshkoff
+
+	* firebird2/src/jrd/blb.cpp (1.166):
+
+	Fixed a problem detected by valgrind - uninitialized data in temp
+	file
+
+2008-04-18 16:30  robocop
+
+	* firebird2/src/jrd/evl.cpp (1.260):
+
+	Misc.
+
+2008-04-18 12:52  alexpeshkoff
+
+	* firebird2/src/remote/remote.h (1.76):
+
+	Linger should better be initialized
+
+2008-04-18 12:33  dimitr
+
+	* firebird2/src/jrd/why.cpp (1.196):
+
+	DSQL now belongs to the engine, so its pools will be released
+	automagically upon disconnect.	There's no need in such crappy
+	anti-memory-leak hacks anymore.
+
+2008-04-18 12:03  robocop
+
+	* firebird2/src/common/classes/: ClumpletReader.cpp (1.27),
+	ClumpletWriter.cpp (1.23), File.h (1.6), TempFile.cpp (1.12),
+	TempFile.h (1.7), fb_string.cpp (1.38), fb_string.h (1.13), locks.h
+	(1.47), rwlock.h (1.35):
+
+	Style.
+
+2008-04-18 11:50  robocop
+
+	* firebird2/src/remote/xdr.cpp (1.36):
+
+	Misc.
+
+2008-04-18 11:48  robocop
+
+	* firebird2/src/include/gen/iberror.h (1.86):
+
+	Generated iberor.h has slightly different layout.
+
+2008-04-18 11:44  alexpeshkoff
+
+	* firebird2/src/lock/manager.cpp (1.13):
+
+	cleanup
+
+2008-04-18 08:00  robocop
+
+	* firebird2/src/jrd/utl.cpp (1.115):
+
+	Tring to fix chaotic indentation (spaces v/s tabs).
+
+2008-04-18 03:37  asfernandes
+
+	* firebird2/: builds/posix/prefix.linux_arm (1.3), src/dsql/ddl.cpp
+	(1.231), src/dsql/dsql.cpp (1.243), src/dsql/make.cpp (1.159),
+	src/dsql/make_proto.h (1.31), src/jrd/DatabaseSnapshot.cpp (1.53),
+	src/jrd/common.h (1.167), src/jrd/drq.h (1.24), src/jrd/jrd.cpp
+	(1.441), src/jrd/jrd_proto.h (1.71), src/jrd/nbak.cpp (1.80),
+	src/jrd/nbak.h (1.32), src/jrd/pag.cpp (1.176), src/jrd/svc.cpp
+	(1.220), src/jrd/svc.h (1.58), src/jrd/utl.cpp (1.114),
+	src/jrd/why.cpp (1.195), src/misc/codes.epp (1.25),
+	src/remote/inet.cpp (1.232), src/remote/server.cpp (1.202),
+	src/remote/xdr.cpp (1.35):
+
+	Misc
+
 2008-04-17 19:09  alexpeshkoff
 
 	* firebird2/src/remote/xdr.cpp (1.34):
