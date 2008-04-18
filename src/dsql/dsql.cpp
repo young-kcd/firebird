@@ -1535,14 +1535,14 @@ static USHORT get_plan_info(thread_db* tdbb,
 							dsql_req* request,
 							SSHORT buffer_length, SCHAR** out_buffer)
 {
+	if (!request->req_request)	// DDL
+		return 0;
+
 	SCHAR explain_buffer[BUFFER_SMALL];
 
 	memset(explain_buffer, 0, sizeof(explain_buffer));
 	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
-
-	if (!request->req_request)	// DDL
-		return 0;
 
 	// get the access path info for the underlying request from the engine 
 

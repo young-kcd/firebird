@@ -119,7 +119,7 @@
 #endif /* i386 */
 
 #ifdef ARM
-#define IMPLEMENTATION  isc_info_db_impl_linux_arm
+#define IMPLEMENTATION  isc_info_db_impl_linux_arm	// 75
 #endif /* ARM */
 
 #ifdef sparc

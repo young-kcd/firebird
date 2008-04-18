@@ -1289,8 +1289,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-		Firebird::PathName org_filename(file_name,
-			file_length ? file_length : strlen(file_name));
+		Firebird::PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
 		org_filename.rtrim();
 
 		Firebird::PathName expanded_filename;
@@ -1858,8 +1857,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 /* copy the file name to a temp buffer, since some of the following
    utilities can modify it */
 
-		Firebird::PathName org_filename(file_name,
-			file_length ? file_length : strlen(file_name));
+		Firebird::PathName org_filename(file_name, file_length ? file_length : strlen(file_name));
 		org_filename.rtrim();
 
 		Firebird::PathName expanded_filename;
@@ -4525,8 +4523,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 
 		SUBSYSTEM_USAGE_INCR;
 
-		Firebird::string svcname(service_name,
-			service_length ? service_length : strlen(service_name));
+		Firebird::string svcname(service_name, service_length ? service_length : strlen(service_name));
 		svcname.rtrim();
 
 		ISC_STATUS* ptr = status;

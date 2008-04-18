@@ -974,8 +974,7 @@ void INET_set_clients( int count)
 }
 
 
-static int accept_connection(rem_port* port,
-							 const P_CNCT* cnct)
+static int accept_connection(rem_port* port, const P_CNCT* cnct)
 {
 /**************************************
  *

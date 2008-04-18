@@ -15,9 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:  $(VERSION)  $(PLATFORM)
-#
-# $Id: prefix.linux_arm,v 1.2 2008-04-15 14:14:48 alexpeshkoff Exp $
-#
 #	14 Apr 2008	Alan Barclay	alan AT escribe.co.uk
 
 

@@ -1819,10 +1819,8 @@ dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
     @param local_number
 
  **/
-dsql_nod* MAKE_variable(dsql_fld* field,
-				  const TEXT* name,
-				  const dsql_var_type type,
-				  USHORT msg_number, USHORT item_number, USHORT local_number)
+dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type type,
+				 		USHORT msg_number, USHORT item_number, USHORT local_number)
 {
 	DEV_BLKCHK(field, dsql_type_fld);
 

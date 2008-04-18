@@ -631,7 +631,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	Firebird::PathName file_name =
-		options.dpb_org_filename.length() ?  options.dpb_org_filename : filename;
+		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
 
 	Firebird::PathName expanded_name;
 
@@ -1611,7 +1611,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	}
 
 	Firebird::PathName file_name =
-		options.dpb_org_filename.length() ?  options.dpb_org_filename : filename;
+		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
 
 	Firebird::PathName expanded_name;
 

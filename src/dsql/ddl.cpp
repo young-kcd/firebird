@@ -6242,8 +6242,7 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 }
 
 
-static void put_local_variables(dsql_req* request, dsql_nod* parameters,
-	SSHORT locals)
+static void put_local_variables(dsql_req* request, dsql_nod* parameters, SSHORT locals)
 {
 /**************************************
  *
@@ -6285,8 +6284,7 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters,
 					}
 				}
 
-				dsql_nod* var_node =
-					MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
+				dsql_nod* var_node = MAKE_variable(field, field->fld_name.c_str(), VAR_local, 0, 0, locals);
 
 				*ptr = var_node;
 				dsql_var* variable = (dsql_var*) var_node->nod_arg[e_var_variable];

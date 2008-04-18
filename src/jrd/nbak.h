@@ -180,8 +180,8 @@ public:
 	class SharedDatabaseHolder
 	{
 	public:
-		explicit SharedDatabaseHolder(thread_db* _tdbb, BackupManager* bm)
-			: backupManager(bm), tdbb(_tdbb)
+		explicit SharedDatabaseHolder(thread_db* atdbb, BackupManager* bm)
+			: backupManager(bm), tdbb(atdbb)
 		{
 			backupManager->lock_shared_database(tdbb, true);
 		}
@@ -190,7 +190,9 @@ public:
 			backupManager->unlock_shared_database(tdbb);
 		}
 	private:
+		// copying is prohibited
 		SharedDatabaseHolder(const SharedDatabaseHolder&);
+		SharedDatabaseHolder& operator =(const SharedDatabaseHolder&);
 
 		BackupManager* backupManager;
 		thread_db* tdbb;
@@ -307,9 +309,9 @@ private:
 	class CleanDatabaseHolder
 	{
 	public:
-		explicit CleanDatabaseHolder(thread_db* _tdbb, BackupManager* bm, 
+		explicit CleanDatabaseHolder(thread_db* atdbb, BackupManager* bm, 
 			SSHORT wait, Jrd::WIN* window)
-			: backupManager(bm), tdbb(_tdbb)
+			: backupManager(bm), tdbb(atdbb)
 		{
 			backupManager->lock_clean_database(tdbb, wait, window);
 		}
@@ -318,7 +320,9 @@ private:
 			backupManager->unlock_clean_database(tdbb);
 		}
 	private:
+		// copying is prohibited
 		CleanDatabaseHolder(const CleanDatabaseHolder&);
+		CleanDatabaseHolder& operator =(const CleanDatabaseHolder&);
 
 		BackupManager* backupManager;
 		thread_db* tdbb;

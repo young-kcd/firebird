@@ -983,7 +983,8 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 
 	// database state
 	thread_db* tdbb = JRD_get_thread_data();
-	{
+
+	{	// scope
 		BackupManager::SharedDatabaseHolder sdbHolder(tdbb, database->dbb_backup_manager);
 
 		switch (database->dbb_backup_manager->get_state())

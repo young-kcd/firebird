@@ -510,7 +510,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				{
 					if (port->asyncReceive(&asyncPacket, buffer, dataSize))
 					{
-						port = 0;
+						port = NULL;
 						continue;
 					}
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);

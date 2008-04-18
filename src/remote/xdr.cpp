@@ -902,8 +902,8 @@ SLONG getOperation(const void* data, size_t size)
 		return op_void;
 	}
 
-	SLONG* p = (SLONG*)data;
-	return ntohl(*((SLONG*)data));
+	SLONG* p = (SLONG*) data;
+	return ntohl(*p);
 }
 
 

@@ -151,11 +151,11 @@ static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
 static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
-static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPSEL
-static const int CLASS_LINUX_MIPS = 30;    // LINUX/MIPS
-static const int CLASS_DARWIN_X64 = 31;   // Darwin/x64
-static const int CLASS_SOLARIS_AMD64 = 32;	//Solaris/amd64
-static const int CLASS_LINUX_ARM = 33;    // LINUX/ARM
+static const int CLASS_LINUX_MIPSEL = 29;	// LINUX/MIPSEL
+static const int CLASS_LINUX_MIPS = 30;		// LINUX/MIPS
+static const int CLASS_DARWIN_X64 = 31;		// Darwin/x64
+static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
+static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
 static const int CLASS_MAX = CLASS_LINUX_ARM;

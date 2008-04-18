@@ -533,8 +533,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 #endif // SERVER_CAPABILITIES
 
 
-Service::Service(const TEXT* service_name,
-				 USHORT spb_length, const UCHAR* spb_data)
+Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()), 
 	svc_handle(0), svc_status(svc_status_array), 
 	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
@@ -955,10 +954,9 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					gds__prefix_msg(buffer, "");
 				}
 
-				/* Note: it is safe to use strlen to get a length of "buffer"
-				   because gds_prefix[_lock|_msg] return a zero-terminated
-				   string
-				 */
+				// Note: it is safe to use strlen to get a length of "buffer"
+				// because gds_prefix[_lock|_msg] return a zero-terminated
+				// string.
 				info = INF_put_item(item, strlen(buffer), buffer, info, end);
 				if (!info) 
 				{
@@ -1359,15 +1357,11 @@ void Service::query(USHORT			send_item_length,
 					gds__prefix_msg(PathBuffer, "");
 				}
 
-				/* Note: it is safe to use strlen to get a length of "buffer"
-				   because gds_prefix[_lock|_msg] return a zero-terminated
-				   string
-				 */
-				if (!(info = INF_put_item(item, strlen(PathBuffer),
-										  PathBuffer, info, end)))
-				{
+				// Note: it is safe to use strlen to get a length of "buffer"
+				// because gds_prefix[_lock|_msg] return a zero-terminated
+				// string.
+				if (!(info = INF_put_item(item, strlen(PathBuffer), PathBuffer, info, end)))
 					return;
-				}
 			}
 			/*
 			 * Can not return error for service v.1 => simply ignore request

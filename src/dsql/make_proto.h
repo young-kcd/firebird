@@ -52,8 +52,7 @@ namespace Jrd {
 		VAR_output,
 		VAR_local
 	};
-
-};
+}
 
 
 Jrd::dsql_nod* MAKE_const_slong(SLONG);
