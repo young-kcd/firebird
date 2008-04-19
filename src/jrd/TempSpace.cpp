@@ -77,7 +77,7 @@ size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length
 	return length;
 }
 
-size_t TempSpace::MemoryBlock::write(offset_t offset, void* buffer, size_t length)
+size_t TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -115,7 +115,7 @@ size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
 	return file->read(offset, buffer, length);
 }
 
-size_t TempSpace::FileBlock::write(offset_t offset, void* buffer, size_t length)
+size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -205,8 +205,7 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 		size_t l = length;
 
 		// read data from the block chain
-		for (Block* itr = block; itr && l;
-			itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->read(offset, p, l);
 			p += n;
@@ -225,7 +224,7 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to the temporary space
 //
 
-size_t TempSpace::write(offset_t offset, void* buffer, size_t length)
+size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 {
 	fb_assert(offset <= logicalSize);
 
@@ -238,14 +237,13 @@ size_t TempSpace::write(offset_t offset, void* buffer, size_t length)
 	if (length)
 	{
 		// search for the first needed block
-		Block* block = findBlock(offset);
+		Block* const block = findBlock(offset);
 
-		char* p = static_cast<char*>(buffer);
+		const char* p = static_cast<const char*>(buffer);
 		size_t l = length;
 
 		// write data to as many blocks as necessary
-		for (Block* itr = block; itr && l;
-			itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->write(offset, p, l);
 			p += n;

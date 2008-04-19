@@ -28,7 +28,8 @@
 
 namespace Jrd {
 
-class RecordBuffer {
+class RecordBuffer
+{
 public:
 	RecordBuffer(MemoryPool&, const Format*);
 	~RecordBuffer();

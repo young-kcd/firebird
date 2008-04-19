@@ -288,8 +288,8 @@ bool OPT_expression_equal(thread_db* tdbb, OptimizerBlk* opt,
 
 		return result;
 	}
-	else
-		return false;
+
+	return false;
 }
 
 
@@ -590,20 +590,19 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 
 	if (relation->isVirtual()) {
 		// Just a dumb estimation
 		return (double) 100;
 	}
-	else if (relation->rel_file) {
+
+	if (relation->rel_file) {
 		// Is there really no way to do better?
 		// Don't we know the file-size and record-size?
 		return (double) 10000;
 	}
-	else {
-		return DPM_cardinality(tdbb, relation, format);
-	}
+
+	return DPM_cardinality(tdbb, relation, format);
 }
 
 
@@ -1424,21 +1423,20 @@ InversionCandidate* OptimizerRetrieval::getCost()
 	if (inversion) {
 		return inversion;
 	}
-	else {
-		// No index will be used, thus
-		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-		invCandidate->indexes = 0;
-		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
-		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+
+	// No index will be used, thus
+	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->indexes = 0;
+	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
 /*
-		OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
-		for (; tail < optimizer->opt_conjuncts.end(); tail++) {
-			findDependentFromStreams(tail->opt_conjunct_node,
-									 &invCandidate->dependentFromStreams);
-		}
-*/
-		return invCandidate;
+	OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+	for (; tail < optimizer->opt_conjuncts.end(); tail++) {
+		findDependentFromStreams(tail->opt_conjunct_node,
+								 &invCandidate->dependentFromStreams);
 	}
+*/
+	return invCandidate;
 }
 
 InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
@@ -1462,14 +1460,13 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 	if (inversion) {
 		return inversion;
 	}
-	else {
-		// No index will be used
-		InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
-		invCandidate->indexes = 0;
-		invCandidate->selectivity = MAXIMUM_SELECTIVITY;
-		invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
-		return invCandidate;
-	}
+
+	// No index will be used
+	InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	invCandidate->indexes = 0;
+	invCandidate->selectivity = MAXIMUM_SELECTIVITY;
+	invCandidate->cost = csb->csb_rpt[stream].csb_cardinality;
+	return invCandidate;
 }
 
 bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
@@ -3243,10 +3240,9 @@ void OptimizerInnerJoin::findBestOrder(int position, InnerJoinStreamInfo* stream
 							processList->remove(index);
 							break;
 						}
-						else {
-							found = true;
-							break;
-						}
+
+						found = true;
+						break;
 					}
 				}
 				if (!found) {

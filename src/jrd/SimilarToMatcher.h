@@ -90,7 +90,7 @@ private:
 
 		struct Node
 		{
-			Node(Op aOp, const CharType* aStr = NULL, SLONG aLen = 0)
+			explicit Node(Op aOp, const CharType* aStr = NULL, SLONG aLen = 0)
 				: op(aOp),
 				  str(aStr),
 				  len(aLen),
@@ -662,11 +662,11 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 					start - patternStart, len));
 
 				int classN;
-				UCharBuffer buffer, buffer2;
+				UCharBuffer buffer;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
-					string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
+					const string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
 					charSet->getConvFromUnicode().convert(
 						s.length(), (const UCHAR*) s.c_str(), buffer);
 

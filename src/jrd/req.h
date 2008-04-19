@@ -56,7 +56,8 @@ class thread_db;
 
 /* record parameter block */
 
-struct record_param {
+struct record_param
+{
 	record_param() : 
 		rpb_relation(0),
 		rpb_window(DB_PAGE_SPACE, -1)
@@ -85,7 +86,8 @@ struct record_param {
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
 
-	inline WIN& getWindow(thread_db* tdbb) {
+	inline WIN& getWindow(thread_db* tdbb)
+	{
 		if (rpb_relation) {
 			rpb_window.win_page.setPageSpaceID(
 				rpb_relation->getPages(tdbb)->rel_pg_space_id);
@@ -167,7 +169,8 @@ typedef Firebird::BePlusTree<ULONG, ULONG, MemoryPool> TempBlobIdTree;
 
 /* Affected rows counter class */
 
-class AffectedRows {
+class AffectedRows
+{
 public:
 	AffectedRows();
 

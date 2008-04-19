@@ -63,15 +63,18 @@ class dsql_opn;
 
 // Blobs active in transaction identified by bli_temp_id. Please keep this 
 // structure small as there can be huge amount of them floating in memory.
-struct BlobIndex {
+struct BlobIndex
+{
 	ULONG bli_temp_id;
 	bool bli_materialized;
 	jrd_req* bli_request;
-	union {
+	union
+	{
 		bid bli_blob_id; // ID of materialized blob
 		blb* bli_blob_object; // Blob object
 	};
-    static const ULONG& generate(const void *sender, const BlobIndex& item) {
+    static const ULONG& generate(const void *sender, const BlobIndex& item)
+	{
 		return item.bli_temp_id;
     }
 	// Empty default constructor to make it behave like POD structure
@@ -247,7 +250,7 @@ const int tra_precommitted	= 5;	/* Transaction is precommitted */
 
 class Savepoint : public pool_alloc<type_sav>
 {
-    public:
+public:
 	VerbAction*		sav_verb_actions;	/* verb action list */
 	VerbAction*		sav_verb_free;		/* free verb actions */
 	USHORT			sav_verb_count;		/* Active verb count */
@@ -343,16 +346,18 @@ public:
 
 /* Verb actions */
 
-class UndoItem {
+class UndoItem
+{
 public:
 	SINT64 rec_number;
 	Record* rec_data;
-    static const SINT64& generate(const void *sender, const UndoItem& item) {
+    static const SINT64& generate(const void *sender, const UndoItem& item)
+	{
 		return item.rec_number;
     }
-	UndoItem() {
-	}
-	UndoItem(SINT64 rec_numberL, Record* rec_dataL) {
+	UndoItem() {}
+	UndoItem(SINT64 rec_numberL, Record* rec_dataL)
+	{
 		this->rec_number = rec_numberL;
 		this->rec_data = rec_dataL;
 	}
@@ -362,7 +367,7 @@ typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTre
 
 class VerbAction : public pool_alloc<type_vct>
 {
-    public:
+public:
 	VerbAction* 	vct_next;		/* Next action within verb */
 	jrd_rel*		vct_relation;	/* Relation involved */
 	RecordBitmap*	vct_records;	/* Record involved */

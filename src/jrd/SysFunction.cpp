@@ -778,9 +778,9 @@ static void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* funct
 
 	if (!firstBlob)
 	{
-		int searchedLen = dataTypeUtil->convertLength(searched, result);
-		int findLen = dataTypeUtil->convertLength(find, result);
-		int replacementLen = dataTypeUtil->convertLength(replacement, result);
+		const int searchedLen = dataTypeUtil->convertLength(searched, result);
+		const int findLen = dataTypeUtil->convertLength(find, result);
+		const int replacementLen = dataTypeUtil->convertLength(replacement, result);
 
 		if (findLen == 0)
 			result->dsc_length = dataTypeUtil->fixLength(result, searchedLen) + sizeof(USHORT);
@@ -2474,9 +2474,9 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	// make descriptor for return value
 	if (!firstBlob)
 	{
-		unsigned int searchedLen = canonicals[0].getCount() / canonicalWidth;
-		unsigned int findLen = canonicals[1].getCount() / canonicalWidth;
-		unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
+		const unsigned int searchedLen = canonicals[0].getCount() / canonicalWidth;
+		const unsigned int findLen = canonicals[1].getCount() / canonicalWidth;
+		const unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
 
 		USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
 			MAX(searchedLen, searchedLen +

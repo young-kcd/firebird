@@ -43,7 +43,8 @@ namespace Firebird {
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
 // Be careful while changing this expression. N=2 must always cause merge
-static inline bool NEED_MERGE(size_t current_count, size_t page_count) {
+static inline bool NEED_MERGE(size_t current_count, size_t page_count)
+{
 	return current_count * 4 / 3 <= page_count;
 }
 
@@ -64,10 +65,12 @@ const int MAX_TREE_LEVEL = 30;
 class MallocAllocator
 {
 public:
-	void *allocate(size_t size) {
+	void *allocate(size_t size)
+	{
 		return malloc(size);
 	}
-	void deallocate(void *p) {
+	void deallocate(void *p)
+	{
 		free(p);
 	}
 };
@@ -202,7 +205,7 @@ public:
 	
 	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
-	bool locate(LocType lt, const Key& key) {	return defaultAccessor.locate(lt, key); }
+	bool locate(LocType lt, const Key& key) { return defaultAccessor.locate(lt, key); }
 	
 	bool getFirst() { return defaultAccessor.getFirst(); }
 	
@@ -340,7 +343,8 @@ public:
 		int level;
 		NodeList *parent;
 		NodeList *next, *prev;
-		static const Key& generate(const void *sender, void *item) { 
+		static const Key& generate(const void *sender, void *item)
+		{ 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
 

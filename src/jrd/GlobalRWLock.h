@@ -50,13 +50,16 @@ namespace Jrd {
 
 typedef USHORT locktype_t;
 
-struct ObjectOwnerData {
+struct ObjectOwnerData
+{
 	SLONG owner_handle;
 	ULONG entry_count;
-	static const SLONG& generate(const void* sender, const ObjectOwnerData& value) {
+	static const SLONG& generate(const void* sender, const ObjectOwnerData& value)
+	{
 		return value.owner_handle;
 	}
-	ObjectOwnerData() {
+	ObjectOwnerData()
+	{
 		owner_handle = 0;
 		entry_count = 0;
 	}
@@ -84,7 +87,8 @@ struct ObjectOwnerData {
  * - All contention to be handled via Lock manager to ensure reliable deadlock
  *   detection and to be monitored and debuggable via standard means
  */
-class GlobalRWLock : public Firebird::PermanentStorage {
+class GlobalRWLock : public Firebird::PermanentStorage
+{
 public:
 	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
 					   size_t lockLen, const UCHAR* lockStr,
@@ -101,21 +105,24 @@ public:
 	//
 	// This function returns false if it cannot take the lock
 	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle);
-	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait) {
+	bool lock(thread_db* tdbb, const locklevel_t level, SSHORT wait)
+	{
 		return lock(tdbb, level, wait, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
 	// NOTE: unlock method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
 	void unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle);
-	void unlock(thread_db* tdbb, const locklevel_t level) {
+	void unlock(thread_db* tdbb, const locklevel_t level)
+	{
 		unlock(tdbb, level, LCK_get_owner_handle_by_type(tdbb, defaultLogicalLockOwner));
 	}
 
 	// Change the lock owner. The function doesn't wait.
 	void changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle);
 
-	SLONG getLockData() const {
+	SLONG getLockData() const
+	{
 		return cached_lock->lck_data;
 	}
 	void setLockData(thread_db* tdbb, SLONG lck_data);
@@ -160,7 +167,8 @@ private:
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 
-	class CountersLockHolder : public Database::AstInhibit, public Database::CheckoutLockGuard {
+	class CountersLockHolder : public Database::AstInhibit, public Database::CheckoutLockGuard
+	{
 	public:
 		CountersLockHolder(Database* dbb, Firebird::Mutex& alock) 
 			: Database::AstInhibit(dbb), Database::CheckoutLockGuard(dbb, alock)

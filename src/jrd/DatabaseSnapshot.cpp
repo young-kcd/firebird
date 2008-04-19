@@ -752,7 +752,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 
 			length = MIN(length, MAX_USHORT);
 
-			BLB_put_segment(tdbb, blob, (UCHAR*) source, length);
+			BLB_put_segment(tdbb, blob, (const UCHAR*) source, length);
 			BLB_close(tdbb, blob);
 
 			*(bid*) address = blob_id;
@@ -834,10 +834,6 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 
 	writer->insertBytes(TAG_DBB, (UCHAR*) &dbb->dbb_guid, sizeof(FB_GUID));
 
-	jrd_tra* transaction = NULL;
-	jrd_req* request = NULL;
-	jrd_req* call = NULL;
-
 	// Database information
 
 	putDatabase(dbb, *writer, dbb->generateId());
@@ -852,6 +848,9 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 			putAttachment(attachment, *writer, dbb->generateId());
 			putContextVars(attachment->att_context_vars, *writer,
 						   attachment->att_attachment_id, true);
+
+			jrd_tra* transaction = NULL;
+			const jrd_req* request = NULL;
 
 			// Transaction information
 
@@ -928,8 +927,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	const jrd_file* const file = pageSpace->file;
 	PAG_header(true);
 
-	int temp;
-
 	// database name or alias
 	writer.insertPath(f_mon_db_name, database->dbb_database_name);
 	// page size
@@ -948,6 +945,9 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	writer.insertInt(f_mon_db_nt, database->dbb_next_transaction);
 	// number of page buffers
 	writer.insertInt(f_mon_db_page_bufs, database->dbb_bcb->bcb_count);
+
+	int temp;
+
 	// SQL dialect
 	temp = (database->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
 	writer.insertInt(f_mon_db_dialect, temp);
@@ -1019,7 +1019,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 
 	int temp = mon_state_idle;
 
-	for (jrd_tra* transaction_itr = attachment->att_transactions;
+	for (const jrd_tra* transaction_itr = attachment->att_transactions;
 		 transaction_itr; transaction_itr = transaction_itr->tra_next)
 	{
 		if (transaction_itr->tra_requests)
@@ -1100,8 +1100,10 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	if (transaction->tra_flags & TRA_degree3)
 		temp = iso_mode_consistency;
 	else if (transaction->tra_flags & TRA_read_committed)
+	{
 		temp = (transaction->tra_flags &  TRA_rec_version) ?
 			iso_mode_rc_version : iso_mode_rc_no_version;
+	}
 	else
 		temp = iso_mode_concurrency;
 	writer.insertInt(f_mon_tra_iso_mode, temp);
@@ -1173,7 +1175,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 {
 	fb_assert(request);
 
-	jrd_req* statement = request->req_caller;
+	const jrd_req* statement = request->req_caller;
 	while (statement->req_caller)
 		statement = statement->req_caller;
 	fb_assert(statement);
@@ -1212,7 +1214,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	}
 	// timestamp
 	writer.insertBytes(f_mon_call_timestamp,
-					   (UCHAR*) &request->req_timestamp.value(),
+					   (const UCHAR*) &request->req_timestamp.value(),
 					   sizeof(ISC_TIMESTAMP));
 	// source line/column
 	writer.insertInt(f_mon_call_src_line, request->req_src_line);

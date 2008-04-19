@@ -29,17 +29,21 @@
 
 namespace Jrd {
 
-class DatabaseSnapshot {
-	struct RelationData {
+class DatabaseSnapshot
+{
+	struct RelationData
+	{
 		int rel_id;
 		RecordBuffer* data;
 	};
 
-	class SharedMemory {
+	class SharedMemory
+	{
 		static const size_t VERSION;
 		static const size_t DEFAULT_SIZE;
 
-		struct Header {
+		struct Header
+		{
 			size_t version;
 			size_t used;
 			size_t allocated;
@@ -76,7 +80,8 @@ class DatabaseSnapshot {
 		Header* base;
 	};
 
-	class DumpGuard {
+	class DumpGuard
+	{
 	public:
 		explicit DumpGuard(SharedMemory* ptr)
 			: dump(ptr)

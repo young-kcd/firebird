@@ -286,7 +286,8 @@ public:
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
-	static Database* newDbb(MemoryPool* p) {
+	static Database* newDbb(MemoryPool* p)
+	{
 		return FB_NEW(*p) Database(p);
 	}
 

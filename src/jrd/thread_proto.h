@@ -3,10 +3,13 @@
 
 #include "../common/thd.h"
 
-inline void THREAD_SLEEP(ULONG msecs) {
+inline void THREAD_SLEEP(ULONG msecs)
+{
 	THD_sleep(msecs);
 }
-inline void THREAD_YIELD() {
+
+inline void THREAD_YIELD()
+{
 	THD_yield();
 }
 

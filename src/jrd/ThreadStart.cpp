@@ -135,7 +135,8 @@ private:
 	ThreadArgs& operator=(const ThreadArgs&);
 };
 
-THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg) {
+THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
+{
 	fb_assert(arg);
 	Firebird::ContextPoolHolder mainThreadContext(getDefaultMemoryPool());
 	ThreadArgs localArgs(*static_cast<ThreadArgs*>(arg));

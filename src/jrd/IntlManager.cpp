@@ -139,7 +139,8 @@ const IntlManager::CharSetDefinition IntlManager::defaultCharSets[] =
 	{NULL, 0, 0}
 };
 
-const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] = {
+const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] =
+{
 	{"BINARY", CS_BINARY},
 	{"USASCII", CS_ASCII},
 	{"ASCII7", CS_ASCII},
@@ -223,7 +224,8 @@ const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] =
 	{NULL, 0}	
 };
 
-const IntlManager::CollationDefinition IntlManager::defaultCollations[] = {
+const IntlManager::CollationDefinition IntlManager::defaultCollations[] =
+{
 	{CS_NONE, 0, "NONE", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
 	{CS_BINARY, 0, "OCTETS", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
 	{CS_ASCII, 0, "ASCII", NULL, TEXTTYPE_ATTR_PAD_SPACE, NULL},
@@ -415,15 +417,15 @@ bool IntlManager::initialize()
 			if (s.hasData())
 				builtinConfig = s;
 
-			for (Element* el = configFile.objects->children; el; el = el->sibling)
+			for (const Element* el = configFile.objects->children; el; el = el->sibling)
 			{
 				if (el->name == "charset")
 				{
-					string charSetName = el->getAttributeName(0);
+					const string charSetName = el->getAttributeName(0);
 					PathName filename;
 					string configInfo;
 
-					Element* module = el->findChild("intl_module");
+					const Element* module = el->findChild("intl_module");
 					if (module)
 					{
 						JString moduleName(module->getAttributeName(0));
@@ -474,7 +476,7 @@ bool IntlManager::initialize()
 						}
 					}
 
-					for (Element* el2 = el->children; el2; el2 = el2->sibling)
+					for (const Element* el2 = el->children; el2; el2 = el2->sibling)
 					{
 						if (el2->name == "collation")
 						{

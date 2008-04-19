@@ -299,7 +299,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to file
 //
 
-size_t TempFile::write(offset_t offset, void* buffer, size_t length)
+size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
