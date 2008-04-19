@@ -210,10 +210,11 @@ void BLB_close(thread_db* tdbb, class blb* blob)
 	{
 		Database* dbb = tdbb->getDatabase();
 
-		blob->blb_temp_size = BLP_SIZE + blob->blb_clump_size - blob->blb_space_remaining;
+		blob->blb_temp_size = blob->blb_clump_size - blob->blb_space_remaining;
 
 		if (blob->blb_temp_size > 0)
 		{
+			blob->blb_temp_size += BLP_SIZE;
 			jrd_tra* transaction = blob->blb_transaction;
 			TempSpace* tempSpace = transaction->getTempSpace();
 
@@ -328,6 +329,8 @@ blb* BLB_create2(thread_db* tdbb,
 		}
 	}
 
+	blob->blb_space_remaining = blob->blb_clump_size;
+
 	if (filter_required) {
 		BLF_create_blob(tdbb,
 						transaction,
@@ -345,7 +348,6 @@ blb* BLB_create2(thread_db* tdbb,
 		return blob;
 	}
 
-	blob->blb_space_remaining = blob->blb_clump_size;
 	blob->blb_flags |= BLB_temporary;
 
 /* Set up for a "small" blob -- a blob that fits on an ordinary blob page */
