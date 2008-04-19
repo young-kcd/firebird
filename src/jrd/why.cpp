@@ -676,6 +676,7 @@ namespace
 		  requests(*getDefaultMemoryPool()),
 		  blobs(*getDefaultMemoryPool()),
 		  statements(*getDefaultMemoryPool()),
+		  enterCount(0),
 		  handle(h),
 		  db_path(*getDefaultMemoryPool())
 	{
