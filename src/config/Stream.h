@@ -53,7 +53,7 @@ struct Segment
 class Stream  
 {
 public:
-	int compare (Stream *stream);
+	int compare (const Stream *stream) const;
 	void truncate (int length);
 	void format (const char *pattern, ...);
 	void			putSegment (int length, const unsigned short *chars);
@@ -63,22 +63,23 @@ public:
 	void			putCharacter (char c);
 
 	virtual void	setSegment (Segment *segment, int length, void *address);
-	virtual int		getSegment (int offset, int length, void* address);
-	virtual int		getSegment (int offset, int len, void *ptr, char delimiter);
+	virtual int		getSegment (int offset, int length, void* address) const;
+	virtual int		getSegment (int offset, int len, void *ptr, char delimiter) const;
 	void*			getSegment (int offset);
-	int				getSegmentLength(int offset);
+	const void*		getSegment (int offset) const;
+	int				getSegmentLength(int offset) const;
 
 	JString			getJString();
 	virtual char*	getString();
 	void			clear();
-	virtual int		getLength();
+	virtual int		getLength() const;
 	virtual char*	alloc (int length);
 
 	Segment*		allocSegment (int tail);
 	void			setMinSegment (int length);
 
 
-	Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
+	explicit Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
 	virtual ~Stream();
 
 	int		totalLength;

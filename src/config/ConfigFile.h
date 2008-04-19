@@ -44,7 +44,7 @@ class ConfObject;
 class ConfigFile : public Lex, public RefObject
 {
 public:
-	ConfigFile(int configFlags);
+	explicit ConfigFile(int configFlags);
 
 //protected:
 	virtual ~ConfigFile();

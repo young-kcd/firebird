@@ -140,10 +140,10 @@ void Element::addAttribute(Element *child)
 	*ptr = child;
 }
 
-void Element::print(int level)
+void Element::print(int level) const
 {
 	printf ("%*s%s", level * 3, "", (const char*) name);
-	Element *element;
+	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
 		{
@@ -167,11 +167,33 @@ Element* Element::findChild(const char *childName)
 	return NULL;
 }
 
+const Element* Element::findChild(const char *childName) const
+{
+	for (const Element *child = children; child; child = child->sibling)
+	{
+		if (child->name == childName)
+			return child;
+	}
+
+	return NULL;
+}
+
 Element* Element::findAttribute(const char *childName)
 {
 	for (Element *child = attributes; child; child = child->sibling)
 		if (child->name == childName)
 			return child;
+
+	return NULL;
+}
+
+const Element* Element::findAttribute(const char *childName) const
+{
+	for (const Element *child = attributes; child; child = child->sibling)
+	{
+		if (child->name == childName)
+			return child;
+	}
 
 	return NULL;
 }
@@ -200,13 +222,13 @@ const Element* Element::findAttribute(int seq) const
 	return NULL;
 }
 
-void Element::genXML(int level, Stream *stream)
+void Element::genXML(int level, Stream *stream) const
 {
 	indent (level, stream);
 	stream->putCharacter ('<');
 	stream->putSegment (name);
 
-	for (Element *attribute = attributes; attribute; attribute = attribute->sibling)
+	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
 		{
 		stream->putCharacter (' ');
 		stream->putSegment (attribute->name);
@@ -243,7 +265,7 @@ void Element::genXML(int level, Stream *stream)
 		
 	++level;
 
-	for (Element *child = children; child; child = child->sibling)
+	for (const Element *child = children; child; child = child->sibling)
 		child->genXML (level, stream);
 
 	if (innerText.IsEmpty())
@@ -254,7 +276,7 @@ void Element::genXML(int level, Stream *stream)
 	stream->putSegment (">\n");
 }
 
-void Element::indent(int level, Stream *stream)
+void Element::indent(int level, Stream *stream) const
 {
 	int count = level * 3;
 
@@ -319,7 +341,7 @@ void Element::setSource(int line, InputStream *stream)
 	inputStream->addRef();
 }
 
-void Element::gen(int level, Stream *stream)
+void Element::gen(int level, Stream *stream) const
 {
 	for (int n = 0; n < level; ++n)
 		stream->putSegment ("   ");
@@ -328,7 +350,7 @@ void Element::gen(int level, Stream *stream)
 		stream->putCharacter ('<');
 
 	stream->putSegment (name);
-	Element *element;
+	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
 		{
@@ -390,7 +412,7 @@ int Element::analyseText(const char* text)
 	
 	for (const char *p = text; *p; p++)
 		{
-		int n = charTable[(UCHAR) *p];
+		const int n = charTable[(UCHAR) *p];
 		
 		if (n)
 			{
@@ -404,7 +426,7 @@ int Element::analyseText(const char* text)
 	return count;
 }
 
-void Element::putQuotedText(const char* text, Stream* stream)
+void Element::putQuotedText(const char* text, Stream* stream) const
 {
 	const char *start = text;
 	const char *p;
@@ -439,7 +461,7 @@ int Element::analyzeData(int length, const UCHAR* bytes)
 	
 	for (const UCHAR *p = bytes; *p; p++)
 		{
-		int n = charTable[*p];
+		const int n = charTable[*p];
 		
 		if (n)
 			{

@@ -87,7 +87,7 @@ void Stream::putSegment(int length, const char *ptr, bool copy)
 	if (length == 0)
 		return;
 
-	const char *address = (char*) ptr;
+	const char *address = ptr;
 	totalLength += length;
 
 	if (!segments)
@@ -134,24 +134,26 @@ void Stream::putSegment(int length, const char *ptr, bool copy)
 }
 
 
-int Stream::getSegment(int offset, int len, void * ptr)
+int Stream::getSegment(int offset, int len, void * ptr) const
 {
 	int n = 0;
 	int length = len;
 	char *address = (char*) ptr;
 
-	for (Segment *segment = segments; segment; n += segment->length, segment = segment->next)
+	for (const Segment *segment = segments; segment; n += segment->length, segment = segment->next)
+	{
 		if (n + segment->length >= offset)
-			{
-			int off = offset - n;
-			int l = MIN (length, segment->length - off);
+		{
+			const int off = offset - n;
+			const int l = MIN (length, segment->length - off);
 			memcpy (address, segment->address + off, l);
 			address += l;
 			length -= l;
 			offset += l;
 			if (!length)
 				break;
-			}
+		}
+	}
 
 	return len - length;
 }
@@ -205,28 +207,30 @@ Segment* Stream::allocSegment(int tail)
 	return segment;
 }
 
-int Stream::getSegment(int offset, int len, void * ptr, char delimiter)
+int Stream::getSegment(int offset, int len, void * ptr, char delimiter) const
 {
 	int n = 0;
 	int length = len;
 	char *address = (char*) ptr;
 
-	for (Segment *segment = segments; segment; n += segment->length, segment = segment->next)
+	for (const Segment *segment = segments; segment; n += segment->length, segment = segment->next)
+	{
 		if (n + segment->length >= offset)
-			{
-			int off = offset - n;
-			int l = MIN (length, segment->length - off);
-			char *p = segment->address + off;
-			for (char *end = p + l; p < end;)
+		{
+			const int off = offset - n;
+			const int l = MIN (length, segment->length - off);
+			const char *p = segment->address + off;
+			for (const char *end = p + l; p < end;)
 				{
-				char c = *address++ = *p++;
+				const char c = *address++ = *p++;
 				--length;
 				if (c == delimiter)
 					return len - length;
 				}
 			if (!length)
 				break;
-			}
+		}
+	}
 
 	return len - length;
 }
@@ -239,7 +243,7 @@ void Stream::putSegment(const char * string)
 
 char* Stream::getString()
 {
-	char *string = new char [totalLength + 1];
+	char* const string = new char [totalLength + 1];
 	getSegment (0, totalLength, string);
 	string [totalLength] = 0;
 
@@ -247,14 +251,14 @@ char* Stream::getString()
 }
 
 #ifdef ENGINE
-void Stream::compress(int length, void * address)
+void Stream::compress(int length, const void * address)
 {
 	//printShorts ("Original data", (length + 1) / 2, (short*) address);
 	Segment *segment = allocSegment (length + 5);
 	short *q = (short*) segment->address;
-	short *p = (short*) address;
-	short *end = p + (length + 1) / 2;
-	short *yellow = end - 2;
+	const short *p = (short*) address;
+	const short const* end = p + (length + 1) / 2;
+	const short* const yellow = end - 2;
 	*q++ = length;
 
 	while (p < end)
@@ -270,12 +274,12 @@ void Stream::compress(int length, void * address)
 			--q;
 		if (p >= end)
 			break;
-		start = p++;
-		while (p < end && *p == *start)
+		const short* start2 = p++;
+		while (p < end && *p == *start2)
 			++p;
-		n = p - start;
+		n = p - start2;
 		*q++ = n;
-		*q++ = *start;
+		*q++ = *start2;
 		}
 
 	totalLength = segment->length = (char*) q - segment->address;
@@ -443,17 +447,17 @@ void Stream::putSegment(int length, const unsigned short *chars)
 
 }
 
-int Stream::getLength()
+int Stream::getLength() const
 {
 	return totalLength;
 }
 
 
-int Stream::getSegmentLength(int offset)
+int Stream::getSegmentLength(int offset) const
 {
 	int n = 0;
 
-	for (Segment *segment = segments; segment; segment = segment->next)
+	for (const Segment *segment = segments; segment; segment = segment->next)
 		{
 		if (offset >= n && offset < n + segment->length)
 			return n + segment->length - offset;
@@ -468,6 +472,20 @@ void* Stream::getSegment(int offset)
 	int n = 0;
 
 	for (Segment *segment = segments; segment; segment = segment->next)
+		{
+		if (offset >= n && offset < n + segment->length)
+			return segment->address + offset - n;
+		n += segment->length;
+		}
+
+	return NULL;
+}
+
+const void* Stream::getSegment(int offset) const
+{
+	int n = 0;
+
+	for (const Segment *segment = segments; segment; segment = segment->next)
 		{
 		if (offset >= n && offset < n + segment->length)
 			return segment->address + offset - n;
@@ -492,7 +510,7 @@ void Stream::putSegment(Stream * stream)
 	if (current)
 		for (int len = currentLength - current->length; len && seg.available;)
 			{
-			int l = MIN (len, seg.available);
+			const int l = MIN (len, seg.available);
 			putSegment (l, seg.data, true);
 			seg.advance (l);
 			len -= l;
@@ -570,20 +588,22 @@ void Stream::truncate(int length)
 
 }
 
-int Stream::compare(Stream *stream)
+int Stream::compare(const Stream *stream) const
 {
 	for (int offset = 0;;)
 		{
 		int length1 = getSegmentLength(offset);
 		int length2 = stream->getSegmentLength(offset);
 		if (length1 == 0)
+		{
 			if (length2)
 				return -1;
-			else
-				return 0;
+
+			return 0;
+		}
 		if (length2 == 0)
 			return 1;				
-		int length = MIN (length1, length2);
+		const int length = MIN (length1, length2);
 		const char *p1 = (const char*) getSegment (offset);
 		const char *p2 = (const char*) stream->getSegment (offset);
 		for (const char *end = p1 + length; p1 < end;)

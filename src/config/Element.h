@@ -48,7 +48,7 @@ public:
 	Element* findChild (const char *name, const char *attribute, const char *value);
 	Element* addAttribute (JString name, int value);
 	void addAttribute (JString name);
-	void gen (int level, Stream *stream);
+	void gen (int level, Stream *stream) const;
 	void setSource (int line, InputStream *stream);
 	void init(JString elementName);
 	const char* getAttributeValue (const char *name, const char *defaultValue);
@@ -57,17 +57,19 @@ public:
 	Element* findChildIgnoreCase (const char *name);
 	Element* addChild (JString name);
 	Element* addAttribute (JString name, JString value);
-	void indent (int level, Stream *stream);
-	void genXML (int level, Stream *stream);
+	void indent (int level, Stream *stream) const;
+	void genXML (int level, Stream *stream) const;
 	Element* findAttribute (const char *name);
+	const Element* findAttribute (const char *name) const;
 	Element* findAttribute (int seq);
 	const Element* findAttribute (int seq) const;
 	Element* findChild (const char *name);
-	void print (int level);
+	const Element* findChild (const char *name) const;
+	void print (int level) const;
 	void addAttribute (Element *child);
 	void addChild (Element *child);
 	Element (JString elementName, JString elementValue);
-	Element(JString elementName);
+	explicit Element(JString elementName);
 	virtual ~Element();
 
 	JString		name;
@@ -82,7 +84,7 @@ public:
 	int			numberLines;
 	InputStream	*inputStream;
 	static int analyseText(const char* text);
-	void putQuotedText(const char* text, Stream* stream);
+	void putQuotedText(const char* text, Stream* stream) const;
 	static int analyzeData(int length, const UCHAR* data);
 };
 
