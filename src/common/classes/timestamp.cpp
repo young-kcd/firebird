@@ -270,12 +270,14 @@ void TimeStamp::round_time(ISC_TIME &ntime, int precision)
 }
 
 // Encode timestamp from UNIX datetime structure
-void TimeStamp::encode(const struct tm* times, int fractions) {
+void TimeStamp::encode(const struct tm* times, int fractions)
+{
 	mValue = encode_timestamp(times, fractions);
 }
 
 // Decode timestamp into UNIX datetime structure
-void TimeStamp::decode(struct tm* times, int* fractions) const {
+void TimeStamp::decode(struct tm* times, int* fractions) const
+{
 	decode_timestamp(mValue, times, fractions);
 }
 

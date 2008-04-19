@@ -17,7 +17,8 @@ const size_t ENGINE_FAILURE_SPACE = 4096;
 
 typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
-class InterlockedStringsBuffer : public CircularBuffer {
+class InterlockedStringsBuffer : public CircularBuffer
+{
 public:
 	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
 		: CircularBuffer() { }

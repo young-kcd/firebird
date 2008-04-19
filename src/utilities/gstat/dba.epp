@@ -215,14 +215,17 @@ public:
 	ISC_STATUS *dba_status;
 	ISC_STATUS_ARRAY dba_status_vector;
 
-	static inline tdba* getSpecific() {
+	static inline tdba* getSpecific()
+	{
 		return (tdba*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(tdba* &tddba, tdba* thd_context) {
+	static inline void putSpecific(tdba* &tddba, tdba* thd_context)
+	{
 		tddba = thd_context;
 		tddba->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific() {
+	static inline void restoreSpecific()
+	{
 		ThreadData::restoreSpecific();
 	}
 };

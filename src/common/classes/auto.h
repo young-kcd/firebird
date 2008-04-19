@@ -54,7 +54,8 @@ public:
 };
 	
 template <typename Where, typename Clear = SimpleDelete<Where> >
-class AutoPtr {
+class AutoPtr
+{
 private:
 	Where* ptr;
 public:
@@ -62,35 +63,42 @@ public:
 		: ptr(v)
 	{}
 
-	~AutoPtr() {
+	~AutoPtr()
+	{
 		Clear::clear(ptr);
 	}
 
-	AutoPtr<Where, Clear>& operator= (Where* v) {
+	AutoPtr<Where, Clear>& operator= (Where* v)
+	{
 		Clear::clear(ptr);
 		ptr = v;
 		return *this;
 	}
 
-	operator Where*() {
+	operator Where*()
+	{
 		return ptr;
 	}
 
-	bool operator !() const {
+	bool operator !() const
+	{
 		return !ptr;
 	}
 
-	Where* operator->() {
+	Where* operator->()
+	{
 		return ptr;
 	}
 
-	Where* release() {
+	Where* release()
+	{
 		Where* tmp = ptr;
 		ptr = NULL;
 		return tmp;
 	}
 
-	void reset(Where* v = NULL) {
+	void reset(Where* v = NULL)
+	{
 		if (v != ptr) {
 			Clear::clear(ptr);
 			ptr = v;

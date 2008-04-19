@@ -182,7 +182,8 @@ inline size_t get_map_page_size()
 #ifdef USE_VALGRIND
 // Circular FIFO buffer of read/write protected extents pending free operation
 // Race protected via cache_mutex.
-struct DelayedExtent {
+struct DelayedExtent
+{
 	void *memory; // Extent pointer
 	size_t size;  // Size of extent
 	int handle;   // Valgrind handle of protected extent block
@@ -508,7 +509,8 @@ void* MemoryPool::external_alloc(size_t &size)
 # endif
 }
 	
-void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
+void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
+{
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
 	if (size == EXTENT_SIZE) {
 		MutexLockGuard guard(*cache_mutex);
@@ -539,7 +541,8 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying) {
 
 #endif
 
-void* MemoryPool::tree_alloc(size_t size) {
+void* MemoryPool::tree_alloc(size_t size)
+{
 	if (size == sizeof(FreeBlocksTree::ItemList))
 		// This condition is to handle case when nodelist and itemlist have equal size
 		if (sizeof(FreeBlocksTree::ItemList) != sizeof(FreeBlocksTree::NodeList) || 
@@ -564,7 +567,8 @@ void* MemoryPool::tree_alloc(size_t size) {
 	return NULL;
 }
 
-void MemoryPool::tree_free(void* block) {
+void MemoryPool::tree_free(void* block)
+{
 	// This method doesn't merge nearby pages
 	((PendingFreeBlock*)block)->next = pendingFree;
 	ptrToBlock(block)->mbk_flags &= ~MBK_USED;
@@ -586,12 +590,15 @@ void* MemoryPool::allocate_nothrow(size_t size
 	size = MEM_ALIGN(size);
 #endif
 	// Blocks with internal length of zero make allocator unhappy
-	if (!size) size = MEM_ALIGN(1);
+	if (!size)
+		size = MEM_ALIGN(1);
 
-	if (parent_redirect) {
+	if (parent_redirect)
+	{
 		// We do not synchronize redirect_amount here. In the worst case we redirect slightly 
 		// more allocations to parent than we wanted. This shouldn't cause problems
-		if (redirect_amount + size < REDIRECT_THRESHOLD) {
+		if (redirect_amount + size < REDIRECT_THRESHOLD)
+		{
 			parent->lock.enter();
 			// Allocate block from parent
 			void* result = parent->internal_alloc(size + MEM_ALIGN(sizeof(MemoryRedirectList)), 0
@@ -626,64 +633,64 @@ void* MemoryPool::allocate_nothrow(size_t size
 #endif
 			return result;
 		}
-		else {
-			lock.enter();
-			if (parent_redirect) { // It may have changed while we were taking the lock
-				parent_redirect = false;
-				// Do some hard manual work to initialize first extent
-				
-				// This is the exact initial layout of memory pool in the first extent //
-				// MemoryExtent
-				// MemoryBlock
-				// FreeBlocksTree::ItemList
-				// MemoryBlock
-				// free space
-				//
-				// ******************************************************************* //
-				size_t ext_size = EXTENT_SIZE;
-				MemoryExtent *extent = (MemoryExtent*)external_alloc(ext_size);
-				fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 
-				if (!extent) {
-					lock.leave();
-					return NULL;
-				}
-				extent->mxt_next = NULL;
-				extent->mxt_prev = NULL;
-				extents = extent;
-				increment_mapping(EXTENT_SIZE);
+		lock.enter();
+		if (parent_redirect)
+		{ // It may have changed while we were taking the lock
+			parent_redirect = false;
+			// Do some hard manual work to initialize first extent
+			
+			// This is the exact initial layout of memory pool in the first extent //
+			// MemoryExtent
+			// MemoryBlock
+			// FreeBlocksTree::ItemList
+			// MemoryBlock
+			// free space
+			//
+			// ******************************************************************* //
+			size_t ext_size = EXTENT_SIZE;
+			MemoryExtent *extent = (MemoryExtent*)external_alloc(ext_size);
+			fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 
-				MemoryBlock* hdr = (MemoryBlock*) ((char*)extent +
-					MEM_ALIGN(sizeof(MemoryExtent)));
-				hdr->mbk_pool = this;
-				hdr->mbk_flags = MBK_USED;
-				hdr->mbk_type = TYPE_LEAFPAGE;
-				hdr->mbk_small.mbk_length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
-				hdr->mbk_small.mbk_prev_length = 0;
-				spareLeafs.add((char*)hdr + MEM_ALIGN(sizeof(MemoryBlock)));
-
-				MemoryBlock* blk = (MemoryBlock *)((char*)extent +
-					MEM_ALIGN(sizeof(MemoryExtent)) +
-					MEM_ALIGN(sizeof(MemoryBlock)) +
-					MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
-				int blockLength = EXTENT_SIZE -
-					MEM_ALIGN(sizeof(MemoryExtent)) -
-					MEM_ALIGN(sizeof(MemoryBlock)) -
-					MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
-					MEM_ALIGN(sizeof(MemoryBlock));
-				blk->mbk_flags = MBK_LAST;
-				blk->mbk_type = 0;
-				blk->mbk_small.mbk_length = blockLength;
-				blk->mbk_small.mbk_prev_length = hdr->mbk_small.mbk_length;
-				blk->mbk_prev_fragment = NULL;
-				FreeMemoryBlock *freeBlock = blockToPtr<FreeMemoryBlock*>(blk);
-				freeBlock->fbk_next_fragment = NULL;
-				BlockInfo temp = {blockLength, freeBlock};
-				freeBlocks.add(temp);
-				updateSpare();
+			if (!extent) {
+				lock.leave();
+				return NULL;
 			}
-			lock.leave();
+			extent->mxt_next = NULL;
+			extent->mxt_prev = NULL;
+			extents = extent;
+			increment_mapping(EXTENT_SIZE);
+
+			MemoryBlock* hdr = (MemoryBlock*) ((char*)extent +
+				MEM_ALIGN(sizeof(MemoryExtent)));
+			hdr->mbk_pool = this;
+			hdr->mbk_flags = MBK_USED;
+			hdr->mbk_type = TYPE_LEAFPAGE;
+			hdr->mbk_small.mbk_length = MEM_ALIGN(sizeof(FreeBlocksTree::ItemList));
+			hdr->mbk_small.mbk_prev_length = 0;
+			spareLeafs.add((char*)hdr + MEM_ALIGN(sizeof(MemoryBlock)));
+
+			MemoryBlock* blk = (MemoryBlock *)((char*)extent +
+				MEM_ALIGN(sizeof(MemoryExtent)) +
+				MEM_ALIGN(sizeof(MemoryBlock)) +
+				MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)));
+			int blockLength = EXTENT_SIZE -
+				MEM_ALIGN(sizeof(MemoryExtent)) -
+				MEM_ALIGN(sizeof(MemoryBlock)) -
+				MEM_ALIGN(sizeof(FreeBlocksTree::ItemList)) -
+				MEM_ALIGN(sizeof(MemoryBlock));
+			blk->mbk_flags = MBK_LAST;
+			blk->mbk_type = 0;
+			blk->mbk_small.mbk_length = blockLength;
+			blk->mbk_small.mbk_prev_length = hdr->mbk_small.mbk_length;
+			blk->mbk_prev_fragment = NULL;
+			FreeMemoryBlock *freeBlock = blockToPtr<FreeMemoryBlock*>(blk);
+			freeBlock->fbk_next_fragment = NULL;
+			BlockInfo temp = {blockLength, freeBlock};
+			freeBlocks.add(temp);
+			updateSpare();
 		}
+		lock.leave();
 	}
 
 	lock.enter();
@@ -762,7 +769,8 @@ void* MemoryPool::allocate(size_t size
 	return result;
 }
 
-bool MemoryPool::verify_pool(bool fast_checks_only) {
+bool MemoryPool::verify_pool(bool fast_checks_only)
+{
 	lock.enter();
 	mem_assert(!pendingFree || needSpare); // needSpare flag should be set if we are in 
 										// a critically low memory condition
@@ -837,10 +845,12 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 			mem_assert(blk->mbk_small.mbk_prev_length == prev_length); // Prev is correct ?
 			bool foundPending = false;
 			for (PendingFreeBlock *tmp = pendingFree; tmp; tmp = tmp->next)
+			{
 				if (tmp == (PendingFreeBlock *)((char*)blk + MEM_ALIGN(sizeof(MemoryBlock)))) {
 					mem_assert(!foundPending); // Block may be in pending list only one time
 					foundPending = true;
 				}
+			}
 			bool foundTree = false;
 			if (freeBlocks.locate(blk->mbk_small.mbk_length)) {
 				// Check previous fragment pointer if block is marked as unused
@@ -874,10 +884,12 @@ bool MemoryPool::verify_pool(bool fast_checks_only) {
 				} 
 				else {
 					for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
+					{
 						if (ptrToBlock(freeBlk) == blk) {
 							mem_assert(!foundTree); // Block may be present in free blocks tree only once
 							foundTree = true;
 						}
+					}
 				}
 			}
 			mem_assert(!(foundTree && foundPending)); // Block shouldn't be present both in
@@ -1348,7 +1360,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		PendingFreeBlock *itr = pendingFree, *prev = NULL;
 		while (itr) {
 			MemoryBlock *temp = ptrToBlock(itr);
-			if (temp->mbk_small.mbk_length >= size) {
+			if (temp->mbk_small.mbk_length >= size)
+			{
 				if (temp->mbk_small.mbk_length - size < MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
 				{
 					// Block is small enough to be returned AS IS
@@ -1365,30 +1378,30 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					else
 						pendingFree = itr->next;						
 					PATTERN_FILL(itr, size, ALLOC_PATTERN);
+
 					return itr;
 				}
-				else {
-					// Cut a piece at the end of block
-					// We don't need to modify tree of free blocks or a list of
-					// pending free blocks in this case
-					temp->mbk_small.mbk_length -= MEM_ALIGN(sizeof(MemoryBlock)) + size;
-					blk = next_block(temp);
-					blk->mbk_pool = this;
-					blk->mbk_flags = MBK_USED | (temp->mbk_flags & MBK_LAST);
+
+				// Cut a piece at the end of block
+				// We don't need to modify tree of free blocks or a list of
+				// pending free blocks in this case
+				temp->mbk_small.mbk_length -= MEM_ALIGN(sizeof(MemoryBlock)) + size;
+				blk = next_block(temp);
+				blk->mbk_pool = this;
+				blk->mbk_flags = MBK_USED | (temp->mbk_flags & MBK_LAST);
 #ifdef DEBUG_GDS_ALLOC
-					blk->mbk_file = file;
-					blk->mbk_line = line;
+				blk->mbk_file = file;
+				blk->mbk_line = line;
 #endif
-					temp->mbk_flags &= ~MBK_LAST;
-					blk->mbk_type = type;
-					blk->mbk_small.mbk_length = size;
-					blk->mbk_small.mbk_prev_length = temp->mbk_small.mbk_length;
-					if (!(blk->mbk_flags & MBK_LAST))
-						next_block(blk)->mbk_small.mbk_prev_length = blk->mbk_small.mbk_length;
-					void *result = blockToPtr<void*>(blk);
-					PATTERN_FILL(result, size, ALLOC_PATTERN);
-					return result;
-				}
+				temp->mbk_flags &= ~MBK_LAST;
+				blk->mbk_type = type;
+				blk->mbk_small.mbk_length = size;
+				blk->mbk_small.mbk_prev_length = temp->mbk_small.mbk_length;
+				if (!(blk->mbk_flags & MBK_LAST))
+					next_block(blk)->mbk_small.mbk_prev_length = blk->mbk_small.mbk_length;
+				void *result = blockToPtr<void*>(blk);
+				PATTERN_FILL(result, size, ALLOC_PATTERN);
+				return result;
 			}
 			prev = itr;
 			itr = itr->next;
@@ -1760,7 +1773,8 @@ void MemoryPool::deallocate(void *block)
 	lock.leave();
 }
 
-MemoryPool& AutoStorage::getAutoMemoryPool() { 
+MemoryPool& AutoStorage::getAutoMemoryPool()
+{ 
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
 	if (! p)
@@ -1775,7 +1789,8 @@ MemoryPool& AutoStorage::getAutoMemoryPool() {
 }
 
 #if defined(DEV_BUILD)
-void AutoStorage::ProbeStack() const {
+void AutoStorage::ProbeStack() const
+{
 	//
 	// AutoStorage() default constructor can be used only 
 	// for objects on the stack. ProbeStack() uses the 

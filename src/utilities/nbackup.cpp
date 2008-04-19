@@ -105,16 +105,17 @@ void missing_parameter_for_switch(const char* sw) {
 class b_error : public Firebird::LongJump
 {
 public:
-	explicit b_error(const char* message) {
+	explicit b_error(const char* message)
+	{
 		size_t len = sizeof(txt) - 1;
 		strncpy(txt, message, len);
 		txt[len] = 0;
 	}
 	enum {MSG_LEN = 1024};
 	virtual ~b_error() throw() {}
-	virtual const char* what() const throw()
-		{ return txt; }
-	static void raise(const char* message, ...) {
+	virtual const char* what() const throw() { return txt; }
+	static void raise(const char* message, ...)
+	{
 		char temp[MSG_LEN];
 		va_list params;
 		va_start(params, message);
@@ -144,7 +145,8 @@ const char local_prefix[] = "localhost:";
 
 const char backup_signature[4] = {'N','B','A','K'};
 
-struct inc_header {
+struct inc_header
+{
 	char signature[4];		// 'NBAK'
 	SSHORT version;			// Incremental backup format version.
 	SSHORT level;			// Backup level.
@@ -157,7 +159,8 @@ struct inc_header {
 	ULONG prev_scn;			// SCN of previous level backup
 };
 
-class nbackup {
+class nbackup
+{
 public:
 	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
 	{
@@ -557,7 +560,8 @@ void nbackup::backup_database(int level, const char* fname)
 	attach_database();
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
-		if (level) {
+		if (level)
+		{
 		    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 				pr_error(status, "start transaction");
 			char out_sqlda_data[XSQLDA_LENGTH(2)];

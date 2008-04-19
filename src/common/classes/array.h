@@ -35,15 +35,18 @@ namespace Firebird {
 
 // Static part of the array
 template <typename T, size_t Capacity>
-class InlineStorage : public AutoStorage {
+class InlineStorage : public AutoStorage
+{
 public:
 	explicit InlineStorage(MemoryPool& p) : AutoStorage(p) { }
 	InlineStorage() : AutoStorage() { }
 protected:
-	T* getStorage() {
+	T* getStorage()
+	{
 		return buffer;
 	}
-	size_t getStorageSize() const {
+	size_t getStorageSize() const
+	{
 		return Capacity;
 	}
 private:
@@ -52,7 +55,8 @@ private:
 
 // Used when array doesn't have static part
 template <typename T>
-class EmptyStorage : public AutoStorage {
+class EmptyStorage : public AutoStorage
+{
 public:
 	explicit EmptyStorage(MemoryPool& p) : AutoStorage(p) { }
 	EmptyStorage() : AutoStorage() { }
@@ -63,7 +67,8 @@ protected:
 
 // Dynamic array of simple types
 template <typename T, typename Storage = EmptyStorage<T> >
-class Array : protected Storage {
+class Array : protected Storage
+{
 public:
 	explicit Array(MemoryPool& p) : 
 		Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage()) { }
@@ -85,11 +90,13 @@ public:
 	}
 	void clear() { count = 0; }
 protected:
-	const T& getElement(size_t index) const {
+	const T& getElement(size_t index) const
+	{
   		fb_assert(index < count);
   		return data[index];
 	}
-	T& getElement(size_t index) {
+	T& getElement(size_t index)
+	{
   		fb_assert(index < count);
   		return data[index];
 	}
@@ -108,96 +115,113 @@ public:
 		count = L.count;
 		return *this;
 	}
-	const T& operator[](size_t index) const {
+	const T& operator[](size_t index) const
+	{
   		return getElement(index);
 	}
-	T& operator[](size_t index) {
+	T& operator[](size_t index)
+	{
   		return getElement(index);
 	}
-	const T& front() const {
+	const T& front() const
+	{
   		fb_assert(count > 0);
 		return *data;
 	}
-	const T& back() const {
+	const T& back() const
+	{
   		fb_assert(count > 0);
 		return *(data + count - 1);
 	}
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
-	T& front() {
+	T& front()
+	{
   		fb_assert(count > 0);
 		return *data;
 	}
-	T& back() {
+	T& back()
+	{
   		fb_assert(count > 0);
 		return *(data + count - 1);
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
-	void insert(size_t index, const T& item) {
+	void insert(size_t index, const T& item)
+	{
 		fb_assert(index <= count);
 		ensureCapacity(count + 1);
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
-	void insert(size_t index, const Array<T, Storage>& L) {
+	void insert(size_t index, const Array<T, Storage>& L)
+	{
 		fb_assert(index <= count);
 		ensureCapacity(count + L.count);
 		memmove(data + index + L.count, data + index, sizeof(T) * (count - index));
 		memcpy(data + index, L.data, L.count);
 		count += L.count;
 	}
-	void insert(size_t index, const T* items, size_t itemsSize) {
+	void insert(size_t index, const T* items, size_t itemsSize)
+	{
 		fb_assert(index <= count);
 		ensureCapacity(count + itemsSize);
 		memmove(data + index + itemsSize, data + index, sizeof(T) * (count - index));
 		memcpy(data + index, items, sizeof(T) * itemsSize);
 		count += itemsSize;
 	}
-	size_t add(const T& item) {
+	size_t add(const T& item)
+	{
 		ensureCapacity(count + 1);
 		data[count] = item;
   		return ++count;
 	}
 	// NOTE: remove method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
-	T* remove(size_t index) {
+	T* remove(size_t index)
+	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
-	T* removeRange(size_t from, size_t to) {
+	T* removeRange(size_t from, size_t to)
+	{
   		fb_assert(from <= to);
   		fb_assert(to <= count);
   		memmove(data + from, data + to, sizeof(T) * (count - to));
 		count -= (to - from);
 		return &data[from];
 	}
-	T* removeCount(size_t index, size_t n) {
+	T* removeCount(size_t index, size_t n)
+	{
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
 		count -= n;
 		return &data[index];
 	}
-	T* remove(T* itr) {
+	T* remove(T* itr)
+	{
 		const size_t index = itr - begin();
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
-	void shrink(size_t newCount) {
+	void shrink(size_t newCount)
+	{
 		fb_assert(newCount <= count);
 		count = newCount;
 	}
 	// Grow size of our array and zero-initialize new items
-	void grow(size_t newCount) {
+	void grow(size_t newCount)
+	{
 		fb_assert(newCount >= count);
 		ensureCapacity(newCount);
 		memset(data + count, 0, sizeof(T) * (newCount - count));
 		count = newCount;
 	}
 	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount, const T& val) {
+	void resize(size_t newCount, const T& val)
+	{
 		if (newCount > count) {
 			ensureCapacity(newCount);
 			while (count < newCount) {
@@ -209,7 +233,8 @@ public:
 		}
 	}
 	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount) {
+	void resize(size_t newCount)
+	{
 		if (newCount > count) {
 			grow(newCount);
 		}
@@ -217,7 +242,8 @@ public:
 			count = newCount;
 		}
 	}
-	void join(const Array<T, Storage>& L) {
+	void join(const Array<T, Storage>& L)
+	{
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
@@ -226,21 +252,25 @@ public:
 	// Used as such in GlobalRWLock::blockingAstHandler
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return capacity; }
-	void push(const T& item) {
+	void push(const T& item)
+	{
 		add(item);
 	}
-	void push(const T* items, size_t itemsSize) {
+	void push(const T* items, size_t itemsSize)
+	{
 		ensureCapacity(count + itemsSize);
 		memcpy(data + count, items, sizeof(T) * itemsSize);
 		count += itemsSize;
 	}
-	T pop() {
+	T pop()
+	{
 		fb_assert(count > 0);
 		count--;
 		return data[count];
 	}
 	// prepare array to be used as a buffer of capacity items
-	T* getBuffer(size_t capacityL) {
+	T* getBuffer(size_t capacityL)
+	{
 		ensureCapacity(capacityL);
 		count = capacityL;
 		return data;
@@ -254,7 +284,8 @@ public:
 		data = this->getStorage();
 	}
 
-	bool find(const T& item, size_t& pos) const	{
+	bool find(const T& item, size_t& pos) const
+	{
 		for (size_t i = 0; i < count; i++) {
 			if (data[i] == item) {
 				pos = i;
@@ -264,7 +295,8 @@ public:
 		return false;
 	}
 
-	bool exist(const T& item) const {
+	bool exist(const T& item) const
+	{
 		size_t pos;	// ignored
 		return find(item, pos);
 	}
@@ -272,7 +304,8 @@ public:
 protected:
 	size_t count, capacity;
 	T* data;
-	void ensureCapacity(size_t newcapacity) {
+	void ensureCapacity(size_t newcapacity)
+	{
 		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
 				newcapacity = capacity * 2;
@@ -297,14 +330,16 @@ template <typename Value,
 	typename Key = Value, 
 	typename KeyOfValue = DefaultKeyValue<Value>, 
 	typename Cmp = DefaultComparator<Key> >
-class SortedArray : public Array<Value, Storage> {
+class SortedArray : public Array<Value, Storage>
+{
 public:
 	SortedArray(MemoryPool& p, size_t s) : Array<Value, Storage>(p, s) {}
 	explicit SortedArray(MemoryPool& p) : Array<Value, Storage>(p) {}
 	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
 
-	bool find(const Key& item, size_t& pos) const {
+	bool find(const Key& item, size_t& pos) const
+	{
 		size_t highBound = this->count, lowBound = 0;
 		while (highBound > lowBound) {
 			const size_t temp = (highBound + lowBound) >> 1;
@@ -324,7 +359,8 @@ public:
 		return find(item, pos);
 	}
 
-	size_t add(const Value& item) {
+	size_t add(const Value& item)
+	{
 	    size_t pos;
   	    find(KeyOfValue::generate(this, item), pos);
 		insert(pos, item);
@@ -334,7 +370,8 @@ public:
 
 // Nice shorthand for arrays with static part
 template <typename T, size_t InlineCapacity>
-class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> > {
+class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> >
+{
 public:
 	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> > (p) {}
 	HalfStaticArray(MemoryPool& p, size_t InitialCapacity) : 
