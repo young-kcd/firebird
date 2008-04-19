@@ -1,3 +1,61 @@
+2008-04-19 15:02  alexpeshkoff
+
+	* firebird2/src/jrd/blb.cpp (1.167):
+
+	Fixed one more problem detected with valgrind.	Also do not write
+	empty blobs to temp file.
+
+2008-04-19 13:46  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.197):
+
+	Added missing initializer
+
+2008-04-19 13:33  robocop
+
+	* firebird2/src/remote/: interface.cpp (1.187), protocol.h (1.42),
+	server.cpp (1.203), xnet.h (1.17):
+
+	Style.
+
+2008-04-19 13:09  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.35),
+	common/StatusHolder.h (1.2), common/classes/Aligner.h (1.3),
+	common/classes/alloc.cpp (1.106), common/classes/alloc.h (1.77),
+	common/classes/array.h (1.46), common/classes/auto.h (1.17),
+	common/classes/fb_tls.h (1.17), common/classes/MetaName.h (1.7),
+	common/classes/objects_array.h (1.23),
+	common/classes/sparse_bitmap.h (1.22), common/classes/stack.h
+	(1.23), common/classes/timestamp.cpp (1.17),
+	common/classes/vector.h (1.19), common/config/dir_list.h (1.18),
+	utilities/nbackup.cpp (1.67), utilities/gstat/dba.epp (1.91):
+
+	Style.
+
+2008-04-19 11:41  robocop
+
+	* firebird2/src/: common/classes/File.h (1.7),
+	common/classes/TempFile.cpp (1.13), common/classes/TempFile.h
+	(1.8), common/classes/tree.h (1.71), jrd/Database.h (1.18),
+	jrd/DatabaseSnapshot.cpp (1.54), jrd/DatabaseSnapshot.h (1.16),
+	jrd/GlobalRWLock.h (1.19), jrd/IntlManager.cpp (1.24),
+	jrd/Optimizer.cpp (1.82), jrd/RecordBuffer.cpp (1.8),
+	jrd/RecordBuffer.h (1.5), jrd/RecordNumber.h (1.11),
+	jrd/RuntimeStatistics.h (1.10), jrd/SimilarToMatcher.h (1.3),
+	jrd/SysFunction.cpp (1.46), jrd/req.h (1.78), jrd/TempSpace.cpp
+	(1.18), jrd/TempSpace.h (1.10), jrd/ThreadStart.cpp (1.5),
+	jrd/thread_proto.h (1.13), jrd/tra.h (1.82):
+
+	Constness and style.
+
+2008-04-19 11:40  robocop
+
+	* firebird2/src/config/: ConfigFile.h (1.4), Element.cpp (1.9),
+	Element.h (1.5), Stream.cpp (1.5), Stream.h (1.4):
+
+	Constness.
+
 2008-04-18 20:34  dimitr
 
 	* firebird2/src/jrd/common.h (1.168):
