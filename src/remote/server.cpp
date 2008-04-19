@@ -94,7 +94,8 @@ public:
 namespace {
 	// this sets of parameters help use same functions
 	// for both services and databases attachments
-	struct ParametersSet {
+	struct ParametersSet
+	{
 		UCHAR address_path;
 	};
 	const ParametersSet dpbParam = {isc_dpb_address_path};

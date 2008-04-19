@@ -458,7 +458,8 @@ typedef struct p_rlse
 
 /* Data block (start, start and send, send, receive) */
 
-typedef struct p_data {
+typedef struct p_data
+{
     OBJCT	p_data_request;		/* Request object id */
     USHORT	p_data_incarnation;	/* Incarnation of request */
     OBJCT	p_data_transaction;	/* Transaction object id */
@@ -472,7 +473,8 @@ typedef struct p_data {
 
 /* Execute stored procedure block */
 
-typedef struct p_trrq {
+typedef struct p_trrq
+{
     OBJCT	p_trrq_database;	/* Database object id */
     OBJCT	p_trrq_transaction;	/* Transaction object id */
     CSTRING	p_trrq_blr;		/* Message blr */
@@ -483,19 +485,22 @@ typedef struct p_trrq {
 
 /* Blob (create/open) and segment blocks */
 
-typedef struct p_blob {
+typedef struct p_blob
+{
     OBJCT	p_blob_transaction;	/* Transaction */
     struct bid	p_blob_id;		/* Blob id for open */
     CSTRING_CONST	p_blob_bpb;		/* Blob parameter block */
 } P_BLOB;
 
-typedef struct p_sgmt {
+typedef struct p_sgmt
+{
     OBJCT	p_sgmt_blob;		/* Blob handle id */
     USHORT	p_sgmt_length;		/* Length of segment */
     CSTRING_CONST	p_sgmt_segment;		/* Data segment */
 } P_SGMT;
 
-typedef struct p_seek {
+typedef struct p_seek
+{
     OBJCT	p_seek_blob;		/* Blob handle id */
     SSHORT	p_seek_mode;		/* mode of seek */
     SLONG	p_seek_offset;		/* Offset of seek */
@@ -503,7 +508,8 @@ typedef struct p_seek {
 
 /* Information request blocks */
 
-typedef struct p_info {
+typedef struct p_info
+{
     OBJCT	p_info_object;		/* Object of information */
     USHORT	p_info_incarnation;	/* Incarnation of object */
     CSTRING_CONST	p_info_items;		/* Information */
@@ -513,7 +519,8 @@ typedef struct p_info {
 
 /* Event request block */
 
-typedef struct p_event {
+typedef struct p_event
+{
     OBJCT	p_event_database;	/* Database object id */
     CSTRING_CONST	p_event_items;		/* Event description block */
     FPTR_EVENT_CALLBACK p_event_ast;		/* Address of ast routine */
@@ -523,14 +530,16 @@ typedef struct p_event {
 
 /* Prepare block */
 
-typedef struct p_prep {
+typedef struct p_prep
+{
     OBJCT	p_prep_transaction;
     CSTRING_CONST	p_prep_data;
 } P_PREP;
 
 /* Connect request block */
 
-typedef struct p_req {
+typedef struct p_req
+{
     USHORT	p_req_type;		/* Connection type */
     OBJCT	p_req_object;		/* Related object */
     ULONG	p_req_partner;		/* Partner identification */
@@ -541,7 +550,8 @@ const USHORT P_REQ_async	= 1;	/* Auxiliary asynchronous port */
 
 /* DDL request */
 
-typedef struct p_ddl {
+typedef struct p_ddl
+{
      OBJCT	p_ddl_database;		/* Database object id */
      OBJCT	p_ddl_transaction;	/* Transaction */
      CSTRING_CONST	p_ddl_blr;		/* Request blr */
@@ -549,7 +559,8 @@ typedef struct p_ddl {
 
 /* Slice Operation */
 
-typedef struct p_slc {
+typedef struct p_slc
+{
     OBJCT	p_slc_transaction;	/* Transaction */
     struct bid	p_slc_id;		/* Slice id */
     CSTRING	p_slc_sdl;		/* Slice description language */
@@ -560,7 +571,8 @@ typedef struct p_slc {
 
 /* Response to get_slice */
 
-typedef struct p_slr {
+typedef struct p_slr
+{
     lstring	p_slr_slice;		/* Slice proper */
     ULONG	p_slr_length;		/* Total length of slice */
     UCHAR* p_slr_sdl;			/* *** not transfered *** */
@@ -569,7 +581,8 @@ typedef struct p_slr {
  
 /* DSQL structure definitions */
 
-typedef struct p_sqlst {
+typedef struct p_sqlst
+{
     OBJCT	p_sqlst_transaction;	/* transaction object */
     OBJCT	p_sqlst_statement;	/* statement object */
     USHORT	p_sqlst_SQL_dialect;	/* the SQL dialect */
@@ -584,7 +597,8 @@ typedef struct p_sqlst {
     USHORT	p_sqlst_out_message_number;
 } P_SQLST;
 
-typedef struct p_sqldata {
+typedef struct p_sqldata
+{
     OBJCT	p_sqldata_statement;	/* statement object */
     OBJCT	p_sqldata_transaction;	/* transaction object */
     // This should be CSTRING_CONST, but fetch() has strange behavior.
@@ -596,12 +610,14 @@ typedef struct p_sqldata {
     ULONG	p_sqldata_status;	/* final eof status */
 } P_SQLDATA;
 
-typedef struct p_sqlfree {
+typedef struct p_sqlfree
+{
     OBJCT	p_sqlfree_statement;	/* statement object */
     USHORT	p_sqlfree_option;	/* option */
 } P_SQLFREE;
 
-typedef struct p_sqlcur {
+typedef struct p_sqlcur
+{
     OBJCT	p_sqlcur_statement;	/* statement object */
     CSTRING_CONST	p_sqlcur_cursor_name;	/* cursor name */
     USHORT	p_sqlcur_type;		/* type of cursor */
@@ -612,12 +628,14 @@ typedef struct p_trau
 	CSTRING	p_trau_data;					// Context
 } P_TRAU;
 
-struct p_update_account {
+struct p_update_account
+{
     OBJCT			p_account_database;		// Database object id
     CSTRING_CONST	p_account_apb;			// Account parameter block (apb)
 };
 
-struct p_authenticate {
+struct p_authenticate
+{
     OBJCT			p_auth_database;		// Database object id
     CSTRING_CONST	p_auth_dpb;				// Database parameter block w/ user credentials
 	CSTRING			p_auth_items;			// Information
@@ -625,7 +643,8 @@ struct p_authenticate {
 	USHORT			p_auth_buffer_length;	// Target buffer length
 };
 
-typedef struct p_cancel_op {
+typedef struct p_cancel_op
+{
     USHORT	p_co_kind;			// Kind of cancelation
 } P_CANCEL_OP;
 
@@ -633,7 +652,8 @@ typedef struct p_cancel_op {
 
 /* Generalize packet (sic!) */
 
-typedef struct packet {
+typedef struct packet
+{
 #ifdef DEBUG_XDR_MEMORY
     /* When XDR memory debugging is enabled, p_malloc must be
        the first subpacket and be followed by p_operation (see

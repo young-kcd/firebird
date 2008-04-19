@@ -94,7 +94,8 @@ const char* ISC_PASSWORD	= "ISC_PASSWORD";
 namespace {
 	// this sets of parameters help use same functions
 	// for both services and databases attachments
-	struct ParametersSet {
+	struct ParametersSet
+	{
 		UCHAR dummy_packet_interval, user_name, sys_user_name, 
 			  password, password_enc, address_path, process_id, process_name, 
 			  trusted_auth, trusted_role;
