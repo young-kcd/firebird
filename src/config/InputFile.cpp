@@ -103,7 +103,7 @@ const char* InputFile::getSegment()
 	return buffer;
 }
 
-const char* InputFile::getFileName()
+const char* InputFile::getFileName() const
 {
 	return fileName;
 }

@@ -110,7 +110,7 @@ void Lex::skipWhite()
 				ptr += 2;
 				++inputStream->lineNumber;
 				}
-			else if (charTable (*ptr) & WHITE)
+			else if (charTable(*ptr) & WHITE)
 				{
 				if (*ptr++ == '\n')
 					{
@@ -157,55 +157,67 @@ void Lex::getToken()
 
 	tokenOffset = inputStream->getOffset (ptr);
 	char *p = token;
-	char *endToken = token + sizeof (token);
-	char c = *p++ = *ptr++;
+	const char* const endToken = token + sizeof(token) - 1; // take into account the '\0'
+	const char c = *p++ = *ptr++;
 
-	if (charTable (c) & PUNCT)
+	if (charTable(c) & PUNCT)
 		tokenType = PUNCT;
 	else if (c == '\'' || c == '"')
-		{
+	{
 		p = token;
 		for (;;)
-			{
+		{
 			if (ptr >= end)
-				{
+			{
 				if (!getSegment())
 					throw AdminException ("end of file in quoted string");
-				}
+			}
 			else if (*ptr == c)
 				break;
 			else
-				{
+			{
 				if (p >= endToken)
 					throw AdminException ("token overflow in quoted string");
 				*p++ = *ptr++;
-				}
 			}
+		}
 		++ptr;
 		tokenType = (c == '"') ? QUOTED_STRING : SINGLE_QUOTED_STRING;
-		}
-	else if (charTable (c) & DIGIT)
-		{
+	}
+	else if (charTable(c) & DIGIT)
+	{
 		tokenType = NUMBER;
-		while (ptr < end && (charTable (*ptr) & DIGIT))
+		while (ptr < end && (charTable(*ptr) & DIGIT))
+		{
+			if (p >= endToken)
+				throw AdminException ("token overflow in number");
 			*p++ = *ptr++;
 		}
+	}
 	else
-		{
+	{
 		tokenType = NAME;
 		if (flags & LEX_upcase)
-			{
+		{
 			p [-1] = UPCASE(c);
-			while (ptr < end && !(charTable (*ptr) & (WHITE | PUNCT)))
-				{
-				c = *ptr++;
-				*p++ = UPCASE(c);
-				}
+			while (ptr < end && !(charTable(*ptr) & (WHITE | PUNCT)))
+			{
+				if (p >= endToken)
+					throw AdminException ("token overflow in name (uppercase)");
+				const char c2 = *ptr++;
+				*p++ = UPCASE(c2);
 			}
-		else
-			while (ptr < end && !(charTable (*ptr) & (WHITE | PUNCT)))
-				*p++ = *ptr++;
 		}
+		else
+		{
+			while (ptr < end && !(charTable(*ptr) & (WHITE | PUNCT)))
+			{
+				if (p >= endToken)
+					throw AdminException ("token overflow in name");
+				*p++ = *ptr++;
+			}
+		}
+	}
 
 	*p = 0;
 }
@@ -213,7 +225,7 @@ void Lex::getToken()
 void Lex::setCharacters(int type, const char *characters)
 {
 	for (const char *p = characters; *p; ++p)
-		charTable (*p) |= type;
+		charTable(*p) |= type;
 }
 
 /***
@@ -260,7 +272,7 @@ JString Lex::reparseFilename()
 	while (*p)
 		++p;
 
-	while (ptr < end && *ptr != '>' && !(charTable (*ptr) & WHITE))
+	while (ptr < end && *ptr != '>' && !(charTable(*ptr) & WHITE))
 		*p++ = *ptr++;
 
 	*p = 0;

@@ -102,7 +102,7 @@ void InputStream::release()
 		delete this;
 }
 
-const char* InputStream::getFileName()
+const char* InputStream::getFileName() const
 {
 	return NULL;
 }

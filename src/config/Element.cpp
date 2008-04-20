@@ -120,24 +120,51 @@ void Element::addChild(Element *child)
 {
 	child->parent = this;
 	child->sibling = NULL;
-	Element **ptr;
-
-	for (ptr = &children; *ptr; ptr = &(*ptr)->sibling)
-		;
+	Element** ptr = &children;
+	while (*ptr)
+		ptr = &(*ptr)->sibling;
 
 	*ptr = child;
+}
+
+Element* Element::addChild(JString childName)
+{
+	Element *element = new Element (childName);
+	addChild (element);
+
+	return element;
 }
 
 void Element::addAttribute(Element *child)
 {
 	child->parent = this;
 	child->sibling = NULL;
-	Element **ptr;
-
-	for (ptr = &attributes; *ptr; ptr = &(*ptr)->sibling)
-		;
+	Element** ptr = &attributes;
+	while (*ptr)
+		ptr = &(*ptr)->sibling;
 
 	*ptr = child;
+}
+
+void Element::addAttribute(JString attributeName)
+{
+	addAttribute (new Element (attributeName));
+}
+
+Element* Element::addAttribute(JString attributeName, JString attributeValue)
+{
+	Element *attribute = new Element (attributeName, attributeValue);
+	addAttribute (attribute);
+
+	return attribute;
+}
+
+Element* Element::addAttribute(JString attributeName, int attributeValue)
+{
+	char buffer [32];
+	sprintf (buffer, "%d", attributeValue);
+
+	return addAttribute (attributeName, buffer);
 }
 
 void Element::print(int level) const
@@ -203,8 +230,10 @@ Element* Element::findAttribute(int seq)
 	int n = 0;
 
 	for (Element *attribute = attributes; attribute; attribute = attribute->sibling)
+	{
 		if (n++ == seq)
 			return attribute;
+	}
 
 	return NULL;
 }
@@ -282,22 +311,6 @@ void Element::indent(int level, Stream *stream) const
 
 	for (int n = 0; n < count; ++n)
 		stream->putCharacter (' ');
-}
-
-Element* Element::addAttribute(JString attributeName, JString attributeValue)
-{
-	Element *attribute = new Element (attributeName, attributeValue);
-	addAttribute (attribute);
-
-	return attribute;
-}
-
-Element* Element::addChild(JString childName)
-{
-	Element *element = new Element (childName);
-	addChild (element);
-
-	return element;
 }
 
 Element* Element::findChildIgnoreCase(const char *childName)
@@ -378,19 +391,6 @@ void Element::gen(int level, Stream *stream) const
 	stream->putSegment ("</");
 	stream->putSegment (name);
 	stream->putSegment (">\n");
-}
-
-void Element::addAttribute(JString attributeName)
-{
-	addAttribute (new Element (attributeName));
-}
-
-Element* Element::addAttribute(JString attributeName, int attributeValue)
-{
-	char buffer [32];
-	sprintf (buffer, "%d", attributeValue);
-	
-	return addAttribute (attributeName, buffer);
 }
 
 Element* Element::findChild(const char *childName, const char *attribute, const char *attributeValue)

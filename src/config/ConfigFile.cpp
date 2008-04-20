@@ -276,7 +276,7 @@ JString ConfigFile::expand(JString rawString)
 	return temp;	
 }
 
-const char* ConfigFile::translate(const char *value, Element *object)
+const char* ConfigFile::translate(const char* value, const Element* object)
 {
 	if (strcasecmp (value, "root") == 0)
 		return getRootDirectory();
@@ -302,8 +302,10 @@ const char* ConfigFile::translate(const char *value, Element *object)
 		const char *p = NULL;
 		
 		for (const char *q = fileName; *q; ++q)
+		{
 			if (IS_SEPARATOR(*q))
 				p = q;
+		}
 
 		if (p)
 			currentDirectory = JString(fileName, p - fileName);

@@ -63,12 +63,12 @@ public:
 	const char*		getInstallDirectory();
 	virtual JString	expand(JString rawString);
 
-	const char* translate(const char *value, Element *object);
-	void init(int configFlags);
+	const char* translate(const char* value, const Element* object);
 	void wildCardInclude(const char* fileName);
 	const Element* getObjects() const { return objects; }
 
 private:
+	void init(int configFlags);
 	Element*	objects;
 	JString		rootDirectory;
 	JString		installDirectory;

@@ -302,7 +302,7 @@ const char* ConfObject::getConcatenatedValues(const char* attributeName)
 	if (!attribute)
 		return value;
 			
-	for (const Element *att = attribute->attributes; att; att = att->sibling)
+	for (const Element *att = attribute->getAttributes(); att; att = att->sibling)
 		{
 		if (!value.IsEmpty())
 			value += " ";

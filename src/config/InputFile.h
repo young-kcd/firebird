@@ -53,7 +53,7 @@ public:
 	void rewrite();
 	void postChange (int lineNumber, int skip, JString insertion);
 	virtual InputFile* getInputFile();
-	virtual const char* getFileName();
+	virtual const char* getFileName() const;
 	virtual const char* getSegment();
 	virtual void close();
 

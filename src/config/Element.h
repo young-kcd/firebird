@@ -45,18 +45,25 @@ class InputStream;
 class Element  
 {
 public:
-	Element* findChild (const char *name, const char *attribute, const char *value);
-	Element* addAttribute (JString name, int value);
+	explicit Element(JString elementName);
+	Element (JString elementName, JString elementValue);
+	virtual ~Element();
+
+	void addChild (Element *child);
+	Element* addChild (JString name);
+	
+	void addAttribute (Element *child);
 	void addAttribute (JString name);
+	Element* addAttribute (JString name, JString value);
+	Element* addAttribute (JString name, int value);
+
+	Element* findChild (const char *name, const char *attribute, const char *value);
 	void gen (int level, Stream *stream) const;
 	void setSource (int line, InputStream *stream);
-	void init(JString elementName);
 	const char* getAttributeValue (const char *name, const char *defaultValue);
 	const char* getAttributeValue (const char *name);
 	const char* getAttributeName (int position) const;
 	Element* findChildIgnoreCase (const char *name);
-	Element* addChild (JString name);
-	Element* addAttribute (JString name, JString value);
 	void indent (int level, Stream *stream) const;
 	void genXML (int level, Stream *stream) const;
 	Element* findAttribute (const char *name);
@@ -66,26 +73,26 @@ public:
 	Element* findChild (const char *name);
 	const Element* findChild (const char *name) const;
 	void print (int level) const;
-	void addAttribute (Element *child);
-	void addChild (Element *child);
-	Element (JString elementName, JString elementValue);
-	explicit Element(JString elementName);
-	virtual ~Element();
+	const Element* getAttributes() const { return attributes; }
 
 	JString		name;
 	JString		value;
-	JString		innerText;
-	JString		outerText;
+
 	Element		*sibling;
-	Element		*parent;
 	Element		*children;
-	Element		*attributes;
+
 	int			lineNumber;
 	int			numberLines;
 	InputStream	*inputStream;
 	static int analyseText(const char* text);
 	void putQuotedText(const char* text, Stream* stream) const;
 	static int analyzeData(int length, const UCHAR* data);
+private:
+	void init(JString elementName);
+	JString		innerText;
+	//JString		outerText;
+	Element		*parent; // assigned but never used.
+	Element		*attributes;
 };
 
 END_NAMESPACE

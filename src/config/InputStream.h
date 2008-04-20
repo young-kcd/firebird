@@ -47,7 +47,7 @@ public:
 	virtual ~InputStream();
 	
 	virtual InputFile* getInputFile();
-	virtual const char* getFileName();
+	virtual const char* getFileName() const;
 	void init();
 	void release();
 	virtual void addRef();
