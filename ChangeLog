@@ -1,3 +1,48 @@
+2008-04-20 16:35  dimitr
+
+	* firebird2/src/remote/inet.cpp (1.234):
+
+	Misc.
+
+2008-04-20 16:02  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.233), remote.cpp (1.61),
+	remote.h (1.77), server.cpp (1.204):
+
+	Fixed CORE-1357.
+
+2008-04-20 13:46  robocop
+
+	* firebird2/src/config/: ConfObject.cpp (1.8), ConfigFile.cpp
+	(1.9), ConfigFile.h (1.6), Element.cpp (1.10), Element.h (1.6),
+	InputFile.cpp (1.6), InputFile.h (1.5), InputStream.cpp (1.3),
+	InputStream.h (1.5), Lex.cpp (1.7):
+
+	More encapsulation, bring some order, fix some B.O. cases, etc.
+
+2008-04-20 12:40  robocop
+
+	* firebird2/src/: config/AdminException.cpp (1.8),
+	config/AdminException.h (1.5), config/Args.cpp (1.3), config/Args.h
+	(1.4), config/ArgsException.cpp (1.4), config/ArgsException.h
+	(1.4), config/ConfigFile.cpp (1.8), config/ConfigFile.h (1.5),
+	config/Configuration.cpp (1.5), config/Configuration.h (1.4),
+	config/ConfObj.cpp (1.4), config/ConfObj.h (1.4),
+	config/ConfObject.cpp (1.7), config/ConfObject.h (1.5),
+	config/FileName.cpp (1.3), config/FileName.h (1.3),
+	config/InputFile.cpp (1.5), config/InputFile.h (1.4),
+	config/InputStream.h (1.4), config/Lex.cpp (1.6), config/Lex.h
+	(1.7), config/ScanDir.cpp (1.7), config/ScanDir.h (1.5),
+	config/Stream.cpp (1.6), config/Stream.h (1.5),
+	config/StreamSegment.cpp (1.3), config/StreamSegment.h (1.4),
+	jrd/IntlManager.cpp (1.25), vulcan/JString.cpp (1.7),
+	vulcan/JString.h (1.8), vulcan/PathName.cpp (1.5),
+	vulcan/PathName.h (1.5), vulcan/RefObject.h (1.5):
+
+	Fix the most obvioius problems: - style (few fixes only) -
+	constness - total lack of encapsulation (all data members exposed
+	in the interface).
+
 2008-04-19 15:02  alexpeshkoff
 
 	* firebird2/src/jrd/blb.cpp (1.167):
