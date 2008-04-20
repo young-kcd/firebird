@@ -335,7 +335,7 @@ static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
 static rem_port*		select_port(rem_port*, SLCT *);
-static rem_port*        select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length);
+static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, rem_port*& port);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
@@ -2375,7 +2375,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 #endif //SUPERSERVER
 }
 
-static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length)
+static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length, rem_port*& port)
 {
 /**************************************
  *
@@ -2391,21 +2391,21 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
  *
  **************************************/
 	fb_assert(main_port->port_server_flags & SRVR_multi_client);
-	
+
 	for (;;) 
 	{
-		rem_port* port = select_port(main_port, &INET_select);
+		port = select_port(main_port, &INET_select);
 		if (port == main_port) 
 		{
-			if (port = select_accept(main_port)) 
+			if ( (port = select_accept(main_port)) )
 			{
 				if (!packet_receive(port, buffer, bufsize, length))
 				{
 					*length = 0;
 				}
-				return port;
+				return (*length) ? true : false;
 			}
-			
+
 			continue;
 		}
 		if (port) 
@@ -2414,20 +2414,24 @@ static rem_port* select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize
 			{
 				port->port_dummy_timeout = port->port_dummy_packet_interval;
 				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8) continue;
+					port->port_protocol < PROTOCOL_VERSION8)
+				{
+					continue;
+				}
 				*length = 0;
-				return port;
+				return true;
 			}
-			
+
 			if (!packet_receive(port, buffer, bufsize, length))
 			{
 				*length = 0;
 			}
-			return port;
+			return (*length) ? true : false;
 		}
 		if (!select_wait(main_port, &INET_select))
 		{
-			return NULL;
+			port = NULL;
+			return false;
 		}
 	}
 }

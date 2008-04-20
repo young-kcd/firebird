@@ -475,7 +475,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				UCHAR buffer[MAX_PACKET_SIZE];
 				SSHORT dataSize = main_port->port_buff_size > sizeof(buffer) ? 
 								  sizeof(buffer) : main_port->port_buff_size;
-				if (!(port = main_port->select_multi(buffer, dataSize, &dataSize)))
+				const bool ok = main_port->select_multi(buffer, dataSize, &dataSize, port);
+				if (!port)
 				{
 					gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					THREAD_EXIT();
@@ -486,23 +487,20 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				{
 					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
 				}
-			
+
 				if (!(port->port_flags & PORT_busy) || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
 
-	//				gds__log("queue=%d", port->port_queue->getCount());
 					if (dataSize) 
 					{
 						const rem_port::RecvQueState recvState = port->getRecvState();
 						port->receive(&request->req_receive);
-	//					gds__log("dats=%d", dataSize);
 						if (request->req_receive.p_operation == op_partial)
 						{
 							port->setRecvState(recvState);
 
-	//						gds__log("Partial");
 							free_request(request);
 							request = 0;
 							port = 0;
@@ -511,9 +509,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					}
 					else
 					{
-						request->req_receive.p_operation = op_exit;
+						request->req_receive.p_operation = ok ? op_dummy : op_exit;
 					}
-	//				gds__log("op=%d ds=%d", request->req_receive.p_operation, dataSize);
 
 					if (!port->haveRecvData())
 						port->clearRecvQue();
