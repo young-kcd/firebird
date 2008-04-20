@@ -237,11 +237,20 @@ namespace
 	class DatabaseContextHolder : public Database::SyncGuard, public Jrd::ContextPoolHolder
 	{
 	public:
-		explicit DatabaseContextHolder(thread_db* arg)
+		explicit DatabaseContextHolder(thread_db* arg, bool lockAtt = true)
 			: Database::SyncGuard(arg->getDatabase()),
 			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
 			  tdbb(arg)
 		{
+			if (lockAtt && arg->getAttachment())
+			{
+				attLocked = arg->getAttachment()->att_mutex.tryEnter();
+				if (!attLocked)
+					Firebird::status_exception::raise(isc_att_handle_busy, 0);
+			}
+			else
+				attLocked = false;
+
 			Database* dbb = tdbb->getDatabase();
 			++dbb->dbb_use_count;
 		}
@@ -253,6 +262,11 @@ namespace
 			{
 				--dbb->dbb_use_count;
 			}
+
+			Attachment* attachment = tdbb->getAttachment();
+
+			if (attLocked && attachment)
+				attachment->att_mutex.leave();
 		}
 
 	private:
@@ -261,6 +275,7 @@ namespace
 		DatabaseContextHolder& operator=(const DatabaseContextHolder&);
 
 		thread_db* tdbb;
+		bool attLocked;
 	};
 
 } // anonymous
@@ -1359,7 +1374,7 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
 	{
 		Attachment* attachment = *handle;
 		validateHandle(tdbb, attachment);
-		DatabaseContextHolder dbbHolder(tdbb);
+		DatabaseContextHolder dbbHolder(tdbb, false);
 
 		switch (option) {
 		case CANCEL_disable:

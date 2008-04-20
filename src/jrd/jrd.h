@@ -292,6 +292,7 @@ public:
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
 	dsql_dbb* att_dsql_instance;
+	Firebird::Mutex att_mutex;
 
 	bool locksmith() const;
 
