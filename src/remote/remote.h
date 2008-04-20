@@ -396,7 +396,7 @@ struct rem_port
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
 	t_port_connect	port_connect;		/* Establish secondary connection */
 	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
-	rem_port*		(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*);	// get packet from active port
+	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, rem_port*&);	// get packet from active port
 									
 	rdb*			port_context;
 	t_event_ast		port_ast;		/* AST for events */
@@ -437,8 +437,8 @@ struct rem_port
 	XDR_INT	send_partial(PACKET* pckt);
 	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
-	rem_port*   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length);
-	
+	bool   select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, rem_port*& port);
+
 	/* TMN: The following member functions are conceptually private
 	 *      to server.cpp and should be _made_ private in due time!
 	 *      That is, if we don't factor these method out.
