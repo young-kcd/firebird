@@ -299,7 +299,7 @@ static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
 
 static void		select_port(rem_port*, SLCT*, RemPortPtr&);
-static void		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
+static bool		select_multi(rem_port*, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr&);
 static int		select_wait(rem_port*, SLCT *);
 static int		send_full(rem_port*, PACKET *);
 static int		send_partial(rem_port*, PACKET *);
@@ -2039,7 +2039,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	return main_port;
 }
 
-static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
+static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port)
 {
 /**************************************
  *
@@ -2055,7 +2055,7 @@ static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
  *
  **************************************/
 	fb_assert(main_port->port_server_flags & SRVR_multi_client);
-	
+
 	for (;;) 
 	{
 		select_port(main_port, &INET_select, port);
@@ -2077,9 +2077,9 @@ static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				{
 					*length = 0;
 				}
-				return;
+				return (*length) ? true : false;
 			}
-			
+
 			continue;
 		}
 		if (port) 
@@ -2087,10 +2087,12 @@ static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 			if (port->port_dummy_timeout < 0) 
 			{
 				port->port_dummy_timeout = port->port_dummy_packet_interval;
-				if (port->port_flags & PORT_async ||
-					port->port_protocol < PROTOCOL_VERSION8) continue;
+				if (port->port_flags & PORT_async || port->port_protocol < PROTOCOL_VERSION8)
+				{
+					continue;
+				}
 				*length = 0;
-				return;
+				return true;
 			}
 
 			if (!packet_receive(port, buffer, bufsize, length))
@@ -2100,12 +2102,12 @@ static void select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				}
 				*length = 0;
 			}
-			return;
+			return (*length) ? true : false;
 		}
 		if (!select_wait(main_port, &INET_select))
 		{
 			port = NULL;
-			return;
+			return false;
 		}
 	}
 }
@@ -3055,28 +3057,26 @@ static int packet_receive(
 		return FALSE;
 	}
 
-/* set the time interval for sending dummy packets to the client */
-
 	timeval timeout;
-	timeout.tv_sec = port->port_dummy_packet_interval;
 	timeout.tv_usec = 0;
-
 	timeval* time_ptr = NULL;
-	if (port->port_protocol >= PROTOCOL_VERSION8 &&
-		port->port_dummy_packet_interval > 0)
-	{
-		time_ptr = &timeout;
-	}
 
-/* If the protocol is 0 we are still in the process of establishing
-   a connection. Add a time out to the wait */
 	if (port->port_protocol == 0)
 	{
+		// If the protocol is 0 we are still in the process of establishing
+		// a connection. Add a time out to the wait.
 		timeout.tv_sec = port->port_connect_timeout;
 		time_ptr = &timeout;
 	}
+	else if (port->port_protocol >= PROTOCOL_VERSION8 &&
+		port->port_dummy_packet_interval > 0)
+	{
+		// Set the time interval for sending dummy packets to the client
+		timeout.tv_sec = port->port_dummy_packet_interval;
+		time_ptr = &timeout;
+	}
 
-	// on Linux systems (and possibly others too) select will eventually
+	// On Linux systems (and possibly others too) select will eventually
 	// change timout values so save it here for later reuse.
 	// Thanks to Brad Pepers who reported this bug  FSG 3 MAY 2001
 	const timeval savetime = timeout;

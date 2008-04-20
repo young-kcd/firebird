@@ -498,7 +498,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 				SSHORT dataSize;
 				// We have a request block - now get some information to stick into it
-				main_port->select_multi(buffer, bufSize, &dataSize, port);
+				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
 					if (!shutting_down) 
@@ -517,7 +517,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
 					memcpy(port->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 				}
-			
+
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
 				const bool portLocked = portGuard.tryEnter();
 				if (portLocked || !dataSize)
@@ -551,7 +551,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					}
 					else
 					{
-						request->req_receive.p_operation = op_exit;
+						request->req_receive.p_operation = ok ? op_dummy : op_exit;
 					}
 
 					request->req_port = port;

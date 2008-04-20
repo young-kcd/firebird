@@ -588,8 +588,8 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
 	t_port_connect	port_connect;		/* Establish secondary connection */
 	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
-	void			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
-									
+	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
+
 	enum rem_port_t {
 		INET,			/* Internet (TCP/IP) */
 		PIPE,			/* Windows NT named pipe connection */
@@ -799,7 +799,7 @@ public:
 	XDR_INT	send_partial(PACKET* pckt);
 	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
-	void		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
+	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 
 #ifdef REM_SERVER
 	bool haveRecvData() const
