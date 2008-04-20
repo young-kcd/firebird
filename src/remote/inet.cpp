@@ -228,7 +228,7 @@ typedef struct slct
 {
 	int		slct_width;
 	int		slct_count;
-	SLONG	slct_time;
+	time_t	slct_time;
 	fd_set	slct_fdset;
 } SLCT;
 
@@ -2223,16 +2223,16 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 		/* Use the time interval between select() calls to expire
 		   keepalive timers on all ports. */
 
-		SLONG delta_time;
+		time_t delta_time;
 		if (selct->slct_time)
 		{
-			delta_time = (SLONG) time(NULL) - selct->slct_time;
+			delta_time = time(NULL) - selct->slct_time;
 			selct->slct_time += delta_time;
 		}
 		else
 		{
 			delta_time = 0;
-			selct->slct_time = (SLONG) time(NULL);
+			selct->slct_time = time(NULL);
 		}
 
 		{ // port_mutex scope
