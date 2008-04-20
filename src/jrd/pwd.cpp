@@ -163,12 +163,12 @@ namespace {
 			{
 				FailedLogin& l = (*this)[pos];
 				if (t - l.lastAttempt >= FAILURE_DELAY)
-		{
+				{
 					l.failCount = 0;
 				}
 				l.lastAttempt = t;
 				if (++l.failCount >= MAX_FAILED_ATTEMPTS)
-			{
+				{
 					l.failCount = 0;
 					DelayFailedLogin::raise(FAILURE_DELAY);
 				}
@@ -520,7 +520,7 @@ void DelayFailedLogin::raise(int sec)
 
 ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer*) const throw()
 {
-	ISC_STATUS *sv = status_vector;
+	ISC_STATUS* sv = status_vector;
 
 	*sv++ = isc_arg_gds;
 	*sv++ = isc_login;
