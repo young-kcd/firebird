@@ -37,6 +37,10 @@
 #include "Stream.h"
 #include "StreamSegment.h"
 
+
+// CVC: The logic in this module seems to overwrite constant params passed into the
+// address field of the Segment structure. This includes literal strings (see Element.cpp).
+
 #ifndef MAX
 #define MAX(a,b)			((a > b) ? a : b)
 #define MIN(a,b)			((a < b) ? a : b)
@@ -112,7 +116,7 @@ void Stream::putSegment(int length, const char *ptr, bool copy)
 		int l = currentLength - current->length;
 		if (l > 0)
 			{
-			int l2 = MIN (l, length);
+			const int l2 = MIN (l, length);
 			memcpy (current->address + current->length, address, l2);
 			current->length += l2;
 			length -= l2;
@@ -505,7 +509,7 @@ void Stream::putSegment(Stream * stream)
 	if (stream->totalLength == 0)
 		return;
 
-	StreamSegment seg = stream;
+	StreamSegment seg(stream);
 
 	if (current)
 		for (int len = currentLength - current->length; len && seg.available;)
@@ -545,7 +549,7 @@ char* Stream::alloc(int length)
 	if (!current || length > currentLength - current->length)
 		allocSegment (length);
 
-	char *p = current->tail + current->length;
+	char* const p = current->tail + current->length;
 	current->length += length;
 
 	return p;
@@ -592,8 +596,8 @@ int Stream::compare(const Stream *stream) const
 {
 	for (int offset = 0;;)
 		{
-		int length1 = getSegmentLength(offset);
-		int length2 = stream->getSegmentLength(offset);
+		const int length1 = getSegmentLength(offset);
+		const int length2 = stream->getSegmentLength(offset);
 		if (length1 == 0)
 		{
 			if (length2)

@@ -17,10 +17,12 @@ FileName::FileName(JString name)
 	absolute = IS_SLASH (start [0]);
 
 	for (const char	*p = start; *p; ++p)
+	{
 		if (!dot && IS_SLASH (*p))
 			slash = p;
 		else if (*p == '.')
 			dot = p;
+	}
 	
 	
 	if (slash)
@@ -38,6 +40,6 @@ FileName::FileName(JString name)
 		root = rootName;	
 }
 
-FileName::~FileName(void)
+FileName::~FileName()
 {
 }

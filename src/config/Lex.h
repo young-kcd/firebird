@@ -68,6 +68,9 @@ class Stream;
 class Lex  
 {
 public:
+	Lex(const char *punctuation, int debugFlags);
+	virtual ~Lex();
+	
 	void captureStuff();
 	char& charTable(int ch);
 	bool getSegment();
@@ -84,16 +87,13 @@ public:
 	void getToken();
 	static bool match (const char *pattern, const char *string);
 	void skipWhite();
-	Lex(const char *punctuation, int debugFlags);
-	virtual ~Lex();
-
+protected:
 	int			flags;
 	int			tokenType;
 	int			priorLineNumber;
 	bool		eol;
 	InputStream	*inputStream;
 	InputStream	*priorInputStream;
-
 private:
 	InputStream	*tokenInputStream;
 	Stream		stuff;

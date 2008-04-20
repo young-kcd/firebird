@@ -40,19 +40,16 @@ ConfObj::ConfObj(ConfObject *confObject)
 		object->addRef();
 }
 
+ConfObj::ConfObj(ConfObj& source)
+{
+	if (object = source.object)
+		object->addRef();
+}
+
 ConfObj::~ConfObj()
 {
 	if (object)
 		object->release();
-}
-
-ConfObj::ConfObj(const ConfObj& source)
-{
-	if (object)
-		object->release();
-	
-	if (object = source.object)
-		object->addRef();
 }
 
 bool ConfObj::hasObject() const

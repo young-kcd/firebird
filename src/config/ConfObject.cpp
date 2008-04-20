@@ -74,7 +74,7 @@ ConfObject::~ConfObject()
 		chain->release();
 }
 
-bool ConfObject::matches(Element *element, const char* type, const char* string)
+bool ConfObject::matches(Element* element, const char* type, const char* string)
 {
 	if (element->name != type)
 		return false;
@@ -123,25 +123,30 @@ bool ConfObject::match(int position, const char* pattern, const char* string)
 	const char *s = string;
 
 	for (const char *p = pattern; (c = *p++); ++s)
+	{
 		if (c == '*')
-			{
+		{
 			if (!*p)
-				{
+			{
 				putString (position, string, (int) strlen (string));
 				return true;
-				}
+			}
 			for (; *s; ++s)
+			{
 				if (match (position + 1,  pattern + 1, s))
-					{
+				{
 					putString (position, string, (int) (s - string));
 					return true;
-					}
-			return false;
+				}
 			}
-		else if (!*s)
 			return false;
-		else if (c != '%' && c != *s)
-			{
+		}
+
+		if (!*s)
+			return false;
+
+		if (c != '%' && c != *s)
+		{
 #ifdef _WIN32
 			if (UPPER (c) == UPPER (*s))
 				continue;
@@ -149,7 +154,8 @@ bool ConfObject::match(int position, const char* pattern, const char* string)
 				continue;
 #endif
 			return false;
-			}
+		}
+	}
 
 	if (c || *s)
 		return false;

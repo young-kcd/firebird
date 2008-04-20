@@ -96,20 +96,22 @@ void ConfigFile::init(int configFlags)
 	memset (hashTable, 0, sizeof (hashTable));
 }
 
-ConfigFile::~ConfigFile(void)
+ConfigFile::~ConfigFile()
 {
 	if (objects)
 		delete objects;
 
 	for (int n = 0; n < HASH_SIZE; ++n)
+	{
 		for (Element *element; element = hashTable [n];)
-			{
+		{
 			hashTable [n] = element->sibling;
 			delete element;
-			}
+		}
+	}
 }
 
-InputFile* ConfigFile::openConfigFile(void)
+InputFile* ConfigFile::openConfigFile()
 {
 	fb_assert(false);
 	// Vulcan specific code removed
@@ -137,7 +139,7 @@ void ConfigFile::parse(void)
 		else
 			{
 			Element *element = parseAttribute();
-			int slot = element->name.hash (HASH_SIZE);
+			const int slot = element->name.hash (HASH_SIZE);
 			element->sibling = hashTable [slot];
 			hashTable [slot] = element;
 			}
@@ -202,8 +204,10 @@ ConfObject* ConfigFile::findObject(const char* objectType, const char* objectNam
 	ConfObject *object = new ConfObject (this);
 	
 	for (Element *child = objects->children; child; child = child->sibling)
+	{
 		if (object->matches (child, objectType, objectName))
 			return object;
+	}
 	
 	object->release();
 	

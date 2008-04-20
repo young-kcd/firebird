@@ -41,10 +41,11 @@ class AdminException
 {
 public:
 	void setLocation (JString fileName, int lineNumber);
-	const char* getText();
+	const char* getText() const;
 	AdminException(const char *txt, ...);
 	virtual ~AdminException();
 
+private:
 	JString	text;
 	JString	fileName;
 };

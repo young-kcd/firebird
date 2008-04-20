@@ -35,12 +35,12 @@ class ConfObject;
 class Configuration
 {
 public:
-	Configuration(void);
-	virtual ~Configuration(void);
+	Configuration();
+	virtual ~Configuration();
 	
 	static ConfObject* findObject(const char* objectType, const char* objectName);
-	static const char* getRootDirectory(void);
-	static void loadConfigFile(void);
+	static const char* getRootDirectory();
+	static void loadConfigFile();
 	static void setConfigFilePath(const char* filename);
 	static ConfObject* getObject(const char* objectType);
 	static ConfObject* getObject(const char* objectType, const char* objectName);

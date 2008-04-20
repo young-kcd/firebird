@@ -39,7 +39,7 @@ struct Switches
 	{
     const char	*string;
 	bool		*boolean;
-	char		**argument;
+	const char* *argument;
 	const char	*argName;
 	const char	*description;
 	};

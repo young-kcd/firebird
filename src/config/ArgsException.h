@@ -39,10 +39,11 @@
 class ArgsException  
 {
 public:
-	const char* getText();
+	const char* getText() const;
 	ArgsException(const char * txt, ...);
 	virtual ~ArgsException();
 
+private:
 	JString		text;
 };
 

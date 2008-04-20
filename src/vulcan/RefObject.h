@@ -38,10 +38,10 @@
 class RefObject  
 {
 public:
-	virtual void release();
-	virtual void addRef();
 	RefObject();
 	virtual ~RefObject();
+	virtual void addRef();
+	virtual void release();
 private:
 	int useCount;
 };

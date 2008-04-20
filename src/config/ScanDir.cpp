@@ -127,8 +127,10 @@ bool ScanDir::match(const char *pattern, const char *name)
 		if (!pattern [1])
 			return true;
 		for (const char *p = name; *p; ++p)
+		{
 			if (match (pattern + 1, p))
 				return true;
+		}
 		return false;
 		}
 

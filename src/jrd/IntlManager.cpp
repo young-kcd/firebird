@@ -417,7 +417,7 @@ bool IntlManager::initialize()
 			if (s.hasData())
 				builtinConfig = s;
 
-			for (const Element* el = configFile.objects->children; el; el = el->sibling)
+			for (const Element* el = configFile.getObjects()->children; el; el = el->sibling)
 			{
 				if (el->name == "charset")
 				{

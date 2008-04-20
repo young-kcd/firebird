@@ -77,7 +77,7 @@ void StreamSegment::advance(int size)
 {
 	for (int len = size; len;)
 		{
-		int l = MIN (available, len);
+		const int l = MIN (available, len);
 		available -= l;
 		remaining -= l;
 		len -= size;
@@ -100,7 +100,7 @@ char* StreamSegment::copy(void *target, int length)
 	
 	for (int len = length; len;)
 		{
-		int l = MIN (len, available);
+		const int l = MIN (len, available);
 		memcpy (targ, data, l);
 		targ += l;
 		len -= l;

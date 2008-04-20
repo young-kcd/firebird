@@ -60,7 +60,7 @@ ArgsException::~ArgsException()
 
 }
 
-const char* ArgsException::getText()
+const char* ArgsException::getText() const
 {
 	return text;
 }

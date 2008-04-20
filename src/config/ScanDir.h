@@ -50,19 +50,21 @@
 class ScanDir  
 {
 public:
+	ScanDir(const char *dir, const char *pattern);
+	virtual ~ScanDir();
+	
 	bool isDots();
 	const char* getFilePath();
 	bool isDirectory();
 	static bool match (const char *pattern, const char *name);
 	const char* getFileName();
 	bool next();
-	ScanDir(const char *dir, const char *pattern);
-	virtual ~ScanDir();
 
 	JString	directory;
 	JString	pattern;
 	JString	fileName;
 	JString	filePath;
+private:
 #ifdef _WIN32
 	WIN32_FIND_DATA	data;
 	HANDLE			handle;

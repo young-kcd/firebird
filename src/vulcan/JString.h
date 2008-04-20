@@ -34,10 +34,10 @@ START_NAMESPACE
 class JString 
 {
 public:
-	JString (const char *source, int length);
 	JString();
-	JString (const char *string);
-	JString(const JString& stringSrc);
+	JString (const char *stuff);
+	JString (const char *source, int length);
+	JString(const JString& source);
 	~JString();
 
 	//JString&	operator = (const WCHAR *wString);
@@ -59,7 +59,7 @@ public:
 	void		setString (const char*);
 	void		setString (const char *source, int length);
 	void		Format (const char*, ...);
-	
+
 	inline const char	*getString() const
 		{
 		return (string) ? string : "";

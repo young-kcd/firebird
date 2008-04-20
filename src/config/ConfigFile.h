@@ -45,6 +45,7 @@ class ConfigFile : public Lex, public RefObject
 {
 public:
 	explicit ConfigFile(int configFlags);
+	ConfigFile(const char* configFile, int configFlags);
 
 //protected:
 	virtual ~ConfigFile();
@@ -64,12 +65,11 @@ public:
 
 	const char* translate(const char *value, Element *object);
 	void init(int configFlags);
-	ConfigFile(const char* configFile, int configFlags);
 	void wildCardInclude(const char* fileName);
-
-	Element*	objects;
+	const Element* getObjects() const { return objects; }
 
 private:
+	Element*	objects;
 	JString		rootDirectory;
 	JString		installDirectory;
 	JString		currentDirectory;

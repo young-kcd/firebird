@@ -42,16 +42,13 @@
 
 START_NAMESPACE
 
-struct FileChange {
-	FileChange	*next;
-	int			lineNumber;
-	int			linesSkipped;
-	JString		insertion;
-};
-
-class InputFile : public InputStream  
+class InputFile : public InputStream
 {
 public:
+	explicit InputFile(const char* fileName);
+	InputFile();
+	virtual ~InputFile();
+	
 	static bool pathEqual(const char *path1, const char *path2);
 	void rewrite();
 	void postChange (int lineNumber, int skip, JString insertion);
@@ -59,15 +56,21 @@ public:
 	virtual const char* getFileName();
 	virtual const char* getSegment();
 	virtual void close();
-	InputFile(const char *fileName);
-	virtual ~InputFile();
 
-	JString		fileName;
+	bool openInputFile(const char* fileName);
+private:
+	struct FileChange
+	{
+		FileChange	*next;
+		int			lineNumber;
+		int			linesSkipped;
+		JString		insertion;
+	};
+
 	void		*file;
 	char		buffer [1024];
-	FileChange	*changes;
-	InputFile(void);
-	bool openInputFile(const char* fileName);
+	JString		fileName;
+	FileChange*	changes;
 };
 
 END_NAMESPACE

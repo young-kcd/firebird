@@ -64,7 +64,7 @@ InputFile::InputFile(const char *name)
 		throw AdminException ("can't open file \"%s\"", name);
 }
 
-InputFile::InputFile(void)
+InputFile::InputFile()
 {
 	changes = NULL;
 }
@@ -137,10 +137,10 @@ void InputFile::rewrite()
 	FILE *input = fopen (fileName, "r");
 
 	if (!input)
-		throw AdminException ("can't open \"%s\" for input", (const char*) fileName);
+		throw AdminException ("can't open \"%s\" for input", fileName.getString());
 
 	char tempName [MAX_FILE_NAME];
-	sprintf (tempName, "%s.tmp", (const char*) fileName);
+	sprintf (tempName, "%.*s.tmp", sizeof(tempName) - 5, fileName.getString());
 	FILE *output = fopen (tempName,"w");
 
 	if (!output)
@@ -152,8 +152,10 @@ void InputFile::rewrite()
 	for (FileChange *change = changes; change; change = change->next)
 		{
 		for (; line < change->lineNumber; ++line)
+		{
 			if (fgets (temp, sizeof (temp), input))
 				fputs (temp, output);
+		}
 		//fputs ("#insertion starts here\n", output);
 		fputs (change->insertion, output);
 		//fputs ("#insertion end here\n", output);
@@ -170,11 +172,13 @@ void InputFile::rewrite()
 	char filename1 [MAX_FILE_NAME];
 	char filename2 [MAX_FILE_NAME];
 
+	fb_assert(BACKUP_FILES < 10); // assumption to avoid B.O.
+	
 	for (int n = BACKUP_FILES; n >= 0; --n)
 		{
-		sprintf (filename1, "%s.%d", (const char*) fileName, n);
+		sprintf (filename1, "%.*s.%d", sizeof(filename1) - 3, (const char*) fileName, n);
 		if (n)
-			sprintf (filename2, "%s.%d", (const char*) fileName, n - 1);
+			sprintf (filename2, "%.*s.%d", sizeof(filename2) - 3, (const char*) fileName, n - 1);
 		else
 			strcpy (filename2, fileName);
 		if (n == BACKUP_FILES)
@@ -190,15 +194,19 @@ bool InputFile::pathEqual(const char *path1, const char *path2)
 {
 #ifdef _WIN32
 	for (; *path1 && *path2; ++path1, ++path2)
+	{
 		if (*path1 != *path2 &&
 		    UPPER (*path1) != UPPER (*path2) &&
 			!((*path1 == '/' || *path1 == '\\') &&
 			  (*path2 == '/' || *path2 == '\\')))
 			return false;
+	}
 #else
 	for (; *path1 && *path2; ++path1, ++path2)
+	{
 		if (*path1 != *path2)
 			return false;
+	}
 #endif
 
 	return *path1 == 0 && *path2 == 0;

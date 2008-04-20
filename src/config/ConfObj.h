@@ -34,18 +34,20 @@ class ConfObject;
 class ConfObj
 {
 public:
+	ConfObj();
 	explicit ConfObj(ConfObject *confObject);
+	ConfObj(ConfObj& source);
 	~ConfObj();
 
 	operator ConfObject*() { return object; }
 	ConfObject* operator -> () { return object; }
 	const ConfObject* operator -> () const { return object; }
 	ConfObject* operator = (ConfObject *source);
-	
-	ConfObject	*object;
-	ConfObj(const ConfObj& source);
-	ConfObj();
+
 	bool hasObject() const;
+	
+private:
+	ConfObject	*object;
 };
 
 END_NAMESPACE

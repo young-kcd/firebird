@@ -31,12 +31,12 @@
 
 static ConfigFile	*configFile;
 
-Configuration::Configuration(void)
+Configuration::Configuration()
 {
 	configFile = NULL;
 }
 
-Configuration::~Configuration(void)
+Configuration::~Configuration()
 {
 	if (configFile)
 		configFile->release();
@@ -50,7 +50,7 @@ ConfObject* Configuration::findObject(const char* objectType, const char* object
 	return configFile->findObject (objectType, objectName);
 }
 
-const char* Configuration::getRootDirectory(void)
+const char* Configuration::getRootDirectory()
 {
 	if (!configFile)
 		loadConfigFile();
@@ -58,7 +58,7 @@ const char* Configuration::getRootDirectory(void)
 	return configFile->getRootDirectory();
 }
 
-void Configuration::loadConfigFile(void)
+void Configuration::loadConfigFile()
 {
 	if (!configFile)
 		configFile = new ConfigFile (0);

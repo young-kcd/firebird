@@ -59,7 +59,7 @@ void Args::parse(const Switches *switches, int argc, char **argv)
 {
 	for (char **arg = argv, **end = arg + argc; arg < end;)
 		{
-		char *p = *arg++;
+		const char *p = *arg++;
 		const Switches *parameter = NULL;
 		bool hit = false;
 		for (const Switches *sw = switches; sw->string; ++sw)
@@ -114,6 +114,7 @@ void Args::printHelp(const char *helpText, const Switches *switches)
 	const Switches *sw;
 
 	for (sw = switches; sw->string; ++sw)
+	{
 		if (sw->description)
 			{
 			int l = (int) strlen (sw->string);
@@ -126,6 +127,7 @@ void Args::printHelp(const char *helpText, const Switches *switches)
 					argLength = l;
 				}
 			}
+	}
 
 	if (helpText)
 		printf (helpText);
@@ -133,11 +135,13 @@ void Args::printHelp(const char *helpText, const Switches *switches)
 	printf ("Options are:\n");
 
 	for (sw = switches; sw->string; ++sw)
+	{
 		if (sw->description)
 			{
 			const char *arg = (sw->argName) ? sw->argName : "";
 			printf ("  %-*s %-*s   %s\n", switchLength, sw->string, argLength, arg, sw->description);
 			}
+	}
 }
 
 bool Args::readPasswords(const char *msg, char *pw1, int length)

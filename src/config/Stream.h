@@ -53,6 +53,9 @@ struct Segment
 class Stream  
 {
 public:
+	explicit Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
+	virtual ~Stream();
+
 	int compare (const Stream *stream) const;
 	void truncate (int length);
 	void format (const char *pattern, ...);
@@ -78,18 +81,15 @@ public:
 	Segment*		allocSegment (int tail);
 	void			setMinSegment (int length);
 
-
-	explicit Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
-	virtual ~Stream();
-
 	int		totalLength;
+	//int		useCount;
+	Segment	*segments; // used by StreamSegment::setStream
+private:
 	int		minSegment;
 	int		currentLength;
 	int		decompressedLength;
-	int		useCount;
 	bool	copyFlag;
 	Segment	first;
-	Segment	*segments;
 	Segment *current;
 };
 

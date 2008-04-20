@@ -79,11 +79,14 @@ Lex::~Lex()
 void Lex::skipWhite()
 {
 	for (;;)
-		{
+	{
 		while (ptr >= end)
+		{
 			if (!getSegment())
 				return;
+		}
 		while (ptr < end)
+		{
 			if (lineComment && lineComment [0] == *ptr && match (lineComment, ptr))
 				{
 				while (ptr < end && *ptr++ != '\n')
@@ -118,7 +121,7 @@ void Lex::skipWhite()
 			else
 				return;
 		}
-
+	}
 }
 
 // Just another custom memcmp-like routine.

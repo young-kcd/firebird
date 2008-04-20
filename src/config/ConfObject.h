@@ -41,12 +41,14 @@ class ConfigFile;
 class ConfObject : public RefObject
 {
 public:
-	ConfObject(ConfigFile *confFile);
+	explicit ConfObject(ConfigFile *confFile);
+	virtual ~ConfObject();
+	
 	virtual const char*	getValue(const char* option, const char *defaultValue);
 	virtual int			getValue(const char* option, int defaultValue);
 	virtual bool		getValue(const char* option, bool defaultValue);
 	virtual const char*	getValue(int instanceNumber, const char* attributeName);
-	virtual bool		matches(Element *element, const char* type, const char* string);
+	virtual bool		matches(Element* element, const char* type, const char* string);
 	virtual void		setChain(ConfObject* object);
 	virtual const char* getName();
 	virtual const char*	getConcatenatedValues(const char* attributeName);
@@ -60,8 +62,6 @@ protected:
 	virtual JString		getValue(const char* attributeName);
 	virtual Element*	findAttribute(const char* attributeName);
 	virtual const char* getValue(const Element* attribute);
-
-	virtual ~ConfObject();
 
 public:
 	Element		*object;

@@ -54,16 +54,16 @@ AdminException::AdminException(const char *txt, ...)
 	
 	if (ret < 0)
 		{
-		int l = sizeof (temp) * 2;
-		char *buffer = new char [l];
+		const int l = sizeof (temp) * 2;
+		char* const buffer = new char [l];
 		vsnprintf (buffer, l, txt, args);
 		text = buffer;
 		delete [] buffer;
 		}
 	else if (static_cast<unsigned>(ret) >= sizeof (temp))
 		{
-		int l = ret + 1;
-		char *buffer = new char [l];
+		const int l = ret + 1;
+		char* const buffer = new char [l];
 		vsnprintf (buffer, l, txt, args);
 		text = buffer;
 		delete [] buffer;
@@ -79,7 +79,7 @@ AdminException::~AdminException()
 
 }
 
-const char* AdminException::getText()
+const char* AdminException::getText() const
 {
 	return text;
 }

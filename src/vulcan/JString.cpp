@@ -45,7 +45,7 @@
 static char THIS_FILE[]=__FILE__;
 #endif
 
-
+
 JString::JString ()
 {
 /**************************************
@@ -61,7 +61,7 @@ JString::JString ()
 
 	string = NULL;
 }
-
+
 JString::JString (const char *stuff)
 {
 /**************************************
@@ -77,6 +77,12 @@ JString::JString (const char *stuff)
 
 	string = NULL;
 	setString (stuff);
+}
+
+JString::JString(const char * source, int len)
+{
+	string = NULL;
+	setString (source, len);
 }
 
 JString::JString (const JString& source)
@@ -145,7 +151,7 @@ void JString::append (const char* stuff)
 	if (--((int*) temp)[0] == 0)
 		delete [] temp;
 }
-
+
 void JString::setString (const char* stuff)
 {
 /**************************************
@@ -457,7 +463,8 @@ JString& JString::operator =(const WCHAR * wString)
 
 void JString::setString(const char * source, int len)
 {
-	char *old = string;
+	fb_assert(len >= 0);
+	char* const old = string;
 	allocSpace (len);
 	memcpy (string, source, len);
 	string[len] = 0;
@@ -483,7 +490,7 @@ int JString::findSubstring(const char * string, const char * sub)
 JString JString::upcase(const char * source)
 {
 	JString string;
-	int len = (int) strlen (source);
+	const int len = (int) strlen (source);
 	string.alloc (len);
 	
 	for (int n = 0; n < len; ++n)
@@ -512,8 +519,10 @@ bool JString::equalsNoCase(const char * string2) const
 	const char *p;
 
 	for (p = string; *p && *string2; ++p, ++string2)
+	{
 		if (UPPER (*p) != UPPER (*string2))
 			return false;
+	}
 
 	return *p == *string2;
 }
@@ -523,18 +532,11 @@ int JString::length() const
 	if (!string)
 		return 0;
 
-	const char *p;
-
-	for (p = string; *p; ++p)
-		;
+	const char* p = string;
+	while (*p)
+		++p;
 
 	return (int) (p - string);
-}
-
-JString::JString(const char * source, int len)
-{
-	string = NULL;
-	setString (source, len);
 }
 
 char* JString::getBuffer(int len)

@@ -53,15 +53,15 @@
 #define IS_LETTER(c)	((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 //#define UPPER(c)		((c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c)
 
-PathName::PathName(void)
+PathName::PathName()
 {
 }
 
-PathName::~PathName(void)
+PathName::~PathName()
 {
 }
 
-const char* PathName::getWorkingDirectory(void)
+const char* PathName::getWorkingDirectory()
 {
 	static char workingDirectory [MAXPATHLEN];
 
@@ -85,11 +85,11 @@ const char* PathName::getWorkingDirectory(void)
 int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLength, char* buffer)
 {
 	const UCHAR *p = dpb, *end = dpb + dpbLength;
-	int length;
-	
+
 	if (dpbLength <= 0 || *p++ != isc_dpb_version1)
 		return 0;
 	
+	int length = 0;
 	for (; p < end; p += length)
 		{
 		const UCHAR verb = *p++;
@@ -98,7 +98,7 @@ int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLe
 		
 		if (verb == isc_dpb_working_directory)
 			{
-			int l = MIN (bufferLength - 1, length);
+			const int l = MIN (bufferLength - 1, length);
 			memcpy (buffer, p, l);
 			buffer [l] = 0;
 			return length;
@@ -128,8 +128,10 @@ JString PathName::expandFilename(const char* fileName, const char* workingDirect
 	
 #ifdef _WIN32
 	for (char *p = buffer; *p; ++p)
+	{
 		if (*p == '/')
 			*p = SEPARATOR;
+	}
 #endif
 
 	return JString (buffer, length);
@@ -249,8 +251,10 @@ JString PathName::expandFilename(const char* fileName)
 bool PathName::hasDirectory(const char* fileName)
 {
 	for (const char *p = fileName; *p; ++p)
+	{
 		if (IS_SEPARATOR (*p))
 			return true;
+	}
 	
 	return false;
 }
