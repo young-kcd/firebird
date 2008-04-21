@@ -1,3 +1,92 @@
+2008-04-21 18:29  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.221):
+
+	Use internal trusted authentication in services
+
+2008-04-21 18:18  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.443):
+
+	Fixed CORE-1854: Value of CURRENT_USER may be not in upper case
+	when using unix OS auth
+
+2008-04-21 16:02  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.132):
+
+	Style.
+
+2008-04-21 15:45  robocop
+
+	* firebird2/src/config/ConfigFile.cpp (1.10):
+
+	Maybe it's just my imagination, but I see more B.O.
+
+2008-04-21 14:56  robocop
+
+	* firebird2/src/config/: InputFile.cpp (1.7), InputFile.h (1.6):
+
+	Buffer overrun and null pointer exception courtesy of Jim.  :-(
+
+2008-04-21 14:14  robocop
+
+	* firebird2/src/burp/burp.cpp (1.137):
+
+	Misc.
+
+2008-04-21 13:39  robocop
+
+	* firebird2/src/: alice/alice_meta.epp (1.52), jrd/blb.cpp (1.168),
+	jrd/blb.h (1.30):
+
+	Misc.
+
+2008-04-21 13:37  robocop
+
+	* firebird2/src/alice/alice.cpp (1.104):
+
+	Changed sw_use to sw_no_reserve and ua_use to ua_no_reserve to
+	distinguish them from sw_user and ua_user. Also, the new name is
+	clearer on the intended usage.	Disabled the replay log feature
+	since Adriano deleted it in the server.  Also god rid of
+	expand_filename() that was a B.O. function.
+
+2008-04-21 13:36  robocop
+
+	* firebird2/src/alice/: alice.h (1.60), aliceswi.h (1.18), exe.cpp
+	(1.52):
+
+	Changed sw_use to sw_no_reserve and ua_use to ua_no_reserve to
+	distinguish them from sw_user and ua_user. Also, the new name is
+	clearer on the intended usage.	Disabled the replay log feature
+	since Adriano deleted it in the server.
+
+2008-04-21 11:53  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.235):
+
+	Fixed races during disconnect
+
+2008-04-21 01:00  asfernandes
+
+	* firebird2/src/: msgs/system_errors2.sql (1.31),
+	include/gen/sql_state.h (1.15):
+
+	Misc
+
+2008-04-21 00:54  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.74),
+	lang_helpers/gds_codes.pas (1.74), src/include/gen/codetext.h
+	(1.83), src/include/gen/iberror.h (1.87), src/include/gen/msgs.h
+	(1.105), src/include/gen/sql_code.h (1.89),
+	src/include/gen/sql_state.h (1.14), src/jrd/jrd.cpp (1.442),
+	src/jrd/jrd.h (1.235), src/msgs/facilities2.sql (1.33),
+	src/msgs/messages2.sql (1.41), src/msgs/system_errors2.sql (1.30):
+
+	Lock the attachment handle during API calls
+
 2008-04-20 16:35  dimitr
 
 	* firebird2/src/remote/inet.cpp (1.234):
