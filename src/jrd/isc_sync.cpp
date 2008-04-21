@@ -3216,8 +3216,10 @@ static void make_object_name(
 	char* p;
 	char c;
 	for (p = buffer; c = *p; p++)
+	{
 		if (c == '/' || c == '\\' || c == ':')
 			*p = '_';
+	}
 	strcpy(p, object_type);
 
 	// hvlad: windows file systems use case-insensitive file names
