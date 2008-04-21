@@ -49,41 +49,48 @@ class jrd_tra;
 class vcl;
 
 // This structure must occupy 8 bytes
-struct bid {
-	union {
+struct bid
+{
+	union
+	{
 		// Internal decomposition of the structure
 		RecordNumber::Packed bid_internal;
 
 		// This is how bid structure represented in public API.
 		// Must be present to enforce alignment rules when structure is declared on stack
-		struct {
+		struct
+		{
 			ULONG bid_quad_high;
 			ULONG bid_quad_low;
 		} bid_quad;
 	};
 
-	ULONG& bid_temp_id() {
+	ULONG& bid_temp_id()
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	ULONG bid_temp_id() const {
+	ULONG bid_temp_id() const
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
 		return bid_internal.bid_temp_id();
 	}
 
-	bool isEmpty() const { 
+	bool isEmpty() const
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0; 
+		return bid_quad.bid_quad_high == 0 && bid_quad.bid_quad_low == 0;
 	}
 
-	void clear() {
+	void clear()
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -91,7 +98,8 @@ struct bid {
 		bid_quad.bid_quad_low = 0;
 	}
 
-	void set_temporary(ULONG temp_id) {
+	void set_temporary(ULONG temp_id)
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -99,7 +107,8 @@ struct bid {
 		bid_temp_id() = temp_id;
 	}
 
-	void set_permanent(USHORT relation_id, RecordNumber num) {
+	void set_permanent(USHORT relation_id, RecordNumber num)
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -108,7 +117,8 @@ struct bid {
 		num.bid_encode(&bid_internal);
 	}
 
-	RecordNumber get_permanent_number() const {
+	RecordNumber get_permanent_number() const
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
@@ -117,11 +127,12 @@ struct bid {
 		return temp;
 	}
 
-	bool operator == (const bid& other) const {
+	bool operator == (const bid& other) const
+	{
 		// Make sure that compiler packed structure like we wanted
 		fb_assert(sizeof(*this) == 8);
 
-		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high && 
+		return bid_quad.bid_quad_high == other.bid_quad.bid_quad_high &&
 			bid_quad.bid_quad_low == other.bid_quad.bid_quad_low;
 	}
 };

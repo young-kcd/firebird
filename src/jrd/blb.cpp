@@ -791,8 +791,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 /* If this is a stream blob, fake fragment unless we're at the end */
 
 	if (!SEGMENTED(blob)) { // stream blob
-		blob->blb_fragment_size =
-			(blob->blb_seek == blob->blb_length) ? 0 : 1;
+		blob->blb_fragment_size = (blob->blb_seek == blob->blb_length) ? 0 : 1;
 	}
 
 	return length;
