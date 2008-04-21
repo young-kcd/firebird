@@ -227,8 +227,10 @@ ConfObject* ConfigFile::getObject(const char* objectType)
 Element* ConfigFile::findGlobalAttribute(const char *attributeName)
 {
 	for (Element *element = hashTable [JString::hash (attributeName, HASH_SIZE)]; element; element = element->sibling)
+	{
 		if (element->name == attributeName)
 			return element;
+	}
 			
 	return NULL;
 }
@@ -240,33 +242,55 @@ const char* ConfigFile::getInstallDirectory()
 
 JString ConfigFile::expand(JString rawString)
 {
+	const char* const errstr = "filename expansion reached implementation limit at %d";
 	char temp [1024];
-	char *p = temp, *temp_end = temp + sizeof(temp) - 1;
+	char* p = temp;
+	const char* const temp_end = temp + sizeof(temp) - 1;
 	bool change = false;
 	
 	for (const char *s = rawString; *s;)
-		{
+	{
 		char c = *s++;
 		if (c == '$')
-			{
+		{
 			if (*s == '(')
-				{
+			{
 				++s;
 				change = true;
-				char name [256], *n = name;
-				while (*s && (c = *s++) != ')' && n < name + sizeof(name) - 1)
-					*n++ = c;
+				char name [256];
+				const char* const name_end = name + sizeof(name) - 1;
+				char* n = name;
+				bool overflow = false;
+				while (*s && (c = *s++) != ')' && !overflow)
+				{
+					if (n < name_end)
+						*n++ = c;
+					else
+						overflow = true;
+				}
 				*n = 0;
+				if (overflow)
+				{
+					n[-3] = n[-2] = n[-1] = '.';
+					throw AdminException("name to be substituted \"%s\" is too long", name);
+				}
 				const char *subst = translate (name, NULL);
 				if (!subst)
 					throw AdminException ("can't substitute for \"%s\"", name);
-				for (const char *t = subst; *t && p < temp_end;)
-					*p++ = *t++;					
+				for (const char *t = subst; *t;)
+				{
+					if (p < temp_end)
+						*p++ = *t++;
+					else
+						throw AdminException(errstr, sizeof(temp) - 1);
 				}
 			}
+		}
 		else if (p < temp_end)
 			*p++ = c;
-		}
+		else
+			throw AdminException(errstr, sizeof(temp) - 1);
+	}
 	
 	if (!change)
 		return rawString;
