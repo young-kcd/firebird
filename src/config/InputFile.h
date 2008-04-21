@@ -45,7 +45,7 @@ START_NAMESPACE
 class InputFile : public InputStream
 {
 public:
-	explicit InputFile(const char* fileName);
+	explicit InputFile(const char* name);
 	InputFile();
 	virtual ~InputFile();
 	
@@ -57,7 +57,7 @@ public:
 	virtual const char* getSegment();
 	virtual void close();
 
-	bool openInputFile(const char* fileName);
+	bool openInputFile(const char* fileName); // caller is ConfigFile.cpp
 private:
 	struct FileChange
 	{

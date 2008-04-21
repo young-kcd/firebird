@@ -59,6 +59,7 @@
 InputFile::InputFile(const char *name)
 {
 	changes = NULL;
+	file = NULL;
 	
 	if (!openInputFile (name))
 		throw AdminException ("can't open file \"%s\"", name);
@@ -67,6 +68,7 @@ InputFile::InputFile(const char *name)
 InputFile::InputFile()
 {
 	changes = NULL;
+	file = NULL;
 }
 
 InputFile::~InputFile()
@@ -141,7 +143,7 @@ void InputFile::rewrite()
 
 	char tempName [MAX_FILE_NAME];
 	sprintf (tempName, "%.*s.tmp", sizeof(tempName) - 5, fileName.getString());
-	FILE *output = fopen (tempName,"w");
+	FILE *output = fopen (tempName, "w");
 
 	if (!output)
 		throw AdminException ("can't open \"%s\" for output", tempName);
@@ -180,7 +182,7 @@ void InputFile::rewrite()
 		if (n)
 			sprintf (filename2, "%.*s.%d", sizeof(filename2) - 3, (const char*) fileName, n - 1);
 		else
-			strcpy (filename2, fileName);
+			strcpy (filename2, fileName); // limited to correct length in openInputFile
 		if (n == BACKUP_FILES)
 			unlink (filename1);
 		rename (filename2, filename1);
@@ -214,6 +216,10 @@ bool InputFile::pathEqual(const char *path1, const char *path2)
 
 bool InputFile::openInputFile(const char* name)
 {
+	// Otherwise it has B.O. in rewrite() with strcpy(filename2, fileName);
+	if (!name || strlen(name) >= MAX_FILE_NAME)
+		return false;
+		
 	if (!(file = fopen (name, "r")))
 		return false;
 		
