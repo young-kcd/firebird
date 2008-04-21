@@ -454,8 +454,6 @@ int gbak(Firebird::UtilSvc* uSvc)
  *	Routine called by command line utility and services API.
  *
  **************************************/
-	const TEXT* file2 = NULL;
-
 	gbak_action action = QUIT;
 	int exit_code = FINI_ERROR;
 
@@ -467,7 +465,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->file_desc = INVALID_HANDLE_VALUE;
 
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
-	int argc = uSvc->argv.getCount();
+	const int argc = uSvc->argv.getCount();
 
 	in_sw_tab_t* in_sw_tab; // used in several parts below.
 	// Initialize static data. DANGER! MT issue in services!
@@ -778,6 +776,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// pop off the obviously boring ones, plus do some checking 
 
 	const TEXT* file1 = NULL;
+	const TEXT* file2 = NULL;
 	for (file = tdgbl->gbl_sw_files; file; file = file->fil_next) 
 	{
 		if (!file1)
@@ -1001,12 +1000,17 @@ int gbak(Firebird::UtilSvc* uSvc)
 		BURP_error(11, true);
 		// msg 11 input and output have the same name.  Disallowed. 
 
-	const time_t clock = time(NULL);
-	strcpy(tdgbl->gbl_backup_start_time, ctime(&clock));
-	TEXT* nlp = tdgbl->gbl_backup_start_time +
-				strlen(tdgbl->gbl_backup_start_time) - 1;
-	if (*nlp == '\n')
-		*nlp = 0;
+	{ // scope
+		// The string result produced by ctime contains exactly 26 characters and
+		// gbl_backup_start_time is TEXT[30], but let's make sure we don't overflow
+		// due to any change.
+		const time_t clock = time(NULL);
+		fb_utils::copy_terminate(tdgbl->gbl_backup_start_time, ctime(&clock),
+			sizeof(tdgbl->gbl_backup_start_time));
+		TEXT* nlp = tdgbl->gbl_backup_start_time + strlen(tdgbl->gbl_backup_start_time) - 1;
+		if (*nlp == '\n')
+			*nlp = 0;
+	} // scope
 
 	tdgbl->action = (ACT) BURP_alloc_zero(ACT_LEN);
 	tdgbl->action->act_total = 0;
