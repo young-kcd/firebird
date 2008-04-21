@@ -1670,20 +1670,13 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			}
 			else
 			{
+				// No need repeating user validation in service worker thread
 				if (svc_username.hasData())
 				{
 					svc_switches += " -";
-					svc_switches += USERNAME_SWITCH;
+					svc_switches += TRUSTED_USER_SWITCH;
 					svc_switches += ' ';
 					svc_switches += svc_username;
-				}
-
-				if (svc_enc_password.hasData())
-				{
-					svc_switches += " -";
-					svc_switches += PASSWORD_SWITCH;
-					svc_switches += ' ';
-					svc_switches += svc_enc_password;
 				}
 			}
 		}
