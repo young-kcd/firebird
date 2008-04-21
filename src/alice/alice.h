@@ -63,7 +63,7 @@ struct user_action
 #ifdef TRUSTED_AUTH
 	bool ua_trusted;
 #endif 
-	bool ua_use;
+	bool ua_no_reserve;
 	bool ua_force;
 	bool ua_read_only;
 	SLONG ua_shutdown_delay;
@@ -72,7 +72,7 @@ struct user_action
 	SLONG ua_page_buffers;
 	USHORT ua_debug;
 	SLONG ua_val_errors[MAX_VAL_ERRORS];
-	TEXT ua_log_file[MAXPATHLEN];
+	//TEXT ua_log_file[MAXPATHLEN];
 	USHORT ua_db_SQL_dialect;
 	alice_shut_mode ua_shutdown_mode;
 };
@@ -177,15 +177,18 @@ public:
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;
 
-	static inline AliceGlobals* getSpecific() {
+	static inline AliceGlobals* getSpecific()
+	{
 		ThreadData* tData = ThreadData::getSpecific();
 		fb_assert (tData->getType() == ThreadData::tddALICE)
 		return (AliceGlobals*) tData;
 	}
-	static inline void putSpecific(AliceGlobals* tdgbl) {
+	static inline void putSpecific(AliceGlobals* tdgbl)
+	{
 		tdgbl->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific() {
+	static inline void restoreSpecific()
+	{
 		ThreadData::restoreSpecific();
 	}
 };

@@ -215,17 +215,19 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertInt(isc_dpb_sweep_interval, 
 					  tdgbl->ALICE_data.ua_sweep_interval);
 	}
+/*
 	else if (switches & sw_begin_log) {
 		dpb.insertString(isc_dpb_begin_log, 
 						 tdgbl->ALICE_data.ua_log_file, 
 						 strlen(tdgbl->ALICE_data.ua_log_file));
 	}
+	else if (switches & sw_quit_log) {
+		dpb.insertTag(isc_dpb_quit_log);
+	}
+*/
 	else if (switches & sw_buffers) {
 		dpb.insertInt(isc_dpb_set_page_buffers, 
 					  tdgbl->ALICE_data.ua_page_buffers);
-	}
-	else if (switches & sw_quit_log) {
-		dpb.insertTag(isc_dpb_quit_log);
 	}
 	else if (switches & sw_kill) {
 		dpb.insertTag(isc_dpb_delete_shadow);
@@ -234,11 +236,10 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertByte(isc_dpb_force_write, 
 					   tdgbl->ALICE_data.ua_force ? 1 : 0);
 	}
-	else if (switches & sw_use) {
+	else if (switches & sw_no_reserve) {
 		dpb.insertByte(isc_dpb_no_reserve, 
-					   tdgbl->ALICE_data.ua_use ? 1 : 0);
+					   tdgbl->ALICE_data.ua_no_reserve ? 1 : 0);
 	}
-
 	else if (switches & sw_mode) {
 		dpb.insertByte(isc_dpb_set_db_readonly,
 					   tdgbl->ALICE_data.ua_read_only ? 1 : 0);
