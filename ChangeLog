@@ -1,3 +1,9 @@
+2008-04-21 11:13  dimitr
+
+	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.6):
+
+	Cleaned up the inactive code from prior versions.
+
 2008-04-01 10:55  paulbeach
 
 	* firebird2/src/jrd/: flu.cpp (1.34.2.5), flu.h (1.3.2.1):
