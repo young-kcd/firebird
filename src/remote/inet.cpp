@@ -1613,7 +1613,7 @@ static void disconnect( rem_port* port)
 #endif
 
 /* If this is a sub-port, unlink it from it's parent */
-
+	Firebird::MutexLockGuard guard(port_mutex);
 	port->port_state = rem_port::DISCONNECTED;
 
 	rem_port* parent = port->port_parent;
