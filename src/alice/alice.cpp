@@ -85,7 +85,6 @@ void ALICE_exit(int code, AliceGlobals* tdgbl)
     Firebird::LongJump::raise();
 }
 
-static void expand_filename(const TEXT*, TEXT*);
 static void alice_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 
 
@@ -258,12 +257,16 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
+#ifdef DEV_BUILD
+		/*
 		if (table->in_sw_value & sw_begin_log) {
 			if (--argc <= 0) {
 				ALICE_error(5);	// msg 5: replay log pathname required
 			}
-			expand_filename(*argv++, tdgbl->ALICE_data.ua_log_file);
+			fb_utils::copy_terminate(tdgbl->ALICE_data.ua_log_file, *argv++, sizeof(tdgbl->ALICE_data.ua_log_file));
 		}
+		*/
+#endif
 
 		if (table->in_sw_value & (sw_buffers)) {
 			if (--argc <= 0) {
@@ -348,16 +351,16 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & sw_use) {
+		if (table->in_sw_value & sw_no_reserve) {
 			if (--argc <= 0) {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required
 			}
 			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, "full")) {
-				tdgbl->ALICE_data.ua_use = true;
+				tdgbl->ALICE_data.ua_no_reserve = true;
 			}
 			else if (!strcmp(string, "reserve")) {
-				tdgbl->ALICE_data.ua_use = false;
+				tdgbl->ALICE_data.ua_no_reserve = false;
 			}
 			else {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required
@@ -647,17 +650,5 @@ static void alice_output(const SCHAR* format, ...)
 	va_end(arglist);
 
 	tdgbl->uSvc->output(buf.c_str());
-}
-
-
-//____________________________________________________________
-//
-//		Fully expand a file name.  If the file doesn't exist, do something
-//		intelligent.
-//      CVC: The above comment is either a joke or a copy/paste.
-
-static void expand_filename(const TEXT* filename, TEXT* expanded_name)
-{
-	strcpy(expanded_name, filename);
 }
 
