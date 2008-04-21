@@ -23,25 +23,9 @@
 
 #include "firebird.h"
 #include <windows.h>
-#include "../jrd/common.h"
-#include "../../utilities/install/registry.h"
-#include "../jrd/jrd_proto.h"
-#include "../jrd/thread_proto.h"
 
 
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain(HINSTANCE /*h*/, DWORD /*reason*/, LPVOID /*reserved*/)
 {
-	switch (reason)	{
-
-	case DLL_PROCESS_DETACH:
-#ifdef EMBEDDED
-		JRD_shutdown_all(false);
-#endif
-		break;
-
-	default:
-		break;
-	}
-
 	return TRUE;
 }
