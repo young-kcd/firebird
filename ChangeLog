@@ -1,3 +1,39 @@
+2008-04-22 17:32  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.444):
+
+	Fixed problems of attachment lock in Windows - thanks to Vlad
+
+2008-04-22 15:01  robocop
+
+	* firebird2/src/utilities/gstat/dba.epp (1.92):
+
+	Cleanup.
+
+2008-04-22 13:34  robocop
+
+	* firebird2/src/remote/os/win32/wnet.cpp (1.55):
+
+	Paranoid check.
+
+2008-04-22 13:32  robocop
+
+	* firebird2/src/qli/expand.cpp (1.37):
+
+	Misc.
+
+2008-04-22 13:28  robocop
+
+	* firebird2/src/intl/lc_icu.cpp (1.11):
+
+	Avoid const_cast.
+
+2008-04-22 13:27  robocop
+
+	* firebird2/src/jrd/: ext.cpp (1.79), ext.h (1.14):
+
+	Since all usages cast ext_filename to char*, I switched to it.
+
 2008-04-21 18:29  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.221):
