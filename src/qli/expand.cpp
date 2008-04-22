@@ -273,7 +273,7 @@ static bool compare_names( const nam* name, const qli_symbol* symbol)
 	if (!symbol)
 		return false;
 
-	int l = name->nam_length;
+	const int l = name->nam_length;
 	if (l != symbol->sym_length)
 		return false;
 
@@ -299,7 +299,7 @@ static bool compare_symbols( const qli_symbol* symbol1, const qli_symbol* symbol
 	if (!symbol1 || !symbol2)
 		return false;
 
-	int l = symbol1->sym_length;
+	const int l = symbol1->sym_length;
 	if (l != symbol2->sym_length)
 		return false;
 
