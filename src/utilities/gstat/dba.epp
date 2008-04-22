@@ -82,7 +82,8 @@ DATABASE DB = STATIC "yachts.lnk";
 const SSHORT BUCKETS	= 5;
 //#define WINDOW_SIZE	(1 << 17)
 
-struct dba_idx {
+struct dba_idx
+{
 	dba_idx* idx_next;
 	SSHORT idx_id;
 	SSHORT idx_depth;
@@ -95,7 +96,8 @@ struct dba_idx {
 	SCHAR idx_name[MAX_SQL_IDENTIFIER_SIZE];
 };
 
-struct dba_rel {
+struct dba_rel
+{
 	dba_rel* rel_next;
 	dba_idx* rel_indexes;
 	SLONG rel_index_root;
@@ -115,7 +117,8 @@ struct dba_rel {
 
 /* kidnapped from jrd/pio.h and abused */
 
-struct dba_fil {
+struct dba_fil
+{
 	dba_fil* fil_next;	/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -136,7 +139,7 @@ struct dba_fil {
 #define CAST64
 #endif
 
-static SCHAR* alloc(size_t);
+static char* alloc(size_t);
 static void analyze_data(dba_rel*, bool);
 static bool analyze_data_page(dba_rel*, const data_page*, bool);
 static ULONG analyze_fragments(const dba_rel*, const rhdf*);
@@ -151,8 +154,11 @@ static void db_error(int);
 
 static dba_fil* db_open(const char*, USHORT);
 static const pag* db_read(SLONG);
+#ifdef WIN_NT
+static void db_close(void* file_desc);
+#else
 static void db_close(int);
-static void move(const SCHAR*, SCHAR*, SSHORT);
+#endif
 static void print_distribution(const SCHAR*, const SLONG*);
 static void dba_error(USHORT, const SafeArg& arg = SafeArg());
 static void dba_print(USHORT, const SafeArg& arg = SafeArg());
@@ -167,8 +173,13 @@ static void dba_print(USHORT, const SafeArg& arg = SafeArg());
 #include "../jrd/jrd_pwd.h"
 #include "../utilities/gstat/dba_proto.h"
 
-struct open_files {
+struct open_files
+{
+#ifdef WIN_NT
+	void* desc;
+#else
 	int desc;
+#endif
 	struct open_files *open_files_next;
 };
 
@@ -494,7 +505,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 
 	char file_name[1024];
-	strcpy(file_name, fileName.c_str());
+	fileName.copyTo(file_name, sizeof(file_name));
 
 	dba_print(6, SafeArg() << file_name);	/* msg 6: \nDatabase \"%s\"\n */
 
@@ -511,7 +522,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		if (page != HEADER_PAGE)
 			current = db_open(file_name, strlen(file_name));
 		do {
-			header = (const header_page*) db_read((SLONG) page);
+			header = (const header_page*) db_read(page);
 			if (current != tddba->files)
 				current->fil_fudge = 1;	/* ignore header page once read it */
 			*file_name = '\0';
@@ -536,7 +547,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	page = HEADER_PAGE;
 	do {
-		header = (const header_page*) db_read((SLONG) page);
+		header = (const header_page*) db_read(page);
 		PPG_print_header(header, page, sw_nocreation, uSvc);
 		page = header->hdr_next_page;
 	} while (page);
@@ -885,10 +896,7 @@ static char* alloc(size_t size)
 		dba_error(31);
 	}
 /* note: shouldn't we check for the NULL?? */
-	char* p = block;
-	do {
-		*p++ = 0;
-	} while (--size);
+	memset(block, 0, size);
 
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list) {
@@ -928,7 +936,7 @@ static void analyze_data( dba_rel* relation, bool sw_record)
 	for (SLONG next_pp = relation->rel_pointer_page; next_pp;
 		 next_pp = ptr_page->ppg_next)
 	{
-		move((const SCHAR*) db_read(next_pp), (SCHAR*) ptr_page, tddba->page_size);
+		memcpy(ptr_page, (const SCHAR*) db_read(next_pp), tddba->page_size);
 		const SLONG* ptr = ptr_page->ppg_page;
 		for (const SLONG* const end = ptr + ptr_page->ppg_count;
 			ptr < end; ptr++)
@@ -965,7 +973,7 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 		return false;
 
 	if (sw_record) {
-		move((const SCHAR*) page, (SCHAR*) tddba->buffer2, tddba->page_size);
+		memcpy(tddba->buffer2, (const SCHAR*) page, tddba->page_size);
 		page = (const data_page*) tddba->buffer2;
 	}
 
@@ -1112,7 +1120,7 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 
 			++index->idx_nodes;
 			index->idx_data_length += node.length;
-			USHORT l = node.length + node.prefix;
+			const USHORT l = node.length + node.prefix;
 			
 			bool dup;
 			if (node.nodePointer == firstNode) {
@@ -1137,13 +1145,8 @@ static void analyze_index( dba_rel* relation, dba_idx* index)
 			}
 
 			key_length = l;
-			l = node.length;
-			if (l) {
-				UCHAR* p = key + node.prefix;
-				const UCHAR* q = node.data;
-				do {
-					*p++ = *q++;
-				} while (--l);
+			if (node.length) {
+				memcpy(key + node.prefix, node.data, node.length);
 			}
 		}
 
@@ -1224,7 +1227,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 
 
 #ifdef WIN_NT
-static void db_close( int file_desc)
+static void db_close( void* file_desc)
 {
 /**************************************
  *
@@ -1236,7 +1239,7 @@ static void db_close( int file_desc)
  *    Close an open file
  *
  **************************************/
-	CloseHandle((HANDLE) file_desc);
+	CloseHandle(file_desc);
 }
 
 static void db_error( SLONG status)
@@ -1338,7 +1341,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		/* NOMEM: return error */
 		dba_error(31);
 	}
-	file_list->desc = reinterpret_cast<int>(fil->fil_desc);
+	file_list->desc = fil->fil_desc;
 	file_list->open_files_next = 0;
 
 	if (tddba->head_of_files_list == 0)
@@ -1618,23 +1621,6 @@ static void dba_print(
 
 	fb_msg_format(NULL, GSTAT_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	tddba->uSvc->printf("%s\n", buffer);
-}
-
-
-static void move(const SCHAR* from, SCHAR* to, SSHORT length)
-{
-/**************************************
- *
- *	m o v e
- *
- **************************************
- *
- * Functional description
- *	Move some stuff.
- *
- **************************************/
-
-	memcpy(to, from, (int) length);
 }
 
 
