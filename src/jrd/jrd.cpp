@@ -4852,6 +4852,9 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 			break;
 		}
 	}
+
+	attachment->att_mutex.leave();
+	tdbb->setAttachment(NULL);
 }
 
 
@@ -5771,6 +5774,7 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 	try
 	{
 		dbb->dbb_flags &= ~DBB_being_opened;
+		attachment->att_mutex.enter();	// will be unlocked in release_attachment
 		release_attachment(tdbb, attachment);
 
 		if (dbb->checkHandle())
