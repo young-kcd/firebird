@@ -43,6 +43,7 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 
 #include <stdarg.h>
@@ -814,8 +815,10 @@ static rem_str* make_pipe_name(const TEXT* connect_name,
 		protocol = p + 1;
 	else {
 		while (*p)
+		{
 			if (*p++ == '\\')
 				protocol = p;
+		}
 	}
 
 	buffer += '\\';
@@ -974,7 +977,7 @@ static int wnet_error(
  **************************************/
 	TEXT node_name[MAXPATHLEN];
 
-	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
+	fb_utils::copy_terminate(node_name, port->port_connection->str_data + 2, sizeof(node_name));
 	TEXT* p = strchr(node_name, '\\');
 	if (p != NULL)
 		*p = '\0';
