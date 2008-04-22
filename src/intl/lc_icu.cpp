@@ -73,8 +73,9 @@ static bool texttype_default_init(texttype* tt,
 	}
 
 	// name comes from stack. Copy it.
-	tt->texttype_name = FB_NEW(*getDefaultMemoryPool())  ASCII[strlen(name) + 1];
-	strcpy(const_cast<ASCII*>(tt->texttype_name), name);
+	ASCII* p = FB_NEW(*getDefaultMemoryPool()) ASCII[strlen(name) + 1];
+	strcpy(p, name);
+	tt->texttype_name = p;
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
 	tt->texttype_country = CC_INTL;
