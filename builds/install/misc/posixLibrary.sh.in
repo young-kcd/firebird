@@ -312,7 +312,7 @@ editFile() {
     Starting=$2
     NewLine=$3
 	
-	AwkProgram="(\$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
+	AwkProgram="(/^$Starting.*/ || \$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
 	MakeTemp
 	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
 }

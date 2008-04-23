@@ -26,7 +26,7 @@ fi
 # Update the /etc/inetd.conf or xinetd entry or /etc/init.d/firebird
 echo "Updating /etc file(s)"
 updateInetdServiceEntry
-changeInitRunUser
+changeInitRunUser $RunUser
 
 # Update ownership and SUID bits for programs.
 echo "Updating $FBRootDir"
