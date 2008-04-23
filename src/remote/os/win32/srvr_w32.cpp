@@ -218,7 +218,16 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		rem_port* port = 0;
 
 		if (server_flag & SRVR_inet)
+		{
 			port = INET_reconnect(connection_handle, status_vector);
+
+			if (port) 
+			{
+				SRVR_multi_thread(port, server_flag);
+				SRVR_shutdown();
+				port = NULL;
+			}
+		}
 		else if (server_flag & SRVR_wnet)
 			port = WNET_reconnect(connection_handle, status_vector);
 		else if (server_flag & SRVR_xnet)

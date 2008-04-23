@@ -465,6 +465,9 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
  **************************************/
 	SERVER_REQ request = NULL;
 	RemPortPtr port;		// Was volatile PORT port = NULL;
+
+	// hold reference on main_port to free asyncPacket before deletion of port
+	RemPortPtr mainPortRef(main_port);
 	PACKET asyncPacket;
 
 	zap_packet(&asyncPacket, true);
@@ -501,7 +504,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
-					if (!shutting_down) 
+					if (!shutting_down && (main_port->port_server_flags & SRVR_multi_client)) 
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}

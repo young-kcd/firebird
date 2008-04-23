@@ -70,8 +70,9 @@
 #ifdef SUPERSERVER
 #define SWEEP_THREAD
 #define GARBAGE_THREAD
-#define CANCEL_OPERATION
 #endif
+
+#define CANCEL_OPERATION
 
 
 #ifdef SUPERSERVER

@@ -909,6 +909,7 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 	status_vector[2] = isc_arg_end;
 
 	port->port_handle = handle;
+	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
 
 	int n = 0, optval = TRUE;
@@ -940,6 +941,7 @@ rem_port* INET_server(int sock)
  **************************************/
 	int n = 0;
 	rem_port* port = alloc_port(0);
+	port->port_flags |= PORT_server;
 	port->port_server_flags |= SRVR_server;
 	port->port_handle = (HANDLE) sock;
 
@@ -2054,12 +2056,11 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
  *	block for the client.
  *
  **************************************/
-	fb_assert(main_port->port_server_flags & SRVR_multi_client);
 
 	for (;;) 
 	{
 		select_port(main_port, &INET_select, port);
-		if (port == main_port) 
+		if (port == main_port && (port->port_server_flags & SRVR_multi_client)) 
 		{
 			if (INET_shutting_down)
 			{
@@ -2307,7 +2308,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 		if (!found)
 		{
-			if (!INET_shutting_down) {
+			if (!INET_shutting_down && (main_port->port_server_flags & SRVR_multi_client)) {
 				gds__log("INET/select_wait: client rundown complete, server exiting", 0);
 			}
 			return FALSE;
