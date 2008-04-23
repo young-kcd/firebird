@@ -201,7 +201,9 @@ bool InputFile::pathEqual(const char *path1, const char *path2)
 		    UPPER (*path1) != UPPER (*path2) &&
 			!((*path1 == '/' || *path1 == '\\') &&
 			  (*path2 == '/' || *path2 == '\\')))
+		{
 			return false;
+		}
 	}
 #else
 	for (; *path1 && *path2; ++path1, ++path2)

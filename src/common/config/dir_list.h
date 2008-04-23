@@ -88,7 +88,7 @@ protected:
 	// Clear allocated memory and reinitialize
 	void clear(void)
 	{
-		((inherited*)this)->clear();
+		((inherited*) this)->clear();
 		mode = NotInitialized;
 	}
 	// Used for various configuration parameters - 

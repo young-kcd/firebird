@@ -142,7 +142,7 @@ public:
 	static void  TlsV_on_thread_exit (void * pval)
 	{
 	/* Usually should delete pval like this
-		T * ptempT= (T*) pval ;
+		T* ptempT = (T*) pval;
 		delete ptempT;
 	*/
 
@@ -162,7 +162,7 @@ public:
 			return (T)(IPTR) valuep ;
 
 		system_call_failed::raise("thr_getspecific");
-		return (T)NULL;
+		return (T) NULL;
 	}
 	void set(const T value)
 	{

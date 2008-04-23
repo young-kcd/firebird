@@ -148,7 +148,8 @@ public:
 	}
 	void beginWrite()
 	{
-		if (!tryBeginWrite()) {
+		if (!tryBeginWrite())
+		{
 			++blockedWriters;
 			while (!tryBeginWrite())
 			{

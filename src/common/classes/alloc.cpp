@@ -656,6 +656,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 				lock.leave();
 				return NULL;
 			}
+
 			extent->mxt_next = NULL;
 			extent->mxt_prev = NULL;
 			extents = extent;
@@ -690,6 +691,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 			freeBlocks.add(temp);
 			updateSpare();
 		}
+
 		lock.leave();
 	}
 
