@@ -1,3 +1,48 @@
+2008-04-23 11:38  hvlad
+
+	* firebird2/src/: jrd/common.h (1.169), remote/inet.cpp (1.236),
+	remote/inet_server.cpp (1.80), remote/server.cpp (1.205),
+	remote/os/win32/srvr_w32.cpp (1.54):
+
+	Implement CORE-818 : Server needs to detect disconnects.  For INET
+	only.
+
+2008-04-23 11:31  hvlad
+
+	* firebird2/src/jrd/exe.cpp (1.260):
+
+	Lets cleanup status vector correctly.
+
+2008-04-23 10:06  dimitr
+
+	* firebird2/src/jrd/idx.h (1.18):
+
+	Made indices on procedure and exception IDs unique.  Added new
+	unique index on generator ID.
+
+2008-04-23 10:01  dimitr
+
+	* firebird2/src/jrd/dyn_mod.epp (1.100):
+
+	Misc.
+
+2008-04-23 10:00  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.55), VirtualTable.cpp
+	(1.9), pag.cpp (1.177):
+
+	1) Implemented CORE-793. More work is required to terminate idle CS
+	processes, this will be done the next week.  2) Fixed the "lock
+	conflict" error for the CS monitoring in v2.5.
+
+2008-04-23 04:19  asfernandes
+
+	* firebird2/src/: common/classes/alloc.cpp (1.107),
+	common/classes/fb_tls.h (1.18), common/classes/rwlock.h (1.36),
+	common/config/dir_list.h (1.19), config/InputFile.cpp (1.8):
+
+	Misc
+
 2008-04-22 17:32  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.444):
