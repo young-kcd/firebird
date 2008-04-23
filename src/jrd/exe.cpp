@@ -4056,8 +4056,9 @@ static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* condition
 		if (found)
 		{
 			request->req_last_xcp.init(status_vector);
-			status_vector[0] = 0;
+			status_vector[0] = isc_arg_gds;
 			status_vector[1] = 0;
+			status_vector[2] = isc_arg_end;
 			break;
 		}
     }
