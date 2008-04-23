@@ -2301,31 +2301,33 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 		/* msg 63: ERASE RDB$FILE failed */
 	}
 	
-	if (!found && verb == isc_dyn_begin_backup) try {
-		request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$FILES 
-			X.RDB$FILE_NAME.NULL = TRUE;
-			X.RDB$FILE_FLAGS.NULL = FALSE;
-			X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
-			X.RDB$FILE_START = 0;
-			X.RDB$FILE_START.NULL = FALSE;
-			X.RDB$FILE_LENGTH.NULL = TRUE;
-			X.RDB$SHADOW_NUMBER.NULL = TRUE;
-		END_STORE;
-		
-		found = true;
+	if (!found && verb == isc_dyn_begin_backup) {
+		try {
+			request = CMP_find_request(tdbb, drq_s_difference, DYN_REQUESTS);
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				X IN RDB$FILES 
+				X.RDB$FILE_NAME.NULL = TRUE;
+				X.RDB$FILE_FLAGS.NULL = FALSE;
+				X.RDB$FILE_FLAGS = FILE_difference | FILE_backing_up;
+				X.RDB$FILE_START = 0;
+				X.RDB$FILE_START.NULL = FALSE;
+				X.RDB$FILE_LENGTH.NULL = TRUE;
+				X.RDB$SHADOW_NUMBER.NULL = TRUE;
+			END_STORE;
+			
+			found = true;
 
-		if (!DYN_REQUEST(drq_s_difference))
-		{
-			DYN_REQUEST(drq_s_difference) = request;
-		}		
-	}
-	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
-		DYN_rundown_request(request, drq_s_difference);
-		DYN_error_punt(true, 150);
-		/* msg 150: STORE RDB$FILES failed */
+			if (!DYN_REQUEST(drq_s_difference))
+			{
+				DYN_REQUEST(drq_s_difference) = request;
+			}		
+		}
+		catch (const Firebird::Exception& ex) {
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+			DYN_rundown_request(request, drq_s_difference);
+			DYN_error_punt(true, 150);
+			/* msg 150: STORE RDB$FILES failed */
+		}
 	}
 	
 	if (invalid_state) {
