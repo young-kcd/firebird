@@ -234,6 +234,10 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 			}
 			else
 			{
+				ISC_STATUS_ARRAY temp_status;
+				ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
+				tdbb->tdbb_status_vector = temp_status;
+
 				memcpy(temp_lock->lck_key.lck_string, &guid, sizeof(FB_GUID));
 				if (LCK_lock(tdbb, temp_lock, LCK_EX, LCK_NO_WAIT))
 				{
@@ -248,6 +252,8 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 					// Don't remove its data.
 					garbage_collect = false;
 				}
+
+				tdbb->tdbb_status_vector = org_status;
 			}
 		}
 

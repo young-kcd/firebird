@@ -103,6 +103,7 @@
 using namespace Jrd;
 using namespace Ods;
 
+static int blocking_ast_attachment(void*);
 static void find_clump_space(SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*,
 							 USHORT);
 static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
@@ -959,7 +960,9 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	lock->lck_dbb = dbb;
-	LCK_lock(tdbb, lock, LCK_write, LCK_WAIT);
+	lock->lck_ast = blocking_ast_attachment;
+	lock->lck_object = attachment;
+	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	return attachment->att_attachment_id;
 }
@@ -2017,6 +2020,32 @@ int PAG_unlicensed()
 	return count;
 }
 */
+
+
+static int blocking_ast_attachment(void* ast_object)
+{
+	Attachment* const attachment = static_cast<Attachment*>(ast_object);
+
+	try
+	{
+		Database* const dbb = attachment->att_database;
+		Database::SyncGuard dsGuard(dbb, true);
+
+		ThreadContextHolder tdbb;
+		tdbb->setDatabase(dbb);
+		tdbb->setAttachment(attachment);
+
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
+		attachment->att_flags |= ATT_shutdown;
+
+		LCK_release(tdbb, attachment->att_id_lock);
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+	return 0;
+}
 
 
 static void find_clump_space(SLONG page_num,
