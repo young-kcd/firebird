@@ -1112,26 +1112,19 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	switch (node->nod_type) {
 	case nod_gen_id:		// return a 32-bit generator value
-		impure->vlu_misc.vlu_long =
-			(SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
+		{
+			SLONG temp = (SLONG) DPM_gen_id(tdbb, (SLONG)(IPTR) node->nod_arg[e_gen_id],
 								false, MOV_get_int64(values[0], 0));
-		impure->vlu_desc.dsc_dtype = dtype_long;
-		impure->vlu_desc.dsc_length = sizeof(SLONG);
-		impure->vlu_desc.dsc_scale = 0;
-		impure->vlu_desc.dsc_sub_type = 0;
-		impure->vlu_desc.dsc_address =
-			(UCHAR *) & impure->vlu_misc.vlu_long;
+			impure->make_long(temp);
+		}
 		return &impure->vlu_desc;
 
 	case nod_gen_id2:
-		impure->vlu_misc.vlu_int64 = DPM_gen_id(tdbb,
-			(IPTR) node->nod_arg[e_gen_id], false, MOV_get_int64(values[0], 0));
-		impure->vlu_desc.dsc_dtype = dtype_int64;
-		impure->vlu_desc.dsc_length = sizeof(SINT64);
-		impure->vlu_desc.dsc_scale = 0;
-		impure->vlu_desc.dsc_sub_type = 0;
-		impure->vlu_desc.dsc_address =
-			(UCHAR *) & impure->vlu_misc.vlu_int64;
+		{
+			SINT64 temp = DPM_gen_id(tdbb, (IPTR) node->nod_arg[e_gen_id],
+    							false, MOV_get_int64(values[0], 0));
+			impure->make_int64(temp);
+		}
 		return &impure->vlu_desc;
 
 	case nod_negate:
@@ -1415,13 +1408,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			/* Initialize the result area as an int64.  If the field being
 			   averaged is approximate numeric, the first call to add2 will
 			   convert the descriptor to double. */
-			impure->vlu_desc.dsc_dtype = dtype_int64;
-			impure->vlu_desc.dsc_length = sizeof(SINT64);
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_scale = from->nod_scale;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_int64;
-			impure->vlu_misc.vlu_int64 = 0;
+			impure->make_int64(0, from->nod_scale);
 			if (from->nod_type == nod_agg_average_distinct2)
 				/* Initialize a sort to reject duplicate values */
 				init_agg_distinct(tdbb, from);
@@ -1429,13 +1416,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 
 		case nod_agg_total:
 		case nod_agg_total_distinct:
-			impure->vlu_desc.dsc_dtype = dtype_long;
-			impure->vlu_desc.dsc_length = sizeof(SLONG);
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_long;
-			impure->vlu_misc.vlu_long = 0;
+			impure->make_long(0);
 			if (from->nod_type == nod_agg_total_distinct)
 				/* Initialize a sort to reject duplicate values */
 				init_agg_distinct(tdbb, from);
@@ -1446,13 +1427,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			/* Initialize the result area as an int64.  If the field being
 			   averaged is approximate numeric, the first call to add2 will
 			   convert the descriptor to double. */
-			impure->vlu_desc.dsc_dtype = dtype_int64;
-			impure->vlu_desc.dsc_length = sizeof(SINT64);
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_scale = from->nod_scale;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_int64;
-			impure->vlu_misc.vlu_int64 = 0;
+			impure->make_int64(0, from->nod_scale);
 			if (from->nod_type == nod_agg_total_distinct2)
 				/* Initialize a sort to reject duplicate values */
 				init_agg_distinct(tdbb, from);
@@ -1468,13 +1443,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		case nod_agg_count:
 		case nod_agg_count2:
 		case nod_agg_count_distinct:
-			impure->vlu_desc.dsc_dtype = dtype_long;
-			impure->vlu_desc.dsc_length = sizeof(SLONG);
-			impure->vlu_desc.dsc_sub_type = 0;
-			impure->vlu_desc.dsc_scale = 0;
-			impure->vlu_desc.dsc_address =
-				(UCHAR *) & impure->vlu_misc.vlu_long;
-			impure->vlu_misc.vlu_long = 0;
+			impure->make_long(0);
 			if (from->nod_type == nod_agg_count_distinct)
 				/* Initialize a sort to reject duplicate values */
 				init_agg_distinct(tdbb, from);
@@ -2152,14 +2121,7 @@ static dsc* add(const dsc* desc, const jrd_nod* node, impure_value* value)
 
 	const SLONG l1 = MOV_get_long(desc, node->nod_scale);
 	const SLONG l2 = MOV_get_long(&value->vlu_desc, node->nod_scale);
-	result->dsc_dtype = dtype_long;
-	result->dsc_length = sizeof(SLONG);
-	result->dsc_scale = node->nod_scale;
-	value->vlu_misc.vlu_long =
-		(node->nod_type == nod_subtract) ? l2 - l1 : l1 + l2;
-	result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_long;
-
-	result->dsc_sub_type = 0;
+	value->make_long(((node->nod_type == nod_subtract) ? l2 - l1 : l1 + l2), node->nod_scale);
 	return result;
 }
 
@@ -2383,12 +2345,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 		 || (node->nod_type == nod_subtract2)) && op1_is_date && op2_is_date)
 	{
 		d2 = d1 - d2;
-		value->vlu_misc.vlu_int64 = d2;
-		result->dsc_dtype = dtype_int64;
-		result->dsc_length = sizeof(SINT64);
-		result->dsc_scale = 0;
-		result->dsc_sub_type = 0;
-		result->dsc_address = (UCHAR *) & value->vlu_misc.vlu_int64;
+		value->make_int64(d2);
 		return result;
 	}
 
@@ -3775,12 +3732,7 @@ static dsc* get_mask(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	request->req_flags &= ~req_null;
 
 	// SecurityClass::flags_t is USHORT for now, so it fits in vlu_long.
-	impure->vlu_misc.vlu_long = SCL_get_mask(p1, p2);
-	impure->vlu_desc.dsc_dtype = dtype_long;
-	impure->vlu_desc.dsc_length = sizeof(SLONG);
-	impure->vlu_desc.dsc_scale = 0;
-	impure->vlu_desc.dsc_address = (UCHAR *) & impure->vlu_misc.vlu_long;
-
+	impure->make_long(SCL_get_mask(p1, p2));
 	return &impure->vlu_desc;
 }
 

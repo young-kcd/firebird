@@ -203,11 +203,13 @@ struct impure_state {
 	SSHORT sta_state;
 };
 
-struct impure_value {
+struct impure_value
+{
 	dsc vlu_desc;
 	USHORT vlu_flags; // Computed/invariant flags
 	VaryingString* vlu_string;
-	union {
+	union
+	{
 		UCHAR vlu_uchar;
 		SSHORT vlu_short;
 		SLONG vlu_long;
@@ -222,9 +224,35 @@ struct impure_value {
 		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
+	void make_long(const SLONG val, const signed char scale = 0);
+	void make_int64(const SINT64 val, const signed char scale = 0);
+	
 };
 
-struct impure_value_ex : public impure_value {
+// Do not use these methods where dsc_sub_type is not explicitly set to zero.
+inline void impure_value::make_long(const SLONG val, const signed char scale)
+{
+	this->vlu_misc.vlu_long = val;
+	this->vlu_desc.dsc_dtype = dtype_long;
+	this->vlu_desc.dsc_length = sizeof(SLONG);
+	this->vlu_desc.dsc_scale = scale;
+	this->vlu_desc.dsc_sub_type = 0;
+	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_long);
+}
+
+inline void impure_value::make_int64(const SINT64 val, const signed char scale)
+{
+	this->vlu_misc.vlu_int64 = val;
+	this->vlu_desc.dsc_dtype = dtype_int64;
+	this->vlu_desc.dsc_length = sizeof(SINT64);
+	this->vlu_desc.dsc_scale = scale;
+	this->vlu_desc.dsc_sub_type = 0;
+	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_int64);
+}
+
+
+struct impure_value_ex : public impure_value
+{
 	SLONG vlux_count;
 	blb* vlu_blob;
 };
