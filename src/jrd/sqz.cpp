@@ -101,7 +101,7 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
  **************************************/
 	SSHORT length;
 
-	const SCHAR* start = input;
+	const SCHAR* const start = input;
 
 	while (true)
 	{
@@ -167,7 +167,7 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
  **************************************/
 	SSHORT length;
 
-	const SCHAR* start = input;
+	const SCHAR* const start = input;
 
 	while (true) {
 		const SCHAR* control = dcc->dcc_string;
