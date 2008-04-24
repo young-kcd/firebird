@@ -225,7 +225,7 @@ CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Source
 #
 # vulcan
 
-VULCAN_ClientFiles=JString.cpp PathName.cpp RefObject.cpp
+VULCAN_ClientFiles=PathName.cpp RefObject.cpp
 VULCAN_ServerFiles=
 
 VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)
