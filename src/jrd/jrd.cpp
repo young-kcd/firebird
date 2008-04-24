@@ -5774,8 +5774,11 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 	try
 	{
 		dbb->dbb_flags &= ~DBB_being_opened;
-		attachment->att_mutex.enter();	// will be unlocked in release_attachment
-		release_attachment(tdbb, attachment);
+		if (attachment)
+		{
+			attachment->att_mutex.enter();	// will be unlocked in release_attachment
+			release_attachment(tdbb, attachment);
+		}
 
 		if (dbb->checkHandle())
 		{
