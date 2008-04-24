@@ -30,10 +30,11 @@
 #if !defined(AFX_ARGS_H__7C584339_5A11_4040_889B_417B607C858B__INCLUDED_)
 #define AFX_ARGS_H__7C584339_5A11_4040_889B_417B607C858B__INCLUDED_
 
-//#include "JString.h"	// Added by ClassView
 #if defined _MSC_VER  && _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER > 1000
+
+#include "../common/classes/alloc.h"
 
 struct Switches 
 	{
@@ -48,7 +49,7 @@ struct Switches
 #define ARG_ARG(sw,value,help)	sw, NULL, &value, NULL, help,
 #define SW_ARG(sw,value,help)	sw, &value,NULL,  NULL, help,
 
-class Args  
+class Args : public Firebird::GlobalStorage
 {
 public:
 	static bool readPassword (const char *msg, char *pw1, int length);

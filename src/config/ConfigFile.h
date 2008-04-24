@@ -29,7 +29,7 @@
 
 #include "Lex.h"
 #include "RefObject.h"
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
 static const int HASH_SIZE		= 101;
 static const int CONFIG_trace	= 1;
@@ -61,7 +61,7 @@ public:
 	ConfObject*		getObject(const char* objectType);
 	Element*		findGlobalAttribute(const char *attributeName);
 	const char*		getInstallDirectory();
-	virtual JString	expand(JString rawString);
+	virtual Firebird::PathName	expand(const Firebird::PathName& rawString);
 
 	const char* translate(const char* value, const Element* object);
 	void wildCardInclude(const char* fileName);
@@ -70,9 +70,9 @@ public:
 private:
 	void init(int configFlags);
 	Element*	objects;
-	JString		rootDirectory;
-	JString		installDirectory;
-	JString		currentDirectory;
+	Firebird::PathName	rootDirectory;
+	Firebird::PathName	installDirectory;
+	Firebird::PathName	currentDirectory;
 	Element*	hashTable [HASH_SIZE];
 
 };

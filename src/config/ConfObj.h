@@ -27,11 +27,13 @@
 #ifndef _CONFOBJ_H_
 #define _CONFOBJ_H_
 
+#include "../common/classes/alloc.h"
+
 START_NAMESPACE
 
 class ConfObject;
 
-class ConfObj
+class ConfObj : public Firebird::GlobalStorage
 {
 public:
 	ConfObj();

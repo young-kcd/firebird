@@ -35,27 +35,27 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
 START_NAMESPACE
 
 class Stream;
 class InputStream;
 
-class Element  
+class Element : public Firebird::GlobalStorage
 {
 public:
-	explicit Element(JString elementName);
-	Element (JString elementName, JString elementValue);
+	explicit Element(const Firebird::string& elementName);
+	Element (const Firebird::string& elementName, const Firebird::string& elementValue);
 	virtual ~Element();
 
 	void addChild (Element *child);
-	Element* addChild (JString name);
+	Element* addChild (const Firebird::string& name);
 	
 	void addAttribute (Element *child);
-	void addAttribute (JString name);
-	Element* addAttribute (JString name, JString value);
-	Element* addAttribute (JString name, int value);
+	void addAttribute (const Firebird::string& name);
+	Element* addAttribute (const Firebird::string& name, const Firebird::string& value);
+	Element* addAttribute (const Firebird::string& name, int value);
 
 	Element* findChild (const char *name, const char *attribute, const char *value);
 	void gen (int level, Stream *stream) const;
@@ -75,8 +75,8 @@ public:
 	void print (int level) const;
 	const Element* getAttributes() const { return attributes; }
 
-	JString		name;
-	JString		value;
+	Firebird::string	name;
+	Firebird::string	value;
 
 	Element		*sibling;
 	Element		*children;
@@ -88,9 +88,8 @@ public:
 	void putQuotedText(const char* text, Stream* stream) const;
 	static int analyzeData(int length, const UCHAR* data);
 private:
-	void init(JString elementName);
-	JString		innerText;
-	//JString		outerText;
+	void init(const Firebird::string& elementName);
+	Firebird::string	innerText;
 	Element		*parent; // assigned but never used.
 	Element		*attributes;
 };

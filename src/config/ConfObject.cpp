@@ -58,7 +58,8 @@ static const BooleanName booleanNames [] =
 	{NULL}
 	};
 	
-ConfObject::ConfObject(ConfigFile *confFile)
+ConfObject::ConfObject(ConfigFile *confFile) :
+	source(getPool()), tempValue(getPool())
 {
 	configFile = confFile;
 	configFile->addRef();
@@ -85,12 +86,12 @@ bool ConfObject::matches(Element* element, const char* type, const char* string)
 		return false;
 	
 	//const char *name = configFile->translate (attribute->name, attribute->name);	
-	JString name = expand (attribute->name);
+	Firebird::string name = expand (attribute->name.c_str());
 	numberStrings = 0;
 	end = buffer + sizeof (buffer);
 	next = buffer;
 
-	if (!match (0, name, string))
+	if (!match (0, name.c_str(), string))
 		return false;
 	
 	object = element;
@@ -174,7 +175,7 @@ const char* ConfObject::getValue (const char* option, const char *defaultValue)
 		
 	tempValue = expand (getValue (element));
 	
-	return tempValue;
+	return tempValue.c_str();
 }
 
 
@@ -185,16 +186,16 @@ int ConfObject::getValue(const char* option, int defaultValue)
 	if (!element)
 		return defaultValue;
 		
-	JString value = expand (getValue (element));
+	Firebird::string value (expand (getValue (element)));
 	int n = 0;
 	
-	for (const char *p = value; *p;)
+	for (const char *p = value.c_str(); *p;)
 		{
 		char c = *p++;
 		if (c >= '0' && c <= '9')
 			n = n * 10 + c - '0';
 		else
-			throw AdminException ("expected numeric value for option \"%s\", got \"%s\"", option, (const char*) value);
+			throw AdminException ("expected numeric value for option \"%s\", got \"%s\"", option, value.c_str());
 		}
 	
 	return n;
@@ -207,16 +208,16 @@ bool ConfObject::getValue(const char* option, bool defaultValue)
 	if (!element)
 		return defaultValue;
 		
-	JString value = expand (getValue (element));
+	Firebird::string value = expand (getValue (element));
 	
 	for (const BooleanName *name = booleanNames; name->string; ++name)
-		if (strcasecmp (name->string, value) == 0)
+		if (strcasecmp (name->string, value.c_str()) == 0)
 			return name->value;
 	
-	throw AdminException ("expected boolean value for option \"%s\", got \"%s\"", option, (const char*) value);
+	throw AdminException ("expected boolean value for option \"%s\", got \"%s\"", option, value.c_str());
 }
 
-JString ConfObject::expand(const char* rawValue)
+Firebird::string ConfObject::expand(const char* rawValue)
 {
 	if (!rawValue)
 		return "";
@@ -251,7 +252,7 @@ JString ConfObject::expand(const char* rawValue)
 					n = n * 10 + *s++ - '0';
 				if (n > numberStrings)
 					throw AdminException ("substitution index exceeds available segments");
-				for (const char *t = (n == 0) ? (const char*) source : strings [n - 1]; *t && p < temp_end;)
+				for (const char *t = (n == 0) ? source.c_str() : strings [n - 1]; *t && p < temp_end;)
 					*p++ = *t++;
 				}
 			}
@@ -267,7 +268,7 @@ JString ConfObject::expand(const char* rawValue)
 	return PathName::expandFilename (temp);	
 }
 
-JString ConfObject::getValue(const char* attributeName)
+Firebird::string ConfObject::getValue(const char* attributeName)
 {
 	const Element *attribute = findAttribute (attributeName);
 	
@@ -289,29 +290,29 @@ const char* ConfObject::getValue(int instanceNumber, const char* attributeName)
 	if (!val)
 		return "";
 		
-	tempValue = expand (val->name);
+	tempValue = expand (val->name.c_str());
 	
-	return tempValue;
+	return tempValue.c_str();
 }
 
 const char* ConfObject::getConcatenatedValues(const char* attributeName)
 {
 	const Element *attribute = findAttribute (attributeName);
-	JString value;
+	Firebird::string value;
 	
 	if (!attribute)
-		return value;
+		return value.c_str();
 			
 	for (const Element *att = attribute->getAttributes(); att; att = att->sibling)
 		{
-		if (!value.IsEmpty())
+		if (value.hasData())
 			value += " ";
 		value += att->name;
 		}
 	
 	tempValue = value;
 	
-	return tempValue;
+	return tempValue.c_str();
 }
 
 Element* ConfObject::findAttribute(const char* attributeName)
@@ -353,7 +354,7 @@ const char* ConfObject::getValue(const Element* attribute)
 	if (!value)
 		return NULL;
 	
-	return value->name;
+	return value->name.c_str();
 }
 
 const char* ConfObject::getName()
@@ -366,7 +367,7 @@ const char* ConfObject::getName()
 	if (!attribute)
 		return NULL;
 		
-	return attribute->name;
+	return attribute->name.c_str();
 }
 
 ConfObject* ConfObject::findObject(const char* objectType, const char* objectName)

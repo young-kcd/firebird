@@ -36,6 +36,7 @@
 #endif // _MSC_VER > 1000
 
 #include "Stream.h"
+#include "../common/classes/alloc.h"
 
 START_NAMESPACE
 
@@ -65,7 +66,7 @@ class InputStream;
 class InputFile;
 class Stream;
 
-class Lex  
+class Lex : public Firebird::GlobalStorage
 {
 public:
 	Lex(const char *punctuation, int debugFlags);
@@ -77,8 +78,8 @@ public:
 	void pushStream (InputStream *stream);
 	void setContinuationChar (char c);
 	virtual void syntaxError (const char* expected);
-	JString getName();
-	JString reparseFilename();
+	Firebird::string getName();
+	Firebird::PathName reparseFilename();
 	bool match (const char *word);
 	bool isKeyword (const char *word) const;
 	void setCommentString (const char *start, const char *end);

@@ -7,10 +7,11 @@
 #define IS_SLASH(c)	(c == '/')
 #endif
 
-FileName::FileName(JString name)
+FileName::FileName(const Firebird::PathName& name) :
+	pathName(getPool()), directory(getPool()), root(getPool()), extension(getPool())
 {
 	pathName = name;
-	const char *start = pathName;
+	const char *start = pathName.c_str();
 	const char *slash = NULL;
 	const char *dot = NULL;
 	const char *rootName = start;
@@ -27,14 +28,14 @@ FileName::FileName(JString name)
 	
 	if (slash)
 		{
-		directory.setString (start, (int) (slash - rootName));
+		directory.assign (start, (int) (slash - rootName));
 		rootName = slash + 1;
 		}
 	
 	if (dot)
 		{
 		extension = dot + 1;
-		root.setString (rootName, (int) (dot - rootName));
+		root.assign (rootName, (int) (dot - rootName));
 		}
 	else
 		root = rootName;	

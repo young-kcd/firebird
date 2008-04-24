@@ -265,7 +265,7 @@ bool Lex::match(const char *word)
 	return true;
 }
 
-JString Lex::reparseFilename()
+Firebird::PathName Lex::reparseFilename()
 {
 	char *p = token;
 
@@ -276,18 +276,18 @@ JString Lex::reparseFilename()
 		*p++ = *ptr++;
 
 	*p = 0;
-	JString string = token;
+	Firebird::PathName string = token;
 	//getToken();
 
 	return string;
 }
 
-JString Lex::getName()
+Firebird::string Lex::getName()
 {
 	if (tokenType != NAME)
 		syntaxError ("name");
 
-	JString name = token;
+	Firebird::string name = token;
 	getToken();
 	
 	return name;	

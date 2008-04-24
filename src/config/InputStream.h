@@ -35,11 +35,13 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "../common/classes/alloc.h"
+
 START_NAMESPACE
 
 class InputFile;
 
-class InputStream  
+class InputStream : public Firebird::GlobalStorage
 {
 public:
 	explicit InputStream (const char* stuff);

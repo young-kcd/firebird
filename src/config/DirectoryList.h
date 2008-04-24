@@ -27,15 +27,16 @@
 #ifndef _DIRECTORYLIST_H_
 #define _DIRECTORYLIST_H_
 
+#include "../common/classes/alloc.h"
+
 static const int MAX_DIRECTORIES = 32;
 
-class DirectoryList
+class DirectoryList : public Firebird::GlobalStorage
 {
 public:
 	DirectoryList(const char *option, const char* list);
 	~DirectoryList(void);
 	
-	//JString	directoryList;
 	bool	enabled;
 	bool	restricted;
 	bool validateFilename(const char* fileName);

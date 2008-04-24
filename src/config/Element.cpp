@@ -72,19 +72,21 @@ int init()
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-Element::Element(JString elementName)
+Element::Element(const Firebird::string& elementName) :
+	name(getPool()), value(getPool()), innerText(getPool())
 {
 	init (elementName);
 }
 
-Element::Element(JString elementName, JString elementValue)
+Element::Element(const Firebird::string& elementName, const Firebird::string& elementValue) :
+	name(getPool()), value(getPool()), innerText(getPool())
 {
 	init (elementName);
 	value = elementValue;
 }
 
 
-void Element::init(JString elementName)
+void Element::init(const Firebird::string& elementName)
 {
 	name = elementName;
 	attributes = NULL;
@@ -127,7 +129,7 @@ void Element::addChild(Element *child)
 	*ptr = child;
 }
 
-Element* Element::addChild(JString childName)
+Element* Element::addChild(const Firebird::string& childName)
 {
 	Element *element = new Element (childName);
 	addChild (element);
@@ -146,12 +148,12 @@ void Element::addAttribute(Element *child)
 	*ptr = child;
 }
 
-void Element::addAttribute(JString attributeName)
+void Element::addAttribute(const Firebird::string& attributeName)
 {
 	addAttribute (new Element (attributeName));
 }
 
-Element* Element::addAttribute(JString attributeName, JString attributeValue)
+Element* Element::addAttribute(const Firebird::string& attributeName, const Firebird::string& attributeValue)
 {
 	Element *attribute = new Element (attributeName, attributeValue);
 	addAttribute (attribute);
@@ -159,24 +161,24 @@ Element* Element::addAttribute(JString attributeName, JString attributeValue)
 	return attribute;
 }
 
-Element* Element::addAttribute(JString attributeName, int attributeValue)
+Element* Element::addAttribute(const Firebird::string& attributeName, int attributeValue)
 {
-	char buffer [32];
-	sprintf (buffer, "%d", attributeValue);
+	Firebird::string buffer;
+	buffer.printf ("%d", attributeValue);
 
 	return addAttribute (attributeName, buffer);
 }
 
 void Element::print(int level) const
 {
-	printf ("%*s%s", level * 3, "", (const char*) name);
+	printf ("%*s%s", level * 3, "", name.c_str());
 	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
 		{
-		printf (" %s", (const char*) element->name);
+		printf (" %s", element->name.c_str());
 		if (element->value != "")
-			printf ("=%s", (const char*) element->value);
+			printf ("=%s", (const char*) element->value.c_str());
 		}
 
 	printf ("\n");
@@ -255,14 +257,14 @@ void Element::genXML(int level, Stream *stream) const
 {
 	indent (level, stream);
 	stream->putCharacter ('<');
-	stream->putSegment (name);
+	stream->putSegment (name.c_str());
 
 	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
 		{
 		stream->putCharacter (' ');
-		stream->putSegment (attribute->name);
+		stream->putSegment (attribute->name.c_str());
 		stream->putSegment ("=\"");
-		for (const char *p = attribute->value; *p; ++p)
+		for (const char *p = attribute->value.c_str(); *p; ++p)
 			switch (*p)
 				{
 				case '"':	stream->putSegment ("&quot;"); break;
@@ -276,14 +278,14 @@ void Element::genXML(int level, Stream *stream) const
 		stream->putCharacter ('"');
 		}
 
-	if (!innerText.IsEmpty())
+	if (innerText.hasData())
 		{
 		stream->putCharacter('>');
-		putQuotedText(innerText, stream);
+		putQuotedText(innerText.c_str(), stream);
 		}
 	else if (!children)
 		{
-		if (*name.getString() == '?')
+		if (name.c_str()[0] == '?')
 			stream->putSegment ("?>\n");
 		else
 			stream->putSegment ("/>\n");
@@ -297,11 +299,11 @@ void Element::genXML(int level, Stream *stream) const
 	for (const Element *child = children; child; child = child->sibling)
 		child->genXML (level, stream);
 
-	if (innerText.IsEmpty())
+	if (innerText.isEmpty())
 		indent (level - 1, stream);
 		
 	stream->putSegment ("</");
-	stream->putSegment (name);
+	stream->putSegment (name.c_str());
 	stream->putSegment (">\n");
 }
 
@@ -329,7 +331,7 @@ const char* Element::getAttributeName(int position) const
 	if (!element)
 		return NULL;
 
-	return element->name;
+	return element->name.c_str();
 }
 
 const char* Element::getAttributeValue(const char *attributeName)
@@ -344,7 +346,7 @@ const char* Element::getAttributeValue(const char *attributeName, const char *de
 	if (!attribute)
 		return defaultValue;
 
-	return attribute->value;
+	return attribute->value.c_str();
 }
 
 void Element::setSource(int line, InputStream *stream)
@@ -362,17 +364,17 @@ void Element::gen(int level, Stream *stream) const
 	if (children)
 		stream->putCharacter ('<');
 
-	stream->putSegment (name);
+	stream->putSegment (name.c_str());
 	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
 		{
 		stream->putCharacter (' ');
-		stream->putSegment (element->name);
+		stream->putSegment (element->name.c_str());
 		if (element->value != "")
 			{
 			stream->putCharacter ('=');
-			stream->putSegment (element->value);
+			stream->putSegment (element->value.c_str());
 			}
 		}
 
@@ -389,7 +391,7 @@ void Element::gen(int level, Stream *stream) const
 		element->gen (level, stream);
 
 	stream->putSegment ("</");
-	stream->putSegment (name);
+	stream->putSegment (name.c_str());
 	stream->putSegment (">\n");
 }
 

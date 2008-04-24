@@ -27,7 +27,7 @@
 #ifndef _CONFOBJECT_H_
 #define _CONFOBJECT_H_
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 #include "RefObject.h"
 
 const static int MAX_STRINGS = 32;
@@ -38,7 +38,7 @@ class Element;
 class ConfigFile;
 
 
-class ConfObject : public RefObject
+class ConfObject : public RefObject, public Firebird::GlobalStorage
 {
 public:
 	explicit ConfObject(ConfigFile *confFile);
@@ -52,14 +52,14 @@ public:
 	virtual void		setChain(ConfObject* object);
 	virtual const char* getName();
 	virtual const char*	getConcatenatedValues(const char* attributeName);
-	virtual JString		expand(const char* rawValue);
+	virtual Firebird::string	expand(const char* rawValue);
 	virtual ConfObject*	findObject(const char* objectType, const char* objectName);
 	virtual ConfObject* getChain();
 
 protected:
 	virtual void		putString(int position, const char* string, int stringLength);
 	virtual bool		match(int position, const char* p1, const char* p2);
-	virtual JString		getValue(const char* attributeName);
+	virtual Firebird::string	getValue(const char* attributeName);
 	virtual Element*	findAttribute(const char* attributeName);
 	virtual const char* getValue(const Element* attribute);
 
@@ -69,8 +69,8 @@ public:
 private:
 	ConfObject	*chain;
 	ConfigFile	*configFile;
-	JString		source;
-	JString		tempValue;
+	Firebird::string	source;
+	Firebird::string	tempValue;
 	int			numberStrings;
 	const char	*strings [MAX_STRINGS];
 	char		buffer [1024];

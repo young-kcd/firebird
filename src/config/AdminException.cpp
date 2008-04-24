@@ -34,43 +34,17 @@
 #include "../common/classes/alloc.h"
 #include "AdminException.h"
 
-#ifdef _WIN32
-#define vsnprintf	_vsnprintf
-#define snprintf	_snprintf
-#endif
-
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-AdminException::AdminException(const char *txt, ...)
+AdminException::AdminException(const char *txt, ...) :
+	text(getPool()), fileName(getPool())
 {
 	va_list		args;
 	va_start	(args, txt);
-	char		temp [1024];
-
-	int ret = vsnprintf (temp, sizeof (temp) - 1, txt, args);
-	
-	if (ret < 0)
-		{
-		const int l = sizeof (temp) * 2;
-		char* const buffer = new char [l];
-		vsnprintf (buffer, l, txt, args);
-		text = buffer;
-		delete [] buffer;
-		}
-	else if (static_cast<unsigned>(ret) >= sizeof (temp))
-		{
-		const int l = ret + 1;
-		char* const buffer = new char [l];
-		vsnprintf (buffer, l, txt, args);
-		text = buffer;
-		delete [] buffer;
-		}
-	else
-		text = temp;
-
+	text.vprintf(txt, args);
 	va_end(args);
 }
 
@@ -81,34 +55,14 @@ AdminException::~AdminException()
 
 const char* AdminException::getText() const
 {
-	return text;
+	return text.c_str();
 }
 
-void AdminException::setLocation(JString file, int lineNumber)
+void AdminException::setLocation(const Firebird::PathName& file, int lineNumber)
 {
 	fileName = file;
-	char	temp [1024];
-	char	*buffer = temp;
-	int		l = sizeof (temp);
-	
-	for (int n = 0; n < 3; ++n)
-		{
-		int ret = snprintf (buffer, l, "%s, line %d: %s", 
-							(const char*) fileName, lineNumber, (const char*) text);
-		if (ret < 0)
-			l += sizeof(temp);
-		else if (ret >= l)
-			l = ret + 1;
-		else
-			{
-			text = buffer;
-			break;
-			}
-		if (text != buffer)
-			delete [] buffer;
-		buffer = new char [l];
-		}
-	
-	if (buffer != temp)
-		delete [] buffer;
+	Firebird::string buffer;
+
+	buffer.printf("%s, line %d: %s", fileName.c_str(), lineNumber, text.c_str());
+	text = buffer;
 }

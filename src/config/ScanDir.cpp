@@ -51,7 +51,8 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ScanDir::ScanDir(const char *direct, const char *pat)
+ScanDir::ScanDir(const char *direct, const char *pat) :
+	directory(getPool()), pattern(getPool()), fileName(getPool()), filePath(getPool())
 {
 	directory = direct;
 	pattern = pat;
@@ -89,7 +90,7 @@ bool ScanDir::next()
 
 	while (data = readdir (dir))
 		{
-		if (match (pattern, data->d_name))
+		if (match (pattern.c_str(), data->d_name))
 			return true;
 		}
 
@@ -105,19 +106,19 @@ const char* ScanDir::getFileName()
 	fileName = data->d_name;
 #endif
 
-	return fileName;
+	return fileName.c_str();
 }
 
 
 const char* ScanDir::getFilePath()
 {
 #ifdef _WIN32
-	filePath.Format("%s\\%s", (const char*) directory, data.cFileName);
+	filePath.printf("%s\\%s", directory.c_str(), data.cFileName);
 #else
-	filePath.Format("%s/%s", (const char*) directory, data->d_name);
+	filePath.printf("%s/%s", directory.c_str(), data->d_name);
 #endif
 
-	return filePath;
+	return filePath.c_str();
 }
 
 bool ScanDir::match(const char *pattern, const char *name)

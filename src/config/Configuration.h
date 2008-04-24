@@ -27,12 +27,14 @@
 #ifndef _CONFIGURATION_H_
 #define _CONFIGURATION_H_
 
+#include "../common/classes/alloc.h"
+
 START_NAMESPACE
 
 class ConfigFile;
 class ConfObject;
 
-class Configuration
+class Configuration : public Firebird::GlobalStorage
 {
 public:
 	Configuration();

@@ -46,10 +46,6 @@
 #define MIN(a,b)			((a < b) ? a : b)
 #endif
 
-#ifdef _WIN32
-#define vsnprintf	_vsnprintf
-#endif
-
 #ifdef _DEBUG
 #undef THIS_FILE
 static char THIS_FILE[]=__FILE__;
@@ -526,9 +522,9 @@ void Stream::putSegment(Stream * stream)
 
 
 
-JString Stream::getJString()
+Firebird::string Stream::getJString()
 {
-	JString string;
+	Firebird::string string;
 	char *p = string.getBuffer (totalLength);
 
 	for (Segment *segment = segments; segment; segment = segment->next)
@@ -536,8 +532,6 @@ JString Stream::getJString()
 		memcpy (p, segment->address, segment->length);
 		p += segment->length;
 		}
-
-	string.releaseBuffer ();
 
 	return string;
 }
@@ -558,15 +552,14 @@ char* Stream::alloc(int length)
 
 void Stream::format(const char *pattern, ...)
 {
+	Firebird::string temp;
+
 	va_list		args;
 	va_start	(args, pattern);
-	char		temp [1024];
-
-	if (vsnprintf (temp, sizeof (temp) - 1, pattern, args) < 0)
-		temp [sizeof (temp) - 1] = 0;
-
+	temp.vprintf(pattern, args);
 	va_end(args);
-	putSegment (temp);
+
+	putSegment (temp.c_str());
 }
 
 void Stream::truncate(int length)

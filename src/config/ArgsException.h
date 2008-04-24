@@ -34,9 +34,9 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
-class ArgsException  
+class ArgsException : public Firebird::GlobalStorage
 {
 public:
 	const char* getText() const;
@@ -44,7 +44,7 @@ public:
 	virtual ~ArgsException();
 
 private:
-	JString		text;
+	Firebird::string	text;
 };
 
 #endif // !defined(AFX_ARGSEXCEPTION_H__0546C1B7_E895_4AC1_A951_AF1812A505B0__INCLUDED_)

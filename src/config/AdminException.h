@@ -35,19 +35,19 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
-class AdminException  
+class AdminException : public Firebird::GlobalStorage
 {
 public:
-	void setLocation (JString fileName, int lineNumber);
+	void setLocation (const Firebird::PathName& fileName, int lineNumber);
 	const char* getText() const;
 	AdminException(const char *txt, ...);
 	virtual ~AdminException();
 
 private:
-	JString	text;
-	JString	fileName;
+	Firebird::string	text;
+	Firebird::PathName	fileName;
 };
 
 #endif // !defined(AFX_ADMINEXCEPTION_H__ED22B745_F780_416D_8291_0A2D49EF5B43__INCLUDED_)

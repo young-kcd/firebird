@@ -35,13 +35,15 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "../common/classes/alloc.h"
+
 START_NAMESPACE
 
 class Stream;
 
 struct Segment;
 
-class StreamSegment  
+class StreamSegment : public Firebird::GlobalStorage
 {
 public:
 	explicit StreamSegment(Stream *stream);

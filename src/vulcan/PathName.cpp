@@ -108,7 +108,7 @@ int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLe
 	return 0;	
 }
 
-JString PathName::expandFilename(const char* fileName, int dpbLength, const UCHAR* dpb)
+Firebird::string PathName::expandFilename(const char* fileName, int dpbLength, const UCHAR* dpb)
 {
 	char workingDirectory [MAXPATHLEN];
 	const char *directory;
@@ -121,7 +121,7 @@ JString PathName::expandFilename(const char* fileName, int dpbLength, const UCHA
 	return expandFilename (fileName, directory);
 }
 
-JString PathName::expandFilename(const char* fileName, const char* workingDirectory)
+Firebird::string PathName::expandFilename(const char* fileName, const char* workingDirectory)
 {
 	char buffer [MAXPATHLEN];
 	int length = merge (fileName, workingDirectory, sizeof (buffer), buffer);
@@ -134,7 +134,7 @@ JString PathName::expandFilename(const char* fileName, const char* workingDirect
 	}
 #endif
 
-	return JString (buffer, length);
+	return Firebird::string(buffer, length);
 }
 
 int PathName::merge(const char* fileName, const char* workingDirectory, int bufferLength, char* buffer)
@@ -243,7 +243,7 @@ char* PathName::copyCanonical(const char* fileName, char* buffer, const char* en
 	return q;
 }
 
-JString PathName::expandFilename(const char* fileName)
+Firebird::string PathName::expandFilename(const char* fileName)
 {
 	return expandFilename (fileName, getWorkingDirectory());
 }

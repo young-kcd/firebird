@@ -49,14 +49,13 @@
 #define UPPER(c)			((ISLOWER (c)) ? c - 'a' + 'A' : c)
 #endif
 
-#define MAX_FILE_NAME	256
 #define BACKUP_FILES	5
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-InputFile::InputFile(const char *name)
+InputFile::InputFile(const char *name) : fileName(getPool())
 {
 	changes = NULL;
 	file = NULL;
@@ -65,7 +64,7 @@ InputFile::InputFile(const char *name)
 		throw AdminException ("can't open file \"%s\"", name);
 }
 
-InputFile::InputFile()
+InputFile::InputFile() : fileName(getPool())
 {
 	changes = NULL;
 	file = NULL;
@@ -107,7 +106,7 @@ const char* InputFile::getSegment()
 
 const char* InputFile::getFileName() const
 {
-	return fileName;
+	return fileName.c_str();
 }
 
 InputFile* InputFile::getInputFile()
@@ -115,7 +114,7 @@ InputFile* InputFile::getInputFile()
 	return this;
 }
 
-void InputFile::postChange(int line, int skip, JString insertion)
+void InputFile::postChange(int line, int skip, const Firebird::string& insertion)
 {
 	FileChange *change = new FileChange;
 	change->lineNumber = line;
@@ -136,17 +135,17 @@ void InputFile::postChange(int line, int skip, JString insertion)
 
 void InputFile::rewrite()
 {
-	FILE *input = fopen (fileName, "r");
+	FILE *input = fopen (fileName.c_str(), "r");
 
 	if (!input)
-		throw AdminException ("can't open \"%s\" for input", fileName.getString());
+		throw AdminException ("can't open \"%s\" for input", fileName.c_str());
 
-	char tempName [MAX_FILE_NAME];
-	sprintf (tempName, "%.*s.tmp", sizeof(tempName) - 5, fileName.getString());
-	FILE *output = fopen (tempName, "w");
+	Firebird::PathName tempName;
+	tempName.printf("%.*s.tmp", MAXPATHLEN - 5, fileName.c_str());
+	FILE *output = fopen (tempName.c_str(), "w");
 
 	if (!output)
-		throw AdminException ("can't open \"%s\" for output", tempName);
+		throw AdminException ("can't open \"%s\" for output", tempName.c_str());
 
 	char temp [1024];
 	int line = 0;
@@ -159,7 +158,7 @@ void InputFile::rewrite()
 				fputs (temp, output);
 		}
 		//fputs ("#insertion starts here\n", output);
-		fputs (change->insertion, output);
+		fputs (change->insertion.c_str(), output);
 		//fputs ("#insertion end here\n", output);
 		for (int n = 0; n < change->linesSkipped; ++n)
 			fgets (temp, sizeof (temp), input);
@@ -171,24 +170,23 @@ void InputFile::rewrite()
 
 	fclose (input);
 	fclose (output);
-	char filename1 [MAX_FILE_NAME];
-	char filename2 [MAX_FILE_NAME];
+	Firebird::PathName filename1, filename2;
 
-	fb_assert(BACKUP_FILES < 10); // assumption to avoid B.O.
+	fb_assert(BACKUP_FILES < 10); // assumption to avoid too long filenames
 	
 	for (int n = BACKUP_FILES; n >= 0; --n)
 		{
-		sprintf (filename1, "%.*s.%d", sizeof(filename1) - 3, (const char*) fileName, n);
+		filename1.printf("%.*s.%d", MAXPATHLEN - 3, fileName.c_str(), n);
 		if (n)
-			sprintf (filename2, "%.*s.%d", sizeof(filename2) - 3, (const char*) fileName, n - 1);
+			filename2.printf("%.*s.%d", MAXPATHLEN - 3, fileName.c_str(), n - 1);
 		else
-			strcpy (filename2, fileName); // limited to correct length in openInputFile
+			filename2 = fileName;	// limited to correct length in openInputFile
 		if (n == BACKUP_FILES)
-			unlink (filename1);
-		rename (filename2, filename1);
+			unlink (filename1.c_str());
+		rename (filename2.c_str(), filename1.c_str());
 		}
 
-	if (rename (tempName, fileName))
+	if (rename (tempName.c_str(), fileName.c_str()))
 		perror ("rename");
 }
 
@@ -218,8 +216,8 @@ bool InputFile::pathEqual(const char *path1, const char *path2)
 
 bool InputFile::openInputFile(const char* name)
 {
-	// Otherwise it has B.O. in rewrite() with strcpy(filename2, fileName);
-	if (!name || strlen(name) >= MAX_FILE_NAME)
+	// It's good idea to keep file names limited to meet OS requirements
+	if (!name || strlen(name) >= MAXPATHLEN)
 		return false;
 		
 	if (!(file = fopen (name, "r")))

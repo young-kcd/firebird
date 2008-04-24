@@ -192,7 +192,7 @@ public:
 	UCHAR* getBuffer()
 	{
 		fb_assert(blb_has_buffer);
-		return (UCHAR*) blb_buffer.begin();
+		return (UCHAR*) blb_buffer.getBuffer(blb_buffer.getCapacity());
 	}
 
 	void freeBuffer()

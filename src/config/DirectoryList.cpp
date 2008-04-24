@@ -45,12 +45,12 @@ DirectoryList::DirectoryList(const char* options)
 	for (p = options; *p && *p != ' '; ++p)
 		;
 	
-	JString option(options, p - options);
+	Firebird::string option(options, p - options);
 	
 	while (*p == ' ')
 		++p;
 	
-	parse(option, p);
+	parse(option.c_str(), p);
 }
 
 DirectoryList::DirectoryList(const char *option, const char* list)

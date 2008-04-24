@@ -41,7 +41,6 @@
 #include "../config/Element.h"
 #include "../config/ScanDir.h"
 #include "../config/AdminException.h"
-#include "../vulcan/JString.h"
 
 
 namespace Jrd {
@@ -428,8 +427,8 @@ bool IntlManager::initialize()
 					const Element* module = el->findChild("intl_module");
 					if (module)
 					{
-						JString moduleName(module->getAttributeName(0));
-						ConfObj objModule(configFile.findObject("intl_module", moduleName));
+						Firebird::string moduleName(module->getAttributeName(0));
+						ConfObj objModule(configFile.findObject("intl_module", moduleName.c_str()));
 						filename = objModule->getValue("filename", "");
 						configInfo = getConfigInfo(objModule);
 

@@ -35,7 +35,7 @@
 #pragma once
 #endif // _MSC_VER >= 1000
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
 #define FIXED_SEGMENT_SIZE		1024
 
@@ -50,7 +50,7 @@ struct Segment
 	};
 
 
-class Stream  
+class Stream : public Firebird::GlobalStorage
 {
 public:
 	explicit Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
@@ -72,7 +72,7 @@ public:
 	const void*		getSegment (int offset) const;
 	int				getSegmentLength(int offset) const;
 
-	JString			getJString();
+	Firebird::string	getJString();
 	virtual char*	getString();
 	void			clear();
 	virtual int		getLength() const;

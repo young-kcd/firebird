@@ -45,9 +45,9 @@
 #include <dirent.h>
 #endif
 
-#include "JString.h"
+#include "../common/classes/fb_string.h"
 
-class ScanDir  
+class ScanDir : public Firebird::GlobalStorage
 {
 public:
 	ScanDir(const char *dir, const char *pattern);
@@ -60,10 +60,10 @@ public:
 	const char* getFileName();
 	bool next();
 
-	JString	directory;
-	JString	pattern;
-	JString	fileName;
-	JString	filePath;
+	Firebird::PathName	directory;
+	Firebird::PathName	pattern;
+	Firebird::PathName	fileName;
+	Firebird::PathName	filePath;
 private:
 #ifdef _WIN32
 	WIN32_FIND_DATA	data;

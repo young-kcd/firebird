@@ -58,7 +58,9 @@
 
 #endif
 
-ConfigFile::ConfigFile(int configFlags) : Lex ("/<>=", configFlags)
+ConfigFile::ConfigFile(int configFlags) : 
+	Lex ("/<>=", configFlags),
+	rootDirectory(getPool()), installDirectory(getPool()), currentDirectory(getPool())
 {
 	init (configFlags);
 	InputFile *inputFile = openConfigFile();
@@ -71,13 +73,15 @@ ConfigFile::ConfigFile(int configFlags) : Lex ("/<>=", configFlags)
 }
 
 
-ConfigFile::ConfigFile(const char* configFile, int configFlags) : Lex ("/<>=", configFlags)
+ConfigFile::ConfigFile(const char* configFile, int configFlags) : 
+	Lex ("/<>=", configFlags), 
+	rootDirectory(getPool()), installDirectory(getPool()), currentDirectory(getPool())
 {
 	init (configFlags);
 	InputFile *inputFile = new InputFile;
-	JString expandedFile = expand (configFile);
+	Firebird::PathName expandedFile (expand (configFile));
 	
-	if (!inputFile->openInputFile(expandedFile))
+	if (!inputFile->openInputFile(expandedFile.c_str()))
 		{
 		delete inputFile;
 		throw AdminException ("can't open configuration file \"%s\"", configFile);
@@ -127,11 +131,11 @@ void ConfigFile::parse(void)
 		{
 		while (match ("include"))
 			{
-			JString fileName = expand (reparseFilename());
-			if (strchr(fileName, '*'))
-				wildCardInclude(fileName);
+			Firebird::PathName fileName = expand (reparseFilename());
+			if (fileName.find('*') != Firebird::PathName::npos)
+				wildCardInclude(fileName.c_str());
 			else
-				pushStream (new InputFile (fileName));
+				pushStream (new InputFile (fileName.c_str()));
 			getToken();
 			}
 		if (match ("<"))
@@ -149,13 +153,13 @@ void ConfigFile::parse(void)
 
 Element* ConfigFile::parseObject(void)
 {
-	JString name = getName();
+	Firebird::string name = getName();
 	Element *element = new Element (name);
 	element->setSource (priorLineNumber, priorInputStream);
 
 	while (!match (">"))
 		{
-		element->addAttribute (new Element (reparseFilename()));
+		element->addAttribute (new Element (reparseFilename().ToString()));
 		getToken();
 		}
 
@@ -165,7 +169,7 @@ Element* ConfigFile::parseObject(void)
 			{
 			if (match ("/"))
 				{
-				if (!match (element->name))
+				if (!match (element->name.c_str()))
 					syntaxError ("closing element");
 				if (!match (">"))
 					syntaxError ("\">\"");
@@ -187,7 +191,7 @@ Element* ConfigFile::parseAttribute(void)
 
 	while (!eol)
 		{
-		element->addAttribute (new Element (reparseFilename()));
+		element->addAttribute (new Element (reparseFilename().ToString()));
 		getToken();
 		}
 
@@ -226,7 +230,7 @@ ConfObject* ConfigFile::getObject(const char* objectType)
 
 Element* ConfigFile::findGlobalAttribute(const char *attributeName)
 {
-	for (Element *element = hashTable [JString::hash (attributeName, HASH_SIZE)]; element; element = element->sibling)
+	for (Element *element = hashTable [Firebird::string::hash (attributeName, HASH_SIZE)]; element; element = element->sibling)
 	{
 		if (element->name == attributeName)
 			return element;
@@ -240,7 +244,7 @@ const char* ConfigFile::getInstallDirectory()
 	return Config::getInstallDirectory();
 }
 
-JString ConfigFile::expand(JString rawString)
+Firebird::PathName ConfigFile::expand(const Firebird::PathName& rawString)
 {
 	const char* const errstr = "filename expansion reached implementation limit at %d";
 	char temp [1024];
@@ -248,7 +252,7 @@ JString ConfigFile::expand(JString rawString)
 	const char* const temp_end = temp + sizeof(temp) - 1;
 	bool change = false;
 	
-	for (const char *s = rawString; *s;)
+	for (const char *s = rawString.c_str(); *s;)
 	{
 		char c = *s++;
 		if (c == '$')
@@ -321,8 +325,8 @@ const char* ConfigFile::translate(const char* value, const Element* object)
 		if (!source)
 			throw AdminException("no context for $(this)");
 			
-		JString currentFile = expand (source);
-		const char *fileName = currentFile;
+		Firebird::PathName currentFile = expand (source);
+		const char *fileName = currentFile.c_str();
 		const char *p = NULL;
 		
 		for (const char *q = fileName; *q; ++q)
@@ -332,11 +336,11 @@ const char* ConfigFile::translate(const char* value, const Element* object)
 		}
 
 		if (p)
-			currentDirectory = JString(fileName, p - fileName);
+			currentDirectory = Firebird::PathName(fileName, p - fileName);
 		else
 			currentDirectory = ".";
 		
-		return currentDirectory;
+		return currentDirectory.c_str();
 		}
 
 	return NULL;
