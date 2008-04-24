@@ -1,3 +1,93 @@
+2008-04-24 18:05  alexpeshkoff
+
+	* firebird2/src/: include/memory_routines.h (1.11), jrd/why.cpp
+	(1.198):
+
+	Fixed CORE-1864: SELECT operator does not work in ISQL
+
+2008-04-24 17:53  alexpeshkoff
+
+	* firebird2/builds/posix/make.shared.variables (1.91):
+
+	Removed JString
+
+2008-04-24 17:49  alexpeshkoff
+
+	* firebird2/src/: config/AdminException.cpp (1.9),
+	config/AdminException.h (1.6), config/Args.h (1.5),
+	config/ArgsException.cpp (1.5), config/ArgsException.h (1.5),
+	config/ConfObj.h (1.5), config/ConfObject.cpp (1.9),
+	config/ConfObject.h (1.6), config/ConfigFile.cpp (1.11),
+	config/ConfigFile.h (1.7), config/Configuration.h (1.5),
+	config/DirectoryList.cpp (1.4), config/DirectoryList.h (1.3),
+	config/Element.cpp (1.11), config/Element.h (1.7),
+	config/FileName.cpp (1.4), config/FileName.h (1.4),
+	config/InputFile.cpp (1.9), config/InputFile.h (1.7),
+	config/InputStream.h (1.6), config/Lex.cpp (1.8), config/Lex.h
+	(1.8), config/ScanDir.cpp (1.8), config/ScanDir.h (1.6),
+	config/Stream.cpp (1.7), config/Stream.h (1.6),
+	config/StreamSegment.h (1.5), jrd/IntlManager.cpp (1.26), jrd/blb.h
+	(1.31), vulcan/JString.cpp (1.8), vulcan/JString.h (1.9),
+	vulcan/PathName.cpp (1.6), vulcan/PathName.h (1.7),
+	vulcan/RefObject.h (1.6):
+
+	1. Replaced JString (and some plain char[] buffers) with
+	Firebird::string.  2. Make memory allocations look (and wrok) in
+	current firebird style.  3. Fixed vararg usage problem on
+	amd64/linux in AdminException.
+
+2008-04-24 17:44  alexpeshkoff
+
+	* firebird2/src/common/classes/: fb_string.cpp (1.39), fb_string.h
+	(1.14):
+
+	Added useful JString methods to Firebird::string
+
+2008-04-24 17:11  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.446):
+
+	Fixed AV: exception may be thrown when there is no attachment at
+	all
+
+2008-04-24 12:56  robocop
+
+	* firebird2/src/jrd/: evl.cpp (1.261), exe.h (1.115):
+
+	Collapse some lines of repetitive code.
+
+2008-04-24 12:50  robocop
+
+	* firebird2/src/isql/extract.epp (1.92):
+
+	Fix CORE-1862.
+
+2008-04-24 09:18  robocop
+
+	* firebird2/src/jrd/cvt2.cpp (1.59):
+
+	Cleanup.
+
+2008-04-24 09:18  robocop
+
+	* firebird2/src/jrd/sqz.cpp (1.28):
+
+	Misc.
+
+2008-04-24 09:16  robocop
+
+	* firebird2/src/jrd/intl.cpp (1.108):
+
+	Style.
+
+2008-04-24 03:53  asfernandes
+
+	* firebird2/src/: jrd/jrd.cpp (1.445), jrd/jrd.h (1.236),
+	remote/inet.cpp (1.237), utilities/gstat/dba.epp (1.93),
+	vulcan/PathName.h (1.6):
+
+	Misc
+
 2008-04-23 11:38  hvlad
 
 	* firebird2/src/: jrd/common.h (1.169), remote/inet.cpp (1.236),
