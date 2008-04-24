@@ -119,7 +119,6 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/intlobj_new.h"
-#include "../jrd/jrd.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"
@@ -268,15 +267,12 @@ CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID toCsId)
 {
 	if (toCsId == CS_UTF16)
 		return CsConvert(cs->getStruct(), NULL);
-	else
-	{
-		CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
 
-		if (cs->getId() == CS_UTF16)
-			return CsConvert(NULL, toCs->getStruct());
-		else
-			return CsConvert(cs->getStruct(), toCs->getStruct());
-	}
+	CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
+	if (cs->getId() == CS_UTF16)
+		return CsConvert(NULL, toCs->getStruct());
+
+	return CsConvert(cs->getStruct(), toCs->getStruct());
 }
 
 Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
@@ -607,21 +603,19 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		len = src_len - MIN(dest_len, src_len);
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
-		else
-			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
+
+		(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
 	}
-	else if (src_len == 0)
-		return (0);
-	else
-		/* character sets are known to be different */
+	else if (src_len)
 	{
+		/* character sets are known to be different */
 		/* Do we know an object from cs1 to cs2? */
 
 		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		return cs_obj.convert(src_len, src_ptr, dest_len, dest_ptr, NULL, true);
 	}
 
-	return (0);					/* to remove compiler errors.  This should never be executed */
+	return 0;
 }
 
 
@@ -801,9 +795,11 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 	}
 
 	if (from_fill)
+	{
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
 			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
+	}
 
 	return 0;
 }
@@ -1211,7 +1207,6 @@ static bool all_spaces(
 			if (*p++ != *obj->getSpace())
 				return false;
 		}
-		return true;
 	}
 	else {
 		const BYTE* p = &ptr[offset];
@@ -1225,8 +1220,9 @@ static bool all_spaces(
 					return false;
 			}
 		}
-		return true;
 	}
+
+	return true;
 }
 
 
