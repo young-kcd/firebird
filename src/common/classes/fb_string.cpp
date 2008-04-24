@@ -436,10 +436,34 @@ extern "C" {
 		}
 	}
 
+	unsigned int AbstractString::hash(const_pointer string, size_t tableSize)
+	{
+		unsigned int value = 0;
+		unsigned char c;
+
+		while ((c = *string++))
+		{
+			c = toupper(c);
+			value = value * 11 + c;
+		}
+
+		return value % tableSize;
+	}
+
 	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n)
 	{
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);
 		return STRNCASECMP(s1, s2, n);
-	} 
+	}
+
+	bool AbstractString::equalsNoCase(AbstractString::const_pointer string) const
+	{
+		size_t l = strlen(string);
+		if (l > length())
+		{
+			l = length();
+		}
+		return STRNCASECMP(c_str(), string, ++l);
+	}
 }	// namespace Firebird
