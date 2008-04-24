@@ -182,4 +182,66 @@ inline void put_long(UCHAR* p, SLONG value)
 #endif
 }
 
+inline void put_vax_short(UCHAR* p, USHORT value)
+{
+/**************************************
+ *
+ *      p u t _ v a x _ s h o r t
+ *
+ **************************************
+ *
+ * Functional description
+ *    Store one unsigned short int as
+ *    two chars in VAX format
+ *
+ **************************************/
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  memcpy(p, &value, sizeof(USHORT));
+#else
+  // big-endian
+  union {
+    USHORT n;
+    UCHAR c[2];
+  } temp;
+
+  temp.n = value;
+
+  p[0] = temp.c[1];
+  p[1] = temp.c[0];
+#endif
+}
+
+inline void put_vax_long(UCHAR* p, SLONG value)
+{
+/**************************************
+ *
+ *      p u t _ v a x _ l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *    Store one signed long int as
+ *    four chars in VAX format
+ *
+ **************************************/
+#ifndef WORDS_BIGENDIAN
+  // little-endian
+  memcpy(p, &value, sizeof(SLONG));
+#else
+  // big-endian
+  union {
+    SLONG n;
+    UCHAR c[4];
+  } temp;
+
+  temp.n = value;
+
+  p[0] = temp.c[3];
+  p[1] = temp.c[2];
+  p[2] = temp.c[1];
+  p[3] = temp.c[0];
+#endif
+}
+
 #endif // MEMORY_ROUTINES_H
