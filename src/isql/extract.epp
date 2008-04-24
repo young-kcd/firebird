@@ -321,8 +321,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
 	{
 		FOR RT IN RDB$RELATIONS
-			WITH RT.RDB$RELATION_NAME EQ relation_name
-				AND RT.RDB$RELATION_TYPE NOT MISSING
+			WITH RT.RDB$RELATION_NAME EQ relation_name AND
+			RT.RDB$RELATION_TYPE NOT MISSING
 
 			rel_type = (rel_t) RT.RDB$RELATION_TYPE;
 
@@ -1233,8 +1233,9 @@ static void list_all_procs()
  *
  **************************************/
 	bool header = true;
-	static const SCHAR* create_procedure_str1 = "CREATE PROCEDURE %s ";
-	static const SCHAR* create_procedure_str2 = "BEGIN EXIT; END %s%s";
+	static const char* create_procedure_str1 = "CREATE PROCEDURE %s ";
+	static const char* create_procedure_str2 = "BEGIN EXIT; END %s%s";
+	static const char* create_procedure_str3 = "BEGIN SUSPEND; END %s%s";
 
 
 	//  First the dummy procedures
@@ -1263,7 +1264,29 @@ static void list_all_procs()
 		}
 
 		get_procedure_args (PRC.RDB$PROCEDURE_NAME);
-		isqlGlob.printf(create_procedure_str2, Procterm, NEWLINE);
+
+		prc_t proc_type = prc_legacy;
+
+		if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
+		{
+			FOR PRC2 IN RDB$PROCEDURES
+				WITH PRC2.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME AND
+				PRC2.RDB$PROCEDURE_TYPE NOT MISSING
+
+				proc_type = (prc_t) PRC2.RDB$PROCEDURE_TYPE;
+
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(gds_status);
+				return;
+			END_ERROR;
+		}
+
+		// We'll assume for safety that prc_legacy can be mapped to prc_selectable.
+		if (proc_type == prc_executable)
+			isqlGlob.printf(create_procedure_str2, Procterm, NEWLINE);
+		else
+			isqlGlob.printf(create_procedure_str3, Procterm, NEWLINE);
 
 	END_FOR
 	ON_ERROR
