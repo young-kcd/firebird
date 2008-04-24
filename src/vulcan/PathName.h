@@ -38,7 +38,7 @@ class PathName
 public:
 	PathName();
 	virtual ~PathName();
-	
+
 	static const char* getWorkingDirectory();
 	static int findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLength, char* buffer);
 	static JString expandFilename(const char* fileName, int dpbLength, const UCHAR* dpb);

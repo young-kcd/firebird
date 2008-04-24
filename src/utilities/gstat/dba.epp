@@ -895,7 +895,7 @@ static char* alloc(size_t size)
 		/* NOMEM: return error */
 		dba_error(31);
 	}
-/* note: shouldn't we check for the NULL?? */
+
 	memset(block, 0, size);
 
 	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
@@ -1227,7 +1227,7 @@ static ULONG analyze_versions( dba_rel* relation, const rhdf* header)
 
 
 #ifdef WIN_NT
-static void db_close( void* file_desc)
+static void db_close(void* file_desc)
 {
 /**************************************
  *

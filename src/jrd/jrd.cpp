@@ -242,9 +242,9 @@ namespace
 			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
 			  tdbb(arg)
 		{
-			if (lockAtt && arg->getAttachment())
+			if (lockAtt && tdbb->getAttachment())
 			{
-				attLocked = arg->getAttachment()->att_mutex.tryEnter();
+				attLocked = tdbb->getAttachment()->att_mutex.tryEnter();
 				if (!attLocked)
 					Firebird::status_exception::raise(isc_att_handle_busy, 0);
 			}

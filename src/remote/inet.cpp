@@ -3070,7 +3070,7 @@ static int packet_receive(
 		time_ptr = &timeout;
 	}
 	else if (port->port_protocol >= PROTOCOL_VERSION8 &&
-		port->port_dummy_packet_interval > 0)
+			 port->port_dummy_packet_interval > 0)
 	{
 		// Set the time interval for sending dummy packets to the client
 		timeout.tv_sec = port->port_dummy_packet_interval;
