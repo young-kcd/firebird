@@ -18,19 +18,19 @@
 FIREBIRD=@prefix@
 FBRunUser=firebird
 pidfile=/var/run/firebird/`basename $0`.pid
-FB_OPTS="-pidfile $pidfile -start -forever"
+FB_OPTS="-pidfile $pidfile -daemon -forever"
 export FIREBIRD 
 
 
 # Check the file is there and is executable.
-MANAGER=$FIREBIRD/bin/fbmgr.bin
-[ -x $MANAGER ] || exit 0
+GUARDIAN=$FIREBIRD/bin/fbguard
+[ -x $GUARDIAN ] || exit 0
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $MANAGER -- $FB_OPTS
+	start-stop-daemon --start --quiet --oknodo --chuid $FBRunUser --exec $GUARDIAN -- $FB_OPTS
 	RETVAL=$?
 	;;
   stop)

@@ -46,8 +46,7 @@ pidfile=/var/run/firebird/firebird.pid
 
 export FIREBIRD
 
-# Check the file is there and is executable.
-[ -x $FIREBIRD/bin/fbmgr ] || exit 5
+# Check the files are there and are executable.
 [ -x $FIREBIRD/bin/fbguard ] || exit 5
 [ -x $FIREBIRD/bin/fbserver ] || exit 5
 

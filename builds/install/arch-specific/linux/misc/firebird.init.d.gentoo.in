@@ -22,15 +22,15 @@ FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
-FB_OPTS="-pidfile $pidfile -start -forever"
+FB_OPTS="-pidfile $pidfile -daemon -forever"
 
 export FIREBIRD LD_LIBRARY_PATH
 
-MANAGER=$FIREBIRD/bin/fbmgr.bin
+GUARDIAN=$FIREBIRD/bin/fbguard
 
 start(){
 	ebegin "Starting $FULLNAME"
-	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $MANAGER -- $FB_OPTS
+	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $GUARDIAN -- $FB_OPTS
 	eend $?
 }
 
