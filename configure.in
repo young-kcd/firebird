@@ -50,7 +50,6 @@ case "$target" in
     INSTALL_PREFIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
@@ -64,7 +63,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
@@ -75,7 +73,6 @@ dnl CPU_TYPE=x86_64
     PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -84,7 +81,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=freebsd
     PLATFORM=GENTOOFREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -93,7 +89,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -103,7 +98,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-pthread
@@ -115,7 +109,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-pthread
@@ -127,7 +120,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     libdir=/usr/lib64
@@ -140,7 +132,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     STD_EDITLINE=true
@@ -152,7 +143,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -162,7 +152,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -171,7 +160,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -181,7 +169,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -190,7 +177,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
     AC_DEFINE(NETBSD, 1, [Define this if OS is NetBSD])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -199,7 +185,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=hpux
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
-    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
@@ -210,7 +195,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=solaris
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
-    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
@@ -225,7 +209,6 @@ dnl CPU_TYPE=x86_64
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
-    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
@@ -241,7 +224,6 @@ dnl CPU_TYPE=x86_64
     INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
-    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
@@ -254,7 +236,6 @@ dnl CPU_TYPE=x86_64
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
     AC_DEFINE(SINIXZ, 1, [Define this if OS is SINIX-Z])
-    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -264,7 +245,6 @@ dnl CPU_TYPE=x86_64
     PLATFORM=win32
     AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
     AC_DEFINE(HAVE_MULTI_THREAD, 1, [Define this if multi-threading should be supported])
-    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
@@ -1259,13 +1239,6 @@ case $RAW_DEVICES_FLG in
  Y)       echo "                    Raw devices : enabled";;
  N)       echo "                    Raw devices : disabled";;
 esac
-
-if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
-  case $LOCK_MANAGER_FLG in
-   Y)     echo "                   Lock manager : enabled";;
-   N)     echo "                   Lock manager : disabled";;
-  esac
-fi
 
 echo           "                   Service name : $FB_SERVICE_NAME"
 echo           "                   Service port : $FB_SERVICE_PORT"
