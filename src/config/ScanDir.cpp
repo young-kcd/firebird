@@ -79,7 +79,7 @@ bool ScanDir::next()
 #ifdef _WIN32
 	if (handle == NULL)
 		{
-		handle = FindFirstFile (directory + "\\" + pattern, &data);
+		handle = FindFirstFile ((directory + "\\" + pattern).c_str(), &data);
 		return handle != INVALID_HANDLE_VALUE;
 		}
 
