@@ -93,6 +93,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************/
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
 	bool done = true;
+	bool daemon = false;
 	const TEXT* prog_name = argv[0];
 	const TEXT* pidfilename = 0;
 	int guard_exit_code = 0;
@@ -103,6 +104,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		const TEXT* p = *argv++;
 		if (*p++ == '-')
 			switch (UPPER(*p)) {
+			case 'D':
+				daemon = true;
+				break;
 			case 'F':
 				option = FOREVER;
 				break;
@@ -117,8 +121,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				break;
 			default:
 				fprintf(stderr,
-						   "Usage: %s [-signore | -onetime | -forever (default)] [-pidfile filename]\n",
-						   prog_name);
+						"Usage: %s [-signore | -onetime | -forever (default)] [-daemon] [-pidfile filename]\n",
+						prog_name);
 				exit(-1);
 				break;
 			}
@@ -179,6 +183,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 // detach from controlling tty
+	if (daemon && fork()) {
+		exit(0);
+	}
 	divorce_terminal(0);
 
 	time_t timer = 0;
