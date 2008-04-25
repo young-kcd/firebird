@@ -201,6 +201,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_mipsel = 71,
 	isc_info_db_impl_linux_mips = 72,
 	isc_info_db_impl_darwin_x64 = 73,
+	isc_info_db_impl_sun_amd64 = 74,
 
 	isc_info_db_impl_linux_arm = 75,
 

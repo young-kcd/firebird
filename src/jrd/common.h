@@ -299,16 +299,15 @@
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define RISC_ALIGNMENT
-#else /* sparc */
+#endif /* sparc */
 
 #ifdef i386
 #define I386
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun_386i  /* 32 */
-#else /* i386 */
-#define IMPLEMENTATION  isc_info_db_impl_isc_sun_68k /* 28 */
-#endif /* i386 */
-
-#endif /* sparc */
+#endif
+#ifdef AMD64
+#define IMPLEMENTATION  isc_info_db_impl_sun_amd64 /* 74 */
+#endif /* AMD64 */
 
 
 #endif /* sun */

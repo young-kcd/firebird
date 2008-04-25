@@ -46,7 +46,7 @@
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
 #	elif defined(i386)
-const P_ARCH ARCHITECTURE	= arch_sun386;
+const P_ARCH ARCHITECTURE	= arch_sunx86;
 #	else
 const P_ARCH ARCHITECTURE	= arch_sun;
 #	endif

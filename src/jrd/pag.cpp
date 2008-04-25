@@ -256,8 +256,12 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 #ifdef sun
 #ifdef i386
 const SSHORT CLASS		= CLASS_SOLARIS_I386;
-#else
+#endif
+#ifdef sparc
 const SSHORT CLASS		= CLASS_SOLARIS_SPARC;
+#endif
+#ifdef AMD64
+const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
 #endif
 #endif
 
