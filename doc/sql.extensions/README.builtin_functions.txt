@@ -239,7 +239,7 @@ COS
 ---
 
 Function:
-    Returns the cosine of a number.
+    Returns the cosine of an angle (expressed in radians).
 
 Format:
     COS( <number> )
@@ -256,7 +256,7 @@ COSH
 ----
 
 Function:
-    Returns the hyperbolic cosine of a number.
+    Returns the hyperbolic cosine of an angle (expressed in radians).
 
 Format:
     COSH( <number> )
@@ -711,7 +711,7 @@ SIN
 ---
 
 Function:
-    Returns the sine of a number.
+    Returns the sine of an angle (expressed in radians).
 
 Format:
     SIN( <number> )
@@ -728,7 +728,7 @@ SINH
 ----
 
 Function:
-    Returns the hyperbolic sine of a number.
+    Returns the hyperbolic sine of an angle (expressed in radians).
 
 Format:
     SINH( <number> )
@@ -756,7 +756,7 @@ TAN
 ---
 
 Function:
-    Returns the tangent of a number.
+    Returns the tangent of an angle (expressed in radians).
 
 Format:
     TAN( <number> )
@@ -773,7 +773,7 @@ TANH
 ----
 
 Function:
-    Returns the hyperbolic tangent of a number.
+    Returns the hyperbolic tangent of an angle (expressed in radians).
 
 Format:
     TANH( <number> )
