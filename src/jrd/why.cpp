@@ -288,6 +288,15 @@ namespace
 	public:
 		static BaseHandle* translate(FB_API_HANDLE);
 		Jrd::Attachment* getAttachmentHandle();
+
+		void release_user_handle()
+		{
+			if (user_handle)
+			{
+				*user_handle = 0;
+			}
+		}
+
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
@@ -649,11 +658,6 @@ namespace
 
 	BaseHandle::~BaseHandle()
 	{
-		if (user_handle)
-		{
-			*user_handle = 0;
-		}
-
 		Firebird::WriteLockGuard sync(handleMappingLock);
 
 		// Silently ignore bad handles for PROD_BUILD
@@ -2087,11 +2091,13 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 
 			while ((i = dbb->requests.getCount()))
 			{
+				dbb->requests[i - 1]->release_user_handle();
 				delete dbb->requests[i - 1];
 			}
 
 			while ((i = dbb->statements.getCount()))
 			{
+				dbb->statements[i - 1]->release_user_handle();
 				release_dsql_support(dbb->statements[i - 1]->das);
 				delete dbb->statements[i - 1];
 			}
@@ -3752,7 +3758,7 @@ ISC_STATUS API_ROUTINE GDS_GET_SLICE(ISC_STATUS* user_status,
 
 
 ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
-												 FB_API_HANDLE* user_handle)
+												 FB_API_HANDLE* tra_handle)
 {
 /**************************************
  *
@@ -3768,7 +3774,7 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
 
 	try
 	{
-		Transaction* transaction = translate<Transaction>(user_handle);
+		Transaction* transaction = translate<Transaction>(tra_handle);
 
 		if (!(transaction->flags & HANDLE_TRANSACTION_limbo))
 		{
