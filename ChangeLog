@@ -1,3 +1,69 @@
+2008-04-25 18:37  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.debian.in (1.7), firebird.init.d.generic.in (1.8),
+	firebird.init.d.gentoo.in (1.8), firebird.init.d.mandrake.in (1.8),
+	firebird.init.d.slackware.in (1.5), firebird.init.d.suse.in (1.9):
+
+	Use -daemon switch to start fbguard directly - without fbmgr.
+
+2008-04-25 18:36  alexpeshkoff
+
+	* firebird2/src/utilities/ibmgr/ibmgr.cpp (1.27):
+
+	Deprecated fbmgr utility.  To be removed in 3.0.
+
+2008-04-25 18:33  alexpeshkoff
+
+	* firebird2/src/utilities/guard/guard.cpp (1.18):
+
+	Added switch "-daemon" to guardian.  Thios seems a good replacement
+	of used since 2.0 fbmgr functionality.
+
+2008-04-25 15:40  alexpeshkoff
+
+	* firebird2/configure.in (1.286):
+
+	Cleanup
+
+2008-04-25 13:00  asfernandes
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.18):
+
+	Update doc.
+
+2008-04-25 12:14  paulbeach
+
+	* firebird2/: builds/posix/prefix.darwin_powerpc (1.7),
+	src/jrd/common.h (1.171), src/jrd/pag.cpp (1.179),
+	src/remote/remote_def.h (1.33):
+
+	Fix optimisation problem on MacOSX ppc build that results in a
+	segfault on exit for all utilities Re-define __ppc__ where
+	necessary
+
+2008-04-25 11:42  paulbeach
+
+	* firebird2/: configure.in (1.285), src/jrd/common.h (1.170),
+	src/jrd/inf_pub.h (1.24), src/jrd/license.h (1.40), src/jrd/pag.cpp
+	(1.178), src/remote/protocol.h (1.43), src/remote/remote_def.h
+	(1.32), builds/posix/prefix.solx86gcc_64 (1.2):
+
+	Solaris 64bit AMD port
+
+2008-04-25 11:30  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.199):
+
+	Fixed CORE-1868: AV in isc_dsql_free_statement()
+
+2008-04-25 10:39  hvlad
+
+	* firebird2/: builds/win32/msvc8/config.vcproj (1.6),
+	src/config/ScanDir.cpp (1.9):
+
+	Fix MSVC build after JString removal
+
 2008-04-24 18:05  alexpeshkoff
 
 	* firebird2/src/: include/memory_routines.h (1.11), jrd/why.cpp
