@@ -96,6 +96,9 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  **************************************/
 
+	fprintf(stderr, "*** fbmgr is deprecated, will be removed soon ***\n");
+	gds__log("*** fbmgr is deprecated, will be removed soon ***");
+
 /* Let's see if we have something in
    environment variables
 */
