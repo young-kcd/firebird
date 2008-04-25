@@ -145,6 +145,7 @@ namespace YValve
 		static BaseHandle* translate(FB_API_HANDLE);
 		Jrd::Attachment* getAttachmentHandle();
 		void cancel();
+		void release_user_handle();
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
