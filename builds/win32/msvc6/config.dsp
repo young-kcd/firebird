@@ -154,10 +154,6 @@ SOURCE=..\..\..\src\config\StreamSegment.cpp
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=..\..\..\src\vulcan\JString.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\vulcan\PathName.cpp
 # End Source File
 # Begin Source File
@@ -215,10 +211,6 @@ SOURCE=..\..\..\src\config\InputFile.h
 # Begin Source File
 
 SOURCE=..\..\..\src\config\InputStream.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\vulcan\JString.h
 # End Source File
 # Begin Source File
 
