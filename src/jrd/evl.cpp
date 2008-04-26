@@ -1803,7 +1803,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				SET_NULL(record, id);
 			}
 			else {
-				MOV_move(tdbb, &impure->vlu_desc, EVL_expr(tdbb, field));
+				MOV_move(tdbb, &impure->vlu_desc, EVL_assign_to(tdbb, field));
 				CLEAR_NULL(record, id);
 			}
 			break;
@@ -1823,7 +1823,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 			temp.dsc_sub_type = 0;
 			temp.dsc_address = (UCHAR *) & d;
 			d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
-			MOV_move(tdbb, &temp, EVL_expr(tdbb, field));
+			MOV_move(tdbb, &temp, EVL_assign_to(tdbb, field));
 			break;
 
 		case nod_agg_average_distinct2:
@@ -1851,7 +1851,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 				temp.dsc_address = (UCHAR *) & d;
 				d = MOV_get_double(&impure->vlu_desc) / impure->vlux_count;
 			}
-			MOV_move(tdbb, &temp, EVL_expr(tdbb, field));
+			MOV_move(tdbb, &temp, EVL_assign_to(tdbb, field));
 			break;
 
 		default:	// Shut up some compiler warnings
