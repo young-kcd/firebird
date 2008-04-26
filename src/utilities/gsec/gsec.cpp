@@ -151,7 +151,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
-	ISC_STATUS* status = tdsec->tsec_status;
+	ISC_STATUS* const status = tdsec->tsec_status;
 	SSHORT ret = parse_cmd_line(argv, tdsec);
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
@@ -363,7 +363,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e) {
 		// Real exceptions are coming here
-		ISC_STATUS *status = tdsec->tsec_status;
+		ISC_STATUS* const status = tdsec->tsec_status;
 		e.stuff_exception(status);
 
 		tdsec->utilSvc->started();
