@@ -869,24 +869,17 @@ bool INTL_defined_type(thread_db* tdbb, USHORT t_type)
  **************************************/
 	SET_TDBB(tdbb);
 
-	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
-	bool defined = true;
-
 	try
 	{
-		ISC_STATUS_ARRAY local_status;
-		tdbb->tdbb_status_vector = local_status;
-
+		ThreadStatusGuard local_status(tdbb);
 		INTL_texttype_lookup(tdbb, t_type);
 	}
 	catch (...)
 	{
-		defined = false;
+		return false;
 	}
 
-	tdbb->tdbb_status_vector = original_status;
-
-	return defined;
+	return true;
 }
 
 

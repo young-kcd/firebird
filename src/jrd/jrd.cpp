@@ -5073,7 +5073,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 		LCK_release(tdbb, dbb->dbb_lock);
 
 	Database** d_ptr;	// Intentionally left outside loop (HP/UX compiler)
-	for (d_ptr = &databases; *(d_ptr); d_ptr = &(*d_ptr)->dbb_next) {
+	for (d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next) {
 		if (*d_ptr == dbb) {
 			*d_ptr = dbb->dbb_next;
 			break;
@@ -5458,15 +5458,12 @@ static void purge_attachment(thread_db*		tdbb,
 	
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{
-		ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
-
 		try
 		{
 			if (!(attachment->att_flags & ATT_no_db_triggers) &&
 				!(attachment->att_flags & ATT_shutdown))
 			{
-				ISC_STATUS_ARRAY temp_status = {0};
-				tdbb->tdbb_status_vector = temp_status;
+				ThreadStatusGuard temp_status(tdbb);
 
 				jrd_tra* transaction = NULL;
 
@@ -5502,12 +5499,9 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 		catch (const Firebird::Exception&)
 		{
-			tdbb->tdbb_status_vector = original_status;
 			attachment->att_flags |= ATT_shutdown;
 			throw;
 		}
-
-		tdbb->tdbb_status_vector = original_status;
 	}
 
 	EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
@@ -5767,12 +5761,10 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 							   Attachment* attachment, 
 							   Database* dbb)
 {
-	ISC_STATUS_ARRAY temp_status = {0};
-	ISC_STATUS* const save_status = tdbb->tdbb_status_vector;
-	tdbb->tdbb_status_vector = temp_status;
-
 	try
 	{
+		ThreadStatusGuard temp_status(tdbb);
+		
 		dbb->dbb_flags &= ~DBB_being_opened;
 		if (attachment)
 		{
@@ -5797,7 +5789,6 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 		// no-op
 	}
 
-	tdbb->tdbb_status_vector = save_status;
 	databases_mutex->leave();
 
 	Firebird::stuff_exception(userStatus, ex);
@@ -5895,12 +5886,10 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 		}
 		catch (const Firebird::Exception&)
 		{
-			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
-			ISC_STATUS_ARRAY temp_status = {0};
-			tdbb->tdbb_status_vector = temp_status;
-
 			try
 			{
+				ThreadStatusGuard temp_status(tdbb);
+
 				TRA_rollback(tdbb, transaction, true, false);
 			}
 			catch (const Firebird::Exception&)
@@ -5908,7 +5897,6 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 				// no-op
 			}
 
-			tdbb->tdbb_status_vector = old_status;
 			throw;
 		}
 	}
@@ -6175,10 +6163,8 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 	{
 		if (prior)
 		{
-			ISC_STATUS_ARRAY temp_status = {0};
-			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
+			ThreadStatusGuard temp_status(tdbb);
 
-			tdbb->tdbb_status_vector = temp_status;
 			try
 			{
 				rollback(tdbb, prior, false);
@@ -6186,8 +6172,6 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 			catch (const Firebird::Exception&)
 			{
 			}
-
-			tdbb->tdbb_status_vector = old_status;
 		}
 
 		throw;

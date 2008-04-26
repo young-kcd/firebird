@@ -3433,24 +3433,20 @@ static jrd_nod* pass1(thread_db* tdbb,
 			if (TTYPE_TO_COLLATION(ttype) != 0)
 			{
 				Jrd::Collation* collation = NULL;
-				ISC_STATUS* save_status = tdbb->tdbb_status_vector;
 
 				try
 				{
-					ISC_STATUS_ARRAY local_status;
-					tdbb->tdbb_status_vector = local_status;
+					ThreadStatusGuard local_status(tdbb);
 
 					collation = INTL_texttype_lookup(tdbb, ttype);
 				}
 				catch (Firebird::Exception&)
 				{
 					// ASF: Swallow the exception if we fail to load the collation here.
-					// This allows we to backup databases when the collation isn't available.
+					// This allows us to backup databases when the collation isn't available.
 					if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
 						throw;
 				}
-
-				tdbb->tdbb_status_vector = save_status;
 
 				if (collation)
 				{

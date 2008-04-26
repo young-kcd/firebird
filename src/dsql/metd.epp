@@ -448,20 +448,16 @@ USHORT METD_get_col_default(dsql_req* request,
 					continue;
 			}
 
-			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
- 			ISC_STATUS_ARRAY status_vector = {0};
-
-			tdbb->tdbb_status_vector = status_vector;
 			try
 			{
+				ThreadStatusGuard status_vector(tdbb);
+				
 				BLB_close(tdbb, blob_handle);
 				blob_handle = NULL;
 			}
 			catch (Firebird::Exception&)
 			{
 			}
-
-			tdbb->tdbb_status_vector = old_status;
 
 			// the default string must be of the form:
 			// blr_version4 blr_literal ..... blr_eoc
@@ -845,20 +841,16 @@ USHORT METD_get_domain_default(dsql_req* request,
 					continue;
 	        }
 
-			ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
- 			ISC_STATUS_ARRAY status_vector = {0};
-
-			tdbb->tdbb_status_vector = status_vector;
 			try
 			{
+				ThreadStatusGuard status_vector(tdbb);
+				
 				BLB_close(tdbb, blob_handle);
 				blob_handle = NULL;
 			}
 			catch (Firebird::Exception&)
 			{
 			}
-
-			tdbb->tdbb_status_vector = old_status;
 
 	        /* the default string must be of the form:
 	           blr_version4 blr_literal ..... blr_eoc  */

@@ -732,6 +732,41 @@ private:
 };
 
 
+// CVC: This class was designed to restore the thread's default status vector automatically.
+// In several places, tdbb_status_vector is replaced by a local temporary.
+class ThreadStatusGuard
+{
+public:
+	explicit ThreadStatusGuard(thread_db* tdbb)
+		: m_tdbb(tdbb), m_old_status(tdbb->tdbb_status_vector)
+	{
+		m_local_status[0] = isc_arg_gds;
+		m_local_status[1] = m_local_status[2] = 0; // isc_arg_end is zero
+		m_tdbb->tdbb_status_vector = m_local_status;
+	}
+	~ThreadStatusGuard()
+	{
+		m_tdbb->tdbb_status_vector = m_old_status;
+	}
+	//ISC_STATUS* restore()
+	//{
+	//	return m_tdbb->tdbb_status_vector = m_old_status; // copy, not comparison
+	//}
+	operator ISC_STATUS*() { return m_local_status; }
+	void copyToOriginal()
+	{
+		memcpy(m_old_status, m_local_status, sizeof(ISC_STATUS_ARRAY));
+	}
+private:
+	thread_db* const m_tdbb;
+	ISC_STATUS* const m_old_status;
+	ISC_STATUS_ARRAY m_local_status;
+	// copying is prohibited
+	ThreadStatusGuard(const ThreadStatusGuard&);
+	ThreadStatusGuard& operator=(const ThreadStatusGuard&);
+};
+
+
 // duplicate context of firebird string to store in jrd_nod::nod_arg
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {

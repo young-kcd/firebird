@@ -100,14 +100,10 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	temp_lock.lck_length = sizeof(SLONG);
 	temp_lock.lck_key.lck_long = id;
 
-	ISC_STATUS_ARRAY temp_status;
-	ISC_STATUS* const org_status = tdbb->tdbb_status_vector;
-	tdbb->tdbb_status_vector = temp_status;
+	ThreadStatusGuard temp_status(tdbb);
 
 	if (LCK_lock(tdbb, &temp_lock, LCK_EX, -1))
 		LCK_release(tdbb, &temp_lock);
-
-	tdbb->tdbb_status_vector = org_status;
 }
 
 

@@ -1029,14 +1029,11 @@ static IDX_E check_duplicates(
 	old_rpb.rpb_relation = insertion->iib_relation;
 	old_rpb.rpb_record = NULL;
 
-	jrd_rel* relation_1 = insertion->iib_relation;
+	jrd_rel* const relation_1 = insertion->iib_relation;
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
-	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
-	ISC_STATUS_ARRAY local_status;
-	memset(local_status, 0, sizeof(ISC_STATUS_ARRAY));
-	tdbb->tdbb_status_vector = local_status;
+	ThreadStatusGuard local_status(tdbb);
 
 	if (accessor.getFirst())
 	do {
@@ -1198,9 +1195,8 @@ static IDX_E check_duplicates(
 		delete old_rpb.rpb_record;
 
 	if (local_status[1]) {
-		memcpy(original_status, local_status, sizeof(ISC_STATUS_ARRAY));
+		local_status.copyToOriginal();
 	}
-	tdbb->tdbb_status_vector = original_status;
 
 	return result;
 }

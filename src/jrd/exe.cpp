@@ -2865,9 +2865,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				}
 				else
 				{
-					ISC_STATUS* const save_status = tdbb->tdbb_status_vector;
-					ISC_STATUS_ARRAY temp_status = {0};
-					tdbb->tdbb_status_vector = temp_status;
+					ThreadStatusGuard temp_status(tdbb);
 
 					if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 					{
@@ -2880,7 +2878,6 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						{
 							if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 							{
-								tdbb->tdbb_status_vector = save_status;
 								throw;
 							}
 						}
@@ -2894,12 +2891,9 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					{
 						if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
 						{
-							tdbb->tdbb_status_vector = save_status;
 							throw;
 						}
 					}
-
-					tdbb->tdbb_status_vector = save_status;
 				}
 				break;
 

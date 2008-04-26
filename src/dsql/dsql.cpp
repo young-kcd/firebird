@@ -73,7 +73,7 @@ using namespace Jrd;
 using namespace Dsql;
 
 
-static void		close_cursor(dsql_req*);
+static void		close_cursor(thread_db*, dsql_req*);
 static USHORT	convert(SLONG, UCHAR*);
 static void		execute_blob(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, const UCHAR*,
 						 USHORT, UCHAR*, USHORT, UCHAR*);
@@ -557,7 +557,7 @@ void DSQL_free_statement(thread_db* tdbb,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
 				  isc_arg_gds, isc_dsql_cursor_close_err, 0);
 		}
-		close_cursor(request);
+		close_cursor(tdbb, request);
 	}
 }
 
@@ -897,19 +897,16 @@ void DSQL_sql_info(thread_db* tdbb,
  
 
     @param request
+    @param tdbb
 
  **/
-static void close_cursor(dsql_req* request)
+static void close_cursor(thread_db* tdbb, dsql_req* request)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-
-	ISC_STATUS_ARRAY status_vector = {0};
+	SET_TDBB(tdbb);
 
 	if (request->req_request)
 	{
-		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
-
-		tdbb->tdbb_status_vector = status_vector;
+		ThreadStatusGuard status_vector(tdbb);
 		try
 		{
 			if (request->req_type == REQ_GET_SEGMENT ||
@@ -924,8 +921,6 @@ static void close_cursor(dsql_req* request)
 		catch (Firebird::Exception&)
 		{
 		}
-
-		tdbb->tdbb_status_vector = old_status;
 	}
 
 	request->req_flags &= ~REQ_cursor_open;
@@ -1282,8 +1277,7 @@ static void execute_request(thread_db* tdbb,
 						   0);
 	}
 
-	ISC_STATUS_ARRAY local_status = {0};
-	// REQ_EXEC_BLOCK has no outputs so there are no out_msg 
+	// REQ_EXEC_BLOCK has no outputs so there are no out_msg
 	// supplied from client side, but REQ_EXEC_BLOCK requires
 	// 2-byte message for EOS synchronization
 	const bool isBlock = (request->req_type == REQ_EXEC_BLOCK);
@@ -1332,11 +1326,10 @@ static void execute_request(thread_db* tdbb,
 
 			for (counter = 0; counter < 2 && !status; counter++)
 			{
-				ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
+				ThreadStatusGuard local_status(tdbb);
 
 				try
 				{
-					tdbb->tdbb_status_vector = local_status;
 					JRD_receive(tdbb, request->req_request, message->msg_number,
 						message->msg_length, message_buffer, 0);
 					status = FB_SUCCESS;
@@ -1345,8 +1338,6 @@ static void execute_request(thread_db* tdbb,
 				{
 					status = tdbb->tdbb_status_vector[1];
 				}
-
-				tdbb->tdbb_status_vector = old_status;
 			}
 
 			gds__free(message_buffer);
@@ -2081,21 +2072,16 @@ static dsql_dbb* init(Attachment* attachment)
 
 		SCHAR buffer[BUFFER_TINY];
 
-		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
-		ISC_STATUS_ARRAY status_vector = {0};
-
-		tdbb->tdbb_status_vector = status_vector;
 		try
 		{
+			ThreadStatusGuard status_vector(tdbb);
+
 			INF_database_info(db_hdr_info_items, sizeof(db_hdr_info_items), buffer, sizeof(buffer));
 		}
 		catch (Firebird::Exception&)
 		{
-			tdbb->tdbb_status_vector = old_status;
 			return database;
 		}
-
-		tdbb->tdbb_status_vector = old_status;
 
 		const UCHAR* data = reinterpret_cast<UCHAR*>(buffer);
 		UCHAR p;
@@ -2752,6 +2738,8 @@ static UCHAR* put_item(	UCHAR	item,
  **/
 static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 {
+	SET_TDBB(tdbb);
+	
 	// If request is parent, orphan the children and
 	// release a portion of their requests
 
@@ -2781,7 +2769,7 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 	// If the request had an open cursor, close it
 
 	if (request->req_flags & REQ_cursor_open) {
-		close_cursor(request);
+		close_cursor(tdbb, request);
 	}
 
 	// If request is named, clear it from the hash table
@@ -2800,10 +2788,8 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 
 	if (request->req_request)
 	{
-		ISC_STATUS* const old_status = tdbb->tdbb_status_vector;
-		ISC_STATUS_ARRAY status_vector = {0};
+		ThreadStatusGuard status_vector(tdbb);
 
-		tdbb->tdbb_status_vector = status_vector;
 		try
 		{
 			CMP_release(tdbb, request->req_request);
@@ -2812,8 +2798,6 @@ static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 		catch (Firebird::Exception&)
 		{
 		}
-
-		tdbb->tdbb_status_vector = old_status;
 	}
 
 	// free blr memory
