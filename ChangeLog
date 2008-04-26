@@ -1,3 +1,52 @@
+2008-04-26 17:58  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.262):
+
+	Fixed CORE-1859 - Arithmetic overflow or division by zero has
+	occurred. in MAX function
+
+2008-04-26 16:50  robocop
+
+	* firebird2/src/remote/os/win32/wnet.cpp (1.56):
+
+	Misc.
+
+2008-04-26 16:45  robocop
+
+	* firebird2/src/jrd/: iberr.cpp (1.14), iberr_proto.h (1.5):
+
+	Fix the code in these almost forgotten files.  Close some B.O., fix
+	the parameters (constness, type) and mark unused functions with our
+	macro for that purpose.
+
+2008-04-26 16:34  robocop
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.27), cch.cpp (1.194):
+
+	Misc.
+
+2008-04-26 16:33  robocop
+
+	* firebird2/builds/win32/: msvc6/config.dsp (1.6),
+	msvc7/config.vcproj (1.5):
+
+	Update project files.
+
+2008-04-26 12:31  robocop
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.87):
+
+	Misc.
+
+2008-04-26 12:29  robocop
+
+	* firebird2/src/: dsql/dsql.cpp (1.244), dsql/metd.epp (1.129),
+	jrd/DatabaseSnapshot.cpp (1.56), jrd/VirtualTable.cpp (1.10),
+	jrd/cmp.cpp (1.287), jrd/exe.cpp (1.261), jrd/idx.cpp (1.134),
+	jrd/intl.cpp (1.109), jrd/jrd.cpp (1.447), jrd/jrd.h (1.237):
+
+	Replace custom code by helper class ThreadStatusGuard.
+
 2008-04-25 18:37  alexpeshkoff
 
 	* firebird2/builds/install/arch-specific/linux/misc/:
