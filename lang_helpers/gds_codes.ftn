@@ -1574,6 +1574,8 @@ C --
       PARAMETER (GDS__dsql_col_more_than_once_using    = 336397235)
       INTEGER*4 GDS__dsql_unsupp_feature_dialect     
       PARAMETER (GDS__dsql_unsupp_feature_dialect      = 336397236)
+      INTEGER*4 GDS__dsql_cte_not_used               
+      PARAMETER (GDS__dsql_cte_not_used                = 336397237)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

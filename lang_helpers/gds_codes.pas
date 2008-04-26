@@ -794,6 +794,7 @@ const
 	gds_dsql_cte_nested_with             = 336397234;
 	gds_dsql_col_more_than_once_using    = 336397235;
 	gds_dsql_unsupp_feature_dialect      = 336397236;
+	gds_dsql_cte_not_used                = 336397237;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;
