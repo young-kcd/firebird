@@ -427,7 +427,7 @@ bool IntlManager::initialize()
 					const Element* module = el->findChild("intl_module");
 					if (module)
 					{
-						Firebird::string moduleName(module->getAttributeName(0));
+						const Firebird::string moduleName(module->getAttributeName(0));
 						ConfObj objModule(configFile.findObject("intl_module", moduleName.c_str()));
 						filename = objModule->getValue("filename", "");
 						configInfo = getConfigInfo(objModule);

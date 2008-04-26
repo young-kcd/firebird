@@ -900,7 +900,7 @@ void CCH_fetch_page(
 	Database* dbb = tdbb->getDatabase();
 	BufferDesc* bdb = window->win_bdb;
 
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	ISC_STATUS* const status = tdbb->tdbb_status_vector;
 
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
@@ -1005,8 +1005,7 @@ void CCH_fetch_page(
 					}
 					else {
 						if (retryCount++ == 3) {
-							fprintf(stderr,
-									   "IO error loop Unwind to avoid a hang\n");
+							fprintf(stderr, "IO error loop Unwind to avoid a hang\n");
 							PAGE_LOCK_RELEASE(bdb->bdb_lock);
 							CCH_unwind(tdbb, true);
 						}
@@ -1017,14 +1016,12 @@ void CCH_fetch_page(
 	} // scope
 
 #ifndef NO_CHECKSUM
-	if (((compute_checksum == 1)
-		 || ((compute_checksum == 2) && page->pag_type))
-		&& ((page->pag_checksum != CCH_checksum(bdb))
-			&& !(dbb->dbb_flags & DBB_damaged)))
+	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
+		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
 	{
-		IBERR_build_status(tdbb->tdbb_status_vector,
+		IBERR_build_status(status,
 						   isc_db_corrupt,
-						   isc_arg_string, "",
+						   isc_arg_string, "", // why isn't the db name used here?
 						   isc_arg_gds, isc_bad_checksum,
 						   isc_arg_gds, isc_badpage,
 						   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(), 0);
