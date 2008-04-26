@@ -146,7 +146,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 /* Establish connection to server */
 
-	P_CNCT* cnct = &packet->p_cnct;
+	P_CNCT* const cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
 	cnct->p_cnct_cversion = CONNECT_VERSION2;
