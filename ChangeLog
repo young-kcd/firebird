@@ -1,3 +1,9 @@
+2008-04-27 06:44  robocop
+
+	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.7):
+
+	Restore the v1.5 version to a state that can be built.
+
 2008-04-21 11:13  dimitr
 
 	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.6):
