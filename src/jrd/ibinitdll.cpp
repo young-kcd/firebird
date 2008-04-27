@@ -24,7 +24,12 @@
 #include "firebird.h"
 #include <windows.h>
 
-BOOL WINAPI DllMain(HINSTANCE /*h*/, DWORD /*reason*/, LPVOID /*reserved*/)
+HINSTANCE hIBDLLInstance;
+
+BOOL WINAPI DllMain(HINSTANCE h, DWORD /*reason*/, LPVOID /*reserved*/)
 {
+	/* save instance value */
+	hIBDLLInstance = h;
+
 	return TRUE;
 }
