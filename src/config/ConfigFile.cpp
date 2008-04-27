@@ -372,5 +372,4 @@ void ConfigFile::wildCardInclude(const char* fileName)
 
 	while (scanDir.next())
 		pushStream (new InputFile (scanDir.getFilePath()));
-
 }

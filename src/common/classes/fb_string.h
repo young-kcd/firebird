@@ -415,6 +415,7 @@ namespace Firebird
 		}
 
 		static unsigned int hash(const_pointer string, size_type tableSize);
+
 		inline unsigned int hash(size_type tableSize) const
 		{
 			return hash(c_str(), tableSize);

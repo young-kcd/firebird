@@ -224,6 +224,7 @@ struct impure_value
 		bid vlu_bid;
 		void* vlu_invariant; // Pre-compiled invariant object for nod_like and other string functions
 	} vlu_misc;
+
 	void make_long(const SLONG val, const signed char scale = 0);
 	void make_int64(const SINT64 val, const signed char scale = 0);
 	

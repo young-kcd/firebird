@@ -605,8 +605,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 	VARY_STR(MAX_SQL_IDENTIFIER_SIZE) temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
-	const USHORT length = CVT_make_string(desc, ttype_metadata, &p,
-							 (vary*) &temp, sizeof(temp), err);
+	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, (vary*) &temp, sizeof(temp), err);
 							 
 	memcpy(string, p, length);
 	string[length] = 0;

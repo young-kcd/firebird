@@ -744,23 +744,29 @@ public:
 		m_local_status[1] = m_local_status[2] = 0; // isc_arg_end is zero
 		m_tdbb->tdbb_status_vector = m_local_status;
 	}
+
 	~ThreadStatusGuard()
 	{
 		m_tdbb->tdbb_status_vector = m_old_status;
 	}
+
 	//ISC_STATUS* restore()
 	//{
 	//	return m_tdbb->tdbb_status_vector = m_old_status; // copy, not comparison
 	//}
+
 	operator ISC_STATUS*() { return m_local_status; }
+
 	void copyToOriginal()
 	{
 		memcpy(m_old_status, m_local_status, sizeof(ISC_STATUS_ARRAY));
 	}
+
 private:
 	thread_db* const m_tdbb;
 	ISC_STATUS* const m_old_status;
 	ISC_STATUS_ARRAY m_local_status;
+
 	// copying is prohibited
 	ThreadStatusGuard(const ThreadStatusGuard&);
 	ThreadStatusGuard& operator=(const ThreadStatusGuard&);

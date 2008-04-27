@@ -59,7 +59,7 @@ void IBERR_append_status(ISC_STATUS* status_vector, ISC_STATUS status, ...)
 	ISC_STATUS* const status_end = status_vector + ISC_STATUS_LENGTH;
 	while (*status_vector && status_vector < status_end)
 		++status_vector;
-		
+
 	// If we fail here, an unterminated, illegal status vector was passed as argument.
 	fb_assert(status_vector < status_end);
 
