@@ -42,7 +42,12 @@
 
 #ifdef USE_VALGRIND
 #include <valgrind/memcheck.h>
+
+#ifndef VALGRIND_MAKE_WRITABLE	// Valgrind 3.3
+#define VALGRIND_MAKE_WRITABLE	VALGRIND_MAKE_MEM_UNDEFINED
+#define VALGRIND_MAKE_NOACCESS	VALGRIND_MAKE_MEM_NOACCESS
 #endif
+#endif	// USE_VALGRIND
 
 // Fill blocks with patterns
 #define FREE_PATTERN 0xDEADBEEF
