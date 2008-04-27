@@ -1,3 +1,18 @@
+2008-04-27 20:53  asfernandes
+
+	* firebird2/src/common/classes/alloc.cpp (1.108):
+
+	Compatibility with Valgrind 3.3
+
+2008-04-27 04:39  asfernandes
+
+	* firebird2/src/: common/classes/fb_string.h (1.15),
+	config/ConfigFile.cpp (1.12), jrd/cvt2.cpp (1.60), jrd/exe.h
+	(1.116), jrd/iberr.cpp (1.15), jrd/jrd.cpp (1.448), jrd/jrd.h
+	(1.238):
+
+	Misc
+
 2008-04-26 17:58  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.262):
