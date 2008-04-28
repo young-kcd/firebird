@@ -1,3 +1,17 @@
+2008-04-28 11:35  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.213):
+
+	Fixed bug CORE-1830
+
+2008-04-28 09:41  alexpeshkoff
+
+	*
+	firebird2/builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
+	(1.9):
+
+	Restored accidentially removed check - thanks to Adriano
+
 2008-04-27 20:53  asfernandes
 
 	* firebird2/src/common/classes/alloc.cpp (1.108):
