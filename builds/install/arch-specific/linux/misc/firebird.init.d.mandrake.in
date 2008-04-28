@@ -28,8 +28,10 @@ LD_LIBRARY_PATH=$FIREBIRD/lib
 
 export FIREBIRD LD_LIBRARY_PATH
 
-# Check the file is there and is executable.
 GUARDIAN=$FIREBIRD/bin/fbguard
+
+# Check the file is there and is executable.
+[ -x $GUARDIAN ] || exit 0
 
 # See how we were called.
 case "$1" in
