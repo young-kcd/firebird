@@ -55,6 +55,10 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
 
+#if !defined(WIN_NT)
+#include "../jrd/ThreadStart.h"
+#endif
+
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -86,6 +90,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <sys/wait.h>
 #endif // !WIN_NT
 
 #if (defined DARWIN || defined HPUX)
@@ -242,6 +247,9 @@ static rem_port*		aux_request(rem_port*, PACKET*);
 #if !defined(WIN_NT)
 static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
 static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
+static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
+static Firebird::GlobalPtr<Firebird::Mutex> waitThreadMutex;
+static unsigned int procCount = 0;
 #endif // WIN_NT
 static void		disconnect(rem_port*);
 static void		exit_handler(void *);
@@ -874,16 +882,22 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 #ifdef WIN_NT
-		if ((flag & SRVR_debug) || !fork(s, flag))
+		if ((flag & SRVR_debug) || !fork(s, flag)) {
 #else
-		if ((flag & SRVR_debug) || !fork())
+		if ((flag & SRVR_debug) || !fork()) {
 #endif
-		{
 			SOCLOSE((SOCKET) port->port_handle);
 			port->port_handle = (HANDLE) s;
 			port->port_server_flags |= SRVR_server;
+			port->port_flags |= PORT_server;
 			return port;
 		}
+#ifndef WIN_NT
+		Firebird::MutexLockGuard guard(waitThreadMutex);
+		if (! procCount++) {
+			gds__thread_start(waitThread, 0, THREAD_medium, 0, 0);
+		}
+#endif
 		SOCLOSE(s);
 	}
 }
@@ -1563,7 +1577,34 @@ static bool check_proxy(rem_port* port,
 
 	return result;
 }
-#endif
+#endif // !defined(WIN_NT)
+
+#if !(defined WIN_NT)
+static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
+{
+/**************************************
+ *
+ *	w a i t T h r e a d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Waits for processes started by standalone classic server (avoid zombies)
+ *
+ **************************************/
+	while (procCount > 0) 
+	{
+		int rc = wait(0);
+
+		Firebird::MutexLockGuard guard(waitThreadMutex);
+		if (rc > 0) {
+			--procCount;
+		}
+	}
+
+	return 0;
+}
+#endif // !defined(WIN_NT)
 
 static void disconnect( rem_port* port)
 {
