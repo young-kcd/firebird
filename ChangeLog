@@ -1,3 +1,151 @@
+2008-04-29 18:39  hvlad
+
+	* firebird2/src/: burp/restore.epp (1.138), dsql/ddl.cpp (1.232),
+	jrd/dyn_def.epp (1.166), jrd/fields.h (1.19), jrd/ini.epp (1.98):
+
+	Fixed bug CORE-1841 : If some VIEW used derived tables and long
+	table names\aliases, It is possible to overflow
+	RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME.  Attention : ODS changed !
+
+2008-04-29 14:36  robocop
+
+	* firebird2/: builds/win32/msvc8/config.vcproj (1.7),
+	src/config/DirectoryList.cpp (1.6), src/config/DirectoryList.h
+	(1.5):
+
+	DirectoryList wasn't used, so I'm deleting it.	Fortunately,
+	because it has half-finished functionality.
+
+2008-04-29 14:24  hvlad
+
+	* firebird2/src/burp/: burp.cpp (1.138), restore.epp (1.137):
+
+	Fixed broken restore via service API
+
+2008-04-29 14:21  robocop
+
+	* firebird2/src/jrd/IntlManager.cpp (1.28):
+
+	Fix IntlManager.cpp to sync with "config" cleanup.  Notice that
+	whereas JString had a const char* operator for automatic or forced
+	conversion, Firebird::string doesn't have one. Worse, the layout of
+	FBString has a static buffer of size 32 but can allocate a dynamic
+	buffer for larger requirements and therefore, casting FBString to
+	char* or const char* will most likely produce wrong behavior or
+	crash. Thereforer, I removed the places with such explicit cast.
+	Alex, please watch if there are more problems of this type in
+	IntlManager.cpp, the "config" dir or the "vulcan" dir.
+
+2008-04-29 14:00  robocop
+
+	* firebird2/src/config/: AdminException.cpp (1.10),
+	AdminException.h (1.7), Args.cpp (1.4), Args.h (1.6),
+	ArgsException.cpp (1.6), ArgsException.h (1.6), ConfigFile.cpp
+	(1.13), ConfigFile.h (1.8), Configuration.cpp (1.6),
+	Configuration.h (1.6), ConfObj.cpp (1.5), ConfObj.h (1.6),
+	Element.cpp (1.12), FileName.cpp (1.5), FileName.h (1.5),
+	InputFile.cpp (1.10), InputFile.h (1.8), InputStream.cpp (1.4),
+	InputStream.h (1.7), ScanDir.cpp (1.10), ScanDir.h (1.7),
+	StreamSegment.cpp (1.4), StreamSegment.h (1.6):
+
+	1.- Style.  2.- Cleanup.  3.- Put enumerations and plain structures
+	in their due classes, checked constness, commented or deleted
+	unused crap (watch stupid macros in header files that pollute all
+	the files where such headers are included), etc.
+
+	There's a lot of pending work to do. Still trying to convert to
+	decent C++ this barbarian code probably written by Genghis Khan or
+	Attila the Hun.
+
+2008-04-29 13:33  robocop
+
+	* firebird2/src/config/: DirectoryList.cpp (1.5), DirectoryList.h
+	(1.4):
+
+	1.- Style.  2.- Cleanup.  3.- Put a compilation warning on
+	DirectoryList::matchFileName because the function's purpose only
+	can be guessed: it returns true unconditionally. Maybe it was
+	expected to tell us if a file name matched a directory name or
+	querying the operating system to know whether the file existed
+	inside the given directory name. Anyway, since it does nothing
+	useful, DirectoryList::validateFilename is suspicious, too, since
+	it uses the former in a loop.
+
+2008-04-29 13:23  robocop
+
+	* firebird2/src/config/: Stream.cpp (1.8), Stream.h (1.7):
+
+	1.- Style.  2.- Cleanup.  3.- Mark a disastrous condition in
+	Stream::allocSegment in DEBUG mode at least so it can be detected:
+	potentially negative argument to new char[<number>] if the caller
+	of the function doesn't do what's expected by this function.  4.-
+	Now that the weed JString was eradicated, rename Stream::getJString
+	to getFBString and put an assertion to verify the initial
+	assumption (in the worst case, it could be a buffer overrun).  5.-
+	Fix a deallocation bug (probable heap corruption) in
+	Stream::truncate because delete[] should be used instead of plain
+	delete.
+
+	Generally speaking, the code inherited from Vulcan is so weak that
+	expects the caller to know the internal logic of the callee to do
+	the right thing to avoid crashing the callee. This is a general
+	problem with the files in the "config" dir.
+
+2008-04-29 13:10  robocop
+
+	* firebird2/src/config/: ConfObject.cpp (1.10), ConfObject.h (1.7):
+
+	1.- Style.  2.- Cleanup.  3.- Fix an invalid memory access when
+	returning data member belonging to an object from the stack in
+	ConfObject::getConcatenatedValues. I didn't see a runtime error
+	because I don't use the feature, but reading the code is enough.
+
+2008-04-29 13:05  robocop
+
+	* firebird2/src/config/: Lex.cpp (1.9), Lex.h (1.9):
+
+	1.- Style.  2.- Cleanup.  3.- Fix what I assume may cause astray
+	behavior. Only an inept could create an enumeration in Lex.h like
+	this enum TokenType {	     END_OF_STREAM,  PUNCT,  NAME, to be
+	used in the data member tokenType but at the same time, create
+	preprocessor macros like this #define WHITE  1 #define PUNCT 2 to
+	be stored and retrieved by char charTableArray [256] to calculate
+	the character class (punctuation, spaces, etc) in the Lexer, where
+	the macro PUNCT (value 2) overrides the enum member PUNCT (value 1)
+	and that inconsistent value is used in both tasks, causing PUNCT to
+	be interpreted as tokenType being NAME (value 2 in the enum). Since
+	this module has several bugs, maybe all the bugs cancel among
+	themselves and all works as expected, but it would be pure luck.
+
+2008-04-29 11:57  alexpeshkoff
+
+	* firebird2/builds/: posix/firebird.vers (1.15),
+	win32/defs/fbclient.def (1.20):
+
+	Make fb_cancel_operation() public API call.
+
+2008-04-29 11:55  alexpeshkoff
+
+	* firebird2/src/: include/consts_pub.h (1.17), isql/isql.epp
+	(1.241), jrd/common.h (1.172), jrd/ibase.h (1.134), jrd/jrd.cpp
+	(1.449), jrd/jrd_proto.h (1.72), jrd/why.cpp (1.200),
+	jrd/why_proto.h (1.49), qli/exe.cpp (1.56), remote/interface.cpp
+	(1.188), remote/server.cpp (1.206):
+
+	Make fb_cancel_operation() public API call. Related cleanup.
+
+2008-04-29 10:15  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.238):
+
+	Fixed "-s" switch in posix CS
+
+2008-04-29 09:57  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.81):
+
+	Cleanup - posix CS works with MT listener as expected.
+
 2008-04-28 11:35  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.213):
