@@ -409,7 +409,7 @@ bool IntlManager::initialize()
 	{
 		while (dir.next())
 		{
-			ConfigFile configFile(dir.getFilePath(), 0);
+			ConfigFile configFile(dir.getFilePath(), ConfigFile::LEX_none);
 
 			ConfObj builtinModule(configFile.findObject("intl_module", "builtin"));
 			string s = getConfigInfo(builtinModule);
@@ -479,9 +479,9 @@ bool IntlManager::initialize()
 					{
 						if (el2->name == "collation")
 						{
-							string collationName = (const char*)el2->getAttributeName(0);
-							string charSetCollation = charSetName + ":" + collationName;
-							const char* externalName = (const char*)el2->getAttributeName(1);
+							const string collationName = el2->getAttributeName(0);
+							const string charSetCollation = charSetName + ":" + collationName;
+							const char* externalName = el2->getAttributeName(1);
 
 							if (!registerCharSetCollation(charSetCollation, filename,
 								(externalName ? externalName : collationName), configInfo))
