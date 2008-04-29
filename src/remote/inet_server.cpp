@@ -408,10 +408,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	shutdownInit();
 #endif
 
-	//if (multi_threaded)
-		SRVR_multi_thread(port, INET_SERVER_flag);
-	//else
-	//	SRVR_main(port, INET_SERVER_flag);
+	SRVR_multi_thread(port, INET_SERVER_flag);
 
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
