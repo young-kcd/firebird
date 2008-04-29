@@ -38,8 +38,6 @@
 #include "InputStream.h"
 #include "../common/classes/fb_string.h"
 
-#define AT_FILE_END		100000
-
 START_NAMESPACE
 
 class InputFile : public InputStream

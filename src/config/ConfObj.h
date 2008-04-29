@@ -37,14 +37,14 @@ class ConfObj : public Firebird::GlobalStorage
 {
 public:
 	ConfObj();
-	explicit ConfObj(ConfObject *confObject);
+	explicit ConfObj(ConfObject* confObject);
 	ConfObj(ConfObj& source);
 	~ConfObj();
 
 	operator ConfObject*() { return object; }
 	ConfObject* operator -> () { return object; }
 	const ConfObject* operator -> () const { return object; }
-	ConfObject* operator = (ConfObject *source);
+	ConfObject* operator = (ConfObject* source);
 
 	bool hasObject() const;
 	

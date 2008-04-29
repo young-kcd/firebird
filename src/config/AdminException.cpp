@@ -39,7 +39,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-AdminException::AdminException(const char *txt, ...) :
+AdminException::AdminException(const char* txt, ...) :
 	text(getPool()), fileName(getPool())
 {
 	va_list		args;

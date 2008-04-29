@@ -38,7 +38,7 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ArgsException::ArgsException(const char * txt, ...) :
+ArgsException::ArgsException(const char* txt, ...) :
 	text(getPool())
 {
 	va_list		args;

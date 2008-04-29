@@ -1,19 +1,19 @@
 /*
- *  
- *     The contents of this file are subject to the Initial 
- *     Developer's Public License Version 1.0 (the "License"); 
- *     you may not use this file except in compliance with the 
- *     License. You may obtain a copy of the License at 
- *     http://www.ibphoenix.com/idpl.html. 
  *
- *     Software distributed under the License is distributed on 
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
- *     express or implied.  See the License for the specific 
+ *     The contents of this file are subject to the Initial
+ *     Developer's Public License Version 1.0 (the "License");
+ *     you may not use this file except in compliance with the
+ *     License. You may obtain a copy of the License at
+ *     http://www.ibphoenix.com/idpl.html.
+ *
+ *     Software distributed under the License is distributed on
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+ *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever 
- *     without the express prior written permission of the original 
+ *     may not be distributed under any other license whatsoever
+ *     without the express prior written permission of the original
  *     author.
  *
  *
@@ -42,14 +42,14 @@
 #include "AdminException.h"
 
 #define ISLOWER(c)			(c >= 'a' && c <= 'z')
-#define ISUPPER(c)			(c >= 'A' && c <= 'Z')
-#define ISDIGIT(c)			(c >= '0' && c <= '9')
+//#define ISUPPER(c)			(c >= 'A' && c <= 'Z')
+//#define ISDIGIT(c)			(c >= '0' && c <= '9')
 
 #ifndef UPPER
 #define UPPER(c)			((ISLOWER (c)) ? c - 'a' + 'A' : c)
 #endif
 
-#define BACKUP_FILES	5
+const int BACKUP_FILES = 5;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -59,7 +59,7 @@ InputFile::InputFile(const char *name) : fileName(getPool())
 {
 	changes = NULL;
 	file = NULL;
-	
+
 	if (!openInputFile (name))
 		throw AdminException ("can't open file \"%s\"", name);
 }
@@ -75,19 +75,19 @@ InputFile::~InputFile()
 	close();
 
 	for (FileChange *change; change = changes;)
-		{
+	{
 		changes = change->next;
 		delete change;
-		}
+	}
 }
 
 void InputFile::close()
 {
 	if (file)
-		{
+	{
 		fclose ((FILE*) file);
 		file = NULL;
-		}
+	}
 }
 
 const char* InputFile::getSegment()
@@ -120,17 +120,17 @@ void InputFile::postChange(int line, int skip, const Firebird::string& insertion
 	change->lineNumber = line;
 	change->linesSkipped = skip;
 	change->insertion = insertion;
-	
+
 	for (FileChange **p = &changes;; p = &(*p)->next)
-		{
+	{
 		FileChange *next = *p;
 		if (!next || next->lineNumber > change->lineNumber)
-			{
+		{
 			change->next = *p;
 			*p = change;
 			break;
-			}
 		}
+	}
 }
 
 void InputFile::rewrite()
@@ -151,7 +151,7 @@ void InputFile::rewrite()
 	int line = 0;
 
 	for (FileChange *change = changes; change; change = change->next)
-		{
+	{
 		for (; line < change->lineNumber; ++line)
 		{
 			if (fgets (temp, sizeof (temp), input))
@@ -163,7 +163,7 @@ void InputFile::rewrite()
 		for (int n = 0; n < change->linesSkipped; ++n)
 			fgets (temp, sizeof (temp), input);
 		line += change->linesSkipped;
-		}
+	}
 
 	while (fgets (temp, sizeof (temp), input))
 		fputs (temp, output);
@@ -173,9 +173,9 @@ void InputFile::rewrite()
 	Firebird::PathName filename1, filename2;
 
 	fb_assert(BACKUP_FILES < 10); // assumption to avoid too long filenames
-	
+
 	for (int n = BACKUP_FILES; n >= 0; --n)
-		{
+	{
 		filename1.printf("%.*s.%d", MAXPATHLEN - 3, fileName.c_str(), n);
 		if (n)
 			filename2.printf("%.*s.%d", MAXPATHLEN - 3, fileName.c_str(), n - 1);
@@ -184,7 +184,7 @@ void InputFile::rewrite()
 		if (n == BACKUP_FILES)
 			unlink (filename1.c_str());
 		rename (filename2.c_str(), filename1.c_str());
-		}
+	}
 
 	if (rename (tempName.c_str(), fileName.c_str()))
 		perror ("rename");
@@ -219,10 +219,10 @@ bool InputFile::openInputFile(const char* name)
 	// It's good idea to keep file names limited to meet OS requirements
 	if (!name || strlen(name) >= MAXPATHLEN)
 		return false;
-		
+
 	if (!(file = fopen (name, "r")))
 		return false;
-		
+
 	fileName = name;
 	segment = buffer;
 	changes = NULL;

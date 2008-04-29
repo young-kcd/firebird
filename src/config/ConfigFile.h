@@ -31,10 +31,9 @@
 #include "RefObject.h"
 #include "../common/classes/fb_string.h"
 
-static const int HASH_SIZE		= 101;
-static const int CONFIG_trace	= 1;
-static const int CONFIG_list	= 2;
-static const int CONFIG_verbose	= 4;
+//static const int CONFIG_trace	= 1;
+//static const int CONFIG_list	= 2;
+//static const int CONFIG_verbose	= 4;
 
 START_NAMESPACE
 class InputFile;
@@ -44,8 +43,8 @@ class ConfObject;
 class ConfigFile : public Lex, public RefObject
 {
 public:
-	explicit ConfigFile(int configFlags);
-	ConfigFile(const char* configFile, int configFlags);
+	explicit ConfigFile(const LEX_flags configFlags);
+	ConfigFile(const char* configFile, const LEX_flags configFlags);
 
 //protected:
 	virtual ~ConfigFile();
@@ -68,7 +67,8 @@ public:
 	const Element* getObjects() const { return objects; }
 
 private:
-	void init(int configFlags);
+	enum { HASH_SIZE = 101 };
+	void init(const LEX_flags configFlags);
 	Element*	objects;
 	Firebird::PathName	rootDirectory;
 	Firebird::PathName	installDirectory;

@@ -1,19 +1,19 @@
 /*
- *  
- *     The contents of this file are subject to the Initial 
- *     Developer's Public License Version 1.0 (the "License"); 
- *     you may not use this file except in compliance with the 
- *     License. You may obtain a copy of the License at 
- *     http://www.ibphoenix.com/idpl.html. 
  *
- *     Software distributed under the License is distributed on 
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
- *     express or implied.  See the License for the specific 
+ *     The contents of this file are subject to the Initial
+ *     Developer's Public License Version 1.0 (the "License");
+ *     you may not use this file except in compliance with the
+ *     License. You may obtain a copy of the License at
+ *     http://www.ibphoenix.com/idpl.html.
+ *
+ *     Software distributed under the License is distributed on
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+ *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever 
- *     without the express prior written permission of the original 
+ *     may not be distributed under any other license whatsoever
+ *     without the express prior written permission of the original
  *     author.
  *
  *
@@ -40,7 +40,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static char THIS_FILE[] = __FILE__;
 #endif
 
 static const int quoted = 1;
@@ -61,7 +61,7 @@ int init()
 	setCharTable('<', quoted);
 	setCharTable('>', quoted);
 	setCharTable('&', quoted);
-	
+
 	for (int n = 0; n < 10; ++n)
 		charTable[n] = illegal;
 
@@ -102,16 +102,16 @@ Element::~Element()
 	Element *child;
 
 	while (child = children)
-		{
+	{
 		children = child->sibling;
 		delete child;
-		}
+	}
 
 	while (child = attributes)
-		{
+	{
 		attributes = child->sibling;
 		delete child;
-		}
+	}
 
 	if (inputStream)
 		inputStream->release();
@@ -175,11 +175,11 @@ void Element::print(int level) const
 	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
-		{
+	{
 		printf (" %s", element->name.c_str());
 		if (element->value != "")
 			printf ("=%s", (const char*) element->value.c_str());
-		}
+	}
 
 	printf ("\n");
 	++level;
@@ -190,8 +190,10 @@ void Element::print(int level) const
 Element* Element::findChild(const char *childName)
 {
 	for (Element *child = children; child; child = child->sibling)
+	{
 		if (child->name == childName)
 			return child;
+	}
 
 	return NULL;
 }
@@ -210,8 +212,10 @@ const Element* Element::findChild(const char *childName) const
 Element* Element::findAttribute(const char *childName)
 {
 	for (Element *child = attributes; child; child = child->sibling)
+	{
 		if (child->name == childName)
 			return child;
+	}
 
 	return NULL;
 }
@@ -260,40 +264,42 @@ void Element::genXML(int level, Stream *stream) const
 	stream->putSegment (name.c_str());
 
 	for (const Element *attribute = attributes; attribute; attribute = attribute->sibling)
-		{
+	{
 		stream->putCharacter (' ');
 		stream->putSegment (attribute->name.c_str());
 		stream->putSegment ("=\"");
 		for (const char *p = attribute->value.c_str(); *p; ++p)
+		{
 			switch (*p)
-				{
+			{
 				case '"':	stream->putSegment ("&quot;"); break;
 				case '\'':	stream->putSegment ("&apos;"); break;
 				case '&':	stream->putSegment ("&amp;"); break;
 				case '<':	stream->putSegment ("&lt;"); break;
 				case '>':	stream->putSegment ("&gt;"); break;
 				default:	stream->putCharacter (*p); break;
-				}
+			}
+		}
 		//stream->putSegment (attribute->value);
 		stream->putCharacter ('"');
-		}
+	}
 
 	if (innerText.hasData())
-		{
+	{
 		stream->putCharacter('>');
 		putQuotedText(innerText.c_str(), stream);
-		}
+	}
 	else if (!children)
-		{
-		if (name.c_str()[0] == '?')
+	{
+		if (name.at(0) == '?')
 			stream->putSegment ("?>\n");
 		else
 			stream->putSegment ("/>\n");
 		return;
-		}
+	}
 	else
 		stream->putSegment (">\n");
-		
+
 	++level;
 
 	for (const Element *child = children; child; child = child->sibling)
@@ -301,7 +307,7 @@ void Element::genXML(int level, Stream *stream) const
 
 	if (innerText.isEmpty())
 		indent (level - 1, stream);
-		
+
 	stream->putSegment ("</");
 	stream->putSegment (name.c_str());
 	stream->putSegment (">\n");
@@ -318,8 +324,10 @@ void Element::indent(int level, Stream *stream) const
 Element* Element::findChildIgnoreCase(const char *childName)
 {
 	for (Element *child = children; child; child = child->sibling)
+	{
 		if (child->name.equalsNoCase (childName))
 			return child;
+	}
 
 	return NULL;
 }
@@ -368,21 +376,21 @@ void Element::gen(int level, Stream *stream) const
 	const Element *element;
 
 	for (element = attributes; element; element = element->sibling)
-		{
+	{
 		stream->putCharacter (' ');
 		stream->putSegment (element->name.c_str());
 		if (element->value != "")
-			{
+		{
 			stream->putCharacter ('=');
 			stream->putSegment (element->value.c_str());
-			}
 		}
+	}
 
 	if (!children)
-		{
+	{
 		stream->putCharacter ('\n');
 		return;
-		}
+	}
 
 	stream->putSegment (">\n");
 	++level;
@@ -398,12 +406,14 @@ void Element::gen(int level, Stream *stream) const
 Element* Element::findChild(const char *childName, const char *attribute, const char *attributeValue)
 {
 	for (Element *child = children; child; child = child->sibling)
+	{
 		if (child->name == childName)
-			{
+		{
 			const char *p = child->getAttributeValue (attribute, NULL);
 			if (p && strcmp (p, attributeValue) == 0)
 				return child;
-			}
+		}
+	}
 
 	return NULL;
 }
@@ -411,20 +421,20 @@ Element* Element::findChild(const char *childName, const char *attribute, const 
 int Element::analyseText(const char* text)
 {
 	int count = 0;
-	
+
 	for (const char *p = text; *p; p++)
-		{
+	{
 		const int n = charTable[(UCHAR) *p];
-		
+
 		if (n)
-			{
+		{
 			if (n & illegal)
 				return -1;
-			
+
 			++count;
-			}
 		}
-	
+	}
+
 	return count;
 }
 
@@ -432,47 +442,55 @@ void Element::putQuotedText(const char* text, Stream* stream) const
 {
 	const char *start = text;
 	const char *p;
-	
+
 	for (p = text; *p; p++)
+	{
 		if (charTable[(UCHAR) *p])
+		{
+			const char* escape = NULL;
+			switch (*p)
 			{
-			const char *escape = NULL;
-			if (*p == '>')
+			case '>':
 				escape = "&gt;";
-			else if (*p == '<')
+				break;
+			case '<':
 				escape = "&lt;";
-			else if (*p == '&')
+				break;
+			case '&':
 				escape = "&amp;";
-			else
+				break;
+			default:
 				continue;
-				
+			}
+
 			if (p > start)
 				stream->putSegment(p - start, start, true);
-		
+
 			stream->putSegment(escape);
 			start = p + 1;
-			}
-	
+		}
+	}
+
 	if (p > start)
-		stream->putSegment(p - start, start, true);		
+		stream->putSegment(p - start, start, true);
 }
 
 int Element::analyzeData(int length, const UCHAR* bytes)
 {
 	int count = 0;
-	
+
 	for (const UCHAR *p = bytes; *p; p++)
-		{
+	{
 		const int n = charTable[*p];
-		
+
 		if (n)
-			{
+		{
 			if (n & illegal)
 				return -1;
-			
+
 			++count;
-			}
 		}
-	
+	}
+
 	return count;
 }

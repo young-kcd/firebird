@@ -11,13 +11,13 @@ FileName::FileName(const Firebird::PathName& name) :
 	pathName(getPool()), directory(getPool()), root(getPool()), extension(getPool())
 {
 	pathName = name;
-	const char *start = pathName.c_str();
-	const char *slash = NULL;
-	const char *dot = NULL;
-	const char *rootName = start;
+	const char* const start = pathName.c_str();
+	const char* slash = NULL;
+	const char* dot = NULL;
+	const char* rootName = start;
 	absolute = IS_SLASH (start [0]);
 
-	for (const char	*p = start; *p; ++p)
+	for (const char* p = start; *p; ++p)
 	{
 		if (!dot && IS_SLASH (*p))
 			slash = p;
@@ -25,18 +25,17 @@ FileName::FileName(const Firebird::PathName& name) :
 			dot = p;
 	}
 	
-	
 	if (slash)
-		{
+	{
 		directory.assign (start, (int) (slash - rootName));
 		rootName = slash + 1;
-		}
+	}
 	
 	if (dot)
-		{
+	{
 		extension = dot + 1;
 		root.assign (rootName, (int) (dot - rootName));
-		}
+	}
 	else
 		root = rootName;	
 }

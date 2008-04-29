@@ -56,18 +56,18 @@ public:
 
 	virtual void close();
 	virtual const char* getEnd();
-	virtual int getOffset (const char *ptr);
+	virtual int getOffset (const char* ptr);
 	virtual const char* getSegment();
 
-	int			lineNumber;
-	const char	*segment;
-	const char	*ptr;
-	InputStream	*prior;
+	int				lineNumber;
+	const char*		segment;
+	const char*		ptr;
+	InputStream*	prior;
 protected:
-	int			segmentLength; // used by InputFile
+	int				segmentLength; // used by InputFile
 private:
-	int			segmentOffset;
-	int			useCount;
+	int				segmentOffset;
+	int				useCount;
 };
 
 END_NAMESPACE

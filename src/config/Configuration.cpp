@@ -29,17 +29,24 @@
 #include "Configuration.h"
 #include "ConfigFile.h"
 
-static ConfigFile	*configFile;
+// This var could be a static member of the class.
+static ConfigFile* configFile;
+
+// Non MT-safe code follows, maybe it was intended?
 
 Configuration::Configuration()
 {
+	fb_assert(!configFile); // only one instance of Configuration at a given time.
 	configFile = NULL;
 }
 
 Configuration::~Configuration()
 {
 	if (configFile)
+	{
 		configFile->release();
+		configFile = NULL;
+	}
 }
 
 ConfObject* Configuration::findObject(const char* objectType, const char* objectName)
@@ -61,13 +68,13 @@ const char* Configuration::getRootDirectory()
 void Configuration::loadConfigFile()
 {
 	if (!configFile)
-		configFile = new ConfigFile (0);
+		configFile = new ConfigFile (ConfigFile::LEX_none);
 }
 
 void Configuration::setConfigFilePath(const char* filename)
 {
 	if (!configFile)
-		configFile = new ConfigFile (filename, 0);
+		configFile = new ConfigFile (filename, ConfigFile::LEX_none);
 }
 
 ConfObject* Configuration::getObject(const char* objectType)
@@ -80,7 +87,7 @@ ConfObject* Configuration::getObject(const char* objectType)
 
 ConfObject* Configuration::getObject(const char* objectType, const char* objectName)
 {
-	ConfObject *object = findObject (objectType, objectName);
+	ConfObject* object = findObject (objectType, objectName);
 	
 	if (!object)
 		object = getObject (objectType);
