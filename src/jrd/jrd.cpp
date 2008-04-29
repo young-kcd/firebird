@@ -6736,6 +6736,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 
 	user.usr_user_name = name;
+	user.usr_user_name.upper();
 	user.usr_project_name = "";
 	user.usr_org_name = "";
 	user.usr_sql_role_name = options.dpb_role_name;
