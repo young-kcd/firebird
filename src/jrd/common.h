@@ -72,8 +72,6 @@
 #define GARBAGE_THREAD
 #endif
 
-#define CANCEL_OPERATION
-
 
 #ifdef SUPERSERVER
 #define FB_ARCHITECTURE isc_info_db_class_server_access

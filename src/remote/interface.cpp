@@ -256,7 +256,7 @@ inline bool defer_packet(rem_port* port, PACKET* packet, ISC_STATUS* status, boo
 #define GDS_TRANSACT_REQUEST	REM_transact_request
 #define GDS_TRANSACTION_INFO	REM_transaction_info
 #define GDS_UNWIND		REM_unwind_request
-#define GDS_CANCEL_OPERATION	REM_cancel_operation
+#define FB_CANCEL_OPERATION		REM_cancel_operation
 
 /* DSQL definitions */
 
@@ -7040,7 +7040,7 @@ static void zap_packet(PACKET* packet)
 }
 
 
-ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT kind)
+ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT kind)
 {
 /*************************************
  * 

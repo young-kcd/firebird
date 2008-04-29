@@ -526,7 +526,7 @@ const char SINGLE_QUOTE			= '\'';
 #define GDS_BLOB_INFO			jrd8_blob_info
 #define GDS_CANCEL_BLOB			jrd8_cancel_blob
 #define GDS_CANCEL_EVENTS		jrd8_cancel_events
-#define GDS_CANCEL_OPERATION	jrd8_cancel_operation
+#define FB_CANCEL_OPERATION		jrd8_cancel_operation
 #define GDS_CLOSE_BLOB			jrd8_close_blob
 #define GDS_COMMIT				jrd8_commit_transaction
 #define GDS_COMMIT_RETAINING	jrd8_commit_retaining
@@ -1354,9 +1354,9 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 }
 
 
-ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
-								Attachment** handle,
-								USHORT option)
+ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
+							   Attachment** handle,
+							   USHORT option)
 {
 /**************************************
  *
@@ -1377,15 +1377,15 @@ ISC_STATUS GDS_CANCEL_OPERATION(ISC_STATUS* user_status,
 		DatabaseContextHolder dbbHolder(tdbb, false);
 
 		switch (option) {
-		case CANCEL_disable:
+		case fb_cancel_disable:
 			attachment->att_flags |= ATT_cancel_disable;
 			break;
 
-		case CANCEL_enable:
+		case fb_cancel_enable:
 			attachment->att_flags &= ~ATT_cancel_disable;
 			break;
 
-		case CANCEL_raise:
+		case fb_cancel_raise:
 			attachment->att_flags |= ATT_cancel_raise;
 			break;
 

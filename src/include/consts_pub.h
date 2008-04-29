@@ -933,11 +933,19 @@
 #define isc_dpb_set_db_SQL_dialect        65
 
 /***********************************/
-/* Masks for fb_shutdown_callback */
+/* Masks for fb_shutdown_callback  */
 /***********************************/
 
 #define fb_shut_preproviders			  1
 #define fb_shut_postproviders			  2
+
+/****************************************/
+/* Cancel types for fb_cancel_operation */
+/****************************************/
+
+#define fb_cancel_disable				  1
+#define fb_cancel_enable				  2
+#define fb_cancel_raise					  3
 
 /********************************************/
 /* Debug information items					*/

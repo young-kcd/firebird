@@ -8572,7 +8572,7 @@ static int API_ROUTINE query_abort()
 	if (DB)
 	{
 		ISC_STATUS_ARRAY status;
-		flag = (gds__cancel_operation(status, &DB, CANCEL_raise) == FB_SUCCESS);
+		flag = (fb_cancel_operation(status, &DB, fb_cancel_raise) == FB_SUCCESS);
 	}
 #endif
 

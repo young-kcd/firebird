@@ -128,9 +128,7 @@ static void		aux_request(rem_port*, P_REQ*, PACKET*);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(Firebird::ClumpletWriter&, const ParametersSet&, const rem_port*);
 
-#ifdef CANCEL_OPERATION
 static void		cancel_operation(rem_port*, USHORT);
-#endif
 
 static bool		check_request(Rrq*, USHORT, USHORT);
 static USHORT	check_statement_type(Rsr*);
@@ -440,10 +438,8 @@ static bool link_request(rem_port* port, SERVER_REQ request)
 
 	if (queue)
 	{
-#ifdef CANCEL_OPERATION
 		if (operation == op_exit || operation == op_disconnect)
-			cancel_operation(port, CANCEL_raise);
-#endif
+			cancel_operation(port, fb_cancel_raise);
 		return true;
 	}
 
@@ -1236,7 +1232,6 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 }
 
 
-#ifdef CANCEL_OPERATION
 static void cancel_operation( rem_port* port, USHORT kind)
 {
 /**************************************
@@ -1263,11 +1258,10 @@ static void cancel_operation( rem_port* port, USHORT kind)
 		if (!(rdb->rdb_flags & Rdb::SERVICE))
 		{
 			ISC_STATUS_ARRAY status_vector;
-			gds__cancel_operation(status_vector, &rdb->rdb_handle, kind);
+			fb_cancel_operation(status_vector, &rdb->rdb_handle, kind);
 		}
 	}
 }
-#endif
 
 
 static bool check_request(Rrq* request,
@@ -1526,12 +1520,10 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		ISC_STATUS_ARRAY status_vector;
 		
 		if (!(rdb->rdb_flags & Rdb::SERVICE)) {
-#ifdef CANCEL_OPERATION
 			/* Prevent a pending or spurious cancel from aborting
 			   a good, clean detach from the database. */
 
-			gds__cancel_operation(status_vector, &rdb->rdb_handle, CANCEL_disable);
-#endif
+			fb_cancel_operation(status_vector, &rdb->rdb_handle, fb_cancel_disable);
 			while (rdb->rdb_requests)
 				release_request(rdb->rdb_requests);
 			while (rdb->rdb_sql_requests)
@@ -3335,9 +3327,7 @@ static bool process_packet(rem_port* port,
 			break;
 
 		case op_cancel:
-#ifdef CANCEL_OPERATION
 			cancel_operation(port, receive->p_cancel_op.p_co_kind);
-#endif
 			break;
 
 		default:
@@ -5233,9 +5223,7 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
 	switch(asyncPacket->p_operation)
 	{
 	case op_cancel:
-#ifdef CANCEL_OPERATION
 		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
-#endif
 		break;
 	default:
 		return false;

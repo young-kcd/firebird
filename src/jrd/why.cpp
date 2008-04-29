@@ -961,7 +961,7 @@ namespace
 #define GDS_BLOB_INFO			isc_blob_info
 #define GDS_CANCEL_BLOB			isc_cancel_blob
 #define GDS_CANCEL_EVENTS		isc_cancel_events
-#define GDS_CANCEL_OPERATION	gds__cancel_operation
+#define FB_CANCEL_OPERATION		fb_cancel_operation
 #define GDS_CLOSE_BLOB			isc_close_blob
 #define GDS_COMMIT				isc_commit_transaction
 #define GDS_COMMIT_RETAINING	isc_commit_retaining
@@ -1480,7 +1480,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
 }
 
 
-ISC_STATUS API_ROUTINE GDS_CANCEL_OPERATION(ISC_STATUS * user_status,
+ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
 											FB_API_HANDLE * handle,
 											USHORT option)
 {
@@ -6053,8 +6053,8 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 				for (unsigned int i = 0; i < attachments().getCount(); ++i)
 				{
 					Attachment* att = attachments()[i];
-					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, CANCEL_enable);
-					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, CANCEL_raise);
+					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, fb_cancel_enable);
+					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, fb_cancel_raise);
 				}
 			}
 

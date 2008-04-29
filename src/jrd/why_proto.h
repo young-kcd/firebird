@@ -251,10 +251,7 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT);
 
 #endif	/* JRD_IBASE_H */
 
-#define CANCEL_disable	1
-#define CANCEL_enable	2
-#define CANCEL_raise	3
-ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
+ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
 
 ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS*, FB_API_HANDLE*);
 

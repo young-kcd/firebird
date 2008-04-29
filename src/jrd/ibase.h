@@ -1127,12 +1127,19 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 										unsigned short,
 										const ISC_SCHAR*);
 
+/***********************/
+/* Shutdown and cancel */
+/***********************/
 
 int ISC_EXPORT fb_shutdown(unsigned int);
+
 ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
 										   FB_SHUTDOWN_CALLBACK,
 										   const int);
 
+ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
+										  isc_db_handle*,
+										  ISC_USHORT);
 
 /********************************/
 /* Client information functions */

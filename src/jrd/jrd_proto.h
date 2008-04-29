@@ -46,9 +46,6 @@ ISC_STATUS jrd8_blob_info(ISC_STATUS*, Jrd::blb**, SSHORT, const SCHAR*, SSHORT,
 ISC_STATUS jrd8_cancel_blob(ISC_STATUS *, Jrd::blb **);
 ISC_STATUS jrd8_cancel_events(ISC_STATUS *, Jrd::Attachment**, SLONG *);
 
-#define CANCEL_disable	1
-#define CANCEL_enable	2
-#define CANCEL_raise	3
 ISC_STATUS jrd8_cancel_operation(ISC_STATUS *, Jrd::Attachment**,
 											   USHORT);
 

@@ -108,7 +108,7 @@ void EXEC_abort(void)
 	{
 		if (database->dbb_handle)
 		{
-			if (gds__cancel_operation(status_vector, &database->dbb_handle, CANCEL_raise) == 0)
+			if (fb_cancel_operation(status_vector, &database->dbb_handle, fb_cancel_raise) == 0)
 			{
 				QLI_abort = true;
 			}
