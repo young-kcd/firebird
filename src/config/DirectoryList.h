@@ -29,23 +29,22 @@
 
 #include "../common/classes/alloc.h"
 
-static const int MAX_DIRECTORIES = 32;
-
 class DirectoryList : public Firebird::GlobalStorage
 {
+	enum { MAX_DIRECTORIES = 32 };
 public:
-	DirectoryList(const char *option, const char* list);
-	~DirectoryList(void);
+	explicit DirectoryList(const char* options);
+	DirectoryList(const char* option, const char* list);
+	~DirectoryList();
 	
-	bool	enabled;
-	bool	restricted;
-	bool validateFilename(const char* fileName);
-	bool matchFileName(const char* directory, const char* fileName);
+	bool		enabled;
+	bool		restricted;
+	bool validateFilename(const char* fileName) const;
+	bool matchFileName(const char* directory, const char* fileName) const;
 	
-	char		*strings;
-	const char	*directories [MAX_DIRECTORIES];
+	char*		strings;
+	const char*	directories [MAX_DIRECTORIES];
 	int			numberDirectories;
-	DirectoryList(const char* options);
 	void parse(const char* option, const char* list);
 };
 
