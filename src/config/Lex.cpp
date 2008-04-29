@@ -1,19 +1,19 @@
 /*
- *  
- *     The contents of this file are subject to the Initial 
- *     Developer's Public License Version 1.0 (the "License"); 
- *     you may not use this file except in compliance with the 
- *     License. You may obtain a copy of the License at 
- *     http://www.ibphoenix.com/idpl.html. 
  *
- *     Software distributed under the License is distributed on 
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
- *     express or implied.  See the License for the specific 
+ *     The contents of this file are subject to the Initial
+ *     Developer's Public License Version 1.0 (the "License");
+ *     you may not use this file except in compliance with the
+ *     License. You may obtain a copy of the License at
+ *     http://www.ibphoenix.com/idpl.html.
+ *
+ *     Software distributed under the License is distributed on
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+ *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever 
- *     without the express prior written permission of the original 
+ *     may not be distributed under any other license whatsoever
+ *     without the express prior written permission of the original
  *     author.
  *
  *
@@ -37,33 +37,33 @@
 #include "InputStream.h"
 
 #define WHITE_SPACE				" \t\n\r"
-#define PUNCTUATION_CHARS		"<>="
-#define MULTI_CHARS				"" //"+=*/%!~<>~^|&="
-#define MAX_TOKEN				1024
+//#define PUNCTUATION_CHARS		"<>="
+//#define MULTI_CHARS				"" //"+=*/%!~<>~^|&="
+//#define MAX_TOKEN				1024
 #define UPCASE(c)				((c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c)
 
-#define WHITE					1
-#define PUNCT					2
-#define MULTI_CHAR				4
-#define DIGIT					8
-#define TERM					(WHITE | PUNCT)
+const int TYPE_WHITE = 1;
+const int TYPE_PUNCT = 2;
+//const int TYPE_MULTI_CHAR = 4;
+const int TYPE_DIGIT = 8;
+//#define TERM					(TYPE_WHITE | TYPE_PUNCT)
 
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-Lex::Lex(const char *punctuation, int debugFlags)
+Lex::Lex(const char* punctuation, const LEX_flags debugFlags)
 {
 	lineComment = NULL;
 	commentStart = NULL;
 	memset (charTableArray, 0, sizeof (charTableArray));
-	setCharacters (PUNCT, punctuation);
-	setCharacters (WHITE, WHITE_SPACE);
-	setCharacters (DIGIT, "0123456789");
+	setCharacters (TYPE_PUNCT, punctuation);
+	setCharacters (TYPE_WHITE, WHITE_SPACE);
+	setCharacters (TYPE_DIGIT, "0123456789");
 	ptr = end = NULL;
 	inputStream = NULL;
-	tokenType = NONE;
+	tokenType = TT_NONE;
 	lineNumber = 0;
 	continuationChar = 0;
 	captureStart = captureEnd = 0;
@@ -88,36 +88,39 @@ void Lex::skipWhite()
 		while (ptr < end)
 		{
 			if (lineComment && lineComment [0] == *ptr && match (lineComment, ptr))
-				{
+			{
 				while (ptr < end && *ptr++ != '\n')
 					;
 				++inputStream->lineNumber;
-				}
+			}
 			else if (commentStart && commentStart [0] == *ptr && match (commentStart, ptr))
-				{
+			{
 				ptr += strlen (commentStart);
 				while (ptr < end)
+				{
 					if (commentEnd [0] == *ptr && match (commentEnd, ptr))
-						{
+					{
 						ptr += strlen (commentEnd);
 						break;
-						}
-					else if (*ptr++ == '\n')
+					}
+
+					if (*ptr++ == '\n')
 						++inputStream->lineNumber;
 				}
+			}
 			else if (*ptr == continuationChar && ptr [1] == '\n')
-				{
+			{
 				ptr += 2;
 				++inputStream->lineNumber;
-				}
-			else if (charTable(*ptr) & WHITE)
-				{
+			}
+			else if (charTable(*ptr) & TYPE_WHITE)
+			{
 				if (*ptr++ == '\n')
-					{
+				{
 					eol = true;
 					++inputStream->lineNumber;
-					}
 				}
+			}
 			else
 				return;
 		}
@@ -128,8 +131,10 @@ void Lex::skipWhite()
 bool Lex::match(const char *pattern, const char *string)
 {
 	while (*pattern && *string)
+	{
 		if (*pattern++ != *string++)
 			return false;
+	}
 
 	return *pattern == 0;
 }
@@ -149,19 +154,19 @@ void Lex::getToken()
 		tokenLineNumber = inputStream->lineNumber;
 
 	if (ptr >= end)
-		{
+	{
 		tokenType = END_OF_STREAM;
 		strcpy (token, "-end-of-file-");
 		return;
-		}
+	}
 
 	tokenOffset = inputStream->getOffset (ptr);
 	char *p = token;
 	const char* const endToken = token + sizeof(token) - 1; // take into account the '\0'
 	const char c = *p++ = *ptr++;
 
-	if (charTable(c) & PUNCT)
-		tokenType = PUNCT;
+	if (charTable(c) & TYPE_PUNCT)
+		tokenType = TT_PUNCT;
 	else if (c == '\'' || c == '"')
 	{
 		p = token;
@@ -184,10 +189,10 @@ void Lex::getToken()
 		++ptr;
 		tokenType = (c == '"') ? QUOTED_STRING : SINGLE_QUOTED_STRING;
 	}
-	else if (charTable(c) & DIGIT)
+	else if (charTable(c) & TYPE_DIGIT)
 	{
-		tokenType = NUMBER;
-		while (ptr < end && (charTable(*ptr) & DIGIT))
+		tokenType = TT_NUMBER;
+		while (ptr < end && (charTable(*ptr) & TYPE_DIGIT))
 		{
 			if (p >= endToken)
 				throw AdminException ("token overflow in number");
@@ -196,11 +201,11 @@ void Lex::getToken()
 	}
 	else
 	{
-		tokenType = NAME;
+		tokenType = TT_NAME;
 		if (flags & LEX_upcase)
 		{
 			p [-1] = UPCASE(c);
-			while (ptr < end && !(charTable(*ptr) & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable(*ptr) & (TYPE_WHITE | TYPE_PUNCT)))
 			{
 				if (p >= endToken)
 					throw AdminException ("token overflow in name (uppercase)");
@@ -210,7 +215,7 @@ void Lex::getToken()
 		}
 		else
 		{
-			while (ptr < end && !(charTable(*ptr) & (WHITE | PUNCT)))
+			while (ptr < end && !(charTable(*ptr) & (TYPE_WHITE | TYPE_PUNCT)))
 			{
 				if (p >= endToken)
 					throw AdminException ("token overflow in name");
@@ -272,11 +277,11 @@ Firebird::PathName Lex::reparseFilename()
 	while (*p)
 		++p;
 
-	while (ptr < end && *ptr != '>' && !(charTable(*ptr) & WHITE))
+	while (ptr < end && *ptr != '>' && !(charTable(*ptr) & TYPE_WHITE))
 		*p++ = *ptr++;
 
 	*p = 0;
-	Firebird::PathName string = token;
+	const Firebird::PathName string = token;
 	//getToken();
 
 	return string;
@@ -284,13 +289,13 @@ Firebird::PathName Lex::reparseFilename()
 
 Firebird::string Lex::getName()
 {
-	if (tokenType != NAME)
+	if (tokenType != TT_NAME)
 		syntaxError ("name");
 
-	Firebird::string name = token;
+	const Firebird::string name = token;
 	getToken();
-	
-	return name;	
+
+	return name;
 }
 
 void Lex::syntaxError(const char *expected)
@@ -312,7 +317,7 @@ InputFile* Lex::pushFile(const char *fileName)
 	InputFile *inputFile = new InputFile (fileName, inputStream);
 	inputStream = inputFile;
 	ptr = end = NULL;
-	tokenType = NONE;
+	tokenType = TT_NONE;
 
 	return inputFile;
 }
@@ -326,13 +331,13 @@ void Lex::setContinuationChar(char c)
 void Lex::pushStream(InputStream *stream)
 {
 	stream->addRef();
-	
+
 	if (flags & LEX_trace)
-		{
+	{
 		const char *fileName = stream->getFileName();
 		if (fileName)
 			printf ("Opening %s\n", fileName);
-		}
+	}
 
 	if (inputStream)
 		inputStream->ptr = ptr;
@@ -340,20 +345,20 @@ void Lex::pushStream(InputStream *stream)
 	stream->prior = inputStream;
 	inputStream = stream;
 	ptr = end = NULL;
-	tokenType = NONE;
+	tokenType = TT_NONE;
 }
 
 bool Lex::getSegment()
 {
 	if (!inputStream)
-		{
+	{
 		tokenType = END_OF_STREAM;
 		eol = true;
 		return false;
-		}
+	}
 
 	if (!(ptr = inputStream->getSegment()))
-		{
+	{
 		end = ptr;
 		InputStream *prior = inputStream->prior;
 		inputStream->close();
@@ -361,13 +366,13 @@ bool Lex::getSegment()
 		if (!(inputStream = prior))
 			return false;
 		ptr = inputStream->ptr;
-		}
+	}
 
 	end = (ptr) ? inputStream->getEnd() : NULL;
 
 	if (end && (flags & LEX_list))
 		printf ("    %s", ptr);
-		
+
 	return true;
 }
 
@@ -376,20 +381,20 @@ void Lex::captureStuff()
 	stuff.clear();
 
 	for (;;)
-		{
+	{
 		if (ptr >= end)
-			{
+		{
 			if (!getSegment())
 				return;
 			continue;
-			}
+		}
 		if (*ptr == captureEnd)
 			return;
 		stuff.putCharacter (*ptr++);
-		}
+	}
 }
 
-char& Lex::charTable(int ch)
+int& Lex::charTable(int ch)
 {
 	return charTableArray [static_cast<UCHAR>(ch)];
 }
