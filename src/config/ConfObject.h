@@ -30,8 +30,6 @@
 #include "../common/classes/fb_string.h"
 #include "RefObject.h"
 
-const static int MAX_STRINGS = 32;
-
 START_NAMESPACE
 
 class Element;
@@ -64,18 +62,19 @@ protected:
 	virtual const char* getValue(const Element* attribute);
 
 public:
-	Element		*object;
+	Element*			object;
 
 private:
-	ConfObject	*chain;
-	ConfigFile	*configFile;
+	enum { MAX_STRINGS = 32 };
+	ConfObject*			chain;
+	ConfigFile*			configFile;
 	Firebird::string	source;
 	Firebird::string	tempValue;
-	int			numberStrings;
-	const char	*strings [MAX_STRINGS];
-	char		buffer [1024];
-	char		*next;
-	char		*end;
+	int					numberStrings;
+	const char*			strings [MAX_STRINGS];
+	char				buffer [1024];
+	char*				next;
+	const char*			end;
 };
 
 END_NAMESPACE
