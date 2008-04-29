@@ -27,7 +27,6 @@ EXPORTS
 	gds__blob_size	@4
 	gds__cancel_blob	@5
 	gds__cancel_events	@6
-	gds__cancel_operation
 	gds__close	@7
 	gds__close_blob	@8
 	gds__commit_retaining	@9
@@ -127,6 +126,7 @@ EXPORTS
 
 	fb_shutdown
 	fb_shutdown_callback
+	fb_cancel_operation
 
 	perf_format	@100
 	perf_get_info	@101

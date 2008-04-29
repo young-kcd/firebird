@@ -36,7 +36,6 @@ global:
 	gds__blob_size;
 	gds__cancel_blob;
 	gds__cancel_events;
-	gds__cancel_operation;
 	gds__close;
 	gds__close_blob;
 	gds__commit_retaining;
@@ -272,11 +271,6 @@ global:
 	isc_service_detach;
 	isc_service_query;
 	isc_service_start;
-	#functions called by utils
-	#SVC_putc;
-	#SVC_finish;
-        #SVC_output;
-	#CMD_UTIL_put_svc_status;
 
 # Transaction control functions
 
@@ -307,6 +301,7 @@ global:
 	isc_start_request;
 	isc_transact_request;
 	isc_unwind_request;
+	fb_cancel_operation;
 
 # Other SQL functions
 
