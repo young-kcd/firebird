@@ -1,19 +1,19 @@
 /*
- *  
- *     The contents of this file are subject to the Initial 
- *     Developer's Public License Version 1.0 (the "License"); 
- *     you may not use this file except in compliance with the 
- *     License. You may obtain a copy of the License at 
- *     http://www.ibphoenix.com/idpl.html. 
  *
- *     Software distributed under the License is distributed on 
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
- *     express or implied.  See the License for the specific 
+ *     The contents of this file are subject to the Initial
+ *     Developer's Public License Version 1.0 (the "License");
+ *     you may not use this file except in compliance with the
+ *     License. You may obtain a copy of the License at
+ *     http://www.ibphoenix.com/idpl.html.
+ *
+ *     Software distributed under the License is distributed on
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
+ *     express or implied.  See the License for the specific
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever 
- *     without the express prior written permission of the original 
+ *     may not be distributed under any other license whatsoever
+ *     without the express prior written permission of the original
  *     author.
  *
  *
@@ -37,22 +37,21 @@
 
 #include "../common/classes/fb_string.h"
 
-#define FIXED_SEGMENT_SIZE		1024
-
 START_NAMESPACE
-
-struct Segment
-    {
-	int		length;
-	char	*address;
-	Segment	*next;
-	char	tail [FIXED_SEGMENT_SIZE];
-	};
-
 
 class Stream : public Firebird::GlobalStorage
 {
 public:
+	enum { FIXED_SEGMENT_SIZE = 1024 };
+	
+	struct Segment
+    {
+		int		length;
+		char	*address;
+		Segment	*next;
+		char	tail [FIXED_SEGMENT_SIZE];
+	};
+
 	explicit Stream (int minSegmentSize = FIXED_SEGMENT_SIZE);
 	virtual ~Stream();
 
@@ -65,14 +64,14 @@ public:
 	virtual void	putSegment (int length, const char *address, bool copy);
 	void			putCharacter (char c);
 
-	virtual void	setSegment (Segment *segment, int length, void *address);
-	virtual int		getSegment (int offset, int length, void* address) const;
+	virtual void	setSegment (Segment *segment, int length, void* address);
+	virtual int		getSegment (int offset, int len, void* ptr) const;
 	virtual int		getSegment (int offset, int len, void *ptr, char delimiter) const;
 	void*			getSegment (int offset);
 	const void*		getSegment (int offset) const;
 	int				getSegmentLength(int offset) const;
 
-	Firebird::string	getJString();
+	Firebird::string	getFBString() const;
 	virtual char*	getString();
 	void			clear();
 	virtual int		getLength() const;
