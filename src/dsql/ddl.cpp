@@ -3801,8 +3801,10 @@ static void define_view( dsql_req* request, NOD_TYPE op)
 			const Firebird::MetaName& name = relation ? relation->rel_name : procedure->prc_name;
 			request->append_string(isc_dyn_view_relation, name);
 			request->append_number(isc_dyn_view_context, context->ctx_context);
-			request->append_string(isc_dyn_view_context_name,
-						context->ctx_alias ? context->ctx_alias : name);
+			
+			const char* str = context->ctx_alias ? context->ctx_alias : name.c_str();
+			const USHORT len = context->ctx_alias ? strlen(str) : name.length();
+			request->append_string(isc_dyn_view_context_name, str, len);
 			request->append_uchar(isc_dyn_end);
 		}
 	}

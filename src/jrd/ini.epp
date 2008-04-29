@@ -770,7 +770,7 @@ void INI_init2()
 					format->fmt_length = (USHORT)MET_align(dbb, &(*desc), format->fmt_length);
 					desc->dsc_address = (UCHAR*) (IPTR) format->fmt_length;
 
-					// In ODS11 length of RDB$MESSAGES are enlarged from 80 to 1023 bytes
+					// In ODS11 length of RDB$MESSAGES was enlarged from 80 to 1023 bytes
 					if ((fld[RFLD_F_NAME] == nam_msg) &&
 						(major_version < ODS_VERSION11))
 					{
@@ -783,6 +783,13 @@ void INI_init2()
 						ENCODE_ODS(major_version, minor_original) < ODS_11_2)
 					{
 						desc->dsc_length -= sizeof(USHORT);
+					}
+
+					// In ODS11.2 length of RDB$CONTEXT_NAME was enlarged from 31 to 255 bytes
+					if ((fld[RFLD_F_NAME] == nam_context) &&
+						ENCODE_ODS(major_version, minor_original) < ODS_11_2)
+					{
+						desc->dsc_length = 31;
 					}
 
 					format->fmt_length += desc->dsc_length;

@@ -4555,6 +4555,10 @@ void DYN_define_view_relation( Global* gbl, const UCHAR** ptr, const Firebird::M
 				case isc_dyn_view_context_name:
 					GET_STRING(ptr, VRL.RDB$CONTEXT_NAME);
 					VRL.RDB$CONTEXT_NAME.NULL = FALSE;
+
+					if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_2) {
+						VRL.RDB$CONTEXT_NAME[31] = 0;
+					}
 					break;
 
 				default:

@@ -6939,6 +6939,9 @@ bool get_view(BurpGlobals*	tdgbl,
 
 			case att_view_context_name:
 				GET_TEXT(X.RDB$CONTEXT_NAME);
+				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2) {
+					X.RDB$CONTEXT_NAME[31] = 0;
+				}
 				break;
 
 			case att_view_context_id:
