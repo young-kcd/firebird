@@ -7080,7 +7080,12 @@ void dsql_req::put_debug_src_info(USHORT line, USHORT col)
 	req_debug_data.add(col);
 	req_debug_data.add(col >> 8);
 
-	const ULONG offset = (req_blr_data.getCount() - req_base_offset) - 2;
+	ULONG offset = (req_blr_data.getCount() - req_base_offset);
+
+	// for DDL requests we store BLR's length at the first 2 bytes 
+	if (req_type == REQ_DDL) {
+		offset -= 2;
+	}
 	req_debug_data.add(offset);
 	req_debug_data.add(offset >> 8);
 }
