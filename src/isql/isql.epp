@@ -7861,16 +7861,19 @@ static SLONG process_record_count(const int statement_type)
 			return -1;
 		}
 
-		const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
-		while (*p != isc_info_end)
+		if (count_buffer[0] == isc_info_sql_records)
 		{
-			const UCHAR count_is = *p++;
-			const SSHORT l = gds__vax_integer(p, 2);
-			p += 2;
-			const SLONG count = gds__vax_integer(p, l);
-			p += l;
-			if (count_is == count_type)
-				return count;
+			const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
+			while (*p != isc_info_end)
+			{
+				const UCHAR count_is = *p++;
+				const SSHORT l = gds__vax_integer(p, 2);
+				p += 2;
+				const SLONG count = gds__vax_integer(p, l);
+				p += l;
+				if (count_is == count_type)
+					return count;
+			}
 		}
 	}
 	return -1;
