@@ -49,7 +49,7 @@
 #define UPPER(c)			((ISLOWER (c)) ? c - 'a' + 'A' : c)
 #endif
 
-const int BACKUP_FILES = 5;
+static const int BACKUP_FILES = 5;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction

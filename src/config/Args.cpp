@@ -42,43 +42,46 @@
 #include "ArgsException.h"
 
 
-class ConsoleNoEcho
+namespace
 {
-public:
-	ConsoleNoEcho();
-	~ConsoleNoEcho();
-private:
-#ifdef _WIN32
-	HANDLE m_stdin;
-	DWORD m_orgSettings;
-#else
-	termios m_orgSettings;
-#endif
-};
+	class ConsoleNoEcho
+	{
+	public:
+		ConsoleNoEcho();
+		~ConsoleNoEcho();
+	private:
+	#ifdef _WIN32
+		HANDLE m_stdin;
+		DWORD m_orgSettings;
+	#else
+		termios m_orgSettings;
+	#endif
+	};
 
-ConsoleNoEcho::ConsoleNoEcho()
-{
+	ConsoleNoEcho::ConsoleNoEcho()
+	{
 #ifdef _WIN32
-	m_stdin = GetStdHandle(STD_INPUT_HANDLE);
-	GetConsoleMode(m_stdin, &m_orgSettings);
-	const DWORD newSettings = m_orgSettings & ~(ENABLE_ECHO_INPUT);
-	SetConsoleMode(m_stdin, newSettings);
+		m_stdin = GetStdHandle(STD_INPUT_HANDLE);
+		GetConsoleMode(m_stdin, &m_orgSettings);
+		const DWORD newSettings = m_orgSettings & ~(ENABLE_ECHO_INPUT);
+		SetConsoleMode(m_stdin, newSettings);
 #else
-	tcgetattr(0, &m_orgSettings);
-	termios newSettings = m_orgSettings;
-	newSettings.c_lflag &= (~ECHO);
-	tcsetattr(0, TCSANOW, &newSettings);
+		tcgetattr(0, &m_orgSettings);
+		termios newSettings = m_orgSettings;
+		newSettings.c_lflag &= (~ECHO);
+		tcsetattr(0, TCSANOW, &newSettings);
 #endif
-}
+	}
 
-ConsoleNoEcho::~ConsoleNoEcho()
-{
+	ConsoleNoEcho::~ConsoleNoEcho()
+	{
 #ifdef _WIN32
-	SetConsoleMode(m_stdin, m_orgSettings);
+		SetConsoleMode(m_stdin, m_orgSettings);
 #else
-	tcsetattr(0, TCSANOW, &m_orgSettings);
+		tcsetattr(0, TCSANOW, &m_orgSettings);
 #endif
-}
+	}
+} // namespace
 
 
 //////////////////////////////////////////////////////////////////////
