@@ -11592,7 +11592,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_src_info:
-		verb = "src_info"; 
+		sprintf(s, "src_info: line %d, col %d", (int) (IPTR) (*ptr++), (int) (IPTR) (*ptr++));
+		verb = s;
 		break;
 
 	case nod_with:
