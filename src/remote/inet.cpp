@@ -244,13 +244,16 @@ static void		alarm_handler(int);
 static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
+
 #if !defined(WIN_NT)
 static int		check_host(rem_port*, TEXT*, const TEXT*, const struct passwd*);
 static bool		check_proxy(rem_port*, TEXT*, Firebird::string&);
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
+
 static Firebird::GlobalPtr<Firebird::Mutex> waitThreadMutex;
 static unsigned int procCount = 0;
 #endif // WIN_NT
+
 static void		disconnect(rem_port*);
 static void		exit_handler(void *);
 

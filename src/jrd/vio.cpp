@@ -99,7 +99,7 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant = false);
 static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
-static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*,  Record*);
+static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*, Record*);
 #ifdef GARBAGE_THREAD
 static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
@@ -3802,7 +3802,7 @@ static void garbage_collect(thread_db* tdbb,
 static void garbage_collect_idx(
 								thread_db* tdbb,
 								record_param* org_rpb, record_param* new_rpb,
-								Record* old_data,  Record* staying_data)
+								Record* old_data, Record* staying_data)
 {
 /**************************************
  *

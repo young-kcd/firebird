@@ -20,7 +20,7 @@
  *  The Original Code was created by James A. Starkey for IBPhoenix.
  *
  *  Copyright (c) 1997 - 2000, 2001, 2003 James A. Starkey
- *  Copyright (c) 1997 - 2000, 2001,   		 2003 Netfrastructure, Inc.
+ *  Copyright (c) 1997 - 2000, 2001, 2003 Netfrastructure, Inc.
  *  All Rights Reserved.
  */
 
