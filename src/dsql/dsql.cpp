@@ -1041,7 +1041,7 @@ static void execute_blob(thread_db* tdbb,
 	}
 	else
 	{
-		request->req_request = 0;
+		request->req_request = NULL;
 		bid* blob_id = (bid*) parameter->par_desc.dsc_address;
 		memset(blob_id, 0, sizeof(bid));
 
@@ -1658,6 +1658,9 @@ static USHORT get_request_info(thread_db* tdbb,
 							   dsql_req* request,
 							   SSHORT buffer_length, UCHAR* buffer)
 {
+	if (!request->req_request)	// DDL
+		return 0;
+
 	// get the info for the request from the engine 
 
 	try
