@@ -212,7 +212,7 @@ FBCONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBCONFIG_So
 
 CONFIG_ClientFiles=AdminException.cpp Args.cpp ArgsException.cpp \
     ConfObj.cpp ConfObject.cpp ConfigFile.cpp Configuration.cpp \
-    DirectoryList.cpp Element.cpp FileName.cpp InputFile.cpp \
+    Element.cpp FileName.cpp InputFile.cpp \
     InputStream.cpp Lex.cpp ScanDir.cpp Stream.cpp StreamSegment.cpp
 CONFIG_ServerFiles=
 

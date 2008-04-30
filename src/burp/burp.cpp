@@ -665,7 +665,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 					// trusted user name parameter missing 
 				}
 				tdgbl->gbl_sw_tr_user = argv[itr];
+#ifdef TRUSTED_AUTH
 				burp_in_sw_table[IN_SW_BURP_TRUSTED_USER].in_sw_state = 1;
+#endif
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) 
 			{
