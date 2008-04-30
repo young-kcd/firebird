@@ -348,6 +348,9 @@ void PIO_flush(jrd_file* main_file)
 #endif
 }
 
+#ifdef SOLARIS
+#define O_DIRECT 0
+#endif
 
 void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 {
@@ -393,6 +396,9 @@ void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 					 isc_arg_cstring, file->fil_length, ERR_string(file->fil_string, file->fil_length),
 					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
 		}
+#ifdef SOLARIS
+		directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF);
+#endif
 #endif //FCNTL_BROKEN
 
 		file->fil_flags &= ~(FIL_force_write | FIL_no_fs_cache);

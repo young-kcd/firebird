@@ -188,6 +188,11 @@ const int NOTASOCKET = EBADF;
 #define FB_SETOPT_FLAGS 0
 #endif
 
+// Solaris does not know what means INADDR_NONE
+#ifndef INADDR_NONE
+#define INADDR_NONE (unsigned long)-1
+#endif
+
 SLONG INET_remote_buffer;
 SLONG INET_max_data;
 static bool first_time = true;
