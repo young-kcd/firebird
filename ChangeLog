@@ -1,3 +1,36 @@
+2008-04-30 19:48  dimitr
+
+	* firebird2/src/isql/isql.epp (1.242):
+
+	Let's avoid crashing when no information is returned in the ouput
+	buffer.
+
+2008-04-30 19:45  dimitr
+
+	* firebird2/src/dsql/dsql.cpp (1.245):
+
+	Fixed the crash reported privately by Bill Oliver.
+
+2008-04-30 03:48  asfernandes
+
+	* firebird2/src/config/: Args.cpp (1.5), InputFile.cpp (1.11):
+
+	Misc
+
+2008-04-30 03:47  asfernandes
+
+	* firebird2/: src/burp/burp.cpp (1.139),
+	builds/posix/make.shared.variables (1.92):
+
+	Fix POSIX build
+
+2008-04-30 03:42  asfernandes
+
+	* firebird2/src/: config/Configuration.h (1.7), jrd/vio.cpp
+	(1.214), remote/inet.cpp (1.239):
+
+	Misc
+
 2008-04-29 18:39  hvlad
 
 	* firebird2/src/: burp/restore.epp (1.138), dsql/ddl.cpp (1.232),
