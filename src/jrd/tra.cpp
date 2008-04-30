@@ -1548,7 +1548,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
 		ERR_post(isc_shutinprog, isc_arg_string,
-				 ERR_string(tdbb->getAttachment()->att_filename),
+				 ERR_string(attachment->att_filename),
 				 0);
 	}
 
@@ -1584,7 +1584,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
 		ERR_post(isc_shutinprog, isc_arg_string,
-				 ERR_string(tdbb->getAttachment()->att_filename),
+				 ERR_string(attachment->att_filename),
 				 0);
 	}
 
