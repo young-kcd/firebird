@@ -37,8 +37,8 @@ extern _C_ Yshort yycheck[];
 extern _C_ Yshort yyctable[];
 
 #if YYDEBUG
-extern _C_ char *yyname[];
-extern _C_ char *yyrule[];
+extern _C_ const char *yyname[];
+extern _C_ const char *yyrule[];
 #endif
 
 %% header
@@ -174,7 +174,7 @@ int Parser::parseAux()
   int reduce_posn;
 
 #if YYDEBUG
-  char *yys;
+  const char *yys;
   
   if ((yys = getenv("YYDEBUG"))) {
     yyn = *yys;
