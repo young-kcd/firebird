@@ -2030,6 +2030,14 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 {
 	Database* dbb = tdbb->getDatabase();
 
+	// Determine location of the page in difference file and write destination
+	// so BufferDesc AST handlers and write_page routine can safely use this information
+	if (bdb->bdb_page != HEADER_PAGE_NUMBER)
+	{
+		// SCN of header page is adjusted in nbak.cpp
+		bdb->bdb_buffer->pag_scn = dbb->dbb_backup_manager->get_current_scn(); // Set SCN for the page
+	}
+
 	const int backup_state = dbb->dbb_backup_manager->get_state();
 
 	if (backup_state == nbak_state_normal)
@@ -2041,14 +2049,6 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	fb_assert(pageSpace);
 	if (pageSpace->isTemporary())
 		return;
-
-	// Determine location of the page in difference file and write destination
-	// so BufferDesc AST handlers and write_page routine can safely use this information
-	if (bdb->bdb_page != HEADER_PAGE_NUMBER)
-	{
-		// SCN of header page is adjusted in nbak.cpp
-		bdb->bdb_buffer->pag_scn = dbb->dbb_backup_manager->get_current_scn(); // Set SCN for the page
-	}
 
 	switch (backup_state) {
 	case nbak_state_stalled:
