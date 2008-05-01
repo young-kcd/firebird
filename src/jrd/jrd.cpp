@@ -1001,9 +1001,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
-						 isc_arg_string, 
-                         ERR_string(file_name), 
-                         0);
+						 isc_arg_string, ERR_string(file_name), 
+						0);
 		}
 	}
 
@@ -1017,9 +1016,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
-						 isc_arg_string, 
-                         ERR_string(file_name), 
-                         0);
+						 isc_arg_string, ERR_string(file_name), 
+						0);
 		}
 	}
 
