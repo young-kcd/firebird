@@ -152,9 +152,6 @@
 				RelativePath="..\..\..\src\config\ConfObject.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\config\DirectoryList.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\config\Element.cpp">
 			</File>
 			<File
