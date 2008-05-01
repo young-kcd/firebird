@@ -84,26 +84,26 @@ const char* PathName::getWorkingDirectory()
 
 int PathName::findWorkingDirectory(int dpbLength, const UCHAR* dpb, int bufferLength, char* buffer)
 {
-	const UCHAR *p = dpb, *end = dpb + dpbLength;
+	const UCHAR* p = dpb;
+	const UCHAR* const end = dpb + dpbLength;
 
 	if (dpbLength <= 0 || *p++ != isc_dpb_version1)
 		return 0;
 	
-	int length = 0;
-	for (; p < end; p += length)
-		{
+	for (int length = 0; p < end; p += length)
+	{
 		const UCHAR verb = *p++;
 		length = *p++;
 		length += (*p++) << 8;
 		
 		if (verb == isc_dpb_working_directory)
-			{
+		{
 			const int l = MIN (bufferLength - 1, length);
 			memcpy (buffer, p, l);
 			buffer [l] = 0;
 			return length;
-			}
 		}
+	}
 	
 	return 0;	
 }
@@ -139,28 +139,26 @@ Firebird::string PathName::expandFilename(const char* fileName, const char* work
 
 int PathName::merge(const char* fileName, const char* workingDirectory, int bufferLength, char* buffer)
 {
-	const char *p;
-	char *q = buffer;
-	const char *endBuffer = buffer + bufferLength - 1;
+	const char* const endBuffer = buffer + bufferLength - 1;
 	
 	if (isAbsolute (fileName))
-		{
-		q = copyCanonical (fileName, buffer, endBuffer);
-		return q - buffer;
-		}
+	{
+		char* rc = copyCanonical (fileName, buffer, endBuffer);
+		return rc - buffer;
+	}
 				
 	// Copy working directory, making slashes canonical
 	
-	q = copyCanonical (workingDirectory, buffer, endBuffer);
+	char* q = copyCanonical (workingDirectory, buffer, endBuffer);
 
 #ifdef _WIN32
 	if (IS_SEPARATOR (fileName [0]))
-		{
+	{
 		for (q = buffer; *q && *q++ != ':';)
 			;
 		q = copyCanonical (fileName, q, endBuffer);
 		return q - buffer;
-		}
+	}
 #endif
 	
 	// And add a trailing slash, if necessary
@@ -170,22 +168,23 @@ int PathName::merge(const char* fileName, const char* workingDirectory, int buff
 
 	// Handle self relative segments
 	
-	for (p = fileName; *p == '.';)
-		{
+	const char* p = fileName;
+	while (*p == '.')
+	{
 		if (IS_SEPARATOR (p[1]))
 			p += 2;
 		else if (p [1] == '.' && IS_SEPARATOR (p [2]))
-			{
+		{
 			p += 3;
 			q -= 1;
 			while (q > buffer && q [-1] != '/')
 				--q;
 			if (q == buffer || q [-1] != '/')
 				*q++ = '/';
-			}
+		}
 		else if (!p [1])
 			++p;
-		}
+	}
 	
 	// skip over extra separators in the file name
 	
@@ -215,28 +214,28 @@ bool PathName::isAbsolute(const char* fileName)
 
 char* PathName::copyCanonical(const char* fileName, char* buffer, const char* endBuffer)
 {
-	char *q = buffer;
-	const char *p = fileName;
+	char* q = buffer;
+	const char* p = fileName;
 	
 #ifdef _WIN32
 	if (IS_SEPARATOR (*p))
-		{
+	{
 		*q++ = '/';
 		++p;
-		}
+	}
 #endif
 		
 	while (*p && q < endBuffer)
-		{
+	{
 		char c = *p++;
 		if (IS_SEPARATOR (c))
-			{
+		{
 			c = '/';
 			while (IS_SEPARATOR (*p))
 				++p;
-			}
-		*q++ = c;
 		}
+		*q++ = c;
+	}
 	
 	*q = 0;
 	
@@ -250,7 +249,7 @@ Firebird::string PathName::expandFilename(const char* fileName)
 
 bool PathName::hasDirectory(const char* fileName)
 {
-	for (const char *p = fileName; *p; ++p)
+	for (const char* p = fileName; *p; ++p)
 	{
 		if (IS_SEPARATOR (*p))
 			return true;
