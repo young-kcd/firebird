@@ -148,7 +148,7 @@ private:
 	// Get character from stdout buffer
 	UCHAR	dequeueByte();
 	// Put character to stdout buffer
-	void	enqueueByte(UCHAR c);
+	void	enqueueByte(const UCHAR c);
 	// true if there is any data in stdout buffer
 	bool	empty() const;
 	// true if no more space in stdout buffer

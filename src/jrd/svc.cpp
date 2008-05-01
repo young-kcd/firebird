@@ -299,9 +299,11 @@ void Service::printf(const SCHAR* format, ...)
 	buf.vprintf(format, arglist);
 	va_end(arglist);
 
-	for (size_t n = 0; n < buf.length() && !(svc_flags & SVC_detached); ++n) 
+	const char* const end = buf.end();
+
+	for (const char* p = buf.begin(); p < end && !(svc_flags & SVC_detached); ++p) 
 	{
-		enqueueByte(buf[n]);
+		enqueueByte(*p);
 	}
 }
 
@@ -327,8 +329,7 @@ void Service::finish()
 
 void Service::putLine(char tag, const char* val)
 {
-	size_t len = strlen(val);
-	len &= 0xFFFF;
+	const size_t len = strlen(val) & 0xFFFF;
 	enqueueByte(tag);
 	enqueueByte(len);
 	enqueueByte(len >> 8);
@@ -381,6 +382,8 @@ void Service::stuffStatus(const ISC_STATUS* status_vector)
 		{
 			*status++ = status_vector[j];
 		}
+
+		svc_status[ISC_STATUS_LENGTH - 1] = 0; // May truncate one element, but it's worse to crash.
 	}
 }
 
@@ -1812,7 +1815,7 @@ UCHAR Service::dequeueByte()
 }
 
 
-void Service::enqueueByte(UCHAR ch)
+void Service::enqueueByte(const UCHAR ch)
 {
 	if (checkForShutdown())
 	{
