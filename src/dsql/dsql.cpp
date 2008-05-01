@@ -2198,6 +2198,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 	case nod_return:
 		verb = "return";
+		ptr = end;
 		break;
 	case nod_revoke:
 		verb = "revoke";
@@ -2836,7 +2837,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_src_info:
-		sprintf(s, "src_info: line %d, col %d", (int) (IPTR) (*ptr++), (int) (IPTR) (*ptr++));
+		{
+			const int line = (int) (IPTR) (*ptr++);
+			const int col = (int) (IPTR) (*ptr++);
+			sprintf(s, "src_info: line %d, col %d", line, col);
+		}
 		verb = s;
 		break;
 
