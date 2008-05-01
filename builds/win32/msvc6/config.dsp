@@ -114,10 +114,6 @@ SOURCE=..\..\..\src\config\ConfObject.cpp
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\config\DirectoryList.cpp
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\config\Element.cpp
 # End Source File
 # Begin Source File
@@ -191,10 +187,6 @@ SOURCE=..\..\..\src\config\ConfObj.h
 # Begin Source File
 
 SOURCE=..\..\..\src\config\ConfObject.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\config\DirectoryList.h
 # End Source File
 # Begin Source File
 
