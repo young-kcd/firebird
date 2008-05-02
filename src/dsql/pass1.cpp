@@ -3662,6 +3662,14 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 		if (request->req_context->getCount() == 1)
 		{
 			dsql_ctx* context = request->req_context->object();
+
+			if (!context->ctx_relation)
+			{
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
+						  0);
+			}
+
 			dsql_nod* node = MAKE_node(nod_dbkey, 1);
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
 			rel_node->nod_arg[0] = (dsql_nod*) context;
@@ -3669,24 +3677,45 @@ static dsql_nod* pass1_dbkey( dsql_req* request, dsql_nod* input)
 			return node;
 		}
 	}
-	else {
-		for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
+	else 
+	{
+		const bool cfgRlxAlias = Config::getRelaxedAliasChecking();
+		bool rlxAlias = false;
+		for(;;)
 		{
-			dsql_ctx* context = stack.object();
-			if ((!(context->ctx_relation) ||
-				strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-						context->ctx_relation->rel_name)) &&
-				(!(context->ctx_alias) ||
-				strcmp(reinterpret_cast<const char*>(qualifier->str_data),
-						context->ctx_alias)))
+			for (DsqlContextStack::iterator stack(*request->req_context); stack.hasData(); ++stack)
 			{
-				continue;
+				dsql_ctx* context = stack.object();
+
+				if ((!(context->ctx_relation) ||
+						strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+							context->ctx_relation->rel_name) ||
+						!rlxAlias && context->ctx_internal_alias) &&
+					(!(context->ctx_internal_alias) ||
+						strcmp(reinterpret_cast<const char*>(qualifier->str_data),
+							context->ctx_internal_alias)))
+				{
+					continue;
+				}
+
+				if (!context->ctx_relation)
+				{
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
+							  isc_arg_gds, isc_dsql_dbkey_from_non_table,
+							  0);
+				}
+
+				dsql_nod* node = MAKE_node(nod_dbkey, 1);
+				dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
+				rel_node->nod_arg[0] = (dsql_nod*) context;
+				node->nod_arg[0] = rel_node;
+				return node;
 			}
-			dsql_nod* node = MAKE_node(nod_dbkey, 1);
-			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
-			rel_node->nod_arg[0] = (dsql_nod*) context;
-			node->nod_arg[0] = rel_node;
-			return node;
+
+			if (rlxAlias == cfgRlxAlias)
+				break;
+			
+			rlxAlias = cfgRlxAlias;
 		}
 	}
 
