@@ -46,11 +46,11 @@ struct dsc;
 namespace Jrd {
 
 class jrd_rel;
-class jrd_tra;
 template <typename T> class vec;
 class jrd_req;
 struct temporary_key;
 class jrd_tra;
+class BtrPageGCLock;
 
 enum idx_null_state {
   idx_nulls_none,
@@ -137,6 +137,7 @@ struct index_insertion {
 	temporary_key*	iib_key;		/* varying string for insertion */
 	RecordBitmap* iib_duplicates;	/* spare bit map of duplicates */
 	jrd_tra*	iib_transaction;	/* insertion transaction */
+	BtrPageGCLock*	iib_dont_gc_lock;	// lock to prevent removal of splitted page
 };
 
 
