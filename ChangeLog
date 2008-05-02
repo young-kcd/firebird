@@ -1,3 +1,11 @@
+2008-05-02 13:10  dimitr
+
+	* firebird2/src/jrd/: jrd_pwd.h (1.31), pwd.cpp (1.65):
+
+	Enabled security database connection caching and brute-force attack
+	protection for SuperClassic.  This code is almost useless for the
+	regular Classic, but it doesn't hurt either.
+
 2008-05-01 18:12  asfernandes
 
 	* firebird2/: src/dsql/btyacc_fb.ske (1.6), extern/btyacc/output.c
