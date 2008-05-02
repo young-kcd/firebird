@@ -469,7 +469,7 @@ SecurityClass* SCL_get_class(const TEXT* _string)
 		 s_class;
 		 s_class = s_class->scl_next)
 	{
-		if (string == s_class->scl_name) {
+		if (!strcmp(string.c_str(), s_class->scl_name)) {
 			return s_class;
 		}
 	}
