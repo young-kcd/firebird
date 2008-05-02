@@ -44,12 +44,6 @@
 
 using namespace Jrd;
 
-#ifdef SUPERSERVER
-const bool SecurityDatabase::is_cached = true;
-#else
-const bool SecurityDatabase::is_cached = false;
-#endif
-
 // BLR to search database for user name record
 
 const UCHAR SecurityDatabase::PWD_REQUEST[] = {
@@ -113,8 +107,7 @@ SecurityDatabase SecurityDatabase::instance;
 
 #ifndef EMBEDDED
 namespace {
-#ifdef SUPERSERVER
-// Disable attempts to brutforce logins/passwords
+// Disable attempts to brute-force logins/passwords
 	class FailedLogin
 	{
 	public:
@@ -211,16 +204,6 @@ namespace {
 			}
 		}
 	};
-#else //SUPERSERVER
-	// Unfortunately, in case of multi-process architectire, this doesn't work.
-	class FailedLogins
-	{
-	public:
-		explicit FailedLogins(MemoryPool& p) {}
-		void loginFail(const Firebird::string& login) { }
-		void loginSuccess(const Firebird::string& login) {}
-	};
-#endif //SUPERSERVER
 
 	Firebird::InitInstance<FailedLogins> usernameFailedLogins;
 	Firebird::InitInstance<FailedLogins> remoteFailedLogins;
@@ -235,19 +218,23 @@ namespace {
 void SecurityDatabase::fini()
 {
 	Firebird::MutexLockGuard guard(mutex);
-	counter -= (is_cached) ? 1 : 0;
-#ifndef EMBEDDED
-	if (counter == 1 && lookup_db)
+	if (--counter == 1)
 	{
-		isc_detach_database(status, &lookup_db);
+		if (lookup_req)
+		{
+			isc_release_request(status, &lookup_req);
+		}
+		if (lookup_db)
+		{
+			isc_detach_database(status, &lookup_db);
+		}
 	}
-#endif
 }
 
 void SecurityDatabase::init()
 {
 	Firebird::MutexLockGuard guard(mutex);
-	counter += (is_cached) ? 1 : 0;
+	++counter;
 }
 
 bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TEXT* pwd)
@@ -274,6 +261,10 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	if (!prepare())
 	{
+		if (lookup_req)
+		{
+			isc_release_request(status, &lookup_req);
+		}
 		if (lookup_db)
 		{
 			isc_db_handle tmp = lookup_db;
@@ -313,11 +304,6 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	}
 
 	isc_rollback_transaction(status, &lookup_trans);
-
-	if (!is_cached)
-	{
-		isc_detach_database(status, &lookup_db);
-	}
 
 	return found;
 }

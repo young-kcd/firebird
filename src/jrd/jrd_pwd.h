@@ -96,8 +96,6 @@ private:
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
-	static const bool is_cached;
-
 	int counter;
 
 	void fini();
@@ -107,10 +105,9 @@ private:
 
 	static SecurityDatabase instance;
 
-	SecurityDatabase() 
-	{
-		lookup_db = 0;
-	}
+	SecurityDatabase()
+		: lookup_db(0), lookup_req(0), counter(0)
+	{}
 
 public:
 	// Shuts SecurityDatabase in case of errors during attach or create.
@@ -159,4 +156,4 @@ public:
 
 } // namespace Jrd
 
-#endif /* JRD_PWD_H */
+#endif // JRD_PWD_H
