@@ -1,3 +1,9 @@
+2008-05-03 03:58  asfernandes
+
+	* firebird2/src/jrd/: jrd.cpp (1.451), pwd.cpp (1.66):
+
+	Misc
+
 2008-05-02 13:10  dimitr
 
 	* firebird2/src/jrd/: jrd_pwd.h (1.31), pwd.cpp (1.65):
