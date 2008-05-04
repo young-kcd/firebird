@@ -3896,6 +3896,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 /* Pseudo attachment needed for lock owner identification. */
 
 		tdbb->setAttachment(FB_NEW(*dbb->dbb_permanent) Attachment(dbb));
+		tdbb->getAttachment()->att_mutex.enter();
 		tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 		tdbb->getAttachment()->att_flags = ATT_garbage_collector;
 

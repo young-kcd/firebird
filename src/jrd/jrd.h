@@ -328,7 +328,6 @@ const ULONG ATT_cancel_disable		= 16384;	// Disable cancel operations
 const ULONG ATT_gfix_attachment		= 32768;	// Indicate a GFIX attachment
 const ULONG ATT_gstat_attachment	= 65536;	// Indicate a GSTAT attachment
 const ULONG ATT_no_db_triggers		= 131072;	// Don't execute database triggers
-const ULONG ATT_busy				= 262144;	// Attachment is busy handling user request
 
 
 inline bool Attachment::locksmith() const

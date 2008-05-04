@@ -246,11 +246,9 @@ namespace
 			Attachment *attachment = tdbb->getAttachment();
 			if (lockAtt && attachment)
 			{
-				Firebird::MutexLockGuard attGuard(attachment->att_mutex);
-				if ((attachment->att_flags & ATT_busy) || engineShuttingDown)
+				attLocked = attachment->att_mutex.tryEnter();
+				if (!attLocked || engineShuttingDown)
 					Firebird::status_exception::raise(isc_att_handle_busy, 0);
-				attachment->att_flags |= ATT_busy;
-				attLocked = true;
 			}
 			else
 				attLocked = false;
@@ -269,10 +267,7 @@ namespace
 
 			Attachment* attachment = tdbb->getAttachment();
 			if (attLocked && attachment)
-			{
-				Firebird::MutexLockGuard attGuard(attachment->att_mutex);
-				attachment->att_flags &= ~ATT_busy;
-			}
+				attachment->att_mutex.leave();
 		}
 
 	private:
@@ -501,29 +496,45 @@ static void cancel_attachments()
 
 	Firebird::MutexLockGuard guard(databases_mutex);
 	for (Database *dbb = databases; dbb; dbb = dbb->dbb_next)
-		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) )
+		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
 		{
-			ISC_STATUS_ARRAY status;
-			for (Attachment *att = dbb->dbb_attachments; att; att = att->att_next)
+			Database::SyncGuard dsGuard(dbb);
+			Attachment *lockedAtt = NULL;
+			Attachment *att = dbb->dbb_attachments; 
+			while (att)
 			{
+				// Try to cancel attachment and lock it. Handle case when attachment
+				// deleted while waiting for lock.
 				while (true)
 				{
+					if (att->att_mutex.tryEnter()) 
 					{
-						Firebird::MutexLockGuard attGuard(att->att_mutex);
-						if (!(att->att_flags & ATT_busy)) 
-						{
-							att->att_flags |= ATT_busy;
-							break;
-						}
+						lockedAtt = att;
+						break;
 					}
 						
-					if (!(att->att_flags & fb_cancel_disable))
 					{
-						jrd8_cancel_operation(status, &att, fb_cancel_enable);
-						jrd8_cancel_operation(status, &att, fb_cancel_raise);
+						const bool cancel_disable = (att->att_flags & fb_cancel_disable);
+						Database::Checkout dcoHolder(dbb);
+						if (!cancel_disable)
+						{
+							ISC_STATUS_ARRAY status;
+							jrd8_cancel_operation(status, &att, fb_cancel_enable);
+							jrd8_cancel_operation(status, &att, fb_cancel_raise);
+						}
+
+						THREAD_YIELD();
 					}
-					THREAD_YIELD();
+
+					// check if attachment still exist
+					if (lockedAtt && lockedAtt->att_next != att) {
+						break;
+					}
+					if (dbb->dbb_attachments != att) {
+						break;
+					}
 				}
+				att = lockedAtt ? lockedAtt->att_next : dbb->dbb_attachments;
 			}
 		}
 }
@@ -793,7 +804,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
-	attachment->att_flags |= ATT_busy;
+	attachment->att_mutex.enter();
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -1275,7 +1286,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	// databases_mutex->leave();
 
 	*handle = attachment;	
-	attachment->att_flags &= ~ATT_busy;
+	attachment->att_mutex.leave();
 
 	}	// try
 	catch (const DelayFailedLogin& ex)
@@ -3144,8 +3155,6 @@ int GDS_SHUTDOWN(unsigned int timeout)
 					 attach_count, database_count);
 		}
 
-		cancel_attachments();
-
 		if (timeout)
 		{
 			Firebird::Semaphore shutdown_semaphore;
@@ -4953,6 +4962,7 @@ Attachment::~Attachment()
 	// once more here because it nulls att_long_locks.
 	//		AP 2007
 	detachLocksFromAttachment(this);
+	att_mutex.leave();
 }
 
 
@@ -5860,6 +5870,8 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		Firebird::MutexLockGuard guard(databases_mutex);
+
+		cancel_attachments();
 
 		Database* dbb_next;
 		for (Database* dbb = databases; dbb; dbb = dbb_next)
