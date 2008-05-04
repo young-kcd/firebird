@@ -24,7 +24,6 @@ export FIREBIRD
 
 # Check the file is there and is executable.
 GUARDIAN=$FIREBIRD/bin/fbguard
-[ -x $GUARDIAN ] || exit 0
 
 # See how we were called.
 case "$1" in
