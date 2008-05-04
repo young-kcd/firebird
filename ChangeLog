@@ -1,3 +1,50 @@
+2008-05-04 18:03  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	firebird.init.d.debian.in (1.8), firebird.init.d.generic.in (1.9),
+	firebird.init.d.mandrake.in (1.10), firebird.init.d.slackware.in
+	(1.6):
+
+	Fixed CORE-1880: Linux startup script silently exits when missing
+	'main' executable
+
+2008-05-04 17:18  alexpeshkoff
+
+	* firebird2/builds/install/arch-specific/linux/misc/:
+	linuxLibrary.sh.in (1.9), superLinux.sh.in (1.5):
+
+	Front-ported misc install scripts changes from 2.1
+
+2008-05-04 16:27  alexpeshkoff
+
+	* firebird2/builds/install/misc/: changeRunUser.sh.in (1.2),
+	posixLibrary.sh.in (1.14):
+
+	Front-ported misc install scripts changes from 2.1
+
+2008-05-04 15:37  alexpeshkoff
+
+	* firebird2/src/: alice/exe.cpp (1.53), alice/tdr.cpp (1.57),
+	burp/burp.cpp (1.140), burp/restore.epp (1.139), common/UtilSvc.cpp
+	(1.4), common/UtilSvc.h (1.4), jrd/jrd.cpp (1.453), jrd/svc.cpp
+	(1.223), jrd/svc.h (1.60), jrd/utl.cpp (1.116),
+	utilities/gsec/gsec.cpp (1.88), utilities/gstat/dba.epp (1.94):
+
+	Fixed CORE-1879: Server uses wrong authentication method
+
+2008-05-04 14:49  hvlad
+
+	* firebird2/src/: jrd/jrd.cpp (1.452), jrd/jrd.h (1.239),
+	jrd/tra.cpp (1.172), jrd/vio.cpp (1.215), jrd/why.cpp (1.201),
+	remote/inet.cpp (1.240), remote/server.cpp (1.207),
+	remote/os/win32/srvr_w32.cpp (1.55):
+
+	Avoid long blocking of att_mutex and make sure it is always
+	released when attachment deleted.  Move active requests
+	cancellation at engine shutdown from Y-valve into engine and let
+	them stop execution before deletion of attachments.  Make sweep run
+	in separate thread despite of engine architecture.
+
 2008-05-03 03:58  asfernandes
 
 	* firebird2/src/jrd/: jrd.cpp (1.451), pwd.cpp (1.66):
