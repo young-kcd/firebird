@@ -8,10 +8,10 @@ changeInitRunUser() {
     NewUser=$1
 
     InitFile=`getInitScriptLocation`
-    if [ -f $InitFile ]
+    if [ -f "$InitFile" ]
     then
-        editFile $InitFile FBRunUser "FBRunUser=$NewUser"
-	    chmod u=rwx,g=rx,o= $InitFile
+        editFile "$InitFile" FBRunUser "FBRunUser=$NewUser"
+	    chmod u=rwx,g=rx,o= "$InitFile"
     fi
 }
 

@@ -127,7 +127,18 @@ stopSuperServerIfRunning() {
 
         if [ -x "$init_d" ]
 		then
-       	    $init_d stop
+			i=1
+			while [ $i -le 20 ]
+			do
+       	    	$init_d stop
+				sleep 1
+				checkString=`ps -efww| egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+				if [ -z "$checkString" ]
+				then
+					return
+				fi
+				i=$((i+1))
+			done
 		fi
     fi
 }
