@@ -193,6 +193,7 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 	dpb.insertTag(isc_dpb_gfix_attach);
+	tdgbl->uSvc->getAddressPath(dpb);
 	if (tdgbl->ALICE_data.ua_user) {
 		dpb.insertString(isc_dpb_user_name, 
 						tdgbl->ALICE_data.ua_user,

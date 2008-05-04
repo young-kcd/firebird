@@ -39,6 +39,8 @@ namespace MsgFormat {
 
 namespace Firebird {
 
+class ClumpletWriter;
+
 class UtilSvc : public Firebird::GlobalStorage
 {
 public:
@@ -64,7 +66,7 @@ public:
 	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual ISC_STATUS* getStatus() = 0;
 	virtual void checkService() = 0;
-
+	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
 
 	virtual ~UtilSvc() { }
 

@@ -114,6 +114,8 @@ public:		// utilities interface with service
     virtual ISC_STATUS* getStatus();
 	// no-op for services
 	virtual void checkService();
+	// add address path (taken from spb) to dpb if present
+	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
 
 public:		// external interface with service
 	// Attach - service ctor
@@ -215,8 +217,8 @@ private:
 	bool                svc_trusted_role;
 	bool				svc_uses_security_database;
 	Firebird::string	svc_switches;	// Full set of switches
-	Firebird::string	svc_perm_sw;	// Switches, taken from services table 
-										// and/or passed using spb_command_line
+	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
+	Firebird::string	svc_address_path;
 };
 
 } //namespace Jrd

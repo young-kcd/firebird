@@ -95,6 +95,7 @@ public:
 	virtual void stuffStatus(const ISC_STATUS*) { }
 	virtual void stuffStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual ISC_STATUS* getStatus() { return 0; }
+	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) { }
 };
 
 

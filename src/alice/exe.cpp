@@ -192,6 +192,7 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	dpb.reset(isc_dpb_version1);
 	dpb.insertTag(isc_dpb_gfix_attach);
+	tdgbl->uSvc->getAddressPath(dpb);
 
 	if (switches & sw_sweep) {
 		dpb.insertByte(isc_dpb_sweep, isc_dpb_records);

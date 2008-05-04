@@ -2187,7 +2187,7 @@ inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 
 void setLogin(Firebird::ClumpletWriter& dpb)
 {
-	if (!dpb.find(isc_dpb_trusted_auth))
+	if (!(dpb.find(isc_dpb_trusted_auth) || dpb.find(isc_dpb_address_path)))
 	{
 		Firebird::string username;
 		if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))

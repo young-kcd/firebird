@@ -803,6 +803,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
+	uSvc->getAddressPath(dpb);
 
 	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
 		if (in_sw_tab->in_sw_state) {

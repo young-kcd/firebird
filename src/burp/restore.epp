@@ -588,6 +588,7 @@ int RESTORE_restore (const TEXT* file_name,
 	// attach database again to put it online 
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	tdgbl->uSvc->getAddressPath(dpb);
 
 	if (tdgbl->flag_on_line)
 	{
@@ -991,6 +992,7 @@ void create_database(BurpGlobals*	tdgbl,
 		page_buffers = tdgbl->gbl_sw_page_buffers;
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	tdgbl->uSvc->getAddressPath(dpb);
 	dpb.insertInt(isc_dpb_page_size, page_size & 0xff00);
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 

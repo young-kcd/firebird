@@ -5733,10 +5733,12 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 	else
 	{
-		if (options.dpb_user_name.isEmpty()) 
+		if (options.dpb_user_name.isEmpty() && 
+			options.dpb_network_protocol.isEmpty() &&	// This 2 checks ensure that we are not remote server
+			options.dpb_remote_address.isEmpty()) 		// process, i.e. can use unix OS auth.
 		{
-	       wheel = ISC_get_user(&name, &id, &group,
-                        	    options.dpb_sys_user_name.nullStr());
+			wheel = ISC_get_user(&name, &id, &group,
+								 options.dpb_sys_user_name.nullStr());
 		}
 
 		if (options.dpb_user_name.hasData() || (id == -1))

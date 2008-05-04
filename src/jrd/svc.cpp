@@ -128,6 +128,7 @@ namespace {
 		Firebird::string	spb_network_protocol;
 		Firebird::string    spb_remote_address;
 		Firebird::string	spb_trusted_login;
+		Firebird::string	spb_address_path;
 		bool				spb_trusted_role;
 		USHORT				spb_version;
 
@@ -174,7 +175,8 @@ namespace {
 					spb.getString(spb_command_line);
 					break;
 
-				case isc_spb_address_path: 
+				case isc_spb_address_path:
+					spb.getString(spb_address_path);
 					{
 						Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
 							spb.getBytes(), spb.getClumpLength());
@@ -412,6 +414,14 @@ void Service::checkService()
 	// no action
 }
 
+void Service::getAddressPath(Firebird::ClumpletWriter& dpb)
+{
+	if (svc_address_path.hasData())
+	{
+		dpb.insertString(isc_dpb_address_path, svc_address_path);
+	}
+}
+
 void Service::need_admin_privs(ISC_STATUS** status, const char* message)
 {
 	ISC_STATUS* stat = *status;
@@ -544,7 +554,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()), 
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
-	svc_switches(getPool()), svc_perm_sw(getPool())
+	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool())
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
 
@@ -643,6 +653,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_username = options.spb_user_name;
 	svc_trusted_login = options.spb_trusted_login;
 	svc_trusted_role = options.spb_trusted_role;
+	svc_address_path = options.spb_address_path;
 
 	// The password will be issued to the service threads on NT since
 	// there is no OS authentication.  If the password is not yet

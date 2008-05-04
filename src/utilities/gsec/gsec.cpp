@@ -190,6 +190,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	{
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
+		uSvc->getAddressPath(dpb);
 
 		if (user_data->dba_trust_user_name_entered) 
 		{
