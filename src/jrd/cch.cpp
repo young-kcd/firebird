@@ -4143,6 +4143,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 
 	tdbb->setDatabase(dbb);
 	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
+	tdbb->getAttachment()->att_mutex.enter();
 	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
