@@ -22,7 +22,7 @@ export ArchiveMainFile
 # Create temporary file. In case mktemp failed, do something...
 
 MakeTemp() {
-	TmpFile=`mktemp /tmp/firebird_install.XXXXXX`
+	TmpFile=`mktemp -q /tmp/firebird_install.XXXXXX`
 	if [ $? -ne 0 ]
 	then
 		TmpFile=/tmp/firebird_install
@@ -312,7 +312,7 @@ editFile() {
     Starting=$2
     NewLine=$3
 	
-	AwkProgram="(\$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
+	AwkProgram="(/^$Starting.*/ || \$1 == \"$Starting\") {\$0=\"$NewLine\"} {print \$0}"
 	MakeTemp
 	awk "$AwkProgram" <$FileName >$TmpFile && mv $TmpFile $FileName || rm -f $TmpFile
 }
