@@ -6043,37 +6043,6 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 		// shutdown yValve
 		shutdownStarted = true;	// since this moment no new thread will be able to enter yValve
 
-		const FB_UINT64 timeLimit = getMilliTime() + timeout;
-
-		for (;;)
-		{
-			{ // scope - cancel running requests
-				Firebird::MutexLockGuard guard(attachmentsMutex);
-
-				for (unsigned int i = 0; i < attachments().getCount(); ++i)
-				{
-					Attachment* att = attachments()[i];
-					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, fb_cancel_enable);
-					CALL(PROC_CANCEL_OPERATION, att->implementation) (status, &att->handle, fb_cancel_raise);
-				}
-			}
-
-			if (isc_enter_count.value() < 2)
-			{
-				break;
-			}
-
-			if (timeout)
-			{
-				if (getMilliTime() > timeLimit)
-				{
-					Firebird::status_exception::raise(isc_shutdown_timeout, isc_arg_end);
-				}
-			}
-
-			THD_sleep(1);
-		}
-
 		// Shutdown providers
 		for (int n = 0; n < SUBSYSTEMS; ++n)
 		{

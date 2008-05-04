@@ -572,7 +572,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							port->port_requests_queued);
 						fflush(stdout);
 #endif
-						if (!Worker::wakeUp())  {
+						if (!shutting_down && !Worker::wakeUp())  {
 							gds__thread_start(loopThread, (void*)(IPTR) flags,
 								THREAD_medium, THREAD_ast, 0);
 						}
@@ -4749,8 +4749,10 @@ void set_server( rem_port* port, USHORT flags)
 		}
 	}
 
-	if (!server) {
+	if (!server) 
+	{
 		servers = server = new srvr(servers, port, flags);
+		fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders);
 	}
 
 	port->port_server = server;

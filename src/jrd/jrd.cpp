@@ -152,6 +152,7 @@ namespace
 #ifdef WIN_NT
 	ModuleLoader::Module* ibUtilModule = NULL;
 #endif
+	bool engineShuttingDown = false;
 
 	class EngineStartup
 	{
@@ -242,11 +243,14 @@ namespace
 			  Jrd::ContextPoolHolder(arg, arg->getDatabase()->dbb_permanent),
 			  tdbb(arg)
 		{
-			if (lockAtt && tdbb->getAttachment())
+			Attachment *attachment = tdbb->getAttachment();
+			if (lockAtt && attachment)
 			{
-				attLocked = tdbb->getAttachment()->att_mutex.tryEnter();
-				if (!attLocked)
+				Firebird::MutexLockGuard attGuard(attachment->att_mutex);
+				if ((attachment->att_flags & ATT_busy) || engineShuttingDown)
 					Firebird::status_exception::raise(isc_att_handle_busy, 0);
+				attachment->att_flags |= ATT_busy;
+				attLocked = true;
 			}
 			else
 				attLocked = false;
@@ -264,9 +268,11 @@ namespace
 			}
 
 			Attachment* attachment = tdbb->getAttachment();
-
 			if (attLocked && attachment)
-				attachment->att_mutex.leave();
+			{
+				Firebird::MutexLockGuard attGuard(attachment->att_mutex);
+				attachment->att_flags &= ~ATT_busy;
+			}
 		}
 
 	private:
@@ -451,6 +457,7 @@ public:
 	void get(const UCHAR*, USHORT, bool&);
 };
 
+static void			cancel_attachments();
 static void			check_database(thread_db* tdbb);
 static void			check_transaction(thread_db*, jrd_tra*);
 static void			commit(thread_db*, jrd_tra*, const bool);
@@ -487,6 +494,39 @@ static void		getUserInfo(UserId&, const DatabaseOptions&);
 static bool		shutdown_dbb(thread_db*, Database*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
+
+static void cancel_attachments()
+{
+	engineShuttingDown = true;
+
+	Firebird::MutexLockGuard guard(databases_mutex);
+	for (Database *dbb = databases; dbb; dbb = dbb->dbb_next)
+		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) )
+		{
+			ISC_STATUS_ARRAY status;
+			for (Attachment *att = dbb->dbb_attachments; att; att = att->att_next)
+			{
+				while (true)
+				{
+					{
+						Firebird::MutexLockGuard attGuard(att->att_mutex);
+						if (!(att->att_flags & ATT_busy)) 
+						{
+							att->att_flags |= ATT_busy;
+							break;
+						}
+					}
+						
+					if (!(att->att_flags & fb_cancel_disable))
+					{
+						jrd8_cancel_operation(status, &att, fb_cancel_enable);
+						jrd8_cancel_operation(status, &att, fb_cancel_raise);
+					}
+					THREAD_YIELD();
+				}
+			}
+		}
+}
 
 //____________________________________________________________
 //
@@ -753,6 +793,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
+	attachment->att_flags |= ATT_busy;
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -1185,10 +1226,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// if there was an error, the status vector is all set
 
+	databases_mutex->leave();
+
 	if (options.dpb_sweep & isc_dpb_records)
 	{
-		if (!(TRA_sweep(tdbb, 0)))
-		{
+		if (!(TRA_sweep(tdbb, 0))) {
 			ERR_punt();
 		}
 	}
@@ -1230,9 +1272,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 	}
 
-	databases_mutex->leave();
+	// databases_mutex->leave();
 
 	*handle = attachment;	
+	attachment->att_flags &= ~ATT_busy;
 
 	}	// try
 	catch (const DelayFailedLogin& ex)
@@ -3101,6 +3144,8 @@ int GDS_SHUTDOWN(unsigned int timeout)
 					 attach_count, database_count);
 		}
 
+		cancel_attachments();
+
 		if (timeout)
 		{
 			Firebird::Semaphore shutdown_semaphore;
@@ -4851,7 +4896,6 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 		}
 	}
 
-	attachment->att_mutex.leave();
 	tdbb->setAttachment(NULL);
 }
 
@@ -5767,7 +5811,6 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 
 		if (attachment)
 		{
-			attachment->att_mutex.enter();	// will be unlocked in release_attachment
 			release_attachment(tdbb, attachment);
 		}
 

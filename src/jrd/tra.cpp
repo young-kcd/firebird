@@ -105,10 +105,8 @@ static SLONG inventory_page(thread_db*, SLONG);
 static SSHORT limbo_transaction(thread_db*, SLONG);
 static void link_transaction(thread_db*, jrd_tra*);
 static void restart_requests(thread_db*, jrd_tra*);
-#ifdef SWEEP_THREAD
 static void start_sweeper(thread_db*, Database*);
 static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM);
-#endif
 static void transaction_options(thread_db*, jrd_tra*, const UCHAR*, USHORT);
 static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp);
 
@@ -1642,7 +1640,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 
 /* No point trying to sweep a ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
-		return false;
+		return true;
 
 	if (dbb->dbb_flags & DBB_sweep_in_progress)
 		return true;
@@ -1658,7 +1656,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	temp_lock.lck_parent = dbb->dbb_lock;
 	temp_lock.lck_length = sizeof(SLONG);
 
-	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, (trans) ? LCK_NO_WAIT : LCK_WAIT))
+	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
 		// clear lock error from status vector
 		tdbb->tdbb_status_vector[0] = isc_arg_gds;
@@ -2604,7 +2602,6 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 }
 
 
-#ifdef SWEEP_THREAD
 static void start_sweeper(thread_db* tdbb, Database* dbb)
 {
 /**************************************
@@ -2636,6 +2633,11 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
+		// clear lock error from status vector
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[1] = 0;
+		tdbb->tdbb_status_vector[2] = isc_arg_end;
+
 		return; // false;
 	}
 
@@ -2700,7 +2702,6 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	gds__free(database);
 	return 0;
 }
-#endif
 
 
 static void transaction_options(thread_db* tdbb,
@@ -3410,13 +3411,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		(trans->tra_oldest_active - trans->tra_oldest >
 		 dbb->dbb_sweep_interval) && oldest_state != tra_limbo)
 	{
-#ifdef SWEEP_THREAD
 		// Why nobody checks the result? Changed the function to return nothing.
 		start_sweeper(tdbb, dbb);
-#else
-		// force a sweep
-		TRA_sweep(tdbb, trans);
-#endif
 	}
 
 /* Check in with external file system */

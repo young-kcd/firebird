@@ -2922,10 +2922,10 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction)
 					if (relation->rel_flags & REL_deleting) {
 						break;
 					}
-#ifdef SUPERSERVER
 					if (--tdbb->tdbb_quantum < 0) {
 						JRD_reschedule(tdbb, SWEEP_QUANTUM, true);
 					}
+#ifdef SUPERSERVER
 					transaction->tra_oldest_active = dbb->dbb_oldest_snapshot;
 #endif
 				}

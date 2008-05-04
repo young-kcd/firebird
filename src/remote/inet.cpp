@@ -319,7 +319,7 @@ static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_VOID tryStopMainThread = 0;
-static int shut_preproviders();
+static int		shut_postproviders();
 
 
 
@@ -880,8 +880,11 @@ rem_port* INET_connect(const TEXT* name,
 				   (struct sockaddr *) &address, &l);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET) {
-			inet_error(port, "accept", isc_net_connect_err, inetErrNo);
-			disconnect(port);
+			if (!INET_shutting_down)
+			{
+				inet_error(port, "accept", isc_net_connect_err, inetErrNo);
+				disconnect(port);
+			}
 			return NULL;
 		}
 #ifdef WIN_NT
@@ -1215,7 +1218,7 @@ static rem_port* alloc_port( rem_port* parent)
 		gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 
-		fb_shutdown_callback(0, shut_preproviders, fb_shut_preproviders);
+		fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders);
 
 		INET_initialized = true;
 
@@ -3451,7 +3454,7 @@ void setStopMainThread(FPTR_VOID func)
 	tryStopMainThread = func;
 }
 
-static int shut_preproviders()
+static int shut_postproviders()
 {
 	INET_shutting_down = true;
 	return 0;

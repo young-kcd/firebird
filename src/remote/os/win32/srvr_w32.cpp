@@ -224,7 +224,6 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			if (port) 
 			{
 				SRVR_multi_thread(port, server_flag);
-				SRVR_shutdown();
 				port = NULL;
 			}
 		}
@@ -236,6 +235,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		if (port) {
 			service_connection(port);
 		}
+
+		fb_shutdown(0);
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{
@@ -321,7 +322,9 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
 
 		if (!port) {
-			gds__log_status(0, status_vector);
+			if (status_vector[1]) {
+				gds__log_status(0, status_vector);
+			}
 			break;
 		}
 		if (server_flag & SRVR_multi_client) {
@@ -423,8 +426,6 @@ static THREAD_ENTRY_DECLARE start_connections_thread(THREAD_ENTRY_PARAM)
  * Functional description
  *
  **************************************/
-
-	fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders);
 
 	if (server_flag & SRVR_inet) {
 		gds__thread_start(inet_connect_wait_thread, 0, THREAD_medium, 0, 0);
