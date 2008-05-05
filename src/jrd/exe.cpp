@@ -634,7 +634,8 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	DEV_BLKCHK(request, type_req);
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
 
 /* I found a core file from my test runs that came from a NULL request -
  * but have no idea what test was running.  Let's bugcheck so we can
@@ -650,7 +651,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 	if (!(request->req_flags & req_in_use))
 		clone = request;
 	else {
-		if (request->req_attachment == tdbb->getAttachment())
+		if (request->req_attachment == attachment)
 			count++;
 
 		/* Request exists and is in use.  Search clones for one in use by
@@ -662,7 +663,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		USHORT n;
 		for (n = 1; n <= clones; n++) {
 			jrd_req* next = CMP_clone_request(tdbb, request, n, validate);
-			if (next->req_attachment == tdbb->getAttachment()) {
+			if (next->req_attachment == attachment) {
 				if (!(next->req_flags & req_in_use)) {
 					clone = next;
 					break;
@@ -681,7 +682,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 			clone = CMP_clone_request(tdbb, request, n, validate);
 	}
 
-	clone->req_attachment = tdbb->getAttachment();
+	clone->req_attachment = attachment;
 	clone->req_stats.reset();
 	clone->req_flags |= req_in_use;
 
