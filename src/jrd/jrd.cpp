@@ -490,17 +490,20 @@ static bool		shutdown_dbb(thread_db*, Database*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
+
 static void cancel_attachments()
 {
 	engineShuttingDown = true;
 
 	Firebird::MutexLockGuard guard(databases_mutex);
-	for (Database *dbb = databases; dbb; dbb = dbb->dbb_next)
+	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
+	{
 		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
 		{
 			Database::SyncGuard dsGuard(dbb);
-			Attachment *lockedAtt = NULL;
-			Attachment *att = dbb->dbb_attachments; 
+			Attachment* lockedAtt = NULL;
+			Attachment* att = dbb->dbb_attachments; 
+
 			while (att)
 			{
 				// Try to cancel attachment and lock it. Handle case when attachment
@@ -537,7 +540,9 @@ static void cancel_attachments()
 				att = lockedAtt ? lockedAtt->att_next : dbb->dbb_attachments;
 			}
 		}
+	}
 }
+
 
 //____________________________________________________________
 //

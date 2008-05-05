@@ -21,8 +21,6 @@ pidfile=/var/run/firebird/`basename $0`.pid
 FB_OPTS="-pidfile $pidfile -daemon -forever"
 export FIREBIRD 
 
-
-# Check the file is there and is executable.
 GUARDIAN=$FIREBIRD/bin/fbguard
 
 # See how we were called.
