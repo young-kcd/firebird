@@ -17,7 +17,7 @@
  * Contributor(s): ______________________________________.
  *
  */
- /* contains the main() and not shared routines for ibguard */
+ /* contains the main() and not shared routines for fbguard */
 
 
 #include "firebird.h"
@@ -61,6 +61,7 @@ const USHORT IGNORE		= 3;
 const USHORT NORMAL_EXIT= 0;
 
 const char* SUPER_SERVER_BINARY	= "bin/fbserver";
+const char* SUPER_CLASSIC_BINARY	= "bin/fb_smp_server";
 
 const char* INTERBASE_USER		= "interbase";
 const char* FIREBIRD_USER		= "firebird";
@@ -84,11 +85,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *      The main for ibguard. This process is used to start
- *      the super server (fbserver) and keep it running
- *	after an abnormal termination.
- *
- *      process takes 1 argument:  -f (default) or -o
+ *      The main for fbguard. This process is used to start
+ *      the stanalone server and keep it running after an abnormal termination.
  *
  **************************************/
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
@@ -200,21 +198,19 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 		if (timer == time(0))
 		{
-			// don't let fbserver restart too often - avoid log overflow
+			// don't let server restart too often - avoid log overflow
 			sleep(1);
 			continue;
 		}
 		timer = time(0);
 
-		gds__log("%s: guardian starting %s\n",
-				 prog_name, SUPER_SERVER_BINARY);
-		pid_t child_pid = UTIL_start_process(SUPER_SERVER_BINARY, server_args);
+		pid_t child_pid = UTIL_start_process(SUPER_SERVER_BINARY, SUPER_CLASSIC_BINARY, server_args, prog_name);
 		if (child_pid == -1) {
 			/* could not fork the server */
-			gds__log("%s: guardian could not start %s\n",
-				prog_name, process_name);
-			fprintf(stderr, "%s: Could not start %s\n",
-				prog_name, process_name);
+			gds__log("%s: guardian could not start server\n",
+				prog_name/*, process_name*/);
+			fprintf(stderr, "%s: Could not start server\n",
+				prog_name/*, process_name*/);
 			UTIL_ex_unlock(fd_guard);
 			exit(-4);
 		}
@@ -292,7 +288,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			}
 		}
 		else {
-			/* Normal shutdown - eg: via ibmgr - don't restart the server */
+			/* Normal shutdown - don't restart the server */
 			gds__log("%s: %s normal shutdown.\n",
 					prog_name, process_name); 
 			done = true;

@@ -32,7 +32,7 @@ OS_ServerFiles=inet_server.cpp
 #LIB_LINK_RPATH:=-Wl,-rpath,
 #LIB_LINK_SONAME:=-Wl,-soname,
 
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbguard fbsvcmgr
 CLIENT_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbguard fbmgr_bin fbsvcmgr
 
 Physical_IO_Module=unix.cpp

@@ -66,7 +66,7 @@
 #include "../jrd/isc_proto.h"
 
 
-pid_t UTIL_start_process(const char* process, char** argv)
+pid_t UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name)
 {
 /**************************************
  *
@@ -92,8 +92,16 @@ pid_t UTIL_start_process(const char* process, char** argv)
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-/* prepend Firebird home directory to the program name */
+// prepend Firebird home directory to the program name
+// choose correct (super/superclassic) image - to be removed in 3.0
 	gds__prefix(string, process);
+	if (access(string, X_OK) < 0) {
+		gds__prefix(string, process2);
+	}
+	if (prog_name) {
+		gds__log("%s: guardian starting %s\n",
+                 prog_name, string);
+	}
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
