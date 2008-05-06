@@ -943,7 +943,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 /* Get new attachment id */
 
 	if (dbb->dbb_flags & DBB_read_only) {
-		attachment->att_attachment_id = dbb->dbb_attachment_id + fb_utils::genReadOnlyId();
+		attachment->att_attachment_id = dbb->dbb_attachment_id + fb_utils::genUniqueId();
 	}
 	else {
 		window.win_page = HEADER_PAGE_NUMBER;

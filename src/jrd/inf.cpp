@@ -305,11 +305,11 @@ int INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_current_memory:
-			length = INF_convert(dbb->dbb_memory_stats.get_current_usage(), buffer);
+			length = INF_convert(dbb->dbb_memory_stats.getCurrentUsage(), buffer);
 			break;
 
 		case isc_info_max_memory:
-			length = INF_convert(dbb->dbb_memory_stats.get_maximum_usage(), buffer);
+			length = INF_convert(dbb->dbb_memory_stats.getMaximumUsage(), buffer);
 			break;
 
 		case isc_info_attachment_id:

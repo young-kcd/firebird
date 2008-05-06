@@ -716,7 +716,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 /* initialize validate errors */
 
 	if (!att->att_val_errors) {
-		att->att_val_errors = vcl::newVector(*dbb->dbb_permanent, VAL_MAX_ERROR);
+		att->att_val_errors = vcl::newVector(*att->att_pool, VAL_MAX_ERROR);
 	}
 	else {
 		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)

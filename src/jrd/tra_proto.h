@@ -42,7 +42,7 @@ int		TRA_get_state(Jrd::thread_db*, SLONG);
 #ifdef SUPERSERVER_V2
 void	TRA_header_write(Jrd::thread_db*, Jrd::Database*, SLONG);
 #endif
-void	TRA_init(Jrd::thread_db*);
+void	TRA_init(Jrd::Database*);
 void	TRA_invalidate(Jrd::Database*, ULONG);
 void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
 void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);

@@ -803,7 +803,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 	}
 
-	tdbb->setAttachment((attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb)));
+	attachment = Attachment::create(dbb);
+	tdbb->setAttachment(attachment);
 	attachment->att_filename = is_alias ? file_name : expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
@@ -1750,7 +1751,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		dbb->dbb_encrypt_key = options.dpb_key;
 	}
 
-	tdbb->setAttachment((attachment = FB_NEW(*dbb->dbb_permanent) Attachment(dbb)));
+	attachment = Attachment::create(dbb);
+	tdbb->setAttachment(attachment);
 	attachment->att_filename = is_alias ? file_name : expanded_name;
 	attachment->att_network_protocol = options.dpb_network_protocol;
 	attachment->att_remote_address = options.dpb_remote_address;
@@ -2231,7 +2233,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		}
 
 		tdbb->setDatabase(NULL);
-		Database::deleteDbb(dbb);
+		Database::destroy(dbb);
 
 		if (err) {
 			user_status[0] = isc_arg_gds;
@@ -3311,9 +3313,8 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			CompilerScratch* csb =
-				PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
-			request = CMP_make_request(tdbb, csb);
+			CompilerScratch* csb = PAR_parse(tdbb, reinterpret_cast<const UCHAR*>(blr), FALSE);
+			request = CMP_make_request(tdbb, csb, false);
 			CMP_verify_access(tdbb, request);
 
 			jrd_nod* node;
@@ -4662,17 +4663,13 @@ static Database* init(thread_db* tdbb,
 		}
 #endif
 
-		Firebird::MemoryStats temp_stats;
-		MemoryPool* perm = MemoryPool::createPool(NULL, temp_stats);
-		dbb = Database::newDbb(perm);
-		perm->setStatsGroup(dbb->dbb_memory_stats);
-
+		dbb = Database::create();
 		tdbb->setDatabase(dbb);
 
 		dbb->dbb_bufferpool = dbb->createPool();
 
 		// provide context pool for the rest stuff
-		Jrd::ContextPoolHolder context(tdbb, perm);
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 		dbb->dbb_next = databases;
 		databases = dbb;
@@ -4715,7 +4712,7 @@ static Database* init(thread_db* tdbb,
 
 		// Initialize a number of subsystems
 
-		TRA_init(tdbb);
+		TRA_init(dbb);
 
 		// Lookup some external "hooks"
 
@@ -4892,8 +4889,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 		attachment->att_flags &= ~ATT_lck_init_done;
 	}
 
-	if (attachment->att_compatibility_table)
-		delete attachment->att_compatibility_table;
+	delete attachment->att_compatibility_table;
 
 	if (attachment->att_dsql_instance) {
 		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
@@ -4910,6 +4906,17 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 		}
 	}
 
+    // CMP_release() advances the pointer before the deallocation.
+	jrd_req* request;
+	while ( (request = attachment->att_requests) ) {
+		CMP_release(tdbb, request);
+	}
+
+	SCL_release_all(attachment->att_security_classes);
+
+	delete attachment->att_user;
+
+	Attachment::destroy(attachment);
 	tdbb->setAttachment(NULL);
 }
 
@@ -4942,18 +4949,20 @@ static void detachLocksFromAttachment(Attachment* attachment)
 }
 
 
-Attachment::Attachment(Database* dbb) :
-		att_database(dbb), 
-		att_lock_owner_id(Database::getLockOwnerId()),
-		att_lc_messages(*dbb->dbb_permanent),
-		att_working_directory(*dbb->dbb_permanent), 
-		att_filename(*dbb->dbb_permanent),
-		att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
-		att_context_vars(*dbb->dbb_permanent),
-		att_network_protocol(*dbb->dbb_permanent),
-		att_remote_address(*dbb->dbb_permanent),
-		att_remote_process(*dbb->dbb_permanent),
-		att_dsql_cache(*dbb->dbb_permanent)
+Attachment::Attachment(MemoryPool* pool, Database* dbb)
+:	att_pool(pool),
+	att_memory_stats(&dbb->dbb_memory_stats),
+	att_database(dbb), 
+	att_lock_owner_id(Database::getLockOwnerId()),
+	att_lc_messages(*pool),
+	att_working_directory(*pool), 
+	att_filename(*pool),
+	att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
+	att_context_vars(*pool),
+	att_network_protocol(*pool),
+	att_remote_address(*pool),
+	att_remote_process(*pool),
+	att_dsql_cache(*pool)
 {
 }
 
@@ -5146,7 +5155,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 
 	if (release_pools) {
 		tdbb->setDatabase(NULL);
-		Database::deleteDbb(dbb);
+		Database::destroy(dbb);
 	}
 }
 
@@ -5586,22 +5595,7 @@ static void purge_attachment(thread_db*		tdbb,
 
 	if (dbb->checkHandle())
 	{
-		if (dbb->dbb_attachments || (dbb->dbb_flags & DBB_being_opened))
-		{
-			// There are still attachments so do a partial shutdown
-
-            // CMP_release() advances the pointer before the deallocation.
-			jrd_req* request;
-			while ( (request = attachment->att_requests) ) {
-				CMP_release(tdbb, request);
-			}
-
-			SCL_release_all(attachment->att_security_classes);
-
-			delete attachment->att_user;
-			delete attachment;
-		}
-		else
+		if (!dbb->dbb_attachments && !(dbb->dbb_flags & DBB_being_opened))
 		{
 			shutdown_database(dbb, true);
 		}
@@ -5837,10 +5831,6 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 			{
 				shutdown_database(dbb, true);
 			}
-			else if (attachment)
-			{
-				delete attachment;
-			}
 		}
 	}
 	catch (const Firebird::Exception&)
@@ -6013,7 +6003,6 @@ void JRD_receive(thread_db* tdbb, jrd_req* request, USHORT msg_type, USHORT msg_
 	if (request->req_flags & req_warning)
 		request->req_flags &= ~req_warning;
 }
-
 
 
 void JRD_request_info(Jrd::thread_db*, jrd_req* request, SSHORT level, SSHORT item_length,

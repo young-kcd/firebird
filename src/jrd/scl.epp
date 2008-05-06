@@ -357,8 +357,8 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 							 object_column, fullFieldName);
 		}
 		else {
-			  SCL_check_access(default_s_class, 0, NULL, NULL, mask,
-							   object_column, fullFieldName);
+			SCL_check_access(default_s_class, 0, NULL, NULL, mask,
+							 object_column, fullFieldName);
 		}
 
 	END_FOR;
@@ -496,21 +496,21 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* _string)
 
 	// Look for the class already known
 
-	SecurityClass* s_class;
 	SecurityClassList* list = attachment->att_security_classes;
 	if (list && list->locate(string))
 		return list->current();
 
 	// Class isn't known. So make up a new security class block.
 
-	s_class = FB_NEW(*dbb->dbb_permanent) SecurityClass(*dbb->dbb_permanent, string);
+	MemoryPool& pool = *attachment->att_pool;
+
+	SecurityClass* const s_class = FB_NEW(pool) SecurityClass(pool, string);
 	s_class->scl_flags = compute_access(tdbb, s_class, NULL, NULL, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
 		if (!list) {
-			attachment->att_security_classes = list = FB_NEW (*dbb->dbb_permanent)
-				SecurityClassList(*dbb->dbb_permanent);
+			attachment->att_security_classes = list = FB_NEW(pool) SecurityClassList(pool);
 		}
 
 		list->add(s_class);
@@ -714,9 +714,11 @@ void SCL_init(bool create,
 		role_name = NULL_ROLE;
 	}
 
-	UserId* user = FB_NEW(*dbb->dbb_permanent) UserId(*dbb->dbb_permanent, tempId);
+	Attachment* const attachment = tdbb->getAttachment();
+	MemoryPool& pool = *attachment->att_pool;
+	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
 	user->usr_sql_role_name = role_name.c_str();
-	tdbb->getAttachment()->att_user = user;
+	attachment->att_user = user;
 
 	if (!create) {
 		jrd_req* handle = NULL;
@@ -726,8 +728,7 @@ void SCL_init(bool create,
 		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
 
 			if (!X.RDB$SECURITY_CLASS.NULL)
-				tdbb->getAttachment()->att_security_class =
-					SCL_get_class(tdbb, X.RDB$SECURITY_CLASS);
+				attachment->att_security_class = SCL_get_class(tdbb, X.RDB$SECURITY_CLASS);
 		END_FOR;
 		CMP_release(tdbb, handle);
 

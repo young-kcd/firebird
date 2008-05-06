@@ -286,18 +286,22 @@ public:
 
 	typedef int (*crypt_routine) (const char*, void*, int, void*);
 
-	static Database* newDbb(MemoryPool* p)
+	static Database* create()
 	{
-		return FB_NEW(*p) Database(p);
+		Firebird::MemoryStats temp_stats;
+		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
+		Database* const dbb = FB_NEW(*pool) Database(pool);
+		pool->setStatsGroup(dbb->dbb_memory_stats);
+		return dbb;
 	}
 
-	// The deleteDbb function MUST be used to delete a Database object.
+	// The destroy() function MUST be used to delete a Database object.
 	// The function hides some tricky order of operations.  Since the
 	// memory for the vectors in the Database is allocated out of the Database's
 	// permanent memory pool, the entire delete() operation needs
 	// to complete _before_ the permanent pool is deleted, or else
 	// risk an aborted engine.
-	static void deleteDbb(Database* const toDelete)
+	static void destroy(Database* const toDelete)
 	{
 		if (!toDelete)
 			return;
@@ -412,7 +416,6 @@ public:
 	event_t dbb_gc_event_fini[1];		// Event for finalization garbage collector
 #endif
 
-	ULONG dbb_current_id;				// Generator of dbb-local ids
 	Firebird::MemoryStats dbb_memory_stats;
 
 	SLONG dbb_reads;
@@ -439,11 +442,6 @@ public:
 	Firebird::TimeStamp dbb_creation_date; // creation date
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, UserFunction*> > > dbb_functions;	// User defined functions
-
-	ULONG generateId()
-	{
-		return ++dbb_current_id;
-	}
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;

@@ -225,7 +225,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 		syntax_error(csb, "end_of_command");
 
 	if (request_ptr)
-		*request_ptr = CMP_make_request(tdbb, csb);
+		*request_ptr = CMP_make_request(tdbb, csb, true);
 
 	if (csb_ptr)
 		*csb_ptr = csb;

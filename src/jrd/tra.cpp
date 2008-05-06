@@ -214,9 +214,11 @@ bool TRA_active_transactions(thread_db* tdbb, Database* dbb)
 #endif /* SUPERSERVER_V2 */
 
 	const ULONG base = oldest & ~TRA_MASK;
+	const size_t length = (number - base + TRA_MASK) / 4;
 
+	MemoryPool* const pool = dbb->dbb_permanent;
 	Firebird::AutoPtr<jrd_tra> trans =
-		FB_NEW_RPT(*dbb->dbb_permanent, (number - base + TRA_MASK) / 4) jrd_tra(dbb->dbb_permanent);
+		FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL, length);
 
 /* Build transaction bitmap to scan for active transactions. */
 
@@ -722,7 +724,7 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, SLONG number)
 #endif
 
 
-void TRA_init(thread_db* tdbb)
+void TRA_init(Database* dbb)
 {
 /**************************************
  *
@@ -734,11 +736,10 @@ void TRA_init(thread_db* tdbb)
  *	"Start" the system transaction.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	jrd_tra* trans = FB_NEW_RPT(*dbb->dbb_permanent, 0) jrd_tra(dbb->dbb_permanent, NULL);
+	MemoryPool* const pool = dbb->dbb_permanent;
+	jrd_tra* const trans = FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL);
 	dbb->dbb_sys_trans = trans;
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
 }
@@ -1001,15 +1002,17 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
+	Attachment* const attachment = tdbb->getAttachment();
 
 /* Cannot work on limbo transactions for ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
 		ERR_post(isc_read_only_database, 0);
 
-	Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
-	jrd_tra* trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool(), NULL);
+	MemoryPool* const pool = dbb->createPool();
+	Jrd::ContextPoolHolder context(tdbb, pool);
+	jrd_tra* const trans = jrd_tra::create(pool, attachment, NULL);
 	trans->tra_number = gds__vax_integer(id, length);
 	trans->tra_flags |= TRA_prepared | TRA_reconnected | TRA_write;
 
@@ -1033,9 +1036,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		}
 
 		const SLONG number = trans->tra_number;
-		MemoryPool* const tra_pool = trans->tra_pool;
-		delete trans;
-		dbb->deletePool(tra_pool);
+		jrd_tra::destroy(dbb, trans);
 
 		TEXT text[128];
 		USHORT flags = 0;
@@ -1184,11 +1185,9 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction)
 		DSQL_free_statement(tdbb, transaction->tra_open_cursors.pop(), DSQL_close);
 	}
 
-	// Release the transaction pool
+	// Release the transaction and its pool
 
-	MemoryPool* const tra_pool = transaction->tra_outer ? NULL : transaction->tra_pool;
-	delete transaction;
-	dbb->deletePool(tra_pool);
+	jrd_tra::destroy(dbb, transaction);
 }
 
 
@@ -1523,7 +1522,7 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, SLONG number)
 	if (number > trans->tra_top)
 		return tra_active;
 
-	return TRA_state(trans->tra_transactions, trans->tra_oldest, number);
+	return TRA_state(trans->tra_transactions.begin(), trans->tra_oldest, number);
 }
 
 
@@ -1540,8 +1539,8 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
@@ -1553,8 +1552,9 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	Jrd::ContextPoolHolder context(tdbb, (outer ? outer->tra_pool : dbb->createPool()));
-	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool(), outer);
+	MemoryPool* const pool = outer ? outer->tra_pool : dbb->createPool();
+	Jrd::ContextPoolHolder context(tdbb, pool);
+	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
 	temp->tra_flags = flags;
 	temp->tra_lock_timeout = lock_timeout;
@@ -1589,8 +1589,9 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 	// To handle the problems of relation locks, allocate a temporary
 	// transaction block first, seize relation locks, then go ahead and
 	// make up the real transaction block.
-	Jrd::ContextPoolHolder context(tdbb, (outer ? outer->tra_pool : dbb->createPool()));
-	jrd_tra* temp = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool(), outer);
+	MemoryPool* const pool = outer ? outer->tra_pool : dbb->createPool();
+	Jrd::ContextPoolHolder context(tdbb, pool);
+	jrd_tra* const temp = jrd_tra::create(pool, attachment, outer);
 
 	transaction_options(tdbb, temp, tpb, tpb_length);
 
@@ -2412,7 +2413,6 @@ static void link_transaction(thread_db* tdbb, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 
 	Attachment* attachment = tdbb->getAttachment();
-	transaction->tra_attachment = attachment;
 	transaction->tra_next = attachment->att_transactions;
 	attachment->att_transactions = transaction;
 }
@@ -2500,7 +2500,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 	new_number = bump_transaction_id(tdbb, &window);
 #else
 	if (dbb->dbb_flags & DBB_read_only)
-		new_number = dbb->dbb_next_transaction + fb_utils::genReadOnlyId();
+		new_number = dbb->dbb_next_transaction + fb_utils::genUniqueId();
 	else {
 		const header_page* header = bump_transaction_id(tdbb, &window);
 		new_number = header->hdr_next_transaction;
@@ -3159,8 +3159,8 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	Attachment* attachment = tdbb->getAttachment();
+	Database* const dbb = tdbb->getDatabase();
+	Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
 	Lock* lock = create_transaction_lock(tdbb, temp);
@@ -3180,7 +3180,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 #else /* SUPERSERVER_V2 */
 	if (dbb->dbb_flags & DBB_read_only) {
-		number = dbb->dbb_next_transaction + fb_utils::genReadOnlyId();
+		number = dbb->dbb_next_transaction + fb_utils::genUniqueId();
 		oldest = dbb->dbb_oldest_transaction;
 		oldest_active = dbb->dbb_oldest_active;
 		oldest_snapshot = dbb->dbb_oldest_snapshot;
@@ -3207,14 +3207,11 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 	ULONG base = oldest & ~TRA_MASK;
 
-	jrd_tra* trans;
-	if (temp->tra_flags & TRA_read_committed)
-		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) jrd_tra(tdbb->getDefaultPool(), temp->tra_outer);
-	else
-	{
-		trans = FB_NEW_RPT(*tdbb->getDefaultPool(), (number - base + TRA_MASK) / 4)
-			jrd_tra(tdbb->getDefaultPool(), temp->tra_outer);
-	}
+	const size_t length =
+		(temp->tra_flags & TRA_read_committed) ? 0 : (number - base + TRA_MASK) / 4;
+
+	MemoryPool* const pool = tdbb->getDefaultPool();
+	jrd_tra* const trans = jrd_tra::create(pool, attachment, temp->tra_outer, length);
 
 	fb_assert(trans->tra_pool == temp->tra_pool);
 	trans->tra_relation_locks = temp->tra_relation_locks;
@@ -3244,7 +3241,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		if (!(dbb->dbb_flags & DBB_read_only))
 			CCH_RELEASE(tdbb, &window);
 #endif
-		delete trans;
+		jrd_tra::destroy(dbb, trans);
 		ERR_post(isc_lock_conflict, 0);
 	}
 
@@ -3271,7 +3268,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 	if (trans->tra_flags & TRA_read_committed)
 		TPC_initialize_tpc(tdbb, number);
 	else
-		TRA_get_inventory(tdbb, trans->tra_transactions, base, number);
+		TRA_get_inventory(tdbb, trans->tra_transactions.begin(), base, number);
 
 /* Next task is to find the oldest active transaction on the system.  This
    is needed for garbage collection.  Things are made ever so slightly

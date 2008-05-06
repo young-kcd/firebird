@@ -48,6 +48,8 @@
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
 
+#include "../common/utils_proto.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -425,6 +427,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
 	RecordBuffer* const ctx_var_buffer =
 		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+	RecordBuffer* const mem_usage_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
 
 	const Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -523,6 +527,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 				break;
 			case rel_mon_ctx_vars:
 				buffer = ctx_var_buffer;
+				break;
+			case rel_mon_mem_usage:
+				buffer = mem_usage_buffer;
 				break;
 			default:
 				fb_assert(false);
@@ -774,9 +781,11 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 	// The only goal of this function is to substitute some numeric zeroes
 	// and empty strings with NULLs
 
-	switch (rid) {
+	switch (rid)
+	{
 	case rel_mon_attachments:
-		switch (fid) {
+		switch (fid)
+		{
 		case f_mon_att_remote_proto:
 		case f_mon_att_remote_addr:
 		case f_mon_att_remote_process:
@@ -787,8 +796,10 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 			break;
 		}
 		break;
+
 	case rel_mon_statements:
-		switch (fid) {
+		switch (fid)
+		{
 		case f_mon_stmt_att_id:
 		case f_mon_stmt_tra_id:
 			return (*(SLONG*) source) ? source : NULL;
@@ -800,8 +811,10 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 			break;
 		}
 		break;
+
 	case rel_mon_calls:
-		switch (fid) {
+		switch (fid)
+		{
 		case f_mon_call_caller_id:
 		case f_mon_call_type:
 		case f_mon_call_src_line:
@@ -813,6 +826,18 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 			break;
 		}
 		break;
+
+	case rel_mon_mem_usage:
+		switch (fid)
+		{
+		case f_mon_mem_cur_alloc:
+		case f_mon_mem_max_alloc:
+			return (*(SLONG*) source) ? source : NULL;
+		default:
+			break;
+		}
+		break;
+
 	default:
 		break;
 	}
@@ -838,7 +863,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 
 	// Database information
 
-	putDatabase(dbb, *writer, dbb->generateId());
+	putDatabase(dbb, *writer, fb_utils::genUniqueId());
 
 	// Attachment information
 
@@ -847,7 +872,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 	{
 		if (broadcast || attachment == self_attachment)
 		{
-			putAttachment(attachment, *writer, dbb->generateId());
+			putAttachment(attachment, *writer, fb_utils::genUniqueId());
 			putContextVars(attachment->att_context_vars, *writer,
 						   attachment->att_attachment_id, true);
 
@@ -859,7 +884,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 			for (transaction = attachment->att_transactions;
 				transaction; transaction = transaction->tra_next)
 			{
-				putTransaction(transaction, *writer, dbb->generateId());
+				putTransaction(transaction, *writer, fb_utils::genUniqueId());
 				putContextVars(transaction->tra_context_vars, *writer,
 							   transaction->tra_number, false);
 			}
@@ -871,7 +896,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 			{
 				if (!(request->req_flags & (req_internal | req_sys_trigger)))
 				{
-					putRequest(request, *writer, dbb->generateId());
+					putRequest(request, *writer, fb_utils::genUniqueId());
 				}
 			}
 
@@ -886,7 +911,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
 						request->req_caller)
 					{
-						putCall(request, *writer, dbb->generateId());
+						putCall(request, *writer, fb_utils::genUniqueId());
 					}
 				}
 			}
@@ -926,7 +951,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// Reload header
 	const PageSpace* const pageSpace =
 		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	const jrd_file* const file = pageSpace->file;
 	PAG_header(true);
 
 	// database name or alias
@@ -1008,6 +1032,7 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// statistics
 	writer.insertBigInt(f_mon_db_stat_id, getGlobalId(stat_id));
 	putStatistics(database->dbb_stats, writer, stat_id, stat_database);
+	putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 }
 
 
@@ -1067,6 +1092,7 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	// statistics
 	writer.insertBigInt(f_mon_att_stat_id, getGlobalId(stat_id));
 	putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
+	putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 }
 
 
@@ -1124,6 +1150,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	// statistics
 	writer.insertBigInt(f_mon_tra_stat_id, getGlobalId(stat_id));
 	putStatistics(transaction->tra_stats, writer, stat_id, stat_transaction);
+	putMemoryUsage(transaction->tra_memory_stats, writer, stat_id, stat_transaction);
 }
 
 
@@ -1168,6 +1195,7 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	// statistics
 	writer.insertBigInt(f_mon_stmt_stat_id, getGlobalId(stat_id));
 	putStatistics(request->req_stats, writer, stat_id, stat_statement);
+	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_statement);
 }
 
 
@@ -1224,6 +1252,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	// statistics
 	writer.insertBigInt(f_mon_call_stat_id, getGlobalId(stat_id));
 	putStatistics(request->req_stats, writer, stat_id, stat_call);
+	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_call);
 }
 
 void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
@@ -1285,4 +1314,22 @@ void DatabaseSnapshot::putContextVars(Firebird::StringMap& variables,
 		writer.insertString(f_mon_ctx_var_name, variables.current()->first);
 		writer.insertString(f_mon_ctx_var_value, variables.current()->second);
 	}
+}
+
+void DatabaseSnapshot::putMemoryUsage(const Firebird::MemoryStats& stats,
+									  Firebird::ClumpletWriter& writer,
+									  int stat_id,
+									  int stat_group)
+{
+	// statistics id
+	const SINT64 id = getGlobalId(stat_id);
+
+	// memory usage
+	writer.insertByte(TAG_RECORD, rel_mon_mem_usage);
+	writer.insertBigInt(f_mon_mem_stat_id, id);
+	writer.insertInt(f_mon_mem_stat_group, stat_group);
+	writer.insertBigInt(f_mon_mem_cur_used, stats.getCurrentUsage());
+	writer.insertBigInt(f_mon_mem_cur_alloc, stats.getCurrentMapping());
+	writer.insertBigInt(f_mon_mem_max_used, stats.getMaximumUsage());
+	writer.insertBigInt(f_mon_mem_max_alloc, stats.getMaximumMapping());
 }

@@ -3980,8 +3980,10 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 /* Dummy attachment needed for lock owner identification. */
 	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
-	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
+	Attachment* const attachment = Attachment::create(dbb);
+	tdbb->setAttachment(attachment);
+	attachment->att_mutex.enter();
+	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 /* This try block is specifically to protect the LCK_init call: if
@@ -4099,8 +4101,8 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	delete tdbb->getAttachment();
-	tdbb->setAttachment(0);
+	Attachment::destroy(attachment);
+	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
 
@@ -4142,9 +4144,10 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 /* Dummy attachment needed for lock owner identification. */
 
 	tdbb->setDatabase(dbb);
-	tdbb->setAttachment(FB_NEW(*dbb->dbb_bufferpool) Attachment(dbb));
-	tdbb->getAttachment()->att_mutex.enter();
-	tdbb->getAttachment()->att_filename = dbb->dbb_filename;
+	Attachment* const attachment = Attachment::create(dbb);
+	tdbb->setAttachment(attachment);
+	attachment->att_mutex.enter();
+	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
 /* This try block is specifically to protect the LCK_init call: if
@@ -4259,8 +4262,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		delete tdbb->getAttachment();
-		tdbb->setAttachment(0);
+		Attachment::destroy(attachment);
+		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_writer_event_fini);

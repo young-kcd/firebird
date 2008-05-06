@@ -223,8 +223,35 @@ struct DSqlCacheItem
 class Attachment : public pool_alloc<type_att>
 {
 public:
-	explicit Attachment(Database* dbb);
-	~Attachment();
+	static Attachment* create(Database* dbb)
+	{
+		MemoryPool* const pool = dbb->createPool();
+
+		try
+		{
+			Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
+			pool->setStatsGroup(attachment->att_memory_stats);
+			return attachment;
+		}
+		catch (const Firebird::Exception&)
+		{
+			dbb->deletePool(pool);
+			throw;
+		}
+	}
+
+	static void destroy(Attachment* const attachment)
+	{
+		if (attachment)
+		{
+			Database* const dbb = attachment->att_database;
+			MemoryPool* const pool = attachment->att_pool;
+			Firebird::MemoryStats temp_stats;
+			pool->setStatsGroup(temp_stats);
+			delete attachment;
+			dbb->deletePool(pool);
+		}
+	}
 
 /*	Attachment()
 	:	att_database(0),
@@ -251,6 +278,9 @@ public:
 	{
 		att_counts[0] = 0;
 	}*/
+
+	MemoryPool* att_pool;					// Memory pool
+	Firebird::MemoryStats att_memory_stats;
 
 	Database*	att_database;				// Parent database block
 	Attachment*	att_next;					// Next attachment to database
@@ -298,6 +328,10 @@ public:
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
+
+private:
+	Attachment(MemoryPool* pool, Database* dbb);
+	~Attachment();
 };
 
 

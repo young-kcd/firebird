@@ -193,7 +193,8 @@ private:
 class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
-	jrd_req(MemoryPool* pool) :
+	jrd_req(MemoryPool* pool, Firebird::MemoryStats* parent_stats)
+	:	req_pool(pool), req_memory_stats(parent_stats),
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
 		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_ext_stmt(NULL),
 		req_invariants(*pool), req_sql_text(*pool), req_domain_validation(NULL),
@@ -206,6 +207,7 @@ public:
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
 	MemoryPool* req_pool;
+	Firebird::MemoryStats req_memory_stats;
 	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this 
@@ -301,7 +303,7 @@ public:
 // alignment quirks, but from quick glance on code it looks like it should not be
 // causing problems. Good fix for this kludgy behavior is to use some C++ means 
 // to manage impure area and array of record parameter blocks
-const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
+const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
 
 /* Flags for req_flags */
 const ULONG req_active			= 0x1L;

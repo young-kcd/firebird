@@ -94,7 +94,7 @@ namespace fb_utils
 #endif 
 
 	Firebird::PathName get_process_name();
-	SLONG genReadOnlyId();
+	SLONG genUniqueId();
 
 	void getCwd(Firebird::PathName& pn);
 } // namespace fb_utils

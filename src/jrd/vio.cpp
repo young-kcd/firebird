@@ -3895,10 +3895,11 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 /* Pseudo attachment needed for lock owner identification. */
 
-		tdbb->setAttachment(FB_NEW(*dbb->dbb_permanent) Attachment(dbb));
-		tdbb->getAttachment()->att_mutex.enter();
-		tdbb->getAttachment()->att_filename = dbb->dbb_filename;
-		tdbb->getAttachment()->att_flags = ATT_garbage_collector;
+		Attachment* const attachment = Attachment::create(dbb);
+		tdbb->setAttachment(attachment);
+		attachment->att_mutex.enter();
+		attachment->att_filename = dbb->dbb_filename;
+		attachment->att_flags = ATT_garbage_collector;
 
 		rpb.getWindow(tdbb).win_flags = WIN_garbage_collector;
 
@@ -4138,17 +4139,19 @@ gc_exit:
 
     try {
 
-		if (rpb.rpb_record) {
-			delete rpb.rpb_record;	/* Possibly allocated from permanent pool. */
-		}
+		delete rpb.rpb_record;
+
 		if (transaction) {
 			TRA_commit(tdbb, transaction, false);
 		}
-		if (tdbb->getAttachment()) {
+
+		Attachment* const attachment = tdbb->getAttachment();
+		if (attachment) {
 			LCK_fini(tdbb, LCK_OWNER_attachment);
-			delete tdbb->getAttachment();
-			tdbb->setAttachment(0);
+			Attachment::destroy(attachment);
+			tdbb->setAttachment(NULL);
 		}
+
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
 		/* Notify the finalization caller that we're finishing. */
 		ISC_event_post(dbb->dbb_gc_event_fini);	

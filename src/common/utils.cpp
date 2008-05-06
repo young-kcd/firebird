@@ -657,7 +657,7 @@ Firebird::PathName get_process_name()
 	return buffer;
 }
 
-SLONG genReadOnlyId()
+SLONG genUniqueId()
 {
 	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
 	Firebird::MutexLockGuard guard(mutex);

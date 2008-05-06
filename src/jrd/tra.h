@@ -92,7 +92,7 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_TEMP_SPACE = "fb_trans_";
 
-class jrd_tra : public pool_alloc_rpt<SCHAR, type_tra>
+class jrd_tra : public pool_alloc<type_tra>
 {
 public:
 	enum wait_t {
@@ -101,8 +101,11 @@ public:
 		tra_wait
 	};
 
-	explicit jrd_tra(MemoryPool* p, jrd_tra* outer) :
-		tra_pool(p),
+	jrd_tra(MemoryPool* p, Firebird::MemoryStats* parent_stats,
+			Attachment* attachment, jrd_tra* outer, size_t length = 0)
+	:	tra_pool(p),
+		tra_memory_stats(parent_stats),
+		tra_attachment(attachment),
 		tra_blobs_tree(p),
 		tra_blobs(&tra_blobs_tree),
 		tra_resources(*p),
@@ -110,7 +113,8 @@ public:
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
 		tra_open_cursors(*p),
-		tra_outer(outer)
+		tra_outer(outer),
+		tra_transactions(*p)
 	{
 		if (outer)
 		{
@@ -118,12 +122,48 @@ public:
 			tra_arrays = outer->tra_arrays;
 			tra_blobs = outer->tra_blobs;
 		}
+
+		tra_transactions.resize(length);
 	}
 
 	~jrd_tra()
 	{
 		if (!tra_outer)
+		{
 			delete tra_temp_space;
+		}
+	}
+
+	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer, size_t length = 0)
+	{
+		jrd_tra* const transaction =
+			FB_NEW(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer, length);
+
+		if (!outer)
+		{
+			pool->setStatsGroup(transaction->tra_memory_stats);
+		}
+
+		return transaction;
+	}
+
+	static void destroy(Database* const dbb, jrd_tra* const transaction)
+	{
+		if (transaction)
+		{
+			if (transaction->tra_outer)
+			{
+				delete transaction;
+			}
+			else
+			{
+				MemoryPool* const pool = transaction->tra_pool;
+				Firebird::MemoryStats temp_stats;
+				pool->setStatsGroup(temp_stats);
+				delete transaction;
+				dbb->deletePool(pool);
+			}
+		}
 	}
 
 	Attachment* tra_attachment;	/* database attachment */
@@ -135,6 +175,7 @@ public:
 	jrd_tra*	tra_next;		/* next transaction in database */
 	jrd_tra*	tra_sibling;	/* next transaction in group */
 	MemoryPool* const tra_pool;		/* pool for transaction */
+	Firebird::MemoryStats	tra_memory_stats;
 	BlobIndexTree tra_blobs_tree;	// list of active blobs
 	BlobIndexTree* tra_blobs;		// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;		/* Linked list of active arrays */
@@ -160,15 +201,13 @@ public:
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
 	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
+	Firebird::Array<UCHAR> tra_transactions;
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage
-
-public:
-	UCHAR tra_transactions[1];
 
 public:
 	SSHORT getLockWait() const
