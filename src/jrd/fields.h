@@ -22,6 +22,7 @@
  */
 
 
+//        type				, name				, dtype			, length		, sub_type				, ods,	dflt_blr
 	FIELD(fld_context		, nam_v_context		, dtype_short	, sizeof(SSHORT), 0						, 0, NULL)
 	FIELD(fld_ctx_name		, nam_context		, dtype_text	, 255			, dsc_text_type_metadata, 0, NULL)
 	FIELD(fld_description	, nam_description	, dtype_blob	, BLOB_SIZE		, isc_blob_text			, 0, NULL)
