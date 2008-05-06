@@ -405,6 +405,8 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
+	PAG_header(true);
+
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
@@ -951,7 +953,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// Reload header
 	const PageSpace* const pageSpace =
 		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	PAG_header(true);
 
 	// database name or alias
 	writer.insertPath(f_mon_db_name, database->dbb_database_name);
