@@ -2884,7 +2884,7 @@ Fetches = !f', NULL, NULL);
 ('USAGE_DUPDB', 'ISQL_main', 'isql.epp', NULL, 17, 146, NULL, 'more than one database name: "@1", "@2"', NULL, NULL);
 ('NO_DEPENDENCIES', 'SHOW_metadata', 'show.epp', NULL, 17, 147, NULL, 'No dependencies for @1 were found', NULL, NULL);
 ('NO_COLLATION', 'SHOW_metadata', 'show.epp', NULL, 17, 148, NULL, 'There is no collation @1 in this database', NULL, NULL);
-('NO_COLLATIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 149, NULL, 'There are no collations in this database', NULL, NULL);
+('NO_COLLATIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 149, NULL, 'There are no user-defined collations in this database', NULL, NULL);
 ('MSG_COLLATIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 150, NULL, 'Collations:', NULL, NULL);
 ('NO_SECCLASS', 'SHOW_metadata', 'show.epp', NULL, 17, 151, NULL, 'There are no security classes for @1', NULL, NULL);
 ('NO_DB_WIDE_SECCLASS', 'SHOW_metadata', 'show.epp', NULL, 17, 152, NULL, 'There is no database-wide security class', NULL, NULL);
