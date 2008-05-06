@@ -445,3 +445,11 @@ RELATION(nam_mon_ctx_vars, rel_mon_ctx_vars, ODS_11_2, rel_virtual)
 	FIELD(f_mon_ctx_var_name, nam_mon_var_name, fld_ctx_var_name, 0, 0, 0, 0)
 	FIELD(f_mon_ctx_var_value, nam_mon_var_value, fld_ctx_var_value, 0, 0, 0, 0)
 END_RELATION
+RELATION(nam_mon_mem_usage, rel_mon_mem_usage, ODS_11_2, rel_virtual)
+	FIELD(f_mon_mem_stat_id, nam_mon_stat_id, fld_stat_id, 0, 0, 0, 0)
+	FIELD(f_mon_mem_stat_group, nam_mon_stat_group, fld_stat_group, 0, 0, 0, 0)
+	FIELD(f_mon_mem_cur_used, nam_mon_mem_used, fld_counter, 0, 0, 0, 0)
+	FIELD(f_mon_mem_cur_alloc, nam_mon_mem_alloc, fld_counter, 0, 0, 0, 0)
+	FIELD(f_mon_mem_max_used, nam_mon_max_used, fld_counter, 0, 0, 0, 0)
+	FIELD(f_mon_mem_max_alloc, nam_mon_max_alloc, fld_counter, 0, 0, 0, 0)
+END_RELATION
