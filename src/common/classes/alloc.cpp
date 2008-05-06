@@ -213,29 +213,41 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 
 inline void MemoryPool::increment_usage(size_t size)
 {
-	size_t temp = stats->mst_usage += size;
-	if (temp > stats->mst_max_usage)
-		stats->mst_max_usage = temp;
+	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
+	{
+		size_t temp = statistics->mst_usage += size;
+		if (temp > statistics->mst_max_usage)
+			statistics->mst_max_usage = temp;
+	}
 	used_memory += size;
 }
 
 inline void MemoryPool::decrement_usage(size_t size)
 {
-	stats->mst_usage -= size;
+	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
+	{
+		statistics->mst_usage -= size;
+	}
 	used_memory -= size;
 }
 
 inline void MemoryPool::increment_mapping(size_t size)
 {
-	size_t temp = stats->mst_mapped += size;
-	if (temp > stats->mst_max_mapped)
-		stats->mst_max_mapped = temp;
+	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
+	{
+		size_t temp = statistics->mst_mapped += size;
+		if (temp > statistics->mst_max_mapped)
+			statistics->mst_max_mapped = temp;
+	}
 	mapped_memory += size;
 }
 
 inline void MemoryPool::decrement_mapping(size_t size)
 {
-	stats->mst_mapped -= size;
+	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
+	{
+		statistics->mst_mapped -= size;
+	}
 	mapped_memory -= size;
 }
 

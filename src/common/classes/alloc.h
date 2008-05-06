@@ -170,15 +170,24 @@ struct PendingFreeBlock
 class MemoryStats
 {
 public:
-	MemoryStats() : mst_usage(0), mst_mapped(0), mst_max_usage(0), mst_max_mapped(0) {}
-	~MemoryStats() {}
-	size_t get_current_usage() const { return mst_usage.value(); }
-	size_t get_maximum_usage() const { return mst_max_usage; }
-	size_t get_current_mapping() const { return mst_mapped.value(); }
-	size_t get_maximum_mapping() const { return mst_max_mapped; }
+	explicit MemoryStats(MemoryStats* parent = NULL)
+		: mst_parent(parent), mst_usage(0), mst_mapped(0), mst_max_usage(0), mst_max_mapped(0)
+	{}
+
+	~MemoryStats()
+	{}
+
+	size_t getCurrentUsage() const { return mst_usage.value(); }
+	size_t getMaximumUsage() const { return mst_max_usage; }
+	size_t getCurrentMapping() const { return mst_mapped.value(); }
+	size_t getMaximumMapping() const { return mst_max_mapped; }
+
 private:
-	// Forbid copy constructor
-	MemoryStats(const MemoryStats& object) {}
+	// Forbid copying/assignment
+	MemoryStats(const MemoryStats&);
+	MemoryStats& operator=(const MemoryStats&);
+
+	MemoryStats* mst_parent;
 
 	// Currently allocated memory (without allocator overhead)
 	// Useful for monitoring engine memory leaks
@@ -186,12 +195,12 @@ private:
 	// Amount of memory mapped (including all overheads)
 	// Useful for monitoring OS memory consumption
 	AtomicCounter mst_mapped;
-	
+
 	// We don't particularily care about extreme precision of these max values,
 	// this is why we don't synchronize them on Windows
 	size_t mst_max_usage;
 	size_t mst_max_mapped;
-	
+
 	friend class MemoryPool;	
 };
 
