@@ -197,6 +197,27 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
  **************************************
  *
  * Functional description
+ *	Clone a node.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(csb, type_csb);
+	DEV_BLKCHK(node, type_nod);
+
+	return copy(tdbb, csb, node, NULL, 0, NULL, false);
+}
+
+
+jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+{
+/**************************************
+ *
+ *	C M P _ c l o n e _ n o d e
+ *
+ **************************************
+ *
+ * Functional description
  *	Clone a value node for the optimizer.  Make a copy of the node
  *	(if necessary) and assign impure space.
  *

@@ -2037,7 +2037,7 @@ static SLONG decompose(thread_db*		tdbb,
 		}
 		jrd_nod* node = OPT_make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
 		stack.push(node);
-		arg = CMP_clone_node(tdbb, csb, arg);
+		arg = CMP_clone_node_opt(tdbb, csb, arg);
 		node = OPT_make_binary_node(nod_leq, arg, boolean_node->nod_arg[2], true);
 		stack.push(node);
 		return 2;
@@ -6351,11 +6351,11 @@ static jrd_nod* make_inference_node(CompilerScratch* csb, jrd_nod* boolean,
 	// If provisions above change the line below will have to be modified
 	node->nod_flags = boolean->nod_flags;
 /* But substitute new values for some of the predicate arguments */
-	node->nod_arg[0] = CMP_clone_node(tdbb, csb, arg1);
-	node->nod_arg[1] = CMP_clone_node(tdbb, csb, arg2);
+	node->nod_arg[0] = CMP_clone_node_opt(tdbb, csb, arg1);
+	node->nod_arg[1] = CMP_clone_node_opt(tdbb, csb, arg2);
 /* Arguments after the first two are just cloned (eg: LIKE ESCAPE clause) */
 	for (USHORT n = 2; n < boolean->nod_count; n++)
-		node->nod_arg[n] = CMP_clone_node(tdbb, csb, boolean->nod_arg[n]);
+		node->nod_arg[n] = CMP_clone_node_opt(tdbb, csb, boolean->nod_arg[n]);
 	// Share impure area for cached invariant value used to hold pre-compiled
 	// pattern for new LIKE and CONTAINING algorithms.
 	// Proper cloning of impure area for this node would require careful accounting
