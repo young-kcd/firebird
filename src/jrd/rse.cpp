@@ -298,7 +298,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				ERR_post(isc_record_lock_not_supp, 0);
 			}
 
-			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
+			record_param* org_rpb = &request->req_rpb[table_rsb->rsb_stream];
 			jrd_rel* relation = org_rpb->rpb_relation;
 
 			// Raise error if we cannot lock this kind of stream
@@ -1810,7 +1810,7 @@ static bool get_record(thread_db*	tdbb,
 		return false;
 	}
 
-	record_param* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 
 #ifdef SCROLLABLE_CURSORS
 /* do bof and eof handling for streams which may be navigated */
@@ -2829,7 +2829,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 
 /* get rid of any lingering record */
 
-	record_param* rpb = request->req_rpb + rsb->rsb_stream;
+	record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 	if (rpb->rpb_record) {
 		delete rpb->rpb_record;
 		rpb->rpb_record = NULL;
@@ -3161,7 +3161,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 	case rsb_aggregate:
 	case rsb_virt_sequential:
 		{
-			record_param* rpb = request->req_rpb + rsb->rsb_stream;
+			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 			restore_record(rpb);
 			break;
 		}
@@ -3180,7 +3180,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = request->req_rpb + i;
+					record_param* rpb = &request->req_rpb[i];
 					restore_record(rpb);
 				}
 			}
@@ -3207,7 +3207,7 @@ static void pop_rpbs(jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = request->req_rpb + i;
+					record_param* rpb = &request->req_rpb[i];
 					restore_record(rpb);
 				}
 			}
@@ -3276,7 +3276,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 	case rsb_aggregate:
 	case rsb_virt_sequential:
 		{
-			record_param* rpb = request->req_rpb + rsb->rsb_stream;
+			record_param* rpb = &request->req_rpb[rsb->rsb_stream];
 			save_record(tdbb, rpb);
 			break;
 		}
@@ -3295,7 +3295,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = request->req_rpb + i;
+					record_param* rpb = &request->req_rpb[i];
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3322,7 +3322,7 @@ static void push_rpbs(thread_db* tdbb, jrd_req* request, RecordSource* rsb)
 			{
 				if (streams[i])
 				{
-					record_param* rpb = request->req_rpb + i;
+					record_param* rpb = &request->req_rpb[i];
 					save_record(tdbb, rpb);
 				}
 			}
@@ -3669,7 +3669,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			const RecordSource* const* end = ptr + streams;
 			for (; ptr < end; ptr++) 
 			{
-				const record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
+				const record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
 				memmove(p, rpb, sizeof(record_param));
 				p += sizeof(record_param);
 			}
@@ -3714,7 +3714,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		const RecordSource* const* end = ptr + streams;
 		for (; ptr < end; ptr++) 
 		{
-			record_param* rpb = request->req_rpb + (USHORT)(U_IPTR) *ptr;
+			record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
 			Record* rec = rpb->rpb_record;
 			memmove(rpb, p, sizeof(record_param));
 			p += sizeof(record_param);
