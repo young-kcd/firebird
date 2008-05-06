@@ -3829,7 +3829,7 @@ static dsql_nod* pass1_constant( dsql_req* request, dsql_nod* input)
 			constant->nod_desc.getCharSet());
 
 		const dsql_intlsym* sym = METD_get_charset(request, charSetName.length(), charSetName.c_str());
-		fb_assert(sym && sym->intlsym_charset_id == constant->nod_desc.getCharSet());
+		fb_assert(sym);
 
 		if (sym)
 			constant->nod_desc.setTextType(sym->intlsym_ttype);
