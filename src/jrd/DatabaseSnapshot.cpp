@@ -407,6 +407,8 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
+	PAG_header(true);
+
 	// Initialize record buffers
 	RecordBuffer* const dbb_buffer =
 		allocBuffer(tdbb, pool, rel_mon_database);
@@ -911,8 +913,6 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// Reload header
 	const PageSpace* const pageSpace =
 		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	const jrd_file* const file = pageSpace->file;
-	PAG_header(true);
 
 	int temp;
 
