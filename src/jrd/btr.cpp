@@ -2213,7 +2213,7 @@ void BTR_selectivity(thread_db* tdbb, jrd_rel* relation, USHORT id,
 }
 
 
-bool BTR_types_comparable(const dsc& target, const dsc& source)
+bool BTR_types_comparable(const dsc& target, const dsc& source, const int flags)
 {
 /**************************************
  *
@@ -2243,19 +2243,22 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 	if (target.dsc_dtype == dtype_sql_date)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_date);
+			source.dsc_dtype == dtype_sql_date ||
+			(flags & nod_date));
 	}
 
 	if (target.dsc_dtype == dtype_sql_time)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			source.dsc_dtype == dtype_sql_time);
+			source.dsc_dtype == dtype_sql_time ||
+			(flags & nod_date));
 	}
 
 	if (target.dsc_dtype == dtype_timestamp)
 	{
 		return (DTYPE_IS_TEXT(source.dsc_dtype) ||
-			DTYPE_IS_DATE(source.dsc_dtype));
+			DTYPE_IS_DATE(source.dsc_dtype) ||
+			(flags & nod_date));
 	}
 
 	fb_assert(DTYPE_IS_BLOB(target.dsc_dtype));
