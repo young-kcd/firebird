@@ -2212,9 +2212,9 @@ static void par_procedure_parms(
 
 			// default value for parameter 
 			if ((count <= 0) && input_flag) {
-				Parameter* parameter =
-					(*procedure->prc_input_fields)[procedure->prc_inputs - n];
+				Parameter* parameter = (*procedure->prc_input_fields)[procedure->prc_inputs - n];
 				asgn->nod_arg[asgn_arg1] = parameter->prm_default_value;
+				csb->csb_to_clone.add(&asgn->nod_arg[asgn_arg1]);
 			}
 			else {
 				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);

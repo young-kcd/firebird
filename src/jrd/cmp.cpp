@@ -2023,6 +2023,19 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 
 		found = csb->csb_map_field_info.getNext();
 	}
+	{ // scope
+		jrd_nod ***ptr = csb->csb_to_clone.begin();
+		jrd_nod **const *const end = csb->csb_to_clone.end();
+		for (; ptr < end; ptr++)
+		{			
+			UCHAR local_map[MAP_LENGTH];
+
+			jrd_nod *node = **ptr;
+			node = copy(tdbb, csb, node, local_map, 0, NULL, false);
+			node = pass1(tdbb, csb, node, NULL, 0, false);
+			**ptr = node;
+		}
+	}
 
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
@@ -2039,6 +2052,15 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb)
 		fieldInfo.validation = pass2(tdbb, csb, fieldInfo.validation, 0);
 
 		found = csb->csb_map_field_info.getNext();
+	}
+	{ // scope
+		jrd_nod ***ptr = csb->csb_to_clone.begin();
+		jrd_nod **const *const end = csb->csb_to_clone.end();
+		for (; ptr < end; ptr++)
+		{			
+			jrd_nod *node = **ptr;
+			pass2(tdbb, csb, node, NULL);
+		}
 	}
 
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
