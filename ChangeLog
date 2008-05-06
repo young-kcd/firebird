@@ -1,3 +1,132 @@
+2008-05-06 17:27  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.4):
+
+	Fixed SIMILAR TO expressions <regular primary> { <low value> } and
+	<regular primary> { <low value> <comma> }
+
+2008-05-06 17:20  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.377):
+
+	Fixed the problematic assert
+
+2008-05-06 15:36  asfernandes
+
+	* firebird2/src/msgs/messages2.sql (1.42):
+
+	Better message - thanks to Paul Vinkenoog
+
+2008-05-06 14:15  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.291), cmp_proto.h (1.34), exe.h
+	(1.118), opt.cpp (1.314), par.cpp (1.195):
+
+	Better and simpler fix for bug CORE-1884.
+
+2008-05-06 11:42  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.149):
+
+	Misc. Let's handle req_rpb's consistently across the module.
+
+2008-05-06 11:37  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.83), btr.cpp (1.212),
+	btr_proto.h (1.42), opt.cpp (1.313):
+
+	Fixed CORE-1812.
+
+2008-05-06 11:06  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.58):
+
+	Fixed CORE-1881.
+
+2008-05-06 11:05  robocop
+
+	* firebird2/src/jrd/Relation.cpp (1.14):
+
+	Misc.
+
+2008-05-06 11:03  robocop
+
+	* firebird2/src/jrd/ini.epp (1.99):
+
+	Make sure rdb$system_flag is written (it's still nullable field).
+
+2008-05-06 11:00  robocop
+
+	* firebird2/src/jrd/met.epp (1.248):
+
+	More meaningful name for input param.
+
+2008-05-06 10:59  robocop
+
+	* firebird2/src/jrd/fields.h (1.20):
+
+	Misc.
+
+2008-05-06 10:58  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.290):
+
+	Correction.
+
+2008-05-06 10:46  dimitr
+
+	* firebird2/src/: jrd/cch.cpp (1.197), jrd/Database.h (1.19),
+	jrd/DatabaseSnapshot.cpp (1.57), jrd/DatabaseSnapshot.h (1.17),
+	jrd/cmp.cpp (1.289), jrd/cmp_proto.h (1.33), jrd/inf.cpp (1.83),
+	jrd/jrd.cpp (1.456), jrd/jrd.h (1.241), jrd/pag.cpp (1.180),
+	jrd/par.cpp (1.194), jrd/req.h (1.79), jrd/scl.epp (1.95),
+	jrd/tra.cpp (1.173), jrd/tra.h (1.83), jrd/tra_proto.h (1.25),
+	jrd/validation.cpp (1.37), jrd/vio.cpp (1.217), common/utils.cpp
+	(1.47), common/utils_proto.h (1.24):
+
+	Implemented CORE-1751. The changes include: 1) Make memory counters
+	aggregated.  2) Add attachment pool and allocate appropriate
+	resources out of this pool.  3) Always release attachments
+	explicitly (via destructor).  4) Always delete user requests prior
+	to attachment deletion.  5) Introduce memory usage counters per
+	every monitoring object.  6) Misc refactoring.	Some pieces are
+	still incomplete (although everything basically works), but I'd
+	like to get feedback and testing sooner rather than later.
+
+2008-05-06 10:41  dimitr
+
+	* firebird2/src/common/classes/: alloc.cpp (1.109), alloc.h (1.78):
+
+	Implemented CORE-1751. The changes include: 1) Make memory counters
+	aggregated.  2) Add attachment pool and allocate appropriate
+	resources out of this pool.  3) Always release attachments
+	explicitly (via destructor).  4) Always delete user requests prior
+	to attachment deletion.  5) Introduce memory usage counters per
+	every monitoring object.  6) Misc refactoring.	Some pieces are
+	still incomplete (although everything basically works), but I'd
+	like to get feedback and testing sooner rather than later.
+
+2008-05-06 10:23  dimitr
+
+	* firebird2/src/: jrd/names.h (1.18), jrd/relations.h (1.25),
+	include/gen/ids.h (1.34):
+
+	Added table MON$MEMORY_USAGE.
+
+2008-05-06 09:06  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.288), exe.h (1.117), par.cpp
+	(1.193):
+
+	Fixed bug CORE-1884 : Random AVs using stored procedures with
+	expressions as default values of input parameters
+
+2008-05-06 09:00  makowski
+
+	* firebird2/builds/install/misc/firebird.conf (1.43):
+
+	Add comment about Classic on Posix for RemoteBindAddress parameter
+
 2008-05-05 11:27  alexpeshkoff
 
 	* firebird2/builds/posix/: Makefile.in.embed.util (1.41),
