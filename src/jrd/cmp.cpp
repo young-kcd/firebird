@@ -551,7 +551,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 
 		CompilerScratch* csb = PAR_parse(tdbb, blr, internal_flag, dbginfo_length, dbginfo);
 		request = CMP_make_request(tdbb, csb, internal_flag);
-		pool->setStatsGroup(request->req_memory_stats);
+		new_pool->setStatsGroup(request->req_memory_stats);
 
 		if (internal_flag) {
 			request->req_flags |= req_internal;
