@@ -133,8 +133,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 	if (!rel_pages_inst) 
 	{
-		MemoryPool* pool = dbb->dbb_permanent;
-		rel_pages_inst = FB_NEW(*pool) RelationPagesInstances(*pool);
+		MemoryPool& pool = *dbb->dbb_permanent;
+		rel_pages_inst = FB_NEW(pool) RelationPagesInstances(pool);
 	}
 
 	size_t pos;
@@ -192,10 +192,10 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
-		USHORT idx_count = BTR_all(tdbb, this, &indices, &rel_pages_base);
+		const USHORT idx_count = BTR_all(tdbb, this, &indices, &rel_pages_base);
 
-		index_desc* idx = indices->items, *const end = indices->items + idx_count;
-		for (; idx < end; idx++)
+		const index_desc* const end = indices->items + idx_count;
+		for (index_desc* idx = indices->items; idx < end; idx++)
 		{
 			Firebird::MetaName idx_name;
 			MET_lookup_index(tdbb, idx_name, this->rel_name, idx->idx_id + 1);
