@@ -1,4 +1,136 @@
   ***************************
+  * v2.1.1
+  ***************************
+
+    * Bugfix CORE-1884
+        Random crashes using stored procedures with expressions as default values of input parameters
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1881
+        Database monitoring may crash the server or badly affect its page locking logic
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1876
+        Incremental backups with NBACKUP are broken
+      Contributor(s):
+        Nickolay Samofatov <skidder at users.sourceforge.net>
+
+    * Bugfix CORE-1875
+        Error/crash on script with CURRENT_DATE
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1868
+        Server crashes in isc_dsql_free_statement()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1864
+        SELECT operator does not work in ISQL (big-endian hosts only)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+        Paul Beach (pbeach at ibphoenix.com)
+
+    * Bugfix CORE-1859
+        Value of CURRENT_USER may be not in upper case when using Unix OS authentication
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1854
+        Value of CURRENT_USER may be not in upper case when using Unix OS authentication
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1851
+        Applications using fbembed hang during the process termination if there are open connections left
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1841
+        If some VIEW used derived tables and long table names\aliases,
+        it is possible to overflow RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1840
+        Small memory leak per every DDL execution
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1839
+        Server crashes sorting by field, calculated using a recursive CTE
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1838
+        SET STATISTICS INDEX on index of GTT may wrongly change index id
+        by maximum available number for the database page size
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1826
+        changeRunUser.sh and restoreRootRunUser.sh scripts does not change run user in init.d scripts
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1819
+        More efficient solution for CORE-1300 (Lower level index pages is missed from parent page)
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1817
+        The RelaxedAliasChecking parameter has no effect concerning RDB$DB_KEY
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1812
+        Index is not used for some date/time expressions in dialect 1
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1807
+        fbserver is assigned to a non-canonical port after abnormal termination
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1798
+        RDB$DB_KEY evaluates to NULL in INSERT ... RETURNING
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1793
+        Server crashes preparing a query with unused parametrized CTE
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1781
+        LIKE, STARTING WITH and CONTAINING may incorrectly return true
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1775
+        Bad performance of the security checking during prepare
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1731
+        SuperServer can't shutdown immediately after shutdown request after failed login attempt
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1421
+        SuperServer can't shutdown immediately after shutdown request after failed login attempt
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1357
+        DummyPacketInterval mechanism broken
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+  ***************************
   * v2.1 Final
   ***************************
 
