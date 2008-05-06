@@ -814,7 +814,6 @@ public:
 		csb_map_field_info(p),
 		csb_map_item_info(p),
 		csb_domain_validation(domain_validation),
-		csb_to_clone(p),
 		csb_rpt(p, len)
 	{}
 
@@ -856,7 +855,6 @@ public:
 	MapFieldInfo		csb_map_field_info;		// Map field name to field info
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
-	Firebird::Array<jrd_nod**>	csb_to_clone;	// default values for procedure, requires cloning and processing
 
 	struct csb_repeat
 	{

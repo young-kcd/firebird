@@ -195,6 +195,27 @@ jrd_nod* CMP_clone_node(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
  **************************************
  *
  * Functional description
+ *	Clone a node.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(csb, type_csb);
+	DEV_BLKCHK(node, type_nod);
+
+	return copy(tdbb, csb, node, NULL, 0, NULL, false);
+}
+
+
+jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+{
+/**************************************
+ *
+ *	C M P _ c l o n e _ n o d e
+ *
+ **************************************
+ *
+ * Functional description
  *	Clone a value node for the optimizer.  Make a copy of the node
  *	(if necessary) and assign impure space.
  *
@@ -2003,20 +2024,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 		found = csb->csb_map_field_info.getNext();
 	}
-	{ // scope
-		jrd_nod ***ptr = csb->csb_to_clone.begin();
-		jrd_nod **const *const end = csb->csb_to_clone.end();
-		for (; ptr < end; ptr++)
-		{			
-			UCHAR local_map[MAP_LENGTH];
-
-			jrd_nod *node = **ptr;
-			node = copy(tdbb, csb, node, local_map, 0, NULL, false);
-			node = pass1(tdbb, csb, node, NULL, 0, false);
-			**ptr = node;
-		}
-	}
-
+	
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 
@@ -2033,16 +2041,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 		found = csb->csb_map_field_info.getNext();
 	}
-	{ // scope
-		jrd_nod ***ptr = csb->csb_to_clone.begin();
-		jrd_nod **const *const end = csb->csb_to_clone.end();
-		for (; ptr < end; ptr++)
-		{			
-			jrd_nod *node = **ptr;
-			pass2(tdbb, csb, node, NULL);
-		}
-	}
-
+	
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
 	}
