@@ -1828,7 +1828,7 @@ void MET_lookup_exception(thread_db*			tdbb,
 						  SLONG					number,
 						  Firebird::MetaName&	name,
 						  TEXT*					message,
-						  size_t				messageBuffer)
+						  size_t				messageSize)
 {
 /**************************************
  *
@@ -1848,7 +1848,7 @@ void MET_lookup_exception(thread_db*			tdbb,
 	jrd_req* request = CMP_find_request(tdbb, irq_l_exception, IRQ_REQUESTS);
 
 	name = "";
-	if (message && messageBuffer)
+	if (message && messageSize)
 	{
 		*message = 0;
 	}
@@ -1868,7 +1868,7 @@ void MET_lookup_exception(thread_db*			tdbb,
 		if (!X.RDB$MESSAGE.NULL && message)
 		{
 			Firebird::string tmp(X.RDB$MESSAGE);
-			tmp.copyTo(message, messageBuffer);
+			tmp.copyTo(message, messageSize);
 		}
 	END_FOR;
 
