@@ -499,7 +499,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 		{
 			if (*patternPos == canonicalChar(TextType::CHAR_CLOSE_BRACE))
 			{
-				if (s1.isEmpty() || (comma && s2.isEmpty()))
+				if (s1.isEmpty())
 					status_exception::raise(isc_invalid_similar_pattern, 0);
 				break;
 			}
@@ -532,7 +532,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 			status_exception::raise(isc_invalid_similar_pattern, 0);
 
 		int n1 = atoi(s1.c_str());
-		int n2 = comma ? atoi(s2.c_str()) : INT_MAX;
+		int n2 = s2.isEmpty() ? (comma ? INT_MAX : n1) : atoi(s2.c_str());
 
 		if (n2 < n1)
 			status_exception::raise(isc_invalid_similar_pattern, 0);
