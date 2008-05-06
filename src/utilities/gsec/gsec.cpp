@@ -674,6 +674,7 @@ static bool get_switches(
  **************************************/
 	TEXT msg[MSG_LENGTH];
 	int l;
+	char quote;
 	SSHORT err_msg_no;
 
 /* look at each argument.   it's either a switch or a parameter.
@@ -699,8 +700,17 @@ static bool get_switches(
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
 			case IN_SW_GSEC_MOD:
-				for (l = 0; l < 32 && string[l] && string[l] != ' '; l++)
+				quote = ' ';
+				for (l = 0; l < 32 && string[l] && string[l] != quote; )
+				{
+					if (l == 0 && (*string == '\'' || *string == '"'))
+					{
+						quote = *string++;
+						continue;
+					}
 					user_data->user_name[l] = UPPER(string[l]);
+					++l;
+				}
 				if (l == 32) {
 #ifdef SERVICE_THREAD
 					GSEC_error(GsecMsg76);
