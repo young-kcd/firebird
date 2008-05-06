@@ -30,6 +30,7 @@
 
 bool CMP_clone_is_active(const Jrd::jrd_req*);
 Jrd::jrd_nod* CMP_clone_node(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
+Jrd::jrd_nod* CMP_clone_node_opt(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_nod*);
 Jrd::jrd_req* CMP_clone_request(Jrd::thread_db*, Jrd::jrd_req*, USHORT, bool);
 Jrd::jrd_req* CMP_compile(USHORT, const UCHAR*, USHORT);
 Jrd::jrd_req* CMP_compile2(Jrd::thread_db*, const UCHAR*, USHORT);

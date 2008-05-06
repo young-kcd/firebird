@@ -1968,9 +1968,8 @@ static void par_procedure_parms(
 
 			// default value for parameter 
 			if ((count <= 0) && input_flag) {
-				Parameter* parameter =
-					(*procedure->prc_input_fields)[procedure->prc_inputs - n];
-				asgn->nod_arg[asgn_arg1] = parameter->prm_default_value;
+				Parameter* parameter = (*procedure->prc_input_fields)[procedure->prc_inputs - n];
+				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
 			else {
 				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
