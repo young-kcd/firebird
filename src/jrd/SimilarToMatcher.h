@@ -1087,7 +1087,9 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 				case opRepeat:
 					fb_assert(state == 1 || state == 2);
 
-					if (state == 2)
+					if (state == 1)
+						scope->j = 0;
+					else if (state == 2)
 					{
 						if (scope->j < node->len)
 						{
