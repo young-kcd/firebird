@@ -617,7 +617,7 @@ int RESTORE_restore (const TEXT* file_name,
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	// set forced writes to the value which was in the header
-	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes);
+	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes ? 1 : 0);
 
 	FB_API_HANDLE db_handle = 0;
 	if (isc_attach_database (tdgbl->status_vector, 0, database_name,
@@ -664,7 +664,7 @@ int RESTORE_restore (const TEXT* file_name,
 				tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 		}
 
-		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
+		dpb.insertByte(isc_dpb_set_db_readonly, 1);
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
@@ -903,7 +903,7 @@ void create_database(BurpGlobals*	tdgbl,
 	ULONG sweep_interval = MAX_ULONG;
 	bool no_reserve = false;
 	bool db_read_only = false, SQL_dialect_flag = false;
-	USHORT forced_writes = 1; // turned on by default
+	bool forced_writes = true; // turned on by default
 	ULONG page_buffers = 0;
 	USHORT SQL_dialect = 0;
 
@@ -929,11 +929,11 @@ void create_database(BurpGlobals*	tdgbl,
 				break;
 
 			case att_forced_writes:
-				forced_writes = (USHORT) get_numeric(tdgbl);
+				forced_writes = get_numeric(tdgbl) != FALSE;
 				break;
 
 			case att_no_reserve:
-				no_reserve = (USHORT) get_numeric(tdgbl) != FALSE;
+				no_reserve = get_numeric(tdgbl) != FALSE;
 				break;
 
 			case att_db_read_only:
@@ -1004,7 +1004,7 @@ void create_database(BurpGlobals*	tdgbl,
 	// If the database is to be restored "read_only", fillup the data pages 
 	if (no_reserve || db_read_only)
 	{
-		dpb.insertByte(isc_dpb_no_reserve, TRUE);
+		dpb.insertByte(isc_dpb_no_reserve, 1);
 	}
 	if (tdgbl->gbl_sw_user)
 	{
@@ -1039,13 +1039,11 @@ void create_database(BurpGlobals*	tdgbl,
 	** to V6, we force the SQL database dialect to 1
 	**
 	*/
-	dpb.insertByte(isc_dpb_sql_dialect, 
-			SQL_dialect_flag ? SQL_dialect : SQL_DIALECT_V5);
+	dpb.insertByte(isc_dpb_sql_dialect, SQL_dialect_flag ? SQL_dialect : SQL_DIALECT_V5);
 
 	// start database up shut down, 
 	// use single-user mode to avoid conflicts during restore process
-	dpb.insertByte(isc_dpb_shutdown, 
-			isc_dpb_shut_attachment | isc_dpb_shut_single);
+	dpb.insertByte(isc_dpb_shutdown, isc_dpb_shut_attachment | isc_dpb_shut_single);
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
