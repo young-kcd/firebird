@@ -29,6 +29,10 @@
 
 // #define DEBUG_SIMILAR
 
+#ifdef DEBUG_SIMILAR
+// #define RECURSIVE_SIMILAR	// useless in production due to stack overflow
+#endif
+
 
 namespace Firebird
 {
@@ -179,7 +183,11 @@ private:
 #endif
 
 	private:
+#ifdef RECURSIVE_SIMILAR
+		bool match(int limit, int start);
+#else
 		bool match();
+#endif
 
 	private:
 		static SLONG notInSet(const CharType* str, SLONG strLen,
@@ -331,7 +339,11 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
+#ifdef RECURSIVE_SIMILAR
+	return match(nodes.getCount(), 0);
+#else
 	return match();
+#endif
 }
 
 
@@ -896,157 +908,153 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 
 
 template <typename StrConverter, typename CharType>
-bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
+#ifdef RECURSIVE_SIMILAR
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int start)
 {
-	// This function should do exactly what this commented out function
-	// do but without recursion, which turns the code useless.
-	//
-	/***
-	template <typename StrConverter, typename CharType>
-	bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit = nodes.getCount(), int start = 0)
+	for (int i = start; i < limit; ++i)
 	{
-		for (int i = start; i < limit; ++i)
+		Node* node = &nodes[i];
+
+		switch (node->op)
 		{
-			Node* node = &nodes[i];
-
-			switch (node->op)
+			case opRepeat:
 			{
-				case opRepeat:
+				int j;
+
+				for (j = 0; j < node->len; ++j)
 				{
-					int j;
-
-					for (j = 0; j < node->len; ++j)
-					{
-						if (!match(i + 1 + node->ref, i + 1))
-							return false;
-					}
-
-					for (j = node->len; j < node->len2; ++j)
-					{
-						const CharType* save = bufferPos;
-
-						if (match(limit, i + 1 + node->ref))
-							return true;
-
-						bufferPos = save;
-
-						if (!match(i + 1 + node->ref, i + 1))
-							return false;
-					}
-
-					++i;
-					break;
+					if (!match(i + 1 + node->ref, i + 1))
+						return false;
 				}
 
-				case opBranch:
+				for (j = node->len; j < node->len2; ++j)
 				{
 					const CharType* save = bufferPos;
 
-					while (true)
-					{
-						if (match(limit, i + 1))
-							return true;
+					if (match(limit, i + 1 + node->ref))
+						return true;
 
-						bufferPos = save;
+					bufferPos = save;
 
-						if (node->ref == 0)
-							return false;
-
-						i += node->ref;
-						node = &nodes[i];
-
-						if (node->ref == 0)
-							break;
-					}
-
-					break;
+					if (!match(i + 1 + node->ref, i + 1))
+						return false;
 				}
 
-				case opStart:
-					if (bufferPos != bufferStart)
-						return false;
-					break;
+				++i;
+				break;
+			}
 
-				case opEnd:
-					if (bufferPos != bufferEnd)
-						return false;
-					break;
+			case opBranch:
+			{
+				const CharType* save = bufferPos;
 
-				case opRef:
-					if (node->ref == 1)	// avoid recursion
+				while (true)
+				{
+					if (match(limit, i + 1))
+						return true;
+
+					bufferPos = save;
+
+					if (node->ref == 0)
+						return false;
+
+					i += node->ref;
+					node = &nodes[i];
+
+					if (node->ref == 0)
 						break;
-					return match(limit, i + node->ref);
+				}
 
-				case opNothing:
+				break;
+			}
+
+			case opStart:
+				if (bufferPos != bufferStart)
+					return false;
+				break;
+
+			case opEnd:
+				if (bufferPos != bufferEnd)
+					return false;
+				break;
+
+			case opRef:
+				if (node->ref == 1)	// avoid recursion
 					break;
+				return match(limit, i + node->ref);
 
-				case opAny:
-					if (bufferPos >= bufferEnd)
-						return false;
-					++bufferPos;
-					break;
+			case opNothing:
+				break;
 
-				case opAnyOf:
-				case opAnyBut:
-					if (bufferPos >= bufferEnd)
+			case opAny:
+				if (bufferPos >= bufferEnd)
+					return false;
+				++bufferPos;
+				break;
+
+			case opAnyOf:
+			case opAnyBut:
+				if (bufferPos >= bufferEnd)
+					return false;
+				else
+				{
+					const int pos = notInSet(bufferPos, 1, node->str, node->len);
+
+					if (node->op == opAnyBut && pos == 0)
 						return false;
-					else
+
+					if (node->op == opAnyOf && pos != 0)
 					{
-						const int pos = notInSet(bufferPos, 1, node->str, node->len);
+						const UCHAR* end = node->str2 + node->len2;
+						const UCHAR* p = node->str2;
 
-						if (node->op == opAnyBut && pos == 0)
-							return false;
-
-						if (node->op == opAnyOf && pos != 0)
+						while (p < end)
 						{
-							const UCHAR* end = node->str2 + node->len2;
-							const UCHAR* p = node->str2;
+							UCHAR c[sizeof(ULONG)];
+							ULONG len = charSet->substring(
+								buffer.getCount(), buffer.begin(),
+								sizeof(c), c, bufferPos - bufferStart, 1);
 
-							while (p < end)
+							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
 							{
-								UCHAR c[sizeof(ULONG)];
-								ULONG len = charSet->substring(
-									buffer.getCount(), buffer.begin(),
-									sizeof(c), c, bufferPos - bufferStart, 1);
-
-								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-								{
-									break;
-								}
-
-								p += 2 + p[0] + p[1 + p[0]];
+								break;
 							}
 
-							if (node->len2 == 0 ||
-								(node->op == opAnyOf && p >= end) || (node->op == opAnyBut && p < end))
-							{
-								return false;
-							}
+							p += 2 + p[0] + p[1 + p[0]];
+						}
+
+						if (node->len2 == 0 ||
+							(node->op == opAnyOf && p >= end) || (node->op == opAnyBut && p < end))
+						{
+							return false;
 						}
 					}
+				}
 
-					++bufferPos;
-					break;
+				++bufferPos;
+				break;
 
-				case opExactly:
-					if (node->len > bufferEnd - bufferPos ||
-						memcmp(node->str, bufferPos, node->len) != 0)
-					{
-						return false;
-					}
-					bufferPos += node->len;
-					break;
-
-				default:
-					fb_assert(false);
+			case opExactly:
+				if (node->len > bufferEnd - bufferPos ||
+					memcmp(node->str, bufferPos, node->len) != 0)
+				{
 					return false;
-			}
-		}
+				}
+				bufferPos += node->len;
+				break;
 
-		return true;
+			default:
+				fb_assert(false);
+				return false;
+		}
 	}
-	***/
+
+	return true;
+}
+#else
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
+{
 	//
 	// state  description
 	// ----------------------
@@ -1295,6 +1303,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 
 	return ret;
 }
+#endif
 
 
 // Returns the number of characters up to first one present in set. 
