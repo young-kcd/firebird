@@ -1140,24 +1140,27 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					{
 						fb_assert(state == 2);
 
-						while (state == 2)
+						if (!ret)
 						{
-							if (ret)
-								break;
-
 							bufferPos = scope->save;
 
 							if (node->ref == 0)
-							{
 								ret = false;
-								break;
+							else
+							{
+								scope->i += node->ref;
+								node = &nodes[scope->i];
+
+								if (node->ref == 0)
+									state = 1;
+								else
+								{
+									scope->save = bufferPos;
+									start = scope->i + 1;
+									limit = scope->limit;
+									state = 0;
+								}
 							}
-
-							scope->i += node->ref;
-							node = &nodes[scope->i];
-
-							if (node->ref == 0)
-								state = 1;
 						}
 					}	
 					break;
