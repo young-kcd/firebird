@@ -903,7 +903,7 @@ void create_database(BurpGlobals*	tdgbl,
 	ULONG sweep_interval = MAX_ULONG;
 	bool no_reserve = false;
 	bool db_read_only = false, SQL_dialect_flag = false;
-	USHORT forced_writes = 2; // default for the current platform 
+	USHORT forced_writes = 1; // turned on by default
 	ULONG page_buffers = 0;
 	USHORT SQL_dialect = 0;
 
