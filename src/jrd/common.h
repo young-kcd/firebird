@@ -427,8 +427,6 @@ typedef unsigned __int64 FB_UINT64;
 #define API_ROUTINE_VARARG      __cdecl
 #define CLIB_ROUTINE    __cdecl
 
-#define SYNC_WRITE_DEFAULT
-
 #ifndef MAXPATHLEN
 #ifdef MAX_PATH
 #define MAXPATHLEN MAX_PATH

@@ -384,26 +384,23 @@ public:
 	SLONG	dpb_sweep_interval;
 	ULONG	dpb_page_buffers;
 	bool	dpb_set_page_buffers;
-	ULONG dpb_buffers;
-	USHORT	dpb_debug;
+	ULONG	dpb_buffers;
 	USHORT	dpb_verify;
 	USHORT	dpb_sweep;
-	USHORT	dpb_trace;
-	USHORT	dpb_disable;
 	USHORT	dpb_dbkey_scope;
 	USHORT	dpb_page_size;
 	bool	dpb_activate_shadow;
 	bool	dpb_delete_shadow;
-	USHORT	dpb_no_garbage;
+	bool	dpb_no_garbage;
 	USHORT	dpb_shutdown;
 	SSHORT	dpb_shutdown_delay;
 	USHORT	dpb_online;
-	SSHORT	dpb_force_write;
-	UCHAR	dpb_set_force_write;
-	UCHAR	dpb_no_reserve;
-	UCHAR	dpb_set_no_reserve;
+	bool	dpb_force_write;
+	bool	dpb_set_force_write;
+	bool	dpb_no_reserve;
+	bool	dpb_set_no_reserve;
 	SSHORT	dpb_interp;
-	USHORT	dpb_single_user;
+	bool	dpb_single_user;
 	bool	dpb_overwrite;
 	bool	dpb_sec_attach;
 	bool	dpb_disable_wal;
@@ -881,8 +878,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		INI_init();
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		pageSpace->file =
-			PIO_open(dbb, expanded_name, options.dpb_trace != 0, file_name, false);
+		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
 		SHUT_init(tdbb);
 		PAG_header_init();
 		INI_init2();
@@ -4285,7 +4281,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_debug:
-			dpb_debug = (USHORT) rdr.getInt();
+			rdr.getInt();
 			break;
 
 		case isc_dpb_sweep:
@@ -4303,7 +4299,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_trace:
-			dpb_trace = (USHORT) rdr.getInt();
+			rdr.getInt();
 			break;
 
 		case isc_dpb_damaged:
@@ -4395,11 +4391,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_no_garbage_collect:
-			dpb_no_garbage = TRUE;
-			break;
-
-		case isc_dpb_disable_journal:
-			dpb_disable = TRUE;
+			dpb_no_garbage = true;
 			break;
 
 		case isc_dpb_activate_shadow:
@@ -4411,8 +4403,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_force_write:
-			dpb_set_force_write = TRUE;
-			dpb_force_write = (SSHORT) rdr.getInt();
+			dpb_set_force_write = true;
+			dpb_force_write = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_begin_log:
@@ -4422,8 +4414,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_no_reserve:
-			dpb_set_no_reserve = TRUE;
-			dpb_no_reserve = (UCHAR) rdr.getInt();
+			dpb_set_no_reserve = true;
+			dpb_no_reserve = rdr.getInt() != 0;
 			break;
 
 		case isc_dpb_interp:
@@ -4464,7 +4456,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 				rdr.getString(single);
 				if (single == "YES")
 				{
-					dpb_single_user = TRUE;
+					dpb_single_user = true;
 				}
 			}
 			break;

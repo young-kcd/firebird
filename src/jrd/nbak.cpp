@@ -837,7 +837,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	if (new_backup_state != nbak_state_normal && !diff_file) {
 		try {
 			NBAK_TRACE(("Open difference file"));
-			diff_file = PIO_open(database, diff_name, false, diff_name, false);
+			diff_file = PIO_open(database, diff_name, diff_name, false);
 		}
 		catch (const Firebird::Exception& ex) {
 			Firebird::stuff_exception(status, ex);

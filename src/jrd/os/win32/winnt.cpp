@@ -553,7 +553,6 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 jrd_file* PIO_open(Database* dbb,
 				   const Firebird::PathName& string,
-				   const bool /*trace_flag*/,
 				   const Firebird::PathName& file_name,
 				   const bool share_delete)
 {
