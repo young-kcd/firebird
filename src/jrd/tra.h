@@ -103,9 +103,9 @@ public:
 
 	jrd_tra(MemoryPool* p, Firebird::MemoryStats* parent_stats,
 			Attachment* attachment, jrd_tra* outer, size_t length = 0)
-	:	tra_pool(p),
+	:	tra_attachment(attachment),
+		tra_pool(p),
 		tra_memory_stats(parent_stats),
-		tra_attachment(attachment),
 		tra_blobs_tree(p),
 		tra_blobs(&tra_blobs_tree),
 		tra_resources(*p),
