@@ -53,7 +53,8 @@ enum lck_t {
 	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
 	LCK_backup_database,        /* Lock to protect writing to database file */
 	LCK_backup_end,				/* Lock to protect end_backup consistency */
-	LCK_rel_partners			/* Relation partners lock */
+	LCK_rel_partners,			/* Relation partners lock */
+	LCK_btr_dont_gc				// lock for b-tree page to prevent its removing from index
 };
 
 /* Lock owner types */

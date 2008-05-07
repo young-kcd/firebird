@@ -546,6 +546,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_record:
 	case LCK_update_shadow:
 	case LCK_backup_end:
+	case LCK_btr_dont_gc:
 		return *LCK_OWNER_HANDLE_ATT(attachment);
 	default:
 		bug_lck("Invalid lock type in LCK_get_owner_handle ()");
