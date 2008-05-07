@@ -573,6 +573,7 @@ AC_CHECK_FUNCS(pthread_keycreate pthread_key_create)
 AC_CHECK_FUNCS(llrint)
 AC_CHECK_FUNCS(localtime_r)
 AC_CHECK_FUNCS(gmtime_r)
+AC_CHECK_FUNCS(fchmod)
 
 if test "$ac_cv_header_semaphore_h" = "yes"; then
 savedFlags="$CFLAGS"
