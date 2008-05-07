@@ -198,7 +198,7 @@ int snprintf(char* buffer, size_t count, const char* format...)
 #ifdef WIN_NT
 
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
-static bool isTerminalServicesEnabled();
+static bool isGlobalKernelPrefix();
 
 // hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
 // names of all kernel objects we use. For Win9x we must not add this prefix. 
@@ -207,18 +207,21 @@ static bool isTerminalServicesEnabled();
 
 void prefix_kernel_object_name(char* name, size_t bufsize)
 {
-	static bool bTSEnabled = false;
+	static bool bGlobalPrefix = false;
 	static bool bInitDone = false;
 
 	if (!bInitDone)
 	{
-		bTSEnabled = isTerminalServicesEnabled();
+		bGlobalPrefix = isGlobalKernelPrefix();
 		bInitDone = true;
 	}
 
-	if (bTSEnabled)
+	// Backwards compatibility feature with Firebird 2.0.3 and earlier. 
+	// If the name already contains some prefix (specified by the user, as was 
+	// recommended in firebird.conf) additional prefix is not added
+	if (bGlobalPrefix && !strchr(name, '\\'))
 	{
-		const char *prefix = "Global\\";
+		const char* prefix = "Global\\";
 		const size_t len_prefix = strlen(prefix);
 		const size_t len_name = strlen(name) + 1;
 
@@ -232,6 +235,34 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 	}
 }
 
+
+// Simply handle guardian.
+class DynLibHandle
+{
+public:
+	explicit DynLibHandle(HMODULE mod)
+		: m_handle(mod)
+	{}
+	~DynLibHandle()
+	{
+		if (m_handle)
+			FreeLibrary(m_handle);
+	}
+	operator HMODULE() const
+	{
+		return m_handle;
+	}
+	/* The previous conversion is invoked with !object so this is enough.
+	bool operator!() const
+	{
+		return !m_handle;
+	}
+	*/
+private:
+	HMODULE m_handle;
+};
+
+
 // hvlad: two functions below got from 
 // http://msdn2.microsoft.com/en-us/library/aa380797.aspx
 // and slightly adapted for our coding style
@@ -242,67 +273,81 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 //   compatibility with Windows Me/98/95.
 //   ------------------------------------------------------------- 
 
-bool isTerminalServicesEnabled() 
+// isTerminalServices replaced by isGlobalKernelPrefix
+
+bool isGlobalKernelPrefix() 
 {
-	DWORD dwVersion = GetVersion();
+	// The strategy of this function is as follows: use Global\ kernel namespace 
+	// for engine objects if we can. This can be prevented by either lack of OS support 
+	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
+
+	const DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
 	if (!(dwVersion & 0x80000000)) 
 	{
-		// Is it Windows 2000 or greater?
-		if (LOBYTE(LOWORD(dwVersion)) > 4) 
-		{
-			return true; 
+		if (LOBYTE(LOWORD(dwVersion)) <= 4) // This is Windows NT 4.0 or earlier.
+			return validateProductSuite("Terminal Server");
 
-			// hvlad: for now we don't need such complex check but i 
-			// preserved code in case we will need it later
+		// Is it Windows 2000 or greater? It is possible to use Global\ prefix on any
+		// version of Windows from Windows 2000 and up
+		// Check if we have enough privileges to create global handles.
+		// If not fall back to creating local ones.
+		// The API for that is the NT thing, so we have to get addresses of the 
+		// functions dynamically to avoid troubles on Windows 9X platforms
 
-/***
-			// On Windows 2000 and later, use the VerifyVersionInfo and 
-			// VerSetConditionMask functions. Don't static link because 
-			// it won't load on earlier systems.
+		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
 
-			HMODULE hmodNtDll = GetModuleHandleA("ntdll.dll");
-			if (hmodNtDll) 
-			{
-				typedef ULONGLONG (WINAPI *PFnVerSetCondition) (ULONGLONG, ULONG, UCHAR);
-				typedef BOOL (WINAPI *PFnVerifyVersionA) (POSVERSIONINFOEXA, DWORD, DWORDLONG);
+		if (!hmodAdvApi) {
+			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
+			return false;
+		}
 
-				PFnVerSetCondition pfnVerSetCondition = 
-					(PFnVerSetCondition) GetProcAddress(hmodNtDll, "VerSetConditionMask");
+		typedef BOOL (WINAPI *PFnOpenProcessToken) (HANDLE, DWORD, PHANDLE);
+		typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
+		typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
 
-				if (pfnVerSetCondition != NULL) 
-				{
-					DWORDLONG dwlCondition = (*pfnVerSetCondition) (0, VER_SUITENAME, VER_AND);
+		PFnOpenProcessToken pfnOpenProcessToken = 
+			(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
+		PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
+			(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
+		PFnPrivilegeCheck pfnPrivilegeCheck = 
+			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
 
-					// Get a VerifyVersionInfo pointer.
-					HMODULE hmodK32 = GetModuleHandleA( "KERNEL32.DLL" );
-					if (hmodK32) 
-					{
-						PFnVerifyVersionA pfnVerifyVersionA = 
-							(PFnVerifyVersionA) GetProcAddress(hmodK32, "VerifyVersionInfoA") ;
+		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
+			// Should never happen, really
+			gds__log("Cannot access privilege management API");
+			return false;
+		}
 
-						if (pfnVerifyVersionA != NULL) 
-						{
-							OSVERSIONINFOEXA osVersion;
+		HANDLE hProcess = GetCurrentProcess();
+		HANDLE hToken;
+		if (pfnOpenProcessToken(hProcess, TOKEN_QUERY, &hToken) == 0) {
+			gds__log("OpenProcessToken failed. Error code: %lu", GetLastError());
+			return false;
+		}
 
-							ZeroMemory(&osVersion, sizeof(osVersion));
-							osVersion.dwOSVersionInfoSize = sizeof(osVersion);
-							osVersion.wSuiteMask = VER_SUITE_TERMINAL;
-
-							return (*pfnVerifyVersionA) (&osVersion, VER_SUITENAME, dwlCondition);
-						}
-					}
-				}
+		PRIVILEGE_SET ps;
+		memset(&ps, 0, sizeof(ps));
+		ps.Control = PRIVILEGE_SET_ALL_NECESSARY;
+		ps.PrivilegeCount = 1;
+		if (pfnLookupPrivilegeValue(NULL, TEXT("SeCreateGlobalPrivilege"), &ps.Privilege[0].Luid) == 0) {
+			// Failure here means we're running on old version of Windows 2000 or XP
+			// which always allow creating global handles
+			CloseHandle(hToken);
+			return true;
 			}
 
+		BOOL checkResult;
+		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
+			gds__log("PrivilegeCheck failed. Error code: %lu", GetLastError());
+			CloseHandle(hToken);
 			return false;
-***/
 		}
-		else  // This is Windows NT 4.0 or earlier.
-		{
-			return validateProductSuite("Terminal Server");
-		}
+
+		CloseHandle(hToken);
+
+		return checkResult; 
 	}
 
 	return false;
