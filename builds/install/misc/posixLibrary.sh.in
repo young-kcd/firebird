@@ -1,4 +1,26 @@
 #!/bin/sh
+#
+#  The contents of this file are subject to the Initial
+#  Developer's Public License Version 1.0 (the "License");
+#  you may not use this file except in compliance with the
+#  License. You may obtain a copy of the License at
+#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+#
+#  Software distributed under the License is distributed AS IS,
+#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+#  See the License for the specific language governing rights
+#  and limitations under the License.
+#
+#  The Original Code was created by Mark O'Donohue
+#  for the Firebird Open Source RDBMS project.
+#
+#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#  and all contributors signed below.
+#
+#  All Rights Reserved.
+#  Contributor(s): ______________________________________.
+#		Alex Peshkoff
+#
 
 
 #------------------------------------------------------------------------
@@ -173,6 +195,15 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
+    checkString=`ps -eaf | egrep "\b(fb_smp_server)\b" |grep -v grep`
+
+    if [ ! -z "$checkString" ]
+    then
+        echo "An instance of the Firebird SuperClassic server seems to be running."
+        echo "Please quit all Firebird applications and then proceed."
+        exit 1
+    fi
+
     checkString=`ps -eaf | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
@@ -216,13 +247,6 @@ checkIfServerRunning() {
 
 	removeInetdServiceEntry
 	
-# Stop lock manager if it is the only thing running.
-
-    for i in `ps -eaf | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
-	do
-        kill $i
-	done
-
 }
 
 
@@ -359,7 +383,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @prefix@/bin/changeDBAPassword.sh script
+# @prefix@/bin/gsec utility.
 EOT
 
     chmod u=r,go= $DBAPasswordFile

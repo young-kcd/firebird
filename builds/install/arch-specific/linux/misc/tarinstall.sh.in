@@ -22,40 +22,14 @@
 #		Alex Peshkoff
 #
 
-# A routine to change the user that runs interbase Firebird
+# The way this works is that the buildroot file is stored relative to the root
+# directory and a tar -xzof at root directory will restore all the files in 
+# the position that we want them to be
 
-RunUser=firebird
-RunGroup=firebird
+OrigDir=`pwd`
 
-checkInstallUser
-checkIfServerRunning
+cd /
 
+tar -xzof "$OrigDir/buildroot.tar.gz"
 
-# Get confirmation
-echo ""
-echo "Change Firebird install for $FBRootDir to uid=$RunUser gid=$RunGroup"
-echo "(User or group options can be changed by editing this script)"
-echo ""
-AskQuestion "Press return to continue - or ^C to abort"
-
-
-# Add user and group, if missing
-if [ $RunUser != "root" ]
-then
-    addFirebirdUser
-fi
-
-# Update the /etc/inetd.conf or xinetd entry or /etc/init.d/firebird
-echo "Updating /etc file(s)"
-updateInetdServiceEntry
-changeInitRunUser $RunUser
-
-# Update ownership and SUID bits for programs.
-echo "Updating $FBRootDir"
-fixFilePermissions
-
-# Get inetd to reread new init files, start service.
-resetInetdServer
-startService
-
-echo "Completed."
+cd "$OrigDir"

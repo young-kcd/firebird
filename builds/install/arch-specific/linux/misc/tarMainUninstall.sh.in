@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 #
 #  The contents of this file are subject to the Initial
 #  Developer's Public License Version 1.0 (the "License");
@@ -19,58 +19,57 @@
 #
 #  All Rights Reserved.
 #  Contributor(s): ______________________________________.
+#		Alex Peshkoff
 #
 
-# stored configuration values
+#  UnInstall script for FirebirdSQL database engine
+#  http://www.firebirdsql.org
 
-fb_root=@prefix@
-fb_bindir=$fb_root/bin
-fb_libdir=$fb_root/lib
-fb_incdir=$fb_root/include
 
-fb_cflags="-I$fb_incdir"
-fb_libs="-L$fb_libdir -lfbclient"
-fb_embedlibs="-L$fb_libdir -lfbembed"
+InteractiveInstall=1
+export InteractiveInstall
+
+
+checkInstallUser
 
 BuildVersion=@FIREBIRD_VERSION@.@FB_BUILD_NUM@
 PackageVersion=@FIREBIRD_PACKAGE_VERSION@
 CpuType=@CPU_TYPE@
 
+FBRootDir=@prefix@
+
 Version="$BuildVersion-$PackageVersion.$CpuType"
 
-fb_version=$Version
 
+cat <<EOF
 
-usage() {
-  cat <<EOF
+Firebird @FIREBIRD_ARCH_TYPE@ $Version Uninstall program
 
-Usage $0 [Options]
+Are you sure you want to proceed?
 
-Where Options are:
-     --cflags
-     --libs
-     --embedlibs
-     --bindir
-     --version
 EOF
-}
 
-if test "$#" -eq 0 ; then
-    usage
-    exit 1
+
+
+AskQuestion "Press Enter to start uninstall or ^C to abort"
+
+
+# Here we are uninstalling from a install tar.gz file
+
+scriptsDir=$FBRootDir/misc/scripts
+
+
+if [ -e $scriptsDir ]
+  then
+    echo "Extracting install data"
+
+    runAndCheckExit "$scriptsDir/preuninstall.sh"
+    runAndCheckExit "$scriptsDir/postuninstall.sh"
+
+    # This one is done last since it deletes the script files
+    # as well.
+    runAndCheckExit "$scriptsDir/taruninstall.sh"
+
 fi
 
-
-while test $# -gt 0
-  do
-    case "$1" in
-        --cflags) echo $fb_cflags ;;
-        --libs) echo $fb_libs ;;
-        --embedlibs) echo $fb_embedlibs ;;
-        --bindir) echo $fb_bindir ;;
-        --version) echo $fb_version ;;
-        --help) usage ;;
-        *) usage ;
-    esac
-    shift
-  done
+echo "Uninstall completed"

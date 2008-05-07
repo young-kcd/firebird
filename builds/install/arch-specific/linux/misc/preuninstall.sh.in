@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 #
 #  The contents of this file are subject to the Initial
 #  Developer's Public License Version 1.0 (the "License");
@@ -22,40 +22,23 @@
 #		Alex Peshkoff
 #
 
-# A routine to change the user that runs interbase Firebird
+# The pre uninstall routines for Firebird Server
 
-RunUser=firebird
-RunGroup=firebird
-
-checkInstallUser
 checkIfServerRunning
 
+cd $FBRootDir
 
-# Get confirmation
-echo ""
-echo "Change Firebird install for $FBRootDir to uid=$RunUser gid=$RunGroup"
-echo "(User or group options can be changed by editing this script)"
-echo ""
-AskQuestion "Press return to continue - or ^C to abort"
+if [ -f $SecurityDatabase ]; then 
+	cp $SecurityDatabase /tmp 
+	echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
+	chown root:root /tmp/$SecurityDatabase
+	chmod 0600 /tmp/$SecurityDatabase
+fi 
 
+for i in isc_*1* firebird.log SYSDBA.password; do
+	if [ -f $i ]; then
+		rm -f $i
+	fi
+done
 
-# Add user and group, if missing
-if [ $RunUser != "root" ]
-then
-    addFirebirdUser
-fi
-
-# Update the /etc/inetd.conf or xinetd entry or /etc/init.d/firebird
-echo "Updating /etc file(s)"
-updateInetdServiceEntry
-changeInitRunUser $RunUser
-
-# Update ownership and SUID bits for programs.
-echo "Updating $FBRootDir"
-fixFilePermissions
-
-# Get inetd to reread new init files, start service.
-resetInetdServer
-startService
-
-echo "Completed."
+rm -f $FBBin/fbmgr
