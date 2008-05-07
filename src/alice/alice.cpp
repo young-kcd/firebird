@@ -460,7 +460,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		else
 		{
 			ALICE_print(21);	// msg 21: plausible options are:\n
-			for (table = alice_in_sw_table; table->in_sw_msg; table++)
+			for (table = alice_in_sw_table; table->in_sw_name; table++)
 			{
 				if (table->in_sw_msg)
 					ALICE_print(table->in_sw_msg);
