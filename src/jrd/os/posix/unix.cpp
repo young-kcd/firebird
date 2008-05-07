@@ -108,7 +108,7 @@ using namespace Jrd;
 #ifdef SUPERSERVER
 #define MASK		0600
 #else
-#define MASK		0666
+#define MASK		0660
 #endif
 
 #define FCNTL_BROKEN
@@ -219,11 +219,22 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
 #endif
 #endif
 
-	const int desc = open(file_name.c_str(), flag, MASK);
+	const int desc = open(file_name.c_str(), flag, 0666);
 	if (desc == -1) 
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
+				 isc_arg_string, ERR_string(file_name),
+				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+	}
+#ifdef HAVE_FCHMOD
+	if (fchmod(desc, MASK) < 0)
+#else
+	if (chmod(file_name.c_str(), MASK) < 0)
+#endif
+	{
+		ERR_post(isc_io_error,
+				 isc_arg_string, "chmod",
 				 isc_arg_string, ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
