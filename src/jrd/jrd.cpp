@@ -900,16 +900,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 		// initialize shadowing as soon as the database is ready for it
 		// but before any real work is done
-		SDW_init(options.dpb_activate_shadow,
-				 options.dpb_delete_shadow);
-
-		/* dimitr: disabled due to unreliable behaviour of minor ODS upgrades
-			a) in the case of any failure it's impossible to attach the database
-			b) there's no way to handle failures properly, because upgrade is
-			   being made in the context of system transaction which doesn't use
-			   the backout logic
-		INI_update_database();
-		*/
+		SDW_init(options.dpb_activate_shadow, options.dpb_delete_shadow);
 	}
 	else
 	{

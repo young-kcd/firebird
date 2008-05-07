@@ -64,19 +64,10 @@ DATABASE DB = FILENAME "ODS.RDB";
 const int MAX_ACL_SIZE		= 4096;
 const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
-#ifdef NOT_USED_OR_REPLACED
-static void add_generator(TEXT*, jrd_req**);
-#endif
-static void add_global_fields(thread_db*, USHORT);
 static void add_index_set(Database*, bool, USHORT, USHORT);
-static void add_new_triggers(USHORT, USHORT);
 static void add_relation_fields(thread_db*, USHORT);
 static void add_security_to_sys_rel(thread_db*, const Firebird::MetaName&,
 		const TEXT*, const UCHAR*, const SSHORT);
-#ifdef NOT_USED_OR_REPLACED
-static void add_trigger(TEXT*, jrd_req**, jrd_req**);
-#endif
-//static void add_user_priv(thread_db*, TEXT*, TEXT*, TEXT*, TEXT);
 static int init2_helper(const int* fld, int n, jrd_rel* relation);
 static void modify_relation_field(thread_db*, const int*, const int*, jrd_req**);
 static void store_generator(thread_db*, const gen*, jrd_req**);
@@ -804,172 +795,6 @@ void INI_init2()
 }
 
 
-void INI_update_database()
-{
-/**************************************
- *
- *	I N I _ u p d a t e _ d a t a b a s e
- *
- **************************************
- *
- * Functional description
- *	Perform changes to ODS that were required
- *	since ODS 8 and are dynamically updatable.
- *
- * %% Note %% Update the switch() statement to reflect new major ODS
- *            addition
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-/* If database is ReadOnly, return without upgrading ODS */
-	if (dbb->dbb_flags & DBB_read_only)
-		return;
-
-/* check out the update version to see if we have work to do */
-
-	const USHORT major_version = dbb->dbb_ods_version;
-	const USHORT minor_version = dbb->dbb_minor_version;
-
-/*******************************************************************
-** when old engine is attaching a newer ODS database, do nothing
-********************************************************************/
-
-/* if database ODS is less than the server's, then upgrade */
-	if (ENCODE_ODS(major_version, minor_version) >= ODS_CURRENT_VERSION)
-	{
-		return;
-	}
-
-/*******************************************************************
-** when new engine is attaching an older ODS database
-**   perform the necessary modifications
-********************************************************************/
-
-	if (major_version == ODS_VERSION8)
-	{
-	/*** NOTE: The following two functions/structures need to understand
-               the difference between major ODS versions. The structure
-               which holds their information needs to have an additional field
-               to define which major ODS version they belong to.
-               PENDING WORK.
-                 add_global_fields (tdbb, major_version, minor_version);
-                 add_relation_fields (tdbb, major_version, minor_version);
-               Look at add_new_triggers() for reference.
-     ***/
-
-		add_global_fields(tdbb, minor_version);
-		add_relation_fields(tdbb, minor_version);
-	}
-
-	add_index_set(dbb, true, major_version, minor_version);
-	add_new_triggers(major_version, minor_version);
-
-	/* if the database was updated; mark it with the current ODS minor
-	   version so other process will attempt to do so. We mark this after
-	   doing the update so that no other process can see the new minor
-	   version but not the update. */
-
-	WIN window(HEADER_PAGE_NUMBER);
-	Ods::header_page* header =
-		(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-	CCH_MARK(tdbb, &window);
-
-/* Only minor upgrades can occur within a major ODS, define which one
-   occured here. */
-	switch (major_version)
-	{
-	case ODS_VERSION8:
-		header->hdr_ods_minor = ODS_CURRENT8;
-		break;
-	case ODS_VERSION9:
-		header->hdr_ods_minor = ODS_CURRENT9;
-		break;
-	case ODS_VERSION10:
-		header->hdr_ods_minor = ODS_CURRENT10;
-		break;
-	default:
-		/* Make sure we add a new case per new major ODS. Look at code above */
-		fb_assert(FALSE);
-		header->hdr_ods_minor = minor_version;
-		break;
-	}
-
-	dbb->dbb_minor_version = header->hdr_ods_minor;
-	CCH_RELEASE(tdbb, &window);
-
-	DFW_perform_system_work(tdbb);
-}
-
-#ifdef NOT_USED_OR_REPLACED
-static void add_generator(TEXT* generator_name, jrd_req** handle)
-{
-/**************************************
- *
- *	a d d _ g e n e r a t o r
- *
- **************************************
- *
- * Functional description
- *	Store a generator of the given name.
- *	This routine is used to upgrade ODS versions.
- *	DO NOT DELETE, even though it is not used
- *	now, since it may be used when we go to 8.1.
- *
- **************************************/
-	const gen* generator = generators;
-
-	thread_db* tdbb = JRD_get_thread_data();
-
-/* find the new generator to be stored; assume it exists in the table */
-/* TMN: If it doesn't exist in the table, we will CRASH here! */
-
-	while (strcmp(generator->gen_name, generator_name))
-	{
-		++generator;
-	}
-
-	store_generator(tdbb, generator, handle);
-}
-#endif
-
-static void add_global_fields(thread_db* tdbb, USHORT minor_version)
-{
-/**************************************
- *
- *	a d d _ g l o b a l _ f i e l d s
- *
- **************************************
- *
- * Functional description
- *	Add any global fields which have a non-zero
- *	update number in the fields table.  That
- *	is, those that have been added since the last
- *	ODS change.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-/* add desired global fields to system relations  */
-
-	jrd_req* handle = NULL;
-	for (const gfld* gfield = (gfld*) gfields; gfield->gfld_name; gfield++)
-	{
-		if (minor_version < gfield->gfld_minor)
-		{
-			store_global_field(tdbb, gfield, &handle);
-		}
-	}
-
-	if (handle) {
-		CMP_release(tdbb, handle);
-	}
-
-	DFW_perform_system_work(tdbb);
-}
-
-
 static void add_index_set(Database*	dbb,
 						  bool		update_ods,
 						  USHORT	major_version,
@@ -1056,55 +881,6 @@ static void add_index_set(Database*	dbb,
 		END_STORE;
 
 	}
-	if (handle1) {
-		CMP_release(tdbb, handle1);
-	}
-	if (handle2) {
-		CMP_release(tdbb, handle2);
-	}
-}
-
-
-static void add_new_triggers(USHORT major_version, USHORT minor_version)
-{
-/**************************************
- *
- *	a d d _ n e w _ t r i g g e r s
- *
- **************************************
- *
- * Functional description
- *	Store all new ODS 8.x (x > 0) triggers.
- *      The major and minor_version passed in are the ODS versions
- *      before the ODS is upgraded.
- *	This routine is used to upgrade ODS versions.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-	jrd_req* handle1 = NULL;
-
-/* add all new triggers, that were added since the database was created */
-	for (const jrd_trg* trig = triggers; trig->trg_length > 0; trig++)
-	{
-		if ((trig->trg_ods_version > ENCODE_ODS(major_version, minor_version))
-			&& (DECODE_ODS_MAJOR(trig->trg_ods_version) == major_version))
-		{
-			store_trigger(tdbb, trig, &handle1);
-		}
-	}
-
-	jrd_req* handle2 = NULL;
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; message++)
-	{
-		if ((message->trg_ods_version >
-				ENCODE_ODS(major_version, minor_version)) &&
-			(DECODE_ODS_MAJOR(message->trg_ods_version) == major_version))
-		{
-			store_message(tdbb, message, &handle2);
-		}
-	}
-
 	if (handle1) {
 		CMP_release(tdbb, handle1);
 	}
@@ -1308,47 +1084,6 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 	CMP_release(tdbb, handle1);
 
 }
-
-#ifdef NOT_USED_OR_REPLACED
-static void add_trigger(TEXT* trigger_name, jrd_req** handle1, jrd_req** handle2)
-{
-/**************************************
- *
- *	a d d _ t r i g g e r
- *
- **************************************
- *
- * Functional description
- *	Store a trigger of the given name.
- *	This routine is used to upgrade ODS versions.
- *	DO NOT DELETE, even though it is not used
- *	now, since it will be used when we go to 8.1.
- *
- **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-
-/* Find the new trigger to be stored; assume it exists in the table */
-
-	const jrd_trg* trigger = triggers;
-	while (strcmp(trigger->trg_name, trigger_name))
-	{
-		++trigger;
-	}
-
-	store_trigger(tdbb, trigger, handle1);
-
-/* Look for any related trigger messages */
-
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name;
-		++message)
-	{
-		if (!strcmp(message->trigmsg_name, trigger->trg_name))
-		{
-			store_message(tdbb, message, handle2);
-		}
-	}
-}
-#endif
 
 
 static int init2_helper(const int* fld, int n, jrd_rel* relation)
