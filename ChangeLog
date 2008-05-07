@@ -1,3 +1,125 @@
+2008-05-07 18:35  alexpeshkoff
+
+	* firebird2/configure.in (1.288):
+
+	1. Deeper integration between super and classic setup.	2. Script
+	to switch between classic and superclassic modes.
+
+2008-05-07 18:34  alexpeshkoff
+
+	* firebird2/builds/install/: arch-specific/linux/Makefile.in (1.9),
+	arch-specific/linux/classic/README (1.3),
+	arch-specific/linux/classic/makeInstallImage.sh.in (1.24),
+	arch-specific/linux/classic/postinstall.sh.in (1.19),
+	arch-specific/linux/classic/postuninstall.sh.in (1.5),
+	arch-specific/linux/classic/preinstall.sh.in (1.8),
+	arch-specific/linux/classic/preuninstall.sh.in (1.8),
+	arch-specific/linux/classic/tarMainInstall.sh.in (1.3),
+	arch-specific/linux/classic/tarMainUninstall.sh.in (1.3),
+	arch-specific/linux/classic/tarinstall.sh.in (1.5),
+	arch-specific/linux/classic/taruninstall.sh.in (1.3),
+	arch-specific/linux/misc/README (1.1),
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.10),
+	arch-specific/linux/misc/postinstall.sh.in (1.1),
+	arch-specific/linux/misc/postuninstall.sh.in (1.1),
+	arch-specific/linux/misc/preinstall.sh.in (1.1),
+	arch-specific/linux/misc/preuninstall.sh.in (1.1),
+	arch-specific/linux/misc/superLinux.sh.in (1.6),
+	arch-specific/linux/misc/tarMainInstall.sh.in (1.1),
+	arch-specific/linux/misc/tarMainUninstall.sh.in (1.1),
+	arch-specific/linux/misc/tarinstall.sh.in (1.1),
+	arch-specific/linux/misc/taruninstall.sh.in (1.1),
+	arch-specific/linux/super/makeInstallImage.sh.in (1.23),
+	arch-specific/linux/super/postinstall.sh.in (1.12),
+	arch-specific/linux/super/postuninstall.sh.in (1.6),
+	arch-specific/linux/super/preinstall.sh.in (1.8),
+	arch-specific/linux/super/preuninstall.sh.in (1.9),
+	arch-specific/linux/super/tarMainInstall.sh.in (1.4),
+	arch-specific/linux/super/tarMainUninstall.sh.in (1.4),
+	arch-specific/linux/super/tarinstall.sh.in (1.7),
+	arch-specific/linux/super/taruninstall.sh.in (1.5),
+	misc/changeGdsLibraryCompatibleLink.sh.in (1.4),
+	misc/changeMultiConnectMode.sh.in (1.1), misc/changeRunUser.sh.in
+	(1.3), misc/classicLibrary.sh.in (1.11), misc/fb_config.in (1.3),
+	misc/posixLibrary.sh.in (1.15), misc/restoreRootRunUser.sh.in
+	(1.2), misc/superLibrary.sh.in (1.6):
+
+	1. Deeper integration between super and classic setup.	2. Script
+	to switch between classic and superclassic modes.  3. Changed
+	lisences from LGPL to IDPL (with Mark's agreement)
+
+2008-05-07 18:07  alexpeshkoff
+
+	* firebird2/builds/install/misc/changeDBAPassword.sh.in (1.4):
+
+	Deprecated this unneeeded any more script
+
+2008-05-07 18:05  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.7):
+
+	Fixed problem matching expressions of type x{n}
+
+2008-05-07 17:39  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.6):
+
+	Make easier to debug the recursive version of SIMILAR TO
+
+2008-05-07 17:20  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.5):
+
+	Fixed problem of regular expression branches (separated by vertical
+	bar) being not matched correctly
+
+2008-05-07 14:20  alexpeshkoff
+
+	* firebird2/: configure.in (1.287), src/jrd/os/posix/unix.cpp
+	(1.93):
+
+	Fixed CORE-1887: New created databases have wrong access rights
+
+2008-05-07 13:43  alexpeshkoff
+
+	* firebird2/src/jrd/tra.h (1.84):
+
+	fixed gcc warning
+
+2008-05-07 13:00  alexpeshkoff
+
+	* firebird2/src/alice/alice.cpp (1.105):
+
+	Fixed printing of help text
+
+2008-05-07 12:39  dimitr
+
+	* firebird2/src/jrd/: ini.epp (1.100), ini_proto.h (1.13), jrd.cpp
+	(1.458):
+
+	Cleanup of the disabled/unused code.
+
+2008-05-07 07:33  dimitr
+
+	* firebird2/src/burp/: burp.h (1.91), restore.epp (1.141):
+
+	Misc.
+
+2008-05-07 07:23  dimitr
+
+	* firebird2/src/burp/restore.epp (1.140):
+
+	1) Turn on FW on all platforms by default.  2) Cleanup/misc.
+
+2008-05-07 07:16  dimitr
+
+	* firebird2/src/jrd/: common.h (1.173), jrd.cpp (1.457), nbak.cpp
+	(1.81), pag.cpp (1.181), pag_proto.h (1.20), sdw.cpp (1.78),
+	os/pio_proto.h (1.30), os/posix/unix.cpp (1.92), os/win32/winnt.cpp
+	(1.70):
+
+	1) Turn on FW on all platforms by default.  2) Cleanup/misc.
+
 2008-05-06 17:27  asfernandes
 
 	* firebird2/src/jrd/SimilarToMatcher.h (1.4):
