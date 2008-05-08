@@ -65,7 +65,7 @@
 
 #= Main PreInstall =========================================================
 
-# It's good ide not to have running firebird/interbase instances
+# It's good idea not to have running firebird/interbase instances
 checkIfServerRunning
 
 # Archive any files we find

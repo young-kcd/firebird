@@ -27,7 +27,7 @@
 #  Contributor(s): Chris Knight <chris@e-easy.com.au>
 # 
 #
-#  $Id: Makefile.in,v 1.1 2004-05-20 23:04:23 skidder Exp $
+#  $Id: Makefile.in,v 1.2 2008-05-08 07:29:40 alexpeshkoff Exp $
 #
 ROOT=..
 
@@ -46,7 +46,6 @@ FirebirdInstallPrefix=@prefix@
 FIREBIRD=$(FirebirdInstallPrefix)
 
 export -n FIREBIRD
-export -n INTERBASE
 
 .PHONY: install
 

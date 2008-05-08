@@ -22,7 +22,7 @@
 #		Alex Peshkoff
 #
 
-# A routine to change the user that runs interbase Firebird
+# A routine to change the user that runs Firebird
 
 RunUser=firebird
 RunGroup=firebird

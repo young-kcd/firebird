@@ -38,7 +38,6 @@ FirebirdInstallPrefix=@prefix@
 FIREBIRD=$(FirebirdInstallPrefix)
 
 export -n FIREBIRD
-export -n INTERBASE
 
 .PHONY: install dist packages tarfile rpmfile 
 .PHONY: buildTarDir buildImageDir buildRoot buildDebugInfo

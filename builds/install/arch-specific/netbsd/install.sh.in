@@ -294,9 +294,9 @@ chmod ug=rw,o= help/*.fdb || exit
 #
 if ! grep ^gds_db /etc/services
 then
-echo Adding InterBase Database Remote Protocol to /etc/services
+echo Adding Firebird Database Remote Protocol to /etc/services
 cat >>/etc/services <<EOF
-gds_db		3050/tcp  #InterBase Database Remote Protocol
+gds_db		3050/tcp  #Firebird Database Remote Protocol
 EOF
 fi
 
