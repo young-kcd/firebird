@@ -336,7 +336,7 @@ bool isGlobalKernelPrefix()
 			// which always allow creating global handles
 			CloseHandle(hToken);
 			return true;
-			}
+		}
 
 		BOOL checkResult;
 		if (pfnPrivilegeCheck(hToken, &ps, &checkResult) == 0) {
