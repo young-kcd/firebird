@@ -228,7 +228,7 @@ class Jrd::BtrPageGCLock : public Lock
 	SLONG unused;
 
 public:
-	BtrPageGCLock(thread_db* tdbb)
+	explicit BtrPageGCLock(thread_db* tdbb)
 	{
 		Database* dbb = tdbb->getDatabase();
 		lck_parent = dbb->dbb_lock;
