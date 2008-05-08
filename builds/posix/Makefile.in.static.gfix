@@ -62,7 +62,7 @@ Dependencies = $(AllObjects:.o=.d)
 gfix_static : $(GFIX_STATIC) $(LIBFBSTATIC_A)
 
 $(GFIX_STATIC):	$(AllObjects) $(LIBFBSTATIC_A)
-	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ $(LINK_LIBS) $(ICU_LIBS)
+	$(STATICEXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) $(ICU_LIBS)
 
 
 include $(ROOT)/gen/make.shared.targets
