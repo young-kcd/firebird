@@ -154,7 +154,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 
 	while (!(blob->blb_flags & BLB_eof))
 	{
-		ULONG len = BLB_get_data(tdbb, blob,
+		const ULONG len = BLB_get_data(tdbb, blob,
 			buffer.getBuffer(buffer.getCapacity()) + pos, buffer.getCapacity() - pos, false);
 		buffer.resize(pos + len);
 
@@ -177,7 +177,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 }
 
 
-void BLB_close(thread_db* tdbb, class blb* blob)
+void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 {
 /**************************************
  *
@@ -218,8 +218,7 @@ void BLB_close(thread_db* tdbb, class blb* blob)
 			jrd_tra* transaction = blob->blb_transaction;
 			TempSpace* tempSpace = transaction->getTempSpace();
 
-			blob->blb_temp_offset = tempSpace->allocateSpace(
-				blob->blb_temp_size);
+			blob->blb_temp_offset = tempSpace->allocateSpace(blob->blb_temp_size);
 			tempSpace->write(blob->blb_temp_offset,
 				blob->getBuffer(), blob->blb_temp_size);
 		}
@@ -297,8 +296,8 @@ blb* BLB_create2(thread_db* tdbb,
 		blob->blb_pg_space_id = DB_PAGE_SPACE;
 	}
 
-	blob->blb_source_interp = from_charset;
-	blob->blb_target_interp = to_charset;
+	//blob->blb_source_interp = from_charset;
+	//blob->blb_target_interp = to_charset;
 	blob->blb_sub_type = to;
 
 	bool filter_required = false;
@@ -660,7 +659,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 			blob->blb_flags |= BLB_eof;
 			return 0;
 		}
-		USHORT l = dbb->dbb_page_size - BLP_SIZE;
+		const USHORT l = dbb->dbb_page_size - BLP_SIZE;
 		blob->blb_sequence = blob->blb_seek / l;
 		seek = (USHORT)(blob->blb_seek % l);	// safe cast
 		blob->blb_flags &= ~BLB_seek;
@@ -1007,7 +1006,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (*source == *destination)
 		return;
 
-	bool needFilter =
+	const bool needFilter =
 		(from_desc->dsc_sub_type != isc_blob_untyped &&
 		 to_desc->dsc_sub_type != isc_blob_untyped &&
 		 (from_desc->dsc_sub_type != to_desc->dsc_sub_type ||
@@ -1390,8 +1389,8 @@ blb* BLB_open2(thread_db* tdbb,
 		bpb_length = new_bpb.getCount();
 	}
 
-	blob->blb_target_interp = to_charset;
-	blob->blb_source_interp = from_charset;
+	//blob->blb_target_interp = to_charset;
+	//blob->blb_source_interp = from_charset;
 
 	BlobFilter* filter = NULL;
 	bool filter_required = false;

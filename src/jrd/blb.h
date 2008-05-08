@@ -151,7 +151,7 @@ public:
 	Attachment*	blb_attachment;	/* database attachment */
 	jrd_rel*	blb_relation;	/* Relation, if known */
 	jrd_tra*	blb_transaction;	/* Parent transaction block */
-	blb*		blb_next;		/* Next blob in transaction */
+	//blb*		blb_next;		/* Next blob in transaction */
 	UCHAR*		blb_segment;	/* Next segment to be addressed */
 	BlobControl*	blb_filter;	/* Blob filter control block, if any */
 	bid			blb_blob_id;	/* Id of materialized blob */
@@ -164,8 +164,8 @@ public:
 	USHORT blb_space_remaining;	/* Data space left */
 	USHORT blb_max_pages;		/* Max pages in vector */
 	USHORT blb_fragment_size;	/* Residual fragment size */
-	USHORT blb_source_interp;	/* source interp (for writing) */
-	USHORT blb_target_interp;	/* destination interp (for reading) */
+	//USHORT blb_source_interp;	/* source interp (for writing) */
+	//USHORT blb_target_interp;	/* destination interp (for reading) */
 	SSHORT blb_sub_type;		/* Blob's declared sub-type */
 	UCHAR blb_charset;			// Blob's charset
 	USHORT blb_pg_space_id;		// page space
