@@ -29,4 +29,4 @@
 GENRB_ALIAS_SOURCE =
 
 # Please try to keep this list in alphabetical order
-GENRB_SOURCE =
+GENRB_SOURCE = pt_BR.txt
