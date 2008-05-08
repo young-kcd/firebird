@@ -222,7 +222,7 @@ static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temp
 class Jrd::BtrPageGCLock : public Lock
 {
 public:
-	BtrPageGCLock(thread_db* tdbb)
+	explicit BtrPageGCLock(thread_db* tdbb)
 	{
 		Database* dbb = tdbb->tdbb_database;
 		lck_parent = dbb->dbb_lock;
