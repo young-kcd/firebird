@@ -3982,7 +3982,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	tdbb->setDatabase(dbb);
 	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
-	attachment->att_mutex.enter();
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 
@@ -4146,7 +4145,6 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	tdbb->setDatabase(dbb);
 	Attachment* const attachment = Attachment::create(dbb);
 	tdbb->setAttachment(attachment);
-	attachment->att_mutex.enter();
 	attachment->att_filename = dbb->dbb_filename;
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_bufferpool);
 

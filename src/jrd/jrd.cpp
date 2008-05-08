@@ -807,7 +807,6 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	attachment->att_remote_address = options.dpb_remote_address;
 	attachment->att_remote_pid = options.dpb_remote_pid;
 	attachment->att_remote_process = options.dpb_remote_process;
-	attachment->att_mutex.enter();
 	attachment->att_next = dbb->dbb_attachments;
 
 	dbb->dbb_attachments = attachment;
@@ -1968,6 +1967,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	databases_mutex->leave();
 
 	*handle = attachment;
+	attachment->att_mutex.leave();
 
 	}	// try
 	catch (const DelayFailedLogin& ex)
@@ -4947,6 +4947,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_remote_process(*pool),
 	att_dsql_cache(*pool)
 {
+	att_mutex.enter();
 }
 
 

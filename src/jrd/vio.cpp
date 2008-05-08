@@ -3897,7 +3897,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		Attachment* const attachment = Attachment::create(dbb);
 		tdbb->setAttachment(attachment);
-		attachment->att_mutex.enter();
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags = ATT_garbage_collector;
 
