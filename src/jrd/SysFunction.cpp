@@ -917,7 +917,7 @@ static dsc* evlStdMath(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	double v = MOV_get_double(value);
+	const double v = MOV_get_double(value);
 
 	impure->vlu_misc.vlu_double = ((StdMathFunc) function->misc)(v);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -983,7 +983,7 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	SLONG code = MOV_get_long(value, 0);
+	const SLONG code = MOV_get_long(value, 0);
 	if (!(code >= 0 && code <= 255))
 		status_exception::raise(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
 
@@ -1151,8 +1151,8 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
 					scale *= 10;
 
-				SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
-				SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
+				const SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				const SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
 
 				impure->vlu_misc.vlu_int64 = v1 / scale;
 
@@ -1197,7 +1197,7 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 	USHORT ttype;
 	UCHAR* data;
-	USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
 
 	// validate the UUID
 	if (len != 36)
@@ -1653,8 +1653,8 @@ static dsc* evlFloor(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 				for (int i = -impure->vlu_desc.dsc_scale; i > 0; --i)
 					scale *= 10;
 
-				SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
-				SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
+				const SINT64 v1 = MOV_get_int64(&impure->vlu_desc, impure->vlu_desc.dsc_scale);
+				const SINT64 v2 = MOV_get_int64(&impure->vlu_desc, 0) * scale;
 
 				impure->vlu_misc.vlu_int64 = v1 / scale;
 
@@ -1724,7 +1724,7 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			address = buffer;
-			SLONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
+			const SLONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
 
 			for (const UCHAR* end = address + length; address < end; ++address)
 			{
@@ -1796,7 +1796,7 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	double v = MOV_get_double(value);
+	const double v = MOV_get_double(value);
 
 	if (v <= 0)
 		status_exception::raise(isc_expression_eval_err, 0);
@@ -1888,12 +1888,12 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	EVL_make_value(tdbb, value1, impure);
 	impure->vlu_desc.dsc_scale = 0;
 
-	SINT64 divisor = MOV_get_int64(value2, 0);
+	const SINT64 divisor = MOV_get_int64(value2, 0);
 
 	if (divisor == 0)
 		status_exception::raise(isc_arith_except, isc_arg_gds, isc_exception_integer_divide_by_zero, 0);
 
-	SINT64 result = MOV_get_int64(value1, 0) % divisor;
+	const SINT64 result = MOV_get_int64(value1, 0) % divisor;
 
 	switch (impure->vlu_desc.dsc_dtype)
 	{
@@ -1958,7 +1958,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	if (from <= 0)
 		status_exception::raise(isc_expression_eval_err, 0);
 
-	USHORT resultTextType = DataTypeUtil::getResultTextType(value, placing);
+	const USHORT resultTextType = DataTypeUtil::getResultTextType(value, placing);
 	CharSet* cs = INTL_charset_lookup(tdbb, resultTextType);
 
 	MoveBuffer temp1;
@@ -2104,7 +2104,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	const dsc* padLenDsc = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if padLenDsc is NULL
 		return NULL;
-	SLONG padLenArg = MOV_get_long(padLenDsc, 0);
+	const SLONG padLenArg = MOV_get_long(padLenDsc, 0);
 	if (padLenArg < 0)
 		status_exception::raise(isc_expression_eval_err, 0);
 	ULONG padLen = static_cast<ULONG>(padLenArg);
@@ -2117,7 +2117,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			return NULL;
 	}
 
-	USHORT ttype = value1->getTextType();
+	const USHORT ttype = value1->getTextType();
 	CharSet* cs = INTL_charset_lookup(tdbb, ttype);
 
 	MoveBuffer buffer1;
@@ -2286,10 +2286,10 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
 
 	// we'll use the collation from the second string
-	USHORT ttype = value2->getTextType();
+	const USHORT ttype = value2->getTextType();
 	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* cs = tt->getCharSet();
-	UCHAR canonicalWidth = tt->getCanonicalWidth();
+	const UCHAR canonicalWidth = tt->getCanonicalWidth();
 
 	MoveBuffer value1Buffer;
 	UCHAR* value1Address;
@@ -2348,7 +2348,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	}
 
 	// search if value1 is inside value2
-	const UCHAR* end = value2Canonical.begin() + value2CanonicalLen;
+	const UCHAR* const end = value2Canonical.begin() + value2CanonicalLen;
 
 	for (const UCHAR* p = value2Canonical.begin() + (start - 1) * canonicalWidth;
 		 p + value1CanonicalLen <= end;
@@ -2384,8 +2384,8 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
-	double v1 = MOV_get_double(value1);
-	double v2 = MOV_get_double(value2);
+	const double v1 = MOV_get_double(value1);
+	const double v2 = MOV_get_double(value2);
 
 	if ((v1 == 0 && v2 < 0) ||
 		(v1 < 0 && !(value2->isExact() && value2->dsc_scale == 0)))
@@ -2434,10 +2434,10 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			firstBlob = values[i];
 	}
 
-	USHORT ttype = values[0]->getTextType();
+	const USHORT ttype = values[0]->getTextType();
 	TextType* tt = INTL_texttype_lookup(tdbb, ttype);
 	CharSet* cs = tt->getCharSet();
-	UCHAR canonicalWidth = tt->getCanonicalWidth();
+	const UCHAR canonicalWidth = tt->getCanonicalWidth();
 
 	MoveBuffer buffers[3];
 	UCHAR* addresses[3];
@@ -2478,7 +2478,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		const unsigned int findLen = canonicals[1].getCount() / canonicalWidth;
 		const unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
 
-		USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
+		const USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
 			MAX(searchedLen, searchedLen +
 					(searchedLen / findLen) * (replacementLen - findLen)));
 
@@ -2496,7 +2496,7 @@ static dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	// search 'find' in 'searched'
 	bool finished = false;
-	const UCHAR* end = canonicals[0].begin() + canonicals[0].getCount();
+	const UCHAR* const end = canonicals[0].begin() + canonicals[0].getCount();
 	const UCHAR* srcPos = addresses[0];
 	UCHAR* dstPos = (newBlob ? NULL : impure->vlu_desc.dsc_address);
 	MoveBuffer buffer;
@@ -2587,13 +2587,13 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		Firebird::HalfStaticArray<UCHAR, BUFFER_LARGE> buffer2;
 
 		UCHAR* p = buffer.getBuffer(blob->blb_length);
-		SLONG len = BLB_get_data(tdbb, blob, p, blob->blb_length, true);
+		const SLONG len = BLB_get_data(tdbb, blob, p, blob->blb_length, true);
 
 		if (cs->isMultiByte() || cs->minBytesPerChar() > 1)
 		{
 			const UCHAR* p1 = p;
 			UCHAR* p2 = buffer2.getBuffer(len) + len;
-			const UCHAR* end = p1 + len;
+			const UCHAR* const end = p1 + len;
 			ULONG size = 0;
 
 			while (p2 > buffer2.begin())
@@ -2609,7 +2609,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		{
 			for (UCHAR* p2 = p + len - 1; p2 >= p; p++, p2--)
 			{
-				UCHAR c = *p;
+				const UCHAR c = *p;
 				*p = *p2;
 				*p2 = c;
 			}
@@ -2628,7 +2628,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	{
 		MoveBuffer temp;
 		UCHAR* p;
-		int len = MOV_make_string2(tdbb, value, value->getTextType(), &p, temp);
+		const int len = MOV_make_string2(tdbb, value, value->getTextType(), &p, temp);
 
 		dsc desc;
 		desc.makeText(len, value->getTextType());
@@ -2639,7 +2639,7 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		if (cs->isMultiByte() || cs->minBytesPerChar() > 1)
 		{
 			const UCHAR* p1 = p;
-			const UCHAR* end = p1 + len;
+			const UCHAR* const end = p1 + len;
 			ULONG size = 0;
 
 			while (p2 > impure->vlu_desc.dsc_address)
@@ -2892,7 +2892,7 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 	USHORT ttype;
 	UCHAR* data;
-	USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
+	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
 
 	if (len != sizeof(FB_GUID))
 		status_exception::raise(isc_expression_eval_err, 0);
