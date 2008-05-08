@@ -86,7 +86,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *
  * Functional description
  *      The main for fbguard. This process is used to start
- *      the stanalone server and keep it running after an abnormal termination.
+ *      the standalone server and keep it running after an abnormal termination.
  *
  **************************************/
 	USHORT option = FOREVER;	/* holds FOREVER or ONETIME  or IGNORE */
