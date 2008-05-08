@@ -2,6 +2,23 @@
   * v2.1.1
   ***************************
 
+    * Bugfix CORE-1890
+        Database monitoring process may hang under high load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1887
+        Newly created databases have wrong access rights
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1885
+        Server crashes after CREATE COLLATION statement on Posix 64-bit
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1884
         Random crashes using stored procedures with expressions as default values of input parameters
       Contributor(s):
@@ -48,6 +65,16 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1845
+        Some standard calls show server installation directory to regular users
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1844
+        Valgrind often reports "Conditional jump or move depends on uninitialised value(s)" in check_status_vector()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1841
         If some VIEW used derived tables and long table names\aliases,
         it is possible to overflow RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME
@@ -90,6 +117,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1810
+        Issue with usernames containing the '.' character
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-1807
         fbserver is assigned to a non-canonical port after abnormal termination
       Contributor(s):
@@ -116,7 +148,7 @@
         Vlad Horsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1731
-        SuperServer can't shutdown immediately after shutdown request after failed login attempt
+        Sometimes engine may "hang" using 100% CPU load and no IO activity for the few minutes
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
