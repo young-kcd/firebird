@@ -446,9 +446,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	{
 		dumpData(tdbb, true);
 
-		// Release our own lock and mark dbb as requesting a new one
+		// Release our own lock
 		LCK_release(tdbb, dbb->dbb_monitor_lock);
-		dbb->dbb_ast_flags |= DBB_monitor_off;
 
 		// Signal other processes to dump their data
 		Lock temp_lock, *lock = &temp_lock;
@@ -461,6 +460,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 		if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 			LCK_release(tdbb, lock);
+
+		// Mark dbb as requesting a new lock
+		dbb->dbb_ast_flags |= DBB_monitor_off;
 
 		// Read the shared memory
 		DumpGuard guard(dump);
