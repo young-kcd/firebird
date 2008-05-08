@@ -34,7 +34,7 @@
         Paul Beach (pbeach at ibphoenix.com)
 
     * Bugfix CORE-1859
-        Value of CURRENT_USER may be not in upper case when using Unix OS authentication
+        Arithmetic overflow or division by zero has occurred in MAX function
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
