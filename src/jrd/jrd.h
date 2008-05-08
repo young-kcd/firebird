@@ -279,7 +279,7 @@ public:
 		att_counts[0] = 0;
 	}*/
 
-	MemoryPool* att_pool;					// Memory pool
+	MemoryPool* const att_pool;					// Memory pool
 	Firebird::MemoryStats att_memory_stats;
 
 	Database*	att_database;				// Parent database block
