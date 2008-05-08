@@ -220,7 +220,7 @@ class Jrd::BtrPageGCLock : public Lock
 	SLONG unused;
 
 public:
-	BtrPageGCLock(thread_db* tdbb)
+	explicit BtrPageGCLock(thread_db* tdbb)
 	{
 		Database* dbb = tdbb->getDatabase();
 		lck_parent = dbb->dbb_lock;
@@ -6002,7 +6002,7 @@ static SLONG insert_node(thread_db* tdbb,
 	}
 
 	// format the new page to look like the old page
-	SLONG right_sibling = bucket->btr_sibling;
+	const SLONG right_sibling = bucket->btr_sibling;
 	split->btr_header.pag_type = bucket->btr_header.pag_type;
 	split->btr_relation = bucket->btr_relation;
 	split->btr_id = bucket->btr_id;

@@ -888,10 +888,11 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 #ifdef WIN_NT
-		if ((flag & SRVR_debug) || !fork(s, flag)) {
+		if ((flag & SRVR_debug) || !fork(s, flag))
 #else
-		if ((flag & SRVR_debug) || !fork()) {
+		if ((flag & SRVR_debug) || !fork())
 #endif
+		{
 			SOCLOSE((SOCKET) port->port_handle);
 			port->port_handle = (HANDLE) s;
 			port->port_server_flags |= SRVR_server;
