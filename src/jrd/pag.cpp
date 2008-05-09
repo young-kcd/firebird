@@ -1770,7 +1770,6 @@ void PAG_set_force_write(Database* dbb, bool flag)
  *
  * Functional description
  *	Turn on/off force write.
- *      The value 2 for flag means set to default.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
