@@ -1,3 +1,22 @@
+2008-05-09 19:35  asfernandes
+
+	* firebird2/src/isql/show.epp (1.130):
+
+	Fixed CORE-1891 - SHOW VIEW shows non-sense information for view
+	fields with expressions
+
+2008-05-09 17:27  asfernandes
+
+	* firebird2/doc/sql.extensions/README.builtin_functions.txt (1.19):
+
+	Documentation for CHAR_TO_UUID and UUID_TO_CHAR
+
+2008-05-09 12:16  dimitr
+
+	* firebird2/src/jrd/pag.cpp (1.182):
+
+	Misc.
+
 2008-05-08 16:22  robocop
 
 	* firebird2/src/jrd/: blb.cpp (1.169), blb.h (1.32):
