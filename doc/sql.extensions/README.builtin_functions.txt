@@ -234,6 +234,24 @@ Example:
     2) select ceil(2.1), ceil(-2.1) from rdb$database;  -- returns 3, -2
 
 
+------------
+CHAR_TO_UUID
+------------
+
+Function:
+    Converts the CHAR(32) ASCII representation of an UUID
+    (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to the CHAR(16) OCTETS
+    representation (optimized for storage).
+
+Format:
+    CHAR_TO_UUID( <string> )
+
+Example:
+    select char_to_uuid('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
+
+See also: GEN_UUID and UUID_TO_CHAR
+
+
 ---
 COS
 ---
@@ -389,6 +407,8 @@ Format:
 
 Example:
     insert into records (id) value (gen_uuid());
+
+See also: CHAR_TO_UUID and UUID_TO_CHAR
 
 
 ----
@@ -800,3 +820,20 @@ Example:
     1) select trunc(x) from y;
     2) select trunc(-2.8), trunc(2.8) from rdb$database;  -- returns -2, 2
     3) select trunc(987.65, 1), trunc(987.65, -1) from rdb$database;  -- returns 987.60, 980.00
+
+
+------------
+UUID_TO_CHAR
+------------
+
+Function:
+    Converts a CHAR(16) OCTETS UUID (that's returned by GEN_UUID) to the
+    CHAR(32) ASCII representation (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX).
+
+Format:
+    UUID_TO_CHAR( <string> )
+
+Example:
+    select uuid_to_char(gen_uuid()) from rdb$database;
+
+See also: GEN_UUID and CHAR_TO_UUID
