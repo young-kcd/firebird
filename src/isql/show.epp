@@ -4098,7 +4098,7 @@ static processing_state show_table(
 
 		// If a computed field, show the source and exit
 		// Note that view columns which are computed are dealt with later.
-		if (!FLD.RDB$COMPUTED_BLR.NULL) {
+		if (!FLD.RDB$COMPUTED_BLR.NULL && !isView) {
 			isqlGlob.printf("Computed by: ");
 			if (!FLD.RDB$COMPUTED_SOURCE.NULL)
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &FLD.RDB$COMPUTED_SOURCE);
@@ -4106,10 +4106,10 @@ static processing_state show_table(
 			continue;
 		}
 
-
 		// Look through types array
 
 		for (int i = 0; Column_types[i].type; i++)
+		{
 			if (FLD.RDB$FIELD_TYPE == Column_types[i].type) {
 				bool precision_known = false;
 
@@ -4164,6 +4164,7 @@ static processing_state show_table(
 				isqlGlob.prints(Print_buffer);
 				break;
 			}
+		}
 
 		if ((FLD.RDB$FIELD_TYPE == T_CHAR) || (FLD.RDB$FIELD_TYPE == VARCHAR)) {
 			isqlGlob.printf("(%d)", ISQL_get_field_length(FLD.RDB$FIELD_NAME));
