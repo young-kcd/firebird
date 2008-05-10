@@ -438,12 +438,6 @@
 				RelativePath="..\..\..\src\jrd\acl.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\aif_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ail_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\align.h">
 			</File>
 			<File
@@ -451,9 +445,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\all_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ansi.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\blb.h">
@@ -498,16 +489,13 @@
 				RelativePath="..\..\..\src\jrd\cch_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\cdefs.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\codes.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\codetext.h">
+				RelativePath="..\..\..\src\include\gen\codetext.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\common.h">
