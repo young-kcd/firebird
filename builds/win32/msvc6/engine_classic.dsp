@@ -645,7 +645,7 @@ SOURCE=..\..\..\src\jrd\cmp_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\codetext.h
+SOURCE=..\..\..\src\include\gen\codetext.h
 # End Source File
 # Begin Source File
 
