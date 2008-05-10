@@ -1,3 +1,29 @@
+2008-05-10 12:26  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.32.2.5),
+	msvc6/engine_classic.dsp (1.28.2.5), msvc6/engine_embed.dsp
+	(1.9.2.4), msvc7/engine.vcproj (1.21.2.6),
+	msvc7/engine_classic.vcproj (1.20.2.6), msvc7/engine_embed.vcproj
+	(1.8.2.6):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).  Fix reference to header files that existed in another
+	location in FB1.
+
+2008-05-10 11:02  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.32.2.4),
+	msvc6/engine_classic.dsp (1.28.2.4), msvc6/engine_embed.dsp
+	(1.9.2.3), msvc7/engine.vcproj (1.21.2.5),
+	msvc7/engine_classic.vcproj (1.20.2.5), msvc7/engine_embed.vcproj
+	(1.8.2.5):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).  Fix reference to header file that existed in another
+	location in FB1.
+
 2008-04-27 06:44  robocop
 
 	* firebird2/src/jrd/ibinitdll.cpp (1.6.2.7):
