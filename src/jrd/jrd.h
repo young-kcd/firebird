@@ -468,9 +468,8 @@ public:
 		return FB_NEW(p) vec_base<T, TYPE>(p, base);
 	}
 	*/
-		
-	// CVC: This should be size_t instead of ULONG for maximum portability.
-	ULONG count() const { return v.getCount(); }
+
+	size_t count() const { return v.getCount(); }
 	T& operator[](size_t index) { return v[index]; }
 	const T& operator[](size_t index) const { return v[index]; }
 
@@ -479,10 +478,9 @@ public:
 
 	const_iterator begin() const { return v.begin(); }
 	const_iterator end() const { return v.end(); }
-	
+
 	void clear() { v.clear(); }
-	//void prepend(int n) { v.insert(v.begin(), n); }
-	
+
 //	T* memPtr() { return &*(v.begin()); }
 	T* memPtr() { return &v[0]; }
 

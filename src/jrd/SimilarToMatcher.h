@@ -350,7 +350,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 template <typename StrConverter, typename CharType>
 bool SimilarToMatcher<StrConverter, CharType>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
 {
-	ULONG pos = buffer.getCount();
+	const size_t pos = buffer.getCount();
 	memcpy(buffer.getBuffer(pos + dataLen) + pos, data, dataLen);
 	return true;
 }

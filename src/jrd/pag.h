@@ -126,7 +126,7 @@ public:
 
 	~PageManager()
 	{
-		for (int i = pageSpaces.getCount() - 1; i >= 0; --i)
+		for (size_t i = pageSpaces.getCount() - 1; i >= 0; --i)
 		{
 			PageSpace* pageSpace = pageSpaces[i];
 			pageSpaces.remove(i);
