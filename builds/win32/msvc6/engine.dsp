@@ -744,10 +744,6 @@ SOURCE=..\..\..\src\jrd\dmp_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\doserr.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\dpm_proto.h
 # End Source File
 # Begin Source File
@@ -1088,10 +1084,6 @@ SOURCE=..\..\..\src\jrd\mov_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\mpexl.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\msg.h
 # End Source File
 # Begin Source File
@@ -1113,10 +1105,6 @@ SOURCE=..\..\..\src\jrd\names.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\nav_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\nlm_thd.h
 # End Source File
 # Begin Source File
 
@@ -1176,15 +1164,7 @@ SOURCE=..\..\..\src\jrd\os\pio_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\pragma.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\prv_m_bypass.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\pwd_proto.h
 # End Source File
 # Begin Source File
 
@@ -1276,10 +1256,6 @@ SOURCE=..\..\..\src\jrd\sdw_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\seg_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\sha.h
 # End Source File
 # Begin Source File
@@ -1300,7 +1276,7 @@ SOURCE=..\..\..\src\jrd\sort_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\sql_code.h
+SOURCE=..\..\..\src\include\gen\sql_code.h
 # End Source File
 # Begin Source File
 
@@ -1337,10 +1313,6 @@ SOURCE=..\..\..\src\jrd\SysFunction.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\TempSpace.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\termtype.h
 # End Source File
 # Begin Source File
 
