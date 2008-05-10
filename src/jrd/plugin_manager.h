@@ -155,16 +155,16 @@ public:
 				module->release();
 		}
 		const Plugin& operator=(const Plugin&);
-		bool operator ==(const Plugin &other) const
-			{ return module == other.module; }
-		bool operator !=(const Plugin &other) const
-			{ return module != other.module; }
+		bool operator ==(const Plugin &other) const { return module == other.module; }
+		bool operator !=(const Plugin &other) const { return module != other.module; }
 		/// Looks in the Plugin's symbol table for a symbol with the given name.
 		///  If the symbol exists a pointer to that symbol's location in the
 		/// current address space is returned.  Otherwise NULL is returned.
 		void *lookupSymbol(const Firebird::string &sym)
-			{ return module ? module->lookupSymbol(sym) : 0; }
-		operator bool() { return module != 0; }
+		{
+			return module ? module->lookupSymbol(sym) : 0;
+		}
+		operator bool() const { return module != 0; }
 		
 	private:
 		friend class iterator;
@@ -191,15 +191,15 @@ public:
 				curr = curr->next;
 			return *this;
 		}
-		Plugin operator*()
-			{ return Plugin(curr); }
-		bool operator==(const iterator& cmp) const
-			{ return curr == cmp.curr; }
-		bool operator!=(const iterator& cmp) const
-			{ return curr != cmp.curr; }
+		Plugin operator*() { return Plugin(curr); }
+		bool operator==(const iterator& cmp) const { return curr == cmp.curr; }
+		bool operator!=(const iterator& cmp) const { return curr != cmp.curr; }
 		operator bool() const { return curr != 0; }
 		const iterator &operator=(const iterator& other)
-			{ curr = other.curr; return *this; }
+		{
+			curr = other.curr;
+			return *this;
+		}
 		iterator(const iterator& other) : curr(other.curr) {}
 			
 	private:

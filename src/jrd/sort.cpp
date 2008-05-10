@@ -2838,11 +2838,13 @@ namespace
 	class RunSort
 	{
 	public:
-		RunSort(run_control* irun) : run(irun) {}
+		explicit RunSort(run_control* irun) : run(irun) {}
 		RunSort() : run(NULL) {}
 
-		static const FB_UINT64 generate(const void*, const RunSort& item) 
-		{ return item.run->run_seek; }
+		static const FB_UINT64 generate(const void*, const RunSort& item)
+		{
+			return item.run->run_seek;
+		}
 
 		run_control* run;
 	};

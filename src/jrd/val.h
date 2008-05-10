@@ -90,7 +90,8 @@ enum FUN_T {
 
 /* Function definition block */
 
-struct fun_repeat {
+struct fun_repeat
+{
 	DSC fun_desc;			/* Datatype info */
 	FUN_T fun_mechanism;	/* Passing mechanism */
 };
@@ -129,10 +130,12 @@ public:
 
 /* Scalar array descriptor, "external side" seen by UDF's */
 
-struct scalar_array_desc {
+struct scalar_array_desc
+{
 	DSC sad_desc;
 	SLONG sad_dimensions;
-	struct sad_repeat {
+	struct sad_repeat
+	{
 		SLONG sad_lower;
 		SLONG sad_upper;
 	} sad_rpt[1];
@@ -147,7 +150,7 @@ struct scalar_array_desc {
 
 class ArrayField : public pool_alloc_rpt<Ods::InternalArrayDesc::iad_repeat, type_arr>
 {
-    public:
+public:
 	UCHAR*				arr_data;			/* Data block, if allocated */
 	blb*				arr_blob;			/* Blob for data access */
 	jrd_tra*			arr_transaction;	/* Parent transaction block */

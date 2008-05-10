@@ -1834,7 +1834,7 @@ dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type t
 	variable->var_variable_number = local_number;
 	variable->var_field = field;
 	strcpy(variable->var_name, name);
-	variable->var_flags = 0;
+	//variable->var_flags = 0;
 	variable->var_type = type;
 	MAKE_desc_from_field(&node->nod_desc, field);
 

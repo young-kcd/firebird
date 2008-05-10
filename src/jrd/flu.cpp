@@ -90,13 +90,15 @@ namespace {
 	// in one of it's directories
 
 	enum ModKind {MOD_PREFIX, MOD_SUFFIX};
-	struct Libfix {
+	struct Libfix
+	{
 		ModKind kind;
 		const char* txt;
 		bool permanent;
 	};
 
-	const Libfix libfixes[] = {
+	const Libfix libfixes[] =
+	{
 
 #ifdef WIN_NT
 // to avoid implicit .dll suffix
@@ -126,7 +128,8 @@ namespace {
 	class UdfDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString(void) const {
+		const Firebird::PathName getConfigString(void) const
+		{
 			return Firebird::PathName(Config::getUdfAccess());
 		}
 	public:

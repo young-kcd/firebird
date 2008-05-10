@@ -25,7 +25,8 @@
 #include "fb_types.h"
 
 namespace Firebird {
-class Syslog {
+class Syslog
+{
 public:
 	enum Severity {Warning, Error};
 	static void Record(Severity, const char*);

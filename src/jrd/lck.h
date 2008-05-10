@@ -93,7 +93,7 @@ public:
 		lck_tail[0] = 0;
 	}
 
-	int		lck_test_field;
+	const int		lck_test_field;
 	Lock*	lck_parent;
 	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
 							   bound to attachment */
@@ -113,8 +113,9 @@ public:
 	UCHAR		lck_physical;			/* Physical lock level */
 	SLONG		lck_data;				/* Data associated with a lock */
 	Firebird::Mutex lck_mutex;
-	enum lck_t lck_type;
-	union {
+	lck_t lck_type;
+	union
+	{
 		UCHAR lck_string[1];
 		SLONG lck_long;
 	} lck_key;

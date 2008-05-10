@@ -90,8 +90,8 @@ public:
 
 		if (cs->charset_fn_well_formed)
 			return cs->charset_fn_well_formed(cs, len, str, offendingPos);
-		else
-			return true;
+
+		return true;
 	}
 
 	CsConvert getConvToUnicode() const { return CsConvert(cs, NULL); }

@@ -60,7 +60,8 @@ class ConfigRoot : public Firebird::PermanentStorage
 	typedef Firebird::PathName string;
 
 private:
-	void GetRoot() {
+	void GetRoot()
+	{
 		const Firebird::PathName* clRoot = Config::getCommandLineRootDirectory();
 		if (clRoot) {
 			root_dir = *clRoot;
@@ -88,7 +89,8 @@ public:
 
 	virtual ~ConfigRoot() {}
 
-	const char* getInstallDirectory() {
+	const char* getInstallDirectory()
+	{
 		osConfigRoot();
 		return install_dir().c_str();
 	}
@@ -100,12 +102,14 @@ public:
 		initialized = true;
 	}
 
-	const char *getRootDirectory() const {
+	const char *getRootDirectory() const
+	{
 		return root_dir.c_str();
 	}
 
 protected:
-	const char *getConfigFilePath() const {
+	const char *getConfigFilePath() const
+	{
 		return config_file.c_str();
 	}
 	
@@ -114,7 +118,8 @@ private:
 	static Firebird::InitInstance<string> install_dir;
 	string root_dir, config_file;
 
-	void addSlash() {
+	void addSlash()
+	{
 		if (root_dir.rfind(PathUtils::dir_sep) != root_dir.length() - 1)
 		{
 			root_dir += PathUtils::dir_sep;

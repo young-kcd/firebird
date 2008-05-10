@@ -3589,7 +3589,7 @@ static void pass1_blob( dsql_req* request, dsql_nod* input)
 
 	dsql_blb* blob = FB_NEW(*tdbb->getDefaultPool()) dsql_blb;
 	request->req_blob = blob;
-	blob->blb_field = field;
+	//blob->blb_field = field;
 	blob->blb_open_in_msg = request->req_send;
 	blob->blb_open_out_msg = FB_NEW(*tdbb->getDefaultPool()) dsql_msg;
 	blob->blb_segment_msg = request->req_receive;

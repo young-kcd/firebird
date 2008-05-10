@@ -60,17 +60,19 @@ class thread_db;
 class Database;
 class jrd_file;
 
-class AllocItem {
+class AllocItem
+{
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
 	Record* rec_data;
-    static const ULONG& generate(const void *sender, const AllocItem& item) {
+    static const ULONG& generate(const void *sender, const AllocItem& item)
+	{
 		return item.db_page;
     }
-	AllocItem() {
-	}
-	AllocItem(ULONG db_pageL, ULONG diff_pageL) {
+	AllocItem() {}
+	AllocItem(ULONG db_pageL, ULONG diff_pageL)
+	{
 		this->db_page = db_pageL;
 		this->diff_page = diff_pageL;
 	}
@@ -175,7 +177,8 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  this lock is not taken. 
  */
 
-class BackupManager {
+class BackupManager
+{
 public:
 	class SharedDatabaseHolder
 	{
@@ -212,16 +215,19 @@ public:
 	void set_difference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
-	int get_state() const {
+	int get_state() const
+	{
 		return backup_state;
 	}
 	// Sets current backup state
-	void set_state(int new_state) {
+	void set_state(int new_state)
+	{
 		backup_state = new_state;
 	}
 
 	// Return current SCN for database
-	ULONG get_current_scn() const {
+	ULONG get_current_scn() const
+	{
 		return current_scn;
 	}
 	
@@ -260,16 +266,19 @@ public:
 	void change_dirty_page_owner(thread_db* tdbb, SLONG from_handle, SLONG to_handle);
 
 	// Returns difference owner handles for locks 
-	static SLONG database_lock_handle(thread_db* tdbb) {
+	static SLONG database_lock_handle(thread_db* tdbb)
+	{
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_database);
 	}
-	static SLONG attachment_lock_handle(thread_db* tdbb) {
+	static SLONG attachment_lock_handle(thread_db* tdbb)
+	{
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_attachment);
 	}
 
 	void shutdown(thread_db* tdbb);
 
-	bool database_flush_in_progress() const {
+	bool database_flush_in_progress() const
+	{
 //		NBAK_TRACE(("NBAK_state_blocking=%i", database_lock->flags & NBAK_state_blocking));
 		return database_lock->flags & NBAK_state_blocking;
 	}

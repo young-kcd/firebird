@@ -54,7 +54,8 @@ const int lowPriority = THREAD_PRIORITY_NORMAL;
 
 #endif // THREAD_PSCHED
 
-class ThreadPriorityScheduler {
+class ThreadPriorityScheduler
+{
 #ifdef THREAD_PSCHED
 
 private:
@@ -90,7 +91,8 @@ private:
 	static void doDetach();
 	// Add current instance to the chain
 	void attach();
-	~ThreadPriorityScheduler() {
+	~ThreadPriorityScheduler()
+	{
 		if (active)
 		{
 			CloseHandle(handle);

@@ -73,7 +73,8 @@ const ULONG MAX_PAGE_BUFFERS = 131072;
 #ifdef DIRTY_TREE
 /* AVL-balanced tree node */
 
-struct BalancedTreeNode {
+struct BalancedTreeNode
+{
 	BufferDesc* bdb_node;
 	SSHORT comp;
 };
@@ -198,7 +199,7 @@ const int BDB_blocking 			= 1;	/* a blocking ast was sent while page locked */
 
 class Precedence : public pool_alloc<type_pre>
 {
-    public:
+public:
 	BufferDesc*	pre_hi;
 	BufferDesc*	pre_low;
 	que				pre_lower;
@@ -247,7 +248,7 @@ enum LATCH
 
 class LatchWait : public pool_alloc<type_lwt>
 {
-    public:
+public:
 	thread_db*		lwt_tdbb;
 	LATCH			lwt_latch;		/* latch type requested */
 	que				lwt_waiters;	/* latch queue */
@@ -269,7 +270,7 @@ const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);	/* m
 #ifdef SUPERSERVER_V2
 class Prefetch : public pool_alloc<type_prf>
 {
-    public:
+public:
 	thread_db*	prf_tdbb;			/* thread database context */
 	SLONG		prf_start_page;		/* starting page of multipage prefetch */
 	USHORT		prf_max_prefetch;	/* maximum no. of pages to prefetch */

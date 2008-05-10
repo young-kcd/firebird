@@ -167,7 +167,7 @@ public:
 	dsql_rel*	rel_next;			//!< Next relation in database
 	dsql_sym*	rel_symbol;			//!< Hash symbol for relation
 	class dsql_fld*	rel_fields;		//!< Field block
-	dsql_rel*	rel_base_relation;	//!< base relation for an updatable view
+	//dsql_rel*	rel_base_relation;	//!< base relation for an updatable view
 	Firebird::MetaName rel_name;	//!< Name of relation
 	Firebird::MetaName rel_owner;	//!< Owner of relation
 	USHORT		rel_id;				//!< Relation id
@@ -240,11 +240,11 @@ public:
 	SLONG	fil_length;			//!< File length in pages
 	SLONG	fil_start;			//!< Starting page
 	dsql_str*	fil_name;			//!< File name
-	dsql_fil*	fil_next;			//!< next file
-	SSHORT	fil_shadow_number;	//!< shadow number if part of shadow
-	SSHORT	fil_manual;			//!< flag to indicate manual shadow
-	SSHORT	fil_partitions;		//!< number of log file partitions
-	USHORT	fil_flags;
+	//dsql_fil*	fil_next;			//!< next file
+	//SSHORT	fil_shadow_number;	//!< shadow number if part of shadow
+	//SSHORT	fil_manual;			//!< flag to indicate manual shadow
+	//SSHORT	fil_partitions;		//!< number of log file partitions
+	//USHORT	fil_flags;
 };
 
 //! Stored Procedure block
@@ -293,7 +293,7 @@ public:
 	SSHORT		udf_sub_type;
 	USHORT		udf_length;
 	SSHORT		udf_character_set_id;
-	USHORT		udf_character_length;
+	//USHORT		udf_character_length;
     USHORT      udf_flags;
 	Firebird::MetaName udf_name;
 	Firebird::Array<dsc> udf_arguments;
@@ -313,7 +313,7 @@ class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
 	dsql_fld*	var_field;		//!< Field on which variable is based
-	USHORT	var_flags;			// Reserved
+	//USHORT	var_flags;			// Reserved
 	//dsql_var_type	var_type;	// Too cumbersome to compile the right data type.
 	int		var_type;			// Input, output or local var.
 	USHORT	var_msg_number;		//!< Message number containing variable
@@ -340,7 +340,9 @@ public:
 	TEXT		intlsym_name[2];
 
 	static SSHORT generate(const void*, const dsql_intlsym* Item)
-	{ return Item->intlsym_charset_id; }
+	{
+		return Item->intlsym_charset_id;
+	}
 };
 
 // values used in intlsym_flags
@@ -451,7 +453,7 @@ public:
 	ULONG	req_base_offset;		//!< place to go back and stuff in blr length
 	USHORT	req_context_number;	//!< Next available context number
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
-	USHORT	req_message_number;	//!< Next available message number
+	//USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
 	DsqlStrStack	req_labels;			//!< Loop labels
 	USHORT	req_cursor_number;	//!< Cursor number
@@ -537,7 +539,8 @@ enum req_flags_vals {
 class dsql_blb : public pool_alloc<dsql_type_blb>
 {
 public:
-	dsql_nod*	blb_field;			//!< Related blob field
+	// blb_field is currently assigned in one place and never used
+	//dsql_nod*	blb_field;			//!< Related blob field
 	dsql_par*	blb_blob_id;		//!< Parameter to hold blob id
 	dsql_par*	blb_segment;		//!< Parameter for segments
 	dsql_nod*	blb_from;
@@ -549,11 +552,13 @@ public:
 };
 
 //! Transaction block
+/* UNUSED
 class dsql_tra : public pool_alloc<dsql_type_tra>
 {
 public:
 	dsql_tra* tra_next;		//!< Next open transaction
 };
+*/
 
 //! Implicit (NATURAL and USING) joins
 class ImplicitJoin : public pool_alloc<dsql_type_imp_join>
@@ -567,7 +572,7 @@ public:
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	dsql_ctx(MemoryPool &p)
+	explicit dsql_ctx(MemoryPool &p)
 		: ctx_childs_derived_table(p),
 	      ctx_imp_join(p)
 	{

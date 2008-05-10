@@ -51,7 +51,8 @@ typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>,
 class RelationGarbage
 {
 private:
-	class TranGarbage {
+	class TranGarbage
+	{
 	public:
 		SLONG tran;
 		PageBitmap *bm;
@@ -59,7 +60,9 @@ private:
 		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {}
 
 		static inline const SLONG generate(void const*, const TranGarbage& Item) 
-		{ return Item.tran; }
+		{
+			return Item.tran;
+		}
 	};
 
 	typedef	Firebird::SortedArray<
@@ -80,7 +83,9 @@ public:
 	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
 	
 	SLONG minTranID() const
-	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; }
+	{
+		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
+	}
 };
 
 #endif //GARBAGE_THREAD
@@ -129,7 +134,8 @@ friend class jrd_rel;
 // Primary dependencies from all foreign references to relation's
 // primary/unique keys 
 
-struct prim {
+struct prim
+{
 	vec<int>* prim_reference_ids;
 	vec<int>* prim_relations;
 	vec<int>* prim_indexes;
@@ -138,7 +144,8 @@ struct prim {
 
 // Foreign references to other relations' primary/unique keys 
 
-struct frgn {
+struct frgn
+{
 	vec<int>* frgn_reference_ids;
 	vec<int>* frgn_relations;
 	vec<int>* frgn_indexes;
@@ -214,14 +221,13 @@ public:
 	public:
 		typedef Firebird::Array<RelationPages*> inherited;
 
-		RelPagesSnapshot(thread_db* tdbb, jrd_rel* relation) {
+		RelPagesSnapshot(thread_db* tdbb, jrd_rel* relation)
+		{
 			spt_tdbb = tdbb;
 			spt_relation = relation;
 		}
 		
-		~RelPagesSnapshot() { 
-			clear(); 
-		}
+		~RelPagesSnapshot() { clear(); }
 
 		void clear();
 	private:

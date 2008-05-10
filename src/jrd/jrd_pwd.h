@@ -43,7 +43,8 @@ namespace Jrd {
 
 class SecurityDatabase
 {
-	struct user_record {
+	struct user_record
+	{
 		SLONG gid;
 		SLONG uid;
 		SSHORT flag;

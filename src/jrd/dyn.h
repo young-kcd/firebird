@@ -50,7 +50,8 @@ public:
 	jrd_tra* gbl_transaction;
 };
 
-class dyn_fld {
+class dyn_fld
+{
 public:
 	dsc dyn_dsc;
 	bool dyn_null_flag;

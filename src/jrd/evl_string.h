@@ -73,7 +73,7 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 class StaticAllocator
 {
 public:
-	StaticAllocator(MemoryPool& _pool)
+	explicit StaticAllocator(MemoryPool& _pool)
 		: pool(_pool), chunksToFree(_pool), allocated(0)
 	{
 	}
@@ -87,7 +87,7 @@ public:
 	void* alloc(SLONG count)
 	{
 		void* result;
-		SLONG localCount = ROUNDUP(count, ALIGNMENT);
+		const SLONG localCount = ROUNDUP(count, ALIGNMENT);
 		if (allocated + localCount <= STATIC_PATTERN_BUFFER)
 		{
 			result = allocBuffer + allocated;
@@ -124,12 +124,14 @@ public:
 		reset();
 	}
 
-	void reset() {
+	void reset()
+	{
 		result = true;
 		offset = 0;
 	}
 
-	bool getResult() {
+	bool getResult() const
+	{
 		return offset >= pattern_len && result;
 	}
 
@@ -138,6 +140,7 @@ public:
 		// Should work fine when called with data_len equal to zero
 		if (!result || offset >= pattern_len)
 			return false;
+
 		const SLONG comp_length = 
 			data_len < pattern_len - offset ? data_len : pattern_len - offset;
 		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
@@ -171,19 +174,23 @@ public:
 		reset();
 	}
 
-	void reset() {
+	void reset()
+	{
 		offset = 0;
 		result = (pattern_len == 0);
 	}
 
-	bool getResult() {
+	bool getResult() const
+	{
 		return result;
 	}
 
-	bool processNextChunk(const CharType* data, SLONG data_len) {		
+	bool processNextChunk(const CharType* data, SLONG data_len)
+	{		
 		// Should work fine when called with data_len equal to zero
 		if (result)
 			return false;
+
 		SLONG data_pos = 0;
 		while (data_pos < data_len) {
 			while (offset > -1 && pattern_str[offset] != data[data_pos])
@@ -206,7 +213,8 @@ private:
 	SLONG *kmpNext;
 };
 
-enum PatternItemType {
+enum PatternItemType
+{
 	piNone = 0,
 	piSearch,
 	piSkipFixed,
@@ -217,7 +225,8 @@ enum PatternItemType {
 	piSkipMore
 };
 
-enum MatchType {
+enum MatchType
+{
 	MATCH_NONE = 0,
 	MATCH_FIXED,
 	MATCH_ANY
@@ -231,7 +240,8 @@ public:
 		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any, 
 		CharType sql_match_one);
 
-	void reset() {
+	void reset()
+	{
 		fb_assert(patternItems.getCount());
 		branches.shrink(0);
 		if (patternItems[0].type == piNone) {
@@ -244,7 +254,8 @@ public:
 		}
 	}
 
-	bool getResult() {
+	bool getResult() const
+	{
 		return match_type != MATCH_NONE;
 	}
 
@@ -252,10 +263,13 @@ public:
 	bool processNextChunk(const CharType* data, SLONG data_len);
 
 private:
-	struct PatternItem {
+	struct PatternItem
+	{
 		PatternItemType type;
-		union {
-			struct {
+		union
+		{
+			struct
+			{
 				SLONG length;
 				CharType* data;
 				SLONG* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
@@ -265,7 +279,8 @@ private:
 		bool match_any;
 	};
 
-	struct BranchItem {
+	struct BranchItem
+	{
 		PatternItem* pattern;
 		SLONG offset; // Match offset inside this pattern
 	};
@@ -438,7 +453,8 @@ LikeEvaluator<CharType>::LikeEvaluator(
 }
 
 template <typename CharType>
-bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_len) {
+bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_len)
+{
 	fb_assert(patternItems.getCount());
 
 	// If called with empty buffer just return if more data can change the result of evaluation

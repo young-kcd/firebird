@@ -1005,20 +1005,30 @@ const int SECS_PER_HOUR	= 60 * 60;
 const int SECS_PER_DAY	= SECS_PER_HOUR * 24;
 
 #ifdef WIN_NT
-// This is machine-global. Can be made instance-global.
-// For as long you don't trace two instances in parallel this shouldn't matter.
-HANDLE trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
-HANDLE trace_file_handle = INVALID_HANDLE_VALUE;
-
-class CleanupTraceHandles {
+class CleanupTraceHandles
+{
 public:
-	~CleanupTraceHandles() {
+	~CleanupTraceHandles()
+	{
 		CloseHandle(trace_mutex_handle);
 		trace_mutex_handle = INVALID_HANDLE_VALUE;
-		CloseHandle(trace_file_handle);
+		
+		if (trace_file_handle != INVALID_HANDLE_VALUE)
+			CloseHandle(trace_file_handle);
+			
 		trace_file_handle = INVALID_HANDLE_VALUE;
 	}
-} cleanupHandles;
+
+	// This is machine-global. Can be made instance-global.
+	// For as long you don't trace two instances in parallel this shouldn't matter.
+	static HANDLE trace_mutex_handle;
+	static HANDLE trace_file_handle;
+};
+
+HANDLE CleanupTraceHandles::trace_mutex_handle = CreateMutex(NULL, FALSE, "firebird_trace_mutex");
+HANDLE CleanupTraceHandles::trace_file_handle = INVALID_HANDLE_VALUE;
+
+CleanupTraceHandles cleanupHandles;
 
 #endif
 
@@ -1042,32 +1052,32 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 
 	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
 	// Slowly enough to make such trace useless. Thus we cache file handle !
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
+	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 	while (true) {
-		if (trace_file_handle == INVALID_HANDLE_VALUE) {
+		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
 			gds__prefix(name, LOGFILE);
 			// We do not care to close this file. 
 			// It will be closed automatically when our process terminates.
-			trace_file_handle = CreateFile(name, GENERIC_WRITE, 
+			CleanupTraceHandles::trace_file_handle = CreateFile(name, GENERIC_WRITE,
 				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (trace_file_handle == INVALID_HANDLE_VALUE)
+			if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE)
 				break;
 		}
 		DWORD bytesWritten;
-		SetFilePointer(trace_file_handle, 0, NULL, FILE_END);
-		WriteFile(trace_file_handle, text, length, &bytesWritten, NULL);
+		SetFilePointer(CleanupTraceHandles::trace_file_handle, 0, NULL, FILE_END);
+		WriteFile(CleanupTraceHandles::trace_file_handle, text, length, &bytesWritten, NULL);
 		if (bytesWritten != length) {
 			// Handle the case when file was deleted by another process on Win9x
 			// On WinNT we are not going to notice that fact :(
-			CloseHandle(trace_file_handle);
-			trace_file_handle = INVALID_HANDLE_VALUE;
+			CloseHandle(CleanupTraceHandles::trace_file_handle);
+			CleanupTraceHandles::trace_file_handle = INVALID_HANDLE_VALUE;
 			continue;
 		}
 		break;
 	}
-	ReleaseMutex(trace_mutex_handle);
+	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
 #else
 	TEXT name[MAXPATHLEN];
 
@@ -1186,7 +1196,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	gds__prefix(name, LOGFILE);
 
 #ifdef WIN_NT
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
+	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 #else
 	if (inLogger)
 	{
@@ -1208,7 +1218,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	}
 	umask(oldmask);
 #ifdef WIN_NT
-	ReleaseMutex(trace_mutex_handle);
+	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
 #else
 	inLogger = false;
 #endif
@@ -1243,7 +1253,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT
-	WaitForSingleObject(trace_mutex_handle, INFINITE);
+	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 #endif
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
@@ -1259,7 +1269,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 		fclose(file);
 	}
 #ifdef WIN_NT
-	ReleaseMutex(trace_mutex_handle);
+	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
 #endif
 
 	umask(oldmask);

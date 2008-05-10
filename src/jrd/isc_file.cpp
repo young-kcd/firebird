@@ -166,7 +166,8 @@ namespace {
     const size npos = tstring::npos;
 
 #ifndef NO_NFS
-	class osMtab {
+	class osMtab
+	{
 	public:
 #if (defined AIX || defined AIX_PPC)
 		TEXT* temp;
@@ -184,7 +185,8 @@ namespace {
 #endif
 	};
 
-	class Mnt {
+	class Mnt
+	{
 	private:
 #ifdef DARWIN
 	struct statfs* mnt_info;

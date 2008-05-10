@@ -199,7 +199,8 @@ const size_t asb_delta	= ((sizeof(AggregateSort) - sizeof(jrd_nod)) / sizeof (jr
 
 /* Various structures in the impure area */
 
-struct impure_state {
+struct impure_state
+{
 	SSHORT sta_state;
 };
 
@@ -265,14 +266,16 @@ const int VLU_checked	= 4;	// Constraint already checked in first read or assign
 
 /* Inversion (i.e. nod_index) impure area */
 
-struct impure_inversion {
+struct impure_inversion
+{
 	RecordBitmap* inv_bitmap;
 };
 
 
 /* AggregateSort impure area */
 
-struct impure_agg_sort {
+struct impure_agg_sort
+{
 	sort_context* iasb_sort_handle;
 };
 
@@ -574,7 +577,8 @@ struct Resource
 	jrd_prc*	rsc_prc;		/* Procedure block */
 	Collation*	rsc_coll;		/* Collation block */
 
-	static bool greaterThan(const Resource& i1, const Resource& i2) {
+	static bool greaterThan(const Resource& i1, const Resource& i2)
+	{
 		// A few places of the engine depend on fact that rsc_type 
 		// is the first field in ResourceList ordering
 		if (i1.rsc_type != i2.rsc_type)
@@ -606,7 +610,8 @@ struct AccessItem
 	const TEXT*				acc_type;
 	SecurityClass::flags_t	acc_mask;
 
-	static bool greaterThan(const AccessItem& i1, const AccessItem& i2) {
+	static bool greaterThan(const AccessItem& i1, const AccessItem& i2)
+	{
 		int v;
 
 		// Relations and procedures should be sorted before
@@ -646,7 +651,8 @@ typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>,
 // Triggers and procedures the request accesses
 struct ExternalAccess
 {
-	enum exa_act {
+	enum exa_act
+	{
 		exa_procedure,
 		exa_insert,
 		exa_update,
@@ -667,7 +673,8 @@ struct ExternalAccess
 		exa_action(action), exa_prc_id(0), exa_rel_id(rel_id), exa_view_id(view_id)
 	{ }
 
-	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2) {
+	static bool greaterThan(const ExternalAccess& i1, const ExternalAccess& i2)
+	{
 		if (i1.exa_action != i2.exa_action)
 			return i1.exa_action > i2.exa_action;
 		if (i1.exa_prc_id != i2.exa_prc_id)
@@ -818,7 +825,9 @@ public:
 	{}
 
 	static CompilerScratch* newCsb(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
-		{ return FB_NEW(p) CompilerScratch(p, len, domain_validation); }
+	{
+		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
+	}
 
 	int nextStream(bool check = true)
 	{
@@ -928,7 +937,8 @@ const int csb_made_river	= 2048;		// stream has been included in a river
 
 // Exception condition list
 
-struct xcp_repeat {
+struct xcp_repeat
+{
 	SSHORT xcp_type;
 	SLONG xcp_code;
 };
@@ -945,7 +955,8 @@ const int xcp_gds_code	= 2;
 const int xcp_xcp_code	= 3;
 const int xcp_default	= 4;
 
-class StatusXcp {
+class StatusXcp
+{
 	ISC_STATUS_ARRAY status;
 
 public:

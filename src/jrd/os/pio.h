@@ -40,7 +40,7 @@ namespace Jrd {
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 {
-    public:
+public:
 	jrd_file*	fil_next;		/* Next file in database */
 	ULONG fil_min_page;			/* Minimum page number in file */
 	ULONG fil_max_page;			/* Maximum page number in file */
@@ -64,9 +64,10 @@ const int MAX_FILE_IO	= 32;			/* Maximum "allocated" overlapped I/O events */
 
 class jrd_file : public pool_alloc_rpt<SCHAR, type_fil>
 {
-    public:
+public:
 
-	~jrd_file() {
+	~jrd_file()
+	{
 		delete fil_ext_lock;
 	}
 
@@ -106,7 +107,8 @@ const SSHORT trace_close	= 6;
 // Physical I/O status block, used only in SS v2 for Win32
 
 #ifdef SUPERSERVER_V2
-struct phys_io_blk {
+struct phys_io_blk
+{
 	jrd_file* piob_file;				/* File being read/written */
 	SLONG piob_desc;			/* File descriptor */
 	SLONG piob_io_length;		/* Requested I/O transfer length */
@@ -134,7 +136,7 @@ public:
 		memset(zeroBuff, 0, ZERO_BUF_SIZE);
 	}
 
-	const char* get() { return zeroBuff; }
+	const char* get() const { return zeroBuff; }
 
 private:
 	Firebird::Array<char> zeroArray;

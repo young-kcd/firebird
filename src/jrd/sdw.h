@@ -33,7 +33,7 @@ namespace Jrd {
 
 class Shadow : public pool_alloc<type_sdw>
 {
-    public:
+public:
 	Shadow* sdw_next;				// next in linked list
 	jrd_file* sdw_file;				// Stack of shadow files
 	USHORT sdw_number;				// number of shadow

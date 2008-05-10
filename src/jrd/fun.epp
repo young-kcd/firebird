@@ -80,7 +80,8 @@ DATABASE DB = FILENAME "ODS.RDB";
 /* Blob passing structure */
 /* Updated definitions from the static functions shown below */
 
-struct udf_blob {
+struct udf_blob
+{
 	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
 	void* blob_handle;
 	SLONG blob_number_segments;

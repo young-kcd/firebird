@@ -63,7 +63,6 @@ public:
 	{
 	}
 
-public:
 	void convert(ULONG srcLen,
 				 const UCHAR* src,
 				 Firebird::UCharBuffer& dst,

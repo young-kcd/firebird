@@ -102,14 +102,15 @@ public:
 	virtual void initialize() = 0;
 
 	// Provider properties
-	int getFlags() const
-	{ return m_flags; }
+	int getFlags() const { return m_flags; }
 
 	// Interprete status and put error description into passed string
 	virtual void getRemoteError(ISC_STATUS* status, Firebird::string &err) const = 0;
 
 	static const Firebird::string* generate(const void*, const Provider* item) 
-	{ return &item->m_name; }
+	{
+		return &item->m_name;
+	}
 
 protected:
 	void clearConnections(Jrd::thread_db *tdbb);
@@ -144,15 +145,13 @@ protected:
 public:
 	static void deleteConnection(Jrd::thread_db *tdbb, Connection *conn);
 
-	Provider* getProvider() 
-	{ return &m_provider; }
+	Provider* getProvider() { return &m_provider; }
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) = 0;
 	virtual void detach(Jrd::thread_db *tdbb) = 0;
 
-	int getSqlDialect() const
-	{ return m_sqlDialect; }
+	int getSqlDialect() const { return m_sqlDialect; }
 
 	// Is this connections can be used by current needs ? Not every DBMS
 	// allows to use same connection in more than one transaction and\or
@@ -169,7 +168,9 @@ public:
 	Transaction* findTransaction(Jrd::thread_db *tdbb, TraScope traScope) const;
 
 	const Firebird::string getDataSourceName() const
-	{ return m_provider.getName() + "::" + m_dbName; }
+	{
+		return m_provider.getName() + "::" + m_dbName;
+	}
 
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
@@ -224,14 +225,11 @@ protected:
 
 public:
 
-	Provider* getProvider() 
-	{ return &m_provider; }
+	Provider* getProvider() { return &m_provider; }
 
-	Connection* getConnection() 
-	{ return &m_connection; }
+	Connection* getConnection() { return &m_connection; }
 
-	TraScope getScope() const
-	{ return m_scope; }
+	TraScope getScope() const { return m_scope; }
 
 	virtual void start(Jrd::thread_db *tdbb, TraScope traScope, TraModes traMode, 
 		bool readOnly, bool wait, int lockTimeout);
@@ -277,14 +275,11 @@ protected:
 public:
 	static void deleteStatement(Jrd::thread_db *tdbb, Statement *stmt);
 
-	Provider* getProvider() 
-	{ return &m_provider; }
+	Provider* getProvider() { return &m_provider; }
 
-	Connection* getConnection() 
-	{ return &m_connection; }
+	Connection* getConnection() { return &m_connection; }
 
-	Transaction* getTransaction() 
-	{ return m_transaction; }
+	Transaction* getTransaction() { return m_transaction; }
 
 	void prepare(Jrd::thread_db *tdbb, Transaction *tran, const Firebird::string& sql, bool named);
 	void execute(Jrd::thread_db *tdbb, Transaction *tran, int in_count, 
@@ -296,23 +291,17 @@ public:
 	void close(Jrd::thread_db *tdbb);
 	void deallocate(Jrd::thread_db *tdbb);
 
-	const Firebird::string& getSql() const
-	{ return m_sql; }
+	const Firebird::string& getSql() const { return m_sql; }
 
-	bool isActive() const
-	{ return m_active; }
+	bool isActive() const { return m_active; }
 
-	bool isAllocated() const
-	{ return m_allocated; }
+	bool isAllocated() const { return m_allocated; }
 
-	bool isSelectable() const
-	{ return m_stmt_selectable; }
+	bool isSelectable() const { return m_stmt_selectable; }
 
-	int getInputs() const
-	{ return m_inputs; }
+	int getInputs() const { return m_inputs; }
 
-	int getOutputs() const
-	{ return m_outputs; }
+	int getOutputs() const { return m_outputs; }
 
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
@@ -400,8 +389,7 @@ protected:
 public:
 	virtual ~Blob() {}
 
-public:
-	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
+	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc,
 		const Firebird::UCharBuffer *bpb) = 0;
 	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, 
 		const Firebird::UCharBuffer* bpb) = 0;

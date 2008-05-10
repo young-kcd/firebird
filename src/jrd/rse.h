@@ -175,14 +175,16 @@ public:
 
 // Impure area formats for the various RecordSource types
 
-struct irsb {
+struct irsb
+{
 	ULONG irsb_flags;
 	USHORT irsb_count;
 };
 
 typedef irsb *IRSB;
 
-struct irsb_recurse {
+struct irsb_recurse
+{
 	ULONG	irsb_flags;
 	USHORT	irsb_level;
 	RSBRecurse::mode irsb_mode;
@@ -190,40 +192,47 @@ struct irsb_recurse {
 	char*	irsb_data;
 };
 
-struct irsb_first_n {
+struct irsb_first_n
+{
 	ULONG irsb_flags;
 	//SLONG irsb_number;
     SINT64 irsb_count;
 };
 
-struct irsb_skip_n {
+struct irsb_skip_n
+{
     ULONG irsb_flags;
     //SLONG irsb_number;
     SINT64 irsb_count;
 };
 
-struct irsb_index {
+struct irsb_index
+{
 	ULONG irsb_flags;
 	//SLONG irsb_number;
 	SLONG irsb_prefetch_number;
 	RecordBitmap**	irsb_bitmap;
 };
 
-struct irsb_sort {
+struct irsb_sort
+{
 	ULONG irsb_flags;
 	sort_context*	irsb_sort_handle;
 };
 
-struct irsb_procedure {
+struct irsb_procedure
+{
 	ULONG 		irsb_flags;
 	jrd_req*	irsb_req_handle;
 	VaryingString*		irsb_message;
 };
 
-struct irsb_mrg {
+struct irsb_mrg
+{
 	ULONG irsb_flags;
 	USHORT irsb_mrg_count;				// next stream in group
-	struct irsb_mrg_repeat {
+	struct irsb_mrg_repeat
+	{
 		SLONG irsb_mrg_equal;			// queue of equal records
 		SLONG irsb_mrg_equal_end;		// end of the equal queue
 		SLONG irsb_mrg_equal_current;	// last fetched record from equal queue
@@ -233,13 +242,15 @@ struct irsb_mrg {
 	} irsb_mrg_rpt[1];
 };
 
-struct irsb_virtual {
+struct irsb_virtual
+{
 	ULONG irsb_flags;
 	RecordBuffer* irsb_record_buffer;
 };
 
 /* CVC: Unused as of Nov-2005.
-struct irsb_sim {
+struct irsb_sim
+{
 	ULONG irsb_flags;
 	USHORT irsb_sim_rid;				// next relation id
 	USHORT irsb_sim_fid;				// next field id
@@ -256,7 +267,8 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 // which holds information used to get back to 
 // the current location within an index
 
-struct irsb_nav {
+struct irsb_nav
+{
 	ULONG irsb_flags;
 	SLONG irsb_nav_expanded_offset;			// page offset of current index node on expanded index page
 	RecordNumber irsb_nav_number;			// last record number
@@ -301,7 +313,8 @@ const ULONG irsb_key_changed = 32768;		// key has changed since record last retu
 
 // Sort map block
 
-struct smb_repeat {
+struct smb_repeat
+{
 	DSC smb_desc;				// relative descriptor
 	USHORT smb_flag_offset;		// offset of missing flag
 	USHORT smb_stream;			// stream for field id
@@ -385,20 +398,23 @@ public:
 	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
 	// All other arrays had been converted to dynamic to preserve memory 
 	// and improve performance
-	struct opt_segment {
+	struct opt_segment
+	{
 		// Index segments and their options
 		jrd_nod* opt_lower;			// lower bound on index value
 		jrd_nod* opt_upper;			// upper bound on index value
 		jrd_nod* opt_match;			// conjunct which matches index segment
 	} opt_segments[MAX_INDEX_SEGMENTS];
-	struct opt_conjunct {
+	struct opt_conjunct
+	{
 		// Conjunctions and their options
 		jrd_nod* opt_conjunct_node;	// conjunction
 		// Stream dependencies to compute conjunct
 		ULONG opt_dependencies[(MAX_STREAMS + 1) / 32];
 		UCHAR opt_conjunct_flags;
 	};
-	struct opt_stream {
+	struct opt_stream
+	{
 		// Streams and their options
 		IndexedRelationship* opt_relationships;	// streams directly reachable by index
 		double opt_best_stream_cost;			// best cost of retrieving first n = streams
@@ -442,7 +458,8 @@ public:
 
 // types for navigating through a stream
 
-enum rse_get_mode {
+enum rse_get_mode
+{
 	RSE_get_forward
 #ifdef SCROLLABLE_CURSORS
 	,

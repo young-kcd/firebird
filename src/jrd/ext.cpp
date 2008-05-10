@@ -76,7 +76,8 @@ namespace {
 	class ExternalFileDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString(void) const {
+		const Firebird::PathName getConfigString() const
+		{
 			return Firebird::PathName(Config::getExternalFileAccess());
 		}
 	public:
@@ -93,10 +94,12 @@ namespace {
 		const char* file_name = ext_file->ext_filename;
 
 		if (!iExternalFileDirectoryList().isPathInList(file_name))
+		{
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "external file",
 				isc_arg_string, ERR_cstring(file_name),
 				isc_arg_end);
+		}
 
 		// If the database is updateable, then try opening the external files in
 		// RW mode. If the DB is ReadOnly, then open the external files only in
@@ -264,7 +267,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
-	SSHORT l = record->rec_length - offset;
+	const ULONG l = record->rec_length - offset;
 
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary. Note that we must flush file buffer if we 
@@ -516,7 +519,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	const UCHAR* p = record->rec_data + offset;
-	USHORT l = record->rec_length - offset;
+	const ULONG l = record->rec_length - offset;
 
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary.	Note that we must flush file buffer if we 

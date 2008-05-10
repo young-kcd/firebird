@@ -41,19 +41,22 @@ typedef BOOL WINAPI tReportEvent(
 		LPCTSTR *lpStrings,
 		LPVOID lpRawData);
 
-class SyslogAccess {
+class SyslogAccess
+{
 private:
 	CRITICAL_SECTION cs;
 	HANDLE LogHandle;
 	tReportEvent *fReportEvent;
 	bool InitFlag;
 public:
-	explicit SyslogAccess(Firebird::MemoryPool&) {
+	explicit SyslogAccess(Firebird::MemoryPool&)
+	{
 		InitializeCriticalSection(&cs); 
 		InitFlag = false;
 		LogHandle = 0;
 	}
-	~SyslogAccess() {
+	~SyslogAccess()
+	{
 		DeleteCriticalSection(&cs);
 	}
 	void Record(WORD wType, const char* msg);
