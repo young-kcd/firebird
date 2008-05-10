@@ -489,7 +489,7 @@
 				RelativePath="..\..\..\src\jrd\cmp_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\codetext.h">
+				RelativePath="..\..\..\src\include\gen\codetext.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\Collation.h">
