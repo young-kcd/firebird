@@ -537,9 +537,6 @@
 				RelativePath="..\..\..\src\jrd\dmp_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\doserr.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\dpm_proto.h">
 			</File>
 			<File
@@ -789,9 +786,6 @@
 				RelativePath="..\..\..\src\jrd\mov_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\mpexl.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\msg.h">
 			</File>
 			<File
@@ -811,9 +805,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nbak.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\nlm_thd.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\nod.h">
@@ -864,16 +855,10 @@
 				RelativePath="..\..\..\src\jrd\os\pio_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\pragma.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\PreparedStatement.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\prv_m_bypass.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\pwd_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\quad.h">
@@ -954,9 +939,6 @@
 				RelativePath="..\..\..\src\jrd\sdw_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\seg_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sha.h">
 			</File>
 			<File
@@ -972,7 +954,7 @@
 				RelativePath="..\..\..\src\jrd\sort_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sql_code.h">
+				RelativePath="..\..\..\src\include\gen\sql_code.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sqz.h">
@@ -1000,9 +982,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\TempSpace.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\termtype.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\TextType.h">
