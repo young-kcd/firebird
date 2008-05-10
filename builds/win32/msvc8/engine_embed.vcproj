@@ -691,23 +691,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\aif_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ail_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\align.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\all.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ansi.h"
 				>
 			</File>
 			<File
@@ -760,10 +748,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cch_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\cdefs.h"
 				>
 			</File>
 			<File

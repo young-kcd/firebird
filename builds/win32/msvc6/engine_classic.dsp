@@ -577,19 +577,11 @@ SOURCE=..\..\..\src\jrd\acl.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\aif_proto.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\align.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\all.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\ansi.h
 # End Source File
 # Begin Source File
 
@@ -642,10 +634,6 @@ SOURCE=..\..\..\src\jrd\cch.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\cch_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\cdefs.h
 # End Source File
 # Begin Source File
 
