@@ -1,3 +1,67 @@
+2008-05-10 18:49  dimitr
+
+	* firebird2/src/jrd/: SimilarToMatcher.h (1.8), jrd.h (1.243),
+	pag.h (1.19):
+
+	Reduce number of warnings for 64-bit targets.
+
+2008-05-10 13:17  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.82),
+	msvc6/engine_classic.dsp (1.78), msvc6/engine_embed.dsp (1.57),
+	msvc7/engine.vcproj (1.75), msvc7/engine_classic.vcproj (1.75),
+	msvc7/engine_embed.vcproj (1.64), msvc8/engine.vcproj (1.25),
+	msvc8/engine_classic.vcproj (1.25), msvc8/engine_embed.vcproj
+	(1.23):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).  Fix reference to header files that existed in another
+	location in FB1.
+
+2008-05-10 10:58  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.81),
+	msvc6/engine_classic.dsp (1.77), msvc6/engine_embed.dsp (1.56),
+	msvc7/engine.vcproj (1.74), msvc7/engine_classic.vcproj (1.74),
+	msvc7/engine_embed.vcproj (1.63), msvc8/engine.vcproj (1.24),
+	msvc8/engine_classic.vcproj (1.24), msvc8/engine_embed.vcproj
+	(1.22):
+
+	Fix reference to header file that existed in another location in
+	FB1.
+
+2008-05-10 06:56  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.80),
+	msvc6/engine_classic.dsp (1.76), msvc6/engine_embed.dsp (1.55),
+	msvc7/engine.vcproj (1.73), msvc7/engine_classic.vcproj (1.73),
+	msvc7/engine_embed.vcproj (1.62), msvc8/engine.vcproj (1.23),
+	msvc8/engine_classic.vcproj (1.23), msvc8/engine_embed.vcproj
+	(1.21):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).
+
+2008-05-10 05:44  robocop
+
+	* firebird2/src/: dsql/dsql.h (1.130), dsql/make.cpp (1.160),
+	dsql/pass1.cpp (1.378), jrd/CharSet.h (1.7), jrd/CsConvert.h
+	(1.12), jrd/Relation.h (1.5), jrd/btr.h (1.47), jrd/cch.h (1.38),
+	jrd/dyn.h (1.37), jrd/evl_string.h (1.26), jrd/exe.h (1.119),
+	jrd/ext.cpp (1.80), jrd/flu.cpp (1.65), jrd/fun.epp (1.93),
+	jrd/gds.cpp (1.256), jrd/isc_file.cpp (1.119), jrd/jrd_pwd.h
+	(1.32), jrd/lck.h (1.40), jrd/met.h (1.12), jrd/nbak.h (1.33),
+	jrd/pag.h (1.18), jrd/plugin_manager.h (1.21), jrd/rpb_chain.h
+	(1.13), jrd/rse.h (1.54), jrd/scl.h (1.20), jrd/sdw.h (1.10),
+	jrd/sort.cpp (1.109), jrd/tpc.h (1.6), jrd/val.h (1.38),
+	jrd/extds/ExtDS.h (1.9), jrd/os/config_root.h (1.18),
+	jrd/os/fbsyslog.h (1.8), jrd/os/pio.h (1.23), jrd/os/thd_priority.h
+	(1.25), jrd/os/win32/fbsyslog.cpp (1.12):
+
+	Style and minor cleanup.
+
 2008-05-09 19:35  asfernandes
 
 	* firebird2/src/isql/show.epp (1.130):
