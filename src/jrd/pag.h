@@ -126,10 +126,10 @@ public:
 
 	~PageManager()
 	{
-		for (size_t i = pageSpaces.getCount() - 1; i >= 0; --i)
+		for (size_t i = pageSpaces.getCount(); i > 0; --i)
 		{
-			PageSpace* pageSpace = pageSpaces[i];
-			pageSpaces.remove(i);
+			PageSpace* pageSpace = pageSpaces[i - 1];
+			pageSpaces.remove(i - 1);
 			delete pageSpace;
 		}
 	}
