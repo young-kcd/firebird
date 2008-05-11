@@ -34,16 +34,24 @@ namespace Jrd
 class ViewContext
 {
 public:
-	Firebird::MetaName	vcx_context_name;
-	Firebird::MetaName	vcx_relation_name;
-	USHORT	vcx_context;
-	static const USHORT& generate(const void*, const ViewContext& vc) 
+	explicit ViewContext(MemoryPool& p, const TEXT* context_name, 
+						 const TEXT* relation_name, USHORT context) : 
+		vcx_context_name(p, context_name, strlen(context_name)),
+		vcx_relation_name(relation_name),
+		vcx_context(context)
+	{		
+	}
+
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
+	static const USHORT generate(const void*, const ViewContext* vc) 
 	{ 
-		return vc.vcx_context; 
+		return vc->vcx_context; 
 	}
 };
 
-typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>, 
+typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>, 
 		USHORT, ViewContext> ViewContexts;
 
 #ifdef GARBAGE_THREAD

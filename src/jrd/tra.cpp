@@ -2230,14 +2230,14 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 	for (size_t i = 0; i < ctx.getCount(); ++i)
 	{
-		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i].vcx_relation_name);
+		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
 		if (!base_rel)
 		{
 			ERR_post(isc_bad_tpb_content,
 					isc_arg_gds,
 					isc_tpb_reserv_baserelnotfound,	/* should be a BUGCHECK */
 					isc_arg_string,
-					ERR_cstring(ctx[i].vcx_relation_name.c_str()),
+					ERR_cstring(ctx[i]->vcx_relation_name.c_str()),
 					isc_arg_string,
 					ERR_cstring(relation_name),
 					isc_arg_string,

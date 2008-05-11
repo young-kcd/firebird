@@ -4500,8 +4500,7 @@ static void pass1_source(thread_db*			tdbb,
 		size_t pos;
 		if (ctx.find(key, pos)) {
 			element->csb_alias = FB_NEW(csb->csb_pool) 
-				Firebird::string(csb->csb_pool, ctx[pos].vcx_context_name.c_str(), 
-												ctx[pos].vcx_context_name.length());
+				Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
 	}
 
