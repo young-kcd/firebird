@@ -28,23 +28,23 @@ FBBin=$FBRootDir/bin
 
 cat <<EOF
 For classic server there are two ways to support multiple connections:
-multyprocess (traditional for FB classic server) and multythread (new for FB 2.5).
+multiprocess (traditional for FB classic server) and multithread (new for FB 2.5).
 
-Multyprocess mode is specially reliable cause error in one process does not affect others.
-Multythread minimizes OS load and should provide better scalability under high loads.
+multiprocess mode is specially reliable cause error in one process does not affect others.
+multithread minimizes OS load and should provide better scalability under high loads.
 
 EOF
 
-AskQuestion "Which option would you like to choose: multy-(process|thread) [process] " "process"
-multyAnswer=$Answer
+AskQuestion "Which option would you like to choose: multi-(process|thread) [process] " "process"
+multiAnswer=$Answer
 
-case $multyAnswer in
+case $multiAnswer in
 process) 
 	;;
 thread) 
 	;;
 *)
-	echo "Unknown option $multyAnswer chosen"
+	echo "Unknown option $multiAnswer chosen"
 	;;
 esac
 
@@ -53,8 +53,8 @@ checkIfServerRunning
 removeInetdServiceEntry
 removeServiceAutostart
 
-echo "Starting firebird in multy$multyAnswer mode..."
-if [ $multyAnswer == process ]; then
+echo "Starting firebird in multi$multiAnswer mode..."
+if [ $multiAnswer == process ]; then
 	updateInetdServiceEntry
 	resetInetdServer
 else
