@@ -211,7 +211,7 @@ jrd_nod* CMP_clone_node_opt(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node
 {
 /**************************************
  *
- *	C M P _ c l o n e _ n o d e
+ *	C M P _ c l o n e _ n o d e _ o p t
  *
  **************************************
  *

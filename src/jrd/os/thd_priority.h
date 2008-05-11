@@ -91,6 +91,7 @@ private:
 	static void doDetach();
 	// Add current instance to the chain
 	void attach();
+
 	~ThreadPriorityScheduler()
 	{
 		if (active)

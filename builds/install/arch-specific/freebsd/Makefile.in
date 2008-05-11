@@ -27,8 +27,6 @@
 #  Contributor(s): Chris Knight <chris@e-easy.com.au>
 # 
 #
-#  $Id: Makefile.in,v 1.3 2008-05-08 07:29:19 alexpeshkoff Exp $
-#
 ROOT=..
 
 

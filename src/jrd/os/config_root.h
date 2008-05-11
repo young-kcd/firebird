@@ -125,6 +125,7 @@ private:
 			root_dir += PathUtils::dir_sep;
 		}
 	}
+
 	bool getRootFromEnvironment(const char* envName)
 	{
 		string envValue;
@@ -135,6 +136,7 @@ private:
 		addSlash();
 		return true;
 	}
+
 	void osConfigRoot();
 
 	// copy prohibition

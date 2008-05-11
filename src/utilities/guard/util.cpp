@@ -92,8 +92,8 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-// prepend Firebird home directory to the program name
-// choose correct (super/superclassic) image - to be removed in 3.0
+	// prepend Firebird home directory to the program name
+	// choose correct (super/superclassic) image - to be removed in 3.0
 	gds__prefix(string, process);
 	if (access(string, X_OK) < 0) {
 		gds__prefix(string, process2);

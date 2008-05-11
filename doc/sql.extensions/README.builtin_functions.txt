@@ -400,7 +400,7 @@ GEN_UUID
 --------
 
 Function:
-    Returns a universal unique number.
+    Returns an universal unique number in CHAR(16) OCTETS type.
 
 Format:
     GEN_UUID()

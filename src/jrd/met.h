@@ -58,7 +58,7 @@ typedef rsr_t RSR_T;
 
 class TemporaryField : public pool_alloc<type_tfb>
 {
-   public:
+public:
 	TemporaryField*	tfb_next;		/* next block in chain */
 	USHORT			tfb_id;				/* id of field in relation */
 	USHORT			tfb_flags;

@@ -975,8 +975,7 @@ void SDW_start(const TEXT* file_name,
 
 	try {
 
-	shadow_file =
-		PIO_open(dbb, expanded_name, file_name, false);
+	shadow_file = PIO_open(dbb, expanded_name, file_name, false);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{

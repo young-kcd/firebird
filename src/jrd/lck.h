@@ -93,7 +93,7 @@ public:
 		lck_tail[0] = 0;
 	}
 
-	const int		lck_test_field;
+	const int	lck_test_field;
 	Lock*	lck_parent;
 	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
 							   bound to attachment */

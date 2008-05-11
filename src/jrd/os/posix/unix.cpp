@@ -227,6 +227,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
 				 isc_arg_string, ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
 	}
+
 #ifdef HAVE_FCHMOD
 	if (fchmod(desc, MASK) < 0)
 #else
