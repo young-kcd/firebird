@@ -1,3 +1,12 @@
+2008-05-11 14:23  robocop
+
+	* firebird2/builds/win32/msvc6/: engine.dsp (1.32.2.6),
+	engine_classic.dsp (1.28.2.6), engine_embed.dsp (1.9.2.5):
+
+	- Delete references to header files that only existed in FB1.  -
+	Fix references to files that are in another location.  - Delete
+	references to files that don't belong to Windows (the VMS files).
+
 2008-05-10 12:26  robocop
 
 	* firebird2/builds/win32/: msvc6/engine.dsp (1.32.2.5),
