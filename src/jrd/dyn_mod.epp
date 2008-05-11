@@ -2989,7 +2989,7 @@ void DYN_modify_sql_field(Global*					gbl,
 			 (!new_fld.dyn_computed_val && orig_computed)))
 		{
 			// Cannot add or remove COMPUTED from column @1
-			DYN_error_punt(false, 248,
+			DYN_error_punt(false, 249,
 				SafeArg() << orig_fld.dyn_fld_name.c_str());
 		}
 
