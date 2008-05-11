@@ -1200,7 +1200,7 @@ void CCH_fini(thread_db* tdbb)
 			while (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) 
 			{
 				QUE que_inst = bcb->bcb_free_lwt.que_forward;
-				QUE_DELETE((*que_inst));
+				QUE_DELETE(*que_inst);
 				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 				ISC_event_fini(&lwt->lwt_event);
 			}
@@ -4722,10 +4722,10 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 		while (QUE_NOT_EMPTY(old_tail->bcb_page_mod)) {
 			QUE que_inst = old_tail->bcb_page_mod.que_forward;
 			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
-			QUE_DELETE((*que_inst));
+			QUE_DELETE(*que_inst);
 			QUE mod_que =
 				&new_block->bcb_rpt[bdb->bdb_page.getPageNum() % new_block->bcb_count].bcb_page_mod;
-			QUE_INSERT((*mod_que), (*que_inst));
+			QUE_INSERT(*mod_que, *que_inst);
 		}
 	}
 
@@ -4893,10 +4893,10 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 
 			if (QUE_NOT_EMPTY(bcb->bcb_empty)) {
 				que_inst = bcb->bcb_empty.que_forward;
-				QUE_DELETE((*que_inst));
+				QUE_DELETE(*que_inst);
 				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
 				if (page.getPageNum() >= 0) {
-					QUE_INSERT((*mod_que), (*que_inst));
+					QUE_INSERT(*mod_que, *que_inst);
 #ifdef SUPERSERVER_V2
 					/* Reserve a buffer for header page with deferred header
 					   page write mechanism. Otherwise, a deadlock will occur
@@ -5059,7 +5059,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				QUE_DELETE(bdb->bdb_que);
 			}
 			QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
-			QUE_DELETE(bdb->bdb_in_use)
+			QUE_DELETE(bdb->bdb_in_use);
 
 			bdb->bdb_page = JOURNAL_PAGE;
 			release_bdb(tdbb, bdb, false, false, false);
@@ -5283,7 +5283,7 @@ static SSHORT latch_bdb(
 	LatchWait* lwt;
 	if (QUE_NOT_EMPTY(bcb->bcb_free_lwt)) {
 		QUE que_inst = bcb->bcb_free_lwt.que_forward;
-		QUE_DELETE((*que_inst));
+		QUE_DELETE(*que_inst);
 		lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 	}
 	else {
@@ -5300,7 +5300,7 @@ static SSHORT latch_bdb(
    precedence writes.  This does not cause starvation because an
    exclusive latch is needed to dirty the page again. */
 	if ((type == LATCH_io) || (type == LATCH_mark)) {
-		QUE_INSERT(bdb->bdb_waiters, lwt->lwt_waiters)
+		QUE_INSERT(bdb->bdb_waiters, lwt->lwt_waiters);
 	}
 	else {
 		QUE_APPEND(bdb->bdb_waiters, lwt->lwt_waiters);
