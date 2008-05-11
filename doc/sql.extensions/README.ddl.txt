@@ -187,3 +187,21 @@ executed to go from input type X to output type Z. If you have such problem in
 databases created with earlier versions and you have a backup for them that want
 to restore in FB2, expect to see your database restore being rejected by FB2.
 
+7) ALTER computed fields
+(Adriano dos Santos Fernandes)
+
+Syntax:
+alter table ...
+    alter <field> [type <data type>] computed by (<expression>);
+
+Notes:
+- You cannot alter a non-COMPUTED field to COMPUTED and vice-versa.
+
+Example:
+create table test (
+    n integer,
+    dn computed by (n * 2)
+);
+
+alter table test
+    alter dn computed by (n + n);

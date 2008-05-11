@@ -6715,6 +6715,11 @@ static void modify_field(dsql_req*	request,
 		dsql_nod* computedNod = element->nod_arg[e_mod_fld_type_computed];
 		if (computedNod)
 		{
+			if (request->req_context_number)
+				reset_context_stack(request);
+
+			PASS1_make_context(request, request->req_ddl_node->nod_arg[e_alt_name]);
+
 			dsql_str* computedSrc = (dsql_str*) computedNod->nod_arg[e_cmp_text];
 			fb_assert(computedSrc->str_length <= MAX_USHORT);
 
@@ -6733,6 +6738,8 @@ static void modify_field(dsql_req*	request,
 
 			request->append_string(isc_dyn_fld_computed_source,
 				computedSrc->str_data, (USHORT) computedSrc->str_length);
+
+			reset_context_stack(request);
 		}
 
 		const dsql_nod* defNod = element->nod_arg[e_mod_fld_type_default];
