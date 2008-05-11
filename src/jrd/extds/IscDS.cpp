@@ -1559,8 +1559,10 @@ static void parseSQLDA(XSQLDA *xsqlda, UCharBuffer &buff, Firebird::Array<dsc> &
 
 		offset += xVar->sqllen;
         const int type = xVar->sqltype & (~1);
-		if (type == SQL_VARYING) {
+		if (type == SQL_VARYING) 
+		{
             offset += sizeof(SSHORT);
+			src.dsc_length += sizeof(SSHORT);
 		}
 
 		// null indicator
