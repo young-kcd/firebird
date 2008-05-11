@@ -88,7 +88,6 @@ private:
 			opNothing,
 			opAny,
 			opAnyOf,
-			opAnyBut,
 			opExactly
 		};
 
@@ -100,6 +99,10 @@ private:
 				  len(aLen),
 				  str2(NULL),
 				  len2(0),
+				  str3(aStr),
+				  len3(aLen),
+				  str4(NULL),
+				  len4(0),
 				  ref(0)
 			{
 			}
@@ -110,6 +113,10 @@ private:
 				  len(aLen1),
 				  str2(NULL),
 				  len2(aLen2),
+				  str3(NULL),
+				  len3(0),
+				  str4(NULL),
+				  len4(0),
 				  ref(aRef)
 			{
 			}
@@ -120,6 +127,10 @@ private:
 				  len(0),
 				  str2(NULL),
 				  len2(0),
+				  str3(NULL),
+				  len3(0),
+				  str4(NULL),
+				  len4(0),
 				  ref(aRef)
 			{
 			}
@@ -130,6 +141,10 @@ private:
 				  len(node.len),
 				  str2(node.str2),
 				  len2(node.len2),
+				  str3(node.str3),
+				  len3(node.len3),
+				  str4(node.str4),
+				  len4(node.len4),
 				  ref(node.ref)
 			{
 			}
@@ -139,6 +154,10 @@ private:
 			SLONG len;
 			const UCHAR* str2;
 			SLONG len2;
+			const CharType* str3;
+			SLONG len3;
+			const UCHAR* str4;
+			SLONG len4;
 			int ref;
 		};
 
@@ -585,16 +604,18 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 	}
 	else if (op == canonicalChar(TextType::CHAR_OPEN_BRACKET))
 	{
-		if (*patternPos == canonicalChar(TextType::CHAR_CIRCUMFLEX))
-		{
-			++patternPos;
-			nodes.push(Node(opAnyBut));
-		}
-		else
-			nodes.push(Node(opAnyOf));
+		nodes.push(Node(opAnyOf));
 
 		HalfStaticArray<CharType, BUFFER_SMALL> charsBuffer;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> rangeBuffer;
+
+		Node& node = nodes.back();
+		const CharType** nodeChars = &node.str;
+		SLONG* nodeCharsLen = &node.len;
+		const UCHAR** nodeRange = &node.str2;
+		SLONG* nodeRangeLen = &node.len2;
+
+		bool but = false;
 
 		do
 		{
@@ -622,6 +643,39 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			{
 				if (*patternPos == canonicalChar(TextType::CHAR_COLON))
 					colon = true;
+				else if (*patternPos == canonicalChar(TextType::CHAR_CIRCUMFLEX))
+				{
+					if (but)
+						status_exception::raise(isc_invalid_similar_pattern, 0);
+
+					but = true;
+
+					CharType* p = (CharType*) alloc(charsBuffer.getCount() * sizeof(CharType));
+					memcpy(p, charsBuffer.begin(), charsBuffer.getCount() * sizeof(CharType));
+					*nodeChars = p;
+
+					*nodeCharsLen = charsBuffer.getCount();
+
+					if (rangeBuffer.getCount() > 0)
+					{
+						UCHAR* p = (UCHAR*) alloc(rangeBuffer.getCount());
+						memcpy(p, rangeBuffer.begin(), rangeBuffer.getCount());
+						*nodeRange = p;
+					}
+
+					*nodeRangeLen = rangeBuffer.getCount();
+
+					charsBuffer.clear();
+					rangeBuffer.clear();
+
+					nodeChars = &node.str3;
+					nodeCharsLen = &node.len3;
+					nodeRange = &node.str4;
+					nodeRangeLen = &node.len4;
+
+					++patternPos;
+					continue;
+				}
 				else if (patternPos + 1 < patternEnd)
 					range = (patternPos[1] == canonicalChar(TextType::CHAR_MINUS));
 			}
@@ -763,22 +817,20 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				status_exception::raise(isc_invalid_similar_pattern, 0);
 		} while (*patternPos != canonicalChar(TextType::CHAR_CLOSE_BRACKET));
 
-		Node& node = nodes.back();
-
 		CharType* p = (CharType*) alloc(charsBuffer.getCount() * sizeof(CharType));
 		memcpy(p, charsBuffer.begin(), charsBuffer.getCount() * sizeof(CharType));
-		node.str = p;
+		*nodeChars = p;
 
-		node.len = charsBuffer.getCount();
+		*nodeCharsLen = charsBuffer.getCount();
 
 		if (rangeBuffer.getCount() > 0)
 		{
 			UCHAR* p = (UCHAR*) alloc(rangeBuffer.getCount());
 			memcpy(p, rangeBuffer.begin(), rangeBuffer.getCount());
-			node.str2 = p;
+			*nodeRange = p;
 		}
 
-		node.len2 = rangeBuffer.getCount();
+		*nodeRangeLen = rangeBuffer.getCount();
 
 		++patternPos;
 		*flagp |= FLAG_NOT_EMPTY;
@@ -876,15 +928,11 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 				break;
 
 			case opAnyOf:
-				type.printf("opAnyOf(%.*s, %d, %.*s, %d)",
+				type.printf("opAnyOf(%.*s, %d, %.*s, %d, %.*s, %d, %.*s, %d)",
 					nodes[i].len, nodes[i].str, nodes[i].len,
-					nodes[i].len2, nodes[i].str2, nodes[i].len2);
-				break;
-
-			case opAnyBut:
-				type.printf("opAnyBut(%.*s, %d, %.*s, %d)",
-					nodes[i].len, nodes[i].str, nodes[i].len,
-					nodes[i].len2, nodes[i].str2, nodes[i].len2);
+					nodes[i].len2, nodes[i].str2, nodes[i].len2,
+					nodes[i].len3, nodes[i].str3, nodes[i].len3,
+					nodes[i].len4, nodes[i].str4, nodes[i].len4);
 				break;
 
 			case opExactly:
@@ -993,17 +1041,11 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 				break;
 
 			case opAnyOf:
-			case opAnyBut:
 				if (bufferPos >= bufferEnd)
 					return false;
 				else
 				{
-					const int pos = notInSet(bufferPos, 1, node->str, node->len);
-
-					if (node->op == opAnyBut && pos == 0)
-						return false;
-
-					if (node->op == opAnyOf && pos != 0)
+					if (notInSet(bufferPos, 1, node->str, node->len) != 0)
 					{
 						const UCHAR* end = node->str2 + node->len2;
 						const UCHAR* p = node->str2;
@@ -1024,11 +1066,35 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 							p += 2 + p[0] + p[1 + p[0]];
 						}
 
-						if (node->len2 == 0 ||
-							(node->op == opAnyOf && p >= end) || (node->op == opAnyBut && p < end))
-						{
+						if (node->len + node->len2 != 0 && p >= end)
 							return false;
+					}
+
+					if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+						return false;
+					else
+					{
+						const UCHAR* end = node->str4 + node->len4;
+						const UCHAR* p = node->str4;
+
+						while (p < end)
+						{
+							UCHAR c[sizeof(ULONG)];
+							ULONG len = charSet->substring(
+								buffer.getCount(), buffer.begin(),
+								sizeof(c), c, bufferPos - bufferStart, 1);
+
+							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+							{
+								break;
+							}
+
+							p += 2 + p[0] + p[1 + p[0]];
 						}
+
+						if (p < end)
+							return false;
 					}
 				}
 
@@ -1221,7 +1287,6 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					break;
 
 				case opAnyOf:
-				case opAnyBut:
 					fb_assert(state == 1);
 					if (bufferPos >= bufferEnd)
 					{
@@ -1230,14 +1295,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					}
 					else
 					{
-						const int pos = notInSet(bufferPos, 1, node->str, node->len);
-
-						if (node->op == opAnyBut && pos == 0)
-						{
-							ret = false;
-							state = 2;
-						}
-						else if (node->op == opAnyOf && pos != 0)
+						if (notInSet(bufferPos, 1, node->str, node->len) != 0)
 						{
 							const UCHAR* end = node->str2 + node->len2;
 							const UCHAR* p = node->str2;
@@ -1258,8 +1316,37 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 								p += 2 + p[0] + p[1 + p[0]];
 							}
 
-							if (node->len2 == 0 ||
-								(node->op == opAnyOf && p >= end) || (node->op == opAnyBut && p < end))
+							if (node->len + node->len2 != 0 && p >= end)
+								return false;
+						}
+
+						if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+						{
+							ret = false;
+							state = 2;
+						}
+						else
+						{
+							const UCHAR* end = node->str4 + node->len4;
+							const UCHAR* p = node->str4;
+
+							while (p < end)
+							{
+								UCHAR c[sizeof(ULONG)];
+								ULONG len = charSet->substring(
+									buffer.getCount(), buffer.begin(),
+									sizeof(c), c, bufferPos - bufferStart, 1);
+
+								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+								{
+									break;
+								}
+
+								p += 2 + p[0] + p[1 + p[0]];
+							}
+
+							if (p < end)
 							{
 								ret = false;
 								state = 2;
