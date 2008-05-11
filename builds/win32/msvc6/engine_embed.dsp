@@ -781,10 +781,6 @@ SOURCE=..\..\..\src\jrd\event_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\everything.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\evl_proto.h
 # End Source File
 # Begin Source File
@@ -885,7 +881,7 @@ SOURCE=..\..\..\src\jrd\ibsetjmp.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\ids.h
+SOURCE=..\..\..\src\include\gen\ids.h
 # End Source File
 # Begin Source File
 
@@ -981,10 +977,6 @@ SOURCE=..\..\..\src\jrd\jrd_pwd.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\jrd_time.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\kanji.h
 # End Source File
 # Begin Source File
@@ -1009,10 +1001,6 @@ SOURCE=..\..\..\src\jrd\lls.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\lnmdef.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\log.h
 # End Source File
 # Begin Source File
@@ -1022,22 +1010,6 @@ SOURCE=..\..\..\src\jrd\log2.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\log_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\map_proto.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\math.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\mblr.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\mblr_proto.h
 # End Source File
 # Begin Source File
 
@@ -1137,10 +1109,6 @@ SOURCE=..\..\..\src\jrd\os\pio_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\prv_m_bypass.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\quad.h
 # End Source File
 # Begin Source File
@@ -1154,10 +1122,6 @@ SOURCE=..\..\..\src\jrd\que.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\RandomGenerator.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\rec_proto.h
 # End Source File
 # Begin Source File
 
@@ -1237,10 +1201,6 @@ SOURCE=..\..\..\src\jrd\sha.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\jrd\shdef.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\jrd\shut_proto.h
 # End Source File
 # Begin Source File
@@ -1274,10 +1234,6 @@ SOURCE=..\..\..\src\jrd\svc_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\svc_undoc.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\syidef.h
 # End Source File
 # Begin Source File
 
@@ -1350,14 +1306,6 @@ SOURCE=..\..\..\src\jrd\vio_proto.h
 # Begin Source File
 
 SOURCE=..\..\..\src\jrd\VirtualTable.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\vms.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\jrd\vmslo_proto.h
 # End Source File
 # Begin Source File
 
