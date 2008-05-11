@@ -265,10 +265,6 @@ SOURCE=..\..\..\src\qli\eval_proto.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\src\qli\everything.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\src\qli\exe.h
 # End Source File
 # Begin Source File
