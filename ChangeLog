@@ -1,3 +1,70 @@
+2008-05-11 16:34  robocop
+
+	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.44),
+	Firebird2Boot.dsw (1.7), README_MSVC6.txt (1.2), engine.dsp (1.83),
+	engine_classic.dsp (1.79), engine_embed.dsp (1.58), fb2control.dsp
+	(1.8), fb_event_print.dsp (1.6), fb_inet_server.dsp (1.27),
+	fb_lock_print.dsp (1.24), fbclient.dsp (1.61), fbclient_static.dsp
+	(1.25), fbembed.dsp (1.43), fbguard.dsp (1.24), fbrmclib.dsp (1.5),
+	fbserver.dsp (1.41), fbsvcmgr.dsp (1.2), fbudf.dsp (1.17), gbak.dsp
+	(1.26), gbak_embed.dsp (1.4), gdef.dsp (1.22), gds32.dsp (1.27),
+	gfix.dsp (1.26), gpre.dsp (1.27), gpre_boot.dsp (1.28),
+	gpre_embed.dsp (1.5), gpre_static.dsp (1.12), gsec.dsp (1.24),
+	gsplit.dsp (1.11), gstat.dsp (1.26), ib_udf.dsp (1.21), ib_util.dsp
+	(1.19), instclient.dsp (1.7), instreg.dsp (1.17), instsvc.dsp
+	(1.18), intl.dsp (1.40), intlbld.dsp (1.5), isql.dsp (1.29),
+	isql_embed.dsp (1.7), lock.dsp (1.16), lock_classic.dsp (1.14),
+	nbackup.dsp (1.6), qli.dsp (1.21), remote.dsp (1.26),
+	remote_classic.dsp (1.23), utilities.dsp (1.19),
+	utilities_classic.dsp (1.17), utilities_embed.dsp (1.3):
+
+	Delete the VC6 project files from FB v2.1 and beyond because
+	building FB2.1+ with VC6 requires more than the reasonable
+	workarounds that were used for previous FB versions.
+
+2008-05-11 14:27  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.199), que.h (1.9):
+
+	Cleanup.
+
+2008-05-11 11:46  hvlad
+
+	* firebird2/src/jrd/extds/IscDS.cpp (1.9):
+
+	Fixed unregistered bug in EXEC STMT2 : varchar's descriptor lengths
+	did not accounted SHORT field for string length. It was lost during
+	refactoring, i.e. initial code has no this bug.
+
+2008-05-11 04:59  asfernandes
+
+	* firebird2/: src/include/gen/ids.h (1.35),
+	builds/install/arch-specific/freebsd/Makefile.in (1.4),
+	builds/install/arch-specific/linux/misc/README (1.2),
+	builds/install/arch-specific/netbsd/Makefile.in (1.3),
+	builds/install/misc/firebird.conf (1.44),
+	doc/sql.extensions/README.builtin_functions.txt (1.20),
+	extern/icu/source/data/locales/resfiles.mk (1.4), src/jrd/cmp.cpp
+	(1.292), src/jrd/lck.h (1.41), src/jrd/met.h (1.13),
+	src/jrd/sdw.cpp (1.79), src/jrd/os/config_root.h (1.19),
+	src/jrd/os/thd_priority.h (1.26), src/jrd/os/posix/unix.cpp (1.94),
+	src/utilities/guard/guard.cpp (1.21), src/utilities/guard/util.cpp
+	(1.16):
+
+	Misc
+
+2008-05-11 03:12  asfernandes
+
+	* firebird2/builds/install/misc/changeMultiConnectMode.sh.in (1.2):
+
+	Fix misspelled word
+
+2008-05-10 22:27  hvlad
+
+	* firebird2/src/jrd/pag.h (1.20):
+
+	Correction
+
 2008-05-10 18:49  dimitr
 
 	* firebird2/src/jrd/: SimilarToMatcher.h (1.8), jrd.h (1.243),
