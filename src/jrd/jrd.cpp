@@ -1423,14 +1423,23 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 		switch (option) {
 		case fb_cancel_disable:
 			attachment->att_flags |= ATT_cancel_disable;
+			attachment->att_flags &= ~ATT_cancel_raise;
 			break;
 
 		case fb_cancel_enable:
-			attachment->att_flags &= ~ATT_cancel_disable;
+			if (attachment->att_flags & ATT_cancel_disable)
+			{
+				// avoid leaving ATT_cancel_raise set when cleaning ATT_cancel_disable
+				// to avoid unexpected CANCEL (though it should not be set, but...)
+				attachment->att_flags &= ~(ATT_cancel_disable | ATT_cancel_raise);
+			}
 			break;
 
 		case fb_cancel_raise:
-			attachment->att_flags |= ATT_cancel_raise;
+			if (!(attachment->att_flags & ATT_cancel_disable))
+			{
+				attachment->att_flags |= ATT_cancel_raise;
+			}
 			break;
 
 		default:

@@ -1501,7 +1501,7 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
 		Attachment* attachment = translate<Attachment>(handle);
 		// mutex will be locked here for a really long time
 		Firebird::MutexLockGuard guard(attachment->enterMutex);	
-		if (attachment->enterCount)
+		if (attachment->enterCount || option != fb_cancel_raise)
 		{
 			CALL(PROC_CANCEL_OPERATION, attachment->implementation) (status,
 																	 &attachment->handle,
