@@ -91,7 +91,7 @@ void ConfigRoot::osConfigRoot()
 		if (bin_dir.length() != 0)
 		{
 			// get rid of the filename
-			int index = bin_dir.rfind(PathUtils::dir_sep);
+			const size_t index = bin_dir.rfind(PathUtils::dir_sep);
 			install_dir() = bin_dir.substr(0, index);
 		}
 	}
@@ -106,7 +106,7 @@ void ConfigRoot::osConfigRoot()
 #endif
 
 		// go to the parent directory
-		int index = install_dir().rfind(PathUtils::dir_sep, install_dir().length());
+		const size_t index = install_dir().rfind(PathUtils::dir_sep, install_dir().length());
 		root_dir = (index ? install_dir().substr(0, index) : install_dir()) + PathUtils::dir_sep;
 		return;
 	}
