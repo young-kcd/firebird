@@ -180,7 +180,6 @@ inline bool checkLock(const Lock* l)
 	return (l != NULL &&
 			l->lck_length <= MAX_UCHAR &&
 			l->lck_dbb != NULL &&
-			l->lck_test_field == 666 &&
 			(l->lck_id || l->lck_physical == LCK_none));
 }
 

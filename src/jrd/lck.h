@@ -70,8 +70,7 @@ class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
 	Lock()
-	:	lck_test_field(666),
-		lck_parent(0),
+	:	lck_parent(0),
 		lck_next(0),
 		lck_prior(0),
 		lck_collision(0),
@@ -93,7 +92,6 @@ public:
 		lck_tail[0] = 0;
 	}
 
-	const int	lck_test_field;
 	Lock*	lck_parent;
 	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
 							   bound to attachment */
