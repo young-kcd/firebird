@@ -508,13 +508,15 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				}
 				if (dataSize)
 				{
-					if (port->asyncReceive(&asyncPacket, buffer, dataSize))
+					SSHORT asyncSize = port->asyncReceive(&asyncPacket, buffer, dataSize);
+					if (asyncSize == dataSize)
 					{
 						port = NULL;
 						continue;
 					}
+					dataSize -= asyncSize;
 					Firebird::RefMutexGuard queGuard(*port->port_que_sync);
-					memcpy(port->port_queue.add().getBuffer(dataSize), buffer, dataSize);
+					memcpy(port->port_queue.add().getBuffer(dataSize), buffer + asyncSize, dataSize);
 				}
 
 				Firebird::RefMutexEnsureUnlock portGuard(*port->port_sync);
@@ -5174,7 +5176,7 @@ int SRVR_shutdown()
 }
 
 
-bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize)
+SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize)
 {
 /**************************************
  *
@@ -5188,7 +5190,7 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
  **************************************/
 	if (! port_async_receive)
 	{
-		return false;
+		return 0;
 	}
 	if (haveRecvData())
 	{
@@ -5198,7 +5200,7 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
 		// waiting in port queue. This can lead to fallback to synchronous 
 		// processing of async command (i.e. with some delay), but reliably 
 		// protects from spurious protocol breakage.
-		return false;
+		return 0;
 	}
 
 	switch(getOperation(buffer, dataSize))
@@ -5206,7 +5208,7 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
 	case op_cancel:
 		break;
 	default:
-		return false;
+		return 0;
 	}
 
 	{ // scope for guard
@@ -5218,9 +5220,10 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
 		memcpy(port_async_receive->port_queue.add().getBuffer(dataSize), buffer, dataSize);
 
 		// It's required, that async packets follow simple rule:
-		// single xdr packet fits into single network packet.
+		// xdr packet fits into network packet.
 		port_async_receive->receive(asyncPacket);
 	}
+	SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
 
 	switch(asyncPacket->p_operation)
 	{
@@ -5228,10 +5231,10 @@ bool rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dat
 		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
 		break;
 	default:
-		return false;
+		return 0;
 	}
 
-	return true;
+	return asyncSize;
 }
 
 

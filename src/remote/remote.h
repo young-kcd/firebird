@@ -890,7 +890,7 @@ public:
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
-	bool		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
+	SSHORT		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
 };
 
 
