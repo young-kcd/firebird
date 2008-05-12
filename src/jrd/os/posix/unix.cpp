@@ -234,6 +234,11 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
 	if (chmod(file_name.c_str(), MASK) < 0)
 #endif
 	{
+		int chmodError = errno;
+		// ignore possible errors ih this calls - even if they have failed
+		// we cannot help much with former recovery
+		close(desc);
+		unlink(file_name.c_str());
 		ERR_post(isc_io_error,
 				 isc_arg_string, "chmod",
 				 isc_arg_string, ERR_string(file_name),
