@@ -3878,6 +3878,9 @@ static processing_state create_db(const TEXT* statement,
 	}
 
 	if (DB) {
+		// No use in cancel when running non-end-user operators
+		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+
 		// Load isqlGlob.global_Db_name with some value to show a successful attach
 
 		// CVC: Someone may decide to play strange games with undocumented ability
@@ -6311,6 +6314,9 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_FREE(save_database);
 			return FAIL;
 		}
+
+		// No use in cancel when running non-end-user operators
+		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
 	} // scope
 
 	if (save_database)
@@ -8096,7 +8102,27 @@ static int process_statement(const TEXT* string,
  *	background work is on the default gds_trans.
  *	This function now returns CONT (success) or ps_ERR.
  **************************************/
+
+// Here we actively use the fact that fb_cancel_enable/disable commands may be send many times.
+// They are ignored if cancel already has requested state. This let's us disable cancel 
+// in the middle of processing, but do not care about special scope for CancelHolder variable.
+	class CancelHolder
+	{
+	public:
+		CancelHolder() 
+		{
+			fb_cancel_operation(isc_status, &DB, fb_cancel_enable);
+		}
+		~CancelHolder() 
+		{
+			fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+		}
+	};
+
 	processing_state ret = CONT;
+
+	// enable CANCEL during statement processing
+	CancelHolder cHolder;
 
 	// We received the address of the sqlda in case we realloc it
 	XSQLDA* sqlda = *sqldap;
@@ -8483,8 +8509,12 @@ static int process_statement(const TEXT* string,
 				// header but in its own line, if no row was output yet.
 				if (!lines && !printHead)
 					isqlGlob.printf(NEWLINE);
-					
+
 				ISQL_errmsg(isc_status);
+
+				// Avoid cancel during cleanup
+				fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
+
 				// CVC: It appears we can have an implicit cursor opened anyways.
 				isc_dsql_free_statement(isc_status, &global_Stmt, DSQL_close);
 				if (nullind)
@@ -8521,6 +8551,9 @@ static int process_statement(const TEXT* string,
 			isqlGlob.printf("%s%s", rec_count_msg, NEWLINE);
 		}
 	}
+
+	// Avoid cancel during cleanup
+	fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
 
 	// CVC: It appears we can have an implicit cursor opened anyways.
 	if (statement_type != isc_info_sql_stmt_exec_procedure) {
