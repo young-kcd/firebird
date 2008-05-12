@@ -117,7 +117,7 @@ static bool texttype_unicode_init(texttype* tt,
 bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const ASCII* configInfo,
 	const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes)
 {
-	int len = strlen(name);
+	const size_t len = strlen(name);
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
@@ -143,14 +143,14 @@ bool LCICU_texttype_init(texttype* tt,
 						 ULONG specificAttributesLength,
 						 const ASCII* configInfo)
 {
-	int len = strlen(name);
-
 	if (strcmp(name, charSetName) == 0)
 	{
 		return texttype_default_init(
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength, configInfo);
 	}
+
+	const size_t len = strlen(name);
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
