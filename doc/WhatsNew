@@ -162,6 +162,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-1889
+        Security database has FW mode OFF, making it corrupted under some circumstances
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
 
   ***************************
   * v2.1 Final
