@@ -46,7 +46,7 @@ void ParsedPath::parse(const PathName& path)
 	} while (oldpath.length() > 0);
 }
 
-PathName ParsedPath::subPath(int n) const 
+PathName ParsedPath::subPath(size_t n) const 
 {
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
@@ -153,7 +153,7 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 
-	unsigned int last = 0;
+	size_t last = 0;
 	PathName root = Config::getRootDirectory();
 	size_t i;
 	for (i = 0; i < val.length(); i++) {

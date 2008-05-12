@@ -66,7 +66,7 @@ public:
 	// possible symbolic links.
 	bool contains(const ParsedPath& pPath) const;
 	// Returns path, containing elements from 0 to n-1
-	PathName subPath(int n) const;
+	PathName subPath(size_t n) const;
 };
 
 	
