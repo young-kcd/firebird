@@ -1,3 +1,95 @@
+2008-05-12 18:09  alexpeshkoff
+
+	* firebird2/doc/sql.extensions/README.user_management (1.1):
+
+	added doc
+
+2008-05-12 17:15  asfernandes
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.96):
+
+	Report the saved errno
+
+2008-05-12 16:14  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.95):
+
+	Remove file if chmod failed - thanks to Adriano
+
+2008-05-12 15:37  alexpeshkoff
+
+	* firebird2/src/isql/isql.epp (1.243):
+
+	Disable ctrl-C processing when running internal SQL statements (API
+	calls) and cleanup
+
+2008-05-12 15:36  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.460), why.cpp (1.202):
+
+	Make fb_cancel_operation() behave better when enable/disable
+	command is used
+
+2008-05-12 15:34  alexpeshkoff
+
+	* firebird2/src/remote/: remote.h (1.78), server.cpp (1.208):
+
+	Make it possible to have normal operations after async ones in
+	single network packet
+
+2008-05-12 09:02  dimitr
+
+	* firebird2/src/jrd/: lck.cpp (1.83), lck.h (1.42):
+
+	Removed the unnecessary debugging field.
+
+2008-05-12 07:59  dimitr
+
+	* firebird2/src/intl/lc_icu.cpp (1.12):
+
+	Reduce number of warnings for 64-bit targets.
+
+2008-05-12 07:25  dimitr
+
+	* firebird2/src/common/config/: dir_list.cpp (1.33), dir_list.h
+	(1.20):
+
+	Reduce number of warnings for 64-bit targets.
+
+2008-05-12 06:47  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.23):
+
+	Reduce number of warnings for 64-bit targets.
+
+2008-05-11 23:27  hvlad
+
+	* firebird2/src/jrd/: Relation.h (1.6), cmp.cpp (1.293), met.epp
+	(1.249), tra.cpp (1.174):
+
+	Make ViewContext::vcx_context_name able to store more than 31 chars
+	 as was discussed in fb-devel. Thanks to Claudio for the tips.
+
+2008-05-11 22:05  asfernandes
+
+	* firebird2/: doc/sql.extensions/README.ddl.txt (1.8),
+	src/dsql/ddl.cpp (1.235):
+
+	1) Allow to reference others fields in the expression of
+	ALTER...COMPUTED 2) Documentation
+
+2008-05-11 21:37  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.101):
+
+	Fix incorrect error message
+
+2008-05-11 21:08  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.9):
+
+	Fixed problems with SIMILAR TO expressions [^x-y] and [x^y]
+
 2008-05-11 16:34  robocop
 
 	* firebird2/builds/win32/msvc6/: Firebird2.dsw (1.44),
