@@ -8103,9 +8103,9 @@ static int process_statement(const TEXT* string,
  *	This function now returns CONT (success) or ps_ERR.
  **************************************/
 
-// Here we actively use the fact that fb_cancel_enable/disable commands may be send many times.
-// They are ignored if cancel already has requested state. This let's us disable cancel 
-// in the middle of processing, but do not care about special scope for CancelHolder variable.
+	// Here we actively use the fact that fb_cancel_enable/disable commands may be send many times.
+	// They are ignored if cancel already has requested state. This let's us disable cancel 
+	// in the middle of processing, but do not care about special scope for CancelHolder variable.
 	class CancelHolder
 	{
 	public:

@@ -5223,6 +5223,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		// xdr packet fits into network packet.
 		port_async_receive->receive(asyncPacket);
 	}
+
 	SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
 
 	switch(asyncPacket->p_operation)

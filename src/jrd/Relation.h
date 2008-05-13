@@ -42,13 +42,14 @@ public:
 	{		
 	}
 
-	const Firebird::string	vcx_context_name;
-	const Firebird::MetaName	vcx_relation_name;
-	const USHORT	vcx_context;
 	static const USHORT generate(const void*, const ViewContext* vc) 
 	{ 
 		return vc->vcx_context; 
 	}
+
+	const Firebird::string	vcx_context_name;
+	const Firebird::MetaName	vcx_relation_name;
+	const USHORT	vcx_context;
 };
 
 typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>, 

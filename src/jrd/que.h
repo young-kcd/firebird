@@ -35,7 +35,7 @@ struct que
 	struct que* que_backward;
 };
 
-typedef que *QUE;
+typedef que* QUE;
 
 
 

@@ -4491,11 +4491,11 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
             REQUEST(irq_view_context) = request;
 
 		// trim trailing spaces 
-		fb_utils::exact_name_limit(V.RDB$CONTEXT_NAME, 
+		fb_utils::exact_name_limit(V.RDB$CONTEXT_NAME,
 			sizeof(V.RDB$CONTEXT_NAME));
 
-		ViewContext *view_context = FB_NEW(*dbb->dbb_permanent) 
-			ViewContext(*dbb->dbb_permanent, 
+		ViewContext* view_context = FB_NEW(*dbb->dbb_permanent)
+			ViewContext(*dbb->dbb_permanent,
 				V.RDB$CONTEXT_NAME,
 				V.RDB$RELATION_NAME,
 				V.RDB$VIEW_CONTEXT);
