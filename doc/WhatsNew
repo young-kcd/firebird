@@ -97,6 +97,12 @@
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-1830
+        Possible index corruption with multiply updates of the same record in the same transaction
+        and using of savepoints
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-1826
         changeRunUser.sh and restoreRootRunUser.sh scripts does not change run user in init.d scripts
       Contributor(s):
