@@ -4,7 +4,7 @@ Function:
 	allow input parameters of stored procedures to have optional default values
 
 Autor:
-	Vlad Horsun <horsun at kdb.dp.ua>
+	Vlad Khorsun <hvlad at users.sourceforge.net>
 
 Syntax:
 	same as default value definition of column or domain, except that

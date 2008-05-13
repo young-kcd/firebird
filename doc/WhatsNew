@@ -36,12 +36,12 @@
     * Bugfix CORE-1651
         False isc_req_sync error may be reported by fbclient to the client application
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1649
         AV when recursive query used MERGE JOIN in execution plan
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1648
         RDB$TYPES doesn't list types for database triggers
@@ -102,7 +102,7 @@
     * Bugfix CORE-1597
         GLOBAL TEMPORARY TABLEs allowed to be created in ODS less than 11.1
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1594
         Bug in CsConvert::convert()
@@ -124,7 +124,7 @@
     * Bugfix CORE-1584
         Server crashes or bugchecks when inserting into monitoring tables
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1582
         ABS() rounds NUMERIC values
@@ -139,7 +139,7 @@
     * Bugfix CORE-1574
         Multi-file database problems
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1567
         Selecting from MON$STATEMENTS yields an error and an exit() call
@@ -220,7 +220,7 @@
     * Bugfix CORE-1519
         AV in isc_dsql_fetch()
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1514
         Many new 2.1 built-in functions have incorrect NULL semantics
@@ -267,7 +267,7 @@
     * Bugfix CORE-1481
         GFIX may report false errors when using in-memory metadata
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1375
         Wrong mapping for 0x212C in cs_gb2312.h
@@ -277,7 +277,7 @@
     * Bugfix CORE-1199
         Internal GDS software consistency check (CCH_precedence: block marked (212))
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-374
         Restore with SPs in 'COMPUTED BY' fields fails
@@ -323,7 +323,7 @@
     * New feature CORE-1625
         Implement new setting to relax strict SQL standard's alias checking rules
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * New feature CORE-1511
         POSITION(<string_expr_1>, <string_expr_2> [, <start_pos>])
@@ -359,7 +359,7 @@
         Database corruption possible when database file extension and read\write activity
         are performed simultaneously
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1467
         Error 'database shutdown' after canceling statement via MON$STATEMENTS
@@ -379,13 +379,13 @@
     * Bugfix CORE-1457
         Server crashes attempting to deliver events for the just disconnected session
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1456
         Wrong events delivery in the case of concurrent XNET connections
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-1455
@@ -397,7 +397,7 @@
         Client library crashes when attempting to process an event received just prior to disconnection
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1451
         Using RDB$DB_KEY in SQL's WHERE section while selecting from a procedure crashes the server
@@ -418,7 +418,7 @@
     * Bugfix CORE-1443
         Embedded engine may hang application on exit if no database access was performed
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1441
         Query cancellation feature cannot interrupt a long fetch
@@ -448,12 +448,12 @@
     * Bugfix CORE-1430
         Access Violation in fbclient.dll if statement prepared and executed right after events was registered
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1428
         Incorrect timestamp substraction in 3 dialect when result is negative number
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1419
         Wrong current timestamp evaluation for selectable procedures
@@ -489,7 +489,7 @@
     * Bugfix CORE-1401
         Global temporary table instance may pick up not all indices
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1400
         GSTAT doesn't support port number in connection string
@@ -509,7 +509,7 @@
     * Bugfix CORE-1397
         Possible vulnerability in the remote server
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1395
         Few problems with domains's check constraints
@@ -519,7 +519,7 @@
     * Bugfix CORE-1388
         Cannot attach to remote service manager if remote engine version is less than 2.0
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1384
         LIKE doesn't work correctly with collations using SPECIALS-FIRST=1
@@ -529,7 +529,7 @@
     * Bugfix CORE-1380
         I/O errors after changing FW for the already attached database
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1379
         Invalid parameter type when using it in CHAR_LENGTH function
@@ -545,12 +545,12 @@
         Incorrect result of recursive CTE query when recursive member's SELECT list
         contains expression using self-referenced fields
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1372
         isc_dsql_fetch() called after isc_commit_transaction() doesn't raise an error
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1371
         Execute block fails within execute statement
@@ -560,7 +560,7 @@
     * Bugfix CORE-1370
         Memory leak when using CTE within procedure
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1369
         Downgrade from ODS11.1 misses default values of procedure parameters
@@ -570,7 +570,7 @@
     * Bugfix CORE-1361
         Index operations for global temporary tables are not visible for the active connection
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1359
         Server crashes at the first operation with the monitoring tables
@@ -586,7 +586,7 @@
     * Bugfix CORE-1349
         Remote interface doesn't validate the client supplied message length against the message format length
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1347
         Unexpected "cannot transliterate" error
@@ -661,7 +661,7 @@
     * New feature CORE-1381, CORE-1480
         Allow Firebird to bypass filesystem cache for database files
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * New feature CORE-1366
         French insensitive collation FR_FR_CI_AI
@@ -692,7 +692,7 @@
         Data type unknown
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1306
         Indices not used for views
@@ -702,22 +702,22 @@
     * Bugfix CORE-1303
 		Infinite loop in SS remote listener
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1300
 		Lower level index pages is missed from parent page
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1299
 		Wrong index entries order at non-leaf b-tree pages
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1298
 		BTR\garbage_collect code can make a deadlock in a page cache
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1292
         Can't create table using long username and UTF8 as attachment charset
@@ -728,7 +728,7 @@
 		Can't transliterate character set when look at procedure text in database 
 		just created from script (and thus in ODS 11.1)
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 		
     * Bugfix CORE-1286
         Bug with COMPUTED BY fields
@@ -738,7 +738,7 @@
     * Bugfix CORE-1276
 		Sometime INET error reported as 0 in firebird.log instead of real error code
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 		
     * Bugfix CORE-1271
         Creation of invalid procedures/triggers allowed
@@ -768,13 +768,13 @@
     * Bugfix CORE-1248
         Incorrect timestamp arithmetics when one of the operands is negative number
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1244
         Server crash on "select * from <recursive CTE>"
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1240
         Any task, using libfbclient, hangs on exit (Darwin PPC)
@@ -789,7 +789,7 @@
     * Bugfix CORE-1228
         Database often became corrupted after an out of disk space condition
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1227
         LIST() function seems not work if used twice or more in a query  
@@ -799,22 +799,22 @@
     * Bugfix CORE-1223
         Wrong message in firebird.log on Open SuSe Linux 10.2 : Open file limit increased from 1024 to 0
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1218
         isc_dsql_info(isc_info_sql_stmt_type) doesn't set isc_info_end at the end of the passed user's buffer
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1215
         Wrong SELECT query results using index to evaluate >= condition
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1207
         FB embedded requires extra OS privileges
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1205
         v2.1 GBAK crashes the v2.0.x server when attempting to backup a database  
@@ -825,7 +825,7 @@
     * Bugfix CORE-1196
         Long SQL statements break TCP/IP connection
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
         Alex Peshkov <peshkoff at mail.ru>
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -898,7 +898,7 @@
     * Bugfix CORE-132
         Restore fails on external table  
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-107
         Instance of fb_lock_mgr runs after build
@@ -923,7 +923,7 @@
     * Improvement CORE-1229
         Allocate disk space by more than one page at a time
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-1226
         Allow RETURNING in INSERT...SELECT, UPDATE and DELETE
@@ -960,7 +960,7 @@
     * Improvement CORE-961
         Free external tables as soon as they're no longer in use by user requests
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-867
         GBAK should change param0 to not show username/password in ps axf
@@ -1052,7 +1052,7 @@
     * Bugfix CORE-1031
         fb_lock_print.exe fails on Windows 2003 R2 / XP SP2
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-1009
         Restoring RDB$BASE_FIELD for expression
@@ -1108,7 +1108,7 @@
     * Bugfix CORE-908
         Garbage in plan output of complex statement
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Bugfix CORE-900
         Deadlock when attaching simultaneously with services and standard APIs
@@ -1273,17 +1273,17 @@
     * Improvement CORE-1071
         Background garbage collector doesn't need to read backversion of active record
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-1070
         Optimize sparse bitmap operations (set, test and clear) with mostly consecutive values
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-1069
         Optimize index scan when more than one index scanned and ANDed
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-979
         Make RDB$DB_KEY in outer joins returns NULL when appropriate
@@ -1314,12 +1314,12 @@
         Improve network protocol performance
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-970
         Show line/column numbers in PSQL error stack trace
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-969
         Deprecate page sizes of 1K and 2K as being inefficient
@@ -1421,14 +1421,14 @@
       See also:
         /doc/README.common_table_expressions
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Feature CORE-962
         Global temporary tables
       See also:
         /doc/README.global_temporary_tables
       Contributor(s):
-        Vlad Horsun <hvlad at users.sourceforge.net>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Feature CORE-864
         Chinese character set GBK

@@ -5,7 +5,7 @@ Function:
 	Supports input and output parameters
 
 Autor:
-	Vlad Horsun <horsun@kdb.dp.ua>
+	Vlad Khorsun <hvlad at users.sourceforge.net>
 
 Syntax:
 	EXECUTE BLOCK [ (param datatype = ?, param datatype = ?, ...) ]
