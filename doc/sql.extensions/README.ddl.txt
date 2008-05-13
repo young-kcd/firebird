@@ -187,10 +187,12 @@ executed to go from input type X to output type Z. If you have such problem in
 databases created with earlier versions and you have a backup for them that want
 to restore in FB2, expect to see your database restore being rejected by FB2.
 
+
 7) ALTER computed fields
 (Adriano dos Santos Fernandes)
 
 Syntax:
+
 alter table ...
     alter <field> [type <data type>] computed by (<expression>);
 
@@ -198,6 +200,7 @@ Notes:
 - You cannot alter a non-COMPUTED field to COMPUTED and vice-versa.
 
 Example:
+
 create table test (
     n integer,
     dn computed by (n * 2)
@@ -205,3 +208,32 @@ create table test (
 
 alter table test
     alter dn computed by (n + n);
+
+
+8) ALTER VIEW
+(Adriano dos Santos Fernandes)
+
+Function:
+
+Ability to alter a view without the need to recreate (drop and create) the view and all of it's
+dependencies.
+
+Syntax:
+
+{ create [ or alter ] | alter } view <view_name> [ ( <field list> ) ]
+    as <select statement>
+
+Example:
+
+create table users (
+    id integer,
+    name varchar(20),
+    passwd varchar(20)
+);
+
+create view v_users as
+    select name from users;
+
+alter view v_users (id, name) as
+    select id, name from users;
+
