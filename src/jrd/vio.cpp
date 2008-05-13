@@ -102,7 +102,7 @@ static void delete_(TDBB, RPB *, SLONG, JrdMemoryPool *);
 static UCHAR *delete_tail(TDBB, RPB *, SLONG, UCHAR *, UCHAR *);
 static void expunge(TDBB, RPB *, JRD_TRA, SLONG);
 static void garbage_collect(TDBB, RPB *, SLONG, LLS);
-static void garbage_collect_idx(TDBB, RPB *, RPB *, REC);
+static void garbage_collect_idx(TDBB, RPB *, RPB *, REC, REC);
 #ifdef GARBAGE_THREAD
 static void THREAD_ROUTINE garbage_collector(DBB);
 #endif
@@ -2852,7 +2852,7 @@ void VIO_verb_cleanup(TDBB tdbb, JRD_TRA transaction)
 							}
 							update_in_place(tdbb, transaction, &rpb, &new_rpb);
 							if (!(transaction->tra_flags & TRA_system))
-								garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
+								garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL, NULL);
 							rpb.rpb_record = dead_record;
 						}
 					}
@@ -3343,7 +3343,7 @@ static void garbage_collect(
 
 static void garbage_collect_idx(
 								TDBB tdbb,
-								RPB * org_rpb, RPB * new_rpb, REC old_data)
+								RPB * org_rpb, RPB * new_rpb, REC old_data, REC staying_data)
 {
 /**************************************
  *
@@ -3370,6 +3370,9 @@ static void garbage_collect_idx(
 	going = staying = NULL;
 	list_staying(tdbb, org_rpb, &staying);
 
+	if (staying_data)
+		LLS_PUSH(staying_data, &staying);
+
 /* The data that is going is passed either via old_data, or via org_rpb. */
 
 	if (old_data)
@@ -3382,6 +3385,9 @@ static void garbage_collect_idx(
 	IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 	LLS_POP(&going);
+
+	if (staying_data)
+		LLS_POP(&staying);
 
 	while (staying)
 		delete LLS_POP(&staying);
@@ -4678,10 +4684,12 @@ static void verb_post(
 		}
 	}
 	else if (same_tx) {
+		REC undo = NULL;
 		if (action->vct_undo && action->vct_undo->locate(Firebird::locEqual, rpb->rpb_number)) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has already undo for this record. */
-			action->vct_undo->current().rec_data->rec_flags |= REC_same_tx;
+			undo = action->vct_undo->current().rec_data;
+			undo->rec_flags |= REC_same_tx;
 		}
 		else {
 			/* An insert/update followed by a delete is posted to this savepoint,
@@ -4699,7 +4707,7 @@ static void verb_post(
 		if (old_data) {
 			/* The passed old_data will not be used.  Thus, garbage collect. */
 
-			garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
+			garbage_collect_idx(tdbb, rpb, new_rpb, old_data, undo);
 		}
 	}
 	else if (old_data) {
@@ -4708,7 +4716,12 @@ static void verb_post(
 		   so make sure we garbage collect before we loose track of the
 		   in-place-updated record. */
 
-		garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
+		REC undo = NULL;
+		if (action->vct_undo && action->vct_undo->locate(Firebird::locEqual, rpb->rpb_number)) {
+			undo = action->vct_undo->current().rec_data;
+		}
+
+		garbage_collect_idx(tdbb, rpb, new_rpb, old_data, undo);
 	}
 
 	tdbb->tdbb_default = old_pool;
