@@ -101,7 +101,7 @@ static void expunge(thread_db*, record_param*, const jrd_tra*, SLONG);
 static bool dfw_should_know(record_param* org_rpb, record_param* new_rpb,
 	USHORT irrelevant_field, bool void_update_is_relevant);
 static void garbage_collect(thread_db*, record_param*, SLONG, RecordStack&);
-static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*);
+static void garbage_collect_idx(thread_db*, record_param*, record_param*, Record*, Record*);
 #ifdef GARBAGE_THREAD
 static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM);
 #endif
@@ -2979,7 +2979,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									}
 									update_in_place(tdbb, transaction, &rpb, &new_rpb);
 									if (!(transaction->tra_flags & TRA_system)) {
-										garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL);
+										garbage_collect_idx(tdbb, &rpb, &new_rpb, NULL, NULL);
 									}
 									rpb.rpb_record = dead_record;
 								}
@@ -3616,7 +3616,7 @@ static void garbage_collect(thread_db* tdbb,
 static void garbage_collect_idx(
 								thread_db* tdbb,
 								record_param* org_rpb, record_param* new_rpb,
-								Record* old_data)
+								Record* old_data, Record* staying_data)
 {
 /**************************************
  *
@@ -3641,6 +3641,10 @@ static void garbage_collect_idx(
 	RecordStack going, staying;
 	list_staying(tdbb, org_rpb, staying);
 
+	if (staying_data) {
+		staying.push(staying_data);
+	}
+
 /* The data that is going is passed either via old_data, or via org_rpb. */
 
 	going.push(old_data ? old_data : org_rpb->rpb_record);
@@ -3651,6 +3655,9 @@ static void garbage_collect_idx(
 
 	going.pop();
 
+	if (staying_data) {
+		staying.pop();
+	}
 	clearRecordStack(staying);
 }
 
@@ -4986,10 +4993,12 @@ static void verb_post(
 		}
 	}
 	else if (same_tx) {
+		Record* undo = NULL;
 		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has already undo for this record. */
-			action->vct_undo->current().rec_data->rec_flags |= REC_same_tx;
+			undo = action->vct_undo->current().rec_data;
+			undo->rec_flags |= REC_same_tx;
 		}
 		else {
 			/* An insert/update followed by a delete is posted to this savepoint,
@@ -5008,7 +5017,7 @@ static void verb_post(
 		if (old_data) {
 			/* The passed old_data will not be used.  Thus, garbage collect. */
 
-			garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
+			garbage_collect_idx(tdbb, rpb, new_rpb, old_data, undo);
 		}
 	}
 	else if (old_data) {
@@ -5017,7 +5026,11 @@ static void verb_post(
 		   so make sure we garbage collect before we lose track of the
 		   in-place-updated record. */
 
-		garbage_collect_idx(tdbb, rpb, new_rpb, old_data);
+		Record* undo = NULL;
+		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
+			undo = action->vct_undo->current().rec_data;
+		}
+		garbage_collect_idx(tdbb, rpb, new_rpb, old_data, undo);
 	}
 }
 
