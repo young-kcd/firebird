@@ -361,8 +361,8 @@ public:
 
 	size_t add(const Value& item)
 	{
-	    size_t pos;
-  	    find(KeyOfValue::generate(this, item), pos);
+		size_t pos;
+		find(KeyOfValue::generate(this, item), pos);
 		insert(pos, item);
 		return pos;
 	}
