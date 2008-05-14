@@ -700,7 +700,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_xpm->xpm_count++;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
@@ -708,7 +708,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
@@ -716,7 +716,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
@@ -724,7 +724,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
@@ -825,7 +825,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		xcc->xcc_xpm->xpm_count++;
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_FILLED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled ||
@@ -835,7 +835,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted ||
@@ -845,7 +845,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled ||
@@ -855,7 +855,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
-						xcc->xcc_map_num, xcc->xcc_slot, (ULONG) xpm->xpm_timestamp);
+						xcc->xcc_map_num, xcc->xcc_slot, xpm->xpm_timestamp);
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, TRUE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted ||
