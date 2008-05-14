@@ -99,7 +99,7 @@
 
     * Bugfix CORE-1830
         Possible index corruption with multiply updates of the same record in the same transaction
-        and using of savepoints
+        and usage of savepoints
       Contributor(s):
         Vlad Horsun <hvlad at users.sourceforge.net>
 
