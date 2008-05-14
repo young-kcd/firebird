@@ -24,7 +24,7 @@ useful when your program executes some critical things (for example, cleanup).
 fb_cancel_disable / fb_cancel_enable may be set many times - if engine is already in requested
 state, no action is taken. Cancel is enabled by default (i.e. after attach/create database).
 
-Pay attention to asynchronous nature of this API call. Useally fb_cancel_raise is called when 
+Pay attention to asynchronous nature of this API call. Usually fb_cancel_raise is called when 
 you need to stop long-running request. This means that it's called from separate thread (calling
 it from signal handler is bad idea, it's NOT async signal safe). Another side of asynchronous 
 execution is that at the end of API call attachment's activity may be already cancelled, may be not
