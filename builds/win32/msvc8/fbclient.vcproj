@@ -575,7 +575,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd_proto.h"
+				RelativePath="..\..\..\src\jrd\os\thd_priority.h"
 				>
 			</File>
 			<File
