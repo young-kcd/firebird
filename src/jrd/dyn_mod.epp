@@ -3425,7 +3425,7 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 	// This is FB 2.5 limited implementation!
 	// Later it should work with new system table, something like RDB$MAPPING.
 
-	if (osName != DOMAIN_ADMINS || dbName != ADMIN_ROLE)
+	if (dbName != ADMIN_ROLE)
 	{
 		Firebird::status_exception::raise(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
 	}
@@ -3445,11 +3445,11 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 		MODIFY X
 			switch (op)
 			{
-			case isc_dyn_map_role:
+			case isc_dyn_automap_role:
 				X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO | ROLE_FLAG_MAY_TRUST;
 				break;
 
-			case isc_dyn_unmap_role:
+			case isc_dyn_autounmap_role:
 				X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;
 				break;
 

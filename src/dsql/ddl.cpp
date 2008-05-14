@@ -5807,13 +5807,14 @@ static void modify_map(dsql_req* request)
 	fb_assert(node->nod_type == nod_mod_role);
 
 	const dsql_str* ds = (dsql_str*) node->nod_arg[e_mod_role_os_name];
-	fb_assert(ds);
-	request->append_cstring(isc_dyn_mapping, ds->str_data);
+	fb_assert(ds || 
+			  node->nod_arg[e_mod_role_action]->getSlong() == isc_dyn_automap_role ||
+			  node->nod_arg[e_mod_role_action]->getSlong() == isc_dyn_autounmap_role);
+	request->append_cstring(isc_dyn_mapping, ds ? ds->str_data : "");
 
 	ds = (dsql_str*) node->nod_arg[e_mod_role_db_name];
 	fb_assert(ds);
-	request->append_cstring(*(SLONG *)	// TODO: use getSlong()
-		(node->nod_arg[e_mod_role_action]->nod_desc.dsc_address), ds->str_data);
+	request->append_cstring(node->nod_arg[e_mod_role_action]->getSlong(), ds->str_data);
 
 	request->append_uchar(isc_dyn_end);
 }
@@ -5879,6 +5880,7 @@ static void define_user(dsql_req* request, UCHAR op)
 	}
 
 	request->append_uchar(isc_user_end);
+	request->append_uchar(isc_dyn_end);
 }
 
 

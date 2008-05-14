@@ -540,7 +540,8 @@ enum att_type {
 	// Names mapping
 	att_map_os = SERIES,
 	att_map_user,
-	att_map_role
+	att_map_role,
+	att_auto_map_role
 };
 
 

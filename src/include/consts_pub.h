@@ -827,6 +827,8 @@
 #define isc_dyn_unmap_role							2
 #define isc_dyn_map_user							3
 #define isc_dyn_unmap_user							4
+#define isc_dyn_automap_role						5
+#define isc_dyn_autounmap_role						6
 
 /********************/
 /* Users control    */

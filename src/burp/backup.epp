@@ -3996,8 +3996,9 @@ void write_mapping(void)
 			if (X.RDB$SYSTEM_FLAG == (ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO))
 			{
 				put(tdgbl, rec_mapping);
-				put_text(att_map_os, DOMAIN_ADMINS, strlen(DOMAIN_ADMINS) + 1);
-				put_text(att_map_role, ADMIN_ROLE, strlen(ADMIN_ROLE) + 1);
+				//put_text(att_map_os, DOMAIN-ADMINS, strlen(DOMAIN-ADMINS) + 1);
+				//put_text(att_map_role, ADMIN-ROLE, strlen(ADMIN-ROLE) + 1);
+				put_text(att_auto_map_role, ADMIN_ROLE, strlen(ADMIN_ROLE) + 1);
 				put(tdgbl, att_end);
 				BURP_verbose (297, ADMIN_ROLE);
 				// msg 297 writing mapping for @1

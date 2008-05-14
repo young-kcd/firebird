@@ -231,6 +231,7 @@ static const TOK tokens[] =
 	{KW_LOWER, "LOWER", 2, false},
 	{LPAD, "LPAD", 2, false},
 	{MANUAL, "MANUAL", 1, false},
+	{MAPPING, "MAPPING", 2, false},
 	{MATCHED, "MATCHED", 2, false},
 	{MATCHING, "MATCHING", 2, false},
 	{MAXIMUM, "MAX", 1, false},

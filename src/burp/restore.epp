@@ -5876,7 +5876,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 		{
 			switch (attribute)
 			{
-			case att_map_role:
+/*			case att_map_role:
 				l = GET_TEXT(temp);
 				role.assign(temp, l);
 				break;
@@ -5884,6 +5884,11 @@ bool get_mapping(BurpGlobals* tdgbl)
 			case att_map_os:
 				l = GET_TEXT(temp);
 				os.assign(temp, l);
+				break;
+ */
+			case att_auto_map_role:
+				l = GET_TEXT(temp);
+				role.assign(temp, l);
 				break;
 
 			default:
@@ -5898,7 +5903,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 			return true;	// silently skip attributes on old server
 		}
 
-		if (os != DOMAIN_ADMINS || role != ADMIN_ROLE)
+		if (role != ADMIN_ROLE)
 		{
 			BURP_error(300, false);
 			return true;

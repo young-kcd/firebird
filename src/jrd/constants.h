@@ -73,8 +73,6 @@ const char* const ADMIN_ROLE = "RDB$ADMIN";
 // Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
 const SSHORT ROLE_FLAG_MAY_TRUST	= 2;
 const SSHORT ROLE_FLAG_DBO			= 4;
-// Predefined NT group name
-const char* const DOMAIN_ADMINS = "Domain Admins";
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
 const char* const FOREIGN_KEY		= "FOREIGN KEY";

@@ -546,6 +546,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token FIRSTNAME
 %token LASTNAME
 %token MIDDLENAME
+%token MAPPING
 %token OS_NAME
 %token SIMILAR
 %token UUID_TO_CHAR
@@ -2474,6 +2475,7 @@ alter_udf_clause    : symbol_UDF_name entry_op module_op
 			{ $$ = make_node(nod_mod_udf, e_mod_udf_count, $1, $2, $3); }
 			;
 
+/*
 alter_role_clause	: symbol_role_name alter_role_action OS_NAME os_security_name
 			{ $$ = make_node(nod_mod_role, e_mod_role_count, $4, $1, $2); }
 			;
@@ -2482,6 +2484,17 @@ alter_role_action	: ADD
 			{ $$ = MAKE_const_slong (isc_dyn_map_role); }
 		| DROP
 			{ $$ = MAKE_const_slong (isc_dyn_unmap_role); }
+		;
+ */
+
+alter_role_clause	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
+			{ $$ = make_node(nod_mod_role, e_mod_role_count, NULL, $1, $2); }
+			;
+
+alter_role_enable	: SET
+			{ $$ = MAKE_const_slong (isc_dyn_automap_role); }
+		| DROP
+			{ $$ = MAKE_const_slong (isc_dyn_autounmap_role); }
 		;
 	
 os_security_name	: STRING
@@ -4982,6 +4995,7 @@ non_reserved_word :
 	| FIRSTNAME
 	| MIDDLENAME
 	| LASTNAME
+	| MAPPING
 	| OS_NAME
 	| UUID_TO_CHAR
 	| COMMON				// new execute statement
