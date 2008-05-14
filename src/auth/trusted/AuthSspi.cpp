@@ -87,9 +87,8 @@ AuthSspi::~AuthSspi()
 
 bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 {
-#if (defined(_MSC_VER) && _MSC_VER <= 1200) || defined (__GNUC__)
-	// CVC: MSVC6 hack.
-	// ASF: seems to be needed by MinGW too.
+#if defined (__GNUC__)
+	// ASF: MinGW hack.
 	struct SecPkgContext_AccessToken
 	{
 		void* AccessToken;

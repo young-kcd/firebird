@@ -103,11 +103,7 @@
 
 using namespace Jrd;
 
-#if defined _MSC_VER && _MSC_VER <= 1200
-#include "../jrd/SimilarToMatcherVC6.h"
-#else
 #include "../jrd/SimilarToMatcher.h"
-#endif
 
 
 namespace {

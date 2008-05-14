@@ -584,14 +584,8 @@ public:
 
 	    Value& current() const { return (*curr)[curPos]; }
 
-		// CVC: Here making this public is hack for MSVC6 that didn't acknowledge the
-		// friend declaration.
-#if defined(_MSC_VER) && _MSC_VER <= 1200
-	public:
-#else
 	private:
-#endif
-	
+
 		// Returns true if current position is valid and already points to the given key.
 		// Note that we can't guarantie validity of current position if tree is accessed 
 		// by different Accessor's. Therefore this method is private and can be used only 

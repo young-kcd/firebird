@@ -285,10 +285,6 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
  *
  **************************************/
  
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) // || defined(MINGW)
-	const DWORD INVALID_SET_FILE_POINTER = 0xFFFFFFFF;
-#endif
-
 	// hvlad: prevent other reading\writing threads from changing file pointer.
 	// As we open file without FILE_FLAG_OVERLAPPED, ReadFile\WriteFile calls
 	// will change file pointer we set here and file truncation instead of file

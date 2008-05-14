@@ -2908,19 +2908,7 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 }
 
 
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-SysFunction::SysFunction(const char* s, int minCount, int maxCount, SetParamsFunc sp, MakeFunc mf, EvlFunc ef, void* v)
-	: name(s), minArgCount(minCount), maxArgCount(maxCount), setParamsFunc(sp), makeFunc(mf), evlFunc(ef), misc(v)
-{
-}
-#endif
-
-
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200))
-#define SF(a, b, c, d, e, f, g) SysFunction(a, b, c, d, e, f, g)
-#else
 #define SF(a, b, c, d, e, f, g) {a, b, c, d, e, f, g}
-#endif
 
 #ifdef _MSC_VER
 typedef StdMathFunc VoidPtrStdMathFunc;

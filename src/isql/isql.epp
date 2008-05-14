@@ -7122,7 +7122,7 @@ static SSHORT print_item(TEXT** s,
 				// The bug appears in TCS DSQL_DOMAIN_12 and 13
 				//
 				const double value = (double) *(float*) var->sqldata;
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
+#if defined(MINGW)
 				if (value == 0) {
 					sprintf(p, "% #*.*g ", length,
 							(int) MIN(8, (length - 6)) - 1,
@@ -7198,7 +7198,7 @@ static SSHORT print_item(TEXT** s,
 					}
 				}
 				else {
-#if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
+#if defined(MINGW)
 					if (value == 0) {
 						sprintf(p, "% #*.*g ", length,
 								(int) MIN(16, (length - 7)) - 1,
