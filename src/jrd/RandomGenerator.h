@@ -34,11 +34,7 @@ public:
 	void getBytes(void* p, size_t size);
 
 private:
-#if (defined(_MSC_VER) && _MSC_VER <= 1200)
-	enum { BUFFER_SIZE = 4096 };
-#else
 	const static size_t BUFFER_SIZE = 4096;
-#endif
 
 	int bufferPos;
 	char buffer[BUFFER_SIZE];

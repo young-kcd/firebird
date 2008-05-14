@@ -67,7 +67,7 @@ public:
 	counter_type value() const { return counter; }
 	
 private:
-# if (defined(_MSC_VER) && (_MSC_VER <= 1200)) || defined(MINGW)
+# if defined(MINGW)
 	counter_type counter;
 # else
 	volatile counter_type counter;
