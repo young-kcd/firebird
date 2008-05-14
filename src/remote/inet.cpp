@@ -190,7 +190,7 @@ const int NOTASOCKET = EBADF;
 
 // Solaris does not know what means INADDR_NONE
 #ifndef INADDR_NONE
-#define INADDR_NONE (unsigned long)-1
+#define INADDR_NONE (unsigned long) -1
 #endif
 
 SLONG INET_remote_buffer;
