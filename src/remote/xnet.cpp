@@ -75,7 +75,7 @@ static void server_shutdown(rem_port* port);
 static rem_port* get_server_port(ULONG, XPM, ULONG, ULONG, ULONG, ISC_STATUS*);
 static bool make_map(ULONG, ULONG, FILE_ID*, CADDR_T*);
 static XPM make_xpm(ULONG, ULONG);
-static bool server_init();
+static bool server_init(USHORT);
 static XPM get_free_slot(ULONG*, ULONG*, ULONG*);
 static bool fork(ULONG, USHORT, ULONG*);
 
@@ -1292,7 +1292,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
  **************************************/
 	current_process_id = getpid();
 
-	if (!server_init())
+	if (!server_init(flag))
 		return NULL;
 
 	PXNET_RESPONSE presponse = (PXNET_RESPONSE)xnet_connect_map;
@@ -2127,7 +2127,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 }
 
 
-static bool server_init()
+static bool server_init(USHORT flag)
 {
 /**************************************
  *
@@ -2152,14 +2152,14 @@ static bool server_init()
 	}
 
 	// init the limits
-#ifdef SUPERSERVER
-	global_slots_per_map = XPS_MAX_NUM_CLI;
+
+	if (flag & (SRVR_multi_client | SRVR_debug)) {
+		global_slots_per_map = XPS_MAX_NUM_CLI;
+	}
+	else {
+		global_slots_per_map = 1;
+	}
 	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
-#else
-	// For classic server there is always only 1 connection and 1 slot
-	global_slots_per_map = 1;
-	global_pages_per_slot = XPS_MAX_PAGES_PER_CLI;
-#endif
 
 	xnet_connect_mutex = 0;
 	xnet_connect_map_h = 0;
