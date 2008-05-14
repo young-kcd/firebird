@@ -725,17 +725,17 @@ pag* CCH_fetch(
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
 
 	if (window->win_page == HEADER_PAGE_NUMBER) 
-		tdbb->getDatabase()->dbb_backup_manager->lock_shared_database(tdbb, true);
+		dbb->dbb_backup_manager->lock_shared_database(tdbb, true);
 	
 	CCH_TRACE(("FETCH PAGE=%d", window->win_page));
 
 	// FETCH_LOCK will return 0, 1, -1 or -2
 	
 	const SSHORT fetch_lock_return =
-		CCH_FETCH_LOCK(tdbb, window, lock_type, LCK_WAIT, latch_wait,
-					   page_type);
+		CCH_FETCH_LOCK(tdbb, window, lock_type, LCK_WAIT, latch_wait, page_type);
 
 	if (fetch_lock_return == 1)
 	{
@@ -744,7 +744,7 @@ pag* CCH_fetch(
 	}
 	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
 		if (window->win_page == HEADER_PAGE_NUMBER)
-			tdbb->getDatabase()->dbb_backup_manager->unlock_shared_database(tdbb);
+			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		return NULL;			/* latch or lock timeout */
 	}
 
