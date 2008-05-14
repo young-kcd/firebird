@@ -690,7 +690,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				if (patternPos >= patternEnd)
 					status_exception::raise(isc_invalid_similar_pattern, 0);
 
-				SLONG len = patternPos++ - start;
+				const SLONG len = patternPos++ - start;
 
 				typedef const UCHAR* (TextType::*GetCanonicalFunc)(int*) const;
 
@@ -1043,59 +1043,57 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 			case opAnyOf:
 				if (bufferPos >= bufferEnd)
 					return false;
+
+				if (notInSet(bufferPos, 1, node->str, node->len) != 0)
+				{
+					const UCHAR* end = node->str2 + node->len2;
+					const UCHAR* p = node->str2;
+
+					while (p < end)
+					{
+						UCHAR c[sizeof(ULONG)];
+						ULONG len = charSet->substring(
+							buffer.getCount(), buffer.begin(),
+							sizeof(c), c, bufferPos - bufferStart, 1);
+
+						if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+							textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+						{
+							break;
+						}
+
+						p += 2 + p[0] + p[1 + p[0]];
+					}
+
+					if (node->len + node->len2 != 0 && p >= end)
+						return false;
+				}
+
+				if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+					return false;
 				else
 				{
-					if (notInSet(bufferPos, 1, node->str, node->len) != 0)
+					const UCHAR* end = node->str4 + node->len4;
+					const UCHAR* p = node->str4;
+
+					while (p < end)
 					{
-						const UCHAR* end = node->str2 + node->len2;
-						const UCHAR* p = node->str2;
+						UCHAR c[sizeof(ULONG)];
+						ULONG len = charSet->substring(
+							buffer.getCount(), buffer.begin(),
+							sizeof(c), c, bufferPos - bufferStart, 1);
 
-						while (p < end)
+						if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+							textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
 						{
-							UCHAR c[sizeof(ULONG)];
-							ULONG len = charSet->substring(
-								buffer.getCount(), buffer.begin(),
-								sizeof(c), c, bufferPos - bufferStart, 1);
-
-							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-							{
-								break;
-							}
-
-							p += 2 + p[0] + p[1 + p[0]];
+							break;
 						}
 
-						if (node->len + node->len2 != 0 && p >= end)
-							return false;
+						p += 2 + p[0] + p[1 + p[0]];
 					}
 
-					if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+					if (p < end)
 						return false;
-					else
-					{
-						const UCHAR* end = node->str4 + node->len4;
-						const UCHAR* p = node->str4;
-
-						while (p < end)
-						{
-							UCHAR c[sizeof(ULONG)];
-							ULONG len = charSet->substring(
-								buffer.getCount(), buffer.begin(),
-								sizeof(c), c, bufferPos - bufferStart, 1);
-
-							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-							{
-								break;
-							}
-
-							p += 2 + p[0] + p[1 + p[0]];
-						}
-
-						if (p < end)
-							return false;
-					}
 				}
 
 				++bufferPos;

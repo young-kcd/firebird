@@ -508,7 +508,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				}
 				if (dataSize)
 				{
-					SSHORT asyncSize = port->asyncReceive(&asyncPacket, buffer, dataSize);
+					const SSHORT asyncSize = port->asyncReceive(&asyncPacket, buffer, dataSize);
 					if (asyncSize == dataSize)
 					{
 						port = NULL;
@@ -5224,7 +5224,8 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 		port_async_receive->receive(asyncPacket);
 	}
 
-	SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
+	const SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
+	fb_assert(asyncSize >= 0);
 
 	switch(asyncPacket->p_operation)
 	{
