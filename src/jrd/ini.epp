@@ -271,7 +271,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 
 /* Make sure relations exist already */
 
-	{ // scope for MSVC6
 	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
 	{
 		if (relfld[RFLD_R_TYPE] == rel_persistent)
@@ -282,7 +281,6 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 		for (fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
 			;
 	}
-	} // scope for MSVC6
 
 /* Store RELATIONS and RELATION_FIELDS */
 

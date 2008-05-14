@@ -1818,12 +1818,10 @@ static void compute_dependencies(const jrd_nod* node, ULONG* dependencies)
 		return;
 	}
 
-	{ // scope for MSVC6
 	for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 	{
 		compute_dependencies(*ptr, dependencies);
 	}
-	} // scope
 
 	const RecordSelExpr* rse;
 	const jrd_nod* sub;

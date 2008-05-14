@@ -35,14 +35,6 @@
 
 namespace Firebird {
 
-// typename is necessary for GCC builds in template below, but at the same time
-// it makes MSVC6 unhappy. Let's use it conditionally.
-#if defined _MSC_VER && _MSC_VER < 1300
-#define FB_TYPENAME_OPT
-#else
-#define FB_TYPENAME_OPT typename
-#endif
-
 //
 // Generic map which allows to have POD and non-POD keys and values.
 // The class is memory pools friendly.
@@ -58,7 +50,7 @@ namespace Firebird {
 //   non-POD key (string), non-POD value (string):
 //     GenericMap<Pair<Full<string, string> > >
 //
-template <typename KeyValuePair, typename KeyComparator = DefaultComparator<FB_TYPENAME_OPT KeyValuePair::first_type> >
+template <typename KeyValuePair, typename KeyComparator = DefaultComparator<typename KeyValuePair::first_type> >
 class GenericMap : public AutoStorage
 {
 public:

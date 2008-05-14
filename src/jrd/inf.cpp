@@ -563,7 +563,7 @@ int INF_database_info(const SCHAR* items,
 				}
 				continue;
 			}
-			{ // scope for VC6
+
 			for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 			{
 				if (att->att_flags & ATT_shutdown)
@@ -585,7 +585,6 @@ int INF_database_info(const SCHAR* items,
 					}
 				}
 			}
-			} // end scope for VC6
 			continue;
 
 		case isc_info_page_errors:

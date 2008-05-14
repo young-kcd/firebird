@@ -132,10 +132,6 @@ private:
 
 #ifdef WIN_NT
 #define FILE_HANDLE HANDLE
-// INVALID_SET_FILE_POINTER is not defined in MSVC6
-#ifndef INVALID_SET_FILE_POINTER
-#define INVALID_SET_FILE_POINTER ((DWORD)-1)
-#endif
 #else
 #define FILE_HANDLE int
 #endif

@@ -1000,10 +1000,8 @@ bool SQE_resolve(GPRE_NOD node,
 	// End date/time/timestamp support
 
 	case nod_coalesce:
-	    { // scope for VC6
-			for (int i = 0; i < node->nod_count; i++)
-				result |= SQE_resolve(node->nod_arg[0]->nod_arg[i], request, selection);
-		} // end scope
+		for (int i = 0; i < node->nod_count; i++)
+			result |= SQE_resolve(node->nod_arg[0]->nod_arg[i], request, selection);
 		return result;
 
 	case nod_deferred:

@@ -708,7 +708,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 	dba_print(10);
 	// msg 10: \nAnalyzing database pages ...\n 
 
-	{ // scope for MSVC6
 	for (dba_rel* relation = tddba->relations; relation;
 		relation = relation->rel_next)
 	{
@@ -724,7 +723,6 @@ int gstat(Firebird::UtilSvc* uSvc)
 			analyze_index(relation, index);
 		}
 	}
-	} // scope for MSVC6
 
 /* Print results */
 
