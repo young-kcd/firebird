@@ -331,10 +331,10 @@
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd.h">
+				RelativePath="..\..\..\src\common\thd.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thd_proto.h">
+				RelativePath="..\..\..\src\jrd\os\thd_priority.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl_proto.h">
