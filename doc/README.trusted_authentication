@@ -1,4 +1,4 @@
-		New way to authenticate users in firebird 2.1.
+		New way to authenticate users in firebird.
 
 	Firebird starting with version 2.1 can use Windows security for user authentication.
 Current security context is passed to the server and if it's OK for that server is used to determine
@@ -11,7 +11,7 @@ isql srv:employee
 
 and do:
 
-select CURRENT_USER from rdb$database;
+SELECT CURRENT_USER FROM RDB$DATABASE;
 
 you will get something like:
 
@@ -23,8 +23,21 @@ Windows users may be granted rights to access database objects and roles in the 
 traditional Firebird users. (This is not something new - in UNIX OS users might be granted rights
 virtually always).
 
-- If member of Domain Admins builtin group connects to Firebird using trusted authentication,
-he/she will be connected as SYSDBA.
+- If domain administrator (member of well known predefined groups) connects to Firebird using trusted
+authentication, he/she may be granted 'god-like' (SYSDBA) rights depending upon settings in database, 
+to which such user attachs. To keep CURRENT_USER value in a form DOMAIN\User, a new object (predefined 
+system role) is added to the database. The name of that role is RDB$ADMIN, and any user, granted it, 
+can attach to the database with SYSDBA rights. To configure database to auto-grant that role to
+administrators, use the following command:
+
+ALTER ROLE RDB$ADMIN SET AUTO ADMIN MAPPING;
+
+To return to default settings (windows administrators are not granted special rights) issue:
+
+ALTER ROLE RDB$ADMIN DROP AUTO ADMIN MAPPING;
+
+Take into an account, that if windows administrator attaches with role set in dpb, it will not be 
+replaced with RDB$ADMIN, i.e. he/she will not get SYSDBA rights.
 
 - New parameter is added to firebird.conf - it is used to select available authentication method.
 Parameter is called Authentication and may have values Native, Trusted and Mixed. Default is
@@ -46,5 +59,8 @@ set ISC_USER=user1
 set ISC_PASSWORD=12345
 isql srv:db                -- log as 'user1' from environment
 isql -trust srv:db         -- log using trusted authentication
+
+PS. There are plans to significantly extend abilities to map OS users/groups to database users/roles
+in future versions.
 
 				Author: Alex Peshkov, <peshkoff at mail.ru>
