@@ -5678,7 +5678,7 @@ int Parser::yylexAux()
 	// Where the X is a literal 'x' or 'X' character, followed
 	// by a set of nibble values in single quotes.  The nibble
 	// can be 0-9, a-f, or A-F, and is converted from the hex.
-	// The number of nibbles shoud be even. 
+	// The number of nibbles should be even. 
 	//
 	// The resulting value is stored in a string descriptor and
 	// returned to the parser as a string.  This can be stored
@@ -5727,7 +5727,7 @@ int Parser::yylexAux()
 		// If we made it this far with no error, then convert the string.
 		if (!hexerror)
 		{
-			// Figure out the length the actual resulting hex string.
+			// Figure out the length of the actual resulting hex string.
 			// Allocate a second temporary buffer for it.
 		
 			bool nibble = false;
