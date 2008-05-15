@@ -1,3 +1,61 @@
+2008-05-15 18:02  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.280):
+
+	Typo
+
+2008-05-15 17:49  alexpeshkoff
+
+	* firebird2/doc/README.trusted_authentication (1.3):
+
+	modified description to match 2.5 state
+
+2008-05-15 17:28  asfernandes
+
+	* firebird2/doc/sql.extensions/README.hex_literals.txt (1.1):
+
+	Documentation for hexadecimal numeric and binary strings literals
+
+2008-05-15 17:27  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.279):
+
+	Follow the standard and do not allow binary strings with odd number
+	of characters
+
+2008-05-15 17:19  alexpeshkoff
+
+	* firebird2/doc/sql.extensions/README.user_management (1.2):
+
+	misc
+
+2008-05-15 17:14  alexpeshkoff
+
+	* firebird2/src/: jrd/dyn.epp (1.124), jrd/tra.cpp (1.175),
+	jrd/tra.h (1.85), utilities/gsec/secur_proto.h (1.8),
+	utilities/gsec/security.epp (1.19):
+
+	Added transaction support in user management commands
+
+2008-05-15 13:43  hvlad
+
+	* firebird2/src/dsql/parse.y (1.278):
+
+	Commented out never reduced rule.
+
+2008-05-15 03:27  asfernandes
+
+	* firebird2/src/remote/server.cpp (1.211):
+
+	Misc
+
+2008-05-15 00:33  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.111):
+
+	Fixed bug CORE-1902 : XNET protocol does not work correctly in
+	SuperClassic. Thanks to Alexander Potapchenko.
+
 2008-05-14 19:27  dimitr
 
 	* firebird2/src/remote/xnet.cpp (1.110):
