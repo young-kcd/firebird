@@ -5678,8 +5678,7 @@ int Parser::yylexAux()
 	// Where the X is a literal 'x' or 'X' character, followed
 	// by a set of nibble values in single quotes.  The nibble
 	// can be 0-9, a-f, or A-F, and is converted from the hex.
-	// If an odd number of nibbles is given, a leading '0' is
-	// assumed. 
+	// The number of nibbles shoud be even. 
 	//
 	// The resulting value is stored in a string descriptor and
 	// returned to the parser as a string.  This can be stored
@@ -5723,15 +5722,15 @@ int Parser::yylexAux()
 			++lex.ptr;	// and advance...
 		}
 
+		hexerror = hexerror || (charlen & 1);	// IS_ODD(charlen)
+
 		// If we made it this far with no error, then convert the string.
 		if (!hexerror)
 		{
-			// At this point, see if the string length is odd.  If so, 
-			// we'll assume a leading zero.  Then figure out the length
-			// of the actual resulting hex string.  Allocate a second 
-			// temporary buffer for it.
+			// Figure out the length the actual resulting hex string.
+			// Allocate a second temporary buffer for it.
 		
-			bool nibble = (charlen & 1);  // IS_ODD(charlen)
+			bool nibble = false;
 			Firebird::string temp;
 
 			// Re-scan over the hex string we got earlier, converting 
