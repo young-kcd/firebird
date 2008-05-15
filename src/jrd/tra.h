@@ -114,7 +114,9 @@ public:
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
 		tra_open_cursors(*p),
 		tra_outer(outer),
-		tra_transactions(*p)
+		tra_transactions(*p),
+		tra_security_database(0),
+		tra_secdb_transaction(0)
 	{
 		if (outer)
 		{
@@ -205,6 +207,9 @@ public:
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
+
+	// user management related stuff
+	FB_API_HANDLE tra_security_database, tra_secdb_transaction;
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage

@@ -2211,26 +2211,37 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 #else
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
-
-	char securityDatabaseName[MAXPATHLEN];
-	SecurityDatabase::getPath(securityDatabaseName);
+	jrd_tra* tra = tdbb->getTransaction();
 
 	Database::Checkout dcoHolder(dbb);
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
-	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
-
-	isc_db_handle securityDatabase = 0;
 	ISC_STATUS_ARRAY status;
 	try 
 	{
-		isc_attach_database(status, 0, securityDatabaseName, &securityDatabase, 
-			dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
-
-		if (status[1])
+		if (!tra->tra_security_database)
 		{
-			Firebird::status_exception::raise(status);
+			char securityDatabaseName[MAXPATHLEN];
+			SecurityDatabase::getPath(securityDatabaseName);
+
+			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+			dpb.insertByte(isc_dpb_gsec_attach, TRUE);
+			dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
+
+			isc_attach_database(status, 0, securityDatabaseName, &tra->tra_security_database, 
+				dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
+			if (status[1])
+			{
+				Firebird::status_exception::raise(status);
+			}
+		}
+
+		if (!tra->tra_secdb_transaction)
+		{
+			isc_start_transaction(status, &tra->tra_secdb_transaction, 1, &tra->tra_security_database, 0, NULL);
+			if (status[1])
+			{
+				Firebird::status_exception::raise(status);
+			}
 		}
 
 		internal_user_data userData;
@@ -2315,7 +2326,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		}
 
 		int errcode = (! userData.user_name_entered) ? GsecMsg18 :
-			SECURITY_exec_line(status, securityDatabase, &userData, NULL, NULL);
+			SECURITY_exec_line(status, tra->tra_security_database, tra->tra_secdb_transaction, &userData, NULL, NULL);
 
 		switch (errcode)
 		{
@@ -2327,21 +2338,9 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		default:
 			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC), isc_arg_end);
 		}
-
-		isc_detach_database(status, &securityDatabase);
-
-		if (status[1])
-		{
-			securityDatabase = 0;
-			Firebird::status_exception::raise(status);
-		}
 	}
 	catch(const Firebird::Exception& e)
 	{
-		if (securityDatabase)
-		{
-			isc_detach_database(status, &securityDatabase);
-		}
 		e.stuff_exception(status);
 		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));
 		status[0] = isc_arg_gds;
