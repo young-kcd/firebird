@@ -5227,7 +5227,7 @@ SSHORT rem_port::asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT d
 	const SSHORT asyncSize = dataSize - port_async_receive->port_receive.x_handy;
 	fb_assert(asyncSize >= 0);
 
-	switch(asyncPacket->p_operation)
+	switch (asyncPacket->p_operation)
 	{
 	case op_cancel:
 		cancel_operation(this, asyncPacket->p_cancel_op.p_co_kind);
