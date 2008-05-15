@@ -15,7 +15,7 @@ Description:
 
 Makes it possible to add, modify and delete users in security database using SQL language. 
 
-Firebird 2.5 has no setup to make it possible to setup different security databases. But since 3.0 
+Firebird 2.5 has no way to make it possible to setup different security databases. But since 3.0 
 this is supposed to become standard feature, therefore it's highly recommended (though currently the 
 result does not change) to modify users being connected to really that database, where modification 
 is required. 
