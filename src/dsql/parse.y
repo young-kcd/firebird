@@ -2496,11 +2496,11 @@ alter_role_enable	: SET
 		| DROP
 			{ $$ = MAKE_const_slong (isc_dyn_autounmap_role); }
 		;
-	
+/*
 os_security_name	: STRING
 			{ $$ = $1; }
 		;
-
+*/
 entry_op	: ENTRY_POINT sql_string
 			{ $$ = $2; }
 		|
