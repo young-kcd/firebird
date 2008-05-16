@@ -32,12 +32,15 @@
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
+#include "../common/classes/fb_string.h"
 
 namespace MsgFormat {
 	class SafeArg;
 }
 
 namespace Firebird {
+
+const TEXT SVC_TRMNTR = '\377';
 
 class ClumpletWriter;
 
@@ -71,6 +74,26 @@ public:
 	virtual ~UtilSvc() { }
 
 	static UtilSvc* createStandalone(int ac, char** argv);
+
+	static inline void UtilSvc::addStringWithSvcTrmntr(const Firebird::string& str, Firebird::string& switches)
+	{
+		// All string parameters are delimited by SVC_TRMNTR.
+		// This is done to ensure that paths with spaces are handled correctly
+		// when creating the argc / argv parameters for the service.
+		// SVC_TRMNTRs inside the string are duplicated.
+
+		switches += SVC_TRMNTR;
+		for (size_t i = 0; i < str.length(); ++i)
+		{
+			if (str[i] == SVC_TRMNTR)
+			{
+				switches += SVC_TRMNTR;
+			}
+			switches += str[i];
+		}
+		switches += SVC_TRMNTR;
+		switches += ' ';
+	}
 
 public:
 	ArgvType argv;

@@ -113,7 +113,6 @@ const int GET_LINE		= 1;
 const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
-const TEXT SVC_TRMNTR	= '\377';
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
 namespace {
@@ -249,11 +248,11 @@ void Service::parseSwitches()
 	{
 		switch (svc_parsed_sw[i])
 		{
-		case SVC_TRMNTR:
+		case Firebird::SVC_TRMNTR:
 			svc_parsed_sw.erase(i, 1);
 			if (inStr)
 			{
-				if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
+				if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != Firebird::SVC_TRMNTR)
 				{
 					inStr = false;
 					--i;
@@ -642,7 +641,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	if (serv->serv_std_switches)
 		switches = serv->serv_std_switches;
 	if (options.spb_command_line.hasData() && serv->serv_std_switches)
-		switches += " ";
+		switches += ' ';
 	switches += options.spb_command_line;
 	
 	svc_flags = switches.hasData() ? SVC_cmd_line : 0;
@@ -2116,8 +2115,13 @@ bool Service::process_switches(Firebird::ClumpletReader&	spb,
 				}
 				break;
 
-			case isc_spb_command_line: 
-				get_action_svc_string(spb, switches);
+			case isc_spb_command_line:
+				{
+					Firebird::string s;
+					spb.getString(s);
+					switches += s;
+					switches += ' ';
+				};
 				break;
 
 			default:
@@ -2270,25 +2274,9 @@ bool Service::get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
 void Service::get_action_svc_string(const Firebird::ClumpletReader& spb,
 									Firebird::string& switches)
 {
-	// All string parameters are delimited by SVC_TRMNTR.
-	// This is done to ensure that paths with spaces are handled correctly
-	// when creating the argc / argv paramters for the service.
-	// SVC_TRMNTRs inside the string are duplicated.
-
 	Firebird::string s;
 	spb.getString(s);
-	for (size_t i = 0; i < s.length(); ++i)
-	{
-		if (s[i] == SVC_TRMNTR)
-		{
-			s.insert(i, 1, SVC_TRMNTR);
-			++i;
-		}
-	}
-	switches += SVC_TRMNTR;
-	switches += s;
-	switches += SVC_TRMNTR;
-	switches += ' ';
+	addStringWithSvcTrmntr(s, switches);
 }
 
 

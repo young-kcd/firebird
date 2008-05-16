@@ -282,12 +282,9 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 			{
 				continue;
 			}
-			if (options.hasData())
-			{
-				options += ' ';
-			}
-			options += argv[itr];
+			Firebird::UtilSvc::addStringWithSvcTrmntr(argv[itr], options);
 		}
+		options.rtrim();
 
 		spb.insertString(isc_spb_command_line, options);
 
