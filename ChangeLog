@@ -1,3 +1,35 @@
+2008-05-16 17:45  alexpeshkoff
+
+	* firebird2/doc/README.fb_shutdown (1.1):
+
+	added doc
+
+2008-05-16 16:08  alexpeshkoff
+
+	* firebird2/src/: burp/burp.cpp (1.141), common/UtilSvc.h (1.5),
+	jrd/svc.cpp (1.225):
+
+	Fixed CORE-1843: gbak with service manager don't allow path with
+	space
+
+2008-05-16 13:31  alexpeshkoff
+
+	* firebird2/src/: include/consts_pub.h (1.19), include/types_pub.h
+	(1.10), isql/isql.epp (1.246), jrd/ibase.h (1.135), jrd/svc.cpp
+	(1.224), jrd/why.cpp (1.203), jrd/why_proto.h (1.50), qli/dtr.cpp
+	(1.50), qli/dtr.h (1.29), qli/err.cpp (1.23), remote/inet.cpp
+	(1.242), remote/inet_server.cpp (1.82), remote/serve_proto.h
+	(1.14), remote/server.cpp (1.212), remote/os/win32/cntl.cpp (1.41),
+	remote/os/win32/srvr_w32.cpp (1.56), remote/os/win32/window.cpp
+	(1.33):
+
+	1. Added parameter 'shutdown reason' to fb_shutdown() API call.
+	It's passed to shutdown callback function, and helps to take
+	correct action in it. This fixes CORE-1827: Win32 Embedded Server
+	should pass control to application before calling exit(3).  2.
+	Removed unneeded any more flag in isql and qli, used earlier to
+	distinguish between kinds of shutdown.
+
 2008-05-15 18:02  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.280):
