@@ -1,0 +1,81 @@
+fb_shutdown(), fb_shutdown_callback() - new API call in firebird 2.5.
+
+   Implements smart shutdown of engine. Primarily used when working with embedded firebird.
+
+Author:
+   Alex Peshkoff <peshkoff@mail.ru>
+
+Syntax is:
+
+   typedef int (*FB_SHUTDOWN_CALLBACK)(const int);
+
+   int fb_shutdown(unsigned int timeout, 
+                   const int reason);
+
+   ISC_STATUS fb_shutdown_callback(ISC_STATUS* status_vector,
+                                   FB_SHUTDOWN_CALLBACK callback_function,
+                                   const int mask);
+
+Description:
+
+fb_shutdown() performs smart shutdown of various firebird subsystems (yValve, engine, redirector).
+It DOES NOT perform shutdown of remote servers, to which you are currently attached - just 
+terminates any firebird activity in the current process. fb_shutdown() was primarily designed 
+to be used by engine itself, but also can be used in user applications - for example, if you want
+to close all opened handles at once, fb_shutdown() may be used for it. Normally it should not be 
+used, because firebird libraries (both kinds - embedded or pure client) do call it automatically
+at exit(). To make fb_shutdown() be called at exit, you should attach at least one database (or 
+service).
+
+fb_shutdown() accepts 2 parameters - timeout in milliseconds and reason of shutdown. Engine uses
+negative reason codes (they are listed in ibase.h, see constants starting with fb_shutrsn), if
+you need to call fb_shutdown() from your program, you must use positive value for reason. This
+value is passed to callback_function, passed asan argument to fb_shutdown_callback(), and can you
+take appropriate actions when writing callback function.
+
+Zero return value of fb_shutdown() means shutdown is successfull, non-zero means some errors took 
+place during shutdown. You should consult firebird.log for more information.
+
+fb_shutdown_callback() setups callback function, which will be called during shutdown. It has 3 
+parameters - status vector, pointer to callback function and call mask. Call mask can have 
+following values:
+fb_shut_preproviders - callback function will be called before shutting down engine
+fb_shut_postproviders - callback function will be called after shutting down engine
+or ORed combination of them (to make same function be called in both cases).
+
+Callback function has single parameter - reason of shutdown. There are 2 interesting shutdown 
+reasons: 
+fb_shutrsn_exit_called - firebird is closing due to exit() or unloaded client/embedded library
+fb_shutrsn_signal - signal SIGINT or SIGTERM was caught (posix only)
+This parameter can help you decide what action to be taken in your callback.
+
+Zero return value of callback function means it performed it's job OK, non-zero is interpreted 
+depening upon call mask. For fb_shut_postproviders calls it means some errors took place, and 
+non-zero value will be returned from fb_shutdown(). It's callback function responsibility to
+notify world about exact reasons of error return. For fb_shut_preproviders non-zero means that
+shutdown will not be performed. It's bad idea to return non-zero if shutdown is due to exit() 
+called.
+
+fb_shutdown_callback() almost always returns successfully, though in some cases (out of memory
+for example) it can return error.
+
+Sample (it will make your program do not terminate on ctrl-C pressed after attaching databases):
+
+#include <ibase.h>
+
+// callback function for shutdown
+static int ignoreCtrlC(const int reason)
+{
+	return reason == fb_shutrsn_signal ? 1 : 0;
+}
+
+int main(int argc, char *argv[])
+{
+	ISC_STATUS_ARRAY status;
+	if (fb_shutdown_callback(status, ignoreCtrlC, fb_shut_preproviders))
+	{
+		isc_print_status(status);
+		return 1;
+	}
+	// your code continues ...
+}
