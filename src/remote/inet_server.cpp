@@ -116,7 +116,7 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 
-static int shutdownInetServer();
+static int shutdownInetServer(const int);
 static void shutdownInit();
 static void tryStopMainThread();
 
@@ -475,7 +475,7 @@ static Firebird::GlobalPtr<Firebird::Semaphore> mainThreadStopSem;
 static bool serverClosing = false;
 
 
-static int shutdownInetServer()
+static int shutdownInetServer(const int)
 {
 /****************************************************
  *
@@ -492,7 +492,7 @@ static int shutdownInetServer()
 	serverClosing = true;
 
 	// shutdown worker threads
-	SRVR_shutdown();
+	SRVR_shutdown(0);
 
 	// shutdown main thread - send self-signal to close select() 
 	// in main thread and wait for it to get into safe state

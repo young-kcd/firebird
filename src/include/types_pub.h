@@ -144,4 +144,6 @@ typedef struct GDS_QUAD_t ISC_QUAD;
 #define	isc_quad_high	gds_quad_high
 #define	isc_quad_low	gds_quad_low
 
+typedef int (*FB_SHUTDOWN_CALLBACK)(const int);
+
 #endif /* INCLUDE_TYPES_PUB_H */

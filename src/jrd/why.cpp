@@ -189,8 +189,6 @@ static SCHAR *alloc(SLONG);
 static void free_block(void*);
 static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDLE * handle,
 										  const int proc, const ISC_STATUS specCode = 0);
-static FB_UINT64 getMilliTime();
-
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
@@ -562,7 +560,7 @@ namespace
 	class ShutChain : public Firebird::GlobalStorage
 	{
 	private:
-		ShutChain(ShutChain* link, FPTR_INT cb, const int m)
+		ShutChain(ShutChain* link, FB_SHUTDOWN_CALLBACK cb, const int m)
 			: next(link), callBack(cb), mask(m) { }
 
 		~ShutChain() { }
@@ -570,11 +568,11 @@ namespace
 	private:
 		static ShutChain* list;
 		ShutChain* next;
-		FPTR_INT callBack;
+		FB_SHUTDOWN_CALLBACK callBack;
 		int mask;
 
 	public:
-		static void add(FPTR_INT cb, const int m)
+		static void add(FB_SHUTDOWN_CALLBACK cb, const int m)
 		{
 			Firebird::MutexLockGuard guard(shutdownCallbackMutex);
 
@@ -589,14 +587,14 @@ namespace
 			list = new ShutChain(list, cb, m);
 		}
 
-		static int run(const int m)
+		static int run(const int m, const int reason)
 		{
 			int rc = FB_SUCCESS;
 			Firebird::MutexLockGuard guard(shutdownCallbackMutex);
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
-				if ((chain->mask & m) && (chain->callBack() != FB_SUCCESS))
+				if ((chain->mask & m) && (chain->callBack(reason) != FB_SUCCESS))
 				{
 					rc = FB_FAILURE;
 				}
@@ -820,7 +818,7 @@ namespace
 
 	void atExitShutdown()
 	{
-		fb_shutdown(SHUTDOWN_TIMEOUT);
+		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
 
 	Firebird::GlobalPtr<Firebird::SignalSafeSemaphore> shutdownSemaphore;
@@ -851,7 +849,7 @@ namespace
 			}
 
 			// perform shutdown
-			if (fb_shutdown(SHUTDOWN_TIMEOUT) == FB_SUCCESS)
+			if (fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_signal) == FB_SUCCESS)
 			{
 				Firebird::InstanceControl::registerShutdown(0);
 				exit(0);
@@ -6001,18 +5999,7 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
-static FB_UINT64 getMilliTime()
-{
-	struct timeb buf;
-	ftime(&buf);
-	FB_UINT64 rc = buf.time;
-	rc *= 1000;
-	rc += buf.millitm;
-	return rc;
-}
-
-
-int API_ROUTINE fb_shutdown(unsigned int timeout)
+int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
 /**************************************
  *
@@ -6035,7 +6022,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 	try
 	{
 		// Shutdown clients before providers
-		if (ShutChain::run(fb_shut_preproviders) != FB_SUCCESS)
+		if (ShutChain::run(fb_shut_preproviders, reason) != FB_SUCCESS)
 		{
 			return FB_FAILURE;	// Do not perform former shutdown
 		}
@@ -6060,7 +6047,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 		}
 
 		// Shutdown clients after providers
-		if (ShutChain::run(fb_shut_postproviders) != FB_SUCCESS)
+		if (ShutChain::run(fb_shut_postproviders, reason) != FB_SUCCESS)
 		{
 			rc = FB_FAILURE;
 		}
@@ -6077,7 +6064,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout)
 }
 
 
-ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask)
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN_CALLBACK callBack, const int mask)
 {
 /**************************************
  *

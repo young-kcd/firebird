@@ -182,7 +182,6 @@ void ERRQ_exit( int status)
 
 	HELP_fini();
 	LEX_fini();
-	QLI_exit = true;
 	exit(status);
 }
 

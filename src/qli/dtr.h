@@ -502,7 +502,6 @@ EXTERN bool		QLI_hex_output;
 #ifdef TRUSTED_AUTH
 EXTERN bool		QLI_trusted;
 #endif
-EXTERN bool		QLI_exit;
 
 EXTERN jmp_buf QLI_env;					// Error return environment 
 

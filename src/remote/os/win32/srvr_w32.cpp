@@ -236,7 +236,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 			service_connection(port);
 		}
 
-		fb_shutdown(0);
+		fb_shutdown(0, fb_shutrsn_no_connection);
 	}
 	else if (!(server_flag & SRVR_non_service))
 	{

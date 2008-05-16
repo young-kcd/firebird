@@ -83,7 +83,6 @@ typedef ISC_LONG isc_resv_handle;
 typedef void (*ISC_PRINT_CALLBACK) (void*, ISC_SHORT, const char*);
 typedef void (*ISC_VERSION_CALLBACK)(void*, const char*);
 typedef void (*ISC_EVENT_CALLBACK)(void*, ISC_USHORT, const ISC_UCHAR*);
-typedef int (*FB_SHUTDOWN_CALLBACK)();
 
 /*******************************************************************/
 /* Blob id structure                                               */
@@ -1131,7 +1130,7 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 /* Shutdown and cancel */
 /***********************/
 
-int ISC_EXPORT fb_shutdown(unsigned int);
+int ISC_EXPORT fb_shutdown(unsigned int, const int);
 
 ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
 										   FB_SHUTDOWN_CALLBACK,

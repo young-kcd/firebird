@@ -66,7 +66,7 @@ extern TEXT *QLI_prompt;
 static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int CLIB_ROUTINE async_quit();
+static int CLIB_ROUTINE async_quit(const int);
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -123,7 +123,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
 #endif
-	QLI_exit = false;
 	QLI_lines = 60;
 	QLI_name_columns = 0;
 	QLI_prompt = QLI_prompt_string;
@@ -154,7 +153,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			case 'A':
 				if (argv >= arg_end) {
 					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name  
-					QLI_exit = true;
 					exit(FINI_ERROR);
 				}
 
@@ -278,7 +276,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  */
 	gds_alloc_report(0, __FILE__, __LINE__);
 #endif
-	QLI_exit = true;
 	return (FINI_OK);
 }
 
@@ -561,7 +558,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static int CLIB_ROUTINE async_quit()
+static int CLIB_ROUTINE async_quit(const int reason)
 {
 /**************************************
  *
@@ -573,8 +570,12 @@ static int CLIB_ROUTINE async_quit()
  *	Stop whatever we happened to be doing.
  *
  **************************************/
-	EXEC_abort();
-	return QLI_exit ? FB_SUCCESS : FB_FAILURE;
+	if (reason == fb_shutrsn_signal)
+	{
+		EXEC_abort();
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
 }
 
 

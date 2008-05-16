@@ -65,7 +65,7 @@ static BOOL CanEndServer(HWND, bool);
 // Window Procedure
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
-static int fb_shutdown_cb();
+static int fb_shutdown_cb(const int);
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 {
@@ -215,7 +215,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				{
 					SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
 				}
-				fb_shutdown(0);
+				fb_shutdown(0, fb_shutrsn_app_stopped);
 				//DestroyWindow(hWnd);
 			}
 		}
@@ -427,7 +427,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 						return FALSE;
 					}
 
-					fb_shutdown(0);
+					fb_shutdown(0, fb_shutrsn_device_removed);
 					//DestroyWindow(hWnd);
 					return TRUE;
 				}
@@ -450,7 +450,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				GetDriveLetter(pdbcv->dbcv_unitmask, szDrives);
 				MessageBox(hWnd, tmp, szDrives, MB_OK | MB_ICONHAND);
 				PostMessage(hWnd, WM_DESTROY, 0, 0);
-				fb_shutdown(0);
+				fb_shutdown(0, fb_shutrsn_device_removed);
 			}
 			return TRUE;
 
@@ -539,7 +539,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 }
 
 
-static int fb_shutdown_cb()
+static int fb_shutdown_cb(const int)
 {
 	if (hMainWnd)
 		DestroyWindow(hMainWnd);

@@ -5147,7 +5147,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 }
 
 
-int SRVR_shutdown()
+int SRVR_shutdown(const int)
 {
 /**************************************
  *

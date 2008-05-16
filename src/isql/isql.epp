@@ -354,7 +354,7 @@ static int process_statement(const TEXT*, XSQLDA**);
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD);
 #else
-static int API_ROUTINE query_abort();
+static int API_ROUTINE query_abort(const int);
 #endif
 static bool stdin_redirected();
 static void strip_quotes(const TEXT*, TEXT*);
@@ -391,7 +391,6 @@ static Firebird::GlobalPtr<InputDevices> Filelist;
 //static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
 static bool Interrupt_flag = false;
-static bool Exit_flag = false;
 static bool Echo = false;
 static bool Time_display = false;
 static bool Sqlda_display = false;
@@ -531,7 +530,6 @@ int CLIB_ROUTINE main(int argc,
 	isqlGlob.minor_ods = 0;
 
 	int rc = ISQL_main(argc, argv);
-	Exit_flag = true;
 	return rc;
 }
 
@@ -560,7 +558,6 @@ int ISQL_main(int argc,
 			// Some problem in initializing multi-user test
 			// environment.
 			qa_mu_cleanup();
-			Exit_flag = true;
 			exit(1);
 		}
 		else {
@@ -8585,7 +8582,7 @@ static int process_statement(const TEXT* string,
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD dwCtrlType)
 #else
-static int API_ROUTINE query_abort()
+static int API_ROUTINE query_abort(const int reason)
 #endif
 {
 /**************************************
@@ -8605,6 +8602,11 @@ static int API_ROUTINE query_abort()
 	if (dwCtrlType != CTRL_C_EVENT)
 		return FALSE;
 #else
+	if (reason != fb_shutrsn_signal)
+	{
+		return FB_SUCCESS;
+	}
+
 	if (DB)
 	{
 		ISC_STATUS_ARRAY status;
@@ -8624,7 +8626,7 @@ static int API_ROUTINE query_abort()
 	return TRUE;
 #else
 	// we do not want to proceed with shutdown except when exit() was called
-	return Exit_flag ? FB_SUCCESS : FB_FAILURE;	
+	return FB_FAILURE;	
 #endif
 }
 

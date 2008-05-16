@@ -690,7 +690,7 @@ void Service::detach()
 {
 	if (svc_do_shutdown) 
 	{
-		if (fb_shutdown(10 * 1000 /* 10 seconds */) == FB_SUCCESS)
+		if (fb_shutdown(10 * 1000 /* 10 seconds */, fb_shutrsn_services) == FB_SUCCESS)
 		{
 			Firebird::InstanceControl::registerShutdown(0);
 			exit(0);

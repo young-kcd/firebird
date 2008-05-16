@@ -255,8 +255,8 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
 
 ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS*, FB_API_HANDLE*);
 
-int API_ROUTINE fb_shutdown(unsigned int timeout);
-ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FPTR_INT callBack, const int mask);
+int API_ROUTINE fb_shutdown(unsigned int timeout, const int);
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN_CALLBACK callBack, const int mask);
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);

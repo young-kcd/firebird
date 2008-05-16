@@ -319,7 +319,7 @@ static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_VOID tryStopMainThread = 0;
-static int		shut_postproviders();
+static int		shut_postproviders(const int);
 
 
 
@@ -3455,7 +3455,7 @@ void setStopMainThread(FPTR_VOID func)
 	tryStopMainThread = func;
 }
 
-static int shut_postproviders()
+static int shut_postproviders(const int)
 {
 	INET_shutting_down = true;
 	return 0;
