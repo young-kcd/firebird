@@ -75,7 +75,7 @@ public:
 
 	static UtilSvc* createStandalone(int ac, char** argv);
 
-	static inline void UtilSvc::addStringWithSvcTrmntr(const Firebird::string& str, Firebird::string& switches)
+	static inline void addStringWithSvcTrmntr(const Firebird::string& str, Firebird::string& switches)
 	{
 		// All string parameters are delimited by SVC_TRMNTR.
 		// This is done to ensure that paths with spaces are handled correctly
