@@ -105,36 +105,34 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 	{
 		BYTE bytesPerChar = 3;
 
-		// if collation is not multi-level, the weights used is already know
+		// scan the table to identify what weights are used
+		bool useSecondary = false;
+		bool useTertiary = false;
+
+		for (int ch = 0; ch <= 255; ++ch)
+		{
+			const SortOrderTblEntry* coll =
+				&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[ch];
+
+			if (coll->Secondary != NULL_SECONDARY)
+				useSecondary = true;
+
+			if (coll->Tertiary != NULL_TERTIARY)
+				useTertiary = true;
+		}
+
+		if (!useSecondary)
+			--bytesPerChar;
+
+		if (!useTertiary)
+			--bytesPerChar;
+
 		if (obj->texttype_impl->texttype_flags & TEXTTYPE_non_multi_level)
 		{
-			if (obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive)
+			if (useSecondary && (obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive))
 				--bytesPerChar;
 
-			if (obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive)
-				--bytesPerChar;
-		}
-		else	// scan the table to identify what weights are used
-		{
-			bool useSecondary = false;
-			bool useTertiary = false;
-
-			for (int ch = 0; ch <= 255; ++ch)
-			{
-				const SortOrderTblEntry* coll =
-					&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[ch];
-
-				if (coll->Secondary != NULL_SECONDARY)
-					useSecondary = true;
-
-				if (coll->Tertiary != NULL_TERTIARY)
-					useTertiary = true;
-			}
-
-			if (!useSecondary)
-				--bytesPerChar;
-
-			if (!useTertiary)
+			if (useTertiary && (obj->texttype_impl->texttype_flags & TEXTTYPE_tertiary_insensitive))
 				--bytesPerChar;
 		}
 
