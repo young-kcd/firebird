@@ -117,7 +117,7 @@ using namespace Jrd;
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
-static bool unix_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
+static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -987,10 +987,9 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 }
 
 
-static bool unix_error(
-						  TEXT* string,
-						  const jrd_file* file, ISC_STATUS operation,
-						  ISC_STATUS* status_vector)
+static bool unix_error(const TEXT* string,
+					   const jrd_file* file, ISC_STATUS operation,
+					   ISC_STATUS* status_vector)
 {
 /**************************************
  *
