@@ -1,3 +1,35 @@
+2008-05-17 20:18  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.31):
+
+	Fixed CORE-1802 - Maximum key size using PXW_CSY collation
+
+2008-05-17 18:51  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.237), dsql.cpp (1.246), dsql.h
+	(1.131), pass1.cpp (1.379), pass1_proto.h (1.17):
+
+	Cleanup on the "proc_flag" logic: store it on the request and
+	changes when necessary.
+
+2008-05-17 18:19  asfernandes
+
+	* firebird2/src/jrd/sort.cpp (1.110):
+
+	Remove warnings of GCC/AMD64
+
+2008-05-17 18:14  asfernandes
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.98):
+
+	Warnings
+
+2008-05-17 18:13  asfernandes
+
+	* firebird2/src/common/UtilSvc.h (1.6):
+
+	Correction
+
 2008-05-16 17:45  alexpeshkoff
 
 	* firebird2/doc/README.fb_shutdown (1.1):
