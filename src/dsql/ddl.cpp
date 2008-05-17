@@ -1144,7 +1144,7 @@ static void define_computed(dsql_req* request,
 
 	PASS1_make_context(request, relation_node);
 
-	dsql_nod* input = PASS1_node(request, node->nod_arg[e_cmp_expr], false);
+	dsql_nod* input = PASS1_node(request, node->nod_arg[e_cmp_expr]);
 
 	// check if array or blobs are used in expression
 
@@ -1302,7 +1302,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 		dsql_nod* condition = MAKE_node(nod_not, 1);
 		condition->nod_arg[0] = node->nod_arg[e_cnstr_condition];
 
-		GEN_expr(request, PASS1_node(request, condition, false));
+		GEN_expr(request, PASS1_node(request, condition));
 
 		// generate the action statements for the trigger
 
@@ -1311,7 +1311,7 @@ static void define_constraint_trigger(dsql_req* request, dsql_nod* node)
 		for (const dsql_nod* const* const end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
 		{
-			GEN_statement(request, PASS1_statement(request, *ptr, false));
+			GEN_statement(request, PASS1_statement(request, *ptr));
 		}
 
 		request->append_uchar(blr_end);	// of if (as there's no ELSE branch)
@@ -1441,7 +1441,7 @@ static bool define_default(dsql_req* request, const dsql_nod* node)
  **************************************/
 	fb_assert(node && node->nod_type == nod_def_default);
 
-	dsql_nod* const value = PASS1_node(request, node->nod_arg[e_dft_default], false);
+	dsql_nod* const value = PASS1_node(request, node->nod_arg[e_dft_default]);
 	fb_assert(value);
 
 	request->begin_blr(isc_dyn_fld_default_value);
@@ -1850,10 +1850,7 @@ static void define_domain(dsql_req* request)
 					   -- chrisj 1999-08-20 */
 					request->req_context_number++;
 
-					GEN_expr(request,
-							 PASS1_node(request,
-										node1->nod_arg[e_cnstr_condition],
-										false));
+					GEN_expr(request, PASS1_node(request, node1->nod_arg[e_cnstr_condition]));
 
 					request->end_blr();
 				}
@@ -2240,7 +2237,7 @@ static void define_collation( dsql_req* request)
 	const dsql_nod* coll_from = request->req_ddl_node->nod_arg[e_def_coll_from];
 	const dsql_nod* coll_attributes = request->req_ddl_node->nod_arg[e_def_coll_attributes];
 	const dsql_nod* coll_specific_attributes =
-		PASS1_node(request, request->req_ddl_node->nod_arg[e_def_coll_specific_attributes], false);
+		PASS1_node(request, request->req_ddl_node->nod_arg[e_def_coll_specific_attributes]);
 
 	const dsql_intlsym* resolved_charset =
 		METD_get_charset(request,
@@ -2665,6 +2662,10 @@ static void define_procedure(dsql_req* request, NOD_TYPE op)
 		}
 	}
 
+	// ASF: This is here to not change the old logic (proc_flag)
+	// of previous calls to PASS1_node and PASS1_statement.
+	request->setPsql(true);
+
 	put_local_variables(request, procedure_node->nod_arg[e_prc_dcls], locals);
 
 	request->append_uchar(blr_stall);
@@ -2674,8 +2675,7 @@ static void define_procedure(dsql_req* request, NOD_TYPE op)
 	request->append_uchar(0);
 	request->req_loop_level = 0;
 	request->req_cursor_number = 0;
-	GEN_statement(request,
-		PASS1_statement(request, procedure_node->nod_arg[e_prc_body], true));
+	GEN_statement(request, PASS1_statement(request, procedure_node->nod_arg[e_prc_body]));
 	request->req_type = REQ_DDL;
 	request->append_uchar(blr_end);
 	GEN_return(request, procedure_node->nod_arg[e_prc_outputs], true);
@@ -2813,6 +2813,8 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 		}
 	}
 
+	request->setPsql(true);
+
 	put_local_variables(request, node->nod_arg[e_exe_blk_dcls], locals);
 
 	request->append_uchar(blr_stall);
@@ -2821,8 +2823,7 @@ void DDL_gen_block(dsql_req* request, dsql_nod* node)
 	request->append_uchar(blr_label);
 	request->append_uchar(0);
 	request->req_loop_level = 0;
-	GEN_statement(request,
-		PASS1_statement(request, node->nod_arg[e_exe_blk_body], true));
+	GEN_statement(request, PASS1_statement(request, node->nod_arg[e_exe_blk_body]));
 	if (outputs)
 		request->req_type = REQ_SELECT_BLOCK;
 	else
@@ -3265,6 +3266,8 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 		request->begin_blr(isc_dyn_trg_blr);
 		request->append_uchar(blr_begin);
 
+		request->setPsql(true);
+
 		put_local_variables(request,
 			trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls], 0);
 
@@ -3280,7 +3283,7 @@ static void define_trigger(dsql_req* request, NOD_TYPE op)
 		request->append_uchar(0);
 		request->req_loop_level = 0;
 		request->req_cursor_number = 0;
-		GEN_statement(request, PASS1_statement(request, actions, true));
+		GEN_statement(request, PASS1_statement(request, actions));
 		request->req_scope_level--;
 		request->append_uchar(blr_end);
 		request->end_blr();
@@ -4173,9 +4176,9 @@ static void define_view_trigger(dsql_req* request, dsql_nod* node, dsql_nod* rse
 		if (trig_type == PRE_MODIFY_TRIGGER) {
 			request->append_uchar(blr_for);
 			dsql_nod* temp = rse->nod_arg[e_rse_streams];
-			temp->nod_arg[0] = PASS1_node(request, temp->nod_arg[0], false);
+			temp->nod_arg[0] = PASS1_node(request, temp->nod_arg[0]);
 			temp = rse->nod_arg[e_rse_boolean];
-			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp, false);
+			rse->nod_arg[e_rse_boolean] = PASS1_node(request, temp);
 			GEN_expr(request, rse);
 			condition =
 				replace_field_names(select_expr->nod_arg[e_qry_where], items,
@@ -4191,7 +4194,7 @@ static void define_view_trigger(dsql_req* request, dsql_nod* node, dsql_nod* rse
 		}
 
 		request->append_uchar(blr_if);
-		GEN_expr(request, PASS1_node(request, condition, false));
+		GEN_expr(request, PASS1_node(request, condition));
 		request->append_uchar(blr_begin);
 		request->append_uchar(blr_end);
 
@@ -4202,7 +4205,7 @@ static void define_view_trigger(dsql_req* request, dsql_nod* node, dsql_nod* rse
 		for (const dsql_nod* const* const end = ptr + actions->nod_count;
 			 ptr < end; ptr++)
 		{
-			GEN_statement(request, PASS1_statement(request, *ptr, false));
+			GEN_statement(request, PASS1_statement(request, *ptr));
 		}
 
 		request->append_uchar(blr_end);	// of begin
@@ -5346,9 +5349,7 @@ static void modify_domain( dsql_req* request)
 			   constraint.  -- chrisj 1999-08-20 */
 			request->req_context_number++;
 
-			GEN_expr(request,
-					 PASS1_node(request, element->nod_arg[e_cnstr_condition],
-								false));
+			GEN_expr(request, PASS1_node(request, element->nod_arg[e_cnstr_condition]));
 
 			request->end_blr();
 			if ((string = (dsql_str*) element->nod_arg[e_cnstr_source]) != NULL) {
@@ -6224,7 +6225,8 @@ static void put_local_variable( dsql_req* request, dsql_var* variable,
 		if (node)
 		{
 			fb_assert(node->nod_type == nod_def_default);
-			node = PASS1_node(request, node->nod_arg[e_dft_default], false);
+			PsqlChanger psqlChanger(request, false);
+			node = PASS1_node(request, node->nod_arg[e_dft_default]);
 			GEN_expr(request, node);
 		}
 		else
@@ -6304,7 +6306,7 @@ static void put_local_variables(dsql_req* request, dsql_nod* parameters, SSHORT 
 			}
 			else if (parameter->nod_type == nod_cursor)
 			{
-				PASS1_statement(request, parameter, true);
+				PASS1_statement(request, parameter);
 				GEN_statement(request, parameter);
 			}
 		}
@@ -6725,7 +6727,7 @@ static void modify_field(dsql_req*	request,
 			dsql_str* computedSrc = (dsql_str*) computedNod->nod_arg[e_cmp_text];
 			fb_assert(computedSrc->str_length <= MAX_USHORT);
 
-			computedNod = PASS1_node(request, computedNod->nod_arg[e_cmp_expr], false);
+			computedNod = PASS1_node(request, computedNod->nod_arg[e_cmp_expr]);
 
 			if (is_array_or_blob(request, computedNod))
 			{

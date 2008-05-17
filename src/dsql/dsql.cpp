@@ -2559,7 +2559,7 @@ static dsql_req* prepare(thread_db* tdbb,
  * Error will be caught at execute time.
  */
 
-	node = PASS1_statement(request, node, false);
+	node = PASS1_statement(request, node);
 	if (!node)
 		return request;
 

@@ -495,6 +495,16 @@ public:
 		req_curr_cte_alias = req_cte_aliases.end();
 	}
 
+	bool isPsql()
+	{
+		return psql;
+	}
+
+	void setPsql(bool value)
+	{
+		psql = value;
+	}
+
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
 	USHORT req_recursive_ctx_id;		// id of recursive union stream context
@@ -508,9 +518,36 @@ private:
 	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
 	const dsql_str* const* req_curr_cte_alias;
 
+	bool psql;
+
 	// To avoid posix warning about missing public destructor declare 
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class MemoryPool;
+};
+
+
+class PsqlChanger
+{
+public:
+	PsqlChanger(dsql_req* aRequest, bool value)
+		: request(aRequest)
+	{
+		oldValue = request->isPsql();
+		request->setPsql(value);
+	}
+
+	~PsqlChanger()
+	{
+		request->setPsql(oldValue);
+	}
+
+private:
+	// copying is prohibited
+	PsqlChanger(const PsqlChanger&);
+	PsqlChanger& operator =(const PsqlChanger&);
+
+	dsql_req* request;
+	bool oldValue;
 };
 
 
