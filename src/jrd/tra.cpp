@@ -396,9 +396,9 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	EDS::Transaction::jrdTransactionEnd(tdbb, transaction, true, retaining_flag, false);
 
-/* If this is a commit retaining, and no updates have been performed,
-   and no events have been posted (via stored procedures etc)
-   no-op the operation */
+	// If this is a commit retaining, and no updates have been performed,
+	// and no events have been posted (via stored procedures etc)
+	// no-op the operation.
 
 	if (retaining_flag
 		&& !(transaction->tra_flags & TRA_write
@@ -422,7 +422,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
-/* Perform any meta data work deferred */
+	// Perform any meta data work deferred
 
 	if (!(transaction->tra_flags & TRA_prepared))
 		DFW_perform_work(tdbb, transaction);
@@ -430,18 +430,18 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
 
-/* Check in with external file system */
+	// Check in with external file system
 
 	EXT_trans_commit(transaction);
 
-/* Commit transaction in security database ... */
+	// Commit transaction in security database ...
 	if (transaction->tra_secdb_transaction) {
 		ISC_STATUS_ARRAY status;
 		if (isc_commit_transaction(status, &transaction->tra_secdb_transaction) != 0) {
 			Firebird::status_exception::raise(status);
 		}
 	}
-/* ... and detach from security database. */
+	// ... and detach from security database.
 	if (transaction->tra_security_database) {
 		ISC_STATUS_ARRAY status;
 		if (isc_detach_database(status, &transaction->tra_security_database) != 0) {
@@ -981,7 +981,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 
 	DFW_perform_work(tdbb, transaction);
 
-/* Prepare transaction in security database for commit */
+	// Prepare transaction in security database for commit
 	if (transaction->tra_secdb_transaction) {
 		ISC_STATUS_ARRAY status;
 		if (isc_prepare_transaction(status, &transaction->tra_secdb_transaction) != 0) {
@@ -1240,14 +1240,14 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
 
-/* Rollback transaction in security database ... */
+	// Rollback transaction in security database ...
 	if (transaction->tra_secdb_transaction) {
 		ISC_STATUS_ARRAY status;
 		if (isc_rollback_transaction(status, &transaction->tra_secdb_transaction) != 0) {
 			Firebird::status_exception::raise(status);
 		}
 	}
-/* ... and detach from security database. */
+	// ... and detach from security database.
 	if (transaction->tra_security_database) {
 		ISC_STATUS_ARRAY status;
 		if (isc_detach_database(status, &transaction->tra_security_database) != 0) {
@@ -1255,7 +1255,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		}
 	}
 
-/* If force flag is true, get rid of all savepoints to mark the transaction as dead */
+	// If force flag is true, get rid of all savepoints to mark the transaction as dead
 	if (force_flag) {
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation

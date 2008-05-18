@@ -40,7 +40,7 @@ namespace MsgFormat {
 
 namespace Firebird {
 
-const TEXT SVC_TRMNTR = '\377';
+const TEXT SVC_TRMNTR = '\377';	// ASCII 255
 
 class ClumpletWriter;
 

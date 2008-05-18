@@ -82,8 +82,7 @@ void WINAPI CNTL_main_thread( DWORD argc, char* argv[])
  * Functional description
  *
  **************************************/
-	service_handle =
-		RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
+	service_handle = RegisterServiceCtrlHandler(service_name->c_str(), control_thread);
 	if (!service_handle)
 		return;
 

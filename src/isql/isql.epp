@@ -8593,6 +8593,7 @@ static int API_ROUTINE query_abort(const int reason)
  *
  * Functional description
  *	Signal handler for interrupting output of a query.
+ *  Note: this function is currently used in completelly different ways in Windows x POSIX.
  *
  **************************************/
 

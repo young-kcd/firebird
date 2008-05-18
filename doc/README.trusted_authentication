@@ -36,7 +36,7 @@ To return to default settings (windows administrators are not granted special ri
 
 ALTER ROLE RDB$ADMIN DROP AUTO ADMIN MAPPING;
 
-Take into an account, that if windows administrator attaches with role set in dpb, it will not be 
+Take into an account, that if Windows administrator attaches with role set in dpb, it will not be 
 replaced with RDB$ADMIN, i.e. he/she will not get SYSDBA rights.
 
 - New parameter is added to firebird.conf - it is used to select available authentication method.
