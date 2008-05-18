@@ -85,7 +85,11 @@
 /* Pick up relation ids */
 #include "../jrd/ini.h"
 
+#include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
+
+using Firebird::AutoSetRestore;
+
 
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -127,12 +131,12 @@ static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, 
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
-static jrd_nod* pass1(thread_db*, CompilerScratch*, jrd_nod*, jrd_rel*, USHORT, bool);
+static jrd_nod* pass1(thread_db*, CompilerScratch*, jrd_nod*);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
-static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_rel*, USHORT);
-static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&, jrd_rel*, USHORT);
+static RecordSelExpr* pass1_rse(thread_db*, CompilerScratch*, RecordSelExpr*);
+static void pass1_source(thread_db*, CompilerScratch*, RecordSelExpr*, jrd_nod*, jrd_nod**, NodeStack&);
 static bool pass1_store(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_update(thread_db*, CompilerScratch*, jrd_rel*, const trig_vec*, USHORT, USHORT,
 	SecurityClass::flags_t, jrd_rel*, USHORT);
@@ -2005,7 +2009,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 	// optimizations can be performed here.
 
 	DEBUG;
-	csb->csb_node = pass1(tdbb, csb, csb->csb_node, 0, 0, false);
+	csb->csb_node = pass1(tdbb, csb, csb->csb_node);
 
 	// Copy and compile (pass1) domains DEFAULT and constraints.
 	bool found = csb->csb_map_field_info.getFirst();
@@ -2019,8 +2023,8 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		fieldInfo.validation =
 			copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
 
-		fieldInfo.defaultValue = pass1(tdbb, csb, fieldInfo.defaultValue, 0, 0, false);
-		fieldInfo.validation = pass1(tdbb, csb, fieldInfo.validation, 0, 0, false);
+		fieldInfo.defaultValue = pass1(tdbb, csb, fieldInfo.defaultValue);
+		fieldInfo.validation = pass1(tdbb, csb, fieldInfo.validation);
 
 		found = csb->csb_map_field_info.getNext();
 	}
@@ -3260,10 +3264,7 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 
 static jrd_nod* pass1(thread_db* tdbb,
 					 CompilerScratch* csb,
-					 jrd_nod* node,
-					 jrd_rel* view,
-					 USHORT view_stream,
-					 bool validate_expr)
+					 jrd_nod* node)
 {
 /**************************************
  *
@@ -3275,12 +3276,12 @@ static jrd_nod* pass1(thread_db* tdbb,
  *	Merge missing values, computed values, validation expressions,
  *	and views into a parsed request.
  *
- * The argument validate_expr is true if an ancestor of the
+ * The csb->csb_validate_expr becomes true if an ancestor of the
  * current node (the one being passed in) in the parse tree has nod_type
  * == nod_validate. "ancestor" does not include the current node 
  * being passed in as an argument.
  * If we are in a "validate subtree" (as determined by the
- * validate_expr), we must not post update access to the fields involved 
+ * csb->csb_validate_expr), we must not post update access to the fields involved 
  * in the validation clause. (see the call for CMP_post_access in this
  * function.)
  * 
@@ -3300,7 +3301,10 @@ static jrd_nod* pass1(thread_db* tdbb,
 	if (!node)
 		return node;
 
-	validate_expr = validate_expr || (node->nod_type == nod_validate);
+	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr,
+		csb->csb_validate_expr || node->nod_type == nod_validate);
+
+	jrd_rel* const view = csb->csb_view;
 
 	// if there is processing to be done before sub expressions, do it here
 
@@ -3308,15 +3312,15 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_like:
 	case nod_similar:
 		ptr = node->nod_arg;
-		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
+		ptr[0] = pass1(tdbb, csb, ptr[0]);
 		// We need to take care of invariantness of like/similar pattern expression to be
 		// able to pre-compile its pattern
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
-		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
+		ptr[1] = pass1(tdbb, csb, ptr[1]);
 		if (node->nod_count == 3) {
 			// escape symbol also needs to be taken care of
-			ptr[2] = pass1(tdbb, csb, ptr[2], view, view_stream, validate_expr);
+			ptr[2] = pass1(tdbb, csb, ptr[2]);
 		}
 		csb->csb_current_nodes.pop();
 
@@ -3343,12 +3347,12 @@ static jrd_nod* pass1(thread_db* tdbb,
 	case nod_contains:
 	case nod_starts:
 		ptr = node->nod_arg;
-		ptr[0] = pass1(tdbb, csb, ptr[0], view, view_stream, validate_expr);
+		ptr[0] = pass1(tdbb, csb, ptr[0]);
 		// We need to take care of invariantness of contains and starts
 		// expression to be able to pre-compile it for searching
 		node->nod_flags |= nod_invariant;
 		csb->csb_current_nodes.push(node);
-		ptr[1] = pass1(tdbb, csb, ptr[1], view, view_stream, validate_expr);
+		ptr[1] = pass1(tdbb, csb, ptr[1]);
 		csb->csb_current_nodes.pop();
 
 		// If there is no top-level RSE present and patterns are not constant,
@@ -3480,7 +3484,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 			// clause only, the subtree is a validate_subtree in our notation.
 
 			if (tail->csb_flags & csb_modify) {
-				if (!validate_expr) {
+				if (!csb->csb_validate_expr) {
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
 									(tail->csb_view) ? tail->csb_view->rel_id : 
 										(view ? view->rel_id : 0),
@@ -3566,11 +3570,13 @@ static jrd_nod* pass1(thread_db* tdbb,
 				// dimitr:	if we reference view columns, we need to pass them
 				//			as belonging to a view (in order to compute the access
 				//			permissions properly).
-				view = relation;
-				view_stream = stream;
-			}
+				AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
+				AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 
-			return pass1(tdbb, csb, sub, view, view_stream, validate_expr);
+				return pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
+			}
+			else
+				return pass1(tdbb, csb, sub);
 		}
 
 	case nod_assignment:
@@ -3628,16 +3634,14 @@ static jrd_nod* pass1(thread_db* tdbb,
 		break;
 
 	case nod_rse:
-		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node, view, view_stream);
+		return (jrd_nod*) pass1_rse(tdbb, csb, (RecordSelExpr*) node);
 
 	case nod_cursor_stmt:
 		if ((UCHAR) (IPTR) node->nod_arg[e_cursor_stmt_op] == blr_cursor_fetch) {
 			node->nod_arg[e_cursor_stmt_seek] =
-				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_seek], view, view_stream,
-					validate_expr);
+				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_seek]);
 			node->nod_arg[e_cursor_stmt_into] =
-				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into], view, view_stream,
-					validate_expr);
+				pass1(tdbb, csb, node->nod_arg[e_cursor_stmt_into]);
 		}
 		break;
 
@@ -3656,22 +3660,14 @@ static jrd_nod* pass1(thread_db* tdbb,
 		csb->csb_rpt[(USHORT)(IPTR) node->nod_arg[e_agg_stream]].csb_flags |=
 			csb_no_dbkey;
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
-		node->nod_arg[e_agg_rse] =
-			pass1(tdbb, csb, node->nod_arg[e_agg_rse], view, view_stream,
-				  validate_expr);
-		node->nod_arg[e_agg_map] =
-			pass1(tdbb, csb, node->nod_arg[e_agg_map], view, view_stream,
-				  validate_expr);
-		node->nod_arg[e_agg_group] =
-			pass1(tdbb, csb, node->nod_arg[e_agg_group], view, view_stream,
-				  validate_expr);
+		node->nod_arg[e_agg_rse] = pass1(tdbb, csb, node->nod_arg[e_agg_rse]);
+		node->nod_arg[e_agg_map] = pass1(tdbb, csb, node->nod_arg[e_agg_map]);
+		node->nod_arg[e_agg_group] = pass1(tdbb, csb, node->nod_arg[e_agg_group]);
 		break;
 
 	case nod_gen_id:
 	case nod_gen_id2:
-		node->nod_arg[e_gen_value] =
-			pass1(tdbb, csb, node->nod_arg[e_gen_value], view, view_stream,
-				  validate_expr);
+		node->nod_arg[e_gen_value] = pass1(tdbb, csb, node->nod_arg[e_gen_value]);
 		return node;
 
 	case nod_rec_version:
@@ -3787,8 +3783,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 		}
 
 	case nod_abort:
-		pass1(tdbb, csb, node->nod_arg[e_xcp_msg], view, view_stream,
-			  validate_expr);
+		pass1(tdbb, csb, node->nod_arg[e_xcp_msg]);
 		break;
 
 	case nod_not:
@@ -3828,8 +3823,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 		break;
 
 	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
-			pass1(tdbb, csb, node->nod_arg[e_src_info_node], view, view_stream, validate_expr);
+		node->nod_arg[e_src_info_node] = pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
 		return node;		
 
 	default:
@@ -3842,7 +3836,7 @@ static jrd_nod* pass1(thread_db* tdbb,
 	ptr = node->nod_arg;
 
 	for (const jrd_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++) {
-		*ptr = pass1(tdbb, csb, *ptr, view, view_stream, validate_expr);
+		*ptr = pass1(tdbb, csb, *ptr);
 	}
 
 	// perform any post-processing here
@@ -4218,9 +4212,7 @@ static void pass1_modify(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 static RecordSelExpr* pass1_rse(thread_db* tdbb,
 					 CompilerScratch* csb,
-					 RecordSelExpr* rse,
-					 jrd_rel* view,
-					 USHORT view_stream)
+					 RecordSelExpr* rse)
 {
 /**************************************
  *
@@ -4276,8 +4268,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	for (const jrd_nod* const* const end = arg + rse->rse_count;
 		arg < end; arg++)
 	{
-		pass1_source(tdbb, csb, rse, *arg, &boolean, stack, view,
-		             view_stream);
+		pass1_source(tdbb, csb, rse, *arg, &boolean, stack);
 	}
 
 	// Now, rebuild the RecordSelExpr block. If possible, re-use the old block,
@@ -4307,13 +4298,15 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 		*--arg = stack.pop();
 	}
 
+	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr, false);
+
 	// finish of by processing other clauses
 
 	if (first) {
-		rse->rse_first = pass1(tdbb, csb, first, view, view_stream, false);
+		rse->rse_first = pass1(tdbb, csb, first);
 	}
 	if (skip) {
-		rse->rse_skip = pass1(tdbb, csb, skip, view, view_stream, false);
+		rse->rse_skip = pass1(tdbb, csb, skip);
 	}
 
 	if (boolean) {
@@ -4321,27 +4314,21 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 			jrd_nod* additional = PAR_make_node(tdbb, 2);
 			additional->nod_type = nod_and;
 			additional->nod_arg[0] = boolean;
-			additional->nod_arg[1] =
-				pass1(tdbb, csb, rse->rse_boolean, view, view_stream, false);
+			additional->nod_arg[1] = pass1(tdbb, csb, rse->rse_boolean);
 			rse->rse_boolean = additional;
 		}
 		else {
 			rse->rse_boolean = boolean;
 		}
 	}
-	else {
-		rse->rse_boolean =
-			pass1(tdbb, csb, rse->rse_boolean, view, view_stream, false);
-	}
+	else
+		rse->rse_boolean = pass1(tdbb, csb, rse->rse_boolean);
 
-	if (sort) {
-		rse->rse_sorted = pass1(tdbb, csb, sort, view, view_stream, false);
-	}
+	if (sort)
+		rse->rse_sorted = pass1(tdbb, csb, sort);
 
-	if (project) {
-		rse->rse_projection =
-			pass1(tdbb, csb, project, view, view_stream, false);
-	}
+	if (project)
+		rse->rse_projection = pass1(tdbb, csb, project);
 
 	if (plan) {
 		rse->rse_plan = plan;
@@ -4351,8 +4338,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 #ifdef SCROLLABLE_CURSORS
 	if (async_message) {
-		rse->rse_async_message =
-			pass1(tdbb, csb, async_message, view, view_stream, false);
+		rse->rse_async_message = pass1(tdbb, csb, async_message);
 		csb->csb_async_message = rse->rse_async_message;
 	}
 #endif
@@ -4370,9 +4356,7 @@ static void pass1_source(thread_db*			tdbb,
 						 RecordSelExpr*		rse,
 						 jrd_nod*	source,
 						 jrd_nod**	boolean,
-						 NodeStack&	stack,
-						 jrd_rel*	parent_view,
-						 USHORT		view_stream)
+						 NodeStack&	stack)
 {
 /**************************************
  *
@@ -4396,6 +4380,8 @@ static void pass1_source(thread_db*			tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr, false);
+
 	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated, 
 	// so wait to process the source before we push it on the stack (bug 8039)
 
@@ -4416,15 +4402,14 @@ static void pass1_source(thread_db*			tdbb,
 			for (const jrd_nod* const* const end = arg + sub_rse->rse_count;
 				 arg < end; arg++)
 			{
-				pass1_source(tdbb, csb, rse, *arg, boolean, stack,
-							 parent_view, view_stream);
+				pass1_source(tdbb, csb, rse, *arg, boolean, stack);
 			}
 			// fold in the boolean for this inner join with the one for the parent
 
 			if (sub_rse->rse_boolean) {
-				jrd_nod* node =
-					pass1(tdbb, csb, sub_rse->rse_boolean, parent_view,
-						  view_stream, false);
+
+				jrd_nod* node = pass1(tdbb, csb, sub_rse->rse_boolean);
+
 				if (*boolean) {
 					jrd_nod* additional = PAR_make_node(tdbb, 2);
 					additional->nod_type = nod_and;
@@ -4440,7 +4425,7 @@ static void pass1_source(thread_db*			tdbb,
 			return;
 		}
 
-		source = pass1(tdbb, csb, source, parent_view, view_stream, false);
+		source = pass1(tdbb, csb, source);
 		stack.push(source);
 		return;
 	}
@@ -4452,7 +4437,7 @@ static void pass1_source(thread_db*			tdbb,
 	// special case: procedure
 
 	if (source->nod_type == nod_procedure) {
-		pass1(tdbb, csb, source, parent_view, view_stream, false);
+		pass1(tdbb, csb, source);
 		jrd_prc* procedure = MET_lookup_procedure_id(tdbb,
 		  (SSHORT)(IPTR) source->nod_arg[e_prc_procedure], false, false, 0);
 		post_procedure_access(tdbb, csb, procedure);
@@ -4464,8 +4449,7 @@ static void pass1_source(thread_db*			tdbb,
 	// special case: union
 
 	if (source->nod_type == nod_union) {
-		pass1(tdbb, csb, source->nod_arg[e_uni_clauses], parent_view,
-			  view_stream, false);
+		pass1(tdbb, csb, source->nod_arg[e_uni_clauses]);
 		return;
 	}
 
@@ -4473,13 +4457,16 @@ static void pass1_source(thread_db*			tdbb,
 
 	if (source->nod_type == nod_aggregate) {
 		fb_assert((int) (IPTR) source->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		pass1(tdbb, csb, source, parent_view, view_stream, false);
+		pass1(tdbb, csb, source);
 		return;
 	}
 
 	// All the special cases are exhausted, so we must have a view or a base table; 
 	// prepare to check protection of relation when a field in the stream of the 
 	// relation is accessed.
+
+	jrd_rel* const parent_view = csb->csb_view;
+	const USHORT view_stream = csb->csb_view_stream;
 
 	jrd_rel* view = (jrd_rel*) source->nod_arg[e_rel_relation];
 	CMP_post_resource(&csb->csb_resources, view, Resource::rsc_relation,
@@ -4517,6 +4504,9 @@ static void pass1_source(thread_db*			tdbb,
 	stack.pop();
 	UCHAR* map = alloc_map(tdbb, csb, stream);
 
+	AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, view);
+	AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
+
 	// We don't expand the view in two cases: 
 	// 1) If the view has a projection, sort, first/skip or explicit plan.
 	// 2) If it's part of an outer join. 
@@ -4528,7 +4518,7 @@ static void pass1_source(thread_db*			tdbb,
 	{
 		jrd_nod* node = copy(tdbb, csb, (jrd_nod*) view_rse, map, 0, NULL, false);
 		DEBUG;
-		stack.push(pass1(tdbb, csb, node, view, stream, false));
+		stack.push(pass1(tdbb, csb, node));
 		DEBUG;
 		return;
 	}
@@ -4556,7 +4546,7 @@ static void pass1_source(thread_db*			tdbb,
 		// Now go out and process the base table itself. This table might also be a view, 
 		// in which case we will continue the process by recursion.
 
-		pass1_source(tdbb, csb, rse, node, boolean, stack, view, stream);
+		pass1_source(tdbb, csb, rse, node, boolean, stack);
 	}
 
 	// When there is a projection in the view, copy the projection up to the query RecordSelExpr.
@@ -4569,9 +4559,7 @@ static void pass1_source(thread_db*			tdbb,
 
 	if (view_rse->rse_projection) {
 		rse->rse_projection =
-			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false),
-				  view, stream, false);
+			pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false));
 	}
 
 	// if we encounter a boolean, copy it and retain it by ANDing it in with the 
@@ -4579,9 +4567,7 @@ static void pass1_source(thread_db*			tdbb,
 
 	if (view_rse->rse_boolean) {
 		jrd_nod* node =
-			pass1(tdbb, csb,
-				  copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false),
-				  view, stream, false);
+			pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_boolean, map, 0, NULL, false));
 		if (*boolean) {
 			// The order of the nodes here is important! The
 			// boolean from the view must appear first so that

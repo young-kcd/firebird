@@ -110,6 +110,32 @@ private:
 	void operator=(AutoPtr<Where, Clear>&);
 };
 
+
+template <typename T>
+class AutoSetRestore
+{
+public:
+	AutoSetRestore(T* aValue, T newValue)
+		: value(aValue),
+		  oldValue(*aValue)
+	{
+		*value = newValue;
+	}
+
+	~AutoSetRestore()
+	{
+		*value = oldValue;
+	}
+
+private:
+	// copying is prohibited
+	AutoSetRestore(const AutoSetRestore&);
+	AutoSetRestore& operator =(const AutoSetRestore&);
+
+	T* value;
+	T oldValue;
+};
+
 } //namespace Firebird
 
 #endif // CLASSES_AUTO_PTR_H

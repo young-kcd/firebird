@@ -865,6 +865,11 @@ public:
 	MapItemInfo			csb_map_item_info;		// Map item to item info
 	Firebird::MetaName	csb_domain_validation;	// Parsing domain constraint in PSQL
 
+	// used in cmp.cpp/pass1
+	jrd_rel*	csb_view;
+	USHORT		csb_view_stream;
+	bool		csb_validate_expr;
+
 	struct csb_repeat
 	{
 		// We must zero-initialize this one
