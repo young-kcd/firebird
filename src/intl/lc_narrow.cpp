@@ -109,7 +109,7 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 		bool useSecondary = false;
 		bool useTertiary = false;
 
-		for (int ch = 0; ch <= 255; ++ch)
+		for (int ch = 0; ch <= 255 && !(useSecondary && useTertiary); ++ch)
 		{
 			const SortOrderTblEntry* coll =
 				&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[ch];
