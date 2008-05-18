@@ -1,3 +1,33 @@
+2008-05-18 04:01  asfernandes
+
+	* firebird2/: doc/README.fb_shutdown (1.2),
+	doc/README.trusted_authentication (1.4), src/common/UtilSvc.h
+	(1.7), src/isql/isql.epp (1.247), src/jrd/tra.cpp (1.176),
+	src/remote/os/win32/cntl.cpp (1.42):
+
+	Misc
+
+2008-05-18 03:59  asfernandes
+
+	* firebird2/src/qli/dtr.cpp (1.51):
+
+	Correction
+
+2008-05-18 03:34  asfernandes
+
+	* firebird2/src/intl/lc_narrow.cpp (1.32):
+
+	Optimization
+
+2008-05-18 03:02  asfernandes
+
+	* firebird2/src/: common/classes/auto.h (1.18), jrd/cmp.cpp
+	(1.294), jrd/exe.h (1.120):
+
+	Do the same kind of cleanup in jrd/pass1 as done for "proc_flag" in
+	dsql/pass1 - recursive passing the same parameters that is changed
+	in specific situations makes difficult to understand the logic.
+
 2008-05-17 20:18  asfernandes
 
 	* firebird2/src/intl/lc_narrow.cpp (1.31):
