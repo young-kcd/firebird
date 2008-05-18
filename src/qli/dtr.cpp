@@ -66,7 +66,7 @@ extern TEXT *QLI_prompt;
 static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int CLIB_ROUTINE async_quit(const int);
+static int API_ROUTINE async_quit(const int);
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -558,7 +558,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static int CLIB_ROUTINE async_quit(const int reason)
+static int API_ROUTINE async_quit(const int reason)
 {
 /**************************************
  *
