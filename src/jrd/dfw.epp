@@ -2826,9 +2826,9 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			CMP_release(tdbb, handle);
 
-			if (validation.isEmpty())
-				MET_delete_dependencies(tdbb, depName, obj_validation);
-			else
+			MET_delete_dependencies(tdbb, depName, obj_validation);
+
+			if (!validation.isEmpty())
 			{
 				MemoryPool* new_pool = dbb->createPool();
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
