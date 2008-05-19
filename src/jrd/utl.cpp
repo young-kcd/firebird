@@ -945,7 +945,7 @@ void API_ROUTINE isc_set_login(const UCHAR** dpb, SSHORT* dpb_size)
 /* look for the environment variables */
 
 	Firebird::string username, password;
-	if (!fb_utils::readenv("ISC_USER", username) && !fb_utils::readenv("ISC_PASSWORD", password))
+	if (!fb_utils::readenv(ISC_USER, username) && !fb_utils::readenv(ISC_PASSWORD, password))
 		return;
 
 /* figure out whether the username or
@@ -2177,7 +2177,7 @@ static int load(ISC_QUAD* blob_id,
 }
 
 // new utl
-inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
+static inline void setTag(Firebird::ClumpletWriter& dpb, UCHAR tag, const TEXT* value)
 {
 	if (! dpb.find(tag))
 	{
@@ -2190,13 +2190,13 @@ void setLogin(Firebird::ClumpletWriter& dpb)
 	if (!(dpb.find(isc_dpb_trusted_auth) || dpb.find(isc_dpb_address_path)))
 	{
 		Firebird::string username;
-		if (fb_utils::readenv("ISC_USER", username) && !dpb.find(isc_dpb_sys_user_name))
+		if (fb_utils::readenv(ISC_USER, username) && !dpb.find(isc_dpb_sys_user_name))
 		{
 			setTag(dpb, isc_dpb_user_name, username.c_str());
 		}
 
 		Firebird::string password;
-		if (fb_utils::readenv("ISC_PASSWORD", password) && !dpb.find(isc_dpb_password_enc))
+		if (fb_utils::readenv(ISC_PASSWORD, password) && !dpb.find(isc_dpb_password_enc))
 		{
 			setTag(dpb, isc_dpb_password, password.c_str());
 		}

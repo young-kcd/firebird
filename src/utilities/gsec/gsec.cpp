@@ -244,8 +244,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		if (!(user_data->trusted_auth))
 #endif
 		{
-			envPick(uSvc, user_data->dba_user_name, sizeof user_data->dba_user_name, "ISC_USER");
-			envPick(uSvc, user_data->dba_password, sizeof user_data->dba_password, "ISC_PASSWORD");
+			envPick(uSvc, user_data->dba_user_name, sizeof user_data->dba_user_name, ISC_USER);
+			envPick(uSvc, user_data->dba_password, sizeof user_data->dba_password, ISC_PASSWORD);
 		}
 		sHandle = attachRemoteServiceManager(
 					status,

@@ -65,6 +65,9 @@ typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 const char* const NULL_STRING_MARK = "*** null ***";
 const char* const UNKNOWN_STRING_MARK = "*** unknown ***";
 
+const char* const ISC_USER = "ISC_USER";
+const char* const ISC_PASSWORD = "ISC_PASSWORD";
+
 const char* const NULL_ROLE = "NONE";
 const char* const ADMIN_ROLE = "RDB$ADMIN";
 

@@ -232,7 +232,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 		if (!flag_trusted)
 #endif
 		{
-			fb_utils::readenv("ISC_USER", usr);
+			fb_utils::readenv(ISC_USER, usr);
 		}
 	}
 
@@ -242,7 +242,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 		if (!flag_trusted)
 #endif
 		{
-			fb_utils::readenv("ISC_PASSWORD", pswd);
+			fb_utils::readenv(ISC_PASSWORD, pswd);
 		}
 	}
 

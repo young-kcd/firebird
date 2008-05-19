@@ -128,13 +128,15 @@ namespace {
 		Firebird::string    spb_remote_address;
 		Firebird::string	spb_trusted_login;
 		Firebird::string	spb_address_path;
-		bool				spb_trusted_role;
 		USHORT				spb_version;
+		bool				spb_trusted_role;
+		bool				spb_remote;
 
 		// Parse service parameter block picking up options and things.
 		Options(Firebird::ClumpletReader& spb) : 
+			spb_version(0),
 			spb_trusted_role(false),
-			spb_version(0)
+			spb_remote(false)
 		{
 			const UCHAR p = spb.getBufferTag();
 			if (p != isc_spb_version1 && p != isc_spb_current_version) {
@@ -176,6 +178,7 @@ namespace {
 
 				case isc_spb_address_path:
 					spb.getString(spb_address_path);
+					spb_remote = true;
 					{
 						Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
 							spb.getBytes(), spb.getClumpLength());
@@ -593,30 +596,49 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		user_flag = SVC_user_none;
 	}
 	else {
+		// If we have embedded service connection, let's check for unix OS auth
+		if ((!options.spb_trusted_login.hasData()) && 
+			(!options.spb_remote) && 
+			(!options.spb_user_name.hasData())) 
+		{
+			if (ISC_get_user(&options.spb_trusted_login, NULL, NULL, NULL)) {
+				options.spb_trusted_login = SYSDBA_USER_NAME;
+			}
+		}
+
 		if (options.spb_trusted_login.hasData()) {
 			options.spb_user_name = options.spb_trusted_login;
 		}
 		else {
+			// If we have embedded service connection, let's check for environment
+			if (!options.spb_remote) {
+				if (!options.spb_user_name.hasData()) {
+					fb_utils::readenv(ISC_USER, options.spb_user_name);
+				}
+				if (!options.spb_password.hasData()) {
+					fb_utils::readenv(ISC_PASSWORD, options.spb_password);
+				}
+			}
+				
 			if (!options.spb_user_name.hasData()) {
 				// user name and password are required while
 				// attaching to the services manager
 				Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
 			}
-			else {
-				Firebird::string name; // unused after retrieved
-				int id, group, node_id;
 
-				const Firebird::string remote = options.spb_network_protocol +
-							(options.spb_network_protocol.isEmpty() || 
-							 options.spb_remote_address.isEmpty() ? "" : "/") +
-										  options.spb_remote_address;
+			Firebird::string name; // unused after retrieved
+			int id, group, node_id;
 
-				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
-						                     options.spb_password.nullStr(), 
-											 options.spb_password_enc.nullStr(),
-											 &id, &group, &node_id, remote);
-				svc_uses_security_database = true;
-			}
+			const Firebird::string remote = options.spb_network_protocol +
+						(options.spb_network_protocol.isEmpty() || 
+						 options.spb_remote_address.isEmpty() ? "" : "/") +
+									  options.spb_remote_address;
+
+			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+					                     options.spb_password.nullStr(), 
+										 options.spb_password_enc.nullStr(),
+										 &id, &group, &node_id, remote);
+			svc_uses_security_database = true;
 		}
 
 		if (options.spb_user_name.length() > USERNAME_LENGTH) {

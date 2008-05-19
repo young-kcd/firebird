@@ -86,8 +86,6 @@
 #define sleep(seconds)		Sleep ((seconds) * 1000)
 #endif // WIN_NT
 
-const char* ISC_USER		= "ISC_USER";
-const char* ISC_PASSWORD	= "ISC_PASSWORD";
 //const int MAX_USER_LENGTH	= 33;
 //const int MAX_OTHER_PARAMS	= 1 + 1 + sizeof(((rem_port*)NULL)->port_dummy_packet_interval);
 

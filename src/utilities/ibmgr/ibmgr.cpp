@@ -103,8 +103,8 @@ int CLIB_ROUTINE main( int argc, char **argv)
    environment variables
 */
 	Firebird::string user, password;
-	fb_utils::readenv("ISC_USER", user);
-	fb_utils::readenv("ISC_PASSWORD", password);
+	fb_utils::readenv(ISC_USER, user);
+	fb_utils::readenv(ISC_PASSWORD, password);
 
 	Firebird::string host;
 /* MMM - do not allow to change host now
