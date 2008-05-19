@@ -1,3 +1,59 @@
+2008-05-19 17:26  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.237):
+
+	Fixed CORE-1907 - Dropping and adding a domain constraint in the
+	same transaction leaves incorrect dependencies
+
+2008-05-19 15:58  alexpeshkoff
+
+	* firebird2/src/: burp/burp.cpp (1.142), jrd/constants.h (1.51),
+	jrd/svc.cpp (1.226), jrd/utl.cpp (1.117), jrd/utl_proto.h (1.24),
+	remote/interface.cpp (1.189), utilities/gsec/gsec.cpp (1.89),
+	utilities/ibmgr/ibmgr.cpp (1.28):
+
+	1. Cleanup - use constants ISC_USER/ISC_PASSWORD instead of always
+	repeated string constants.
+
+	2. Let services uses environment and OS auth when run embedded.
+
+2008-05-19 15:46  asfernandes
+
+	* firebird2/: builds/posix/make.shared.variables (1.93),
+	builds/win32/preprocess.bat (1.40),
+	builds/win32/msvc7/dsql_server.vcproj (1.23),
+	builds/win32/msvc7/dsql_server_classic.vcproj (1.23),
+	builds/win32/msvc8/dsql_server.vcproj (1.10),
+	builds/win32/msvc8/dsql_server_classic.vcproj (1.11),
+	src/dsql/DdlNodes.epp (1.1), src/dsql/DdlNodes.h (1.1),
+	src/dsql/Nodes.h (1.1), src/dsql/Parser.h (1.7),
+	src/dsql/StmtNodes.cpp (1.1), src/dsql/StmtNodes.h (1.1),
+	src/dsql/ddl.cpp (1.238), src/dsql/gen.cpp (1.149), src/dsql/node.h
+	(1.112), src/dsql/parse.y (1.281), src/dsql/pass1.cpp (1.380),
+	src/jrd/cmp.cpp (1.295), src/jrd/cmp_proto.h (1.35),
+	src/jrd/dyn_mod.epp (1.103), src/jrd/exe.cpp (1.263), src/jrd/exe.h
+	(1.121), src/jrd/nod.h (1.28), src/jrd/par.cpp (1.196),
+	src/jrd/par_proto.h (1.22), src/misc/blrtable.cpp (1.37):
+
+	1) Move the new Node classes to appropriate files 2) Creation of
+	StmtNode 3) Conversion of IN AUTONOMOUS TRANSACTION to
+	InAutonomousTransactionNode (inherited from StmtNode) - it makes
+	this feature almost self-contained
+
+	Please do a boot build or at least run blr_table.
+
+2008-05-19 15:30  asfernandes
+
+	* firebird2/src/jrd/blp.h (1.35):
+
+	Fixed BLR print of autonomous transaction
+
+2008-05-19 14:10  asfernandes
+
+	* firebird2/src/qli/dtr.cpp (1.52):
+
+	Correction
+
 2008-05-18 04:01  asfernandes
 
 	* firebird2/: doc/README.fb_shutdown (1.2),
