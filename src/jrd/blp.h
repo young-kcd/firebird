@@ -222,7 +222,7 @@ static const struct
 	{"recurse", union_ops},
 	{"sys_function", function},
 	// New BLR in FB2.5
-	{"auto_trans", one},
+	{"auto_trans", byte_verb},
 	{"similar", similar},
 	{"exec_stmt", exec_stmt},
 	{0, 0}
