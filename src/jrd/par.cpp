@@ -66,26 +66,17 @@
 #include "../jrd/SysFunction.h"
 
 
-/* blr type classes */
-
-const int OTHER			= 0;
-const int STATEMENT		= 1;
-const int TYPE_BOOL		= 2;
-const int VALUE			= 3;
-const int TYPE_RSE		= 4;
-const int RELATION		= 5;
-const int ACCESS_TYPE	= 6;
-
 using namespace Jrd;
 
 #include "gen/blrtable.h"
-
-
 
 static const TEXT elements[][14] =
 	{ "", "statement", "boolean", "value", "RecordSelExpr", "TABLE" };
 
 #include "gen/codetext.h"
+
+
+static NodeParseFunc blr_parsers[256] = {NULL};
 
 
 static void error(CompilerScratch*, ...);
@@ -119,12 +110,10 @@ static jrd_nod* par_stream(thread_db*, CompilerScratch*);
 static jrd_nod* par_sys_function(thread_db*, CompilerScratch*);
 static jrd_nod* par_union(thread_db*, CompilerScratch*, bool);
 static USHORT par_word(CompilerScratch*);
-static jrd_nod* parse(thread_db*, CompilerScratch*, USHORT, USHORT expected_optional = 0);
-static void syntax_error(CompilerScratch*, const TEXT*);
 static void warning(CompilerScratch*, ...);
 
 #define BLR_PEEK	*(csb->csb_running)
-#define BLR_BYTE	*(csb->csb_running)++
+#define BLR_BYTE	csb->getBlrByte()
 #define BLR_PUSH	(csb->csb_running)--
 #define BLR_WORD	par_word (csb)
 
@@ -218,11 +207,11 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 	if (version == blr_version4)
 		csb->csb_g_flags |= csb_blr_version4;
 
-	jrd_nod* node = parse(tdbb, csb, OTHER);
+	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
-		syntax_error(csb, "end_of_command");
+		PAR_syntax_error(csb, "end_of_command");
 
 	if (request_ptr)
 		*request_ptr = CMP_make_request(tdbb, csb, true);
@@ -723,12 +712,12 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 	if (dbginfo_length > 0)
 		DBG_parse_debug_info(dbginfo_length, dbginfo, csb->csb_dbg_info);
 
-	jrd_nod* node = parse(tdbb, csb, OTHER);
+	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
 	csb->csb_node = node;
 
 	if (*csb->csb_running++ != (UCHAR) blr_eoc)
 	{
-		syntax_error(csb, "end_of_command");
+		PAR_syntax_error(csb, "end_of_command");
 	}
 
 	return csb;
@@ -762,6 +751,13 @@ SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
 	}
 
 	return 0;
+}
+
+
+void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
+{
+	fb_assert(!blr_parsers[blr]);
+	blr_parsers[blr] = parseFunc;
 }
 
 
@@ -885,7 +881,7 @@ static jrd_nod* par_args(thread_db* tdbb, CompilerScratch* csb, USHORT expected)
 
 	if (count) {
 		do {
-			*ptr++ = parse(tdbb, csb, expected);
+			*ptr++ = PAR_parse_node(tdbb, csb, expected);
 		} while (--count);
 	}
 
@@ -918,7 +914,7 @@ static jrd_nod* par_cast(thread_db* tdbb, CompilerScratch* csb)
 	PAR_desc(tdbb, csb, desc, &itemInfo);
 	format->fmt_length = desc->dsc_length;
 
-	node->nod_arg[e_cast_source] = parse(tdbb, csb, VALUE);
+	node->nod_arg[e_cast_source] = PAR_parse_node(tdbb, csb, VALUE);
 
 	if (itemInfo.isSpecial())
 	{
@@ -1257,7 +1253,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 	rse->nod_type = nod_rse;
 	rse->nod_count = 0;
 	rse->rse_count = 1;
-	jrd_nod* relation = parse(tdbb, csb, RELATION);
+	jrd_nod* relation = PAR_parse_node(tdbb, csb, RELATION);
 	rse->rse_relation[0] = relation;
 
 /* Fake boolean */
@@ -1265,7 +1261,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 	jrd_nod* node = rse->rse_boolean = PAR_make_node(tdbb, 2);
 	node->nod_type = nod_eql;
 	node->nod_flags = nod_comparison;
-	node->nod_arg[1] = parse(tdbb, csb, VALUE);
+	node->nod_arg[1] = PAR_parse_node(tdbb, csb, VALUE);
 	node->nod_arg[0] = PAR_make_node(tdbb, 1);
 	node = node->nod_arg[0];
 	node->nod_type = nod_dbkey;
@@ -1274,7 +1270,7 @@ static jrd_nod* par_fetch(thread_db* tdbb, CompilerScratch* csb, jrd_nod* for_no
 
 /* Pick up statement */
 
-	for_node->nod_arg[e_for_statement] = parse(tdbb, csb, STATEMENT);
+	for_node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, STATEMENT);
 
 	return for_node;
 }
@@ -1630,7 +1626,7 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 	SET_TDBB(tdbb);
 
 	if (BLR_BYTE != blr_map)
-		syntax_error(csb, "blr_map");
+		PAR_syntax_error(csb, "blr_map");
 
 	SSHORT count = BLR_WORD;
 	NodeStack map;
@@ -1641,7 +1637,7 @@ static jrd_nod* par_map(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 		assignment->nod_count = e_asgn_length;
 		assignment->nod_arg[e_asgn_to] =
 			PAR_gen_field(tdbb, stream, BLR_WORD);
-		assignment->nod_arg[e_asgn_from] = parse(tdbb, csb, VALUE);
+		assignment->nod_arg[e_asgn_from] = PAR_parse_node(tdbb, csb, VALUE);
 		map.push(assignment);
 	}
 
@@ -1765,12 +1761,12 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 	node->nod_count = 1;
 	node->nod_arg[e_mod_org_stream] = (jrd_nod*) (IPTR) org_stream;
 	node->nod_arg[e_mod_new_stream] = (jrd_nod*) (IPTR) new_stream;
-	node->nod_arg[e_mod_statement] = parse(tdbb, csb, STATEMENT);
+	node->nod_arg[e_mod_statement] = PAR_parse_node(tdbb, csb, STATEMENT);
 
 	if (blr_operator == blr_modify2)
 	{
 		node->nod_count = 2;
-		node->nod_arg[e_mod_statement2] = parse(tdbb, csb, STATEMENT);
+		node->nod_arg[e_mod_statement2] = PAR_parse_node(tdbb, csb, STATEMENT);
 	}
 
 	return node;
@@ -1885,7 +1881,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		if (n != blr_relation && n != blr_relation2 &&
 			n != blr_rid && n != blr_rid2)
 		{
-			syntax_error(csb, elements[RELATION]);
+			PAR_syntax_error(csb, elements[RELATION]);
 		}
 
 		/* don't have par_relation() parse the context, because
@@ -2040,13 +2036,13 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		case blr_sequential:
 			break;
 		default:
-			syntax_error(csb, "access type");
+			PAR_syntax_error(csb, "access type");
 		}
 
 		return plan;
 	}
 
-	syntax_error(csb, "plan item");
+	PAR_syntax_error(csb, "plan item");
 	return NULL;			/* Added to remove compiler warning */
 }
 
@@ -2216,7 +2212,7 @@ static void par_procedure_parms(
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 			}
 			else {
-				asgn->nod_arg[asgn_arg1] = parse(tdbb, csb, VALUE);
+				asgn->nod_arg[asgn_arg1] = PAR_parse_node(tdbb, csb, VALUE);
 			}
 			jrd_nod* prm = asgn->nod_arg[asgn_arg2] =
 				PAR_make_node(tdbb, e_arg_length);
@@ -2363,38 +2359,38 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 	while (--count >= 0) {
 		// AB: Added TYPE_RSE for derived table support
-		*ptr++ = parse(tdbb, csb, RELATION, TYPE_RSE);
-		//*ptr++ = parse(tdbb, csb, RELATION);
+		*ptr++ = PAR_parse_node(tdbb, csb, RELATION, TYPE_RSE);
+		//*ptr++ = PAR_parse_node(tdbb, csb, RELATION);
 	}
 
 	while (true) {
 		const UCHAR op = BLR_BYTE;
 		switch (op) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
 			break;
 
 		case blr_first:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
-			rse->rse_first = parse(tdbb, csb, VALUE);
+				PAR_syntax_error(csb, "RecordSelExpr stream clause");
+			rse->rse_first = PAR_parse_node(tdbb, csb, VALUE);
 			break;
 
         case blr_skip:
             if (rse_op == blr_rs_stream)
-                syntax_error (csb, "RecordSelExpr stream clause");
-            rse->rse_skip = parse (tdbb, csb, VALUE);
+                PAR_syntax_error(csb, "RecordSelExpr stream clause");
+            rse->rse_skip = PAR_parse_node(tdbb, csb, VALUE);
             break;
 
 		case blr_sort:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
+				PAR_syntax_error(csb, "RecordSelExpr stream clause");
 			rse->rse_sorted = par_sort(tdbb, csb, true);
 			break;
 
 		case blr_project:
 			if (rse_op == blr_rs_stream)
-				syntax_error(csb, "RecordSelExpr stream clause");
+				PAR_syntax_error(csb, "RecordSelExpr stream clause");
 			rse->rse_projection = par_sort(tdbb, csb, false);
 			break;
 
@@ -2406,7 +2402,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 					&& jointype != blr_left && jointype != blr_right
 					&& jointype != blr_full)
 				{
-					syntax_error(csb, "join type clause");
+					PAR_syntax_error(csb, "join type clause");
 				}
 				break;
 			}
@@ -2428,7 +2424,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 		case blr_receive:
 			BLR_PUSH;
-			rse->rse_async_message = parse(tdbb, csb, STATEMENT);
+			rse->rse_async_message = PAR_parse_node(tdbb, csb, STATEMENT);
 			break;
 #endif
 
@@ -2453,7 +2449,7 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 					return (jrd_nod*) rse;
 				}
 			}
-			syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
+			PAR_syntax_error(csb, (TEXT*)((rse_op == blr_rs_stream) ?
 						 "RecordSelExpr stream clause" :
 						 "record selection expression clause"));
 		}
@@ -2503,7 +2499,7 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 			*ptr2++ =
 				(jrd_nod*) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
 		}
-		*ptr++ = parse(tdbb, csb, VALUE);
+		*ptr++ = PAR_parse_node(tdbb, csb, VALUE);
 	}
 
 	return clause;
@@ -2528,19 +2524,19 @@ static jrd_nod* par_stream(thread_db* tdbb, CompilerScratch* csb)
 	RecordSelExpr* rse = (RecordSelExpr*) PAR_make_node(tdbb, 1 + rse_delta + 2);
 	rse->nod_count = 0;
 	rse->rse_count = 1;
-	rse->rse_relation[0] = parse(tdbb, csb, RELATION);
+	rse->rse_relation[0] = PAR_parse_node(tdbb, csb, RELATION);
 
 	while (true) {
 		const UCHAR op = BLR_BYTE;
 		switch (op) {
 		case blr_boolean:
-			rse->rse_boolean = parse(tdbb, csb, TYPE_BOOL);
+			rse->rse_boolean = PAR_parse_node(tdbb, csb, TYPE_BOOL);
 			break;
 
 		default:
 			if (op == (UCHAR) blr_end)
 				return (jrd_nod*) rse;
-			syntax_error(csb, "stream_clause");
+			PAR_syntax_error(csb, "stream_clause");
 		}
 	}
 }
@@ -2619,7 +2615,7 @@ static jrd_nod* par_union(thread_db* tdbb, CompilerScratch* csb, bool recursive)
 	NodeStack clauses;
 
 	while (--count >= 0) {
-		clauses.push(parse(tdbb, csb, TYPE_RSE));
+		clauses.push(PAR_parse_node(tdbb, csb, TYPE_RSE));
 		clauses.push(par_map(tdbb, csb, map_stream));
 	}
 
@@ -2648,12 +2644,12 @@ static USHORT par_word(CompilerScratch* csb)
 }
 
 
-static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
+jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	USHORT expected_optional)
 {
 /**************************************
  *
- *	p a r s e
+ *	P A R _ p a r s e _ n o d e
  *
  **************************************
  *
@@ -2669,7 +2665,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	if (blr_operator < 0 || blr_operator >= FB_NELEM(type_table)) {
         // NS: This error string is correct, please do not mangle it again and again.
 		// The whole error message is "BLR syntax error: expected %s at offset %d, encountered %d"
-        syntax_error(csb, "valid BLR code");
+        PAR_syntax_error(csb, "valid BLR code");
     }
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
@@ -2677,11 +2673,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	if (expected && (expected != type_table[blr_operator])) {
 		if (expected_optional) {
 			if (expected_optional != type_table[blr_operator]) {
-				syntax_error(csb, elements[expected]);
+				PAR_syntax_error(csb, elements[expected]);
 			}
 		}
 		else {
-			syntax_error(csb, elements[expected]);
+			PAR_syntax_error(csb, elements[expected]);
 		}
 	}
 
@@ -2712,7 +2708,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_ansi_any:
 	case blr_ansi_all:
 	case blr_exists:
-		node->nod_arg[e_any_rse] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_any_rse] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 		/* Boring operators -- no special handling req'd */
@@ -2721,9 +2717,9 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_substring:
 	case blr_matching2:
 	case blr_ansi_like:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_trim:
@@ -2734,14 +2730,14 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		BYTE trimWhat = BLR_BYTE;
 
 		if (trimWhat == blr_trim_characters)
-			node->nod_arg[e_trim_characters] = parse(tdbb, csb, sub_type);
+			node->nod_arg[e_trim_characters] = PAR_parse_node(tdbb, csb, sub_type);
 		else
 		{
 			node->nod_arg[e_trim_characters] = NULL;
 			--node->nod_count;
 		}
 
-		node->nod_arg[e_trim_value] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_trim_value] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 	}
 
@@ -2760,7 +2756,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_concatenate:
 
 	case blr_assignment:
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		/* Fall into ... */
 
 	case blr_handler:
@@ -2782,14 +2778,14 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_agg_average_distinct:
 	case blr_post:
 	case blr_internal_info:
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_similar:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		if (BLR_BYTE != 0)
-			*arg++ = parse(tdbb, csb, sub_type);	// escape
+			*arg++ = PAR_parse_node(tdbb, csb, sub_type);	// escape
 		else	// without escape
 		{
 			*arg++ = NULL;
@@ -2799,8 +2795,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_agg_list:
 	case blr_agg_list_distinct:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, VALUE);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 
 	case blr_exec_sql:
@@ -2813,7 +2809,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			set_type = false;
 
 			arg = node->nod_arg;
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
 			*arg++ = NULL;		// e_exec_stmt_data_src	
 			*arg++ = NULL;		// e_exec_stmt_user	
 			*arg++ = NULL;		// e_exec_stmt_password	
@@ -2837,7 +2833,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			set_type = false;
 
 			arg = node->nod_arg;
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
 			*arg++ = NULL;		// e_exec_stmt_data_src	
 			*arg++ = NULL;		// e_exec_stmt_user	
 			*arg++ = NULL;		// e_exec_stmt_password	
@@ -2845,11 +2841,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			if (BLR_BYTE)	// singleton flag
 				*arg++ = NULL;							// e_exec_stmt_proc_block
 			else
-				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
+				*arg++ = PAR_parse_node(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
 
 			// output parameters
 			for (n = e_exec_stmt_fixed_count; n < node->nod_count; n++) {
-				*arg++ = parse(tdbb, csb, VALUE);
+				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
 
 			*arg++ = NULL;		// e_exec_stmt_extra_inputs	
@@ -2868,20 +2864,20 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
 			node->nod_count = n;
 			arg = node->nod_arg;
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_user	
-			*arg++ = parse(tdbb, csb, VALUE);		// e_exec_stmt_password	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_user	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_password	
 			const UCHAR tra_mode = BLR_BYTE;		// e_exec_stmt_tran		
 			if (BLR_BYTE != 0) {
 				// external transaction parameters is not implemented currently
-				syntax_error(csb, "external transaction parameters");
+				PAR_syntax_error(csb, "external transaction parameters");
 			}
 
 			if (BLR_BYTE)	// singleton flag
 				*arg++ = 0;								// e_exec_stmt_proc_block
 			else
-				*arg++ = parse(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
+				*arg++ = PAR_parse_node(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
 
 			// input parameters and their names
 			const bool haveNames = (inputs && (BLR_BYTE == 1));
@@ -2902,12 +2898,12 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 						paramNames->add(newName);
 					}
 				}
-				*arg++ = parse(tdbb, csb, VALUE);
+				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
 
 			// output parameters
 			for (; n < node->nod_count; n++) {
-				*arg++ = parse(tdbb, csb, VALUE);
+				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
 
 			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs	
@@ -2918,8 +2914,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_post_arg:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_null:
@@ -2960,16 +2956,16 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_store:
 	case blr_store2:
-		node->nod_arg[e_sto_relation] = parse(tdbb, csb, RELATION);
-		node->nod_arg[e_sto_statement] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_sto_relation] = PAR_parse_node(tdbb, csb, RELATION);
+		node->nod_arg[e_sto_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		if (blr_operator == blr_store2)
-			node->nod_arg[e_sto_statement2] = parse(tdbb, csb, sub_type);
+			node->nod_arg[e_sto_statement2] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 		/* Comparison operators */
 
 	case blr_between:
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 
 	case blr_equiv:
 	case blr_eql:
@@ -2978,8 +2974,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_gtr:
 	case blr_leq:
 	case blr_lss:
-		*arg++ = parse(tdbb, csb, sub_type);
-		*arg++ = parse(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
+		*arg++ = PAR_parse_node(tdbb, csb, sub_type);
 		node->nod_flags = nod_comparison;
 		break;
 
@@ -3011,31 +3007,31 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_index:
-		node->nod_arg[0] = parse(tdbb, csb, sub_type);
+		node->nod_arg[0] = PAR_parse_node(tdbb, csb, sub_type);
 		node->nod_arg[1] = par_args(tdbb, csb, sub_type);
 		break;
 
 	case blr_for:
 		if (BLR_PEEK == (UCHAR) blr_stall)
-			node->nod_arg[e_for_stall] = parse(tdbb, csb, STATEMENT);
+			node->nod_arg[e_for_stall] = PAR_parse_node(tdbb, csb, STATEMENT);
 
 		if (BLR_PEEK == (UCHAR) blr_rse ||
 			BLR_PEEK == (UCHAR) blr_singular)
-				node->nod_arg[e_for_re] = parse(tdbb, csb, TYPE_RSE);
+				node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		else
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
-		node->nod_arg[e_for_statement] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_dcl_cursor:
 		{
 			node->nod_arg[e_dcl_cursor_number] = (jrd_nod*) (IPTR) BLR_WORD;
-			node->nod_arg[e_dcl_cursor_rse] = parse(tdbb, csb, TYPE_RSE);
+			node->nod_arg[e_dcl_cursor_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 			n = BLR_WORD;
 			jrd_nod* temp = PAR_make_node(tdbb, n);
 			temp->nod_type = nod_list;
 			for (jrd_nod** ptr = temp->nod_arg; n; n--) {
-				*ptr++ = parse(tdbb, csb, VALUE);
+				*ptr++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
 			node->nod_arg[e_dcl_cursor_refs] = temp;
 		}
@@ -3052,14 +3048,14 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		case blr_cursor_fetch:
 #ifdef SCROLLABLE_CURSORS
 			if (BLR_PEEK == blr_seek)
-				node->nod_arg[e_cursor_stmt_seek] = parse(tdbb, csb, STATEMENT);
+				node->nod_arg[e_cursor_stmt_seek] = PAR_parse_node(tdbb, csb, STATEMENT);
 #endif
 			csb->csb_g_flags |= csb_reuse_context;
-			node->nod_arg[e_cursor_stmt_into] = parse(tdbb, csb, STATEMENT);
+			node->nod_arg[e_cursor_stmt_into] = PAR_parse_node(tdbb, csb, STATEMENT);
 			csb->csb_g_flags &= ~csb_reuse_context;
 			break;
 		default:
-			syntax_error(csb, "cursor operation clause");
+			PAR_syntax_error(csb, "cursor operation clause");
 		}
 		break;
 
@@ -3069,7 +3065,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		break;
 
 	case blr_singular:
-		node = parse(tdbb, csb, TYPE_RSE);
+		node = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		((RecordSelExpr*) node)->nod_flags |= rse_singular;
 		break;
 
@@ -3091,8 +3087,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_aggregate:
 		node->nod_arg[e_agg_stream] = (jrd_nod*) (IPTR) par_context(csb, 0);
 		fb_assert((int) (IPTR)node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		node->nod_arg[e_agg_rse] = parse(tdbb, csb, TYPE_RSE);
-		node->nod_arg[e_agg_group] = parse(tdbb, csb, OTHER);
+		node->nod_arg[e_agg_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		node->nod_arg[e_agg_group] = PAR_parse_node(tdbb, csb, OTHER);
 		node->nod_arg[e_agg_map] =
 			par_map(tdbb, csb, (USHORT)(IPTR) node->nod_arg[e_agg_stream]);
 		break;
@@ -3120,7 +3116,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 					  isc_arg_string, ERR_cstring(name), 0);
 			}
 			node->nod_arg[e_gen_relation] = (jrd_nod*) (IPTR) tmp;
-			node->nod_arg[e_gen_value] = parse(tdbb, csb, VALUE);
+			node->nod_arg[e_gen_value] = PAR_parse_node(tdbb, csb, VALUE);
 
             /* CVC: There're thousand ways to go wrong, but I don't see any value
                in posting dependencies with set generator since it's DDL, so I will
@@ -3154,7 +3150,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_receive:
 		n = BLR_BYTE;
 		node->nod_arg[e_send_message] = csb->csb_rpt[n].csb_message;
-		node->nod_arg[e_send_statement] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_send_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_message:
@@ -3172,14 +3168,14 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_extract:
 	    // This forced conversion looks strange, but extract_part fits in a byte
 		node->nod_arg[e_extract_part] = (jrd_nod*)(U_IPTR) BLR_BYTE;
-		node->nod_arg[e_extract_value] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_extract_value] = PAR_parse_node(tdbb, csb, sub_type);
 		node->nod_count = e_extract_count;
 		break;
 
 	case blr_strlen:
 	    // This forced conversion looks strange, but length_type fits in a byte
 		node->nod_arg[e_strlen_type] = (jrd_nod*)(U_IPTR) BLR_BYTE;
-		node->nod_arg[e_strlen_value] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_strlen_value] = PAR_parse_node(tdbb, csb, sub_type);
 		node->nod_count = e_strlen_count;
 		break;
 
@@ -3221,7 +3217,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			if (!vector || n >= vector->count() ||
 				!(node->nod_arg[e_var_variable] = (*vector)[n]))
 			{
-				syntax_error(csb, "variable identifier");
+				PAR_syntax_error(csb, "variable identifier");
 			}
 		}
 		break;
@@ -3280,8 +3276,8 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 			while (BLR_PEEK != (UCHAR) blr_end) {
 				if (blr_operator == blr_select && BLR_PEEK != blr_receive)
-					syntax_error(csb, "blr_receive");
-				stack.push(parse(tdbb, csb, sub_type));
+					PAR_syntax_error(csb, "blr_receive");
+				stack.push(PAR_parse_node(tdbb, csb, sub_type));
 			}
 			BLR_BYTE; // skip blr_end
 			node = PAR_make_list(tdbb, stack);
@@ -3292,10 +3288,10 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		{
 			NodeStack stack;
 
-			node->nod_arg[e_blk_action] = parse(tdbb, csb, sub_type);
+			node->nod_arg[e_blk_action] = PAR_parse_node(tdbb, csb, sub_type);
 			while (BLR_PEEK != (UCHAR) blr_end)
 			{
-				stack.push(parse(tdbb, csb, sub_type));
+				stack.push(PAR_parse_node(tdbb, csb, sub_type));
 			}
 			BLR_BYTE; // skip blr_end
 			node->nod_arg[e_blk_handlers] = PAR_make_list(tdbb, stack);
@@ -3304,7 +3300,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_error_handler:
 		node->nod_arg[e_err_conditions] = (jrd_nod*) par_conditions(tdbb, csb);
-		node->nod_arg[e_err_action] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_err_action] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_abort:
@@ -3313,25 +3309,25 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			node->nod_arg[e_xcp_desc] = (jrd_nod*) par_condition(tdbb, csb);
 			if (flag)
 			{
-				node->nod_arg[e_xcp_msg] = parse(tdbb, csb, sub_type);
+				node->nod_arg[e_xcp_msg] = PAR_parse_node(tdbb, csb, sub_type);
 			}
 			break;
 		}
 
 	case blr_if:
-		node->nod_arg[e_if_boolean] = parse(tdbb, csb, TYPE_BOOL);
-		node->nod_arg[e_if_true] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_if_boolean] = PAR_parse_node(tdbb, csb, TYPE_BOOL);
+		node->nod_arg[e_if_true] = PAR_parse_node(tdbb, csb, sub_type);
 		if (BLR_PEEK == (UCHAR) blr_end) {
 			node->nod_count = 2;
 			BLR_BYTE; // skip blr_end
 			break;
 		}
-		node->nod_arg[e_if_false] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_if_false] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_label:
 		node->nod_arg[e_lbl_label] = (jrd_nod*) (IPTR) BLR_BYTE;
-		node->nod_arg[e_lbl_statement] = parse(tdbb, csb, sub_type);
+		node->nod_arg[e_lbl_statement] = PAR_parse_node(tdbb, csb, sub_type);
 		break;
 
 	case blr_leave:
@@ -3349,17 +3345,17 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_total:
 	case blr_from:
 	case blr_via:
-		node->nod_arg[e_stat_rse] = parse(tdbb, csb, TYPE_RSE);
+		node->nod_arg[e_stat_rse] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		if (blr_operator != blr_count)
-			node->nod_arg[e_stat_value] = parse(tdbb, csb, VALUE);
+			node->nod_arg[e_stat_value] = PAR_parse_node(tdbb, csb, VALUE);
 		if (blr_operator == blr_via)
-			node->nod_arg[e_stat_default] = parse(tdbb, csb, VALUE);
+			node->nod_arg[e_stat_default] = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 
 #ifdef SCROLLABLE_CURSORS
 	case blr_seek:
-		node->nod_arg[e_seek_direction] = parse(tdbb, csb, VALUE);
-		node->nod_arg[e_seek_offset] = parse(tdbb, csb, VALUE);
+		node->nod_arg[e_seek_direction] = PAR_parse_node(tdbb, csb, VALUE);
+		node->nod_arg[e_seek_offset] = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 #endif
 
@@ -3371,7 +3367,7 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			if (!vector || n >= vector->count() ||
 				!(node->nod_arg[e_init_var_variable] = (*vector)[n]))
 			{
-				syntax_error(csb, "variable identifier");
+				PAR_syntax_error(csb, "variable identifier");
 			}
 		}
 		break;
@@ -3380,15 +3376,16 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node = par_sys_function(tdbb, csb);
 		break;
 
-	case blr_auto_trans:
-		n = BLR_BYTE;
-		if (n != 0)	// Reserved for future improvements. Should be 0 for now.
-			syntax_error(csb, "0");
-		node->nod_arg[e_auto_trans_action] = parse(tdbb, csb, sub_type);
-		break;
-
 	default:
-		syntax_error(csb, elements[expected]);
+		if ((NOD_T)(USHORT) blr_table[(int) blr_operator] == nod_class_node_jrd)
+		{
+			fb_assert(blr_parsers[blr_operator]);
+
+			node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
+				blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb));
+		}
+		else
+			PAR_syntax_error(csb, elements[expected]);
 	}
 
 	if (set_type)
@@ -3417,11 +3414,11 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 }
 
 
-static void syntax_error(CompilerScratch* csb, const TEXT* string)
+void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
 {
 /**************************************
  *
- *	s y n t a x _ e r r o r
+ *	P A R _ s y n t a x _ e r r o r
  *
  **************************************
  *
@@ -3515,4 +3512,3 @@ static void warning(CompilerScratch* csb, ...)
 	}
 	va_end(args);
 }
-

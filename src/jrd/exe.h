@@ -541,10 +541,6 @@ const int e_sysfun_function	= 1;
 const int e_sysfun_count	= 1;
 const int e_sysfun_length	= 2;
 
-// nod_auto_trans
-const int e_auto_trans_action	= 0;
-const int e_auto_trans_length	= 1;
-
 // nod_exec_stmt
 const int e_exec_stmt_stmt_sql		= 0;
 const int e_exec_stmt_data_src		= 1;
@@ -827,6 +823,11 @@ public:
 	static CompilerScratch* newCsb(MemoryPool& p, size_t len, const Firebird::MetaName& domain_validation = Firebird::MetaName())
 	{
 		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
+	}
+
+	UCHAR getBlrByte()
+	{
+		return *csb_running++;
 	}
 
 	int nextStream(bool check = true)

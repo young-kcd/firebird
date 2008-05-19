@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/StmtNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/constants.h"
@@ -1002,10 +1003,8 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		DDL_gen_block(request, node);
 		return;
 
-	case nod_auto_trans:
-		stuff(request, blr_auto_trans);
-		stuff(request, 0);	// to extend syntax in the future
-		GEN_statement(request, node->nod_arg[e_auto_trans_action]);
+	case nod_class_node:
+		reinterpret_cast<StmtNode*>(node->nod_arg[0])->genBlr();
 		return;
 
 	case nod_for_select:

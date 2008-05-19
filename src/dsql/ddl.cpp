@@ -95,6 +95,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
+#include "../dsql/DdlNodes.h"
 
 #ifdef DSQL_DEBUG
 #include "../gpre/prett_proto.h"
@@ -374,7 +375,7 @@ void DDL_execute(dsql_req* request)
 
 	if (type == nod_class_node)
 	{
-		reinterpret_cast<Node*>(request->req_ddl_node->nod_arg[0])->execute(tdbb,
+		reinterpret_cast<DdlNode*>(request->req_ddl_node->nod_arg[0])->execute(tdbb,
 			request->req_transaction);
 		JRD_autocommit_ddl(tdbb, request->req_transaction);
 	}

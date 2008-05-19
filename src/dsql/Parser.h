@@ -26,6 +26,8 @@
 #include "../jrd/common.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/DdlNodes.h"
+#include "../dsql/StmtNodes.h"
 #include "../common/classes/stack.h"
 
 namespace Jrd {

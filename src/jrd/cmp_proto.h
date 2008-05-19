@@ -43,6 +43,10 @@ Jrd::IndexLock* CMP_get_index_lock(Jrd::thread_db*, Jrd::jrd_rel*, USHORT);
 SLONG CMP_impure(Jrd::CompilerScratch*, USHORT);
 Jrd::jrd_req* CMP_make_request(Jrd::thread_db*, Jrd::CompilerScratch*, bool);
 
+Jrd::jrd_nod* CMP_pass1(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jrd_nod* node);
+Jrd::jrd_nod* CMP_pass2(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::jrd_nod* const node,
+	Jrd::jrd_nod* parent);
+
 void CMP_post_access(Jrd::thread_db*, Jrd::CompilerScratch*, const Firebird::MetaName&, SLONG,
 					 Jrd::SecurityClass::flags_t, const TEXT*, const Firebird::MetaName&, const Firebird::MetaName&);
 inline void CMP_post_access(Jrd::thread_db* tdbb,

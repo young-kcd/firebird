@@ -67,7 +67,8 @@ DSQL_ClientFiles = array.epp blob.epp \
 
 DSQL_ServerFiles=	metd.epp \
                 ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
-	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp
+	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp \
+	            DdlNodes.epp StmtNodes.cpp
 
 
 DSQL_Files = $(DSQL_ClientFiles) $(DSQL_ServerFiles)

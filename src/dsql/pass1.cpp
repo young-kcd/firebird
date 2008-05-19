@@ -144,6 +144,7 @@
 #include "../jrd/ibase.h"
 #include "../dsql/dsql.h"
 #include "../dsql/node.h"
+#include "../dsql/Nodes.h"
 #include "../jrd/intl.h"
 #include "../jrd/blr.h"
 #include "../jrd/jrd.h"
@@ -1337,7 +1338,13 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input)
 		return input;
 
 	case nod_class_node:
-		reinterpret_cast<Node*>(input->nod_arg[0])->pass1(request);
+		node = reinterpret_cast<dsql_nod*>(
+			reinterpret_cast<Node*>(input->nod_arg[0])->dsqlPass(request));
+		if (node != input->nod_arg[0])
+		{
+			input = MAKE_node(input->nod_type, input->nod_count);
+			input->nod_arg[0] = node;
+		}
 		return input;
 
 	case nod_def_trigger:
@@ -1566,20 +1573,6 @@ dsql_nod* PASS1_statement(dsql_req* request, dsql_nod* input)
 			}
 		} // end scope
 		return node;
-
-	case nod_auto_trans:
-		{
-			const bool auto_trans = request->req_flags & REQ_in_auto_trans_block;
-			request->req_flags |= REQ_in_auto_trans_block;
-
-			node = MAKE_node(input->nod_type, input->nod_count);
-			node->nod_arg[e_auto_trans_action] =
-				PASS1_statement(request, input->nod_arg[e_auto_trans_action]);
-
-			if (!auto_trans)
-				request->req_flags &= ~REQ_in_auto_trans_block;
-		}
-		break;
 
 	case nod_for_select:
 		{
@@ -10613,7 +10606,8 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	const dsql_str* string;
 	const TEXT* verb;
 	const dsql_nod* const* ptr = node->nod_arg;
-	const dsql_nod* const* const end = ptr + node->nod_count;
+	const dsql_nod* const* end = ptr + node->nod_count;
+	Firebird::Array<dsql_nod*> subNodes;
 
 	switch (node->nod_type) {
 	case nod_abort:
@@ -11629,10 +11623,6 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		verb = "mod_role";
 		break;
 
-	case nod_auto_trans:
-		verb = "auto_trans";
-		break;
-
 	case nod_add_user:
 		verb = "add_user";
 		break;
@@ -11651,8 +11641,11 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_class_node:
 		{
-			Firebird::string s = reinterpret_cast<Node*>(node->nod_arg[0])->print();
-			trace_line("%s", s.c_str());
+			Firebird::string s;
+			reinterpret_cast<Node*>(node->nod_arg[0])->print(s, subNodes);
+			trace_line("%s\n", s.c_str());
+			ptr = subNodes.begin();
+			end = subNodes.end();
 		}
 		return;
 

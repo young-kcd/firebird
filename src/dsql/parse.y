@@ -1715,7 +1715,12 @@ complex_proc_statement
 
 in_autonomous_transaction
 	: KW_IN AUTONOMOUS TRANSACTION DO proc_block
-		{ $$ = make_node(nod_auto_trans, (int) e_auto_trans_count, $5); }
+		{
+			InAutonomousTransactionNode* node = FB_NEW(getPool())
+				InAutonomousTransactionNode(getPool());
+			node->dsqlAction = $5;
+			$$ = makeClassNode(node);
+		}
 	;
 
 excp_statement	: EXCEPTION symbol_exception_name

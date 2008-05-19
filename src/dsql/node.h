@@ -359,14 +359,13 @@ enum nod_t
 	nod_merge_update,
 	nod_merge_insert,
 	nod_sys_function,
-	nod_auto_trans,
 	nod_similar,
 	nod_mod_role,
 	nod_add_user,
 	nod_mod_user,
 	nod_del_user,
-	nod_exec_stmt,	// 290
-	nod_exec_stmt_inputs,
+	nod_exec_stmt,
+	nod_exec_stmt_inputs,	// 290
 	nod_tran_params,
 	nod_named_param,
 	nod_dfl_collate,
@@ -975,9 +974,6 @@ enum node_args {
 	e_sysfunc_args,
 	e_sysfunc_count,
 
-	e_auto_trans_action = 0,		// nod_auto_trans
-	e_auto_trans_count,
-
 	e_similar_value = 0,
 	e_similar_pattern,
 	e_similar_escape,
@@ -1095,64 +1091,6 @@ enum nod_flags_vals {
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,
 	NOD_TRAN_2PC = 3
-};
-
-class Node : public Firebird::PermanentStorage
-{
-public:
-	explicit Node(MemoryPool& pool)
-		: PermanentStorage(pool)
-	{
-	}
-
-	virtual ~Node()
-	{
-	}
-
-public:
-	virtual void pass1(dsql_req* request) = 0;
-	virtual Firebird::string print() const = 0;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction) = 0;
-};
-
-class DdlNode : public Node
-{
-public:
-	explicit DdlNode(MemoryPool& pool)
-		: Node(pool),
-		  dsqlRequest(NULL)
-	{
-	}
-
-public:
-	virtual void pass1(dsql_req* aDsqlRequest)
-	{
-		dsqlRequest = aDsqlRequest;
-		dsqlRequest->req_type = REQ_DDL;
-	}
-
-protected:
-	dsql_req* dsqlRequest;
-};
-
-class AlterCharSetNode : public DdlNode
-{
-public:
-	AlterCharSetNode(MemoryPool& pool, const Firebird::MetaName& aCharSet,
-				const Firebird::MetaName& aDefaultCollation)
-		: DdlNode(pool),
-		  charSet(getPool(), aCharSet),
-		  defaultCollation(getPool(), aDefaultCollation)
-	{
-	}
-
-public:
-	virtual Firebird::string print() const;
-	virtual void execute(thread_db* tdbb, jrd_tra* transaction);
-
-private:
-	Firebird::MetaName charSet;
-	Firebird::MetaName defaultCollation;
 };
 
 } // namespace

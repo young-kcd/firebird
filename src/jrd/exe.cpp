@@ -104,6 +104,8 @@
 #include "../jrd/rpb_chain.h"
 #include "../jrd/VirtualTable.h"
 
+#include "../dsql/Nodes.h"
+
 
 using namespace Jrd;
 
@@ -2813,98 +2815,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = node->nod_parent;
 			break;
 
-		case nod_auto_trans:
-			if (request->req_operation == jrd_req::req_evaluate)
-			{
-				fb_assert(tdbb->getTransaction() == request->req_transaction);
-
-				request->req_auto_trans.push(request->req_transaction);
-				request->req_transaction = TRA_start(tdbb,
-					request->req_transaction->tra_flags,
-					request->req_transaction->tra_lock_timeout,
-					request->req_transaction);
-				tdbb->setTransaction(request->req_transaction);
-
-				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
-				{
-					// run ON TRANSACTION START triggers
-					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_start);
-				}
-
-				node = node->nod_arg[e_auto_trans_action];
-				break;
-			}
-
-			switch (request->req_operation)
-			{
-			case jrd_req::req_return:
-				if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
-				{
-					// run ON TRANSACTION COMMIT triggers
-					EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
-				}
-				TRA_commit(tdbb, request->req_transaction, false);
-				break;
-
-			case jrd_req::req_unwind:
-				if (request->req_flags & req_leave)
-				{
-					try
-					{
-						if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
-						{
-							// run ON TRANSACTION COMMIT triggers
-							EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_commit);
-						}
-						TRA_commit(tdbb, request->req_transaction, false);
-					}
-					catch (...)
-					{
-						request->req_flags &= ~req_leave;
-						throw;
-					}
-				}
-				else
-				{
-					ThreadStatusGuard temp_status(tdbb);
-
-					if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
-					{
-						try
-						{
-							// run ON TRANSACTION ROLLBACK triggers
-							EXE_execute_db_triggers(tdbb, request->req_transaction, jrd_req::req_trigger_trans_rollback);
-						}
-						catch (const Firebird::Exception&)
-						{
-							if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-							{
-								throw;
-							}
-						}
-					}
-
-					try
-					{
-						TRA_rollback(tdbb, request->req_transaction, false, false);
-					}
-					catch (const Firebird::Exception&)
-					{
-						if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-						{
-							throw;
-						}
-					}
-				}
-				break;
-
-			default:
-				fb_assert(false);
-			}
-
-			request->req_transaction = request->req_auto_trans.pop();
-			tdbb->setTransaction(request->req_transaction);
-			node = node->nod_parent;
+		case nod_class_node_jrd:
+			node = reinterpret_cast<StmtNode*>(node->nod_arg[0])->execute(tdbb, request);
 			break;
 
 		default:

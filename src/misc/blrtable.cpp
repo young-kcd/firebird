@@ -220,7 +220,7 @@ static const VERB verbs[] =
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
 	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
 	PAIR(nod_sys_function, blr_sys_function, e_sysfun_length, e_sysfun_count, VALUE, VALUE),
-	PAIR(nod_auto_trans, blr_auto_trans, e_auto_trans_length, 1, STATEMENT, STATEMENT),
+	PAIR(nod_class_node_jrd, blr_auto_trans, 1, 0, STATEMENT, STATEMENT),
 	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };

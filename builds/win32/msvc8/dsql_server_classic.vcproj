@@ -318,6 +318,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\StmtNodes.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\user_dsql.cpp"
 				>
 			</File>
@@ -338,6 +342,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\..\src\dsql\DdlNodes.epp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\..\src\dsql\metd.epp"
 					>
 				</File>
@@ -351,6 +359,10 @@
 				</File>
 				<File
 					RelativePath="..\..\..\gen\$(PlatformName)\dsql\blob.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\gen\$(PlatformName)\dsql\DdlNodes.cpp"
 					>
 				</File>
 				<File
@@ -386,6 +398,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\ddl_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\DdlNodes.h"
 				>
 			</File>
 			<File
@@ -433,6 +449,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\dsql\Nodes.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\dsql\parse_proto.h"
 				>
 			</File>
@@ -446,6 +466,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\dsql\prepa_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\dsql\StmtNodes.h"
 				>
 			</File>
 			<File
