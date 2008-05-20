@@ -1,3 +1,9 @@
+2008-05-20 02:58  asfernandes
+
+	* firebird2/src/: dsql/StmtNodes.cpp (1.2), jrd/par.cpp (1.197):
+
+	Misc
+
 2008-05-19 17:26  asfernandes
 
 	* firebird2/src/jrd/dfw.epp (1.237):
