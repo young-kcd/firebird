@@ -65,7 +65,6 @@
 #include "../common/utils_proto.h"
 #include "../jrd/SysFunction.h"
 
-
 using namespace Jrd;
 
 #include "gen/blrtable.h"
@@ -754,6 +753,7 @@ SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
 }
 
 
+// Registers a parse function (DmlNode creator) for a BLR code.
 void PAR_register(UCHAR blr, NodeParseFunc parseFunc)
 {
 	fb_assert(!blr_parsers[blr]);

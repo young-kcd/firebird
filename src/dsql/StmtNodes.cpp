@@ -67,7 +67,8 @@ DmlNode* DmlNode::pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* aNode)
 RegisterNode<InAutonomousTransactionNode> regInAutonomousTransactionNode(blr_auto_trans);
 
 
-DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb)
+DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool,
+		CompilerScratch* csb)
 {
 	InAutonomousTransactionNode* node = FB_NEW(pool) InAutonomousTransactionNode(pool);
 
@@ -96,7 +97,8 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass()
 }
 
 
-void InAutonomousTransactionNode::print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
+void InAutonomousTransactionNode::print(Firebird::string& text,
+		Firebird::Array<dsql_nod*>& nodes) const
 {
 	text = "in autonomous transaction";
 	nodes.add(dsqlAction);
