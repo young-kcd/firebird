@@ -8177,8 +8177,7 @@ static dsql_nod* pass1_simple_case( dsql_req* request, dsql_nod* input)
 	dsql_nod* node = MAKE_node(nod_simple_case, 3);
 
 	// build case_operand node
-	node->nod_arg[e_simple_case_case_operand] =
-		PASS1_node(request, input->nod_arg[0]);
+	node->nod_arg[e_simple_case_case_operand] = PASS1_node(request, input->nod_arg[0]);
 
 	dsql_nod* list = input->nod_arg[1];
 

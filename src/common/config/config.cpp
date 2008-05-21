@@ -134,20 +134,20 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 {
 	/* Prepare some stuff */
 
-	ConfigFile file(true);
+	ConfigFile file(p, true);
 	root_dir = getRootDirectory();
 	const int size = FB_NELEM(entries);
 	values = FB_NEW(p) ConfigValue[size];
 
-	string val_sep = ",";
+	//string val_sep = ",";
 	file.setConfigFilePath(getConfigFilePath());
 
 	/* Iterate through the known configuration entries */
 
 	for (int i = 0; i < size; i++)
 	{
-		ConfigEntry entry = entries[i];
-		string value = getValue(file, entries[i].key);
+		const ConfigEntry entry = entries[i];
+		const string value = getValue(file, entries[i].key);
 
 		if (!value.length())
 		{
@@ -169,10 +169,10 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 			break;
 		case TYPE_STRING:
 			{
-			const char *src = asString(value);
-			char *dst = FB_NEW(p) char[strlen(src) + 1];
-			strcpy(dst, src);
-			values[i] = (ConfigValue) dst;
+				const char *src = asString(value);
+				char *dst = FB_NEW(p) char[strlen(src) + 1];
+				strcpy(dst, src);
+				values[i] = (ConfigValue) dst;
 			}
 			break;
 		case TYPE_STRING_VECTOR:

@@ -152,7 +152,7 @@ private:
 	public:
 		Segment(Segment* _next, offset_t _position, offset_t _size) :
 			next(_next), position(_position), size(_size) 
-		{};
+		{}
 
 		Segment* next;
 		offset_t position;
