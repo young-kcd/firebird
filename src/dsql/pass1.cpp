@@ -2997,11 +2997,11 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 				// info how deep the context is inside the request.
 
 				// If the context-scope-level from this field is
-				// lower or the sameas the scope-level from the
+				// lower or the same as the scope-level from the
 				// given context then it is an invalid field
 				if (lcontext->ctx_scope_level == context->ctx_scope_level) {
 					// Return TRUE (invalid) if this Field isn't inside
-					// the GROUP BY clause , that should already been
+					// the GROUP BY clause, that should already been
 					// seen in the match_node above
 					invalid = true;
 				}
