@@ -495,7 +495,7 @@ public:
 		req_curr_cte_alias = req_cte_aliases.end();
 	}
 
-	bool isPsql()
+	bool isPsql() const
 	{
 		return psql;
 	}

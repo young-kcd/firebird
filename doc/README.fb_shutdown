@@ -30,7 +30,7 @@ service).
 fb_shutdown() accepts 2 parameters - timeout in milliseconds and reason of shutdown. Engine uses
 negative reason codes (they are listed in ibase.h, see constants starting with fb_shutrsn), if
 you need to call fb_shutdown() from your program, you must use positive value for reason. This
-value is passed to callback_function, passed as an argument to fb_shutdown_callback(), and can you
+value is passed to callback_function, passed as an argument to fb_shutdown_callback(), and you can
 take appropriate actions when writing callback function.
 
 Zero return value of fb_shutdown() means shutdown is successfull, non-zero means some errors took 
