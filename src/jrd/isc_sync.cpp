@@ -3011,7 +3011,6 @@ void ISC_sync_signals_reset()
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
-#define UNMAP_FILE
 void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
@@ -3038,7 +3037,6 @@ void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 #ifdef UNIX
 #ifndef HAVE_MMAP
-#define UNMAP_FILE
 void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
@@ -3062,7 +3060,6 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 
 
 #ifdef WIN_NT
-#define UNMAP_FILE
 void ISC_unmap_file(ISC_STATUS * status_vector,
 					SH_MEM shmem_data,
 					USHORT flag)
@@ -3086,29 +3083,6 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
 	CloseHandle(shmem_data->sh_mem_handle);
 	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
 	CloseHandle(shmem_data->sh_mem_hdr_object);
-}
-#endif
-
-
-#ifndef UNMAP_FILE
-void ISC_unmap_file(ISC_STATUS * status_vector,
-					SH_MEM shmem_data,
-					USHORT flag)
-{
-/**************************************
- *
- *	I S C _ u n m a p _ f i l e		( G E N E R I C )
- *
- **************************************
- *
- * Functional description
- *	unmap a given file or shared memory.
- *
- **************************************/
-
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_unavailable;
-	*status_vector++ = isc_arg_end;
 }
 #endif
 
