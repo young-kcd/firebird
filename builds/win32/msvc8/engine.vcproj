@@ -663,6 +663,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\UserManagement.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp"
 				>
 			</File>
