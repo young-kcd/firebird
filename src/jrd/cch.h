@@ -134,7 +134,7 @@ const int BDB_max_shared	= 20;	/* maximum number of shared latch owners per Buff
 class BufferDesc : public pool_alloc<type_bdb>
 {
 public:
-	BufferDesc() : bdb_page(0, 0) {};
+	BufferDesc() : bdb_page(0, 0) {}
 
 	Database*	bdb_dbb;				/* Database block (for ASTs) */
 	Lock*		bdb_lock;				/* Lock block for buffer */
