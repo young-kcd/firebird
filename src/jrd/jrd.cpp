@@ -5677,14 +5677,14 @@ static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS
 {
 	// Check for security2.fdb
 	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
-	static Firebird::PathName ExpandedSecurityNameBuffer(*getDefaultMemoryPool());
-	static Firebird::Mutex mutex;
+	static Firebird::GlobalPtr<Firebird::PathName> ExpandedSecurityNameBuffer;
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
 
 	Firebird::MutexLockGuard guard(mutex);
 
 	if (! SecurityNameBuffer[0]) {
 		SecurityDatabase::getPath(SecurityNameBuffer);
-		ExpandedSecurityNameBuffer = SecurityNameBuffer;
+		ExpandedSecurityNameBuffer->assign(SecurityNameBuffer);
 		ISC_expand_filename(ExpandedSecurityNameBuffer, false);
 	}
 	if (name == SecurityNameBuffer || name == ExpandedSecurityNameBuffer)
