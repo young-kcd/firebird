@@ -47,7 +47,7 @@ bool ResolveDatabaseAlias(const string& alias, string& database)
 {
 	string alias_filename;
 	Firebird::Prefix(alias_filename, ALIAS_FILE);
-	ConfigFile aliasConfig(false);
+	ConfigFile aliasConfig(false, true);
 	aliasConfig.setConfigFilePath(alias_filename);
 
 	string corrected_alias = alias;

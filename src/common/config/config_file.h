@@ -59,10 +59,17 @@ class ConfigFile : public Firebird::AutoStorage
 public:
 	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
 		: AutoStorage(p), isLoadedFlg(false), 
-		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
-    explicit ConfigFile(bool ExceptionOnError) 
-		: AutoStorage(), isLoadedFlg(false), 
-		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
+		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
+		  parameters(getPool()) {}
+	ConfigFile(bool ExceptionOnError, bool useForAliases)
+		: AutoStorage(), isLoadedFlg(false),
+		  fExceptionOnError(ExceptionOnError), parsingAliases(useForAliases),
+		  parameters(getPool()) {}
+
+    explicit ConfigFile(bool ExceptionOnError)
+		: AutoStorage(), isLoadedFlg(false),
+		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
+		  parameters(getPool()) {}
 
 	// configuration file management
     const string getConfigFilePath() const { return configFile; }
@@ -78,14 +85,15 @@ public:
     string getString(const string&);
 
 	// utilities
-	static void stripComments(string&);
+	bool stripComments(string&) const;
 	static string parseKeyFrom(const string&, string::size_type&);
-	static string parseValueFrom(string, string::size_type);
+	string parseValueFrom(string, string::size_type);
 
 private:
     string configFile;
     bool isLoadedFlg;
-	bool fExceptionOnError;
+	const bool fExceptionOnError;
+	const bool parsingAliases;
     mymap_t parameters;
 };
 

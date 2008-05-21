@@ -50,16 +50,61 @@ typedef Firebird::PathName string;
  *	Strip any comments
  */
 
-void ConfigFile::stripComments(string& s)
+bool ConfigFile::stripComments(string& s) const
 {
-	// Note that this is only a hack. It won't work in case inputLine
-	// contains hash-marks embedded in quotes! Not that I know if we
-	// should care about that case.
-	const string::size_type commentPos = s.find('#');
-	if (commentPos != string::npos)
+	if (!parsingAliases)
 	{
-		s = s.substr(0, commentPos);
+		// Simple, fast processing for firebird.conf
+		// Note that this is only a hack. It won't work in case inputLine
+		// contains hash-marks embedded in quotes! Not that I know if we
+		// should care about that case.
+		const string::size_type commentPos = s.find('#');
+		if (commentPos != string::npos)
+		{
+			s = s.substr(0, commentPos);
+		}
+		return true;
 	}
+
+	// Paranoid, slow processing for aliases.conf
+	bool equalSeen = false, inString = false;
+	const char* iter = s.begin();
+	const char* end = s.end();
+	while (iter < end)
+	{
+		switch (*iter)
+		{
+		case '"':
+			if (!equalSeen) // quoted string to the left of = doesn't make sense
+				return false;
+			inString = !inString; // We don't support embedded quotes
+			if (!inString) // we finished a quoted string
+			{
+				// We don't want trash after closing the quoted string, except comments
+				const string::size_type startPos =
+					s.find_first_not_of(" \t\r", iter + 1 - s.begin());
+				if (startPos == string::npos || s[startPos] == '#')
+				{
+					s = s.substr(0, iter + 1 - s.begin());
+					return true;
+				}
+				return false;
+			}
+			break;
+		case '=':
+			equalSeen = true;
+			break;
+		case '#':
+			if (!inString)
+			{
+				s = s.substr(0, iter - s.begin());
+				return true;
+			}
+			break;
+		}
+		++iter;
+	}
+	return !inString; // If we are still inside a string, it's error
 }
 
 /******************************************************************************
@@ -69,11 +114,11 @@ void ConfigFile::stripComments(string& s)
 
 bool ConfigFile::doesKeyExist(const string& key)
 {
-    checkLoadConfig();
+	checkLoadConfig();
 
-    string data = getString(key);
+	const string data = getString(key);
 
-    return !data.empty();
+	return !data.empty();
 }
 
 /******************************************************************************
@@ -83,10 +128,10 @@ bool ConfigFile::doesKeyExist(const string& key)
 
 string ConfigFile::getString(const string& key)
 {
-    checkLoadConfig();
+	checkLoadConfig();
 
-    size_t pos;
-    return parameters.find(key, pos) ? parameters[pos].second : string();
+	size_t pos;
+	return parameters.find(key, pos) ? parameters[pos].second : string();
 }
 
 /******************************************************************************
@@ -96,13 +141,13 @@ string ConfigFile::getString(const string& key)
 
 string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endPos)
 {
-    endPos = inputLine.find_first_of("=");
-    if (endPos == string::npos)
-    {
-        return inputLine;
-    }
+	endPos = inputLine.find_first_of("=");
+	if (endPos == string::npos)
+	{
+		return inputLine;
+	}
 
-    return inputLine.substr(0, endPos);
+	return inputLine.substr(0, endPos);
 }
 
 /******************************************************************************
@@ -112,20 +157,27 @@ string ConfigFile::parseKeyFrom(const string& inputLine, string::size_type& endP
 
 string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos)
 {
-    if (initialPos == string::npos)
-    {
-        return string();
-    }
+	if (initialPos == string::npos)
+	{
+		return string();
+	}
 
-    // skip leading white spaces
-    const string::size_type startPos = inputLine.find_first_not_of("= \t", initialPos);
-    if (startPos == string::npos)
-    {
-        return string();
-    }
+	// skip leading white spaces
+	const string::size_type startPos = inputLine.find_first_not_of("= \t", initialPos);
+	if (startPos == string::npos)
+	{
+		return string();
+	}
 
-    inputLine.rtrim(" \t\r");
-    return inputLine.substr(startPos);
+	inputLine.rtrim(" \t\r");
+	// stringComments demands paired quotes but trimming \r may render startPos invalid.
+	if (parsingAliases && inputLine.length() > startPos + 1
+		&& inputLine[startPos] == '"' && inputLine.end()[-1] == '"')
+	{
+		return inputLine.substr(startPos + 1, inputLine.length() - startPos - 2);
+	}
+	
+	return inputLine.substr(startPos);
 }
 
 /******************************************************************************
@@ -137,7 +189,7 @@ void ConfigFile::checkLoadConfig()
 {
 	if (!isLoadedFlg)
 	{
-    	loadConfig();
+		loadConfig();
 	}
 }
 
@@ -166,65 +218,66 @@ void ConfigFile::loadConfig()
 	parameters.clear();
 
 	Firebird::AutoPtr<FILE, FileClose> ifile(fopen(configFile.c_str(), "rt"));
-	
+
 #ifdef EXCEPTION_ON_NO_CONF
 	int BadLinesCount = 0;
 #endif
-    if (!ifile)
-    {
-        // config file does not exist
+	if (!ifile)
+	{
+		// config file does not exist
 #ifdef EXCEPTION_ON_NO_CONF
 		if (fExceptionOnError)
 		{
-			Firebird::string Msg = "Missing configuration file: " + 
+			Firebird::string Msg = "Missing configuration file: " +
 				configFile.ToString() + ", exiting";
 			Firebird::Syslog::Record(Firebird::Syslog::Error, Msg.c_str());
 			Firebird::fatal_exception::raise(Msg.c_str());
 		}
 #endif //EXCEPTION_ON_NO_CONF
 		return;
-    }
-    string inputLine;
+	}
+	string inputLine;
 
-    while (!feof(ifile))
-    {
+	while (!feof(ifile))
+	{
 		inputLine.LoadFromFile(ifile);
 
-		stripComments(inputLine);
+		const bool goodLine = stripComments(inputLine);
 		inputLine.ltrim(" \t\r");
-		
+
 		if (!inputLine.size())
 		{
 			continue;	// comment-line or empty line
 		}
 
-        if (inputLine.find('=') == string::npos)
-        {
+		if (!goodLine || inputLine.find('=') == string::npos)
+		{
 			Firebird::string Msg = (configFile + ": illegal line \"" +
 				inputLine + "\"").ToString();
-			Firebird::Syslog::Record(fExceptionOnError ? 
+			Firebird::Syslog::Record(fExceptionOnError ?
 					Firebird::Syslog::Error :
 					Firebird::Syslog::Warning, Msg.c_str());
 #ifdef EXCEPTION_ON_NO_CONF
 			BadLinesCount++;
 #endif
-            continue;
-        }
+			continue;
+		}
 
-        string::size_type endPos;
+		string::size_type endPos;
 
-        string key   = parseKeyFrom(inputLine, endPos);
+		string key = parseKeyFrom(inputLine, endPos);
 		key.rtrim(" \t\r");
 		// TODO: here we must check for correct parameter spelling !
-        string value = parseValueFrom(inputLine, endPos);
+		const string value = parseValueFrom(inputLine, endPos);
 
 		parameters.add(Parameter(getPool(), key, value));
-    }
+	}
 #ifdef EXCEPTION_ON_NO_CONF
-	if (BadLinesCount && fExceptionOnError) 
+	if (BadLinesCount && fExceptionOnError)
 	{
 		Firebird::fatal_exception::raise("Bad lines in firebird.conf");
 	}
 #endif
 }
+
 
