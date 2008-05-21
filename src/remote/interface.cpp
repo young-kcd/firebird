@@ -5376,6 +5376,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
  *
  **************************************/
 	rem_port* port = (rem_port*)arg;
+	Firebird::Reference portRef(*port);
 	PACKET packet;
 
 	for (;;) {
