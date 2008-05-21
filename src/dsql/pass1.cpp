@@ -10603,7 +10603,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	TEXT s[64];
 	const dsql_str* string;
-	const TEXT* verb;
+	Firebird::string verb;
 	const dsql_nod* const* ptr = node->nod_arg;
 	const dsql_nod* const* end = ptr + node->nod_count;
 	Firebird::Array<dsql_nod*> subNodes;
@@ -11639,14 +11639,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		break;
 
 	case nod_class_node:
-		{
-			Firebird::string s;
-			reinterpret_cast<Node*>(node->nod_arg[0])->print(s, subNodes);
-			trace_line("%s\n", s.c_str());
-			ptr = subNodes.begin();
-			end = subNodes.end();
-		}
-		return;
+		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);
+		ptr = subNodes.begin();
+		end = subNodes.end();
+		break;
 
 	default:
 		sprintf(s, "unknown type %d", node->nod_type);
@@ -11655,18 +11651,17 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	if (node->nod_desc.dsc_dtype) {
 		trace_line("%s%s (%d,%d,%p)\n",
-				buffer, verb,
+				buffer, verb.c_str(),
 				node->nod_desc.dsc_dtype,
 				node->nod_desc.dsc_length, node->nod_desc.dsc_address);
 	}
-	else {
-		trace_line("%s%s\n", buffer, verb);
-	}
+	else
+		trace_line("%s%s\n", buffer, verb.c_str());
+
 	++column;
 
-	while (ptr < end) {
+	while (ptr < end)
 		DSQL_pretty(*ptr++, column);
-	}
 
 	return;
 }
