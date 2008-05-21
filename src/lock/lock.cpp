@@ -3174,9 +3174,10 @@ static bool signal_owner(own* blocking_owner, SRQ_PTR blocked_owner_offset)
 
 	if (blocking_owner->own_flags & OWN_signaled)
 	{
+		const prc* const process = (prc*) SRQ_ABS_PTR(blocking_owner->own_process);
 		DEBUG_MSG(1,
 				  ("signal_owner (%ld) - skipped OWN_signaled\n",
-				   blocking_owner->own_process_id));
+				   process->prc_process_id));
 		return true;
 	}
 
