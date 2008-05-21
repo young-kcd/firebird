@@ -52,17 +52,8 @@ static const char* GUARD_FILE	= "isc_guard1.%s";
 static const char* MONITOR_FILE	= "isc_monitor1.%s";
 #endif
 
-#ifdef sun
-#include <sys/types.h>
-#include <sys/ipc.h>
-#endif
-
-#ifdef LINUX
-#include <sys/types.h>
-#include <sys/ipc.h>
-#endif
-
-#if defined FREEBSD || defined NETBSD
+// CVC: Do we really need this information here after using autoconf?
+#if defined(sun) || defined(LINUX) || defined(FREEBSD) || defined(NETBSD)
 #include <sys/types.h>
 #include <sys/ipc.h>
 #endif
@@ -77,16 +68,15 @@ static const char* MONITOR_FILE	= "isc_monitor1.%s";
 /* keep MSG_FILE_LANG in sync with build_file.epp */
 #ifdef WIN_NT
 static const char* WORKFILE		= "c:\\temp\\";
-static const char* MSG_FILE		= "firebird.msg";
 static const char MSG_FILE_LANG[]= "intl\\%.10s.msg";
-const int LOCALE_MAX	= 6;
-static const char* LOGFILE		= "firebird.log";
 #else
 static const char* WORKFILE		= "/tmp/";
-static const char* MSG_FILE		= "firebird.msg";
 static const char MSG_FILE_LANG[]= "intl/%.10s.msg";
-const int LOCALE_MAX	= 10;
-static const char* LOGFILE		= "firebird.log";
 #endif
+
+static const char* LOGFILE		= "firebird.log";
+static const char* MSG_FILE		= "firebird.msg";
+// Keep in sync with MSG_FILE_LANG
+const int LOCALE_MAX	= 10;
 
 #endif /* JRD_FILE_PARAMS_H */
