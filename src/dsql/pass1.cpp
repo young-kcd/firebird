@@ -7943,7 +7943,7 @@ static dsql_nod* pass1_rse_impl( dsql_req* request, dsql_nod* input, dsql_nod* o
 	rse->nod_arg[e_rse_plan] = pass1_node_psql(request, input->nod_arg[e_qry_plan], false);
 
 	// AB: Pass select-items for distinct operation again, because for
-	// sub-selects a new contextnumber should be generated
+	// sub-selects a new context number should be generated
 	if (input->nod_arg[e_qry_distinct]) {
 		if (update_lock) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
@@ -9620,10 +9620,13 @@ static dsql_nod* post_map( dsql_nod* node, dsql_ctx* context)
 	int count = 0;
 	dsql_map* map;
 	for (map = context->ctx_map; map; map = map->map_next, ++count)
+	{
 		if (node_match(node, map->map_node, false))
 			break;
+	}
 
-	if (!map) {
+	if (!map)
+	{
 		map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 		map->map_position = (USHORT) count;
 		map->map_next = context->ctx_map;
