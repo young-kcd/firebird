@@ -93,6 +93,7 @@ int UserManagement::execute(ISC_STATUS* status, internal_user_data* u)
 {
 #if (defined BOOT_BUILD || defined EMBEDDED)
 	Firebird::status_exception::raise(isc_wish_list, isc_arg_end);
+	return 0; // make the compiler happy
 #else
 	return (!u->user_name_entered) ? GsecMsg18 : SECURITY_exec_line(status, database, transaction, u, NULL, NULL);
 #endif
