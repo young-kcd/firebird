@@ -5735,7 +5735,6 @@ int Parser::yylexAux()
 			// Figure out the length of the actual resulting hex string.
 			// Allocate a second temporary buffer for it.
 		
-			bool nibble = false;
 			Firebird::string temp;
 
 			// Re-scan over the hex string we got earlier, converting 
@@ -5756,16 +5755,14 @@ int Parser::yylexAux()
 				else
 					c = (c - '0');
 			
-				if (nibble)
+				if (i & 1) // nibble?
 				{
 					byte = (byte << 4) + (UCHAR) c;
-					nibble = false;
 					temp.append(1, (char) byte);
 				}
 				else 
 				{
 					byte = c;
-					nibble = true;
 				}
 			}
 
