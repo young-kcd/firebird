@@ -24,6 +24,8 @@
 #ifndef JRD_DFW_PROTO_H
 #define JRD_DFW_PROTO_H
 
+#include "../jrd/btr.h"	// defines SelectivityList
+
 USHORT DFW_assign_index_type(Jrd::thread_db*, Jrd::DeferredWork*, SSHORT, SSHORT);
 void DFW_delete_deferred(Jrd::jrd_tra*, SLONG);
 void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);

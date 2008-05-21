@@ -434,21 +434,6 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	EXT_trans_commit(transaction);
 
-	// Commit transaction in security database ...
-	if (transaction->tra_secdb_transaction) {
-		ISC_STATUS_ARRAY status;
-		if (isc_commit_transaction(status, &transaction->tra_secdb_transaction) != 0) {
-			Firebird::status_exception::raise(status);
-		}
-	}
-	// ... and detach from security database.
-	if (transaction->tra_security_database) {
-		ISC_STATUS_ARRAY status;
-		if (isc_detach_database(status, &transaction->tra_security_database) != 0) {
-			Firebird::status_exception::raise(status);
-		}
-	}
-
 #ifdef GARBAGE_THREAD
 /* Flush pages if transaction logically modified data */
 
@@ -981,14 +966,6 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 
 	DFW_perform_work(tdbb, transaction);
 
-	// Prepare transaction in security database for commit
-	if (transaction->tra_secdb_transaction) {
-		ISC_STATUS_ARRAY status;
-		if (isc_prepare_transaction(status, &transaction->tra_secdb_transaction) != 0) {
-			Firebird::status_exception::raise(status);
-		}
-	}
-
 #ifdef GARBAGE_THREAD
 /* Flush pages if transaction logically modified data */
 
@@ -1240,22 +1217,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, false);
 
-	// Rollback transaction in security database ...
-	if (transaction->tra_secdb_transaction) {
-		ISC_STATUS_ARRAY status;
-		if (isc_rollback_transaction(status, &transaction->tra_secdb_transaction) != 0) {
-			Firebird::status_exception::raise(status);
-		}
-	}
-	// ... and detach from security database.
-	if (transaction->tra_security_database) {
-		ISC_STATUS_ARRAY status;
-		if (isc_detach_database(status, &transaction->tra_security_database) != 0) {
-			Firebird::status_exception::raise(status);
-		}
-	}
-
-	// If force flag is true, get rid of all savepoints to mark the transaction as dead
+/* If force flag is true, get rid of all savepoints to mark the transaction as dead */
 	if (force_flag) {
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
@@ -1281,7 +1243,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	}
 
 /* Measure transaction savepoint size if there is one. We'll use it for undo
-  only if it is small enough */
+   only if it is small enough */
 	IPTR count = SAV_LARGE;
 	if (tran_sav) {
 		for (const Savepoint* temp = transaction->tra_save_point; temp;
@@ -3505,4 +3467,14 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 		TRA_precommited(tdbb, 0, trans->tra_number);
 
 	return trans;
+}
+
+jrd_tra::~jrd_tra()
+{
+	if (!tra_outer)
+	{
+		delete tra_temp_space;
+	}
+
+	DFW_delete_deferred(this, -1);
 }

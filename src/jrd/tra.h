@@ -108,15 +108,14 @@ public:
 		tra_memory_stats(parent_stats),
 		tra_blobs_tree(p),
 		tra_blobs(&tra_blobs_tree),
+		tra_deferred_work(0),
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
 		tra_open_cursors(*p),
 		tra_outer(outer),
-		tra_transactions(*p),
-		tra_security_database(0),
-		tra_secdb_transaction(0)
+		tra_transactions(*p)
 	{
 		if (outer)
 		{
@@ -128,13 +127,7 @@ public:
 		tra_transactions.resize(length);
 	}
 
-	~jrd_tra()
-	{
-		if (!tra_outer)
-		{
-			delete tra_temp_space;
-		}
-	}
+	~jrd_tra();
 
 	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer, size_t length = 0)
 	{
@@ -207,9 +200,6 @@ public:
 
 	EDS::Transaction *tra_ext_common;
 	//Transaction *tra_ext_two_phase;
-
-	// user management related stuff
-	FB_API_HANDLE tra_security_database, tra_secdb_transaction;
 
 private:
 	TempSpace* tra_temp_space;	// temp space storage
@@ -362,6 +352,7 @@ enum dfw_t {
 	dfw_delete_difference,
 	dfw_begin_backup,
 	dfw_end_backup,
+	dfw_user_management,
 
 	// deferred works argument types
 	dfw_arg_index_name,		// index name for dfw_delete_expression_index, mandatory
@@ -384,8 +375,18 @@ public:
 	USHORT			dfw_id;			/* object id, if appropriate */
 	USHORT			dfw_count;		/* count of block posts */
 	Firebird::string	dfw_name;	/* name of object */
+
 public:
-	explicit DeferredWork(MemoryPool& p) : dfw_name(p) { }
+	DeferredWork(MemoryPool& p, enum dfw_t t, USHORT id, SLONG sn, const char* string, USHORT length)
+	  : dfw_type(t), dfw_next(NULL), dfw_lock(NULL), dfw_args(NULL), 
+		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p)
+	{
+		if (string)
+		{
+			dfw_name.assign(string, length);
+		}
+	}
+	~DeferredWork();
 };
 
 /* Verb actions */

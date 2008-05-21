@@ -46,6 +46,8 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
+#include "../jrd/dfw_proto.h"
+#include "../jrd/UserManagement.h"
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
@@ -75,7 +77,6 @@
 #include "../common/utils_proto.h"
 #include "../jrd/jrd_pwd.h"
 #include "../utilities/gsec/gsec.h"
-#include "../utilities/gsec/secur_proto.h"
 #include "../jrd/msg_encode.h"
 
 using MsgFormat::SafeArg;
@@ -2206,9 +2207,6 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
  *	Implements CREATE/ALTER/DROP USER
  *
  **************************************/
-#if (defined BOOT_BUILD || defined EMBEDDED)
-	Firebird::status_exception::raise(isc_wish_list, isc_arg_end);
-#else
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 	jrd_tra* tra = tdbb->getTransaction();
@@ -2218,30 +2216,12 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	ISC_STATUS_ARRAY status;
 	try 
 	{
-		if (!tra->tra_security_database)
+		DeferredWork* work = DFW_post_work(tra, dfw_user_management, NULL, 0);
+		UserManagement* sec = reinterpret_cast<UserManagement*>(work->dfw_args);
+		if (!sec)
 		{
-			char securityDatabaseName[MAXPATHLEN];
-			SecurityDatabase::getPath(securityDatabaseName);
-
-			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-			dpb.insertByte(isc_dpb_gsec_attach, TRUE);
-			dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
-
-			isc_attach_database(status, 0, securityDatabaseName, &tra->tra_security_database, 
-				dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
-			if (status[1])
-			{
-				Firebird::status_exception::raise(status);
-			}
-		}
-
-		if (!tra->tra_secdb_transaction)
-		{
-			isc_start_transaction(status, &tra->tra_secdb_transaction, 1, &tra->tra_security_database, 0, NULL);
-			if (status[1])
-			{
-				Firebird::status_exception::raise(status);
-			}
+			sec = FB_NEW(*tra->tra_pool) UserManagement(tdbb);
+			work->dfw_args = reinterpret_cast<DeferredWork*>(sec);
 		}
 
 		internal_user_data userData;
@@ -2325,8 +2305,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			}
 		}
 
-		int errcode = (! userData.user_name_entered) ? GsecMsg18 :
-			SECURITY_exec_line(status, tra->tra_security_database, tra->tra_secdb_transaction, &userData, NULL, NULL);
+		int errcode = sec->execute(status, &userData);
 
 		switch (errcode)
 		{
@@ -2347,5 +2326,4 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		status[1] = isc_no_meta_update;
 		Firebird::status_exception::raise(status);
 	}
-#endif
 }

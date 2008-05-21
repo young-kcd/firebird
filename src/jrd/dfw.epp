@@ -116,6 +116,7 @@
 #include "../jrd/nbak.h"
 #include "../jrd/trig.h"
 #include "../jrd/IntlManager.h"
+#include "../jrd/UserManagement.h"
 #include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
@@ -181,6 +182,7 @@ static bool add_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool delete_difference(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool begin_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool end_backup(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
@@ -261,6 +263,7 @@ static const deferred_task task_table[] =
 	{ dfw_delete_difference, delete_difference },
 	{ dfw_begin_backup, begin_backup },
 	{ dfw_end_backup, end_backup },
+	{ dfw_user_management, user_management },
 	{ dfw_null, NULL }
 };
 
@@ -371,6 +374,35 @@ void DFW_delete_deferred( jrd_tra* transaction, SLONG sav_number)
 
 	if (!deferred_meta) {
 		transaction->tra_flags &= ~TRA_deferred_meta;
+	}
+}
+
+
+DeferredWork::~DeferredWork()
+{
+	if (dfw_args)
+	{
+		if (dfw_type == dfw_user_management)
+		{
+			UserManagement* sec = reinterpret_cast<UserManagement*>(dfw_args);
+			delete sec;
+		}
+		else
+		{
+			DeferredWork* tmp = dfw_args;
+			while (tmp)
+			{
+				DeferredWork* next = tmp->dfw_next;
+				delete tmp;
+				tmp = next;
+			}
+		}
+	}
+
+	if (dfw_lock)
+	{
+		LCK_release(JRD_get_thread_data(), dfw_lock);
+		delete dfw_lock;
 	}
 }
 
@@ -1209,6 +1241,43 @@ static bool end_backup(	thread_db*	tdbb,
 	case 3:
 		// End backup normally
 		dbb->dbb_backup_manager->end_backup(tdbb, false);
+		return false;
+	}
+
+	return false;
+}
+
+static bool user_management(thread_db*		tdbb,
+							SSHORT			phase,
+							DeferredWork*	work,
+							jrd_tra*		transaction)
+{
+/**************************************
+ *
+ *	u s e r _ m a n a g e m e n t
+ *
+ **************************************
+ *
+ * Commit in security database
+ *
+ **************************************/
+
+	UserManagement* sec;
+
+	switch (phase)
+	{
+	case 0:
+		return false;
+	case 1:
+	case 2:
+		return true;
+	case 3:
+		// Commit
+		sec = reinterpret_cast<UserManagement*>(work->dfw_args);
+		if (sec)
+		{
+			sec->commit();
+		}
 		return false;
 	}
 
@@ -5051,12 +5120,7 @@ static DeferredWork* post_work(jrd_tra* transaction,
 
 	// Not already posted, so do so now.
 
-	*ptr = work = FB_NEW(*transaction->tra_pool) DeferredWork(*transaction->tra_pool);
-	work->dfw_type = type;
-	work->dfw_id = id;
-	work->dfw_count = 1;
-	work->dfw_sav_number = sav_number;
-	work->dfw_name.assign(string, length);
+	*ptr = FB_NEW(*transaction->tra_pool) DeferredWork(*transaction->tra_pool, type, id, sav_number, string, length);
 
 	if (type != dfw_post_event)
 		transaction->tra_flags |= TRA_deferred_meta;
