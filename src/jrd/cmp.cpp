@@ -3572,8 +3572,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 				return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
 			}
-			else
-				return CMP_pass1(tdbb, csb, sub);
+
+			return CMP_pass1(tdbb, csb, sub);
 		}
 
 	case nod_assignment:
