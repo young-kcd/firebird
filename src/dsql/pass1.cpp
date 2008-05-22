@@ -4795,13 +4795,13 @@ static dsql_nod* pass1_derived_table(dsql_req* request, dsql_nod* input, dsql_st
 	// CVC: prepare a truncated alias for the derived table here
 	// because we need it several times.
 	TEXT aliasbuffer[100] = "";
-	TEXT* aliasname = aliasbuffer;
+	const TEXT* aliasname = aliasbuffer;
 	if (alias) {
 		int length = alias->str_length;
 		if (length > 99) {
 			length = 99;
-			memcpy(aliasname, alias->str_data, length);
-			aliasname[length] = 0;
+			memcpy(aliasbuffer, alias->str_data, length);
+			aliasbuffer[length] = 0;
 		}
 		else
 			aliasname = alias->str_data;
@@ -11359,7 +11359,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 
 	case nod_derived_field:
 		verb = "derived_field";
-		trace_line("%s%s\n", buffer, verb);
+		trace_line("%s%s\n", buffer, verb.c_str());
 		DSQL_pretty(node->nod_arg[e_derived_field_value], column + 1);
 		DSQL_pretty(node->nod_arg[e_derived_field_name], column + 1);
 		trace_line("%s   scope %d\n", buffer,
@@ -11369,7 +11369,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_aggregate:
 		{
 			verb = "aggregate";
-			trace_line("%s%s\n", buffer, verb);
+			trace_line("%s%s\n", buffer, verb.c_str());
 			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_agg_context];
 			trace_line("%s   context %d\n", buffer, context->ctx_context);
 			dsql_map* map = context->ctx_map;
@@ -11429,7 +11429,7 @@ void DSQL_pretty(const dsql_nod* node, int column)
 	case nod_map:
 		{
 			verb = "map";
-			trace_line("%s%s\n", buffer, verb);
+			trace_line("%s%s\n", buffer, verb.c_str());
 			const dsql_ctx* context = (dsql_ctx*) node->nod_arg[e_map_context];
 			trace_line("%s   context %d\n", buffer, context->ctx_context);
 			for (const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map]; map;
