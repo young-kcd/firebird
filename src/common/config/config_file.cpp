@@ -70,6 +70,7 @@ bool ConfigFile::stripComments(string& s) const
 	bool equalSeen = false, inString = false;
 	const char* iter = s.begin();
 	const char* end = s.end();
+
 	while (iter < end)
 	{
 		switch (*iter)
@@ -102,8 +103,10 @@ bool ConfigFile::stripComments(string& s) const
 			}
 			break;
 		}
+
 		++iter;
 	}
+
 	return !inString; // If we are still inside a string, it's error
 }
 

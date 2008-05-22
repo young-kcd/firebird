@@ -169,8 +169,8 @@ ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 			break;
 		case TYPE_STRING:
 			{
-				const char *src = asString(value);
-				char *dst = FB_NEW(p) char[strlen(src) + 1];
+				const char* src = asString(value);
+				char* dst = FB_NEW(p) char[strlen(src) + 1];
 				strcpy(dst, src);
 				values[i] = (ConfigValue) dst;
 			}
@@ -195,7 +195,7 @@ ConfigImpl::~ConfigImpl()
 		switch (entries[i].data_type)
 		{
 		case TYPE_STRING:
-			delete[] (char*)values[i];
+			delete[] (char*) values[i];
 			break;
 		case TYPE_STRING_VECTOR:
 			break;

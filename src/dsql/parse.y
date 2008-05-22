@@ -5761,9 +5761,7 @@ int Parser::yylexAux()
 					temp.append(1, (char) byte);
 				}
 				else 
-				{
 					byte = c;
-				}
 			}
 
 			dsql_str* string = MAKE_string((char*) temp.c_str(), temp.length());

@@ -38,8 +38,10 @@ class UserManagement
 public:
 	explicit UserManagement(thread_db* tdbb);
 	~UserManagement();
+
 private:
 	FB_API_HANDLE database, transaction;
+
 public:
 	int execute(ISC_STATUS* status, internal_user_data* u);
 	void commit();
