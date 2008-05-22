@@ -1346,7 +1346,7 @@ int API_ROUTINE gds__msg_close(void *handle)
 
 	const int fd = messageL->msg_file;
 
-	FREE_LIB_MEMORY(messageL);
+	gds__free(messageL);
 
 	if (fd <= 0)
 		return 0;
@@ -1606,7 +1606,7 @@ int API_ROUTINE gds__msg_open(void** handle, const TEXT* filename)
 	}
 
 	gds_msg* messageL =
-		(gds_msg*) ALLOC_LIB_MEMORY((SLONG) sizeof(gds_msg) +
+		(gds_msg*) gds__alloc((SLONG) sizeof(gds_msg) +
 							   header.msghdr_bucket_size - 1);
 /* FREE: in gds__msg_close */
 	if (!messageL) {				/* NOMEM: return non-open error */
@@ -2108,7 +2108,7 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
 		init();
 	}
 
-	CLEAN clean = (CLEAN) ALLOC_LIB_MEMORY((SLONG) sizeof(struct clean));
+	CLEAN clean = (CLEAN) gds__alloc((SLONG) sizeof(struct clean));
 	clean->clean_routine = routine;
 	clean->clean_arg = arg;
 
@@ -2440,7 +2440,7 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
             && clean->clean_arg == arg) 
 		{
 			*clean_ptr = clean->clean_next;
-			FREE_LIB_MEMORY(clean);
+			gds__free(clean);
 			break;
 		}
     }
@@ -3446,7 +3446,7 @@ void gds__cleanup()
 		   may be a handler (and is) that frees all memory that has
 		   been allocated. */
 
-		FREE_LIB_MEMORY(clean);
+		gds__free(clean);
 
 		(*routine)(arg);
 	}

@@ -570,7 +570,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 	if (!attach_failures)
 	{
 		attach_failures =
-			(TEXT*) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
+			(TEXT*) gds__alloc((SLONG) ATTACH_FAILURE_SPACE);
 		/* FREE: freed by exit handler cleanup_memory() */
 		if (!attach_failures)	/* NOMEM: don't bother trying to copy */
 			return;
@@ -634,7 +634,7 @@ static void cleanup_memory( void *block)
  **************************************/
 
 	if (attach_failures)
-		FREE_LIB_MEMORY(attach_failures);
+		gds__free(attach_failures);
 
 	gds__unregister_cleanup(cleanup_memory, 0);
 	attach_failures = NULL;

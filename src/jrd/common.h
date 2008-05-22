@@ -441,14 +441,6 @@ typedef unsigned __int64 FB_UINT64;
 
 #endif /* WIN_NT */
 
-// 23 Sep 2002, skidder, ALLOC_LIB_MEMORY moved here,
-// DEBUG_GDS_ALLOC definition removed because allocators 
-// do not (and can not) include this file,
-// but use DEBUG_GDS_ALLOC. Hence DEBUG_GDS_ALLOC should be defined
-// globally by now and moved to autoconf-generated header later
-#ifdef DEBUG_GDS_ALLOC
-#define ALLOC_LIB_MEMORY(size)   gds__alloc_debug ((size), (TEXT *)__FILE__, (ULONG)__LINE__)
-#endif
 
 /*****************************************************
 * SCO 
@@ -700,14 +692,6 @@ struct ISC_TIMESTAMP
 /* data movement and allocation macros */
 
 #define MOVE_CLEAR(to, length)			memset(to, 0, (size_t) (length))
-
-#ifndef ALLOC_LIB_MEMORY
-#define ALLOC_LIB_MEMORY(size)          gds__alloc (size)
-#endif
-
-#ifndef FREE_LIB_MEMORY
-#define FREE_LIB_MEMORY(block)          gds__free (block)
-#endif
 
 // This macros are used to workaround shortage of standard conformance
 // in Microsoft compilers. They could be replaced with normal procedure

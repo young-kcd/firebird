@@ -791,7 +791,7 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 
 	if (!DSQL_failures)
 	{
-		DSQL_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) DSQL_FAILURE_SPACE);
+		DSQL_failures = (TEXT *) gds__alloc((SLONG) DSQL_FAILURE_SPACE);
 		// FREE: by exit handler cleanup() 
 		if (!DSQL_failures)		// NOMEM: don't try to copy the strings 
 			return;
@@ -865,7 +865,7 @@ static void cleanup(void* arg)
 	Firebird::MutexLockGuard guard(failuresMutex);
 
 	if (DSQL_failures)
-		FREE_LIB_MEMORY(DSQL_failures);
+		gds__free(DSQL_failures);
 
 	gds__unregister_cleanup(cleanup, 0);
 	DSQL_failures = NULL;
