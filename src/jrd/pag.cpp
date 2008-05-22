@@ -157,9 +157,10 @@ static const int CLASS_LINUX_MIPS = 30;		// LINUX/MIPS
 static const int CLASS_DARWIN_X64 = 31;		// Darwin/x64
 static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
 static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
+static const int CLASS_LINUX_IA64 = 34;		// LINUX/IA64
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_ARM;
+static const int CLASS_MAX = CLASS_LINUX_IA64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -250,7 +251,8 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,    // CLASS_LINUX_MIPS
 	archLittleEndian, // CLASS_DARWIN_X64
 	archLittleEndian, // CLASS_SOLARIS_AMD64
-	archLittleEndian  // CLASS_LINUX_ARM
+	archLittleEndian, // CLASS_LINUX_ARM
+	archLittleEndian  // CLASS_LINUX_IA64
 };
 
 #ifdef sun
@@ -302,6 +304,8 @@ const SSHORT CLASS		= CLASS_LINUX_PPC;
 const SSHORT CLASS		= CLASS_LINUX_MIPSEL;
 #elif defined(MIPS)
 const SSHORT CLASS		= CLASS_LINUX_MIPS;
+#elif defined(IA64)
+const SSHORT CLASS		= CLASS_LINUX_IA64;
 #else
 #error no support on other hardware for Linux
 #endif

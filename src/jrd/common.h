@@ -134,6 +134,11 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
 #endif /* mips */
 
+#ifdef IA64
+#define IMPLEMENTATION  isc_info_db_impl_linux_ia64	// 76
+#define RISC_ALIGNMENT
+#endif // IA64
+
 #endif /* LINUX */
 
 
