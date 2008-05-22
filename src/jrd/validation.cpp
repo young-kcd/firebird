@@ -634,7 +634,7 @@ static const TEXT msg_table[][66] = {
 	"Chain for record %ld is broken",
 	"Data page %ld (sequence %ld) is confused",
 	"Data page %ld (sequence %ld), line %ld is bad",	// 10 
-	"Index %d is corrupt on page %ld level %ld. File: %s, line: %ld\n\t",
+	"Index %d is corrupt on page %ld level %d. File: %s, line: %d\n\t",
 	"Pointer page (sequence %ld) lost",
 	"Pointer page (sequence %ld) inconsistent",
 	"Record %ld is marked as damaged",
