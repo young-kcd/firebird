@@ -7,14 +7,15 @@ Author:
 
 Syntax is:
 
-   typedef int (*FB_SHUTDOWN_CALLBACK)(const int);
+   typedef int (*FB_SHUTDOWN_CALLBACK)(const int reason, const int mask, void* arg);
 
    int fb_shutdown(unsigned int timeout, 
                    const int reason);
 
    ISC_STATUS fb_shutdown_callback(ISC_STATUS* status_vector,
                                    FB_SHUTDOWN_CALLBACK callback_function,
-                                   const int mask);
+                                   const int mask,
+								   void* arg);
 
 Description:
 
@@ -36,18 +37,22 @@ take appropriate actions when writing callback function.
 Zero return value of fb_shutdown() means shutdown is successfull, non-zero means some errors took 
 place during shutdown. You should consult firebird.log for more information.
 
-fb_shutdown_callback() setups callback function, which will be called during shutdown. It has 3 
-parameters - status vector, pointer to callback function and call mask. Call mask can have 
-following values:
+fb_shutdown_callback() setups callback function, which will be called during shutdown. It has 4 
+parameters - status vector, pointer to callback function, call mask and argumnet to be passed 
+to callback function. Call mask can have the following values:
 fb_shut_preproviders - callback function will be called before shutting down engine
 fb_shut_postproviders - callback function will be called after shutting down engine
 or ORed combination of them (to make same function be called in both cases).
 
-Callback function has single parameter - reason of shutdown. There are 2 interesting shutdown 
-reasons: 
+Callback function has 3 parameters - reason of shutdown, actual value of mask with which it was 
+called and argument passed by user to fb_shutdown_callback(). There are 2 specially interesting 
+shutdown reasons: 
 fb_shutrsn_exit_called - Firebird is closing due to exit() or unloaded client/embedded library
 fb_shutrsn_signal - signal SIGINT or SIGTERM was caught (posix only)
-This parameter can help you decide what action to be taken in your callback.
+Second parameter (actual value of mask) helps to distinguish was callback invoked before or after
+engine shutdown. 
+First and second parameters help you decide what action to be taken in your callback. Third can 
+be used for any purporse you like and may be NULL.
 
 Zero return value of callback function means it performed it's job OK, non-zero is interpreted 
 depending upon call mask. For fb_shut_postproviders calls it means some errors took place, and 
@@ -64,7 +69,7 @@ Sample (it will make your program do not terminate on ctrl-C pressed after attac
 #include <ibase.h>
 
 // callback function for shutdown
-static int ignoreCtrlC(const int reason)
+static int ignoreCtrlC(const int reason, const int, void*)
 {
 	return reason == fb_shutrsn_signal ? 1 : 0;
 }
@@ -72,7 +77,7 @@ static int ignoreCtrlC(const int reason)
 int main(int argc, char *argv[])
 {
 	ISC_STATUS_ARRAY status;
-	if (fb_shutdown_callback(status, ignoreCtrlC, fb_shut_preproviders))
+	if (fb_shutdown_callback(status, ignoreCtrlC, fb_shut_preproviders, 0))
 	{
 		isc_print_status(status);
 		return 1;

@@ -66,7 +66,7 @@ extern TEXT *QLI_prompt;
 static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int async_quit(const int);
+static int async_quit(const int, const int, void*);
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -297,7 +297,7 @@ static void enable_signals(void)
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);
 #endif
-	fb_shutdown_callback(0, async_quit, fb_shut_preproviders);
+	fb_shutdown_callback(0, async_quit, fb_shut_preproviders, 0);
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
@@ -558,7 +558,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static int async_quit(const int reason)
+static int async_quit(const int reason, const int, void*)
 {
 /**************************************
  *

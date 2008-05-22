@@ -65,7 +65,7 @@ static BOOL CanEndServer(HWND, bool);
 // Window Procedure
 LRESULT CALLBACK WindowFunc(HWND, UINT, WPARAM, LPARAM);
 
-static int fb_shutdown_cb(const int);
+static int fb_shutdown_cb(const int, const int, void*);
 
 int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 {
@@ -90,7 +90,7 @@ int WINDOW_main( HINSTANCE hThisInst, int nWndMode, USHORT usServerFlagMask)
 	hInstance = hThisInst;
 	usServerFlags = usServerFlagMask;
 
-	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders);
+	fb_shutdown_callback(0, fb_shutdown_cb, fb_shut_postproviders, 0);
 
 /* initialize main window */
 
@@ -539,7 +539,7 @@ BOOL CanEndServer(HWND hWnd, bool bSysExit)
 }
 
 
-static int fb_shutdown_cb(const int)
+static int fb_shutdown_cb(const int, const int, void*)
 {
 	if (hMainWnd)
 		DestroyWindow(hMainWnd);

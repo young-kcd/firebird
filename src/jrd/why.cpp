@@ -560,8 +560,8 @@ namespace
 	class ShutChain : public Firebird::GlobalStorage
 	{
 	private:
-		ShutChain(ShutChain* link, FB_SHUTDOWN_CALLBACK cb, const int m)
-			: next(link), callBack(cb), mask(m) { }
+		ShutChain(ShutChain* link, FB_SHUTDOWN_CALLBACK cb, const int m, void* a)
+			: next(link), callBack(cb), mask(m), arg(a) { }
 
 		~ShutChain() { }
 
@@ -570,21 +570,22 @@ namespace
 		ShutChain* next;
 		FB_SHUTDOWN_CALLBACK callBack;
 		int mask;
+		void* arg;
 
 	public:
-		static void add(FB_SHUTDOWN_CALLBACK cb, const int m)
+		static void add(FB_SHUTDOWN_CALLBACK cb, const int m, void* a)
 		{
 			Firebird::MutexLockGuard guard(shutdownCallbackMutex);
 
 			for (const ShutChain* chain = list; chain; chain = chain->next)
 			{
-				if (chain->callBack == cb && chain->mask == m)
+				if (chain->callBack == cb && chain->mask == m && chain->arg == a)
 				{
 					return;
 				}
 			}
 
-			list = new ShutChain(list, cb, m);
+			list = new ShutChain(list, cb, m, a);
 		}
 
 		static int run(const int m, const int reason)
@@ -594,7 +595,7 @@ namespace
 
 			for (ShutChain* chain = list; chain; chain = chain->next)
 			{
-				if ((chain->mask & m) && (chain->callBack(reason) != FB_SUCCESS))
+				if ((chain->mask & m) && (chain->callBack(reason, m, chain->arg) != FB_SUCCESS))
 				{
 					rc = FB_FAILURE;
 				}
@@ -6064,7 +6065,10 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 }
 
 
-ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN_CALLBACK callBack, const int mask)
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, 
+											FB_SHUTDOWN_CALLBACK callBack, 
+											const int mask,
+											void* arg)
 {
 /**************************************
  *
@@ -6079,7 +6083,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN
 	YEntry status(user_status);
 	try 
 	{
-		ShutChain::add(callBack, mask);
+		ShutChain::add(callBack, mask, arg);
 	}
 	catch (const Firebird::Exception& e)
 	{

@@ -4754,7 +4754,7 @@ void set_server( rem_port* port, USHORT flags)
 	if (!server) 
 	{
 		servers = server = new srvr(servers, port, flags);
-		fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders);
+		fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders, 0);
 	}
 
 	port->port_server = server;
@@ -5147,7 +5147,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 }
 
 
-int SRVR_shutdown(const int)
+int SRVR_shutdown(const int, const int, void*)
 {
 /**************************************
  *

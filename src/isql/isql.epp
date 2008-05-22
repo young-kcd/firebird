@@ -354,7 +354,7 @@ static int process_statement(const TEXT*, XSQLDA**);
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD);
 #else
-static int API_ROUTINE query_abort(const int);
+static int query_abort(const int, const int, void*);
 #endif
 static bool stdin_redirected();
 static void strip_quotes(const TEXT*, TEXT*);
@@ -4053,7 +4053,7 @@ static void do_isql()
 #ifdef WIN_NT
 	SetConsoleCtrlHandler(query_abort, TRUE);
 #elif defined(HAVE_SIGACTION)
-	fb_shutdown_callback(0, query_abort, fb_shut_preproviders);
+	fb_shutdown_callback(0, query_abort, fb_shut_preproviders, 0);
 #endif
 
 	// Open database and start tansaction
@@ -8582,7 +8582,7 @@ static int process_statement(const TEXT* string,
 #ifdef WIN_NT
 static BOOL CALLBACK query_abort(DWORD dwCtrlType)
 #else
-static int API_ROUTINE query_abort(const int reason)
+static int query_abort(const int reason, const int, void*)
 #endif
 {
 /**************************************

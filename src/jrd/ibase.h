@@ -1134,7 +1134,8 @@ int ISC_EXPORT fb_shutdown(unsigned int, const int);
 
 ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
 										   FB_SHUTDOWN_CALLBACK,
-										   const int);
+										   const int,
+										   void*);
 
 ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
 										  isc_db_handle*,

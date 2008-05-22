@@ -319,7 +319,7 @@ static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
 static FPTR_VOID tryStopMainThread = 0;
-static int		shut_postproviders(const int);
+static int		shut_postproviders(const int, const int, void*);
 
 
 
@@ -1219,7 +1219,7 @@ static rem_port* alloc_port( rem_port* parent)
 		gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 
-		fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders);
+		fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders, 0);
 
 		INET_initialized = true;
 
@@ -3455,7 +3455,7 @@ void setStopMainThread(FPTR_VOID func)
 	tryStopMainThread = func;
 }
 
-static int shut_postproviders(const int)
+static int shut_postproviders(const int, const int, void*)
 {
 	INET_shutting_down = true;
 	return 0;

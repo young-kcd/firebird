@@ -116,7 +116,7 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 
-static int shutdownInetServer(const int);
+static int shutdownInetServer(const int, const int, void*);
 static void shutdownInit();
 static void tryStopMainThread();
 
@@ -475,7 +475,7 @@ static Firebird::GlobalPtr<Firebird::Semaphore> mainThreadStopSem;
 static bool serverClosing = false;
 
 
-static int shutdownInetServer(const int)
+static int shutdownInetServer(const int, const int, void*)
 {
 /****************************************************
  *
@@ -492,7 +492,7 @@ static int shutdownInetServer(const int)
 	serverClosing = true;
 
 	// shutdown worker threads
-	SRVR_shutdown(0);
+	SRVR_shutdown(0, 0, 0);
 
 	// shutdown main thread - send self-signal to close select() 
 	// in main thread and wait for it to get into safe state
@@ -513,7 +513,7 @@ static void shutdownInit()
 	setStopMainThread(tryStopMainThread);
 
 	ISC_STATUS_ARRAY status;
-	fb_shutdown_callback(status, shutdownInetServer, fb_shut_postproviders);
+	fb_shutdown_callback(status, shutdownInetServer, fb_shut_postproviders, 0);
 	if (status[0] == 1 && status[1] > 0) 
 	{
 		gds__log_status("Error in shutdownInit()", status);
