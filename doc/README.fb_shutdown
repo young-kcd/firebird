@@ -49,7 +49,7 @@ called and argument passed by user to fb_shutdown_callback(). There are 2 specia
 shutdown reasons: 
 fb_shutrsn_exit_called - Firebird is closing due to exit() or unloaded client/embedded library
 fb_shutrsn_signal - signal SIGINT or SIGTERM was caught (posix only)
-Second parameter (actual value of mask) helps to distinguish was callback invoked before or after
+Second parameter (actual value of mask) helps to distinguish if callback was invoked before or after
 engine shutdown. 
 First and second parameters help you decide what action to be taken in your callback. Third can 
 be used for any purporse you like and may be NULL.

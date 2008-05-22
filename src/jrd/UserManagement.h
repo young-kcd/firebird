@@ -36,7 +36,7 @@ class thread_db;
 class UserManagement
 {
 public:
-	UserManagement(thread_db* tdbb);
+	explicit UserManagement(thread_db* tdbb);
 	~UserManagement();
 private:
 	FB_API_HANDLE database, transaction;
