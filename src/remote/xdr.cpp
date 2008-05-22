@@ -36,10 +36,13 @@
 
 // 30 Dec 2002. Nickolay Samofatov 
 // This needs to be checked for all supported platforms
-// The simpliest way to check it is to issue
-// "select abs(2.0/3.0) from rdb$database" from correct client
+// The simpliest way to check it is to issue from correct client:
+// declare external function abs2 double precision
+//   returns double precision by value
+//   entry_point 'IB_UDF_abs' module_name 'ib_udf';
+// select abs2(2.0 / 3.0) from rdb$database;
 // It will return big strange value in case of invalid define
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64)
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
 #define		SWAP_DOUBLE
 #elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS)
 #undef		SWAP_DOUBLE

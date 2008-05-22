@@ -242,7 +242,8 @@ static const TEXT* const impl_implementation[] = {
     "Firebird/linux MIPS",	/* 72 */
 	"Firebird/Darwin/Intel64",	/* 73 */
     "Firebird/sun/amd64",	/* 74 */	
-    "Firebird/linux ARM"	/* 75 */
+    "Firebird/linux ARM",	/* 75 */
+    "Firebird/linux IA64"	// 76
 };
 
 

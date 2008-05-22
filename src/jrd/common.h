@@ -146,6 +146,11 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_mips /* 72  */
 #endif /* mips */
 
+#ifdef IA64
+#define IMPLEMENTATION  isc_info_db_impl_linux_ia64	// 76
+#define RISC_ALIGNMENT
+#endif // IA64
+
 #define MEMMOVE(from, to, length)		memmove ((void *)to, (void *)from, (size_t) length)
 #define MOVE_FAST(from, to, length)       memcpy (to, from, (int) (length))
 #define MOVE_FASTER(from, to, length)     memcpy (to, from, (int) (length))
