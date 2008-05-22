@@ -149,7 +149,7 @@ dnl CPU_TYPE=x86_64
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     libdir=/usr/lib
-    CPU_TYPE=amd64
+    CPU_TYPE=ia64
     RPM64='()(64bit)'
     ;;
 
