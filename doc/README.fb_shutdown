@@ -15,7 +15,7 @@ Syntax is:
    ISC_STATUS fb_shutdown_callback(ISC_STATUS* status_vector,
                                    FB_SHUTDOWN_CALLBACK callback_function,
                                    const int mask,
-								   void* arg);
+                                   void* arg);
 
 Description:
 
