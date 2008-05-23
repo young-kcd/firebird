@@ -331,112 +331,112 @@ int gstat(Firebird::UtilSvc* uSvc)
 	++argv;
 	while (argv < end) {
 		const TEXT* str = *argv++;
-		if (*str == '-') {
-			if (!str[1])
-				str = "-*NONE*";
-			in_sw_tab_t* in_sw_tab;
-			const TEXT* q;
-			for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
-				 in_sw_tab++)
-			{
-				TEXT c;
-				for (const TEXT* p = str + 1; c = *p++;) {
-					if (UPPER(c) != *q++)
-						break;
-				}
-				if (!c)
+		if (*str != '-')
+		{
+			name = str;
+			continue;
+		}
+
+		if (!str[1])
+			str = "-*NONE*";
+		in_sw_tab_t* in_sw_tab;
+		const TEXT* q;
+		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
+			 in_sw_tab++)
+		{
+			TEXT c;
+			for (const TEXT* p = str + 1; c = *p++;) {
+				if (UPPER(c) != *q++)
 					break;
 			}
-			in_sw_tab->in_sw_state = TRUE;
-			
-			switch (in_sw_tab->in_sw)
+			if (!c)
+				break;
+		}
+		in_sw_tab->in_sw_state = true;
+		
+		switch (in_sw_tab->in_sw)
+		{
+		case 0:
+			dba_print(20, SafeArg() << (str + 1));	/* msg 20: unknown switch "%s" */
+			dba_print(21);	/* msg 21: Available switches: */
+			for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw; in_sw_tab++)
 			{
-			case 0:
-				dba_print(20, SafeArg() << (str + 1));	/* msg 20: unknown switch "%s" */
-				dba_print(21);	/* msg 21: Available switches: */
-				for (in_sw_tab = dba_in_sw_table; in_sw_tab->in_sw;
-					 in_sw_tab++)
-				{
-					if (in_sw_tab->in_sw_msg)
-						dba_print(in_sw_tab->in_sw_msg);
-				}
-				tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 1, SafeArg());
-				dba_error(1);	/* msg 1: found unknown switch */
-				break;
-			case IN_SW_DBA_USERNAME:
-				if (argv < end)
-					fb_utils::copy_terminate((char*) username, *argv++, sizeof(user_buff));
-				break;
-			case IN_SW_DBA_PASSWORD:
-				if (argv < end)
-				{
-					uSvc->hidePasswd(uSvc->argv, argv - uSvc->argv.begin());
-					fb_utils::copy_terminate((char*) password, *argv++, sizeof(pass_buff));
-				}
-				break;
-			case IN_SW_DBA_TRUSTEDUSER:
-				uSvc->checkService();
-				if (argv < end)
-					fb_utils::copy_terminate((char*) tr_user, *argv++, sizeof(tr_buff));
-				break;
-			case IN_SW_DBA_TRUSTEDROLE:
-				uSvc->checkService();
-				trusted_role = true;
-				break;
+				if (in_sw_tab->in_sw_msg)
+					dba_print(in_sw_tab->in_sw_msg);
+			}
+			tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 1, SafeArg());
+			dba_error(1);	/* msg 1: found unknown switch */
+			break;
+		case IN_SW_DBA_USERNAME:
+			if (argv < end)
+				fb_utils::copy_terminate((char*) username, *argv++, sizeof(user_buff));
+			break;
+		case IN_SW_DBA_PASSWORD:
+			if (argv < end)
+			{
+				uSvc->hidePasswd(uSvc->argv, argv - uSvc->argv.begin());
+				fb_utils::copy_terminate((char*) password, *argv++, sizeof(pass_buff));
+			}
+			break;
+		case IN_SW_DBA_TRUSTEDUSER:
+			uSvc->checkService();
+			if (argv < end)
+				fb_utils::copy_terminate((char*) tr_user, *argv++, sizeof(tr_buff));
+			break;
+		case IN_SW_DBA_TRUSTEDROLE:
+			uSvc->checkService();
+			trusted_role = true;
+			break;
 #ifdef TRUSTED_AUTH
-			case IN_SW_DBA_TRUSTEDAUTH:
-				trusted_auth = true;
-				break;
+		case IN_SW_DBA_TRUSTEDAUTH:
+			trusted_auth = true;
+			break;
 #endif
-			case IN_SW_DBA_SYSTEM:
-				sw_system = true;
-				break;
-			case IN_SW_DBA_DATA:
-				sw_data = true;
-				break;
-			case IN_SW_DBA_INDEX:
-				sw_index = true;
-				break;
-			case IN_SW_DBA_VERSION:
-				sw_version = true;
-				break;
-			case IN_SW_DBA_HEADER:
-				sw_header = true;
-				break;
+		case IN_SW_DBA_SYSTEM:
+			sw_system = true;
+			break;
+		case IN_SW_DBA_DATA:
+			sw_data = true;
+			break;
+		case IN_SW_DBA_INDEX:
+			sw_index = true;
+			break;
+		case IN_SW_DBA_VERSION:
+			sw_version = true;
+			break;
+		case IN_SW_DBA_HEADER:
+			sw_header = true;
+			break;
 //			case IN_SW_DBA_LOG:
 //				sw_log = true;
 //				break;
-			case IN_SW_DBA_DATAIDX:
-				sw_index = sw_data = true;
-				break;
-			case IN_SW_DBA_RECORD:
-				sw_record = true;
-				break;
-			case IN_SW_DBA_RELATION:
-				sw_relation = true;
-				while (argv < end && **argv != '-') {
-					if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
-						argv++;
-						continue;
-					}
-					dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
-					strcpy(relation->rel_name, *argv++);
-					fb_utils::exact_name(relation->rel_name);
-					relation->rel_id = -1;
-					dba_rel** next = &tddba->relations;
-					while (*next) {
-						next = &(*next)->rel_next;
-					}
-					*next = relation;
+		case IN_SW_DBA_DATAIDX:
+			sw_index = sw_data = true;
+			break;
+		case IN_SW_DBA_RECORD:
+			sw_record = true;
+			break;
+		case IN_SW_DBA_RELATION:
+			sw_relation = true;
+			while (argv < end && **argv != '-') {
+				if (strlen(*argv) > MAX_SQL_IDENTIFIER_LEN) {
+					argv++;
+					continue;
 				}
-				break;
-			case IN_SW_DBA_NOCREATION:
-				sw_nocreation = true;
-				break;
+				dba_rel* relation = (dba_rel*) alloc(sizeof(struct dba_rel));
+				strcpy(relation->rel_name, *argv++);
+				fb_utils::exact_name(relation->rel_name);
+				relation->rel_id = -1;
+				dba_rel** next = &tddba->relations;
+				while (*next) {
+					next = &(*next)->rel_next;
+				}
+				*next = relation;
 			}
-		} // if (*str == '-')
-		else {
-			name = str;
+			break;
+		case IN_SW_DBA_NOCREATION:
+			sw_nocreation = true;
+			break;
 		}
 	}
 

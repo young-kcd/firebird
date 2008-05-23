@@ -82,8 +82,8 @@ using MsgFormat::SafeArg;
 const char* fopen_write_type = "w";
 const char* fopen_read_type	 = "r";
 
-const int open_mask	 = 0666;
-const char* switch_char	= "-";
+const int open_mask = 0666;
+const char switch_char = '-';
 
 
 const char* const output_suppress	= "SUPPRESS";
@@ -412,7 +412,7 @@ static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bo
 	{
 		return 0;
 	}
-	if (sw[0] != *switch_char) 
+	if (sw[0] != switch_char)
 	{
 		return 0;
 	}
@@ -471,7 +471,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	for (size_t maxt = FB_NELEM(reference_burp_in_sw_table), iter = 0; iter < maxt; ++ iter)
 	{
 		burp_in_sw_table[iter] = reference_burp_in_sw_table[iter];
-		burp_in_sw_table[iter].in_sw_state = FALSE;
+		burp_in_sw_table[iter].in_sw_state = false;
 	}
 
 	// test for "-service" switch
@@ -529,7 +529,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			str.erase(str.length() - 1, 1);
 		}
 
-		if (str[0] != *switch_char) 
+		if (str[0] != switch_char)
 		{
 			if (!file || file->fil_length || !get_size(argv[itr], file)) 
 			{
@@ -542,228 +542,227 @@ int gbak(Firebird::UtilSvc* uSvc)
 				file->fil_next = file_list;
 				file_list = file;
 			}
+			continue;
 		}
-		else 
+
+		if (str.length() == 1)
 		{
-			if (str.length() == 1)
+			str = none;
+		}
+
+		in_sw_tab = findSwitch(burp_in_sw_table, str, true);
+		fb_assert(in_sw_tab);
+		in_sw_tab->in_sw_state = true;
+
+		if (in_sw_tab->in_sw == IN_SW_BURP_RECREATE) 
+		{
+			int real_sw = IN_SW_BURP_C;
+			if ((itr < argc - 1) && (*argv[itr + 1] != switch_char))
 			{
-				str = none;
+				// find optional BURP_SW_OVERWRITE parameter
+				Firebird::string next(argv[itr + 1]);
+				next.upper();
+				if (next == BURP_SW_OVERWRITE) 
+				{
+					real_sw = IN_SW_BURP_R;
+					itr++;
+				}
 			}
 
-			in_sw_tab = findSwitch(burp_in_sw_table, str, true);
-			fb_assert(in_sw_tab);
-			in_sw_tab->in_sw_state = TRUE;
+			// replace IN_SW_BURP_RECREATE by IN_SW_BURP_R or IN_SW_BURP_C
+			in_sw_tab->in_sw_state = false;
 
-			if (in_sw_tab->in_sw == IN_SW_BURP_RECREATE) 
+			in_sw_tab_t* real_sw_tab = burp_in_sw_table; 
+			while (real_sw_tab->in_sw != real_sw)
+				++real_sw_tab;
+				
+			real_sw_tab->in_sw_state = true;
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_S) 
+		{
+			if (++itr >= argc)
 			{
-				int real_sw = IN_SW_BURP_C;
-				if ((itr < argc - 1) && (*argv[itr + 1] != *switch_char)) 
-				{
-					// find optional BURP_SW_OVERWRITE parameter
-					Firebird::string next(argv[itr + 1]);
-					next.upper();
-					if (next == BURP_SW_OVERWRITE) 
-					{
-						real_sw = IN_SW_BURP_R;
-						itr++;
-					}
-				}
-
-				// replace IN_SW_BURP_RECREATE by IN_SW_BURP_R or IN_SW_BURP_C
-				in_sw_tab->in_sw_state = FALSE;
-
-				in_sw_tab_t* real_sw_tab = burp_in_sw_table; 
-				while (real_sw_tab->in_sw != real_sw)
-					++real_sw_tab;
-					
-				real_sw_tab->in_sw_state = TRUE;
+				BURP_error(200, true);
+				// msg 200: missing parameter for the number of bytes to be skipped 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_S) 
+			tdgbl->gbl_sw_skip_count = get_number(argv[itr]);
+			if (!tdgbl->gbl_sw_skip_count)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(200, true);
-					// msg 200: missing parameter for the number of bytes to be skipped 
-				}
-				tdgbl->gbl_sw_skip_count = get_number(argv[itr]);
-				if (!tdgbl->gbl_sw_skip_count)
-				{
-					BURP_error(201, true, argv[itr]);
-					// msg 201: expected number of bytes to be skipped, encountered "%s" 
-				}
+				BURP_error(201, true, argv[itr]);
+				// msg 201: expected number of bytes to be skipped, encountered "%s" 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_P) 
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_P) 
+		{
+			if (++itr >= argc)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(2, true);
-					// msg 2 page size parameter missing 
-				}
-				tdgbl->gbl_sw_page_size = (USHORT) get_number(argv[itr]);
-				if (!tdgbl->gbl_sw_page_size)
-				{
-					BURP_error(12, true, argv[itr]);
-					// msg 12 expected page size, encountered "%s" 
-				}
+				BURP_error(2, true);
+				// msg 2 page size parameter missing 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_BU) 
+			tdgbl->gbl_sw_page_size = (USHORT) get_number(argv[itr]);
+			if (!tdgbl->gbl_sw_page_size)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(258, true);
-					// msg 258 page buffers parameter missing 
-				}
-				tdgbl->gbl_sw_page_buffers = get_number(argv[itr]);
-				if (!tdgbl->gbl_sw_page_buffers)
-				{
-					BURP_error(259, true, argv[itr]);
-					// msg 259 expected page buffers, encountered "%s" 
-				}
+				BURP_error(12, true, argv[itr]);
+				// msg 12 expected page size, encountered "%s" 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_MODE) 
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_BU) 
+		{
+			if (++itr >= argc)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(279, true);
-					// msg 279: "read_only" or "read_write" required 
-				}
-				str = argv[itr];
-				str.lower();
-				if (str == BURP_SW_MODE_RO)
-					tdgbl->gbl_sw_mode_val = true;
-				else if (str == BURP_SW_MODE_RW)
-					tdgbl->gbl_sw_mode_val = false;
-				else
-				{
-					BURP_error(279, true);
-					// msg 279: "read_only" or "read_write" required 
-				}
-				tdgbl->gbl_sw_mode = true;
+				BURP_error(258, true);
+				// msg 258 page buffers parameter missing 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) 
+			tdgbl->gbl_sw_page_buffers = get_number(argv[itr]);
+			if (!tdgbl->gbl_sw_page_buffers)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(189, true);
-					// password parameter missing 
-				}
-				uSvc->hidePasswd(argv, itr);
-				tdgbl->gbl_sw_password = argv[itr];
+				BURP_error(259, true, argv[itr]);
+				// msg 259 expected page buffers, encountered "%s" 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_USER) 
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_MODE) 
+		{
+			if (++itr >= argc)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(188, true);
-					// user name parameter missing 
-				}
-				tdgbl->gbl_sw_user = argv[itr];
+				BURP_error(279, true);
+				// msg 279: "read_only" or "read_write" required 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_SVC) 
+			str = argv[itr];
+			str.lower();
+			if (str == BURP_SW_MODE_RO)
+				tdgbl->gbl_sw_mode_val = true;
+			else if (str == BURP_SW_MODE_RW)
+				tdgbl->gbl_sw_mode_val = false;
+			else
 			{
-				uSvc->checkService();
-				if (++itr >= argc)
-				{
-					BURP_error(188, true);
-					// trusted user name parameter missing 
-				}
-				tdgbl->gbl_sw_tr_user = argv[itr];
+				BURP_error(279, true);
+				// msg 279: "read_only" or "read_write" required 
+			}
+			tdgbl->gbl_sw_mode = true;
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_PASS) 
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(189, true);
+				// password parameter missing 
+			}
+			uSvc->hidePasswd(argv, itr);
+			tdgbl->gbl_sw_password = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_USER) 
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(188, true);
+				// user name parameter missing 
+			}
+			tdgbl->gbl_sw_user = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_TRUSTED_SVC) 
+		{
+			uSvc->checkService();
+			if (++itr >= argc)
+			{
+				BURP_error(188, true);
+				// trusted user name parameter missing 
+			}
+			tdgbl->gbl_sw_tr_user = argv[itr];
 #ifdef TRUSTED_AUTH
-				burp_in_sw_table[IN_SW_BURP_TRUSTED_USER].in_sw_state = 1;
+			burp_in_sw_table[IN_SW_BURP_TRUSTED_USER].in_sw_state = true;
 #endif
-			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) 
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_ROLE) 
+		{
+			if (++itr >= argc)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(253, true);
-					// SQL role parameter missing
-				} 
-				tdgbl->gbl_sw_sql_role = argv[itr];
-			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_FA) 
+				BURP_error(253, true);
+				// SQL role parameter missing
+			} 
+			tdgbl->gbl_sw_sql_role = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FA) 
+		{
+			if (++itr >= argc)
 			{
-				if (++itr >= argc)
+				BURP_error(182, true);
+				// msg 182 blocking factor parameter missing 
+			}
+			tdgbl->gbl_sw_blk_factor = get_number(argv[itr]);
+			if (!tdgbl->gbl_sw_blk_factor)
+			{
+				BURP_error(183, true, argv[itr]);
+				// msg 183 expected blocking factor, encountered "%s"  
+			}
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_DATA)
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(304, true);
+				// Character set parameter missing
+			} 
+			tdgbl->gbl_sw_fix_fss_data = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_METADATA)
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(304, true);
+				// Character set parameter missing
+			} 
+			tdgbl->gbl_sw_fix_fss_metadata = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_SE) 
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(273, true);
+				// msg 273: service name parameter missing 
+			}
+			// skip a service specification 
+			in_sw_tab->in_sw_state = false;
+		}
+		// want to do output redirect handling now instead of waiting
+		else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
+		{
+			const TEXT* redirect = NULL;
+			if (++itr < argc)
+			{
+				redirect = argv[itr];
+				if (*redirect == switch_char)
 				{
-					BURP_error(182, true);
-					// msg 182 blocking factor parameter missing 
+					redirect = NULL;
 				}
-				tdgbl->gbl_sw_blk_factor = get_number(argv[itr]);
-				if (!tdgbl->gbl_sw_blk_factor)
-				{
-					BURP_error(183, true, argv[itr]);
-					// msg 183 expected blocking factor, encountered "%s"  
-				}
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_DATA)
+			if (!redirect)
 			{
-				if (++itr >= argc)
-				{
-					BURP_error(304, true);
-					// Character set parameter missing
-				} 
-				tdgbl->gbl_sw_fix_fss_data = argv[itr];
+				BURP_error(4, true);
+				// msg 4 redirect location for output is not specified 
 			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_FIX_FSS_METADATA)
-			{
-				if (++itr >= argc)
-				{
-					BURP_error(304, true);
-					// Character set parameter missing
-				} 
-				tdgbl->gbl_sw_fix_fss_metadata = argv[itr];
-			}
-			else if (in_sw_tab->in_sw == IN_SW_BURP_SE) 
-			{
-				if (++itr >= argc)
-				{
-					BURP_error(273, true);
-					// msg 273: service name parameter missing 
-				}
-				// skip a service specification 
-				in_sw_tab->in_sw_state = FALSE;
-			}
-			// want to do output redirect handling now instead of waiting
-			else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
-			{
-				const TEXT* redirect = NULL;
-				if (++itr < argc)
-				{
-					redirect = argv[itr];
-					if (*redirect == *switch_char)
-					{
-						redirect = NULL;
-					}
-				}
-				if (!redirect)
-				{
-					BURP_error(4, true);
-					// msg 4 redirect location for output is not specified 
-				}
 
-				Firebird::string up(redirect);
-				up.upper();
-				tdgbl->sw_redirect = (up == output_suppress) ? NOOUTPUT : REDIRECT;
+			Firebird::string up(redirect);
+			up.upper();
+			tdgbl->sw_redirect = (up == output_suppress) ? NOOUTPUT : REDIRECT;
 
-				if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT 
-				{
-					// Make sure the status file doesn't already exist 
-					FILE* tmp_outfile = fopen(redirect, fopen_read_type);
-					if (tmp_outfile) {
-						BURP_print(66, redirect);
-						// msg 66 can't open status and error output file %s 
-						fclose(tmp_outfile);
-						BURP_exit_local(FINI_ERROR, tdgbl);
-					}
-					if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
-					{
-						BURP_print(66, redirect);
-						// msg 66 can't open status and error output file %s 
-						BURP_exit_local(FINI_ERROR, tdgbl);
-					}
+			if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT 
+			{
+				// Make sure the status file doesn't already exist 
+				FILE* tmp_outfile = fopen(redirect, fopen_read_type);
+				if (tmp_outfile) {
+					BURP_print(66, redirect);
+					// msg 66 can't open status and error output file %s 
+					fclose(tmp_outfile);
+					BURP_exit_local(FINI_ERROR, tdgbl);
 				}
-			}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
-		}						// else 
+				if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
+				{
+					BURP_print(66, redirect);
+					// msg 66 can't open status and error output file %s 
+					BURP_exit_local(FINI_ERROR, tdgbl);
+				}
+			}
+		}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
 	}							// for
 
 	// reverse the linked list of file blocks 
@@ -806,154 +805,153 @@ int gbak(Firebird::UtilSvc* uSvc)
 	dpb.insertByte(isc_dpb_gsec_attach, 1);		// make it possible to have local security backups
 	uSvc->getAddressPath(dpb);
 
-	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) {
-		if (in_sw_tab->in_sw_state) {
-			switch (in_sw_tab->in_sw) {
-			case (IN_SW_BURP_B):
-				if (sw_replace)
-					BURP_error(5, true);
-					// msg 5 conflicting switches for backup/restore 
-				sw_replace = IN_SW_BURP_B;
-				break;
+	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
+	{
+		if (!in_sw_tab->in_sw_state)
+			continue;
+			
+		switch (in_sw_tab->in_sw)
+		{
+		case (IN_SW_BURP_B):
+			if (sw_replace)
+				BURP_error(5, true);
+				// msg 5 conflicting switches for backup/restore 
+			sw_replace = IN_SW_BURP_B;
+			break;
 
-			case (IN_SW_BURP_C):
-				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, true);
-					// msg 5 conflicting switches for backup/restore 
-				if (sw_replace != IN_SW_BURP_R)
-					sw_replace = IN_SW_BURP_C;
-				break;
+		case (IN_SW_BURP_C):
+			if (sw_replace == IN_SW_BURP_B)
+				BURP_error(5, true);
+				// msg 5 conflicting switches for backup/restore 
+			if (sw_replace != IN_SW_BURP_R)
+				sw_replace = IN_SW_BURP_C;
+			break;
 
-			case (IN_SW_BURP_CO):
-				tdgbl->gbl_sw_convert_ext_tables = true;
-				break;
+		case (IN_SW_BURP_CO):
+			tdgbl->gbl_sw_convert_ext_tables = true;
+			break;
 
-			case (IN_SW_BURP_E):
-				tdgbl->gbl_sw_compress = false;
-				break;
+		case (IN_SW_BURP_E):
+			tdgbl->gbl_sw_compress = false;
+			break;
 
-			case (IN_SW_BURP_G):
-				dpb.insertTag(isc_dpb_no_garbage_collect);
-				break;
+		case (IN_SW_BURP_G):
+			dpb.insertTag(isc_dpb_no_garbage_collect);
+			break;
 
-			case (IN_SW_BURP_I):
-				tdgbl->gbl_sw_deactivate_indexes = true;
-				break;
+		case (IN_SW_BURP_I):
+			tdgbl->gbl_sw_deactivate_indexes = true;
+			break;
 
-			case (IN_SW_BURP_IG):
-				dpb.insertByte(isc_dpb_damaged, 1);
-				break;
+		case (IN_SW_BURP_IG):
+			dpb.insertByte(isc_dpb_damaged, 1);
+			break;
 
-			case (IN_SW_BURP_K):
-				tdgbl->gbl_sw_kill = true;
-				break;
+		case (IN_SW_BURP_K):
+			tdgbl->gbl_sw_kill = true;
+			break;
 
-			case (IN_SW_BURP_L):
-				tdgbl->gbl_sw_ignore_limbo = true;
-				break;
+		case (IN_SW_BURP_L):
+			tdgbl->gbl_sw_ignore_limbo = true;
+			break;
 
-			case (IN_SW_BURP_M):
-				tdgbl->gbl_sw_meta = true;
-				break;
+		case (IN_SW_BURP_M):
+			tdgbl->gbl_sw_meta = true;
+			break;
 
-			case (IN_SW_BURP_MODE):
-				tdgbl->gbl_sw_mode = true;
-				break;
+		case (IN_SW_BURP_MODE):
+			tdgbl->gbl_sw_mode = true;
+			break;
 
-			case (IN_SW_BURP_N):
-				tdgbl->gbl_sw_novalidity = true;
-				break;
+		case (IN_SW_BURP_N):
+			tdgbl->gbl_sw_novalidity = true;
+			break;
 
-			case (IN_SW_BURP_NOD):
-				tdgbl->gbl_sw_nodbtriggers = true;
-				dpb.insertByte(isc_dpb_no_db_triggers, 1);
-				break;
+		case (IN_SW_BURP_NOD):
+			tdgbl->gbl_sw_nodbtriggers = true;
+			dpb.insertByte(isc_dpb_no_db_triggers, 1);
+			break;
 
-			case (IN_SW_BURP_NT):	// Backup non-transportable format 
-				tdgbl->gbl_sw_transportable = false;
-				break;
+		case (IN_SW_BURP_NT):	// Backup non-transportable format 
+			tdgbl->gbl_sw_transportable = false;
+			break;
 
-			case (IN_SW_BURP_O):
-				tdgbl->gbl_sw_incremental = true;
-				break;
+		case (IN_SW_BURP_O):
+			tdgbl->gbl_sw_incremental = true;
+			break;
 
-			case (IN_SW_BURP_OL):
-				tdgbl->gbl_sw_old_descriptions = true;
-				break;
+		case (IN_SW_BURP_OL):
+			tdgbl->gbl_sw_old_descriptions = true;
+			break;
 
-			case (IN_SW_BURP_PASS):
-				dpb.insertString(tdgbl->uSvc->isService() ?
-									isc_dpb_password_enc : isc_dpb_password,
-								 tdgbl->gbl_sw_password, 
-								 strlen(tdgbl->gbl_sw_password));
-				break;
+		case (IN_SW_BURP_PASS):
+			dpb.insertString(tdgbl->uSvc->isService() ?
+							 isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+			break;
 
-			case (IN_SW_BURP_R):
-				if (sw_replace == IN_SW_BURP_B)
-					BURP_error(5, true);
-					// msg 5 conflicting switches for backup/restore 
-				sw_replace = IN_SW_BURP_R;
-				break;
+		case (IN_SW_BURP_R):
+			if (sw_replace == IN_SW_BURP_B)
+				BURP_error(5, true);
+				// msg 5 conflicting switches for backup/restore 
+			sw_replace = IN_SW_BURP_R;
+			break;
 
-			case (IN_SW_BURP_T):
-				tdgbl->gbl_sw_transportable = true;
-				break;
+		case (IN_SW_BURP_T):
+			tdgbl->gbl_sw_transportable = true;
+			break;
 
-			case (IN_SW_BURP_U):
-				BURP_error(7, true);
-				// msg 7 protection isn't there yet 
-				break;
+		case (IN_SW_BURP_U):
+			BURP_error(7, true);
+			// msg 7 protection isn't there yet 
+			break;
 
-			case (IN_SW_BURP_US):
-				tdgbl->gbl_sw_no_reserve = true;
-				break;
+		case (IN_SW_BURP_US):
+			tdgbl->gbl_sw_no_reserve = true;
+			break;
 
-			case (IN_SW_BURP_ROLE):
-				dpb.insertString(isc_dpb_sql_role_name, 
-								 tdgbl->gbl_sw_sql_role,
-								 strlen(tdgbl->gbl_sw_sql_role));
-				break;
+		case (IN_SW_BURP_ROLE):
+			dpb.insertString(isc_dpb_sql_role_name, 
+							 tdgbl->gbl_sw_sql_role, strlen(tdgbl->gbl_sw_sql_role));
+			break;
 
-			case (IN_SW_BURP_USER):
-				dpb.insertString(isc_dpb_user_name, 
-								 tdgbl->gbl_sw_user,
-								 strlen(tdgbl->gbl_sw_user));
-				break;
+		case (IN_SW_BURP_USER):
+			dpb.insertString(isc_dpb_user_name, 
+							 tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+			break;
 
-			case (IN_SW_BURP_TRUSTED_SVC):
-				uSvc->checkService();
-				dpb.deleteWithTag(isc_dpb_trusted_auth);
-				dpb.insertString(isc_dpb_trusted_auth, 
-								 tdgbl->gbl_sw_tr_user,
-								 strlen(tdgbl->gbl_sw_tr_user));
-				break;
+		case (IN_SW_BURP_TRUSTED_SVC):
+			uSvc->checkService();
+			dpb.deleteWithTag(isc_dpb_trusted_auth);
+			dpb.insertString(isc_dpb_trusted_auth, 
+							 tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+			break;
 
-			case (IN_SW_BURP_TRUSTED_ROLE):
-				uSvc->checkService();
-				dpb.deleteWithTag(isc_dpb_trusted_role);
-				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-				break;
+		case (IN_SW_BURP_TRUSTED_ROLE):
+			uSvc->checkService();
+			dpb.deleteWithTag(isc_dpb_trusted_role);
+			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+			break;
 #ifdef TRUSTED_AUTH
-			case (IN_SW_BURP_TRUSTED_USER):
-				if (!dpb.find(isc_dpb_trusted_auth))
-				{
-					dpb.insertTag(isc_dpb_trusted_auth);
-				}
-				break;
-#endif
-			case (IN_SW_BURP_V):
-				tdgbl->gbl_sw_verbose = true;
-				break;
-
-			case (IN_SW_BURP_Z):
-				BURP_print(91, GDS_VERSION);
-				// msg 91 gbak version %s 
-				tdgbl->gbl_sw_version = true;
-				break;
-
-			default:
-				break;
+		case (IN_SW_BURP_TRUSTED_USER):
+			if (!dpb.find(isc_dpb_trusted_auth))
+			{
+				dpb.insertTag(isc_dpb_trusted_auth);
 			}
+			break;
+#endif
+		case (IN_SW_BURP_V):
+			tdgbl->gbl_sw_verbose = true;
+			break;
+
+		case (IN_SW_BURP_Z):
+			BURP_print(91, GDS_VERSION);
+			// msg 91 gbak version %s 
+			tdgbl->gbl_sw_version = true;
+			break;
+
+		default:
+			break;
 		}
 	}
 
@@ -2002,10 +2000,13 @@ static void burp_usage(const in_sw_tab_t* in_sw_tab)
 	// msg 95  legal switches are
 
 	SafeArg sa;
+	sa << switch_char;
+	
 	for (; in_sw_tab->in_sw; in_sw_tab++)
-		if (in_sw_tab->in_sw_msg) {
-			BURP_msg_put(in_sw_tab->in_sw_msg, sa.clear() << switch_char);
-		}
+	{
+		if (in_sw_tab->in_sw_msg)
+			BURP_msg_put(in_sw_tab->in_sw_msg, sa);
+	}
 
 	BURP_print(132);
 	// msg 132 switches can be abbreviated to one character 

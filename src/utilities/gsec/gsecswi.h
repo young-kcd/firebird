@@ -60,7 +60,8 @@ const int IN_SW_GSEC_TRUSTED_AUTH	= 24;	/* Use trusted authentication */
 #endif
 
 
-static struct in_sw_tab_t gsec_in_sw_table [] = {
+static const struct in_sw_tab_t gsec_in_sw_table [] =
+{
     {IN_SW_GSEC_ADD,		0,				"ADD",		0, 0, 0, FALSE,	0,	1, NULL},	/* add user */
     {IN_SW_GSEC_UID,		isc_spb_sec_userid,		"UID",		0, 0, 0, FALSE,	0,	1, NULL},	/* user's ID */
     {IN_SW_GSEC_GID,		isc_spb_sec_groupid,		"GID",		0, 0, 0, FALSE,	0,	2, NULL},	/* user's group ID */
@@ -90,7 +91,8 @@ static struct in_sw_tab_t gsec_in_sw_table [] = {
     {IN_SW_GSEC_0,		0,				NULL,		0, 0, 0, FALSE,	0,	0, NULL}		/* End of List */
 };
 
-static struct in_sw_tab_t gsec_action_in_sw_table [] = {
+static const struct in_sw_tab_t gsec_action_in_sw_table [] =
+{
     {IN_SW_GSEC_ADD,		isc_action_svc_add_user,	"ADD",		0, 0, 0, FALSE,	0,	1, NULL},	/* add user */
     {IN_SW_GSEC_DEL,		isc_action_svc_delete_user,	"DELETE",	0, 0, 0, FALSE,	0,	2, NULL},	/* delete user */
     {IN_SW_GSEC_MOD,		isc_action_svc_modify_user,	"MODIFY",	0, 0, 0, FALSE,	0,	2, NULL},	/* modify user */
