@@ -255,6 +255,7 @@ return=`basename $new`
 cp $file "$FB_RES/English.lproj/var/UDF/$return"
 rm $file
 done
+
 # Tell inetd/xinetd to reload their configuration files.
 echo "Tell inetd/xinetd to reload configuration files"
 if [ "$HUPNEEDED" = 'y' ]
