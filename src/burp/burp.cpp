@@ -104,10 +104,10 @@ static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
-static int api_gbak(Firebird::UtilSvc*);
+static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* in_sw_tab);
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
-static void burp_usage();
-static in_sw_tab_t* findSwitch(Firebird::string, bool);
+static void burp_usage(const in_sw_tab_t* in_sw_tab);
+static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string, bool);
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
@@ -144,7 +144,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int api_gbak(Firebird::UtilSvc* uSvc)
+static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* in_sw_tab)
 {
 /**********************************************
  *
@@ -170,7 +170,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 
 	for (itr = 1; itr < argc; ++itr)
 	{
-		const in_sw_tab_t* inSw = findSwitch(argv[itr], false);
+		const in_sw_tab_t* inSw = findSwitch(in_sw_tab, argv[itr], false);
 		if (! inSw)
 		{
 			continue;
@@ -310,7 +310,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 		if (flag_verbose)
 			*thd_ptr++ = isc_spb_verbose;
 
-		USHORT thdlen = thd_ptr - thd;
+		const USHORT thdlen = thd_ptr - thd;
 
 		if (isc_service_start(status, &svc_handle, NULL, thdlen, thd))
 		{
@@ -345,7 +345,8 @@ static int api_gbak(Firebird::UtilSvc* uSvc)
 				{
 					if (*p == isc_info_data_not_ready)
 						continue;
-					else if (*p == isc_info_end)
+
+					if (*p == isc_info_end)
 						break;
 				}
 
@@ -393,7 +394,7 @@ static bool switchMatch(const Firebird::string& sw, const char* target)
 }
 
 
-static in_sw_tab_t* findSwitch(Firebird::string sw, bool throwErrors)
+static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string sw, bool throwErrors)
 {
 /**************************************
  *
@@ -418,7 +419,7 @@ static in_sw_tab_t* findSwitch(Firebird::string sw, bool throwErrors)
 	sw.erase(0, 1);
 	sw.upper();
 
-	for (in_sw_tab_t* in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++)
+	for (; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		if (switchMatch(sw, in_sw_tab->in_sw_name))
 		{
@@ -430,7 +431,7 @@ static in_sw_tab_t* findSwitch(Firebird::string sw, bool throwErrors)
 	{
 		BURP_print(137, sw.c_str());
 		// msg 137  unknown switch %s 
-		burp_usage();
+		burp_usage(in_sw_tab);
 		BURP_error(1, true);
 		// msg 1: found unknown switch
 	}
@@ -464,31 +465,35 @@ int gbak(Firebird::UtilSvc* uSvc)
 	Firebird::UtilSvc::ArgvType& argv = uSvc->argv;
 	const int argc = uSvc->argv.getCount();
 
-	in_sw_tab_t* in_sw_tab; // used in several parts below.
-	// Initialize static data. DANGER! MT issue in services!
-	for (in_sw_tab = burp_in_sw_table; in_sw_tab->in_sw_name; in_sw_tab++) 
+	// Copy the static const table to a local array for processing.
+	in_sw_tab_t burp_in_sw_table[FB_NELEM(reference_burp_in_sw_table)];
+
+	for (size_t maxt = FB_NELEM(reference_burp_in_sw_table), iter = 0; iter < maxt; ++ iter)
 	{
-		in_sw_tab->in_sw_state = FALSE;
+		burp_in_sw_table[iter] = reference_burp_in_sw_table[iter];
+		burp_in_sw_table[iter].in_sw_state = FALSE;
 	}
 
 	// test for "-service" switch
 	for (int itr = 1; itr < argc; ++itr)
 	{
-		in_sw_tab_t* inSw = findSwitch(argv[itr], false);
+		const in_sw_tab_t* inSw = findSwitch(burp_in_sw_table, argv[itr], false);
 
 		if (inSw && inSw->in_sw == IN_SW_BURP_SE)
 		{
-			return api_gbak(uSvc);
+			return api_gbak(uSvc, burp_in_sw_table);
 		}
 	}
 
 	try {
 
+	in_sw_tab_t* in_sw_tab;
+
 	tdgbl->status = tdgbl->status_vector;
 	uSvc->started();
 
 	if (argc <= 1) {
-		burp_usage();
+		burp_usage(burp_in_sw_table);
 		BURP_exit_local(FINI_ERROR, tdgbl);
 	}
 
@@ -545,7 +550,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				str = none;
 			}
 
-			in_sw_tab = findSwitch(str, true);
+			in_sw_tab = findSwitch(burp_in_sw_table, str, true);
 			fb_assert(in_sw_tab);
 			in_sw_tab->in_sw_state = TRUE;
 
@@ -568,8 +573,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 				in_sw_tab->in_sw_state = FALSE;
 
 				in_sw_tab_t* real_sw_tab = burp_in_sw_table; 
-				for (; real_sw_tab->in_sw != real_sw; real_sw_tab++)
-					;
+				while (real_sw_tab->in_sw != real_sw)
+					++real_sw_tab;
+					
 				real_sw_tab->in_sw_state = TRUE;
 			}
 			else if (in_sw_tab->in_sw == IN_SW_BURP_S) 
@@ -749,9 +755,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 						fclose(tmp_outfile);
 						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
-					if (!
-						(tdgbl->output_file =
-						 fopen(redirect, fopen_write_type)))
+					if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
 					{
 						BURP_print(66, redirect);
 						// msg 66 can't open status and error output file %s 
@@ -1982,7 +1986,7 @@ static void burp_output( const SCHAR* format, ...)
 }
 
 
-static void burp_usage()
+static void burp_usage(const in_sw_tab_t* in_sw_tab)
 {
 /**********************************************
  *
@@ -1998,7 +2002,6 @@ static void burp_usage()
 	// msg 95  legal switches are
 
 	SafeArg sa;
-	const in_sw_tab_t* in_sw_tab = burp_in_sw_table;
 	for (; in_sw_tab->in_sw; in_sw_tab++)
 		if (in_sw_tab->in_sw_msg) {
 			BURP_msg_put(in_sw_tab->in_sw_msg, sa.clear() << switch_char);

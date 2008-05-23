@@ -99,7 +99,7 @@ static const char* BURP_SW_MODE_RW = "read_write";
 static const char* BURP_SW_OVERWRITE = "OVERWRITE"; // recreate with overwrite
 
 
-static in_sw_tab_t burp_in_sw_table [] =
+static const in_sw_tab_t reference_burp_in_sw_table [] =
 {
     {IN_SW_BURP_B,    0,                 	"BACKUP_DATABASE",  0, 0, 0, FALSE, 60,	0, NULL},
                 // msg 60: %sBACKUP_DATABASE backup database to file 

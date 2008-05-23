@@ -2162,7 +2162,7 @@ bool Service::process_switches(Firebird::ClumpletReader&	spb,
 				break;
 			case isc_spb_options:
 				burp_options |= spb.getInt();
-				if (!get_action_svc_bitmask(spb, burp_in_sw_table, switches))
+				if (!get_action_svc_bitmask(spb, reference_burp_in_sw_table, switches))
 				{
 					return false;
 				}
@@ -2176,20 +2176,20 @@ bool Service::process_switches(Firebird::ClumpletReader&	spb,
 			case isc_spb_bkp_factor:
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
-				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
+				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;
 				}
 				get_action_svc_data(spb, switches);
 				break;
 			case isc_spb_res_access_mode:
-				if (!get_action_svc_parameter(*(spb.getBytes()), burp_in_sw_table, switches))
+				if (!get_action_svc_parameter(*(spb.getBytes()), reference_burp_in_sw_table, switches))
 				{
 					return false;
 				}
 				break;
 			case isc_spb_verbose:
-				if (!get_action_svc_parameter(spb.getClumpTag(), burp_in_sw_table, switches))
+				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;
 				}
