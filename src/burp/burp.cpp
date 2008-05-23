@@ -104,10 +104,10 @@ static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
 static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 							  const Firebird::ClumpletWriter&);
-static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* in_sw_tab);
+static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* const in_sw_tab);
 static void burp_output(const SCHAR*, ...) ATTRIBUTE_FORMAT(1,2);
 static void burp_usage(const in_sw_tab_t* in_sw_tab);
-static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string, bool);
+static in_sw_tab_t* findSwitch(in_sw_tab_t* const in_sw_tab, Firebird::string, bool);
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
@@ -144,7 +144,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 }
 
 
-static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* in_sw_tab)
+static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 {
 /**********************************************
  *
@@ -394,7 +394,7 @@ static bool switchMatch(const Firebird::string& sw, const char* target)
 }
 
 
-static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string sw, bool throwErrors)
+static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bool throwErrors)
 {
 /**************************************
  *
@@ -419,7 +419,7 @@ static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string sw, bool
 	sw.erase(0, 1);
 	sw.upper();
 
-	for (; in_sw_tab->in_sw_name; in_sw_tab++)
+	for (in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
 	{
 		if (switchMatch(sw, in_sw_tab->in_sw_name))
 		{
@@ -431,7 +431,7 @@ static in_sw_tab_t* findSwitch(in_sw_tab_t* in_sw_tab, Firebird::string sw, bool
 	{
 		BURP_print(137, sw.c_str());
 		// msg 137  unknown switch %s 
-		burp_usage(in_sw_tab);
+		burp_usage(table);
 		BURP_error(1, true);
 		// msg 1: found unknown switch
 	}
