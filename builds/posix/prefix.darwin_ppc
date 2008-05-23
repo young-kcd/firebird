@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_ppc,v 1.1.2.2 2008-03-28 10:00:31 paulbeach Exp $
+#$Id: prefix.darwin_ppc,v 1.1.2.3 2008-05-23 10:48:56 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 #
 # 6th Dec 2007 - NOTE:
@@ -40,9 +40,9 @@ DEV_FLAGS=-g -DDARWIN -DDEBUG_GDS_ALLOC -pipe -MMD -p -fPIC -Wall -arch ppc -mma
 LIB_LINK_OPTIONS:=-bundle -flat_namespace -undefined suppress
 LIB_SHLIB_LINK_OPTIONS:=-dynamiclib -flat_namespace
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird \
-	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000 
+	-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000 
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird \
-	-current_version 1.0.0 -compatibility_version 1.0.0 -seg1addr 0x30000000
+	-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
 LIB_UTIL_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/libib_util.dylib
 LIB_LINK_RPATH_LINE:=
 LIB_LINK_SONAME_LINE:=
