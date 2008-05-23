@@ -6960,23 +6960,17 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input)
 
 		modify->nod_arg[e_mdc_context] = (dsql_nod*) context;
 
-		// push the USING context
-		request->req_context->push(get_context(source));
-		request->req_scope_level++;
-
-		// process old context values
-		request->req_context->push(context);
-		request->req_scope_level++;
+		request->req_scope_level++;	// go to the same level of source and target contexts
+		request->req_context->push(get_context(source));	// push the USING context
+		request->req_context->push(context);	// process old context values
 
 		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
 			*ptr = pass1_node_psql(request, *ptr, false);
 
-		request->req_scope_level--;
+		// and pop the contexts
 		request->req_context->pop();
-
-		// pop the USING context
-		request->req_scope_level--;
 		request->req_context->pop();
+		request->req_scope_level--;
 
 		// process relation
 		modify->nod_arg[e_mdc_update] = pass1_relation(request, input->nod_arg[e_mrg_relation]);
@@ -6988,8 +6982,7 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input)
 		request->req_context->pop();
 
 		// recreate list of assignments
-		modify->nod_arg[e_mdc_statement] = list =
-			MAKE_node(nod_list, list->nod_count);
+		modify->nod_arg[e_mdc_statement] = list = MAKE_node(nod_list, list->nod_count);
 
 		for (i = 0; i < list->nod_count; ++i)
 		{
@@ -7012,11 +7005,10 @@ static dsql_nod* pass1_merge(dsql_req* request, dsql_nod* input)
 
 	if (input->nod_arg[e_mrg_when]->nod_arg[e_mrg_when_not_matched])
 	{
-		// push the USING context
-		request->req_context->push(get_context(source));
-		request->req_scope_level++;
+		request->req_scope_level++;	// go to the same level of the source context
+		request->req_context->push(get_context(source));	// push the USING context
 
-		// the INSERT relation should be processed in a higher level than the source
+		// the INSERT relation should be processed in a higher level than the source context
 		request->req_scope_level++;
 
 		// build the INSERT node
