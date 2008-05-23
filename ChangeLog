@@ -1,3 +1,10 @@
+2008-05-23 12:48  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin (1.8.2.22),
+	prefix.darwin_ppc (1.1.2.3):
+
+	Make the version numbers automatic
+
 2008-05-13 11:11  hvlad
 
 	* firebird2/src/jrd/vio.cpp (1.49.2.5):
