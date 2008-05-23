@@ -6187,24 +6187,36 @@ static dsql_nod* pass1_insert( dsql_req* request, dsql_nod* input, bool insert_o
 		for (const dsql_nod* const* const end = ptr + fields->nod_count;
 			ptr < end; ptr++)
 		{
-			const dsql_ctx* tmp_ctx = 0;
 			DEV_BLKCHK (*ptr, dsql_type_nod);
 			const dsql_nod* temp2 = *ptr;
-			if (temp2->nod_type == nod_field &&
-				(tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_fld_context]) != 0 &&
-				tmp_ctx->ctx_relation &&
-				relation->rel_name != tmp_ctx->ctx_relation->rel_name)
-			{
 
+			const dsql_ctx* tmp_ctx = NULL;
+			const TEXT* tmp_name = NULL;
+
+			if (temp2->nod_type == nod_field)
+			{
+				tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_fld_context];
+				tmp_name = (temp2->nod_arg[e_fld_field] ?
+					((dsql_fld*) temp2->nod_arg[e_fld_field])->fld_name.c_str() : NULL);
+			}
+			else if (temp2->nod_type == nod_derived_field)
+			{
+				tmp_ctx = (dsql_ctx*) temp2->nod_arg[e_derived_field_context];
+				tmp_name = (temp2->nod_arg[e_derived_field_name] ?
+					((dsql_str*) temp2->nod_arg[e_derived_field_name])->str_data : NULL);
+			}
+
+			if (tmp_ctx &&
+				((tmp_ctx->ctx_relation && relation->rel_name != tmp_ctx->ctx_relation->rel_name) ||
+				 tmp_ctx->ctx_context != context->ctx_context))
+			{
 				const dsql_rel* bad_rel = tmp_ctx->ctx_relation;
-				const dsql_fld* bad_fld = (dsql_fld*) temp2->nod_arg[e_fld_field];
 				// At this time, "fields" has been replaced by the processed list in
 				// the same variable, so we refer again to input->nod_arg[e_ins_fields].
 				// CVC: After three years, made old_fields for that purpose.
 
 				field_unknown(bad_rel ? bad_rel->rel_name.c_str() : NULL,
-								bad_fld ? bad_fld->fld_name.c_str() : NULL,
-								old_fields->nod_arg[ptr - fields->nod_arg]);
+								tmp_name, old_fields->nod_arg[ptr - fields->nod_arg]);
 			}
 		}
 		// end IBO hack
