@@ -528,7 +528,6 @@ typedef unsigned __int64 FB_UINT64;
 /* Number of shifts needed to convert between char and LONG */
 #define SHIFTLONG       2
 #define BITS_PER_LONG   32
-#define LOG2_BITS_PER_LONG      5
 #endif
 
 #ifndef DOUBLE_ALIGN
