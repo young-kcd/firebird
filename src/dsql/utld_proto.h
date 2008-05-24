@@ -46,13 +46,13 @@ SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 namespace Jrd {
 
-	class dsql_req;
+	class CompiledStatement;
 
 	class DSqlDataTypeUtil : public DataTypeUtilBase
 	{
 	public:
-		explicit DSqlDataTypeUtil(dsql_req* req)
-			: request(req)
+		explicit DSqlDataTypeUtil(CompiledStatement* aStatement)
+			: statement(aStatement)
 		{
 		}
 
@@ -61,7 +61,7 @@ namespace Jrd {
 		virtual USHORT getDialect() const;
 
 	private:
-		dsql_req* request;
+		CompiledStatement* statement;
 	};
 
 } // namespace

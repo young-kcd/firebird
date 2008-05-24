@@ -92,7 +92,7 @@ static bool		get_rsb_item(SSHORT*, const SCHAR**, SSHORT*, SCHAR**, USHORT*,
 static dsql_dbb*	init(Attachment*);
 static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
-static dsql_req*		prepare(thread_db*, dsql_req*, USHORT, const TEXT*, USHORT, USHORT);
+static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
 static UCHAR*	put_item(UCHAR, USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_request(thread_db*, dsql_req*, bool);
 static void		sql_info(thread_db*, dsql_req*, USHORT, const UCHAR*, USHORT, UCHAR*);
@@ -669,8 +669,6 @@ void DSQL_prepare(thread_db* tdbb,
 	               0);
 	}
 
-	Jrd::ContextPoolHolder context(tdbb, database->createPool());
-
 	// check to see if old request has an open cursor 
 
 	if (old_request && (old_request->req_flags & REQ_cursor_open)) {
@@ -686,10 +684,7 @@ void DSQL_prepare(thread_db* tdbb,
 /* Because that's the client's allocated statement handle and we
    don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
 
-	MemoryPool& pool = *tdbb->getDefaultPool();
-	dsql_req* request = FB_NEW(pool) dsql_req(pool);
-	request->req_dbb = database;
-	request->req_transaction = transaction;
+	dsql_req* request = NULL;
 
 	try {
 
@@ -737,9 +732,7 @@ void DSQL_prepare(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request->req_client_dialect = dialect;
-
-		request = prepare(tdbb, request, length, string, dialect, parser_version);
+		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
 
@@ -754,16 +747,22 @@ void DSQL_prepare(thread_db* tdbb,
 		// Now that we know that the new request exists, zap the old one. 
 
 		{
-			Jrd::ContextPoolHolder another_context(tdbb, &old_request->req_pool);
+			Jrd::ContextPoolHolder context(tdbb, &old_request->req_pool);
 			release_request(tdbb, old_request, true);
 		}
 
 		*req_handle = request;
 
+		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 		sql_info(tdbb, request, item_length, items, buffer_length, buffer);
 	}
-	catch (const Firebird::Exception&) {
-		release_request(tdbb, request, true);
+	catch (const Firebird::Exception&)
+	{
+		if (request)
+		{
+			Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+			release_request(tdbb, request, true);
+		}
 		throw;
 	}
 }
@@ -1093,14 +1092,8 @@ static void execute_immediate(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	dsql_dbb* const database = init(attachment);
-	Jrd::ContextPoolHolder context(tdbb, database->createPool());
 
-	// allocate the request block, then prepare the request 
-
-	MemoryPool& pool = *tdbb->getDefaultPool();
-	dsql_req* request = FB_NEW(pool) dsql_req(pool);
-	request->req_dbb = database;
-	request->req_transaction = *tra_handle;
+	dsql_req* request = NULL;
 
 	try {
 
@@ -1140,9 +1133,9 @@ static void execute_immediate(thread_db* tdbb,
 			dialect /= 10;
 		}
 
-		request->req_client_dialect = dialect;
+		request = prepare(tdbb, database, *tra_handle, length, string, dialect, parser_version);
 
-		request = prepare(tdbb, request, length, string, dialect, parser_version);
+		Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
 		execute_request(tdbb, request, tra_handle, in_blr_length, in_blr,
 						in_msg_length, in_msg, out_blr_length, out_blr,
@@ -1150,8 +1143,13 @@ static void execute_immediate(thread_db* tdbb,
 
 		release_request(tdbb, request, true);
 	}
-	catch (const Firebird::Exception&) {
-		release_request(tdbb, request, true);
+	catch (const Firebird::Exception&)
+	{
+		if (request)
+		{
+			Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
+			release_request(tdbb, request, true);
+		}
 		throw;
 	}
 }
@@ -2485,8 +2483,7 @@ static USHORT parse_blr(
     @param parser_version
 
  **/
-static dsql_req* prepare(thread_db* tdbb,
-				   dsql_req* request,
+static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
 				   USHORT string_length,
 				   const TEXT* string,
 				   USHORT client_dialect, USHORT parser_version)
@@ -2514,9 +2511,21 @@ static dsql_req* prepare(thread_db* tdbb,
 		}
 	}
 
+	// allocate the statement block, then prepare the statement 
+
+	Jrd::ContextPoolHolder context(tdbb, database->createPool());
+
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	CompiledStatement* statement = FB_NEW(pool) CompiledStatement(pool);
+	statement->req_dbb = database;
+	statement->req_transaction = transaction;
+	statement->req_client_dialect = client_dialect;
+
+	try {
+
 	// Parse the SQL statement.  If it croaks, return 
 
-	Parser parser(*tdbb->getDefaultPool(), client_dialect, request->req_dbb->dbb_db_SQL_dialect,
+	Parser parser(*tdbb->getDefaultPool(), client_dialect, statement->req_dbb->dbb_db_SQL_dialect,
 		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
 
 	dsql_nod* node = parser.parse();
@@ -2531,95 +2540,94 @@ static dsql_req* prepare(thread_db* tdbb,
 				  0);
 	}
 
-// allocate the send and receive messages 
+	// allocate the send and receive messages 
 
-	MemoryPool& pool = *tdbb->getDefaultPool();
-	request->req_send = FB_NEW(pool) dsql_msg;
+	statement->req_send = FB_NEW(pool) dsql_msg;
 	dsql_msg* message = FB_NEW(pool) dsql_msg;
-	request->req_receive = message;
+	statement->req_receive = message;
 	message->msg_number = 1;
 
 #ifdef SCROLLABLE_CURSORS
-	if (request->req_dbb->dbb_base_level >= 5) {
+	if (statement->req_dbb->dbb_base_level >= 5) {
 		/* allocate a message in which to send scrolling information
 		   outside of the normal send/receive protocol */
 
-		request->req_async = message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
+		statement->req_async = message = FB_NEW(*tdsql->getDefaultPool()) dsql_msg;
 		message->msg_number = 2;
 	}
 #endif
 
-	request->req_type = REQ_SELECT;
-	request->req_flags &= ~REQ_cursor_open;
+	statement->req_type = REQ_SELECT;
+	statement->req_flags &= ~REQ_cursor_open;
 
-/*
- * No work is done during pass1 for set transaction - like
- * checking for valid table names.  This is because that will
- * require a valid transaction handle.
- * Error will be caught at execute time.
- */
+	/*
+	 * No work is done during pass1 for set transaction - like
+	 * checking for valid table names.  This is because that will
+	 * require a valid transaction handle.
+	 * Error will be caught at execute time.
+	 */
 
-	node = PASS1_statement(request, node);
+	node = PASS1_statement(statement, node);
 	if (!node)
-		return request;
+		return statement;
 
-// stop here for requests not requiring code generation 
+	// stop here for statements not requiring code generation 
 
-	if (request->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
-		request->req_dbb->dbb_db_SQL_dialect != client_dialect)
+	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
+		statement->req_dbb->dbb_db_SQL_dialect != client_dialect)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 817,
 				  isc_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
 				  isc_arg_number,
-				  (SLONG) request->req_dbb->dbb_db_SQL_dialect, 0);
+				  (SLONG) statement->req_dbb->dbb_db_SQL_dialect, 0);
 	}
 
-	if (request->req_type == REQ_COMMIT ||
-		request->req_type == REQ_COMMIT_RETAIN ||
-		request->req_type == REQ_ROLLBACK ||
-		request->req_type == REQ_ROLLBACK_RETAIN)
+	if (statement->req_type == REQ_COMMIT ||
+		statement->req_type == REQ_COMMIT_RETAIN ||
+		statement->req_type == REQ_ROLLBACK ||
+		statement->req_type == REQ_ROLLBACK_RETAIN)
 	{
-		return request;
+		return statement;
 	}
 
-// Work on blob segment requests 
+	// Work on blob segment statements 
 
-	if (request->req_type == REQ_GET_SEGMENT ||
-		request->req_type == REQ_PUT_SEGMENT)
+	if (statement->req_type == REQ_GET_SEGMENT ||
+		statement->req_type == REQ_PUT_SEGMENT)
 	{
-		GEN_port(request, request->req_blob->blb_open_in_msg);
-		GEN_port(request, request->req_blob->blb_open_out_msg);
-		GEN_port(request, request->req_blob->blb_segment_msg);
-		return request;
+		GEN_port(statement, statement->req_blob->blb_open_in_msg);
+		GEN_port(statement, statement->req_blob->blb_open_out_msg);
+		GEN_port(statement, statement->req_blob->blb_segment_msg);
+		return statement;
 	}
 
-// Generate BLR, DDL or TPB for request 
+	// Generate BLR, DDL or TPB for statement 
 
-// Start transactions takes parameters via a parameter block.
-// The request blr string is used for that
+	// Start transactions takes parameters via a parameter block.
+	// The statement blr string is used for that
 
-	if (request->req_type == REQ_START_TRANS) {
-		GEN_start_transaction(request, node);
-		return request;
+	if (statement->req_type == REQ_START_TRANS) {
+		GEN_start_transaction(statement, node);
+		return statement;
 	}
 
 	if (client_dialect > SQL_DIALECT_V5)
-		request->req_flags |= REQ_blr_version5;
+		statement->req_flags |= REQ_blr_version5;
 	else
-		request->req_flags |= REQ_blr_version4;
+		statement->req_flags |= REQ_blr_version4;
 
-	GEN_request(request, node);
-	const USHORT length = request->req_blr_data.getCount();
+	GEN_request(statement, node);
+	const USHORT length = statement->req_blr_data.getCount();
 	
-// stop here for ddl requests 
+	// stop here for ddl statements 
 
-	if (request->req_type == REQ_CREATE_DB ||
-		request->req_type == REQ_DDL)
+	if (statement->req_type == REQ_CREATE_DB ||
+		statement->req_type == REQ_DDL)
 	{
-		return request;
+		return statement;
 	}
 
-// have the access method compile the request 
+	// have the access method compile the statement 
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
@@ -2627,12 +2635,12 @@ static dsql_req* prepare(thread_db* tdbb,
 		gds__trace_raw("Statement:\n");
 		gds__trace_raw(string, string_length);
 		gds__trace_raw("\nBLR:\n");
-		gds__print_blr(request->req_blr_data.begin(),
+		gds__print_blr(statement->req_blr_data.begin(),
 			gds__trace_printer, 0, 0);
 	}
 #endif
 
-// check for warnings 
+	// check for warnings 
 	if (tdbb->tdbb_status_vector[2] == isc_arg_warning) {
 		// save a status vector 
 		memcpy(local_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
@@ -2643,21 +2651,21 @@ static dsql_req* prepare(thread_db* tdbb,
 	try
 	{
 		JRD_compile(tdbb,
-					request->req_dbb->dbb_attachment,
-					&request->req_request,
+					statement->req_dbb->dbb_attachment,
+					&statement->req_request,
 					length,
-					request->req_blr_data.begin(),
+					statement->req_blr_data.begin(),
 					string_length,
 					string,
-					request->req_debug_data.getCount(),
-					request->req_debug_data.begin());
+					statement->req_debug_data.getCount(),
+					statement->req_debug_data.begin());
 	}
 	catch (const Firebird::Exception&)
 	{
 		status = tdbb->tdbb_status_vector[1];
 	}
 
-// restore warnings (if there are any) 
+	// restore warnings (if there are any) 
 	if (local_status[2] == isc_arg_warning)
 	{
 		int indx, len, warning;
@@ -2675,13 +2683,20 @@ static dsql_req* prepare(thread_db* tdbb,
 			memcpy(&tdbb->tdbb_status_vector[indx], &local_status[2], sizeof(ISC_STATUS) * len);
 	}
 
-// free blr memory
-	request->req_blr_data.free();
+	// free blr memory
+	statement->req_blr_data.free();
 
 	if (status)
 		Firebird::status_exception::raise(tdbb->tdbb_status_vector);
 
-	return request;
+	return statement;
+
+	}
+	catch (const Firebird::Exception&)
+	{
+		release_request(tdbb, statement, true);
+		throw;
+	}
 }
 
 

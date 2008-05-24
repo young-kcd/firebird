@@ -388,7 +388,7 @@ dsql_str* MAKE_cstring(const char* str)
 	@param null_replacement
 
  **/
-void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
+void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod* null_replacement)
 {
 	dsc desc1, desc2, desc3;
 	USHORT dtype, dtype1, dtype2;
@@ -436,17 +436,17 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_map:
 		map = (dsql_map*) node->nod_arg[e_map_map];
-		MAKE_desc(request, desc, map->map_node, null_replacement);
+		MAKE_desc(statement, desc, map->map_node, null_replacement);
 		return;
 
 	case nod_agg_min:
 	case nod_agg_max:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		return;
 
 	case nod_agg_average:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
@@ -460,7 +460,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_agg_average2:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
@@ -478,7 +478,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_agg_total:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
@@ -500,7 +500,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_agg_total2:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
 			ERRD_post(isc_expression_eval_err, 0);
@@ -518,24 +518,24 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_agg_list:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		desc->makeBlob(desc->getBlobSubType(), desc->getTextType());
 		desc->setNullable(true);
 		return;
 
 	case nod_concatenate:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
-		DSqlDataTypeUtil(request).makeConcatenate(desc, &desc1, &desc2);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		DSqlDataTypeUtil(statement).makeConcatenate(desc, &desc1, &desc2);
 		return;
 
 	case nod_derived_field:
-		MAKE_desc(request, desc, node->nod_arg[e_derived_field_value], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_derived_field_value], null_replacement);
 		return;
 
  	case nod_upcase:
  	case nod_lowcase:
- 		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
+ 		MAKE_desc(statement, &desc1, node->nod_arg[0], null_replacement);
 		if (desc1.dsc_dtype <= dtype_any_text || desc1.dsc_dtype == dtype_blob)
  		{
  			*desc = desc1;
@@ -550,16 +550,16 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
  
 	case nod_substr:
-		MAKE_desc(request, &desc1, node->nod_arg[0], null_replacement);
-		MAKE_desc(request, &desc2, node->nod_arg[1], null_replacement);
-		MAKE_desc(request, &desc3, node->nod_arg[2], null_replacement);
- 		DSqlDataTypeUtil(request).makeSubstr(desc, &desc1, &desc2, &desc3);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], null_replacement);
+		MAKE_desc(statement, &desc3, node->nod_arg[2], null_replacement);
+ 		DSqlDataTypeUtil(statement).makeSubstr(desc, &desc1, &desc2, &desc3);
   		return;
 
     case nod_trim:
-		MAKE_desc(request, &desc1, node->nod_arg[e_trim_value], null_replacement);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_trim_value], null_replacement);
 		if (node->nod_arg[e_trim_characters])
-			MAKE_desc(request, &desc2, node->nod_arg[e_trim_characters], null_replacement);
+			MAKE_desc(statement, &desc2, node->nod_arg[e_trim_characters], null_replacement);
 		else
 			desc2.dsc_flags = 0;
 
@@ -589,24 +589,24 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 	case nod_cast:
 		field = (dsql_fld*) node->nod_arg[e_cast_target];
 		MAKE_desc_from_field(desc, field);
-		MAKE_desc(request, &desc1, node->nod_arg[e_cast_source], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_cast_source], NULL);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
 
 	case nod_simple_case:
-		MAKE_desc_from_list(request, &desc1, node->nod_arg[e_simple_case_results],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[e_simple_case_results],
 							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_searched_case:
-		MAKE_desc_from_list(request, &desc1, node->nod_arg[e_searched_case_results],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[e_searched_case_results],
 							null_replacement, "CASE");
 		*desc = desc1;
 		return;
 
 	case nod_coalesce:
-		MAKE_desc_from_list(request, &desc1, node->nod_arg[0],
+		MAKE_desc_from_list(statement, &desc1, node->nod_arg[0],
 							null_replacement, "COALESCE");
 		*desc = desc1;
 		return;
@@ -619,8 +619,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_add:
 	case nod_subtract:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -764,8 +764,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_add2:
 	case nod_subtract2:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -939,8 +939,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_multiply:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -980,8 +980,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_multiply2:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -1039,8 +1039,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 	*/
 
 	case nod_divide:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -1077,8 +1077,8 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_divide2:
-		MAKE_desc(request, &desc1, node->nod_arg[0], node->nod_arg[1]);
-		MAKE_desc(request, &desc2, node->nod_arg[1], node->nod_arg[0]);
+		MAKE_desc(statement, &desc1, node->nod_arg[0], node->nod_arg[1]);
+		MAKE_desc(statement, &desc2, node->nod_arg[1], node->nod_arg[0]);
 
 		if (node->nod_arg[0]->nod_type == nod_null &&
 			node->nod_arg[1]->nod_type == nod_null)
@@ -1124,7 +1124,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_negate:
-		MAKE_desc(request, desc, node->nod_arg[0], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 
 		if (node->nod_arg[0]->nod_type == nod_null)
 		{
@@ -1136,7 +1136,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		// In Dialect 2 or 3, a string can never partipate in negation
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
-			if (request->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
+			if (statement->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
 				ERRD_post(isc_expression_eval_err, 0);
 			}
 			desc->dsc_dtype = dtype_double;
@@ -1155,7 +1155,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_alias:
-		MAKE_desc(request, desc, node->nod_arg[e_alias_value], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_alias_value], null_replacement);
 		return;
 
 	case nod_dbkey:
@@ -1209,19 +1209,19 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 				for (dsql_nod** p = nodeArgs->nod_arg;
 					 p < nodeArgs->nod_arg + nodeArgs->nod_count; ++p)
 				{
-					MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
+					MAKE_desc(statement, &(*p)->nod_desc, *p, NULL);
 					args.add(&(*p)->nod_desc);
 				}
 			}
 
 			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
-			DSqlDataTypeUtil(request).makeSysFunction(desc, name->str_data, args.getCount(), args.begin());
+			DSqlDataTypeUtil(statement).makeSysFunction(desc, name->str_data, args.getCount(), args.begin());
 
 			return;
 		}
 
 	case nod_gen_id:
-		MAKE_desc(request, &desc1, node->nod_arg[e_gen_id_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_long;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -1230,7 +1230,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_gen_id2:
-		MAKE_desc(request, &desc1, node->nod_arg[e_gen_id_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_gen_id_value], NULL);
 		desc->dsc_dtype = dtype_int64;
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
@@ -1241,7 +1241,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 
 	case nod_limit:
 	case nod_rows:
-		if (request->req_client_dialect <= SQL_DIALECT_V5) {
+		if (statement->req_client_dialect <= SQL_DIALECT_V5) {
 			desc->dsc_dtype = dtype_long;
 			desc->dsc_length = sizeof (SLONG);
 		}
@@ -1273,7 +1273,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		desc->dsc_flags = 0;
 		desc->dsc_ttype() = ttype_metadata;
 		desc->dsc_length =
-			USERNAME_LENGTH * METD_get_charset_bpc(request, ttype_metadata) +
+			USERNAME_LENGTH * METD_get_charset_bpc(statement, ttype_metadata) +
 			sizeof(USHORT);
 		return;
 
@@ -1309,7 +1309,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_extract:
-		MAKE_desc(request, &desc1, node->nod_arg[e_extract_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_extract_value], NULL);
 
 		switch (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
@@ -1331,7 +1331,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_strlen:
-		MAKE_desc(request, &desc1, node->nod_arg[e_strlen_value], NULL);
+		MAKE_desc(statement, &desc1, node->nod_arg[e_strlen_value], NULL);
 		desc->dsc_sub_type = 0;
 		desc->dsc_scale = 0;
 		desc->dsc_flags = (desc1.dsc_flags & DSC_nullable);
@@ -1367,7 +1367,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		 */
 		if (null_replacement)
 		{
-			MAKE_desc(request, desc, null_replacement, NULL);
+			MAKE_desc(statement, desc, null_replacement, NULL);
 			desc->dsc_flags |= (DSC_nullable | DSC_null);
 		}
 		else
@@ -1377,7 +1377,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 		return;
 
 	case nod_via:
-		MAKE_desc(request, desc, node->nod_arg[e_via_value_1], null_replacement);
+		MAKE_desc(statement, desc, node->nod_arg[e_via_value_1], null_replacement);
 	/**
 	    Set the descriptor flag as nullable. The
 	    select expression may or may not return 
@@ -1451,7 +1451,7 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	@param expression_name
 
  **/
-void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
+void MAKE_desc_from_list(CompiledStatement* statement, dsc* desc, dsql_nod* node,
 						 dsql_nod* null_replacement,
 						 const TEXT* expression_name)
 {
@@ -1461,17 +1461,17 @@ void MAKE_desc_from_list(dsql_req* request, dsc* desc, dsql_nod* node,
 
 	for (dsql_nod** p = node->nod_arg; p < node->nod_arg + node->nod_count; ++p)
 	{
-		MAKE_desc(request, &(*p)->nod_desc, *p, NULL);
+		MAKE_desc(statement, &(*p)->nod_desc, *p, NULL);
 		args.add(&(*p)->nod_desc);
 	}
 
-	DSqlDataTypeUtil(request).makeFromList(desc, expression_name, args.getCount(), args.begin());
+	DSqlDataTypeUtil(statement).makeFromList(desc, expression_name, args.getCount(), args.begin());
 
 	// If we have literal NULLs only, let the result be either
 	// CHAR(1) CHARACTER SET NONE or the context-provided datatype
 	if (desc->isNull() && null_replacement)
 	{
-		MAKE_desc(request, desc, null_replacement, NULL);
+		MAKE_desc(statement, desc, null_replacement, NULL);
 		desc->dsc_flags |= DSC_null | DSC_nullable;
 		return;
 	}

@@ -32,18 +32,19 @@
 
 namespace Jrd {
 	class dsql_req;
+	class CompiledStatement;
 	class dsql_fld;
 	class dsql_nod;
 	class dsql_str;
 };
 
 void DDL_execute(Jrd::dsql_req*);
-void DDL_generate(Jrd::dsql_req*, Jrd::dsql_nod*);
+void DDL_generate(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 bool DDL_ids(const Jrd::dsql_req*);
-void DDL_put_field_dtype(Jrd::dsql_req*, const Jrd::dsql_fld*, bool);
-void DDL_resolve_intl_type(Jrd::dsql_req*, Jrd::dsql_fld*, const Jrd::dsql_str*);
-void DDL_resolve_intl_type2(Jrd::dsql_req*, Jrd::dsql_fld*, const Jrd::dsql_str*, bool);
-void DDL_gen_block(Jrd::dsql_req*, Jrd::dsql_nod*);
+void DDL_put_field_dtype(Jrd::CompiledStatement*, const Jrd::dsql_fld*, bool);
+void DDL_resolve_intl_type(Jrd::CompiledStatement*, Jrd::dsql_fld*, const Jrd::dsql_str*);
+void DDL_resolve_intl_type2(Jrd::CompiledStatement*, Jrd::dsql_fld*, const Jrd::dsql_str*, bool);
+void DDL_gen_block(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 
 #endif // DSQL_DDL_PROTO_H
 

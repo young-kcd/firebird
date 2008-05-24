@@ -83,15 +83,15 @@ DmlNode* InAutonomousTransactionNode::parse(thread_db* tdbb, MemoryPool& pool,
 
 InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass()
 {
-	const bool autoTrans = dsqlRequest->req_flags & REQ_in_auto_trans_block;
-	dsqlRequest->req_flags |= REQ_in_auto_trans_block;
+	const bool autoTrans = compiledStatement->req_flags & REQ_in_auto_trans_block;
+	compiledStatement->req_flags |= REQ_in_auto_trans_block;
 
 	InAutonomousTransactionNode* node = FB_NEW(getPool()) InAutonomousTransactionNode(getPool());
-	node->dsqlRequest = dsqlRequest;
-	node->dsqlAction = PASS1_statement(dsqlRequest, dsqlAction);
+	node->compiledStatement = compiledStatement;
+	node->dsqlAction = PASS1_statement(compiledStatement, dsqlAction);
 
 	if (!autoTrans)
-		dsqlRequest->req_flags &= ~REQ_in_auto_trans_block;
+		compiledStatement->req_flags &= ~REQ_in_auto_trans_block;
 
 	return node;
 }
@@ -107,9 +107,9 @@ void InAutonomousTransactionNode::print(Firebird::string& text,
 
 void InAutonomousTransactionNode::genBlr()
 {
-	stuff(dsqlRequest, blr_auto_trans);
-	stuff(dsqlRequest, 0);	// to extend syntax in the future
-	GEN_statement(dsqlRequest, dsqlAction);
+	stuff(compiledStatement, blr_auto_trans);
+	stuff(compiledStatement, 0);	// to extend syntax in the future
+	GEN_statement(compiledStatement, dsqlAction);
 }
 
 

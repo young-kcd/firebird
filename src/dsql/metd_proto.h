@@ -37,6 +37,7 @@ typedef Firebird::GenericMap<MetaNamePair> MetaNamePairMap;
 namespace Jrd {
 	class dsql_req;
 	class dsql_str;
+	class CompiledStatement;
 };
 
 void METD_drop_charset(Jrd::dsql_req*, const Firebird::MetaName&);
@@ -56,14 +57,14 @@ USHORT   METD_get_domain_default(Jrd::dsql_req*, const TEXT*, bool*, UCHAR*, USH
 bool METD_get_exception(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_udf*      METD_get_function(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_prc* METD_get_procedure(Jrd::dsql_req*, const Jrd::dsql_str*);
-Jrd::dsql_rel* METD_get_relation(Jrd::dsql_req*, const Jrd::dsql_str*);
+Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*);
+Jrd::dsql_rel* METD_get_relation(Jrd::CompiledStatement*, const Jrd::dsql_str*);
 bool   METD_get_trigger(Jrd::dsql_req*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
 bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, char*, SSHORT*);
-Jrd::dsql_rel* METD_get_view_base(Jrd::dsql_req*   request,
+Jrd::dsql_rel* METD_get_view_base(Jrd::CompiledStatement* request,
 							 const char* view_name,	// UTF-8
 							 MetaNamePairMap& fields);
-Jrd::dsql_rel* METD_get_view_relation(Jrd::dsql_req*   request,
+Jrd::dsql_rel* METD_get_view_relation(Jrd::CompiledStatement* request,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias); // UTF-8
 

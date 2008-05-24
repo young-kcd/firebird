@@ -33,6 +33,7 @@ namespace Jrd {
 	class dsql_nod;
 	class dsql_fld;
 	class dsql_req;
+	class CompiledStatement;
 
 // Parameters to MAKE_constant
 	enum dsql_constant_type {
@@ -59,9 +60,9 @@ Jrd::dsql_nod* MAKE_const_slong(SLONG);
 Jrd::dsql_nod* MAKE_constant(Jrd::dsql_str*, Jrd::dsql_constant_type);
 Jrd::dsql_nod* MAKE_str_constant(Jrd::dsql_str*, SSHORT);
 Jrd::dsql_str* MAKE_cstring(const char*);
-void MAKE_desc(Jrd::dsql_req*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*);
+void MAKE_desc(Jrd::CompiledStatement*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*);
 void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);
-void MAKE_desc_from_list(Jrd::dsql_req*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*, const TEXT*);
+void MAKE_desc_from_list(Jrd::CompiledStatement*, dsc*, Jrd::dsql_nod*, Jrd::dsql_nod*, const TEXT*);
 Jrd::dsql_nod* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::dsql_nod*);
 Jrd::dsql_nod* MAKE_field_name(const char*);
 Jrd::dsql_nod* MAKE_list(Jrd::DsqlNodStack&);

@@ -366,8 +366,83 @@ enum REQ_TYPE
 	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
 };
 
+
 class dsql_req : public pool_alloc<dsql_type_req>
 {
+public:
+	explicit dsql_req(MemoryPool& p)
+		: req_pool(p),
+		  req_blr_data(p)
+	{
+	}
+
+	dsql_req*	req_parent;		//!< Source request, if cursor update
+	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
+	dsql_req*	req_offspring;	//!< Cursor update requests
+	MemoryPool&	req_pool;
+
+	dsql_sym* req_name;			//!< Name of request
+	dsql_sym* req_cursor;		//!< Cursor symbol, if any
+	dsql_dbb* req_dbb;			//!< DSQL attachment
+	jrd_tra* req_transaction;	//!< JRD transaction
+	dsql_nod* req_ddl_node;		//!< Store metadata request
+	class dsql_blb* req_blob;			//!< Blob info for blob requests
+	jrd_req*	req_request;			//!< JRD request
+	//dsql_str*	req_blr_string;			//!< String block during BLR generation
+	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
+	class dsql_msg* req_send;		//!< Message to be sent to start request
+	class dsql_msg* req_receive;	//!< Per record message to be received
+	class dsql_msg* req_async;		//!< Message for sending scrolling information
+	dsql_par* req_eof;			//!< End of file parameter
+	dsql_par* req_dbkey;		//!< Database key for current of
+	dsql_par* req_rec_version;	//!< Record Version for current of
+	dsql_par* req_parent_rec_version;	//!< parent record version
+	dsql_par* req_parent_dbkey;	//!< Parent database key for current of
+	//BLOB_PTR* req_blr;			//!< Running blr address
+	//BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
+	ULONG	req_inserts;			//!< records processed in request
+	ULONG	req_deletes;
+	ULONG	req_updates;
+	ULONG	req_selects;
+	REQ_TYPE req_type;			//!< Type of request
+	ULONG	req_flags;			//!< generic flag
+
+protected:
+	// Request should never be destroyed using delete.
+	// It dies together with it's pool in release_request().
+	~dsql_req()
+	{
+	}
+
+	// To avoid posix warning about missing public destructor declare 
+	// MemoryPool as friend class. In fact IT releases request memory!
+	friend class MemoryPool;
+};
+
+
+class CompiledStatement : public dsql_req
+{
+public:
+	explicit CompiledStatement(MemoryPool& p)
+		: dsql_req(p),
+		  req_debug_data(p),
+		  req_main_context(p),
+		  req_context(&req_main_context),
+		  req_union_context(p),
+		  req_dt_context(p),
+		  req_labels(p),
+		  req_cursors(p),
+		  req_curr_ctes(p),
+		  req_ctes(p),
+		  req_cte_aliases(p)
+	{
+	}
+
+protected:
+	// Request should never be destroyed using delete.
+	// It dies together with it's pool in release_request().
+	~CompiledStatement();
+
 public:
 	// begin - member functions that should be private
 	void		append_uchar(UCHAR byte);
@@ -399,77 +474,6 @@ public:
 	void	put_debug_argument(UCHAR, USHORT, const TEXT*);
 	void	append_debug_info();
 	// end - member functions that should be private
-
-	explicit dsql_req(MemoryPool& p) 
-		: req_pool(p), 
-		req_main_context(p), 
-		req_context(&req_main_context), 
-		req_union_context(p), 
-		req_dt_context(p), 
-		req_blr_data(p),
-		req_labels(p), 
-		req_cursors(p),
-		req_debug_data(p),
-		req_curr_ctes(p),
-		req_ctes(p),
-		req_cte_aliases(p) { }
-
-	dsql_req*	req_parent;		//!< Source request, if cursor update
-	dsql_req*	req_sibling;	//!< Next sibling request, if cursor update
-	dsql_req*	req_offspring;	//!< Cursor update requests
-	MemoryPool&	req_pool;
-	DsqlContextStack	req_main_context;
-	DsqlContextStack*	req_context;
-    DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
-    DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
-	dsql_sym* req_name;			//!< Name of request
-	dsql_sym* req_cursor;		//!< Cursor symbol, if any
-	dsql_dbb* req_dbb;			//!< DSQL attachment
-	jrd_tra* req_transaction;	//!< JRD transaction
-	dsql_nod* req_ddl_node;		//!< Store metadata request
-	dsql_nod* req_blk_node;		//!< exec_block node 
-	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	jrd_req*	req_request;			//!< JRD request
-	//dsql_str*	req_blr_string;			//!< String block during BLR generation
-	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
-	class dsql_msg* req_send;		//!< Message to be sent to start request
-	class dsql_msg* req_receive;	//!< Per record message to be received
-	class dsql_msg* req_async;		//!< Message for sending scrolling information
-	dsql_par* req_eof;			//!< End of file parameter
-	dsql_par* req_dbkey;		//!< Database key for current of
-	dsql_par* req_rec_version;	//!< Record Version for current of
-	dsql_par* req_parent_rec_version;	//!< parent record version
-	dsql_par* req_parent_dbkey;	//!< Parent database key for current of
-	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
-	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
-	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
-	//BLOB_PTR* req_blr;			//!< Running blr address
-	//BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
-	ULONG	req_inserts;			//!< records processed in request
-	ULONG	req_deletes;
-	ULONG	req_updates;
-	ULONG	req_selects;
-	REQ_TYPE req_type;			//!< Type of request
-	ULONG	req_base_offset;		//!< place to go back and stuff in blr length
-	USHORT	req_context_number;	//!< Next available context number
-	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
-	//USHORT	req_message_number;	//!< Next available message number
-	USHORT	req_loop_level;		//!< Loop level
-	DsqlStrStack	req_labels;			//!< Loop labels
-	USHORT	req_cursor_number;	//!< Cursor number
-	DsqlNodStack	req_cursors;		//!< Cursors
-	USHORT	req_in_select_list;	//!< now processing "select list"
-	USHORT	req_in_where_clause;	//!< processing "where clause"
-	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
-	USHORT	req_in_having_clause;	//!< processing "having clause"
-	USHORT	req_in_order_by_clause;	//!< processing "order by clause"
-	USHORT	req_error_handlers;	//!< count of active error handlers
-	ULONG	req_flags;			//!< generic flag
-	USHORT	req_client_dialect;	//!< dialect passed into the API call
-	USHORT	req_in_outer_join;	//!< processing inside outer-join part
-	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
-
-	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
 
 	void addCTEs(dsql_nod* list);
 	dsql_nod* findCTE(const dsql_str* name);
@@ -505,40 +509,59 @@ public:
 		psql = value;
 	}
 
+	dsql_nod* req_blk_node;		//!< exec_block node 
+	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
+	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
+	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
+	DsqlContextStack	req_main_context;
+	DsqlContextStack*	req_context;
+	DsqlContextStack	req_union_context;	//!< Save contexts for views of unions
+	DsqlContextStack	req_dt_context;		//!< Save contexts for views of derived tables
+	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
+	ULONG	req_base_offset;		//!< place to go back and stuff in blr length
+	USHORT	req_context_number;	//!< Next available context number
+	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
+	//USHORT	req_message_number;	//!< Next available message number
+	USHORT	req_loop_level;		//!< Loop level
+	DsqlStrStack	req_labels;			//!< Loop labels
+	USHORT	req_cursor_number;	//!< Cursor number
+	DsqlNodStack	req_cursors;		//!< Cursors
+	USHORT	req_in_select_list;	//!< now processing "select list"
+	USHORT	req_in_where_clause;	//!< processing "where clause"
+	USHORT	req_in_group_by_clause;	//!< processing "group by clause"
+	USHORT	req_in_having_clause;	//!< processing "having clause"
+	USHORT	req_in_order_by_clause;	//!< processing "order by clause"
+	USHORT	req_error_handlers;	//!< count of active error handlers
+	USHORT	req_client_dialect;	//!< dialect passed into the API call
+	USHORT	req_in_outer_join;	//!< processing inside outer-join part
+	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
+
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
 	USHORT req_recursive_ctx_id;		// id of recursive union stream context
 
 private:
-	// Request should never be destroyed using delete.
-	// It dies together with it's pool in release_request().
-	~dsql_req();
-
 	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
 	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
 	const dsql_str* const* req_curr_cte_alias;
 
 	bool psql;
-
-	// To avoid posix warning about missing public destructor declare 
-	// MemoryPool as friend class. In fact IT releases request memory!
-	friend class MemoryPool;
 };
 
 
 class PsqlChanger
 {
 public:
-	PsqlChanger(dsql_req* aRequest, bool value)
-		: request(aRequest)
+	PsqlChanger(CompiledStatement* aStatement, bool value)
+		: statement(aStatement)
 	{
-		oldValue = request->isPsql();
-		request->setPsql(value);
+		oldValue = statement->isPsql();
+		statement->setPsql(value);
 	}
 
 	~PsqlChanger()
 	{
-		request->setPsql(oldValue);
+		statement->setPsql(oldValue);
 	}
 
 private:
@@ -546,7 +569,7 @@ private:
 	PsqlChanger(const PsqlChanger&);
 	PsqlChanger& operator =(const PsqlChanger&);
 
-	dsql_req* request;
+	CompiledStatement* statement;
 	bool oldValue;
 };
 

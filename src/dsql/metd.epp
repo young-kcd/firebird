@@ -1141,7 +1141,7 @@ dsql_nod* METD_get_primary_key(dsql_req* request, const dsql_str* relation_name)
 }
 
 
-dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
+dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
@@ -1157,37 +1157,37 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = statement->req_dbb;
 	dsql_fld* parameter;
 	dsql_fld** ptr;
 	dsql_prc* temp;
 	SSHORT type, count, defaults;
 
-	// see if the procedure is the one currently being defined in this request 
+	// see if the procedure is the one currently being defined in this statement 
 
-	if (((temp = request->req_procedure) != NULL) &&
+	if (((temp = statement->req_procedure) != NULL) &&
 		temp->prc_name == name->str_data)
 	{
 		return temp;
 	}
 
-	MutexHolder holder(request);
+	MutexHolder holder(statement);
 
 	// Start by seeing if symbol is already defined 
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_procedure);
+	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure);
 	if (symbol)
 		return (dsql_prc*) symbol->sym_object;
 
 	// now see if it is in the database 
 
-	validateTransaction(request);
+	validateTransaction(statement);
 
 	dsql_prc* procedure = NULL;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_procedure, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$PROCEDURES WITH
 		X.RDB$PROCEDURE_NAME EQ name->str_data 
 
@@ -1224,7 +1224,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 
 		jrd_req* handle2 = CMP_find_request(tdbb, irq_parameters, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
+		FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 			PR IN RDB$PROCEDURE_PARAMETERS CROSS
 			FLD IN RDB$FIELDS
 			WITH FLD.RDB$FIELD_NAME EQ PR.RDB$FIELD_SOURCE
@@ -1246,7 +1246,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			{
 				jrd_req* handle3 = CMP_find_request(tdbb, irq_parameters2, IRQ_REQUESTS);
 
-				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE request->req_transaction)
+				FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
 					PR2 IN RDB$PROCEDURE_PARAMETERS
 					WITH PR2.RDB$PROCEDURE_NAME EQ PR.RDB$PROCEDURE_NAME AND
 						 PR2.RDB$PARAMETER_NAME EQ PR.RDB$PARAMETER_NAME
@@ -1337,7 +1337,7 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 	// Since we could give up control due to the THREAD_EXIT and THEAD_ENTER
 	// calls, another thread may have added the same procedure in the mean time
 
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_procedure)))
+	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_procedure)))
 	{
 		// Get rid of all the stuff we just read in. Use existing one 
 		free_procedure(procedure);
@@ -1359,14 +1359,14 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 		symbol->sym_length = procedure->prc_name.length();
 		symbol->sym_type = SYM_procedure;
 		symbol->sym_dbb = dbb;
-		insert_symbol(request->req_dbb, symbol);
+		insert_symbol(statement->req_dbb, symbol);
 	}
 
 	return procedure;
 }
 
 
-dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
+dsql_rel* METD_get_relation(CompiledStatement* statement, const dsql_str* name)
 {
 /**************************************
  *
@@ -1381,38 +1381,38 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = statement->req_dbb;
 	dsql_fld* field;
 	dsql_fld** ptr;
 	dsql_rel* temp;
 
-	// See if the relation is the one currently being defined in this request 
+	// See if the relation is the one currently being defined in this statement 
 
-	if (((temp = request->req_relation) != NULL) &&
+	if (((temp = statement->req_relation) != NULL) &&
 		temp->rel_name == name->str_data)
 	{
 		return temp;
 	}
 
-	MutexHolder holder(request);
+	MutexHolder holder(statement);
 
 	// Start by seeing if symbol is already defined 
 
-	dsql_sym* symbol = lookup_symbol(request->req_dbb, name, SYM_relation);
+	dsql_sym* symbol = lookup_symbol(statement->req_dbb, name, SYM_relation);
 	if (symbol)
 		return (dsql_rel*) symbol->sym_object;
 
 	// If the relation id or any of the field ids have not yet been assigned,
-	// and this is a type of request which does not use ids, prepare a
+	// and this is a type of statement which does not use ids, prepare a
 	// temporary relation block to provide information without caching it
 
-	validateTransaction(request);
+	validateTransaction(statement);
 
 	bool permanent = true;
 
 	jrd_req* handle1 = CMP_find_request(tdbb, irq_rel_ids, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 		REL IN RDB$RELATIONS
 		CROSS RFR IN RDB$RELATION_FIELDS OVER RDB$RELATION_NAME
 		WITH REL.RDB$RELATION_NAME EQ name->str_data
@@ -1436,7 +1436,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle2 = CMP_find_request(tdbb, irq_relation, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name->str_data
 
 		if (!DSQL_REQUEST(irq_relation))
@@ -1450,7 +1450,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	        relation = FB_NEW(pool) dsql_rel(pool);
 	        relation->rel_id = X.RDB$RELATION_ID;
 	    }
-	    else if (!DDL_ids(request)) {
+	    else if (!DDL_ids(statement)) {
 	        relation = FB_NEW(pool) dsql_rel(pool);
 	    }
 
@@ -1485,7 +1485,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 
 	jrd_req* handle3 = CMP_find_request(tdbb, irq_fields, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle3 TRANSACTION_HANDLE statement->req_transaction)
 		FLX IN RDB$FIELDS CROSS
 		RFR IN RDB$RELATION_FIELDS
 		WITH FLX.RDB$FIELD_NAME EQ RFR.RDB$FIELD_SOURCE
@@ -1509,7 +1509,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	        field = FB_NEW(pool) dsql_fld(pool);
 			field->fld_id = RFR.RDB$FIELD_ID;
 	    }
-	    else if (!DDL_ids(request))
+	    else if (!DDL_ids(statement))
 	        field = FB_NEW(pool) dsql_fld(pool);
 
 		if (field) {
@@ -1566,7 +1566,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 	if (!DSQL_REQUEST(irq_fields))
 		DSQL_REQUEST(irq_fields) = handle3;
 
-	if ((symbol = lookup_symbol(request->req_dbb, name, SYM_relation)))
+	if ((symbol = lookup_symbol(statement->req_dbb, name, SYM_relation)))
 	{
 		free_relation(relation);
 		return (dsql_rel*) symbol->sym_object;
@@ -1586,7 +1586,7 @@ dsql_rel* METD_get_relation(dsql_req* request, const dsql_str* name)
 		symbol->sym_length = relation->rel_name.length();
 		symbol->sym_type = SYM_relation;
 		symbol->sym_dbb = dbb;
-		insert_symbol(request->req_dbb, symbol);
+		insert_symbol(statement->req_dbb, symbol);
 	}
 	else {
 		relation->rel_flags |= REL_new_relation;
@@ -1688,7 +1688,7 @@ bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT*
 }
 
 
-dsql_rel* METD_get_view_base(dsql_req* request,
+dsql_rel* METD_get_view_base(CompiledStatement* statement,
 							 const char* view_name,	// UTF-8
 							 MetaNamePairMap& fields)
 {
@@ -1709,11 +1709,11 @@ dsql_rel* METD_get_view_base(dsql_req* request,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(statement);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = statement->req_dbb;
 	bool first = true;
 	bool cont = true;
 	MetaNamePairMap previousAux;
@@ -1724,7 +1724,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 	{
 		jrd_req* handle1 = CMP_find_request(tdbb, irq_view_base, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE request->req_transaction)
+		FOR(REQUEST_HANDLE handle1 TRANSACTION_HANDLE statement->req_transaction)
 			X IN RDB$VIEW_RELATIONS
 			WITH X.RDB$VIEW_NAME EQ view_name
 
@@ -1744,7 +1744,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 			dsql_str* relation_name =
 				MAKE_string(X.RDB$RELATION_NAME, strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(request, relation_name);
+			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 
 			Firebird::Array<Firebird::MetaName> ambiguities;
@@ -1758,7 +1758,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 
 			jrd_req* handle2 = CMP_find_request(tdbb, irq_view_base_flds, IRQ_REQUESTS);
 
-			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE request->req_transaction)
+			FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE statement->req_transaction)
 				RFL IN RDB$RELATION_FIELDS
 				WITH RFL.RDB$RELATION_NAME EQ X.RDB$VIEW_NAME
 
@@ -1832,7 +1832,7 @@ dsql_rel* METD_get_view_base(dsql_req* request,
 }
 
 
-dsql_rel* METD_get_view_relation(dsql_req* request,
+dsql_rel* METD_get_view_relation(CompiledStatement* statement,
 								const char* view_name,         // UTF-8
 								const char* relation_or_alias) // UTF-8
 {
@@ -1850,15 +1850,15 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	validateTransaction(request);
+	validateTransaction(statement);
 
 	dsql_rel* relation = NULL;
 
-	dsql_dbb* dbb = request->req_dbb;
+	dsql_dbb* dbb = statement->req_dbb;
 
 	jrd_req* handle = CMP_find_request(tdbb, irq_view, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE request->req_transaction)
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE statement->req_transaction)
 		X IN RDB$VIEW_RELATIONS WITH X.RDB$VIEW_NAME EQ view_name
 
 		if (!DSQL_REQUEST(irq_view))
@@ -1872,13 +1872,13 @@ dsql_rel* METD_get_view_relation(dsql_req* request,
 		{
 			dsql_str* relation_name = MAKE_string(X.RDB$RELATION_NAME,
 										strlen(X.RDB$RELATION_NAME));
-			relation = METD_get_relation(request, relation_name);
+			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 			return relation;
 		}
 
 		relation =
-			METD_get_view_relation(request, X.RDB$RELATION_NAME, relation_or_alias);
+			METD_get_view_relation(statement, X.RDB$RELATION_NAME, relation_or_alias);
 		if (relation) {
 			return relation;
 		}

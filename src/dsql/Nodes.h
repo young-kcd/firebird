@@ -36,7 +36,7 @@ class Node : public Firebird::PermanentStorage
 public:
 	explicit Node(MemoryPool& pool)
 		: PermanentStorage(pool),
-		  dsqlRequest(NULL)
+		  compiledStatement(NULL)
 	{
 	}
 
@@ -45,9 +45,9 @@ public:
 	}
 
 public:
-	virtual Node* dsqlPass(dsql_req* aDsqlRequest)
+	virtual Node* dsqlPass(CompiledStatement* aCompiledStatement)
 	{
-		dsqlRequest = aDsqlRequest;
+		compiledStatement = aCompiledStatement;
 		return dsqlPass();
 	}
 
@@ -61,7 +61,7 @@ protected:
 	}
 
 protected:
-	dsql_req* dsqlRequest;
+	CompiledStatement* compiledStatement;
 };
 
 
@@ -74,10 +74,10 @@ public:
 	}
 
 public:
-	virtual Node* dsqlPass(dsql_req* aDsqlRequest)
+	virtual Node* dsqlPass(CompiledStatement* aCompiledStatement)
 	{
-		aDsqlRequest->req_type = REQ_DDL;
-		return Node::dsqlPass(aDsqlRequest);
+		aCompiledStatement->req_type = REQ_DDL;
+		return Node::dsqlPass(aCompiledStatement);
 	}
 
 public:
