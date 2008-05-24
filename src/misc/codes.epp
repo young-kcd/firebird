@@ -345,9 +345,9 @@ static void build_msgfac_h(void)
 	fprintf(msgfac, "\n");
 
 	fprintf(msgfac, "struct _facilities {\n");
-	fprintf(msgfac, "\tint  fac_code;\n");
-	fprintf(msgfac, "\tchar *facility;\n");
-	fprintf(msgfac, "\t};\n\n");
+	fprintf(msgfac, "\tint fac_code;\n");
+	fprintf(msgfac, "\tconst char* facility;\n");
+	fprintf(msgfac, "};\n\n");
 
 	fprintf(msgfac, "static const struct _facilities facilities[] = {\n");
 	FOR F IN FACILITIES WITH ANY FAC_CODE IN SYSTEM_ERRORS OVER FAC_CODE
