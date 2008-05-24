@@ -1,3 +1,27 @@
+2008-05-24 05:19  asfernandes
+
+	* firebird2/src/dsql/: DdlNodes.epp (1.2), Nodes.h (1.2),
+	StmtNodes.cpp (1.3), ddl.cpp (1.239), ddl_proto.h (1.16), dsql.cpp
+	(1.247), dsql.h (1.133), gen.cpp (1.150), gen_proto.h (1.16),
+	make.cpp (1.161), make_proto.h (1.32), metd.epp (1.130),
+	metd_proto.h (1.31), pass1.cpp (1.388), pass1_proto.h (1.18),
+	utld.cpp (1.51), utld_proto.h (1.23):
+
+	Split dsql_req into dsql_req and CompiledStatement. This should be
+	my last refactoring to 2.5: - dsql_req becomes a running request; -
+	CompiledStatement is derived from dsql_req. The compilation state
+	previously in dsql_req comes to here; - Rename many "request"
+	parameters to "statement" where type is changed from dsql_req to
+	CompiledStatement.  This changes makes easy the path to support
+	compiled statement cache.
+
+2008-05-24 04:08  asfernandes
+
+	* firebird2/src/: include/gen/msg_facs.h (1.12), misc/codes.epp
+	(1.26):
+
+	Fix warnings
+
 2008-05-23 15:27  robocop
 
 	* firebird2/src/: burp/burp.cpp (1.145), burp/spit.cpp (1.32),
