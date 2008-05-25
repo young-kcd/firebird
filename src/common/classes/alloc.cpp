@@ -215,7 +215,7 @@ inline void MemoryPool::increment_usage(size_t size)
 {
 	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
 	{
-		size_t temp = statistics->mst_usage += size;
+		const size_t temp = statistics->mst_usage += size;
 		if (temp > statistics->mst_max_usage)
 			statistics->mst_max_usage = temp;
 	}
@@ -235,7 +235,7 @@ inline void MemoryPool::increment_mapping(size_t size)
 {
 	for (MemoryStats* statistics = stats; statistics; statistics = statistics->mst_parent)
 	{
-		size_t temp = statistics->mst_mapped += size;
+		const size_t temp = statistics->mst_mapped += size;
 		if (temp > statistics->mst_max_mapped)
 			statistics->mst_max_mapped = temp;
 	}
