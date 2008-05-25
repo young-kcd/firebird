@@ -1115,7 +1115,7 @@ static void define_computed(CompiledStatement* statement,
  *
  **************************************/
 
-	dsql_nod* ddl_node = statement->req_ddl_node;
+	dsql_nod* const saved_ddl_node = statement->req_ddl_node;
 	statement->req_ddl_node = node;
 
 	// Get the table node & set up correct context
@@ -1194,7 +1194,7 @@ static void define_computed(CompiledStatement* statement,
 	}
 
 	statement->req_type = REQ_DDL;
-	statement->req_ddl_node = ddl_node;
+	statement->req_ddl_node = saved_ddl_node;
 	reset_context_stack(statement);
 
 	// generate the source text
@@ -1223,7 +1223,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 /* make the "define trigger" node the current statement ddl node so
    that generating of BLR will be appropriate for trigger */
 
-	dsql_nod* ddl_node = statement->req_ddl_node;
+	dsql_nod* const saved_ddl_node = statement->req_ddl_node;
 
 	statement->req_ddl_node = node;
 
@@ -1330,7 +1330,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
    is a data definition statement; also reset the ddl node */
 
 	statement->req_type = REQ_DDL;
-	statement->req_ddl_node = ddl_node;
+	statement->req_ddl_node = saved_ddl_node;
 	reset_context_stack(statement);
 }
 
@@ -4081,11 +4081,11 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_nod* ddl_node = statement->req_ddl_node;
+	dsql_nod* const saved_ddl_node = statement->req_ddl_node;
 
-	dsql_nod* select_expr = ddl_node->nod_arg[e_view_select];
+	dsql_nod* select_expr = saved_ddl_node->nod_arg[e_view_select];
 	select_expr = select_expr->nod_arg[e_sel_query_spec];
-	dsql_nod* view_fields = ddl_node->nod_arg[e_view_fields];
+	dsql_nod* view_fields = saved_ddl_node->nod_arg[e_view_fields];
 
 /* make the "define trigger" node the current statement ddl node so
    that generating of BLR will be appropriate for trigger */
@@ -4220,7 +4220,7 @@ static void define_view_trigger(CompiledStatement* statement, dsql_nod* node, ds
    is a data definition statement; also reset the ddl node */
 
 	statement->req_type = REQ_DDL;
-	statement->req_ddl_node = ddl_node;
+	statement->req_ddl_node = saved_ddl_node;
 	reset_context_stack(statement);
 }
 

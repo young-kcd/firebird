@@ -9403,10 +9403,10 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	eql->nod_arg[0]->nod_arg[e_internal_info] = MAKE_const_slong(internal_rows_affected);
 	eql->nod_arg[1] = MAKE_const_slong(0);
 
-	ULONG req_flags = statement->req_flags;
+	const ULONG save_req_flags = statement->req_flags;
 	statement->req_flags |= REQ_block;	// to compile ROW_COUNT
 	eql = PASS1_node(statement, eql);
-	statement->req_flags = req_flags;
+	statement->req_flags = save_req_flags;
 
 	// if (ROW_COUNT = 0) then INSERT
 	dsql_nod* if_nod = MAKE_node(nod_if, e_if_count);
