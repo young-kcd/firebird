@@ -32,9 +32,9 @@ void	GEN_start_transaction(Jrd::CompiledStatement*, const Jrd::dsql_nod*);
 void	GEN_statement(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 
 // CVC: I think this can be replaced by request->append_uchar(byte) in the calling code.
-inline void stuff(Jrd::CompiledStatement* request, const UCHAR byte)
+inline void stuff(Jrd::CompiledStatement* statement, const UCHAR byte)
 {
-	request->req_blr_data.add(byte);
+	statement->req_blr_data.add(byte);
 }
 
 #endif //  DSQL_GEN_PROTO_H
