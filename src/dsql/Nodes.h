@@ -45,7 +45,7 @@ public:
 	}
 
 public:
-	virtual Node* dsqlPass(CompiledStatement* aCompiledStatement)
+	Node* dsqlPass(CompiledStatement* aCompiledStatement)
 	{
 		compiledStatement = aCompiledStatement;
 		return dsqlPass();
@@ -73,11 +73,11 @@ public:
 	{
 	}
 
-public:
-	virtual Node* dsqlPass(CompiledStatement* aCompiledStatement)
+protected:
+	virtual Node* dsqlPass()
 	{
-		aCompiledStatement->req_type = REQ_DDL;
-		return Node::dsqlPass(aCompiledStatement);
+		compiledStatement->req_type = REQ_DDL;
+		return this;
 	}
 
 public:

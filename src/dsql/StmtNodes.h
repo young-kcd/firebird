@@ -42,8 +42,10 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb);
 
-public:
+protected:
 	virtual InAutonomousTransactionNode* dsqlPass();
+
+public:
 	virtual void print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const;
 	virtual void genBlr();
 	virtual InAutonomousTransactionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
