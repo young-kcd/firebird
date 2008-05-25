@@ -54,7 +54,7 @@ public:
 		TYPE_STRING_VECTOR
 	};
 
-	typedef char* ConfigKey;
+	typedef const char* ConfigKey;
 	typedef IPTR ConfigValue;
 
 	struct ConfigEntry
