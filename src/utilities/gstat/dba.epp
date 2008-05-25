@@ -341,8 +341,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			str = "-*NONE*";
 		in_sw_tab_t* in_sw_tab;
 		const TEXT* q;
-		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name;
-			 in_sw_tab++)
+		for (in_sw_tab = dba_in_sw_table; q = in_sw_tab->in_sw_name; in_sw_tab++)
 		{
 			TEXT c;
 			for (const TEXT* p = str + 1; c = *p++;) {

@@ -386,9 +386,9 @@ public:
 	dsql_dbb* req_dbb;			//!< DSQL attachment
 	jrd_tra* req_transaction;	//!< JRD transaction
 	dsql_nod* req_ddl_node;		//!< Store metadata request
-	class dsql_blb* req_blob;			//!< Blob info for blob requests
-	jrd_req*	req_request;			//!< JRD request
-	//dsql_str*	req_blr_string;			//!< String block during BLR generation
+	class dsql_blb* req_blob;	//!< Blob info for blob requests
+	jrd_req*	req_request;	//!< JRD request
+	//dsql_str*	req_blr_string;	//!< String block during BLR generation
 	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
 	class dsql_msg* req_send;		//!< Message to be sent to start request
 	class dsql_msg* req_receive;	//!< Per record message to be received
@@ -398,9 +398,9 @@ public:
 	dsql_par* req_rec_version;	//!< Record Version for current of
 	dsql_par* req_parent_rec_version;	//!< parent record version
 	dsql_par* req_parent_dbkey;	//!< Parent database key for current of
-	//BLOB_PTR* req_blr;			//!< Running blr address
+	//BLOB_PTR* req_blr;		//!< Running blr address
 	//BLOB_PTR* req_blr_yellow;	//!< Threshold for upping blr buffer size
-	ULONG	req_inserts;			//!< records processed in request
+	ULONG	req_inserts;		//!< records processed in request
 	ULONG	req_deletes;
 	ULONG	req_updates;
 	ULONG	req_selects;

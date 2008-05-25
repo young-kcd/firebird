@@ -468,7 +468,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// Copy the static const table to a local array for processing.
 	in_sw_tab_t burp_in_sw_table[FB_NELEM(reference_burp_in_sw_table)];
 
-	for (size_t maxt = FB_NELEM(reference_burp_in_sw_table), iter = 0; iter < maxt; ++ iter)
+	for (size_t maxt = FB_NELEM(reference_burp_in_sw_table), iter = 0; iter < maxt; ++iter)
 	{
 		burp_in_sw_table[iter] = reference_burp_in_sw_table[iter];
 		burp_in_sw_table[iter].in_sw_state = false;
@@ -763,7 +763,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				}
 			}
 		}					//else if (in_sw_tab->in_sw == IN_SW_BURP_Y) 
-	}							// for
+	}						// for
 
 	// reverse the linked list of file blocks 
 

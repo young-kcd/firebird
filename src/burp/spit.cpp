@@ -700,10 +700,8 @@ static int gen_multy_bakup_files(b_fil* file_list,
 										&byte_read, &byte_write);
 				switch (ret_cd) {
 				case FB_FAILURE:
-					{
-						free(io_buffer);
-						return FB_FAILURE;
-					}
+					free(io_buffer);
+					return FB_FAILURE;
 
 				case FILE_IS_FULL:
 					{

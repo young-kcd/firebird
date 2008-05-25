@@ -478,7 +478,7 @@ void DDL_resolve_intl_type(CompiledStatement* statement, dsql_fld* field, const 
 void DDL_resolve_intl_type2(CompiledStatement* statement,
                             dsql_fld* field,
                             const dsql_str* collation_name,
-                            bool     modifying)
+                            bool modifying)
 {
 /**************************************
  *
@@ -962,9 +962,9 @@ static bool is_array_or_blob(CompiledStatement* statement, const dsql_nod* node)
 }
 
 
-static void check_constraint(	CompiledStatement*		statement,
-								dsql_nod*		element,
-								bool delete_trigger_required)
+static void check_constraint(CompiledStatement* statement,
+							 dsql_nod* element,
+							 bool delete_trigger_required)
 {
 /**************************************
  *
@@ -1200,7 +1200,7 @@ static void define_computed(CompiledStatement* statement,
 	// generate the source text
 	const dsql_str* source = (dsql_str*) node->nod_arg[e_cmp_text];
 	fb_assert(source->str_length <= MAX_USHORT);
-	statement->append_string(	isc_dyn_fld_computed_source,
+	statement->append_string(isc_dyn_fld_computed_source,
 							source->str_data,
 							(USHORT) source->str_length);
 }
@@ -1237,7 +1237,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 	dsql_nod* relation_node = node->nod_arg[e_cnstr_table];
 	const dsql_str* relation_name = (dsql_str*) relation_node->nod_arg[e_rln_name];
 
-	statement->append_string(	isc_dyn_rel_name,
+	statement->append_string(isc_dyn_rel_name,
 							relation_name->str_data,
 							(USHORT) relation_name->str_length);
 
@@ -1248,7 +1248,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 		ULONG j = find_start_of_body(source);
 		if (j < source->str_length)
 		{
-			statement->append_string(	isc_dyn_trg_source,
+			statement->append_string(isc_dyn_trg_source,
 									source->str_data + j,
 									source->str_length - j);
 		}
@@ -1335,7 +1335,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 }
 
 
-static void define_database( CompiledStatement* statement)
+static void define_database(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -1909,8 +1909,7 @@ static void define_exception( CompiledStatement* statement, NOD_TYPE op)
 }
 
 
-static void define_field(
-						 CompiledStatement* statement,
+static void define_field(CompiledStatement* statement,
 						 dsql_nod* element, SSHORT position,
 						 const dsql_str* relation_name,
 						 const dsql_nod* pkcols)
@@ -2191,7 +2190,7 @@ static SSHORT getBlobFilterSubType(CompiledStatement* statement, const dsql_nod*
 	return blob_sub_type;
 }
 
-static void define_filter( CompiledStatement* statement)
+static void define_filter(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -2220,7 +2219,7 @@ static void define_filter( CompiledStatement* statement)
 }
 
 
-static void define_collation( CompiledStatement* statement)
+static void define_collation(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -2321,7 +2320,7 @@ static void define_collation( CompiledStatement* statement)
 }
 
 
-static void define_generator( CompiledStatement* statement)
+static void define_generator(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -2843,7 +2842,7 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 // Define a constraint, either as part of a create
 // table or an alter table statement.
 //
-static void define_rel_constraint( CompiledStatement* statement, dsql_nod* element)
+static void define_rel_constraint(CompiledStatement* statement, dsql_nod* element)
 {
 	const dsql_str* string = (dsql_str*) element->nod_arg[e_rct_name];
 	const char* constraint_name = string ? string->str_data : 0;
@@ -3301,7 +3300,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 }
 
 
-static void define_udf( CompiledStatement* statement)
+static void define_udf(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -3697,7 +3696,7 @@ static void define_upd_cascade_trg(	CompiledStatement*    statement,
 }
 
 
-static void define_view( CompiledStatement* statement, NOD_TYPE op)
+static void define_view(CompiledStatement* statement, NOD_TYPE op)
 {
 /**************************************
  *
@@ -3769,7 +3768,7 @@ static void define_view( CompiledStatement* statement, NOD_TYPE op)
 
 	const dsql_str* source = (dsql_str*) node->nod_arg[e_view_source];
 	fb_assert(source->str_length <= MAX_USHORT);
-	statement->append_string(	isc_dyn_view_source,
+	statement->append_string(isc_dyn_view_source,
 							source->str_data,
 							source->str_length);
 
@@ -4485,7 +4484,7 @@ static void fix_default_source(dsql_str* string)
 }
 
 
-static void foreign_key( CompiledStatement* statement, dsql_nod* element, const char* index_name)
+static void foreign_key(CompiledStatement* statement, dsql_nod* element, const char* index_name)
 {
 /**************************************
  *
@@ -4784,7 +4783,7 @@ static void generate_dyn(CompiledStatement* statement, dsql_nod* node)
 }
 
 
-static void grant_revoke( CompiledStatement* statement)
+static void grant_revoke(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -6431,7 +6430,7 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 }
 
 
-static void reset_context_stack( CompiledStatement* statement)
+static void reset_context_stack(CompiledStatement* statement)
 {
 /**************************************
  *
@@ -7020,7 +7019,7 @@ void CompiledStatement::append_file_start(ULONG start)
 //
 // common code factored out
 //
-void CompiledStatement::generate_unnamed_trigger_beginning(	bool		on_update_trigger,
+void CompiledStatement::generate_unnamed_trigger_beginning(bool	on_update_trigger,
 												const char*		prim_rel_name,
 												const dsql_nod*	prim_columns,
 												const char*		for_rel_name,
@@ -7147,7 +7146,7 @@ void CompiledStatement::append_debug_info()
 	if (len + 4 < MAX_USHORT) 
 	{
 		append_uchar(isc_dyn_debug_info);
-		append_ushort( req_debug_data.getCount() );
+		append_ushort(req_debug_data.getCount());
 
 		const UCHAR *const end = req_debug_data.end();
 		for (const UCHAR *c = req_debug_data.begin(); c < end; c++)

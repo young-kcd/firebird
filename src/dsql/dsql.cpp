@@ -676,14 +676,6 @@ void DSQL_prepare(thread_db* tdbb,
 			  isc_arg_gds, isc_dsql_open_cursor_request, 0);
 	}
 
-/* Allocate a new request block and then prepare the request.  We want to
-   keep the old request around, as is, until we know that we are able
-   to prepare the new one. */
-/* It would be really *nice* to know *why* we want to
-   keep the old request around -- 1994-October-27 David Schnepper */
-/* Because that's the client's allocated statement handle and we
-   don't want to trash the context in it -- 2001-Oct-27 Ann Harrison */
-
 	dsql_req* request = NULL;
 
 	try {
@@ -731,6 +723,14 @@ void DSQL_prepare(thread_db* tdbb,
 			parser_version = dialect % 10;
 			dialect /= 10;
 		}
+
+		// Allocate a new request block and then prepare the request.  We want to
+		// keep the old request around, as is, until we know that we are able
+		// to prepare the new one.
+		// It would be really *nice* to know *why* we want to
+		// keep the old request around -- 1994-October-27 David Schnepper
+		// Because that's the client's allocated statement handle and we
+		// don't want to trash the context in it -- 2001-Oct-27 Ann Harrison
 
 		request = prepare(tdbb, database, transaction, length, string, dialect, parser_version);
 
@@ -1092,7 +1092,6 @@ static void execute_immediate(thread_db* tdbb,
 	SET_TDBB(tdbb);
 
 	dsql_dbb* const database = init(attachment);
-
 	dsql_req* request = NULL;
 
 	try {
