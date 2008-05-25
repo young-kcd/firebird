@@ -75,8 +75,11 @@ $(SRC_ROOT)/qli/help.cpp:        help.fdb
 # Explicit dependence on generated header
 $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
-# Special case for building cpp from epp
+# Special cases for building cpp from epp
 $(SRC_ROOT)/dsql/metd.cpp:: $(SRC_ROOT)/dsql/metd.epp 
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
+
+$(SRC_ROOT)/dsql/DdlNodes.cpp:: $(SRC_ROOT)/dsql/DdlNodes.epp 
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 # Rebuild blrtable.h
