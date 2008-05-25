@@ -5637,7 +5637,8 @@ int Parser::yylexAux()
 				}
 				yylval = (dsql_nod*) MAKE_string(buffer, p - buffer);
 				dsql_str* delimited_id_str = (dsql_str*) yylval;
-				delimited_id_str->str_flags |= STR_delimited_id;
+				//delimited_id_str->str_flags |= STR_delimited_id;
+				delimited_id_str->delimited_id = true;
 				if (buffer != string)
 					gds__free (buffer);
 				return SYMBOL;

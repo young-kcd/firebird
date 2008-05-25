@@ -176,6 +176,12 @@ public:
 		data[count] = item;
   		return ++count;
 	}
+	void add(const T* items, size_t itemsSize)
+	{
+		ensureCapacity(count + itemsSize);
+		memcpy(data + count, items, sizeof(T) * itemsSize);
+		count += itemsSize;
+	}
 	// NOTE: remove method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
 	T* remove(size_t index)

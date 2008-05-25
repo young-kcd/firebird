@@ -257,6 +257,16 @@ static inline bool hasNewContext(const int value)
 }
 
 
+inline void CompiledStatement::append_raw_string(const char* string, USHORT len)
+{
+	req_blr_data.add(reinterpret_cast<const UCHAR*>(string), len);
+}
+
+inline void CompiledStatement::append_raw_string(const UCHAR* string, USHORT len)
+{
+	req_blr_data.add(string, len);
+}
+
 //
 //	Write out a string valued attribute. (Overload 2.)
 //
@@ -6976,14 +6986,20 @@ void CompiledStatement::append_string(UCHAR verb, const char* string, USHORT len
 		append_uchar(length);
 	}
 
+	/* CVC: I preserve this code but it's inconsistent: we first log the length
+	then we check the null terminator. If we want this, we should recalculate the
+	length and log the correct length instead.
 	if (string) {
 		for (; length-- && *string; string++) {
 			append_uchar(*string);
 		}
 	}
+	*/
+	if (string)
+		append_raw_string(string, length);
 }
 
-void CompiledStatement::append_uchars(UCHAR byte, UCHAR count)
+void CompiledStatement::append_uchars(UCHAR byte, int count)
 {
 	for (int i = 0; i < count; ++i) {
 		append_uchar(byte);
@@ -7115,8 +7131,7 @@ void CompiledStatement::put_debug_variable(USHORT number, const TEXT* name)
 		len = MAX_UCHAR;
 	req_debug_data.add(len);
 
-	while (len--) 
-		req_debug_data.add(*name++);
+	req_debug_data.add(reinterpret_cast<const UCHAR*>(name), len);
 }
 
 void CompiledStatement::put_debug_argument(UCHAR type, USHORT number, const TEXT* name)
@@ -7134,8 +7149,7 @@ void CompiledStatement::put_debug_argument(UCHAR type, USHORT number, const TEXT
 		len = MAX_UCHAR;
 	req_debug_data.add(len);
 
-	while (len--) 
-		req_debug_data.add(*name++);
+	req_debug_data.add(reinterpret_cast<const UCHAR*>(name), len);
 }
 
 void CompiledStatement::append_debug_info()
@@ -7148,9 +7162,7 @@ void CompiledStatement::append_debug_info()
 		append_uchar(isc_dyn_debug_info);
 		append_ushort(req_debug_data.getCount());
 
-		const UCHAR *const end = req_debug_data.end();
-		for (const UCHAR *c = req_debug_data.begin(); c < end; c++)
-			append_uchar(*c);
+		append_raw_string(req_debug_data.begin(), req_debug_data.getCount());
 	}
 }
 

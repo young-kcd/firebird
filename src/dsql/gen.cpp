@@ -976,7 +976,6 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	dsql_nod** ptr;
 	const dsql_nod* const* end;
 	dsql_str* string;
-	ULONG id_length;
 
 	switch (node->nod_type) {
 	case nod_assign:
@@ -1276,14 +1275,12 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		{
 			stuff(statement, blr_exception);
 		}
-		if (!(string->str_flags & STR_delimited_id))
+		if (!string->delimited_id)
 		{
-			id_length = string->str_length;
-			for (TEXT* p = reinterpret_cast<char*>(string->str_data); *p;
-				 id_length--)
+			ULONG id_length = string->str_length;
+			for (TEXT* p = string->str_data; *p && id_length; ++p, --id_length)
 			{
 				*p = UPPER(*p);
-				*p++;
 			}
 		}
 		stuff_cstring(statement, string->str_data);
@@ -1514,7 +1511,6 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 	stuff(statement, blr_literal);
 
-	USHORT l = 0; //= desc->dsc_length;
 	const UCHAR* p = desc->dsc_address;
 
 	switch (desc->dsc_dtype) {
@@ -1545,24 +1541,24 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 		break;
 
 	case dtype_double:
-		/* this is used for approximate/large numeric literal
-		   which is transmitted to the engine as a string.
-		 */
-		gen_descriptor(statement, desc, true);
-		// Length of string literal, cast because it could be > 127 bytes.
-		l = (USHORT) (UCHAR) desc->dsc_scale;
-		if (negate_value) {
-			stuff_word(statement, l + 1);
-			stuff(statement, '-');
-		}
-		else {
-			stuff_word(statement, l);
-		}
+		{
+			/* this is used for approximate/large numeric literal
+			   which is transmitted to the engine as a string.
+			 */
+			gen_descriptor(statement, desc, true);
+			// Length of string literal, cast because it could be > 127 bytes.
+			const USHORT l = (USHORT) (UCHAR) desc->dsc_scale;
+			if (negate_value) {
+				stuff_word(statement, l + 1);
+				stuff(statement, '-');
+			}
+			else {
+				stuff_word(statement, l);
+			}
 
-		if (l)
-			do {
-				stuff(statement, *p++);
-			} while (--l);
+			if (l)
+				statement->append_raw_string(p, l);
+		}
 		break;
 
 	case dtype_int64:
@@ -1626,15 +1622,13 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 	case dtype_text:
 		{
-			USHORT length = desc->dsc_length;
+			const USHORT length = desc->dsc_length;
 
 			gen_descriptor(statement, desc, true);
 			if (length)
-				do {
-					stuff(statement, *p++);
-				} while (--length);
-			break;
+				statement->append_raw_string(p, length);
 		}
+		break;
 
 	default:
 		// gen_constant: datatype not understood 
@@ -3113,8 +3107,9 @@ static void stuff_string(CompiledStatement* statement, const char* string, int l
 
 	stuff(statement, len);
 
-	while (len--)
-		stuff(statement, *string++);
+	//while (len--)
+	//	stuff(statement, *string++);
+	statement->append_raw_string(string, len);
 }
 
 
@@ -3138,7 +3133,6 @@ static void stuff_string(CompiledStatement* statement, const Firebird::MetaName&
  **/
 static void stuff_word( CompiledStatement* statement, USHORT word)
 {
-
 	stuff(statement, word);
 	stuff(statement, word >> 8);
 }

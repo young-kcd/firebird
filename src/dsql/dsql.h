@@ -97,14 +97,15 @@ class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
 {
 public:
 	const char* str_charset;	//!< ASCIIZ Character set identifier for string
-	USHORT      str_flags;
+	//USHORT      str_flags;
+	bool        delimited_id;
 	ULONG       str_length;		//!< length of string in BYTES
 	char        str_data[2];	//!< one for ALLOC and one for the NULL
 };
 
 // values used in str_flags
 
-const long STR_delimited_id		= 0x1L;
+//const USHORT STR_delimited_id		= 0x1L;
 
 // blocks used to cache metadata
 
@@ -450,13 +451,15 @@ public:
 	void		append_ulong(ULONG val);
 	void		append_cstring(UCHAR verb, const char* string);
 	void		append_meta_string(const char* string);
+	void        append_raw_string(const char* string, USHORT len);
+	void        append_raw_string(const UCHAR* string, USHORT len);
 	void		append_string(UCHAR verb, const char* string, USHORT len);
 	void		append_string(UCHAR verb, const Firebird::MetaName& name);
 	void		append_string(UCHAR verb, const Firebird::string& name);
 	void		append_number(UCHAR verb, SSHORT number);
 	void		begin_blr(UCHAR verb);
 	void		end_blr();
-	void		append_uchars(UCHAR byte, UCHAR count);
+	void		append_uchars(UCHAR byte, int count);
 	void		append_ushort_with_length(USHORT val);
 	void		append_ulong_with_length(ULONG val);
 	void		append_file_length(ULONG length);
