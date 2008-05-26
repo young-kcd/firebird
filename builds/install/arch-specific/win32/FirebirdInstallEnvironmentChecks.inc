@@ -88,23 +88,34 @@ Const
   IB5Install    = 1;
   IB6Install    = 2;
   IB65Install   = 3;
-  IB7Install    = 4;
+  IB70Install   = 4;
   FB1Install    = 5;
   FB15RCInstall = 6;
   FB15Install   = 7;
-  FB2Install    = 8;            //All Fb 1.6 and beyond
-  MaxProdInstalled = FB2Install;
+  FB20Install   = 8;
+  IB80Install   = 9;
+  IB81Install   = 10;
+  FB21Install   = 11;
+  FB25Install   = 12;
+  FB30Install   = 13;
+
+  MaxProdInstalled = FB30Install;
 
   //ProductsInstalled
   IB4     = $0001;
   IB5     = $0002;
   IB6     = $0004;
   IB65    = $0008;
-  IB7     = $0010;
+  IB70    = $0010;
   FB1     = $0020;
   FB15RC  = $0040;
   FB15    = $0080;
-  FB2     = $0100;
+  FB20    = $0100;
+  IB80    = $0200;
+  IB81    = $0400;
+  FB21    = $0800;
+  FB25    = $1000;
+  FB30    = $2000;
 
   //  Likely gds32 version strings for installed versions of Firebird or InterBase are:
   //  [6,0,n,n]     InterBase 6.0
@@ -186,7 +197,21 @@ begin
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
       end;
 
-      IB7Install: begin
+      IB70Install: begin
+        ProductsInstalledArray[product].Description := IBDesc;
+        ProductsInstalledArray[product].RegKey := IBRegKey;
+        ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := IBMessageFile;
+      end;
+
+      IB80Install: begin
+        ProductsInstalledArray[product].Description := IBDesc;
+        ProductsInstalledArray[product].RegKey := IBRegKey;
+        ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := IBMessageFile;
+      end;
+
+      IB81Install: begin
         ProductsInstalledArray[product].Description := IBDesc;
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
@@ -214,7 +239,28 @@ begin
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
       end;
 
-      FB2Install: begin
+      FB20Install: begin
+        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+      end;
+
+      FB21Install: begin
+        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+      end;
+
+      FB25Install: begin
+        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+      end;
+
+      FB30Install: begin
         ProductsInstalledArray[product].Description := FBDesc;
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
@@ -387,14 +433,14 @@ begin
             ProductsInstalledArray[product].InstallType := NotInstalled;
         end;
 
-        IB7Install: begin
+        IB70Install: begin
           //If we get here we have ambiguity with other versions of InterBase and Firebird
           if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '7.0.0.0',1) <> 0 then
               ProductsInstalledArray[product].InstallType := NotInstalled
           else
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
-              ProductsInstalled := ProductsInstalled + IB7;
+              ProductsInstalled := ProductsInstalled + IB70;
               ProductsInstalledCount := ProductsInstalledCount + 1;
               end;
             end
@@ -437,12 +483,72 @@ begin
             end;
         end;
 
-        FB2Install: begin
+        FB20Install: begin
           if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) <> 0) then
             ProductsInstalledArray[product].InstallType := NotInstalled
           else
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
-              ProductsInstalled := ProductsInstalled + FB2;
+              ProductsInstalled := ProductsInstalled + FB20;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        IB80Install: begin
+          //If we get here we have ambiguity with other versions of InterBase and Firebird
+          if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
+            if CompareVersion(ProductsInstalledArray[product].ClientVersion, '8.0.0.0',2) <> 0 then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + IB80;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+              end;
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        IB81Install: begin
+          //If we get here we have ambiguity with other versions of InterBase and Firebird
+          if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
+            if CompareVersion(ProductsInstalledArray[product].ClientVersion, '8.1.0.0',2) <> 0 then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + IB81;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+              end;
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        FB21Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.1.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB21;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB25Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.5.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB25;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB30Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '3.0.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB30;
               ProductsInstalledCount := ProductsInstalledCount + 1;
             end;
         end;
