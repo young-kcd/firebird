@@ -257,12 +257,12 @@ static inline bool hasNewContext(const int value)
 }
 
 
-inline void CompiledStatement::append_raw_string(const char* string, USHORT len)
+void CompiledStatement::append_raw_string(const char* string, USHORT len)
 {
 	req_blr_data.add(reinterpret_cast<const UCHAR*>(string), len);
 }
 
-inline void CompiledStatement::append_raw_string(const UCHAR* string, USHORT len)
+void CompiledStatement::append_raw_string(const UCHAR* string, USHORT len)
 {
 	req_blr_data.add(string, len);
 }
