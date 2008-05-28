@@ -1,3 +1,23 @@
+2008-05-28 15:21  alexpeshkoff
+
+	* firebird2/src/: dsql/metd.epp (1.131), dsql/metd_proto.h (1.32),
+	dudley/exe.epp (1.67), dudley/expand.cpp (1.29), gpre/pretty.cpp
+	(1.34), include/gen/msg_facs.h (1.13), jrd/isc_sync.cpp (1.135):
+
+	Applied Damyan's patch eliminating some warnings in gcc 4.3
+
+2008-05-28 15:11  alexpeshkoff
+
+	* firebird2/src/dsql/ddl.cpp (1.243):
+
+	fixed gcc 3 build
+
+2008-05-28 04:11  asfernandes
+
+	* firebird2/src/dsql/gen.cpp (1.152):
+
+	Misc
+
 2008-05-25 17:41  asfernandes
 
 	* firebird2/src/dsql/: Nodes.h (1.3), StmtNodes.h (1.2):
