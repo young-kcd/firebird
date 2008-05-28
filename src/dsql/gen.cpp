@@ -1547,7 +1547,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			 */
 			gen_descriptor(statement, desc, true);
 			// Length of string literal, cast because it could be > 127 bytes.
-			const USHORT l = (USHORT) (UCHAR) desc->dsc_scale;
+			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
 			if (negate_value) {
 				stuff_word(statement, l + 1);
 				stuff(statement, '-');
@@ -3106,9 +3106,6 @@ static void stuff_string(CompiledStatement* statement, const char* string, int l
 	fb_assert(len >= 0 && len <= 255);
 
 	stuff(statement, len);
-
-	//while (len--)
-	//	stuff(statement, *string++);
 	statement->append_raw_string(string, len);
 }
 
