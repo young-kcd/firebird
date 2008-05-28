@@ -96,7 +96,7 @@ static void erase_userpriv(USERPRIV, TEXT *, USRE, UPFE);
 static void get_field_desc(DUDLEY_FLD);
 static void get_global_fields(void);
 static void get_relations(DBB);
-static USHORT get_prot_mask(TEXT *, TEXT *);
+static USHORT get_prot_mask(const TEXT *, TEXT *);
 static SYM get_symbol(enum sym_t, TEXT *, DUDLEY_CTX);
 static void get_triggers(DBB);
 static void get_udfs(DBB);
@@ -2859,7 +2859,7 @@ static void get_relations( DBB databaseL)
 }
 
 
-static USHORT get_prot_mask( TEXT * relation, TEXT * field)
+static USHORT get_prot_mask( const TEXT * relation, TEXT * field)
 {
 /**************************************
  *

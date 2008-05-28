@@ -1648,7 +1648,7 @@ bool METD_get_trigger(dsql_req* request, const dsql_str* name, dsql_str** relati
 }
 
 
-bool METD_get_type(dsql_req* request, const dsql_str* name, char* field, SSHORT* value)
+bool METD_get_type(dsql_req* request, const dsql_str* name, const char* field, SSHORT* value)
 {
 /**************************************
  *

@@ -29,8 +29,7 @@
 /*   ISC message facilities   */
 /******************************/
 
-struct _facilities
-{
+struct _facilities {
 	int fac_code;
 	const char* facility;
 };

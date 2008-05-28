@@ -59,7 +59,7 @@ typedef struct ctl {
 } *CTL;
 
 static int blr_format(CTL, const char *, ...);
-static int error(CTL, SSHORT, TEXT *, int);
+static int error(CTL, SSHORT, const TEXT *, int);
 static int indent(CTL, SSHORT);
 static int print_blr_dtype(CTL, bool);
 static void print_blr_line(void*, SSHORT, const char*);
@@ -283,7 +283,7 @@ static int blr_format(CTL control, const char *string, ...)
 //		Put out an error msg and punt.
 //  
 
-static int error( CTL control, SSHORT offset, TEXT * string, int arg)
+static int error( CTL control, SSHORT offset, const TEXT * string, int arg)
 {
 
 	print_line(control, offset);

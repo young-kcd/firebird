@@ -60,7 +60,7 @@ Jrd::dsql_nod* METD_get_primary_key(Jrd::dsql_req*, const Jrd::dsql_str*);
 Jrd::dsql_prc* METD_get_procedure(Jrd::CompiledStatement*, const Jrd::dsql_str*);
 Jrd::dsql_rel* METD_get_relation(Jrd::CompiledStatement*, const Jrd::dsql_str*);
 bool   METD_get_trigger(Jrd::dsql_req*, const Jrd::dsql_str*, Jrd::dsql_str**, USHORT*);
-bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, char*, SSHORT*);
+bool   METD_get_type(Jrd::dsql_req*, const Jrd::dsql_str*, const char*, SSHORT*);
 Jrd::dsql_rel* METD_get_view_base(Jrd::CompiledStatement* request,
 							 const char* view_name,	// UTF-8
 							 MetaNamePairMap& fields);

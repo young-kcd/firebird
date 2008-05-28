@@ -156,7 +156,7 @@ static size_t getpagesize(void)
 
 using namespace Jrd;
 
-static void		error(ISC_STATUS*, TEXT*, ISC_STATUS);
+static void		error(ISC_STATUS*, const TEXT*, ISC_STATUS);
 static bool		event_blocked(USHORT count, const event_t* const* events, const SLONG* values);
 
 #ifdef UNIX
@@ -3087,7 +3087,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
 #endif
 
 
-static void error(ISC_STATUS* status_vector, TEXT* string, ISC_STATUS status)
+static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS status)
 {
 /**************************************
  *
