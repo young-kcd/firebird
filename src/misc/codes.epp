@@ -344,12 +344,14 @@ static void build_msgfac_h(void)
 	fprintf(msgfac, "/******************************/\n");
 	fprintf(msgfac, "\n");
 
-	fprintf(msgfac, "struct _facilities {\n");
+	fprintf(msgfac, "struct _facilities\n");
+	fprintf(msgfac, "{\n");
 	fprintf(msgfac, "\tint fac_code;\n");
 	fprintf(msgfac, "\tconst char* facility;\n");
 	fprintf(msgfac, "};\n\n");
 
-	fprintf(msgfac, "static const struct _facilities facilities[] = {\n");
+	fprintf(msgfac, "static const struct _facilities facilities[] =\n");
+	fprintf(msgfac, "{\n");
 	FOR F IN FACILITIES WITH ANY FAC_CODE IN SYSTEM_ERRORS OVER FAC_CODE
 		fprintf(msgfac, "\t{%d,  \"%-10.10s\"},\n", F.FAC_CODE, F.FACILITY);
 	END_FOR;
