@@ -660,7 +660,7 @@
 				RelativePath="..\..\..\src\jrd\ibsetjmp.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ids.h">
+				RelativePath="..\..\..\src\include\gen\ids.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\idx.h">
@@ -738,10 +738,10 @@
 				RelativePath="..\..\..\src\jrd\jrn_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\kanji.h">
+				RelativePath="..\..\..\src\intl\kanji.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\kanji_proto.h">
+				RelativePath="..\..\..\src\intl\kanji_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lck.h">
@@ -762,9 +762,6 @@
 				RelativePath="..\..\..\src\jrd\lls.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\lnmdef.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\log.h">
 			</File>
 			<File
@@ -774,16 +771,7 @@
 				RelativePath="..\..\..\src\jrd\log_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\map_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\math.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\mblr.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\mblr_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\met.h">
@@ -864,9 +852,6 @@
 				RelativePath="..\..\..\src\jrd\pio_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\prv_m_bypass.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\quad.h">
 			</File>
 			<File
@@ -876,13 +861,7 @@
 				RelativePath="..\..\..\src\jrd\que.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\rdb.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\rdb_codes.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\rdbcodes.h">
+				RelativePath="..\..\..\src\include\gen\rdb_codes.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\rec_proto.h">
@@ -972,9 +951,6 @@
 				RelativePath="..\..\..\src\jrd\svc_undoc.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\syidef.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sym_proto.h">
 			</File>
 			<File
@@ -1018,12 +994,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\vio_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\vms.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\vmslo_proto.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\why_proto.h">
