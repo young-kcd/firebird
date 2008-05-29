@@ -89,6 +89,7 @@ static act* act_openclose(enum act_t);
 static act* act_open_blob(ACT_T, gpre_sym*);
 static act* act_prepare(void);
 static act* act_procedure(void);
+static act* act_release(void);
 static act* act_select(void);
 static act* act_set(const TEXT*);
 static act* act_set_dialect(void);
@@ -192,6 +193,7 @@ act* SQL_action(const TEXT* base_directory)
 	case KW_LOCK:
 	case KW_OPEN:
 	case KW_PREPARE:
+	case KW_RELEASE_REQUESTS:
 	case KW_ROLLBACK:
 	case KW_SELECT:
 	case KW_SET:
@@ -296,6 +298,10 @@ act* SQL_action(const TEXT* base_directory)
 
 	case KW_PREPARE:
 		action = act_prepare();
+		break;
+
+	case KW_RELEASE_REQUESTS:
+		action = act_release();
 		break;
 
 	case KW_REVOKE:
@@ -3977,8 +3983,24 @@ static act* act_procedure(void)
 
 	return action;
 }
+//____________________________________________________________
+//  
+//		Parse a RELEASE_REQUESTS statement
+//
+static act* act_release(void)
+{
+	act* action = MSC_action(0, ACT_release);
 
+	MSC_match(KW_FOR);
 
+	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
+	if (symbol && (symbol->sym_type == SYM_database)) {
+		action->act_object = (REF) symbol->sym_object;
+		PAR_get_token();
+	}
+
+	return action;
+}
 //____________________________________________________________
 //  
 //		Handle the stand alone SQL select statement.

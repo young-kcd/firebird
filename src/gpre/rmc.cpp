@@ -75,7 +75,12 @@ static const char* const ISC_INSERT 			= "isc_embed_dsql_insert";
 static const char* const ISC_OPEN			= "isc_embed_dsql_open";
 static const char* const ISC_OPEN2			= "isc_embed_dsql_open2";
 static const char* const ISC_PREPARE	 		= "isc_embed_dsql_prepare";
-static const char* const ISC_DSQL_ALLOCATE	= "isc_dsql_alloc_statement2";
+// Never user isc_dsql_alloc_statement2 here.  This will cause problems for 
+// cursors opened in Cobol subprograms that are subsequently CANCELed.  When the
+// subprogram is CANCELed the buffer holding the statement handle is free.  This
+// will cause the program to abort when detaching from the database.  It can
+// also potentially cause hard to find memory corruption errors.
+static const char* const ISC_DSQL_ALLOCATE	= "isc_dsql_allocate_statement";
 static const char* const ISC_DSQL_EXECUTE	= "isc_dsql_execute_m";
 static const char* const ISC_DSQL_FREE		= "isc_dsql_free_statement";
 static const char* const ISC_DSQL_SET_CURSOR	= "isc_dsql_set_cursor_name";
@@ -1462,11 +1467,16 @@ static void gen_compile( const act* action)
 	if (gpreGlob.sw_auto && action->act_error)
 		printa(names[COLUMN], false, "IF %s NOT = 0 THEN",
 			   request_trans(action, request));
-
+	// Never use isc_compile_request2 here because if the request is 
+	// generated in a subprogram and that subprogram is subsequently CANCELed
+	// the buffer containing the request handle will be freed.  This will cause
+	// the main program to abort when detaching from the database.  It can also
+	// cause other difficult to find memory corruption problems.  This implies
+	// that the user must issue a RELEASE_REQUESTS request before exiting any
+	// subprogram in order to clean up its handles.
 	sprintf(output_buffer,
-			"%sCALL \"%s%s\" USING %s, %s, %s, %d, %s%d\n",
+			"%sCALL \"%s\" USING %s, %s, %s, %d, %s%d\n",
 			names[COLUMN], ISC_COMPILE_REQUEST,
-			(request->req_flags & REQ_exp_hand) ? "" : "2",
 			status_vector(action), symbol->sym_string,
 			request->req_handle, request->req_length,
 			names[isc_a_pos], request->req_ident);
@@ -3197,8 +3207,9 @@ static void gen_release( const act* action)
 		if (exp_db && db != exp_db)
 			continue;
 		if (!(request->req_flags & REQ_exp_hand)) {
-			printa(names[COLUMN], false, "IF %s = 0 THEN",
-				   db->dbb_name->sym_string);
+			printa(names[COLUMN], false, "IF %s NOT = 0 AND %s NOT = 0 THEN",
+				   db->dbb_name->sym_string,
+				   request->req_handle);
 			printa(names[COLUMN], true, "CALL \"%s\" USING %s, %s",
 				   ISC_RELEASE_REQUEST, status_vector(action),
 				   request->req_handle);
