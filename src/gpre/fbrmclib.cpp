@@ -799,6 +799,18 @@ EXPORT RM_ENTRY(rmc_embed_dsql_prepare)
 	return (0);
 }
 
+EXPORT RM_ENTRY(rmc_dsql_allocate_statement)
+{
+	ClearParamPool();
+	ISC_STATUS *stat = AllocStatusPool();
+	isc_dsql_allocate_statement(stat,
+							    (isc_db_handle *)arg_vector[1].a_address,
+							    (isc_tr_handle *)arg_vector[2].a_address);
+	StatusToCobol(&arg_vector[0], stat);
+
+	return (0);
+}
+
 EXPORT RM_ENTRY(rmc_dsql_alloc_statement2)
 {
 	ClearParamPool();
@@ -1612,6 +1624,7 @@ EXPORT entry_table RM_EntryPoints[] = {
 	{ "isc_embed_dsql_open", rmc_embed_dsql_open, "rmc_embed_dsql_open" },
 	{ "isc_embed_dsql_open2", rmc_embed_dsql_open2, "rmc_embed_dsql_open2" },
 	{ "isc_embed_dsql_prepare", rmc_embed_dsql_prepare, "rmc_embed_dsql_prepare" },
+	{ "isc_dsql_allocate_statement", rmc_dsql_allocate_statement, "rmc_dsql_allocate_statement" },
 	{ "isc_dsql_alloc_statement2", rmc_dsql_alloc_statement2, "rmc_dsql_alloc_statement2" },
 	{ "isc_dsql_execute_m", rmc_dsql_execute_m, "rmc_dsql_execute_m" },
 	{ "isc_dsql_free_statement", rmc_dsql_free_statement, "rmc_dsql_free_statement" },

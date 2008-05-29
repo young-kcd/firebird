@@ -68,3 +68,4 @@ EXPORTS
    rmc_ctos=rmc_ctos											@64
    rmc_stoc=rmc_stoc											@65
    isc_rollback_retaining=rmc_rollback_retaining				@66
+   isc_dsql_allocate_statement=rmc_dsql_allocate_statement		@67
