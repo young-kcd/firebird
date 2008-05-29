@@ -1,3 +1,10 @@
+2008-05-29 12:31  robocop
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.21.2.7),
+	engine_classic.vcproj (1.20.2.7), engine_embed.vcproj (1.8.2.7):
+
+	Get rid of references to useless header files.
+
 2008-05-23 12:48  paulbeach
 
 	* firebird2/builds/posix/: prefix.darwin (1.8.2.22),
