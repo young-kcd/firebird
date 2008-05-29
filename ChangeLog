@@ -1,3 +1,37 @@
+2008-05-29 21:20  sboyd
+
+	* firebird2/src/gpre/: rmc.cpp (1.8), sql.cpp (1.69):
+
+	Fixes to allow embedded SQL to work properly in RM/Cobol programs
+	which use the CANCEL verb.  This entailed:
+
+	- added RELEASE_REQUESTS FOR <dbname> as an embedded SQL command as
+	well as QLI
+
+	- changed the RM/Cobol code generator to use isc_compile_request
+	rather than isc_compile_request2
+
+	- changed the RM/Cobol code generator to use
+	isc_dsql_allocate_statement rather than isc_dsql_alloc_statement2
+
+	As a result of this change RM/Cobol programs will have clean up
+	their handles by issuing a RELEASE_REQUESTS call before exiting a
+	subprogram using the EXIT PROGRAM verb.
+
+2008-05-29 21:09  sboyd
+
+	* firebird2/: builds/win32/defs/fbrmclib.def (1.3),
+	src/gpre/fbrmclib.cpp (1.6):
+
+	Added an entry point for isc_dsql_allocate_statement
+
+2008-05-29 14:01  robocop
+
+	* firebird2/src/: include/gen/msg_facs.h (1.14), misc/codes.epp
+	(1.27):
+
+	Misc.
+
 2008-05-28 15:21  alexpeshkoff
 
 	* firebird2/src/: dsql/metd.epp (1.131), dsql/metd_proto.h (1.32),
