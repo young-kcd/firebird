@@ -284,9 +284,6 @@
 				RelativePath="..\..\..\src\qli\eval_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\qli\everything.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\qli\exe.h">
 			</File>
 			<File
