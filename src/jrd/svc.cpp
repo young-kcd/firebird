@@ -2454,6 +2454,10 @@ static void service_put(Service* service, const SCHAR* buffer, USHORT length)
 
 #else
 
+#ifdef DARWIN
+#define NO_DOUBLE_VFORK
+#endif
+
 static void service_fork(TEXT* service_path, Service* service)
 {
 /**************************************
@@ -2496,7 +2500,7 @@ static void service_fork(TEXT* service_path, Service* service)
 		break;
 
 	case 0:
-#ifndef DARWIN
+#ifndef NO_DOUBLE_VFORK
 		if (vfork() > 0)
 			_exit(FINI_OK);
 #endif
@@ -2536,7 +2540,9 @@ static void service_fork(TEXT* service_path, Service* service)
 	close(pair1[1]);
 	close(pair2[0]);
 
+#ifndef NO_DOUBLE_VFORK
 	waitpid(pid, NULL, 0);
+#endif
 
 	THREAD_ENTER();
 
