@@ -1,3 +1,9 @@
+2008-05-30 10:33  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.166.2.11):
+
+	Backported fix from 2.1
+
 2008-05-29 13:37  robocop
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj (1.50.4.5),
