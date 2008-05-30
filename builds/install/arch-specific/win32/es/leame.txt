@@ -1,6 +1,6 @@
 
 ===================================
-Firebird 2.1.0   (Windows Build)
+Firebird 2.1.1   (Windows Build)
 ===================================
 
 
@@ -22,29 +22,29 @@ Bienvenido a Firebird 2.1.
 A quién está destinada esta versión
 ===================================
 
-Firebird 2.1.0 ha sido intensivamente probado y está
+Firebird 2.1.1 ha sido intensivamente probado y está
 listo para usarse en ambientes de producción.
 De todas maneras, se recomienda a los usuarios
 que sigan los procedimientos habituales antes
-de instalar esta versión en un servidor de 
+de instalar esta versión en un servidor de
 producción, es decir:
 
  o Asegúrese de leer el documento de instalación
    y las notas de la versión.
 
- o Realice una copia de seguridad de los datos 
+ o Realice una copia de seguridad de los datos
    que considere importantes antes de de instalar
    esta versión.
-   
+
  o Se recomienda que desinstale cualquier versión
-   anterior antes de realizar la instalación. El 
-   proceso de desinstalación no elimina los 
+   anterior antes de realizar la instalación. El
+   proceso de desinstalación no elimina los
    archivos de configuración ni los logs.
 
  o Se recomienda que realice sus propias pruebas
-   en un ambiente de desarrollo antes de 
+   en un ambiente de desarrollo antes de
    implementar esta versión en producción.
-   
+
 
 
 Problemas Conocidos

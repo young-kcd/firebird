@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.1.0  (Windows Build)
+Firebird 2.1.1  (Windows Build)
 ==================================
 
 o Introduction
@@ -21,7 +21,7 @@ Bienvenue dans le monde de Firebird 2.1.
 Avertissements
 ==============
 
-Firebird 2.1.0 a été testé intensivement
+Firebird 2.1.1 a été testé intensivement
 et peut être utiliseé en production. Toutefois, les
 utilisateurs sont invités à suivre ces prescriptions avant de
 déployer cette version en production. ie:

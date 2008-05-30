@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.1.0       (Windows Build)
+Firebird 2.1.1       (Windows Build)
 ==================================
 
 o Introduzione
@@ -23,7 +23,7 @@ Benvenuti in Firebird 2.1
 A chi è rivolta questa versione
 ===============================
 
-Firebird 2.1.0 è stato estensivamente testato ed
+Firebird 2.1.1 è stato estensivamente testato ed
 è considerato pronto per l'uso in produzione.
 Tuttavia, si raccomanda di applicare le cautele
 standard per la messa in produzione di questa
@@ -49,7 +49,7 @@ Caratteristiche di questa versione
 
 Fate riferimento a:
 
-  doc/Firebird_v2.1.0.ReleaseNotes.pdf
+  doc/Firebird_v2.1.1.ReleaseNotes.pdf
 
 per maggiori informazioni.
 
@@ -59,7 +59,7 @@ Errori corretti in questa versione
 
 Fate riferimento a:
 
-  doc/Firebird_v2.1.0.BugFixes.pdf
+  doc/Firebird_v2.1.1.BugFixes.pdf
 
 per maggiori informazioni.
 
@@ -83,24 +83,24 @@ o Siete sicuri di conoscere il funzionamento di
   inoltrare una richiesta di supporto. In questo caso,
   potete usare la mailing list firebird-support. Per
   iscrivervi:
-  
-    mailto:firebird-support-subscribe@yahoogroups.com
+
+	mailto:firebird-support-subscribe@yahoogroups.com
 
 o Pensate ancora che si tratti di un errore?
 
   Per prima cosa, controllate che il problema non sia
   già stato segnalato nel Bug Tracker:
 
-    http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
   Vi raccomandiamo di non usare il Tracker per richieste
   di supporto. Nel dubbio, iscrivetevi alla mailing list
-  
-    mailto:firebird-support-subscribe@yahoogroups.com
+
+	mailto:firebird-support-subscribe@yahoogroups.com
 
   e chiedete lì. Se avete problemi con l'inglese,
   potete usare l'area dedicata a Firebird su
   Delphi & Dintorni:
-  
-    http://www.delphiedintorni.it
+
+	http://www.delphiedintorni.it
 
