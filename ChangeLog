@@ -1,3 +1,690 @@
+2008-05-29 13:37  robocop
+
+	* firebird2/builds/win32/msvc7/: engine.vcproj (1.50.4.5),
+	engine_classic.vcproj (1.50.4.5), engine_embed.vcproj (1.39.4.5),
+	qli.vcproj (1.20.4.1):
+
+	Get rid of references to useless header files.
+
+2008-05-23 12:48  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin_i386 (1.1.2.6),
+	prefix.darwin_powerpc (1.1.2.6):
+
+	Make the version numbers automatic
+
+2008-05-22 14:25  alexpeshkoff
+
+	* firebird2/src/jrd/validation.cpp (1.16.2.3):
+
+	Backported fix for CORE-1909: Garbage in firebird.log on
+	linux/amd64
+
+2008-05-22 14:16  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.114.4.5):
+
+	Rolled back accidentially committed experimental code
+
+2008-05-22 14:11  alexpeshkoff
+
+	* firebird2/src/: include/gen/iberror.h (1.39.2.1), lock/lock.cpp
+	(1.114.4.4), misc/codes.epp (1.20.4.1):
+
+	Backported fix for CORE-1844: Valgrind often reports "Conditional
+	jump or move depends on uninitialised value(s)" in
+	check_status_vector()
+
+2008-05-22 11:08  paulbeach
+
+	* firebird2/builds/posix/: prefix.darwin_i386 (1.1.2.5),
+	prefix.darwin_powerpc (1.1.2.5):
+
+	Fix small problem with version numbers
+
+2008-05-13 10:29  hvlad
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.11):
+
+	Backport fix for bug CORE-1830
+
+2008-05-11 14:25  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.60.4.5),
+	msvc6/engine_classic.dsp (1.56.4.5), msvc6/engine_embed.dsp
+	(1.35.4.5), msvc6/qli.dsp (1.17.12.1), msvc8/engine.vcproj
+	(1.10.6.7), msvc8/engine_classic.vcproj (1.10.6.7),
+	msvc8/engine_embed.vcproj (1.10.6.7), msvc8/qli.vcproj (1.4.6.3):
+
+	- Delete references to header files that only existed in FB1 or
+	until FB1.5.  - Fix references to files that are in another
+	location.  - Delete references to files that don't belong to
+	Windows (the VMS files).
+
+2008-05-10 12:53  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.60.4.4),
+	msvc6/engine_classic.dsp (1.56.4.4), msvc6/engine_embed.dsp
+	(1.35.4.4), msvc7/engine.vcproj (1.50.4.4),
+	msvc7/engine_classic.vcproj (1.50.4.4), msvc7/engine_embed.vcproj
+	(1.39.4.4), msvc8/engine.vcproj (1.10.6.6),
+	msvc8/engine_classic.vcproj (1.10.6.6), msvc8/engine_embed.vcproj
+	(1.10.6.6):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).  Fix reference to header files that existed in another
+	location in FB1.
+
+2008-05-10 10:54  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.60.4.3),
+	msvc6/engine_classic.dsp (1.56.4.3), msvc6/engine_embed.dsp
+	(1.35.4.3), msvc7/engine.vcproj (1.50.4.3),
+	msvc7/engine_classic.vcproj (1.50.4.3), msvc7/engine_embed.vcproj
+	(1.39.4.3), msvc8/engine.vcproj (1.10.6.5),
+	msvc8/engine_classic.vcproj (1.10.6.5), msvc8/engine_embed.vcproj
+	(1.10.6.5):
+
+	Fix reference to header file that existed in another location in
+	FB1.
+
+2008-05-10 07:02  robocop
+
+	* firebird2/builds/win32/: msvc6/engine.dsp (1.60.4.2),
+	msvc6/engine_classic.dsp (1.56.4.2), msvc6/engine_embed.dsp
+	(1.35.4.2), msvc7/engine.vcproj (1.50.4.2),
+	msvc7/engine_classic.vcproj (1.50.4.2), msvc7/engine_embed.vcproj
+	(1.39.4.2), msvc8/engine.vcproj (1.10.6.4),
+	msvc8/engine_classic.vcproj (1.10.6.4), msvc8/engine_embed.vcproj
+	(1.10.6.4):
+
+	Delete explicit references to headers that only existed on FB1
+	(MSVC doesn't complain unless the missing header is in an #include
+	clause).
+
+2008-05-08 15:11  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.refDatabases (1.29.4.2),
+	Makefile.in.static.gfix (1.1.4.2), make.defaults (1.44.4.7):
+
+	Bacported fix for CORE-1889: Security database has FW mode OFF,
+	making it corrupted under some circumstances
+
+2008-05-08 14:46  alexpeshkoff
+
+	* firebird2/configure.in (1.241.2.31):
+
+	Bacported fix for CORE-1889: Security database has FW mode OFF,
+	making it corrupted under some circumstances
+
+2008-05-08 11:30  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.static.gfix (1.1.4.1):
+
+	file Makefile.in.static.gfix was added on branch B2_0_Release on
+	2008-05-08 13:11:03 +0000
+
+2008-05-08 09:54  robocop
+
+	* firebird2/src/jrd/btr.cpp (1.162.2.17):
+
+	Misc.
+
+2008-05-08 09:52  robocop
+
+	* firebird2/src/common/utils.cpp (1.16.4.3):
+
+	Fix indentation.
+
+2008-05-07 14:49  alexpeshkoff
+
+	* firebird2/: configure.in (1.241.2.30), src/jrd/os/posix/unix.cpp
+	(1.42.4.13):
+
+	Bacported fix for CORE-1887: New created databases have wrong
+	access rights
+
+2008-05-07 14:26  hvlad
+
+	* firebird2/src/jrd/: btr.cpp (1.162.2.16), btr.h (1.43.4.1),
+	lck.cpp (1.51.4.3), lck.h (1.21.4.2):
+
+	Backported fix sub-task CORE-1819 : More efficient solution for
+	CORE-1300 (Lower level index pages is missed from parent page).  A
+	bit of (disabled) tracing code added.
+
+2008-05-07 13:30  makowski
+
+	* firebird2/builds/install/misc/firebird.conf (1.20.4.6):
+
+	Add comment about Classic on Posix for RemoteBindAddress parameter
+
+2008-05-07 10:03  hvlad
+
+	* firebird2/src/common/: utils.cpp (1.16.4.2), config/config.cpp
+	(1.66.4.7):
+
+	Backported fix for bug CORE-1886 : Server doesn't start as an
+	application under restricted user accounts on Vista.  Note : i
+	can't verify it as i have no Vista.
+
+2008-05-06 15:10  hvlad
+
+	* firebird2/src/jrd/: cmp.cpp (1.203.2.8), cmp_proto.h (1.29.4.1),
+	opt.cpp (1.261.2.16), par.cpp (1.132.4.6):
+
+	Backport fix for bug CORE-1884 : Random AVs using stored procedures
+	with expressions as default values of input parameters
+
+2008-05-02 17:23  hvlad
+
+	* firebird2/src/dsql/pass1.cpp (1.260.2.10):
+
+	Backport fixes for a) CORE-1817 : The RelaxedAliasChecking
+	parameter has no effect concerning RDB$DB_KE b) CORE-1313 :
+	RDB$DB_KEY not supported in derived tables c) CORE-1451 : Using
+	RDB$DB_KEY in where section while selecting from a procedure
+	crashes the server Its all in the same part of code so i commit
+	them together
+
+2008-05-02 09:36  hvlad
+
+	* firebird2/src/dsql/ddl.cpp (1.168.4.4):
+
+	Fixed bug CORE-1841 : If some VIEW used derived tables and long
+	table names\aliases, It is possible to overflow
+	RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME
+
+2008-05-01 13:33  robocop
+
+	* firebird2/: builds/win32/msvc6/config.dsp (1.2.4.1),
+	builds/win32/msvc7/config.vcproj (1.2.4.1),
+	builds/win32/msvc8/config.vcproj (1.4.6.3),
+	src/config/DirectoryList.cpp (1.2.4.1), src/config/DirectoryList.h
+	(1.2.4.1), builds/posix/make.shared.variables (1.60.4.3):
+
+	Delete useless file.
+
+2008-04-29 16:11  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.25):
+
+	Backported fix for CORE-1854: Value of CURRENT_USER may be not in
+	upper case when using unix OS auth.
+
+2008-04-23 10:40  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/misc/linuxLibrary.sh.in (1.3.4.6),
+	misc/changeRunUser.sh.in (1.1.6.1), misc/posixLibrary.sh.in
+	(1.4.4.9), misc/restoreRootRunUser.sh.in (1.1.6.1):
+
+	Backported fix for CORE-1826: changeRunUser.sh and
+	restoreRootRunUser.sh scripts do not change run user in init.d
+	script
+
+2008-04-21 11:07  dimitr
+
+	* firebird2/src/jrd/os/win32/ibinitdll.cpp (1.8.4.1):
+
+	Cleaned up the inactive code from prior versions.
+
+2008-04-20 15:55  dimitr
+
+	* firebird2/src/remote/: inet.cpp (1.160.2.14), remote.cpp
+	(1.43.2.1), remote.h (1.46.4.1), server.cpp (1.126.2.10):
+
+	Fixed CORE-1357.
+
+2008-04-17 16:54  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.16):
+
+	Update.
+
+2008-04-17 16:50  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.40):
+
+	Update.
+
+2008-04-17 16:31  dimitr
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.4.4.6):
+
+	Restored the original mutex test code.
+
+2008-04-17 11:07  dimitr
+
+	* firebird2/src/jrd/dyn.epp (1.80.4.3):
+
+	Backported CORE-1840.
+
+2008-04-16 17:17  roman-simakov
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.14), nbak.cpp (1.52.2.9):
+
+	1. Fixed unlocking header page while CCH_release. Thanks to Vlad.
+	2. Fixed writing page while nbackup merge state is stalled.
+
+2008-04-14 15:32  paulbeach
+
+	* firebird2/builds/posix/: fbintl.hpux.vers (1.2.6.2),
+	firebird.hpux.vers (1.1.6.2):
+
+	Just noticed these HPUX symbol files were missing in 2.0.x
+
+2008-04-14 15:17  paulbeach
+
+	* firebird2/: configure.in (1.241.2.29), src/jrd/common.h
+	(1.137.2.11), src/jrd/inf_pub.h (1.9.4.3), src/jrd/license.h
+	(1.31.12.6), src/jrd/pag.cpp (1.98.4.16), src/jrd/utl.cpp
+	(1.90.4.6), src/remote/protocol.h (1.27.4.1),
+	src/remote/remote_def.h (1.27.4.3),
+	builds/posix/prefix.solx86gcc_64 (1.1.2.1):
+
+	Solaris AMD 64bit port
+
+2008-04-07 15:03  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/: CS/prototype.in
+	(1.1.6.6), SS/prototype.in (1.1.6.2):
+
+	Wrongly named libfbclient.so
+
+2008-04-04 11:03  dimitr
+
+	* firebird2/src/: remote/os/win32/srvr_w32.cpp (1.34.4.2),
+	utilities/install/install_nt.h (1.11.4.1):
+
+	Server-side fix for CORE-1820.
+
+2008-04-03 17:55  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.160.2.13):
+
+	Backported fix for CORE-1807: fbserver assigned to non-canonical
+	port
+
+2008-04-03 15:46  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.4.4.5):
+
+	Testing for a real mutex is good. But testing for a mutex that also
+	exists in the client library is not good. :-(
+
+2008-04-03 15:20  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.4.4.4):
+
+	Test for a real mutex, rather than an imaginary one.
+
+2008-04-02 12:42  robocop
+
+	* firebird2/src/: include/gen/autoconfig_msvc.h (1.99.2.3),
+	gpre/cob.cpp (1.61.4.2), gpre/ftn.cpp (1.57.4.2), jrd/common.h
+	(1.137.2.10), jrd/flu.cpp (1.52.4.6), jrd/isc_file.cpp (1.98.4.5),
+	jrd/license.h (1.31.12.5), jrd/pag.cpp (1.98.4.15),
+	common/config/config.cpp (1.66.4.6), utilities/drop.cpp (1.31.4.5),
+	remote/inet.cpp (1.160.2.12), lock/lock.h (1.33.4.3),
+	config/Parameters.h (1.2.4.1):
+
+	Remove SINIX-Z from FB2.
+
+2008-04-02 12:19  paulbeach
+
+	* firebird2/builds/posix/prefix.hpux (1.1.4.4):
+
+	No header for prefix.hpux
+
+2008-03-30 14:07  robocop
+
+	* firebird2/builds/: install/arch-specific/sinixz/Makefile.in
+	(1.1.12.1), install/arch-specific/sinixz/pkginfo.in (1.1.12.1),
+	install/arch-specific/sinixz/postinstall.in (1.2.12.1),
+	install/arch-specific/sinixz/postremove.in (1.1.12.1),
+	install/arch-specific/sinixz/preinstall.in (1.1.12.1),
+	install/arch-specific/sinixz/prototype.in (1.7.4.1),
+	posix/prefix.sinixz (1.24.12.1):
+
+	Remove obsolete SINIX-Z files.
+
+2008-03-29 12:28  robocop
+
+	* firebird2/src/jrd/nbak.cpp (1.52.2.8):
+
+	Fix the chaotic indentation.
+
+2008-03-29 12:21  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.237.2.24), jrd.h (1.148.4.9),
+	nbak.h (1.19.4.5):
+
+	const.
+
+2008-03-29 12:19  robocop
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.13), GlobalRWLock.cpp
+	(1.15.2.3), GlobalRWLock.h (1.14.2.3):
+
+	Style.
+
+2008-03-29 12:14  robocop
+
+	* firebird2/builds/win32/msvc6/: engine.dsp (1.60.4.1),
+	engine_classic.dsp (1.56.4.1), engine_embed.dsp (1.35.4.1):
+
+	Adjust VC6 files.
+
+2008-03-28 14:58  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_scripted.txt
+	(1.1.6.4):
+
+	enhance documentation of scripted installs.
+
+2008-03-28 14:45  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	After_Installation.url (1.1.10.2), BuildExecutableInstall.bat
+	(1.15.2.14), FirebirdInstallEnvironmentChecks.inc (1.4.4.3),
+	FirebirdInstallSupportFunctions.inc (1.2.4.1),
+	FirebirdInstall_20.iss (1.12.2.13), Readme.txt (1.9.2.10),
+	custom_messages.inc (1.2.4.5), firebirdsql.org.url (1.1.10.2),
+	i18n_readme.txt (1.2.6.2), installation_readme.txt (1.9.2.12),
+	ba/Instalacija_ProcitajMe.txt (1.4.4.6), ba/ProcitajMe.txt
+	(1.2.4.6), ba/custom_messages_ba.inc (1.2.4.3),
+	de/custom_messages_de.inc (1.2.6.3), de/installation_liesmich.txt
+	(1.3.4.6), de/liesmich.txt (1.3.4.6), es/custom_messages_es.inc
+	(1.1.6.3), es/leame.txt (1.1.6.7), es/leame_instalacion.txt
+	(1.1.6.6), fr/custom_messages_fr.inc (1.2.6.4),
+	fr/installation_lisezmoi.txt (1.1.6.6), fr/lisezmoi.txt (1.1.6.7),
+	hu/custom_messages_hu.inc (1.2.6.5), hu/olvass_el.txt (1.1.6.7),
+	hu/telepitesi_segedlet.txt (1.1.6.7), it/custom_messages_it.inc
+	(1.1.2.3), it/leggimi.txt (1.1.2.8), it/leggimi_installazione.txt
+	(1.1.2.6), pl/custom_messages_pl.inc (1.1.6.3), pl/czytajto.txt
+	(1.2.4.8), pl/instalacja_czytajto.txt (1.3.4.8),
+	pt/custom_messages_pt.inc (1.3.2.3), pt/instalacao_leia-me.txt
+	(1.3.2.7), pt/leia-me.txt (1.2.2.6), ru/Readme.txt (1.1.2.6),
+	ru/custom_messages_ru.inc (1.1.2.4), ru/installation_readme.txt
+	(1.1.2.6), si/custom_messages_si.inc (1.2.6.2):
+
+	sync windows installation kits with Fb 2.1 update version strings
+	for 2.0.4
+
+2008-03-28 11:56  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.4.8):
+
+	typo
+
+2008-03-25 10:07  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.14):
+
+	This line - be not needed
+
+2008-03-24 14:54  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.13):
+
+	Typo
+
+2008-03-21 22:50  asfernandes
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.11), pwd.cpp (1.48.4.4),
+	cch.cpp (1.129.2.12):
+
+	Misc
+
+2008-03-21 10:28  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.12):
+
+	Fixed posix build
+
+2008-03-21 09:19  dimitr
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.15.2.2), GlobalRWLock.h
+	(1.14.2.2):
+
+	Commit the forgotten files.
+
+2008-03-21 03:42  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.14.2.1):
+
+	file GlobalRWLock.h was added on branch B2_0_Release on 2008-03-21
+	08:19:11 +0000
+
+2008-03-21 03:42  asfernandes
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.14):
+
+	Misc
+
+2008-03-20 19:45  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.15):
+
+	Update.
+
+2008-03-20 19:41  dimitr
+
+	* firebird2/: src/common/classes/array.h (1.34.4.1),
+	src/jrd/btr.cpp (1.162.2.15), src/jrd/cch.cpp (1.129.2.10),
+	src/jrd/cch.h (1.28.4.3), src/jrd/cch_proto.h (1.24.4.1),
+	src/jrd/dfw.epp (1.178.2.6), src/jrd/jrd.cpp (1.237.2.23),
+	src/jrd/jrd.h (1.148.4.8), src/jrd/lck.cpp (1.51.4.2),
+	src/jrd/lck.h (1.21.4.1), src/jrd/lck_proto.h (1.10.12.2),
+	src/jrd/nbak.cpp (1.52.2.7), src/jrd/nbak.h (1.19.4.4),
+	src/jrd/shut.cpp (1.38.4.4), src/jrd/os/pio_proto.h (1.16.4.2),
+	src/jrd/os/posix/unix.cpp (1.42.4.11), src/lock/lock.cpp
+	(1.114.4.3), src/lock/lock.h (1.33.4.2), src/lock/lock_proto.h
+	(1.8.12.2), builds/posix/make.shared.variables (1.60.4.2),
+	builds/win32/msvc7/engine.vcproj (1.50.4.1),
+	builds/win32/msvc7/engine_classic.vcproj (1.50.4.1),
+	builds/win32/msvc7/engine_embed.vcproj (1.39.4.1),
+	builds/win32/msvc8/engine.vcproj (1.10.6.3),
+	builds/win32/msvc8/engine_classic.vcproj (1.10.6.3),
+	builds/win32/msvc8/engine_embed.vcproj (1.10.6.3):
+
+	Applied the NBAK patch. I've decided to skip the new error code and
+	use isc_random instead. Raw devices are not officially supported in
+	v2.0 anyway.
+
+2008-03-20 17:42  dimitr
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.15), GlobalRWLock.h
+	(1.13):
+
+	1) Added proper handle validation for dbb.  2) Changed dbb_sync
+	lifestyle handling.  3) Sync'ed access to the att_long_locks.  4)
+	Put in a temporary workaround for nbackup deadlocks.
+
+2008-03-20 17:42  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.15.2.1):
+
+	file GlobalRWLock.cpp was added on branch B2_0_Release on
+	2008-03-21 08:19:11 +0000
+
+2008-03-19 17:19  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.14):
+
+	1) Major cleanup of the old-style blk and allocator-based blk_type.
+	 2) Added synchronization for the JRD locks.
+
+2008-03-17 13:27  dimitr
+
+	* firebird2/: doc/WhatsNew (1.95.2.39), src/jrd/isc_version.h
+	(1.8.4.14):
+
+	Update.
+
+2008-03-17 13:04  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.1.4.7):
+
+	Include aliases.conf in the install
+
+2008-03-17 11:50  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.9), cch.h (1.28.4.2):
+
+	Backport fix for bug CORE-1731 : Sometimes engine may "hang" using
+	100% CPU load and no IO activity for the few minutes
+
+2008-03-14 11:51  paul_reeves
+
+	* firebird2/src/intl/lc_iso8859_1.cpp (1.15.4.3):
+
+	Be sure to include limits.h if we are using INT_MAX
+
+2008-03-12 17:48  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.13):
+
+	1) Cleanup.  2) Catch exceptions in AST routines.
+
+2008-03-09 17:02  asfernandes
+
+	* firebird2/src/intl/: lc_iso8859_1.cpp (1.15.4.2), lc_narrow.cpp
+	(1.16.2.3), lc_narrow.h (1.5.4.1):
+
+	Fixed CORE-1774 - Problem with collate ES_ES_CI_AI
+
+2008-03-06 20:06  hvlad
+
+	* firebird2/src/jrd/scl.epp (1.71.4.5):
+
+	Simpified fix for CORE-1775 : Improve performance of security
+	checking
+
+2008-03-04 07:37  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.237.2.22), jrd_pwd.h (1.18.4.3),
+	pwd.cpp (1.48.4.3):
+
+	Misc.
+
+2008-03-02 16:37  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/call_service.cpp (1.10.4.2):
+
+	Fixed problem, noticed by Philippe with CORE-1680
+
+2008-02-29 16:27  paulbeach
+
+	* firebird2/src/jrd/os/darwin/config_root.cpp (1.5.4.3):
+
+	Correct include for MacTypes.h
+
+2008-02-29 14:56  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_i386 (1.1.2.4):
+
+	Minor typo
+
+2008-02-29 14:33  paulbeach
+
+	* firebird2/src/common/classes/semaphore.h (1.24.2.16):
+
+	MacOSX 10.4 and previous semaphore declaration for all Darwin
+	builds
+
+2008-02-29 14:26  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_i386 (1.1.2.3):
+
+	Get rid of the really annoying $UNIX2003 symbols that get pulled
+	into libfbclient.dylib that prevent kinterbasdb running on MacOSX
+	10.4
+
+2008-02-27 13:56  alexpeshkoff
+
+	* firebird2/src/jrd/: jrd.cpp (1.237.2.21), jrd_pwd.h (1.18.4.2),
+	pwd.cpp (1.48.4.2):
+
+	backported fix for CORE-1421: SuperServer can't shutdown
+	immediately after shutdown request after failed login attempt
+
+2008-02-27 13:00  alexpeshkoff
+
+	* firebird2/src/jrd/os/pio.h (1.6.12.2):
+
+	forgotten yesterday file - CORE-1476
+
+2008-02-26 16:12  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.38):
+
+	Update.
+
+2008-02-26 14:09  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.42.4.10):
+
+	Backported fix for CORE-1476: Forced writes do not work on Linux
+
+2008-02-25 10:26  paul_reeves
+
+	* firebird2/builds/win32/install_classic.bat (1.2.12.1):
+
+	Dont run the guardian service if using the classic server.
+
+2008-02-24 11:31  hvlad
+
+	* firebird2/src/jrd/: dfw.epp (1.178.2.5), dfw_proto.h (1.14.4.1),
+	pcmet.epp (1.40.4.2):
+
+	Backport fix for CORE-1746 : Expression index can be created while
+	doing inserts into table
+
+2008-02-20 16:06  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/CS/prototype.in
+	(1.1.6.5):
+
+	Installation of Firebird 2.0.x SuperServer on Solaris
+
+2008-02-20 15:38  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/: CS/pkginfo.in
+	(1.1.6.2), CS/postinstall.in (1.2.4.3), CS/prototype.in (1.1.6.4),
+	SS/pkginfo.in (1.1.6.1), SS/postinstall.in (1.1.6.1),
+	SS/postremove.in (1.2.4.1), SS/prototype.in (1.1.6.1):
+
+	Installation of Firebird 2.0.x SuperServer on Solaris
+
+2008-02-20 15:32  dimitr
+
+	* firebird2/: doc/WhatsNew (1.95.2.37), src/jrd/isc_version.h
+	(1.8.4.13):
+
+	Update.
+
+2008-02-18 12:58  paulbeach
+
+	* firebird2/builds/: install/arch-specific/darwin/Readme.txt
+	(1.1.2.2), install/arch-specific/darwin/install-script (1.1.2.12),
+	install/arch-specific/darwin/preupgrade-script (1.1.2.4),
+	posix/postfix.darwin (1.1.4.6):
+
+	Add the Readme.txt, allow package upgrade of aliases.conf and UDF
+	files, so existing installations get upgraded properly.
+
 2008-02-17 14:59  dimitr
 
 	* firebird2/src/jrd/isc_version.h (1.8.4.12):
@@ -31,6 +718,20 @@
 
 	Minor MacOS ppc changes
 
+2008-01-29 02:36  asfernandes
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.12):
+
+	Misc
+
+2008-01-26 14:03  dimitr
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.12), GlobalRWLock.h
+	(1.11):
+
+	Major synchronization changes. Description of the commit will be
+	posted to fb-devel.
+
 2008-01-22 10:37  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/install-script
@@ -59,6 +760,19 @@
 
 	rolled back my bad attempt to fix CORE 1671
 
+2008-01-17 13:09  paulbeach
+
+	* firebird2/builds/posix/fbintl.hpux.vers (1.2.6.1):
+
+	file fbintl.hpux.vers was added on branch B2_0_Release on
+	2008-04-14 13:32:47 +0000
+
+2008-01-17 13:09  paulbeach
+
+	* firebird2/builds/posix/fbintl.hpux.vers (1.2):
+
+	Darwin and HPUX mods
+
 2008-01-17 12:15  paulbeach
 
 	* firebird2/builds/posix/: prefix.darwin_i386 (1.1.2.2),
@@ -66,11 +780,24 @@
 
 	Minor mod for international symbols
 
+2008-01-16 13:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.11):
+
+	Fixing merge
+
 2008-01-16 12:04  paulbeach
 
 	* firebird2/src/jrd/svc.cpp (1.166.2.9):
 
 	Make the service api work on MacOS
+
+2008-01-16 10:07  dimitr
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.10), GlobalRWLock.h
+	(1.10):
+
+	The merge continued.
 
 2008-01-11 13:55  alexpeshkoff
 
@@ -149,6 +876,20 @@
 	(1.126.2.9):
 
 	Fixed CORE-1681.
+
+2008-01-07 13:25  paulbeach
+
+	* firebird2/builds/posix/firebird.hpux.vers (1.1.6.1):
+
+	file firebird.hpux.vers was added on branch B2_0_Release on
+	2008-04-14 13:32:48 +0000
+
+2008-01-07 13:25  paulbeach
+
+	* firebird2/builds/posix/: fbintl.hpux.vers (1.1),
+	firebird.hpux.vers (1.1):
+
+	HPUX Port
 
 2008-01-07 13:03  paulbeach
 
@@ -448,11 +1189,24 @@
 
 	Backported missed method from HEAD
 
+2007-12-03 16:46  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.9):
+
+	Optimized RuntimeStaticstics (and related part of ThreadDb) for
+	performance - some tests run 25faster
+
 2007-11-28 14:12  alexpeshkoff
 
 	* firebird2/src/alice/alice.h (1.49.2.3):
 
 	Fixed gcc warning
+
+2007-11-24 01:12  asfernandes
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.9):
+
+	Misc
 
 2007-11-22 13:30  alexpeshkoff
 
@@ -465,6 +1219,12 @@
 
 	Backported fix for CORE-1603: Possible buffer overflow with long
 	user name
+
+2007-11-19 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.8):
+
+	Patch from Roman Simakov for deadlock using GlobalRWLock
 
 2007-11-19 11:14  alexpeshkoff
 
@@ -831,6 +1591,12 @@
 
 	Update Polish i18n for Windows installer.
 
+2007-09-22 10:34  robocop
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.8), GlobalRWLock.h (1.7):
+
+	The lock_string argument can be const.
+
 2007-09-14 20:29  dimitr
 
 	* firebird2/src/jrd/par.cpp (1.132.4.5):
@@ -1041,6 +1807,24 @@
 	* firebird2/src/common/classes/vector.h (1.15.4.2):
 
 	Removed the unconditional debugging info, moved the tag.
+
+2007-08-12 07:22  robocop
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.7):
+
+	Misc.
+
+2007-08-10 15:57  alexpeshkoff
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.6), GlobalRWLock.h (1.6):
+
+	Use AstInhibit in GlobalRWLock
+
+2007-08-10 09:55  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.5):
+
+	Fixed solx86 build - not always offset_t and UINT64 are the same
 
 2007-08-09 13:57  paulbeach
 
@@ -1304,6 +2088,31 @@
 	Backported fix for CORE-1347 - Unexpected "cannot transliterate"
 	error
 
+2007-07-03 11:08  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	After_Installation.url (1.1), firebirdsql.org.url (1.1):
+
+	Add link to landing page Make sure we include the metadata update
+	script.
+
+2007-07-03 11:08  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/After_Installation.url
+	(1.1.10.1):
+
+	file After_Installation.url was added on branch B2_0_Release on
+	2008-03-28 13:45:29 +0000
+
+2007-07-03 11:08  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/firebirdsql.org.url
+	(1.1.10.1):
+
+	file firebirdsql.org.url was added on branch B2_0_Release on
+	2008-03-28 13:45:29 +0000
+
 2007-06-28 14:24  alexpeshkoff
 
 	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.17.4.2):
@@ -1389,6 +2198,18 @@
 
 	Backported fix for CORE-1302: Races during service startup
 
+2007-05-24 14:49  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.5):
+
+	some more gcc warnings
+
+2007-05-24 14:30  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.4):
+
+	fixed gcc warning, human readability also here
+
 2007-05-23 04:32  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.14):
@@ -1463,6 +2284,12 @@
 
 	Update.
 
+2007-05-11 08:44  aafemt
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.4):
+
+	Warnings
+
 2007-05-08 17:23  alexpeshkoff
 
 	* firebird2/src/burp/mvol.cpp (1.43.4.1):
@@ -1510,6 +2337,12 @@
 	Fixed CORE-1247 : Blobs garbage collector removed wrong blob if
 	going blob descriptor contains 0:0 (NULL value) but field's NULL
 	flag is not set
+
+2007-05-04 23:25  skidder
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.3):
+
+	Small NBAK performance optimization from Roman Simakov
 
 2007-05-04 03:38  dimitr
 
@@ -1574,6 +2407,18 @@
 
 	MacOS Port
 
+2007-05-02 08:57  robocop
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.3):
+
+	Misc.
+
+2007-04-27 18:27  dimitr
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.2):
+
+	Misc.
+
 2007-04-27 17:21  dimitr
 
 	* firebird2/src/jrd/vio.cpp (1.151.2.7):
@@ -1612,6 +2457,19 @@
 	* firebird2/builds/win32/msvc8/fbembed.vcproj (1.10):
 
 	This shouldn't belong to this project
+
+2007-04-24 19:40  skidder
+
+	* firebird2/src/jrd/GlobalRWLock.h (1.2):
+
+	Fix typos in comments
+
+2007-04-24 17:44  skidder
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.1), GlobalRWLock.h (1.1):
+
+	NBAK synchronization rework. This should fix CORE-1151 and other
+	Nbackup stability issues
 
 2007-04-24 16:05  dimitr
 
