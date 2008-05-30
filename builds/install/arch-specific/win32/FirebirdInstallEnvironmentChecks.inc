@@ -84,38 +84,44 @@ Const
   BrokenInstall         = 32;   //version or component mismatch found, so mark broken
 
   //Possible product installs
-  IB4Install    = 0;
-  IB5Install    = 1;
-  IB6Install    = 2;
-  IB65Install   = 3;
-  IB70Install   = 4;
-  FB1Install    = 5;
-  FB15RCInstall = 6;
-  FB15Install   = 7;
-  FB20Install   = 8;
-  IB80Install   = 9;
-  IB81Install   = 10;
-  FB21Install   = 11;
-  FB25Install   = 12;
-  FB30Install   = 13;
+  IB4Install        = 0;
+  IB5Install        = 1;
+  IB6Install        = 2;
+  IB65Install       = 3;
+  IB70Install       = 4;
+  FB1Install        = 5;
+  FB15RCInstall     = 6;
+  FB15Install       = 7;
+  FB20Install       = 8;
+  IB80Install       = 9;
+  IB81Install       = 10;
+  FB21Install       = 11;
+  FB21_x64_Install  = 12;
+  FB25Install       = 13;
+  FB25_x64_Install  = 14;
+  FB30Install       = 15;
+  FB30_x64_Install  = 16;
 
-  MaxProdInstalled = FB30Install;
-
-  //ProductsInstalled
-  IB4     = $0001;
-  IB5     = $0002;
-  IB6     = $0004;
-  IB65    = $0008;
-  IB70    = $0010;
-  FB1     = $0020;
-  FB15RC  = $0040;
-  FB15    = $0080;
-  FB20    = $0100;
-  IB80    = $0200;
-  IB81    = $0400;
-  FB21    = $0800;
-  FB25    = $1000;
-  FB30    = $2000;
+  MaxProdInstalled = FB30_x64_Install;
+  
+//ProductsInstalled
+  IB4       = $00001;
+  IB5       = $00002;
+  IB6       = $00004;
+  IB65      = $00008;
+  IB70      = $00010;
+  FB1       = $00020;
+  FB15RC    = $00040;
+  FB15      = $00080;
+  FB20      = $00100;
+  IB80      = $00200;
+  IB81      = $00400;
+  FB21      = $00800;
+  FB25      = $01000;
+  FB30      = $02000;
+  FB21_x64  = $04000;
+  FB25_x64  = $08000;
+  FB30_x64  = $10000;
 
   //  Likely gds32 version strings for installed versions of Firebird or InterBase are:
   //  [6,0,n,n]     InterBase 6.0
@@ -152,6 +158,7 @@ Type
     InstallType:    Integer;
     ActualVersion:  String;
     FirebirdVersion:String;
+    RootKey:        Integer;
   end;
 
 
@@ -162,6 +169,7 @@ procedure InitExistingInstallRecords;
 var
   product: Integer;
 begin
+
   SetArrayLength(ProductsInstalledArray,MaxProdInstalled + 1);
   for product := 0 to MaxProdInstalled do begin
 
@@ -174,6 +182,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IB4MessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB5Install: begin
@@ -181,6 +190,7 @@ begin
         ProductsInstalledArray[product].RegKey := IB5RegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB6Install: begin
@@ -188,6 +198,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB65Install: begin
@@ -195,6 +206,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB70Install: begin
@@ -202,6 +214,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB80Install: begin
@@ -209,6 +222,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB81Install: begin
@@ -216,6 +230,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB1Install: begin
@@ -223,6 +238,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB15RCInstall: begin
@@ -230,6 +246,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB15RCKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB15Install: begin
@@ -237,6 +254,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB20Install: begin
@@ -244,36 +262,66 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB21Install: begin
-        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB21_x64_Install: begin
+        if iswin64 then begin
+          ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+          ProductsInstalledArray[product].RegKey := FB2RegKey;
+          ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+          ProductsInstalledArray[product].MessageFile := FBMessageFile;
+          ProductsInstalledArray[product].RootKey := HKLM64;
+        end;
       end;
 
       FB25Install: begin
-        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB25_x64_Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM64;
       end;
 
       FB30Install: begin
-        ProductsInstalledArray[product].Description := FBDesc;
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB30_x64_Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM64;
       end;
 
     end; //case
 
-    ProductsInstalledArray[product].Path := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
+    ProductsInstalledArray[product].Path := GetRegistryEntry(ProductsInstalledArray[product].RootKey,
+      ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
 
     ProductsInstalledArray[product].RegVersion := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, 'Version');
+      ProductsInstalledArray[product].RootKey, ProductsInstalledArray[product].RegKey, 'Version');
 
   end;  //for
 end; //function
@@ -533,6 +581,20 @@ begin
             end;
         end;
 
+        FB21_x64_Install: begin
+          if iswin64 then begin
+            if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.1.0.0',2) <> 0) then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+                ProductsInstalled := ProductsInstalled + FB21_x64;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+              end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+          end;
+        end;
+
         FB25Install: begin
           if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.5.0.0',2) <> 0) then
             ProductsInstalledArray[product].InstallType := NotInstalled
@@ -543,12 +605,32 @@ begin
             end;
         end;
 
+        FB25_x64_Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.5.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB25_x64;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
         FB30Install: begin
           if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '3.0.0.0',2) <> 0) then
             ProductsInstalledArray[product].InstallType := NotInstalled
           else
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
               ProductsInstalled := ProductsInstalled + FB30;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB30_x64_Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '3.0.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB30_x64;
               ProductsInstalledCount := ProductsInstalledCount + 1;
             end;
         end;

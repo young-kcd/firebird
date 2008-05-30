@@ -25,6 +25,8 @@
 
 Function Prototypes
 
+  function IsWin32: boolean;
+  function Is32BitInstallMode: boolean;
   function IsVista: boolean;
   function IsWin2k3: boolean;
   function IsWinXP: boolean;
@@ -107,6 +109,19 @@ v4.0    4.0.6001.16531 or greater   Released with Windows Vista SP1 and
  NB3 - Our installer will not run msiexec on systems before XP. However, some early XP and W2K3
        systems do not have v3.0 of the Windows Installer.
 *)
+
+
+function IsWin32: boolean;
+//helper function to simplify logic of x86/win64 checks.
+begin
+  result := not IsWin64;
+end;
+
+function Is32BitInstallMode: boolean;
+//helper function to simplify logic of x86/win64 checks.
+begin
+  result := not Is64BitInstallMode;
+end;
 
 function IsVista: boolean;
 var
@@ -368,10 +383,17 @@ begin
 
 end;
 
-function GetRegistryEntry(RegKey, RegEntry: string): String;
+
+function GetRegistryEntry(RootKey: Integer; RegKey, RegEntry: string): String;
 begin
-  result := '';
-  RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
+  Result := '';
+  //if not win64 and RootKey is HKLM64 then we are on a 32-bit box,
+  //so skip looking in registry
+    if ( (RootKey = HKLM64) AND (iswin32) ) then
+    //do nothing
+      Result := ''
+    else
+      RegQueryStringValue(RootKey, RegKey, RegEntry, Result);
 end;
 
 

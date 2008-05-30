@@ -675,8 +675,12 @@ end;
 for i:=0 to ProductsInstalledCount-1 do
   InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
 
-//If FB2 is installed
-If ((ProductsInstalled AND FB2) = FB2) then
+//If FB21 is installed
+#if PlatformTarget == "x64"
+If ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) then
+#else
+If ((ProductsInstalled AND FB21 ) = FB21 ) then
+#endif
       InstallSummary := InstallSummary
       +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
       +#13 + ExpandConstant('{cm:InstallSummarySuffix2}')
@@ -716,10 +720,14 @@ begin
   end;
 
 
-  //If Fb2.0 is installed then we can install over it.
-  //unless we find the server running.
-  if (ProductsInstalledCount = 1) AND
-    ((ProductsInstalled AND FB2) = FB2) then begin
+  //If existing install of the same majorver.minorver is found then
+  //we can upgrade it unless we find the server running.
+  if ( (ProductsInstalledCount = 1) AND
+#if PlatformTarget == "x64"
+    ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) ) then begin
+#else
+    ((ProductsInstalled AND FB21 ) = FB21 ) ) then begin
+#endif
       VerString := ( FirebirdDefaultServerRunning );
       if VerString <> '' then begin
         result := false;
