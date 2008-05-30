@@ -23,7 +23,7 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.2.2
+;   This script has been designed to work with Inno Setup v5.2.3
 ;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
@@ -162,9 +162,9 @@
 #endif
 #define msvc_version 8
 
-;BaseVer should be used for all v2.n installs.
-;This allows us to upgrade silently from 2.0 to 2.1
-#define BaseVer MajorVer + "_0"
+;BaseVer should be used for all v2.1.n installs.
+;This allows us to upgrade silently from 2.1.m to 2.1.n
+#define BaseVer MajorVer + "_" + MinorVer
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
@@ -341,14 +341,14 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 [Run]
 #if msvc_version == 8
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
-;Always register Firebird
-Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
+;Only register Firebird if we are installing AND configuring
+Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
 Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
@@ -361,7 +361,7 @@ Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {c
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
 Filename: {app}\bin\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
@@ -846,9 +846,9 @@ begin
 
 end;
 
-//This function tries to find an existing install of Firebird 1.5
+//This function tries to find an existing install of Firebird 2.n
 //If it succeeds it suggests that directory for the install
-//Otherwise it suggests the default for Fb 1.5
+//Otherwise it suggests the default for Fb 2.n
 function ChooseInstallDir(Default: String): String;
 var
   InterBaseRootDir,
@@ -875,7 +875,7 @@ begin
       InstallRootDir := Default;                                   // but the user has changed the default
 
     if (( InstallRootDir = '') and
-        ( FirebirdVer[0] = 2 ) and ( FirebirdVer[1] = 0 ) ) then   // Firebird 2.0 is installed
+        ( FirebirdVer[0] = {#MajorVer} ) and ( FirebirdVer[1] = {#MinorVer} ) ) then   // Firebird 2.n is installed
       InstallRootDir := FirebirdRootDir;                            // but the user has changed the default
 
     // if we haven't found anything then try the FIREBIRD env var
