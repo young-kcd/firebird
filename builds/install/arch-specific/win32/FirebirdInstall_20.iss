@@ -343,7 +343,7 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 #if msvc_version == 8
 Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
