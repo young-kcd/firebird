@@ -389,7 +389,7 @@ begin
   Result := '';
   //if not win64 and RootKey is HKLM64 then we are on a 32-bit box,
   //so skip looking in registry
-    if ( (RootKey = HKLM64) AND (iswin32) ) then
+    if ( (RootKey = HKLM64) AND (isWin32) ) then
     //do nothing
       Result := ''
     else

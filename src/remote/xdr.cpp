@@ -42,6 +42,7 @@
 //   entry_point 'IB_UDF_abs' module_name 'ib_udf';
 // select abs2(2.0 / 3.0) from rdb$database;
 // It will return big strange value in case of invalid define
+// ASF: Currently, all little-endian are SWAP_DOUBLE and big-endian aren't.
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
 #define		SWAP_DOUBLE
 #elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS)

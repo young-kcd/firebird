@@ -15,8 +15,8 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:	$(VERSION)	$(PLATFORM)
-#
 # 2 Oct 2002, Nickolay Samofatov - Major cleanup
+# Adriano dos Santos Fernandes
 
 COMMON_FLAGS=-ggdb -DFB_SEND_FLAGS=MSG_NOSIGNAL -DLINUX -DIA64 -pipe -MMD -fPIC -fmessage-length=0
 OPTIMIZE_FLAGS=-O3 -fno-omit-frame-pointer 
