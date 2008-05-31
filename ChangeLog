@@ -1,3 +1,9 @@
+2008-05-31 04:33  asfernandes
+
+	* firebird2/src/remote/xdr.cpp (1.38):
+
+	Misc
+
 2008-05-29 21:20  sboyd
 
 	* firebird2/src/gpre/: rmc.cpp (1.8), sql.cpp (1.69):
