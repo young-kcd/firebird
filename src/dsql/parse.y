@@ -1747,7 +1747,7 @@ for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 //		;
 //
 //exec_into	: EXECUTE STATEMENT value INTO variable_list
-//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
+//			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, NULL, make_list ($5), NULL); }
 //		;
 
 exec_sql
@@ -1755,7 +1755,7 @@ exec_sql
 			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], 0, 0, $4, $5, $6, $7, 0);
+					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, $4, $5, $6, $7, NULL);
 		}
 	;
 
@@ -1765,7 +1765,7 @@ exec_into
 			INTO variable_list
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($9), 0, $4, $5, $6, $7, 0);
+					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($9), NULL, $4, $5, $6, $7, NULL);
 		}
 	;
 
