@@ -1,3 +1,10 @@
+2008-06-01 03:19  asfernandes
+
+	* firebird2/src/dsql/parse.y (1.200.4.4):
+
+	Fixed CORE-1919 - Memory corruptions in EXECUTE STATEMENT may crash
+	the server
+
 2008-05-30 10:33  alexpeshkoff
 
 	* firebird2/src/jrd/svc.cpp (1.166.2.11):
