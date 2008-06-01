@@ -1742,7 +1742,7 @@ for_exec_into	: label_opt FOR EXECUTE STATEMENT value INTO variable_list DO proc
 		;
 
 exec_into	: EXECUTE STATEMENT value INTO variable_list
-			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, 0, make_list ($5)); }
+			{ $$ = make_node (nod_exec_into, (int) e_exec_into_count, $3, NULL, make_list ($5), NULL); }
 		;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
