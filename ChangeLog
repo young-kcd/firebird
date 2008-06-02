@@ -1,3 +1,14 @@
+2008-06-01 21:14  asfernandes
+
+	* firebird2/src/: common/classes/auto.h (1.19), dsql/StmtNodes.cpp
+	(1.4):
+
+	Set the tdbb->request to NULL when committing an autonomous
+	transaction, as a normal COMMIT does. This fixes assertion related
+	to system blobs created by DDL commands in EXECUTE STATEMENT. Test
+	case: execute block as begin   in autonomous transaction do
+	execute statement 'create table x (n integer)'; end!
+
 2008-06-01 03:19  asfernandes
 
 	* firebird2/src/dsql/parse.y (1.285):
