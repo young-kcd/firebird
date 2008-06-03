@@ -672,6 +672,7 @@
 #define isc_dyn_grant_options             132
 #define isc_dyn_grant_user_group          205
 #define isc_dyn_grant_role                218
+#define isc_dyn_grant_grantor			  245
 
 
 /**********************************/
@@ -846,8 +847,9 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
+// 245 is used in GRANTED BY
 
-#define isc_dyn_last_dyn_value            245
+#define isc_dyn_last_dyn_value            246
 
 /******************************************/
 /* Array slice description language (SDL) */

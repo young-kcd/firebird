@@ -2064,6 +2064,7 @@ COMMIT WORK;
 ('dyn_cannot_addrem_computed', 'DYN_modify_sql_field', 'dyn_mod.epp', NULL, 8, 249, NULL, 'Cannot add or remove COMPUTED from column @1', NULL, NULL);
 ('dyn_no_empty_pw', 'dyn_user', 'dyn.epp', NULL, 8, 250, NULL, 'Password should not be empty string', NULL, NULL);
 ('dyn_dup_index', 'DYN_define_index', 'dyn_def.epp', NULL, 8, 251, NULL, 'Index @1 already exists', NULL, NULL);
+('dyn_locksmith_use_granted', 'grant/revoke', 'dyn.epp', NULL, 8, 252, NULL, 'Only @1 or database owner can use GRANTED BY clause', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
