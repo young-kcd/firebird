@@ -1,3 +1,51 @@
+2008-06-03 13:47  alexpeshkoff
+
+	* firebird2/src/: include/consts_pub.h (1.20), msgs/facilities2.sql
+	(1.34), msgs/messages2.sql (1.43):
+
+	Reserved codes for GRANTED BY clause
+
+2008-06-03 13:43  alexpeshkoff
+
+	* firebird2/src/common/classes/init.cpp (1.10):
+
+	Some service for us - make errors in destructors visible to
+	debugger
+
+2008-06-03 08:19  robocop
+
+	* firebird2/src/dsql/StmtNodes.cpp (1.5):
+
+	Style.
+
+2008-06-03 08:19  robocop
+
+	* firebird2/src/dsql/: ddl.cpp (1.244), pass1.cpp (1.390):
+
+	Style.	Remove useless parentheses.
+
+2008-06-03 08:16  robocop
+
+	* firebird2/src/: common/classes/alloc.cpp (1.111),
+	gpre/gpre_meta.epp (1.57):
+
+	Style.
+
+2008-06-03 08:14  robocop
+
+	* firebird2/src/: burp/backup.epp (1.112), burp/burp.cpp (1.147),
+	burp/restore.epp (1.143), burp/spit.cpp (1.34),
+	common/classes/init.cpp (1.9), dsql/gen.cpp (1.153),
+	dudley/extract.epp (1.47), dudley/parse.cpp (1.52), dudley/trn.cpp
+	(1.39), gpre/ada.cpp (1.53), gpre/c_cxx.cpp (1.70), gpre/cmd.cpp
+	(1.43), gpre/cme.cpp (1.45), gpre/cmp.cpp (1.37), gpre/cob.cpp
+	(1.66), gpre/exp.cpp (1.42), gpre/ftn.cpp (1.62), gpre/gpre.cpp
+	(1.88), gpre/par.cpp (1.68), gpre/pas.cpp (1.54), gpre/rmc.cpp
+	(1.9), gpre/sqe.cpp (1.51), gpre/sql.cpp (1.70), intl/cv_jis.cpp
+	(1.17), iscguard/iscguard.cpp (1.57):
+
+	Mostly remove useless parentheses.
+
 2008-06-01 21:14  asfernandes
 
 	* firebird2/src/: common/classes/auto.h (1.19), dsql/StmtNodes.cpp
