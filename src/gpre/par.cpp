@@ -499,7 +499,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 	TEXT* string;
 
 	for (;;) {
-		if (MSC_match(KW_FILENAME) && (!isQuoted(gpreGlob.token_global.tok_type)))
+		if (MSC_match(KW_FILENAME) && !isQuoted(gpreGlob.token_global.tok_type))
 			CPR_s_error("quoted file name");
 
 		if (isQuoted(gpreGlob.token_global.tok_type)) {
@@ -1042,7 +1042,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 	while (true) {
 		// find a relation name, or maybe a list of them 
 
-		if ((!parse_sql) && terminator())
+		if (!parse_sql && terminator())
 			break;
 
 		do {
@@ -1094,7 +1094,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 				}
 			}
 		}
-		if (!(MSC_match(KW_COMMA)))
+		if (!MSC_match(KW_COMMA))
 			break;
 	}
 }
@@ -1203,7 +1203,7 @@ static void block_data_list( const dbb* db)
 			for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
 				list < end; list++)
 			{
-				if (!(strcmp(name, list->dbb_name)))
+				if (!strcmp(name, list->dbb_name))
 					return;
 			}
 		}
@@ -1609,7 +1609,7 @@ static act* par_blob_field()
 static act* par_case()
 {
 
-	if ((gpreGlob.sw_language == lang_pascal) && (!routine_decl))
+	if (gpreGlob.sw_language == lang_pascal && !routine_decl)
 		gpreGlob.cur_routine->act_count++;
 
 	return NULL;
@@ -1636,7 +1636,7 @@ static act* par_clear_handles()
 
 static act* par_derived_from()
 {
-	if ((gpreGlob.sw_language != lang_c) && (!isLangCpp(gpreGlob.sw_language))) {
+	if (gpreGlob.sw_language != lang_c && !isLangCpp(gpreGlob.sw_language)) {
 		return (NULL);
     }
 
@@ -2270,7 +2270,7 @@ static act* par_modify()
 
 static act* par_on()
 {
-	if (!(MSC_match(KW_ERROR)))
+	if (!MSC_match(KW_ERROR))
 		return NULL;
 
 	return par_on_error();
@@ -2999,7 +2999,7 @@ static act* par_trans( ACT_T act_op)
 		if ((gpreGlob.sw_language == lang_fortran)
 			&& (act_op == ACT_commit_retain_context))
 		{
-			if (!(MSC_match(KW_TRANSACTION_HANDLE)))
+			if (!MSC_match(KW_TRANSACTION_HANDLE))
 				return NULL;
 		}
 		else
@@ -3168,12 +3168,14 @@ static act* scan_routine_header()
 	act* action = MSC_action(0, ACT_routine);
 	action->act_flags |= ACT_mark;
 
-	while (!(MSC_match(KW_SEMI_COLON)))
+	while (!MSC_match(KW_SEMI_COLON))
+	{
 		if (!(match_parentheses()))
 			PAR_get_token();
+	}
 
 	if (MSC_match(KW_OPTIONS) && MSC_match(KW_LEFT_PAREN)) {
-		while (!(MSC_match(KW_RIGHT_PAREN))) {
+		while (!MSC_match(KW_RIGHT_PAREN)) {
 			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD))
 				action->act_flags |= ACT_decl;
 			else

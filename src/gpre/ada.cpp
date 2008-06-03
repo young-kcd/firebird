@@ -2781,7 +2781,7 @@ static void gen_routine( const act* action, int column)
 				   "isc_%d\t: firebird.blob_handle;\t-- blob handle --",
 				   blob->blb_ident);
 			SSHORT blob_subtype = blob->blb_const_to_type;
-			if (!(blob_subtype)) {
+			if (!blob_subtype) {
 				const ref* reference = blob->blb_reference;
 				if (reference) {
 					const gpre_fld* field = reference->ref_field;
@@ -3687,8 +3687,8 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 			trname = "gds_trans";
 		return trname;
 	}
-	else
-		return (request) ? request->req_trans : "gds_trans";
+
+	return (request) ? request->req_trans : "gds_trans";
 }
 
 

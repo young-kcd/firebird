@@ -3520,8 +3520,8 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 			trname = "gds__trans";
 		return trname;
 	}
-	else
-		return (request) ? request->req_trans : "gds__trans";
+
+	return (request) ? request->req_trans : "gds__trans";
 }
 
 

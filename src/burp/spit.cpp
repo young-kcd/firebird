@@ -210,8 +210,9 @@ int main( int argc, char *argv[])
 		}						// end of processing (*string == '-')
 		else {					// processing function specific command line options
 
-			switch (sw_replace) {
-			case (IN_SW_SPIT_SP):
+			switch (sw_replace)
+			{
+			case IN_SW_SPIT_SP:
 				if (!file_nm_sw) {	// process file name 
 					file_size = 0;
 					file_num = file_num + 1;
@@ -267,7 +268,7 @@ int main( int argc, char *argv[])
 				file_ptr->b_fil_size = file_size;
 				break;
 
-			case (IN_SW_SPIT_JT):
+			case IN_SW_SPIT_JT:
 				ret_cd = get_file_name(string, file_size, &file_ptr);
 
 				if (ret_cd == FB_FAILURE) {

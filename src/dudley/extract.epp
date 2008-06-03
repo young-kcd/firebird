@@ -2111,7 +2111,7 @@ static void view_fields(const TEXT * view_name)
                 VR2.RDB$VIEW_CONTEXT = VR.RDB$VIEW_CONTEXT
                 name_trunc(VR2.RDB$CONTEXT_NAME, context);
             END_FOR;
-            if (!(strcmp(RFR.RDB$FIELD_NAME, RFR.RDB$BASE_FIELD)))
+            if (!strcmp(RFR.RDB$FIELD_NAME, RFR.RDB$BASE_FIELD))
                 fprintf(output_file, "    %s.%s", context, s);
             else {
                 name_trunc(RFR.RDB$BASE_FIELD, temp);

@@ -593,7 +593,7 @@ void RMC_print_buffer(TEXT* output_bufferL,
 						else
 							single_quote = false;
 					}
-					if (!open_quote && (*p == ','))
+					if (!open_quote && *p == ',')
 						break;
 				}
 				/* if p == s, this is a call with no commas. back up to a blank */
@@ -612,7 +612,7 @@ void RMC_print_buffer(TEXT* output_bufferL,
 							else
 								single_quote = false;
 						}
-						if (!open_quote && (*p == ' '))
+						if (!open_quote && *p == ' ')
 							break;
 					}
 					q--;
@@ -639,7 +639,7 @@ void RMC_print_buffer(TEXT* output_bufferL,
 						else
 							single_quote = false;
 					}
-					if (!open_quote && (*p == ' '))
+					if (!open_quote && *p == ' ')
 						break;
 				}
 				q--;
@@ -3306,7 +3306,7 @@ static void gen_request( gpre_req* request)
 				request->req_ident);
 				
 		const char* string_type;
-		if (!(gpreGlob.sw_raw)) {
+		if (!gpreGlob.sw_raw) {
 			printa(names[COMMENT], false, " ");
 			printa(names[COMMENT], false, "FORMATTED REQUEST BLR FOR %s%d = ",
 				   names[isc_a_pos], request->req_ident);
@@ -4474,8 +4474,8 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 			trname = names[isc_trans_pos];
 		return trname;
 	}
-	else
-		return (request) ? request->req_trans : names[isc_trans_pos];
+
+	return (request) ? request->req_trans : names[isc_trans_pos];
 }
 
 

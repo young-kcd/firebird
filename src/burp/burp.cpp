@@ -1559,12 +1559,13 @@ static gbak_action open_files(const TEXT* file1,
 // try to attach the database using the first file_name 
 
 	if (sw_replace != IN_SW_BURP_C && sw_replace != IN_SW_BURP_R)
-		if (!(isc_attach_database(status_vector,
+	{
+		if (!isc_attach_database(status_vector,
 								  (SSHORT) 0,
 								  file1,
 								  &tdgbl->db_handle,
 								  dpb.getBufferLength(),
-								  reinterpret_cast<const char*>(dpb.getBuffer()))))
+								  reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
 			if (sw_replace != IN_SW_BURP_B) {
 				// msg 13 REPLACE specified, but the first file %s is a database 
@@ -1590,6 +1591,7 @@ static gbak_action open_files(const TEXT* file1,
 			BURP_print_status(status_vector, true);
 			return QUIT;
 		}
+	}
 
 	burp_fil* fil = 0;
 	if (sw_replace == IN_SW_BURP_B) {

@@ -281,8 +281,8 @@ gpre_ctx* SQE_context(gpre_req* request)
 			&& (symbol->sym_type == SYM_relation
 				|| symbol->sym_type == SYM_context
 				|| symbol->sym_type == SYM_procedure)
-			&& (!strcmp(symbol->sym_string, gpreGlob.token_global.tok_string))
-			&& (conflict->ctx_scope_level == request-> req_scope_level))
+			&& !strcmp(symbol->sym_string, gpreGlob.token_global.tok_string)
+			&& conflict->ctx_scope_level == request->req_scope_level)
 		{
 			break;
 		}
@@ -1758,8 +1758,10 @@ static gpre_ctx* par_alias_list( gpre_req* request, GPRE_NOD alias_list)
 //  since we already matched it to the context 
 
 	for (arg++; arg < end; arg++)
+	{
 		if (!(relation = par_base_table(request, relation, (const TEXT*) * arg)))
 			break;
+	}
 
 	if (!relation) {
 		fb_utils::snprintf(error_string, sizeof(error_string),
@@ -1830,8 +1832,10 @@ static gpre_ctx* par_alias( gpre_req* request, const TEXT* alias)
 			const TEXT* p = context->ctx_alias;
 			const TEXT* q = alias;
 			for (; *p && *q; p++, q++)
+			{
 				if (UPPER(*p) != UPPER(*q))
 					break;
+			}
 			if (!*p && !*q)
 				return context;
 		}
@@ -2059,7 +2063,7 @@ static GPRE_NOD par_in( gpre_req* request, GPRE_NOD value)
 					MSC_binary(nod_or, node,
 							   MSC_binary(nod_eq, value, value2));
 
-			if (!(MSC_match(KW_COMMA)))
+			if (!MSC_match(KW_COMMA))
 				break;
 		}
 	}

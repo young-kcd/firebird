@@ -825,7 +825,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		while (count--) {
 			const dsql_nod* ptr = node->nod_arg[count];
 
-			if ((!ptr) || (ptr->nod_type != nod_isolation))
+			if (!ptr || (ptr->nod_type != nod_isolation))
 				continue;
 
 			lock_level = (ptr->nod_flags & NOD_CONSISTENCY) ?
@@ -2903,7 +2903,7 @@ static void gen_sys_function(CompiledStatement* statement, const dsql_nod* node)
 static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lock,
 	USHORT lock_level)
 {
-	if ((!tbl_lock) || (tbl_lock->nod_type != nod_table_lock))
+	if (!tbl_lock || tbl_lock->nod_type != nod_table_lock)
 		return;
 
 	const dsql_nod* tbl_names = tbl_lock->nod_arg[e_lock_tables];

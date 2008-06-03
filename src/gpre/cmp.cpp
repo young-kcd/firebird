@@ -93,7 +93,7 @@ const int MAX_TPB = 4000;
 void CMP_check( gpre_req* request, SSHORT min_reqd)
 {
 	int length = request->req_blr - request->req_base;
-	if (!(min_reqd) && (length < request->req_length - 100))
+	if (!min_reqd && (length < request->req_length - 100))
 		return;
 
 	const int n = ((length + min_reqd + 100) > request->req_length * 2) ?

@@ -157,7 +157,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 	USHORT this_len;
 	USHORT wide;
 	const USHORT* const start = dest_ptr;
-	while ((sjis_len) && (dest_len > 1)) {
+	while (sjis_len && dest_len > 1) {
 		/* Step 1: Convert from SJIS to JIS code */
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
 			const UCHAR c1 = *sjis_str++;

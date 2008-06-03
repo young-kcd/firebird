@@ -1839,7 +1839,7 @@ static bool create_view(gpre_req* request,
 			return false;
 		}
 
-		if (!(select->rse_boolean)) {
+		if (!select->rse_boolean) {
 			CPR_error("Invalid view WITH CHECK OPTION - no WHERE clause");
 			return false;
 		}

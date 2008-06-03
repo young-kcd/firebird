@@ -636,7 +636,7 @@ THREAD_ENTRY_DECLARE start_and_watch_server(THREAD_ENTRY_PARAM)
 				error = GetLastError();
 			/* if the server is already running, then inform it that it should
 			 * open the guardian mutex so that it may be governed. */
-			if ((!error) || (error == ERROR_SERVICE_ALREADY_RUNNING)) {
+			if (!error || error == ERROR_SERVICE_ALREADY_RUNNING) {
 				/* Make sure that it is actually ready to receive commands.
 				 * If we were the one who started it, then it will need a few
 				 * seconds to get ready. */

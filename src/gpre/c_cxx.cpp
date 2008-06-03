@@ -587,9 +587,7 @@ static void asgn_from( const act* action, REF reference, int column)
 		else
 			value = reference->ref_value;
 
-		if (!slice_flag &&
-			reference->ref_value &&
-			(reference->ref_flags & REF_array_elem))
+		if (!slice_flag && reference->ref_value && (reference->ref_flags & REF_array_elem))
 		{
 			field = field->fld_array;
 		}
@@ -615,8 +613,7 @@ static void asgn_from( const act* action, REF reference, int column)
 				fprintf(gpreGlob.out_file, "isc_vtof (%s, %s, %d);", value,
 						   variable, field->fld_length);
 		}
-		else if (!reference->ref_master
-				 || (reference->ref_flags & REF_literal))
+		else if (!reference->ref_master || (reference->ref_flags & REF_literal))
 		{
 			fprintf(gpreGlob.out_file, "%s = %s;", variable, value);
 		}

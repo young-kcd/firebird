@@ -763,7 +763,7 @@ burp_fld* get_fields( burp_rel* relation)
 				}
 			}
 
-			if (!(Y.RDB$CHARACTER_SET_ID.NULL)) {
+			if (!Y.RDB$CHARACTER_SET_ID.NULL) {
 				field->fld_character_set_id = Y.RDB$CHARACTER_SET_ID;
 				field->fld_flags |= FLD_charset_flag;
 			}
@@ -902,7 +902,7 @@ burp_fld* get_fields( burp_rel* relation)
 						if (blob_id->gds_quad_low || blob_id->gds_quad_high)
 							field->fld_default_source = X2.RDB$DEFAULT_SOURCE;
 					}
-					if (!(F2.RDB$CHARACTER_SET_ID.NULL))
+					if (!F2.RDB$CHARACTER_SET_ID.NULL)
 					{
 						field->fld_character_set_id = F2.RDB$CHARACTER_SET_ID;
 						field->fld_flags |= FLD_charset_flag;
@@ -2677,7 +2677,7 @@ void write_check_constraints(void)
 		put(tdgbl, rec_chk_constraint);
 	
 		PUT_TEXT (att_chk_constraint_name, X.RDB$CONSTRAINT_NAME);
-		if (!(X.RDB$TRIGGER_NAME.NULL))
+		if (!X.RDB$TRIGGER_NAME.NULL)
 			PUT_TEXT (att_chk_trigger_name, X.RDB$TRIGGER_NAME);
 		put(tdgbl, att_end);
 	END_FOR;
@@ -3122,10 +3122,10 @@ void write_function_args( GDS_NAME funcptr)
 			put_numeric (att_functionarg_field_scale, X.RDB$FIELD_SCALE);
 			put_numeric (att_functionarg_field_length, X.RDB$FIELD_LENGTH);
 			put_numeric (att_functionarg_field_sub_type, X.RDB$FIELD_SUB_TYPE);
-			if (!(X.RDB$CHARACTER_SET_ID.NULL))
+			if (!X.RDB$CHARACTER_SET_ID.NULL)
 				put_numeric (att_functionarg_character_set, X.RDB$CHARACTER_SET_ID);
 			
-			if (!(X.RDB$FIELD_PRECISION.NULL))
+			if (!X.RDB$FIELD_PRECISION.NULL)
 				put_numeric (att_functionarg_field_precision, X.RDB$FIELD_PRECISION);
 			put(tdgbl, att_end);
 		END_FOR;
@@ -3158,7 +3158,7 @@ void write_function_args( GDS_NAME funcptr)
 					X2.RDB$FUNCTION_NAME EQ funcptr AND 
 					X2.RDB$ARGUMENT_POSITION = X.RDB$ARGUMENT_POSITION;
 
-					if (!(X2.RDB$CHARACTER_SET_ID.NULL))
+					if (!X2.RDB$CHARACTER_SET_ID.NULL)
 						put_numeric (att_functionarg_character_set, X2.RDB$CHARACTER_SET_ID);
 				/* Note that BCK_ods10 canNOT be set if we're in this
 				   "else" branch.  Hence there is no need to test that
@@ -3317,22 +3317,22 @@ void write_global_fields(void)
 				put_numeric (att_field_external_scale, X.RDB$EXTERNAL_SCALE);
 			if (X.RDB$DIMENSIONS)
 				put_numeric (att_field_dimensions, X.RDB$DIMENSIONS);
-			if (!(X.RDB$NULL_FLAG.NULL))
+			if (!X.RDB$NULL_FLAG.NULL)
 				put_numeric (att_field_null_flag, X.RDB$NULL_FLAG);
-			if (!(X.RDB$CHARACTER_LENGTH.NULL))
+			if (!X.RDB$CHARACTER_LENGTH.NULL)
 				put_numeric (att_field_character_length, X.RDB$CHARACTER_LENGTH);
-			if (!(X.RDB$DEFAULT_SOURCE.NULL))
+			if (!X.RDB$DEFAULT_SOURCE.NULL)
 				put_source_blob (att_field_default_source, att_field_default_source,
 					X.RDB$DEFAULT_SOURCE);
-			if (!(X.RDB$MISSING_SOURCE.NULL))
+			if (!X.RDB$MISSING_SOURCE.NULL)
 				put_source_blob (att_field_missing_source, att_field_missing_source,
 					X.RDB$MISSING_SOURCE);
-			if (!(X.RDB$CHARACTER_SET_ID.NULL))
+			if (!X.RDB$CHARACTER_SET_ID.NULL)
 				put_numeric (att_field_character_set, X.RDB$CHARACTER_SET_ID);
-			if (!(X.RDB$COLLATION_ID.NULL))
+			if (!X.RDB$COLLATION_ID.NULL)
 				put_numeric (att_field_collation_id, X.RDB$COLLATION_ID);
 			
-			if (!(X.RDB$FIELD_PRECISION.NULL))
+			if (!X.RDB$FIELD_PRECISION.NULL)
 				put_numeric (att_field_precision, X.RDB$FIELD_PRECISION);
 			
 			put(tdgbl, att_end);
@@ -3399,26 +3399,26 @@ void write_global_fields(void)
 			{
 				FOR (REQUEST_HANDLE req_handle3)
 					F IN RDB$FIELDS WITH F.RDB$FIELD_NAME = X.RDB$FIELD_NAME
-					if (!(F.RDB$NULL_FLAG.NULL))
+					if (!F.RDB$NULL_FLAG.NULL)
 						put_numeric (att_field_null_flag, F.RDB$NULL_FLAG);
-					if (!(F.RDB$CHARACTER_LENGTH.NULL))
+					if (!F.RDB$CHARACTER_LENGTH.NULL)
 						put_numeric (att_field_character_length, F.RDB$CHARACTER_LENGTH);
-					if (!(F.RDB$DEFAULT_SOURCE.NULL))
+					if (!F.RDB$DEFAULT_SOURCE.NULL)
 						put_source_blob (att_field_default_source, att_field_default_source,
 							F.RDB$DEFAULT_SOURCE);
-					if (!(F.RDB$MISSING_SOURCE.NULL))
+					if (!F.RDB$MISSING_SOURCE.NULL)
 						put_source_blob (att_field_missing_source, att_field_missing_source,
 							F.RDB$MISSING_SOURCE);
-					if (!(F.RDB$CHARACTER_SET_ID.NULL))
+					if (!F.RDB$CHARACTER_SET_ID.NULL)
 						put_numeric (att_field_character_set, F.RDB$CHARACTER_SET_ID);
-					if (!(F.RDB$COLLATION_ID.NULL))
+					if (!F.RDB$COLLATION_ID.NULL)
 						put_numeric (att_field_collation_id, F.RDB$COLLATION_ID);
 
 					if (tdgbl->BCK_capabilities & BCK_ods10)
 					{
 						FOR (REQUEST_HANDLE req_handle4)
 							K IN RDB$FIELDS WITH K.RDB$FIELD_NAME = X.RDB$FIELD_NAME
-							if (!(K.RDB$FIELD_PRECISION.NULL))
+							if (!K.RDB$FIELD_PRECISION.NULL)
 								put_numeric (att_field_precision, K.RDB$FIELD_PRECISION);
 						END_FOR;
 						ON_ERROR
@@ -3669,7 +3669,7 @@ void write_rel_constraints(void)
 		PUT_TEXT (att_rel_constraint_rel_name, X.RDB$RELATION_NAME);
 		PUT_TEXT (att_rel_constraint_defer, X.RDB$DEFERRABLE);
 		PUT_TEXT (att_rel_constraint_init, X.RDB$INITIALLY_DEFERRED);
-		if (!(X.RDB$INDEX_NAME.NULL))
+		if (!X.RDB$INDEX_NAME.NULL)
 			PUT_TEXT (att_rel_constraint_index, X.RDB$INDEX_NAME);
 		put(tdgbl, att_end);
 	END_FOR;
@@ -3729,7 +3729,7 @@ void write_relations(void)
 				flags |= REL_view;
 			if (X.RDB$SYSTEM_FLAG)
 				put_numeric (att_relation_system_flag, X.RDB$SYSTEM_FLAG);
-			if (!(X.RDB$FLAGS.NULL))
+			if (!X.RDB$FLAGS.NULL)
 				put_numeric (att_relation_flags, X.RDB$FLAGS);
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				PUT_TEXT (att_relation_security_class, X.RDB$SECURITY_CLASS);
@@ -3792,7 +3792,7 @@ void write_relations(void)
 			{
 				FOR (REQUEST_HANDLE req_handle2)
 					R IN RDB$RELATIONS WITH R.RDB$RELATION_NAME = X.RDB$RELATION_NAME
-					if (!(R.RDB$FLAGS.NULL))
+					if (!R.RDB$FLAGS.NULL)
 						put_numeric (att_relation_flags, R.RDB$FLAGS);
 				END_FOR;
 				ON_ERROR
@@ -4060,10 +4060,10 @@ void write_triggers(void)
 			put_numeric (att_trig_system_flag, X.RDB$SYSTEM_FLAG);
 			put_numeric (att_trig_inactive, X.RDB$TRIGGER_INACTIVE);
 			
-			if (!(X.RDB$FLAGS.NULL))
+			if (!X.RDB$FLAGS.NULL)
 				put_numeric (att_trig_flags, X.RDB$FLAGS);
 
-			if (!(X.RDB$VALID_BLR.NULL))
+			if (!X.RDB$VALID_BLR.NULL)
 				put_numeric (att_trig_valid_blr, X.RDB$VALID_BLR);
 
 			if (!X.RDB$DEBUG_INFO.NULL)
@@ -4100,7 +4100,7 @@ void write_triggers(void)
 			put_numeric (att_trig_system_flag, X.RDB$SYSTEM_FLAG);
 			put_numeric (att_trig_inactive, X.RDB$TRIGGER_INACTIVE);
 			
-			if (!(X.RDB$FLAGS.NULL))
+			if (!X.RDB$FLAGS.NULL)
 				put_numeric (att_trig_flags, X.RDB$FLAGS);
 			
 			put(tdgbl, att_end);
@@ -4140,7 +4140,7 @@ void write_triggers(void)
 					Y IN RDB$TRIGGERS WITH 
 					X.RDB$TRIGGER_NAME = Y.RDB$TRIGGER_NAME
 
-					if (!(Y.RDB$FLAGS.NULL))
+					if (!Y.RDB$FLAGS.NULL)
 						put_numeric (att_trig_flags, Y.RDB$FLAGS);
 
 				END_FOR;

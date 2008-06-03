@@ -329,7 +329,7 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 	END_ERROR;
 	// Activate the indices for foreign keys and do another commit  
-	if (!(tdgbl->gbl_sw_deactivate_indexes))
+	if (!tdgbl->gbl_sw_deactivate_indexes)
 	{
 
 		// Block added to verbose index creation by Toni Martir 
@@ -5500,7 +5500,7 @@ bool get_relation(BurpGlobals* tdgbl)
 		case rec_field:
 			*ptr = field = get_field (tdgbl, relation);
 			if (!field)
-			return false;
+				return false;
 			ptr = &field->fld_next;
 			break;
 

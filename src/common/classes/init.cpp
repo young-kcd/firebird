@@ -167,13 +167,13 @@ namespace Firebird
 
 	void InstanceControl::registerGdsCleanup(FPTR_VOID cleanup)
 	{
-		fb_assert((!gdsCleanup) || (!cleanup));
+		fb_assert(!gdsCleanup || !cleanup);
 		gdsCleanup = cleanup;
 	}
 
 	void InstanceControl::registerShutdown(FPTR_VOID shutdown)
 	{
-		fb_assert((!gdsShutdown) || (!shutdown));
+		fb_assert(!gdsShutdown || !shutdown);
 		gdsShutdown = shutdown;
 	}
 

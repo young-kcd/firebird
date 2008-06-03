@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
 			 ext_tab++) 
 		{
 			strcpy(spare_file_name, file_name);
-			if (!(file_rename(spare_file_name, ext_tab->in, NULL)))
+			if (!file_rename(spare_file_name, ext_tab->in, NULL))
 				break;
 		}
 
@@ -829,7 +829,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		if (!(strcmp(out_file_name, file_name))) {
+		if (!strcmp(out_file_name, file_name)) {
 			fprintf(stderr,
 					   "gpre: output file %s would duplicate input\n",
 					   out_file_name);
@@ -1228,7 +1228,7 @@ TOK CPR_token()
 
 		switch (gpreGlob.sw_sql_dialect) {
 		case SQL_DIALECT_V5:
-			if (!(isQuoted(token->tok_type)))
+			if (!isQuoted(token->tok_type))
 				CPR_error("Can only tag quoted strings with character set");
 			else
 				token->tok_charset = symbol;
@@ -2236,7 +2236,7 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if ((gpreGlob.token_global.tok_symbol == NULL) && (!isQuoted(gpreGlob.token_global.tok_type))
+	if (gpreGlob.token_global.tok_symbol == NULL && !isQuoted(gpreGlob.token_global.tok_type)
 		&& gpreGlob.sw_case)
 	{
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
@@ -2750,7 +2750,8 @@ static SSHORT skip_white()
 		if (gpreGlob.sw_language == lang_fortran &&
 			line_position == 1 && (c == 'C' || c == 'c' || c == '*'))
 		{
-			while ((c = nextchar()) != '\n' && c != EOF);
+			while ((c = nextchar()) != '\n' && c != EOF)
+				;
 			continue;
 		}
 #endif
@@ -2770,7 +2771,8 @@ static SSHORT skip_white()
 			 (isAnsiCobol(gpreGlob.sw_cob_dialect) && line_position == 7 && c != '\t' && c != ' '
 			  && c != '-')))
 		{
-			while ((c = nextchar()) != '\n' && c != EOF);
+			while ((c = nextchar()) != '\n' && c != EOF)
+				;
 			continue;
 		}
 #endif
@@ -2788,7 +2790,8 @@ static SSHORT skip_white()
 			if (c2 != '-')
 				return_char(c2);
 			else {
-				while ((c = nextchar()) != '\n' && c != EOF);
+				while ((c = nextchar()) != '\n' && c != EOF)
+					;
 				last_position = position - 1;
 				continue;
 			}
@@ -2803,7 +2806,8 @@ static SSHORT skip_white()
 			SSHORT next = nextchar();
 			if (next != '*') {
 				if (isLangCpp(gpreGlob.sw_language) && next == '/') {
-					while ((c = nextchar()) != '\n' && c != EOF);
+					while ((c = nextchar()) != '\n' && c != EOF)
+						; // empty loop
 					continue;
 				}
 				return_char(next);
@@ -2847,14 +2851,16 @@ static SSHORT skip_white()
 				return_char(next);
 				return c;
 			}
-			while ((c = nextchar()) != EOF && c != '\n');
+			while ((c = nextchar()) != EOF && c != '\n')
+				;
 			continue;
 		}
 
 		// skip PASCAL comments - both types 
 
 		if (c == '{' && gpreGlob.sw_language == lang_pascal) {
-			while ((c = nextchar()) != EOF && c != '}');
+			while ((c = nextchar()) != EOF && c != '}')
+				;
 			continue;
 		}
 

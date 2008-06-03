@@ -2915,7 +2915,7 @@ static void gen_request_data( const gpre_req* request)
 					gen_raw(reference->ref_sdl, REQ_slice,
 							reference->ref_sdl_length, begin_i, end_i);
 				}
-				if (!(gpreGlob.sw_raw)) {
+				if (!gpreGlob.sw_raw) {
 					printa(COMMENT, " ");
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 						CPR_error("internal error during SDL generation");
@@ -3482,7 +3482,7 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++) 
 		{
 			*c = *text++;
-			if (!(--length))
+			if (!--length)
 				break;
 		}
 		if (length)
@@ -3994,8 +3994,8 @@ static const TEXT* request_trans(const act* action, const gpre_req* request)
 			trname = "GDS__TRANS";
 		return trname;
 	}
-	else
-		return (request) ? request->req_trans : "GDS__TRANS";
+
+	return (request) ? request->req_trans : "GDS__TRANS";
 }
 
 

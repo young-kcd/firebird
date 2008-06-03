@@ -1489,8 +1489,7 @@ static act* act_connect(void)
 				|| db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
 			{
 				if (!request)
-					request =
-						PAR_set_up_dpb_info(ready, action, default_buffers);
+					request = PAR_set_up_dpb_info(ready, action, default_buffers);
 				request->req_flags |= REQ_extend_dpb;
 			}
 
@@ -1553,8 +1552,7 @@ static act* act_connect(void)
 				db->dbb_r_password = password;
 				db->dbb_r_lc_messages = lc_messages;
 				if (!request)
-					request =
-						PAR_set_up_dpb_info(ready, action, default_buffers);
+					request = PAR_set_up_dpb_info(ready, action, default_buffers);
 				request->req_flags |= REQ_extend_dpb;
 			}
 
@@ -1565,8 +1563,7 @@ static act* act_connect(void)
 							 db->dbb_c_sql_role ||
 							 db->dbb_c_lc_ctype || db->dbb_c_lc_messages))
 			{
-				request =
-					PAR_set_up_dpb_info(ready, action, default_buffers);
+				request = PAR_set_up_dpb_info(ready, action, default_buffers);
 			}
 		}
 
@@ -2934,12 +2931,12 @@ static act* act_execute(void)
 
 		switch (gpreGlob.sw_sql_dialect) {
 		case 1:
-			if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
+			if (!isQuoted(gpreGlob.token_global.tok_type) && !MSC_match(KW_COLON))
 				CPR_s_error(": <string expression>");
 			break;
 
 		default:
-			if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+			if (gpreGlob.token_global.tok_type != tok_sglquoted && !MSC_match(KW_COLON))
 				CPR_s_error(": <string expression>");
 			break;
 		}
@@ -3299,6 +3296,7 @@ static act* act_grant_revoke( enum act_t type)
 //  If this is a grant, do we have the optional WITH GRANT OPTION specification? 
 
 	if ((type == ACT_dyn_grant) && grant_option_legal)
+	{
 		if (MSC_match(KW_WITH)) {
 			if (!MSC_match(KW_GRANT))
 				CPR_s_error("GRANT");
@@ -3306,6 +3304,7 @@ static act* act_grant_revoke( enum act_t type)
 				CPR_s_error("OPTION");
 			priv_block->prv_privileges |= PRV_grant_option;
 		}
+	}
 
 //  create action block 
 
@@ -3464,7 +3463,7 @@ static act* act_insert(void)
 			else
 				MSC_push(SQE_value(request, false, NULL, NULL), &values);
 			count2++;
-			if (!(MSC_match(KW_COMMA)))
+			if (!MSC_match(KW_COMMA))
 				break;
 		}
 		EXP_match_paren();
@@ -3883,12 +3882,12 @@ static act* act_prepare(void)
 
 	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
-		if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
+		if (!isQuoted(gpreGlob.token_global.tok_type) && !MSC_match(KW_COLON))
 			CPR_s_error(": <string expression>");
 		break;
 
 	default:
-		if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
+		if (gpreGlob.token_global.tok_type != tok_sglquoted && !MSC_match(KW_COLON))
 			CPR_s_error(": <string expression>");
 		break;
 	}
@@ -4218,7 +4217,7 @@ static act* act_set_names(void)
 				 * so we can resolve against it.
 				 * So what if we go through this code once for each database...
 				 */
-				if (!(MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset)))
+				if (!MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset))
 					PAR_error("The named CHARACTER SET was not found");
 			}
 		}
@@ -5095,7 +5094,7 @@ static IND make_index( gpre_req* request, const TEXT* string)
 {
 	IND index = NULL;
 
-	if ((gpreGlob.isc_databases) && (!(gpreGlob.isc_databases->dbb_next))) {
+	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
 		// CVC: I've kept this silly code. What's the idea of the copy here?
 		// If we are trying to limit the index name, the correct length is NAME_SIZE.
 		TEXT s[ERROR_LENGTH];

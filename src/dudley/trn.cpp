@@ -85,7 +85,7 @@ static FILE* output_file;
 
 static inline void check_dyn(str* dyn, const int l)
 {
-	if (!(dyn->str_current - dyn->str_start + l <=  dyn->str_length)
+	if (dyn->str_current - dyn->str_start + l > dyn->str_length
 		&& !TRN_get_buffer (dyn, l) )
 	{
 		DDL_error_abort( NULL, 320);
@@ -1719,7 +1719,7 @@ static void raw_cobol( STR dyn)
 			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
 		{
 			*c = *blr++;
-			if (!(--blr_length))
+			if (!--blr_length)
 				break;
 		}
 		if (dudleyGlob.language == lan_ansi_cobol)
@@ -1765,7 +1765,7 @@ static void raw_ftn( STR dyn)
 			 c < blr_hunk.bytewise_blr + sizeof(SLONG); c++)
 		{
 			*c = *blr++;
-			if (!(--blr_length))
+			if (!--blr_length)
 				break;
 		}
 		if (blr_length)

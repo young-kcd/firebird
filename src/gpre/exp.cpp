@@ -1116,15 +1116,15 @@ static GPRE_NOD par_array(gpre_req* request,
 			else
 				array_node->nod_arg[i] = index_node;
 
-			if ((dimension->dim_next) && (!MSC_match(KW_COMMA)))
+			if (dimension->dim_next && !MSC_match(KW_COMMA))
 				CPR_s_error("Adequate number of subscripts for this array reference.");
 		}
 
 		//  Match the parenthesis or bracket  
 
-		if ((paren) && (!MSC_match(KW_RIGHT_PAREN)))
+		if (paren && !MSC_match(KW_RIGHT_PAREN))
 			CPR_s_error("Missing parenthesis for array reference.");
-		else if ((bracket) && !MSC_match(KW_R_BRCKET))
+		else if (bracket && !MSC_match(KW_R_BRCKET))
 			CPR_s_error("Missing right bracket for array reference.");
 	}
 
@@ -1315,7 +1315,7 @@ static GPRE_NOD par_not( gpre_req* request)
 	if (node)
 		return node;
 
-	if (!(MSC_match(KW_NOT)))
+	if (!MSC_match(KW_NOT))
 		return par_relational(request);
 
 	return MSC_unary(nod_not, par_not(request));
@@ -1405,7 +1405,7 @@ static GPRE_NOD par_primitive_value( gpre_req* request, gpre_fld* field)
 		return node;
 
 	const gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
-	if (!symbol || (symbol->sym_type != SYM_context))
+	if (!symbol || symbol->sym_type != SYM_context)
 		return par_native_value(request, field);
 
 	return par_field(request);
