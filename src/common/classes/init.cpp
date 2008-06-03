@@ -37,13 +37,22 @@
 
 namespace
 {
-	void cleanError()
-	{
 #ifdef DEV_BUILD
+	void cleanError(const Firebird::Exception* e)
+	{
+		// This is done to be able to look at status in debugger
+		ISC_STATUS_ARRAY status;
+		if (e)
+		{
+			Firebird::CircularStringsBuffer<4096> localBuffer;
+			e->stuff_exception(status, &localBuffer);
+		}
 		// we do not have big choice in error reporting when running destructors
 		abort();
-#endif
 	}
+#else
+	void cleanError(const Firebird::Exception*) { }
+#endif
 
 	// This helps initialize globals, needed before regular ctors run
 	bool initDone = false;
@@ -58,7 +67,7 @@ namespace
 		}
 		catch (...)
 		{
-			cleanError();
+			cleanError(0);
 		}
 
 		try
@@ -67,7 +76,7 @@ namespace
 		}
 		catch (...)
 		{
-			cleanError();
+			cleanError(0);
 		}
 	}
 
@@ -132,9 +141,9 @@ namespace Firebird
 			{
 				gdsShutdown();
 			}
-			catch (const Firebird::Exception&)
+			catch (const Firebird::Exception& e)
 			{
-				cleanError();
+				cleanError(&e);
 			}
 		}
 
@@ -145,9 +154,9 @@ namespace Firebird
 			{
 				gdsCleanup();
 			}
-			catch (const Firebird::Exception&)
+			catch (const Firebird::Exception& e)
 			{
-				cleanError();
+				cleanError(&e);
 			}
 		}
 
@@ -158,9 +167,9 @@ namespace Firebird
 			{
 				i->dtor();
 			}
-			catch (const Firebird::Exception&)
+			catch (const Firebird::Exception& e)
 			{
-				cleanError();
+				cleanError(&e);
 			}
 		}
 	}
