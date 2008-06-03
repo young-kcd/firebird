@@ -103,7 +103,7 @@ Const
   FB30_x64_Install  = 16;
 
   MaxProdInstalled = FB30_x64_Install;
-  
+
 //ProductsInstalled
   IB4       = $00001;
   IB5       = $00002;
@@ -274,13 +274,14 @@ begin
       end;
 
       FB21_x64_Install: begin
-        if iswin64 then begin
           ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
           ProductsInstalledArray[product].RegKey := FB2RegKey;
           ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
           ProductsInstalledArray[product].MessageFile := FBMessageFile;
-          ProductsInstalledArray[product].RootKey := HKLM64;
-        end;
+          if IsWin64 then
+            ProductsInstalledArray[product].RootKey := HKLM64
+          else
+            ProductsInstalledArray[product].RootKey := HKLM;
       end;
 
       FB25Install: begin
@@ -296,7 +297,10 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-        ProductsInstalledArray[product].RootKey := HKLM64;
+        if IsWin64 then
+          ProductsInstalledArray[product].RootKey := HKLM64
+        else
+          ProductsInstalledArray[product].RootKey := HKLM;
       end;
 
       FB30Install: begin
@@ -312,7 +316,10 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-        ProductsInstalledArray[product].RootKey := HKLM64;
+        if IsWin64 then
+          ProductsInstalledArray[product].RootKey := HKLM64
+        else
+          ProductsInstalledArray[product].RootKey := HKLM;
       end;
 
     end; //case
