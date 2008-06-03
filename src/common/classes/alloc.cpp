@@ -83,7 +83,8 @@ using namespace Firebird;
 
 inline static void mem_assert(bool value)
 {
-	if (!value) abort();
+	if (!value)
+		abort();
 }
 
 // Returns redirect list for given memory block

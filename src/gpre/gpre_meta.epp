@@ -1448,8 +1448,10 @@ void MET_load_hash_table(dbb* database)
 		return;
 
 	if (!database->dbb_handle)
+	{
 		if (!MET_database(database, false))
 			CPR_exit(FINI_ERROR);
+	}
 
 	if (database->dbb_transaction) {
 		// we must have already loaded this one 

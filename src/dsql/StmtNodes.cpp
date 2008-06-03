@@ -155,7 +155,6 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 	switch (request->req_operation)
 	{
 	case jrd_req::req_return:
-	{
 		if (!(tdbb->getAttachment()->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
@@ -163,11 +162,12 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 				jrd_req::req_trigger_trans_commit);
 		}
 		
-		Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
-			tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
-		TRA_commit(tdbb, request->req_transaction, false);
+		{ // scope
+			Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
+				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
+			TRA_commit(tdbb, request->req_transaction, false);
+		} // end scope
 		break;
-	}
 
 	case jrd_req::req_unwind:
 		if (request->req_flags & req_leave)
