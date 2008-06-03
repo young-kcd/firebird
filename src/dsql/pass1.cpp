@@ -3224,11 +3224,11 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
 
-	if ((!node1) && (!node2)) {
+	if (!node1 && !node2) {
 		return true;
 	}
 
-	if ((!node1) || (!node2)) {
+	if (!node1 || !node2) {
 		return false;
 	}
 
@@ -5265,15 +5265,15 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 					// If there's no name then we have most probable an asterisk that
 					// needs to be exploded. This should be handled by the caller and
 					// when the caller can handle this, list is true.
-					if (!name) {
+					if (!name)
+					{
 						if (list) {
 							node = MAKE_node(nod_relation, e_rel_count);
 							node->nod_arg[e_rel_context] = reinterpret_cast<dsql_nod*>(stack.object());
 							return node;
 						}
-						else {
-							break;
-						}
+
+						break;
 					}
 
 					dsql_nod* using_field = NULL;
@@ -5289,7 +5289,8 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 									field = NULL;
 									break;
 								}
-								else if (using_field)
+
+								if (using_field)
 									field = NULL;
 							}
 
@@ -5367,7 +5368,8 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 					// If there's no name then we have most probable a asterisk that
 					// needs to be exploded. This should be handled by the caller and
 					// when the caller can handle this, list is true.
-					if (!name) {
+					if (!name)
+					{
 						if (list) {
 							// Node is created so caller pass1_expand_select_node()
 							// can deal with it.
@@ -5375,9 +5377,8 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 							node->nod_arg[e_derived_table_rse] = context->ctx_rse;
 							return node;
 						}
-						else {
-							break;
-						}
+
+						break;
 					}
 
 					// Because every select item has an alias we can just walk
@@ -7465,15 +7466,13 @@ static dsql_ctx* pass1_alias(CompiledStatement* statement, DsqlContextStack& sta
 			}
 			continue;
 		}
-		else 
+
+		// If an unnamed derived table and empty alias
+		if (context->ctx_rse && !context->ctx_relation &&
+			!context->ctx_procedure && (alias->str_length == 0))
 		{
-			// If an unnamed derived table and empty alias
-			if (context->ctx_rse && !context->ctx_relation && 
-				!context->ctx_procedure && (alias->str_length == 0))
-			{
-				relation_context = context;
-			}
-		}	
+			relation_context = context;
+		}
 
 		// check for matching relation name; aliases take priority so
 		// save the context in case there is an alias of the same name;
