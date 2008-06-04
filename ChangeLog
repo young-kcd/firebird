@@ -1,3 +1,20 @@
+2008-06-04 15:37  dimitr
+
+	* firebird2/src/jrd/: os/win32/winnt.cpp (1.72), os/posix/unix.cpp
+	(1.99), Database.h (1.20), GlobalRWLock.cpp (1.18), GlobalRWLock.h
+	(1.20):
+
+	Simplified the dbb_sync handling. This becomes possible because of
+	the prior commit.  With checkouts being allowed for ASTs, the
+	AstInhibit code also becomes redundant.
+
+2008-06-04 15:22  dimitr
+
+	* firebird2/src/jrd/: cch.cpp (1.201), cch_proto.h (1.29):
+
+	Enabled page latching code for [Super]Classic. This solves most of
+	the synchronization issues between worker thread and ASTs.
+
 2008-06-03 13:47  alexpeshkoff
 
 	* firebird2/src/: include/consts_pub.h (1.20), msgs/facilities2.sql
