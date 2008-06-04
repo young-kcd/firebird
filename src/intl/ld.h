@@ -57,6 +57,8 @@
 
 #ifdef WIN_NT
 #define FB_DLL_EXPORT	__declspec(dllexport)
+#elif defined(DARWIN)
+#define FB_DLL_EXPORT API_ROUTINE
 #else
 #define FB_DLL_EXPORT
 #endif
@@ -481,9 +483,12 @@ struct CompressPair {
 // VCS AREA
 //-----------------------------------------------------------------
 
-//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.25 2004-05-19 15:21:15 brodsom Exp $
+//	$Header: /home/job/firebird/cvs-backup/firebird2/src/intl/ld.h,v 1.25.26.1 2008-06-04 11:18:33 paulbeach Exp $
 
 //	$Log: not supported by cvs2svn $
+//	Revision 1.25  2004/05/19 15:21:15  brodsom
+//	Style
+//	
 //	Revision 1.24  2004/05/17 10:18:37  brodsom
 //	Macro cleaning
 //	

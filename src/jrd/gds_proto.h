@@ -45,11 +45,12 @@ const ULONG ALLOC_dont_check	= 1L << 5;	/* Stop checking integrity on each call 
 extern "C" {
 #endif
 
-void*	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
+typedef void* pVoid;
+pVoid	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
 
-void*	API_ROUTINE gds__alloc(SLONG);
+pVoid	API_ROUTINE gds__alloc(SLONG);
 
 #ifdef DEBUG_GDS_ALLOC
 #define gds__alloc(s)		gds__alloc_debug ((s), (TEXT*)__FILE__, (ULONG)__LINE__)
@@ -115,7 +116,7 @@ void	API_ROUTINE gds__qtoq(const void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
-void*	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
+pVoid	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
 	BOOLEAN = FALSE);
 void	API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*,
@@ -126,13 +127,13 @@ void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, const ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
+void	API_ROUTINE gds__default_printer(void*, SSHORT, const TEXT*);
 
 // 14-June-2004. Nickolay Samofatov. The routines below are not part of the 
 // API and are not exported. Maybe use another prefix like GDS_ for them?
 void	gds__cleanup(void);
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
 
-void	gds__default_printer(void*, SSHORT, const TEXT*);
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
 void	gds__print_pool(class JrdMemoryPool*, const TEXT*, ...);
 

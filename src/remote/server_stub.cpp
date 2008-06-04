@@ -4,7 +4,7 @@
 #ifndef MINGW
 
 extern "C" {
-int CLIB_ROUTINE server_main( int argc, char** argv);
+int API_ROUTINE server_main( int argc, char** argv);
 }
 
 // This routine invokes server loop implemented in the shared library

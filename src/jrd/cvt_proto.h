@@ -39,7 +39,9 @@ GDS_TIME	CVT_get_sql_time(const dsc*, FPTR_ERROR);
 GDS_TIMESTAMP CVT_get_timestamp(const dsc*, FPTR_ERROR);
 USHORT		CVT_make_string(const dsc*, USHORT, const char**, vary*,
 							  USHORT, FPTR_ERROR);
-extern "C" void CVT_move(const dsc*, dsc*, FPTR_ERROR);
+extern "C" {
+void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR);
+}
 
 #endif // JRD_CVT_PROTO_H
 

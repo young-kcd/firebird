@@ -56,6 +56,7 @@ int MATHERR(struct exception_type *e)
 #undef exception_type
 #endif /* SOLARIS */
 
+typedef char* pChar;
 double EXPORT IB_UDF_abs( double *a)
 {
 	return (*a < 0.0) ? -*a : *a;
@@ -66,7 +67,7 @@ double EXPORT IB_UDF_acos( double *a)
 	return (acos(*a));
 }
 
-char *EXPORT IB_UDF_ascii_char( ISC_LONG *a)
+pChar EXPORT IB_UDF_ascii_char( ISC_LONG *a)
 {
 	if (!a)
 		return 0;
@@ -185,7 +186,7 @@ double EXPORT IB_UDF_log10( double *a)
 	return (log10(*a));
 }
 
-char *EXPORT IB_UDF_lower(const char *s)
+pChar EXPORT IB_UDF_lower(const char *s)
 {
 	if (!s)
 		return 0;
@@ -205,7 +206,7 @@ char *EXPORT IB_UDF_lower(const char *s)
 	return buf;
 }
 
-char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
+pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
@@ -238,7 +239,7 @@ char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 		return NULL;
 }
 
-char *EXPORT IB_UDF_ltrim( const char *s)
+pChar EXPORT IB_UDF_ltrim( const char *s)
 {
 	if (!s)
 		return 0;
@@ -292,7 +293,7 @@ double EXPORT IB_UDF_rand()
 	return ((float) rand() / (float) RAND_MAX);
 }
 
-char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
+pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
@@ -324,7 +325,7 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 		return NULL;
 }
 
-char *EXPORT IB_UDF_rtrim( const char *s)
+pChar EXPORT IB_UDF_rtrim( const char *s)
 {
 	if (!s)
 		return 0;
@@ -365,7 +366,7 @@ double EXPORT IB_UDF_sqrt( double *a)
 	return (sqrt(*a));
 }
 
-char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 {
 	if (!s) {
 		return 0;
@@ -401,7 +402,7 @@ char* EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	return buf;
 }
 
-char* EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
+pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 {
 	/* Created by Claudio Valderrama for the Firebird project,
 		2001.04.17 We don't want to return NULL when params are wrong

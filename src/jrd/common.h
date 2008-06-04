@@ -201,6 +201,9 @@
 #define MOVE_FASTER(from, to, length)	memcpy (to, from, (int) (length))
 #define MOVE_CLEAR(to, length)		memset (to, 0, (int) (length))
 
+#define API_ROUTINE __attribute__((visibility("default")))
+#define API_ROUTINE_VARARG API_ROUTINE
+#define INTERNAL_API_ROUTINE API_ROUTINE
 #endif /* Darwin Platforms */
 
 

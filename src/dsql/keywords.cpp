@@ -399,7 +399,7 @@ static const TOK tokens[] =
 
 extern "C" {
 
-int KEYWORD_stringIsAToken(const char* in_str)
+int API_ROUTINE KEYWORD_stringIsAToken(const char* in_str)
 {
     const TOK* tok_ptr = tokens;
     while (tok_ptr->tok_string) {
@@ -411,7 +411,7 @@ int KEYWORD_stringIsAToken(const char* in_str)
     return false;
 }
 
-const TOK* KEYWORD_getTokens()
+Tokens API_ROUTINE KEYWORD_getTokens()
 {
     return tokens;
 }

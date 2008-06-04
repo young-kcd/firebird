@@ -149,7 +149,7 @@ static USHORT INET_SERVER_flag = 0;
 
 extern "C" {
 
-int CLIB_ROUTINE server_main( int argc, char** argv)
+int API_ROUTINE server_main( int argc, char** argv)
 {
 /**************************************
  *

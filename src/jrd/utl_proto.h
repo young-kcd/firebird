@@ -67,8 +67,9 @@ int		API_ROUTINE blob__load(SLONG*, FB_API_HANDLE*, FB_API_HANDLE*, const TEXT*,
 int		API_ROUTINE BLOB_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
 int		API_ROUTINE BLOB_text_dump(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
 int		API_ROUTINE BLOB_text_load(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const TEXT*);
-struct	bstream* API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
-struct  bstream* API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
+typedef struct  bstream* pStream;
+pStream	API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const SCHAR*);
+pStream	API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
 int		API_ROUTINE BLOB_put(SCHAR, struct bstream*);
 
 #ifdef VMS
