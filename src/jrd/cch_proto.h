@@ -48,7 +48,6 @@ Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, 
 void		CCH_init(Jrd::thread_db*, ULONG);
 void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
 void		CCH_must_write(Jrd::win*);
-Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
 #ifdef SUPERSERVER_V2
@@ -56,7 +55,6 @@ void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);
 #endif
 void		CCH_release(Jrd::thread_db*, Jrd::win*, const bool);
-void		CCH_release_and_free(Jrd::win*);
 void		CCH_release_exclusive(Jrd::thread_db*);
 bool		CCH_rollover_to_shadow(Jrd::Database*, Jrd::jrd_file*, const bool);
 void		CCH_unwind(Jrd::thread_db*, const bool);
