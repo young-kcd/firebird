@@ -100,7 +100,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	fb_assert(owner_handle);
 
 	{ // this is a first scope for a code where counters are locked
-		CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
@@ -178,7 +178,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
 	{ // this is a second scope for a code where counters are locked
-		CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
 		fb_assert(internal_blocking > 0);
 		internal_blocking--;
@@ -235,7 +235,7 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 {
 	SET_TDBB(tdbb);
 
-	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
 	COS_TRACE(("unlock level=%i", level));
 
@@ -289,7 +289,7 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
 	COS_TRACE_AST("bloackingAstHandler");
 	// When we request a new lock counters are not updated until we get it.
@@ -318,7 +318,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 	if (old_owner_handle == new_owner_handle)
 		return;
 
-	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
 	if (level == LCK_read) {
 		size_t n;
@@ -349,13 +349,15 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-	CountersLockHolder lockHolder(tdbb->getDatabase(), lockMutex);
+	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+
 	if (!writer.entry_count && !readers.getCount())
 	{
 		LCK_release(tdbb, cached_lock);
 		invalidate(tdbb, false);
 		return true;
 	}
+
 	return false;
 }
 

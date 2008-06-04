@@ -84,62 +84,28 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 	class Sync : public Firebird::RefCounted
 	{
 	public:
-		Sync()
-			: threadId(0), isAst(false), astInhibits(0)
+		Sync() : threadId(0), isAst(false)
 		{}
 
 		void lock(bool ast = false)
 		{
-			const FB_THREAD_ID currentId = getThreadId();
-
-			stateMutex.enter();
-
-			if (threadId != currentId)
-			{
-				stateMutex.leave();
-				++waiters;
-				syncMutex.enter();
-				while (ast && astInhibits)
-				{
-					syncMutex.leave();
-					THREAD_SLEEP(1);
-					syncMutex.enter();
-				}
-				--waiters;
-				stateMutex.enter();
-				threadId = currentId;
-				isAst = ast;
-			}
-
-			stateMutex.leave();
+			++waiters;
+			syncMutex.enter();
+			--waiters;
+			threadId = getThreadId();
+			isAst = ast;
 		}
 
-		void unlock(bool checkout = false)
+		void unlock()
 		{
-			Firebird::MutexLockGuard guard(stateMutex);
-
-			fb_assert(threadId == getThreadId());
-
-			if (!(isAst && checkout))
-			{
-				threadId = 0;
-				syncMutex.leave();
-			}
+			isAst = false;
+			threadId = 0;
+			syncMutex.leave();
 		}
 
 		bool hasContention() const
 		{
 			return (waiters.value() > 0);
-		}
-
-		void disableAsts()
-		{
-			++astInhibits;
-		}
-
-		void enableAsts()
-		{
-			--astInhibits;
 		}
 
 	private:
@@ -148,7 +114,6 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 			if (threadId)
 			{
 				syncMutex.leave();
-				threadId = 0;
 			}
 		}
 
@@ -157,31 +122,12 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		Sync& operator=(const Sync&);
 
 		Firebird::Mutex syncMutex;
-		Firebird::Mutex stateMutex;
 		Firebird::AtomicCounter waiters;
 		FB_THREAD_ID threadId;
 		bool isAst;
-		int astInhibits;
 	};
 
 public:
-
-	class AstInhibit
-	{
-	public:
-		explicit AstInhibit(Database* dbb)
-			: sync(*dbb->dbb_sync)
-		{
-			sync.disableAsts();
-		}
-
-		~AstInhibit()
-		{
-			sync.enableAsts();
-		}
-
-		Sync& sync;
-	};
 
 	class SyncGuard
 	{
@@ -229,21 +175,15 @@ public:
 	class Checkout
 	{
 	public:
-		explicit Checkout(Database* dbb, bool io_flag = false)
-			: sync(*dbb->dbb_sync), io(io_flag)
+		explicit Checkout(Database* dbb)
+			: sync(*dbb->dbb_sync)
 		{
-#ifndef SUPERSERVER
-			if (!io)
-#endif
-				sync.unlock(true);
+			sync.unlock();
 		}
 
 		~Checkout()
 		{
-#ifndef SUPERSERVER
-			if (!io)
-#endif
-				sync.lock();
+			sync.lock();
 		}
 
 	private:
@@ -252,7 +192,6 @@ public:
 		Checkout& operator=(const Checkout&);
 
 		Sync& sync;
-		const bool io;
 	};
 
 	class CheckoutLockGuard
