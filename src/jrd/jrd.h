@@ -632,6 +632,7 @@ public:
 		tdbb_quantum = QUANTUM;
 		tdbb_flags = 0;
 		tdbb_temp_attid = tdbb_temp_traid = 0;
+		QUE_INIT(tdbb_latches);
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 
 		tdbb_status_vector = status;
@@ -645,6 +646,8 @@ public:
 
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
+	
+	que			tdbb_latches;		// shared latches hold by thread
 
 	MemoryPool* getDefaultPool()
 	{

@@ -201,6 +201,63 @@ const SLONG MIN_BUFFER_SEGMENT = 65536;
 
 #define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
 
+static inline SharedLatch* allocSharedLatch(thread_db* tdbb, BufferDesc* bdb)
+{
+	BufferControl* bcb = bdb->bdb_dbb->dbb_bcb;
+	SharedLatch* latch;
+	if (QUE_NOT_EMPTY(bcb->bcb_free_slt))
+	{
+		QUE que_inst = bcb->bcb_free_slt.que_forward;
+		QUE_DELETE(*que_inst);
+		latch = BLOCK(que_inst, SharedLatch*, slt_bdb_que);
+	}
+	else
+	{
+		const int BATCH_ALLOC = 64;
+		Database* dbb = bdb->bdb_dbb;
+
+		SharedLatch *latches = latch = FB_NEW(*dbb->dbb_bufferpool) SharedLatch[BATCH_ALLOC];
+		for (int i = 1; i < BATCH_ALLOC; i++) {
+			QUE_APPEND(bcb->bcb_free_slt, latches[i].slt_bdb_que);
+		}
+	}
+
+	latch->slt_bdb = bdb;
+	QUE_APPEND(bdb->bdb_shared, latch->slt_bdb_que);
+
+	latch->slt_tdbb = tdbb;
+	QUE_APPEND(tdbb->tdbb_latches, latch->slt_tdbb_que);
+	
+	return latch;
+}
+
+
+static inline void freeSharedLatch(thread_db* tdbb, BufferControl* bcb, SharedLatch* latch)
+{
+	latch->slt_bdb = NULL;
+	QUE_DELETE(latch->slt_bdb_que);
+	QUE_INSERT(bcb->bcb_free_slt, latch->slt_bdb_que);
+
+	latch->slt_tdbb = NULL;
+	QUE_DELETE(latch->slt_tdbb_que);
+}
+
+
+static inline SharedLatch* findSharedLatch(thread_db* tdbb, BufferDesc* bdb)
+{
+	for (QUE que_inst = tdbb->tdbb_latches.que_forward; que_inst != &tdbb->tdbb_latches; 
+		 que_inst = que_inst->que_forward)
+	{
+		SharedLatch *latch = BLOCK(que_inst, SharedLatch*, slt_tdbb_que);
+		fb_assert(latch->slt_tdbb == tdbb);
+		if (latch->slt_bdb == bdb) {
+			return latch;
+		}
+	}
+	return NULL;
+}
+
+
 //
 //#define BCB_MUTEX_ACQUIRE
 //#define BCB_MUTEX_RELEASE
@@ -1672,6 +1729,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 #endif
 	QUE_INIT(bcb->bcb_empty);
 	QUE_INIT(bcb->bcb_free_lwt);
+	QUE_INIT(bcb->bcb_free_slt);
 
 	// initialization of memory is system-specific
 
@@ -2358,10 +2416,14 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
 		}
-		for (int i = 0; i < BDB_max_shared; ++i) {
-			if (bdb->bdb_shared[i] == tdbb) {
-				release_bdb(tdbb, bdb, true, false, false);
-			}
+
+		// hvlad : as far as i understand thread can't hold more than two shared lathes 
+		// on the same bdb, so findSharedLatch below will not be called many times
+		SharedLatch *latch = findSharedLatch(tdbb, bdb);
+		while (latch)
+		{
+			release_bdb(tdbb, bdb, true, false, false);
+			latch = findSharedLatch(tdbb, bdb);
 		}
 #ifndef SUPERSERVER
 		const pag* const page = bdb->bdb_buffer;
@@ -2587,6 +2649,7 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
 	QUE_INIT(bdb->bdb_higher);
 	QUE_INIT(bdb->bdb_lower);
 	QUE_INIT(bdb->bdb_waiters);
+	QUE_INIT(bdb->bdb_shared);
 	QUE_INSERT(bcb->bcb_empty, bdb->bdb_que);
 #ifdef DIRTY_LIST
 	QUE_INIT(bdb->bdb_dirty);
@@ -4667,6 +4730,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	QUE_DELETE(old->bcb_empty);
 	QUE_INSERT(old->bcb_free_lwt, new_block->bcb_free_lwt);
 	QUE_DELETE(old->bcb_free_lwt);
+	QUE_INSERT(old->bcb_free_slt, new_block->bcb_free_slt);
+	QUE_DELETE(old->bcb_free_slt);
 
 /* Copy addresses of previously allocated buffer space to new block */
 
@@ -5113,7 +5178,7 @@ static SSHORT latch_bdb(
 		switch (type) {
 		case LATCH_shared:
 			++bdb->bdb_use_count;
-			bdb->bdb_shared[0] = tdbb;
+			allocSharedLatch(tdbb, bdb);
 			break;
 		case LATCH_exclusive:
 			++bdb->bdb_use_count;
@@ -5146,8 +5211,6 @@ static SSHORT latch_bdb(
    flag is set, then an exclusive latch request will be followed by
    an io latch request. */
 
-	SSHORT i;
-	
 	switch (type) {
 
 	case LATCH_none:
@@ -5167,9 +5230,7 @@ static SSHORT latch_bdb(
 			/* Note that Firebird often 'hands-off' to the same page, for both
 			   shared and exlusive latches. */
 			/* Check if we own already an exclusive latch. */
-			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
-				 i++);
-			if (i >= BDB_max_shared) {	/* we don't own a shared latch yet */
+			if (!findSharedLatch(tdbb, bdb)) {	/* we don't own a shared latch yet */
 				/* If there are latch-waiters, and they are not waiting for an
 				   io_latch, then we have to wait also (there must be a exclusive
 				   latch waiter).  If there is an IO in progress, the violate the
@@ -5183,12 +5244,8 @@ static SSHORT latch_bdb(
 		/* Nobody owns an exlusive latch, or sneak ahead of exclusive latch
 		   waiters while an io is in progress. */
 
-		for (i = 0; (i < BDB_max_shared) && bdb->bdb_shared[i]; i++); // empty loop body
-		if (i >= BDB_max_shared) {
-			break;
-		}
 		++bdb->bdb_use_count;
-		bdb->bdb_shared[i] = tdbb;
+		allocSharedLatch(tdbb, bdb);
 //		LATCH_MUTEX_RELEASE;
 		return 0;
 
@@ -5860,7 +5917,6 @@ static void release_bdb(thread_db* tdbb,
  *	If rel_mark_latch is true, the value of downgrade_latch is ignored.
  *
  **************************************/
-	SSHORT i;
 
 //	LATCH_MUTEX_ACQUIRE;
 
@@ -5884,8 +5940,7 @@ static void release_bdb(thread_db* tdbb,
 		}
 		if (bdb->bdb_exclusive == tdbb) {
 			bdb->bdb_exclusive = 0;
-			for (i = 0; bdb->bdb_shared[i]; i++); // empty loop body
-			bdb->bdb_shared[i] = tdbb;
+			allocSharedLatch(tdbb, bdb);
 		}
 		else {
 //			LATCH_MUTEX_RELEASE;
@@ -5899,7 +5954,11 @@ static void release_bdb(thread_db* tdbb,
 		--bdb->bdb_use_count;
 		if (!bdb->bdb_use_count) {	/* All latches are released */
 			bdb->bdb_exclusive = bdb->bdb_io = 0;
-			for (i = 0; i < BDB_max_shared; bdb->bdb_shared[i++] = 0); // null loop body
+			while (QUE_NOT_EMPTY(bdb->bdb_shared)) 
+			{
+				SharedLatch* latch = BLOCK(bdb->bdb_shared.que_forward, SharedLatch*, slt_bdb_que);
+				freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
+			}
 		}
 		else if (bdb->bdb_io) {	/* This is a release for an io or an exclusive latch */
 			if (bdb->bdb_io == tdbb) {	/* We have an io latch */
@@ -5918,10 +5977,9 @@ static void release_bdb(thread_db* tdbb,
 			}
 		}
 		else {					/* This is a release for a shared latch */
-			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
-				 i++); // null loop body
-			if (i < BDB_max_shared) {
-				bdb->bdb_shared[i] = 0;
+			SharedLatch* latch = findSharedLatch(tdbb, bdb);
+			if (latch) {
+				freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
 			}
 		}
 	}
@@ -5936,12 +5994,11 @@ static void release_bdb(thread_db* tdbb,
 			bdb->bdb_io = 0;
 		}
 		else {
-			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
-				 i++); // null loop body
-			if (i >= BDB_max_shared) {
+			SharedLatch* latch = findSharedLatch(tdbb, bdb);
+			if (!latch) {
 				cache_bugcheck(300);	/* can't find shared latch */
 			}
-			bdb->bdb_shared[i] = 0;
+			freeSharedLatch(tdbb, bdb->bdb_dbb->dbb_bcb, latch);
 		}
 	}
 
@@ -5998,12 +6055,8 @@ static void release_bdb(thread_db* tdbb,
 					   LATCH_MUTEX_RELEASE;
 					   return;  */
 				}
-				for (i = 0; (i < BDB_max_shared) && bdb->bdb_shared[i]; i++);
-				if (i >= BDB_max_shared) {
-					break;
-				}
 				++bdb->bdb_use_count;
-				bdb->bdb_shared[i] = lwt->lwt_tdbb;
+				SharedLatch* latch = allocSharedLatch(lwt->lwt_tdbb, bdb);
 				lwt->lwt_flags &= ~LWT_pending;
 				ISC_event_post(&lwt->lwt_event);
 				granted = true;

@@ -104,6 +104,7 @@ public:
 #endif 
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
+	que			bcb_free_slt;		// Free shared latch blocks
 	SSHORT		bcb_flags;			/* see below */
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
@@ -167,7 +168,7 @@ public:
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
 	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
 	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
-	thread_db*	bdb_shared[BDB_max_shared];	/* threads holding shared latches */
+	que			bdb_shared;				// shared latches queue
 };
 
 /* bdb_flags */
@@ -257,6 +258,16 @@ public:
 };
 
 const int LWT_pending	= 1;			/* latch request is pending */
+
+// Shared Latch
+class SharedLatch
+{
+public:
+	thread_db*	slt_tdbb;		// thread holding latch
+	BufferDesc*	slt_bdb;		// buffer for which is this latch
+	que			slt_tdbb_que;	// thread's latches queue
+	que			slt_bdb_que;	// buffer's latches queue
+};
 
 #include "../jrd/os/pio.h"
 
