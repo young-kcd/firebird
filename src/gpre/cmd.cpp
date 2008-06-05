@@ -2139,7 +2139,7 @@ static void declare_udf( gpre_req* request, const act* action)
 
 static void grant_revoke_privileges( gpre_req* request, const act* action)
 {
-	TEXT privileges[5];
+	TEXT privileges[7];
 	TEXT* p = privileges;
 	const prv* priv_block = (PRV) action->act_object;
 
@@ -2182,7 +2182,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 			if ((priv_block->prv_privileges & PRV_grant_option) &&
 				((action->act_type == ACT_dyn_grant) ||
-				 (!(request->req_database->dbb_flags & DBB_v3))))
+				 !(request->req_database->dbb_flags & DBB_v3)))
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}
@@ -2220,7 +2220,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 				if ((priv_block->prv_privileges & PRV_grant_option) &&
 					((action->act_type == ACT_dyn_grant) ||
-					 (!(request->req_database->dbb_flags & DBB_v3))))
+					 !(request->req_database->dbb_flags & DBB_v3)))
 				{
 					put_numeric(request, isc_dyn_grant_options, 1);
 				}			
@@ -2242,7 +2242,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 			if ((priv_block->prv_privileges & PRV_grant_option) &&
 				((action->act_type == ACT_dyn_grant) ||
-				 (!(request->req_database->dbb_flags & DBB_v3))))
+				 !(request->req_database->dbb_flags & DBB_v3)))
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}
