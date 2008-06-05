@@ -1491,10 +1491,11 @@ static void gen_cursor_init( const act* action)
 //  If blobs are present, zero out all of the blob handles.  After this
 //  point, the handles are the user's responsibility 
 
-	if (action->act_request->
-		req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
-			printa(names[COLUMN], false, "MOVE 0 TO %s%d", names[isc_a_pos],
-				   action->act_request->req_blobs->blb_ident);
+	if (action->act_request->req_flags & (REQ_sql_blob_open | REQ_sql_blob_create))
+	{
+		printa(names[COLUMN], false, "MOVE 0 TO %s%d", names[isc_a_pos],
+			   action->act_request->req_blobs->blb_ident);
+	}
 }
 
 
@@ -3537,8 +3538,10 @@ static void gen_store( const act* action)
 	{
 		const gpre_fld* field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
+		{
 			printa(names[COLUMN], true, "CALL \"isc_qtoq\" USING %s, %s",
 				   names[isc_blob_null_pos], gen_name(name, reference, true));
+		}
 	}
 }
 

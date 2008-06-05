@@ -412,14 +412,11 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		dbb->dbb_ast_flags |= DBB_assert_locks;
 		BufferControl* bcb = dbb->dbb_bcb;
-		if (bcb) {
-			if (bcb->bcb_count) {
-				const bcb_repeat* tail = bcb->bcb_rpt;
-				for (const bcb_repeat* const end = tail + bcb->bcb_count;
-					tail < end; tail++)
-				{
-					PAGE_LOCK_ASSERT(tail->bcb_bdb->bdb_lock);
-				}
+		if (bcb && bcb->bcb_count) {
+			const bcb_repeat* tail = bcb->bcb_rpt;
+			for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
+			{
+				PAGE_LOCK_ASSERT(tail->bcb_bdb->bdb_lock);
 			}
 		}
 
@@ -1475,8 +1472,7 @@ void CCH_flush_ast(thread_db* tdbb)
 
 	for (ULONG i = 0; (bcb = dbb->dbb_bcb) && i < bcb->bcb_count; i++) {
 		BufferDesc* bdb = bcb->bcb_rpt[i].bcb_bdb;
-		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) 
-
+		if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 			down_grade(tdbb, bdb);
 	}
 
@@ -1860,8 +1856,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
 		bdb->bdb_flags |= BDB_system_dirty;
 	}
 
-	if (!(tdbb->tdbb_flags & TDBB_sweeper) ||
-		bdb->bdb_flags & BDB_system_dirty)
+	if (!(tdbb->tdbb_flags & TDBB_sweeper) || bdb->bdb_flags & BDB_system_dirty)
 	{
 #ifdef DIRTY_LIST
 		insertDirty(bcb, bdb);
@@ -2225,7 +2220,7 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 				 !(bdb->bdb_flags & BDB_garbage_collect)) ||
 				(window->win_flags & WIN_garbage_collector &&
 				 bdb->bdb_flags & BDB_garbage_collect &&
-				 !(bdb->bdb_scan_count)))
+				 !bdb->bdb_scan_count))
 			{
 				if (window->win_flags & WIN_garbage_collector)
 				{
@@ -2417,7 +2412,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			release_bdb(tdbb, bdb, true, false, false);
 		}
 
-		// hvlad : as far as i understand thread can't hold more than two shared lathes 
+		// hvlad : as far as i understand thread can't hold more than two shared latches 
 		// on the same bdb, so findSharedLatch below will not be called many times
 		SharedLatch *latch = findSharedLatch(tdbb, bdb);
 		while (latch)
@@ -2535,8 +2530,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 		   old code --> if (sdw->sdw_flags & SDW_INVALID)
 		 */
 
-		if ((sdw->sdw_flags & SDW_INVALID) &&
-			!(sdw->sdw_flags & SDW_conditional))
+		if ((sdw->sdw_flags & SDW_INVALID) && !(sdw->sdw_flags & SDW_conditional))
 		{
 			continue;
 		}
@@ -5754,9 +5748,9 @@ static void prefetch_init(Prefetch* prefetch, thread_db* tdbb)
 	prefetch->prf_flags = 0;
 	prefetch->prf_max_prefetch = PREFETCH_MAX_TRANSFER / dbb->dbb_page_size;
 	prefetch->prf_aligned_buffer =
-		(SCHAR
-		 *) (((U_IPTR) & prefetch->prf_unaligned_buffer + MIN_PAGE_SIZE -
-			  1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
+		(SCHAR*)
+			(((U_IPTR) &prefetch->prf_unaligned_buffer + MIN_PAGE_SIZE - 1)
+		  	& ~((U_IPTR) MIN_PAGE_SIZE - 1));
 }
 
 

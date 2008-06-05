@@ -2494,8 +2494,7 @@ static void gen_get_segment( const act* action, int column)
 	PAT args;
 	args.pat_blob = blob;
 	args.pat_vector1 = status_vector(action);
-	args.pat_condition = !(action->act_error
-						   || (action->act_flags & ACT_sql));
+	args.pat_condition = !(action->act_error || (action->act_flags & ACT_sql));
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
 	args.pat_string1 = global_status_name;
@@ -2679,8 +2678,7 @@ static void gen_put_segment( const act* action, int column)
 	PAT args;
 	args.pat_blob = blob;
 	args.pat_vector1 = status_vector(action);
-	args.pat_condition = !(action->act_error
-						   || (action->act_flags & ACT_sql));
+	args.pat_condition = !(action->act_error || (action->act_flags & ACT_sql));
 	args.pat_ident1 = blob->blb_len_ident;
 	args.pat_ident2 = blob->blb_buff_ident;
 	args.pat_string1 = global_status_name;
@@ -3316,8 +3314,7 @@ static void gen_store( const act* action, int column)
 	{
 		gpre_fld* field = reference->ref_field;
 		if (field->fld_flags & FLD_blob)
-			printa(column, "%s = isc_blob_null;",
-				   gen_name(name, reference, true));
+			printa(column, "%s = isc_blob_null;", gen_name(name, reference, true));
 	}
 }
 

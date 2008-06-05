@@ -4066,7 +4066,7 @@ static void sort_out_attributes(
 				PARSE_error(220, 0, 0);	/* msg 220: Attempt to change trigger type from ERASE to STORE */
 		}
 
-	if ((!(flags & trg_mflag_order)) && (flags & trg_mflag_type))
+	if (!(flags & trg_mflag_order) && (flags & trg_mflag_type))
 		switch (trigger->trg_type) {
 		case trg_erase:
 		case trg_post_modify:

@@ -2837,8 +2837,7 @@ static bool resolve_fields(GPRE_NOD& fields,
 				case nod_agg_min:
 				case nod_agg_average:
 				case nod_agg_total:
-					if ((node->nod_arg[1]) &&
-						(request->req_database->dbb_flags & DBB_v3))
+					if (node->nod_arg[1] && (request->req_database->dbb_flags & DBB_v3))
 					{
 						selection->rse_reduced =
 							MSC_unary(nod_sort, node->nod_arg[1]);

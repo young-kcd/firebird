@@ -2356,7 +2356,7 @@ static void gen_for(const act* action)
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			if (reference-> ref_flags & REF_fetch_array)
+			if (reference->ref_flags & REF_fetch_array)
 				gen_get_or_put_slice(action, reference, true);
 		}
 	}
@@ -3947,8 +3947,9 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 
 static USHORT next_label(void)
 {
-	UCHAR* byte;
-	for (byte = gpreGlob.fortran_labels; *byte == 255; byte++);
+	UCHAR* byte = gpreGlob.fortran_labels;
+	while (*byte == 255)
+		++byte;
 
 	USHORT label = ((byte - gpreGlob.fortran_labels) << 3);
 

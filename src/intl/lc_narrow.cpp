@@ -267,7 +267,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			}
 		}
 		else {					/* (col->IsCompress) */
-			bool complete = (USHORT) (i + 1) < iInLen;
+			const bool complete = (USHORT) (i + 1) < iInLen;
 
 			if (complete) {
 				const CompressPair* cmp =
@@ -407,6 +407,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 	ULONG index1 = 0;
 	ULONG index2 = 0;
 
+	const bool noSpecials = !(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first);
 	while (true) {
 		/* Scan to find ignore char from l1 */
 		while (l1) {
@@ -414,8 +415,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s1];
 
-			if (col1->IsExpand && col1->IsCompress &&
-				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
+			if (col1->IsExpand && col1->IsCompress && noSpecials)
 			{
 				break;
 			}
@@ -430,8 +430,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 			col2 =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s2];
-			if (col2->IsExpand && col2->IsCompress &&
-				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
+			if (col2->IsExpand && col2->IsCompress && noSpecials)
 			{
 				break;
 			}
@@ -468,8 +467,8 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 	*sum = obj->texttype_impl->primary_sum;
 
 	if (stat->stat_flags & LC_HAVE_WAITING) {
-		(*l)--;
-		(*p)++;
+		--*l;
+		++*p;
 		stat->stat_flags &= ~LC_HAVE_WAITING;
 		fb_assert(stat->stat_waiting);
 		return stat->stat_waiting;
@@ -488,15 +487,15 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 				*sum = obj->texttype_impl->ignore_sum;
 
 				/* Have col */
-				(*l)--;
-				(*p)++;
+				--*l;
+				++*p;
 				return col;
 			}
 
 			/* Both flags set indicate a special value */
 			/* Need a new col */
-			(*l)--;
-			(*p)++;
+			--*l;
+			++*p;
 			stat->stat_flags |= LC_HAVE_SPECIAL;
 			continue;
 		}
@@ -505,8 +504,8 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 				   (col->IsCompress && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))))
 		{
 			/* Have col */
-			(*l)--;
-			(*p)++;
+			--*l;
+			++*p;
 			return col;
 		}
 
@@ -544,8 +543,8 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 			}
 		}
 		/* Have col */
-		(*l)--;
-		(*p)++;
+		--*l;
+		++*p;
 		return col;
 	}
 	return NULL;

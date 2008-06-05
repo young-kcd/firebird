@@ -2762,7 +2762,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 		{
 			if (!(field->fld_flags & FLD_computed))
 			{
-				if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
+				if (field->fld_type == blr_blob || (field->fld_flags & FLD_array))
 				{
 					ISC_QUAD* blob_id = (ISC_QUAD*) ((SCHAR*) buffer + field->fld_offset);
 					blob_id->gds_quad_high = 0;
@@ -2978,7 +2978,7 @@ burp_fld* get_field(BurpGlobals*	tdgbl,
 	// If it is a view and there is a global transaction then use it
 	bool global_tr = false;
 	isc_tr_handle local_trans;
-	if ((relation->rel_flags & REL_view) && (tdgbl->global_trans))
+	if ((relation->rel_flags & REL_view) && tdgbl->global_trans)
 	{
 		local_trans = tdgbl->global_trans;
 		global_tr = true;

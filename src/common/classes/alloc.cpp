@@ -309,17 +309,20 @@ void MemoryPool::setStatsGroup(MemoryStats& statsL)
 	// It is deadlock-free only as long other code takes locks in the same order.
 	// There are no other places which need both locks at once so this code seems
 	// to be safe
-	if (parent) parent->lock.enter();
+	if (parent)
+		parent->lock.enter();
+		
 	lock.enter();
-	size_t sav_used_memory = used_memory.value();
-	size_t sav_mapped_memory = mapped_memory;
+	const size_t sav_used_memory = used_memory.value();
+	const size_t sav_mapped_memory = mapped_memory;
 	decrement_mapping(sav_mapped_memory);
 	decrement_usage(sav_used_memory);
 	this->stats = &statsL;
 	increment_mapping(sav_mapped_memory);
 	increment_usage(sav_used_memory);	
 	lock.leave();
-	if (parent) parent->lock.leave();
+	if (parent)
+		parent->lock.leave();
 }
 
 MemoryPool::MemoryPool(MemoryPool* parentL, 
@@ -639,7 +642,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 			parent_redirected = blk;
 
 			// Update usage statistics
-			size_t blk_size = blk->mbk_small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+			const size_t blk_size = blk->mbk_small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
 			increment_usage(blk_size);
 			redirect_amount += blk_size;
 			parent->lock.leave();
@@ -985,7 +988,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 			mem_assert(redirected->mbk_flags & MBK_USED);
 			mem_assert(!(redirected->mbk_flags & MBK_LARGE));
 			if (redirected->mbk_type >= 0) {
-				size_t blk_size = redirected->mbk_small.mbk_length - sizeof(MemoryRedirectList);
+				const size_t blk_size = redirected->mbk_small.mbk_length - sizeof(MemoryRedirectList);
 				blk_redirected += blk_size;
 				if (!(redirected->mbk_flags & MBK_DELAYED))
 					blk_used_memory += blk_size;
@@ -1744,7 +1747,7 @@ void MemoryPool::deallocate(void *block)
 		if (list->mrl_next)
 			block_list_small(list->mrl_next)->mrl_prev = list->mrl_prev;
 		// Update usage statistics
-		size_t size = blk->mbk_small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+		const size_t size = blk->mbk_small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList));
 		redirect_amount -= size;
 #ifndef USE_VALGRIND
 		decrement_usage(size);
@@ -1769,7 +1772,7 @@ void MemoryPool::deallocate(void *block)
 		if (list->mrl_next)
 			block_list_large(list->mrl_next)->mrl_prev = list->mrl_prev;
 		// Update usage statistics
-		size_t size = blk->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
+		const size_t size = blk->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList));
 #ifndef USE_VALGRIND
 		decrement_usage(size);
 #endif

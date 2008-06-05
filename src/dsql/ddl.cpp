@@ -3131,7 +3131,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		relation_node = trigger_node->nod_arg[e_trg_table];
 		if (relation_node)
 		{
-			if (type_node && ((SSHORT)type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
+			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 			{
 				ERRD_post(isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
@@ -3147,7 +3147,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		}
 		else
 		{
-			if (type_node && ((SSHORT)type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DB)
+			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DB)
 			{
 				ERRD_post(isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
@@ -3174,7 +3174,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 
 			if (found && relation_name)
 			{
-				if (type_node && ((IPTR) type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
+				if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 				{
 					ERRD_post(isc_dsql_command_err,
 							  isc_arg_gds, isc_dsql_incompatible_trigger_type,

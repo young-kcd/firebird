@@ -4063,8 +4063,7 @@ static void store_userpriv(USERPRIV upriv,
 		MOVE_SYMBOL(usr->usre_name, X.RDB$USER);
 		strcpy(X.RDB$GRANTOR, grantor);
 		strcpy(X.RDB$PRIVILEGE, priv);
-		X.RDB$GRANT_OPTION =
-			(upriv->userpriv_flags & USERPRIV_grant) ? TRUE : FALSE;
+		X.RDB$GRANT_OPTION = (upriv->userpriv_flags & USERPRIV_grant) ? TRUE : FALSE;
 		MOVE_SYMBOL(upriv->userpriv_relation, X.RDB$RELATION_NAME);
 		X.RDB$USER_TYPE = obj_user;
 		X.RDB$OBJECT_TYPE = obj_relation;

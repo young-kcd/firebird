@@ -499,10 +499,11 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 		if (request->req_blob->blb_blob->blb_flags & BLB_eof)
 			return 100;
-		else if (request->req_blob->blb_blob->blb_fragment_size)
+
+		if (request->req_blob->blb_blob->blb_fragment_size)
 			return 101;
-		else
-			return 0;
+
+		return 0;
 	}
 
 	JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
@@ -946,8 +947,7 @@ static USHORT convert( SLONG number, UCHAR* buffer)
 	const UCHAR* p;
 
 #ifndef WORDS_BIGENDIAN
-	const SLONG n = number;
-	p = (UCHAR *) & n;
+	p = (UCHAR *) &number;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;

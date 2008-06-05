@@ -868,7 +868,9 @@ static void gen_blob_open( const act* action, USHORT column)
 
 	if ((action->act_error && (action->act_type != ACT_blob_for)) ||
 		action->act_flags & ACT_sql)
+	{
 		begin(column);
+	}
 
 	TEXT s[MAX_REF_SIZE];
 	const blb* blob;
@@ -2073,7 +2075,8 @@ static void gen_finish( const act* action, int column)
 	db = NULL;
 
 	if (gpreGlob.sw_auto || ((action->act_flags & ACT_sql) &&
-					(action->act_type != ACT_disconnect))) {
+					(action->act_type != ACT_disconnect)))
+	{
 		printa(column, "if gds__trans <> nil");
 		printa(column + 4, "then GDS__%s_TRANSACTION (%s, gds__trans);",
 			   (action->act_type != ACT_rfinish) ? "COMMIT" : "ROLLBACK",

@@ -63,7 +63,8 @@ using namespace Jrd;
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static const UCHAR blr_bpb[] = {
+static const UCHAR blr_bpb[] =
+{
 	isc_bpb_version1,
 	isc_bpb_source_type, 1, isc_blob_blr,
 	isc_bpb_target_type, 1, isc_blob_blr
@@ -73,7 +74,7 @@ static void convert_dtype(dsql_fld*, SSHORT);
 static void free_procedure(dsql_prc*);
 static void free_relation(dsql_rel*);
 static void insert_symbol(dsql_dbb*, dsql_sym*);
-static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, SYM_TYPE, USHORT = 0);
+static dsql_sym* lookup_symbol(dsql_dbb*, USHORT, const char*, const SYM_TYPE, USHORT = 0);
 static dsql_sym* lookup_symbol(dsql_dbb*, const dsql_str*, SYM_TYPE, USHORT = 0);
 
 #define DSQL_REQUEST(id) dbb->dbb_database->dbb_internal[id]
@@ -2014,7 +2015,8 @@ static void insert_symbol(dsql_dbb* dbb, dsql_sym* symbol)
 }
 
 
-static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, SYM_TYPE type, USHORT charset_id)
+static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name,
+	const SYM_TYPE type, USHORT charset_id)
 {
 /**************************************
  *
@@ -2051,26 +2053,26 @@ static dsql_sym* lookup_symbol(dsql_dbb* dbb, USHORT length, const char* name, S
 			}
 			else if (type == SYM_intlsym_collation &&
 					 (intlSym = (dsql_intlsym*) symbol->sym_object) &&
-					 (!(intlSym->intlsym_flags & INTLSYM_dropped)) &&
+					 !(intlSym->intlsym_flags & INTLSYM_dropped) &&
 					 (charset_id == 0 || intlSym->intlsym_charset_id == charset_id))
 			{
 				break;
 			}
 			else if (type == SYM_procedure &&
 					 (procedure = (dsql_prc*) symbol->sym_object) &&
-					 (!(procedure->prc_flags & PRC_dropped)))
+					 !(procedure->prc_flags & PRC_dropped))
 			{
 				break;
 			}
 			else if (type == SYM_relation &&
 					 (relation = (dsql_rel*) symbol->sym_object) &&
-					 (!(relation->rel_flags & REL_dropped)))
+					 !(relation->rel_flags & REL_dropped))
 			{
 				break;
 			}
 			else if (type == SYM_udf &&
 					 (userFunc = (dsql_udf*) symbol->sym_object) &&
-					 (!(userFunc->udf_flags & UDF_dropped)))
+					 !(userFunc->udf_flags & UDF_dropped))
 			{
 				break;
 			}

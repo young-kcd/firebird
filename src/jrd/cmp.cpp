@@ -1669,8 +1669,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_negate:
 		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
-		node->nod_flags =
-			node->nod_arg[0]->nod_flags & (nod_double | nod_quad);
+		node->nod_flags = node->nod_arg[0]->nod_flags & (nod_double | nod_quad);
 		return;
 
 	case nod_literal:
@@ -3049,7 +3048,7 @@ static void expand_view_nodes(thread_db* tdbb,
 		return;
 
 	// if the stream references a view, follow map
-	UCHAR* map = csb->csb_rpt[stream].csb_map;
+	const UCHAR* map = csb->csb_rpt[stream].csb_map;
 	if (map) {
 		++map;
 		while (*map) {

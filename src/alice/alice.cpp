@@ -268,7 +268,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		*/
 #endif
 
-		if (table->in_sw_value & (sw_buffers)) {
+		if (table->in_sw_value & sw_buffers) {
 			if (--argc <= 0) {
 				ALICE_error(6);	// msg 6: number of page buffers for cache required
 			}
@@ -283,7 +283,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & (sw_housekeeping)) {
+		if (table->in_sw_value & sw_housekeeping) {
 			if (--argc <= 0) {
 				ALICE_error(9);	// msg 9: number of transactions per sweep required
 			}
@@ -298,7 +298,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			}
 		}
 
-		if (table->in_sw_value & (sw_set_db_dialect)) {
+		if (table->in_sw_value & sw_set_db_dialect) {
 			if (--argc <= 0) {
 				ALICE_error(113);	// msg 113: dialect number required
 			}

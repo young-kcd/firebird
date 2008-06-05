@@ -3055,8 +3055,7 @@ static act* act_fetch(void)
 
 	if (direction != blr_forward) {
 		if (!(request->req_flags & REQ_scroll))
-			PAR_error
-				("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
+			PAR_error("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
 
 		// create a literal for the direction parameter
 

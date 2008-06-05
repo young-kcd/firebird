@@ -196,11 +196,11 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 				// oh no, a hex string!
 				*p++; // skip the 'X' part.
 				UCHAR byte = 0;
-				int nibble = ((strlen(p)) & 1);
+				bool nibble = (strlen(p) & 1);
 				SSHORT c;
 
 				// hex string is already upper-cased
-				while ((isdigit(*p)) || ((*p >= 'A') && (*p <= 'F')))
+				while (isdigit(*p) || ((*p >= 'A') && (*p <= 'F')))
 				{
 					// Now convert the character to a nibble
 					if (*p >= 'A')
@@ -211,13 +211,13 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 					if (nibble)
 					{
 						byte = (byte << 4) + (UCHAR) c;
-						nibble = 0;
+						nibble = false;
 						value = (value << 8) + byte;
 					}
 					else
 					{
 						byte = c;
-						nibble = 1;
+						nibble = true;
 					}
 
 					*p++;
@@ -1530,8 +1530,7 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 		MAKE_desc_from_field(&node->nod_desc, field);
 	}
 
-	if ((field->fld_flags & FLD_nullable) ||
-		(context->ctx_flags & CTX_outer_join))
+	if ((field->fld_flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
 	{
 		node->nod_desc.dsc_flags |= DSC_nullable;
 	}

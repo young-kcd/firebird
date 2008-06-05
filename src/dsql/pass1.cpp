@@ -10033,7 +10033,7 @@ static dsql_fld* resolve_context( CompiledStatement* statement, const dsql_str* 
 	// the qualifier present.
 	// An exception is a check-constraint that is allowed to reference fields
 	// without the qualifier.
-	if (!isCheckConstraint && (context->ctx_flags & CTX_system) && (!qualifier)) {
+	if (!isCheckConstraint && (context->ctx_flags & CTX_system) && !qualifier) {
 		return NULL;
 	}
 

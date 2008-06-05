@@ -257,8 +257,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		return;
 
 	case nod_agg_count:
-		if ((node->nod_arg[0]) &&
-			!(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[0] && !(request->req_database->dbb_flags & DBB_v3))
 		{
 			if (node->nod_arg[1])
 				request->add_byte(blr_agg_count_distinct);
@@ -316,8 +315,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 //  
 
 	case nod_agg_total:
-		if ((node->nod_arg[1]) &&
-			!(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[1] && !(request->req_database->dbb_flags & DBB_v3))
 		{
 			request->add_byte(blr_agg_total_distinct);
 		}
@@ -327,8 +325,7 @@ void CME_expr(GPRE_NOD node, gpre_req* request)
 		return;
 
 	case nod_agg_average:
-		if ((node->nod_arg[1]) &&
-			!(request->req_database->dbb_flags & DBB_v3))
+		if (node->nod_arg[1] && !(request->req_database->dbb_flags & DBB_v3))
 		{
 			request->add_byte(blr_agg_average_distinct);
 		}
@@ -1162,8 +1159,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 	{
 		if (gpreGlob.sw_ids)
 		{
-			if ((context->ctx_alias) &&
-				!(request->req_database->dbb_flags & DBB_v3))
+			if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
 			{
 				request->add_byte(blr_rid2);
 			}
@@ -1175,8 +1171,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 		}
 		else
 		{
-			if ((context->ctx_alias) &&
-				!(request->req_database->dbb_flags & DBB_v3))
+			if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
 			{
 				request->add_byte(blr_relation2);
 			}
@@ -1185,8 +1180,7 @@ void CME_relation(gpre_ctx* context, gpre_req* request)
 			CMP_stuff_symbol(request, relation->rel_symbol);
 		}
 
-		if ((context->ctx_alias) &&
-			!(request->req_database->dbb_flags & DBB_v3))
+		if (context->ctx_alias && !(request->req_database->dbb_flags & DBB_v3))
 		{
 			request->add_cstring(context->ctx_alias);
 		}
