@@ -647,7 +647,7 @@ public:
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
 	
-	que			tdbb_latches;		// shared latches hold by thread
+	que			tdbb_latches;		// shared latches held by thread
 
 	MemoryPool* getDefaultPool()
 	{
