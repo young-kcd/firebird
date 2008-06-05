@@ -5085,8 +5085,7 @@ static bool long_int(dsql_nod* string,
  *
  *************************************/
 
-	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		 classes(*p) & CHR_DIGIT; p++)
+	for (const UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; true; p++)
 	{
 		if (!(classes(*p) & CHR_DIGIT)) {
 			return false;
@@ -5331,8 +5330,7 @@ static bool short_int(dsql_nod* string,
 		return false;
 	}
 
-	for (UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; 
-		classes(*p) & CHR_DIGIT; p++)
+	for (UCHAR* p = (UCHAR*)((dsql_str*) string)->str_data; true; p++)
 	{
 		if (!(classes(*p) & CHR_DIGIT)) {
 			return false;
