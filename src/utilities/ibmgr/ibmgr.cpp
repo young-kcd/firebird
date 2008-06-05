@@ -71,8 +71,8 @@ const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
-static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
-	ibmgr_data_t*, bool*, bool);
+static SSHORT get_switches(int argc, TEXT** argv, const in_sw_tab_t* in_sw_table,
+						   ibmgr_data_t* ibmgr_data, bool * quitflag, bool zapPasswd);
 static SSHORT parse_cmd_line(int, TEXT**, bool);
 static void print_config(void);
 static void print_help(void);

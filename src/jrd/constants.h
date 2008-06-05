@@ -71,6 +71,13 @@ const char* const ISC_PASSWORD = "ISC_PASSWORD";
 const char* const NULL_ROLE = "NONE";
 const char* const ADMIN_ROLE = "RDB$ADMIN";
 
+/*
+ * User name assigned to any user granted USR_locksmith rights.
+ * If this name is changed, modify also the trigger in 
+ * jrd/grant.gdl (which turns into jrd/trig.h.
+ */
+static const char* SYSDBA_USER_NAME	= "SYSDBA";
+
 // This temporary set of flags is needed to implement minimum form of 
 // ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
 // Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.

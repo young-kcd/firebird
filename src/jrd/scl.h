@@ -137,13 +137,6 @@ public:
 		  usr_flags(ui.usr_flags) { }
 };
 
-/*
- * User name assigned to any user granted USR_locksmith rights.
- * If this name is changed, modify also the trigger in 
- * jrd/grant.gdl (which turns into jrd/trig.h.
- */
-static const char* SYSDBA_USER_NAME	= "SYSDBA";
-
 static const char* object_table		= "TABLE";
 static const char* object_procedure	= "PROCEDURE";
 static const char* object_column	= "COLUMN";
