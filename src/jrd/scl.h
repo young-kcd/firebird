@@ -137,9 +137,9 @@ public:
 		  usr_flags(ui.usr_flags) { }
 };
 
-static const char* object_table		= "TABLE";
-static const char* object_procedure	= "PROCEDURE";
-static const char* object_column	= "COLUMN";
+const char* const object_table		= "TABLE";
+const char* const object_procedure	= "PROCEDURE";
+const char* const object_column		= "COLUMN";
 
 } //namespace Jrd
 

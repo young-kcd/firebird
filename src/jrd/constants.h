@@ -76,7 +76,7 @@ const char* const ADMIN_ROLE = "RDB$ADMIN";
  * If this name is changed, modify also the trigger in 
  * jrd/grant.gdl (which turns into jrd/trig.h.
  */
-static const char* SYSDBA_USER_NAME	= "SYSDBA";
+const char* const SYSDBA_USER_NAME = "SYSDBA";
 
 // This temporary set of flags is needed to implement minimum form of 
 // ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
