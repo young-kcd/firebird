@@ -1639,7 +1639,8 @@ static void list_charsets()
 		return;
 	END_ERROR;
 
-	isqlGlob.printf(NEWLINE);
+	if (! first)
+		isqlGlob.printf(NEWLINE);
 }
 
 
