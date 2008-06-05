@@ -608,6 +608,13 @@ int RESTORE_restore (const TEXT* file_name,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
 	}
+#ifdef TRUSTED_SERVICES
+	if (tdgbl->gbl_sw_tr_user)
+	{
+		dpb.insertString(isc_dpb_trusted_auth, 
+			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+	}
+#endif
 
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
@@ -653,6 +660,13 @@ int RESTORE_restore (const TEXT* file_name,
 								 tdgbl->gbl_sw_password, 
 								 strlen(tdgbl->gbl_sw_password));
 		}
+#ifdef TRUSTED_SERVICES
+		if (tdgbl->gbl_sw_tr_user)
+		{
+			dpb.insertString(isc_dpb_trusted_auth, 
+				tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+		}
+#endif
 
 		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
@@ -1007,6 +1021,13 @@ void create_database(BurpGlobals*	tdgbl,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
 	}
+#ifdef TRUSTED_SERVICES
+	if (tdgbl->gbl_sw_tr_user)
+	{
+		dpb.insertString(isc_dpb_trusted_auth, 
+			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+	}
+#endif
 	if (page_buffers)
 	{
 		dpb.insertInt(isc_dpb_set_page_buffers, page_buffers);
