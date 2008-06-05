@@ -1569,7 +1569,7 @@ IDX_E BTR_make_key(thread_db* tdbb,
 		}
 		compress(tdbb, desc, key, tail->idx_itype, isNull,
 			(idx->idx_flags & idx_descending), (fuzzy ? INTL_KEY_PARTIAL : ((idx->idx_flags & idx_unique) ? INTL_KEY_UNIQUE : INTL_KEY_SORT)));
-		if (fuzzy & (key->key_flags & key_empty)) {
+		if (fuzzy && (key->key_flags & key_empty)) {
 			key->key_length = 0;
 		}
 	}
