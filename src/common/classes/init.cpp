@@ -67,7 +67,7 @@ namespace
 		}
 		catch (...)
 		{
-			cleanError(0);
+			cleanError(NULL);
 		}
 
 		try
@@ -76,7 +76,7 @@ namespace
 		}
 		catch (...)
 		{
-			cleanError(0);
+			cleanError(NULL);
 		}
 	}
 

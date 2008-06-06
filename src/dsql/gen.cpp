@@ -825,7 +825,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		while (count--) {
 			const dsql_nod* ptr = node->nod_arg[count];
 
-			if (!ptr || (ptr->nod_type != nod_isolation))
+			if (!ptr || ptr->nod_type != nod_isolation)
 				continue;
 
 			lock_level = (ptr->nod_flags & NOD_CONSISTENCY) ?

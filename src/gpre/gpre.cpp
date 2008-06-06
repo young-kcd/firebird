@@ -2236,8 +2236,8 @@ static TOK get_token()
 //IF symbol is null AND it is not a quoted string AND -e switch was specified
 //THEN search again using HSH_lookup2().
 //*  
-	if (gpreGlob.token_global.tok_symbol == NULL && !isQuoted(gpreGlob.token_global.tok_type)
-		&& gpreGlob.sw_case)
+	if (gpreGlob.token_global.tok_symbol == NULL && !isQuoted(gpreGlob.token_global.tok_type) &&
+		gpreGlob.sw_case)
 	{
 		gpreGlob.token_global.tok_symbol = symbol = HSH_lookup2(gpreGlob.token_global.tok_string);
 		if (symbol && symbol->sym_type == SYM_keyword)

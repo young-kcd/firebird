@@ -947,7 +947,7 @@ static USHORT convert( SLONG number, UCHAR* buffer)
 	const UCHAR* p;
 
 #ifndef WORDS_BIGENDIAN
-	p = (UCHAR *) &number;
+	p = (UCHAR*) &number;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
 	*buffer++ = *p++;
@@ -955,7 +955,7 @@ static USHORT convert( SLONG number, UCHAR* buffer)
 
 #else
 
-	p = (UCHAR *) (&number + 1);
+	p = (UCHAR*) (&number + 1);
 	*buffer++ = *--p;
 	*buffer++ = *--p;
 	*buffer++ = *--p;

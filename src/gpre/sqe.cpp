@@ -277,12 +277,12 @@ gpre_ctx* SQE_context(gpre_req* request)
 	for (conflict = request->req_contexts; conflict;
 		 conflict = conflict->ctx_next)
 	{
-		if ((symbol = conflict->ctx_symbol) 
-			&& (symbol->sym_type == SYM_relation
-				|| symbol->sym_type == SYM_context
-				|| symbol->sym_type == SYM_procedure)
-			&& !strcmp(symbol->sym_string, gpreGlob.token_global.tok_string)
-			&& conflict->ctx_scope_level == request->req_scope_level)
+		if ((symbol = conflict->ctx_symbol) && 
+			(symbol->sym_type == SYM_relation ||
+				symbol->sym_type == SYM_context ||
+				symbol->sym_type == SYM_procedure) &&
+			!strcmp(symbol->sym_string, gpreGlob.token_global.tok_string) &&
+			conflict->ctx_scope_level == request->req_scope_level)
 		{
 			break;
 		}

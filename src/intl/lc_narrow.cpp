@@ -407,7 +407,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 	ULONG index1 = 0;
 	ULONG index2 = 0;
 
-	const bool noSpecials = !(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first);
+	const bool noSpecialsFirst = !(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first);
 	while (true) {
 		/* Scan to find ignore char from l1 */
 		while (l1) {
@@ -415,7 +415,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s1];
 
-			if (col1->IsExpand && col1->IsCompress && noSpecials)
+			if (col1->IsExpand && col1->IsCompress && noSpecialsFirst)
 			{
 				break;
 			}
@@ -430,7 +430,7 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 			col2 =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s2];
-			if (col2->IsExpand && col2->IsCompress && noSpecials)
+			if (col2->IsExpand && col2->IsCompress && noSpecialsFirst)
 			{
 				break;
 			}

@@ -3170,7 +3170,7 @@ static act* scan_routine_header()
 
 	while (!MSC_match(KW_SEMI_COLON))
 	{
-		if (!(match_parentheses()))
+		if (!match_parentheses())
 			PAR_get_token();
 	}
 

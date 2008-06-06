@@ -2390,7 +2390,7 @@ static void get_dtype_of_list(const gpre_nod* node, gpre_fld* f)
 		if (field.fld_dtype == dtype_blob)
 		{
 			// When there was already an other data type, raise immediate error
-			if (! all_blob || ! all_same_sub_type) {
+			if (!all_blob || !all_same_sub_type) {
 				CPR_error("Incompatible data types");
 				return;
 			}
