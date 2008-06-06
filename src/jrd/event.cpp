@@ -670,7 +670,7 @@ static SLONG create_process(void)
 	probe_processes();
 	release();
 
-	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, THREAD_blast, 0))
+	if (gds__thread_start(watcher_thread, NULL, THREAD_medium, 0, 0))
 		ERR_bugcheck_msg("cannot start thread");
 
 	return EVENT_process_offset;

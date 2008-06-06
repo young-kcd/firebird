@@ -3162,7 +3162,7 @@ int GDS_SHUTDOWN(unsigned int timeout)
 		{
 			Firebird::Semaphore shutdown_semaphore;
 
-			ThreadStart::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, 0, 0);
+			ThreadStart::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, 0);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
 			{

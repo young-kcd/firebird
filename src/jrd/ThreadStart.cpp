@@ -57,10 +57,11 @@
 #include "../common/classes/rwlock.h"
 
 
-int API_ROUTINE gds__thread_start(
-				  ThreadEntryPoint* entrypoint,
-				  void* arg,
-				  int priority, int flags, void* thd_id)
+int API_ROUTINE gds__thread_start(ThreadEntryPoint* entrypoint,
+								  void* arg,
+								  int priority,
+								  int /*flags*/,
+								  void* thd_id)
 {
 /**************************************
  *
@@ -75,7 +76,7 @@ int API_ROUTINE gds__thread_start(
 
 	int rc = 0;
 	try {
-		ThreadStart::start(entrypoint, arg, priority, flags, thd_id);
+		ThreadStart::start(entrypoint, arg, priority, thd_id);
 	}
 	catch (const Firebird::status_exception& status) {
 		rc = status.value()[1];
@@ -155,7 +156,6 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 void ThreadStart::start(ThreadEntryPoint* routine,
 						void* arg, 
 						int priority_arg, 
-						int flags, 
 						void* thd_id)
 {
 /**************************************
@@ -243,7 +243,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 void ThreadStart::start(ThreadEntryPoint* routine,
 						void* arg, 
 						int priority_arg, 
-						int flags, 
 						void* thd_id)
 {
 /**************************************
@@ -280,7 +279,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 void ThreadStart::start(ThreadEntryPoint* routine,
 						void* arg, 
 						int priority_arg, 
-						int flags, 
 						void* thd_id)
 {
 /**************************************
@@ -323,8 +321,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	ThreadPriorityScheduler::Init();
 
 	ThreadPriorityScheduler* tps = FB_NEW(*getDefaultMemoryPool()) 
-		ThreadPriorityScheduler(routine, arg, 
-			ThreadPriorityScheduler::adjustPriority(priority));
+		ThreadPriorityScheduler(routine, arg, ThreadPriorityScheduler::adjustPriority(priority));
 #endif // THREAD_PSCHED
 
 	/* I have changed the CreateThread here to _beginthreadex() as using
@@ -342,10 +339,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 
 	SetThreadPriority(handle, priority);
 
-	if (! (flags & THREAD_wait))
-	{
-		ResumeThread(handle);
-	}
+	ResumeThread(handle);
+
 	if (thd_id)
 	{
 		*static_cast<HANDLE*>(thd_id) = handle;
@@ -362,7 +357,6 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 void ThreadStart::start(ThreadEntryPoint* routine,
 						void* arg, 
 						int priority_arg, 
-						int flags, 
 						void* thd_id)
 {
 /**************************************

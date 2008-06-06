@@ -3126,8 +3126,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 				return user_status[1];
 			}
 
-			gds__thread_start(event_thread, port->port_async, 
-				THREAD_high, THREAD_ast, 0);
+			gds__thread_start(event_thread, port->port_async, THREAD_high, 0, 0);
 
 			port->port_async->port_context = rdb;
 		}

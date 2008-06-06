@@ -575,8 +575,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						fflush(stdout);
 #endif
 						if (!shutting_down && !Worker::wakeUp())  {
-							gds__thread_start(loopThread, (void*)(IPTR) flags,
-								THREAD_medium, THREAD_ast, 0);
+							gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0);
 						}
 					}
 					request = 0;

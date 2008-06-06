@@ -42,11 +42,6 @@ const int THREAD_medium_low		= 4;
 const int THREAD_low			= 5;
 const int THREAD_critical		= 6;
 
-/* Thread option flags */
-
-const int THREAD_ast		= 1;	/* Thread can/should run at ast level */
-const int THREAD_blast		= 2;	/* Blow away thread during exit handler */
-const int THREAD_wait		= 4;	/* Somebody will wait for thread exit */
 
 /* Thread startup */
 
@@ -60,11 +55,7 @@ class ThreadStart : public ThreadData
 public:
 	explicit ThreadStart(ThreadData::ThreadDataType t) : ThreadData(t) { }
 
-	static void	start(ThreadEntryPoint* routine, 
-					  void* arg, 
-					  int priority_arg, 
-					  int flags, 
-					  void* thd_id);
+	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, void* thd_id);
 };
 
 extern "C" {
