@@ -40,7 +40,7 @@ GDS_TIMESTAMP CVT_get_timestamp(const dsc*, FPTR_ERROR);
 USHORT		CVT_make_string(const dsc*, USHORT, const char**, vary*,
 							  USHORT, FPTR_ERROR);
 extern "C" {
-void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR);
+void FB_EXPORTED CVT_move(const dsc*, dsc*, FPTR_ERROR);
 }
 
 #endif // JRD_CVT_PROTO_H

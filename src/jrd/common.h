@@ -204,6 +204,8 @@
 #define API_ROUTINE __attribute__((visibility("default")))
 #define API_ROUTINE_VARARG API_ROUTINE
 #define INTERNAL_API_ROUTINE API_ROUTINE
+#define FB_EXPORTED __attribute__((visibility("default")))
+
 #endif /* Darwin Platforms */
 
 
@@ -623,18 +625,22 @@ typedef unsigned __int64 FB_UINT64;
 #define H_ERRNO		h_errno
 #endif
 
+
 /* various declaration modifiers */
 
 #ifndef API_ROUTINE
 #define API_ROUTINE
 #define API_ROUTINE_VARARG
-#define INTERNAL_API_ROUTINE	API_ROUTINE
+#define INTERNAL_API_ROUTINE
 #endif
 
 #ifndef CLIB_ROUTINE
 #define CLIB_ROUTINE
 #endif
 
+#ifndef FB_EXPORTED
+#define FB_EXPORTED
+#endif
 
 
 /* alignment macros */

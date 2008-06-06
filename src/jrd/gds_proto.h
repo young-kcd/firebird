@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 typedef void* pVoid;
+
 pVoid	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
@@ -127,13 +128,12 @@ void	API_ROUTINE gds__vtov(const SCHAR*, char*, SSHORT);
 void	API_ROUTINE isc_print_sqlerror(SSHORT, const ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
-void	API_ROUTINE gds__default_printer(void*, SSHORT, const TEXT*);
+void	FB_EXPORTED gds__default_printer(void*, SSHORT, const TEXT*);
 
 // 14-June-2004. Nickolay Samofatov. The routines below are not part of the 
 // API and are not exported. Maybe use another prefix like GDS_ for them?
 void	gds__cleanup(void);
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);
-
 void	gds__trace_printer(void*, SSHORT, const TEXT*);
 void	gds__print_pool(class JrdMemoryPool*, const TEXT*, ...);
 

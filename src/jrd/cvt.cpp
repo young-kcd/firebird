@@ -1281,7 +1281,7 @@ USHORT CVT_make_string(const dsc*          desc,
 }
 
 
-void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
+void FB_EXPORTED CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 {
 /**************************************
  *

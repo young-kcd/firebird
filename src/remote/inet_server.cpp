@@ -149,7 +149,7 @@ static USHORT INET_SERVER_flag = 0;
 
 extern "C" {
 
-int API_ROUTINE server_main( int argc, char** argv)
+int FB_EXPORTED server_main( int argc, char** argv)
 {
 /**************************************
  *

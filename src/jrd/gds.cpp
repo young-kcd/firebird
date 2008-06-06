@@ -3617,7 +3617,7 @@ static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
 }
 
 
-void gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
+void FB_EXPORTED gds__default_printer(void* arg, SSHORT offset, const TEXT* line)
 {
 	printf("%4d %s\n", offset, line);
 }
