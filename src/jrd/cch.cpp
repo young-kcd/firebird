@@ -5224,10 +5224,10 @@ static SSHORT latch_bdb(
 			/* Note that Firebird often 'hands-off' to the same page, for both
 			   shared and exlusive latches. */
 			/* Check if we own already an exclusive latch. */
-			if (!findSharedLatch(tdbb, bdb)) {	/* we don't own a shared latch yet */
+			if (!findSharedLatch(tdbb, bdb)) {	// we don't own a shared latch yet
 				/* If there are latch-waiters, and they are not waiting for an
 				   io_latch, then we have to wait also (there must be a exclusive
-				   latch waiter).  If there is an IO in progress, the violate the
+				   latch waiter).  If there is an IO in progress, then violate the
 				   fairness and sneak ahead of the exclusive (or io) waiters. */
 
 				if ((QUE_NOT_EMPTY(bdb->bdb_waiters)) && !bdb->bdb_io) {
