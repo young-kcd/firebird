@@ -269,16 +269,18 @@ public:
 	que			slt_bdb_que;	// buffer's latches queue
 };
 
-#include "../jrd/os/pio.h"
-
-/* Constants used by prefetch mechanism */
-
-const int PREFETCH_MAX_TRANSFER	= 16384;	/* maximum block I/O transfer (bytes) */
-const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);	/* maximum pages allowed per prefetch request */
-
-/* Prefetch block */
 
 #ifdef SUPERSERVER_V2
+#include "../jrd/os/pio.h"
+
+// Constants used by prefetch mechanism
+
+const int PREFETCH_MAX_TRANSFER	= 16384;	// maximum block I/O transfer (bytes)
+// maximum pages allowed per prefetch request
+const int PREFETCH_MAX_PAGES	= (2 * PREFETCH_MAX_TRANSFER / MIN_PAGE_SIZE);
+
+// Prefetch block
+
 class Prefetch : public pool_alloc<type_prf>
 {
 public:
@@ -295,7 +297,7 @@ public:
 };
 
 const int PRF_active	= 1;			/* prefetch block currently in use */
-#endif
+#endif // SUPERSERVER_V2
 
 } //namespace Jrd
 
