@@ -223,8 +223,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				// 1.	thread exited single thread zone and didn't 
 				//		return into it since this &last cycle:
 				//			increase priority
-						if (! SetThreadPriority(t->handle, 
-									highPriority))
+						if (! SetThreadPriority(t->handle, highPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
@@ -249,8 +248,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				//		last cycle and didn't leave it completely
 				//		this cycle:
 				//		decrease priority
-						if (! SetThreadPriority(t->handle, 
-									lowPriority))
+						if (! SetThreadPriority(t->handle, lowPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
