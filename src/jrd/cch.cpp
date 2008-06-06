@@ -216,7 +216,7 @@ static inline SharedLatch* allocSharedLatch(thread_db* tdbb, BufferDesc* bdb)
 		const int BATCH_ALLOC = 64;
 		Database* dbb = bdb->bdb_dbb;
 
-		SharedLatch *latches = latch = FB_NEW(*dbb->dbb_bufferpool) SharedLatch[BATCH_ALLOC];
+		SharedLatch* latches = latch = FB_NEW(*dbb->dbb_bufferpool) SharedLatch[BATCH_ALLOC];
 		for (int i = 1; i < BATCH_ALLOC; i++) {
 			QUE_APPEND(bcb->bcb_free_slt, latches[i].slt_bdb_que);
 		}
@@ -248,7 +248,7 @@ static inline SharedLatch* findSharedLatch(thread_db* tdbb, BufferDesc* bdb)
 	for (QUE que_inst = tdbb->tdbb_latches.que_forward; que_inst != &tdbb->tdbb_latches; 
 		 que_inst = que_inst->que_forward)
 	{
-		SharedLatch *latch = BLOCK(que_inst, SharedLatch*, slt_tdbb_que);
+		SharedLatch* latch = BLOCK(que_inst, SharedLatch*, slt_tdbb_que);
 		fb_assert(latch->slt_tdbb == tdbb);
 		if (latch->slt_bdb == bdb) {
 			return latch;
@@ -2412,9 +2412,9 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 			release_bdb(tdbb, bdb, true, false, false);
 		}
 
-		// hvlad : as far as i understand thread can't hold more than two shared latches 
+		// hvlad : as far as I understand thread can't hold more than two shared latches 
 		// on the same bdb, so findSharedLatch below will not be called many times
-		SharedLatch *latch = findSharedLatch(tdbb, bdb);
+		SharedLatch* latch = findSharedLatch(tdbb, bdb);
 		while (latch)
 		{
 			release_bdb(tdbb, bdb, true, false, false);
