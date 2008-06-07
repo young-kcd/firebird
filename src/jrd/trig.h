@@ -847,12 +847,19 @@ static const UCHAR trigger6[] = {
 
 static const UCHAR trigger7[] = {
 	blr_version5,
+	blr_begin,
+	blr_if,
+	blr_missing,
+	blr_field, 1, 16, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
+		'O', 'R', '_', 'I', 'D',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
 		'O', 'R', 'S',
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 1, 16, 'R', 'D', 'B', '$', 'G', 'E', 'N', 'E', 'R', 'A', 'T',
 		'O', 'R', '_', 'I', 'D',
+	blr_end,
+	blr_end,
 	blr_eoc,
 };
 
@@ -2137,12 +2144,17 @@ static const UCHAR trigger28[] = {
 	blr_field, 1, 14, 'R', 'D', 'B', '$', 'O', 'W', 'N', 'E', 'R', '_', 'N',
 		'A', 'M', 'E',
 	blr_end,
+	blr_if,
+	blr_missing,
+	blr_field, 1, 16, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
+		'R', 'E', '_', 'I', 'D',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
 		'R', 'E', 'S',
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 1, 16, 'R', 'D', 'B', '$', 'P', 'R', 'O', 'C', 'E', 'D', 'U',
 		'R', 'E', '_', 'I', 'D',
+	blr_end,
 	blr_end,
 	blr_eoc
 };
@@ -2171,12 +2183,17 @@ static const UCHAR trigger29[] = {
 static const UCHAR trigger30[] = {
 	blr_version5,
 	blr_begin,
+	blr_if,
+	blr_missing,
+	blr_field, 1, 20, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
+		'O', 'N', '_', 'N', 'U', 'M', 'B', 'E', 'R',
 	blr_assignment,
 	blr_gen_id, 14, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
 		'O', 'N', 'S',
 	blr_literal, blr_long, 0, 1, 0, 0, 0,
 	blr_field, 1, 20, 'R', 'D', 'B', '$', 'E', 'X', 'C', 'E', 'P', 'T', 'I',
 		'O', 'N', '_', 'N', 'U', 'M', 'B', 'E', 'R',
+	blr_end,
 	blr_end,
 	blr_eoc
 };
