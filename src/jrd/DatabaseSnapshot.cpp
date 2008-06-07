@@ -223,8 +223,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 			memcpy(&guid, reader.getBytes(), sizeof(FB_GUID));
 
 			// Is this our own dbb instance?
-			const bool our_dbb =
-				!memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
+			const bool our_dbb = !memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
 
 			if (self)
 			{
@@ -476,13 +475,18 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Record* record = NULL;
 
 	int rid = 0;
-	bool database_processed = false, database_seen = false;
-	bool fields_processed = false, allowed = false;
+	bool fields_processed = false, allowed = false, our_dbb = false;
 
 	while (!reader->isEof())
 	{
 		if (reader->getClumpTag() == TAG_DBB)
 		{
+			FB_GUID guid;
+			fb_assert(reader->getClumpLength() == sizeof(FB_GUID));
+			memcpy(&guid, reader->getBytes(), sizeof(FB_GUID));
+
+			our_dbb = !memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
+
 			reader->moveNext();
 
 			if (fields_processed)
@@ -537,36 +541,24 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			const int fid = reader->getClumpTag();
 			const size_t length = reader->getClumpLength();
 
-			const char* source =
-				checkNull(rid, fid, (char*) reader->getBytes(), length);
+			const char* source = checkNull(rid, fid, (char*) reader->getBytes(), length);
 
 			reader->moveNext();
 
-			if (rid == rel_mon_database)
+			if (rid == rel_mon_database) // special case for MON$DATABASE
 			{
 				if (fid == f_mon_db_name)
 				{
-					database_processed = database_seen;
-
-					// Do we look at our own database record?
 					allowed = !dbb->dbb_database_name.compare(source, length);
-					if (allowed)
-					{
-						// Yep, we've seen it
-						database_seen = true;
-					}
 				}
 
-				// We need to return the database record only once
-				if (allowed && !database_processed)
+				if (allowed && our_dbb)
 				{
 					putField(record, fid, source, length);
 					fields_processed = true;
 				}
 			}
-			// The generic logic that covers all relations
-			// except MON$DATABASE
-			else if (allowed)
+			else if (allowed) // generic logic that covers all other relations
 			{
 				putField(record, fid, source, length);
 				fields_processed = true;
