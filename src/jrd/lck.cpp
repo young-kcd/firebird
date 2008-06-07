@@ -37,7 +37,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
-#include "../lock/lock_proto.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -127,6 +126,7 @@ static const bool compatibility[LCK_max][LCK_max] =
 //#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 const int LOCK_HASH_SIZE	= 19;
 
+
 inline void ENQUEUE(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {
 	if (lock->lck_compatible)
@@ -137,24 +137,30 @@ inline void ENQUEUE(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 inline bool CONVERT(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait, ISC_STATUS* status)
 {
+	Database* const dbb = tdbb->getDatabase();
+
 	return (lock->lck_compatible) ?
 		internal_enqueue(tdbb, lock, level, wait, true) :
-		LOCK_convert(lock->lck_id, level, wait, lock->lck_ast, lock->lck_object, status);
+		dbb->dbb_lock_mgr->convert(tdbb, lock->lck_id, level, wait, lock->lck_ast, lock->lck_object);
 }
 
 inline void DEQUEUE(thread_db* tdbb, Lock* lock)
 {
+	Database* const dbb = tdbb->getDatabase();
+
 	if (lock->lck_compatible)
 		internal_dequeue(tdbb, lock);
 	else
-		LOCK_deq(lock->lck_id);
+		dbb->dbb_lock_mgr->dequeue(lock->lck_id);
 }
 
 inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock, ISC_STATUS* status)
 {
+	Database* const dbb = tdbb->getDatabase();
+
 	return (lock->lck_compatible) ?
 		internal_downgrade(tdbb, lock) :
-		LOCK_downgrade(lock->lck_id, status);
+		dbb->dbb_lock_mgr->downgrade(tdbb, lock->lck_id);
 }
 
 #ifdef DEV_BUILD
@@ -197,19 +203,6 @@ inline bool checkLock(const Lock* l)
 #ifndef LCK_CHECK_LOCK
 #define LCK_CHECK_LOCK(x)		(TRUE)	/* nothing */
 #endif
-
-class LockContextHolder: public Database::Checkout, public Firebird::MutexLockGuard
-{
-public:
-	LockContextHolder(Database* dbb, Firebird::Mutex& mutex)
-		: Database::Checkout(dbb), Firebird::MutexLockGuard(mutex)
-	{}
-
-private:
-	// copying is prohibited
-	LockContextHolder(const LockContextHolder&);
-	LockContextHolder& operator= (const LockContextHolder&);
-};
 
 
 void LCK_assert(thread_db* tdbb, Lock* lock)
@@ -255,8 +248,6 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
-
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -289,7 +280,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 }
 
 
-int LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
+bool LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 {
 /**************************************
  *
@@ -314,7 +305,7 @@ int LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return TRUE;
+	return true;
 }
 
 
@@ -332,8 +323,6 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
  **************************************/
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
-
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
@@ -368,6 +357,7 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = NULL;
 
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (owner_type) {
 	case LCK_OWNER_database:
@@ -383,8 +373,7 @@ void LCK_fini(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
-	LOCK_fini(tdbb->tdbb_status_vector, owner_handle_ptr);
+	dbb->dbb_lock_mgr->shutdownOwner(tdbb, owner_handle_ptr);
 }
 
 
@@ -479,12 +468,12 @@ bool LCK_set_owner_handle(Jrd::thread_db* tdbb, Jrd::Lock* lock, SLONG owner_han
  *
  **************************************/
 	SET_TDBB(tdbb);
-	fb_assert(LCK_CHECK_LOCK(lock));
+	Database* const dbb = tdbb->getDatabase();
 
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
+	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_physical > LCK_none);
 
-	const bool result = LOCK_set_owner_handle(lock->lck_id, owner_handle);
+	const bool result = dbb->dbb_lock_mgr->setOwnerHandle(lock->lck_id, owner_handle);
 
 	if (result)
 		lock->lck_owner_handle = owner_handle;
@@ -509,6 +498,7 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 	SLONG* owner_handle_ptr = 0;
 
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	switch (owner_type) {
 	case LCK_OWNER_database:
@@ -526,17 +516,19 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
-	if (!LOCK_init(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle_ptr))
+	if (!dbb->dbb_lock_mgr->initializeOwner(tdbb, owner_id, owner_type, owner_handle_ptr))
 	{
 		if (tdbb->tdbb_status_vector[1] == isc_lockmanerr)
+		{
 			tdbb->getDatabase()->dbb_flags |= DBB_bugcheck;
+		}
+
 		ERR_punt();
 	}
 }
 
 
-int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
+bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -551,8 +543,6 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
-
 	Database* dbb = lock->lck_dbb;
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
     set_lock_attachment(lock, tdbb->getAttachment());
@@ -563,14 +553,14 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	{
     	set_lock_attachment(lock, NULL);
 		if (!wait)
-			return FALSE;
+			return false;
 			
 		switch (status[1])
 		{
 		case isc_deadlock:
 		case isc_lock_conflict:
 		case isc_lock_timeout:
-			return FALSE;
+			return false;
 		case isc_lockmanerr:
 			dbb->dbb_flags |= DBB_bugcheck;
 			break;
@@ -582,11 +572,11 @@ int LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		lock->lck_physical = lock->lck_logical = level;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return TRUE;
+	return true;
 }
 
 
-int LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
+bool LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -610,7 +600,7 @@ int LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return TRUE;
+	return true;
 }
 
 
@@ -629,10 +619,11 @@ SLONG LCK_query_data(thread_db* tdbb, Lock* parent, enum lck_t lock_type, USHORT
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	fb_assert(LCK_CHECK_LOCK(parent));
 
-	Database::Checkout dcoHolder(tdbb->getDatabase());
-	return LOCK_query_data(parent->lck_id, lock_type, aggregate);
+	return dbb->dbb_lock_mgr->queryData(parent->lck_id, lock_type, aggregate);
 }
 
 
@@ -649,24 +640,24 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 #ifdef VMS
 	if (!LCK_lock(NULL, lock, LCK_null, LCK_NO_WAIT))
 		return 0;
 
-	const SLONG data = LOCK_read_data(lock->lck_id);
+	const SLONG data = dbb->dbb_lock_mgr->readData(lock->lck_id);
 	LCK_release(lock);
 #else
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
-
 	Lock* parent = lock->lck_parent;
 	const SLONG data =
-		LOCK_read_data2(parent ? parent->lck_id : 0,
-						lock->lck_type,
-						(UCHAR *) & lock->lck_key,
-						lock->lck_length,
-						lock->lck_owner_handle);
+		dbb->dbb_lock_mgr->readData2(parent ? parent->lck_id : 0,
+									 lock->lck_type,
+									 (UCHAR*) &lock->lck_key,
+									 lock->lck_length,
+									 lock->lck_owner_handle);
 #endif
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -688,8 +679,6 @@ void LCK_release(thread_db* tdbb, Lock* lock)
  **************************************/
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
-
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
 
 	if (lock->lck_physical != LCK_none) {
 		DEQUEUE(tdbb, lock);
@@ -717,9 +706,9 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	fb_assert(LCK_CHECK_LOCK(lock));
+	Database* const dbb = tdbb->getDatabase();
 
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
+	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (lock->lck_compatible) {
 		if (lock->lck_ast) {
@@ -728,7 +717,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 		return;
 	}
 
-	LOCK_re_post(lock->lck_ast, lock->lck_object, lock->lck_owner_handle);
+	dbb->dbb_lock_mgr->repost(tdbb, lock->lck_ast, lock->lck_object, lock->lck_owner_handle);
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
@@ -747,11 +736,11 @@ void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	LockContextHolder lcHolder(tdbb->getDatabase(), lock->lck_mutex);
-
-	LOCK_write_data(lock->lck_id, data);
+	dbb->dbb_lock_mgr->writeData(lock->lck_id, data);
 	lock->lck_data = data;
 
 	fb_assert(LCK_CHECK_LOCK(lock));
@@ -833,21 +822,29 @@ static void enqueue(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Lock* parent = lock->lck_parent;
-	lock->lck_id = LOCK_enq(lock->lck_id,
-							parent ? parent->lck_id : 0,
-							lock->lck_type,
-							(const UCHAR*) & lock->lck_key,
-							lock->lck_length,
-							level,
-							lock->lck_ast,
-							lock->lck_object, lock->lck_data, wait,
-							tdbb->tdbb_status_vector, lock->lck_owner_handle);
+	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb,
+											  lock->lck_id,
+											  parent ? parent->lck_id : 0,
+											  lock->lck_type,
+											  (const UCHAR*) &lock->lck_key,
+											  lock->lck_length,
+											  level,
+											  lock->lck_ast,
+											  lock->lck_object,
+											  lock->lck_data,
+											  wait,
+											  lock->lck_owner_handle);
+
 	if (!lock->lck_id)
+	{
 		lock->lck_physical = lock->lck_logical = LCK_none;
+	}
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 }
 
@@ -1204,15 +1201,21 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_compatible);
 
 /* if this is the last identical lock in the hash table, release it */
 
 	Lock* match;
-	if (hash_remove_lock(lock, &match)) {
-		if (!LOCK_deq(lock->lck_id))
+	if (hash_remove_lock(lock, &match))
+	{
+		if (!dbb->dbb_lock_mgr->dequeue(lock->lck_id))
+		{
 			bug_lck("LOCK_deq() failed in Lock:internal_dequeue");
+		}
+
 		lock->lck_id = 0;
 		lock->lck_physical = lock->lck_logical = LCK_none;
 		return;
@@ -1239,6 +1242,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	fb_assert(LCK_CHECK_LOCK(first));
 	fb_assert(first->lck_compatible);
@@ -1256,15 +1260,18 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 
 	if (level < first->lck_physical)
 	{
-		if (LOCK_convert(first->lck_id,
-						 level,
-						 LCK_NO_WAIT,
-						 external_ast,
-						 first,
-						 tdbb->tdbb_status_vector))
+		if (dbb->dbb_lock_mgr->convert(tdbb,
+									   first->lck_id,
+									   level,
+									   LCK_NO_WAIT,
+									   external_ast,
+									   first))
 		{
 			for (lock = first; lock; lock = lock->lck_identical)
+			{
 				lock->lck_physical = level;
+			}
+
 			return level;
 		}
 	}
@@ -1295,10 +1302,12 @@ static bool internal_enqueue(
  *	itself upward.
  *
  **************************************/
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
+
 	fb_assert(LCK_CHECK_LOCK(lock));
 	fb_assert(lock->lck_compatible);
 
-	SET_TDBB(tdbb);
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* look for an identical lock */
@@ -1328,16 +1337,20 @@ static bool internal_enqueue(
 
 			if (level > match->lck_physical)
 			{
-				if (!LOCK_convert(match->lck_id,
-								  level,
-								  wait,
-								  external_ast,
-								  lock, status))
+				if (!dbb->dbb_lock_mgr->convert(tdbb,
+												match->lck_id,
+												level,
+												wait,
+												external_ast,
+												lock))
 				{
 					return false;
 				}
+
 				for (Lock* update = match; update; update = update->lck_identical)
+				{
 					update->lck_physical = level;
+				}
 			}
 
 			lock->lck_id = match->lck_id;
@@ -1357,29 +1370,35 @@ static bool internal_enqueue(
 /* enqueue the lock, but swap out the ast and the ast argument
    with the local ast handler, passing it the lock block itself */
 
-	lock->lck_id = LOCK_enq(lock->lck_id,
-							lock->lck_parent ? lock->lck_parent->lck_id : 0,
-							lock->lck_type,
-							(const UCHAR*) & lock->lck_key,
-							lock->lck_length,
-							level,
-							external_ast,
-							lock,
-							lock->lck_data,
-							wait, status, lock->lck_owner_handle);
+	lock->lck_id = dbb->dbb_lock_mgr->enqueue(tdbb,
+											  lock->lck_id,
+											  lock->lck_parent ? lock->lck_parent->lck_id : 0,
+											  lock->lck_type,
+											  (const UCHAR*) &lock->lck_key,
+											  lock->lck_length,
+											  level,
+											  external_ast,
+											  lock,
+											  lock->lck_data,
+											  wait,
+											  lock->lck_owner_handle);
 
 /* If the lock exchange failed, set the lock levels appropriately */
 	if (lock->lck_id == 0)
+	{
 		lock->lck_physical = lock->lck_logical = LCK_none;
+	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	if (lock->lck_id) {
+	if (lock->lck_id)
+	{
 		hash_insert_lock(lock);
 		lock->lck_logical = lock->lck_physical = level;
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
+
 	return lock->lck_id ? true : false;
 }
 
@@ -1394,8 +1413,6 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 	// Delist in old attachment
 	if (lock->lck_attachment) {
-		Firebird::MutexLockGuard guard(lock->lck_attachment->att_long_locks_mutex);
-
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(lock->lck_attachment->att_flags != 0xDEADBEEF);
 
@@ -1423,8 +1440,6 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 
 	// Enlist in new attachment
 	if (attachment) {
-		Firebird::MutexLockGuard guard(attachment->att_long_locks_mutex);
-
 		// Check that attachment seems to be valid, check works only when DEBUG_GDS_ALLOC is defined
 		fb_assert(attachment->att_flags != 0xDEADBEEF);
 

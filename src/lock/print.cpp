@@ -398,8 +398,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 /* if we can't read this version - admit there's nothing to say and return. */
 
-	if ((LOCK_header->lhb_version != SS_LHB_VERSION) &&
-		(LOCK_header->lhb_version != CLASSIC_LHB_VERSION))
+	if (LOCK_header->lhb_version != LHB_VERSION)
 	{
 		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0) 
 		{

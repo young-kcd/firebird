@@ -4702,6 +4702,10 @@ static Database* init(thread_db* tdbb,
 			}
 		}
 
+		// Initialize the lock manager
+
+		dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
+
 		// Initialize a number of subsystems
 
 		TRA_init(dbb);
@@ -4927,8 +4931,6 @@ static void detachLocksFromAttachment(Attachment* attachment)
  * block doesn't get dereferenced after it is released
  *
  **************************************/
-	Database::CheckoutLockGuard guard(attachment->att_database, attachment->att_long_locks_mutex);
-
 	Lock* long_lock = attachment->att_long_locks;
 	while (long_lock) {
 		Lock* next = long_lock->lck_next;

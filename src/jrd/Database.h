@@ -60,6 +60,7 @@
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
+#include "../lock/lock_proto.h"
 
 class CharSetContainer;
 
@@ -274,6 +275,8 @@ public:
 
 	mutable Sync* dbb_sync;				// Database sync primitive
 	Firebird::Reference dbb_sync_ref;	// Database reference to dbb_sync
+
+	Firebird::RefPtr<LockManager> dbb_lock_mgr;
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments

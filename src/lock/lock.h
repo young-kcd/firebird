@@ -110,17 +110,14 @@ const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
 const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 #endif
 
-const UCHAR CLASSIC_LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
-const UCHAR SS_LHB_VERSION		= CLASSIC_LHB_VERSION + 100;
-
-#ifdef SUPERSERVER
-const UCHAR LHB_VERSION			= SS_LHB_VERSION;
-#else
-const UCHAR LHB_VERSION			= CLASSIC_LHB_VERSION;
-#endif
+const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
 #ifndef SUPERSERVER
 #define USE_BLOCKING_THREAD
+#endif
+
+#ifdef DEV_BUILD
+#define VALIDATE_LOCK_TABLE
 #endif
 
 // Lock header block -- one per lock file, lives up front
@@ -237,9 +234,7 @@ struct prc
 	int prc_process_id;				// Process ID
 	srq prc_lhb_processes;			// Process que
 	srq prc_owners;					// Owners
-#ifdef USE_BLOCKING_THREAD
 	event_t prc_blocking;			// Blocking event block
-#endif
 	USHORT prc_flags;				// Unused. Misc flags
 };
 

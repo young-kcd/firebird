@@ -110,7 +110,6 @@ public:
 	UCHAR		lck_logical;			/* Logical lock level */
 	UCHAR		lck_physical;			/* Physical lock level */
 	SLONG		lck_data;				/* Data associated with a lock */
-	Firebird::Mutex lck_mutex;
 	lck_t lck_type;
 	union
 	{

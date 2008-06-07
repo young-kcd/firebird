@@ -304,7 +304,6 @@ public:
 	// customized firebird.msg file doesn't work; the only way is to use an env var.
 	Firebird::PathName	att_lc_messages;	// attachment's preference for message natural language
 	Lock*		att_long_locks;				// outstanding two phased locks
-	Firebird::Mutex att_long_locks_mutex;
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
 	vcl*		att_val_errors;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
