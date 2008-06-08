@@ -551,6 +551,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token SIMILAR
 %token UUID_TO_CHAR
 // new execute statement
+%token CALLER
 %token COMMON
 %token DATA
 %token SOURCE
@@ -1751,32 +1752,29 @@ for_select	: label_opt FOR select INTO variable_list cursor_def DO proc_block
 //		;
 
 exec_sql
-	: EXECUTE STATEMENT exec_stmt_inputs
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, $4, $5, $6, $7, NULL);
+					($3)->nod_arg[0], ($3)->nod_arg[1], NULL, NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
 exec_into
-	: EXECUTE STATEMENT exec_stmt_inputs 
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+	: EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 			INTO variable_list
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($3)->nod_arg[0], ($3)->nod_arg[1], make_list ($9), NULL, $4, $5, $6, $7, NULL);
+					($3)->nod_arg[0], ($3)->nod_arg[1], make_list($6), NULL, NULL, make_list($4), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
 for_exec_into
-	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs 
-			ext_datasrc_opt ext_user_opt ext_pwd_opt ext_tran_opt
+	: label_opt FOR EXECUTE STATEMENT exec_stmt_inputs exec_stmt_options
 			INTO variable_list 
 			DO proc_block 
 		{
 			$$ = make_node (nod_exec_stmt, int (e_exec_stmt_count), 
-					($5)->nod_arg[0], ($5)->nod_arg[1], make_list ($11), $13, $6, $7, $8, $9, $1);
+					($5)->nod_arg[0], ($5)->nod_arg[1], make_list($8), $10, $1, make_list($6), NULL, NULL, NULL, NULL, NULL);
 		}
 	;
 
@@ -1811,38 +1809,55 @@ not_named_param
 		{ $$ = make_node (nod_named_param, e_named_param_count, NULL, $1); }
 	;
 
-ext_datasrc_opt
+exec_stmt_options
+	: exec_stmt_options_list
+	|
+		{ $$ = NULL; }
+	;
+
+exec_stmt_options_list
+	: exec_stmt_options_list exec_stmt_option 
+		{ $$ = make_node (nod_list, 2, $1, $2); }
+	| exec_stmt_option
+	;
+
+exec_stmt_option
+	: ext_datasrc
+	| ext_user
+	| ext_pwd 
+	| ext_tran
+	| ext_privs
+	;
+
+ext_datasrc
 	: ON EXTERNAL DATA SOURCE value
-		{ $$ = $5; }
+		{ $$ = make_node (nod_exec_stmt_datasrc, 1, $5); }
 	| ON EXTERNAL value
-		{ $$ = $3; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
+		{ $$ = make_node (nod_exec_stmt_datasrc, 1, $3); }
 	;
 
-ext_user_opt
+ext_user
 	: AS USER value
-		{ $$ = $3; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
+		{ $$ = make_node (nod_exec_stmt_user, 1, $3); }
 	;
 
-ext_pwd_opt
+ext_pwd
 	: PASSWORD value
-		{ $$ = $2; }
-	|
-		{ $$ = make_node (nod_null, 0, NULL); }
+		{ $$ = make_node (nod_exec_stmt_pwd, 1, $2); }
 	;
 
-ext_tran_opt
+ext_tran
 	: WITH AUTONOMOUS TRANSACTION
 		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_AUTONOMOUS, 1, NULL); }
 	| WITH COMMON TRANSACTION
 		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
 	// | WITH TWO_PHASE TRANSACTION
 	//		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_2PC, 1, NULL); }
-	|
-		{ $$ = make_flag_node(nod_tran_params, NOD_TRAN_COMMON, 1, NULL); }
+	;
+
+ext_privs
+	: WITH CALLER PRIVILEGES 
+		{ $$ = make_node (nod_exec_stmt_privs, 1, NULL); }
 	;
 
 if_then_else	: IF '(' search_condition ')' THEN proc_block ELSE proc_block
@@ -5003,7 +5018,8 @@ non_reserved_word :
 	| MAPPING
 	| OS_NAME
 	| UUID_TO_CHAR
-	| COMMON				// new execute statement
+	| CALLER				// new execute statement
+	| COMMON
 	| DATA
 	| SOURCE
 	| TWO_PHASE

@@ -196,6 +196,7 @@ public:
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
 	jrd_tra* const tra_outer;	// outer transaction of an autonomous transaction
+	jrd_req* tra_callback_caller;	// caller request for execute statement
 	Firebird::Array<UCHAR> tra_transactions;
 
 	EDS::Transaction *tra_ext_common;

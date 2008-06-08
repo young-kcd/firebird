@@ -366,6 +366,10 @@ enum nod_t
 	nod_del_user,
 	nod_exec_stmt,
 	nod_exec_stmt_inputs,	// 290
+	nod_exec_stmt_datasrc,
+	nod_exec_stmt_user,
+	nod_exec_stmt_pwd,
+	nod_exec_stmt_privs,
 	nod_tran_params,
 	nod_named_param,
 	nod_dfl_collate,
@@ -436,11 +440,13 @@ enum node_args {
 	e_exec_stmt_inputs,
 	e_exec_stmt_outputs,
 	e_exec_stmt_proc_block,
+	e_exec_stmt_label,
+	e_exec_stmt_options,
 	e_exec_stmt_data_src,
 	e_exec_stmt_user,
 	e_exec_stmt_pwd,
 	e_exec_stmt_tran,
-	e_exec_stmt_label,
+	e_exec_stmt_privs,
 	e_exec_stmt_count,
 	
 	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
@@ -1090,7 +1096,8 @@ enum nod_flags_vals {
 
 	NOD_TRAN_AUTONOMOUS = 1,		// nod_exec_stmt
 	NOD_TRAN_COMMON = 2,
-	NOD_TRAN_2PC = 3
+	NOD_TRAN_2PC = 3,
+	NOD_TRAN_DEFAULT = NOD_TRAN_COMMON
 };
 
 } // namespace

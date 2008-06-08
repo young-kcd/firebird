@@ -72,6 +72,7 @@ static void gen_for_select(CompiledStatement*, const dsql_nod*);
 static void gen_gen_id(CompiledStatement*, const dsql_nod*);
 static void gen_join_rse(CompiledStatement*, const dsql_nod*);
 static void gen_map(CompiledStatement*, dsql_map*);
+static inline void gen_optional_expr(CompiledStatement*, dsql_nod*);
 static void gen_parameter(CompiledStatement*, const dsql_par*);
 static void gen_plan(CompiledStatement*, const dsql_nod*);
 static void gen_relation(CompiledStatement*, dsql_ctx*);
@@ -1101,11 +1102,12 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_exec_stmt:
 		{ // scope
 		const bool old_syntax = 
-			(node->nod_arg[e_exec_stmt_inputs] == NULL) &&
-			(node->nod_arg[e_exec_stmt_data_src]->nod_type == nod_null) &&
-			(node->nod_arg[e_exec_stmt_user]->nod_type == nod_null) &&
-			(node->nod_arg[e_exec_stmt_pwd]->nod_type == nod_null) &&
-			(node->nod_arg[e_exec_stmt_tran]->nod_flags == NOD_TRAN_COMMON);
+			!node->nod_arg[e_exec_stmt_inputs] &&
+			!node->nod_arg[e_exec_stmt_data_src] &&
+			!node->nod_arg[e_exec_stmt_user] &&
+			!node->nod_arg[e_exec_stmt_pwd] &&
+			!node->nod_arg[e_exec_stmt_tran] &&
+			!node->nod_arg[e_exec_stmt_privs];
 
 		const bool old_exec_into = old_syntax && node->nod_arg[e_exec_stmt_outputs];
 
@@ -1144,13 +1146,22 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		if (!old_syntax)
 		{
 			// external data source, user and password
-			GEN_expr(statement, node->nod_arg[e_exec_stmt_data_src]);
-			GEN_expr(statement, node->nod_arg[e_exec_stmt_user]);
-			GEN_expr(statement, node->nod_arg[e_exec_stmt_pwd]);
+			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_data_src]);
+			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_user]);
+			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_pwd]);
 
 			// statement's transaction behavior
-			stuff(statement, (UCHAR) node->nod_arg[e_exec_stmt_tran]->nod_flags);
+			const dsql_nod* opt = node->nod_arg[e_exec_stmt_tran];
+			stuff(statement, (UCHAR) opt ? opt->nod_flags : NOD_TRAN_DEFAULT);
 			stuff(statement, 0); // transaction parameters equal to current transaction 
+
+			// inherit caller's privileges ?
+			if (node->nod_arg[e_exec_stmt_privs]) {
+				stuff(statement, 1);
+			}
+			else {
+				stuff(statement, 0);
+			}
 		}
 
 		// singleton flag and proc block body
@@ -2024,6 +2035,13 @@ static void gen_map( CompiledStatement* statement, dsql_map* map)
 	}
 }
 
+static void gen_optional_expr(CompiledStatement* statement, dsql_nod* node)
+{
+	if (node)
+		GEN_expr(statement, node);
+	else
+		stuff(statement, blr_null);
+}
 
 /**
   

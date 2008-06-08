@@ -93,41 +93,12 @@ Connection* IscProvider::doCreateConnection()
 IscConnection::IscConnection(IscProvider &prov) : 
 	Connection(prov),
 	m_iscProvider(prov),
-	m_handle(0),
-	m_dpb(getPool(), ClumpletReader::Tagged, MAX_DPB_SIZE)
+	m_handle(0)
 {
 }
 
 IscConnection::~IscConnection()
 {
-}
-
-void IscConnection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
-	const string &dbName, const string &user, const string &pwd) const
-{
-	dpb.reset(isc_dpb_version1);
-
-	Firebird::string &attUser = tdbb->getAttachment()->att_user->usr_user_name;
-
-	if ((m_provider.getFlags() & prvTrustedAuth) && 
-		(user.isEmpty() || user == attUser) && pwd.isEmpty())
-	{
-		dpb.insertString(isc_dpb_trusted_auth, attUser);
-	}
-	else
-	{
-		if (!user.isEmpty()) {
-			dpb.insertString(isc_dpb_user_name, user);
-		}
-		if (!pwd.isEmpty()) {
-			dpb.insertString(isc_dpb_password, pwd);
-		}
-	}
-
-	CharSet* const cs = INTL_charset_lookup(tdbb, tdbb->getAttachment()->att_charset);
-	if (cs) {
-		dpb.insertString(isc_dpb_lc_ctype, cs->getName());
-	}
 }
 
 void IscConnection::attach(thread_db *tdbb, const string &dbName, const string &user, 
@@ -203,7 +174,7 @@ void IscConnection::detach(thread_db *tdbb)
 	}
 }
 
-// connection is available for the current execution context if it
+// this ISC connection instance is available for the current execution context if it
 // a) have no active statements or support many active statements 
 //    and 
 // b) have no active transactions or have active transaction of given 
@@ -222,18 +193,6 @@ bool IscConnection::isAvailable(thread_db *tdbb, TraScope traScope) const
 	}
 
 	return true;
-}
-
-bool IscConnection::isSameDatabase(thread_db *tdbb, const string &dbName, 
-	const string &user, const string &pwd) const
-{
-	if (m_dbName != dbName)
-		return false;
-
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	generateDPB(tdbb, dpb, dbName, user, pwd);
-
-	return m_dpb.simpleCompare(dpb);
 }
 
 Blob* IscConnection::createBlob()

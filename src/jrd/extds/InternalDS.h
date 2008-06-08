@@ -56,7 +56,8 @@ protected:
 
 	explicit InternalConnection(InternalProvider &prov) : 
 	  Connection(prov),
-	  m_attachment(0)
+	  m_attachment(0),
+	  m_isCurrent(false)
 	{}
 
 	virtual ~InternalConnection();
@@ -75,6 +76,8 @@ public:
 	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) const;
 
+	bool isCurrent() const { return m_isCurrent; }
+
 	Jrd::Attachment* getJrdAtt() 
 	{ return m_attachment; }
 
@@ -85,6 +88,7 @@ protected:
 	virtual Statement* doCreateStatement();
 
 	Jrd::Attachment* m_attachment;
+	bool m_isCurrent;
 };
 
 

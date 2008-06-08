@@ -399,6 +399,7 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
  *  resources it used indirectecty via procedures or triggers
  *
  **************************************/
+
 	ExternalAccessList external;
 	build_external_access(tdbb, external, request);
 
@@ -445,12 +446,28 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 		}
 	}
 
+	// Inherit privileges of caller stored procedure or trigger if and only if
+	// this request is called immediately by caller (check for empty req_caller).
+	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
+	// tra_callback_count incremented only by it. 
+	// When external SP's will be introduced we need to decide if they also can 
+	// inherit caller's privileges
+	jrd_tra* transaction = tdbb->getTransaction();
+	const jrd_req *exec_stmt_caller = 
+		(transaction && transaction->tra_callback_count && !request->req_caller) ? 
+		transaction->tra_callback_caller : NULL;
+
 	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
 		access++) 
 	{
 		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
-		SCL_check_access(sec_class, access->acc_view_id, NULL, NULL, access->acc_mask,
-						 access->acc_type, access->acc_name, access->acc_r_name);
+
+		Firebird::MetaName trgName(exec_stmt_caller ? exec_stmt_caller->req_trg_name : NULL);
+		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ? 
+			exec_stmt_caller->req_procedure->prc_name : NULL);
+
+		SCL_check_access(sec_class, access->acc_view_id, trgName, prcName, 
+			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
 

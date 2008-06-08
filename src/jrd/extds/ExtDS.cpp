@@ -39,6 +39,7 @@
 #include "../exe_proto.h"
 #include "../err_proto.h"
 #include "../evl_proto.h"
+#include "../intl_proto.h"
 #include "../mov_proto.h"
 
 using namespace Jrd;
@@ -102,10 +103,8 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 
 	if (dataSource.isEmpty()) 
 	{
-		if (user.isEmpty() || user == tdbb->getAttachment()->att_user->usr_user_name)
-			prvName = INTERNAL_PROVIDER_NAME;
-		else
-			prvName = FIREBIRD_PROVIDER_NAME;
+		prvName = INTERNAL_PROVIDER_NAME;
+		dbName = tdbb->getDatabase()->dbb_database_name.c_str();
 	}
 	else 
 	{
@@ -221,6 +220,7 @@ Connection::Connection(Provider &prov) :
 	PermanentStorage(prov.getPool()),
 	m_provider(prov),
 	m_dbName(getPool()),
+	m_dpb(getPool(), ClumpletReader::Tagged, MAX_DPB_SIZE),
 	m_transactions(getPool()),
 	m_statements(getPool()),
 	m_freeStatements(NULL),
@@ -246,6 +246,47 @@ void Connection::deleteConnection(thread_db *tdbb, Connection *conn)
 Connection::~Connection()
 {
 }
+
+void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
+	const string &dbName, const string &user, const string &pwd) const
+{
+	dpb.reset(isc_dpb_version1);
+
+	Firebird::string &attUser = tdbb->getAttachment()->att_user->usr_user_name;
+
+	if ((m_provider.getFlags() & prvTrustedAuth) && 
+		(user.isEmpty() || user == attUser) && pwd.isEmpty())
+	{
+		dpb.insertString(isc_dpb_trusted_auth, attUser);
+	}
+	else
+	{
+		if (!user.isEmpty()) {
+			dpb.insertString(isc_dpb_user_name, user);
+		}
+		if (!pwd.isEmpty()) {
+			dpb.insertString(isc_dpb_password, pwd);
+		}
+	}
+
+	CharSet* const cs = INTL_charset_lookup(tdbb, tdbb->getAttachment()->att_charset);
+	if (cs) {
+		dpb.insertString(isc_dpb_lc_ctype, cs->getName());
+	}
+}
+
+bool Connection::isSameDatabase(thread_db *tdbb, const string &dbName, 
+	const string &user, const string &pwd) const
+{
+	if (m_dbName != dbName)
+		return false;
+
+	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	generateDPB(tdbb, dpb, dbName, user, pwd);
+
+	return m_dpb.simpleCompare(dpb);
+}
+
 
 Transaction* Connection::createTransaction()
 {
@@ -602,6 +643,8 @@ Statement::Statement(Connection &conn) :
 	m_stmt_selectable(false),
 	m_inputs(0),
 	m_outputs(0),
+	m_callerPrivileges(false),
+	m_preparedByReq(NULL),
 	m_sqlParamNames(getPool()),
 	m_sqlParamsMap(getPool()),
 	m_in_buffer(getPool()),
@@ -627,12 +670,14 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 	fb_assert(!m_active);
 
 	// already prepared the same non-empty statement
-	if (isAllocated() && (m_sql == sql) && (m_sql != ""))
+	if (isAllocated() && (m_sql == sql) && (m_sql != "") && 
+		m_preparedByReq == (m_callerPrivileges ? tdbb->getRequest() : NULL))
 		return;
 
 	m_error = false;
 	m_transaction = tran;
 	m_sql = "";
+	m_preparedByReq = NULL;
 
 	m_in_buffer.clear();
 	m_out_buffer.clear();
@@ -662,6 +707,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 
 	m_sql = sql;
 	m_sql.trim();
+	m_preparedByReq = m_callerPrivileges ? tdbb->getRequest() : NULL;
 }
 
 void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count, 

@@ -1110,6 +1110,9 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_tran_params:
 		return input;
 
+	case nod_exec_stmt_privs:
+		return input;
+
 	case nod_named_param:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_named_param_name] = input->nod_arg[e_named_param_name];
@@ -1780,17 +1783,66 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			statement->req_labels.pop();
 		}
 
-		node->nod_arg[e_exec_stmt_data_src] = 
-			PASS1_node(statement, input->nod_arg[e_exec_stmt_data_src]);
+		// process various optional arguments
+		if (input->nod_arg[e_exec_stmt_options])
+		{
+			dsql_nod *list = input->nod_arg[e_exec_stmt_options];
+			fb_assert(list->nod_type == nod_list);
 
-		node->nod_arg[e_exec_stmt_user] = 
-			PASS1_node(statement, input->nod_arg[e_exec_stmt_user]);
+			dsql_nod **ptr = list->nod_arg;
+			const dsql_nod *const *end = list->nod_arg + list->nod_count;
+			for (; ptr < end; ptr++)
+			{
+				char *dupClause = NULL;
+				dsql_nod *opt = *ptr;
+				switch (opt->nod_type)
+				{
+				case nod_exec_stmt_datasrc:
+					if (node->nod_arg[e_exec_stmt_data_src])
+						dupClause = "EXTERNAL DATA SOURCE";
+					else
+						node->nod_arg[e_exec_stmt_data_src] = PASS1_node(statement, opt->nod_arg[0]);
+					break;
 
-		node->nod_arg[e_exec_stmt_pwd] = 
-			PASS1_node(statement, input->nod_arg[e_exec_stmt_pwd]);
+				case nod_exec_stmt_user:
+					if (node->nod_arg[e_exec_stmt_user])
+						dupClause = "USER";
+					else
+						node->nod_arg[e_exec_stmt_user] = PASS1_node(statement, opt->nod_arg[0]);
+					break;
 
-		node->nod_arg[e_exec_stmt_tran] = 
-			PASS1_node(statement, input->nod_arg[e_exec_stmt_tran]);
+				case nod_exec_stmt_pwd:
+					if (node->nod_arg[e_exec_stmt_pwd])
+						dupClause = "PASSWORD";
+					else
+						node->nod_arg[e_exec_stmt_pwd] = PASS1_node(statement, opt->nod_arg[0]);
+					break;
+
+				case nod_tran_params:
+					if (node->nod_arg[e_exec_stmt_tran])
+						dupClause = "TRANSACTION";
+					else
+						node->nod_arg[e_exec_stmt_tran] = PASS1_node(statement, opt);
+					break;
+
+				case nod_exec_stmt_privs:
+					if (node->nod_arg[e_exec_stmt_privs])
+						dupClause = "CALLER PRIVILEGES";
+					else
+						node->nod_arg[e_exec_stmt_privs] = PASS1_node(statement, opt);
+					break;
+
+				default:
+					fb_assert(false);
+				}
+
+				if (dupClause) {
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
+							  isc_arg_gds, isc_dsql_duplicate_spec,
+							  isc_arg_string, dupClause, 0);
+				}
+			}
+		}
 
 		return pass1_savepoint(statement, node);
 

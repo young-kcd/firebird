@@ -95,6 +95,7 @@ static const TOK tokens[] =
 	{BOTH, "BOTH", 2, false},
 	{KW_BREAK, "BREAK", 2, true},
 	{BY, "BY", 1, false},
+	{CALLER, "CALLER", 2, true},
 	{CASCADE, "CASCADE", 1, true},
 	{CASE, "CASE", 2, false},
 	{CAST, "CAST", 1, false},

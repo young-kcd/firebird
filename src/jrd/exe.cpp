@@ -1646,6 +1646,9 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 		const jrd_nod* tra_node = node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
 		const EDS::TraScope tra_scope = tra_node ? (EDS::TraScope)(IPTR) tra_node : EDS::traCommon;
 
+		const jrd_nod* privs_node = node->nod_arg[node->nod_count + e_exec_stmt_extra_privs];
+		const bool caller_privs = (privs_node != NULL);
+
 		Firebird::string sSql;
 		get_string(tdbb, request, node->nod_arg[e_exec_stmt_stmt_sql], sSql);
 
@@ -1662,10 +1665,10 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 		stmt = conn->createStatement(sSql);
 
-		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, 
-			stmt->getConnection(), tra_scope);
+		EDS::Transaction* tran = EDS::Transaction::getTransaction(tdbb, stmt->getConnection(), tra_scope);
 
 		stmt->bindToRequest(request, stmt_ptr);
+		stmt->setCallerPrivileges(caller_privs);
 
 		const Firebird::string* const * inp_names = inputs_names ? inputs_names->begin() : NULL;
 		stmt->prepare(tdbb, tran, sSql, inputs_names != NULL);

@@ -553,7 +553,8 @@ const int e_exec_stmt_extra_inputs		= 0;
 const int e_exec_stmt_extra_input_names	= 1;
 const int e_exec_stmt_extra_outputs		= 2;
 const int e_exec_stmt_extra_tran		= 3;
-const int e_exec_stmt_extra_count		= 4;
+const int e_exec_stmt_extra_privs		= 4;
+const int e_exec_stmt_extra_count		= 5;
 
 // Request resources
 

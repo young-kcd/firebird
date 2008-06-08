@@ -2868,14 +2868,15 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
 			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_user	
 			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_password	
-			const UCHAR tra_mode = BLR_BYTE;		// e_exec_stmt_tran		
+			const UCHAR tra_mode = BLR_BYTE;				// e_exec_stmt_tran		
 			if (BLR_BYTE != 0) {
 				// external transaction parameters is not implemented currently
 				PAR_syntax_error(csb, "external transaction parameters");
 			}
+			const UCHAR use_caller_privs = BLR_BYTE;		// e_exec_stmt_extra_privs
 
 			if (BLR_BYTE)	// singleton flag
-				*arg++ = 0;								// e_exec_stmt_proc_block
+				*arg++ = 0;									// e_exec_stmt_proc_block
 			else
 				*arg++ = PAR_parse_node(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
 
@@ -2910,6 +2911,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
 			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
 			*arg++ = (jrd_nod*)(IPTR) tra_mode;		// e_exec_stmt_extra_tran
+			*arg++ = (jrd_nod*)(IPTR) use_caller_privs;		// e_exec_stmt_extra_privs
 		}
 		break;
 

@@ -162,7 +162,7 @@ public:
 	virtual bool isConnected() const = 0;
 
 	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
-		const Firebird::string &user, const Firebird::string &pwd) const = 0;
+		const Firebird::string &user, const Firebird::string &pwd) const;
 
 	// Search for existing transaction of given scope, may return NULL.
 	Transaction* findTransaction(Jrd::thread_db *tdbb, TraScope traScope) const;
@@ -192,6 +192,10 @@ public:
 	virtual Blob* createBlob() = 0;
 
 protected:
+	void generateDPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &dpb,
+		const Firebird::string &dbName, const Firebird::string &user, 
+		const Firebird::string &pwd) const;
+
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;
 	void clearStatements(Jrd::thread_db *tdbb);
@@ -201,6 +205,7 @@ protected:
 
 	Provider &m_provider;
 	Firebird::string m_dbName;
+	Firebird::ClumpletWriter m_dpb;
 
 	Firebird::Array<Transaction*> m_transactions;
 	Firebird::Array<Statement*> m_statements;
@@ -293,6 +298,8 @@ public:
 
 	const Firebird::string& getSql() const { return m_sql; }
 
+	void setCallerPrivileges(bool use) { m_callerPrivileges = use; }
+
 	bool isActive() const { return m_active; }
 
 	bool isAllocated() const { return m_allocated; }
@@ -365,6 +372,9 @@ protected:
 	bool	m_stmt_selectable;
 	int		m_inputs;
 	int		m_outputs;
+
+	bool	m_callerPrivileges;
+	Jrd::jrd_req* m_preparedByReq;
 
 	// set in preprocess
 	ParamNames m_sqlParamNames;

@@ -28,6 +28,7 @@
 #include "../align.h"
 #include "../exe.h"
 #include "../jrd.h"
+#include "../tra.h"
 #include "../dsc.h"
 #include "../../dsql/dsql.h"
 #include "../../dsql/sqlda_pub.h"
@@ -114,7 +115,33 @@ void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
 		const Firebird::string &user, const Firebird::string &pwd)
 {
 	fb_assert(!m_attachment);
-	m_attachment = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
+	fb_assert(dbName.isEmpty() || dbName == dbb->dbb_database_name.c_str());
+
+	Attachment* attachment = tdbb->getAttachment();
+	if (user.isEmpty() || user == attachment->att_user->usr_user_name)
+	{
+		m_isCurrent = true;
+		m_attachment = attachment;
+	}
+	else
+	{
+		m_isCurrent = false;
+		m_dbName = dbb->dbb_database_name.c_str();
+		generateDPB(tdbb, m_dpb, m_dbName, user, pwd);
+
+		ISC_STATUS_ARRAY status = {0};
+
+		{
+			EngineCallbackGuard guard(tdbb, *this);
+			jrd8_attach_database(status, m_dbName.c_str(), &m_attachment, 
+				m_dpb.getBufferLength(), m_dpb.getBuffer());
+		}
+		if (status[1]) {
+			raise(status, tdbb, "attach");
+		}
+	}
+
 	m_sqlDialect = (m_attachment->att_database->dbb_flags & DBB_DB_SQL_dialect_3) ? 
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 }
@@ -124,18 +151,47 @@ void InternalConnection::detach(thread_db *tdbb)
 	clearStatements(tdbb);
 
 	fb_assert(m_attachment);
-	m_attachment = 0;
+	if (m_isCurrent)
+	{
+		m_attachment = 0;
+	}
+	else
+	{
+		ISC_STATUS_ARRAY status = {0};
+
+		{
+			Attachment* att = m_attachment;
+			m_attachment = NULL;
+
+			EngineCallbackGuard guard(tdbb, *this);
+			jrd8_detach_database(status, &att);
+			
+			m_attachment = att;
+		}
+		if (status[1]) {
+			raise(status, tdbb, "dettach");
+		}
+	}
+	fb_assert(!m_attachment)
 }
 
+// this internal connection instance is available for the current execution context if it
+// a) is current conenction and current thread's attachment is equal to
+//	  this attachment, or
+// b) is not current conenction
 bool InternalConnection::isAvailable(thread_db *tdbb, TraScope traScope) const
 {
-	return (tdbb->getAttachment() == m_attachment);
+	return !m_isCurrent || 
+		m_isCurrent && (tdbb->getAttachment() == m_attachment);
 }
 
 bool InternalConnection::isSameDatabase(thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) const
 {
-	return dbName.isEmpty() && user.isEmpty() && (tdbb->getAttachment() == m_attachment);
+	if (m_isCurrent)
+		return (tdbb->getAttachment() == m_attachment);
+	else
+		return Connection::isSameDatabase(tdbb, dbName, user, pwd);
 }
 
 Transaction* InternalConnection::doCreateTransaction()
@@ -160,7 +216,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db *tdbb, ClumpletW
 {
 	fb_assert(!m_transaction);
 
-	if (m_scope == traCommon) {
+	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
 		m_transaction = tdbb->getTransaction();
 	}
 	else
@@ -184,7 +240,7 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db *tdbb, bool ret
 {
 	fb_assert(m_transaction);
 	
-	if (m_scope == traCommon) {
+	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
 		m_transaction = 0;
 	}
 	else
@@ -201,7 +257,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 {
 	fb_assert(m_transaction);
 
-	if (m_scope == traCommon) {
+	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
 		m_transaction = 0;
 	}
 	else
@@ -253,8 +309,14 @@ void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
 
 	{
 		EngineCallbackGuard guard(tdbb, *this);
+		
+		jrd_req* save_caller = tran->tra_callback_caller;
+		tran->tra_callback_caller = m_callerPrivileges ? tdbb->getRequest() : NULL;
+
 		jrd8_prepare(status, &tran, &m_request, sql.length(), sql.c_str(), 
 			m_connection.getSqlDialect(), 0, NULL, 0, NULL);
+
+		tran->tra_callback_caller = save_caller;
 	}
 	if (status[1]) {
 		raise(status, tdbb, "jrd8_prepare", &sql);

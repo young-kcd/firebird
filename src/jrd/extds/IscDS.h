@@ -516,22 +516,14 @@ public:
 	virtual bool isConnected() const
 	{ return (m_handle != 0); }
 
-	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
-		const Firebird::string &user, const Firebird::string &pwd) const;
-
 	virtual Blob* createBlob();
 
 protected:
 	virtual Transaction* doCreateTransaction();
 	virtual Statement* doCreateStatement();
 
-	void generateDPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &dpb,
-		const Firebird::string &dbName, const Firebird::string &user, 
-		const Firebird::string &pwd) const;
-
 	IscProvider &m_iscProvider;
 	FB_API_HANDLE m_handle;
-	Firebird::ClumpletWriter m_dpb;
 };
 
 
