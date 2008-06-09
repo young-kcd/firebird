@@ -61,6 +61,7 @@
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
 #include "../lock/lock_proto.h"
+#include "../jrd/os/thd_priority.h"
 
 class CharSetContainer;
 
@@ -90,6 +91,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 
 		void lock(bool ast = false)
 		{
+			ThreadPriorityScheduler::enter();
 			++waiters;
 			syncMutex.enter();
 			--waiters;
@@ -99,6 +101,7 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 
 		void unlock()
 		{
+			ThreadPriorityScheduler::exit();
 			isAst = false;
 			threadId = 0;
 			syncMutex.leave();

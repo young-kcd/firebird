@@ -3921,7 +3921,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
-		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
+#ifdef SUPERSERVER
+		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
+			Config::getPriorityBoost() : 1) * QUANTUM) :
+#else
+		(quantum ? quantum : QUANTUM) :
+#endif
+		tdbb->tdbb_quantum;
 
 	return false;
 }
