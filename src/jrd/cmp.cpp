@@ -453,9 +453,9 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	// When external SP's will be introduced we need to decide if they also can 
 	// inherit caller's privileges
 	jrd_tra* transaction = tdbb->getTransaction();
-	const jrd_req *exec_stmt_caller = 
+	const jrd_req* exec_stmt_caller = 
 		(transaction && transaction->tra_callback_count && !request->req_caller) ? 
-		transaction->tra_callback_caller : NULL;
+			transaction->tra_callback_caller : NULL;
 
 	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
 		access++) 

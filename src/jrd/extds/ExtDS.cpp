@@ -672,7 +672,9 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 	// already prepared the same non-empty statement
 	if (isAllocated() && (m_sql == sql) && (m_sql != "") && 
 		m_preparedByReq == (m_callerPrivileges ? tdbb->getRequest() : NULL))
+	{
 		return;
+	}
 
 	m_error = false;
 	m_transaction = tran;

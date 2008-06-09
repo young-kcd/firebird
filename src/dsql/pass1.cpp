@@ -1786,15 +1786,16 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		// process various optional arguments
 		if (input->nod_arg[e_exec_stmt_options])
 		{
-			dsql_nod *list = input->nod_arg[e_exec_stmt_options];
+			dsql_nod* list = input->nod_arg[e_exec_stmt_options];
 			fb_assert(list->nod_type == nod_list);
 
-			dsql_nod **ptr = list->nod_arg;
-			const dsql_nod *const *end = list->nod_arg + list->nod_count;
-			for (; ptr < end; ptr++)
+			const dsql_nod* const* end = list->nod_arg + list->nod_count;
+
+			for (dsql_nod** ptr = list->nod_arg;; ptr < end; ptr++)
 			{
-				char *dupClause = NULL;
-				dsql_nod *opt = *ptr;
+				char* dupClause = NULL;
+				dsql_nod* opt = *ptr;
+
 				switch (opt->nod_type)
 				{
 				case nod_exec_stmt_datasrc:

@@ -522,7 +522,7 @@ protected:
 	virtual Transaction* doCreateTransaction();
 	virtual Statement* doCreateStatement();
 
-	IscProvider &m_iscProvider;
+	IscProvider& m_iscProvider;
 	FB_API_HANDLE m_handle;
 };
 

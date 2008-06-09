@@ -52,7 +52,7 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 public:
 	static LockManager* create(const Firebird::PathName&);
 
-	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SLONG *);
+	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SLONG*);
 	void shutdownOwner(thread_db*, SLONG *);
 	bool setOwnerHandle(SLONG, SLONG);
 

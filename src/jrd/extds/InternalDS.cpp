@@ -159,7 +159,7 @@ void InternalConnection::detach(thread_db *tdbb)
 	{
 		ISC_STATUS_ARRAY status = {0};
 
-		{
+		{	// scope
 			Attachment* att = m_attachment;
 			m_attachment = NULL;
 
@@ -168,6 +168,7 @@ void InternalConnection::detach(thread_db *tdbb)
 			
 			m_attachment = att;
 		}
+
 		if (status[1]) {
 			raise(status, tdbb, "dettach");
 		}
@@ -182,7 +183,7 @@ void InternalConnection::detach(thread_db *tdbb)
 bool InternalConnection::isAvailable(thread_db *tdbb, TraScope traScope) const
 {
 	return !m_isCurrent || 
-		m_isCurrent && (tdbb->getAttachment() == m_attachment);
+		(m_isCurrent && (tdbb->getAttachment() == m_attachment));
 }
 
 bool InternalConnection::isSameDatabase(thread_db *tdbb, const Firebird::string &dbName, 
@@ -309,7 +310,7 @@ void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
 
 	{
 		EngineCallbackGuard guard(tdbb, *this);
-		
+
 		jrd_req* save_caller = tran->tra_callback_caller;
 		tran->tra_callback_caller = m_callerPrivileges ? tdbb->getRequest() : NULL;
 
