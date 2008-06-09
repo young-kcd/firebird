@@ -68,6 +68,23 @@ ThreadPriorityScheduler* ThreadPriorityScheduler::get()
 	return TLS_GET(currentScheduler);
 }
 
+// Goes to low priority zone
+void ThreadPriorityScheduler::enter()
+{
+	ThreadPriorityScheduler *t = get();
+	fb_assert(t);
+	t->inside = true;
+	t->gonein = true;
+}
+
+// Goes from low priority zone
+void ThreadPriorityScheduler::exit()
+{
+	ThreadPriorityScheduler *t = get();
+	fb_assert(t);
+	t->inside = false;
+}
+
 void ThreadPriorityScheduler::init()
 {
 	if (opMode != Running)

@@ -119,21 +119,10 @@ public:
 	static void Cleanup(void*);
 	
 	// Goes to low priority zone
-	static void enter()
-	{
-		ThreadPriorityScheduler *t = get();
-		fb_assert(t);
-		t->inside = true;
-		t->gonein = true;
-	}
+	static void enter();
 	
 	// Goes from low priority zone
-	static void exit()
-	{
-		ThreadPriorityScheduler *t = get();
-		fb_assert(t);
-		t->inside = false;
-	}
+	static void exit();
 	
 	// Check whether current thread has high priority
 	static bool boosted()
@@ -163,6 +152,7 @@ public:
 public:
 	static void enter() {}
 	static void exit() {}
+
 	static bool boosted()
 	{
 		return false;
