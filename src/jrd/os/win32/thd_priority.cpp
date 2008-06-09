@@ -52,8 +52,7 @@
 Firebird::GlobalPtr<Firebird::Mutex> ThreadPriorityScheduler::mutex;
 ThreadPriorityScheduler* ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
-ThreadPriorityScheduler::OperationMode 
-	ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
+ThreadPriorityScheduler::OperationMode ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
 ThreadPriorityScheduler::TpsPointers* ThreadPriorityScheduler::toDetach = 0;
 bool ThreadPriorityScheduler::active = true;
 
@@ -80,16 +79,16 @@ void ThreadPriorityScheduler::init()
 	toDetach = FB_NEW(*getDefaultMemoryPool()) TpsPointers(*getDefaultMemoryPool());
 
 	// allocate thps for current (i.e. server's main) thread
-	ThreadPriorityScheduler *tps = FB_NEW(*getDefaultMemoryPool()) 
-						ThreadPriorityScheduler(0, 0, THPS_PSCHED);
+	ThreadPriorityScheduler *tps =
+		FB_NEW(*getDefaultMemoryPool()) ThreadPriorityScheduler(0, 0, THPS_PSCHED);
+
 	tps->attach();
 
 	// start scheduler
 	if (active)
 	{
 		unsigned thread_id;
-		HANDLE handle = (HANDLE)_beginthreadex(NULL, 0,
-			schedulerMain, 0, 0, &thread_id);
+		HANDLE handle = (HANDLE) _beginthreadex(NULL, 0, schedulerMain, 0, 0, &thread_id);
 		if (! handle)
 		{
 			Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
@@ -119,8 +118,7 @@ void ThreadPriorityScheduler::attach()
 	{
 		HANDLE process = GetCurrentProcess();
 		HANDLE thread = GetCurrentThread();
-		if (! DuplicateHandle(process, thread, process, &handle, 0, 
-				FALSE, DUPLICATE_SAME_ACCESS))
+		if (! DuplicateHandle(process, thread, process, &handle, 0, FALSE, DUPLICATE_SAME_ACCESS))
 		{
 			Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
 		}
@@ -132,9 +130,7 @@ void ThreadPriorityScheduler::attach()
 		}
 
 #ifdef DEBUG_THREAD_PSCHED
-		gds__log("^ handle=%p priority=%d", handle, 
-				flags & THPS_BOOSTED ? 
-				highPriority : lowPriority);
+		gds__log("^ handle=%p priority=%d", handle, flags & THPS_BOOSTED ? highPriority : lowPriority);
 #endif
 	}
 	else
