@@ -1,7 +1,7 @@
 SQL Language Extension: EXECUTE STATEMENT
 
    Extends already implemented EXECUTE STATEMENT with ability to query
-external Firebird's databases.
+external Firebird's databases. Introduced support for input parameters.
 
 Authors:
    Vlad Khorsun <hvlad@users.sourceforge.net>
@@ -12,10 +12,20 @@ Syntax and notes :
 
 [FOR] EXECUTE STATEMENT <query_text> [(<input_parameters>)]
     [ON EXTERNAL [DATA SOURCE] <connection_string>]
+    [WITH AUTONOMOUS | COMMON TRANSACTION]
     [AS USER <user_name>]
     [PASSWORD <password>]
-    [WITH AUTONOMOUS | COMMON TRANSACTION]
+    [WITH CALLER PRIVILEGES]
     [INTO <variables>]
+    
+- Order of clauses below is not fixed :
+    [ON EXTERNAL [DATA SOURCE] <connection_string>]
+    [WITH AUTONOMOUS | COMMON TRANSACTION]
+    [AS USER <user_name>]
+    [PASSWORD <password>]
+    [WITH CALLER PRIVILEGES]
+	
+- Duplicate clauses is not allowed
 
 - if you use both <query_text> and <input_parameters> then you must
     enclose <query_text> into round brackets, for example :
@@ -24,7 +34,7 @@ Syntax and notes :
 - both named and not named input parameters are supported. Mix of named and not
 	named input parameters in the same statement is not allowed.
 
-- syntax of named input parameters :
+- syntax of named input parameters 
 	<input_parameters> ::= 
 		  <named_parameter> 
 		| <input_parameters>, <named_parameter>
@@ -36,38 +46,51 @@ Syntax and notes :
 	clashes with future boolean expressions.
 	This syntax may be changed in release version.
 
+- if ON EXTERNAL DATA SOURCE clause is omitted then 
+	a) statement will be executed against current (local) database
+	b) if AS USER clause is omitted or <user_name> equal to CURRENT_USER 
+	then statement executed in current connection context
+	c) if <user_name> not equal to CURRENT_USER then statement executed in separate 
+	connection established inside the same engine instance (i.e. created new internal 
+	connection without Y-Valve and remote layers).
+
 - <connection_string> is usual connection string accepted by isc_attach_database, 
     i.e. [<host_name><protocol_delimiter>]database_path.
 
 - connection to the external data source is made using the same character set as
 	current (local) connection is used.
 
-- if ON EXTERNAL DATA SOURCE is omitted then statement will be executed 
-    within current connection.
+- AUTONOMOUS TRANSACTION started new transaction with the same parameters as current 
+	transaction. This transaction will be committed if statement executed ok or rolled 
+	back if statement executed with errors.
 
-- if <user_name> is omitted then CURRENT_USER is used
+- COMMON TRANSACTION 
+	a) started new transaction with the same parameters as current transaction, or 
+	b) used already started transaction in this connection, or 
+	c) used current transaction if current connection is used.
+	This transaction lifetime is bound to the lifetime of current (local) transaction 
+	and commits\rolled back the same way as current transaction.
 
-- if <password> is omitted then :
+- by default COMMON TRANSACTION is used
+
+- if AS USER clause is omitted then CURRENT_USER is used
+
+- if PASSWORD clause is omitted then 
 	a) if <user_name> is omitted, NULL or equal to CURRENT_USER value
 		then trusted autentication is performed, and
-		a1) for current connection - CURRENT_USER is effective user account
-		a2) for local database - CURRENT_USER is effective user account
+		a1) for current connection (ON EXTERNAL DATA SOURCE is omitted) - 
+			CURRENT_USER is effective user account
+		a2) for local database (<connection_string> refers to the current database) - 
+			CURRENT_USER is effective user account
 		a3) for remote database - operating system account under which engine
 			process is currently run is effective user account.
 	b) else only isc_dpb_user_name will be present in DPB and native autentication 
 		is performed.
 
-- AUTONOMOUS TRANSACTION started new transaction with the same parameters as 
-	current transaction and this transaction is committed if statement executed ok 
-	or rolled back if statement executed with errors.
-
-- COMMON TRANSACTION started new transaction with the same parameters as current 
-	transaction or used already started transaction in this connection or used 
-	current transaction if current connection is used.
-	This transaction lifetime is bound to the lifetime of current (local) transaction 
-	and its commits\rolled back the same way as current transaction.
-
-- by default COMMON TRANSACTION is used
+- if WITH CALLER PRIVILEGES is specified and ON EXTERNAL DATA SOURCE is omitted, then
+	statement prepared using additional privileges of caller stored procedure or trigger
+	(if EXECUTE STATEMENT is inside SP\trigger). This gets the same effect as if statement 
+	is executed by SP\trigger directly.
 
 
     Examples :
