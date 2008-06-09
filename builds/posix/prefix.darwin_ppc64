@@ -15,7 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_ppc64,v 1.1.2.1 2008-06-09 11:16:51 paulbeach Exp $
+#$Id: prefix.darwin_ppc64,v 1.1.2.2 2008-06-09 13:04:29 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 # To use this file to build 64bit version of Firebird for MacOS 10.4 (Tiger)
@@ -48,11 +48,10 @@ Physical_IO_Module=os/posix/unix.cpp
 PLATFORM_PATH=os/darwin
 
 LINK_OPTS:=-arch ppc64 
-LD_FLAGS+=-arch ppc64 
-# -isysroot /Developer/SDKs/MacOSX10.4u.sdk
+LD_FLAGS+=-arch ppc64 -isysroot /Developer/SDKs/MacOSX10.4u.sdk
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
-LIB_LINK_SONAME:=-current_version 2.1.0 -compatibility_version 2.1.0 -seg1addr 0x30000000
+LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
 LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
