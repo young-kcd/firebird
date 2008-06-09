@@ -22,8 +22,8 @@ LD_FLAGS += -headerpad_max_install_names
 #CXXFLAGS += -arch x86_64 -mmacosx-version-min=10.5
 
 # 64 bit powerpc
-#CFLAGS += -arch ppc64  -mmacosx-version-min=10.4
-#CXXFLAGS += -arch ppc64 -mmacosx-version-min=10.4
+#CFLAGS += -arch ppc64  -mmacosx-version-min=10.5
+#CXXFLAGS += -arch ppc64 -mmacosx-version-min=10.5
 
 # 32bit intel default 
 # DARWIN flag added because of problem with putil.c
