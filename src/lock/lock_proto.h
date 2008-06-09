@@ -26,6 +26,7 @@
 
 #include "../common/classes/semaphore.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/classes/init.h"
 #include "../jrd/ThreadStart.h"
 #include "../lock/lock.h"
 
