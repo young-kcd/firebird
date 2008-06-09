@@ -266,7 +266,7 @@ bool LockManager::initializeOwner(thread_db* tdbb,
 {
 /**************************************
  *
- *	L O C K _ i n i t
+ *	i n i t i a l i z e O w n e r
  *
  **************************************
  *
@@ -301,7 +301,7 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_offset)
 {
 /**************************************
  *
- *	L O C K _ f i n i
+ *	s h u t d o w n O w n e r
  *
  **************************************
  *
@@ -340,7 +340,7 @@ bool LockManager::setOwnerHandle(SRQ_PTR request_offset, SRQ_PTR new_owner_offse
 {
 /**************************************
  *
- *	L O C K _ s e t _ o w n e r _ h a n d l e
+ *	s e t O w n e r H a n d l e
  *
  **************************************
  *
