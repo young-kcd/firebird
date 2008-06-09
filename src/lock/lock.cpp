@@ -205,7 +205,9 @@ LockManager::LockManager(int dbId)
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
 	if (g_lmMap->put(m_dbId, this))
+	{
 		fb_assert(false);
+	}
 }
 
 
@@ -251,7 +253,9 @@ LockManager::~LockManager()
 	Firebird::MutexLockGuard guard(g_mapMutex);
 
 	if (!g_lmMap->remove(m_dbId))
+	{
 		fb_assert(false);
+	}
 }
 
 
