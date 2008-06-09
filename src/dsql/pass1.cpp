@@ -1791,7 +1791,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 
 			const dsql_nod* const* end = list->nod_arg + list->nod_count;
 
-			for (dsql_nod** ptr = list->nod_arg;; ptr < end; ptr++)
+			for (dsql_nod** ptr = list->nod_arg; ptr < end; ptr++)
 			{
 				char* dupClause = NULL;
 				dsql_nod* opt = *ptr;
