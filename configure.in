@@ -64,6 +64,7 @@ dnl CPU_TYPE=x86_64
 
   powerpc-*-darwin*)
     MAKEFILE_PREFIX=darwin_powerpc
+dnl MAKEFILE_PREFIX=darwin_ppc64
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
     INSTALL_PREFIX=darwin
@@ -73,6 +74,7 @@ dnl CPU_TYPE=x86_64
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
+dnl CPU_TYPE=ppc64
     ;;
 
   amd64-*-freebsd*)

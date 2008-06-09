@@ -45,7 +45,7 @@
 // ASF: Currently, all little-endian are SWAP_DOUBLE and big-endian aren't.
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
 #define		SWAP_DOUBLE
-#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS)
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
 #undef		SWAP_DOUBLE
 #else
 #error "Define SWAP_DOUBLE for your platform correctly !"

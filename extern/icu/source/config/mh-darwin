@@ -12,13 +12,18 @@ SHAREDLIBCPPFLAGS =
 # Pad out the paths to the maximum possible length
 LD_FLAGS += -headerpad_max_install_names
 #LD_FLAGS += -headerpad_max_install_names -arch x86_64
+#LD_FLAGS += -headerpad_max_install_names -arch ppc64
 
 # Set CFLAGS and CXXFLAGS for relevant MacOS architecture
 # and backwards compatibility. Set accordingly before building.
 
 # 64 bit Leopard - intel (MacOS 10.5)
-#CFLAGS += -arch x86_64 
-#CXXFLAGS += -arch x86_64 
+#CFLAGS += -arch x86_64  -mmacosx-version-min=10.5
+#CXXFLAGS += -arch x86_64 -mmacosx-version-min=10.5
+
+# 64 bit powerpc
+#CFLAGS += -arch ppc64  -mmacosx-version-min=10.4
+#CXXFLAGS += -arch ppc64 -mmacosx-version-min=10.4
 
 # 32bit intel default 
 # DARWIN flag added because of problem with putil.c
@@ -28,6 +33,7 @@ CXXFLAGS += -arch i386 -mmacosx-version-min=10.4
 # 32 bit powerpc
 #CFLAGS += -arch ppc -mmacosx-version-min=10.2
 #CXXFLAGS += -arch ppc -mmacosx-version-min=10.2
+
 ## Commands to generate dependency files
 GEN_DEPS.c=	$(CC) -E -MMD  $(DEFS) $(CPPFLAGS)
 GEN_DEPS.cc=	$(CXX) -E -MMD  $(DEFS) $(CPPFLAGS)
