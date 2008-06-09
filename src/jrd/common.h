@@ -164,6 +164,7 @@
 //#define BSD_UNIX
 #define UNIX
 #ifdef __ppc__ 
+#define powerpc
 #define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
 #ifdef i386
@@ -173,6 +174,10 @@
 #ifdef __x86_64__
 #define DARWIN64
 #define IMPLEMENTATION isc_info_db_impl_darwin_x64 /* 73 */
+#endif
+#ifdef __ppc64__
+#define DARWINPPC64
+#define IMPLEMENTATION isc_info_db_impl_darwin_ppc64 /* 77 */
 #endif
 #define IEEE
 #define QUADCONST(n) (n##LL)

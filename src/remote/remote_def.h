@@ -45,7 +45,7 @@
 #if defined(sun)
 #	ifdef sparc
 const P_ARCH ARCHITECTURE	= arch_sun4;
-#	elif defined(i386)
+#elif (defined i386 || defined AMD64)
 const P_ARCH ARCHITECTURE	= arch_sunx86;
 #	else
 const P_ARCH ARCHITECTURE	= arch_sun;
@@ -69,7 +69,9 @@ const P_ARCH ARCHITECTURE	= arch_winnt_64;
 #elif defined(I386)
 const P_ARCH ARCHITECTURE	= arch_intel_32;
 #elif defined(DARWIN64)
-const P_ARCH ARCHITECTURE	= arch_darwin_64;
+const P_ARCH ARCHITECTURE	= arch_darwin_x64;
+#elif defined(DARWINPPC64)
+const P_ARCH ARCHITECTURE	= arch_darwin_ppc64;
 #endif
 
 
