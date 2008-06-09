@@ -1048,8 +1048,7 @@ dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
   [LINUX|GENTOOFREEBSD|HPUX])
-    AC_CONFIG_FILES([
-    gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
+    AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
@@ -1096,14 +1095,13 @@ case "$PLATFORM" in
                      gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
                      gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
                      gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
-                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
-      ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in]
+      ,[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
   HPUX)
     HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
-    AC_CONFIG_FILES([
-    gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
+    AC_CONFIG_FILES([gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
     gen/firebirdCS.psf:${HP_INSTALL_SRC_DIR}/firebirdCS.psf.in
     gen/firebird/bin/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
     gen/firebird/bin/tarInstall.sh:${HP_INSTALL_SRC_DIR}/tarInstall.sh.in
@@ -1123,14 +1121,14 @@ case "$PLATFORM" in
     ;;
 
   FREEBSD)
-    AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in
-      ],[chmod a+x gen/install/install.sh 2>/dev/null])
+    AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in]
+      ,[chmod a+x gen/install/install.sh 2>/dev/null])
     ;;
 
 
   NETBSD)
-    AC_CONFIG_FILES([gen/install/install.netbsd.sh:builds/install/arch-specific/netbsd/install.sh.in
-      ],[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
+    AC_CONFIG_FILES([gen/install/install.netbsd.sh:builds/install/arch-specific/netbsd/install.sh.in]
+      ,[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
     ;;
 
 
@@ -1139,8 +1137,8 @@ case "$PLATFORM" in
                      gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
                      gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
                      gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in
-      ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
+                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in]
+      ,[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 
   solx86|SOLARIS)
@@ -1150,8 +1148,8 @@ case "$PLATFORM" in
                      gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
                      gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
 		     gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
-		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
-      ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
+		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in]
+      ,[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
 
   DARWIN)

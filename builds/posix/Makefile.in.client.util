@@ -68,7 +68,7 @@ $(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp common/utils.cpp \
-$(OS_SPECIFIC_Sources) jrd/isc_file.cpp jrd/ThreadData.cpp common/UtilSvc.cpp
+$(OS_SPECIFIC_Sources) jrd/isc_file.cpp jrd/isc.cpp jrd/ThreadData.cpp common/UtilSvc.cpp
 
 GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
