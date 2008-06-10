@@ -2860,56 +2860,107 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_exec_stmt:
 		{
-			const USHORT inputs = BLR_WORD;
-			const USHORT outputs = BLR_WORD;
-			n = inputs + outputs + e_exec_stmt_fixed_count; 
-
-			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
-			node->nod_count = n;
-			arg = node->nod_arg;
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_data_src	
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_user	
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_password	
-			const UCHAR tra_mode = BLR_BYTE;				// e_exec_stmt_tran		
-			if (BLR_BYTE != 0) {
-				// external transaction parameters is not implemented currently
-				PAR_syntax_error(csb, "external transaction parameters");
-			}
-			const UCHAR use_caller_privs = BLR_BYTE;		// e_exec_stmt_extra_privs
-
-			if (BLR_BYTE)	// singleton flag
-				*arg++ = 0;									// e_exec_stmt_proc_block
-			else
-				*arg++ = PAR_parse_node(tdbb, csb, STATEMENT);	// e_exec_stmt_proc_block
-
-			// input parameters and their names
-			const bool haveNames = (inputs && (BLR_BYTE == 1));
+			USHORT inputs = 0;
+			USHORT outputs = 0;
+			UCHAR tra_mode = 0;
+			int use_caller_privs = 0;
 			EDS::ParamNames* paramNames = NULL;
 
-			for (n = e_exec_stmt_fixed_count; n < e_exec_stmt_fixed_count + inputs; n++)
+			while (true)
 			{
-				if (haveNames)
+				const UCHAR code = BLR_BYTE;
+				switch (code)
 				{
-					Firebird::string name;
-					if (par_name(csb, name))
+				case blr_exec_stmt_inputs:
+					inputs = BLR_WORD;
+				break;
+
+				case blr_exec_stmt_outputs:
+					outputs = BLR_WORD;
+				break;
+
+				case blr_exec_stmt_sql:
+					n = inputs + outputs + e_exec_stmt_fixed_count; 
+
+					node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
+					node->nod_count = n;
+					node->nod_arg[e_exec_stmt_stmt_sql] = PAR_parse_node(tdbb, csb, VALUE);
+				break;
+
+				case blr_exec_stmt_proc_block:
+					node->nod_arg[e_exec_stmt_proc_block] = PAR_parse_node(tdbb, csb, STATEMENT);
+				break;
+
+				case blr_exec_stmt_data_src:
+					node->nod_arg[e_exec_stmt_data_src] = PAR_parse_node(tdbb, csb, VALUE);
+				break;
+
+				case blr_exec_stmt_user:
+					node->nod_arg[e_exec_stmt_user] = PAR_parse_node(tdbb, csb, VALUE);
+				break;
+
+				case blr_exec_stmt_pwd:
+					node->nod_arg[e_exec_stmt_password] = PAR_parse_node(tdbb, csb, VALUE);
+				break;
+
+				case blr_exec_stmt_tran:
+					PAR_syntax_error(csb, "external transaction parameters");
+				break;
+
+				case blr_exec_stmt_tran_clone:
+					tra_mode = BLR_BYTE;
+				break;
+
+				case blr_exec_stmt_privs:
+					use_caller_privs = 1;
+				break;
+
+				case blr_exec_stmt_in_params:
+				case blr_exec_stmt_in_params2:
+					// input parameters and their names
+					n = e_exec_stmt_fixed_count;
+					arg = node->nod_arg + n;
+
+					for (; n < e_exec_stmt_fixed_count + inputs; n++)
 					{
-						Firebird::MemoryPool& pool = csb->csb_pool;
-						if (!paramNames) {
-							paramNames = FB_NEW (pool) EDS::ParamNames(pool);
+						if (code == blr_exec_stmt_in_params2)
+						{
+							Firebird::string name;
+							if (par_name(csb, name))
+							{
+								Firebird::MemoryPool& pool = csb->csb_pool;
+								if (!paramNames) {
+									paramNames = FB_NEW (pool) EDS::ParamNames(pool);
+								}
+								Firebird::string* newName = FB_NEW (pool) Firebird::string(pool, name);
+								paramNames->add(newName);
+							}
 						}
-						Firebird::string* newName = FB_NEW (pool) Firebird::string(pool, name);
-						paramNames->add(newName);
+						*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 					}
+				break;
+
+				case blr_exec_stmt_out_params:
+					// output parameters
+					n = e_exec_stmt_fixed_count + inputs;
+					arg = node->nod_arg + n;
+					for (; n < node->nod_count; n++) {
+						*arg++ = PAR_parse_node(tdbb, csb, VALUE);
+					}
+				break;
+
+				case blr_end:
+				break;
+
+				default:
+					PAR_syntax_error(csb, "unknown EXECUTE STATEMENT option");
 				}
-				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
+
+				if (code == blr_end)
+					break;
 			}
 
-			// output parameters
-			for (; n < node->nod_count; n++) {
-				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
-			}
-
+			arg = node->nod_arg + node->nod_count;
 			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs	
 			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
 			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	

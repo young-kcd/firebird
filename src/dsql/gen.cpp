@@ -72,7 +72,7 @@ static void gen_for_select(CompiledStatement*, const dsql_nod*);
 static void gen_gen_id(CompiledStatement*, const dsql_nod*);
 static void gen_join_rse(CompiledStatement*, const dsql_nod*);
 static void gen_map(CompiledStatement*, dsql_map*);
-static inline void gen_optional_expr(CompiledStatement*, dsql_nod*);
+static inline void gen_optional_expr(CompiledStatement*, const UCHAR code, dsql_nod*);
 static void gen_parameter(CompiledStatement*, const dsql_par*);
 static void gen_plan(CompiledStatement*, const dsql_nod*);
 static void gen_relation(CompiledStatement*, dsql_ctx*);
@@ -1101,76 +1101,58 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 
 	case nod_exec_stmt:
 		{ // scope
-		const bool old_syntax = 
-			!node->nod_arg[e_exec_stmt_inputs] &&
-			!node->nod_arg[e_exec_stmt_data_src] &&
-			!node->nod_arg[e_exec_stmt_user] &&
-			!node->nod_arg[e_exec_stmt_pwd] &&
-			!node->nod_arg[e_exec_stmt_tran] &&
-			!node->nod_arg[e_exec_stmt_privs];
 
-		const bool old_exec_into = old_syntax && node->nod_arg[e_exec_stmt_outputs];
-
-		if (node->nod_arg[e_exec_stmt_proc_block]) {
+		if (node->nod_arg[e_exec_stmt_proc_block]) 
+		{
 			stuff(statement, blr_label);
 			stuff(statement, (int)(IPTR) node->nod_arg[e_exec_stmt_label]->nod_arg[e_label_number]);
 		}
 
-		if (old_syntax) {
-			if (old_exec_into) {
-				stuff(statement, blr_exec_into);
-			}
-			else {
-				stuff(statement, blr_exec_sql);
-			}
-		}
-		else {
-			stuff(statement, blr_exec_stmt);
-		}
+		stuff(statement, blr_exec_stmt);
 
 		// counts of input and output parameters
-		if (!old_syntax)
+		temp = node->nod_arg[e_exec_stmt_inputs];
+		if (temp)
 		{
-			temp = node->nod_arg[e_exec_stmt_inputs];
-			stuff_word(statement, temp ? temp->nod_count : 0);
+			stuff(statement, blr_exec_stmt_inputs);
+			stuff_word(statement, temp->nod_count);
 		}
-		if (!old_syntax || old_exec_into)
+
+		temp = node->nod_arg[e_exec_stmt_outputs];
+		if (temp)
 		{
-			temp = node->nod_arg[e_exec_stmt_outputs];
-			stuff_word(statement, temp ? temp->nod_count : 0);
+			stuff(statement, blr_exec_stmt_outputs);
+			stuff_word(statement, temp->nod_count);
 		}
 
 		// query expression
+		stuff(statement, blr_exec_stmt_sql);
 		GEN_expr(statement, node->nod_arg[e_exec_stmt_sql]);
 
-		if (!old_syntax)
+		// proc block body
+		temp = node->nod_arg[e_exec_stmt_proc_block];
+		if (temp) 
 		{
-			// external data source, user and password
-			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_data_src]);
-			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_user]);
-			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_pwd]);
-
-			// statement's transaction behavior
-			const dsql_nod* const opt = node->nod_arg[e_exec_stmt_tran];
-			stuff(statement, (UCHAR) (opt ? opt->nod_flags : NOD_TRAN_DEFAULT));
-			stuff(statement, 0); // transaction parameters equal to current transaction 
-
-			// inherit caller's privileges ?
-			if (node->nod_arg[e_exec_stmt_privs]) {
-				stuff(statement, 1);
-			}
-			else {
-				stuff(statement, 0);
-			}
+			stuff(statement, blr_exec_stmt_proc_block);
+			GEN_statement(statement, temp);
 		}
 
-		// singleton flag and proc block body
-		if (node->nod_arg[e_exec_stmt_proc_block]) {
-			stuff(statement, 0);		// non-singleton
-			GEN_statement(statement, node->nod_arg[e_exec_stmt_proc_block]);
+		// external data source, user and password
+		gen_optional_expr(statement, blr_exec_stmt_data_src, node->nod_arg[e_exec_stmt_data_src]);
+		gen_optional_expr(statement, blr_exec_stmt_user, node->nod_arg[e_exec_stmt_user]);
+		gen_optional_expr(statement, blr_exec_stmt_pwd, node->nod_arg[e_exec_stmt_pwd]);
+
+		// statement's transaction behavior
+		temp = node->nod_arg[e_exec_stmt_tran];
+		if (temp)
+		{
+			stuff(statement, blr_exec_stmt_tran_clone); // transaction parameters equal to current transaction 
+			stuff(statement, (UCHAR)(IPTR) (temp->nod_flags));
 		}
-		else if (!old_syntax || old_exec_into) {
-			stuff(statement, 1);		// singleton
+
+		// inherit caller's privileges ?
+		if (node->nod_arg[e_exec_stmt_privs]) {
+			stuff(statement, blr_exec_stmt_privs);
 		}
 
 		// inputs
@@ -1180,9 +1162,9 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			ptr = temp->nod_arg;
 			const bool haveNames = ((*ptr)->nod_arg[e_named_param_name] != 0);
 			if (haveNames)
-				stuff(statement, 1);
+				stuff(statement, blr_exec_stmt_in_params2);
 			else 
-				stuff(statement, 0);
+				stuff(statement, blr_exec_stmt_in_params);
 
 			for (end = ptr + temp->nod_count; ptr < end; ptr++) 
 			{
@@ -1197,11 +1179,14 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 
 		// outputs
 		temp = node->nod_arg[e_exec_stmt_outputs];
-		if (temp) {
+		if (temp) 
+		{
+			stuff(statement, blr_exec_stmt_out_params);
 			for (ptr = temp->nod_arg, end = ptr + temp->nod_count; ptr < end; ptr++) {
 				GEN_expr(statement, *ptr);
 			}
 		}
+		stuff(statement, blr_end);
 		} // scope of case nod_exec_stmt
 		return;
 	
@@ -2035,12 +2020,13 @@ static void gen_map( CompiledStatement* statement, dsql_map* map)
 	}
 }
 
-static void gen_optional_expr(CompiledStatement* statement, dsql_nod* node)
+static void gen_optional_expr(CompiledStatement* statement, const UCHAR code, dsql_nod* node)
 {
 	if (node)
+	{
+		stuff(statement, code);
 		GEN_expr(statement, node);
-	else
-		stuff(statement, blr_null);
+	}
 }
 
 /**

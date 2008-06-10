@@ -1723,7 +1723,6 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			PASS1_node(statement, input->nod_arg[e_exec_sql_stmnt]);
 		return pass1_savepoint(statement, node);
 
-	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_into_stmnt] =
@@ -1742,6 +1741,25 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		return pass1_savepoint(statement, node);
 
 	case nod_exec_stmt:
+		// if no new features of EXECUTE STATEMENT is used, lets generate old BLR
+		if (!input->nod_arg[e_exec_stmt_inputs] && !input->nod_arg[e_exec_stmt_options])
+		{
+			if (!input->nod_arg[e_exec_stmt_outputs])
+			{
+				node = MAKE_node(nod_exec_sql, e_exec_sql_count);
+				node->nod_arg[e_exec_sql_stmnt] = input->nod_arg[e_exec_stmt_sql];
+			}
+			else
+			{
+				node = MAKE_node(nod_exec_into, e_exec_into_count);
+				node->nod_arg[e_exec_into_stmnt] = input->nod_arg[e_exec_stmt_sql];
+				node->nod_arg[e_exec_into_block] = input->nod_arg[e_exec_stmt_proc_block];
+				node->nod_arg[e_exec_into_list] = input->nod_arg[e_exec_stmt_outputs];
+				node->nod_arg[e_exec_into_label] = input->nod_arg[e_exec_stmt_label];
+			}
+			return PASS1_statement(statement, node);
+		}
+
 		node = MAKE_node(input->nod_type, input->nod_count);
 		node->nod_arg[e_exec_stmt_sql] =
 			PASS1_node(statement, input->nod_arg[e_exec_stmt_sql]);
@@ -6643,7 +6661,6 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 	case nod_for_select:
 		label = input->nod_arg[e_flp_label];
 		break;
-	// CVC: This node seems obsolete.
 	case nod_exec_into:
 		label = input->nod_arg[e_exec_into_label];
 		break;

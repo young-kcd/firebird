@@ -3307,64 +3307,106 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 		case op_exec_stmt: 
 		{
-			int inputs = blr_print_word(control);
-			int outputs = blr_print_word(control);
 			offset = blr_print_line(control, offset);
-			
-			blr_print_verb(control, level);		// query expression
-			offset = blr_print_line(control, offset);
-
-			blr_print_verb(control, level);		// external data source
-			offset = blr_print_line(control, offset);
-
-			blr_print_verb(control, level);		// user 
-			offset = blr_print_line(control, offset);
-
-			blr_print_verb(control, level);		// password
-			offset = blr_print_line(control, offset);
-
-			blr_indent(control, level);
-			blr_print_word(control);			// transaction behavior
-
-			const bool singleton = blr_print_byte(control);	// singleton flag
-			offset = blr_print_line(control, offset);
-
-			if (!singleton) 
+			static const char* sub_codes[] = 
 			{
-				blr_print_verb(control, level);
-				offset = blr_print_line(control, offset);
-			}
-
-			bool named = false;
-			if (inputs)
+				NULL,
+				"inputs",
+				"outputs",		
+				"sql",
+				"proc_block",
+				"data_src",
+				"user",
+				"pwd",
+				"tran",
+				"tran_clone",
+				"privs",
+				"in_params",
+				"in_params2",
+				"out_params"
+			};
+			
+			int inputs = 0;
+			int outputs = 0;
+			while ((blr_operator = BLR_BYTE) != blr_end)
 			{
 				blr_indent(control, level);
-				named = (blr_print_byte(control) != 0);	// named parameters flag
-				offset = blr_print_line(control, offset);
-			}
-
-			while (inputs + outputs) 
-			{
-				if (inputs)
+				blr_format(control, "blr_exec_stmt_%s, ", sub_codes[blr_operator]);
+				switch (blr_operator)
 				{
-					// input param name
-					if (named)
+				case blr_exec_stmt_inputs:
+				case blr_exec_stmt_outputs:
+					if (blr_operator == blr_exec_stmt_inputs)
+						inputs = blr_print_word(control);
+					else
+						outputs = blr_print_word(control);
+					offset = blr_print_line(control, offset);
+				break;
+
+				case blr_exec_stmt_sql:
+				case blr_exec_stmt_proc_block:
+				case blr_exec_stmt_data_src:
+				case blr_exec_stmt_user:
+				case blr_exec_stmt_pwd:
+					offset = blr_print_line(control, offset);
+					level++;
+					blr_print_verb(control, level);
+					level--;
+				break;
+
+				// case blr_exec_stmt_tran:
+				case blr_exec_stmt_tran_clone:
+					blr_print_byte(control);
+					offset = blr_print_line(control, offset);
+				break;
+				
+				case blr_exec_stmt_privs:
+					offset = blr_print_line(control, offset);
+				break;
+
+				case blr_exec_stmt_in_params:
+				case blr_exec_stmt_in_params2:
+					offset = blr_print_line(control, offset);
+					level++;
+					while (inputs) 
 					{
-						blr_indent(control, level);
-						int len = BLR_BYTE;
-						while (len--) 
-							blr_print_char(control);
-						
+						// input param name
+						if (blr_operator == blr_exec_stmt_in_params2)
+						{
+							blr_indent(control, level);
+							int len = blr_print_byte(control);							
+							while (len--) 
+								blr_print_char(control);
+							
+							offset = blr_print_line(control, offset);
+						}
+						--inputs;
+						blr_print_verb(control, level);		// param expression
 						offset = blr_print_line(control, offset);
 					}
-					--inputs;
+					level--;
+				break;
+
+				case blr_exec_stmt_out_params:
+					offset = blr_print_line(control, offset);
+					level++;
+					while (outputs) 
+					{
+						--outputs;
+						blr_print_verb(control, level);		// param expression
+						offset = blr_print_line(control, offset);
+					}
+					level--;
+				break;
+
+				default:
+					fb_assert(false);
 				}
-				else {
-					--outputs;
-				}
-				blr_print_verb(control, level);		// param expression
-				offset = blr_print_line(control, offset);
 			}
+
+			// print blr_end
+			control->ctl_blr--;
+			blr_print_verb(control, level); 
 			break;
 		}
 
