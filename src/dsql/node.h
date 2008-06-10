@@ -725,6 +725,7 @@ enum node_args {
 	e_grant_table,
 	e_grant_users,
 	e_grant_grant,
+	e_grant_grantor,
 	e_grant_count,
 
 	e_alias_value = 0,		// nod_alias

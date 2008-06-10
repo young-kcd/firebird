@@ -94,7 +94,7 @@ static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName
 static const char* privilege_name(char symbol);
 static void	revoke_permission(Global*, const UCHAR**);
 static void store_privilege(Global*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&,
-	const TEXT*, SSHORT, SSHORT, int);
+	const TEXT*, SSHORT, SSHORT, int, const Firebird::MetaName&);
 static void	set_field_class_name(Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static void dyn_user(Global*, const UCHAR**);
 
@@ -1107,10 +1107,10 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	Firebird::MetaName user;
 	TEXT priv[2];
 	bool grant_role_stmt = false;
-	Firebird::MetaName grantor;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
+	Firebird::MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1220,10 +1220,19 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			options = DYN_get_number(ptr);
 			break;
 
+		case isc_dyn_grant_grantor:
+			if (! tdbb->getAttachment()->locksmith()) 
+			{
+				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
+			}
+			GET_STRING(ptr, grantor);
+			break;
+
 		default:
 			DYN_unsupported_verb();
 		}
 	}
+	grantor.upper7();
 
 	jrd_req* request = NULL;
 
@@ -1247,7 +1256,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$PRIVILEGE EQ priv AND
 					PRIV.RDB$USER = user.c_str() AND
 					PRIV.RDB$USER_TYPE = user_type AND
-					PRIV.RDB$GRANTOR EQ UPPERCASE(RDB$USER_NAME) AND
+					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
 					PRIV.RDB$FIELD_NAME EQ field.c_str()
 					if (!DYN_REQUEST(drq_l_grant1)) {
 						DYN_REQUEST(drq_l_grant1) = request;
@@ -1279,7 +1288,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 					PRIV.RDB$PRIVILEGE EQ priv AND
 					PRIV.RDB$USER = user.c_str() AND
 					PRIV.RDB$USER_TYPE = user_type AND
-					PRIV.RDB$GRANTOR EQ UPPERCASE(RDB$USER_NAME) AND
+					PRIV.RDB$GRANTOR EQ grantor.c_str() AND
 					PRIV.RDB$FIELD_NAME MISSING
 					if (!DYN_REQUEST(drq_l_grant2))
 						DYN_REQUEST(drq_l_grant2) = request;
@@ -1313,9 +1322,6 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			}
 			id = drq_get_role_nm;
 
-			grantor = tdbb->getAttachment()->att_user->usr_user_name;
-			grantor.upper7();
-
 			if (!grantor_can_grant_role(tdbb, gbl, grantor, object)) {
 				// ERR_punt();
 				goto do_punt;
@@ -1341,7 +1347,9 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			   his own view.  If the grantor is not the owner of the view, then the
 			   base table/view grant privilege checks were made when the grantor
 			   got its grant privilege on the view and no further checks are
-			   necessary. */
+			   necessary. 
+			   As long as only locksmith can use GRANTED BY, no need specially checking 
+			   for privileges of current user. AP-2008 */
 
 			if (!obj_type)
 			{	/* relation or view because we cannot distinguish at this point. */
@@ -1363,7 +1371,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 
 		id = drq_s_grant;
 		store_privilege(gbl, object, user, field, pr, user_type, obj_type,
-						options);
+						options, grantor);
 	}	// for (...)
 
 	}	// try
@@ -1703,6 +1711,7 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
  **************************************/
 
 	bool grantable = false;
+	bool no_admin = false;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -1741,36 +1750,31 @@ static bool grantor_can_grant_role(	thread_db*	tdbb,
 				DYN_REQUEST(drq_get_role_au) = request;
 			}
 
-		if (PRV.RDB$GRANT_OPTION == 2) {
+		if (PRV.RDB$GRANT_OPTION == 2)
 			grantable = true;
-		}
-		else {
-			/****************************************************
-			**
-			**  user have no admin option.
-			**
-			*****************************************************/
-			DYN_error(false, 189, SafeArg() << grantor.c_str() << role_name.c_str());
-			return false;
-		}
+		else
+			no_admin = true;
 
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_get_role_au)) {
+	if (!DYN_REQUEST(drq_get_role_au)) 
+	{
 		DYN_REQUEST(drq_get_role_au) = request;
 	}
 
-	if (!grantable) {
+	if (!grantable) 
+	{
 		/****************************************************
 		**
-		**  user is not a member of the role.
+		**  189: user have no admin option.
+		**  190: user is not a member of the role.
 		**
 		*****************************************************/
-		DYN_error(false, 190, SafeArg() << grantor.c_str() << role_name.c_str());
+		DYN_error(false, no_admin ? 189 : 190, SafeArg() << grantor.c_str() << role_name.c_str());
 		return false;
 	}
 
-	return grantable;
+	return true;
 }
 
 
@@ -1794,6 +1798,8 @@ static const char* privilege_name(char symbol)
 		case 'D': return "Delete";
 		case 'S': return "Select";
 		case 'X': return "Execute";
+		case 'M': return "Role";
+		case 'R': return "Reference";
 	}
 	return "<Unknown>";
 }
@@ -1835,8 +1841,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 /* Stash away a copy of the revoker's name, in uppercase form */
 
 	const UserId* revoking_user = tdbb->getAttachment()->att_user;
-	Firebird::MetaName revoking_user_name(revoking_user->usr_user_name);
-	revoking_user_name.upper7();
+	Firebird::MetaName revoking_as_user_name(revoking_user->usr_user_name);
+	revoking_as_user_name.upper7();
 
 	GET_STRING(ptr, privileges);
 	if (!strcmp(privileges, "A")) {
@@ -1847,7 +1853,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	SSHORT user_type = -1;
 	SSHORT obj_type = -1;
 
-	while ((verb = *(*ptr)++) != isc_dyn_end)
+	while ((verb = *(*ptr)++) != isc_dyn_end) {
 		switch (verb) {
 		case isc_dyn_rel_name:
 			obj_type = obj_relation;
@@ -1938,9 +1944,19 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			options = DYN_get_number(ptr);
 			break;
 
+		case isc_dyn_grant_grantor:
+			if (! tdbb->getAttachment()->locksmith()) 
+			{
+				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
+			}
+			GET_STRING(ptr, revoking_as_user_name);
+			break;
+
 		default:
 			DYN_unsupported_verb();
 		}
+	}
+	revoking_as_user_name.upper7();
 
 
 	USHORT id = field.length() ? drq_e_grant1 : drq_e_grant2;
@@ -1969,8 +1985,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 					if (!DYN_REQUEST(drq_e_grant1))
 						DYN_REQUEST(drq_e_grant1) = request;
 
-				if ((revoking_user->locksmith()) ||
-					(revoking_user_name == PRIV.RDB$GRANTOR))
+				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
 				{
 					ERASE PRIV;
 					grant_erased = true;
@@ -2001,8 +2016,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 				   in this table which have been granted the privilege, we
 				   erase the entries from RDB$USER_PRIVILEGES. */
 
-				if ((revoking_user->locksmith()) ||
-					(revoking_user_name == PRIV.RDB$GRANTOR))
+				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
 				{
 					ERASE PRIV;
 					grant_erased = true;
@@ -2028,14 +2042,14 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			id = drq_s_grant;
 
 			store_privilege(gbl, object, user, field, pr, user_type, obj_type,
-							0);
+							0, revoking_as_user_name);
 
 			id = old_id;
 		}
 		
-		if (bad_grantor)
+		if (bad_grantor && (!grant_erased))
 		{
-			DYN_error_punt(false, 246, SafeArg() << revoking_user_name.c_str() << 
+			DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() << 
 				privilege_name(temp[0]) << object.c_str() << user.c_str());
 			// msg 246: @1 is not grantor of @2 on @3 to @4.
 		}
@@ -2140,10 +2154,11 @@ static void store_privilege(Global*						gbl,
 							const Firebird::MetaName&	object,
 							const Firebird::MetaName&	user,
 							const Firebird::MetaName&	field,
-							const TEXT*	privilege,
-							SSHORT	user_type,
-							SSHORT	obj_type,
-							int		option)
+							const TEXT*					privilege,
+							SSHORT						user_type,
+							SSHORT						obj_type,
+							int							option,
+							const Firebird::MetaName&	grantor)
 {
 /**************************************
  *
@@ -2169,6 +2184,7 @@ static void store_privilege(Global*						gbl,
 			PRIV.RDB$FIELD_NAME.NULL = TRUE;
 			strcpy(PRIV.RDB$RELATION_NAME, object.c_str());
 			strcpy(PRIV.RDB$USER, user.c_str());
+			strcpy(PRIV.RDB$GRANTOR, grantor.c_str());
 			PRIV.RDB$USER_TYPE = user_type;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
 			if (field.length()) {

@@ -544,6 +544,7 @@ inline void check_copy_incr(char*& to, const char ch, const char* const string)
 %token AUTONOMOUS
 %token CHAR_TO_UUID
 %token FIRSTNAME
+%token GRANTED
 %token LASTNAME
 %token MIDDLENAME
 %token MAPPING
@@ -624,16 +625,16 @@ statement	: alter
 /* GRANT statement */
 
 grant	: GRANT privileges ON table_noise simple_table_name
-			TO non_role_grantee_list grant_option
+			TO non_role_grantee_list grant_option granted_by
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					$2, $5, make_list($7), $8); }
+					$2, $5, make_list($7), $8, $9); }
 		| GRANT proc_privileges ON PROCEDURE simple_proc_name
-			TO non_role_grantee_list grant_option
+			TO non_role_grantee_list grant_option granted_by
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					$2, $5, make_list($7), $8); }
-		| GRANT role_name_list TO role_grantee_list role_admin_option
+					$2, $5, make_list($7), $8, $9); }
+		| GRANT role_name_list TO role_grantee_list role_admin_option granted_by
 			{ $$ = make_node (nod_grant, (int) e_grant_count, 
-					make_list($2), make_list($4), NULL, $5); }
+					make_list($2), make_list($4), NULL, $5, $6); }
 		;
 
 table_noise	: TABLE
@@ -681,6 +682,20 @@ role_admin_option   : WITH ADMIN OPTION
 			{ $$ = NULL; }
 		;
 
+granted_by	: granted_by_text grantor
+			{ $$ = $2; }
+		|
+			{ $$ = NULL; }
+		;
+
+granted_by_text	: GRANTED BY
+		|  AS
+		;
+
+grantor		: role_grantee
+			{ $$ = $1; }
+		;
+
 simple_proc_name: symbol_procedure_name
 			{ $$ = make_node (nod_procedure_name, (int) 1, $1); }
 		;
@@ -689,16 +704,16 @@ simple_proc_name: symbol_procedure_name
 /* REVOKE statement */
 
 revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
-			FROM non_role_grantee_list
+			FROM non_role_grantee_list granted_by
 			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					$3, $6, make_list($8), $2); }
+					$3, $6, make_list($8), $2, $9); }
 		| REVOKE rev_grant_option proc_privileges ON PROCEDURE simple_proc_name
-			FROM non_role_grantee_list
+			FROM non_role_grantee_list granted_by
 			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					$3, $6, make_list($8), $2); }
-		| REVOKE rev_admin_option role_name_list FROM role_grantee_list
+					$3, $6, make_list($8), $2, $9); }
+		| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
 			{ $$ = make_node (nod_revoke, (int) e_grant_count,
-					make_list($3), make_list($5), NULL, $2); }
+					make_list($3), make_list($5), NULL, $2, $6); }
 		; 
 
 rev_grant_option : GRANT OPTION FOR
@@ -5018,6 +5033,7 @@ non_reserved_word :
 	| MAPPING
 	| OS_NAME
 	| UUID_TO_CHAR
+	| GRANTED
 	| CALLER				// new execute statement
 	| COMMON
 	| DATA

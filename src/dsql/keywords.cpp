@@ -192,6 +192,7 @@ static const TOK tokens[] =
 	{GEN_UUID, "GEN_UUID", 2, false},
 	{GLOBAL, "GLOBAL", 2, false},
 	{GRANT, "GRANT", 1, false},
+	{GRANTED, "GRANTED", 2, false},
 	{GROUP, "GROUP", 1, false},
 	{HASH, "HASH", 2, false},
 	{HAVING, "HAVING", 1, false},

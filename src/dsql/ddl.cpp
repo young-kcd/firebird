@@ -168,15 +168,17 @@ static void modify_database(CompiledStatement*);
 static void modify_domain(CompiledStatement*);
 static void modify_field(CompiledStatement*, dsql_nod*, SSHORT, const dsql_str*);
 static void modify_index(CompiledStatement*);
-static void modify_privilege(CompiledStatement*, NOD_TYPE, SSHORT, const UCHAR*,
-	const dsql_nod*, const dsql_nod*, const dsql_str*);
+static void modify_privilege(CompiledStatement* statement, NOD_TYPE type, SSHORT option,
+							 const UCHAR* privs, const dsql_nod* table,
+							 const dsql_nod* user, const dsql_nod* grantor,
+							 const dsql_str* field_name);
 static SCHAR modify_privileges(CompiledStatement*, NOD_TYPE, SSHORT, const dsql_nod*,
-	const dsql_nod*, const dsql_nod*);
+	const dsql_nod*, const dsql_nod*, const dsql_nod*);
 static void modify_relation(CompiledStatement*);
 static void modify_udf(CompiledStatement*);
 static void modify_map(CompiledStatement*);
 static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev);
-static void process_role_nm_list(CompiledStatement*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE);
+static void process_role_nm_list(CompiledStatement*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE, const dsql_nod*);
 static void put_descriptor(CompiledStatement*, const dsc*);
 static void put_dtype(CompiledStatement*, const dsql_fld*, bool);
 static void put_field(CompiledStatement*, dsql_fld*, bool);
@@ -194,6 +196,7 @@ static void stuff_trg_firing_cond(CompiledStatement*, const dsql_nod*);
 static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
 static void clearPermanentField (dsql_rel*, bool);
 static void define_user(CompiledStatement*, UCHAR);
+static void put_grantor(CompiledStatement* statement, const dsql_nod* grantor);
 
 enum trigger_type {
 	PRE_STORE_TRIGGER = 1,
@@ -4833,7 +4836,7 @@ static void grant_revoke(CompiledStatement* statement)
 		for (uptr = users->nod_arg; uptr < uend; ++uptr)
 		{
 			modify_privileges(statement, ddl_node->nod_type, option,
-							  privs, table, *uptr);
+							  privs, table, *uptr, ddl_node->nod_arg[e_grant_grantor]);
 		}
 	}
 	else
@@ -4851,7 +4854,7 @@ static void grant_revoke(CompiledStatement* statement)
 			for (uptr = users->nod_arg; uptr < uend; ++uptr)
 			{
 				process_role_nm_list(statement, option, *uptr, *role_ptr,
-									 ddl_node->nod_type);
+									 ddl_node->nod_type, ddl_node->nod_arg[e_grant_grantor]);
 			}
 		}
 	}
@@ -5440,6 +5443,7 @@ static void modify_privilege(	CompiledStatement*			statement,
 								const UCHAR*		privs,
 								const dsql_nod*			table,
 								const dsql_nod*			user,
+								const dsql_nod*			grantor,
 								const dsql_str*			field_name)
 {
 /**************************************
@@ -5532,6 +5536,8 @@ static void modify_privilege(	CompiledStatement*			statement,
 		statement->append_number(isc_dyn_grant_options, option);
 	}
 
+	put_grantor(statement, grantor);
+
 	statement->append_uchar(isc_dyn_end);
 }
 
@@ -5542,7 +5548,8 @@ static SCHAR modify_privileges(CompiledStatement*		statement,
 							   SSHORT	option,
 							   const dsql_nod*		privs,
 							   const dsql_nod*		table,
-							   const dsql_nod*		user)
+							   const dsql_nod*		user,
+							   const dsql_nod*		grantor)
 {
 /**************************************
  *
@@ -5588,7 +5595,7 @@ static SCHAR modify_privileges(CompiledStatement*		statement,
 			 ptr++)
 		{
 			modify_privilege(statement, type, option,
-							 reinterpret_cast<const UCHAR*>(p), table, user,
+							 reinterpret_cast<const UCHAR*>(p), table, user, grantor,
 							 reinterpret_cast<dsql_str*>((*ptr)->nod_arg[1]));
 		}
 		return 0;
@@ -5601,8 +5608,7 @@ static SCHAR modify_privileges(CompiledStatement*		statement,
 		for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr < end;
 			 ptr++)
 		{
-			*q = modify_privileges(statement, type, option, *ptr, table,
-								  user);
+			*q = modify_privileges(statement, type, option, *ptr, table, user, grantor);
 			if (*q) {
 				q++;
 			}
@@ -5621,6 +5627,7 @@ static SCHAR modify_privileges(CompiledStatement*		statement,
 							reinterpret_cast<const UCHAR*>(p),
 							table,
 							user,
+							grantor,
 							0);
 	}
 
@@ -5919,10 +5926,11 @@ static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev)
 
 
 static void process_role_nm_list(	CompiledStatement*			statement,
-									SSHORT		option,
-									dsql_nod*			user_ptr,
-									dsql_nod*			role_ptr,
-									NOD_TYPE	type)
+									SSHORT			option,
+									dsql_nod*		user_ptr,
+									dsql_nod*		role_ptr,
+									NOD_TYPE		type,
+									const dsql_nod*	grantor)
 {
 /**************************************
  *
@@ -5954,7 +5962,29 @@ static void process_role_nm_list(	CompiledStatement*			statement,
 		statement->append_number(isc_dyn_grant_admin_options, option);
 	}
 
+	put_grantor(statement, grantor);
+
 	statement->append_uchar(isc_dyn_end);
+}
+
+
+static void put_grantor(CompiledStatement* statement, const dsql_nod* grantor)
+{
+/**************************************
+ *
+ *	p u t _ g r a n t o r
+ *
+ **************************************
+ *
+ * Function
+ *	Write out grantor for grant / revoke.
+ *
+ **************************************/
+	if (grantor) {
+		fb_assert(grantor->nod_type == nod_user_name);
+		const dsql_str* name = (const dsql_str*) grantor->nod_arg[0];
+		statement->append_cstring(isc_dyn_grant_grantor, name->str_data);
+	}
 }
 
 

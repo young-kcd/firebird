@@ -463,6 +463,55 @@ processing_state SHOW_grants(const SCHAR* object,
 }
 
 
+static const char* granted_by(char* buffer, const char* grantor)
+{
+/**************************************
+ *
+ *	S H O W _ g r a n t s 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Output message only if granted not by SYSDBA.
+ *
+ **************************************/
+	static SCHAR last_Db_name[MAXPATHLEN] = "";
+	static BASED_ON RDB$RELATIONS.RDB$OWNER_NAME owner;
+	if (strcmp(isqlGlob.global_Db_name, last_Db_name))
+	{
+		strcpy(last_Db_name, isqlGlob.global_Db_name);
+
+		// Get the owner name
+		strcpy(owner, SYSDBA_USER_NAME);
+		FOR REL IN RDB$RELATIONS WITH
+			REL.RDB$RELATION_NAME = "RDB$DATABASE"
+
+			if (!REL.RDB$OWNER_NAME.NULL)
+				strcpy(owner, REL.RDB$OWNER_NAME);
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(isc_status);
+			buffer[0] = '\0';
+			return "";
+		END_ERROR;
+		fb_utils::exact_name(owner);
+	}
+	
+ 	strcpy(buffer, grantor);
+	fb_utils::exact_name(buffer);
+	if (!strcmp(buffer, owner))
+		buffer[0] = '\0';
+	else
+	{
+		strcpy(buffer, " GRANTED BY ");
+		strcat(buffer, grantor);
+		fb_utils::exact_name(buffer);
+	}
+
+	return buffer;
+}
+
+
 processing_state SHOW_grants2 (const SCHAR* object,
 				  const SCHAR* terminator,
 				  USHORT obj_type,
@@ -492,6 +541,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANT_OPTION prev_option;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$FIELD_NAME prev_field;
 	BASED_ON RDB$USER_PRIVILEGES.RDB$USER_TYPE prev_user_type;
+	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR prev_grantor;
+	SCHAR buf_grantor[sizeof(prev_grantor) + 20];
 	SCHAR user_string[QUOTEDLENGTH + 20];
 	bool first = true;
 
@@ -503,6 +554,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 	prev_option = -1;
 	prev_user[0] = '\0';
 	prev_field[0] = '\0';
+	prev_grantor[0] = '\0';
 	prev_user_type = -1;
 	char priv_string[MAX_PRIV_LIST] = "";
 	char col_string[BUFFER_LENGTH128] = "";
@@ -544,7 +596,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					 prev_field_null != PRV.RDB$FIELD_NAME.NULL) ||
 					(!prev_field_null && strcmp (prev_field, PRV.RDB$FIELD_NAME)) ||
 					(prev_option != -1 && prev_option != PRV.RDB$GRANT_OPTION) ||
-					(prev_user_type != -1 && prev_user_type != PRV.RDB$USER_TYPE))
+					(prev_user_type != -1 && prev_user_type != PRV.RDB$USER_TYPE) ||
+					(prev_grantor[0] && strcmp (prev_grantor, PRV.RDB$GRANTOR)))
 				{
 
 					make_priv_string (priv_flags, priv_string);
@@ -559,9 +612,10 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					else
 						strcpy (SQL_identifier, object);
 
-					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s", priv_string,
-							 col_string, SQL_identifier, user_string,
-							 with_option, terminator, NEWLINE);
+					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
+						priv_string, col_string, 
+						SQL_identifier, 
+						user_string, with_option, granted_by(buf_grantor, prev_grantor), terminator, NEWLINE);
 
 					// re-initialize strings
 
@@ -578,6 +632,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				prev_field_null = PRV.RDB$FIELD_NAME.NULL;
 				strcpy (prev_field, PRV.RDB$FIELD_NAME);
 				prev_user_type = PRV.RDB$USER_TYPE;
+				strcpy (prev_grantor, PRV.RDB$GRANTOR);
 
 				switch (PRV.RDB$USER_TYPE) {
 				case obj_relation:
@@ -688,9 +743,10 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					strcpy (SQL_identifier, object);
 
-				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s",
-						 priv_string, col_string,
-						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
+				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s", 
+					priv_string, col_string, 
+					SQL_identifier, 
+					user_string, with_option, granted_by(buf_grantor, prev_grantor), terminator, NEWLINE);
 			}
 
 		END_FOR
@@ -781,8 +837,9 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					strcpy (SQL_identifier, object);
 
-				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s",
-						 SQL_identifier, user_string, with_option, terminator, NEWLINE);
+				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s%s",
+						 SQL_identifier, user_string, with_option, 
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
 				first = false;
 
 			END_FOR
@@ -834,8 +891,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				else
 					with_option[0] = '\0';
 
-				sprintf (Print_buffer, "GRANT %s TO %s%s%s%s", SQL_identifier,
-						 user_string, with_option, terminator, NEWLINE);
+				sprintf (Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
+						 user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
 
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
@@ -897,6 +954,8 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
  *
  **************************************/
 	TEXT SQL_identifier2[BUFFER_LENGTH128];
+	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR dummy;	// used to declare buf_grantor
+	SCHAR buf_grantor[sizeof(dummy) + 20];
 
 	// process role "object"
 
@@ -920,6 +979,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			with_option = " WITH ADMIN OPTION";
 
 		const char* role = fb_utils::exact_name(PRV.RDB$RELATION_NAME);
+		const char* grantor = fb_utils::exact_name(PRV.RDB$GRANTOR);
 		if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 		{
 			ISQL_copy_SQL_id (PRV.RDB$RELATION_NAME, SQL_identifier, DBL_QUOTE);
@@ -927,8 +987,8 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			ISQL_copy_SQL_id(PRV.RDB$USER, SQL_identifier2, DBL_QUOTE);
 			user_string = SQL_identifier2;
 		}
-		isqlGlob.printf("GRANT %s TO %s%s%s%s", role,
-					 user_string, with_option, terminator, NEWLINE);
+		isqlGlob.printf("GRANT %s TO %s%s%s%s%s", role,
+			user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
 
 	END_FOR
 	ON_ERROR
