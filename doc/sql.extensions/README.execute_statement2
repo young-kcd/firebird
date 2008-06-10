@@ -25,7 +25,7 @@ Syntax and notes :
     [PASSWORD <password>]
     [WITH CALLER PRIVILEGES]
 	
-- Duplicate clauses is not allowed
+- Duplicate clauses are not allowed
 
 - if you use both <query_text> and <input_parameters> then you must
     enclose <query_text> into round brackets, for example :
@@ -49,8 +49,8 @@ Syntax and notes :
 - if ON EXTERNAL DATA SOURCE clause is omitted then 
 	a) statement will be executed against current (local) database
 	b) if AS USER clause is omitted or <user_name> equal to CURRENT_USER 
-	then statement executed in current connection context
-	c) if <user_name> not equal to CURRENT_USER then statement executed in separate 
+	then the statement is executed in current connection context
+	c) if <user_name> not equal to CURRENT_USER then the statement is executed in separate 
 	connection established inside the same engine instance (i.e. created new internal 
 	connection without Y-Valve and remote layers).
 
@@ -61,8 +61,8 @@ Syntax and notes :
 	current (local) connection is used.
 
 - AUTONOMOUS TRANSACTION started new transaction with the same parameters as current 
-	transaction. This transaction will be committed if statement executed ok or rolled 
-	back if statement executed with errors.
+	transaction. This transaction will be committed if the statement is executed ok or rolled 
+	back if the statement is executed with errors.
 
 - COMMON TRANSACTION 
 	a) started new transaction with the same parameters as current transaction, or 
@@ -88,8 +88,8 @@ Syntax and notes :
 		is performed.
 
 - if WITH CALLER PRIVILEGES is specified and ON EXTERNAL DATA SOURCE is omitted, then
-	statement prepared using additional privileges of caller stored procedure or trigger
-	(if EXECUTE STATEMENT is inside SP\trigger). This gets the same effect as if statement 
+	the statement is prepared using additional privileges of caller stored procedure or trigger
+	(if EXECUTE STATEMENT is inside SP\trigger). This causes the same effect as if statement 
 	is executed by SP\trigger directly.
 
 
