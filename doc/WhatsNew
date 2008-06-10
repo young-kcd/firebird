@@ -2,13 +2,6 @@
   * v2.5 Alpha 1
   **************
 
-    * Bugfix CORE-1869
-        Roles granting/revoking logic differs between 2.0 and 2.1.
-	* Feature
-		GRANTED BY clause in GRANT and REVOKE commands. (Required to fix CORE-1869.)
-      Contributor(s):
-        Alex Peshkov <peshkoff at mail.ru>
-
     * Bugfix CORE-1930
         Possible server crash if procedure was altered to have no outputs and dependent procedures were not recompiled
       Contributor(s):
@@ -79,6 +72,11 @@
         Error on script with CURRENT_DATE
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1869
+        Roles granting/revoking logic differs between 2.0 and 2.1
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-1868
         Client library crashes inside isc_dsql_free_statement()
@@ -458,6 +456,13 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
         Alex Peshkov <peshkoff at mail.ru>
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+	* Unregistered improvement
+        GRANTED BY clause in GRANT and REVOKE statements
+      See also:
+        /doc/sql.extensions/README.ddl.txt (section #9)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Feature CORE-1831
         New GBAK restore switches intended to fix backups with character set bugs
