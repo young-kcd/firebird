@@ -1151,8 +1151,8 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			gen_optional_expr(statement, node->nod_arg[e_exec_stmt_pwd]);
 
 			// statement's transaction behavior
-			const dsql_nod* opt = node->nod_arg[e_exec_stmt_tran];
-			stuff(statement, (UCHAR) opt ? opt->nod_flags : NOD_TRAN_DEFAULT);
+			const dsql_nod* const opt = node->nod_arg[e_exec_stmt_tran];
+			stuff(statement, (UCHAR) (opt ? opt->nod_flags : NOD_TRAN_DEFAULT));
 			stuff(statement, 0); // transaction parameters equal to current transaction 
 
 			// inherit caller's privileges ?
