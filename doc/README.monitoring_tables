@@ -274,7 +274,7 @@ Monitoring tables
 
     6) Enumerate all session-level context variables for the current connection:
         SELECT VAR.MON$VARIABLE_NAME, VAR.MON$VARIABLE_VALUE
-        FROM MON$VARIABLES VAR
+        FROM MON$CONTEXT_VARIABLES VAR
         WHERE VAR.MON$ATTACHMENT_ID = CURRENT_CONNECTION
 
     7) Report top 10 statements ranted by their memory usage:
