@@ -46,6 +46,7 @@
         CREATE COLLATION connection lost under Posix
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-1885
         CREATE COLLATION connection lost under Posix
@@ -384,7 +385,7 @@
 
     * Improvements CORE-1737 and CORE-1803
         1) Optional COLLATION clause for CREATE DATABASE statement
-        2) ALTER CHARACTER SET statement to set the default collation for a database
+        2) ALTER CHARACTER SET statement to set the default collation for a character set
       See also:
         /doc/README.ddl.txt (???)
       Contributor(s):
@@ -472,6 +473,7 @@
       See also:
         /doc/sql.extensions/README.hex_literals.txt
       Contributor(s):
+        Bill Oliver <bill.oliver at sas.com>
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Features CORE-1656 and CORE-1682
@@ -483,8 +485,8 @@
         GPRE now supports IS NOT DISTINCT predicate and CASE/NULLIF/COALESCE/SUBSTRING functions,
         as well as the whole set of CURRENT_<something> context variables
       Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
         Stephen Boyd <sboyd at users.sourceforge.net>
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
     * Feature CORE-1454
         ALTER mechanism for computed fields
