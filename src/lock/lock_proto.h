@@ -100,7 +100,7 @@ private:
 	lrq* get_request(SRQ_PTR);
 	void grant(lrq*, lbl*);
 	SRQ_PTR grant_or_que(thread_db*, lrq*, lbl*, SSHORT);
-	void init_owner_block(own*, UCHAR, LOCK_OWNER_T);
+	void init_owner_block(own*, UCHAR, LOCK_OWNER_T) const;
 	void initialize(SH_MEM, bool);
 	void insert_data_que(lbl*);
 	void insert_tail(SRQ, SRQ);
@@ -120,6 +120,7 @@ private:
 	void release_mutex();
 	void release_request(lrq*);
 	bool signal_owner(thread_db*, own*, SRQ_PTR);
+//#define VALIDATE_LOCK_TABLE
 #ifdef VALIDATE_LOCK_TABLE
 	void validate_history(const SRQ_PTR history_header);
 	void validate_parent(const lhb*, const SRQ_PTR);

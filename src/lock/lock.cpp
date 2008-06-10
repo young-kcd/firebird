@@ -2066,7 +2066,7 @@ SRQ_PTR LockManager::grant_or_que(thread_db* tdbb, lrq* request, lbl* lock, SSHO
 }
 
 
-void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id)
+void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T owner_id) const
 {
 /**************************************
  *
@@ -3791,7 +3791,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// Do not do rescan of owners if we received notification that
 		// blocking ASTs have completed - will do it next time if needed.
 
-		else if (probe_processes() && !(request->lrq_flags & LRQ_pending))
+		if (probe_processes() && !(request->lrq_flags & LRQ_pending))
 		{
 			release_shmem(owner_offset);
 			break;
@@ -3799,7 +3799,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 
 		// If we've not previously been scanned for a deadlock, go do a deadlock scan
 
-		else if (!(owner->own_flags & OWN_scanned) &&
+		if (!(owner->own_flags & OWN_scanned) &&
 			(blocking_request = deadlock_scan(owner, request)))
 		{
 			// Something has been selected for rejection to prevent a
