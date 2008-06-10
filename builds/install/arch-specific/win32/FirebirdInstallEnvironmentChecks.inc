@@ -182,11 +182,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IB4MessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB5Install: begin
@@ -194,11 +190,7 @@ begin
         ProductsInstalledArray[product].RegKey := IB5RegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB6Install: begin
@@ -206,11 +198,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB65Install: begin
@@ -218,11 +206,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB70Install: begin
@@ -230,11 +214,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB80Install: begin
@@ -242,11 +222,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       IB81Install: begin
@@ -254,11 +230,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB1Install: begin
@@ -266,11 +238,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB15RCInstall: begin
@@ -278,11 +246,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB15RCKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB15Install: begin
@@ -290,11 +254,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB20Install: begin
@@ -302,11 +262,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB21Install: begin
@@ -314,11 +270,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB21_x64_Install: begin
@@ -326,11 +278,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM64;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB25Install: begin
@@ -338,11 +286,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB25_x64_Install: begin
@@ -350,11 +294,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM64;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB30Install: begin
@@ -362,11 +302,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM32;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
       FB30_x64_Install: begin
@@ -374,11 +310,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
-#if PlatformTarget == "x64"
         ProductsInstalledArray[product].RootKey := HKLM64;
-#else
-        ProductsInstalledArray[product].RootKey := HKLM;
-#endif
       end;
 
     end; //case
