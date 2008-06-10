@@ -82,7 +82,7 @@ inline void gsec_exit(int code, tsec* tdsec)
 
 inline void envPick(Firebird::UtilSvc* uSvc, TEXT* dest, size_t size, const TEXT* var)
 {
-	if ((!uSvc->isService()) && dest && (!dest[0]))
+	if (!uSvc->isService() && dest && !dest[0])
 	{
 		Firebird::string val;
 		if (fb_utils::readenv(var, val))

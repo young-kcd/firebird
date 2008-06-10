@@ -467,12 +467,12 @@ static const char* granted_by(char* buffer, const char* grantor)
 {
 /**************************************
  *
- *	S H O W _ g r a n t s 2
+ *	g r a n t e d _ b y
  *
  **************************************
  *
  * Functional description
- *	Output message only if granted not by SYSDBA.
+ *	Output message only if not granted by SYSDBA.
  *
  **************************************/
 	static SCHAR last_Db_name[MAXPATHLEN] = "";
