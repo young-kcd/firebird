@@ -615,7 +615,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, SRQ_PTR request_offset)
 	SRQ_PTR owner_offset = request->lrq_owner;
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
-		return FALSE; // Warning! Can be treated as LCK_none by the caller!
+		return LCK_none;
 
 	acquire_shmem(owner_offset);
 	++m_header->lhb_downgrades;

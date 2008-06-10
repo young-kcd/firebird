@@ -135,7 +135,7 @@ inline void ENQUEUE(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 		enqueue(tdbb, lock, level, wait);
 }
 
-inline bool CONVERT(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait, ISC_STATUS* status)
+inline bool CONVERT(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 {
 	Database* const dbb = tdbb->getDatabase();
 
@@ -154,7 +154,7 @@ inline void DEQUEUE(thread_db* tdbb, Lock* lock)
 		dbb->dbb_lock_mgr->dequeue(lock->lck_id);
 }
 
-inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock, ISC_STATUS* status)
+inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 {
 	Database* const dbb = tdbb->getDatabase();
 
@@ -249,17 +249,16 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Database* dbb = lock->lck_dbb;
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 	Attachment *old_attachment = lock->lck_attachment;
 	set_lock_attachment(lock, tdbb->getAttachment());
 
-	const bool result = CONVERT(tdbb, lock, level, wait, status);
+	const bool result = CONVERT(tdbb, lock, level, wait);
 
 	if (!result) {
 	    set_lock_attachment(lock, old_attachment);
 
-		switch (status[1])
+		switch (tdbb->tdbb_status_vector[1])
 		{
 		case isc_deadlock:
 		case isc_lock_conflict:
@@ -309,7 +308,7 @@ bool LCK_convert_opt(thread_db* tdbb, Lock* lock, USHORT level)
 }
 
 
-int LCK_downgrade(thread_db* tdbb, Lock* lock)
+void LCK_downgrade(thread_db* tdbb, Lock* lock)
 {
 /**************************************
  *
@@ -324,10 +323,8 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
 	SET_TDBB(tdbb);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
-
 	if (lock->lck_id && lock->lck_physical != LCK_none) {
-		const USHORT level = DOWNGRADE(tdbb, lock, status);
+		const USHORT level = DOWNGRADE(tdbb, lock);
 		if (!lock->lck_compatible)
 			lock->lck_physical = lock->lck_logical = level;
 	}
@@ -338,7 +335,6 @@ int LCK_downgrade(thread_db* tdbb, Lock* lock)
 	}
 
 	fb_assert(LCK_CHECK_LOCK(lock));
-	return TRUE;
 }
 
 
@@ -544,7 +540,6 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Database* dbb = lock->lck_dbb;
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
     set_lock_attachment(lock, tdbb->getAttachment());
 
 	ENQUEUE(tdbb, lock, level, wait);
@@ -554,8 +549,8 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
     	set_lock_attachment(lock, NULL);
 		if (!wait)
 			return false;
-			
-		switch (status[1])
+
+		switch (tdbb->tdbb_status_vector[1])
 		{
 		case isc_deadlock:
 		case isc_lock_conflict:
