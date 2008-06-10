@@ -175,10 +175,10 @@ void IscConnection::detach(thread_db *tdbb)
 }
 
 // this ISC connection instance is available for the current execution context if it
-// a) have no active statements or support many active statements 
+// a) has no active statements or supports many active statements 
 //    and 
-// b) have no active transactions or have active transaction of given 
-//	  TraScope bound to current jrd transaction or support many active 
+// b) has no active transactions or has active transaction of given 
+//	  TraScope bound to current jrd transaction or supports many active 
 //    transactions
 bool IscConnection::isAvailable(thread_db *tdbb, TraScope traScope) const 
 {

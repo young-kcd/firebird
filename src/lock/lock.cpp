@@ -165,7 +165,7 @@ Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
 LockManager* LockManager::create(const Firebird::PathName& filename)
 {
-	const size_t HASH_SIZE = 997;
+	//const size_t HASH_SIZE = 997;
 	const int id = 0;//filename.hash(HASH_SIZE);
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
@@ -317,7 +317,7 @@ void LockManager::shutdownOwner(thread_db* tdbb, SRQ_PTR* owner_offset)
 	if (!m_header)
 		return;
 
-	SRQ_PTR offset = *owner_offset;
+	const SRQ_PTR offset = *owner_offset;
 	own* owner = (own*) SRQ_ABS_PTR(offset);
 	if (!offset || !owner->own_count)
 		return;
@@ -583,7 +583,7 @@ bool LockManager::convert(thread_db* tdbb,
 	acquire_shmem(request->lrq_owner);
 	++m_header->lhb_converts;
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++m_header->lhb_operations[lock->lbl_series];
 	else
@@ -594,7 +594,7 @@ bool LockManager::convert(thread_db* tdbb,
 }
 
 
-UCHAR LockManager::downgrade(thread_db* tdbb, SRQ_PTR request_offset)
+UCHAR LockManager::downgrade(thread_db* tdbb, const SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -621,7 +621,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, SRQ_PTR request_offset)
 	++m_header->lhb_downgrades;
 
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* Re-init after a potential remap */
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	UCHAR pending_state = LCK_none;
 
 	// Loop thru requests looking for pending conversions
@@ -655,7 +655,7 @@ UCHAR LockManager::downgrade(thread_db* tdbb, SRQ_PTR request_offset)
 }
 
 
-bool LockManager::dequeue(SRQ_PTR request_offset)
+bool LockManager::dequeue(const SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -672,7 +672,7 @@ bool LockManager::dequeue(SRQ_PTR request_offset)
 	Firebird::MutexLockGuard guard(m_localMutex);
 
 	lrq* request = get_request(request_offset);
-	SRQ_PTR owner_offset = request->lrq_owner;
+	const SRQ_PTR owner_offset = request->lrq_owner;
 	own* owner = (own*) SRQ_ABS_PTR(owner_offset);
 	if (!owner->own_count)
 		return false;
@@ -680,7 +680,7 @@ bool LockManager::dequeue(SRQ_PTR request_offset)
 	acquire_shmem(owner_offset);
 	++m_header->lhb_deqs;
 	request = (lrq*) SRQ_ABS_PTR(request_offset);	/* remap */
-	lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
+	const lbl* lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++m_header->lhb_operations[lock->lbl_series];
 	else
@@ -2429,7 +2429,7 @@ void LockManager::internal_dequeue(SRQ_PTR request_offset)
 }
 
 
-USHORT LockManager::lock_state(lbl* lock)
+USHORT LockManager::lock_state(const lbl* lock)
 {
 /**************************************
  *
@@ -2890,7 +2890,7 @@ void LockManager::release_shmem(SRQ_PTR owner_offset)
 {
 /**************************************
  *
- *	r e l e a s e
+ *	r e l e a s e _ s h m e m
  *
  **************************************
  *

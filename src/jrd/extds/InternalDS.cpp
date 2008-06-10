@@ -311,7 +311,7 @@ void InternalStatement::doPrepare(thread_db *tdbb, const string &sql)
 	{
 		EngineCallbackGuard guard(tdbb, *this);
 
-		jrd_req* save_caller = tran->tra_callback_caller;
+		jrd_req* const save_caller = tran->tra_callback_caller;
 		tran->tra_callback_caller = m_callerPrivileges ? tdbb->getRequest() : NULL;
 
 		jrd8_prepare(status, &tran, &m_request, sql.length(), sql.c_str(), 

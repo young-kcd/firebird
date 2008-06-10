@@ -53,28 +53,28 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 public:
 	static LockManager* create(const Firebird::PathName&);
 
-	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SLONG*);
-	void shutdownOwner(thread_db*, SLONG *);
-	bool setOwnerHandle(SLONG, SLONG);
+	bool initializeOwner(thread_db*, LOCK_OWNER_T, UCHAR, SRQ_PTR*);
+	void shutdownOwner(thread_db*, SRQ_PTR*);
+	bool setOwnerHandle(SRQ_PTR, SRQ_PTR);
 
-	SLONG enqueue(thread_db*, SLONG, SLONG, const USHORT, const UCHAR*, const USHORT, UCHAR,
-				  lock_ast_t, void*, SLONG, SSHORT, SLONG);
-	bool convert(thread_db*, SLONG, UCHAR, SSHORT, lock_ast_t, void*);
-	UCHAR downgrade(thread_db*, SLONG);
-	bool dequeue(SLONG);
+	SLONG enqueue(thread_db*, SRQ_PTR, SRQ_PTR, const USHORT, const UCHAR*, const USHORT, UCHAR,
+				  lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
+	bool convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
+	UCHAR downgrade(thread_db*, const SRQ_PTR);
+	bool dequeue(const SRQ_PTR);
 
-	void repost(thread_db*, lock_ast_t, void*, SLONG);
+	void repost(thread_db*, lock_ast_t, void*, SRQ_PTR);
 
-	SLONG queryData(SLONG, USHORT, USHORT);
-	SLONG readData(SLONG);
-	SLONG readData2(SLONG, USHORT, const UCHAR*, USHORT, SLONG);
-	SLONG writeData(SLONG, SLONG);
+	SLONG queryData(SRQ_PTR, USHORT, USHORT);
+	SLONG readData(SRQ_PTR);
+	SLONG readData2(SRQ_PTR, USHORT, const UCHAR*, USHORT, SRQ_PTR);
+	SLONG writeData(SRQ_PTR, SLONG);
 
 private:
 	explicit LockManager(int);
 	~LockManager();
 
-	bool lockOrdering()
+	bool lockOrdering() const
 	{
 		return (m_header->lhb_flags & LHB_lock_ordering) ? true : false;
 	}
@@ -106,7 +106,7 @@ private:
 	void insert_tail(SRQ, SRQ);
 	bool internal_convert(thread_db*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	void internal_dequeue(SRQ_PTR);
-	USHORT lock_state(lbl*);
+	static USHORT lock_state(const lbl*);
 	void post_blockage(thread_db*, lrq*, lbl*);
 	void post_history(USHORT, SRQ_PTR, SRQ_PTR, SRQ_PTR, bool);
 	void post_pending(lbl*);
