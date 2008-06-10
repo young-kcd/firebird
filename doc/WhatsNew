@@ -457,7 +457,7 @@
         Alex Peshkov <peshkoff at mail.ru>
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
-	* Unregistered improvement
+    * Unregistered improvement
         GRANTED BY clause in GRANT and REVOKE statements
       See also:
         /doc/sql.extensions/README.ddl.txt (section #9)
