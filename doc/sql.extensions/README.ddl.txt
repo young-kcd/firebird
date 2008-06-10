@@ -237,3 +237,33 @@ create view v_users as
 alter view v_users (id, name) as
     select id, name from users;
 
+
+9) GRANT/REVOKE rights GRANTED BY specified user
+(Alex Peshkoff)
+
+Function:
+
+Makes it possible to specify non-default (which is CURRENT_USER) grantor in GRANT and REVOKE 
+commands.
+
+Syntax:
+
+grant <right> to <object> [ { granted by | as } [ user ] <username> ]
+revoke <right> from <object> [ { granted by | as } [ user ] <username> ]
+
+Example (as SYSDBA):
+
+create role r1;
+grant r1 to user1 with admin option;
+grant r1 to public granted by user1;
+
+(in isql)
+show grant;
+/* Grant permissions for this database */
+GRANT R1 TO PUBLIC GRANTED BY USER1
+GRANT R1 TO USER1 WITH ADMIN OPTION
+
+Misc:
+GRANTED BY form of clause is recommended by SQL standard. AS is supported by some other 
+servers (Informix), and is added for better compatibility.
+
