@@ -848,6 +848,9 @@ static SSHORT find_proc_field(const jrd_prc* procedure, const Firebird::MetaName
  *
  **************************************/
 	vec<Parameter*>* list = procedure->prc_output_fields;
+	if (!list)
+		return -1;
+
 	vec<Parameter*>::const_iterator ptr = list->begin();
 	for (const vec<Parameter*>::const_iterator end = list->end(); ptr < end; ++ptr)
 	{
