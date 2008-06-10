@@ -387,12 +387,12 @@ end;
 function GetRegistryEntry(RootKey: Integer; RegKey, RegEntry: string): String;
 begin
   Result := '';
-//  //if not win64 and RootKey is HKLM64 then we are on a 32-bit box,
-// //so skip looking in registry
-//    if ( (RootKey = HKLM64) AND (isWin32) ) then7
-//    //do nothing
-//      Result := ''
-//    else
+  //if not win64 and RootKey is HKLM64 then we are on a 32-bit box,
+  //so skip looking in registry
+    if ( (RootKey = HKLM64) AND (isWin32) ) then
+    //do nothing
+      Result := ''
+    else
       RegQueryStringValue(RootKey, RegKey, RegEntry, Result);
 end;
 
