@@ -2047,7 +2047,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			id = old_id;
 		}
 		
-		if (bad_grantor && (!grant_erased))
+		if (bad_grantor && !grant_erased)
 		{
 			DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() << 
 				privilege_name(temp[0]) << object.c_str() << user.c_str());
