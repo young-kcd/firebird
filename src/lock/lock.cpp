@@ -163,6 +163,7 @@ const char* LockManager::PATTERN = "firebird_db_%d_lock";
 Firebird::GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
 Firebird::GlobalPtr<Firebird::Mutex> LockManager::g_mapMutex;
 
+
 LockManager* LockManager::create(const Firebird::PathName& filename)
 {
 	//const size_t HASH_SIZE = 997;
@@ -278,7 +279,7 @@ bool LockManager::initializeOwner(thread_db* tdbb,
  *
  *	Return the offset of the owner block through owner_handle.
  *
- *	Return FB_SUCCESS or FB_FAILURE.
+ *	Return success or failure.
  *
  **************************************/
 	LOCK_TRACE(("LOCK_init (ownerid=%ld)\n", owner_id));
@@ -373,7 +374,7 @@ bool LockManager::setOwnerHandle(SRQ_PTR request_offset, SRQ_PTR new_owner_offse
 	// Make sure that change of lock owner is possible
 	SRQ lock_srq;
 	SRQ_LOOP(lck->lbl_requests, lock_srq) {
-		lrq* granted_request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_requests));
+		lrq* granted_request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_requests));
 		// One owner must have the only granted request on the same lock resource
 		if (granted_request->lrq_owner == new_owner_offset) {
 			LOCK_TRACE(("The owner already has a granted request"));
@@ -725,7 +726,7 @@ void LockManager::repost(thread_db* tdbb, lock_ast_t ast, void* arg, SRQ_PTR own
 	}
 	else {
 		ASSERT_ACQUIRED;
-		request = (lrq*) ((UCHAR *) SRQ_NEXT(m_header->lhb_free_requests) -
+		request = (lrq*) ((UCHAR*) SRQ_NEXT(m_header->lhb_free_requests) -
 						 OFFSET(lrq*, lrq_lbl_requests));
 		remove_que(&request->lrq_lbl_requests);
 	}
@@ -1443,7 +1444,6 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 		}
 	}
 
-
 #ifdef DEV_BUILD
 	// Make a core drop - we want to LOOK at this failure!
 	abort();
@@ -1894,13 +1894,13 @@ lbl* LockManager::find_lock(SRQ_PTR parent,
 
 	ULONG hash_value = 0;
 	{ // scope
-	UCHAR* p = NULL; // silence uninitialized warning
-	const UCHAR* q = value;
-	for (USHORT l = 0; l < length; l++) {
-		if (!(l & 3))
-			p = (UCHAR *) &hash_value;
-		*p++ += *q++;
-	}
+		UCHAR* p = NULL; // silence uninitialized warning
+		const UCHAR* q = value;
+		for (USHORT l = 0; l < length; l++) {
+			if (!(l & 3))
+				p = (UCHAR *) &hash_value;
+			*p++ += *q++;
+		}
 	} // scope
 
 	// See if the lock already exists
@@ -2210,8 +2210,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 			prior = &history->his_next;
 		}
 
-		history->his_next =
-			(j == 0) ? m_header->lhb_history : secondary_header->shb_history;
+		history->his_next = (j == 0) ? m_header->lhb_history : secondary_header->shb_history;
 	}
 
 	// Done initializing, unmark owner information
@@ -2322,7 +2321,7 @@ bool LockManager::internal_convert(thread_db* tdbb,
  *	granted immediately, either return immediately or wait depending
  *	on a wait flag.  If the lock is granted return true, otherwise
  *	return false.  Note: if the conversion would cause a deadlock,
- *	FALSE is returned even if wait was requested.
+ *	false is returned even if wait was requested.
  *
  **************************************/
 	ASSERT_ACQUIRED;
@@ -2422,8 +2421,7 @@ void LockManager::internal_dequeue(SRQ_PTR request_offset)
 	// request and lock
 
 	lrq* request = get_request(request_offset);
-	post_history(his_deq, request->lrq_owner, request->lrq_lock,
-				 request_offset, true);
+	post_history(his_deq, request->lrq_owner, request->lrq_lock, request_offset, true);
 	request->lrq_ast_routine = NULL;
 	release_request(request);
 }
@@ -2739,8 +2737,7 @@ void LockManager::purge_owner(SRQ_PTR purging_owner_offset, own* owner)
 		lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_own_blocks));
 		remove_que(&request->lrq_own_blocks);
 		request->lrq_type = type_null;
-		insert_tail(&m_header->lhb_free_requests,
-					&request->lrq_lbl_requests);
+		insert_tail(&m_header->lhb_free_requests, &request->lrq_lbl_requests);
 	}
 
 	// Release owner block
