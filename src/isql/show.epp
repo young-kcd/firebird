@@ -104,6 +104,7 @@ static processing_state show_users();
 const char* const spaces = "                                ";
 static TEXT Print_buffer[512];
 static TEXT SQL_identifier[BUFFER_LENGTH128];
+static bool reReadDbOwner = true;
 
 // Initialize types
 
@@ -463,6 +464,22 @@ processing_state SHOW_grants(const SCHAR* object,
 }
 
 
+void SHOW_read_owner()
+{
+/**************************************
+ *
+ *	S H O W _ r e a d _ o w n e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make granted_by() re-read db owner name.
+ *
+ **************************************/
+	reReadDbOwner = true;
+}
+
+
 static const char* granted_by(char* buffer, const char* grantor)
 {
 /**************************************
@@ -472,15 +489,12 @@ static const char* granted_by(char* buffer, const char* grantor)
  **************************************
  *
  * Functional description
- *	Output message only if not granted by SYSDBA.
+ *	Output message only if not granted by DB owner.
  *
  **************************************/
-	static SCHAR last_Db_name[MAXPATHLEN] = "";
 	static BASED_ON RDB$RELATIONS.RDB$OWNER_NAME owner;
-	if (strcmp(isqlGlob.global_Db_name, last_Db_name))
+	if (reReadDbOwner)
 	{
-		strcpy(last_Db_name, isqlGlob.global_Db_name);
-
 		// Get the owner name
 		strcpy(owner, SYSDBA_USER_NAME);
 		FOR REL IN RDB$RELATIONS WITH
@@ -495,6 +509,7 @@ static const char* granted_by(char* buffer, const char* grantor)
 			return "";
 		END_ERROR;
 		fb_utils::exact_name(owner);
+		reReadDbOwner = false;
 	}
 	
  	strcpy(buffer, grantor);

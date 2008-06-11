@@ -3875,6 +3875,9 @@ static processing_state create_db(const TEXT* statement,
 	}
 
 	if (DB) {
+		// Make it read owner name to display grantor correctly
+		SHOW_read_owner();
+
 		// No use in cancel when running non-end-user operators
 		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);
 
@@ -6311,6 +6314,9 @@ static processing_state newdb(TEXT* dbname,
 				ISQL_FREE(save_database);
 			return FAIL;
 		}
+
+		// Make it read owner name to display grantor correctly
+		SHOW_read_owner();
 
 		// No use in cancel when running non-end-user operators
 		fb_cancel_operation(isc_status, &DB, fb_cancel_disable);

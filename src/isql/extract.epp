@@ -125,6 +125,9 @@ int EXTRACT_ddl(LegacyTables flag,
 			return FINI_ERROR;
 		}
 		did_attach = true;
+
+		// Make it read owner name to display grantor correctly
+		SHOW_read_owner();
 	}
 
 	ISQL_get_version(false);
