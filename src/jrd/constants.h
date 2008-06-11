@@ -104,6 +104,8 @@ const int SQL_SECCLASS_PREFIX_LEN = 4;
 const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";
 const int IMPLICIT_INTEGRITY_PREFIX_LEN = 6;
 
+// Quote for string parameters in services
+const char SVC_TRMNTR	= '\377';
 
 /******************************************/
 /* System flag meaning - mainly Firebird. */

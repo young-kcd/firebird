@@ -56,6 +56,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/why_proto.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 
 #ifdef HAVE_CTYPE_H
@@ -465,11 +466,16 @@ static int api_gbak(int argc,
 
 		while (argv < end) 
 		{
-			if (**argv && options.length() > 0)
+			if (**argv)
 			{
-				options += ' ';
+				if (options.length() > 0)
+				{
+					options += ' ';
+				}
+				Firebird::string s = *argv;
+				options.appendQuoted(s, SVC_TRMNTR);
 			}
-			options += *argv++;
+			++argv;
 		}
 
 		spb.insertString(isc_spb_command_line, options);

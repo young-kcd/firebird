@@ -126,8 +126,6 @@ const int GET_LINE		= 1;
 const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
-const TEXT SVC_TRMNTR	= '\377';
-
 namespace Jrd {
 	Service::Service(serv_entry *se, Firebird::MemoryPool& p) :
 		svc_parsed_sw(p), 
@@ -2961,7 +2959,12 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 				break;
 
 			case isc_spb_command_line: 
-				get_action_svc_string(spb, switches);
+				{
+					Firebird::string s;
+					spb.getString(s);
+					switches += s;
+					switches += ' ';
+				}
 				break;
 
 			default:
@@ -3148,17 +3151,7 @@ static void get_action_svc_string(const Firebird::ClumpletReader& spb,
  **************************************/
 	Firebird::string s;
 	spb.getString(s);
-	for (size_t i = 0; i < s.length(); ++i)
-	{
-		if (s[i] == SVC_TRMNTR)
-		{
-			s.insert(i, 1, SVC_TRMNTR);
-			++i;
-		}
-	}
-	switches += SVC_TRMNTR;
-	switches += s;
-	switches += SVC_TRMNTR;
+	switches.appendQuoted(s, SVC_TRMNTR);
 	switches += ' ';
 }
 

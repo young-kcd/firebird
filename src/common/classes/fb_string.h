@@ -368,6 +368,8 @@ namespace Firebird
 			return toSize;
 		}
 
+		void appendQuoted(const AbstractString& from, char_type quote);
+
 		inline ~AbstractString() {
 			if (stringBuffer != inlineBuffer)
 				delete[] stringBuffer;

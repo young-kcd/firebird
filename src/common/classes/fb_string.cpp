@@ -410,6 +410,32 @@ extern "C" {
 		}
 	}
 
+	void AbstractString::appendQuoted(const AbstractString& from, char_type quote)
+	{
+		const_pointer p;
+		const_pointer end = from.c_str() + from.length();
+		size_type nQuotes = 2;	// 2 bytes for leading and trailing quotes
+		for (p = from.c_str(); p < end; ++p)
+		{
+			if (*p == quote)
+			{
+				++nQuotes;
+			}
+		}
+
+		pointer s = baseAppend(from.length() + nQuotes);
+		*s++ = quote;
+		for (p = from.c_str(); p < end; ++p)
+		{
+			if (*p == quote)
+			{
+				*s++ = quote;
+			}
+			*s++ = *p;
+		}
+		*s++ = quote;
+	}
+
 	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);
