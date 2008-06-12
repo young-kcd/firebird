@@ -2873,11 +2873,11 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 				{
 				case blr_exec_stmt_inputs:
 					inputs = BLR_WORD;
-				break;
+					break;
 
 				case blr_exec_stmt_outputs:
 					outputs = BLR_WORD;
-				break;
+					break;
 
 				case blr_exec_stmt_sql:
 					n = inputs + outputs + e_exec_stmt_fixed_count; 
@@ -2885,35 +2885,35 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 					node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
 					node->nod_count = n;
 					node->nod_arg[e_exec_stmt_stmt_sql] = PAR_parse_node(tdbb, csb, VALUE);
-				break;
+					break;
 
 				case blr_exec_stmt_proc_block:
 					node->nod_arg[e_exec_stmt_proc_block] = PAR_parse_node(tdbb, csb, STATEMENT);
-				break;
+					break;
 
 				case blr_exec_stmt_data_src:
 					node->nod_arg[e_exec_stmt_data_src] = PAR_parse_node(tdbb, csb, VALUE);
-				break;
+					break;
 
 				case blr_exec_stmt_user:
 					node->nod_arg[e_exec_stmt_user] = PAR_parse_node(tdbb, csb, VALUE);
-				break;
+					break;
 
 				case blr_exec_stmt_pwd:
 					node->nod_arg[e_exec_stmt_password] = PAR_parse_node(tdbb, csb, VALUE);
-				break;
+					break;
 
 				case blr_exec_stmt_tran:
 					PAR_syntax_error(csb, "external transaction parameters");
-				break;
+					break;
 
 				case blr_exec_stmt_tran_clone:
 					tra_mode = BLR_BYTE;
-				break;
+					break;
 
 				case blr_exec_stmt_privs:
 					use_caller_privs = 1;
-				break;
+					break;
 
 				case blr_exec_stmt_in_params:
 				case blr_exec_stmt_in_params2:
@@ -2938,7 +2938,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 						}
 						*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 					}
-				break;
+					break;
 
 				case blr_exec_stmt_out_params:
 					// output parameters
@@ -2947,10 +2947,10 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 					for (; n < node->nod_count; n++) {
 						*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 					}
-				break;
+					break;
 
 				case blr_end:
-				break;
+					break;
 
 				default:
 					PAR_syntax_error(csb, "unknown EXECUTE STATEMENT option");
