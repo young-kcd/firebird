@@ -35,7 +35,7 @@ static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - %s";
 static const char* ISCGUARD_DISPLAY_DESCR	= "Firebird Server Guardian - www.firebirdsql.org";
 static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
 
-static const char* SERVER_MUTEX				= "Global\\FirebirdServerMutex%s";
+static const char* SERVER_MUTEX				= "FirebirdServerMutex%s";
 static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex%s";
 
 static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
