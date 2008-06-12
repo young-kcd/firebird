@@ -3684,8 +3684,8 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 				Database::Checkout dcoHolder(tdbb->getDatabase());
 				ret = ISC_event_wait(1, &event_ptr, &value,
 									 (timeout - current_time) * 1000000);
+				--m_waitingOwners;
 			}
-			--m_waitingOwners;
 			m_localMutex.enter();
 		}
 
