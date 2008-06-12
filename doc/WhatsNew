@@ -12,6 +12,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-1911
+        Backup and restore are not thread-safe when using the Services API
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
+
     * Bugfix CORE-1910
         Invalid fields in MERGE's insert clause are allowed
       Contributor(s):
@@ -26,6 +31,11 @@
         Dropping and adding a domain constraint in the same transaction leaves incorrect dependencies
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1905
+        Hash sign (#) in filenames in aliases.conf is not handled correctly
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-1891
         SHOW VIEW shows non-sense information for view fields with expressions
@@ -82,6 +92,11 @@
         Client library crashes inside isc_dsql_free_statement()
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1862
+        ISQL's extracted script is unusable with interdependent selectable procedures in FB 2.1
+      Contributor(s):
+        Claudio Valderrama <cvalde at usa.net>
 
     * Bugfix CORE-1859
         Arithmetic overflow or division by zero has occurred in MAX function
