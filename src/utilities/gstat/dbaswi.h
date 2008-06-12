@@ -50,7 +50,7 @@ const int IN_SW_DBA_TRUSTEDROLE	= 14;	/* use predefined trusted role */
 const int IN_SW_DBA_TRUSTEDAUTH	= 15;	/* trusted user name */
 #endif
 
-static struct in_sw_tab_t dba_in_sw_table [] =
+const static struct in_sw_tab_t dba_in_sw_table [] =
 {
     {IN_SW_DBA_DATAIDX,		0,				"ALL",		0,0,0,	FALSE,	22,	0, NULL},	/* msg 22: -a      analyze data and index pages */
     {IN_SW_DBA_DATA,		isc_spb_sts_data_pages,		"DATA",		0,0,0,	FALSE,	23,	0, NULL},	/* msg 23: -d      analyze data pages*/
