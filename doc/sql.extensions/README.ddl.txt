@@ -267,3 +267,63 @@ Misc:
 GRANTED BY form of clause is recommended by SQL standard. AS is supported by some other 
 servers (Informix), and is added for better compatibility.
 
+
+10) ALTER CHARACTER SET
+(Adriano dos Santos Fernandes)
+
+Function:
+
+Allows to change the default collation of a character set.
+
+The default collation is used when table columns are created with a given character set (explicit
+or implicit through the database default character set) without a collation specified.
+String constants also uses the default collation of the connection character set.
+
+Syntax:
+
+alter character set <charset_name>
+    set default collation <collation_name>
+
+Example:
+
+create database 'peoples.fdb'
+    default character set win1252;
+ 
+alter character set win1252
+    set default collation win_ptbr;
+ 
+create table peoples (
+    id integer,
+    name varchar(50)  -- will use the database default character set and the win1252 default collation
+);
+ 
+insert into peoples values (1, 'adriano');
+insert into peoples values (2, 'ADRIANO');
+ 
+-- will retrieve both records as win_ptbr is case insensitive
+select * from peoples where name like 'A%';
+
+
+11) Default collation in CREATE DATABASE
+(Adriano dos Santos Fernandes)
+
+Function:
+
+Specify the default collation of the default character set. See also ALTER CHARACTER SET.
+
+Syntax:
+
+create database <file name>
+    [ page_size <page size> ]
+    [ length = <length> ]
+    [ user <user name> ]
+    [ password <user password> ]
+    [ set names <charset name> ]
+    [ default character set <charset name> [ collation <collation name> ] ]
+    [ difference file <file name> ]
+
+Example:
+
+create database 'test.fdb'
+    default character set win1252 collation win_ptbr;
+

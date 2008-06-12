@@ -389,10 +389,10 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvements CORE-1737 and CORE-1803
-        1) Optional COLLATION clause for CREATE DATABASE statement
-        2) ALTER CHARACTER SET statement to set the default collation for a character set
+        1) ALTER CHARACTER SET statement to set the default collation for a character set
+        2) Optional COLLATION clause for CREATE DATABASE statement
       See also:
-        /doc/README.ddl.txt (???)
+        /doc/sql.extensions/README.ddl.txt (section #10 and #11)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -490,6 +490,8 @@
 
     * Features CORE-1656 and CORE-1682
         New functions UUID_TO_CHAR and CHAR_TO_UUID to convert between CHAR(16) OCTETS and RFC4122-compliant form
+      See also:
+        /doc/sql.extensions/README.builtin_functions.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -510,7 +512,7 @@
     * Feature CORE-1409
         Support for autonomous transactions
       See also:
-        /doc/sql.extensions/README.autonomous_transactions (???)
+        /doc/sql.extensions/README.autonomous_transactions.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
@@ -550,7 +552,7 @@
     * Feature CORE-769
         SIMILAR TO predicate to support regular expressions
       See also:
-        /doc/sql.extensions/README.similar_to (???)
+        /doc/sql.extensions/README.similar_to.txt
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
