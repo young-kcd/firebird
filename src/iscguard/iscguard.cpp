@@ -112,30 +112,19 @@ int WINAPI WinMain(
 *
 **************************************/
 
-	OSVERSIONINFO OsVersionInfo;
+	strcpy(instance, FB_DEFAULT_INSTANCE);
 
-/* need to set the sizeof this structure for NT to work */
-	OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	service_flag = parse_args(lpszCmdLine);
 
-	GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo);
-
-/* service_flag is TRUE for NT false for 95 */
-	service_flag = (OsVersionInfo.dwPlatformId == VER_PLATFORM_WIN32_NT);
-
-	if (service_flag) {
-		strcpy(instance, FB_DEFAULT_INSTANCE);
-		service_flag = parse_args(lpszCmdLine);
-		service_name->printf(ISCGUARD_SERVICE, instance);
-		remote_name->printf(REMOTE_SERVICE, instance);
-		mutex_name->printf(GUARDIAN_MUTEX, instance);
-	}
+	service_name->printf(ISCGUARD_SERVICE, instance);
+	remote_name->printf(REMOTE_SERVICE, instance);
+	mutex_name->printf(GUARDIAN_MUTEX, instance);
 
 /* set the global HINSTANCE as we need it in WINDOW_main */
 	hInstance_gbl = hInstance;
 
 /* allocate space for the event list */
-	log_entry =
-		reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
+	log_entry = reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
 	log_entry->next = NULL;
 
 /* since the flag is set we run as a service */
@@ -160,10 +149,10 @@ int WINAPI WinMain(
 		}
 	}
 	else {
-		return (WINDOW_main(0));
+		return WINDOW_main(0);
 	}
 
-	return (TRUE);
+	return TRUE;
 }
 
 static bool parse_args(LPCSTR lpszArgs)
