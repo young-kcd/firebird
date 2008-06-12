@@ -277,7 +277,7 @@ Monitoring tables
         FROM MON$CONTEXT_VARIABLES VAR
         WHERE VAR.MON$ATTACHMENT_ID = CURRENT_CONNECTION
 
-    7) Report top 10 statements ranted by their memory usage:
+    7) Report top 10 statements ranked by their memory usage:
         SELECT FIRST 10 STMT.MON$ATTACHMENT_ID, STMT.MON$SQL_TEXT, MEM.MON$MEMORY_USED
         FROM MON$MEMORY_USAGE MEM
           NATURAL JOIN MON$STATEMENTS STMT
@@ -289,7 +289,7 @@ Modifications of the monitoring tables
 
     Monitoring tables also allow some special administration activities, in particular:
     cancelling running statements and terminating client sessions. This is done via deletes
-    from tables MON$STATEMENTS and MON$ATTACHMENTS respectfully. Deletes from other tables,
+    from tables MON$STATEMENTS and MON$ATTACHMENTS respectively. Deletes from other tables,
     as well as inserts/updates issued against them, are prohibited.
 
   Notes:
