@@ -873,8 +873,6 @@ begin
     //General Notes on testing for mutexes:
     // - Mutexes are case-sensitive.
     // - Don't escape the slash in Global\, Local\ etc. (We don't currently use Local\)
-    // - Strings are currently tested separately for debugging purposes
-    //   They will be concatenated to a single string of strings later.
     //
     // v2.0 notes
     // - v2.0 prior to 2.0.4 does not create a FirebirdServerMutex mutex,
