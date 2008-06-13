@@ -124,7 +124,7 @@ int WINAPI WinMain(
 	hInstance_gbl = hInstance;
 
 /* allocate space for the event list */
-	log_entry = reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
+	log_entry = static_cast<log_info*>(malloc(sizeof(log_info)));
 	log_entry->next = NULL;
 
 /* since the flag is set we run as a service */
@@ -1060,8 +1060,7 @@ void write_log(int log_action, const char* buff)
 	while (log_temp->next)
 		log_temp = log_temp->next;
 
-	log_info* tmp =
-		reinterpret_cast<log_info*>(malloc(sizeof(log_info)));
+	log_info* tmp = static_cast<log_info*>(malloc(sizeof(log_info)));
 	memset(tmp, 0, sizeof(log_info));
 
 #ifdef NOT_USED_OR_REPLACED
@@ -1094,8 +1093,7 @@ void write_log(int log_action, const char* buff)
 		else {
 			char* act_buff[1]; // CVC: Where is this deallocated?
 			act_buff[0] = (char*) malloc(sizeof(tmp_buff));
-			LoadString(hInstance_gbl, log_action + 1, tmp_buff,
-					   sizeof(tmp_buff));
+			LoadString(hInstance_gbl, log_action + 1, tmp_buff, sizeof(tmp_buff));
 			sprintf(act_buff[0], "%s", buff);
 
 			LPVOID lpMsgBuf;
