@@ -870,28 +870,32 @@ begin
   if (Handle > 0) then
      RunningServerVerString := '1.5'
   else begin
-    // v2.0.4 uses mutexes without the global prefix.
-    // Later versions (if any) will use the prefix, so we will test for them anyway.
-    mutexes := 'Global\\FirebirdGuardianMutex' + ',' +
-               'Global\\FirebirdServerMutex';
-    mutex_found := CheckForMutexes(mutexes);
-
-    // Note: v2.0 prior to 2.0.4 does not create a FirebirdServerMutex mutex,
-    // so server running without guardian is not detected.
-    mutexes := 'FirebirdGuardianMutex' + ',' +
+    //General Notes on testing for mutexes:
+    // - Mutexes are case-sensitive.
+    // - Don't escape the slash in Global\, Local\ etc. (We don't currently use Local\)
+    // - Strings are currently tested separately for debugging purposes
+    //   They will be concatenated to a single string of strings later.
+    //
+    // v2.0 notes
+    // - v2.0 prior to 2.0.4 does not create a FirebirdServerMutex mutex,
+    //   so server running without guardian is not detected.
+    // - v2.0.4 creates mutexes without the global prefix.
+    // - Later versions (if any) will use the prefix, so we will test for them anyway.
+    mutexes := 'Global\FirebirdGuardianMutex' + ',' +
+               'Global\FirebirdServerMutex' + ',' +
+               'FirebirdGuardianMutex' + ',' +
                'FirebirdServerMutex';
     mutex_found := CheckForMutexes(mutexes);
 
     if mutex_found then
       RunningServerVerString := '2.0'
     else begin
-      //v2.1.0 declares mutexes without the global prefix.
-      //v2.1.1 and later should add correct prefix.
-      mutexes := 'Global\\FirebirdGuardianMutexDefaultInstance' + ',' +
-                 'Global\\FirebirdServerMutexDefaultInstance';
-      mutex_found := CheckForMutexes(mutexes);
-
-      mutexes := 'FirebirdGuardianMutexDefaultInstance' + ',' +
+      //v2.1.1 notes
+      // - v2.1.0 creates mutexes without the global prefix.
+      // - v2.1.1 and later should use the correct prefix.
+      mutexes := 'Global\FirebirdGuardianMutexDefaultInstance' + ',' +
+                 'Global\FirebirdServerMutexDefaultInstance' + ',' +
+                 'FirebirdGuardianMutexDefaultInstance' + ',' +
                  'FirebirdServerMutexDefaultInstance';
       mutex_found := CheckForMutexes(mutexes);
 
