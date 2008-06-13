@@ -212,7 +212,7 @@ static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
 	archIntel86, // CLASS_LINUX_I386
 	archUnknown, // CLASS_LINUX_SPARC
 	archIntel86, // CLASS_FREEBSD_I386
-    archIntel86, // CLASS_NETBSD_I386
+	archIntel86, // CLASS_NETBSD_I386
 	archUnknown, // CLASS_DARWIN_PPC
 	archUnknown  // CLASS_LINUX_AMD64
 };
@@ -241,7 +241,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archLittleEndian, // CLASS_LINUX_I386
 	archBigEndian,    // CLASS_LINUX_SPARC
 	archLittleEndian, // CLASS_FREEBSD_I386
-    archLittleEndian, // CLASS_NETBSD_I386
+	archLittleEndian, // CLASS_NETBSD_I386
 	archBigEndian,    // CLASS_DARWIN_PPC
 	archLittleEndian, // CLASS_LINUX_AMD64
 	archLittleEndian, // CLASS_FREEBSD_AMD64
@@ -459,7 +459,7 @@ void PAG_add_clump(
 		break;
 	}
 
-/* Add the entry */
+	// Add the entry
 
 	find_clump_space(page_num, &window, &page, type, len, entry, must_write);
 
@@ -542,7 +542,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	header->hdr_ods_minor          = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
 	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-    		header->hdr_flags |= hdr_SQL_dialect_3;
+		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
 
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
@@ -1412,7 +1412,7 @@ void PAG_header_init()
 		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
 	   )
 	{
-	    ERR_post(isc_bad_db_format,
+		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
 				 0);
 	}

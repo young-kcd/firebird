@@ -121,7 +121,8 @@ static const char info[] =
 static const char ods_info[] =
 	{ isc_info_ods_version, isc_info_ods_minor_version, isc_info_end };
 
-static const TEXT* const impl_class[] = {
+static const TEXT* const impl_class[] =
+{
 	NULL,						/* 0 */
 	"access method",			/* 1 */
 	"Y-valve",					/* 2 */
@@ -138,7 +139,8 @@ static const TEXT* const impl_class[] = {
 	"super server"			/* 13 */
 };
 
-static const TEXT* const impl_implementation[] = {
+static const TEXT* const impl_implementation[] =
+{
 	NULL,						/* 0 */
 	"Rdb/VMS",				/* 1 */
 	"Rdb/ELN target",		/* 2 */
@@ -215,7 +217,7 @@ static const TEXT* const impl_implementation[] = {
 	"Firebird/Darwin/Intel64",	// 73
 	"Firebird/sun/amd64",		// 74
 	"Firebird/linux ARM",		// 75
-    "Firebird/linux IA64",		// 76
+	"Firebird/linux IA64",		// 76
 	"Firebird/Darwin/PowerPC64"	// 77
 };
 
@@ -323,7 +325,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 /* calculate length of database parameter block,
    setting initial length to include version */
 
-   	SSHORT new_dpb_length;
+	SSHORT new_dpb_length;
 	if (!*dpb || !(new_dpb_length = *dpb_size))
 	{
 		new_dpb_length = 1;
@@ -356,8 +358,8 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	va_end(args);
 
-/* if items have been added, allocate space
-   for the new dpb and copy the old one over */
+	// if items have been added, allocate space
+	// for the new dpb and copy the old one over
 
 	if (new_dpb_length > *dpb_size)
 	{
@@ -381,13 +383,13 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	}
 	else
 	{
-	    // CVC: Notice this case is new_dpb_length <= *dpb_size, but since
-	    // we have new_dpb_length = MAX(*dpb_size, 1) our case is reduced
-	    // to new_dpb_length == *dpb_size. Therefore, this code is a waste
-	    // of time, since the function didn't find any param to add and thus,
+		// CVC: Notice this case is new_dpb_length <= *dpb_size, but since
+		// we have new_dpb_length = MAX(*dpb_size, 1) our case is reduced
+		// to new_dpb_length == *dpb_size. Therefore, this code is a waste
+		// of time, since the function didn't find any param to add and thus,
 		// the loop below won't find anything worth adding either.
-	    // Notice, too that the original input dpb is used, yet the pointer "p"
-	    // is positioned exactly at the end, so if something was added at the
+		// Notice, too that the original input dpb is used, yet the pointer "p"
+		// is positioned exactly at the end, so if something was added at the
 		// tail, it would be a memory failure, unless the caller lies and is
 		// always passing a dpb bigger than *dpb_size.
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
@@ -397,7 +399,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 	if (!*dpb_size)
 		*p++ = isc_dpb_version1;
 
-/* copy in the new runtime items */
+	// copy in the new runtime items
 
 	va_start(args, dpb_size);
 
@@ -499,8 +501,8 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		return FB_FAILURE;
 	}
 
-/* if items have been added, allocate space
-   for the new dpb and copy the old one over */
+	// if items have been added, allocate space
+	// for the new dpb and copy the old one over
 
 	UCHAR* new_dpb;
 	if (new_dpb_length > *dpb_size)
@@ -528,7 +530,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 		*p++ = isc_dpb_version1;
 	}
 
-/* copy in the new runtime items */
+	// copy in the new runtime items
 
 	switch (type)
 	{
@@ -539,7 +541,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 	case isc_dpb_lc_ctype:
 	case isc_dpb_reserved:
 		{
-		    const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
+			const UCHAR* q = reinterpret_cast<const UCHAR*>(str);
 			if (q)
 			{
 				SSHORT length = str_len;
@@ -635,9 +637,9 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 
 	va_start(ptr, count);
 
-/* calculate length of event parameter block,
-   setting initial length to include version
-   and counts for each argument */
+	// calculate length of event parameter block,
+	// setting initial length to include version
+	// and counts for each argument
 
 	length = 1;
 	i = count;
@@ -648,11 +650,11 @@ SLONG API_ROUTINE gds__event_block(UCHAR ** event_buffer,
 
 	p = *event_buffer =
 		(UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
-/* FREE: unknown */
+	/* FREE: unknown */
 	if (!*event_buffer)			/* NOMEM: */
 		return 0;
 	*result_buffer = (UCHAR *) gds__alloc((SLONG) (sizeof(UCHAR) * length));
-/* FREE: unknown */
+	/* FREE: unknown */
 	if (!*result_buffer) {		/* NOMEM: */
 		gds__free(*event_buffer);
 		*event_buffer = NULL;
@@ -711,9 +713,9 @@ USHORT API_ROUTINE gds__event_block_a(SCHAR ** event_buffer,
  *
  **************************************/
 
-/* calculate length of event parameter block,
-   setting initial length to include version
-   and counts for each argument */
+	// calculate length of event parameter block,
+	// setting initial length to include version
+	// and counts for each argument
 
 	USHORT i = count;
 	const SCHAR* const* nb = name_buffer;
@@ -819,7 +821,7 @@ void API_ROUTINE isc_event_counts(
 	USHORT length = buffer_length;
 	const UCHAR* const end = p + length;
 
-/* analyze the event blocks, getting the delta for each event */
+	// analyze the event blocks, getting the delta for each event
 
 	p++;
 	q++;
