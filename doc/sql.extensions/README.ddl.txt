@@ -300,7 +300,7 @@ create table peoples (
 insert into peoples values (1, 'adriano');
 insert into peoples values (2, 'ADRIANO');
  
--- will retrieve both records as win_ptbr is case insensitive
+-- will retrieve both records because win_ptbr is case insensitive
 select * from peoples where name like 'A%';
 
 
