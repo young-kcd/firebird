@@ -103,6 +103,7 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/file_params.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 
 static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM);
@@ -201,9 +202,10 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	}
 #endif
 
-	Firebird::string mutex_name;
-	mutex_name.printf(SERVER_MUTEX, instance);
-	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name.c_str());
+	TEXT mutex_name[MAXPATHLEN];
+	fb_utils::_snprintf(mutex_name, sizeof(mutex_name), SERVER_MUTEX, instance);
+	fb_utils::prefix_kernel_object_name(mutex_name, sizeof(mutex_name));
+	CreateMutex(ISC_get_security_desc(), FALSE, mutex_name);
 
 	// Initialize the service
 
