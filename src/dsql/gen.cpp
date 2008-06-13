@@ -1725,8 +1725,6 @@ static void gen_error_condition( CompiledStatement* statement, const dsql_nod* n
  **/
 static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 {
-	const dsql_nod* temp;
-
 	if (node->nod_arg[e_exec_stmt_proc_block]) 
 	{
 		stuff(statement, blr_label);
@@ -1736,7 +1734,7 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 	stuff(statement, blr_exec_stmt);
 
 	// counts of input and output parameters
-	temp = node->nod_arg[e_exec_stmt_inputs];
+	const dsql_nod* temp = node->nod_arg[e_exec_stmt_inputs];
 	if (temp)
 	{
 		stuff(statement, blr_exec_stmt_inputs);

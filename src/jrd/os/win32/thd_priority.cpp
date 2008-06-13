@@ -71,7 +71,7 @@ ThreadPriorityScheduler* ThreadPriorityScheduler::get()
 // Goes to low priority zone
 void ThreadPriorityScheduler::enter()
 {
-	ThreadPriorityScheduler *t = get();
+	ThreadPriorityScheduler* t = get();
 	fb_assert(t);
 	t->inside = true;
 	t->gonein = true;
@@ -80,7 +80,7 @@ void ThreadPriorityScheduler::enter()
 // Goes from low priority zone
 void ThreadPriorityScheduler::exit()
 {
-	ThreadPriorityScheduler *t = get();
+	ThreadPriorityScheduler* t = get();
 	fb_assert(t);
 	t->inside = false;
 }
@@ -96,7 +96,7 @@ void ThreadPriorityScheduler::init()
 	toDetach = FB_NEW(*getDefaultMemoryPool()) TpsPointers(*getDefaultMemoryPool());
 
 	// allocate thps for current (i.e. server's main) thread
-	ThreadPriorityScheduler *tps =
+	ThreadPriorityScheduler* tps =
 		FB_NEW(*getDefaultMemoryPool()) ThreadPriorityScheduler(0, 0, THPS_PSCHED);
 
 	tps->attach();

@@ -358,18 +358,18 @@
 #define blr_exec_stmt		(unsigned char)189
 
 // subcodes of blr_exec_stmt
-#define blr_exec_stmt_inputs		(unsigned char)1	// input parameters count
-#define blr_exec_stmt_outputs		(unsigned char)2	// output parameters count
-#define blr_exec_stmt_sql			(unsigned char)3
-#define blr_exec_stmt_proc_block	(unsigned char)4
-#define blr_exec_stmt_data_src		(unsigned char)5
-#define blr_exec_stmt_user			(unsigned char)6
-#define blr_exec_stmt_pwd			(unsigned char)7
-#define blr_exec_stmt_tran    		(unsigned char)8	// not implemented yet
-#define blr_exec_stmt_tran_clone	(unsigned char)9	// make transaction parameters equal to current tran
-#define blr_exec_stmt_privs			(unsigned char)10
-#define blr_exec_stmt_in_params		(unsigned char)11	// not named input parameters
-#define blr_exec_stmt_in_params2	(unsigned char)12	// named input parameters
-#define blr_exec_stmt_out_params	(unsigned char)13	// output parameters
+#define blr_exec_stmt_inputs		(unsigned char) 1	// input parameters count
+#define blr_exec_stmt_outputs		(unsigned char) 2	// output parameters count
+#define blr_exec_stmt_sql			(unsigned char) 3
+#define blr_exec_stmt_proc_block	(unsigned char) 4
+#define blr_exec_stmt_data_src		(unsigned char) 5
+#define blr_exec_stmt_user			(unsigned char) 6
+#define blr_exec_stmt_pwd			(unsigned char) 7
+#define blr_exec_stmt_tran    		(unsigned char) 8	// not implemented yet
+#define blr_exec_stmt_tran_clone	(unsigned char) 9	// make transaction parameters equal to current transaction
+#define blr_exec_stmt_privs			(unsigned char) 10
+#define blr_exec_stmt_in_params		(unsigned char) 11	// not named input parameters
+#define blr_exec_stmt_in_params2	(unsigned char) 12	// named input parameters
+#define blr_exec_stmt_out_params	(unsigned char) 13	// output parameters
 
 #endif // JRD_BLR_H

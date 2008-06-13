@@ -5437,14 +5437,14 @@ static void modify_index( CompiledStatement* statement)
 }
 
 
-static void modify_privilege(	CompiledStatement*			statement,
-								NOD_TYPE	type,
-								SSHORT		option,
-								const UCHAR*		privs,
-								const dsql_nod*			table,
-								const dsql_nod*			user,
-								const dsql_nod*			grantor,
-								const dsql_str*			field_name)
+static void modify_privilege(CompiledStatement* statement,
+							 NOD_TYPE type,
+							 SSHORT option,
+							 const UCHAR* privs,
+							 const dsql_nod* table,
+							 const dsql_nod* user,
+							 const dsql_nod* grantor,
+							 const dsql_str* field_name)
 {
 /**************************************
  *
@@ -5543,13 +5543,13 @@ static void modify_privilege(	CompiledStatement*			statement,
 
 
 
-static SCHAR modify_privileges(CompiledStatement*		statement,
-							   NOD_TYPE	type,
-							   SSHORT	option,
-							   const dsql_nod*		privs,
-							   const dsql_nod*		table,
-							   const dsql_nod*		user,
-							   const dsql_nod*		grantor)
+static SCHAR modify_privileges(CompiledStatement* statement,
+							   NOD_TYPE type,
+							   SSHORT option,
+							   const dsql_nod* privs,
+							   const dsql_nod* table,
+							   const dsql_nod* user,
+							   const dsql_nod* grantor)
 {
 /**************************************
  *
@@ -5621,14 +5621,14 @@ static SCHAR modify_privileges(CompiledStatement*		statement,
 	}
 
 	if (*p) {
-		modify_privilege(	statement,
-							type,
-							option,
-							reinterpret_cast<const UCHAR*>(p),
-							table,
-							user,
-							grantor,
-							0);
+		modify_privilege(statement,
+						 type,
+						 option,
+						 reinterpret_cast<const UCHAR*>(p),
+						 table,
+						 user,
+						 grantor,
+						 0);
 	}
 
 	return 0;
@@ -5925,12 +5925,12 @@ static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev)
 }
 
 
-static void process_role_nm_list(	CompiledStatement*			statement,
-									SSHORT			option,
-									dsql_nod*		user_ptr,
-									dsql_nod*		role_ptr,
-									NOD_TYPE		type,
-									const dsql_nod*	grantor)
+static void process_role_nm_list(CompiledStatement* statement,
+								 SSHORT option,
+								 dsql_nod* user_ptr,
+								 dsql_nod* role_ptr,
+								 NOD_TYPE type,
+								 const dsql_nod* grantor)
 {
 /**************************************
  *

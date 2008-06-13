@@ -493,10 +493,12 @@ static const char* granted_by(char* buffer, const char* grantor)
  *
  **************************************/
 	static BASED_ON RDB$RELATIONS.RDB$OWNER_NAME owner;
+
 	if (reReadDbOwner)
 	{
 		// Get the owner name
 		strcpy(owner, SYSDBA_USER_NAME);
+
 		FOR REL IN RDB$RELATIONS WITH
 			REL.RDB$RELATION_NAME = "RDB$DATABASE"
 
@@ -508,6 +510,7 @@ static const char* granted_by(char* buffer, const char* grantor)
 			buffer[0] = '\0';
 			return "";
 		END_ERROR;
+
 		fb_utils::exact_name(owner);
 		reReadDbOwner = false;
 	}

@@ -158,7 +158,7 @@ static const int CLASS_DARWIN_X64 = 31;		// Darwin/x64
 static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
 static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
 static const int CLASS_LINUX_IA64 = 34;		// LINUX/IA64
-static const int CLASS_DARWIN_PPC64 = 35; // Darwin/PowerPC64
+static const int CLASS_DARWIN_PPC64 = 35; 	// Darwin/PowerPC64
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
 static const int CLASS_MAX = CLASS_DARWIN_PPC64;

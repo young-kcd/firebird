@@ -155,7 +155,7 @@ typedef enum
 	arch_winnt_64	= 40,
 	arch_darwin_x64		= 41,
 	arch_darwin_ppc64	= 42,
-	arch_max		= 43	/* Keep this at the end */
+	arch_max		= 43	// Keep this at the end
 } P_ARCH;
 
 /* Protocol Types */

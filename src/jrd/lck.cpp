@@ -250,7 +250,7 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 
 	Database* dbb = lock->lck_dbb;
 
-	Attachment *old_attachment = lock->lck_attachment;
+	Attachment* old_attachment = lock->lck_attachment;
 	set_lock_attachment(lock, tdbb->getAttachment());
 
 	const bool result = CONVERT(tdbb, lock, level, wait);
