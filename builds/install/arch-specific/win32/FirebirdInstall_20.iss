@@ -53,10 +53,9 @@
 ;In practice, these values are set in the environment and we use the env vars.
 #define MajorVer "2"
 #define MinorVer "1"
-#define PointRelease "0"
+#define PointRelease "1"
 #define BuildNumber "0"
 #define PackageNumber "0"
-
 
 
 ;-------Start of Innosetup script debug flags section
@@ -96,6 +95,9 @@
 #undef files
 ;We speed up compilation (and hence testing) by not compressing contents.
 #undef compression
+
+;Default to x64 for testing
+#define PlatformTarget "x64"
 #endif
 
 
@@ -115,27 +117,42 @@
 ;------If necessary we can turn off i18n by uncommenting this undefine
 ;#undef  i18n
 
+;----- If we are debugging the script (and not executed from command prompt)
+;----- there is no guarantee that the environment variable exists. However an
+;----- expression such as #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER") will
+;----- 'define' the macro anyway so we need to test for a valid env var before
+;----- we define our macro.
+#if Len(GetEnv("FB_MAJOR_VER")) > 0
 #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER")
+#endif
 #ifdef FB_MAJOR_VER
 #define MajorVer FB_MAJOR_VER
 #endif
 
+#if Len(GetEnv("FB_MINOR_VER")) > 0
 #define FB_MINOR_VER GetEnv("FB_MINOR_VER")
+#endif
 #ifdef FB_MINOR_VER
 #define MinorVer FB_MINOR_VER
 #endif
 
+#if Len(GetEnv("FB_REV_VER")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
+#endif
 #ifdef FB_REV_NO
 #define PointRelease FB_REV_NO
 #endif
 
+#if Len(GetEnv("FB_BUILD_NO")) > 0
 #define FB_BUILD_NO GetEnv("FB_BUILD_NO")
+#endif
 #ifdef FB_BUILD_NO
 #define BuildNumber FB_BUILD_NO
 #endif
 
+#if Len(GetEnv("FBBUILD_PACKAGE_NUMBER")) > 0
 #define FBBUILD_PACKAGE_NUMBER GetEnv("FBBUILD_PACKAGE_NUMBER")
+#endif
 #ifdef FBBUILD_PACKAGE_NUMBER
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
@@ -149,8 +166,10 @@
 #endif
 #define MyAppVerName MyAppName + " " + MyAppVerString
 
-
+;---- If we haven't already set PlatformTarget then pick it up from the environment.
+#ifndef PlatformTarget
 #define PlatformTarget GetEnv("FB_TARGET_PLATFORM")
+#endif
 #if PlatformTarget == ""
 #define PlatformTarget "win32"
 #endif
@@ -675,7 +694,8 @@ end;
 for i:=0 to ProductsInstalledCount-1 do
   InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
 
-//If FB21 is installed
+// If FB21 is installed and installed platform does not match current platform
+// then notify user.
 #if PlatformTarget == "x64"
 If ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) then
 #else
@@ -720,28 +740,16 @@ begin
   end;
 
 
-  //If existing install of the same majorver.minorver is found then
-  //we can upgrade it unless we find the server running.
+  //If existing install of the same majorver.minorver is
+  //found then we can upgrade it.
   if ( (ProductsInstalledCount = 1) AND
 #if PlatformTarget == "x64"
     ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) ) then begin
 #else
     ((ProductsInstalled AND FB21 ) = FB21 ) ) then begin
 #endif
-      VerString := ( FirebirdDefaultServerRunning );
-      if VerString <> '' then begin
-        result := false;
-        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
-        +#13
-        +#13+ExpandConstant('{cm:FbRunning2}')
-        +#13+ExpandConstant('{cm:FbRunning3}')
-        +#13, mbError, MB_OK);
-        exit;
-        end
-      else begin
         result := true;
         exit;
-      end
     end
   ;
 
@@ -765,15 +773,9 @@ function InitializeSetup(): Boolean;
 var
   i: Integer;
   CommandLine: String;
-  VerString: String;
 begin
 
   result := true;
-
-  if not CheckWinsock2 then begin
-    result := False;
-    exit;
-  end
 
   CommandLine:=GetCmdTail;
 
@@ -800,6 +802,17 @@ begin
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
 
+  // Check if a server is running - we cannot continue if it is.
+  if FirebirdDefaultServerRunning then begin
+    result := false;
+    exit;
+  end;
+
+  if not CheckWinsock2 then begin
+    result := False;
+    exit;
+  end
+
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.
   InstallAndConfigure := Install + Configure;
@@ -809,20 +822,7 @@ begin
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
-  if result then begin
-    //There is a possibility that all our efforts to detect an
-    //install were in vain and a server _is_ running...
-    VerString := FirebirdDefaultServerRunning;
-    if ( VerString <> '' ) then begin
-      result := false;
-        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-    end;
-  end;
+
 end;
 
 
@@ -836,6 +836,13 @@ begin
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
+
+  if RunningServerVerString <> '' then
+        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [RunningServerVerString])
+      +#13
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
+      +#13, mbError, MB_OK);
 
 #ifdef setuplogging
   if OkToCopyLog then
@@ -1080,7 +1087,7 @@ end;
 function StartEngine: boolean;
 begin
   if ConfigureFirebird then
-    result := not FirebirdOneRunning;
+    result := not FirebirdDefaultServerRunning;
 end;
 
 
