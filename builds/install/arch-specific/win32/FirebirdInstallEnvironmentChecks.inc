@@ -843,13 +843,23 @@ begin
     result := true;
 end;
 
-//Detect any 1.5 or 2.0 server running with default ClassName or mutex
-function FirebirdDefaultServerRunning: String;
+
+//Detect server running with default ClassName or mutex
+var
+    RunningServerVerString: String;
+
+function FirebirdDefaultServerRunning: Boolean;
 var
   Handle: Integer;
   mutex_found: boolean;
+  mutexes: String;
 begin
-  result := '';
+  RunningServerVerString := '';
+  Result := false;
+
+  if FirebirdOneRunning then
+    RunningServerVerString := 'Firebird 1.0 or InterBase';
+
   //Look for a running version of Firebird 1.5 or later
   Handle := FindWindowByClassName('FB_Disabled');
   if ( Handle = 0 ) then
@@ -858,18 +868,40 @@ begin
     Handle := FindWindowByClassName('FB_Guard');
 
   if (Handle > 0) then
-     result := '1.5'
+     RunningServerVerString := '1.5'
   else begin
-    mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
+    // v2.0.4 uses mutexes without the global prefix.
+    // Later versions (if any) will use the prefix, so we will test for them anyway.
+    mutexes := 'Global\\FirebirdGuardianMutex' + ',' +
+               'Global\\FirebirdServerMutex';
+    mutex_found := CheckForMutexes(mutexes);
+
+    // Note: v2.0 prior to 2.0.4 does not create a FirebirdServerMutex mutex,
+    // so server running without guardian is not detected.
+    mutexes := 'FirebirdGuardianMutex' + ',' +
+               'FirebirdServerMutex';
+    mutex_found := CheckForMutexes(mutexes);
+
     if mutex_found then
-      result := '2.0'
+      RunningServerVerString := '2.0'
     else begin
-      mutex_found := CheckForMutexes('FirebirdGuardianMutexDefaultInstance,FirebirdServerMutexDefaultInstance');
+      //v2.1.0 declares mutexes without the global prefix.
+      //v2.1.1 and later should add correct prefix.
+      mutexes := 'Global\\FirebirdGuardianMutexDefaultInstance' + ',' +
+                 'Global\\FirebirdServerMutexDefaultInstance';
+      mutex_found := CheckForMutexes(mutexes);
+
+      mutexes := 'FirebirdGuardianMutexDefaultInstance' + ',' +
+                 'FirebirdServerMutexDefaultInstance';
+      mutex_found := CheckForMutexes(mutexes);
+
       if mutex_found then
-        result := '2.1'
+        RunningServerVerString := '2.1'
     end;
 
   end;
+  if RunningServerVerString <> '' then
+    Result := True;
 
 end;
 
