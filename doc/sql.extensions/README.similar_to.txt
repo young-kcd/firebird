@@ -154,8 +154,8 @@ Matches a character identical to one of <character enumeration>:
 
 Matches a character not identical to one of <character enumeration>:
 <left bracket> <circumflex> <character enumeration>... <right bracket>
-    'b' SIMILAR TO '[abc]'    -- false
-    'd' SIMILAR TO '[abc]'    -- true
+    'b' SIMILAR TO '[^abc]'    -- false
+    'd' SIMILAR TO '[^abc]'    -- true
 
 Matches a character identical to one of <character enumeration include> but not identical to one
 of <character enumeration exclude>:
