@@ -1005,7 +1005,7 @@ static dsc* evlAsciiVal(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	CharSet* cs = INTL_charset_lookup(tdbb, value->getCharSet());
+	const CharSet* cs = INTL_charset_lookup(tdbb, value->getCharSet());
 
 	UCHAR* p;
 	MoveBuffer temp;
@@ -1724,13 +1724,13 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 		while (!(blob->blb_flags & BLB_eof))
 		{
 			address = buffer;
-			const SLONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
+			const ULONG length = BLB_get_data(tdbb, blob, address, sizeof(buffer), false);
 
 			for (const UCHAR* end = address + length; address < end; ++address)
 			{
 				impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
 
-				SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+				const SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
 				if (n)
 					impure->vlu_misc.vlu_int64 ^= n >> 56;
 				impure->vlu_misc.vlu_int64 &= ~n;
@@ -1742,13 +1742,13 @@ static dsc* evlHash(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	else
 	{
 		MoveBuffer buffer;
-		ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
+		const ULONG length = MOV_make_string2(tdbb, value, value->getTextType(), &address, buffer, false);
 
 		for (const UCHAR* end = address + length; address < end; ++address)
 		{
 			impure->vlu_misc.vlu_int64 = (impure->vlu_misc.vlu_int64 << 4) + *address;
 
-			SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
+			const SINT64 n = impure->vlu_misc.vlu_int64 & CONST64(0xF000000000000000);
 			if (n)
 				impure->vlu_misc.vlu_int64 ^= n >> 56;
 			impure->vlu_misc.vlu_int64 &= ~n;
@@ -1773,7 +1773,7 @@ static dsc* evlLeft(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	if (request->req_flags & req_null)	// return NULL if str is NULL
 		return NULL;
 
-	dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* len = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if len is NULL
 		return NULL;
 
@@ -1926,20 +1926,20 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
-	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
-	dsc* placing = EVL_expr(tdbb, args->nod_arg[1]);
+	const dsc* placing = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if placing is NULL
 		return NULL;
 
-	dsc* fromDsc = EVL_expr(tdbb, args->nod_arg[2]);
+	const dsc* fromDsc = EVL_expr(tdbb, args->nod_arg[2]);
 	if (request->req_flags & req_null)	// return NULL if fromDsc is NULL
 		return NULL;
 
-	dsc* lengthDsc = NULL;
-	SLONG length;
+	const dsc* lengthDsc = NULL;
+	ULONG length;
 
 	if (args->nod_count >= 4)
 	{
@@ -1947,10 +1947,12 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		if (request->req_flags & req_null)	// return NULL if lengthDsc is NULL
 			return NULL;
 
-		length = MOV_get_long(lengthDsc, 0);
+		const SLONG auxlen = MOV_get_long(lengthDsc, 0);
 
-		if (length < 0)
+		if (auxlen < 0)
 			status_exception::raise(isc_expression_eval_err, 0);
+			
+		length = auxlen;
 	}
 
 	SLONG from = MOV_get_long(fromDsc, 0);
@@ -1963,7 +1965,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	MoveBuffer temp1;
 	UCHAR* str1;
-	int len1;
+	ULONG len1;
 
 	if (value->isBlob())
 	{
@@ -1983,7 +1985,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	MoveBuffer temp2;
 	UCHAR* str2;
-	int len2;
+	ULONG len2;
 	
 	if (placing->isBlob())
 	{
@@ -2001,7 +2003,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	else
 		len2 = MOV_make_string2(tdbb, placing, resultTextType, &str2, temp2);
 
-	from = MIN(from, len1 + 1);
+	from = MIN((ULONG) from, len1 + 1);
 
 	if (lengthDsc == NULL)	// not specified
 	{
@@ -2017,11 +2019,12 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	if (!value->isBlob() && !placing->isBlob())
 	{
-		if (len1 - length + len2 > static_cast<signed>(MAX_COLUMN_SIZE - sizeof(USHORT)))
+		const SINT64 newlen = (SINT64) len1 - length + len2;
+		if (newlen > static_cast<SINT64>(MAX_COLUMN_SIZE - sizeof(USHORT)))
 			status_exception::raise(isc_arith_except, isc_arg_gds, isc_imp_exc, 0);
 
 		dsc desc;
-		desc.makeText(len1 - length + len2, resultTextType);
+		desc.makeText(newlen, resultTextType);
 		EVL_make_value(tdbb, &desc, impure);
 	}
 	else
@@ -2060,15 +2063,16 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	{
 		BLB_put_data(tdbb, newBlob, str2, len2);
 
+		const ULONG auxlen = len1 - l1;
 		if (!cs->isMultiByte())
 		{
 			BLB_put_data(tdbb, newBlob, str1 + l1 + length * cs->maxBytesPerChar(),
-				len1 - l1 - length * cs->maxBytesPerChar());
+				auxlen - length * cs->maxBytesPerChar());
 		}
 		else
 		{
-			l2 = cs->substring(len1 - l1, str1 + l1, len1 - l1,
-				blobBuffer.getBuffer(len1 - l1), length, len1 - l1);
+			l2 = cs->substring(auxlen, str1 + l1, auxlen,
+				blobBuffer.getBuffer(auxlen), length, auxlen);
 			BLB_put_data(tdbb, newBlob, blobBuffer.begin(), l2);
 		}
 	}
@@ -2083,8 +2087,6 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 	if (newBlob)
 		BLB_close(tdbb, newBlob);
-	else
-		impure->vlu_desc.dsc_length = (USHORT) (l1 + len2 + l2);
 
 	return &impure->vlu_desc;
 }
@@ -2104,9 +2106,11 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	const dsc* padLenDsc = EVL_expr(tdbb, args->nod_arg[1]);
 	if (request->req_flags & req_null)	// return NULL if padLenDsc is NULL
 		return NULL;
+		
 	const SLONG padLenArg = MOV_get_long(padLenDsc, 0);
 	if (padLenArg < 0)
 		status_exception::raise(isc_expression_eval_err, 0);
+
 	ULONG padLen = static_cast<ULONG>(padLenArg);
 
 	const dsc* value2 = NULL;
@@ -2598,8 +2602,8 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 			while (p2 > buffer2.begin())
 			{
-				bool readed = IntlUtil::readOneChar(cs, &p1, end, &size);
-				fb_assert(readed == true);
+				const bool read = IntlUtil::readOneChar(cs, &p1, end, &size);
+				fb_assert(read == true);
 				memcpy(p2 -= size, p1, size);
 			}
 
@@ -2644,8 +2648,8 @@ static dsc* evlReverse(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 			while (p2 > impure->vlu_desc.dsc_address)
 			{
-				bool readed = IntlUtil::readOneChar(cs, &p1, end, &size);
-				fb_assert(readed == true);
+				const bool read = IntlUtil::readOneChar(cs, &p1, end, &size);
+				fb_assert(read == true);
 				memcpy(p2 -= size, p1, size);
 			}
 		}
@@ -2720,7 +2724,7 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
-	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -2728,7 +2732,7 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 	if (args->nod_count > 1)
 	{
-		dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		const dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
@@ -2751,7 +2755,7 @@ static dsc* evlSign(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	jrd_req* request = tdbb->getRequest();
 
 	request->req_flags &= ~req_null;
-	dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
+	const dsc* value = EVL_expr(tdbb, args->nod_arg[0]);
 	if (request->req_flags & req_null)	// return NULL if value is NULL
 		return NULL;
 
@@ -2807,7 +2811,7 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	SLONG resultScale = 0;
 	if (args->nod_count > 1)
 	{
-		dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
+		const dsc* scaleDsc = EVL_expr(tdbb, args->nod_arg[1]);
 		if (request->req_flags & req_null)	// return NULL if scaleDsc is NULL
 			return NULL;
 
@@ -3000,8 +3004,8 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
  **************************************/
 	SET_TDBB(tdbb);
 
-	SLONG offset_arg = MOV_get_long(offset_value, 0);
-	SLONG length_arg = MOV_get_long(length_value, 0);
+	const SLONG offset_arg = MOV_get_long(offset_value, 0);
+	const SLONG length_arg = MOV_get_long(length_value, 0);
 
 	if (offset_arg < 0)
 		status_exception::raise(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
@@ -3025,7 +3029,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 
 		fb_assert(desc.dsc_dtype == dtype_blob);
 
-		desc.dsc_address = (UCHAR*)&impure->vlu_misc.vlu_bid;
+		desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_bid;
 
 		blb* newBlob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 			&impure->vlu_misc.vlu_bid);
@@ -3128,7 +3132,7 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 			// messages, so I will return empty.
 			// Finally I decided to use arithmetic exception or numeric overflow.
 			const UCHAR* p = desc.dsc_address;
-			USHORT pcount = desc.dsc_length;
+			const USHORT pcount = desc.dsc_length;
 
 			CharSet* charSet = INTL_charset_lookup(tdbb, desc.getCharSet());
 
