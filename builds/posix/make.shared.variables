@@ -317,6 +317,10 @@ LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 # gbak modules.  These are then used to compile the rest of the system.
 # MOD 29-July-2002
 
+# Statically link ib_util in libfbstatic.
+IBUTIL_Sources = $(addprefix extlib/, ib_util.cpp)
+IBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBUTIL_Sources))))
+
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
 
@@ -328,7 +332,8 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
 				$(CLUMPLETS_Objects) \
-				$(UTIL_Objects)
+				$(UTIL_Objects) \
+				$(IBUTIL_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

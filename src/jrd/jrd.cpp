@@ -149,9 +149,6 @@ namespace
 {
 	Database* databases = NULL;
 	Firebird::GlobalPtr<Firebird::Mutex> databases_mutex;
-#ifdef WIN_NT
-	ModuleLoader::Module* ibUtilModule = NULL;
-#endif
 	bool engineShuttingDown = false;
 
 	class EngineStartup
@@ -161,22 +158,10 @@ namespace
 		{
 			IntlManager::initialize();
 			PluginManager::load_engine_plugins();
-
-#ifdef WIN_NT
-			// Try to load ib_util.dll now because loading UDFs with altered search
-			// path will not search the server bin directory and will fail.
-			Firebird::PathName dir;
-			PathUtils::concatPath(dir, Config::getInstallDirectory(), "ib_util.dll");
-			ibUtilModule = ModuleLoader::loadModule(dir);
-#endif
 		}
 
 		static void cleanup()
 		{
-#ifdef WIN_NT
-			delete ibUtilModule;
-			ibUtilModule = NULL;
-#endif
 		}
 	};
 

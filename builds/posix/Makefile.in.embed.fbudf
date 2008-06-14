@@ -46,7 +46,7 @@ FBUDF_Files = fbudf.cpp
 FBUDF_Sources = $(addprefix extlib/fbudf/, $(FBUDF_Files)) $(FBUDF_Other_Sources)
 FBUDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUDF_Sources))))
 
-UTIL_Files = ib_util.c
+UTIL_Files = ib_util.cpp
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
@@ -63,18 +63,18 @@ all: lib_fbudf
 # User defined functions.  (I've put the .$(SHRLIB_EXT) extension back onto the library)
 # 
 
-lib_fbudf: $(UDF)/fbudf.$(SHRLIB_EXT) 
+lib_fbudf: $(LIBIBUTIL_SO) $(UDF)/fbudf.$(SHRLIB_EXT)
 
 $(UDF)/fbudf.$(SHRLIB_EXT):	$(FBUDF_Objects) $(FBUTIL_Objects)
 ifeq ($(PLATFORM),win32)
-	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbembed -o $@ $^
+	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) -L$(LIB) -lfbembed -lib_util -o $@ $^
 endif
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
 -lm -o $@ $^
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lm -o $@ $^
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lm -o $@ $^ -L$(LIB) -lib_util
 endif
 
 

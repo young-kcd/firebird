@@ -31,6 +31,7 @@ LIB_LINK_RPATH:=  -Wl,+b
 LIB_LINK_SONAME:= -Wl,+h
 LIB_LINK_MAPFILE= -Wl,-c
 LINK_FBINTL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.hpux.vers
+LINK_IBUTIL_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.hpux.vers
 LINK_FIREBIRD_SYMBOLS= $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.hpux.vers
 
 EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fbguard fb_lock_print fbsvcmgr

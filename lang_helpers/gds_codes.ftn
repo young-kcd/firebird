@@ -1248,6 +1248,8 @@ C --
       PARAMETER (GDS__shutdown_timeout                 = 335544917)
       INTEGER*4 GDS__att_handle_busy                 
       PARAMETER (GDS__att_handle_busy                  = 335544918)
+      INTEGER*4 GDS__bad_udf_freeit                  
+      PARAMETER (GDS__bad_udf_freeit                   = 335544919)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

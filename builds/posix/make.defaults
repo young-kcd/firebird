@@ -260,6 +260,7 @@ endif
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
+LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
 
 LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
 

@@ -619,6 +619,7 @@ static const struct {
 	{335544916, -802}, /* 596 numeric_out_of_range */
 	{335544917, -901}, /* 597 shutdown_timeout */
 	{335544918, -901}, /* 598 att_handle_busy */
+	{335544919, -901}, /* 599 bad_udf_freeit */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

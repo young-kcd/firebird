@@ -45,12 +45,20 @@ UDF_Files = ib_udf.cpp
 UDF_Sources = $(addprefix extlib/, $(UDF_Files))
 UDF_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UDF_Sources))))
 
-UTIL_Files = ib_util.c
+UTIL_Files = ib_util.cpp
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
+COMMON_Files = fb_exception.cpp
+COMMON_Sources = $(addprefix common/, $(COMMON_Files))
+COMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(COMMON_Sources))))
 
-AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
+CLASSES_Files = alloc.cpp init.cpp locks.cpp
+CLASSES_Sources = $(addprefix common/classes/, $(CLASSES_Files))
+CLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLASSES_Sources))))
+
+
+AllObjects = $(UDF_Objects) $(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects) $(FBUDF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 
@@ -59,7 +67,7 @@ Dependencies = $(AllObjects:.o=.d)
 all: lib_ib_udf lib_ib_util
 
 
-# The libraires in this directory could do with a bit more work, since they
+# The libraries in this directory could do with a bit more work, since they
 # the previous code (presumably by John) that does the ar crv stuff, might
 # work still, even if the .o files have directory prefixes on them.
 # And the udf stuff doesn't want to do .$(SHRLIB_EXT).X.X.X extensions in UDF directory
@@ -75,25 +83,24 @@ all: lib_ib_udf lib_ib_util
 
 lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
 
-$(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects)
+$(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects) $(LIBIBUTIL_SO)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lib_util
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS)
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS) -L$(LIB) -lib_util
 endif
+
 # ib_util
-# this is plain-C library, therefore CLIENTLIB_LINK 
-# without STATIC_CXXSUPPORT_LIB is used
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
-$(LIBIBUTIL_SO):	$(UTIL_Objects)
+$(LIBIBUTIL_SO):	$(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) \
--o $@ $^ $(THR_LIBS)
+	$(CLIENTLIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) \
+$(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) -o $@ $^ $(THR_LIBS)
 else
-	$(CLIENTLIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
+	$(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS)
 endif
 

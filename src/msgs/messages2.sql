@@ -698,6 +698,7 @@ COMMIT WORK;
 ('numeric_out_of_range', NULL, NULL, NULL, 0, 596, NULL, 'numeric value is out of range', NULL, NULL)
 ('shutdown_timeout', NULL, NULL, NULL, 0, 597, NULL, 'Firebird shutdown is still in progress after the specified timeout', NULL, NULL)
 ('att_handle_busy', NULL, NULL, NULL, 0, 598, NULL, 'Attachment handle is busy', NULL, NULL)
+('bad_udf_freeit', NULL, NULL, NULL, 0, 599, NULL, 'Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

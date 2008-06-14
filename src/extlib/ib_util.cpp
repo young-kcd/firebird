@@ -15,11 +15,46 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
+ * Adriano dos Santos Fernandes
  */
+
 #include <stdlib.h>
 #include "ib_udf.h"
+#include "firebird.h"
+#include "../jrd/common.h"
+#include "../common/classes/array.h"
+#include "../common/classes/init.h"
+#include "../common/classes/locks.h"
 
-void* EXPORT ib_util_malloc(long size)
+using namespace Firebird;
+
+
+static InitInstance<Mutex> mutex;
+static InitInstance<SortedArray<void*> > pointers;
+
+
+extern "C" void* EXPORT ib_util_malloc(long size)
 {
-	return malloc(size);
+	void* ptr = malloc(size);
+
+	Firebird::MutexLockGuard guard(mutex());
+	pointers().add(ptr);
+
+	return ptr;
+}
+
+
+extern "C" bool EXPORT ib_util_free(void* ptr)
+{
+	Firebird::MutexLockGuard guard(mutex());
+	size_t pos;
+
+	if (pointers().find(ptr, pos))
+	{
+		pointers().remove(pos);
+		free(ptr);
+		return true;
+	}
+	else
+		return false;
 }

@@ -17,3 +17,4 @@
 
 EXPORTS
 	ib_util_malloc
+	ib_util_free
