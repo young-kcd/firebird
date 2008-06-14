@@ -68,6 +68,10 @@ Syntax:
     | <character specifier> <minus sign> <character specifier>
     | <left bracket> <colon> <character class identifier> <colon> <right bracket>
 
+<character specifier> ::=
+      <non-escaped character>
+    | <escaped character>
+
 <character class identifier> ::=
       ALPHA
     | UPPER
@@ -76,6 +80,15 @@ Syntax:
     | SPACE
     | WHITESPACE
     | ALNUM
+
+Note:
+1) <non-escaped character> is any character except <left bracket>, <right bracket>, <left paren>,
+<right paren>, <vertical bar>, <circumflex>, <minus sign>, <plus sign>, <asterisk>, <underscore>,
+<percent>, <question mark>, <left brace> and <escape character>.
+
+2) <escaped character> is the <escape character> succeeded by one of <left bracket>, <right bracket>,
+<left paren>, <right paren>, <vertical bar>, <circumflex>, <minus sign>, <plus sign>, <asterisk>,
+<underscore>, <percent>, <question mark>, <left brace> or <escape character>.
 
 
 Syntax description and examples:
@@ -151,6 +164,8 @@ Matches a character identical to one of <character enumeration>:
 <left bracket> <character enumeration>... <right bracket>
     'b' SIMILAR TO '[abc]'    -- true
     'd' SIMILAR TO '[abc]'    -- false
+    '9' SIMILAR TO '[0-9]'    -- true
+    '9' SIMILAR TO '[0-8]'    -- false
 
 Matches a character not identical to one of <character enumeration>:
 <left bracket> <circumflex> <character enumeration>... <right bracket>
@@ -160,16 +175,16 @@ Matches a character not identical to one of <character enumeration>:
 Matches a character identical to one of <character enumeration include> but not identical to one
 of <character enumeration exclude>:
 <left bracket> <character enumeration include>... <circumflex> <character enumeration exclude>... 
-    '3' SIMILAR TO '[:DIGIT:^3]'    -- false
-    '4' SIMILAR TO '[:DIGIT:^3]'    -- true
+    '3' SIMILAR TO '[[:DIGIT:]^3]'    -- false
+    '4' SIMILAR TO '[[:DIGIT:]^3]'    -- true
 
 Matches a character identical to one character included in <character class identifier>.
 See the table below. May be used with <circumflex> to invert the logic as above:
 <left bracket> <colon> <character class identifier> <colon> <right bracket>
-    '4' SIMILAR TO '[:DIGIT:]'  -- true
-    'a' SIMILAR TO '[:DIGIT:]'  -- false
-    '4' SIMILAR TO '[^:DIGIT:]' -- false
-    'a' SIMILAR TO '[^:DIGIT:]' -- true
+    '4' SIMILAR TO '[[:DIGIT:]]'  -- true
+    'a' SIMILAR TO '[[:DIGIT:]]'  -- false
+    '4' SIMILAR TO '[^[:DIGIT:]]' -- false
+    'a' SIMILAR TO '[^[:DIGIT:]]' -- true
 
 
 Character class identifiers:

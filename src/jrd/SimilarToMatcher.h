@@ -623,7 +623,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				status_exception::raise(isc_invalid_similar_pattern, 0);
 
 			bool range = false;
-			bool colon = false;
+			bool charClass = false;
 
 			if (useEscape && *patternPos == escapeChar)
 			{
@@ -641,8 +641,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			}
 			else
 			{
-				if (*patternPos == canonicalChar(TextType::CHAR_COLON))
-					colon = true;
+				if (*patternPos == canonicalChar(TextType::CHAR_OPEN_BRACKET))
+					charClass = true;
 				else if (*patternPos == canonicalChar(TextType::CHAR_CIRCUMFLEX))
 				{
 					if (but)
@@ -680,17 +680,20 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 					range = (patternPos[1] == canonicalChar(TextType::CHAR_MINUS));
 			}
 
-			if (colon)
+			if (charClass)
 			{
+				if (++patternPos >= patternEnd || *patternPos != canonicalChar(TextType::CHAR_COLON))
+					status_exception::raise(isc_invalid_similar_pattern, 0);
+
 				const CharType* start = ++patternPos;
 
 				while (patternPos < patternEnd && *patternPos != canonicalChar(TextType::CHAR_COLON))
 					++patternPos;
 
-				if (patternPos >= patternEnd)
-					status_exception::raise(isc_invalid_similar_pattern, 0);
-
 				const SLONG len = patternPos++ - start;
+
+				if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_BRACKET))
+					status_exception::raise(isc_invalid_similar_pattern, 0);
 
 				typedef const UCHAR* (TextType::*GetCanonicalFunc)(int*) const;
 
