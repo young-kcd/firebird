@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="fbembed"
 	ProjectGUID="{C5A60E3D-7815-4127-B856-96277BEC1D11}"
 	>
@@ -697,10 +697,6 @@
 			>
 			<File
 				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gstat\dba.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\extlib\ib_util.cpp"
 				>
 			</File>
 			<File
