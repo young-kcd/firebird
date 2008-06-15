@@ -28,16 +28,18 @@
 
 using namespace Firebird;
 
-
-static InitInstance<Mutex> mutex;
-static InitInstance<SortedArray<void*> > pointers;
+namespace
+{
+	GlobalPtr<Mutex> mutex;
+	InitInstance<SortedArray<void*> > pointers;
+}
 
 
 extern "C" void* EXPORT ib_util_malloc(long size)
 {
-	void* ptr = malloc(size);
+	void* const ptr = malloc(size);
 
-	Firebird::MutexLockGuard guard(mutex());
+	Firebird::MutexLockGuard guard(mutex);
 	pointers().add(ptr);
 
 	return ptr;
@@ -46,7 +48,7 @@ extern "C" void* EXPORT ib_util_malloc(long size)
 
 extern "C" bool EXPORT ib_util_free(void* ptr)
 {
-	Firebird::MutexLockGuard guard(mutex());
+	Firebird::MutexLockGuard guard(mutex);
 	size_t pos;
 
 	if (pointers().find(ptr, pos))
@@ -55,6 +57,6 @@ extern "C" bool EXPORT ib_util_free(void* ptr)
 		free(ptr);
 		return true;
 	}
-	else
-		return false;
+
+	return false;
 }
