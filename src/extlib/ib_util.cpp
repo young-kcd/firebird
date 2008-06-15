@@ -39,15 +39,21 @@ extern "C" void* EXPORT ib_util_malloc(long size)
 {
 	void* const ptr = malloc(size);
 
-	Firebird::MutexLockGuard guard(mutex);
-	pointers().add(ptr);
+	if (ptr)
+	{
+		Firebird::MutexLockGuard guard(mutex);
+		pointers().add(ptr);
+	}
 
 	return ptr;
 }
 
 
-extern "C" bool EXPORT ib_util_free(void* ptr)
+extern "C" int EXPORT ib_util_free(void* ptr)
 {
+	if (!ptr)
+		return true;
+
 	Firebird::MutexLockGuard guard(mutex);
 	size_t pos;
 
