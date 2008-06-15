@@ -1,3 +1,59 @@
+2008-06-15 18:29  asfernandes
+
+	* firebird2/builds/win32/msvc8/: Firebird2Boot.sln (1.7),
+	fbembed.vcproj (1.17):
+
+	Correction for the Windows boot build fix - include ib_util in
+	Firebird2Boot and make fbembed depends on it
+
+2008-06-15 18:20  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.extlib (1.27),
+	src/extlib/ib_util.cpp (1.3), src/jrd/fun.epp (1.95):
+
+	1) Fixed an error in the POSIX build after usage of GlobalPtr 2)
+	Some things observed by Claudio
+
+2008-06-15 18:17  asfernandes
+
+	* firebird2/builds/win32/msvc8/fbembed.vcproj (1.16):
+
+	Fixed the Windows boot build
+
+2008-06-15 07:23  dimitr
+
+	* firebird2/src/extlib/ib_util.cpp (1.2):
+
+	Misc.
+
+2008-06-15 00:15  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.client.fbudf (1.13),
+	builds/posix/Makefile.in.embed.fbudf (1.8),
+	builds/posix/Makefile.in.extlib (1.26),
+	builds/posix/Makefile.in.libfbembed (1.25),
+	builds/posix/ib_util.darwin.vers (1.1),
+	builds/posix/ib_util.hpux.vers (1.1), builds/posix/ib_util.vers
+	(1.1), builds/posix/make.defaults (1.65),
+	builds/posix/make.shared.variables (1.95),
+	builds/posix/prefix.darwin_powerpc (1.10),
+	builds/posix/prefix.darwin_ppc64 (1.5),
+	builds/posix/prefix.darwin_x86_64 (1.8), builds/posix/prefix.hpux
+	(1.7), builds/win32/defs/ib_util.def (1.2),
+	builds/win32/msvc7/ib_util.vcproj (1.20),
+	builds/win32/msvc8/Firebird2.sln (1.11),
+	builds/win32/msvc8/ib_util.vcproj (1.6), lang_helpers/gds_codes.ftn
+	(1.75), lang_helpers/gds_codes.pas (1.75), src/extlib/ib_util.c
+	(1.5), src/extlib/ib_util.cpp (1.1), src/include/gen/codetext.h
+	(1.84), src/include/gen/iberror.h (1.88), src/include/gen/msgs.h
+	(1.106), src/include/gen/sql_code.h (1.90),
+	src/include/gen/sql_state.h (1.16), src/jrd/fun.epp (1.94),
+	src/jrd/jrd.cpp (1.465), src/msgs/facilities2.sql (1.36),
+	src/msgs/messages2.sql (1.44), src/msgs/system_errors2.sql (1.32):
+
+	Improvement CORE-1937 - Detect (instead of crash) FREE_IT UDFs that
+	return pointer not allocated by ib_util_malloc
+
 2008-06-14 12:47  robocop
 
 	* firebird2/src/jrd/SysFunction.cpp (1.49):
