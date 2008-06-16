@@ -77,9 +77,40 @@ using namespace NAMESPACE;
 #include "fb_exception.h"
 #endif
 
+// 
+#if defined(SUPERSERVER) || defined(WIN_NT)
+#define SERVER_SHUTDOWN
+#endif
+
 // from thd.h
-#if defined(HAVE_POSIX_THREADS)
+#ifdef HAVE_POSIX_THREADS
+#ifdef SUPERSERVER
 #define USE_POSIX_THREADS
+#endif
+#ifdef SUPERCLIENT
+#if defined(LINUX) || defined(FREEBSD) || defined(DARWIN) || defined(HPUX)
+/* The following ifdef was added to build thread safe gds shared
+   library on linux platform. It seems the gdslib works now (20020220)
+   with thread enabled applications. Anyway, more tests should be 
+   done as I don't have deep knowledge of the interbase/firebird 
+   engine and this change may imply side effect I haven't known 
+   about yet. Tomas Nejedlik (tomas@nejedlik.cz) */
+#define USE_POSIX_THREADS
+#endif
+#endif
+#endif
+
+// Check if we need thread synchronization
+#if defined(HAVE_MULTI_THREAD)
+# if defined(SUPERSERVER) || defined(SUPERCLIENT) || \
+     defined(WIN_NT) || defined(SOLARIS_MT) || defined (VMS)
+# define MULTI_THREAD
+# endif
+#endif
+
+// This is needed to build client library on threaded platforms for classic server
+#if defined(HAVE_POSIX_THREADS) && defined(SUPERCLIENT)
+# define MULTI_THREAD
 #endif
 
 #ifndef NULL
@@ -93,8 +124,15 @@ using namespace NAMESPACE;
 #define THREAD_PSCHED
 #endif
 
+#if defined(MULTI_THREAD) && !defined(SUPERCLIENT) && !defined(BOOT_BUILD) &&!defined (STD_UTIL)
+#define SERVICE_THREAD
+#endif
+
 #if defined(WIN_NT)
 #define TRUSTED_AUTH
+#if defined(SERVICE_THREAD)
+#define TRUSTED_SERVICES
+#endif
 #endif
 
 #endif /* INCLUDE_Firebird_H */

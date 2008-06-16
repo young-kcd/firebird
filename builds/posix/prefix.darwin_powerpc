@@ -27,7 +27,7 @@ OS_ServerFiles=inet_server.cpp
 
 PROD_FLAGS=-DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch ppc -mmacosx-version-min=10.2
 DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch ppc -mmacosx-version-min=10.2
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fbguard nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbsvcmgr
 CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
 
 Physical_IO_Module=os/posix/unix.cpp
@@ -36,12 +36,11 @@ PLATFORM_PATH=os/darwin
 LINK_OPTS:=
 LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
 LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
-LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
+LIB_LINK_SONAME:=-current_version 2.1.0 -compatibility_version 2.1.0 -seg1addr 0x30000000
 LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
-LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird

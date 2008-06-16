@@ -71,8 +71,8 @@ const SSHORT ACT_PROMPT	= 2;
 
 static void copy_str_upper(TEXT*, const TEXT*);
 static bool get_line(int*, SCHAR**, TEXT*);
-static SSHORT get_switches(int argc, TEXT** argv, const in_sw_tab_t* in_sw_table,
-						   ibmgr_data_t* ibmgr_data, bool* quitflag, bool zapPasswd);
+static SSHORT get_switches(int, const TEXT* const*, const in_sw_tab_t*,
+	ibmgr_data_t*, bool*, bool);
 static SSHORT parse_cmd_line(int, TEXT**, bool);
 static void print_config(void);
 static void print_help(void);
@@ -95,16 +95,17 @@ int CLIB_ROUTINE main( int argc, char **argv)
  *	the specified argc/argv to IBMGR_exec_line (see below).
  *
  **************************************/
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
+#endif
 
-	fprintf(stderr, "*** fbmgr is deprecated, will be removed soon ***\n");
-	gds__log("*** fbmgr is deprecated, will be removed soon ***");
 
 /* Let's see if we have something in
    environment variables
 */
 	Firebird::string user, password;
-	fb_utils::readenv(ISC_USER, user);
-	fb_utils::readenv(ISC_PASSWORD, password);
+	fb_utils::readenv("ISC_USER", user);
+	fb_utils::readenv("ISC_PASSWORD", password);
 
 	Firebird::string host;
 /* MMM - do not allow to change host now
@@ -284,7 +285,8 @@ if (sw_service_gsec)
 				errno = 0;
 				continue;
 			}
-			return true;
+			else
+				return true;
 		}
 	}
 

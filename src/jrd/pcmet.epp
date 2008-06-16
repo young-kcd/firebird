@@ -31,6 +31,7 @@
 #include "../jrd/val.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
+#include "../jrd/all.h"
 #include "../jrd/req.h"
 #include "../jrd/exe.h"
 #include "../jrd/met.h"
@@ -47,6 +48,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/pcmet_proto.h"
+#include "../jrd/thd.h"
 
 using namespace Jrd;
 
@@ -68,12 +70,12 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	jrd_rel* relation;
 	index_desc idx;
-	MemoryPool* new_pool = NULL;
+	JrdMemoryPool* new_pool = NULL;
 	jrd_req* current_request, *request;
 	jrd_tra* current_transaction;
 
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->getDatabase();
 
 	switch (phase)
 	{
@@ -120,7 +122,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					SelectivityList selectivity(*tdbb->getDefaultPool());
 					const USHORT id = IDX.RDB$INDEX_ID - 1;
 					IDX_statistics(tdbb, relation, id, selectivity);
-					DFW_update_index(work->dfw_name.c_str(), id, selectivity, transaction);
+					DFW_update_index(work->dfw_name.c_str(), id, selectivity);
 
 					EXE_unwind(tdbb, request);
 					return false;
@@ -153,7 +155,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				CompilerScratch* csb = 0;
 				/* allocate a new pool to contain the expression tree 
 				   for the expression index */
-				new_pool = dbb->createPool();
+				new_pool = JrdMemoryPool::createPool();
 				{
 					Jrd::ContextPoolHolder context(tdbb, new_pool);
 					MET_scan_relation(tdbb, relation);
@@ -177,7 +179,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				CMP_get_desc(tdbb, csb, idx.idx_expression,
 							 &idx.idx_expression_desc);
 				idx.idx_rpt[0].idx_itype =
-					DFW_assign_index_type(tdbb, work,
+					DFW_assign_index_type(work,
 										  idx.idx_expression_desc.dsc_dtype,
 										  idx.idx_expression_desc.dsc_sub_type);
 				idx.idx_rpt[0].idx_selectivity = 0;
@@ -200,6 +202,10 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		// Actually create the index
 
+		bool releaseRelationLock = false;
+		Lock* relationLock = DFW_protect_relation(tdbb, transaction, relation, 
+								releaseRelationLock);
+
 		SelectivityList selectivity(*tdbb->getDefaultPool());
 
 		current_request = tdbb->getRequest();
@@ -207,21 +213,45 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		TRA_attach_request(transaction, idx.idx_expression_request);
 		tdbb->setRequest(idx.idx_expression_request);
 
-		fb_assert(work->dfw_id <= dbb->dbb_max_idx);
-		idx.idx_id = work->dfw_id;
-		IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
-						 transaction, selectivity);
-		fb_assert(work->dfw_id == idx.idx_id);
+		try {
+			fb_assert(work->dfw_id <= dbb->dbb_max_idx);
+			idx.idx_id = work->dfw_id;
+			IDX_create_index(tdbb, relation, &idx, work->dfw_name.c_str(), &work->dfw_id,
+							 transaction, selectivity);
+			fb_assert(work->dfw_id == idx.idx_id);
 
-		TRA_detach_request(idx.idx_expression_request);
-		tdbb->setRequest(current_request);
-		tdbb->setTransaction(current_transaction); 
-	
-		DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity, transaction);
+			TRA_detach_request(idx.idx_expression_request);
+			tdbb->setRequest(current_request);
+			tdbb->setTransaction(current_transaction); 
+		
+			DFW_update_index(work->dfw_name.c_str(), idx.idx_id, selectivity);
 
-		// Get rid of the pool containing the expression tree
+			// Get rid of the pool containing the expression tree
 
-		dbb->deletePool(new_pool);
+			if (new_pool) {
+				JrdMemoryPool::deletePool(new_pool);
+			}
+
+			if (relationLock && releaseRelationLock) {
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
+			}
+		}
+		catch (const Firebird::Exception&)
+		{
+			TRA_detach_request(idx.idx_expression_request);
+			tdbb->setRequest(current_request);
+			tdbb->setTransaction(current_transaction); 
+		
+			if (new_pool) {
+				JrdMemoryPool::deletePool(new_pool);
+			}
+			
+			if (relationLock && releaseRelationLock) {
+				DFW_release_protect_lock(tdbb, transaction, relationLock);
+			}
+
+			throw;
+		}
 		break;
 	}
 
@@ -243,7 +273,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	const Database* dbb = tdbb->getDatabase();
 
 	// Check the index blocks for the relation to see if we 
 	// have a cached block
@@ -260,7 +290,8 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	{
 		idx->idx_expression = index_block->idb_expression;
 		idx->idx_expression_request = index_block->idb_expression_request;
-		memcpy(&idx->idx_expression_desc, &index_block->idb_expression_desc, sizeof(struct dsc));
+		MOVE_FAST(&index_block->idb_expression_desc,
+				  &idx->idx_expression_desc, sizeof(struct dsc));
 		return;
 	}
 
@@ -294,7 +325,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 		   with the index block in the "permanent" metadata cache */
 
 		{
-			Jrd::ContextPoolHolder context(tdbb, dbb->createPool());
+			Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
 			idx->idx_expression =
 				MET_parse_blob(tdbb, relation, &IDX.RDB$EXPRESSION_BLR, &csb,
 							   &idx->idx_expression_request, false);
@@ -322,7 +353,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 /* if we can't get the lock, no big deal: just give up on caching the index info */
 
-	if (!LCK_lock(tdbb, index_block->idb_lock, LCK_SR, LCK_NO_WAIT))
+	if (!LCK_lock_non_blocking(tdbb, index_block->idb_lock, LCK_SR, LCK_NO_WAIT))
 		return;
 
 /* whether the index block already existed or was just created,
@@ -330,6 +361,7 @@ void PCMET_lookup_index(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	index_block->idb_expression = idx->idx_expression;
 	index_block->idb_expression_request = idx->idx_expression_request;
-	memcpy(&index_block->idb_expression_desc, &idx->idx_expression_desc, sizeof(struct dsc));
+	MOVE_FAST(&idx->idx_expression_desc, &index_block->idb_expression_desc,
+			  sizeof(struct dsc));
 }
 

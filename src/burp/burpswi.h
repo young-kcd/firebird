@@ -28,7 +28,6 @@
 #define BURP_BURPSWI_H
 
 #include "../jrd/common.h"
-#include "../jrd/constants.h"
 #include "../jrd/ibase.h"
 
 /* Local copies of global variables.  They will be copied into
@@ -83,14 +82,11 @@ const int IN_SW_BURP_HIDDEN_RDWRITE	= 37;
 const int IN_SW_BURP_RECREATE		= 38;      // recreate database 
 const int IN_SW_BURP_NOD			= 39;      // do not run database triggers
 #ifdef TRUSTED_AUTH
-const int IN_SW_BURP_TRUSTED_USER	= 40;      // force trusted auth
+const int IN_SW_BURP_TRUSTED_USER   = 40;      // force trusted auth
 #endif
-const int IN_SW_BURP_TRUSTED_SVC	= 41;      // trusted user name to use on attach
-const int IN_SW_BURP_TRUSTED_ROLE	= 42;      // use trusted role on attach
-
-const int IN_SW_BURP_FIX_FSS_DATA		= 43;      // fix unicode_fss data
-const int IN_SW_BURP_FIX_FSS_METADATA	= 44;      // fix unicode_fss metadata
-
+#ifdef TRUSTED_SERVICES
+const int IN_SW_BURP_TRUSTED_SVC    = 41;      // trusted user name to use on attach 
+#endif
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
 
@@ -99,7 +95,7 @@ static const char* BURP_SW_MODE_RW = "read_write";
 static const char* BURP_SW_OVERWRITE = "OVERWRITE"; // recreate with overwrite
 
 
-static const in_sw_tab_t reference_burp_in_sw_table [] =
+static in_sw_tab_t burp_in_sw_table [] =
 {
     {IN_SW_BURP_B,    0,                 	"BACKUP_DATABASE",  0, 0, 0, FALSE, 60,	0, NULL},
                 // msg 60: %sBACKUP_DATABASE backup database to file 
@@ -114,10 +110,6 @@ static const in_sw_tab_t reference_burp_in_sw_table [] =
     {IN_SW_BURP_F,    0,				"FILE_NAMES",	    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_FA,   isc_spb_bkp_factor,	"FACTOR",	    0, 0, 0, FALSE, 181, 0, NULL},
                 /* msg 181; %sFACTOR  blocking factor */
-	{IN_SW_BURP_FIX_FSS_DATA,    0,		"FIX_FSS_DATA",	    0, 0, 0, FALSE, 302, 0, NULL},
-                // msg 302: @1FIX_FSS_DATA         fix malformed UNICODE_FSS data
-	{IN_SW_BURP_FIX_FSS_METADATA,    0,	"FIX_FSS_METADATA",	    0, 0, 0, FALSE, 303, 0, NULL},
-                // msg 303: @1FIX_FSS_METADATA     fix malformed UNICODE_FSS metadata
     {IN_SW_BURP_G,    isc_spb_bkp_no_garbage_collect, "GARBAGE_COLLECT",  0, 0, 0, FALSE, 177, 0, NULL},
                 // msg 177:%sGARBAGE_COLLECT inhibit garbage collection 
     {IN_SW_BURP_I,    isc_spb_res_deactivate_idx, "INACTIVE",	    0, 0, 0, FALSE, 78, 0, NULL},
@@ -164,8 +156,9 @@ static const in_sw_tab_t reference_burp_in_sw_table [] =
     {IN_SW_BURP_TRUSTED_USER, 0,		"TRUSTED",			0, 0, 0, FALSE, 295, 0, NULL},
 				// msg 295: @1TRU(STED)            use trusted authentication
 #endif
-    {IN_SW_BURP_TRUSTED_SVC, 0,	 		TRUSTED_USER_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_BURP_TRUSTED_ROLE, 0, 		TRUSTED_ROLE_SWITCH, 0, 0, 0, FALSE, 0, 0, NULL},
+#ifdef TRUSTED_SERVICES
+    {IN_SW_BURP_TRUSTED_SVC, 0,	 		"TRUSTED_SVC",	    0, 0, 0, FALSE, 0, 0, NULL},
+#endif
 /*
     {IN_SW_BURP_U,    0,				"UNPROTECTED",	    0, 0, 0, FALSE, 0, 0, NULL},
 */

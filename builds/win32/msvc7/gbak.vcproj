@@ -151,9 +151,6 @@
 				RelativePath="..\..\..\src\burp\burp.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\burp\burpMain.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\burp\canonical.cpp">
 			</File>
 			<File
@@ -194,9 +191,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 		<Filter

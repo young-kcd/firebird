@@ -30,6 +30,7 @@
 #
 ROOT=..
 ObjModuleType=std
+CFLAGS+=-DSTD_UTIL
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -59,28 +60,28 @@ CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_So
 
 
 DROP_Other_Sources = common/utils.cpp lock/lock.cpp jrd/isc_sync.cpp jrd/isc_ipc.cpp jrd/isc.cpp \
+common/classes/fb_string.cpp common/classes/alloc.cpp common/fb_exception.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
-DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))) \
-$(FBCOMMON_ClientObjects) $(FBCLASSES_ClientObjects)
+DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
 
-GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp common/utils.cpp \
-$(OS_SPECIFIC_Sources) jrd/isc_file.cpp jrd/isc.cpp jrd/ThreadData.cpp common/UtilSvc.cpp
+GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp jrd/ods.cpp \
+common/utils.cpp jrd/isc_file.cpp jrd/isc.cpp $(OS_SPECIFIC_Sources)
 
-GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
+GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources)))) $(CLUMPLETS_Objects)
 
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp
+common/fb_exception.cpp common/utils.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
-$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
 
 
 FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
@@ -136,56 +137,62 @@ all: $(CLIENT_UTIL_TARGETS)
 create_db: $(CREATE_DB)
 
 $(CREATE_DB):	$(CREATEDB_Objects) 
-	$(STATICEXE_LINK) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(STATICEXE_LINK) $(LINK_OPTS) $(CREATEDB_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 nbackup: $(LIBFBCLIENT_SO) $(NBACKUP)
 
 $(NBACKUP):	$(NBACKUP_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 fb_lock_print: $(LIBFBCLIENT_SO) $(LOCKPRINT)
 
 $(LOCKPRINT):	$(LOCKPRINT_Objects) $(COMMON_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 gstat : $(LIBFBCLIENT_SO) $(GSTAT)
 
 $(GSTAT):	$(GSTAT_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects) $(FBCONFIG_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 gds_drop: $(GDS_DROP)
 
 $(GDS_DROP):	$(DROP_Objects) $(LIBFBCLIENT_SO)  
-	$(EXE_LINK) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(DROP_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 fbsvcmgr: $(FBSVCMGR)
 
 $(FBSVCMGR):	$(FBSVCMGR_Objects) $(LIBFBCLIENT_SO)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
+
+
+gds_relay: $(GDS_RELAY)
+
+$(GDS_RELAY):	$(RELAY_Objects) $(LIBFBCLIENT_SO)  
+	$(EXE_LINK) $(LINK_OPTS) $(RELAY_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
 
 $(FBGUARD):	$(FBGUARD_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 ibguard: $(LIBFBCLIENT_SO) $(IBGUARD)
 
 $(IBGUARD):	$(IBGUARD_A_Objects) $(IBGUARD_B_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_Objects) $(FBCOMMON_Objects) -lfbclient \
-$(LIB_GUI) $(LINK_LIBS)
+$(LIB_GUI) $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 fbmgr_bin: $(FBMGR_BIN)
 
 $(FBMGR_BIN):	$(FBMGR_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) $(FBCLASSES_Objects) $(FBCOMMON_Objects) -lfbclient \
-$(LINK_LIBS)
+$(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 
 instreg: $(INSTREG)
@@ -204,7 +211,7 @@ $(INSTSVC):	$(INSTSVC_Objects)
 rebuild: $(GDS_REBUILD)
 
 $(GDS_REBUILD):	$(REBUILD_Objects) $(LIBFBCLIENT_SO)  
-	$(EXE_LINK) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $(REBUILD_Objects) -o $@ -L$(LIB) -lfbclient $(LINK_LIBS) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@
 
 include $(ROOT)/gen/make.shared.targets
 

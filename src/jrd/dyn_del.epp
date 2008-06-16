@@ -40,6 +40,7 @@
 #include "../jrd/flags.h"
 #include "../jrd/ibase.h"
 #include "../jrd/lls.h"
+#include "../jrd/all.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
 #include "../jrd/intl.h"
@@ -56,6 +57,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../common/utils_proto.h"
 
@@ -985,8 +987,8 @@ void DYN_delete_parameter(Global* gbl,
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		PP IN RDB$PROCEDURE_PARAMETERS WITH PP.RDB$PROCEDURE_NAME EQ proc_name->c_str()
 			AND PP.RDB$PARAMETER_NAME EQ name.c_str()
-		if (!DYN_REQUEST(drq_e_prm))
-			DYN_REQUEST(drq_e_prm) = request;
+        if (!DYN_REQUEST(drq_e_prm))
+            DYN_REQUEST(drq_e_prm) = request;
 		found = true;
 
 		/* get rid of parameters in rdb$fields */
@@ -1001,33 +1003,10 @@ void DYN_delete_parameter(Global* gbl,
 				FLD IN RDB$FIELDS
 					WITH FLD.RDB$FIELD_NAME EQ PP.RDB$FIELD_SOURCE AND
 						 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX
-				if (!DYN_REQUEST(drq_d_gfields))
-					DYN_REQUEST(drq_d_gfields) = request;
+                if (!DYN_REQUEST(drq_d_gfields))
+                    DYN_REQUEST(drq_d_gfields) = request;
 
-				bool erase = true;
-
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
-				{
-					jrd_req* request2 = CMP_find_request(tdbb, drq_d_gfields2, DYN_REQUESTS);
-
-					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-						PP2 IN RDB$PROCEDURE_PARAMETERS
-						WITH PP2.RDB$PROCEDURE_NAME = PP.RDB$PROCEDURE_NAME AND
-							 PP2.RDB$PARAMETER_NAME = PP.RDB$PARAMETER_NAME
-
-						if (!DYN_REQUEST(drq_d_gfields2))
-							DYN_REQUEST(drq_d_gfields2) = request2;
-
-						if (!PP2.RDB$RELATION_NAME.NULL && !PP2.RDB$FIELD_NAME.NULL)
-							erase = false;
-					END_FOR;
-
-					if (!DYN_REQUEST(drq_d_gfields2))
-						DYN_REQUEST(drq_d_gfields2) = request2;
-				}
-
-				if (erase)
-					ERASE FLD;
+				ERASE FLD;
 			END_FOR;
 
 			if (!DYN_REQUEST(drq_d_gfields))
@@ -1125,26 +1104,7 @@ void DYN_delete_procedure( Global* gbl, const UCHAR** ptr)
                 if (!DYN_REQUEST(drq_d_gfields))
                     DYN_REQUEST(drq_d_gfields) = request;
 
-				bool erase = true;
-
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_2)
-				{
-					jrd_req* request2 = NULL;
-
-					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-						PP2 IN RDB$PROCEDURE_PARAMETERS
-						WITH PP2.RDB$PROCEDURE_NAME = PP.RDB$PROCEDURE_NAME AND
-							 PP2.RDB$PARAMETER_NAME = PP.RDB$PARAMETER_NAME
-
-						if (!PP2.RDB$RELATION_NAME.NULL && !PP2.RDB$FIELD_NAME.NULL)
-							erase = false;
-					END_FOR;
-
-					CMP_release(tdbb, request2);
-				}
-
-				if (erase)
-					ERASE FLD;
+				ERASE FLD;
 			END_FOR;
 
 			if (!DYN_REQUEST(drq_d_gfields))
@@ -1514,33 +1474,15 @@ void DYN_delete_relation( Global* gbl, const UCHAR** ptr, const Firebird::MetaNa
 		// msg 129: "ERASE RDB$RELATION_CONSTRAINTS failed"
 		USHORT number;
 		switch (id) {
-			case drq_e_rel_con2:
-				number = 129;
-				break;
-			case drq_e_rel_idxs:
-				number = 57;
-				break;
-			case drq_e_trg_msgs2:
-				number = 65;
-				break;
-			case drq_e_trigger2:
-				number = 66;
-				break;
-			case drq_e_rel_flds:
-				number = 58;
-				break;
-			case drq_e_view_rels:
-				number = 59;
-				break;
-			case drq_e_relation:
-				number = 60;
-				break;
-			case drq_e_sec_class:
-				number = 74;
-				break;
-			default:
-				number = 62;
-				break;
+			case drq_e_rel_con2:	number = 129;	break;
+			case drq_e_rel_idxs:	number = 57;	break;
+			case drq_e_trg_msgs2:	number = 65;	break;
+			case drq_e_trigger2:	number = 66;	break;
+			case drq_e_rel_flds:	number = 58;	break;
+			case drq_e_view_rels:	number = 59;	break;
+			case drq_e_relation:	number = 60;	break;
+			case drq_e_sec_class:	number = 74;	break;
+			default:				number = 62;	break;
 		}
 
 		DYN_error_punt(true, number);

@@ -190,7 +190,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	}
 	
 	// Check length according to clumplet type
-	const ClumpletType t = getClumpletType(tag);
+	ClumpletType t = getClumpletType(tag);
 	UCHAR lenSize = 0;
 	switch (t)
 	{
@@ -257,7 +257,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	}
 
 	// Insert the data
-	const size_t saved_offset = cur_offset;
+	size_t saved_offset = cur_offset;
 	dynamic_buffer.insert(cur_offset++, tag);
 	switch (lenSize)
 	{
@@ -366,3 +366,4 @@ bool ClumpletWriter::deleteWithTag(UCHAR tag)
 }
 
 } // namespace
+

@@ -24,6 +24,7 @@ AC_SUBST(CPU_TYPE)
 
 
 dnl EKU: set appropiate defaults for each platform
+dnl      LOCK_MANAGER_FLG : build lock manager (CS only)
 dnl      EDITLINE_FLG     : support fancy command line editing in isql
 dnl      SHRLIB_EXT       : suffix of shared library files
 
@@ -33,6 +34,10 @@ INSTALL_PREFIX=""
 dnl Use /usr/lib for library links on most platforms except some 64-bit ones
 libdir=/usr/lib
 ICU_PLATFORM=LinuxRedHat
+
+dnl Should Classic Server run services as thread or as process?
+dnl Default - run as processes (empty value).
+service_thread_CS=""
 
 dnl Should system editline and/or icu be used 
 STD_EDITLINE=false
@@ -50,6 +55,7 @@ case "$target" in
     INSTALL_PREFIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
@@ -58,16 +64,15 @@ dnl CPU_TYPE=x86_64
 
   powerpc-*-darwin*)
     MAKEFILE_PREFIX=darwin_powerpc
-dnl MAKEFILE_PREFIX=darwin_ppc64
     MAKEFILE_POSTFIX=darwin
     PLATFORM=DARWIN
     INSTALL_PREFIX=darwin
     AC_DEFINE(DARWIN, 1, [Define this if OS is DARWIN])
 	XE_APPEND(-framework CoreFoundation,LIBS)
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=dylib
     ICU_PLATFORM=MacOSX
-dnl CPU_TYPE=ppc64
     ;;
 
   amd64-*-freebsd*)
@@ -75,6 +80,7 @@ dnl CPU_TYPE=ppc64
     PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -83,6 +89,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=freebsd
     PLATFORM=GENTOOFREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -91,6 +98,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=freebsd 
     PLATFORM=FREEBSD
     AC_DEFINE(FREEBSD, 1, [Define this if OS is FreeBSD])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -100,6 +108,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-pthread
@@ -111,6 +120,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-pthread
@@ -122,13 +132,10 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
-	if test -L /usr/lib64; then
-		libdir=/usr/lib
-	else
-		libdir=/usr/lib64
-	fi
+    libdir=/usr/lib64
     CPU_TYPE=amd64
 	RPM64='()(64bit)'
     ;;
@@ -138,6 +145,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     libdir=/usr/lib
@@ -150,6 +158,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     STD_EDITLINE=true
@@ -161,6 +170,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -170,6 +180,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -178,6 +189,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX)
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -187,6 +199,7 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -195,6 +208,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=netbsd
     PLATFORM=NETBSD
     AC_DEFINE(NETBSD, 1, [Define this if OS is NetBSD])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -203,6 +217,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=hpux
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
+    LOCK_MANAGER_FLG=Y
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
@@ -213,11 +228,13 @@ dnl CPU_TYPE=ppc64
     INSTALL_PREFIX=solaris
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISX86GCC
+    service_thread_CS=true
     RT_LIB_CHECK=true
     ;;
 
@@ -227,6 +244,7 @@ dnl CPU_TYPE=ppc64
     PLATFORM=solx86
     AC_DEFINE(solx86, 1, [Define this if OS is Solarix x86])
     AC_DEFINE(AMD64, 1, [Define this if CPU is amd64])
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
@@ -237,16 +255,19 @@ dnl CPU_TYPE=ppc64
     CPU_TYPE=amd64
     RT_LIB_CHECK=true
     ;;
+
   sparc-sun-solaris*)
     MAKEFILE_PREFIX=solaris
     INSTALL_PREFIX=solaris
     PLATFORM=SOLARIS
     AC_DEFINE(SOLARIS, 1, [Define this if OS is Solaris Sparc])
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     PTHREAD_CFLAGS=-threads
     PTHREAD_LIBS=-lthread
     ICU_PLATFORM=SOLARISGCC
+    service_thread_CS=true
     RT_LIB_CHECK=true
     ;;
 
@@ -254,6 +275,7 @@ dnl CPU_TYPE=ppc64
     MAKEFILE_PREFIX=sinixz
     PLATFORM="SINIX-Z"
     AC_DEFINE(SINIXZ, 1, [Define this if OS is SINIX-Z])
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
     ;;
@@ -263,10 +285,12 @@ dnl CPU_TYPE=ppc64
     PLATFORM=win32
     AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
     AC_DEFINE(HAVE_MULTI_THREAD, 1, [Define this if multi-threading should be supported])
+    LOCK_MANAGER_FLG=N
     EDITLINE_FLG=N
     RAW_DEVICES_FLG=N
     SHRLIB_EXT=dll
 	ICU_PLATFORM=MinGW
+    service_thread_CS=true
     ;;
 
   *)
@@ -282,6 +306,7 @@ AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
 AC_SUBST(ICU_PLATFORM)
+AC_SUBST(service_thread_CS)
 AC_DEFINE(CASE_SENSITIVITY, false, [Define this if paths are case sensitive])
 AC_SUBST(RPM64)
 
@@ -313,11 +338,9 @@ AC_ARG_ENABLE(debug,
 AC_SUBST(PROD_BUILD_FLG)
 
 dnl Find out how to use threads on this platform
-pre_acx_pthread_cflags=$CFLAGS
 ACX_PTHREAD([
   AC_DEFINE(HAVE_MULTI_THREAD, 1,
     [Define this if multi-threading should be supported])])
-CFLAGS=$pre_acx_pthread_cflags
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
@@ -333,6 +356,30 @@ if test "$RAW_DEVICES_FLG" = "Y"; then
   AC_DEFINE(SUPPORT_RAW_DEVICES, 1,
     [Define this if databases on raw devices should be supported])
 fi
+
+MANAGER_PROCESS_TARGET=
+if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
+  dnl The lock manager process is only need on systems, that do not support
+  dnl sending signals to process groups (man 2 kill).
+  AC_ARG_WITH(lock-manager,
+    [  --with-lock-manager     build lock manager],
+    [case "$withval" in
+       yes) LOCK_MANAGER_FLG=Y;;
+       no)  LOCK_MANAGER_FLG=N;;
+       *)   AC_MSG_ERROR(bad value '${withval}' for --with-lock-manager);;
+     esac])
+
+  if test "$LOCK_MANAGER_FLG" = "Y"; then
+    dnl EKU: we should determine the necessity by target system
+    dnl      at least SOLARIS-MT, DARWIN and SINIX-Z do not require a lock
+    dnl      manager process
+    dnl EKU: is this really true???
+    AC_DEFINE(MANAGER_PROCESS, 1,
+      [Define this if the lock manager process is needed])
+    MANAGER_PROCESS_TARGET=lock_mgr
+  fi
+fi
+AC_SUBST(MANAGER_PROCESS_TARGET)
 
 AC_ARG_WITH(editline,
   [  --with-editline         support fancy command line editing],
@@ -516,6 +563,7 @@ AC_CHECK_HEADERS(semaphore.h)
 
 dnl Check for libraries
 AC_CHECK_LIB(dl, main)
+dnl AC_CHECK_LIB(c, main)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \
@@ -859,7 +907,6 @@ mkdir -p gen/gpre
 mkdir -p gen/iscguard
 mkdir -p gen/isql
 mkdir -p gen/jrd
-mkdir -p gen/jrd/extds
 mkdir -p gen/msgs
 mkdir -p gen/qli
 mkdir -p gen/utilities
@@ -906,7 +953,6 @@ mkdir -p temp/boot/ipserver
 mkdir -p temp/boot/iscguard
 mkdir -p temp/boot/isql
 mkdir -p temp/boot/jrd
-mkdir -p temp/boot/jrd/extds
 mkdir -p temp/boot/jrd/os/posix
 mkdir -p temp/boot/jrd/os/win32
 mkdir -p temp/boot/jrd/os/darwin
@@ -943,7 +989,6 @@ mkdir -p temp/std/ipserver
 mkdir -p temp/std/iscguard
 mkdir -p temp/std/isql
 mkdir -p temp/std/jrd
-mkdir -p temp/std/jrd/extds
 mkdir -p temp/std/jrd/os/posix
 mkdir -p temp/std/jrd/os/win32
 mkdir -p temp/std/jrd/os/darwin
@@ -980,7 +1025,6 @@ mkdir -p temp/superclient/ipserver
 mkdir -p temp/superclient/iscguard
 mkdir -p temp/superclient/isql
 mkdir -p temp/superclient/jrd
-mkdir -p temp/superclient/jrd/extds
 mkdir -p temp/superclient/jrd/os/posix
 mkdir -p temp/superclient/jrd/os/win32
 mkdir -p temp/superclient/jrd/os/darwin
@@ -1017,7 +1061,6 @@ mkdir -p temp/superserver/ipserver
 mkdir -p temp/superserver/iscguard
 mkdir -p temp/superserver/isql
 mkdir -p temp/superserver/jrd
-mkdir -p temp/superserver/jrd/extds
 mkdir -p temp/superserver/jrd/os/posix
 mkdir -p temp/superserver/jrd/os/win32
 mkdir -p temp/superserver/jrd/os/darwin
@@ -1048,7 +1091,8 @@ dnl EKU: handle platform specific installation and packaging
 dnl: Common Files
 case "$PLATFORM" in
   [LINUX|GENTOOFREEBSD|HPUX])
-    AC_CONFIG_FILES([gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
+    AC_CONFIG_FILES([
+    gen/install/misc/firebird.conf:builds/install/misc/firebird.conf
     gen/install/misc/aliases.conf:builds/install/misc/aliases.conf.in
     gen/install/misc/fbintl.conf:builds/install/misc/fbintl.conf
     gen/firebird/bin/fb_config:builds/install/misc/fb_config.in
@@ -1073,16 +1117,16 @@ case "$PLATFORM" in
 
     INSTALL_SRC_DIR=builds/install/arch-specific/linux/${FIREBIRD_ARCH_TYPE}
     AC_CONFIG_FILES([gen/install/makeInstallImage.sh:${INSTALL_SRC_DIR}/makeInstallImage.sh.in
+                     gen/firebird/bin/tarMainInstall.sh:${INSTALL_SRC_DIR}/tarMainInstall.sh.in
+                     gen/firebird/bin/tarinstall.sh:${INSTALL_SRC_DIR}/tarinstall.sh.in
+                     gen/firebird/bin/preinstall.sh:${INSTALL_SRC_DIR}/preinstall.sh.in
+                     gen/firebird/bin/postinstall.sh:${INSTALL_SRC_DIR}/postinstall.sh.in
+                     gen/firebird/bin/preuninstall.sh:${INSTALL_SRC_DIR}/preuninstall.sh.in
+                     gen/firebird/bin/postuninstall.sh:${INSTALL_SRC_DIR}/postuninstall.sh.in
+                     gen/firebird/bin/taruninstall.sh:${INSTALL_SRC_DIR}/taruninstall.sh.in
+                     gen/firebird/bin/tarMainUninstall.sh:${INSTALL_SRC_DIR}/tarMainUninstall.sh.in
                      gen/install/scripts/rpmheader.txt:${INSTALL_SRC_DIR}/rpmheader.txt.in
                      gen/install/scripts/rpmfiles.txt:${INSTALL_SRC_DIR}/rpmfiles.txt.in
-                     gen/firebird/bin/tarMainInstall.sh:builds/install/arch-specific/linux/misc/tarMainInstall.sh.in
-                     gen/firebird/bin/tarinstall.sh:builds/install/arch-specific/linux/misc/tarinstall.sh.in
-                     gen/firebird/bin/preinstall.sh:builds/install/arch-specific/linux/misc/preinstall.sh.in
-                     gen/firebird/bin/postinstall.sh:builds/install/arch-specific/linux/misc/postinstall.sh.in
-                     gen/firebird/bin/preuninstall.sh:builds/install/arch-specific/linux/misc/preuninstall.sh.in
-                     gen/firebird/bin/postuninstall.sh:builds/install/arch-specific/linux/misc/postuninstall.sh.in
-                     gen/firebird/bin/taruninstall.sh:builds/install/arch-specific/linux/misc/taruninstall.sh.in
-                     gen/firebird/bin/tarMainUninstall.sh:builds/install/arch-specific/linux/misc/tarMainUninstall.sh.in
                      gen/install/misc/firebird.xinetd:builds/install/arch-specific/linux/misc/firebird.xinetd.in
                      gen/install/misc/firebird.init.d.generic:builds/install/arch-specific/linux/misc/firebird.init.d.generic.in
                      gen/install/misc/firebird.init.d.mandrake:builds/install/arch-specific/linux/misc/firebird.init.d.mandrake.in
@@ -1092,16 +1136,17 @@ case "$PLATFORM" in
                      gen/install/misc/firebird.init.d.slackware:builds/install/arch-specific/linux/misc/firebird.init.d.slackware.in
                      gen/install/misc/rc.config.firebird:builds/install/arch-specific/linux/misc/rc.config.firebird.in
                      gen/firebird/bin/changeDBAPassword.sh:builds/install/misc/changeDBAPassword.sh.in
-                     gen/firebird/bin/changeMultiConnectMode.sh:builds/install/misc/changeMultiConnectMode.sh.in
                      gen/firebird/bin/changeGdsLibraryCompatibleLink.sh:builds/install/misc/changeGdsLibraryCompatibleLink.sh.in
                      gen/firebird/bin/createAliasDB.sh:builds/install/misc/createAliasDB.sh.in
-                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in]
-      ,[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
+                     gen/firebird/bin/linuxLibrary.sh:builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+                     gen/firebird/bin/superLinux.sh:builds/install/arch-specific/linux/misc/superLinux.sh.in
+      ],[chmod a+x gen/install/scripts/*.sh gen/install/*sh 2>/dev/null])
     ;;
 
   HPUX)
     HP_INSTALL_SRC_DIR=builds/install/arch-specific/hpux/${FIREBIRD_ARCH_TYPE}
-    AC_CONFIG_FILES([gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
+    AC_CONFIG_FILES([
+    gen/install/makeinstallImage.sh:${HP_INSTALL_SRC_DIR}/makeinstallImage.sh.in
     gen/firebirdCS.psf:${HP_INSTALL_SRC_DIR}/firebirdCS.psf.in
     gen/firebird/bin/preInstall.sh:${HP_INSTALL_SRC_DIR}/preInstall.sh.in
     gen/firebird/bin/tarInstall.sh:${HP_INSTALL_SRC_DIR}/tarInstall.sh.in
@@ -1121,14 +1166,14 @@ case "$PLATFORM" in
     ;;
 
   FREEBSD)
-    AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in]
-      ,[chmod a+x gen/install/install.sh 2>/dev/null])
+    AC_CONFIG_FILES([gen/install/install.sh:builds/install/arch-specific/freebsd/install.sh.in
+      ],[chmod a+x gen/install/install.sh 2>/dev/null])
     ;;
 
 
   NETBSD)
-    AC_CONFIG_FILES([gen/install/install.netbsd.sh:builds/install/arch-specific/netbsd/install.sh.in]
-      ,[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
+    AC_CONFIG_FILES([gen/install/install.netbsd.sh:builds/install/arch-specific/netbsd/install.sh.in
+      ],[chmod a+x gen/install/install.netbsd.sh 2>/dev/null])
     ;;
 
 
@@ -1137,8 +1182,8 @@ case "$PLATFORM" in
                      gen/install/prototype:builds/install/arch-specific/sinixz/prototype.in
                      gen/install/preinstall:builds/install/arch-specific/sinixz/preinstall.in
                      gen/install/postinstall:builds/install/arch-specific/sinixz/postinstall.in
-                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in]
-      ,[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
+                     gen/install/postremove:builds/install/arch-specific/sinixz/postremove.in
+      ],[chmod a+x gen/install/pre* gen/install/post* 2>/dev/null])
     ;;
 
   solx86|SOLARIS)
@@ -1148,8 +1193,8 @@ case "$PLATFORM" in
                      gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
                      gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
 		     gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
-		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in]
-      ,[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
+		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
+      ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
 
   DARWIN)
@@ -1178,10 +1223,10 @@ gen/Makefile.boot.gpre:${MAKE_SRC_DIR}/Makefile.in.boot.gpre
 gen/Makefile.libfbstatic:${MAKE_SRC_DIR}/Makefile.in.libfbstatic
 gen/Makefile.static.gpre:${MAKE_SRC_DIR}/Makefile.in.static.gpre
 gen/Makefile.static.gbak:${MAKE_SRC_DIR}/Makefile.in.static.gbak
+gen/Makefile.static.gfix:${MAKE_SRC_DIR}/Makefile.in.static.gfix
 gen/Makefile.static.isql:${MAKE_SRC_DIR}/Makefile.in.static.isql
 gen/Makefile.refDatabases:${MAKE_SRC_DIR}/Makefile.in.refDatabases
 gen/Makefile.fbserver:${MAKE_SRC_DIR}/Makefile.in.fbserver
-gen/Makefile.smp_server:${MAKE_SRC_DIR}/Makefile.in.smp_server
 gen/Makefile.libfbclient:${MAKE_SRC_DIR}/Makefile.in.libfbclient
 gen/Makefile.client.fbudf:${MAKE_SRC_DIR}/Makefile.in.client.fbudf
 gen/Makefile.client.gbak:${MAKE_SRC_DIR}/Makefile.in.client.gbak
@@ -1198,6 +1243,7 @@ gen/Makefile.extlib:${MAKE_SRC_DIR}/Makefile.in.extlib
 gen/examples/Makefile.examples:${MAKE_SRC_DIR}/Makefile.in.examples
 gen/Makefile.libfbembed:${MAKE_SRC_DIR}/Makefile.in.libfbembed
 gen/Makefile.inet_server:${MAKE_SRC_DIR}/Makefile.in.inet_server
+gen/Makefile.embed.lockmgr:${MAKE_SRC_DIR}/Makefile.in.embed.lockmgr
 gen/Makefile.embed.util:${MAKE_SRC_DIR}/Makefile.in.embed.util
 gen/Makefile.embed.fbudf:${MAKE_SRC_DIR}/Makefile.in.embed.fbudf
 gen/Makefile.embed.gfix:${MAKE_SRC_DIR}/Makefile.in.embed.gfix
@@ -1256,6 +1302,13 @@ case $RAW_DEVICES_FLG in
  Y)       echo "                    Raw devices : enabled";;
  N)       echo "                    Raw devices : disabled";;
 esac
+
+if test "$FIREBIRD_ARCH_TYPE" = "classic"; then
+  case $LOCK_MANAGER_FLG in
+   Y)     echo "                   Lock manager : enabled";;
+   N)     echo "                   Lock manager : disabled";;
+  esac
+fi
 
 echo           "                   Service name : $FB_SERVICE_NAME"
 echo           "                   Service port : $FB_SERVICE_PORT"

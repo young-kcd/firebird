@@ -63,6 +63,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/sort_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../jrd/tra_proto.h"
 
@@ -85,7 +86,6 @@ static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
 static IDX_E insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, jrd_rel**, USHORT *);
 static bool key_equal(const temporary_key*, const temporary_key*);
-static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
 
@@ -197,13 +197,11 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
 
 	int i;
 	for (i = 0; i < idx.idx_count; i++)
-	{
 		if (idx.idx_rpt[i].idx_itype != partner_idx.idx_rpt[i].idx_itype)
 		{
 			bad_segment = i;
 			return false;
 		}
-	}
 
 	return true;
 }
@@ -520,10 +518,10 @@ void IDX_create_index(
 		IndexLock* idx_lock = CMP_get_index_lock(tdbb, relation, idx->idx_id);
 		if (idx_lock)
 		{
-			++idx_lock->idl_count;
-			if (idx_lock->idl_count == 1) {
-				LCK_lock(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
+			if (!idx_lock->idl_count) {
+				LCK_lock_non_blocking(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
 			}
+			++idx_lock->idl_count;
 		}
 	}
 }
@@ -1029,11 +1027,14 @@ static IDX_E check_duplicates(
 	old_rpb.rpb_relation = insertion->iib_relation;
 	old_rpb.rpb_record = NULL;
 
-	jrd_rel* const relation_1 = insertion->iib_relation;
+	jrd_rel* relation_1 = insertion->iib_relation;
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
-	ThreadStatusGuard local_status(tdbb);
+	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
+	ISC_STATUS_ARRAY local_status;
+	memset(local_status, 0, sizeof(ISC_STATUS_ARRAY));
+	tdbb->tdbb_status_vector = local_status;
 
 	if (accessor.getFirst())
 	do {
@@ -1195,8 +1196,9 @@ static IDX_E check_duplicates(
 		delete old_rpb.rpb_record;
 
 	if (local_status[1]) {
-		local_status.copyToOriginal();
+		memcpy(original_status, local_status, sizeof(ISC_STATUS_ARRAY));
 	}
+	tdbb->tdbb_status_vector = original_status;
 
 	return result;
 }
@@ -1375,7 +1377,8 @@ static IDX_E check_partner_index(
 		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
-		memcpy(&retrieval.irb_desc, &partner_idx, sizeof(retrieval.irb_desc));
+		MOVE_FAST(&partner_idx, &retrieval.irb_desc,
+				  sizeof(retrieval.irb_desc));
 		retrieval.irb_generic = irb_equality | (fuzzy ? irb_starting : 0);
 		retrieval.irb_relation = partner_relation;
 		retrieval.irb_key = &key;
@@ -1488,22 +1491,40 @@ static int index_block_flush(void* ast_object)
  *
  **************************************/
 	IndexBlock* index_block = static_cast<IndexBlock*>(ast_object);
+	thread_db thd_context, *tdbb;
 
-	try
+/* Since this routine will be called asynchronously, we must establish
+   a thread context. */
+
+	JRD_set_thread_data(tdbb, thd_context);
+
+	Lock* lock = index_block->idb_lock;
+
+	if (lock->lck_attachment) 
 	{
-		Lock* lock = index_block->idb_lock;
-		Database* dbb = lock->lck_dbb;
-
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(lock->lck_attachment);
-
-		release_index_block(tdbb, index_block);
+		tdbb->setDatabase(lock->lck_attachment->att_database);
 	}
-	catch (const Firebird::Exception&)
-	{} // no-op
+	tdbb->setAttachment(lock->lck_attachment);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+
+/* release the index expression request, which also has
+   the effect of releasing the expression tree */
+
+	if (index_block->idb_expression_request) {
+		CMP_release(tdbb, index_block->idb_expression_request);
+	}
+
+	index_block->idb_expression_request = NULL;
+	index_block->idb_expression = NULL;
+	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(struct dsc));
+
+	LCK_release(tdbb, lock);
+
+/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
 
 	return 0;
 }
@@ -1590,33 +1611,8 @@ static bool key_equal(const temporary_key* key1, const temporary_key* key2)
  *	Compare two keys for equality.
  *
  **************************************/
-	const USHORT l = key1->key_length;
+	USHORT l = key1->key_length;
 	return (l == key2->key_length && !memcmp(key1->key_data, key2->key_data, l));
-}
-
-
-static void release_index_block(thread_db* tdbb, IndexBlock* index_block)
-{
-/**************************************
- *
- *	r e l e a s e _ i n d e x _ b l o c k
- *
- **************************************
- *
- * Functional description
- *	Release index block structure.
- *
- **************************************/
-	if (index_block->idb_expression_request)
-	{
-		CMP_release(tdbb, index_block->idb_expression_request);
-	}
-
-	index_block->idb_expression_request = NULL;
-	index_block->idb_expression = NULL;
-	MOVE_CLEAR(&index_block->idb_expression_desc, sizeof(dsc));
-
-	LCK_release(tdbb, index_block->idb_lock);
 }
 
 
@@ -1662,11 +1658,13 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
 /* signal other processes to clear out the index block */
 
 	if (lock->lck_physical == LCK_SR) {
-		LCK_convert(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_convert_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 	else {
-		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+		LCK_lock_non_blocking(tdbb, lock, LCK_EX, LCK_WAIT);
 	}
 
-	release_index_block(tdbb, index_block);
+/* and clear out our index block as well */
+
+	index_block_flush(index_block);
 }

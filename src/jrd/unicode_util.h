@@ -30,11 +30,6 @@
 #include "intlobj_new.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/os/mod_loader.h"
-//#include "unicode/ucol.h"
-//#include "unicode/ucnv.h"
-
-struct UCollator;
-struct USet;
 
 namespace Jrd {
 
@@ -42,9 +37,9 @@ class UnicodeUtil
 {
 private:
 	struct ICU;
+	class ICUModules;
 
 public:
-	class ICUModules;
 	// routines semantically equivalent with intlobj_new.h
 
 	static USHORT utf16KeyLength(USHORT len);	// BOCU-1
@@ -98,10 +93,10 @@ public:
 		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
-		UCollator* compareCollator;
-		UCollator* partialCollator;
-		UCollator* sortCollator;
-		USet* contractions;
+		void* compareCollator;
+		void* partialCollator;
+		void* sortCollator;
+		void* contractions;
 		int contractionsCount;
 	};
 	

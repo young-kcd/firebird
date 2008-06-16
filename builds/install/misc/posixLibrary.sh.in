@@ -1,26 +1,4 @@
 #!/bin/sh
-#
-#  The contents of this file are subject to the Initial
-#  Developer's Public License Version 1.0 (the "License");
-#  you may not use this file except in compliance with the
-#  License. You may obtain a copy of the License at
-#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
-#
-#  Software distributed under the License is distributed AS IS,
-#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
-#  See the License for the specific language governing rights
-#  and limitations under the License.
-#
-#  The Original Code was created by Mark O'Donohue
-#  for the Firebird Open Source RDBMS project.
-#
-#  Copyright (c) Mark O'Donohue <mark.odonohue@ludwig.edu.au>
-#  and all contributors signed below.
-#
-#  All Rights Reserved.
-#  Contributor(s): ______________________________________.
-#		Alex Peshkoff
-#
 
 
 #------------------------------------------------------------------------
@@ -136,7 +114,7 @@ checkInstallUser() {
 #  Works for both inetd and xinetd
 
 resetInetdServer() {
-	pid=`ps -eaf | grep inetd | grep -v grep | awk '{print $2}'`
+	pid=`ps -efww | grep inetd | grep -v grep | awk '{print $2}'`
     if [ "$pid" ]
     then
         kill -HUP $pid
@@ -195,16 +173,7 @@ checkIfServerRunning() {
 
 # Check is server is being actively used.
 
-    checkString=`ps -eaf | egrep "\b(fb_smp_server)\b" |grep -v grep`
-
-    if [ ! -z "$checkString" ]
-    then
-        echo "An instance of the Firebird SuperClassic server seems to be running."
-        echo "Please quit all Firebird applications and then proceed."
-        exit 1
-    fi
-
-    checkString=`ps -eaf | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(fbserver|fbguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -213,7 +182,7 @@ checkIfServerRunning() {
         exit 1
     fi
 
-    checkString=`ps -eaf | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ]
     then
@@ -225,7 +194,7 @@ checkIfServerRunning() {
 
 # The following check for running interbase or firebird 1.0 servers.
 
-    checkString=`ps -eaf | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(ibserver|ibguard)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
     then
@@ -235,7 +204,7 @@ checkIfServerRunning() {
         exit 1 
     fi
 
-    checkString=`ps -eaf | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
+    checkString=`ps -efww| egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
 
     if [ ! -z "$checkString" ] 
     then
@@ -247,6 +216,13 @@ checkIfServerRunning() {
 
 	removeInetdServiceEntry
 	
+# Stop lock manager if it is the only thing running.
+
+    for i in `ps -efww | grep "fb_lock_mgr" | grep -v "grep" | awk '{print $2}' `
+	do
+        kill $i
+	done
+
 }
 
 
@@ -383,7 +359,7 @@ EOT
 	cat <<EOT >>$DBAPasswordFile
 
 # Your password can be changed to a more suitable one using the
-# @prefix@/bin/gsec utility.
+# @prefix@/bin/changeDBAPassword.sh script
 EOT
 
     chmod u=r,go= $DBAPasswordFile
@@ -397,6 +373,41 @@ EOT
         runSilent "$FBBin/gsec -user sysdba -password masterkey -modify sysdba -pw $NewPasswd"
     fi
 }
+
+
+#------------------------------------------------------------------------
+#  Generate new sysdba password - this routine is used only in the 
+#  rpm file not in the install script.
+
+generateNewDBAPassword() {
+    # openssl generates random data.
+	openssl </dev/null >/dev/null 2&>/dev/null
+    if [ $? -eq 0 ]
+    then
+        # We generate 20 random chars, strip any '/''s and get the first 8
+        NewPasswd=`openssl rand -base64 20 | tr -d '/' | cut -c1-8`
+    fi
+
+    # mkpasswd is a bit of a hassle, but check to see if it's there
+    if [ -z "$NewPasswd" ]
+    then
+        if [ -f /usr/bin/mkpasswd ]
+        then
+            NewPasswd=`/usr/bin/mkpasswd -l 8`
+        fi
+    fi
+
+	# On some systems the mkpasswd program doesn't appear and on others
+	# there is another mkpasswd which does a different operation.  So if
+	# the specific one isn't available then keep the original password.
+    if [ -z "$NewPasswd" ]
+    then
+        NewPasswd="masterkey"
+    fi
+
+    writeNewPassword $NewPasswd
+}
+
 
 #------------------------------------------------------------------------
 #  Change sysdba password.
@@ -428,8 +439,6 @@ buildUninstallFile() {
 
     cp -r scripts $FBRootDir/misc/
     cp scripts/tarMainUninstall.sh $FBRootDir/bin/uninstall.sh
-
-	cd $FBRootDir
 }
 
 
@@ -473,7 +482,6 @@ createLinksForBackCompatibility() {
     # to ensure it loads the fb equivalent.  Eventually these should be 
     # optional and in a seperate rpm install.  MOD 7-Nov-2002.
 
-	cd $FBRootDir
 	if [ "$1" ]
 	then
 		# Use library name from parameter
@@ -498,7 +506,6 @@ removeLinksForBackCompatibility() {
     removeIfOnlyAlink @libdir@/libgds.so.0
 }
 
-
 #------------------------------------------------------------------------
 #  For security reasons most files in firebird installation are
 #  root-owned and world-readable(executable) only (including firebird).
@@ -514,7 +521,7 @@ MakeFileFirebirdWritable() {
 
 
 #------------------------------------------------------------------------
-#  Set correct permissions for $FbRoot/doc tree 
+#  Set correct permissions for $FbRoot/doc tree
 
 fixDocPermissions() {
 	cd $FBRootDir
@@ -646,7 +653,7 @@ archivePriorInstallSystemFiles() {
     if [ ! -z "$archiveFileList" ]
     then
         displayMessage "Archiving..."
-        runAndCheckExit "tar -cvf $ArchiveMainFile $archiveFileList"
+        runAndCheckExit "tar -czf $ArchiveMainFile $archiveFileList"
         displayMessage "Done."
 
         displayMessage "Deleting..."

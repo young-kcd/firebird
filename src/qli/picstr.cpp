@@ -716,6 +716,9 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 	bool negative = false;
 	USHORT l, width, decimal_digits, w_digits, f_digits;
 
+#ifdef VMS
+	bool hack_for_vms_flag = false;
+#endif
 #ifdef WIN_NT
 	bool hack_for_nt_flag = false;
 #endif
@@ -737,6 +740,10 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
+#ifdef VMS
+		if (!decimal_digits)
+			hack_for_vms_flag = true;
+#endif
 #ifdef WIN_NT
 		hack_for_nt_flag = true;
 #endif
@@ -768,12 +775,30 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 			else
 				decimal_digits = (width > 7) ? width - 7 : 0;
 			sprintf(temp, "%.*e", decimal_digits, number);
+#ifdef VMS
+			if (!decimal_digits)
+				hack_for_vms_flag = true;
+#endif
 #ifdef WIN_NT
 			hack_for_nt_flag = true;
 #endif
 		}
 	}
 
+#ifdef VMS
+/* If precision of 0 is specified to e- or f-format in VMS, the dec point
+   is printed regardless.  On no other platform is this the case; so take
+   it out here.  When/if this is ever fixed, ALL LINES IN THIS ROUTINE
+   THAT RELATED TO 'hack_for_vms_flag' MAY BE DELETED. */
+
+	if (hack_for_vms_flag) {
+		TEXT* p = temp;
+		while (*p != '.')
+			++p;
+		while (*p = *(p + 1))
+			++p;
+	}
+#endif
 #ifdef WIN_NT
 /* On Windows NT exponents have three digits regardless of the magnitude
    of the number being formatted.  To maintain compatiblity with other
@@ -833,16 +858,16 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		case '9':
 		case 'Z':
 			{
-				if (!(*p) || *p > '9' || *p < '0')
-					break;
-				TEXT d = *p++;
-				if (c == '9' && d == ' ')
-					d = '0';
-				else if (c == 'Z' && d == '0')
-					d = ' ';
-				*out++ = d;
-			}
+			if (!(*p) || *p > '9' || *p < '0')
+				break;
+			TEXT d = *p++;
+			if (c == '9' && d == ' ')
+				d = '0';
+			else if (c == 'Z' && d == '0')
+				d = ' ';
+			*out++ = d;
 			break;
+			}
 
 		case '.':
 			*out++ = (*p == c) ? *p++ : c;

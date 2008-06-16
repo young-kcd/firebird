@@ -27,8 +27,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
 
-class TempFile : public Firebird::File
-{
+class TempFile : public Firebird::File {
 public:
 	TempFile(MemoryPool& pool,
 			 const Firebird::PathName& prefix,
@@ -49,7 +48,7 @@ public:
 	virtual ~TempFile();
 
 	size_t read(offset_t, void*, size_t);
-	size_t write(offset_t, const void*, size_t);
+	size_t write(offset_t, void*, size_t);
 
 	void unlink();
 

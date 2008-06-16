@@ -32,7 +32,6 @@ void	SHOW_grant_roles (const SCHAR*, bool*);
 void	SHOW_grant_roles2 (const SCHAR*, bool*, const TEXT*, bool);
 void	SHOW_print_metadata_text_blob(FILE*, ISC_QUAD*, bool escape_squote = false);
 processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
-void	SHOW_read_owner();
 
 #endif // ISQL_SHOW_PROTO_H
 

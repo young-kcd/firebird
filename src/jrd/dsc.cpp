@@ -835,10 +835,19 @@ bool DSC_make_descriptor(DSC* desc,
 		break;
 
 	case blr_double:
+#ifndef VMS
 	case blr_d_float:
+#endif
 		desc->dsc_length = sizeof(double);
 		desc->dsc_dtype = dtype_double;
 		break;
+
+#ifdef VMS
+	case blr_d_float:
+		desc->dsc_length = sizeof(double);
+		desc->dsc_dtype = dtype_d_float;
+		break;
+#endif
 
 	case blr_timestamp:
 		desc->dsc_length = 2 * sizeof(SLONG);

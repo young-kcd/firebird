@@ -23,7 +23,7 @@
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;WIN32;_X86_"
+				PreprocessorDefinitions="_DEBUG;DEV_BUILD;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -97,7 +97,7 @@
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen"
-				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;I386;_X86_=1;WIN32;_X86_"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;CLIENT;SUPERCLIENT;GOVERNOR;I386;_X86_=1;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="FALSE"
@@ -204,16 +204,19 @@
 				RelativePath="..\..\..\src\jrd\perf.cpp">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdl.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\status.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
+				RelativePath="..\..\..\src\jrd\thd.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ThreadStart.cpp">
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\utl.cpp">
@@ -247,6 +250,9 @@
 		<Filter
 			Name="REMOTE files"
 			Filter="">
+			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+			</File>
 			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 			</File>
@@ -325,13 +331,16 @@
 				RelativePath="..\..\..\src\jrd\perf_proto.h">
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch_proto.h">
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdl.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sdl_proto.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\thd.h">
+				RelativePath="..\..\..\src\jrd\thd.h">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\os\thd_priority.h">

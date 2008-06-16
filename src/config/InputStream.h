@@ -35,39 +35,33 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "../common/classes/alloc.h"
-
 START_NAMESPACE
 
 class InputFile;
 
-class InputStream : public Firebird::GlobalStorage
+class InputStream  
 {
 public:
-	explicit InputStream (const char* stuff);
-	InputStream();
-	virtual ~InputStream();
-	
 	virtual InputFile* getInputFile();
-	virtual const char* getFileName() const;
+	virtual const char* getFileName();
 	void init();
 	void release();
 	virtual void addRef();
-
+	InputStream (const char *stuff);
 	virtual void close();
 	virtual const char* getEnd();
-	virtual int getOffset (const char* ptr);
+	virtual int getOffset (const char *ptr);
 	virtual const char* getSegment();
+	InputStream();
+	virtual ~InputStream();
 
-	int				lineNumber;
-	const char*		segment;
-	const char*		ptr;
-	InputStream*	prior;
-protected:
-	int				segmentLength; // used by InputFile
-private:
-	int				segmentOffset;
-	int				useCount;
+	int			segmentLength;
+	int			segmentOffset;
+	int			lineNumber;
+	const char	*segment;
+	const char	*ptr;
+	InputStream	*prior;
+	int			useCount;
 };
 
 END_NAMESPACE

@@ -24,12 +24,10 @@
 #ifndef JRD_IBERR_PROTO_H
 #define JRD_IBERR_PROTO_H
 
-void IBERR_append_status(ISC_STATUS*, ISC_STATUS, ...);
-void IBERR_build_status(ISC_STATUS*, ISC_STATUS, ...);
-#ifdef NOT_USED_OR_REPLACED
-void IBERR_bugcheck(ISC_STATUS*, const SCHAR*, const bool, int, TEXT*);
-void IBERR_error(ISC_STATUS*, const SCHAR*, const bool, int, TEXT*);
-#endif
+void IBERR_append_status(ISC_STATUS *, ISC_STATUS, ...);
+void IBERR_build_status(ISC_STATUS *, ISC_STATUS, ...);
+void IBERR_bugcheck(ISC_STATUS *, SCHAR *, UCHAR *, int, TEXT *);
+void IBERR_error(ISC_STATUS*, const SCHAR*, UCHAR*, int, TEXT*);
 
 #endif // JRD_IBERR_PROTO_H
 

@@ -28,13 +28,17 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/iberr.h"
-#include "../jrd/err_proto.h"
+
+#ifndef INCLUDE_FB_BLK
+#include "../include/fb_blk.h"
+#endif
 
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
 #include "../jrd/svc.h"
+#include "../jrd/svc_proto.h"
 #include "cmd_util_proto.h"
 
 using MsgFormat::SafeArg;
@@ -71,7 +75,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 	// Don't want to overflow the status vector.
 	for (unsigned int loop = 0; loop < 5 && loop < arg.getCount(); ++loop)
 	{
-		CMD_UTIL_put_status_arg(status, arg.getCell(loop));
+		SVC_STATUS_ARG(status, arg.getCell(loop));
 		tmp_status_len += 2;
 	}
 
@@ -81,7 +85,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 &&
 		 svc_status[2] != isc_arg_warning))
 	{
-		memcpy(svc_status, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
+		MOVE_FASTER(tmp_status, svc_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
 	else {
 		int status_len = 0, warning_indx = 0;
@@ -120,7 +124,7 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 			if (warning_indx) {
 				/* copy current warning(s) to a temp buffer */
 				MOVE_CLEAR(warning_status, sizeof(warning_status));
-				memcpy(warning_status, &svc_status[warning_indx],
+				MOVE_FASTER(&svc_status[warning_indx], warning_status,
 							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 				PARSE_STATUS(warning_status, warning_count, warning_indx);
 			}
@@ -128,13 +132,13 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 			/* add the status into a real buffer right in between last error
 			   and first warning */
 			if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
-				memcpy(&svc_status[err_status_len], tmp_status,
+				MOVE_FASTER(tmp_status, &svc_status[err_status_len],
 							sizeof(ISC_STATUS) * tmp_status_len);
 				/* copy current warning(s) to the status_vector */
 				if (warning_count
 					&& i + warning_count - 1 < ISC_STATUS_LENGTH)
 				{
-					memcpy(&svc_status[i - 1], warning_status,
+					MOVE_FASTER(warning_status, &svc_status[i - 1],
 								sizeof(ISC_STATUS) * warning_count);
 				}
 			}
@@ -142,41 +146,3 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 	}
 }
 
-
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
-{
-	using MsgFormat::safe_cell;
-    
-	switch (value.type)
-	{
-	case safe_cell::at_int64:
-	case safe_cell::at_uint64:
-		*status++ = isc_arg_number;
-		*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
-		break;
-	case safe_cell::at_str:
-		{
-			*status++ = isc_arg_string;
-			const char* s = value.st_value.s_string;
-			*status++ = (ISC_STATUS) ERR_cstring(s);
-		}
-		break;
-	case safe_cell::at_counted_str:
-		{
-			*status++ = isc_arg_string;
-			const char* s = value.st_value.s_string;
-			*status++ = (ISC_STATUS) ERR_string(s, value.st_value.s_len);
-		}
-		break;
-
-	default:
-		break;
-	}
-}
-
-
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const char* value)
-{
-	*status++ = isc_arg_string;
-	*status++ = (ISC_STATUS) ERR_cstring(value);
-}

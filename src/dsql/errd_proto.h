@@ -29,7 +29,7 @@ void ERRD_assert_msg(const char*, const char*, ULONG);
 #endif
 
 void ERRD_bugcheck(const char*);
-void ERRD_error(const char*);
+void ERRD_error(int, const char*);
 void ERRD_post(ISC_STATUS, ...);
 bool ERRD_post_warning(ISC_STATUS, ...);
 void ERRD_punt(const ISC_STATUS* = 0);

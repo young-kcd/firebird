@@ -95,7 +95,6 @@ static const VERB verbs[] =
 	PAIR(nod_post, blr_post_arg, 2, 2, STATEMENT, VALUE),
 	PAIR(nod_exec_sql, blr_exec_sql, 1, 1, STATEMENT, VALUE),
 	PAIR(nod_exec_into, blr_exec_into, 0, 0, STATEMENT, OTHER),
-	PAIR(nod_exec_stmt, blr_exec_stmt, 0, 0, STATEMENT, OTHER),
 	PAIR(nod_internal_info, blr_internal_info, 1, 1, VALUE, VALUE),
 	PAIR2(nod_add, blr_add, 2, 2, VALUE, VALUE),
 	PAIR(nod_agg_count, blr_agg_count, 1, 0, VALUE, VALUE),
@@ -220,8 +219,6 @@ static const VERB verbs[] =
 	PAIR(nod_trim, blr_trim, e_trim_length, e_trim_count, VALUE, VALUE),
 	PAIR(nod_init_variable, blr_init_variable, e_init_var_length, 0, STATEMENT, OTHER),
 	PAIR(nod_sys_function, blr_sys_function, e_sysfun_length, e_sysfun_count, VALUE, VALUE),
-	PAIR(nod_class_node_jrd, blr_auto_trans, 1, 0, STATEMENT, STATEMENT),
-	PAIR(nod_similar, blr_similar, 3, 3, TYPE_BOOL, VALUE),
 	{0, NULL, NULL, NULL, NULL, NULL, NULL}
 };
 

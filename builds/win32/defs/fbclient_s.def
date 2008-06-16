@@ -18,9 +18,6 @@
 EXPORTS
 
 	fb_interpret@12				PRIVATE
-	fb_sqlstate@8				PRIVATE
-	fb_cancel_operation@12		PRIVATE
-	fb_shutdown_callback@16		PRIVATE
 
 	isc_attach_database@24		PRIVATE
 	isc_blob_default_desc@12	PRIVATE

@@ -105,17 +105,16 @@ void missing_parameter_for_switch(const char* sw) {
 class b_error : public Firebird::LongJump
 {
 public:
-	explicit b_error(const char* message)
-	{
+	explicit b_error(const char* message) {
 		size_t len = sizeof(txt) - 1;
 		strncpy(txt, message, len);
 		txt[len] = 0;
 	}
 	enum {MSG_LEN = 1024};
 	virtual ~b_error() throw() {}
-	virtual const char* what() const throw() { return txt; }
-	static void raise(const char* message, ...)
-	{
+	virtual const char* what() const throw()
+		{ return txt; }
+	static void raise(const char* message, ...) {
 		char temp[MSG_LEN];
 		va_list params;
 		va_start(params, message);
@@ -132,6 +131,10 @@ private:
 
 #ifdef WIN_NT
 #define FILE_HANDLE HANDLE
+// INVALID_SET_FILE_POINTER is not defined in MSVC6
+#ifndef INVALID_SET_FILE_POINTER
+#define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#endif
 #else
 #define FILE_HANDLE int
 #endif
@@ -141,8 +144,7 @@ const char local_prefix[] = "localhost:";
 
 const char backup_signature[4] = {'N','B','A','K'};
 
-struct inc_header
-{
+struct inc_header {
 	char signature[4];		// 'NBAK'
 	SSHORT version;			// Incremental backup format version.
 	SSHORT level;			// Backup level.
@@ -155,8 +157,7 @@ struct inc_header
 	ULONG prev_scn;			// SCN of previous level backup
 };
 
-class nbackup
-{
+class nbackup {
 public:
 	nbackup(const char* _database, const char* _username, const char* _password, bool _run_db_triggers)
 	{
@@ -556,8 +557,7 @@ void nbackup::backup_database(int level, const char* fname)
 	attach_database();
 	try {
 		// Look for SCN and GUID of previous-level backup in history table
-		if (level)
-		{
+		if (level) {
 		    if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 				pr_error(status, "start transaction");
 			char out_sqlda_data[XSQLDA_LENGTH(2)];
@@ -716,10 +716,9 @@ void nbackup::backup_database(int level, const char* fname)
 		// pages in it. There are no need to backup this empty pages. More, 
 		// we can't be sure its not used pages have right SCN assigned.
 		// How many pages are really used we know from pip_header.reserved
-		// where stored number of pages allocated from this pointer page.
-		// In ODS 12 it will be moved into corresponding field of page_inv_page.
-		const bool isODS11_x = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11) &&
-								(header->hdr_ods_minor_original >= 1);
+		// where stored number of pages allocated from this pointer page 
+		const bool isODS11_1 = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11)
+							&& (header->hdr_ods_minor_original == 1);
 		ULONG lastPage = 1; // first PIP must be at page number 1
 		const ULONG pagesPerPIP = 
 			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
@@ -749,7 +748,7 @@ void nbackup::backup_database(int level, const char* fname)
 				b_error::raise("Database file size is not a multiply of page size");
 			curPage++;
 
-			if (isODS11_x && curPage == lastPage)
+			if (isODS11_1 && curPage == lastPage)
 			{
 				if (page_buff->pag_type == pag_pages)
 				{
@@ -892,11 +891,13 @@ void nbackup::restore_database(int filecount, const char* const* files)
 					delete[] page_buffer;
 					return;
 				}
-				bakname = files[curLevel];
+				else {
+					bakname = files[curLevel];
 #ifdef WIN_NT
-				if (curLevel)
+					if (curLevel)
 #endif
-					open_backup_scan();
+						open_backup_scan();
+				}
 			}
 
 			if (curLevel) {

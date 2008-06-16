@@ -40,6 +40,7 @@
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/gds_proto.h"
 /* CVC: I needed them here. */
@@ -51,6 +52,10 @@
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
+#endif
 
 /* The original order of dsc_type values corresponded to the priority
    of conversion (that is, always convert the lesser to the greater
@@ -175,6 +180,15 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 				return 1;
 			return -1;
 
+#ifdef VMS
+		case SPECIAL_DOUBLE:
+			if (*(double *) p1 == *(double *) p2)
+				return 0;
+			if (CNVT_TO_DFLT((double *) p1) > CNVT_TO_DFLT((double *) p2))
+				return 1;
+			return -1;
+#endif
+
 		case dtype_text:
 		case dtype_varying:
 		case dtype_cstring:
@@ -234,45 +248,40 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 		int fill = length - length2;
 		const UCHAR pad = charset1 == ttype_binary || charset2 == ttype_binary ? '\0' : ' ';
-
-		if (length >= length2)
-		{
+		if (length >= length2) {
 			if (length2)
-			{
 				do
-				{
 					if (*p1++ != *p2++)
-						return (p1[-1] > p2[-1]) ? 1 : -1;
-				} while (--length2);
-			}
-
+						if (p1[-1] > p2[-1])
+							return 1;
+						else
+							return -1;
+				while (--length2);
 			if (fill > 0)
-			{
 				do
-				{
 					if (*p1++ != pad)
-						return (p1[-1] > pad) ? 1 : -1;
-				} while (--fill);
-			}
-
+						if (p1[-1] > pad)
+							return 1;
+						else
+							return -1;
+				while (--fill);
 			return 0;
 		}
-		
 		if (length)
-		{
 			do
-			{
 				if (*p1++ != *p2++)
-					return (p1[-1] > p2[-1]) ? 1 : -1;
-			} while (--length);
-		}
-
+					if (p1[-1] > p2[-1])
+						return 1;
+					else
+						return -1;
+			while (--length);
 		do
-		{
 			if (*p2++ != pad)
-				return (pad > p2[-1]) ? 1 : -1;
-		} while (++fill);
-
+				if (pad > p2[-1])
+					return 1;
+				else
+					return -1;
+		while (++fill);
 		return 0;
 	}
 
@@ -379,6 +388,9 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 		}
 
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		{
 			const double temp1 = CVT_get_double(arg1, err);
 			const double temp2 = CVT_get_double(arg2, err);
@@ -605,11 +617,14 @@ void CVT2_get_name(const dsc* desc, TEXT* string, FPTR_ERROR err)
 	VARY_STR(MAX_SQL_IDENTIFIER_SIZE) temp;			/* 31 bytes + 1 NULL */
 	const char* p;
 
-	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, (vary*) &temp, sizeof(temp), err);
-							 
-	memcpy(string, p, length);
-	string[length] = 0;
-	fb_utils::exact_name(string);
+	USHORT length = CVT_make_string(desc, ttype_metadata, &p,
+							 (vary*) & temp, sizeof(temp), err);
+	TEXT* const orig_string = string;
+	for (; length; --length)
+		*string++ = *p++;
+
+	*string = 0;
+	fb_utils::exact_name(orig_string);
 }
 
 
@@ -674,14 +689,15 @@ USHORT CVT2_make_string2(const dsc* desc,
 			*address = from_buf;
 			return from_len;
 		}
-
-		USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
-										   cs2, from_buf, from_len, err);
-		UCHAR* tempptr = temp.getBuffer(length);
-		length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
-									cs2, from_buf, from_len, err);
-		*address = tempptr;
-		return length;
+		else {
+			USHORT length = INTL_convert_bytes(tdbb, cs1, NULL, 0,
+											   cs2, from_buf, from_len, err);
+			UCHAR* tempptr = temp.getBuffer(length);
+			length = INTL_convert_bytes(tdbb, cs1, tempptr, length,
+										cs2, from_buf, from_len, err);
+			*address = tempptr;
+			return length;
+		}
 	}
 
 /* Not string data, then  -- convert value to varying string. */

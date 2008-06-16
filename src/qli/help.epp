@@ -43,6 +43,10 @@ const char* INDENT	= "  ";
 const int COLUMN_WIDTH	= 20;
 const int RIGHT_MARGIN	= 70;
 
+#ifdef VMS
+const char* TARGET	= "[syshlp]help.fdb";
+#endif
+
 #ifdef UNIX
 const char* TARGET	= "help/help.fdb";
 #endif

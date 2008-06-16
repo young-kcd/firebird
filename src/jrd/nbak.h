@@ -60,19 +60,17 @@ class thread_db;
 class Database;
 class jrd_file;
 
-class AllocItem
-{
+class AllocItem {
 public:
 	ULONG db_page; // Page number in the main database file
 	ULONG diff_page; // Page number in the difference file
 	Record* rec_data;
-    static const ULONG& generate(const void *sender, const AllocItem& item)
-	{
+    static const ULONG& generate(const void *sender, const AllocItem& item) {
 		return item.db_page;
     }
-	AllocItem() {}
-	AllocItem(ULONG db_pageL, ULONG diff_pageL)
-	{
+	AllocItem() {
+	}
+	AllocItem(ULONG db_pageL, ULONG diff_pageL) {
 		this->db_page = db_pageL;
 		this->diff_page = diff_pageL;
 	}
@@ -177,30 +175,8 @@ const SATOM nbak_state_unknown	= -1;      // State is unknown. Needs to be read 
  *  this lock is not taken. 
  */
 
-class BackupManager
-{
+class BackupManager {
 public:
-	class SharedDatabaseHolder
-	{
-	public:
-		explicit SharedDatabaseHolder(thread_db* atdbb, BackupManager* bm)
-			: backupManager(bm), tdbb(atdbb)
-		{
-			backupManager->lock_shared_database(tdbb, true);
-		}
-		~SharedDatabaseHolder()
-		{
-			backupManager->unlock_shared_database(tdbb);
-		}
-	private:
-		// copying is prohibited
-		SharedDatabaseHolder(const SharedDatabaseHolder&);
-		SharedDatabaseHolder& operator =(const SharedDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
-
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
@@ -215,19 +191,16 @@ public:
 	void set_difference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
-	int get_state() const
-	{
+	int get_state() {
 		return backup_state;
 	}
 	// Sets current backup state
-	void set_state(int new_state)
-	{
+	void set_state(int new_state) {
 		backup_state = new_state;
 	}
 
 	// Return current SCN for database
-	ULONG get_current_scn() const
-	{
+	ULONG get_current_scn() const {
 		return current_scn;
 	}
 	
@@ -239,14 +212,21 @@ public:
 	// does nothing (so it can be used for recovery on database startup). 
 	void end_backup(thread_db* tdbb, bool recover);
 	
+	// Function for force all connections to flush their caches
+	// and prevent them from marking new dirty pages
+	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
+	void unlock_clean_database(thread_db* tdbb);
+
 	void lock_shared_database(thread_db* tdbb, SSHORT wait);
 	void unlock_shared_database(thread_db* tdbb);
 
 	// Prevent allocation table from modification by other threads/processes
+	// You may or may not call unlock function in case this functions fail
 	void lock_alloc(thread_db* tdbb, SSHORT wait);
-	void unlock_alloc(thread_db* tdbb);
-
 	void lock_alloc_write(thread_db* tdbb, SSHORT wait);
+
+	// Remove our interest in static allocation table
+	void unlock_alloc(thread_db* tdbb);
 	void unlock_alloc_write(thread_db* tdbb);
 
 	// Return page index in difference file that can be used in 
@@ -266,19 +246,16 @@ public:
 	void change_dirty_page_owner(thread_db* tdbb, SLONG from_handle, SLONG to_handle);
 
 	// Returns difference owner handles for locks 
-	static SLONG database_lock_handle(thread_db* tdbb)
-	{
+	static SLONG database_lock_handle(thread_db* tdbb) {
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_database);
 	}
-	static SLONG attachment_lock_handle(thread_db* tdbb)
-	{
+	static SLONG attachment_lock_handle(thread_db* tdbb) {
 		return LCK_get_owner_handle_by_type(tdbb, LCK_OWNER_attachment);
 	}
 
 	void shutdown(thread_db* tdbb);
 
-	bool database_flush_in_progress() const
-	{
+	bool database_flush_in_progress() {
 //		NBAK_TRACE(("NBAK_state_blocking=%i", database_lock->flags & NBAK_state_blocking));
 		return database_lock->flags & NBAK_state_blocking;
 	}
@@ -309,33 +286,6 @@ private:
 	NBackupState* database_lock;
 
 	void generate_filename();
-
-	// Function for force all connections to flush their caches
-	// and prevent them from marking new dirty pages
-	void lock_clean_database(thread_db* tdbb, SSHORT wait, WIN* window);
-	void unlock_clean_database(thread_db* tdbb);
-
-	class CleanDatabaseHolder
-	{
-	public:
-		explicit CleanDatabaseHolder(thread_db* atdbb, BackupManager* bm, 
-			SSHORT wait, Jrd::WIN* window)
-			: backupManager(bm), tdbb(atdbb)
-		{
-			backupManager->lock_clean_database(tdbb, wait, window);
-		}
-		~CleanDatabaseHolder()
-		{
-			backupManager->unlock_clean_database(tdbb);
-		}
-	private:
-		// copying is prohibited
-		CleanDatabaseHolder(const CleanDatabaseHolder&);
-		CleanDatabaseHolder& operator =(const CleanDatabaseHolder&);
-
-		BackupManager* backupManager;
-		thread_db* tdbb;
-	};
 };
 
 } //namespace Jrd

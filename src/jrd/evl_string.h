@@ -48,6 +48,44 @@ const int STATIC_PATTERN_BUFFER		= 256;
 namespace Firebird {
 
 template <typename CharType>
+class StartsEvaluator {
+public:
+	StartsEvaluator(const CharType* _pattern_str, SLONG _pattern_len) : 
+		// No need to copy string because this class is used briefly
+		pattern_str(_pattern_str), pattern_len(_pattern_len)
+	{
+		reset();
+	}
+	void reset() {
+		result = true;
+		offset = 0;
+	}
+	bool getResult() {
+		return offset >= pattern_len && result;
+	}
+	bool processNextChunk(const CharType* data, SLONG data_len) 
+	{
+		// Should work fine when called with data_len equal to zero
+		if (!result || offset >= pattern_len)
+			return false;
+		const SLONG comp_length = 
+			data_len < pattern_len - offset ? data_len : pattern_len - offset;
+		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
+		{
+			result = false;
+			return false;
+		}
+		offset += comp_length;
+		return offset < pattern_len;
+	}
+private:
+	SLONG offset;
+	const CharType* pattern_str;
+	SLONG pattern_len;
+	bool result;
+};
+
+template <typename CharType>
 static void preKmp(const CharType *x, int m, SLONG kmpNext[]) 
 {
 	SLONG i = 0;
@@ -70,127 +108,62 @@ static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 	kmpNext[++i] = ++j;
 }
 
-class StaticAllocator
-{
+class StaticAllocator {
 public:
-	explicit StaticAllocator(MemoryPool& _pool)
-		: pool(_pool), chunksToFree(_pool), allocated(0)
-	{
-	}
+	StaticAllocator(MemoryPool& _pool) : chunksToFree(_pool), pool(_pool), allocated(0) {}
 
-	~StaticAllocator()
-	{
+	~StaticAllocator() {
 		for (size_t i = 0; i < chunksToFree.getCount(); i++)
 			pool.deallocate(chunksToFree[i]);
 	}
 
-	void* alloc(SLONG count)
-	{
+	void* alloc(SLONG count) {
 		void* result;
-		const SLONG localCount = ROUNDUP(count, ALIGNMENT);
-		if (allocated + localCount <= STATIC_PATTERN_BUFFER)
-		{
+		SLONG localCount = ROUNDUP(count, ALIGNMENT);
+		if (allocated + localCount <= STATIC_PATTERN_BUFFER) {
 			result = allocBuffer + allocated;
 			allocated += localCount; 
 		}
-		else
-		{
+		else {
 			result = pool.allocate(count);
 			chunksToFree.add(result);
 		}
 		return result;
 	}
-
-protected:
-	MemoryPool& pool;
-
 private:
 	Array<void*> chunksToFree;
+	MemoryPool& pool;
 	char allocBuffer[STATIC_PATTERN_BUFFER];
 	int allocated;
 };
 
 template <typename CharType>
-class StartsEvaluator : private StaticAllocator
-{
+class ContainsEvaluator : private StaticAllocator {
 public:
-	StartsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len)
-		: StaticAllocator(_pool), pattern_len(_pattern_len)
+	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len) : 
+		StaticAllocator(_pool),	pattern_len(_pattern_len)
 	{
-		CharType* temp = static_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
+		CharType* temp = reinterpret_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
 		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
 		pattern_str = temp;
-
-		reset();
-	}
-
-	void reset()
-	{
-		result = true;
-		offset = 0;
-	}
-
-	bool getResult() const
-	{
-		return offset >= pattern_len && result;
-	}
-
-	bool processNextChunk(const CharType* data, SLONG data_len) 
-	{
-		// Should work fine when called with data_len equal to zero
-		if (!result || offset >= pattern_len)
-			return false;
-
-		const SLONG comp_length = 
-			data_len < pattern_len - offset ? data_len : pattern_len - offset;
-		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
-		{
-			result = false;
-			return false;
-		}
-		offset += comp_length;
-		return offset < pattern_len;
-	}
-
-private:
-	SLONG offset;
-	const CharType* pattern_str;
-	SLONG pattern_len;
-	bool result;
-};
-
-template <typename CharType>
-class ContainsEvaluator : private StaticAllocator
-{
-public:
-	ContainsEvaluator(MemoryPool& _pool, const CharType* _pattern_str, SLONG _pattern_len)
-		: StaticAllocator(_pool), pattern_len(_pattern_len)
-	{
-		CharType* temp = static_cast<CharType*>(alloc(_pattern_len * sizeof(CharType)));
-		memcpy(temp, _pattern_str, _pattern_len * sizeof(CharType));
-		pattern_str = temp;
-		kmpNext = static_cast<SLONG*>(alloc((_pattern_len + 1) * sizeof(SLONG)));
+		kmpNext = reinterpret_cast<SLONG*>(alloc((_pattern_len + 1) * sizeof(SLONG)));
 		preKmp<CharType>(_pattern_str, _pattern_len, kmpNext);
 		reset();
 	}
 
-	void reset()
-	{
+	void reset() {
 		offset = 0;
 		result = (pattern_len == 0);
 	}
 
-	bool getResult() const
-	{
+	bool getResult() {
 		return result;
 	}
 
-	bool processNextChunk(const CharType* data, SLONG data_len)
-	{		
+	bool processNextChunk(const CharType* data, SLONG data_len) {		
 		// Should work fine when called with data_len equal to zero
 		if (result)
 			return false;
-
 		SLONG data_pos = 0;
 		while (data_pos < data_len) {
 			while (offset > -1 && pattern_str[offset] != data[data_pos])
@@ -213,8 +186,7 @@ private:
 	SLONG *kmpNext;
 };
 
-enum PatternItemType
-{
+enum PatternItemType {
 	piNone = 0,
 	piSearch,
 	piSkipFixed,
@@ -225,23 +197,20 @@ enum PatternItemType
 	piSkipMore
 };
 
-enum MatchType
-{
+enum MatchType {
 	MATCH_NONE = 0,
 	MATCH_FIXED,
 	MATCH_ANY
 };
 
 template <typename CharType>
-class LikeEvaluator : private StaticAllocator
-{
+class LikeEvaluator : private StaticAllocator {
 public:
 	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str, 
 		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any, 
 		CharType sql_match_one);
 
-	void reset()
-	{
+	void reset() {
 		fb_assert(patternItems.getCount());
 		branches.shrink(0);
 		if (patternItems[0].type == piNone) {
@@ -254,8 +223,7 @@ public:
 		}
 	}
 
-	bool getResult() const
-	{
+	bool getResult() {
 		return match_type != MATCH_NONE;
 	}
 
@@ -263,13 +231,10 @@ public:
 	bool processNextChunk(const CharType* data, SLONG data_len);
 
 private:
-	struct PatternItem
-	{
+	struct PatternItem {
 		PatternItemType type;
-		union
-		{
-			struct
-			{
+		union {
+			struct {
 				SLONG length;
 				CharType* data;
 				SLONG* kmpNext; // Jump table for Knuth-Morris-Pratt algorithm
@@ -279,8 +244,7 @@ private:
 		bool match_any;
 	};
 
-	struct BranchItem
-	{
+	struct BranchItem {
 		PatternItem* pattern;
 		SLONG offset; // Match offset inside this pattern
 	};
@@ -298,7 +262,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 : StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {
 	// Create local copy of the string.
-	CharType* pattern_str = static_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
+	CharType* pattern_str = reinterpret_cast<CharType*>(alloc(pattern_len*sizeof(CharType)));
 	memcpy(pattern_str, _pattern_str, pattern_len * sizeof(CharType));
 
 	patternItems.grow(1);
@@ -335,7 +299,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 			}
-			ERR_post(isc_escape_invalid, 0);
+			ERR_post(isc_like_escape_invalid, 0);
 		}
 		// percent sign
 		if (c == sql_match_any) {
@@ -400,7 +364,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		case piEscapedString: {
 			const CharType *curPos = itemL->str.data;
 			itemL->str.data = 
-				static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
+				reinterpret_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
 			for (SLONG j = 0; j < itemL->str.length; j++) {
 				if (use_escape && *curPos == escape_char) 
 					curPos++;
@@ -414,7 +378,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 				itemL->type = piDirectMatch;
 			else {
 				itemL->str.kmpNext = 
-					static_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
+					reinterpret_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
 				preKmp<CharType>(itemL->str.data, itemL->str.length, itemL->str.kmpNext);
 				directMatch = true;
 			}
@@ -453,8 +417,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 }
 
 template <typename CharType>
-bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_len)
-{
+bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_len) {
 	fb_assert(patternItems.getCount());
 
 	// If called with empty buffer just return if more data can change the result of evaluation

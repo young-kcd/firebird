@@ -21,12 +21,10 @@
 
 #include "firebird.h"
 #include "../jrd/os/fbsyslog.h"
-#include "../common/classes/init.h"
 
 #include <Windows.h>
 
 namespace {
-
 typedef HANDLE WINAPI tRegisterEventSource(
 		LPCTSTR lpUNCServerName, 
 		LPCTSTR lpSourceName);
@@ -41,28 +39,25 @@ typedef BOOL WINAPI tReportEvent(
 		LPCTSTR *lpStrings,
 		LPVOID lpRawData);
 
-class SyslogAccess
-{
+class SyslogAccess {
 private:
 	CRITICAL_SECTION cs;
 	HANDLE LogHandle;
 	tReportEvent *fReportEvent;
 	bool InitFlag;
 public:
-	explicit SyslogAccess(Firebird::MemoryPool&)
-	{
+	SyslogAccess() {
 		InitializeCriticalSection(&cs); 
 		InitFlag = false;
 		LogHandle = 0;
 	}
-	~SyslogAccess()
-	{
+	~SyslogAccess() {
 		DeleteCriticalSection(&cs);
 	}
-	void Record(WORD wType, const char* msg);
+	void Record(WORD wType, const Firebird::string& Msg);
 };
 
-void SyslogAccess::Record(WORD wType, const char* msg) 
+void SyslogAccess::Record(WORD wType, const Firebird::string& Msg) 
 {
 	EnterCriticalSection(&cs);
 	if (! InitFlag) {
@@ -78,36 +73,33 @@ void SyslogAccess::Record(WORD wType, const char* msg)
 	bool use9x = true;
 	if (LogHandle) {
 		LPCTSTR sb[1];
-		sb[0] = msg;
+		sb[0] = Msg.c_str();
 		if (fReportEvent(LogHandle, wType, 0, 0, 0, 1, 0, sb, 0)) {
 			use9x = false;
 		}
 	}
 	if (use9x) {
-		::MessageBox(0, msg, "Firebird Error", MB_ICONSTOP);
+		::MessageBox(0, Msg.c_str(), "Firebird Error", MB_ICONSTOP);
 	}
 	LeaveCriticalSection(&cs);
 }
 
-Firebird::InitInstance<SyslogAccess> iSyslogAccess;
-
+class SyslogAccess iSyslogAccess;
 } // namespace
 
 namespace Firebird {
-
-void Syslog::Record(Severity level, const char* msg) 
-{
-	WORD wType = EVENTLOG_ERROR_TYPE;
-	switch (level) {
-	case Warning:
-		wType = EVENTLOG_INFORMATION_TYPE;
-		break;
-	case Error:
-	default:
-		wType = EVENTLOG_ERROR_TYPE;
-		break;
+	void Syslog::Record(Severity level, const Firebird::string& Msg) 
+	{
+		WORD wType = EVENTLOG_ERROR_TYPE;
+		switch (level) {
+		case Warning:
+			wType = EVENTLOG_INFORMATION_TYPE;
+			break;
+		case Error:
+		default:
+			wType = EVENTLOG_ERROR_TYPE;
+			break;
+		}
+		iSyslogAccess.Record(wType, Msg);
 	}
-	iSyslogAccess().Record(wType, msg);
-}
-
 } // namespace Firebird

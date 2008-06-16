@@ -61,12 +61,11 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			{
-				const char* temp = reinterpret_cast<const char*>(*from++);
+			{				
+				const char *temp = reinterpret_cast<const char*>(*from++);
 				
 				const size_t len = strlen(temp);
-				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
+				char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				memcpy(string, temp, len + 1);
 
 				*to++ = (ISC_STATUS)(IPTR) string;
@@ -98,7 +97,6 @@ void StatusHolder::clear()
 
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
 			delete[] reinterpret_cast<char*>(*ptr++);
 			break;
 

@@ -31,12 +31,10 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/iberr_proto.h"
 
-#ifdef NOT_USED_OR_REPLACED
-static void post_error(ISC_STATUS*, const SCHAR*, const bool, ISC_STATUS, ...);
-#endif
+static void post_error(ISC_STATUS*, const SCHAR*, UCHAR*, ISC_STATUS, ...);
 
 
-void IBERR_append_status(ISC_STATUS* status_vector, ISC_STATUS status, ...)
+void IBERR_append_status(ISC_STATUS * status_vector, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -48,36 +46,25 @@ void IBERR_append_status(ISC_STATUS* status_vector, ISC_STATUS status, ...)
  *	Append the given status vector with the passed arguments.
  *
  **************************************/
+	ISC_STATUS *appended, *status_end;
 	ISC_STATUS_ARRAY local_status;
 
-	// First build a local status vector with the passed arguments
+/* First build a local status vector with the passed arguments */
 
 	STUFF_STATUS(local_status, status);
 
-	// Now find the end of the passed status vector info
+/* Now find the end of the passed status vector info */
 
-	ISC_STATUS* const status_end = status_vector + ISC_STATUS_LENGTH;
-	while (*status_vector && status_vector < status_end)
-		++status_vector;
+	for (status_end = status_vector + ISC_STATUS_LENGTH; *status_vector; status_vector++);
 
-	// If we fail here, an unterminated, illegal status vector was passed as argument.
-	fb_assert(status_vector < status_end);
+/* Now append the newly built local status vector to the passed one */
 
-	// Now append the newly built local status vector to the passed one
-	// The minimum space is for appending isc_arg_<something>, <value>, isc_arg_end.
-
-	if (status_vector < status_end - 2)
-	{
-		const ISC_STATUS* appended = local_status;
-		while (status_vector < status_end && (*status_vector++ = *appended++))
-			; // empty loop
-			
-		status_end[-1] = 0; // force termination
-	}
+	appended = local_status;
+	while ((*status_vector++ = *appended++) && status_vector < status_end);
 }
 
 
-void IBERR_build_status(ISC_STATUS* status_vector, ISC_STATUS status, ...)
+void IBERR_build_status(ISC_STATUS * status_vector, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -94,11 +81,10 @@ void IBERR_build_status(ISC_STATUS* status_vector, ISC_STATUS status, ...)
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
 void IBERR_bugcheck(
-					ISC_STATUS* status_vector,
-					const SCHAR* dbname,
-					const bool raise, int number, TEXT* errmsg)
+					ISC_STATUS * status_vector,
+					SCHAR * dbname,
+					UCHAR * longjmp_addr, int number, TEXT * errmsg)
 {
 /**************************************
  *
@@ -110,19 +96,16 @@ void IBERR_bugcheck(
  *	Things seem to be going poorly today.
  *
  **************************************/
-	USHORT flags;
+	USHORT flags, len;
 
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, MAX_ERRMSG_LEN, errmsg,
 						&flags) < 1)
 		strcpy(errmsg, "Internal error code");
 
-	char strnum[20];
-	const size_t len1 = strlen(errmsg);
-	const size_t len2 = sprintf(strnum, " (%d)", number);
-	if (len1 + len2 < MAX_ERRMSG_LEN)
-		strncpy(errmsg + len1, strnum, len2 + 1);
+	len = strlen(errmsg);
+	sprintf(errmsg + len, " (%d)", number);
 
-	post_error(status_vector, dbname, raise, isc_bug_check,
+	post_error(status_vector, dbname, longjmp_addr, isc_bug_check,
 			   isc_arg_string, errmsg, 0);
 }
 
@@ -130,7 +113,7 @@ void IBERR_bugcheck(
 void IBERR_error(
 				 ISC_STATUS* status_vector,
 				 const SCHAR* dbname,
-				 const bool raise, int number, TEXT* errmsg)
+				 UCHAR* longjmp_addr, int number, TEXT* errmsg)
 {
 /**************************************
  *
@@ -149,7 +132,7 @@ void IBERR_error(
 						&flags) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	post_error(status_vector, dbname, raise, isc_random,
+	post_error(status_vector, dbname, longjmp_addr, isc_random,
 			   isc_arg_string, errmsg, 0);
 }
 
@@ -157,7 +140,7 @@ void IBERR_error(
 static void post_error(
 					   ISC_STATUS* status_vector,
 					   const SCHAR* dbname,
-					   const bool raise, ISC_STATUS status, ...)
+					   UCHAR* longjmp_addr, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -178,9 +161,8 @@ static void post_error(
 			gds__log_status(dbname, status_vector);
 	}
 
-	if (raise) {
+	if (longjmp_addr) {
 		Firebird::status_exception::raise(status_vector);
 	}
 }
-#endif
 

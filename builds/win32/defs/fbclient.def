@@ -124,10 +124,6 @@ EXPORTS
     gds_alloc_flag_unfreed
     gds_alloc_report
 
-	fb_shutdown
-	fb_shutdown_callback
-	fb_cancel_operation
-
 	perf_format	@100
 	perf_get_info	@101
 	perf_report	@102
@@ -246,7 +242,6 @@ EXPORTS
 	isc_sqlcode	@165
 	isc_sql_interprete	@164
 	isc_sqlcode_s		@278
-	fb_sqlstate			@279
 
 	; Event functions
 

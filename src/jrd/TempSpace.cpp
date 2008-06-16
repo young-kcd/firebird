@@ -33,7 +33,7 @@
 
 // Static definitions/initializations
 
-Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
+Firebird::Mutex TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
 size_t TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
@@ -77,7 +77,7 @@ size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length
 	return length;
 }
 
-size_t TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, size_t length)
+size_t TempSpace::MemoryBlock::write(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -115,7 +115,7 @@ size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
 	return file->read(offset, buffer, length);
 }
 
-size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t length)
+size_t TempSpace::FileBlock::write(offset_t offset, void* buffer, size_t length)
 {
 	if (offset + length > size)
 	{
@@ -205,7 +205,8 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 		size_t l = length;
 
 		// read data from the block chain
-		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l;
+			itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->read(offset, p, l);
 			p += n;
@@ -224,7 +225,7 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to the temporary space
 //
 
-size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
+size_t TempSpace::write(offset_t offset, void* buffer, size_t length)
 {
 	fb_assert(offset <= logicalSize);
 
@@ -237,13 +238,14 @@ size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 	if (length)
 	{
 		// search for the first needed block
-		Block* const block = findBlock(offset);
+		Block* block = findBlock(offset);
 
-		const char* p = static_cast<const char*>(buffer);
+		char* p = static_cast<char*>(buffer);
 		size_t l = length;
 
 		// write data to as many blocks as necessary
-		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
+		for (Block* itr = block; itr && l;
+			itr = itr->next, offset = 0)
 		{
 			const size_t n = itr->write(offset, p, l);
 			p += n;
@@ -377,14 +379,16 @@ TempFile* TempSpace::setupFile(size_t size)
 			}
 		}
 
+		if (!file)
+		{
+			file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
+			tempFiles.add(file);
+		}
+
+		fb_assert(file);
+
 		try
 		{
-			if (!file)
-			{
-				file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
-				tempFiles.add(file);
-			}
-
 			file->extend(size);
 		}
 		catch (const Firebird::system_call_failed&)
@@ -520,7 +524,10 @@ void TempSpace::releaseSpace(offset_t position, size_t size)
 char* TempSpace::inMemory(offset_t begin, size_t size) const
 {
 	const Block* block = findBlock(begin);
-	return block ? block->inMemory(begin, size) : NULL;
+	if (block)
+		return block->inMemory(begin, size);
+	else
+		return NULL;
 }
 
 //
@@ -535,7 +542,6 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 	offset_t local_offset = begin;
 	const offset_t save_begin = begin;
 	const Block* block = findBlock(local_offset);
-
 	while (block && (begin + size <= end))
 	{
 		char* mem = block->inMemory(local_offset, size);
@@ -543,12 +549,13 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 		{
 			return mem;
 		}
-
-		begin += block->size - local_offset;
-		local_offset = 0;
-		block = block->next;
+		else 
+		{
+			begin += block->size - local_offset;
+			local_offset = 0;
+			block = block->next;
+		}
 	}
-
 	begin = save_begin;
 	return NULL;
 }

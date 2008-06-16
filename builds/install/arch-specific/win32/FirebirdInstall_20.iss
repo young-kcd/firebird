@@ -23,7 +23,7 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.2.2
+;   This script has been designed to work with Inno Setup v5.2.3
 ;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
@@ -53,10 +53,9 @@
 ;In practice, these values are set in the environment and we use the env vars.
 #define MajorVer "2"
 #define MinorVer "1"
-#define PointRelease "0"
+#define PointRelease "1"
 #define BuildNumber "0"
 #define PackageNumber "0"
-
 
 
 ;-------Start of Innosetup script debug flags section
@@ -96,6 +95,9 @@
 #undef files
 ;We speed up compilation (and hence testing) by not compressing contents.
 #undef compression
+
+;Default to x64 for testing
+#define PlatformTarget "x64"
 #endif
 
 
@@ -115,27 +117,42 @@
 ;------If necessary we can turn off i18n by uncommenting this undefine
 ;#undef  i18n
 
+;----- If we are debugging the script (and not executed from command prompt)
+;----- there is no guarantee that the environment variable exists. However an
+;----- expression such as #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER") will
+;----- 'define' the macro anyway so we need to test for a valid env var before
+;----- we define our macro.
+#if Len(GetEnv("FB_MAJOR_VER")) > 0
 #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER")
+#endif
 #ifdef FB_MAJOR_VER
 #define MajorVer FB_MAJOR_VER
 #endif
 
+#if Len(GetEnv("FB_MINOR_VER")) > 0
 #define FB_MINOR_VER GetEnv("FB_MINOR_VER")
+#endif
 #ifdef FB_MINOR_VER
 #define MinorVer FB_MINOR_VER
 #endif
 
+#if Len(GetEnv("FB_REV_VER")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
+#endif
 #ifdef FB_REV_NO
 #define PointRelease FB_REV_NO
 #endif
 
+#if Len(GetEnv("FB_BUILD_NO")) > 0
 #define FB_BUILD_NO GetEnv("FB_BUILD_NO")
+#endif
 #ifdef FB_BUILD_NO
 #define BuildNumber FB_BUILD_NO
 #endif
 
+#if Len(GetEnv("FBBUILD_PACKAGE_NUMBER")) > 0
 #define FBBUILD_PACKAGE_NUMBER GetEnv("FBBUILD_PACKAGE_NUMBER")
+#endif
 #ifdef FBBUILD_PACKAGE_NUMBER
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
@@ -149,8 +166,10 @@
 #endif
 #define MyAppVerName MyAppName + " " + MyAppVerString
 
-
+;---- If we haven't already set PlatformTarget then pick it up from the environment.
+#ifndef PlatformTarget
 #define PlatformTarget GetEnv("FB_TARGET_PLATFORM")
+#endif
 #if PlatformTarget == ""
 #define PlatformTarget "win32"
 #endif
@@ -162,9 +181,9 @@
 #endif
 #define msvc_version 8
 
-;BaseVer should be used for all v2.n installs.
-;This allows us to upgrade silently from 2.0 to 2.1
-#define BaseVer MajorVer + "_0"
+;BaseVer should be used for all v2.1.n installs.
+;This allows us to upgrade silently from 2.1.m to 2.1.n
+#define BaseVer MajorVer + "_" + MinorVer
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
@@ -172,8 +191,6 @@
 #define FB15_cur_ver GetEnv("FBBUILD_FB15_CUR_VER")
 #define FB20_cur_ver GetEnv("FBBUILD_FB20_CUR_VER")
 #define FB21_cur_ver GetEnv("FBBUILD_FB21_CUR_VER")
-#define FB25_cur_ver GetEnv("FBBUILD_FB25_CUR_VER")
-#define FB_cur_ver FB25_cur_ver
 
 ; We can save space by shipping a pdb package that just includes
 ; the pdb files. It would then upgrade an existing installation,
@@ -269,7 +286,7 @@ Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#Script
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
 Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
 Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
-Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+;Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
 [Messages]
@@ -284,7 +301,7 @@ it.BeveledLabel=Italiano
 pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 ru.BeveledLabel=Ðóññêèé
-si.BeveledLabel=Slovenski
+;si.BeveledLabel=Slovenski
 #endif
 
 [CustomMessages]
@@ -299,7 +316,7 @@ si.BeveledLabel=Slovenski
 #include "pl\custom_messages_pl.inc"
 #include "pt\custom_messages_pt.inc"
 #include "ru\custom_messages_ru.inc"
-#include "si\custom_messages_si.inc"
+;#include "si\custom_messages_si.inc"
 #endif
 
 #ifdef iss_debug
@@ -343,14 +360,14 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 [Run]
 #if msvc_version == 8
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_Win32.msi"" /L*v {tmp}\vccrt{#msvc_version}_Win32.log "; StatusMsg: "Installing MSVC 32-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #if PlatformTarget == "x64"
-Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  Check: HasWI30; Components: ClientComponent;
+Filename: msiexec.exe; Parameters: "/qn /i ""{tmp}\vccrt{#msvc_version}_x64.msi"" /L*v {tmp}\vccrt{#msvc_version}_x64.log ";  StatusMsg: "Installing MSVC 64-bit runtime libraries to system directory"; Check: HasWI30; Components: ClientComponent;
 #endif
 #endif
 
-;Always register Firebird
-Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
+;Only register Firebird if we are installing AND configuring
+Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
 Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
@@ -363,7 +380,7 @@ Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {c
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
 Filename: {app}\bin\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
 Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start {code:ServiceName} "; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Tasks: UseServiceTask; Check: StartEngine
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
 
@@ -390,21 +407,20 @@ Name: {group}\Firebird Server; Filename: {app}\bin\fb_inet_server.exe; Parameter
 Name: {group}\Firebird Server; Filename: {app}\bin\fbserver.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Superserver (without guardian)
 Name: {group}\Firebird Guardian; Filename: {app}\bin\fbguard.exe; Parameters: -a; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent\SuperServerComponent; Comment: Run Firebird Super Server (with guardian)
 Name: {group}\Firebird ISQL Tool; Filename: {app}\bin\isql.exe; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
-Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#FB_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
-Name: {group}\Firebird {#FB_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird {#FB21_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
+Name: {group}\Firebird {#FB21_cur_ver} Installation Guide; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.InstallationGuide.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:InstallationGuide}
+Name: {group}\Firebird {#FB21_cur_ver} Bug Fixes; Filename: {app}\doc\Firebird_v{#FB21_cur_ver}.BugFixes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:BugFixes}
 Name: {group}\Firebird {#FB15_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB15_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird 2.0 Quick Start Guide; Filename: {app}\doc\Firebird-2.0-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
+Name: {group}\Firebird 2.1 Quick Start Guide; Filename: {app}\doc\Firebird-2.1-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\readme.txt; MinVersion: 4.0,4.0;
 #ifdef i18n
 ;And install translated readme.txt if non-default language is chosen.
-Name: {group}\{cm:IconReadme,{#FB_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
+Name: {group}\{cm:IconReadme,{#FB21_cur_ver}}; Filename: {app}\{cm:ReadMeFile}; MinVersion: 4.0,4.0; Components: DevAdminComponent; Check: NonDefaultLanguage;
 #endif
-Name: {group}\{cm:Uninstall,{#FB_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
+Name: {group}\{cm:Uninstall,{#FB21_cur_ver}}; Filename: {uninstallexe}; Comment: Uninstall Firebird
 
 [Files]
 #ifdef files
@@ -425,7 +441,7 @@ Source: {#ScriptsDir}\it\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pl;
 Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
 Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
-Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+;Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -678,8 +694,13 @@ end;
 for i:=0 to ProductsInstalledCount-1 do
   InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
 
-//If FB2 is installed
-If ((ProductsInstalled AND FB2) = FB2) then
+// If FB21 is installed and installed platform does not match current platform
+// then notify user.
+#if PlatformTarget == "x64"
+If ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) then
+#else
+If ((ProductsInstalled AND FB21 ) = FB21 ) then
+#endif
       InstallSummary := InstallSummary
       +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
       +#13 + ExpandConstant('{cm:InstallSummarySuffix2}')
@@ -719,24 +740,16 @@ begin
   end;
 
 
-  //If Fb2.0 is installed then we can install over it.
-  //unless we find the server running.
-  if (ProductsInstalledCount = 1) AND
-    ((ProductsInstalled AND FB2) = FB2) then begin
-      VerString := ( FirebirdDefaultServerRunning );
-      if VerString <> '' then begin
-        result := false;
-        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
-        +#13
-        +#13+ExpandConstant('{cm:FbRunning2}')
-        +#13+ExpandConstant('{cm:FbRunning3}')
-        +#13, mbError, MB_OK);
-        exit;
-        end
-      else begin
+  //If existing install of the same majorver.minorver is
+  //found then we can upgrade it.
+  if ( (ProductsInstalledCount = 1) AND
+#if PlatformTarget == "x64"
+    ((ProductsInstalled AND FB21_x64 ) = FB21_x64 ) ) then begin
+#else
+    ((ProductsInstalled AND FB21 ) = FB21 ) ) then begin
+#endif
         result := true;
         exit;
-      end
     end
   ;
 
@@ -760,18 +773,12 @@ function InitializeSetup(): Boolean;
 var
   i: Integer;
   CommandLine: String;
-  VerString: String;
 begin
 
   result := true;
 
-  if not CheckWinsock2 then begin
-    result := False;
-    exit;
-  end
-
   CommandLine:=GetCmdTail;
-  
+
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
     (pos('/?',Uppercase(CommandLine)) > 0) or
     (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
@@ -780,7 +787,7 @@ begin
     CloseHelpDlg;
     result := False;
     Exit;
-    
+
   end;
 
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
@@ -795,6 +802,17 @@ begin
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
 
+  // Check if a server is running - we cannot continue if it is.
+  if FirebirdDefaultServerRunning then begin
+    result := false;
+    exit;
+  end;
+
+  if not CheckWinsock2 then begin
+    result := False;
+    exit;
+  end
+
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.
   InstallAndConfigure := Install + Configure;
@@ -804,20 +822,7 @@ begin
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
-  if result then begin
-    //There is a possibility that all our efforts to detect an
-    //install were in vain and a server _is_ running...
-    VerString := FirebirdDefaultServerRunning;
-    if ( VerString <> '' ) then begin
-      result := false;
-        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [VerString])
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-    end;
-  end;
+
 end;
 
 
@@ -831,19 +836,26 @@ begin
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
       ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
-      
+
+  if RunningServerVerString <> '' then
+        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [RunningServerVerString])
+      +#13
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
+      +#13, mbError, MB_OK);
+
 #ifdef setuplogging
   if OkToCopyLog then
     FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
-    
+
   RestartReplace (ExpandConstant ('{log}'), '');
 #endif /* setuplogging */
 
 end;
 
-//This function tries to find an existing install of Firebird 1.5
+//This function tries to find an existing install of Firebird 2.n
 //If it succeeds it suggests that directory for the install
-//Otherwise it suggests the default for Fb 1.5
+//Otherwise it suggests the default for Fb 2.n
 function ChooseInstallDir(Default: String): String;
 var
   InterBaseRootDir,
@@ -870,7 +882,7 @@ begin
       InstallRootDir := Default;                                   // but the user has changed the default
 
     if (( InstallRootDir = '') and
-        ( FirebirdVer[0] = 2 ) and ( FirebirdVer[1] = 0 ) ) then   // Firebird 2.0 is installed
+        ( FirebirdVer[0] = {#MajorVer} ) and ( FirebirdVer[1] = {#MinorVer} ) ) then   // Firebird 2.n is installed
       InstallRootDir := FirebirdRootDir;                            // but the user has changed the default
 
     // if we haven't found anything then try the FIREBIRD env var
@@ -1075,7 +1087,7 @@ end;
 function StartEngine: boolean;
 begin
   if ConfigureFirebird then
-    result := not FirebirdOneRunning;
+    result := not FirebirdDefaultServerRunning;
 end;
 
 

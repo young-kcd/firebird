@@ -52,6 +52,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/vio_proto.h"
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
@@ -76,13 +77,11 @@ namespace {
 	class ExternalFileDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const Firebird::PathName getConfigString() const
-		{
+		const Firebird::PathName getConfigString(void) const {
 			return Firebird::PathName(Config::getExternalFileAccess());
 		}
 	public:
-		explicit ExternalFileDirectoryList(MemoryPool& p)
-			: DirectoryList(p)
+		ExternalFileDirectoryList(MemoryPool& p) : DirectoryList(p) 
 		{
 			initialize();
 		}
@@ -91,15 +90,13 @@ namespace {
 
 	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file) 
 	{
-		const char* file_name = ext_file->ext_filename;
+		const char* file_name = (char*) ext_file->ext_filename;
 
 		if (!iExternalFileDirectoryList().isPathInList(file_name))
-		{
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "external file",
 				isc_arg_string, ERR_cstring(file_name),
 				isc_arg_end);
-		}
 
 		// If the database is updateable, then try opening the external files in
 		// RW mode. If the DB is ReadOnly, then open the external files only in
@@ -202,7 +199,7 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name, bid* descriptio
 	ExternalFile* file =
 		FB_NEW_RPT(*dbb->dbb_permanent, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;
-	strcpy(file->ext_filename, file_name);
+	strcpy(reinterpret_cast<char*>(file->ext_filename), file_name);
 	file->ext_flags = 0;
 	file->ext_ifi = NULL;
 
@@ -267,7 +264,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 
 	const SSHORT offset = (SSHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	SSHORT l = record->rec_length - offset;
 
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary. Note that we must flush file buffer if we 
@@ -279,7 +276,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 		ERR_post(isc_io_error,
 				 isc_arg_string, "fseek",
 				 isc_arg_string,
-				 ERR_cstring(file->ext_filename),
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
@@ -519,7 +516,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
 	const UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	USHORT l = record->rec_length - offset;
 
 	// hvlad: fseek will flush file buffer and degrade performance, so don't 
 	// call it if it is not necessary.	Note that we must flush file buffer if we 
@@ -528,14 +525,14 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
-				 ERR_cstring(file->ext_filename),
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
-				 ERR_cstring(file->ext_filename),
+				 ERR_cstring(reinterpret_cast<const char*>(file->ext_filename)),
 				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 

@@ -1,3 +1,5 @@
+CS_SRV_TH=@service_thread_CS@
+
 #________________________________________________________________________
 #
 # jrd
@@ -16,9 +18,12 @@ WHY_Sources = why.cpp
 
 JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
-		isc_sync.cpp perf.cpp sdl.cpp status.cpp \
-		ThreadData.cpp ThreadStart.cpp utl.cpp \
+		isc_sync.cpp perf.cpp sch.cpp sdl.cpp status.cpp \
+		ThreadData.cpp utl.cpp \
         $(WHY_Sources)
+
+# These are in the win32 release but not unix one for super? 
+#err.cpp flu.cpp functions.cpp 
 
 JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
@@ -26,20 +31,20 @@ JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
         all.cpp blb.cpp btn.cpp btr.cpp builtin.cpp \
 		GlobalRWLock.cpp cch.cpp cmp.cpp cvt2.cpp \
-		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
-		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
+		DataTypeUtil.cpp dfw.cpp divorce.cpp \
+		err.cpp iberr.cpp \
+		event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		iberr.cpp idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
-		IntlUtil.cpp \
-		jrd.cpp Database.cpp lck.cpp \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp IntlUtil.cpp \
+		inuse.cpp jrd.cpp lck.cpp log.cpp  \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
-		ods.cpp plugin_manager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \
-		Relation.cpp ResultSet.cpp rlck.cpp rpb_chain.cpp rse.cpp \
+		ods.cpp plugin_manager.cpp pwd.cpp RandomGenerator.cpp Relation.cpp rlck.cpp \
+		rpb_chain.cpp rse.cpp \
 		sdw.cpp shut.cpp sort.cpp sqz.cpp \
-		svc.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
+		svc.cpp sym.cpp SysFunction.cpp TempSpace.cpp tpc.cpp tra.cpp validation.cpp vio.cpp \
 		nodebug.cpp nbak.cpp sha.cpp $(Physical_IO_Module) TextType.cpp \
-		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
-		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp
+		ThreadData.cpp thd.cpp unicode_util.cpp RuntimeStatistics.cpp \
+		DebugInterface.cpp
 
 
 JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
@@ -66,9 +71,9 @@ DSQL_ClientFiles = array.epp blob.epp \
                    preparse.cpp user_dsql.cpp utld.cpp keywords.cpp
 
 DSQL_ServerFiles=	metd.epp \
-                ddl.cpp dsql.cpp errd.cpp gen.cpp hsh.cpp make.cpp \
-	            movd.cpp parse.cpp Parser.cpp pass1.cpp misc_func.cpp \
-	            DdlNodes.epp StmtNodes.cpp
+                alld.cpp ddl.cpp dsql.cpp \
+	            errd.cpp gen.cpp hsh.cpp make.cpp \
+	            movd.cpp parse.cpp pass1.cpp misc_func.cpp
 
 
 DSQL_Files = $(DSQL_ClientFiles) $(DSQL_ServerFiles)
@@ -92,7 +97,7 @@ LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources)))
 #
 # remote
 
-REMOTE_ClientFiles =  inet.cpp interface.cpp merge.cpp \
+REMOTE_ClientFiles =  allr.cpp inet.cpp interface.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
 INTERFACE_Files=	$(REMOTE_ClientFiles)
@@ -130,7 +135,16 @@ GPRELIB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRELIB_Sour
 #
 # alice
 
-ALICE_Files=alice.cpp exe.cpp alice_meta.epp tdr.cpp
+ALICE_Files=
+ifeq ($(ArchType),super)
+    ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    ALICE_Files=alice.cpp all.cpp exe.cpp alice_meta.epp tdr.cpp
+	endif
+
+endif
+
 ALICE_Sources = $(addprefix alice/, $(ALICE_Files))
 ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources))))
 
@@ -138,7 +152,15 @@ ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources)
 #
 # alice
 
-BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+BURP_Files=
+ifeq ($(ArchType),super)
+    BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
+	endif
+endif
+
 BURP_Sources = $(addprefix burp/, $(BURP_Files))
 BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources))))
 
@@ -149,9 +171,22 @@ BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources)))
 
 SECURITY_ClientFiles_gsec = call_service.cpp
 
-SECURITY_ServerFiles_gsec:= security.cpp gsec.cpp 
-SECURITY_ServerFiles_gstat:= dba.epp ppg.cpp 
-SECURITY_ServerFiles_common:= cmd_util.cpp
+SECURITY_ServerFiles_gsec:= security.cpp
+SECURITY_ServerFiles_gstat:=
+SECURITY_ServerFiles_common:=
+
+ifeq ($(ArchType),super)
+    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
+    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
+    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
+else
+	ifeq ($(CS_SRV_TH),true)
+	    SECURITY_ServerFiles_gsec:= $(SECURITY_ServerFiles_gsec) gsec.cpp 
+	    SECURITY_ServerFiles_gstat:= $(SECURITY_ServerFiles_gstat) dba.epp ppg.cpp 
+	    SECURITY_ServerFiles_common:= $(SECURITY_ServerFiles_common) cmd_util.cpp
+	endif
+
+endif
 
 SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
 SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
@@ -180,8 +215,7 @@ FBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBUTIL_Source
 #
 # common/classes
 
-FBCLASSES_ClientFiles=alloc.cpp locks.cpp semaphore.cpp fb_string.cpp timestamp.cpp \
-	PublicHandle.cpp TempFile.cpp
+FBCLASSES_ClientFiles=alloc.cpp locks.cpp semaphore.cpp fb_string.cpp timestamp.cpp TempFile.cpp
 FBCLASSES_MsgFiles=SafeArg.cpp MsgPrint.cpp BaseStream.cpp
 FBCLASSES_ServerFiles=UserBlob.cpp
 
@@ -226,7 +260,7 @@ CONFIG_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CONFIG_Source
 #
 # vulcan
 
-VULCAN_ClientFiles=PathName.cpp RefObject.cpp
+VULCAN_ClientFiles=JString.cpp PathName.cpp RefObject.cpp
 VULCAN_ServerFiles=
 
 VULCAN_Files= $(VULCAN_ClientFiles) $(VULCAN_ServerFiles)
@@ -238,7 +272,7 @@ VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Source
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp classes/MetaName.cpp StatusHolder.cpp
 FBCOMMON_ServerFiles = utils.cpp
 
 FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
@@ -280,13 +314,6 @@ COMMON_Objects = $(FBCLASSES_Objects) \
 				$(CONFIG_Objects) \
 				$(VULCAN_Objects)
 
-#________________________________________________________________________
-#
-
-UTIL_Files = utilities/common/cmd_util.cpp
-
-UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Files))))
-
 # These are the lists of object/shared object files that will go into libgds.a
 # and libgds.$(SHRLIB_EXT).
 
@@ -301,8 +328,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(CLUMPLETS_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
-                $(ALICE_Objects) \
-				$(UTIL_Objects)
+                $(ALICE_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 
 # have been worked out above in this file, based on macros, so here they
@@ -317,10 +343,6 @@ LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 # gbak modules.  These are then used to compile the rest of the system.
 # MOD 29-July-2002
 
-# Statically link ib_util in libfbstatic.
-IBUTIL_Sources = $(addprefix extlib/, ib_util.cpp)
-IBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBUTIL_Sources))))
-
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
 
@@ -331,9 +353,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(INTERFACE_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
-				$(CLUMPLETS_Objects) \
-				$(UTIL_Objects) \
-				$(IBUTIL_Objects)
+				$(CLUMPLETS_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

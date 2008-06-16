@@ -53,6 +53,11 @@ using MsgFormat::SafeArg;
 //#include <ctypes.h>
 //#endif
 
+#ifdef VMS
+#include <descrip.h>
+const SLONG LIB$_INPSTRTRU	= 0x15821c;
+#endif
+
 #if (defined WIN_NT)
 #include <io.h> // isatty
 #endif
@@ -225,13 +230,10 @@ qli_tok* LEX_edit_string(void)
 		return NULL;
 	}
 
-	while (!(classes(c) & (CHR_white | CHR_eol))) 
-	{
+	while (!(classes(c) & (CHR_white | CHR_eol))) {
 		*p++ = c;
 		if (classes(c) & CHR_quote)
-		{
-			for (;;) 
-			{
+			for (;;) {
 				const SSHORT d = nextchar(false);
 				if (d == '\n') {
 					retchar();
@@ -241,7 +243,6 @@ qli_tok* LEX_edit_string(void)
 				if (d == c)
 					break;
 			}
-		}
 		c = nextchar(true);
 	}
 
@@ -307,11 +308,9 @@ qli_tok* LEX_filename(void)
 	for (;;) {
 		c = nextchar(true);
 		char char_class = classes(c);
-		if (c == '"' && c != save) 
-		{
+		if (c == '"' && c != save) {
 			*p++ = c;
-			for (;;) 
-			{
+			for (;;) {
 				c = nextchar(true);
 				char_class = classes(c);
 				if ((char_class & CHR_eol) || c == '"')
@@ -397,25 +396,22 @@ void LEX_flush(void)
 // Look for a semi-colon
 
 	if (QLI_semi)
-	{
 		while (QLI_line && QLI_token->tok_keyword != KW_SEMI)
 			LEX_token();
-	}
 	else
-	{
 		while (QLI_line && QLI_token->tok_type != tok_eol)
 			LEX_token();
-	}
 }
 
 
+#if defined(UNIX) || defined(WIN_NT)
 bool LEX_get_line(const TEXT* prompt,
 				  TEXT * buffer,
 				  int size)
 {
 /**************************************
  *
- *	L E X _ g e t _ l i n e
+ *	L E X _ g e t _ l i n e  ( U N I X )
  *
  **************************************
  *
@@ -455,8 +451,8 @@ bool LEX_get_line(const TEXT* prompt,
 			}
 			if (QLI_abort)
 				continue;
-
-			break;
+			else
+				break;
 		}
 		if (--size > 0)
 			*p++ = c;
@@ -480,6 +476,71 @@ bool LEX_get_line(const TEXT* prompt,
 
 	return true;
 }
+#endif
+
+
+#ifdef VMS
+bool LEX_get_line(const TEXT* prompt,
+				  TEXT * buffer,
+				  int size)
+{
+/**************************************
+ *
+ *	L E X _ g e t _ l i n e  ( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Give a prompt and read a line.  If the line is terminated by
+ *	an EOL, return true.  If the buffer is exhausted and non-blanks
+ *	would be discarded, return an error.  If EOF is detected,
+ *	return false.  Regardless, a null terminated string is returned.
+ *
+ **************************************/
+	struct dsc$descriptor_s line_desc, prompt_desc;
+	SLONG status;
+	SSHORT length;
+
+// We're going to add a null to the end, so don't read too much
+
+	--size;
+
+	line_desc.dsc$b_class = DSC$K_CLASS_S;
+	line_desc.dsc$b_dtype = DSC$K_DTYPE_T;
+	line_desc.dsc$w_length = size;
+	line_desc.dsc$a_pointer = buffer;
+
+	if (prompt) {
+		prompt_desc.dsc$b_class = DSC$K_CLASS_S;
+		prompt_desc.dsc$b_dtype = DSC$K_DTYPE_T;
+		prompt_desc.dsc$w_length = strlen(prompt);
+		prompt_desc.dsc$a_pointer = const_cast<TEXT*>(prompt); // safe cast
+		status = lib$get_input(&line_desc, &prompt_desc, &length);
+	}
+	else
+		status = lib$get_input(&line_desc, NULL, &length);
+
+	SCHAR* p = buffer + length;
+
+	if (!(status & 1)) {
+		if (status != LIB$_INPSTRTRU)
+			return false;
+		buffer[0] = 0;
+		IBERROR(476);			// Msg 476 input line too long
+	}
+	else if (length < size)
+		*p++ = '\n';
+
+	*p = 0;
+
+	if (sw_verify) {
+		line_desc.dsc$w_length = length;
+		lib$put_output(&line_desc);
+	}
+
+	return true;
+}
+#endif
 
 
 void LEX_init(void)
@@ -703,8 +764,9 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 			}
 		}
 		const SSHORT l = p - buffer;
-		if (l && isc_put_segment(status_vector, &blob, l, buffer))
-			ERRQ_bugcheck(58);	// Msg 58 isc_put_segment failed
+		if (l)
+			if (isc_put_segment(status_vector, &blob, l, buffer))
+				ERRQ_bugcheck(58);	// Msg 58 isc_put_segment failed
 	}
 
 	fseek(trace_file, 0, 2);
@@ -908,8 +970,8 @@ static bool get_line(FILE * file,
 			}
 			if (QLI_abort)
 				continue;
-
-			break;
+			else
+				break;
 		}
 		if (--length > 0)
 			*p++ = c;
@@ -1072,12 +1134,9 @@ static void next_line(const bool eof_ok)
 // Dump output to the trace file
 
 	if (QLI_line->line_type == line_blob)
-	{
 		while (*p)
 			p++;
-	}
-	else
-	{
+	else {
 		while (*p)
 			putc(*p++, trace_file);
 		QLI_position += (TEXT *) p - QLI_line->line_data;
@@ -1127,6 +1186,8 @@ static bool scan_number(SSHORT c,
  **************************************/
 	bool dot = false;
 
+	TEXT* p = *ptr;
+
 // If this is a leading decimal point, check that the next
 //   character is really a digit, otherwise backout
 
@@ -1137,8 +1198,6 @@ static bool scan_number(SSHORT c,
 			return false;
 		dot = true;
 	}
-
-	TEXT* p = *ptr;
 
 // Gobble up digits up to a single decimal point
 

@@ -499,7 +499,7 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 	TEXT* string;
 
 	for (;;) {
-		if (MSC_match(KW_FILENAME) && !isQuoted(gpreGlob.token_global.tok_type))
+		if (MSC_match(KW_FILENAME) && (!isQuoted(gpreGlob.token_global.tok_type)))
 			CPR_s_error("quoted file name");
 
 		if (isQuoted(gpreGlob.token_global.tok_type)) {
@@ -1000,12 +1000,16 @@ TEXT* PAR_native_value(bool array_ref,
 	}
 
 	int length = string - buffer;
-	string = (SCHAR *) MSC_alloc(length + 1);
+	SCHAR* const s2 = string = (SCHAR *) MSC_alloc(length + 1);
+	const SCHAR* s1 = buffer;
 
-	if (length)
-		memcpy(string, buffer, length); // MSC_alloc filled the string with zeroes.
+	if (length) {
+		do {
+			*string++ = *s1++;
+		} while (--length);
+	}
 
-	return string;
+	return s2;
 }
 
 
@@ -1042,7 +1046,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 	while (true) {
 		// find a relation name, or maybe a list of them 
 
-		if (!parse_sql && terminator())
+		if ((!parse_sql) && terminator())
 			break;
 
 		do {
@@ -1094,7 +1098,7 @@ void PAR_reserving( USHORT flags, bool parse_sql)
 				}
 			}
 		}
-		if (!MSC_match(KW_COMMA))
+		if (!(MSC_match(KW_COMMA)))
 			break;
 	}
 }
@@ -1203,7 +1207,7 @@ static void block_data_list( const dbb* db)
 			for (const dbd* const end = gpreGlob.global_db_list + gpreGlob.global_db_count;
 				list < end; list++)
 			{
-				if (!strcmp(name, list->dbb_name))
+				if (!(strcmp(name, list->dbb_name)))
 					return;
 			}
 		}
@@ -1229,8 +1233,7 @@ static bool match_parentheses()
 {
 	USHORT paren_count = 0;
 
-	if (MSC_match(KW_LEFT_PAREN))
-	{
+	if (MSC_match(KW_LEFT_PAREN)) {
 		paren_count++;
 		while (paren_count) {
 			if (MSC_match(KW_RIGHT_PAREN))
@@ -1242,8 +1245,8 @@ static bool match_parentheses()
 		}
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -1609,7 +1612,7 @@ static act* par_blob_field()
 static act* par_case()
 {
 
-	if (gpreGlob.sw_language == lang_pascal && !routine_decl)
+	if ((gpreGlob.sw_language == lang_pascal) && (!routine_decl))
 		gpreGlob.cur_routine->act_count++;
 
 	return NULL;
@@ -1636,7 +1639,7 @@ static act* par_clear_handles()
 
 static act* par_derived_from()
 {
-	if (gpreGlob.sw_language != lang_c && !isLangCpp(gpreGlob.sw_language)) {
+	if ((gpreGlob.sw_language != lang_c) && (!isLangCpp(gpreGlob.sw_language))) {
 		return (NULL);
     }
 
@@ -2119,7 +2122,7 @@ static act* par_for()
 		PAR_get_token();
 
 		if (!MSC_match(KW_IN)) {
-			MSC_free(symbol);
+			MSC_free((UCHAR *) symbol);
 			return NULL;
 		}
 		if (dup_symbol) {
@@ -2270,7 +2273,7 @@ static act* par_modify()
 
 static act* par_on()
 {
-	if (!MSC_match(KW_ERROR))
+	if (!(MSC_match(KW_ERROR)))
 		return NULL;
 
 	return par_on_error();
@@ -2911,29 +2914,26 @@ static act* par_start_transaction()
 			trans->tra_flags |= TRA_ro;
 			continue;
 		}
-		if (MSC_match(KW_READ_WRITE))
+		else if (MSC_match(KW_READ_WRITE))
 			continue;
 
 		if (MSC_match(KW_CONSISTENCY)) {
 			trans->tra_flags |= TRA_con;
 			continue;
 		}
-
-// ***    if (MSC_match (KW_READ_COMMITTED))
+// ***    else if (MSC_match (KW_READ_COMMITTED))
 // { 
 // trans->tra_flags |= TRA_read_committed;
 // continue;
 // } **
-
-		if (MSC_match(KW_CONCURRENCY))
+		else if (MSC_match(KW_CONCURRENCY))
 			continue;
 
 		if (MSC_match(KW_NO_WAIT)) {
 			trans->tra_flags |= TRA_nw;
 			continue;
 		}
-
-		if (MSC_match(KW_WAIT))
+		else if (MSC_match(KW_WAIT))
 			continue;
 
 		if (MSC_match(KW_AUTOCOMMIT)) {
@@ -2943,8 +2943,8 @@ static act* par_start_transaction()
 
 		if (gpreGlob.sw_language == lang_cobol || gpreGlob.sw_language == lang_fortran)
 			break;
-
-		CPR_s_error("transaction keyword");
+		else
+			CPR_s_error("transaction keyword");
 	}
 
 //  send out for the list of reserved relations 
@@ -2999,7 +2999,7 @@ static act* par_trans( ACT_T act_op)
 		if ((gpreGlob.sw_language == lang_fortran)
 			&& (act_op == ACT_commit_retain_context))
 		{
-			if (!MSC_match(KW_TRANSACTION_HANDLE))
+			if (!(MSC_match(KW_TRANSACTION_HANDLE)))
 				return NULL;
 		}
 		else
@@ -3120,7 +3120,7 @@ static act* par_variable()
 	if (!is_null)
 		return action;
 
-//  We've got a explicit null flag reference rather than a field
+//  We've got a explicit null flag referernce rather than a field
 //  reference.  If there's already a null reference for the field,
 //  use it; otherwise make one up. 
 
@@ -3168,14 +3168,12 @@ static act* scan_routine_header()
 	act* action = MSC_action(0, ACT_routine);
 	action->act_flags |= ACT_mark;
 
-	while (!MSC_match(KW_SEMI_COLON))
-	{
-		if (!match_parentheses())
+	while (!(MSC_match(KW_SEMI_COLON)))
+		if (!(match_parentheses()))
 			PAR_get_token();
-	}
 
 	if (MSC_match(KW_OPTIONS) && MSC_match(KW_LEFT_PAREN)) {
-		while (!MSC_match(KW_RIGHT_PAREN)) {
+		while (!(MSC_match(KW_RIGHT_PAREN))) {
 			if (MSC_match(KW_EXTERN) || MSC_match(KW_FORWARD))
 				action->act_flags |= ACT_decl;
 			else

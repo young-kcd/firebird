@@ -25,7 +25,6 @@
 // =====================================
 // Utility functions
 
-#include "firebird.h"
 #include "../jrd/common.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -39,13 +38,8 @@
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/locks.h"
-#include "../common/classes/init.h"
 #include "../jrd/constants.h"
 
-#ifdef WIN_NT
-#include <direct.h>
-#endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -291,8 +285,6 @@ int snprintf(char* buffer, size_t count, const char* format...)
 // Copy password to newly allocated place and replace existing one in argv with spaces.
 // Allocated space is released upon exit from utility.
 // This is planned leak of a few bytes of memory in utilities.
-// This function is deprecated. Use UtilSvc::hidePasswd(ArgvType&, int) whenever possible.
-// However, there are several usages through fb_utils::get_passwd(char* arg);
 char* cleanup_passwd(char* arg)
 {
 	if (! arg) 
@@ -300,7 +292,7 @@ char* cleanup_passwd(char* arg)
 		return arg;
 	}
 
-	const int lpass = strlen(arg);
+	int lpass = strlen(arg);
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
 	{
@@ -655,27 +647,6 @@ Firebird::PathName get_process_name()
 		buffer[len - 1] = 0;
 
 	return buffer;
-}
-
-SLONG genUniqueId()
-{
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
-	Firebird::MutexLockGuard guard(mutex);
-	static SLONG cnt = 0;
-	return ++cnt;
-}
-
-void getCwd(Firebird::PathName& pn)
-{
-	char* buffer = pn.getBuffer(MAXPATHLEN);
-#if defined(WIN_NT)
-	_getcwd(buffer, MAXPATHLEN);
-#elif defined(HAVE_GETCWD)
-	getcwd(buffer, MAXPATHLEN);
-#else
-	getwd(buffer);
-#endif
-	pn.recalculate_length();
 }
 
 } // namespace fb_utils

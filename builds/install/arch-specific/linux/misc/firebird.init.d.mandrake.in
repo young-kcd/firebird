@@ -5,7 +5,7 @@
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
+# Firebird/interbase database server daemon 
 
 # Source function library - RedHat or Mandriva specific
 # functions actually used: checkpid success failure
@@ -25,17 +25,18 @@ FBRunUser=firebird
 pidfile=/var/run/firebird/$INSTANCE.pid
 FULLNAME="Firebird server [$INSTANCE]"
 LD_LIBRARY_PATH=$FIREBIRD/lib
+MANAGER=$FIREBIRD/bin/fbmgr.bin
 
 export FIREBIRD LD_LIBRARY_PATH
 
-GUARDIAN=$FIREBIRD/bin/fbguard
+# Check the file is there and is executable.
+[ -x $MANAGER ] || exit 1
 
 # See how we were called.
 case "$1" in
   start)
 	echo -n "Starting $FULLNAME "
-
-	runuser -s /bin/bash $FBRunUser -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
+	echo $MANAGER -pidfile $pidfile -start -forever | su $FBRunUser
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && success || failure
 	echo

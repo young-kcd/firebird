@@ -5,7 +5,7 @@
 #
 # This file belongs in /etc/init.d where it will be run
 # on system startup and shutdown to start the background
-# Firebird database server daemon 
+# Firebird/interbase database server daemon 
 
 
 # This init script contains functions specific for redhat
@@ -15,7 +15,7 @@
 . /etc/rc.d/init.d/functions
 
 
-: ${FIREBIRD:=@prefix@}
+: ${INTERBASE:=@prefix@}
 : ${ISC_USER:=SYSDBA}
 : ${ISC_PASSWORD:=masterkey}
 : ${FBRunUser:=root}
@@ -26,13 +26,13 @@
 # the server. 
 
 
-export FIREBIRD 
+export INTERBASE 
 export ISC_USER
 export ISC_PASSWORD
 
 
 # Check the file is there and is executable.
-[ -x $FIREBIRD/bin/fbmgr ] || exit 0
+[ -x $INTERBASE/bin/fbmgr ] || exit 0
 
 
 
@@ -40,14 +40,14 @@ export ISC_PASSWORD
 case "$1" in
   start)
 	echo -n "Starting Firebird server: "
-	daemon --user $FBRunUser $FIREBIRD/bin/fbmgr -start -forever
-#    echo '$FIREBIRD/bin/ibmgr -start -forever' | su $FBRunUser
+	daemon --user $FBRunUser $INTERBASE/bin/fbmgr -start -forever
+#    echo '$INTERBASE/bin/ibmgr -start -forever' | su $FBRunUser
 	RETVAL=$?
 	echo
 	;;
   stop)
 	echo -n "Stopping Firebird server: "
-	$FIREBIRD/bin/fbmgr -shut
+	$INTERBASE/bin/fbmgr -shut
 #	killproc ibserver
 	RETVAL=$?
 #	echo

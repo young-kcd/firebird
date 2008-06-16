@@ -44,21 +44,33 @@ namespace Jrd {
 
 int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 {
-	GlobalRWLock* globalRWLock = static_cast<GlobalRWLock*>(ast_object);
+	Jrd::GlobalRWLock *GlobalRWLock = 
+		static_cast<Jrd::GlobalRWLock*>(ast_object);
 
-	try
-	{
-		Database* dbb = globalRWLock->getDatabase();
+	ISC_ast_enter();
 
-		Database::SyncGuard dsGuard(dbb, true);
+	/* Since this routine will be called asynchronously, we must establish
+		a thread context. */
+	Jrd::thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
 
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
+	ISC_STATUS_ARRAY ast_status;
+	Jrd::Database* dbb = GlobalRWLock->cached_lock->lck_dbb;
 
-		globalRWLock->blockingAstHandler(tdbb);
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
+	tdbb->setDatabase(dbb);
+	tdbb->setAttachment(NULL);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+	tdbb->tdbb_status_vector = ast_status;
+
+	GlobalRWLock->blockingAstHandler(tdbb);
+
+	/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
+
+	ISC_ast_exit();
 
 	return 0;	
 }
@@ -68,18 +80,20 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 						   lck_owner_t default_logical_lock_owner, bool lock_caching)
 	: PermanentStorage(p), internal_blocking(0), external_blocking(false), 
 	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner), 
-	  lockCaching(lock_caching), readers(p), dbb(tdbb->getDatabase())
+	  lockCaching(lock_caching), readers(p)
 {
 	SET_TDBB(tdbb);
 
+	Database* dbb = tdbb->getDatabase();
+
 	cached_lock = FB_NEW_RPT(getPool(), lockLen) Lock();
-	cached_lock->lck_type = static_cast<lck_t>(lckType);
+	cached_lock->lck_type = static_cast<Jrd::lck_t>(lckType);
 	cached_lock->lck_owner_handle = 0;
 	cached_lock->lck_length = lockLen;
 
 	cached_lock->lck_dbb = dbb;
 	cached_lock->lck_parent = dbb->dbb_lock;
-	cached_lock->lck_object = this;
+	cached_lock->lck_object = reinterpret_cast<blk*>(this);
 	cached_lock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
 	memcpy(&cached_lock->lck_key, lockStr, lockLen);
 	
@@ -94,17 +108,17 @@ GlobalRWLock::~GlobalRWLock()
 	delete cached_lock;
 }
 
-bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, SLONG owner_handle)
+bool GlobalRWLock::lock(thread_db* tdbb, locklevel_t level, SSHORT wait, SLONG owner_handle)
 {
 	SET_TDBB(tdbb);
 	fb_assert(owner_handle);
 
 	{ // this is a first scope for a code where counters are locked
-		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+		CountersLockHolder lockHolder(lockMutex);
 
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
-		size_t n = size_t(-1);
+		size_t n;
 		if (level == LCK_read) {
 			if (readers.find(owner_handle, n)) {
 				readers[n].entry_count++;
@@ -118,8 +132,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 			}
 		}
 
-		const bool all_compatible =
-			!writer.entry_count && (level == LCK_read || readers.getCount() == 0);
+		const bool all_compatible = !writer.entry_count && (level == LCK_read || readers.getCount() == 0);
 
 		// We own the lock and all present requests are compatible with us
 		// In case of any congestion we force all requests through the lock
@@ -131,7 +144,6 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 				ObjectOwnerData ownerData;
 				ownerData.owner_handle = owner_handle;
 				ownerData.entry_count++;
-				fb_assert(n <= readers.getCount());
 				readers.insert(n, ownerData);
 			}
 			else
@@ -178,7 +190,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
 
 	{ // this is a second scope for a code where counters are locked
-		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+		CountersLockHolder lockHolder(lockMutex);
 
 		fb_assert(internal_blocking > 0);
 		internal_blocking--;
@@ -211,9 +223,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		COS_TRACE(("Replace lock, type=%i", cached_lock->lck_type));
 		if (newLock->lck_physical > cached_lock->lck_physical) {
 			LCK_release(tdbb, cached_lock);
-			Lock* const old_lock = cached_lock;
+			delete cached_lock;
 			cached_lock = newLock;
-			delete old_lock;
 			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner))) {
 				COS_TRACE(("Error: set owner handle for captured lock, type=%i", cached_lock->lck_type));
 				LCK_release(tdbb, cached_lock);
@@ -231,11 +242,11 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 
 // NOTE: unlock method must be signal safe
 // This function may be called in AST. The function doesn't wait.
-void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_handle)
+void GlobalRWLock::unlock(thread_db* tdbb, locklevel_t level, SLONG owner_handle)
 {
 	SET_TDBB(tdbb);
 
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	CountersLockHolder lockHolder(lockMutex);
 
 	COS_TRACE(("unlock level=%i", level));
 
@@ -289,7 +300,7 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	CountersLockHolder lockHolder(lockMutex);
 
 	COS_TRACE_AST("bloackingAstHandler");
 	// When we request a new lock counters are not updated until we get it.
@@ -306,9 +317,9 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 		external_blocking = true;
 }
 
-void GlobalRWLock::setLockData(thread_db* tdbb, SLONG lck_data)
+void GlobalRWLock::setLockData(SLONG lck_data)
 {
-	LCK_write_data(tdbb, cached_lock, lck_data);
+	LCK_write_data(cached_lock, lck_data);
 } 
 
 void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle)
@@ -318,7 +329,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 	if (old_owner_handle == new_owner_handle)
 		return;
 
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+	CountersLockHolder lockHolder(lockMutex);
 
 	if (level == LCK_read) {
 		size_t n;
@@ -349,15 +360,13 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 bool GlobalRWLock::tryReleaseLock(thread_db* tdbb)
 {
-	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
-
+	CountersLockHolder lockHolder(lockMutex);
 	if (!writer.entry_count && !readers.getCount())
 	{
 		LCK_release(tdbb, cached_lock);
 		invalidate(tdbb, false);
 		return true;
 	}
-
 	return false;
 }
 

@@ -44,24 +44,12 @@ const ISC_STATUS CLASS_MASK	= 0xF0000000;	/* Defines the code as warning, error,
  * since gds__decode returns the error code, facility, and error type
  * from a given error message */
 
-inline ISC_STATUS ENCODE_ISC_MSG(ISC_STATUS code, USHORT facility)
-{
-	return (((facility & 0x1F) << 16) | ((code & 0x3FFF) << 0) | ISC_MASK);
-}
+#define ENCODE_ISC_MSG(code, facility)	((facility & 0x1F) << 16) | \
+			                ((code & 0x3FFF) << 0) | \
+	       				(ISC_MASK)
 
-inline USHORT GET_FACILITY(ISC_STATUS code)
-{
-	return (code & FAC_MASK) >> 16;
-}
-
-inline USHORT GET_CLASS(ISC_STATUS code)
-{
-	return (code & CLASS_MASK) >> 30;
-}
-
-inline ISC_STATUS GET_CODE(ISC_STATUS code)
-{
-	return (code & CODE_MASK);
-}
+#define GET_FACILITY(code)		(code & FAC_MASK) >> 16
+#define GET_CLASS(code)			(code & CLASS_MASK) >> 30
+#define GET_CODE(code)			(code & CODE_MASK) >> 0
 
 #endif // MSG_ENCODE_H

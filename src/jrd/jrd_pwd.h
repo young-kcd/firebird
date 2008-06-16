@@ -28,6 +28,7 @@
 #define JRD_PWD_H
 
 #include "../jrd/ibase.h"
+#include "../jrd/thd.h"
 #include "../jrd/sha.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -39,12 +40,9 @@ const size_t MAX_PASSWORD_LENGTH = 64;		// used to store passwords internally
 static const char* PASSWORD_SALT  = "9z";	// for old ENC_crypt()
 const size_t SALT_LENGTH = 12;				// measured after base64 coding
 
-namespace Jrd {
-
 class SecurityDatabase
 {
-	struct user_record
-	{
+	struct user_record {
 		SLONG gid;
 		SLONG uid;
 		SSHORT flag;
@@ -52,9 +50,16 @@ class SecurityDatabase
 	};
 
 public:
+
 	static void getPath(TEXT* path_buffer)
 	{
-		static const char* USER_INFO_NAME = "security2.fdb";
+		static const char* USER_INFO_NAME =
+#ifdef VMS
+					"[sysmgr]security2.fdb";
+#else
+					"security2.fdb";
+#endif
+
 		gds__prefix(path_buffer, USER_INFO_NAME);
 	}
 
@@ -87,6 +92,7 @@ public:
 	}
 
 private:
+
 	static const UCHAR PWD_REQUEST[256];
 	static const UCHAR TPB[4];
 
@@ -97,6 +103,8 @@ private:
 	isc_db_handle lookup_db;
 	isc_req_handle lookup_req;
 
+	static const bool is_cached;
+
 	int counter;
 
 	void fini();
@@ -106,55 +114,22 @@ private:
 
 	static SecurityDatabase instance;
 
-	SecurityDatabase()
-		: lookup_db(0), lookup_req(0), counter(0)
-	{}
-
-public:
-	// Shuts SecurityDatabase in case of errors during attach or create.
-	// When attachment is created, control is passed to it using clear.
-	class InitHolder
+	SecurityDatabase() 
 	{
-	public:
-		InitHolder()
-			: shutdown(true)
-		{
-			SecurityDatabase::initialize();
-		}
-		
-		void clear()
-		{
-			shutdown = false;
-		}
-		
-		~InitHolder()
-		{
-			if (shutdown)
-			{
-				SecurityDatabase::shutdown();
-			}
-		}
-
-	private:
-		bool shutdown;
-	};
+		lookup_db = 0;
+	}
 };
 
 class DelayFailedLogin : public Firebird::Exception
 {
 private:
 	int seconds;
-
 public:
-	explicit DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
-
 	virtual ISC_STATUS stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer* sb = NULL) const throw();
 	virtual const char* what() const throw() { return "Jrd::DelayFailedLogin"; }
 	static void raise(int sec);
+	DelayFailedLogin(int sec) throw() : Exception(), seconds(sec) { }
 	void sleep() const;
 };
 
-
-} // namespace Jrd
-
-#endif // JRD_PWD_H
+#endif /* JRD_PWD_H */

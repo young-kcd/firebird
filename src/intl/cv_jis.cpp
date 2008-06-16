@@ -157,7 +157,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 	USHORT this_len;
 	USHORT wide;
 	const USHORT* const start = dest_ptr;
-	while (sjis_len && dest_len > 1) {
+	while ((sjis_len) && (dest_len > 1)) {
 		/* Step 1: Convert from SJIS to JIS code */
 		if (*sjis_str & 0x80) {	/* Non-Ascii - High bit set */
 			const UCHAR c1 = *sjis_str++;
@@ -559,8 +559,10 @@ static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
 			if (euc_len == 0) {	/* truncated kanji */
 				return (1);
 			}
-			euc_str += 2;
-			euc_len -= 1;
+			else {
+				euc_str += 2;
+				euc_len -= 1;
+			}
 		}
 		else {					/* it is a ASCII */
 			euc_str++;
@@ -591,11 +593,12 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
 			const UCHAR c1 = *sjis_str;
 			if (SJIS1(c1)) {	/* It is a KANJI */
 				if (sjis_len == 0) {	/* truncated KANJI */
-					return 1;
+					return (1);
 				}
-
-				sjis_str += 2;
-				sjis_len -= 1;
+				else {
+					sjis_str += 2;
+					sjis_len -= 1;
+				}
 			}
 			else {				/*It is a KANA */
 				sjis_str++;

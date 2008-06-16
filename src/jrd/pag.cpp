@@ -69,7 +69,6 @@
 #endif
 
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 #include "../jrd/fil.h"
 #include "../jrd/jrd.h"
 #include "../jrd/pag.h"
@@ -85,6 +84,7 @@
 #include "../jrd/tra.h"
 #ifdef VIO_DEBUG
 #include "../jrd/vio_debug.h"
+#include "../jrd/all.h"
 #endif
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -96,6 +96,7 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"
@@ -103,7 +104,6 @@
 using namespace Jrd;
 using namespace Ods;
 
-static int blocking_ast_attachment(void*);
 static void find_clump_space(SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*,
 							 USHORT);
 static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
@@ -152,16 +152,15 @@ static const int CLASS_FREEBSD_AMD64 = 25;// FreeBSD/amd64
 static const int CLASS_WINDOWS_AMD64 = 26;// Windows/amd64
 static const int CLASS_LINUX_PPC = 27;    // LINUX/PowerPC
 static const int CLASS_DARWIN_I386 = 28;	//Darwin/Intel
-static const int CLASS_LINUX_MIPSEL = 29;	// LINUX/MIPSEL
-static const int CLASS_LINUX_MIPS = 30;		// LINUX/MIPS
-static const int CLASS_DARWIN_X64 = 31;		// Darwin/x64
-static const int CLASS_SOLARIS_AMD64 = 32;	// Solaris/amd64
-static const int CLASS_LINUX_ARM = 33;		// LINUX/ARM
-static const int CLASS_LINUX_IA64 = 34;		// LINUX/IA64
-static const int CLASS_DARWIN_PPC64 = 35; 	// Darwin/PowerPC64
+static const int CLASS_LINUX_MIPSEL = 29;    // LINUX/MIPSEL
+static const int CLASS_LINUX_MIPS = 30;    // LINUX/MIPS
+static const int CLASS_DARWIN_X64 = 31;   // Darwin/x64
+static const int CLASS_SOLARIS_AMD64 = 32;	//Solaris/amd64
+static const int CLASS_LINUX_ARM = 33;    // LINUX/ARM
+static const int CLASS_LINUX_IA64 = 34;    // LINUX/IA64
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_DARWIN_PPC64;
+static const int CLASS_MAX = CLASS_LINUX_IA64;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -188,8 +187,7 @@ enum ArchitectureType {
 // compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
 // This is why we declare all such builds "Unknown" for ODS10.
 
-static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
-{
+static ArchitectureType archMatrix10[CLASS_MAX10 + 1] = {
 	archUnknown, // CLASS_UNKNOWN
 	archUnknown, // CLASS_APOLLO_68K
 	archUnknown, // CLASS_SOLARIS_SPARC
@@ -212,13 +210,12 @@ static const ArchitectureType archMatrix10[CLASS_MAX10 + 1] =
 	archIntel86, // CLASS_LINUX_I386
 	archUnknown, // CLASS_LINUX_SPARC
 	archIntel86, // CLASS_FREEBSD_I386
-	archIntel86, // CLASS_NETBSD_I386
+    archIntel86, // CLASS_NETBSD_I386
 	archUnknown, // CLASS_DARWIN_PPC
 	archUnknown  // CLASS_LINUX_AMD64
 };
 
-static const ArchitectureType archMatrix[CLASS_MAX + 1] =
-{
+static ArchitectureType archMatrix[CLASS_MAX + 1] = {
 	archUnknown,      // CLASS_UNKNOWN
 	archUnknown,      // CLASS_APOLLO_68K
 	archBigEndian,    // CLASS_SOLARIS_SPARC
@@ -241,7 +238,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archLittleEndian, // CLASS_LINUX_I386
 	archBigEndian,    // CLASS_LINUX_SPARC
 	archLittleEndian, // CLASS_FREEBSD_I386
-	archLittleEndian, // CLASS_NETBSD_I386
+    archLittleEndian, // CLASS_NETBSD_I386
 	archBigEndian,    // CLASS_DARWIN_PPC
 	archLittleEndian, // CLASS_LINUX_AMD64
 	archLittleEndian, // CLASS_FREEBSD_AMD64
@@ -253,8 +250,7 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archLittleEndian, // CLASS_DARWIN_X64
 	archLittleEndian, // CLASS_SOLARIS_AMD64
 	archLittleEndian, // CLASS_LINUX_ARM
-	archLittleEndian, // CLASS_LINUX_IA64
-	archBigEndian	  // CLASS_DARWIN_PPC64
+	archLittleEndian  // CLASS_LINUX_IA64
 };
 
 #ifdef sun
@@ -271,6 +267,10 @@ const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
 
 #ifdef HPUX
 const SSHORT CLASS		= CLASS_HPUX_PA;
+#endif
+
+#ifdef VMS
+const SSHORT CLASS		= CLASS_VMS_VAX;
 #endif
 
 #ifdef AIX
@@ -332,10 +332,8 @@ const SSHORT CLASS		= CLASS_NETBSD_I386;
 const SSHORT CLASS		= CLASS_DARWIN_I386;
 #elif defined(DARWIN64)
 const SSHORT CLASS		= CLASS_DARWIN_X64;
-#elif defined(powerpc)
+#elif defined(__ppc__)
 const SSHORT CLASS		= CLASS_DARWIN_PPC;
-#elif defined(DARWINPPC64)
-const SSHORT CLASS		= CLASS_DARWIN_PPC64;
 #endif
 #endif  // DARWIN
 
@@ -459,7 +457,7 @@ void PAG_add_clump(
 		break;
 	}
 
-	// Add the entry
+/* Add the entry */
 
 	find_clump_space(page_num, &window, &page, type, len, entry, must_write);
 
@@ -496,7 +494,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	}
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
-	if (!JRD_verify_database_access(file_name)) {
+	if (!ISC_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "additional database file",
 			isc_arg_string, ERR_cstring(file_name),
@@ -533,7 +531,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 #ifdef SUPPORT_RAW_DEVICES
 /* The following lines (taken from PAG_format_header) are needed to identify
    this file in raw_devices_validate_database as a valid database attachment. */
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 
@@ -542,7 +540,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 	header->hdr_ods_minor          = ODS_CURRENT;
 	header->hdr_ods_minor_original = ODS_CURRENT;
 	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-		header->hdr_flags |= hdr_SQL_dialect_3;
+    		header->hdr_flags |= hdr_SQL_dialect_3;
 #endif
 
 	header->hdr_header.pag_checksum = CCH_checksum(window.win_bdb);
@@ -604,7 +602,6 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
  *	RETURNS
  *		TRUE - modified page
  *		FALSE - nothing done
- * CVC: Nobody checks the result of this function!
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -620,7 +617,7 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 	if (*p != HDR_end)
 		return FALSE;
 
-	// We are at HDR_end, add the entry
+/* We are at HDR_end, add the entry */
 
 	const int free_space = dbb->dbb_page_size - header->hdr_end;
 
@@ -630,13 +627,13 @@ int PAG_add_header_entry(header_page* header, USHORT type, USHORT len, const UCH
 		*p++ = static_cast<UCHAR>(type);
 		*p++ = static_cast<UCHAR>(len);
 
-		if (len) {
-			if (entry) {
+		if (len)
+		{
+			if (entry)
 				memcpy(p, entry, len);
-			}
-			else {
+			else
 				memset(p, 0, len);
-			}
+
 			p += len;
 		}
 
@@ -766,11 +763,10 @@ PAG PAG_allocate(WIN * window)
 	
 	pag* new_page = 0; // NULL before the search for a new page.
 
-	// Starting from ODS 11.1 we store in pip_header.reserved number of pages 
-	// allocated from this pointer page. There is intention to create dedicated
-	// field at page_inv_page for this purpose in ODS 12.
-	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && 
-							dbb->dbb_minor_version >= 1);
+	// in ODS 11.1 we store in pip_header.reserved number of pages allocated
+	// from this pointer page
+	const bool isODS11_1 = (dbb->dbb_ods_version == ODS_VERSION11 && 
+							dbb->dbb_minor_version == 1);
 
 /* Find an allocation page with something on it */
 
@@ -801,7 +797,7 @@ PAG PAG_allocate(WIN * window)
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
 						if (new_page)
 						{
-							if (isODS11_x)
+							if (isODS11_1)
 							{
 								USHORT next_init_pages = 1;
 								// ensure there are space on disk for faked page
@@ -951,7 +947,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 /* Get new attachment id */
 
 	if (dbb->dbb_flags & DBB_read_only) {
-		attachment->att_attachment_id = dbb->dbb_attachment_id + fb_utils::genUniqueId();
+		attachment->att_attachment_id = ++dbb->dbb_attachment_id;
 	}
 	else {
 		window.win_page = HEADER_PAGE_NUMBER;
@@ -972,9 +968,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 	lock->lck_length = sizeof(SLONG);
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	lock->lck_dbb = dbb;
-	lock->lck_ast = blocking_ast_attachment;
-	lock->lck_object = attachment;
-	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+	LCK_lock(tdbb, lock, LCK_write, LCK_WAIT);
 
 	return attachment->att_attachment_id;
 }
@@ -1062,7 +1056,7 @@ void PAG_format_header()
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_fake(tdbb, &window, 1);
 	header->hdr_header.pag_scn = 0;
-	*(ISC_TIMESTAMP*) header->hdr_creation_date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+	*(ISC_TIMESTAMP*)header->hdr_creation_date = Firebird::TimeStamp().value();
 	// should we include milliseconds or not?
 	//Firebird::TimeStamp::round_time(header->hdr_creation_date->timestamp_time, 0);
 	header->hdr_header.pag_type = pag_header;
@@ -1075,7 +1069,9 @@ void PAG_format_header()
 	header->hdr_bumped_transaction = 1;
 	header->hdr_end = HDR_SIZE;
 	header->hdr_data[0] = HDR_end;
+#ifdef SYNC_WRITE_DEFAULT
 	header->hdr_flags |= hdr_force_write;
+#endif
 
 	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 		header->hdr_flags |= hdr_SQL_dialect_3;
@@ -1412,7 +1408,7 @@ void PAG_header_init()
 		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
 	   )
 	{
-		ERR_post(isc_bad_db_format,
+	    ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
 				 0);
 	}
@@ -1605,17 +1601,17 @@ void PAG_init2(USHORT shadow_number)
 				case HDR_file:
 					file_length = p[1];
 					file_name = buf;
-					memcpy(buf, p + 2, file_length);
+					MOVE_FAST(p + 2, buf, file_length);
 					break;
 
 				case HDR_last_page:
-					memcpy(&last_page, p + 2, sizeof(last_page));
+					MOVE_FAST(p + 2, &last_page, sizeof(last_page));
 					break;
 
 				case HDR_sweep_interval:
 					// CVC: Let's copy it always.
 					//if (!(dbb->dbb_flags & DBB_read_only))
-						memcpy(&dbb->dbb_sweep_interval, p + 2, sizeof(SLONG));
+						MOVE_FAST(p + 2, &dbb->dbb_sweep_interval, sizeof(SLONG));
 					break;
 				}
 			}
@@ -1642,14 +1638,14 @@ void PAG_init2(USHORT shadow_number)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
-		if (!JRD_verify_database_access(file_name)) {
+		if (!ISC_verify_database_access(file_name)) {
 			ERR_post(isc_conf_access_denied,
 				isc_arg_string, "additional database file",
 				isc_arg_string, ERR_cstring(file_name),
 				isc_arg_end);
 		}
 
-		file->fil_next = PIO_open(dbb, file_name, file_name, false);
+		file->fil_next = PIO_open(dbb, file_name, false, file_name, false);
 		file->fil_max_page = last_page;
 		file = file->fil_next;
 		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
@@ -1768,7 +1764,7 @@ void PAG_release_page(const PageNumber& number, const PageNumber& prior_page)
 }
 
 
-void PAG_set_force_write(Database* dbb, bool flag)
+void PAG_set_force_write(Database* dbb, SSHORT flag)
 {
 /**************************************
  *
@@ -1778,6 +1774,7 @@ void PAG_set_force_write(Database* dbb, bool flag)
  *
  * Functional description
  *	Turn on/off force write.
+ *      The value 2 for flag means set to default.
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
@@ -1787,6 +1784,14 @@ void PAG_set_force_write(Database* dbb, bool flag)
 	WIN window(HEADER_PAGE_NUMBER);
 	header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 	CCH_MARK_MUST_WRITE(tdbb, &window);
+
+	if (flag == 2)
+		/* Set force write to the default for the platform */
+#ifdef SYNC_WRITE_DEFAULT
+		flag = 1;
+#else
+		flag = 0;
+#endif
 
 	if (flag) {
 		header->hdr_flags |= hdr_force_write;
@@ -1801,18 +1806,19 @@ void PAG_set_force_write(Database* dbb, bool flag)
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	for (jrd_file* file = pageSpace->file; file; file = file->fil_next) {
-		PIO_force_write(file, flag, dbb->dbb_flags & DBB_no_fs_cache);
+		PIO_force_write(file, flag != 0, 
+			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next) {
-		for (jrd_file* file = shadow->sdw_file; file; file = file->fil_next) {
-			PIO_force_write(file, flag, dbb->dbb_flags & DBB_no_fs_cache);
-		}
+		for (jrd_file* file = shadow->sdw_file; file; file = file->fil_next)
+			PIO_force_write(file, flag != 0, 
+				dbb->dbb_flags & DBB_no_fs_cache);
 	}
 }
 
 
-void PAG_set_no_reserve(Database* dbb, bool flag)
+void PAG_set_no_reserve(Database* dbb, USHORT flag)
 {
 /**************************************
  *
@@ -2020,32 +2026,6 @@ int PAG_unlicensed()
 	return count;
 }
 */
-
-
-static int blocking_ast_attachment(void* ast_object)
-{
-	Attachment* const attachment = static_cast<Attachment*>(ast_object);
-
-	try
-	{
-		Database* const dbb = attachment->att_database;
-		Database::SyncGuard dsGuard(dbb, true);
-
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(attachment);
-
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-		attachment->att_flags |= ATT_shutdown;
-
-		LCK_release(tdbb, attachment->att_id_lock);
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
-
-	return 0;
-}
 
 
 static void find_clump_space(SLONG page_num,
@@ -2362,7 +2342,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 		{
 			try 
 			{
-				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
+				PIO_extend(file, extPages, dbb->dbb_page_size);
 				break;
 			}
 			catch (Firebird::status_exception) 
@@ -2442,9 +2422,8 @@ void PageManager::releaseLocks()
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
-	USHORT result;
 #ifdef SUPERSERVER
-	result = TEMP_PAGE_SPACE;
+	return TEMP_PAGE_SPACE;
 #else
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -2471,14 +2450,8 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		att->att_temp_pg_lock = lock;
 	}
 	
-	result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
+	return (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 #endif
-
-	if (!this->findPageSpace(result)) {
-		PAG_attach_temp_pages(tdbb, result);
-	}
-
-	return result;
 }
 
 ULONG PAG_page_count(Database* database, PageCountCallback* cb)
@@ -2495,19 +2468,20 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
  *********************************************/
 	fb_assert(cb);
 
-	const bool isODS11_x = (database->dbb_ods_version == ODS_VERSION11 &&
+	const bool isODS11_1 = (database->dbb_ods_version == ODS_VERSION11 &&
 							database->dbb_minor_version >= 1);
-	if (!isODS11_x) {
+	if (! isODS11_1)
+	{
 		return 0;
 	}
 
 	Firebird::Array<BYTE> temp;
-	page_inv_page* pip = (Ods::page_inv_page*) // can't reinterpret_cast<> here
-		FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
-
-	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	page_inv_page* pip = (Ods::page_inv_page*) 
+						 // can't reinterpret_cast<> here
+			FB_ALIGN((IPTR) temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+	PageSpace* pageSpace = 
+		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
-
 	ULONG pageNo = pageSpace->ppFirst;
 	const ULONG pagesPerPip = database->dbb_page_manager.pagesPerPIP;
 

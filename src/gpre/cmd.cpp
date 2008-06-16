@@ -25,6 +25,7 @@
 //
 //____________________________________________________________
 //
+//	$Id: cmd.cpp,v 1.40 2005-05-27 22:42:12 asfernandes Exp $
 //
 
 #include "firebird.h"
@@ -154,8 +155,10 @@ int CMD_compile_ddl(gpre_req* request)
 			create_database(request, action);
 			return 0;
 		}
-		create_database_modify_dyn(request, action);
+		else
+			create_database_modify_dyn(request, action);
 		break;
+
 
 	case ACT_create_domain:
 		create_domain(request, action);
@@ -1839,7 +1842,7 @@ static bool create_view(gpre_req* request,
 			return false;
 		}
 
-		if (!select->rse_boolean) {
+		if (!(select->rse_boolean)) {
 			CPR_error("Invalid view WITH CHECK OPTION - no WHERE clause");
 			return false;
 		}
@@ -2139,7 +2142,7 @@ static void declare_udf( gpre_req* request, const act* action)
 
 static void grant_revoke_privileges( gpre_req* request, const act* action)
 {
-	TEXT privileges[7];
+	TEXT privileges[5];
 	TEXT* p = privileges;
 	const prv* priv_block = (PRV) action->act_object;
 
@@ -2182,7 +2185,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 			if ((priv_block->prv_privileges & PRV_grant_option) &&
 				((action->act_type == ACT_dyn_grant) ||
-				 !(request->req_database->dbb_flags & DBB_v3)))
+				 (!(request->req_database->dbb_flags & DBB_v3))))
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}
@@ -2220,7 +2223,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 				if ((priv_block->prv_privileges & PRV_grant_option) &&
 					((action->act_type == ACT_dyn_grant) ||
-					 !(request->req_database->dbb_flags & DBB_v3)))
+					 (!(request->req_database->dbb_flags & DBB_v3))))
 				{
 					put_numeric(request, isc_dyn_grant_options, 1);
 				}			
@@ -2242,7 +2245,7 @@ static void grant_revoke_privileges( gpre_req* request, const act* action)
 
 			if ((priv_block->prv_privileges & PRV_grant_option) &&
 				((action->act_type == ACT_dyn_grant) ||
-				 !(request->req_database->dbb_flags & DBB_v3)))
+				 (!(request->req_database->dbb_flags & DBB_v3))))
 			{
 				put_numeric(request, isc_dyn_grant_options, 1);
 			}

@@ -24,6 +24,8 @@
 #ifndef JRD_EXE_PROTO_H
 #define JRD_EXE_PROTO_H
 
+#include "../jrd/req.h"
+
 namespace Jrd {
 	class jrd_req;
 	class jrd_nod;

@@ -34,17 +34,25 @@
 #include "firebird.h"
 #include "ArgsException.h"
 
+#ifdef _WIN32
+#define vsnprintf	_vsnprintf
+#endif
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ArgsException::ArgsException(const char* txt, ...) :
-	text(getPool())
+ArgsException::ArgsException(const char * txt, ...)
 {
 	va_list		args;
 	va_start	(args, txt);
-	text.vprintf(txt, args);
+	char		temp [1024];
+
+	if (vsnprintf (temp, sizeof (temp) - 1, txt, args) < 0)
+		temp [sizeof (temp) - 1] = 0;
+
 	va_end(args);
+	text = temp;
 }
 
 ArgsException::~ArgsException()
@@ -52,7 +60,7 @@ ArgsException::~ArgsException()
 
 }
 
-const char* ArgsException::getText() const
+const char* ArgsException::getText()
 {
-	return text.c_str();
+	return text;
 }

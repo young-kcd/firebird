@@ -29,6 +29,7 @@
 
 #include "../jrd/constants.h"
 #include "../common/classes/array.h"
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/err_proto.h"    /* Index error types */
@@ -45,7 +46,6 @@ struct dsc;
 namespace Jrd {
 
 class jrd_rel;
-class jrd_tra;
 template <typename T> class vec;
 class jrd_req;
 struct temporary_key;
@@ -60,8 +60,7 @@ enum idx_null_state {
 
 /* Index descriptor block -- used to hold info from index root page */
 
-struct index_desc
-{
+struct index_desc {
 	SLONG	idx_root;				/* Index root */
 	float	idx_selectivity;		/* selectivity of index */
 	USHORT	idx_id;
@@ -77,16 +76,14 @@ struct index_desc
 	dsc		idx_expression_desc;	/* descriptor for expression result */
 	jrd_req* idx_expression_request;	/* stored request for expression evaluation */
 	// This structure should exactly match IRTD structure for current ODS
-	struct idx_repeat
-	{
+	struct idx_repeat {
 		USHORT idx_field;		/* field id */
 		USHORT idx_itype;		/* data of field in index */
 		float idx_selectivity;	/* segment selectivity */
 	} idx_rpt[MAX_INDEX_SEGMENTS];
 };
 
-struct IndexDescAlloc : public pool_alloc_rpt<index_desc>
-{
+struct IndexDescAlloc : public pool_alloc_rpt<index_desc> {
 	index_desc items[1];
 };
 
@@ -132,8 +129,7 @@ const int idx_marker		= 128;	/* marker used in procedure sort_indices */
 
 /* Index insertion block -- parameter block for index insertions */
 
-struct index_insertion
-{
+struct index_insertion {
 	RecordNumber iib_number;		/* record number (or lower level page) */
 	SLONG iib_sibling;				/* right sibling page */
 	index_desc*	iib_descriptor;		/* index descriptor */
@@ -152,8 +148,7 @@ const int key_all_nulls	= 2;	/* All key fields are nulls */
 
 /* Temporary key block */
 
-struct temporary_key
-{
+struct temporary_key {
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
@@ -179,8 +174,7 @@ struct temporary_key
 // other compilers, sorry
 
 #pragma pack(push, 1)
-struct index_sort_record
-{
+struct index_sort_record {
 	// RecordNumber should be at the first place, because it's used
 	// for determing sort by creating index (see idx.cpp)
 	SINT64 isr_record_number;
@@ -198,7 +192,7 @@ const int ISR_null		= 2;	// Record consists of NULL values only
 
 class IndexRetrieval : public pool_alloc_rpt<jrd_nod*, type_irb>
 {
-public:
+    public:
 	index_desc irb_desc;				/* Index descriptor */
 	USHORT irb_index;			/* Index id */
 	USHORT irb_generic;			/* Flags for generic search */

@@ -27,10 +27,11 @@
 #include "../iscguard/cntlg_proto.h"
 #include "../remote/remote.h"
 #include "../utilities/install/install_nt.h"
+#include "../jrd/thd.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../common/classes/fb_string.h"
-#include "../common/classes/init.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -48,8 +49,8 @@ static USHORT report_status(DWORD, DWORD, DWORD, DWORD);
 static DWORD current_state;
 static ThreadEntryPoint* main_handler;
 static SERVICE_STATUS_HANDLE service_handle;
-static Firebird::GlobalPtr<Firebird::string> service_name;
-static Firebird::GlobalPtr<Firebird::string> remote_name;
+static Firebird::string* service_name = NULL;
+static Firebird::string* remote_name = NULL;
 static HANDLE stop_event_handle;
 
 
@@ -67,7 +68,9 @@ void CNTL_init(ThreadEntryPoint* handler, const TEXT* name)
 
 	main_handler = handler;
 	MemoryPool& pool = *getDefaultMemoryPool();
+	service_name = FB_NEW(pool) Firebird::string(pool);
 	service_name->printf(ISCGUARD_SERVICE, name);
+	remote_name = FB_NEW(pool) Firebird::string(pool);
 	remote_name->printf(REMOTE_SERVICE, name);
 }
 
@@ -224,7 +227,6 @@ static void WINAPI control_thread( DWORD action)
 
 	switch (action) {
 	case SERVICE_CONTROL_STOP:
-	case SERVICE_CONTROL_SHUTDOWN:
 		report_status(SERVICE_STOP_PENDING, NO_ERROR, 1, 3000);
 		SetEvent(stop_event_handle);
 		return;

@@ -92,10 +92,10 @@ string IntlUtil::generateSpecificAttributes(
 		const USHORT equalChar = '=';
 
 		size = cs->getConvFromUnicode().convert(
-			sizeof(equalChar), (const UCHAR*) &equalChar,
+			sizeof(equalChar), (const UCHAR*)&equalChar,
 			sizeof(c), c);
 
-		s += string((const char*) &c, size);
+		s += string((const char*)&c, size);
 
 		s += escapeAttribute(cs, attribute->second);
 
@@ -105,9 +105,9 @@ string IntlUtil::generateSpecificAttributes(
 		{
 			const USHORT semiColonChar = ';';
 			size = cs->getConvFromUnicode().convert(
-				sizeof(semiColonChar), (const UCHAR*) &semiColonChar, sizeof(c), c);
+				sizeof(semiColonChar), (const UCHAR*)&semiColonChar, sizeof(c), c);
 
-			s += string((const char*) &c, size);
+			s += string((const char*)&c, size);
 		}
 	}
 
@@ -249,7 +249,7 @@ string IntlUtil::convertUtf16ToAscii(const string& utf16, bool* error)
 	for (const USHORT* p = (const USHORT*) utf16.c_str(); p < end; ++p)
 	{
 		if (*p <= 0xFF)
-			s.append(1, (UCHAR) *p);
+			s.append((UCHAR) *p);
 		else
 		{
 			*error = true;
@@ -614,7 +614,10 @@ bool IntlUtil::isAttributeEscape(Jrd::CharSet* cs, const UCHAR* s, ULONG size)
 	UCHAR uc[sizeof(ULONG)];
 	ULONG uSize = cs->getConvToUnicode().convert(size, s, sizeof(uc), uc);
 
-	return (uSize == 2 && *(USHORT*) uc == '\\');
+	if (uSize == 2 && *(USHORT*)uc == '\\')
+		return true;
+
+	return false;
 }
 
 

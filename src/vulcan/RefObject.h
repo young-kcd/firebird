@@ -35,13 +35,13 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-class RefObject
+class RefObject  
 {
 public:
+	virtual void release();
+	virtual void addRef();
 	RefObject();
 	virtual ~RefObject();
-	virtual void addRef();
-	virtual void release();
 private:
 	int useCount;
 };

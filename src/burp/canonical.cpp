@@ -405,7 +405,7 @@ static bool_t burp_putlong(XDR* xdrs, const SLONG* lp)
  **************************************/
 	SLONG l = htonl(*lp);
 	return (*xdrs->x_ops->x_putbytes) (xdrs,
-									   reinterpret_cast<char*>(&l),
+									   reinterpret_cast<char*>(AOF32L(l)),
 									   4);
 }
 

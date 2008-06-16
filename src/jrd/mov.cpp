@@ -130,6 +130,159 @@ void MOV_double_to_date(double real, SLONG fixed[2])
 }
 
 
+#ifndef VMS
+void MOV_fast(
+			  const SCHAR* from,
+			  SCHAR* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f a s t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Move a byte string as fast as possible.
+ *
+ **************************************/
+	ULONG l = length >> 4;
+	if (l)
+		do {
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+		} while (--l);
+
+	if (length &= 15)
+		do {
+			*to++ = *from++;
+		} while (--length);
+}
+
+
+void MOV_faster(const SLONG* from, SLONG* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f a s t e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Do a long move, already aligned, as quickly as possible.
+ *
+ **************************************/
+	ULONG l;
+
+	fb_assert(!((U_IPTR) to & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+	fb_assert(!((U_IPTR) from & (sizeof(ULONG) - 1)));	/* ULONG alignment required */
+
+/* copy by chunks of 8 longwords == 32 bytes == 2**5 bytes */
+	if (l = (length >> 5)) {
+		do {
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+			*to++ = *from++;
+		} while (--l);
+		length &= (8 * sizeof(ULONG) - 1);
+	}
+
+/* Copy by longwords */
+	if (l = (length >> 2))
+		do
+			*to++ = *from++;
+		while (--l);
+
+/* Finally, copy any trailing bytes */
+	if (l = (length & 3)) {
+		UCHAR* p = (UCHAR *) to;
+		const UCHAR* q = (UCHAR *) from;
+		do
+			*p++ = *q++;
+		while (--l);
+	}
+}
+#endif
+
+
+void MOV_fill(SLONG* to, ULONG length)
+{
+/**************************************
+ *
+ *	M O V _ f i l l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Clear out a block.
+ *
+ **************************************/
+	ULONG l;
+
+/* If not longword aligned, fill bytewise until it is */
+
+	if (l = (((U_IPTR) to) & (sizeof(ULONG) - 1))) {
+		l = sizeof(ULONG) - l;
+		if (length < l)
+			l = length;
+		length -= l;
+		UCHAR* p = (UCHAR *) to;
+		while (l--)
+			*p++ = 0;
+		to = (SLONG *) p;
+		fb_assert(!(((U_IPTR) to) & (sizeof(ULONG) - 1))	/* We're now aligned ULONG */
+			   || !length);		/* Or already completed */
+	}
+
+/* Fill in chunks of 8 longwords == 32 bytes == 2**5 bytes */
+	if (l = (length >> 5)) {
+		do {
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+			*to++ = 0;
+		} while (--l);
+		length &= (8 * sizeof(ULONG) - 1);
+	}
+
+/* Fill by longwords */
+	if (l = (length >> 2))
+		do
+			*to++ = 0;
+		while (--l);
+
+/* Finally, fill any trailing bytes */
+	if (l = (length & 3)) {
+		UCHAR* p = (UCHAR *) to;
+		do
+			*p++ = 0;
+		while (--l);
+	}
+}
+
+
 double MOV_get_double(const dsc* desc)
 {
 /**************************************
@@ -411,9 +564,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		ULONG size;
 
 		if (temp.getCharSet() == desc->getCharSet())
-		{
 			size = blob->blb_length;
-		}
 		else
 		{
 			size = (blob->blb_length / INTL_charset_lookup(tdbb, desc->getCharSet())->minBytesPerChar()) *
@@ -425,12 +576,12 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, 0);
+			ERR_post(isc_arith_except, 0);
 
 		return size;
 	}
-
-	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
+	else
+		return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 

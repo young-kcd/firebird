@@ -95,6 +95,14 @@
 #endif
 #endif /* sun */
 
+#ifdef VMS
+#ifdef __ALPHA
+#define FB_PLATFORM     "AV"
+#else
+#define FB_PLATFORM	"VM"
+#endif
+#endif
+
 #ifdef AIX
 #define FB_PLATFORM	"IA"
 #endif
@@ -125,12 +133,12 @@
 
 #ifdef DARWIN
 #if defined(i386) || defined(__x86_64__)
-#define FB_PLATFORM		"UI"	/* Darwin/Intel */
+#define FB_PLATFORM	"UI"	/* Darwin/Intel */
 #endif
-#if defined(__ppc__) || defined(__ppc64__)
+#if defined(__ppc__)
 #define FB_PLATFORM     "UP"	/* Darwin/PowerPC */
 #endif
-#endif	// DARWIN
+#endif  // DARWIN
 
 #ifndef FB_VERSION
 #define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX

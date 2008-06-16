@@ -137,7 +137,7 @@ BOOL CFBDialog::OnInitDialog()
 {
 	CDialog::OnInitDialog();
 
-	m_Reset_Display_To_Existing_Values = true;
+	m_Reset_Display_To_Existing_Values = TRUE;
 
 	fb_status.ServicesAvailable = ServiceSupportAvailable();
 	if ( fb_status.ServicesAvailable )
@@ -278,7 +278,10 @@ bool CFBDialog::ValidateInstalledServices()
 	fb_status.UseGuardian =
 		CheckServiceInstalled(GetServiceName(ISCGUARD_SERVICE));
 
-	return (!fb_status.UseService && fb_status.UseGuardian) ? false : true;
+	if (!fb_status.UseService && fb_status.UseGuardian)
+		return false;
+	else
+		return true;
 }
 
 CString CFBDialog::GetServiceName(const char* name) const
@@ -638,7 +641,7 @@ void CFBDialog::ApplyChanges()
 		}
 
 		// If we haven't had a failure then we disable the apply button
-		if (!m_Reset_Display_To_Existing_Values)
+		if ( m_Reset_Display_To_Existing_Values == false )
 			DisableApplyButton();
 
 		// Update fb_status if we are running as an application
@@ -958,8 +961,8 @@ bool CFBDialog::ServiceInstall( CFBDialog::STATUS status )
 		CloseServiceManager();
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -991,8 +994,8 @@ bool CFBDialog::ServiceRemove()
 		CloseServiceManager();
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 
@@ -1041,22 +1044,30 @@ bool CFBDialog::ConfigureRegistryForApp(CFBDialog::STATUS status)
 			0, KEY_QUERY_VALUE | KEY_WRITE, &hkey) == ERROR_SUCCESS)
 
 		{
-			if (RegQueryValueEx(hkey, "Firebird", NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+			if (RegQueryValueEx(hkey, "Firebird", NULL, NULL, NULL, NULL)
+				== ERROR_SUCCESS)
 			{
 				if (RegDeleteValue(hkey, "Firebird") == ERROR_SUCCESS)
 					return true;
-
-				HandleError(false, "Removing registry entry to stop autorun failed.");
-				return false;
+				else
+				{
+					HandleError(false, "Removing registry entry to stop autorun failed.");
+					return false;
+				}
 			}
-			// If an error is thrown it must be because there is no
-			// entry in the registry so we shouldn't need to show an error.
-			return true;
+			else
+			{
+				// If an error is thrown it must be because there is no
+				// entry in the registry so we shouldn't need to show an error.
+				return true;
+			}
 		}
-
-		//Things are really bad - perhaps user has screwed up their registry?
-		HandleError(false, "Could not find HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run in the registry.");
-		return false;
+		else
+		{
+			//Things are really bad - perhaps user has screwed up their registry?
+			HandleError(false, "Could not find HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run in the registry.");
+			return false;
+		}
 	}
 
 	return true;
@@ -1572,7 +1583,10 @@ bool CFBDialog::OpenServiceManager( DWORD DesiredAccess )
 	if (hScManager == NULL)
 		hScManager = OpenSCManager (NULL, SERVICES_ACTIVE_DATABASE, DesiredAccess );
 
-	return hScManager ? true : false;
+	if (hScManager)
+		return true;
+	else
+		return false;
 }
 
 

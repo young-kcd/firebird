@@ -186,15 +186,6 @@
 			<File
 				RelativePath="..\..\..\src\common\fb_exception.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
-			</File>
 		</Filter>
 		<File
 			RelativePath="..\defs\gds32.def">

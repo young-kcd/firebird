@@ -29,11 +29,12 @@
 
 #include "Lex.h"
 #include "RefObject.h"
-#include "../common/classes/fb_string.h"
+#include "JString.h"
 
-//static const int CONFIG_trace	= 1;
-//static const int CONFIG_list	= 2;
-//static const int CONFIG_verbose	= 4;
+static const int HASH_SIZE		= 101;
+static const int CONFIG_trace	= 1;
+static const int CONFIG_list	= 2;
+static const int CONFIG_verbose	= 4;
 
 START_NAMESPACE
 class InputFile;
@@ -43,8 +44,7 @@ class ConfObject;
 class ConfigFile : public Lex, public RefObject
 {
 public:
-	explicit ConfigFile(const LEX_flags configFlags);
-	ConfigFile(const char* configFile, const LEX_flags configFlags);
+	ConfigFile(int configFlags);
 
 //protected:
 	virtual ~ConfigFile();
@@ -60,19 +60,19 @@ public:
 	ConfObject*		getObject(const char* objectType);
 	Element*		findGlobalAttribute(const char *attributeName);
 	const char*		getInstallDirectory();
-	virtual Firebird::PathName	expand(const Firebird::PathName& rawString);
+	virtual JString	expand(JString rawString);
 
-	const char* translate(const char* value, const Element* object);
+	const char* translate(const char *value, Element *object);
+	void init(int configFlags);
+	ConfigFile(const char* configFile, int configFlags);
 	void wildCardInclude(const char* fileName);
-	const Element* getObjects() const { return objects; }
+
+	Element*	objects;
 
 private:
-	enum { HASH_SIZE = 101 };
-	void init(const LEX_flags configFlags);
-	Element*	objects;
-	Firebird::PathName	rootDirectory;
-	Firebird::PathName	installDirectory;
-	Firebird::PathName	currentDirectory;
+	JString		rootDirectory;
+	JString		installDirectory;
+	JString		currentDirectory;
 	Element*	hashTable [HASH_SIZE];
 
 };

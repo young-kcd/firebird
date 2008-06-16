@@ -19,37 +19,13 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
 #include <windows.h>
-#include "../common/classes/fb_string.h"
-#include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
-
-using namespace Firebird;
 
 
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
+BOOL WINAPI DllMain(HINSTANCE /*h*/, DWORD /*reason*/, LPVOID /*reserved*/)
 {
-#if defined(EMBEDDED)
-	switch (reason)
-	{
-		case DLL_PROCESS_ATTACH:
-		{
-			char filename[MAX_PATH];
-			GetModuleFileName(h, filename, sizeof(filename));
-
-			PathName dir, file;
-			PathUtils::splitLastComponent(dir, file, filename);
-
-			ConfigRoot::setInstallDirectory(dir.c_str());
-
-			break;
-		}
-	}
-#endif
-
 	return TRUE;
 }

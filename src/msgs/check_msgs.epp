@@ -25,8 +25,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef VMS
+#include <types.h>
+#include <stat.h>
+#else
 #include <sys/types.h>
 #include <sys/stat.h>
+#endif
 #if TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -138,7 +143,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (!flag_jrd) {
 		FOR FIRST 1 X IN FACILITIES WITH
-			X.FACILITY EQ 'JRD' AND X.LAST_CHANGE GE date_jrd 
+			X.FACILITY EQ "JRD" AND X.LAST_CHANGE GE date_jrd 
 
             flag_jrd = true;
 		END_FOR;

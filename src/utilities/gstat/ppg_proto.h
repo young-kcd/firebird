@@ -24,10 +24,11 @@
 #ifndef UTILITIES_PPG_PROTO_H
 #define UTILITIES_PPG_PROTO_H
 
-#include "../common/UtilSvc.h"
-
-void	PPG_print_header (const Ods::header_page*, SLONG, bool, Firebird::UtilSvc*);
-int     gstat(Firebird::UtilSvc*);
+#ifdef SERVICE_THREAD
+void	PPG_print_header (const Ods::header_page*, SLONG, bool, Jrd::Service*);
+#else
+void	PPG_print_header (const Ods::header_page*, SLONG, bool, FILE*);
+#endif
 
 #endif // UTILITIES_PPG_PROTO_H
 

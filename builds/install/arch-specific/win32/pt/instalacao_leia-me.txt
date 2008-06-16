@@ -1,11 +1,5 @@
-Servidor SQL Firebird 2.5.0 pre alpha
+Servidor SQL Firebird 2.1
 ==================================================
-
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 Este documento constitui um guia para instalar o kit do

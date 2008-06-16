@@ -64,7 +64,7 @@ struct index_desc;
 class OptimizerBlk;
 class jrd_rel;
 
-bool OPT_computable(CompilerScratch*, const jrd_nod*, SSHORT, const bool, const bool);
+bool OPT_computable(CompilerScratch*, jrd_nod*, SSHORT, bool, bool);
 bool OPT_expression_equal(thread_db*, OptimizerBlk*, const index_desc*,
 							 jrd_nod*, USHORT);
 bool OPT_expression_equal2(thread_db*, OptimizerBlk*, jrd_nod*,
@@ -103,7 +103,7 @@ enum segmentScanType {
 class IndexScratchSegment 
 {
 public:
-	explicit IndexScratchSegment(MemoryPool& p);
+	IndexScratchSegment(MemoryPool& p);
 	IndexScratchSegment(MemoryPool& p, IndexScratchSegment* segment);
 
 
@@ -141,7 +141,7 @@ typedef Firebird::SortedArray<int> SortedStreamList;
 class InversionCandidate
 {
 public:
-	explicit InversionCandidate(MemoryPool& p);
+	InversionCandidate(MemoryPool& p);
 
 	double			selectivity;
 	double			cost;
@@ -228,7 +228,7 @@ typedef Firebird::Array<IndexRelationship*> IndexedRelationships;
 class InnerJoinStreamInfo
 {
 public:
-	explicit InnerJoinStreamInfo(MemoryPool& p);
+	InnerJoinStreamInfo(MemoryPool& p);
 	bool independent() const;
 
 	int		stream;
@@ -247,7 +247,7 @@ typedef Firebird::HalfStaticArray<InnerJoinStreamInfo*, 8> StreamInfoList;
 class OptimizerInnerJoin
 {
 public:
-	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const UCHAR* streams,
+	OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	streams,
 		RiverStack& river_stack, jrd_nod** sort_clause, 
 		jrd_nod** project_clause, jrd_nod* plan_clause);
 	~OptimizerInnerJoin();

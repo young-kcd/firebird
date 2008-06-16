@@ -44,7 +44,7 @@
 #ifndef JRD_DRQ_H
 #define JRD_DRQ_H
 
-#define DYN_REQUEST(drt) dbb->dbb_dyn_req[drt]
+#define DYN_REQUEST(drt) (*dbb->dbb_dyn_req)[drt]
 
 const int drq_l_prot_mask	= 0;	/* lookup protection mask */
 const int drq_l_user_name	= 1;	/* lookup user name */
@@ -131,13 +131,13 @@ const int drq_e_prcs			= 81;	/* erase procedure */
 const int drq_e_prms			= 82;	/* erase all of procedure's parameters */
 const int drq_s_prm_src		= 83;	/* store parameter global field */
 const int drq_s_intl_info	= 84;	/* store RDB$CHARACTER_FIELDS */
-const int drq_m_prcs		= 85;	/* modify procedure */
+const int drq_m_prcs			= 85;	/* modify procedure */
 const int drq_s_log_files	= 86;	/* store log files */
 const int drq_s_cache		= 87;	/* store cache  */
 const int drq_e_prm			= 88;	/* erase a procedure parameter */
 const int drq_s_xcp			= 89;	/* store an exception */
 const int drq_m_xcp			= 90;	/* modify an exception */
-const int drq_e_prc_prvs	= 91;	/* erase user privileges on procedure */
+const int drq_e_prc_prvs		= 91;	/* erase user privileges on procedure */
 const int drq_e_prc_prv		= 92;	/* erase procedure's privileges  */
 const int drq_e_trg_prv		= 93;	/* erase trigger's privileges */
 const int drq_d_log			= 94;	/* drop log */
@@ -163,18 +163,18 @@ const int drq_gcg2			= 113;	/* grantor_can_grant */
 const int drq_gcg3			= 114;	/* grantor_can_grant */
 const int drq_gcg4			= 115;	/* grantor_can_grant */
 const int drq_gcg5			= 116;	/* grantor_can_grant */
-const int drq_l_view_idx	= 117;	/* table is view? */
+const int drq_l_view_idx		= 117;	/* table is view? */
 const int drq_role_gens		= 118;	/* store SQL role */
 const int drq_get_role_nm	= 119;	/* get SQL role */
 const int drq_get_role_au	= 120;	/* get SQL role auth */
-const int drq_del_role_1	= 121;	/* delete SQL role from rdb$user_privilege */
+const int drq_del_role_1		= 121;	/* delete SQL role from rdb$user_privilege */
 const int drq_drop_role		= 122;	/* delete SQL role from rdb$roles */
 const int drq_get_rel_owner	= 123;	/* get the owner of any relations */
 const int drq_get_user_priv	= 124;	/* get the grantor of user privileges or
 										the user who was granted the privileges */
 const int drq_g_rel_constr_nm= 125;	/* get relation constraint name */
 const int drq_e_rel_const	= 126;	/* erase relation constraints */
-const int drq_e_gens		= 127;	/* erase generators */
+const int drq_e_gens			= 127;	/* erase generators */
 const int drq_s_f_class		= 128;	/* set the security class name for a field */
 const int drq_s_u_class		= 129;	/* find a unique security class name for a field */
 const int drq_l_difference	= 130;	/* Look up a backup difference file */
@@ -203,13 +203,6 @@ const int drq_l_fld_coll	= 152;	// lookup field collation
 const int drq_l_prp_src		= 153;	// lookup a procedure parameter source
 const int drq_s_prms2		= 154;	// store parameters (ODS 11.1)
 const int drq_l_prm_coll	= 155;	// lookup procedure parameter collation
-const int drq_s_prms3		= 156;	// store parameters (ODS 11.2)
-const int drq_d_gfields2	= 157;	// drop a global field for procedure param (ODS 11.2)
-const int drq_m_map			= 158;  // modify os=>db names mapping
-const int drq_l_idx_name	= 159;	// lookup index name
-const int drq_l_collation	= 160;	// lookup character set
-const int drq_m_charset		= 161;	// modify character set
-const int drq_MAX			= 162;
+const int drq_MAX			= 156;
 
 #endif /* JRD_DRQ_H */
-

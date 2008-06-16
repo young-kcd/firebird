@@ -55,7 +55,6 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
-#include "../common/utils_proto.h"
 
 #include <sys/types.h>
 #ifdef HAVE_SYS_IPC_H
@@ -74,7 +73,42 @@
 
 #include "../common/config/config.h"
 
-const char INET_FLAG = ':';
+/* VMS Specific Stuff */
+
+#ifdef VMS
+
+#include <rms.h>
+#include <descrip.h>
+#include <ssdef.h>
+#include <jpidef.h>
+#include <prvdef.h>
+#include <secdef.h>
+#include <lckdef.h>
+#include "../jrd/lnmdef.h"
+
+
+const char* LOGICAL_NAME_TABLE	= "LNM$FILE_DEV";
+const char* DEFAULT_FILE_NAME	= ".fdb";
+const char INET_FLAG		= '^';
+
+struct itm {
+	SSHORT itm_length;
+	SSHORT itm_code;
+	SCHAR *itm_buffer;
+	SSHORT *itm_return_length;
+};
+typedef itm ITM;
+
+#else /* of ifdef VMS */
+const char INET_FLAG		= ':';
+#endif
+
+
+#ifdef SUPERSERVER
+#define GETWD(buf)		JRD_getdir(buf)
+#else
+#define GETWD(buf)		fb_getcwd(buf)
+#endif /* SUPERSERVER */
 
 #ifdef DARWIN
 #ifdef HAVE_SYS_PARAM_H
@@ -166,8 +200,7 @@ namespace {
     const size npos = tstring::npos;
 
 #ifndef NO_NFS
-	class osMtab
-	{
+	class osMtab {
 	public:
 #if (defined AIX || defined AIX_PPC)
 		TEXT* temp;
@@ -185,8 +218,7 @@ namespace {
 #endif
 	};
 
-	class Mnt
-	{
+	class Mnt {
 	private:
 #ifdef DARWIN
 	struct statfs* mnt_info;
@@ -534,6 +566,59 @@ bool ISC_expand_filename(tstring& buff, bool expand_mounts)
 #endif
 
 
+#ifdef VMS
+int ISC_expand_filename(const TEXT* file_name,
+						USHORT file_length, TEXT* expanded_name, USHORT bufsize)
+{
+/**************************************
+ *
+ *	I S C _ e x p a n d _ f i l e n a m e		( V M S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fully expand a file name.  If the file doesn't exist, do something
+ *	intelligent.
+ *
+ **************************************/
+	TEXT temp[NAM$C_MAXRSS], temp2[NAM$C_MAXRSS];
+
+	int length = ISC_expand_logical(file_name, file_length, expanded_name, bufsize);
+
+	TEXT* p;
+	for (p = expanded_name; *p; p++)
+		if (p[0] == ':' && p[1] == ':')
+			return length;
+
+	struct FAB fab = cc$rms_fab;
+	struct NAM nam = cc$rms_nam;
+	fab.fab$l_nam = &nam;
+	nam.nam$l_esa = temp;
+	nam.nam$b_ess = sizeof(temp);
+	nam.nam$l_rsa = temp2;
+	nam.nam$b_rss = sizeof(temp2);
+	fab.fab$l_fna = expanded_name;
+	fab.fab$b_fns = length;
+	fab.fab$l_dna = DEFAULT_FILE_NAME;
+	fab.fab$b_dns = sizeof(DEFAULT_FILE_NAME) - 1;
+
+	if ((sys$parse(&fab) & 1) && (sys$search(&fab) & 1)) {
+		p = temp2;
+		int l = length = nam.nam$b_rsl
+		if (l)
+			do {
+				if (bufsize-- == 1)
+					break;
+				*expanded_name++ = *p++;
+			} while (--l);
+		*expanded_name = 0;
+	}
+
+	return length;
+}
+#endif
+
+
 #ifdef WIN_NT
 
 static void translate_slashes(tstring& Path)
@@ -856,9 +941,8 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// Expand the file name 
 
 #ifdef SUPERSERVER
-	if (!fully_qualified_path)
+	if ((!fully_qualified_path) && JRD_getdir(file_name))
 	{
-		fb_utils::getCwd(file_name);
 		if (device.hasData() && device[0] == file_name[0]) {
 			// case where temp is of the form "c:foo.fdb" and
 			// expanded_name is "c:\x\y".
@@ -886,7 +970,8 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	else
 #endif
 	{
-		// Here we get "." and ".." translated by the API.
+		// Here we get "." and ".." translated by the API, but ONLY IF we are using
+		// local conection, because in that case, JRD_getdir() returns false.
 		if (!get_full_path(temp, file_name))
 		{
 			file_name = temp;
@@ -902,6 +987,68 @@ bool ISC_expand_filename(tstring& file_name, bool expand_mounts)
 	// results in incorrect behavior.
 	file_name.upper();
 	return rc;
+}
+#endif
+
+
+#ifdef VMS
+int ISC_expand_logical(const TEXT* file_name,
+					   USHORT file_length, TEXT* expanded_name, USHORT bufsize)
+{
+/**************************************
+ *
+ *	I S C _ e x p a n d _ l o g i c a l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fully expand a file name.  If the file doesn't exist, do something
+ *	intelligent.
+ *
+ **************************************/
+	ITM items[2];
+	struct dsc$descriptor_s desc1, desc2;
+
+	if (!file_length)
+		file_length = strlen(file_name);
+
+	ISC_make_desc(file_name, &desc1, file_length);
+	ISC_make_desc(LOGICAL_NAME_TABLE, &desc2, sizeof(LOGICAL_NAME_TABLE) - 1);
+
+	USHORT l;
+	items[0].itm_length = bufsize; //256;
+	items[0].itm_code = LNM$_STRING;
+	items[0].itm_buffer = expanded_name;
+	items[0].itm_return_length = &l;
+
+	items[1].itm_length = 0;
+	items[1].itm_code = 0;
+
+	int attr = LNM$M_CASE_BLIND;
+
+	if (l = file_length) {
+		if (l > bufsize)
+		    l = bufsize;
+		TEXT* p = expanded_name;
+		do {
+			*p++ = *file_name++;
+		} while (--l);
+	}
+
+	for (int n = 0; n < 10; n++) {
+		const int status = sys$trnlnm(&attr, &desc2, &desc1, NULL, items);
+		if (!(status & 1))
+			break;
+		desc1.dsc$a_pointer = expanded_name;
+		desc1.dsc$w_length = file_length = l;
+	}
+
+	if (file_length >= bufsize)
+		file_length = bufsize - 1;
+
+	expanded_name[file_length] = 0;
+
+	return file_length;
 }
 #endif
 
@@ -1097,7 +1244,10 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 	// If the file is local, expand partial pathnames with default directory
 	if (*from && *from != '/') 
 	{
-		fb_utils::getCwd(buff);
+		if (! GETWD(buff)) 
+		{
+			buff = "";
+		}
 		buff += '/';
 	}
 
@@ -1184,7 +1334,7 @@ static void expand_filename2(tstring& buff, bool expand_mounts)
 		tstring nfsServer;
 		if (ISC_analyze_nfs(buff, nfsServer))
 		{
-			buff.insert(0, ":");
+			buff.insert(0, ':');
 			buff.insert(0, nfsServer);
 		}
 	}
@@ -1807,3 +1957,41 @@ static void share_name_from_unc(tstring& file_name,
 }
 #endif /* WIN_NT */
 
+
+#ifndef SUPERCLIENT
+namespace {
+	class DatabaseDirectoryList : public Firebird::DirectoryList
+	{
+	private:
+		const Firebird::PathName getConfigString(void) const {
+			return Firebird::PathName(Config::getDatabaseAccess());
+		}
+	public:
+		DatabaseDirectoryList(MemoryPool& p) : DirectoryList(p) 
+		{ 
+			initialize();
+		}
+	};
+	Firebird::InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
+}
+#endif
+
+bool ISC_verify_database_access(const Firebird::PathName& name)
+{
+/**************************************
+ *
+ *      I S C _ v e r i f y _ d a t a b a s e _ a c c e s s
+ *
+ **************************************
+ *
+ * Functional description
+ *      Verify 'name' against DatabaseAccess entry of firebird.conf.
+ *
+ **************************************/
+#ifndef SUPERCLIENT
+	if (!iDatabaseDirectoryList().isPathInList(name)) {
+		return false;
+	}
+#endif
+	return true;
+}

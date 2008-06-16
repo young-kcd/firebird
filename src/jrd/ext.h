@@ -32,7 +32,7 @@ namespace Jrd {
 
 class ExternalFile : public pool_alloc_rpt<SCHAR, type_ext>
 {
-public:
+    public:
 #ifdef VMS
 	Format*	ext_format;			/* External format */
 #endif
@@ -53,7 +53,7 @@ public:
 	UCHAR*	ext_indices;		/* Index descriptions */
 	UCHAR	ext_dbkey[8];		/* DBKEY */
 #endif
-	char	ext_filename[1];
+	UCHAR	ext_filename[1];
 };
 
 //const int EXT_opened	= 1;	// File has been opened
@@ -63,8 +63,7 @@ const int EXT_last_read		= 8;	// last operation was read
 const int EXT_last_write	= 16;	// last operation was write
 
 #ifdef VMS
-struct irsb_ext
-{
+struct irsb_ext {
 	USHORT irsb_flags;			/* flags (a whole word!) */
 	UCHAR irsb_ext_dbkey[8];	/* DBKEY */
 };

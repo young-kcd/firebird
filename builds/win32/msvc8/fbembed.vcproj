@@ -364,6 +364,42 @@
 			Name="REMOTE files"
 			>
 			<File
+				RelativePath="..\..\..\src\remote\allr.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\src\auth\trusted\AuthSspi.cpp"
 				>
 			</File>
@@ -749,6 +785,4 @@
 			>
 		</File>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

@@ -58,7 +58,16 @@
 using MsgFormat::SafeArg;
 
 
+#ifdef VMS
+const char* STARTUP_FILE	= "QLI_STARTUP";
+#else
 const char* STARTUP_FILE	= "HOME";	// Assume its Unix 
+#endif
+
+#ifndef SIGQUIT
+#define SIGQUIT		SIGINT
+#define SIGPIPE		SIGINT
+#endif
 
 
 extern TEXT *QLI_prompt;
@@ -66,7 +75,7 @@ extern TEXT *QLI_prompt;
 static void enable_signals(void);
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
-static int async_quit(const int, const int, void*);
+static void CLIB_ROUTINE signal_quit(void);
 static bool yes_no(USHORT, const TEXT*);
 
 struct answer_t {
@@ -119,7 +128,11 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
 // Let's define the default number of columns on a machine by machine basis 
+#ifdef VMS
 	QLI_columns = 80;
+#else
+	QLI_columns = 80;
+#endif
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
 #endif
@@ -133,6 +146,10 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 #ifdef DEV_BUILD
 	QLI_hex_output = false;
+#endif
+
+#ifdef VMS
+	argc = VMS_parse(&argv, argc);
 #endif
 
 	SLONG debug_value; // aparently unneeded, see usage below.
@@ -182,21 +199,32 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'P':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_password;
+					const TEXT* const end = r + sizeof(QLI_default_password) - 1;
+					for (const TEXT* q = fb_utils::get_passwd(*argv++); *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				fb_utils::copy_terminate(QLI_default_password, fb_utils::get_passwd(*argv++),
-					sizeof(QLI_default_password));
-				break;
+				}
 
 			case 'T':
 				sw_trace = true;
 				break;
 
 			case 'U':
-				if (argv >= arg_end || **argv == '-')
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					TEXT* r = QLI_default_user;
+					const TEXT* const end = r + sizeof(QLI_default_user) - 1;
+					for (const TEXT* q = *argv++; *q && r < end;)
+						*r++ = *q++;
+					*r = 0;
 					break;
-				fb_utils::copy_terminate(QLI_default_user, *argv++, sizeof(QLI_default_user));
-				break;
+				}
 
 			case 'V':
 				sw_verify = true;
@@ -238,6 +266,20 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 
 	if (startup_file.length())
 		LEX_push_file(startup_file.c_str(), false);
+
+#ifdef VMS
+	bool vms_tryagain_flag = false;
+	if (startup_file.length())
+		vms_tryagain_flag = LEX_push_file(startup_file.c_str(), false);
+
+/* If default value of startup file wasn't altered by the use of -i,
+   and LEX returned false (above), try the old logical name, QLI_INIT */
+
+	if (!vms_tryagain_flag && startup_file == STARTUP_FILE)
+	{
+		LEX_push_file("QLI_INIT", false);
+	}
+#endif
 
 	for (bool got_started = false; !got_started;)
 	{
@@ -294,13 +336,9 @@ static void enable_signals(void)
  **************************************/
 	typedef void (*new_handler) (int);
 
-#ifdef SIGQUIT
-	signal(SIGQUIT, SIG_IGN);
-#endif
-	fb_shutdown_callback(0, async_quit, fb_shut_preproviders, 0);
-#ifdef SIGPIPE
-	signal(SIGPIPE, SIG_IGN);
-#endif
+	signal(SIGQUIT, (new_handler) signal_quit);
+	signal(SIGINT, (new_handler) signal_quit);
+	signal(SIGPIPE, (new_handler) signal_quit);
 	signal(SIGFPE, (new_handler) signal_arith_excp);
 }
 
@@ -324,6 +362,7 @@ static bool process_statement(bool flush_flag)
 // Clear database active flags in preparation for a new statement 
 
 	QLI_abort = false;
+	blk* execution_tree = NULL;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
@@ -398,34 +437,29 @@ static bool process_statement(bool flush_flag)
 	if (syntax_tree->syn_type == nod_quit) {
 		QLI_line = NULL;
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-		{
 			if ((dbb->dbb_transaction) && (dbb->dbb_flags & DBB_updates))
-			{
 				if (yes_no(460, dbb->dbb_symbol->sym_string))	/* Msg460 Do you want to rollback updates for <dbb>? */
 					MET_transaction(nod_rollback, dbb);
 				else
 					MET_transaction(nod_commit, dbb);
-			}
-		}
 		return false;
 	}
 
 /* Expand the statement.  It will return NULL is the statement was
    a command.  An error will be unwound */
 
-	qli_nod* expanded_tree = EXP_expand(syntax_tree);
+	blk* expanded_tree = (BLK) EXP_expand(syntax_tree);
 	if (!expanded_tree)
 		return false;
 
 // Compile the statement 
 
-	qli_nod* execution_tree = CMPQ_compile(expanded_tree);
-	if (!execution_tree)
+	if (!(execution_tree = (BLK) CMPQ_compile((qli_nod*) expanded_tree)))
 		return false;
 
 // Generate any BLR needed to support the request 
 
-	if (!GEN_generate(execution_tree))
+	if (!GEN_generate(( (qli_nod*) execution_tree)))
 		return false;
 
 	if (QLI_statistics)
@@ -444,7 +478,7 @@ static bool process_statement(bool flush_flag)
 
 // Execute the request, for better or worse 
 
-	EXEC_top(execution_tree);
+	EXEC_top((qli_nod*) execution_tree);
 
 	if (QLI_statistics)
 	{
@@ -558,7 +592,7 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 }
 
 
-static int async_quit(const int reason, const int, void*)
+static void CLIB_ROUTINE signal_quit(void)
 {
 /**************************************
  *
@@ -570,12 +604,12 @@ static int async_quit(const int reason, const int, void*)
  *	Stop whatever we happened to be doing.
  *
  **************************************/
-	if (reason == fb_shutrsn_signal)
-	{
-		EXEC_abort();
-		return FB_FAILURE;
-	}
-	return FB_SUCCESS;
+	//void (*prev_handler) ();
+
+	signal(SIGQUIT, SIG_DFL);
+	signal(SIGINT, SIG_DFL);
+
+	EXEC_abort();
 }
 
 
@@ -613,7 +647,7 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;
-		for (const answer_t* response = answer_table; *response->answer != '\0';
+		for (answer_t* response = answer_table; *response->answer != '\0';
 			response++)
 		{
 			const TEXT* p = buffer;

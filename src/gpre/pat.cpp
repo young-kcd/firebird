@@ -139,6 +139,12 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 		valend = "";
 	}
 	else if (gpreGlob.sw_language == lang_fortran) {
+#ifdef VMS
+		lang_ref = "%REF(";
+		refend = ")";
+		lang_val = "%VAL(";
+		valend = ")";
+#endif
 #if (defined AIX || defined AIX_PPC)
 		lang_ref = "%REF(";
 		refend = ")";

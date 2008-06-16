@@ -36,6 +36,7 @@ else
 	cp $i /tmp/UDF_save_$x
 fi
 done
+
 if [ -f /Library/StartupItems/Firebird/Firebird ]; then
 	/Library/StartupItems/Firebird/Firebird stop
 	rm -fr /Library/StartupItems/Firebird
@@ -45,5 +46,7 @@ if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	launchctl unload /Library/LaunchDaemons/org.firebird/gds.plist
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 fi
+
 rm -rf "$FB_FW/Firebird.framework"
+
 exit 0

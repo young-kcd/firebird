@@ -37,6 +37,7 @@
 #include "../jrd/license.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
+#include "../jrd/thd.h"
 #include "../common/stuff.h"
 #include "../burp/burp_proto.h"
 #include "../burp/canon_proto.h"
@@ -52,7 +53,6 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/SafeArg.h"
-#include "memory_routines.h"
 
 using MsgFormat::SafeArg;
 
@@ -77,11 +77,10 @@ const int DB_VERSION_DDL4		= 40;  // ods4 db
 const int DB_VERSION_DDL5		= 50;  // ods5 db
 const int DB_VERSION_DDL8		= 80;  // ods8 db
 const int DB_VERSION_CURRENT	= DB_VERSION_DDL8;  // IB4.0 is ods8 
-const int DB_VERSION_DDL9		= 90;  // ods9 db, IB5
-const int DB_VERSION_DDL10		= 100; // ods10 db, IB6, FB1, FB1.5
-const int DB_VERSION_DDL11		= 110; // ods11 db, FB2
-const int DB_VERSION_DDL11_1	= 111; // ods11.1 db, FB2.1
-const int DB_VERSION_DDL11_2	= 112; // ods11.2 db, FB2.5
+const int DB_VERSION_DDL9       = 90;  // ods9 db, IB5
+const int DB_VERSION_DDL10      = 100; // ods10 db, IB6, FB1, FB1.5
+const int DB_VERSION_DDL11      = 110; // ods11 db, FB2
+const int DB_VERSION_DDL11_1    = 111; // ods11.1 db, FB2.1
 
 const int DEFERRED_ACTIVE		= 3;	/* RDB$INDEX_INACTIVE setting for Foreign Keys
 										* This setting is used temporarily while
@@ -142,7 +141,6 @@ bool	get_rel_constraint(BurpGlobals* tdgbl);
 bool	get_relation(BurpGlobals* tdgbl);
 bool	get_relation_data(BurpGlobals* tdgbl);
 bool	get_sql_roles(BurpGlobals* tdgbl);
-bool	get_mapping(BurpGlobals* tdgbl);
 bool	get_security_class(BurpGlobals* tdgbl);
 void	get_source_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 USHORT	get_text (BurpGlobals* tdgbl, TEXT*, ULONG);
@@ -329,54 +327,56 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 	END_ERROR;
 	// Activate the indices for foreign keys and do another commit  
-	if (!tdgbl->gbl_sw_deactivate_indexes)
+	if (!(tdgbl->gbl_sw_deactivate_indexes))
 	{
 
 		// Block added to verbose index creation by Toni Martir 
-		// Always try to activate deferred indices - it helps for some broken backups,
-		// and in normal cases doesn't take much time to look for such indices. AP-2008.
-		EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
-		if (gds_status[1])
-			EXEC SQL SET TRANSACTION;
+		if (tdgbl->gbl_sw_verbose)
+		{
+			EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
+			if (gds_status[1])
+				EXEC SQL SET TRANSACTION;
 
-		// Activate first indexes that are not foreign keys 
-		FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
-			IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
-			IDS.RDB$FOREIGN_KEY MISSING
+			// Activate first indexes that are not foreign keys 
+			FOR (REQUEST_HANDLE req_handle1) IDS IN RDB$INDICES WITH
+				IDS.RDB$INDEX_INACTIVE EQ DEFERRED_ACTIVE AND
+				IDS.RDB$FOREIGN_KEY MISSING
 				
-			MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
-				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
-				sizeof(index_name));
-			BURP_verbose(285, index_name);
-			// activating and creating deferred index %s
-			MODIFY IDS USING
-				IDS.RDB$INDEX_INACTIVE = FALSE;
-			END_MODIFY;
-			ON_ERROR
-				general_on_error();
-			END_ERROR;
-
-			SAVE
-			// existing ON_ERROR continues past error, beck 
-			ON_ERROR
-				BURP_print (173, index_name);
-				BURP_print_status(isc_status);
+				MISC_terminate(IDS.RDB$INDEX_NAME, index_name,
+					(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
+					sizeof(index_name));
+				BURP_verbose(285, index_name);
+				// activating and creating deferred index %s
 				MODIFY IDS USING
-					IDS.RDB$INDEX_INACTIVE = TRUE;
+					IDS.RDB$INDEX_INACTIVE = FALSE;
 				END_MODIFY;
 				ON_ERROR
-					general_on_error ();
+					general_on_error();
 				END_ERROR;
+
+				SAVE
+				// existing ON_ERROR continues past error, beck 
+				ON_ERROR
+					BURP_print (173, index_name);
+					BURP_print_status(isc_status);
+					MODIFY IDS USING
+						IDS.RDB$INDEX_INACTIVE = TRUE;
+					END_MODIFY;
+					ON_ERROR
+						general_on_error ();
+					END_ERROR;
+				END_ERROR;
+			END_FOR;
+			ON_ERROR
+				general_on_error ();
 			END_ERROR;
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-		MISC_release_request_silent(req_handle1);
-		COMMIT;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
+			MISC_release_request_silent(req_handle1);
+			COMMIT;
+			ON_ERROR
+				general_on_error ();
+			END_ERROR;
+		}
+
 
 		EXEC SQL SET TRANSACTION ISOLATION LEVEL READ COMMITTED NO_AUTO_UNDO;
 		if (gds_status[1])
@@ -402,8 +402,8 @@ int RESTORE_restore (const TEXT* file_name,
 				(ULONG) MISC_symbol_length(IDS.RDB$INDEX_NAME, sizeof(IDS.RDB$INDEX_NAME)),
 				sizeof(index_name));
 			BURP_verbose(285, index_name);
+			
 			// activating and creating deferred index %s
-
 			bool fError = false;
 			isc_tr_handle activateIndexTran = 0;
 			ISC_STATUS_ARRAY local_status_vector;
@@ -588,7 +588,6 @@ int RESTORE_restore (const TEXT* file_name,
 	// attach database again to put it online 
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	tdgbl->uSvc->getAddressPath(dpb);
 
 	if (tdgbl->flag_on_line)
 	{
@@ -601,23 +600,19 @@ int RESTORE_restore (const TEXT* file_name,
 							 tdgbl->gbl_sw_user, 
 							 strlen(tdgbl->gbl_sw_user));
 	}
+
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->uSvc->isService() ? 
+		dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
 								isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
-	}
-	if (tdgbl->gbl_sw_tr_user)
-	{
-		dpb.insertString(isc_dpb_trusted_auth, 
-			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 	}
 
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	// set forced writes to the value which was in the header
-	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes ? 1 : 0);
+	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes);
 
 	FB_API_HANDLE db_handle = 0;
 	if (isc_attach_database (tdgbl->status_vector, 0, database_name,
@@ -653,18 +648,13 @@ int RESTORE_restore (const TEXT* file_name,
 		}
 		if (tdgbl->gbl_sw_password)
 		{
-			dpb.insertString(tdgbl->uSvc->isService() ? 
+			dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
 									isc_dpb_password_enc : isc_dpb_password,
 								 tdgbl->gbl_sw_password, 
 								 strlen(tdgbl->gbl_sw_password));
 		}
-		if (tdgbl->gbl_sw_tr_user)
-		{
-			dpb.insertString(isc_dpb_trusted_auth, 
-				tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
-		}
 
-		dpb.insertByte(isc_dpb_set_db_readonly, 1);
+		dpb.insertByte(isc_dpb_set_db_readonly, TRUE);
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (isc_attach_database (tdgbl->status_vector, 0, database_name,
@@ -708,19 +698,19 @@ void add_files(BurpGlobals*	tdgbl,
 
 	for (burp_fil* file = tdgbl->gbl_sw_files; file; file = file->fil_next)
 	{
-		if (file->fil_name != file_name)
+		if (strcmp (file->fil_name, file_name))
 		{
 			count++;
 			STORE (REQUEST_HANDLE req_handle1)
 				X IN RDB$FILES
-				strcpy (X.RDB$FILE_NAME, file->fil_name.c_str());
+				strcpy (X.RDB$FILE_NAME, file->fil_name);
 				X.RDB$FILE_START = start;
 			END_STORE;
 			ON_ERROR
 				general_on_error ();
 			END_ERROR;
 				MISC_release_request_silent(req_handle1);
-			BURP_verbose (57, SafeArg() << file->fil_name.c_str() << start);
+			BURP_verbose (57, SafeArg() << file->fil_name << start);
 			// msg 57 adding file %s, starting at page %ld 
 		}
 		else if (((SLONG) file->fil_length) >= start - 1)
@@ -856,10 +846,9 @@ void check_db_version(BurpGlobals* tdgbl)
 
 	const rel_field_t rel_fields[] =
 	{
-		{"RDB$FIELDS",					"RDB$FIELD_PRECISION",	DB_VERSION_DDL10},		// FB1, FB1.5
-		{"RDB$ROLES",					"RDB$DESCRIPTION",		DB_VERSION_DDL11},		// FB2
-		{"RDB$RELATIONS",				"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1},	// FB2.1
-		{"RDB$PROCEDURE_PARAMETERS",	"RDB$FIELD_NAME",		DB_VERSION_DDL11_2},	// FB2.5
+		{"RDB$FIELDS",		"RDB$FIELD_PRECISION",	DB_VERSION_DDL10}, // FB1, FB1.5
+		{"RDB$ROLES",		"RDB$DESCRIPTION",		DB_VERSION_DDL11}, // FB2
+		{"RDB$RELATIONS",	"RDB$RELATION_TYPE",	DB_VERSION_DDL11_1}, // FB2.1
 		{0, 0, 0}
 	};
 		
@@ -903,7 +892,7 @@ void create_database(BurpGlobals*	tdgbl,
 	ULONG sweep_interval = MAX_ULONG;
 	bool no_reserve = false;
 	bool db_read_only = false, SQL_dialect_flag = false;
-	bool forced_writes = true; // turned on by default
+	USHORT forced_writes = 2; // default for the current platform 
 	ULONG page_buffers = 0;
 	USHORT SQL_dialect = 0;
 
@@ -929,11 +918,11 @@ void create_database(BurpGlobals*	tdgbl,
 				break;
 
 			case att_forced_writes:
-				forced_writes = get_numeric(tdgbl) != FALSE;
+				forced_writes = (USHORT) get_numeric(tdgbl);
 				break;
 
 			case att_no_reserve:
-				no_reserve = get_numeric(tdgbl) != FALSE;
+				no_reserve = (USHORT) get_numeric(tdgbl) != FALSE;
 				break;
 
 			case att_db_read_only:
@@ -992,7 +981,6 @@ void create_database(BurpGlobals*	tdgbl,
 		page_buffers = tdgbl->gbl_sw_page_buffers;
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	tdgbl->uSvc->getAddressPath(dpb);
 	dpb.insertInt(isc_dpb_page_size, page_size & 0xff00);
 	dpb.insertString(isc_dpb_gbak_attach, GDS_VERSION, strlen(GDS_VERSION));
 
@@ -1004,7 +992,7 @@ void create_database(BurpGlobals*	tdgbl,
 	// If the database is to be restored "read_only", fillup the data pages 
 	if (no_reserve || db_read_only)
 	{
-		dpb.insertByte(isc_dpb_no_reserve, 1);
+		dpb.insertByte(isc_dpb_no_reserve, TRUE);
 	}
 	if (tdgbl->gbl_sw_user)
 	{
@@ -1014,15 +1002,10 @@ void create_database(BurpGlobals*	tdgbl,
 	}
 	if (tdgbl->gbl_sw_password)
 	{
-		dpb.insertString(tdgbl->uSvc->isService() ? 
+		dpb.insertString(tdgbl->gbl_sw_service_gbak ? 
 								isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, 
 							 strlen(tdgbl->gbl_sw_password));
-	}
-	if (tdgbl->gbl_sw_tr_user)
-	{
-		dpb.insertString(isc_dpb_trusted_auth, 
-			tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
 	}
 	if (page_buffers)
 	{
@@ -1039,23 +1022,19 @@ void create_database(BurpGlobals*	tdgbl,
 	** to V6, we force the SQL database dialect to 1
 	**
 	*/
-	dpb.insertByte(isc_dpb_sql_dialect, SQL_dialect_flag ? SQL_dialect : SQL_DIALECT_V5);
+	dpb.insertByte(isc_dpb_sql_dialect, 
+			SQL_dialect_flag ? SQL_dialect : SQL_DIALECT_V5);
 
 	// start database up shut down, 
 	// use single-user mode to avoid conflicts during restore process
-	dpb.insertByte(isc_dpb_shutdown, isc_dpb_shut_attachment | isc_dpb_shut_single);
+	dpb.insertByte(isc_dpb_shutdown, 
+			isc_dpb_shut_attachment | isc_dpb_shut_single);
 	dpb.insertInt(isc_dpb_shutdown_delay, 0);
 	dpb.insertInt(isc_dpb_overwrite, tdgbl->gbl_sw_overwrite);
 
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	ISC_STATUS_ARRAY status_vector;
-
-	if (tdgbl->gbl_sw_fix_fss_metadata)
-	{
-		dpb.insertString(isc_dpb_lc_ctype, tdgbl->gbl_sw_fix_fss_metadata,
-			strlen(tdgbl->gbl_sw_fix_fss_metadata));
-	}
 
 	if (isc_create_database (status_vector, 0, file_name,
 							 &DB, dpb.getBufferLength(), 
@@ -1205,7 +1184,7 @@ void general_on_error()
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	BURP_print_status (isc_status, true);
+	BURP_print_status (isc_status);
 	BURP_abort ();
 }
 
@@ -2111,103 +2090,84 @@ bool get_character_set(BurpGlobals* tdgbl)
  *	Restore data for user defined character sets
  *
  **************************************/
-	class AbortException
-	{
-	};
-
 	ATT_TYPE		attribute;
 	scan_attr_t		scan_next_attr;
 
-	try
-	{
-		STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
-			X IN RDB$CHARACTER_SETS
-			X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
-			X.RDB$FORM_OF_USE.NULL = TRUE;
-			X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
-			X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
-			X.RDB$CHARACTER_SET_ID.NULL = TRUE;
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$DESCRIPTION.NULL = TRUE;
-			X.RDB$FUNCTION_NAME.NULL = TRUE;
-			X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
+	STORE (REQUEST_HANDLE tdgbl->handles_get_character_sets_req_handle1)
+		X IN RDB$CHARACTER_SETS
+		X.RDB$CHARACTER_SET_NAME.NULL = TRUE;
+		X.RDB$FORM_OF_USE.NULL = TRUE;
+		X.RDB$NUMBER_OF_CHARACTERS.NULL = TRUE;
+		X.RDB$DEFAULT_COLLATE_NAME.NULL = TRUE;
+		X.RDB$CHARACTER_SET_ID.NULL = TRUE;
+		X.RDB$SYSTEM_FLAG = 0;
+		X.RDB$SYSTEM_FLAG.NULL = FALSE;
+		X.RDB$DESCRIPTION.NULL = TRUE;
+		X.RDB$FUNCTION_NAME.NULL = TRUE;
+		X.RDB$BYTES_PER_CHARACTER.NULL = TRUE;
 
-			skip_init(&scan_next_attr);
-			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		skip_init(&scan_next_attr);
+		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+		{
+			switch (attribute)
 			{
-				switch (attribute)
-				{
-				case att_charset_name:
-					X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$CHARACTER_SET_NAME);
-					BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME);
-					break;
 
-				case att_charset_form:
-					X.RDB$FORM_OF_USE.NULL = FALSE;
-						GET_TEXT(X.RDB$FORM_OF_USE);
-					break;
+			case att_charset_name:
+				X.RDB$CHARACTER_SET_NAME.NULL = FALSE;
+				GET_TEXT(X.RDB$CHARACTER_SET_NAME);
+				BURP_verbose (msgVerbose_restore_charset, X.RDB$CHARACTER_SET_NAME);
+				break;
 
-				case att_charset_numchar:
-					X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
-					X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
-					break;
+			case att_charset_form:
+				X.RDB$FORM_OF_USE.NULL = FALSE;
+					GET_TEXT(X.RDB$FORM_OF_USE);
+				break;
 
-				case att_charset_coll:
-					X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
-					break;
+			case att_charset_numchar:
+				X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
+				X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
+				break;
 
-				case att_charset_id:
-					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
-					break;
+			case att_charset_coll:
+				X.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
+				GET_TEXT(X.RDB$DEFAULT_COLLATE_NAME);
+				break;
 
-				case att_charset_sysflag:
-					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
-					break;
+			case att_charset_id:
+				X.RDB$CHARACTER_SET_ID.NULL = FALSE;
+				X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+				break;
 
-				case att_charset_description:
-					X.RDB$DESCRIPTION.NULL = FALSE;
-					get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
-					break;
+			case att_charset_sysflag:
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+				break;
 
-				case att_charset_funct:
-					X.RDB$FUNCTION_NAME.NULL = FALSE;
-					GET_TEXT(X.RDB$FUNCTION_NAME);
-					break;
+			case att_charset_description:
+				X.RDB$DESCRIPTION.NULL = FALSE;
+				get_source_blob (tdgbl, X.RDB$DESCRIPTION, false);
+				break;
 
-				case att_charset_bytes_char:
-					X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
-					X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
-					break;
+			case att_charset_funct:
+				X.RDB$FUNCTION_NAME.NULL = FALSE;
+				GET_TEXT(X.RDB$FUNCTION_NAME);
+				break;
 
-				default:
-					bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
-					// 213 character set
-					break;
-				}
+			case att_charset_bytes_char:
+				X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
+				X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
+				break;
+
+			default:
+				bad_attribute (scan_next_attr, attribute, msgErr_restore_charset);
+				// 213 character set
+				break;
 			}
-
-			if (X.RDB$CHARACTER_SET_ID.NULL && !X.RDB$DEFAULT_COLLATE_NAME.NULL &&
-				!X.RDB$CHARACTER_SET_NAME.NULL)
-			{
-				tdgbl->defaultCollations.add(
-					Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> >(
-						X.RDB$CHARACTER_SET_NAME, X.RDB$DEFAULT_COLLATE_NAME));
-				throw AbortException();	// prevent the STORE
-			}
-
-		END_STORE;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-	}
-	catch (const AbortException&)
-	{
-	}
+		}
+	END_STORE;
+	ON_ERROR
+		general_on_error ();
+	END_ERROR;
 
 	return true;
 }
@@ -2544,12 +2504,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 				add_byte(blr, blr_text2);
 			else
 				add_byte(blr, blr_varying2);
-
-			if (tdgbl->gbl_sw_fix_fss_data && field->fld_character_set_id == CS_UNICODE_FSS)
-				add_word(blr, tdgbl->gbl_sw_fix_fss_data_id);
-			else
-				add_word(blr, field->fld_character_set_id);
-
+			add_word(blr, field->fld_character_set_id);
 			add_word(blr, field->fld_length);
 			if (dtype == blr_varying)
 				length += sizeof(USHORT);
@@ -2574,21 +2529,8 @@ rec_type get_data(BurpGlobals*	tdgbl,
 		case blr_blob:
 			alignment = type_alignments[dtype_blob];
 			length = type_lengths[dtype_blob];
-
-			if (tdgbl->gbl_sw_fix_fss_data && !(field->fld_flags & FLD_array) &&
-				field->fld_sub_type == isc_blob_text &&
-				field->fld_character_set_id == CS_UNICODE_FSS)
-			{
-				add_byte(blr, blr_blob2);
-				add_word(blr, field->fld_sub_type);
-				add_word(blr, tdgbl->gbl_sw_fix_fss_data_id);
-			}
-			else
-			{
-				add_byte(blr, blr_quad);
-				add_byte(blr, 0);
-			}
-
+			add_byte(blr, blr_quad);
+			add_byte(blr, 0);
 			break;
 
 		default:
@@ -2729,7 +2671,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 					data.lstr_allocated = l;
 					if (data.lstr_address)
 						BURP_free (data.lstr_address);
-					data.lstr_address = BURP_alloc(data.lstr_allocated);
+					data.lstr_address = (UCHAR *) BURP_alloc (data.lstr_allocated);
 				}
 				p = data.lstr_address;
 			}
@@ -2762,7 +2704,7 @@ rec_type get_data(BurpGlobals*	tdgbl,
 		{
 			if (!(field->fld_flags & FLD_computed))
 			{
-				if (field->fld_type == blr_blob || (field->fld_flags & FLD_array))
+				if ((field->fld_type == blr_blob) || (field->fld_flags & FLD_array))
 				{
 					ISC_QUAD* blob_id = (ISC_QUAD*) ((SCHAR*) buffer + field->fld_offset);
 					blob_id->gds_quad_high = 0;
@@ -2978,7 +2920,7 @@ burp_fld* get_field(BurpGlobals*	tdgbl,
 	// If it is a view and there is a global transaction then use it
 	bool global_tr = false;
 	isc_tr_handle local_trans;
-	if ((relation->rel_flags & REL_view) && tdgbl->global_trans)
+	if ((relation->rel_flags & REL_view) && (tdgbl->global_trans))
 	{
 		local_trans = tdgbl->global_trans;
 		global_tr = true;
@@ -4092,19 +4034,6 @@ bool get_global_field(BurpGlobals* tdgbl)
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
 
-			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
-				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
-				((!X.RDB$CHARACTER_LENGTH.NULL &&
-				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-				 X.RDB$FIELD_TYPE == blr_blob))
-			{
-				if (X.RDB$FIELD_TYPE != blr_blob)
-					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
-
-				X.RDB$CHARACTER_SET_ID = CS_NONE;
-				X.RDB$COLLATION_ID = 0;
-			}
-
 		END_STORE;
 		ON_ERROR
 			general_on_error ();
@@ -4430,19 +4359,6 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 			if (gfield)
 				strcpy (gfield->gfld_name, X.RDB$FIELD_NAME);
-
-			if (tdgbl->gbl_sw_fix_fss_data && tdgbl->gbl_sw_fix_fss_data_id == 0 &&
-				!X.RDB$CHARACTER_SET_ID.NULL && X.RDB$CHARACTER_SET_ID == CS_UNICODE_FSS &&
-				((!X.RDB$CHARACTER_LENGTH.NULL &&
-				  (X.RDB$FIELD_TYPE == blr_text || X.RDB$FIELD_TYPE == blr_varying)) ||
-				 X.RDB$FIELD_TYPE == blr_blob))
-			{
-				if (X.RDB$FIELD_TYPE != blr_blob)
-					X.RDB$CHARACTER_LENGTH = X.RDB$FIELD_LENGTH;
-
-				X.RDB$CHARACTER_SET_ID = CS_NONE;
-				X.RDB$COLLATION_ID = 0;
-			}
 
 		END_STORE;
 		ON_ERROR
@@ -5096,16 +5012,6 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 						bad_attribute (scan_next_attr, attribute, 291);
 					break;
 
-				// DB_VERSION_DDL11_2
-				case att_procedureprm_field_name:
-					GET_TEXT(X.RDB$FIELD_NAME);
-					break;
-
-				// DB_VERSION_DDL11_2
-				case att_procedureprm_relation_name:
-					GET_TEXT(X.RDB$RELATION_NAME);
-					break;
-
 				default:
 					bad_attribute (scan_next_attr, attribute, 291);
 					// msg 291 procedure parameter
@@ -5500,7 +5406,7 @@ bool get_relation(BurpGlobals* tdgbl)
 		case rec_field:
 			*ptr = field = get_field (tdgbl, relation);
 			if (!field)
-				return false;
+			return false;
 			ptr = &field->fld_next;
 			break;
 
@@ -5849,89 +5755,6 @@ bool get_sql_roles(BurpGlobals* tdgbl)
 	return true;
 }
 
-bool get_mapping(BurpGlobals* tdgbl)
-{
-/**************************************
- *
- *	g e t _ m a p p i n g
- *
- **************************************
- *
- * Functional description
- *	Restore mapping to users and roles
- *	Restricted version - only single 
- *	mapping is accepted
- *
- **************************************/
-	ATT_TYPE		attribute;
-	scan_attr_t		scan_next_attr;
-	TEXT			temp[GDS_NAME_LEN];
-	SSHORT			l;
-	Firebird::string role, os;
-
-	if (tdgbl->RESTORE_ods >= DB_VERSION_DDL11_1)
-	{
-		skip_init(&scan_next_attr);
-		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
-		{
-			switch (attribute)
-			{
-/*			case att_map_role:
-				l = GET_TEXT(temp);
-				role.assign(temp, l);
-				break;
-
-			case att_map_os:
-				l = GET_TEXT(temp);
-				os.assign(temp, l);
-				break;
- */
-			case att_auto_map_role:
-				l = GET_TEXT(temp);
-				role.assign(temp, l);
-				break;
-
-			default:
-				// msg 299 name mapping
-				bad_attribute (scan_next_attr, attribute, 299);
-				break;
-			}
-		}
-
-		if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2)
-		{
-			return true;	// silently skip attributes on old server
-		}
-
-		if (role != ADMIN_ROLE)
-		{
-			BURP_error(300, false);
-			return true;
-		}
-
-		if (tdgbl->firstMap)
-		{
-			tdgbl->firstMap = false;
-			BURP_verbose(301);
-			//msg 301, restoring names mapping
-		}
-		BURP_verbose(298, ADMIN_ROLE);
-		//msg 298, restoring map @1
-		Firebird::string sql;
-		sql.printf("%s ('%s', %d) %s", 
-			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
-			ADMIN_ROLE, ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO, 
-			"MATCHING (RDB$ROLE_NAME)");
-		isc_dsql_execute_immediate(tdgbl->status, &tdgbl->db_handle, &tdgbl->tr_handle, 
-								   sql.length(), sql.c_str(), 1, NULL);
-		if (tdgbl->status[1])
-		{
-			general_on_error ();
-		}
-	}
-	return true;
-}
-
 bool is_ascii_name (const TEXT *name, const SSHORT len)
 {
 /**************************************
@@ -6070,37 +5893,7 @@ void get_source_blob(BurpGlobals*	tdgbl,
 	else
 		local_trans = gds_trans;
 
-	bool ok;
-
-	if (tdgbl->gbl_sw_fix_fss_metadata)
-	{
-		UCHAR bpb[15];
-		UCHAR* p = bpb;
-
-		*p++ = isc_bpb_version1;
-
-		*p++ = isc_bpb_source_type;
-		*p++ = 2;
-		put_short(p, isc_blob_text);
-		p += 2;
-		*p++ = isc_bpb_source_interp;
-		*p++ = 1;
-		*p++ = tdgbl->gbl_sw_fix_fss_metadata_id;
-
-		*p++ = isc_bpb_target_type;
-		*p++ = 2;
-		put_short(p, isc_blob_text);
-		p += 2;
-		*p++ = isc_bpb_target_interp;
-		*p++ = 1;
-		*p++ = CS_UNICODE_FSS;
-
-		ok = blob.create(DB, local_trans, blob_id, p - bpb, bpb);
-	}
-	else
-		ok = blob.create(DB, local_trans, blob_id);
-
-	if (!ok)
+	if (!blob.create(DB, local_trans, blob_id))
 	{
 		BURP_error_redirect (status_vector, 37);
 		// msg 37 isc_create_blob failed 
@@ -6944,9 +6737,6 @@ bool get_view(BurpGlobals*	tdgbl,
 
 			case att_view_context_name:
 				GET_TEXT(X.RDB$CONTEXT_NAME);
-				if (tdgbl->RESTORE_ods < DB_VERSION_DDL11_2) {
-					X.RDB$CONTEXT_NAME[31] = 0;
-				}
 				break;
 
 			case att_view_context_id:
@@ -7425,58 +7215,6 @@ bool restore(BurpGlobals*	tdgbl,
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
 
-	if (tdgbl->gbl_sw_fix_fss_data)
-	{
-		bool found = false;
-		Firebird::string name = tdgbl->gbl_sw_fix_fss_data;
-		name.upper();
-
-		req_handle3 = 0;
-
-		FOR (REQUEST_HANDLE req_handle3)
-			X IN RDB$CHARACTER_SETS
-			WITH X.RDB$CHARACTER_SET_NAME EQ name.c_str()
-
-			tdgbl->gbl_sw_fix_fss_data_id = X.RDB$CHARACTER_SET_ID;
-			found = true;
-
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-
-		MISC_release_request_silent(req_handle3);
-
-		if (!found)
-			BURP_error(305, true, SafeArg() << tdgbl->gbl_sw_fix_fss_data);
-	}
-
-	if (tdgbl->gbl_sw_fix_fss_metadata)
-	{
-		bool found = false;
-		Firebird::string name = tdgbl->gbl_sw_fix_fss_metadata;
-		name.upper();
-
-		req_handle3 = 0;
-
-		FOR (REQUEST_HANDLE req_handle3)
-			X IN RDB$CHARACTER_SETS
-			WITH X.RDB$CHARACTER_SET_NAME EQ name.c_str()
-
-			tdgbl->gbl_sw_fix_fss_metadata_id = X.RDB$CHARACTER_SET_ID;
-			found = true;
-
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-
-		MISC_release_request_silent(req_handle3);
-
-		if (!found)
-			BURP_error(305, true, SafeArg() << tdgbl->gbl_sw_fix_fss_metadata);
-	}
-
 	// If this should be a multi-file database, add the files
 
 	if (tdgbl->gbl_sw_files && tdgbl->gbl_sw_files->fil_next)
@@ -7631,46 +7369,11 @@ bool restore(BurpGlobals*	tdgbl,
 			flag = true;
 			break;
 
-		case rec_mapping:
-			if (!get_mapping(tdgbl))
-				return false;
-			flag = true;
-			break;
-
 		default:
 			BURP_error(43, true, SafeArg() << record);
 			// msg 43 don't recognize record type %ld 
 			break;
 		}
-	}
-
-	if (tdgbl->defaultCollations.getCount() > 0)
-	{
-		isc_req_handle req_handle4 = 0;
-		
-		FOR (REQUEST_HANDLE req_handle4)
-			CS IN RDB$CHARACTER_SETS
-
-			for (int i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
-			{
-				if (tdgbl->defaultCollations[i].first == CS.RDB$CHARACTER_SET_NAME)
-				{
-					MODIFY CS;
-						CS.RDB$DEFAULT_COLLATE_NAME.NULL = FALSE;
-						strcpy(CS.RDB$DEFAULT_COLLATE_NAME,
-							tdgbl->defaultCollations[i].second.c_str());
-					END_MODIFY;
-					ON_ERROR
-						general_on_error ();
-					END_ERROR;
-				}
-			}
-		END_FOR;
-		ON_ERROR
-			general_on_error ();
-		END_ERROR;
-
-		MISC_release_request_silent(req_handle4);
 	}
 
 	/* This piece of code is to fix bug 10098: restore of database with
@@ -7768,7 +7471,7 @@ void restore_security_class(BurpGlobals*	tdgbl,
 		get_acl(tdgbl, owner_nm, &X.RDB$ACL, &new_blob_id);
 
 		MODIFY X;
-			memcpy(&X.RDB$ACL, &new_blob_id, sizeof(ISC_QUAD));
+			MOVE_FAST (&new_blob_id, &X.RDB$ACL, sizeof(ISC_QUAD));
 		END_MODIFY;
 		ON_ERROR
 			MISC_release_request_silent(req_handle2);

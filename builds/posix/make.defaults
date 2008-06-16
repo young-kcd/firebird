@@ -76,12 +76,9 @@ RealFirebirdPath = @NEW_FIREBIRD_DIR@
 #____________________________________________________________________________
 # From here we may set some global options to both compiler and linker.
 
-# Use configure's CFLAGS as global options for all compilers and linkers
-GLOB_OPTIONS=@CFLAGS@
-
+GLOB_OPTIONS=
 # Possible use - profiling.
-#GLOB_OPTIONS+= -pg
-
+#GLOB_OPTIONS= -pg
 CFLAGS:= $(CFLAGS) $(GLOB_OPTIONS)
 
 #____________________________________________________________________________
@@ -109,10 +106,6 @@ endif
 EDITLINE_FLG=@EDITLINE_FLG@
 STD_EDITLINE=@STD_EDITLINE@
 STD_ICU=@STD_ICU@
-
-# threading options - set by configure
-THR_FLAGS=@PTHREAD_CFLAGS@
-THR_LIBS=@PTHREAD_LIBS@
 
 # Default programs and tools to be used in the build process
 
@@ -165,10 +158,10 @@ CLIENTLIB_LINK:= @CC@ $(GLOB_OPTIONS)
 EXE_LINK:= @CXX@ $(GLOB_OPTIONS)
 STATICEXE_LINK:= @CXX@ $(GLOB_OPTIONS)
 
-LINK_LIBS = @LIBS@ $(THR_LIBS)
+LINK_LIBS = @LIBS@
 ICU_LIBS = -licuuc -licudata -licui18n
-STATICLINK_LIBS = @LIBS@ $(THR_LIBS)
-SO_LINK_LIBS = @LIBS@ $(THR_LIBS)
+STATICLINK_LIBS = @LIBS@
+SO_LINK_LIBS = @LIBS@
 
 # Default extensions
 
@@ -198,6 +191,7 @@ vpath %.dll $(LIB)
 
 # From jrd
 
+JRD_BOOT=		$(LIB)/jrd_boot.a
 BLRTABLE	= $(BIN)/blrtable$(EXEC_EXT)
 
 
@@ -219,7 +213,7 @@ LIBFBEMBED_SONAME = $(LIB)/$(SharedLibraryBaseName)
 # to the fbserver. MOD 28-July-2002
 
 ClientLibraryName = $(LIB_PREFIX)fbclient.$(SHRLIB_EXT)
-ClientLibraryNameMajor = $(ClientLibraryName).${MajorVer}
+ClientLibraryNameMajor = $(ClientLibraryName).2
 ClientLibraryNameFull = $(ClientLibraryName).${FirebirdVersion}
 
 LIBFBCLIENT_SO = $(LIB)/$(ClientLibraryNameFull)
@@ -257,24 +251,19 @@ UNDEF_PLATFORM = -Wl,--no-undefined
 ifneq ($(IsProdTypeBuild),Y)
   UNDEF_FLAGS = $(UNDEF_PLATFORM)
 endif
-
-LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
-LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
-LINK_IBUTIL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.vers
-
-LIB_PATH_OPTS = $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl
-
-LINK_OPTS = $(LDFLAGS) $(THR_FLAGS) $(UNDEF_FLAGS) $(LIB_PATH_OPTS)
-LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
+LINK_OPTS = $(LDFLAGS) $(UNDEF_FLAGS) $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/intl  
+LIB_LINK_OPTIONS = $(LDFLAGS) $(UNDEF_FLAGS) -shared
 
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
 FBEMBED_LINK= -L$(LIB) -lfbembed
 
+LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
+LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
+
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)
-FB_DAEMON = $(BIN)/fb_smp_server$(EXEC_EXT)
 
 STATIC_CXXSUPPORT_LIB = -lsupc++
 
@@ -287,6 +276,7 @@ NBACKUP		= $(BIN)/nbackup$(EXEC_EXT)
 LOCKPRINT	= $(BIN)/fb_lock_print$(EXEC_EXT)
 GSEC		= $(BIN)/gsec$(EXEC_EXT)
 GFIX		= $(BIN)/gfix$(EXEC_EXT)
+GFIX_STATIC	= $(BIN)/gfix_static$(EXEC_EXT)
 GDS_REBUILD	= $(BIN)/gds_rebuild$(EXEC_EXT)
 GDS_RELAY	= $(BIN)/gds_relay$(EXEC_EXT)
 GDS_INSTALL	= $(BIN)/gds_install$(EXEC_EXT)

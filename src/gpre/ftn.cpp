@@ -159,7 +159,23 @@ static TEXT output_buffer[512];
 static bool global_first_flag = false;
 static adl* array_decl_list;
 
-#if (defined AIX || defined AIX_PPC)
+#ifdef VMS
+const char* const INCLUDE_ISC_FTN	= "       include  'firebird:[syslib]gds.for\' \n\n";
+const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
+const char* const I2CONST_1			= "%VAL(";
+const char* const I2CONST_2			= ")";
+const char* const I2_1				= "";
+const char* const I2_2				= "";
+const char* const VAL_1				= "%VAL(";
+const char* const VAL_2				= ")";
+const char* const REF_1				= "%REF(";
+const char* const REF_2				= ")";
+const char* const I4CONST_1			= "%VAL(";
+const char* const I4CONST_2			= ")";
+const char* const COMMENT			= "C     ";
+const char* const INLINE_COMMENT	= "!";
+const char* const COMMA				= ",";
+#elif (defined AIX || defined AIX_PPC)
 const char* const INCLUDE_ISC_FTN	= "       INCLUDE  '%s\' \n\n";
 const char* const INCLUDE_FTN_FILE	= "include/gds.f";
 const char* const DOUBLE_DCL		= "DOUBLE PRECISION";
@@ -309,7 +325,11 @@ const char* const ISC_EVENT_COUNTS			= "ISC_EVENT_COUNTS";
 const char* const DSQL_I2CONST_1			= I2CONST_1;
 const char* const DSQL_I2CONST_2			= I2CONST_2;
 
+#ifdef VMS
+const char* const NULL_SQLDA	= "%VAL(0)";
+#else
 const char* const NULL_SQLDA	= "0";
+#endif
 
 
 //____________________________________________________________
@@ -516,9 +536,6 @@ void FTN_action(const act* action, int column)
 		gen_trans(action);
 		break;
 	case ACT_rollback:
-		gen_trans(action);
-		break;
-	case ACT_rollback_retain_context:
 		gen_trans(action);
 		break;
 	case ACT_routine:
@@ -2356,7 +2373,7 @@ static void gen_for(const act* action)
 		for (const ref* reference = port->por_references; reference;
 			 reference = reference->ref_next)
 		{
-			if (reference->ref_flags & REF_fetch_array)
+			if (reference-> ref_flags & REF_fetch_array)
 				gen_get_or_put_slice(action, reference, true);
 		}
 	}
@@ -2915,7 +2932,7 @@ static void gen_request_data( const gpre_req* request)
 					gen_raw(reference->ref_sdl, REQ_slice,
 							reference->ref_sdl_length, begin_i, end_i);
 				}
-				if (!gpreGlob.sw_raw) {
+				if (!(gpreGlob.sw_raw)) {
 					printa(COMMENT, " ");
 					if (PRETTY_print_sdl(reference->ref_sdl, gen_blr, 0, 0))
 						CPR_error("internal error during SDL generation");
@@ -3482,7 +3499,7 @@ static void gen_tpb_data(const tpb* tpb_buffer)
 			 c < tpb_hunk.bytewise_tpb + sizeof(SLONG); c++) 
 		{
 			*c = *text++;
-			if (!--length)
+			if (!(--length))
 				break;
 		}
 		if (length)
@@ -3521,19 +3538,12 @@ static void gen_tpb_decls(const tpb* tpb_buffer)
 
 static void gen_trans(const act* action)
 {
-	if (action->act_type == ACT_commit_retain_context) {
+	if (action->act_type == ACT_commit_retain_context)
 		printa(COLUMN, "CALL ISC_COMMIT_RETAINING (%s, %s)",
 			   status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(COLUMN, "CALL ISC_ROLLBACK_RETAINING (%s, %s)",
-			   status_vector(action),
-			   (action->act_object) ?
-			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-	else {
+	else
 		printa(COLUMN, "CALL ISC_%s_TRANSACTION (%s, %s)",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3541,8 +3551,6 @@ static void gen_trans(const act* action)
 				status_vector(action),
 			   (action->act_object) ?
 			   		(const TEXT*) (action->act_object) : "GDS__TRANS");
-	}
-
 	status_and_stop(action);
 
 }
@@ -3947,9 +3955,8 @@ static void make_ready( DBB db, const TEXT* filename, const TEXT* vector,
 
 static USHORT next_label(void)
 {
-	UCHAR* byte = gpreGlob.fortran_labels;
-	while (*byte == 255)
-		++byte;
+	UCHAR* byte;
+	for (byte = gpreGlob.fortran_labels; *byte == 255; byte++);
 
 	USHORT label = ((byte - gpreGlob.fortran_labels) << 3);
 
@@ -3995,8 +4002,8 @@ static const TEXT* request_trans(const act* action, const gpre_req* request)
 			trname = "GDS__TRANS";
 		return trname;
 	}
-
-	return (request) ? request->req_trans : "GDS__TRANS";
+	else
+		return (request) ? request->req_trans : "GDS__TRANS";
 }
 
 

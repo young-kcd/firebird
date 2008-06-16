@@ -30,12 +30,10 @@
 #include "../dsql/dsql.h"
 #include "gen/iberror.h"
 #include "../jrd/iberr.h"
-#include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
 #include "../jrd/cvt_proto.h"
-
-using namespace Jrd;
+#include "../jrd/thd.h"
 
 static void post_error(ISC_STATUS, ...);
 
@@ -69,13 +67,13 @@ void MOVD_move(const dsc* from, dsc* to)
     @param 
 
  **/
-static void post_error(ISC_STATUS status, ...)
+static void post_error( ISC_STATUS status, ...)
 {
 	ISC_STATUS *v;
 	const ISC_STATUS* temp, *v_end;
 	ISC_STATUS_ARRAY temp_status;
 
-	thread_db* tdbb = JRD_get_thread_data();
+	tsql* tdsql = DSQL_get_thread_data();
 
 /* copy into a temporary array any other arguments which may 
  * have been handed to us, then post the error.
@@ -84,7 +82,7 @@ static void post_error(ISC_STATUS status, ...)
 
 	STUFF_STATUS(temp_status, status);
 
-	v = tdbb->tdbb_status_vector;
+	v = tdsql->tsql_status;
 	v_end = v + ISC_STATUS_LENGTH;
 	*v++ = isc_arg_gds;
 	*v++ = isc_dsql_error;

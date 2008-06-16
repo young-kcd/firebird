@@ -37,7 +37,7 @@ int		MET_dimensions(dbb*, const TEXT*);
 void	MET_fields(qli_rel*);
 void	MET_finish(dbb*);
 int		MET_get_datatype (USHORT);
-void	MET_index_info(DBB db, const TEXT*, const TEXT*, SCHAR* const, size_t bufsize);
+void	MET_index_info(const TEXT*, const TEXT*, SCHAR*);
 void	MET_meta_commit(dbb*);
 void	MET_meta_rollback(dbb*);
 FB_API_HANDLE	MET_meta_transaction(dbb*, bool);

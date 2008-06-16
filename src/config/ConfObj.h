@@ -27,29 +27,25 @@
 #ifndef _CONFOBJ_H_
 #define _CONFOBJ_H_
 
-#include "../common/classes/alloc.h"
-
 START_NAMESPACE
 
 class ConfObject;
 
-class ConfObj : public Firebird::GlobalStorage
+class ConfObj
 {
 public:
-	ConfObj();
-	explicit ConfObj(ConfObject* confObject);
-	ConfObj(ConfObj& source);
+	explicit ConfObj(ConfObject *confObject);
 	~ConfObj();
 
 	operator ConfObject*() { return object; }
 	ConfObject* operator -> () { return object; }
 	const ConfObject* operator -> () const { return object; }
-	ConfObject* operator = (ConfObject* source);
-
-	bool hasObject() const;
+	ConfObject* operator = (ConfObject *source);
 	
-private:
 	ConfObject	*object;
+	ConfObj(const ConfObj& source);
+	ConfObj();
+	bool hasObject() const;
 };
 
 END_NAMESPACE

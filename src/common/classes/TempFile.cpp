@@ -57,6 +57,8 @@ static const char* DEFAULT_PATH =
 	"/tmp/";
 #elif defined(WIN_NT)
 	"c:\\temp\\";
+#elif defined(VMS)
+	"SYS$SCRATCH:";
 #else
 	NULL;
 #endif
@@ -278,7 +280,8 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!ReadFile(handle, buffer, length, &bytes, NULL) || bytes != length)
+	if (!ReadFile(handle, buffer, length, &bytes, NULL) ||
+		bytes != length)
 	{
 		Firebird::system_call_failed::raise("ReadFile");
 	}
@@ -299,13 +302,14 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to file
 //
 
-size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
+size_t TempFile::write(offset_t offset, void* buffer, size_t length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
 #if defined(WIN_NT)
 	DWORD bytes = 0;
-	if (!WriteFile(handle, buffer, length, &bytes, NULL) || bytes != length)
+	if (!WriteFile(handle, buffer, length, &bytes, NULL) ||
+		bytes != length)
 	{
 		Firebird::system_call_failed::raise("WriteFile");
 	}

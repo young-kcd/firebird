@@ -577,15 +577,14 @@ void PRO_setup( DBB dbb)
 		IBERROR(77);
 // Msg 77 database handle required
 
-	// If we don't have a QLI$PROCEDURES relation, and can't get one, punt
-	/* CVC: We consider VMS dead.
+// If we don't have a QLI$PROCEDURES relation, and can't get one, punt 
+
 	if (dbb->dbb_type == isc_info_db_impl_rdb_vms &&
 		!(dbb->dbb_flags & DBB_procedures))
 	{
 		IBERROR(78);
-		// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases
 	}
-	*/
+// Msg 78 QLI$PROCEDURES relation must be created with RDO in Rdb/VMS databases 
 
 	DB = dbb->dbb_handle;
 

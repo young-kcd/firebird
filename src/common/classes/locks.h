@@ -30,10 +30,8 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
-#include "fb_atomic.h"
-#include "RefCounted.h"
-#include "../jrd/gdsassert.h"
 
+#ifdef MULTI_THREAD
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
 // in thd.h ? This is Windows platform maintainers choice
@@ -45,14 +43,12 @@
 #include <thread.h>
 #include <synch.h>
 #endif
-#include <errno.h>
 #endif
+#endif /* MULTI_THREAD */
 
 namespace Firebird {
 
-class MemoryPool;	// Needed for ctors that must always ignore it
-class Exception;	// Needed for catch
-
+#ifdef MULTI_THREAD
 #ifdef WIN_NT
 
 // Generic process-local mutex and spinlock. The latter
@@ -60,73 +56,22 @@ class Exception;	// Needed for catch
 
 // Windows version of the class
 
-class TryEnterCS
-{
-public:
-	TryEnterCS();
-
-	static bool tryEnter(LPCRITICAL_SECTION lpCS)
-	{
-		return ((*m_funct) (lpCS) == TRUE);
-	}
-
-private:
-	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection 
-		(LPCRITICAL_SECTION lpCriticalSection);
-
-	static BOOL WINAPI notImpl(LPCRITICAL_SECTION)
-	{
-		system_call_failed::raise("TryEnterCriticalSection is not implemented", 0);
-		return false;
-	}
-
-	static tTryEnterCriticalSection* m_funct;
-};
-
-class Mutex
-{
+class Mutex {
 protected:
 	CRITICAL_SECTION spinlock;
-
 public:
-	Mutex()
-	{
+	Mutex() {
 		InitializeCriticalSection(&spinlock);
 	}
-	explicit Mutex(MemoryPool&) {
-		InitializeCriticalSection(&spinlock);
-	}
-
-	~Mutex()
-	{
-#ifdef DEV_BUILD
-		if (spinlock.OwningThread != 0)
-			DebugBreak();
-#endif
+	~Mutex() {
 		DeleteCriticalSection(&spinlock);
 	}
-
-	void enter()
-	{
+	void enter() {
 		EnterCriticalSection(&spinlock);
 	}
-
-	bool tryEnter()
-	{
-		return TryEnterCS::tryEnter(&spinlock);
-	}
-
-	void leave()
-	{
-#ifdef DEV_BUILD
-		if ((DWORD)spinlock.OwningThread != GetCurrentThreadId())
-			DebugBreak();
-#endif
+	void leave() {
 		LeaveCriticalSection(&spinlock);
 	}
-	
-public:
-	static void initMutexes() { }
 };
 
 typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
@@ -134,65 +79,37 @@ typedef WINBASEAPI DWORD WINAPI tSetCriticalSectionSpinCount (
 	DWORD dwSpinCount
 );
 
-class Spinlock : public Mutex
-{
+class Spinlock : public Mutex {
 private:
 	static tSetCriticalSectionSpinCount* SetCriticalSectionSpinCount;
-
-	void init();
-
 public:
-	Spinlock()
-	{
-		init();
-	}
-
-	explicit Spinlock(MemoryPool&)
-	{
-		init();
-	}
+	Spinlock();
 };
 
 #else //WIN_NT
 
 #ifdef SOLARIS_MT
 
-#error: Make mutexes on Solaris recursive!
-
-class Mutex
-{
+class Mutex {
 private:
 	mutex_t mlock;
-
 public:
-	Mutex()
-	{
+	Mutex() {
 		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
 			system_call_failed::raise("mutex_init");
 	}
-	explicit Mutex(MemoryPool&)
-	{
-		if (mutex_init(&mlock, USYNC_PROCESS, NULL))
-			system_call_failed::raise("mutex_init");
-	}
-	~Mutex()
-	{
+	~Mutex() {
 		if (mutex_destroy(&mlock))
 			system_call_failed::raise("mutex_destroy");
 	}
-	void enter()
-	{
+	void enter() {
 		if (mutex_lock(&mlock))
 			system_call_failed::raise("mutex_lock");
 	}
-	void leave()
-	{
+	void leave() {
 		if (mutex_unlock(&mlock))
 			system_call_failed::raise("mutex_unlock");
 	}
-	
-public:
-	static void initMutexes() { }
 };
 
 typedef Mutex Spinlock;
@@ -200,83 +117,46 @@ typedef Mutex Spinlock;
 #else  //SOLARIS_MT
 
 // Pthreads version of the class
-class Mutex
-{
+class Mutex {
 private:
 	pthread_mutex_t mlock;
-	static pthread_mutexattr_t attr;
-
-private:
-	void init()
-	{
-		int rc = pthread_mutex_init(&mlock, &attr);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_init", rc);
-	}
-
 public:
-	Mutex() { init(); }
-	explicit Mutex(MemoryPool&) { init(); }
-	~Mutex()
-	{
-		int rc = pthread_mutex_destroy(&mlock);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_destroy", rc);
+	Mutex() {
+		if (pthread_mutex_init(&mlock, 0))
+			system_call_failed::raise("pthread_mutex_init");
 	}
-	void enter()
-	{
-		int rc = pthread_mutex_lock(&mlock);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_lock", rc);
+	~Mutex() {
+		if (pthread_mutex_destroy(&mlock))
+			system_call_failed::raise("pthread_mutex_destroy");
 	}
-	bool tryEnter()
-	{
-		int rc = pthread_mutex_trylock(&mlock);
-		if (rc == EBUSY)
-			return false;
-		if (rc)
-			system_call_failed::raise("pthread_mutex_trylock", rc);
-		return true;
+	void enter() {
+		if (pthread_mutex_lock(&mlock))
+			system_call_failed::raise("pthread_mutex_lock");
 	}
-	void leave()
-	{
-		int rc = pthread_mutex_unlock(&mlock);
-		if (rc)
-			system_call_failed::raise("pthread_mutex_unlock", rc);
+	void leave() {
+		if (pthread_mutex_unlock(&mlock))
+			system_call_failed::raise("pthread_mutex_unlock");
 	}
-	
-public:
-	static void initMutexes();
 };
 
 #ifndef DARWIN
-class Spinlock
-{
+class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
 public:
-	Spinlock()
-	{
+	Spinlock() {
 		if (pthread_spin_init(&spinlock, false))
 			system_call_failed::raise("pthread_spin_init");
 	}
-	explicit Spinlock(MemoryPool&)
-	{
-		if (pthread_spin_init(&spinlock, false))
-			system_call_failed::raise("pthread_spin_init");
-	}
-	~Spinlock()
-	{
+	~Spinlock() {
 		if (pthread_spin_destroy(&spinlock))
 			system_call_failed::raise("pthread_spin_destroy");
 	}
-	void enter()
-	{
+	void enter() {
 		if (pthread_spin_lock(&spinlock))
 			system_call_failed::raise("pthread_spin_lock");
 	}
-	void leave()
-	{
+	void leave() {
 		if (pthread_spin_unlock(&spinlock))
 			system_call_failed::raise("pthread_spin_unlock");
 	}
@@ -287,151 +167,36 @@ public:
 
 #endif //WIN_NT
 
+#else //MULTI_THREAD
 
-// mutex with reference count
-// This class is useful if mutex can be "deleted" by the
-// code between enter and leave calls
-class RefMutex : public Mutex, public RefCounted
-{
+// Non-MT version
+class Mutex {
 public:
-	RefMutex() {}
-	explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
+	Mutex() {
+	}
+	~Mutex() {
+	}
+	void enter() {
+	}
+	void leave() {
+	}
 };
 
+typedef Mutex Spinlock;
 
-class RefMutexGuard;	// forward declaration
+#endif //MULTI_THREAD
 
-// RAII holder
-class MutexLockGuard
-{
+// RAII holder of mutex lock
+class MutexLockGuard {
 public:
 	explicit MutexLockGuard(Mutex &alock) 
-		: lock(&alock)
-	{
-		lock->enter();
-	}
-
-	~MutexLockGuard() 
-	{ 
-		try {
-			lock->leave();
-		}
-		catch (const Exception&)
-		{
-			DtorException::devHalt();
-		}
-	}
-
+		: lock(&alock) { lock->enter(); }
+	~MutexLockGuard() { lock->leave(); }
 private:
 	// Forbid copy constructor
 	MutexLockGuard(const MutexLockGuard& source);
-
-	// Forbidden to avoid errors
-	MutexLockGuard(const RefMutex*);
-
-	// This constructor should be available only from RefMutexGuard
-	friend class RefMutexGuard;
-	explicit MutexLockGuard(RefMutex& refLock) 
-		: lock(&refLock)
-	{
-		lock->enter();
-	}
-
-	Mutex* lock;
+	Mutex *lock;
 };
-
-
-class RefMutexGuard : public Reference, public MutexLockGuard
-{
-public:
-	explicit RefMutexGuard(RefMutex& alock) 
-		: Reference(alock), MutexLockGuard(alock)
-	{ }
-
-private:
-	// Forbid copy constructor
-	RefMutexGuard(const RefMutexGuard& source);
-};
-
-
-template <typename T>
-class DefaultRefCounted
-{
-public:
-	static int addRef(T* object)
-	{
-		return object->addRef();
-	}
-
-	static int release(T* object)
-	{
-		return object->release();
-	}
-};
-
-template <typename T>
-class NotRefCounted
-{
-public:
-	static int addRef(T*)
-	{
-		return 0;
-	}
-
-	static int release(T*)
-	{
-		return 0;
-	}
-};
-
-
-template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
-class EnsureUnlock
-{
-public:
-	explicit EnsureUnlock(Mtx& mutex)
-	{
-		m_mutex = &mutex;
-		RefCounted::addRef(m_mutex);
-		m_locked = 0;
-	}
-
-	~EnsureUnlock()
-	{
-		while (m_locked)
-			leave();
-		RefCounted::release(m_mutex);
-	}
-
-	void enter() 
-	{
-		m_mutex->enter();
-		m_locked++;
-	}
-
-	bool tryEnter() 
-	{
-		if (m_mutex->tryEnter())
-		{
-			m_locked++;
-			return true;
-		}
-		return false;
-	}
-
-	void leave() 
-	{
-		m_mutex->leave();
-		m_locked--;
-	}
-
-private:
-	Mtx* m_mutex;
-	int m_locked;
-};
-
-typedef EnsureUnlock<Mutex, NotRefCounted<Mutex> > MutexEnsureUnlock;
-typedef EnsureUnlock<RefMutex> RefMutexEnsureUnlock;
 
 } //namespace Firebird
 

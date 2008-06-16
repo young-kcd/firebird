@@ -299,8 +299,6 @@
 	const USHORT  f_prm_coll_id = 9;
 	const USHORT  f_prm_null_flag = 10;
 	const USHORT  f_prm_mech = 11;
-	const USHORT  f_prm_fname = 12;
-	const USHORT  f_prm_rname = 13;
  
 
 	const USHORT  f_cs_cs_name = 0;
@@ -439,19 +437,5 @@
 	const USHORT  f_mon_rec_backouts = 7;
 	const USHORT  f_mon_rec_purges = 8;
 	const USHORT  f_mon_rec_expunges = 9;
-
-
-	const USHORT  f_mon_ctx_var_att_id = 0;
-	const USHORT  f_mon_ctx_var_tra_id = 1;
-	const USHORT  f_mon_ctx_var_name = 2;
-	const USHORT  f_mon_ctx_var_value = 3;
-
-
-	const USHORT  f_mon_mem_stat_id = 0;
-	const USHORT  f_mon_mem_stat_group = 1;
-	const USHORT  f_mon_mem_cur_used = 2;
-	const USHORT  f_mon_mem_cur_alloc = 3;
-	const USHORT  f_mon_mem_max_used = 4;
-	const USHORT  f_mon_mem_max_alloc = 5;
 
 

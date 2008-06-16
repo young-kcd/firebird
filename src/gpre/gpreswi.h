@@ -120,12 +120,12 @@ enum gpre_cmd_switch
 	 * source stream this was causing bogus errors while parsing COBOL programs.
 	 */
 	IN_SW_NO_QLI,
-#ifdef TRUSTED_AUTH
+
 	/*
 	 * Added to allow trusted authentication even with ISC_USER set in environment 
 	 */
 	IN_SW_GPRE_TRUSTED,
-#endif
+
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
 	   FSG 14.Nov.2000
@@ -191,7 +191,11 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_USER	, 0, "USER"			, 0, 0, 0, FALSE, 0, 0, "\t\tdefault user name"},
 /* FSG 14.Nov.2000 */
 	{IN_SW_GPRE_VERBOSE	, 0, "VERBOSE"		, 0, 0, 0, FALSE, 0, 0, "\t\tVerbose Output to stderr"},
+#ifdef VMS
+	{IN_SW_GPRE_X		, 0, "EXTERNAL"		, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with /DATABASE)"},
+#else
 	{IN_SW_GPRE_X		, 0, "X"			, 0, 0, 0, FALSE, 0, 0, "\t\tEXTERNAL database (used with -DATABASE)"},
+#endif
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_COB		, 0, "COB"			, 0, 0, 0, FALSE, 0, 0, "\t\textended COBOL program"},
 	{IN_SW_GPRE_ANSI	, 0, "ANSI"			, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate ANSI85 compatible COBOL"},

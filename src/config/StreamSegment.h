@@ -35,29 +35,26 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "../common/classes/alloc.h"
-#include "Stream.h"
-
 START_NAMESPACE
 
+class Stream;
 
-class StreamSegment : public Firebird::GlobalStorage
+struct Segment;
+
+class StreamSegment  
 {
 public:
-	explicit StreamSegment(Stream *stream);
-	virtual ~StreamSegment();
-	
 	char* copy (void *target, int length);
 	void advance (int size);
 	void advance();
 	void setStream (Stream *stream);
+	StreamSegment(Stream *stream);
+	virtual ~StreamSegment();
 
-private:
-	friend class Stream; // for "available" and "remaining"
 	int		available;
 	int		remaining;
-	char*	data;
-	Stream::Segment* segment;
+	char	*data;
+	Segment	*segment;
 };
 
 END_NAMESPACE

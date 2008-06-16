@@ -21,8 +21,11 @@
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
+//  
+//
 //____________________________________________________________
 //
+//	$Id: movg.cpp,v 1.8 2004-06-08 13:41:00 alexpeshkoff Exp $
 //
 
 #include "firebird.h"
@@ -40,6 +43,7 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../jrd/thd.h"
 
 static void post_error(ISC_STATUS, ...);
 

@@ -434,7 +434,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 				{
 					if (*p == isc_info_data_not_ready)
 						continue;
-					if (*p == isc_info_end)
+					else if (*p == isc_info_end)
 						break;
 				}
 				p[len] = 0;
@@ -567,7 +567,6 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 
 	while (*p != isc_info_end)
 	{
-		fb_assert(p[loop] == isc_info_end);
 		try 
 		{
 			switch (*p++)

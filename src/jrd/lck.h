@@ -24,8 +24,11 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
+struct blk;
+
 namespace Jrd {
 
+class BlockingThread;
 class Database;
 class Attachment;
 
@@ -41,10 +44,13 @@ enum lck_t {
 	LCK_attachment,				/* Attachment lock */
 	LCK_shadow,					/* Lock to synchronize addition of shadows */
 	LCK_sweep,					/* Sweep lock for single sweeper */
+	LCK_file_extend,			/* Lock to synchronize file extension */
 	LCK_retaining,				/* Youngest commit retaining transaction */
 	LCK_expression,				/* Expression index caching mechanism */
 	LCK_record_locking,			/* Lock on existence of record locking for this database */
+	LCK_record,					/* Record Lock */
 	LCK_prc_exist,				/* Procedure existence lock */
+	LCK_range_relation_obsolete,			// Relation refresh range lock, PC_ENGINE
 	LCK_update_shadow,			/* shadow update sync lock */
 	LCK_backup_alloc,           /* Lock for page allocation table in backup spare file */
 	LCK_backup_database,        /* Lock to protect writing to database file */
@@ -59,30 +65,31 @@ enum lck_t {
 	LCK_btr_dont_gc				// Prevent removal of b-tree page from index
 };
 
-/* Lock owner types */
-
-enum lck_owner_t {
-	LCK_OWNER_database = 1,		// A database is the owner of the lock
-	LCK_OWNER_attachment		// An attachment is the owner of the lock
-};
+// This is defined in dbt.cpp and nobody calls it.
+void MP_GDB_print(MemoryPool*);
 
 class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
 	Lock()
-	:	lck_parent(0),
+	:	lck_test_field(666),
+		lck_parent(0),
 		lck_next(0),
+		lck_att_next(0),
 		lck_prior(0),
 		lck_collision(0),
 		lck_identical(0),
 		lck_dbb(0),
 		lck_object(0),
+		lck_owner(0),
 		lck_compatible(0),
 		lck_compatible2(0),
 		lck_attachment(0),
+		lck_blocked_threads(0),
 		lck_ast(0),
 		lck_id(0),
 		lck_owner_handle(0),
+		lck_count(0),
 		lck_length(0),
 		lck_logical(0),
 		lck_physical(0),
@@ -92,27 +99,31 @@ public:
 		lck_tail[0] = 0;
 	}
 
+	int		lck_test_field;
 	Lock*	lck_parent;
 	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
-							   bound to attachment */
+							   bound to attachment. Used in MULTI_THREAD builds only */
+	Lock*	lck_att_next;	/* Next in chain owned by attachment (RLCK, currently unused) */
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */
 	Lock*	lck_identical;	/* identical locks in compatibility table */
 	Database*	lck_dbb;	/* database object is contained in */
-	void*	lck_object;		/* argument to be passed to ast */
-	void*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
-	void*	lck_compatible2;	/* Sub-level for internal compatibility */
+	blk*	lck_object;		/* argument to be passed to ast */
+	blk*	lck_owner;		/* Logical owner block (transaction, etc.) */
+	blk*	lck_compatible;	/* Enter into internal_enqueue() and treat as compatible */
+	blk*	lck_compatible2;	/* Sub-level for internal compatibility */
 	Attachment* lck_attachment;	/* Attachment that owns lock, set only using set_lock_attachment */
+	BlockingThread* lck_blocked_threads;	/* Threads blocked by lock */
 	lock_ast_t	lck_ast;	        /* Blocking AST routine */
 	SLONG		lck_id;				/* Lock id from lock manager */
 	SLONG		lck_owner_handle;		/* Lock owner handle from the lock manager's point of view */
+	USHORT		lck_count;			/* count of locks taken out by attachment */
 	SSHORT		lck_length;			/* Length of lock string */
 	UCHAR		lck_logical;			/* Logical lock level */
 	UCHAR		lck_physical;			/* Physical lock level */
 	SLONG		lck_data;				/* Data associated with a lock */
-	lck_t lck_type;
-	union
-	{
+	enum lck_t lck_type;
+	union {
 		UCHAR lck_string[1];
 		SLONG lck_long;
 	} lck_key;

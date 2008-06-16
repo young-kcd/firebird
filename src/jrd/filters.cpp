@@ -39,6 +39,7 @@
 #include "../jrd/filte_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/thd.h"
 
 using namespace Jrd;
 
@@ -75,7 +76,11 @@ struct tmp {
 
 typedef tmp *TMP;
 
+#ifdef VMS
+const char* const WILD_CARD_UIC = "<*,*>";
+#else
 const char* const WILD_CARD_UIC = "(*.*)";
+#endif
 
 /* TXNN: Used on filter of internal data structure to text */
 static const TEXT acl_privs[] = "?CGDRWPIEUTX??";
@@ -517,7 +522,8 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 	const USHORT length = control->ctl_data[0];
 	if (length) {
 		buffer_used = MIN(length, control->ctl_buffer_length);
-		memcpy(control->ctl_buffer, (void*) control->ctl_data[1], buffer_used);
+		MOVE_FAST((void *) control->ctl_data[1], control->ctl_buffer,
+				  buffer_used);
 
 		/* remember how much did not get used */
 
@@ -540,18 +546,12 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 		USHORT l = control->ctl_buffer_length - buffer_used;
 		const ISC_STATUS status = caller(isc_blob_filter_get_segment, control, l,
 						control->ctl_buffer + buffer_used, &l);
-		switch (status)
-		{
-		case isc_segment:
+		if (status == isc_segment)
 			control->ctl_data[2] = isc_segment;
-			break;
-		case 0:
-			control->ctl_data[2] = FB_SUCCESS;
-			break;
-		default:
+		else if (status)
 			return status;
-		}
-
+		else
+			control->ctl_data[2] = FB_SUCCESS;
 		buffer_used += l;
 	}
 
@@ -590,7 +590,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 			/* save data after found newline */
 
-			memcpy((void*) control->ctl_data[1], p + 1, l - 1);
+			MOVE_FAST(p + 1, (void *) control->ctl_data[1], l - 1);
 
 			/* if there was data in control buffer not moved to user's buffer,
 			   move it to be contiguous with what was saved from user's buffer
@@ -602,7 +602,7 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 			if (left_over) {
 				p = reinterpret_cast<UCHAR*>(control->ctl_data[1]) + l - 1;
-				memcpy(p, left_over, left_length);
+				MOVE_FAST(left_over, p, left_length);
 				control->ctl_data[0] += left_length;
 			}
 			return FB_SUCCESS;
@@ -620,13 +620,14 @@ ISC_STATUS filter_text(USHORT action, BlobControl* control)
 
 	control->ctl_segment_length = buffer_used;
 	if (left_over) {
-		memcpy((void*) control->ctl_data[1], left_over, left_length);
+		MOVE_FAST(left_over, (void *) control->ctl_data[1], left_length);
 		control->ctl_data[0] = left_length;
 		return isc_segment;
 	}
-
-	control->ctl_data[0] = 0;
-	return control->ctl_data[2];
+	else {
+		control->ctl_data[0] = 0;
+		return control->ctl_data[2];
+	}
 }
 
 
@@ -793,75 +794,75 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		break;
 
 	case isc_blob_filter_put_segment:
+	{
+		USHORT len = control->ctl_buffer_length;
+		Firebird::HalfStaticArray<BYTE, BUFFER_MEDIUM> buffer;
+		BYTE* p;
+
+		if (aux->ctlaux_buffer1_unused != 0)
 		{
-			USHORT len = control->ctl_buffer_length;
-			Firebird::HalfStaticArray<BYTE, BUFFER_MEDIUM> buffer;
-			BYTE* p;
-
-			if (aux->ctlaux_buffer1_unused != 0)
-			{
-				p = buffer.getBuffer(aux->ctlaux_buffer1_unused + len);
-				memcpy(p, aux->ctlaux_buffer1, aux->ctlaux_buffer1_unused);
-				memcpy(p + aux->ctlaux_buffer1_unused, control->ctl_buffer, len);
-				len += aux->ctlaux_buffer1_unused;
-			}
-			else
-				p = control->ctl_buffer;
-
-			/* Now convert from the input buffer into the temporary buffer */
-
-			/* How much space do we need to convert? */
-			result_length = aux->ctlaux_obj1.convertLength(len);
-
-			/* Allocate a new buffer if we don't have enough */
-			if (result_length > aux->ctlaux_buffer1_len) {
-				gds__free(aux->ctlaux_buffer1);
-				aux->ctlaux_buffer1_len = result_length;
-				aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
-				/* FREE: above & isc_blob_filter_close in this routine */
-				if (!aux->ctlaux_buffer1)	/* NOMEM: */
-					return isc_virmemexh;
-			}
-
-			/* convert the text */
-
-			try
-			{
-				err_position = len;
-				result_length = aux->ctlaux_obj1.convert(len, p,
-					aux->ctlaux_buffer1_len, aux->ctlaux_buffer1, &err_position);
-			}
-			catch (const Firebird::status_exception&)
-			{
-				return isc_transliteration_failed;
-			}
-
-			if (len > 0 && err_position == 0)
-				return isc_transliteration_failed;
-
-			/* hand the text off to the next stage of the filter */
-
-			status = caller(isc_blob_filter_put_segment, control, result_length,
-							aux->ctlaux_buffer1, NULL);
-
-			if (status)
-				return status;
-
-			aux->ctlaux_buffer1_unused = len - err_position;
-
-			if (aux->ctlaux_buffer1_unused != 0)
-				memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
-
-			/* update local control variables for segment length */
-
-			if (result_length > control->ctl_max_segment)
-				control->ctl_max_segment = result_length;
-
-			control->ctl_total_length += result_length;
-			control->ctl_number_segments++;
-
-			return FB_SUCCESS;
+			p = buffer.getBuffer(aux->ctlaux_buffer1_unused + len);
+			memcpy(p, aux->ctlaux_buffer1, aux->ctlaux_buffer1_unused);
+			memcpy(p + aux->ctlaux_buffer1_unused, control->ctl_buffer, len);
+			len += aux->ctlaux_buffer1_unused;
 		}
+		else
+			p = control->ctl_buffer;
+
+		/* Now convert from the input buffer into the temporary buffer */
+
+		/* How much space do we need to convert? */
+		result_length = aux->ctlaux_obj1.convertLength(len);
+
+		/* Allocate a new buffer if we don't have enough */
+		if (result_length > aux->ctlaux_buffer1_len) {
+			gds__free(aux->ctlaux_buffer1);
+			aux->ctlaux_buffer1_len = result_length;
+			aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
+			/* FREE: above & isc_blob_filter_close in this routine */
+			if (!aux->ctlaux_buffer1)	/* NOMEM: */
+				return isc_virmemexh;
+		}
+
+		/* convert the text */
+
+		try
+		{
+			err_position = len;
+			result_length = aux->ctlaux_obj1.convert(len, p,
+				aux->ctlaux_buffer1_len, aux->ctlaux_buffer1, &err_position);
+		}
+		catch (const Firebird::status_exception&)
+		{
+			return isc_transliteration_failed;
+		}
+
+		if (len > 0 && err_position == 0)
+			return isc_transliteration_failed;
+
+		/* hand the text off to the next stage of the filter */
+
+		status = caller(isc_blob_filter_put_segment, control, result_length,
+						aux->ctlaux_buffer1, NULL);
+
+		if (status)
+			return status;
+
+		aux->ctlaux_buffer1_unused = len - err_position;
+
+		if (aux->ctlaux_buffer1_unused != 0)
+			memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
+
+		/* update local control variables for segment length */
+
+		if (result_length > control->ctl_max_segment)
+			control->ctl_max_segment = result_length;
+
+		control->ctl_total_length += result_length;
+		control->ctl_number_segments++;
+
+		return FB_SUCCESS;
+	}
 
 	case isc_blob_filter_seek:
 		return isc_uns_ext;
@@ -916,24 +917,17 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 						(USHORT) MIN((aux->ctlaux_buffer1_len - length), control->ctl_buffer_length),
 						aux->ctlaux_buffer1 + length,
 						&bytes_read_from_source);
-						
-		switch (status)
-		{
-		case isc_segment:		/* source has more segment bytes */
+		if (status == isc_segment)	/* source has more segment bytes */
 			aux->ctlaux_source_blob_status = status;
-			break;
-		case isc_segstr_eof:	/* source blob is finished */
+		else if (status == isc_segstr_eof) {	/* source blob is finished */
 			if (length == 0)	/* are we done too? */
 				return isc_segstr_eof;
 			aux->ctlaux_source_blob_status = FB_SUCCESS;
-			break;
-		case 0:                 /* complete segment in buffer */
-			aux->ctlaux_source_blob_status = FB_SUCCESS;
-			break;
-		default:				/* general error */
-			return status;
 		}
-
+		else if (status)		/* general error */
+			return status;
+		else					/* complete segment in buffer */
+			aux->ctlaux_source_blob_status = FB_SUCCESS;
 		length += bytes_read_from_source;
 	}
 
@@ -1025,17 +1019,9 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 		TEXT* out = line;
 		const UCHAR* const end = temp + length;
 
-		while (p < end)
-		{
+		while (p < end) {
 			const UCHAR c = *p++;
 			length = *p++;
-			if (p + length > end)
-			{
-				sprintf(out, "item %d with inconsistent length", (int) p[-1]);
-				string_put(control, line);
-				goto break_out;
-			}
-
 			switch (c) {
 			case TDR_HOST_SITE:
 				sprintf(out, "Host site: %.*s", length, p);
@@ -1211,26 +1197,26 @@ static void string_put(BlobControl* control, const char* line)
  *	Add a line of string to a string formatted blob.
  *
  **************************************/
-	const USHORT len = strlen(line);
-	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + len));
+	const USHORT l = strlen(line);
+	TMP string = (TMP) gds__alloc((SLONG) (sizeof(tmp) + l));
 /* FREE: on isc_blob_filter_close in string_filter() */
 	if (!string) {				/* NOMEM: */
 		fb_assert(FALSE);			/* out of memory */
 		return;					/* & No error handling at this level */
 	}
 	string->tmp_next = NULL;
-	string->tmp_length = len;
-	memcpy(string->tmp_string, line, len);
+	string->tmp_length = l;
+	memcpy(string->tmp_string, line, l);
 
-	TMP prior = (TMP) control->ctl_data[1];
-	if (prior)
+	TMP prior;
+	if (prior = (TMP) control->ctl_data[1])
 		prior->tmp_next = string;
 	else
 		control->ctl_data[0] = (IPTR) string;
 
 	control->ctl_data[1] = (IPTR) string;
 	++control->ctl_number_segments;
-	control->ctl_total_length += len;
-	control->ctl_max_segment = MAX(control->ctl_max_segment, len);
+	control->ctl_total_length += l;
+	control->ctl_max_segment = MAX(control->ctl_max_segment, l);
 }
 

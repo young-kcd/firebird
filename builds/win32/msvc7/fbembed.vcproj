@@ -183,6 +183,21 @@
 			Name="REMOTE files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\remote\allr.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_X86_;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\src\remote\inet.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">

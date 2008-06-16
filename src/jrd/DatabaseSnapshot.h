@@ -29,27 +29,24 @@
 
 namespace Jrd {
 
-class DatabaseSnapshot
-{
-	struct RelationData
-	{
+class DatabaseSnapshot {
+	struct RelationData {
 		int rel_id;
 		RecordBuffer* data;
 	};
 
-	class SharedMemory
-	{
+	class SharedMemory {
 		static const size_t VERSION;
 		static const size_t DEFAULT_SIZE;
+		static const size_t SEMAPHORES;
 
-		struct Header
-		{
+		struct Header {
 			size_t version;
 			size_t used;
 			size_t allocated;
-#ifndef WIN_NT
+	#ifndef WIN_NT
 			MTX_T mutex;
-#endif
+	#endif
 		};
 
 	public:
@@ -74,14 +71,13 @@ class DatabaseSnapshot
 		static void init(void*, SH_MEM_T*, bool);
 
 		SH_MEM_T handle;
-#ifdef WIN_NT
+	#ifdef WIN_NT
 		MTX_T mutex;
-#endif
+	#endif
 		Header* base;
 	};
 
-	class DumpGuard
-	{
+	class DumpGuard {
 	public:
 		explicit DumpGuard(SharedMemory* ptr)
 			: dump(ptr)
@@ -130,11 +126,9 @@ private:
 	static void putTransaction(const jrd_tra*, Firebird::ClumpletWriter&, int);
 	static void putRequest(const jrd_req*, Firebird::ClumpletWriter&, int);
 	static void putCall(const jrd_req*, Firebird::ClumpletWriter&, int);
-	static void putStatistics(const RuntimeStatistics&, Firebird::ClumpletWriter&, int, int);
-	static void putContextVars(Firebird::StringMap&, Firebird::ClumpletWriter&, int, bool);
-	static void putMemoryUsage(const Firebird::MemoryStats&, Firebird::ClumpletWriter&, int, int);
+	static void putStatistics(const RuntimeStatistics*, Firebird::ClumpletWriter&, int, int);
 
-	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
+	static Firebird::Mutex initMutex;
 	static SharedMemory* dump;
 	static int pid;
 

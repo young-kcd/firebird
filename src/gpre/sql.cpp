@@ -89,7 +89,6 @@ static act* act_openclose(enum act_t);
 static act* act_open_blob(ACT_T, gpre_sym*);
 static act* act_prepare(void);
 static act* act_procedure(void);
-static act* act_release(void);
 static act* act_select(void);
 static act* act_set(const TEXT*);
 static act* act_set_dialect(void);
@@ -193,7 +192,6 @@ act* SQL_action(const TEXT* base_directory)
 	case KW_LOCK:
 	case KW_OPEN:
 	case KW_PREPARE:
-	case KW_RELEASE_REQUESTS:
 	case KW_ROLLBACK:
 	case KW_SELECT:
 	case KW_SET:
@@ -298,10 +296,6 @@ act* SQL_action(const TEXT* base_directory)
 
 	case KW_PREPARE:
 		action = act_prepare();
-		break;
-
-	case KW_RELEASE_REQUESTS:
-		action = act_release();
 		break;
 
 	case KW_REVOKE:
@@ -1489,7 +1483,8 @@ static act* act_connect(void)
 				|| db->dbb_r_lc_messages || db->dbb_r_lc_ctype)
 			{
 				if (!request)
-					request = PAR_set_up_dpb_info(ready, action, default_buffers);
+					request =
+						PAR_set_up_dpb_info(ready, action, default_buffers);
 				request->req_flags |= REQ_extend_dpb;
 			}
 
@@ -1552,7 +1547,8 @@ static act* act_connect(void)
 				db->dbb_r_password = password;
 				db->dbb_r_lc_messages = lc_messages;
 				if (!request)
-					request = PAR_set_up_dpb_info(ready, action, default_buffers);
+					request =
+						PAR_set_up_dpb_info(ready, action, default_buffers);
 				request->req_flags |= REQ_extend_dpb;
 			}
 
@@ -1563,7 +1559,8 @@ static act* act_connect(void)
 							 db->dbb_c_sql_role ||
 							 db->dbb_c_lc_ctype || db->dbb_c_lc_messages))
 			{
-				request = PAR_set_up_dpb_info(ready, action, default_buffers);
+				request =
+					PAR_set_up_dpb_info(ready, action, default_buffers);
 			}
 		}
 
@@ -2185,8 +2182,8 @@ static act* act_declare(void)
 		PAR_get_token();
 		if (MSC_match(KW_FUNCTION))
 			return (act_declare_udf());
-
-		CPR_s_error("FUNCTION");
+		else
+			CPR_s_error("FUNCTION");
 		break;
 	}
 
@@ -2476,8 +2473,7 @@ static act* act_declare_udf(void)
 
 	gpre_fld** ptr = &udf_declaration->decl_udf_arg_list;
 	while (true) {
-		if (MSC_match(KW_RETURNS))
-		{
+		if (MSC_match(KW_RETURNS)) {
 			if (MSC_match(KW_PARAMETER)) {
 				const SLONG return_parameter = EXP_pos_USHORT_ordinal(true);
 				if (return_parameter > 10)
@@ -2499,14 +2495,15 @@ static act* act_declare_udf(void)
 			}
 			break;
 		}
-
-		gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
-		field->fld_flags |= (FLD_meta | FLD_meta_cstring);
-		SQL_par_field_dtype(request, field, true);
-		SQL_adjust_field_dtype(field);
-		*ptr = field;
-		ptr = &(field->fld_next);
-		MSC_match(KW_COMMA);
+		else {
+			gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
+			field->fld_flags |= (FLD_meta | FLD_meta_cstring);
+			SQL_par_field_dtype(request, field, true);
+			SQL_adjust_field_dtype(field);
+			*ptr = field;
+			ptr = &(field->fld_next);
+			MSC_match(KW_COMMA);
+		}
 	}
 
 	if (MSC_match(KW_ENTRY_POINT))
@@ -2562,7 +2559,7 @@ static act* act_delete(void)
 			CPR_s_error("OF <cursor>");
 		gpreGlob.requests = request->req_next;
 		gpreGlob.cur_routine->act_object = (REF) request->req_routine; // Beware global var
-		MSC_free(request);
+		MSC_free((UCHAR *) request);
 		request = par_cursor(NULL);
 		if ((transaction || request->req_trans) &&
 			(!transaction || !request->req_trans ||
@@ -2571,11 +2568,14 @@ static act* act_delete(void)
 			if (transaction)
 				PAR_error("different transaction for select and delete");
 			else {				// does not specify transaction clause in      
-				//   "delete ... where current of cursor" stmt
-				const size_t trans_nm_len = strlen(request->req_trans);
-				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
-				memcpy(str_2, request->req_trans, trans_nm_len);
+				//   "delete ... where cuurent of cursor" stmt 
+				SSHORT trans_nm_len = strlen(request->req_trans);
+				SCHAR* str_2 = (SCHAR*) MSC_alloc(trans_nm_len + 1);
 				transaction = str_2;
+				const SCHAR* str_1 = request->req_trans;
+				do {
+					*str_2++ = *str_1++;
+				} while (--trans_nm_len);
 			}
 		}
 		request->req_trans = transaction;
@@ -2931,12 +2931,12 @@ static act* act_execute(void)
 
 		switch (gpreGlob.sw_sql_dialect) {
 		case 1:
-			if (!isQuoted(gpreGlob.token_global.tok_type) && !MSC_match(KW_COLON))
+			if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 
 		default:
-			if (gpreGlob.token_global.tok_type != tok_sglquoted && !MSC_match(KW_COLON))
+			if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 				CPR_s_error(": <string expression>");
 			break;
 		}
@@ -3055,7 +3055,8 @@ static act* act_fetch(void)
 
 	if (direction != blr_forward) {
 		if (!(request->req_flags & REQ_scroll))
-			PAR_error("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
+			PAR_error
+				("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
 
 		// create a literal for the direction parameter
 
@@ -3295,7 +3296,6 @@ static act* act_grant_revoke( enum act_t type)
 //  If this is a grant, do we have the optional WITH GRANT OPTION specification? 
 
 	if ((type == ACT_dyn_grant) && grant_option_legal)
-	{
 		if (MSC_match(KW_WITH)) {
 			if (!MSC_match(KW_GRANT))
 				CPR_s_error("GRANT");
@@ -3303,7 +3303,6 @@ static act* act_grant_revoke( enum act_t type)
 				CPR_s_error("OPTION");
 			priv_block->prv_privileges |= PRV_grant_option;
 		}
-	}
 
 //  create action block 
 
@@ -3462,7 +3461,7 @@ static act* act_insert(void)
 			else
 				MSC_push(SQE_value(request, false, NULL, NULL), &values);
 			count2++;
-			if (!MSC_match(KW_COMMA))
+			if (!(MSC_match(KW_COMMA)))
 				break;
 		}
 		EXP_match_paren();
@@ -3881,12 +3880,12 @@ static act* act_prepare(void)
 
 	switch (gpreGlob.sw_sql_dialect) {
 	case 1:
-		if (!isQuoted(gpreGlob.token_global.tok_type) && !MSC_match(KW_COLON))
+		if ((!isQuoted(gpreGlob.token_global.tok_type)) && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 
 	default:
-		if (gpreGlob.token_global.tok_type != tok_sglquoted && !MSC_match(KW_COLON))
+		if (gpreGlob.token_global.tok_type != tok_sglquoted && (!MSC_match(KW_COLON)))
 			CPR_s_error(": <string expression>");
 		break;
 	}
@@ -3981,24 +3980,8 @@ static act* act_procedure(void)
 
 	return action;
 }
-//____________________________________________________________
-//  
-//		Parse a RELEASE_REQUESTS statement
-//
-static act* act_release(void)
-{
-	act* action = MSC_action(0, ACT_release);
 
-	MSC_match(KW_FOR);
 
-	gpre_sym* symbol = gpreGlob.token_global.tok_symbol;
-	if (symbol && (symbol->sym_type == SYM_database)) {
-		action->act_object = (REF) symbol->sym_object;
-		PAR_get_token();
-	}
-
-	return action;
-}
 //____________________________________________________________
 //  
 //		Handle the stand alone SQL select statement.
@@ -4216,7 +4199,7 @@ static act* act_set_names(void)
 				 * so we can resolve against it.
 				 * So what if we go through this code once for each database...
 				 */
-				if (!MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset))
+				if (!(MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_charset)))
 					PAR_error("The named CHARACTER SET was not found");
 			}
 		}
@@ -4365,10 +4348,6 @@ static act* act_transaction( enum act_t type)
 	else if ((type == ACT_commit) && (MSC_match(KW_RETAIN))) {
 		MSC_match(KW_SNAPSHOT);
 		action->act_type = type = ACT_commit_retain_context;
-	}
-	else if ((type == ACT_rollback) && (MSC_match(KW_RETAIN))) {
-		MSC_match(KW_SNAPSHOT);
-		action->act_type = type = ACT_rollback_retain_context;
 	}
 
 	return action;
@@ -5029,8 +5008,7 @@ static void into( gpre_req* request, GPRE_NOD field_list, GPRE_NOD var_list)
 			|| ((*fld_ptr)->nod_type == nod_array))
 		{
 			field_ref = (REF) (*fld_ptr)->nod_arg[0];
-			if ((*fld_ptr)->nod_count > 2)
-				slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
+			slice_req = (gpre_req*) (*fld_ptr)->nod_arg[2];
 		}
 
 		REF reference = NULL;
@@ -5093,7 +5071,7 @@ static IND make_index( gpre_req* request, const TEXT* string)
 {
 	IND index = NULL;
 
-	if (gpreGlob.isc_databases && !gpreGlob.isc_databases->dbb_next) {
+	if ((gpreGlob.isc_databases) && (!(gpreGlob.isc_databases->dbb_next))) {
 		// CVC: I've kept this silly code. What's the idea of the copy here?
 		// If we are trying to limit the index name, the correct length is NAME_SIZE.
 		TEXT s[ERROR_LENGTH];
@@ -5349,21 +5327,19 @@ static gpre_req* par_cursor( gpre_sym** symbol_ptr)
 		gpreGlob.token_global.tok_keyword = KW_none;
 
 	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_cursor);
-
 	if (!symbol)
 		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_delimited_cursor);
-
 	if (symbol) {
 		PAR_get_token();
 		if (symbol_ptr)
 			*symbol_ptr = symbol;
 		return (gpre_req*) symbol->sym_object;
 	}
-
-	symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
-	if (symbol)
-		PAR_error("DSQL cursors require DSQL update & delete statements");
-
+	else {
+		symbol = MSC_find_symbol(gpreGlob.token_global.tok_symbol, SYM_dyn_cursor);
+		if (symbol)
+			PAR_error("DSQL cursors require DSQL update & delete statements");
+	}
 	CPR_s_error("<cursor name>");
 	return NULL;				// silence compiler
 }
@@ -5631,6 +5607,7 @@ static bool par_into( DYN statement)
 
 static void par_options(const TEXT** transaction)
 {
+
 	*transaction = NULL;
 
 	if (!MSC_match(KW_TRANSACTION))
@@ -5939,8 +5916,7 @@ static bool par_transaction_modes(gpre_tra* trans,
 								  bool expect_iso)
 {
 
-	if (MSC_match(KW_READ))
-	{
+	if (MSC_match(KW_READ)) {
 		if (MSC_match(KW_ONLY)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
@@ -5948,8 +5924,7 @@ static bool par_transaction_modes(gpre_tra* trans,
 			trans->tra_flags |= TRA_ro;
 			return true;
 		}
-
-		if (MSC_match(KW_WRITE)) {
+		else if (MSC_match(KW_WRITE)) {
 			if (expect_iso)
 				CPR_s_error("SNAPSHOT");
 
@@ -5964,11 +5939,12 @@ static bool par_transaction_modes(gpre_tra* trans,
 		if (MSC_match(KW_NO)) {
 			if (MSC_match(KW_VERSION))
 				return true;
-			if (MSC_match(KW_WAIT)) {
+			else if (MSC_match(KW_WAIT)) {
 				trans->tra_flags |= TRA_nw;
 				return true;
 			}
-			CPR_s_error("WAIT or VERSION");
+			else
+				CPR_s_error("WAIT or VERSION");
 		}
 
 		if (MSC_match(KW_VERSION))
@@ -5976,14 +5952,15 @@ static bool par_transaction_modes(gpre_tra* trans,
 
 		return true;
 	}
-
-	if (MSC_match(KW_SNAPSHOT)) {
+	else if (MSC_match(KW_SNAPSHOT)) {
 		if (MSC_match(KW_TABLE)) {
 			trans->tra_flags |= TRA_con;
 
 			MSC_match(KW_STABILITY);
+			return true;
 		}
-		return true;
+		else
+			return true;
 	}
 	return false;
 }
@@ -6062,18 +6039,20 @@ static USHORT resolve_dtypes(KWWORDS typ,
 		break;
 
 	case KW_TIME:
-		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6))
-		{
+		if ((gpreGlob.sw_ods_version < 10) || (gpreGlob.sw_server_version < 6)) {
 			sprintf(err_mesg,
 					"Encountered column type TIME which is not supported by pre 6.0 Servers\n");
 			PAR_error(err_mesg);
 			return dtype_unknown;	// TMN: FIX FIX
 			/* return; */
 		}
-		return dtype_sql_time;
+		else
+			return dtype_sql_time;
+		break;
 
 	case KW_TIMESTAMP:
 		return dtype_timestamp;
+		break;
 
 	default:
 		sprintf(err_mesg, "resolve_dtypes(): Unknown dtype %d\n", typ);

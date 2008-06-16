@@ -35,8 +35,10 @@
 #include "../jrd/ibase.h"
 //#include "../jrd/license.h"
 #include "../alice/alice.h"
+#include "../alice/all.h"
 #include "../alice/alice_meta.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/thd.h"
 #include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../alice/alice_proto.h"
@@ -123,7 +125,8 @@ void MET_get_state(ISC_STATUS* user_status, TDR trans)
 	FB_API_HANDLE request = 0;
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
-	if (!(DB = trans->tdr_db_handle) || !(trans->tdr_db_caps & CAP_transactions))
+	if (!(DB = trans->tdr_db_handle) ||
+		!(trans->tdr_db_caps & CAP_transactions))
 	{
 		trans->tdr_state = TRA_unknown;
 		return;
@@ -485,6 +488,8 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 
 //  get the blob into the buffer, if it fits 
 
+	USHORT returned_length;
+
 	TEXT* ptr = buffer;
 	const TEXT* const end = buffer + buffer_length;
 	for (;;) {
@@ -492,7 +497,6 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 			break;
 		if (!(buffer_length = end - ptr))
 			break;
-		USHORT returned_length;
 		ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
 								  buffer_length, ptr);
 		if (status && status != isc_segment)
@@ -503,16 +507,13 @@ static USHORT snarf_blob(ISC_QUAD* blob_id,
 //  snarf failed, get length of blob for retry 
 
 	if (!buffer_length)
-	{
 		for (;;) {
-			USHORT returned_length;
 			ISC_STATUS status = isc_get_segment(gds_status, &blob, &returned_length,
 									  buffer_length, buffer);
 			if (status && status != isc_segment)
 				break;
 			buffer_length += returned_length;
 		}
-	}
 	else
 		buffer_length = 0;
 

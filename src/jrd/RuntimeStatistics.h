@@ -31,8 +31,7 @@ class thread_db;
 
 // Runtime statistics class
 
-class RuntimeStatistics
-{
+class RuntimeStatistics {
 public:
 	enum StatType {
 		PAGE_FETCHES = 0,

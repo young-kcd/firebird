@@ -7,7 +7,6 @@
 #include <stdarg.h>
 #include "gen/iberror.h"
 #include "../common/classes/alloc.h"
-#include "../common/classes/init.h"
 
 namespace {
 
@@ -17,15 +16,14 @@ const size_t ENGINE_FAILURE_SPACE = 4096;
 
 typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
-class InterlockedStringsBuffer : public CircularBuffer
-{
+class InterlockedStringsBuffer : public CircularBuffer {
 public:
-	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
-		: CircularBuffer() { }
 	virtual char* alloc(const char* string, size_t length) 
 	{
-		Firebird::MutexLockGuard guard(buffer_lock);
-		return CircularBuffer::alloc(string, length);
+		buffer_lock.enter();
+		char* new_string = CircularBuffer::alloc(string, length);
+		buffer_lock.leave();
+		return new_string;
 	}
 private:
 	Firebird::Mutex buffer_lock;
@@ -62,7 +60,6 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 			}
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
 			{
 				*ptr++ = dupStringTemp(reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS)));
 				break;
@@ -74,7 +71,7 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 	}	
 }
 
-Firebird::GlobalPtr<InterlockedStringsBuffer> engine_failures;
+InterlockedStringsBuffer engine_failures;
 
 } // namespace
 
@@ -100,7 +97,6 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
 			{
 				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
@@ -172,7 +168,6 @@ void status_exception::release_vector() throw()
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
 			delete[] reinterpret_cast<char*>(*ptr++);
 			break;
 		default:
@@ -358,7 +353,7 @@ const char* status_string(const char* string)
 
 const char* status_nstring(const char* string, size_t length) 
 {
-	return engine_failures->alloc(string, length);
+	return engine_failures.alloc(string, length);
 }
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer

@@ -108,7 +108,8 @@ int main()
 
 	for (i = 0; i <= 255; i++) {
 		if (from_unicode_map[i] + 0xFF >= sizeof(from_unicode_mapping_array)) {
-			printf("From_unicode array bounds error at position %02x00\n", i);
+			printf("From_unicode array bounds error at position %02x00\n",
+					  i);
 			continue;
 		}
 

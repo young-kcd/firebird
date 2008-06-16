@@ -224,8 +224,8 @@ namespace Firebird {
 
 				if (stk && stk->next)
 					return stk->next->hasMore(value);
-
-				return false;
+				else
+					return false;
 			}
 
 			bool hasData() const
@@ -256,8 +256,8 @@ namespace Firebird {
 
 			bool operator== (const Stack<Object, Capacity>& s) const
 			{
-				return (this->stk == s.stk) &&
-					(s.stk ? this->elem == s.stk->getCount() : true);
+			return (this->stk == s.stk) &&
+				   (s.stk ? this->elem == s.stk->getCount() : true);
 			}
 
 			bool operator!= (const Stack<Object, Capacity>& s) const
@@ -327,8 +327,8 @@ namespace Firebird {
 
 				if (stk && stk->next)
 					return stk->next->hasMore(value);
-
-				return false;
+				else
+					return false;
 			}
 
 			bool hasData() const

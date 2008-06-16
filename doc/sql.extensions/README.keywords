@@ -138,7 +138,6 @@ Firebird 2.1:
     BIN_SHR *
     BIN_XOR *
     CEIL
-    CEILING
     COS *
     COSH *
     COT *
@@ -182,20 +181,3 @@ Firebird 2.1:
     TEMPORARY
     TRUNC *
     WEEK *
-
-Firebird 2.5:
-
-  Added as reserved words:
-
-    SIMILAR
-
-  Added as non-reserved words:
-
-    AUTONOMOUS *
-    BIN_NOT *
-    CHAR_TO_UUID *
-    FIRSTNAME *
-    LASTNAME *
-    MIDDLENAME *
-    OS_NAME *
-    UUID_TO_CHAR *

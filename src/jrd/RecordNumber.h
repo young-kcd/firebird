@@ -37,8 +37,7 @@ const SINT64 BOF_NUMBER = QUADCONST(-1);
 // deliberately not define implicit conversions to and from integer to allow 
 // compiler check errors on our migration path from 32-bit to 64-bit record 
 // numbers.
-class RecordNumber
-{
+class RecordNumber {
 public:
 	// Packed record number represents common layout of RDB$DB_KEY and BLOB ID.
 	// To ensure binary compatibility with old (pre-ODS11) databases it differs 
@@ -79,16 +78,14 @@ public:
 		// BLOB ID is stored in database thus we do encode large record numbers 
 		// in a manner which preserves backward compatibility with older ODS. 
 		// The same applies to bid_decode routine below.
-		inline void bid_encode(SINT64 value)
-		{
+		inline void bid_encode(SINT64 value) {
 			// Store lower 32 bits of number
 			bid_number = value;
 			// Store high 8 bits of number
 			bid_number_up = value >> 32;
 		}
 
-		inline SINT64 bid_decode() const
-		{
+		inline SINT64 bid_decode() const {
 			return bid_number + (((FB_UINT64) bid_number_up) << 32);
 		}
 	};
@@ -103,39 +100,32 @@ public:
 	inline explicit RecordNumber(SINT64 number) : value(number), valid(true) {}
 
 	// Assignment operator
-	inline RecordNumber& operator =(const RecordNumber& from)
-	{ 
+	inline RecordNumber& operator =(const RecordNumber& from) { 
 		value = from.value;
 		return *this;
 	}
 
-	inline bool operator ==(const RecordNumber& other) const
-	{ 
+	inline bool operator ==(const RecordNumber& other) const { 
 		return value == other.value; 
 	}
 
-	inline bool operator !=(const RecordNumber& other) const
-	{ 
+	inline bool operator !=(const RecordNumber& other) const { 
 		return value != other.value; 
 	}
 
-	inline bool operator > (const RecordNumber& other) const
-	{ 
+	inline bool operator > (const RecordNumber& other) const { 
 		return value > other.value; 
 	}
 
-	inline bool operator < (const RecordNumber& other) const
-	{ 
+	inline bool operator < (const RecordNumber& other) const { 
 		return value < other.value; 
 	}
 
-	inline bool operator >= (const RecordNumber& other) const
-	{ 
+	inline bool operator >= (const RecordNumber& other) const { 
 		return value >= other.value; 
 	}
 
-	inline bool operator <= (const RecordNumber& other) const
-	{ 
+	inline bool operator <= (const RecordNumber& other) const { 
 		return value <= other.value; 
 	}
 
@@ -198,13 +188,11 @@ public:
 	}
 
 	// Handle encoding of record number for RDB$DB_KEY and BLOB ID structure.
-	inline void bid_encode(Packed* recno) const
-	{
+	inline void bid_encode(Packed* recno) const {
 		recno->bid_encode(value);
 	}
 
-	inline void bid_decode(const Packed* recno)
-	{
+	inline void bid_decode(const Packed* recno) {
 		value = recno->bid_decode();
 	}
 

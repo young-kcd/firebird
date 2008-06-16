@@ -64,6 +64,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/dbg_proto.h"
@@ -492,12 +493,14 @@ int DPM_compress( thread_db* tdbb, data_page* page)
 			// This should also work just a little bit faster too.
 			const SSHORT l = ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
 			space -= l;
-			memcpy(temp_page + space, (UCHAR *) page + index->dpg_offset, l);
+			MOVE_FAST((UCHAR *) page + index->dpg_offset, temp_page + space,
+					  l);
 			index->dpg_offset = space;
 		}
 	}
 
-	memcpy((UCHAR *) page + space, temp_page + space, dbb->dbb_page_size - space);
+	MOVE_FASTER(temp_page + space,
+				(UCHAR *) page + space, dbb->dbb_page_size - space);
 
 	if (page->dpg_header.pag_type != pag_data) {
 		BUGCHECK(251);			/* msg 251 damaged data page */
@@ -924,7 +927,8 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 				}
 				CCH_RELEASE_TAIL(tdbb, &data_window);
 			}
-			PAG_release_page(PageNumber(relPages->rel_pg_space_id, *page), ZERO_PAGE_NUMBER);
+			PAG_release_page(PageNumber(relPages->rel_pg_space_id, *page), 
+				ZERO_PAGE_NUMBER);
 		}
 		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
@@ -942,7 +946,8 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation, Jrd
 /* Now get rid of the index root page */
 
 	PAG_release_page(
-		PageNumber(relPages->rel_pg_space_id, relPages->rel_index_root), ZERO_PAGE_NUMBER);
+		PageNumber(relPages->rel_pg_space_id, relPages->rel_index_root), 
+		ZERO_PAGE_NUMBER);
 	relPages->rel_index_root = 0;
 }
 
@@ -1376,7 +1381,8 @@ ULONG DPM_get_blob(thread_db* tdbb,
    let somebody else complain.  */
 
 	pointer_page* ppage = get_pointer_page(tdbb, blob->blb_relation,
-		blob->blb_relation->getPages(tdbb), &rpb.getWindow(tdbb), pp_sequence, LCK_read);
+		blob->blb_relation->getPages(tdbb), &rpb.getWindow(tdbb), pp_sequence, 
+		LCK_read);
 	if (!ppage) {
 		blob->blb_flags |= BLB_damaged;
 		return 0UL;
@@ -1458,8 +1464,10 @@ ULONG DPM_get_blob(thread_db* tdbb,
 
 		if (blob->blb_level == 0) {
 			blob->blb_space_remaining = length;
-			if (length)
-				memcpy(blob->getBuffer(), q, length);
+			UCHAR* p = blob->blb_data;
+			if (length) {
+				MOVE_FASTER(q, p, length);
+			}
 		}
 		else {
 			vcl* vector = blob->blb_pages;
@@ -1468,7 +1476,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 					vcl::newVector(*blob->blb_transaction->tra_pool, 0);
 			}
 			vector->resize(length / sizeof(SLONG));
-			memcpy(vector->memPtr(), q, length);
+			MOVE_FASTER(q, vector->memPtr(), length);
 		}
 
 		if (!delete_flag) {
@@ -1726,8 +1734,7 @@ void DPM_pages(
 	jrd_req* request = CMP_find_request(tdbb, irq_s_pages, IRQ_REQUESTS);
 
 	STORE(REQUEST_HANDLE request)
-		X IN RDB$PAGES
-		X.RDB$RELATION_ID = rel_id;
+		X IN RDB$PAGES X.RDB$RELATION_ID = rel_id;
 		X.RDB$PAGE_TYPE = type;
 		X.RDB$PAGE_SEQUENCE = sequence;
 		X.RDB$PAGE_NUMBER = page;
@@ -1998,35 +2005,12 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	USHORT length;
 	const UCHAR* q;
 	PageStack stack;
-	Firebird::Array<UCHAR> buffer;
 
-	if (blob->blb_level == 0)
-	{
+	if (blob->blb_level == 0) {
 		length = blob->blb_clump_size - blob->blb_space_remaining;
-
-		if (!blob->hasBuffer())
-		{
-			if (blob->blb_temp_size > 0)
-			{
-				blob->blb_transaction->getTempSpace()->read(
-					blob->blb_temp_offset, buffer.getBuffer(blob->blb_temp_size),
-					blob->blb_temp_size);
-				q = buffer.begin();
-			}
-			else
-			{
-				fb_assert(length == 0);
-				q = NULL;
-			}
-		}
-		else
-			q = blob->getBuffer();
-
-		if (q)
-			q = (UCHAR*) ((blob_page*) q)->blp_page;
+		q = (UCHAR *) ((blob_page*) blob->blb_data)->blp_page;
 	}
-	else
-	{
+	else {
 		vector = blob->blb_pages;
 		length = vector->count() * sizeof(SLONG);
 		q = (UCHAR *) (vector->begin());
@@ -2066,9 +2050,11 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 	header->blh_sub_type = blob->blb_sub_type;
 	if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		header->blh_charset = blob->blb_charset;
+	UCHAR* p = (UCHAR *) header->blh_page;
 
-	if (length)
-		memcpy(header->blh_page, q, length);
+	if (length) {
+		MOVE_FASTER(q, p, length);
+	}
 
 	data_page* page = (data_page*) rpb.getWindow(tdbb).win_buffer;
 	if (blob->blb_level && !(page->dpg_header.pag_flags & dpg_large)) {
@@ -2322,11 +2308,13 @@ static void delete_tail(thread_db* tdbb, rhdf* header, const USHORT page_space, 
 			const SLONG* const end2 =
 				page2 + ((bpage->blp_length - BLP_SIZE) / sizeof(SLONG));
 			while (page2 < end2) {
-				PAG_release_page(PageNumber(page_space, *page2++), ZERO_PAGE_NUMBER);
+				PAG_release_page(PageNumber(page_space, *page2++), 
+					ZERO_PAGE_NUMBER);
 			}
 			CCH_RELEASE_TAIL(tdbb, &window);
 		}
-		PAG_release_page(PageNumber(page_space, *page1), ZERO_PAGE_NUMBER);
+		PAG_release_page(PageNumber(page_space, *page1),
+			ZERO_PAGE_NUMBER);
 	}
 }
 
@@ -3003,8 +2991,8 @@ static rhd* locate_space(
    locked, then give up on the assumption that things 
    are really screwed up. */
 	UCHAR* space = 0;
-	int i;
-	for (i = 0; i < 20; ++i) {
+	USHORT i;
+	for (i = 0; i < 20; i++) {
 		DPM_allocate(tdbb, window);
 		extend_relation(tdbb, relation, window);
 		space = find_space(tdbb, rpb, size, stack, record, type);
@@ -3182,9 +3170,8 @@ static void store_big_record(thread_db* tdbb, record_param* rpb,
 
 /* Start by finding the last data compression control block and set up
     to start decompression from the end. */
-	DataComprControl* dcc = head_dcc;
-	while (dcc->dcc_next)
-		dcc = dcc->dcc_next;
+	DataComprControl* dcc;
+	for (dcc = head_dcc; dcc->dcc_next; dcc = dcc->dcc_next);
 
 	const SCHAR* control = dcc->dcc_end;
 	const SCHAR* in = (SCHAR *) rpb->rpb_address + rpb->rpb_length;

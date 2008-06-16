@@ -232,7 +232,7 @@ ExternalFile* EXT_file(jrd_rel* relation, TEXT* file_name, bid* description)
 		const ptrdiff_t l2 = (UCHAR *) index - index_buffer;
 		if (l2) {
 			str* string = FB_NEW_RPT(tdbb->getDefaultPool(), l2) str();
-			memcpy(string->str_data, index_buffer, l2);
+			MOVE_FAST(index_buffer, string->str_data, l2);
 			file->ext_indices = string->str_data;
 		}
 	}
@@ -873,8 +873,8 @@ static bool get_dbkey(RecordSource* rsb)
 
 	sys$free(&rab);
 	set_flags(relation, record);
-	memcpy(&rpb->rpb_ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
-	memcpy(file->ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
 	return true;
 }
@@ -1052,14 +1052,14 @@ static bool get_sequential(RecordSource* rsb)
 
 	sys$free(&rab);
 	set_flags(relation, record);
-	memcpy(&rpb->rpb_ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rab.rab$w_rfa, &rpb->rpb_ext_dbkey, sizeof(rab.rab$w_rfa));
 
 /* If we're using the shared stream, save the current dbkey to
    determine whether repositioning will be required next time
    thru */
 
 	if (rpb->rpb_ext_isi == file->ext_isi)
-		memcpy(file->ext_dbkey, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
+		MOVE_FAST(rab.rab$w_rfa, file->ext_dbkey, sizeof(rab.rab$w_rfa));
 
 	return true;
 }
@@ -1179,7 +1179,7 @@ static void position_by_rfa(ExternalFile* file, USHORT * rfa)
  *	Position file to specific RFA.
  *
  **************************************/
-	memcpy(rab.rab$w_rfa, rfa, sizeof(rab.rab$w_rfa));
+	MOVE_FAST(rfa, rab.rab$w_rfa, sizeof(rab.rab$w_rfa));
 	rab.rab$b_rac = RAB$C_RFA;
 	file->ext_flags &= ~EXT_eof;
 	const int status = sys$get(&rab);

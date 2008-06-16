@@ -29,9 +29,9 @@
 #ifndef JRD_VAL_H
 #define JRD_VAL_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
-#include "../common/classes/MetaName.h"
 
 #include "../jrd/dsc.h"
 
@@ -39,9 +39,18 @@
 
 const UCHAR DEFAULT_DOUBLE	= dtype_double;
 
+#ifdef VMS
+const UCHAR SPECIAL_DOUBLE	= dtype_d_float;
+#define CNVT_TO_DFLT(x)	MTH$CVT_D_G (x)
+#define CNVT_FROM_DFLT(x)	MTH$CVT_G_D (x)
+
+#endif
+
 const ULONG MAX_FORMAT_SIZE	= 65535;
 
 namespace Jrd {
+
+#ifndef REQUESTER
 
 class ArrayField;
 class blb;
@@ -70,6 +79,7 @@ public:
 	typedef Firebird::Array<dsc>::iterator fmt_desc_iterator;
 	typedef Firebird::Array<dsc>::const_iterator fmt_desc_const_iterator;
 };
+#endif /* REQUESTER */
 
 
 /* A macro to define a local vary stack variable of a given length
@@ -88,10 +98,10 @@ enum FUN_T {
 };
 
 
+#ifndef REQUESTER
 /* Function definition block */
 
-struct fun_repeat
-{
+struct fun_repeat {
 	DSC fun_desc;			/* Datatype info */
 	FUN_T fun_mechanism;	/* Passing mechanism */
 };
@@ -99,8 +109,7 @@ struct fun_repeat
 
 class UserFunction : public pool_alloc_rpt<fun_repeat, type_fun>
 {
-public:
-	Firebird::MetaName fun_name;	// Function name
+    public:
 	Firebird::string fun_exception_message;	/* message containing the exception error message */
 	UserFunction*	fun_homonym;	/* Homonym functions */
 	Symbol*		fun_symbol;			/* Symbol block */
@@ -111,13 +120,8 @@ public:
 	USHORT		fun_type;			/* Type of function */
 	ULONG		fun_temp_length;	/* Temporary space required */
     fun_repeat fun_rpt[1];
-
-public:
-	explicit UserFunction(MemoryPool& p)
-		: fun_name(p),
-		  fun_exception_message(p)
-	{
-	}
+    public:
+	UserFunction(MemoryPool& p) : fun_exception_message(p) { }
 };
 
 // Those two defines seems an intention to do something that wasn't completed.
@@ -130,16 +134,18 @@ public:
 
 /* Scalar array descriptor, "external side" seen by UDF's */
 
-struct scalar_array_desc
-{
+struct scalar_array_desc {
 	DSC sad_desc;
 	SLONG sad_dimensions;
-	struct sad_repeat
-	{
+	struct sad_repeat {
 		SLONG sad_lower;
 		SLONG sad_upper;
 	} sad_rpt[1];
 };
+
+#endif /* REQUESTER */
+
+#ifndef REQUESTER
 
 // Sorry for the clumsy name, but in blk.h this is referred as array description.
 // Since we already have Scalar Array Descriptor and Array Description [Slice],
@@ -150,7 +156,7 @@ struct scalar_array_desc
 
 class ArrayField : public pool_alloc_rpt<Ods::InternalArrayDesc::iad_repeat, type_arr>
 {
-public:
+    public:
 	UCHAR*				arr_data;			/* Data block, if allocated */
 	blb*				arr_blob;			/* Blob for data access */
 	jrd_tra*			arr_transaction;	/* Parent transaction block */
@@ -163,6 +169,8 @@ public:
 	// Keep this field last as it is C-style open array !
 	Ods::InternalArrayDesc	arr_desc;		/* Array descriptor. ! */
 };
+
+#endif /* REQUESTER */
 
 } //namespace Jrd
 

@@ -27,7 +27,7 @@
 #ifndef DSQL_UTLD_PROTO_H
 #define DSQL_UTLD_PROTO_H
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 #include "../jrd/DataTypeUtil.h"
 #endif
 
@@ -42,29 +42,25 @@ void		UTLD_save_status_strings(ISC_STATUS*);
 SCHAR*		UTLD_skip_sql_info(SCHAR*);
 
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 
-namespace Jrd {
+class dsql_req;
 
-	class CompiledStatement;
-
-	class DSqlDataTypeUtil : public DataTypeUtilBase
+class DSqlDataTypeUtil : public DataTypeUtilBase
+{
+public:
+	DSqlDataTypeUtil(dsql_req* req)
+		: request(req)
 	{
-	public:
-		explicit DSqlDataTypeUtil(CompiledStatement* aStatement)
-			: statement(aStatement)
-		{
-		}
+	}
 
-	public:
-		virtual UCHAR maxBytesPerChar(UCHAR charSet);
-		virtual USHORT getDialect() const;
+public:
+	virtual UCHAR maxBytesPerChar(UCHAR charSet);
+	virtual USHORT getDialect() const;
 
-	private:
-		CompiledStatement* statement;
-	};
-
-} // namespace
+private:
+	dsql_req* request;
+};
 
 #endif
 

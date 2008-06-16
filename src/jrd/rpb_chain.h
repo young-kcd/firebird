@@ -65,7 +65,7 @@ typedef Firebird::SortedArray<traRpbListElement,
 class traRpbList : public traRpbArray
 {
 public:
-	explicit traRpbList(Firebird::MemoryPool& p) :
+	traRpbList(Firebird::MemoryPool& p) : 
 		traRpbArray(p) {}
 	int PushRpb(record_param* value);
 	bool PopRpb(record_param* value, int Level);

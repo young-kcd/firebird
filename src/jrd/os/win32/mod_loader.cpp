@@ -26,9 +26,7 @@ private:
 bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	LPCSTR pszName = module.c_str();
-	HINSTANCE hMod = LoadLibraryEx(pszName, 0,
-		LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
-
+	HINSTANCE hMod = LoadLibraryEx(pszName, 0, LOAD_LIBRARY_AS_DATAFILE);
 	if (hMod) {
 		FreeLibrary((HMODULE)hMod);
 	}
@@ -45,7 +43,7 @@ void ModuleLoader::doctorModuleExtention(Firebird::PathName& name)
 
 ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
 {
-	HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
+	HMODULE module = LoadLibrary(modPath.c_str());
 	if (!module)
 		return 0;
 	

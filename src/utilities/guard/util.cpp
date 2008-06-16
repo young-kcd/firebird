@@ -66,7 +66,7 @@
 #include "../jrd/isc_proto.h"
 
 
-pid_t UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name)
+pid_t UTIL_start_process(const char* process, char** argv)
 {
 /**************************************
  *
@@ -92,16 +92,8 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-	// prepend Firebird home directory to the program name
-	// choose correct (super/superclassic) image - to be removed in 3.0
+/* prepend Firebird home directory to the program name */
 	gds__prefix(string, process);
-	if (access(string, X_OK) < 0) {
-		gds__prefix(string, process2);
-	}
-	if (prog_name) {
-		gds__log("%s: guardian starting %s\n",
-                 prog_name, string);
-	}
 
 /* add place in argv for visibility to "ps" */
 	strcpy(argv[0], string);
@@ -159,9 +151,11 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 		{
 			if (shutting_down)
 				return -2;
-			continue;
+			else
+				continue;
 		}
-		return (errno);
+		else
+			return (errno);
 	}
 
 /* Check for very specific conditions before we assume the child

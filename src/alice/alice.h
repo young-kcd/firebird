@@ -27,11 +27,13 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
-#include "../jrd/ThreadData.h"
+#include "../jrd/thd.h"
+#include "../alice/all.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
-#include "../common/UtilSvc.h"
+
+#include "../alice/blk.h"
 
 enum val_errors {
 	VAL_INVALID_DB_VERSION	= 0,
@@ -59,11 +61,8 @@ struct user_action
 	const char* ua_user;
 	const char* ua_password;
 	const char* ua_tr_user;
-	bool ua_tr_role;
-#ifdef TRUSTED_AUTH
 	bool ua_trusted;
-#endif 
-	bool ua_no_reserve;
+	bool ua_use;
 	bool ua_force;
 	bool ua_read_only;
 	SLONG ua_shutdown_delay;
@@ -72,7 +71,7 @@ struct user_action
 	SLONG ua_page_buffers;
 	USHORT ua_debug;
 	SLONG ua_val_errors[MAX_VAL_ERRORS];
-	//TEXT ua_log_file[MAXPATHLEN];
+	TEXT ua_log_file[MAXPATHLEN];
 	USHORT ua_db_SQL_dialect;
 	alice_shut_mode ua_shutdown_mode;
 };
@@ -135,35 +134,54 @@ enum tdr_state_vals {
 };
 
 
-// Global data 
+// Global switches and data 
+
+#include "../jrd/svc.h"
+
+enum redirect_vals {
+	NOREDIRECT = 0,
+	REDIRECT = 1,
+	NOOUTPUT = 2
+};
+
+
+#ifndef SERVICE_THREAD
+class AliceGlobals;
+extern AliceGlobals* gdgbl;
+#endif
 
 class AliceGlobals : public ThreadData
 {
 private:
-	MemoryPool* ALICE_default_pool;
-	friend class Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool>;
+	AliceMemoryPool* ALICE_default_pool;
+	friend class Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool>;
 
-	void setDefaultPool(MemoryPool* p)
+	void setDefaultPool(AliceMemoryPool* p)
 	{
 		ALICE_default_pool = p;
 	}
 
 public:
-	AliceGlobals(Firebird::UtilSvc* us) 
+	AliceGlobals(Jrd::pfn_svc_output outProc, Jrd::Service* outData) 
 		: ThreadData(ThreadData::tddALICE), 
 		ALICE_default_pool(0),
 		exit_code(FINI_ERROR),	// prevent FINI_OK in case of unknown error thrown
 								// would be set to FINI_OK (==0) in ALICE_exit
-		uSvc(us),
+		output_proc(outProc), 
+		output_data(outData),
 		output_file(NULL),
+		service_blk(NULL),
 		db_handle(0),
 		tr_handle(0),
-		status(status_vector)
+		status(status_vector),
+		sw_redirect(NOREDIRECT),
+		sw_service(false),
+		sw_service_thd(false)
 	{
 		memset(&ALICE_data, 0, sizeof(user_action));
 	}
 
-	MemoryPool* getDefaultPool()
+	AliceMemoryPool* getDefaultPool()
 	{
 		return ALICE_default_pool;
 	}
@@ -171,29 +189,42 @@ public:
 	user_action		ALICE_data;
 	ISC_STATUS_ARRAY	status_vector;
 	int				exit_code;
-	Firebird::UtilSvc*	uSvc;
+	Jrd::pfn_svc_output  output_proc;
+	Jrd::Service*	output_data;
 	FILE*		output_file;
+	Jrd::Service*	service_blk;
 	isc_db_handle	db_handle;
 	isc_tr_handle	tr_handle;
 	ISC_STATUS*		status;
+	redirect_vals	sw_redirect;
+	bool			sw_service;
+	bool			sw_service_thd;
 
-	static inline AliceGlobals* getSpecific()
-	{
+#ifdef SERVICE_THREAD
+	static inline AliceGlobals* getSpecific() {
 		ThreadData* tData = ThreadData::getSpecific();
 		fb_assert (tData->getType() == ThreadData::tddALICE)
 		return (AliceGlobals*) tData;
 	}
-	static inline void putSpecific(AliceGlobals* tdgbl)
-	{
+	static inline void putSpecific(AliceGlobals* tdgbl) {
 		tdgbl->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific()
-	{
+	static inline void restoreSpecific() {
 		ThreadData::restoreSpecific();
 	}
+#else
+	static inline AliceGlobals* getSpecific() {
+		return gdgbl;
+	}
+	static inline void putSpecific(AliceGlobals* tdgbl) {
+		gdgbl = tdgbl;
+	}
+	static inline void restoreSpecific() {
+	}
+#endif
 };
 
-typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool> 
+typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, AliceMemoryPool> 
 	AliceContextPoolHolder;
 
 #endif	// ALICE_ALICE_H

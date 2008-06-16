@@ -24,6 +24,10 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 
+#ifdef VMS
+#include <types.h>
+#include "times.h"
+#else
 #ifdef HAVE_TIMES
 #include <sys/types.h>
 #include <sys/times.h>
@@ -38,10 +42,12 @@
 #  include <time.h>
 # endif
 #endif
+#endif
 
 #ifdef WIN_NT
 #include <io.h> // open, close
 #endif
+
 
 #include <stdio.h>
 #include <errno.h>
@@ -58,9 +64,11 @@ using namespace Ods;
 
 static void analyse(int, const SCHAR*, const pag*, int);
 static SLONG get_long(void);
+//#ifdef VMS
 static void db_error(int);
 static void db_open(const char*, USHORT);
 static PAG db_read(SLONG);
+//#endif
 
 static FILE *trace;
 static int file;
@@ -75,7 +83,9 @@ const SSHORT trace_write	= 5;
 const SSHORT trace_close	= 6;
 
 static USHORT page_size;
+//static int map_length, map_base, map_count;
 static pag* global_buffer;
+//static UCHAR *map_region;
 
 const int MAX_PAGES	= 50000;
 
@@ -104,10 +114,11 @@ void main( int argc, char **argv)
 	{
 		const char* s = *argv;
 		if (*s++ == '-')
-		{
-			if (UPPER(*s) == 'S')
+			switch (UPPER(*s)) {
+			case 'S':
 				detail = false;
-		}
+				break;
+			}
 	}
 
 	SLONG reads = 0, writes = 0;
@@ -121,7 +132,6 @@ void main( int argc, char **argv)
 	const pag* page;
 	SSHORT event;
 	while ((event = getc(trace)) != trace_close && event != EOF)
-	{
 		switch (event)
 		{
 		case trace_open:
@@ -166,7 +176,6 @@ void main( int argc, char **argv)
 			printf("don't understand event %d\n", event);
 			abort();
 		}
-	}
 
 	struct tms after;
 	elapsed = times(&after) - elapsed;
@@ -247,10 +256,11 @@ static void analyse( int number, const SCHAR* string, const pag* page, int seque
 		break;
 
 	case pag_blob:
-		printf(
-			"Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
-			page->pag_flags, ((blob_page*) page)->blp_lead_page,
-			((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
+		printf
+			("Blob page\n\tFlags: %x, lead page: %d, sequence: %d, length: %d\n\t",
+			 page->pag_flags, ((blob_page*) page)->blp_lead_page,
+			 ((blob_page*) page)->blp_sequence, ((blob_page*) page)->blp_length);
+
 		break;
 
 	default:
@@ -294,6 +304,7 @@ static SLONG get_long(void)
 }
 
 
+//#ifdef VMS
 static void db_error( int status)
 {
 /**************************************
@@ -355,6 +366,7 @@ static PAG db_read( SLONG page_number)
 
 	return global_buffer;
 }
+//#endif
 
 
 #ifndef HAVE_TIMES
@@ -375,3 +387,4 @@ static time_t times(struct tms* buffer)
 	return buffer->tms_utime;
 }
 #endif
+

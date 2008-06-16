@@ -15,6 +15,9 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.linux:  $(VERSION)  $(PLATFORM)
+#
+# $Id: prefix.linux_arm,v 1.1.2.1 2008-04-15 14:11:33 alexpeshkoff Exp $
+#
 #	14 Apr 2008	Alan Barclay	alan AT escribe.co.uk
 
 
@@ -32,7 +35,7 @@ OS_ServerFiles=inet_server.cpp
 #LIB_LINK_RPATH:=-Wl,-rpath,
 #LIB_LINK_SONAME:=-Wl,-soname,
 
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbguard fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbsvcmgr
 CLIENT_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbguard fbmgr_bin fbsvcmgr
 
 Physical_IO_Module=unix.cpp

@@ -273,7 +273,7 @@ static bool compare_names( const nam* name, const qli_symbol* symbol)
 	if (!symbol)
 		return false;
 
-	const int l = name->nam_length;
+	int l = name->nam_length;
 	if (l != symbol->sym_length)
 		return false;
 
@@ -299,7 +299,7 @@ static bool compare_symbols( const qli_symbol* symbol1, const qli_symbol* symbol
 	if (!symbol1 || !symbol2)
 		return false;
 
-	const int l = symbol1->sym_length;
+	int l = symbol1->sym_length;
 	if (l != symbol2->sym_length)
 		return false;
 
@@ -462,15 +462,12 @@ static NAM decompile_symbol( qli_symbol* symbol)
  *	(Needed to support SQL idiocies)
  *
  **************************************/
-	const int l = symbol->sym_length;
+	int l = symbol->sym_length;
 
 	NAM name = (NAM) ALLOCDV(type_nam, l);
 	name->nam_length = l;
 	name->nam_symbol = symbol;
-	if (l)
-		memcpy(name->nam_string, symbol->sym_string, l);
 
-	/*
 	TEXT* p = name->nam_string;
 	const TEXT* q = symbol->sym_string;
 
@@ -480,7 +477,6 @@ static NAM decompile_symbol( qli_symbol* symbol)
 			*p++ = c; //UPPER(c);
 
 		} while (--l);
-	*/
 
 	return name;
 }
@@ -669,6 +665,9 @@ static void expand_edit_string( qli_nod* node, qli_print_item* item)
  *	Default edit_string and query_header.
  *
  **************************************/
+	qli_fun* function;
+	qli_map* map;
+
 	switch (node->nod_type) {
 	case nod_min:
 	case nod_rpt_min:
@@ -708,10 +707,8 @@ static void expand_edit_string( qli_nod* node, qli_print_item* item)
 		break;
 
 	case nod_map:
-		{
-			qli_map* map = (qli_map*) node->nod_arg[e_map_map];
-			expand_edit_string(map->map_node, item);
-		}
+		map = (qli_map*) node->nod_arg[e_map_map];
+		expand_edit_string(map->map_node, item);
 		return;
 
 	case nod_field:
@@ -719,11 +716,9 @@ static void expand_edit_string( qli_nod* node, qli_print_item* item)
 		break;
 
 	case nod_function:
-		{
-			qli_fun* function = (qli_fun*) node->nod_arg[e_fun_function];
-			if (!item->itm_query_header)
-				item->itm_query_header = function->fun_symbol->sym_string;
-		}
+		function = (qli_fun*) node->nod_arg[e_fun_function];
+		if (!item->itm_query_header)
+			item->itm_query_header = function->fun_symbol->sym_string;
 		return;
 
 	default:
@@ -809,7 +804,9 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
  *
  **************************************/
 	qli_nod* node;
+	qli_const* constant;
 	qli_ctx* context;
+	NAM name;
 	qli_syntax* value;
 
 	switch (input->syn_type) {
@@ -950,11 +947,9 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		return expand_function(input, stack);
 
 	case nod_constant:
-		{
-			node = make_node(input->syn_type, 0);
-			qli_const* constant = (qli_const*) input->syn_arg[0];
-			node->nod_desc = constant->con_desc;
-		}
+		node = make_node(input->syn_type, 0);
+		constant = (qli_const*) input->syn_arg[0];
+		node->nod_desc = constant->con_desc;
 		return node;
 
 	case nod_prompt:
@@ -963,11 +958,9 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 		return node;
 
 	case nod_star:
-		{
-			NAM name = (NAM) input->syn_arg[0];
-			ERRQ_print_error(141, name->nam_string);
-			// Msg141 can't be used when a single element is required
-		}
+		name = (NAM) input->syn_arg[0];
+		ERRQ_print_error(141, name->nam_string);
+		// Msg141 can't be used when a single element is required
 
 	default:
 		ERRQ_bugcheck(135);			// Msg135 expand_expression: not yet implemented
@@ -1040,8 +1033,7 @@ static qli_nod* expand_field( qli_syntax* input, qli_lls* stack, qli_syntax* sub
 
 	if (!parent)
 		return node;
-
-	if (context->ctx_parent != parent) {
+	else if (context->ctx_parent != parent) {
 		/* The parent context may be hidden because we are part of
 		   a stream context.  Check out this possibility. */
 
@@ -1111,7 +1103,7 @@ static qli_nod* expand_function( qli_syntax* input, qli_lls* stack)
  **************************************/
 	qli_symbol* symbol = 0;
 	qli_fun* function = 0;
-	DBB database = 0;
+	DBB database;
 
 	qli_nod* node = make_node(input->syn_type, e_fun_count);
 	node->nod_count = 1;
@@ -1953,7 +1945,6 @@ static qli_nod* expand_statement( qli_syntax* input, qli_lls* right, qli_lls* le
 	case nod_erase:
 		routine = expand_erase;
 		break;
-
 	case nod_for:
 		routine = expand_for;
 		break;
@@ -2115,9 +2106,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 				(field->fld_system_flag
 				 && field->fld_system_flag != relation->rel_system_flag)
 				|| field->fld_flags & FLD_array)
-			{
 				continue;
-			}
 			qli_nod* assignment = make_assignment(make_field(field, context), 0, 0);
 			ALLQ_push((blk*) assignment, &stack);
 		}
@@ -2530,12 +2519,11 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 				gname = (NAM) element->syn_arg[1];
 			}
 			if (!strcmp(fname->nam_string, gname->nam_string))
-			{
-				if (!gctx || !fctx || !strcmp(fctx->nam_string, gctx->nam_string))
+				if (!gctx || !fctx
+					|| !strcmp(fctx->nam_string, gctx->nam_string))
 				{
 					return false;
 				}
-			}
 		}
 		return true;
 	}
@@ -2811,10 +2799,8 @@ static qli_nod* post_map( qli_nod* node, qli_ctx* context)
 // Check to see if the item has already been posted
 
 	for (map = context->ctx_map; map; map = map->map_next)
-	{
 		if (CMP_node_match(node, map->map_node))
 			break;
-	}
 
 	if (!map) {
 		map = (qli_map*) ALLOCD(type_map);
@@ -2857,8 +2843,7 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 
 	NAM* base = (NAM*) node->syn_arg;
 
-	for (; stack; stack = stack->lls_next)
-	{
+	for (; stack; stack = stack->lls_next) {
 		qli_ctx* context = (qli_ctx*) stack->lls_object;
 		*out_context = context;
 		NAM* ptr = base + node->syn_count;
@@ -2892,22 +2877,17 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 				{
 					if (ptr == base)
 						return field;
-					
 					name = *--ptr;
 
 					if (compare_names(name, relation->rel_symbol))
-					{
 						if (ptr == base)
 							return field;
-
-						name = *--ptr;
-					}
+						else
+							name = *--ptr;
 
 					if (compare_names(name, context->ctx_symbol))
-					{
 						if (ptr == base)
 							return field;
-					}
 					break;
 				}
 			break;

@@ -57,6 +57,7 @@
 #include "../jrd/opt_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
+#include "../jrd/thd.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
@@ -304,13 +305,23 @@ int INF_database_info(const SCHAR* items,
 			length = INF_convert(0, buffer);
 			break;
 
+#ifdef SUPERSERVER
 		case isc_info_current_memory:
-			length = INF_convert(dbb->dbb_memory_stats.getCurrentUsage(), buffer);
+			length = INF_convert(dbb->dbb_memory_stats.get_current_usage(), buffer);
 			break;
 
 		case isc_info_max_memory:
-			length = INF_convert(dbb->dbb_memory_stats.getMaximumUsage(), buffer);
+			length = INF_convert(dbb->dbb_memory_stats.get_maximum_usage(), buffer);
 			break;
+#else
+		case isc_info_current_memory:
+			length = INF_convert(MemoryPool::default_stats_group->get_current_usage(), buffer);
+			break;
+
+		case isc_info_max_memory:
+			length = INF_convert(MemoryPool::default_stats_group->get_maximum_usage(), buffer);
+			break;
+#endif
 
 		case isc_info_attachment_id:
 			length = INF_convert(PAG_attachment_id(tdbb), buffer);
@@ -563,7 +574,7 @@ int INF_database_info(const SCHAR* items,
 				}
 				continue;
 			}
-
+			{ // scope for VC6
 			for (const Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
 			{
 				if (att->att_flags & ATT_shutdown)
@@ -585,6 +596,7 @@ int INF_database_info(const SCHAR* items,
 					}
 				}
 			}
+			} // end scope for VC6
 			continue;
 
 		case isc_info_page_errors:
@@ -831,7 +843,7 @@ SCHAR* INF_put_item(SCHAR item,
 	STUFF_WORD(ptr, length);
 
 	if (length) {
-		memmove(ptr, string, length);
+		MEMMOVE(string, ptr, length);
 		ptr += length;
 	}
 

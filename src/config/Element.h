@@ -35,63 +35,55 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "../common/classes/fb_string.h"
+#include "JString.h"
 
 START_NAMESPACE
 
 class Stream;
 class InputStream;
 
-class Element : public Firebird::GlobalStorage
+class Element  
 {
 public:
-	explicit Element(const Firebird::string& elementName);
-	Element (const Firebird::string& elementName, const Firebird::string& elementValue);
-	virtual ~Element();
-
-	void addChild (Element *child);
-	Element* addChild (const Firebird::string& name);
-	
-	void addAttribute (Element *child);
-	void addAttribute (const Firebird::string& name);
-	Element* addAttribute (const Firebird::string& name, const Firebird::string& value);
-	Element* addAttribute (const Firebird::string& name, int value);
-
 	Element* findChild (const char *name, const char *attribute, const char *value);
-	void gen (int level, Stream *stream) const;
+	Element* addAttribute (JString name, int value);
+	void addAttribute (JString name);
+	void gen (int level, Stream *stream);
 	void setSource (int line, InputStream *stream);
+	void init(JString elementName);
 	const char* getAttributeValue (const char *name, const char *defaultValue);
 	const char* getAttributeValue (const char *name);
 	const char* getAttributeName (int position) const;
 	Element* findChildIgnoreCase (const char *name);
-	void indent (int level, Stream *stream) const;
-	void genXML (int level, Stream *stream) const;
+	Element* addChild (JString name);
+	Element* addAttribute (JString name, JString value);
+	void indent (int level, Stream *stream);
+	void genXML (int level, Stream *stream);
 	Element* findAttribute (const char *name);
-	const Element* findAttribute (const char *name) const;
 	Element* findAttribute (int seq);
 	const Element* findAttribute (int seq) const;
 	Element* findChild (const char *name);
-	const Element* findChild (const char *name) const;
-	void print (int level) const;
-	const Element* getAttributes() const { return attributes; }
+	void print (int level);
+	void addAttribute (Element *child);
+	void addChild (Element *child);
+	Element (JString elementName, JString elementValue);
+	Element(JString elementName);
+	virtual ~Element();
 
-	Firebird::string	name;
-	Firebird::string	value;
-
+	JString		name;
+	JString		value;
+	JString		innerText;
+	JString		outerText;
 	Element		*sibling;
+	Element		*parent;
 	Element		*children;
-
+	Element		*attributes;
 	int			lineNumber;
 	int			numberLines;
 	InputStream	*inputStream;
 	static int analyseText(const char* text);
-	void putQuotedText(const char* text, Stream* stream) const;
+	void putQuotedText(const char* text, Stream* stream);
 	static int analyzeData(int length, const UCHAR* data);
-private:
-	void init(const Firebird::string& elementName);
-	Firebird::string	innerText;
-	Element		*parent; // assigned but never used.
-	Element		*attributes;
 };
 
 END_NAMESPACE

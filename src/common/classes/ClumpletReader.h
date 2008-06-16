@@ -89,15 +89,6 @@ public:
 	void dump() const;
 #endif
 
-	// it is not exact comparison as clumplets may have same tags
-	// but in different order 
-	bool simpleCompare(const ClumpletReader &other) const
-	{
-		const size_t len = getBufferLength();
-		return (len == other.getBufferLength()) &&
-			(memcmp(getBuffer(), other.getBuffer(), len) == 0);
-	}
-
 protected:
 	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
 	ClumpletType getClumpletType(UCHAR tag) const;

@@ -36,41 +36,38 @@
 #endif // _MSC_VER > 1000
 
 #include "InputStream.h"
-#include "../common/classes/fb_string.h"
+#include "JString.h"
+
+#define AT_FILE_END		100000
 
 START_NAMESPACE
 
-class InputFile : public InputStream
+struct FileChange {
+	FileChange	*next;
+	int			lineNumber;
+	int			linesSkipped;
+	JString		insertion;
+};
+
+class InputFile : public InputStream  
 {
 public:
-	explicit InputFile(const char* name);
-	InputFile();
-	virtual ~InputFile();
-	
 	static bool pathEqual(const char *path1, const char *path2);
 	void rewrite();
-	void postChange (int lineNumber, int skip, const Firebird::string& insertion);
+	void postChange (int lineNumber, int skip, JString insertion);
 	virtual InputFile* getInputFile();
-	virtual const char* getFileName() const;
+	virtual const char* getFileName();
 	virtual const char* getSegment();
 	virtual void close();
+	InputFile(const char *fileName);
+	virtual ~InputFile();
 
-	bool openInputFile(const char* fileName); // caller is ConfigFile.cpp
-private:
-	struct FileChange : public Firebird::GlobalStorage
-	{
-		FileChange	*next;
-		int			lineNumber;
-		int			linesSkipped;
-		Firebird::string	insertion;
-	public:
-		FileChange() : insertion(getPool()) { }
-	};
-
+	JString		fileName;
 	void		*file;
 	char		buffer [1024];
-	Firebird::PathName	fileName;
-	FileChange*	changes;
+	FileChange	*changes;
+	InputFile(void);
+	bool openInputFile(const char* fileName);
 };
 
 END_NAMESPACE

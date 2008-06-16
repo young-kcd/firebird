@@ -22,4 +22,3 @@ s none @prefix@/lib/libstdc++.so.5=@prefix@/lib/libstdc++.so.5.0.5
 s none @prefix@/lib/libstdc++.so=@prefix@/lib/libstdc++.so.5
 s none @prefix@/lib/libgcc_s.so=@prefix@/lib/libgcc_s.so.1
 # EOF
-

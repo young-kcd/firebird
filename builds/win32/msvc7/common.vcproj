@@ -185,9 +185,6 @@
 				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp">
 			</File>
 			<File
@@ -206,9 +203,6 @@
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.cpp">
 			</File>
 			<File
@@ -216,9 +210,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.cpp">
 			</File>
 		</Filter>
 		<Filter

@@ -24,11 +24,11 @@ WARN_FLAGS=-Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-v
 CXXFLAGS:= $(CXXFLAGS) -fno-rtti
 
 PROD_FLAGS=-DNDEBUG $(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
-DEV_FLAGS=-DUSE_VALGRIND $(COMMON_FLAGS) $(WARN_FLAGS)
+DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
 
-EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print fbsvcmgr
+EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print fbsvcmgr
 CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
 
 Physical_IO_Module=os/posix/unix.cpp

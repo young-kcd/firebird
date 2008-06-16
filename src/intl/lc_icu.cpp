@@ -73,9 +73,8 @@ static bool texttype_default_init(texttype* tt,
 	}
 
 	// name comes from stack. Copy it.
-	ASCII* p = FB_NEW(*getDefaultMemoryPool()) ASCII[strlen(name) + 1];
-	strcpy(p, name);
-	tt->texttype_name = p;
+	tt->texttype_name = FB_NEW(*getDefaultMemoryPool())  ASCII[strlen(name) + 1];
+	strcpy(const_cast<ASCII*>(tt->texttype_name), name);
 
 	tt->texttype_version = TEXTTYPE_VERSION_1;
 	tt->texttype_country = CC_INTL;
@@ -117,7 +116,7 @@ static bool texttype_unicode_init(texttype* tt,
 bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const ASCII* configInfo,
 	const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes)
 {
-	const size_t len = strlen(name);
+	int len = strlen(name);
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
@@ -143,21 +142,20 @@ bool LCICU_texttype_init(texttype* tt,
 						 ULONG specificAttributesLength,
 						 const ASCII* configInfo)
 {
+	int len = strlen(name);
+
 	if (strcmp(name, charSetName) == 0)
 	{
 		return texttype_default_init(
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength, configInfo);
 	}
-
-	const size_t len = strlen(name);
-
-	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
+	else if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
 		return texttype_unicode_init(
 			tt, name, charSetName, attributes,
 			specificAttributes, specificAttributesLength, configInfo);
 	}
-
-	return false;
+	else
+		return false;
 }

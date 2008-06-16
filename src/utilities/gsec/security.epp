@@ -35,6 +35,10 @@
 #include "../jrd/isc_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
+#ifndef SUPERCLIENT
+#include "../common/classes/fb_string.h"
+#include "../jrd/jrd_pwd.h"
+#endif
 #include "../common/utils_proto.h"
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
@@ -44,7 +48,6 @@ static const char* SYSDBA_USER_NAME	= "SYSDBA";
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 						  FB_API_HANDLE DB,
-						  FB_API_HANDLE trans,
 						  internal_user_data* io_user_data,
 						  FPTR_SECURITY_CALLBACK display_func,
 						  void* callback_arg)
@@ -111,6 +114,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
  **************************************/
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	Firebird::string encrypted2;
+	ISC_STATUS_ARRAY tmp_status;
+	FB_API_HANDLE gds_trans = 0;
 	bool found;
 	SSHORT ret = 0;
 
@@ -121,12 +126,17 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		}
 	}
 
+	START_TRANSACTION
+	ON_ERROR
+		return GsecMsg75;		/* gsec error */
+	END_ERROR;
+
 	switch (io_user_data->operation) {
 	case ADD_OPER:
 		/* this checks the "entered" flags for each parameter (except the name)
 		   and makes all non-entered parameters null valued */
 
-		STORE (TRANSACTION_HANDLE trans) U IN USERS USING
+		STORE U IN USERS USING
 			strcpy(U.USER_NAME, io_user_data->user_name);
 			if (io_user_data->uid_entered) {
 				U.UID = io_user_data->uid;
@@ -148,7 +158,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 				U.GROUP_NAME.NULL = ISC_TRUE;
 			if (io_user_data->password_entered) {
 				ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
-				Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
+				SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 				strcpy(U.PASSWD, encrypted2.c_str());
 				U.PASSWD.NULL = ISC_FALSE;
 			}
@@ -184,7 +194,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		   changes the current value to the null value */
 
 		found = false;
-		FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+		FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 			found = true;
 			MODIFY U USING
 				if (io_user_data->uid_entered) {
@@ -207,7 +217,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 					U.GROUP_NAME.NULL = ISC_TRUE;
 				if (io_user_data->password_entered) {
 					ENC_crypt(encrypted1, sizeof encrypted1, io_user_data->password, PASSWORD_SALT);
-					Jrd::SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
+					SecurityDatabase::hash(encrypted2, io_user_data->user_name, &encrypted1[2]);
 					strcpy(U.PASSWD, encrypted2.c_str());
 					U.PASSWD.NULL = ISC_FALSE;
 				}
@@ -251,7 +261,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
 				ON_ERROR
@@ -272,7 +282,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		found = false;
 		if (!io_user_data->user_name_entered) {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS
+			FOR U IN USERS
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
 				*(io_user_data->sys_user_name) = '\0';
@@ -291,7 +301,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			END_ERROR;
 		}
 		else {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+			FOR U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
 				*(io_user_data->sys_user_name) = '\0';
@@ -316,31 +326,11 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		break;
 	}
 
-	return ret;
-}
+/* rollback if we have an error using tmp_status to avoid 
+   overwriting the error status which the caller wants to see */
 
-SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
-						  FB_API_HANDLE DB,
-						  internal_user_data* io_user_data,
-						  FPTR_SECURITY_CALLBACK display_func,
-						  void* callback_arg)
-{
-	FB_API_HANDLE gds_trans = 0;
-
-	START_TRANSACTION
-	ON_ERROR
-		return GsecMsg75;		/* gsec error */
-	END_ERROR;
-
-	SSHORT ret = SECURITY_exec_line(isc_status, DB, gds_trans, io_user_data, display_func, callback_arg);
-
-	// rollback if we have an error using tmp_status to avoid 
-	// overwriting the error status which the caller wants to see
-
-	if (ret) {
-		ISC_STATUS_ARRAY tmp_status;
+	if (ret)
 		isc_rollback_transaction(tmp_status, &gds_trans);
-	}
 	else {
 		COMMIT
 		ON_ERROR

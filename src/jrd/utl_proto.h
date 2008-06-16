@@ -71,6 +71,14 @@ struct	bstream* API_ROUTINE Bopen(ISC_QUAD*, FB_API_HANDLE, FB_API_HANDLE, const
 struct  bstream* API_ROUTINE BLOB_open(FB_API_HANDLE, SCHAR*, int);
 int		API_ROUTINE BLOB_put(SCHAR, struct bstream*);
 
+#ifdef VMS
+ISC_STATUS API_ROUTINE gds__attach_database_d(ISC_STATUS*,
+												 struct dsc$descriptor_s*,
+												 int, SSHORT, const SCHAR*,
+												 SSHORT);
+void	API_ROUTINE gds__wake_init(void);
+#endif
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -80,7 +88,7 @@ namespace Firebird
 {
 	class ClumpletWriter;
 }
-void setLogin(Firebird::ClumpletWriter& dpb);
+void setLogin(Firebird::ClumpletWriter&);
 
 #endif // JRD_UTL_PROTO_H
 

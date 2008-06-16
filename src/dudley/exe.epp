@@ -96,7 +96,7 @@ static void erase_userpriv(USERPRIV, TEXT *, USRE, UPFE);
 static void get_field_desc(DUDLEY_FLD);
 static void get_global_fields(void);
 static void get_relations(DBB);
-static USHORT get_prot_mask(const TEXT *, TEXT *);
+static USHORT get_prot_mask(TEXT *, TEXT *);
 static SYM get_symbol(enum sym_t, TEXT *, DUDLEY_CTX);
 static void get_triggers(DBB);
 static void get_udfs(DBB);
@@ -186,11 +186,9 @@ void EXE_create_database( DBB dbb)
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
-#ifdef TRUSTED_AUTH
 	if (dudleyGlob.DDL_trusted) {
 		dpb.insertTag(isc_dpb_trusted_auth);
 	}
-#endif
 
 	const TEXT* file_name = dbb->dbb_name->sym_string;
 
@@ -359,11 +357,9 @@ void EXE_drop_database( DBB dbb)
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
-#ifdef TRUSTED_AUTH
 	if (dudleyGlob.DDL_trusted) {
 		dpb.insertTag(isc_dpb_trusted_auth);
 	}
-#endif
 
 	if (isc_attach_database(gds_status, 0, dbb->dbb_name->sym_string, 
 				&DB, dpb.getBufferLength(), 
@@ -662,11 +658,9 @@ void EXE_modify_database( DBB dbb)
 	if (p = dudleyGlob.DDL_default_password) {
 		dpb.insertString(isc_dpb_password, p, strlen(p));
 	}
-#ifdef TRUSTED_AUTH
 	if (dudleyGlob.DDL_trusted) {
 		dpb.insertTag(isc_dpb_trusted_auth);
 	}
-#endif
 
 /*
 	if (dbb->dbb_flags & DBB_drop_log) {
@@ -981,7 +975,6 @@ static void add_field( DUDLEY_FLD field)
 		X.RDB$QUERY_HEADER.NULL = FALSE;
 		store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 	}
-	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	if (field->fld_system)
 		X.RDB$SYSTEM_FLAG = field->fld_system;
 	else
@@ -1003,7 +996,10 @@ static void add_files( DBB dbb, FIL files)
  *	Add a file to an existing database.  
  *
  **************************************/
+	SLONG length, start;
 	FIL file, next;
+	TEXT s[128];
+	SSHORT shadow_number;
 
 /* Reverse the order of files (parser left them backwards) */
 
@@ -1017,10 +1013,7 @@ static void add_files( DBB dbb, FIL files)
    current allocation of database, then check the allocation
    against the user given maximum length (if given). */
 
-	SLONG length = 0, start = 0;
-	
 	if (dbb) {
-		TEXT s[128];
 		if (isc_database_info(gds_status, &DB, sizeof(alloc_info), alloc_info,
 							   sizeof(s), s) || s[0] != isc_info_allocation) 
 		{
@@ -1034,8 +1027,12 @@ static void add_files( DBB dbb, FIL files)
 		length = (dbb->dbb_length) ? dbb->dbb_length + 1 : 0;
 		start = MAX(start, length);
 	}
+	else {
+		length = 0;
+		start = 0;
+	}
 
-	SSHORT shadow_number = 0;
+	shadow_number = 0;
 	for (file = files; file; file = file->fil_next) {
 		if (file->fil_shadow_number != shadow_number) {
 			start = 0;
@@ -1257,7 +1254,6 @@ static void add_global_field( DUDLEY_FLD field)
 	X.RDB$FIELD_TYPE = (int) field->fld_dtype;
 	X.RDB$FIELD_LENGTH = field->fld_length;
 	X.RDB$FIELD_SCALE = field->fld_scale;
-	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	X.RDB$SYSTEM_FLAG = field->fld_system;
 	X.RDB$FIELD_SUB_TYPE = field->fld_sub_type;
 
@@ -1535,7 +1531,6 @@ static void add_relation( DUDLEY_REL relation)
 		X.RDB$DESCRIPTION.NULL = FALSE;
 	}
 
-	X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	X.RDB$SYSTEM_FLAG = relation->rel_system;
 
 	END_STORE;
@@ -1806,7 +1801,6 @@ static void add_view( DUDLEY_REL relation)
 		else
 			X.RDB$DESCRIPTION.NULL = TRUE;
 
-		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$SYSTEM_FLAG = relation->rel_system;
 
 	END_STORE
@@ -1894,7 +1888,6 @@ static void add_view( DUDLEY_REL relation)
 				X.RDB$QUERY_HEADER.NULL = FALSE;
 				store_query_header(field->fld_query_header, &X.RDB$QUERY_HEADER);
 			}
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
 			else
@@ -2859,7 +2852,7 @@ static void get_relations( DBB databaseL)
 }
 
 
-static USHORT get_prot_mask( const TEXT * relation, TEXT * field)
+static USHORT get_prot_mask( TEXT * relation, TEXT * field)
 {
 /**************************************
  *
@@ -3360,11 +3353,8 @@ static void modify_field( DUDLEY_FLD field)
 			if (field->fld_flags & fld_null_query_header)
 				X.RDB$QUERY_HEADER.NULL = TRUE;
 
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_flags & fld_explicit_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
-			else
-				X.RDB$SYSTEM_FLAG = 0;
 
 			if (field->fld_source)
 				MOVE_SYMBOL(field->fld_source, X.RDB$FIELD_SOURCE);
@@ -3433,11 +3423,8 @@ static void modify_global_field( DUDLEY_FLD field)
 					DDL_err(83, SafeArg() << name->sym_name);
 				/* msg 83: Unauthorized attempt to change field %s to or from blob */
 			}
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (field->fld_flags & fld_explicit_system)
 				X.RDB$SYSTEM_FLAG = field->fld_system;
-			else
-				X.RDB$SYSTEM_FLAG = 0;
 			
 			if (field->fld_flags & fld_null_description)
 				X.RDB$DESCRIPTION.NULL = TRUE;
@@ -3584,12 +3571,8 @@ static void modify_relation( DUDLEY_REL relation)
 				store_text(relation->rel_description, &X.RDB$DESCRIPTION);
 				X.RDB$DESCRIPTION.NULL = FALSE;
 			}
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			if (relation->rel_flags & rel_explicit_system)
 				X.RDB$SYSTEM_FLAG = relation->rel_system;
-			else
-				X.RDB$SYSTEM_FLAG = 0;
-				
 			if (relation->rel_filename) {
 				if (X.RDB$EXTERNAL_FILE.NULL)
 					DDL_err(86, SafeArg() << name->sym_string);
@@ -4063,7 +4046,8 @@ static void store_userpriv(USERPRIV upriv,
 		MOVE_SYMBOL(usr->usre_name, X.RDB$USER);
 		strcpy(X.RDB$GRANTOR, grantor);
 		strcpy(X.RDB$PRIVILEGE, priv);
-		X.RDB$GRANT_OPTION = (upriv->userpriv_flags & USERPRIV_grant) ? TRUE : FALSE;
+		X.RDB$GRANT_OPTION =
+			(upriv->userpriv_flags & USERPRIV_grant) ? TRUE : FALSE;
 		MOVE_SYMBOL(upriv->userpriv_relation, X.RDB$RELATION_NAME);
 		X.RDB$USER_TYPE = obj_user;
 		X.RDB$OBJECT_TYPE = obj_relation;

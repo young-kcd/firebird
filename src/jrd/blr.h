@@ -62,8 +62,6 @@
 #define blr_domain_name		(unsigned char)18
 #define blr_domain_name2	(unsigned char)19
 #define blr_not_nullable	(unsigned char)20
-#define blr_column_name		(unsigned char)21
-#define blr_column_name2	(unsigned char)22
 
 // first sub parameter for blr_domain_name[2]
 #define blr_domain_type_of	(unsigned char)0
@@ -350,26 +348,5 @@
 #define blr_init_variable	(unsigned char)184
 #define blr_recurse			(unsigned char)185
 #define blr_sys_function	(unsigned char)186
-
-// FB 2.5 specific BLR
-
-#define blr_auto_trans		(unsigned char)187
-#define blr_similar			(unsigned char)188
-#define blr_exec_stmt		(unsigned char)189
-
-// subcodes of blr_exec_stmt
-#define blr_exec_stmt_inputs		(unsigned char) 1	// input parameters count
-#define blr_exec_stmt_outputs		(unsigned char) 2	// output parameters count
-#define blr_exec_stmt_sql			(unsigned char) 3
-#define blr_exec_stmt_proc_block	(unsigned char) 4
-#define blr_exec_stmt_data_src		(unsigned char) 5
-#define blr_exec_stmt_user			(unsigned char) 6
-#define blr_exec_stmt_pwd			(unsigned char) 7
-#define blr_exec_stmt_tran    		(unsigned char) 8	// not implemented yet
-#define blr_exec_stmt_tran_clone	(unsigned char) 9	// make transaction parameters equal to current transaction
-#define blr_exec_stmt_privs			(unsigned char) 10
-#define blr_exec_stmt_in_params		(unsigned char) 11	// not named input parameters
-#define blr_exec_stmt_in_params2	(unsigned char) 12	// named input parameters
-#define blr_exec_stmt_out_params	(unsigned char) 13	// output parameters
 
 #endif // JRD_BLR_H

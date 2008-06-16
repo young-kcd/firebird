@@ -41,6 +41,8 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
+
 
 
 void (*dbg_block) (const BufferDesc*);
@@ -895,18 +897,16 @@ static void dmp_pip(const page_inv_page* page, ULONG sequence)
 
 	for (int n = 0; n < control->pgc_ppp;) {
 		while (n < control->pgc_ppp)
-		{
 			if (BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d - ", n);
 		while (n < control->pgc_ppp)
-		{
 			if (!BIT(n))
 				break;
-			n++;
-		}
+			else
+				n++;
 		fprintf(dbg_file, "%d, ", n - 1);
 	}
 

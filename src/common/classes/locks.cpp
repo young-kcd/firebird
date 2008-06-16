@@ -27,80 +27,37 @@
 
 #include "../../include/firebird.h"
 #include "../../common/classes/locks.h"
-#include "../../common/thd.h"
-#include "../../jrd/common.h"
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 
 namespace Firebird {
 
-#if defined(WIN_NT)
-
-TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct = &TryEnterCS::notImpl;
-
-static TryEnterCS tryEnterCS;
-
-TryEnterCS::TryEnterCS()
-{
-	HMODULE kernel32 = GetModuleHandle("kernel32.dll");
-	if (kernel32) {
-		m_funct = (tTryEnterCriticalSection*) 
-			GetProcAddress(kernel32, "TryEnterCriticalSection");
-	}
-}
-
+#ifdef WIN_NT
 
 #define MISS_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(-1))
 #define INIT_SPIN_COUNT ((tSetCriticalSectionSpinCount *)(0))
 
-tSetCriticalSectionSpinCount* Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
+tSetCriticalSectionSpinCount* 
+	Spinlock::SetCriticalSectionSpinCount = INIT_SPIN_COUNT;
 
-void Spinlock::init()
-{
+Spinlock::Spinlock() {
 	if (SetCriticalSectionSpinCount == MISS_SPIN_COUNT)
 		return;
-
 	if (SetCriticalSectionSpinCount == INIT_SPIN_COUNT) {
-		HMODULE kernel32 = GetModuleHandle("kernel32.dll");
-		if (!kernel32) {
+		HMODULE kernel32 = LoadLibrary("kernel32.dll");
+		if (! kernel32) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
 		}
 		SetCriticalSectionSpinCount = 
 			(tSetCriticalSectionSpinCount *) GetProcAddress(
 					kernel32, "SetCriticalSectionSpinCount");
-		if (!SetCriticalSectionSpinCount) {
+		if (! SetCriticalSectionSpinCount) {
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
 		}
 	}
-
 	SetCriticalSectionSpinCount(&spinlock, 4000);
 }
 
-#elif defined(SOLARIS_MT)
+#endif  // WIN_NT
 
-#error Fix me!
-
-#else //posix mutex
-
-pthread_mutexattr_t Mutex::attr;
-
-void Mutex::initMutexes()
-{
-	// Throw exceptions on errors, but they will not be processed in init
-	// (first constructor). Better logging facilities are required here.
-	int rc = pthread_mutexattr_init(&attr);
-	if (rc < 0)
-		system_call_failed::raise("pthread_mutexattr_init", rc);
-
-	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	if (rc < 0)
-		system_call_failed::raise("pthread_mutexattr_settype", rc);
-}
-
-#endif
-
-} // namespace Firebird
+}		// namespace Firebird

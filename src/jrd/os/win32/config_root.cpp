@@ -18,7 +18,6 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  Adriano dos Santos Fernandes
  */
 
 #include "firebird.h"
@@ -65,15 +64,8 @@ bool getRootFromRegistry(string& root)
 
 } // namespace
 
-
-bool ConfigRoot::initialized = false;
-Firebird::InitInstance<string> ConfigRoot::install_dir;
-
-
 void ConfigRoot::osConfigRoot()
 {
-	initialized = true;
-
 	// check the registry first
 //#if !defined(EMBEDDED)
 #if defined(SUPERCLIENT)
@@ -84,33 +76,28 @@ void ConfigRoot::osConfigRoot()
 	}
 #endif
 
-	if (install_dir().isEmpty())
+	// get the pathname of the running executable
+	string bin_dir = fb_utils::get_process_name();
+	if (bin_dir.length() != 0)
 	{
-		// get the pathname of the running executable
-		string bin_dir = fb_utils::get_process_name();
-		if (bin_dir.length() != 0)
-		{
-			// get rid of the filename
-			const size_t index = bin_dir.rfind(PathUtils::dir_sep);
-			install_dir() = bin_dir.substr(0, index);
-		}
-	}
+		// get rid of the filename
+		int index = bin_dir.rfind(PathUtils::dir_sep);
+		bin_dir = bin_dir.substr(0, index);
 
-	if (install_dir().hasData())
-	{
 		// how should we decide to use bin_dir instead of root_dir? any ideas?
 		// ???
 #if defined(EMBEDDED)
-		root_dir = install_dir() + PathUtils::dir_sep;
+		root_dir = bin_dir + PathUtils::dir_sep;
 		return;
 #endif
 
 		// go to the parent directory
-		const size_t index = install_dir().rfind(PathUtils::dir_sep, install_dir().length());
-		root_dir = (index ? install_dir().substr(0, index) : install_dir()) + PathUtils::dir_sep;
+		index = bin_dir.rfind(PathUtils::dir_sep, bin_dir.length());
+		root_dir = (index ? bin_dir.substr(0, index) : bin_dir) + PathUtils::dir_sep;
 		return;
 	}
 
 	// As a last resort get it from the default install directory
 	root_dir = FB_PREFIX;
 }
+

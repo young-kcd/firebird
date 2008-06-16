@@ -1,12 +1,5 @@
+Serwer baz danych Firebird 2.1
 ==================================================
-Serwer Baz Danych Firebird 2.5.0 pre alpha
-==================================================
-
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
 
 Ten dokument jest przewodnikiem instalacji serwera

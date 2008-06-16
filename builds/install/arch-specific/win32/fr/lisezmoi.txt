@@ -1,13 +1,7 @@
 
-========================================
-Firebird 2.5.0 pre-alpha (Windows Build)
-========================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
+==================================
+Firebird 2.1.1  (Windows Build)
+==================================
 
 o Introduction
 o Avertissements
@@ -27,11 +21,22 @@ Bienvenue dans le monde de Firebird 2.1.
 Avertissements
 ==============
 
-Cette version est une "Release candidate".
-Nous vous remercions de la tester et ainsi nous
-permettre de la valider en tant que version finale.
+Firebird 2.1.1 a été testé intensivement
+et peut être utiliseé en production. Toutefois, les
+utilisateurs sont invités à suivre ces prescriptions avant de
+déployer cette version en production. ie:
 
-N'utilisez pas cette version dans un environnement de production.
+ o Lisez les notes de version et le fichier installation_lisezmoi.txt.
+
+ o N'oubliez pas de sauvegarder vos données.
+
+ o Il est recommandé de faire d'abors une désinstallation.
+   Une désinstallation conserve vos fichier de log et de configuration.
+
+ o Il est recommandé de faire vos propres tests
+   avant tout déploiement en production.
+
+
 
 
 Problèmes connus

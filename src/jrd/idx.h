@@ -163,16 +163,16 @@ static const struct ini_idx_t indices[] = {
 	INDEX(21, ODS_8_0, rel_procedures, idx_unique, 1)
 		SEGMENT(f_prc_name, idx_metadata)	/* procedure name */
 	}},
-/*	define index RDB$INDEX_22 for RDB$PROCEDURES unique RDB$PROCEDURE_ID; */
-	INDEX(22, ODS_8_0, rel_procedures, idx_unique, 1)
+/*	define index RDB$INDEX_22 for RDB$PROCEDURES RDB$PROCEDURE_ID; */
+	INDEX(22, ODS_8_0, rel_procedures, 0, 1)
 		SEGMENT(f_prc_id, idx_numeric)	/* procedure id */
 	}},
 /*	define index RDB$INDEX_23 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NAME; */
 	INDEX(23, ODS_8_0, rel_exceptions, idx_unique, 1)
 		SEGMENT(f_xcp_name, idx_metadata)	/* exception name */
 	}},
-/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS unique RDB$EXCEPTION_NUMBER; */
-	INDEX(24, ODS_8_0, rel_exceptions, idx_unique, 1)
+/*	define index RDB$INDEX_24 for RDB$EXCEPTIONS RDB$EXCEPTION_NUMBER; */
+	INDEX(24, ODS_8_0, rel_exceptions, 0, 1)
 		SEGMENT(f_xcp_number, idx_numeric)	/* exception number */
 	}},
 /*	define index RDB$INDEX_25 for RDB$CHARACTER_SETS unique	RDB$CHARACTER_SET_ID; */
@@ -295,21 +295,9 @@ static const struct ini_idx_t indices[] = {
 /*	define index RDB$INDEX_45 for RDB$FILTERS RDB$FUNCTION_NAME; */
 	INDEX(45, ODS_11_0, rel_filters, idx_unique, 1)
 		SEGMENT(f_flt_name, idx_metadata)	/* function name */
-	}},
-
-	/* Last index in both ODS 11.0 and ODS 11.1 is RDB$INDEX_45 */
-
-	/* New indices added as part of ODS 11.2
-	 * These are now indices on all system tables that previously 
-	 * did not have one.
-	 */
-
-	/*	define index RDB$INDEX_46 for RDB$GENERATORS unique RDB$GENERATOR_ID; */
-	INDEX(46, ODS_11_2, rel_gens, idx_unique, 1)
-		SEGMENT(f_gen_id, idx_numeric)	/* generator id */
 	}}
 
-	/* Last index in ODS 11.2 is RDB$INDEX_46 */
+	/* Last index in ODS 11.0 is RDB$INDEX_45 */
 };
 
 #define SYSTEM_INDEX_COUNT FB_NELEM(indices)

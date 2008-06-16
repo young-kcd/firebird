@@ -82,8 +82,7 @@ static in_sw_tab_t spit_in_sw_table[] =
 **************************************
 */
 
-struct header_rec 
-{
+struct header_rec {
 	TEXT name[18];
 	TEXT date_time[30];
 	TEXT text1[11];
@@ -102,12 +101,11 @@ static const char *header_rec_name	= "InterBase/gsplit, ";
 **************************************
 */
 
-struct b_fil 
-{
+struct b_fil {
 	b_fil *b_fil_next;
 	TEXT *b_fil_name;
 	SLONG b_fil_number;
-	SINT64 b_fil_size;
+	double b_fil_size;
 };
 
 const size_t b_fil_len = sizeof(b_fil);
@@ -122,13 +120,13 @@ const size_t b_fil_len = sizeof(b_fil);
 
 static int conv_ntoc(SLONG, TEXT *);
 static int free_file_list(b_fil*);
-static int final_flush_io_buff(const UCHAR*, SLONG, FILE_DESC);
+static int final_flush_io_buff(UCHAR *, SLONG, FILE_DESC);
 static int final_read_and_write(FILE_DESC, FILE_DESC,
 								const TEXT*, SLONG, UCHAR **, bool*);
-static int flush_io_buff(const UCHAR*, SLONG,
-						 FILE_DESC, SINT64, SLONG*, bool*);
-static int get_file_name(const SCHAR *, SINT64, b_fil**);
-static int get_file_size(const SCHAR *, const SCHAR *, SINT64*);
+static int flush_io_buff(UCHAR *, SLONG,
+						 FILE_DESC, double, SLONG *, bool*);
+static int get_file_name(const SCHAR *, double, b_fil**);
+static int get_file_size(const SCHAR *, const SCHAR *, double *);
 static int get_function_option(const SCHAR *, gsplit_option*, const SCHAR *,
 	const in_sw_tab_t* const);
 static int gen_multy_bakup_files(b_fil*, FILE_DESC, SLONG);
@@ -137,10 +135,10 @@ static int join_multy_bakup_files(b_fil*);
 static int print_clo(const TEXT *);
 static int read_and_write(FILE_DESC, FILE_DESC,
 						  const TEXT*, SLONG,
-						  SINT64, UCHAR **, bool*, SINT64*, SLONG *);
+						  double, UCHAR **, bool*, double *, SLONG *);
 static int read_and_write_for_join(FILE_DESC, const TEXT*,
 								   UCHAR **, SLONG, SLONG *);
-static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT *);
+static int write_header(b_fil*, header_rec, FILE_DESC, TEXT *);
 
 
 
@@ -172,7 +170,9 @@ int main( int argc, char *argv[])
 	b_fil* file_ptr = NULL;
 	b_fil* file_list = NULL;
 	b_fil* prev_file = NULL;
-	SINT64 file_size = -1;
+	// Strange, never met a program with tenths of bytes... may need updating
+	// from double to int64.
+	double file_size = -1;
 	gsplit_option sw_replace = IN_SW_SPIT_0;
 
 /*******************************
@@ -183,7 +183,7 @@ int main( int argc, char *argv[])
 	for (in_sw_tab_t* in_sw_tab = spit_in_sw_table; in_sw_tab->in_sw_name;
 		in_sw_tab++)
 	{
-		in_sw_tab->in_sw_state = false;
+		in_sw_tab->in_sw_state = FALSE;
 	}
 
 	/**********************************
@@ -210,9 +210,8 @@ int main( int argc, char *argv[])
 		}						// end of processing (*string == '-')
 		else {					// processing function specific command line options
 
-			switch (sw_replace)
-			{
-			case IN_SW_SPIT_SP:
+			switch (sw_replace) {
+			case (IN_SW_SPIT_SP):
 				if (!file_nm_sw) {	// process file name 
 					file_size = 0;
 					file_num = file_num + 1;
@@ -268,7 +267,7 @@ int main( int argc, char *argv[])
 				file_ptr->b_fil_size = file_size;
 				break;
 
-			case IN_SW_SPIT_JT:
+			case (IN_SW_SPIT_JT):
 				ret_cd = get_file_name(string, file_size, &file_ptr);
 
 				if (ret_cd == FB_FAILURE) {
@@ -293,6 +292,7 @@ int main( int argc, char *argv[])
 				ret_cd = print_clo(prog_name);
 				ret_cd = free_file_list(file_list);
 				return FB_FAILURE;
+				break;
 			}					// end of switch (sw_replace) 
 
 			argv++;
@@ -382,26 +382,24 @@ static int get_function_option(const SCHAR* prog_name,
 	{
 		SCHAR c;
 		for (const SCHAR* p = string + 1; c = *p++;)
-		{
 			if (UPPER(c) != *q++)
 				break;
-		}
-		if (!c) 
-		{
+		if (!c) {
 			if (*sw_replace == IN_SW_SPIT_0) {
 				*sw_replace = (gsplit_option) in_sw_tab->in_sw;
 				return FB_SUCCESS;
 			}
-
-			if (*sw_replace != in_sw_tab->in_sw) {
-				fprintf(stderr,
-						   "%s: invalid option '%s', incompatible option\n",
-						   prog_name, string);
-				ret_cd = print_clo(prog_name);
-				return FB_FAILURE;
+			else {
+				if (*sw_replace != in_sw_tab->in_sw) {
+					fprintf(stderr,
+							   "%s: invalid option '%s', incompatible option\n",
+							   prog_name, string);
+					ret_cd = print_clo(prog_name);
+					return FB_FAILURE;
+				}
+				else			// compatible option 
+					break;
 			}
-
-			break;
 		}						// end of if (!c)
 	}							// end of for loop 
 
@@ -415,7 +413,7 @@ static int get_function_option(const SCHAR* prog_name,
 }
 
 
-static int get_file_name( const SCHAR* string, SINT64 file_size, b_fil** file_ptr)
+static int get_file_name( const SCHAR * string, double file_size, b_fil** file_ptr)
 {
 /********************************************************************
 **
@@ -445,7 +443,7 @@ static int get_file_name( const SCHAR* string, SINT64 file_size, b_fil** file_pt
 }
 
 
-static int get_file_size(const SCHAR* prog_name, const SCHAR* string, SINT64* file_size)
+static int get_file_size(const SCHAR* prog_name, const SCHAR* string, double* file_size)
 {
 /********************************************************************
 **
@@ -636,8 +634,8 @@ static int gen_multy_bakup_files(b_fil* file_list,
 	SLONG io_size = 0;
 	b_fil* fl_ptr = file_list;
 
-	SINT64 byte_read = 0;
-	SINT64 file_size = 0;
+	double byte_read = 0;
+	double file_size = 0;
 	
 	while (true) {
 		if (fl_ptr != NULL) {
@@ -701,15 +699,18 @@ static int gen_multy_bakup_files(b_fil* file_list,
 										&byte_read, &byte_write);
 				switch (ret_cd) {
 				case FB_FAILURE:
-					free(io_buffer);
-					return FB_FAILURE;
+					{
+						free(io_buffer);
+						return FB_FAILURE;
+						break;
+					}
 
 				case FILE_IS_FULL:
 					{
 						byte_read = 0;	/* reset byte read count,
 										   ** prepare for next read 
 										 */
-						const UCHAR* remaining_io = io_buffer + byte_write;
+						UCHAR* remaining_io = io_buffer + byte_write;
 						SLONG remaining_io_len = IO_BUFFER_SIZE - byte_write;
 						while (!flush_done && (fl_ptr != NULL)) {
 							if (!fl_ptr->b_fil_next && fl_ptr->b_fil_size == 0)
@@ -772,7 +773,8 @@ static int gen_multy_bakup_files(b_fil* file_list,
 								}
 								else {
 									remaining_io = remaining_io + byte_write;
-									remaining_io_len = remaining_io_len - byte_write;
+									remaining_io_len = remaining_io_len -
+										byte_write;
 								}
 							}
 						}		// end of while loop
@@ -797,10 +799,10 @@ static int read_and_write(FILE_DESC input_file_desc,
 						  FILE_DESC output_fl_desc,
 						  const TEXT* file_name,
 						  SLONG io_size,
-						  SINT64 file_size,
+						  double file_size,
 						  UCHAR** io_buffer,
 						  bool* end_of_input,
-						  SINT64* byte_read,
+						  double *byte_read,
 						  SLONG* byte_write)
 {
 
@@ -842,12 +844,14 @@ static int read_and_write(FILE_DESC input_file_desc,
 		*end_of_input = true;
 		*byte_read = *byte_read + read_cnt;
 		return FB_SUCCESS;
+		break;
 
 	case (-1):					// read failed 
 		close(output_fl_desc);
 		fprintf(stderr,
 				   "fail to read input from stdin, errno = %d\n", errno);
 		return FB_FAILURE;
+		break;
 
 	default:					// read ok 
 		*byte_read = *byte_read + read_cnt;
@@ -860,15 +864,18 @@ static int read_and_write(FILE_DESC input_file_desc,
 	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
+		break;
 
 	default:
 		if (write_cnt == read_cnt)	// write ok 
 			return FB_SUCCESS;
+		else {					// write less data then it reads in 
 
-		// write less data than it reads in 
-		close(output_fl_desc);
-		*byte_write = write_cnt;
-		return FILE_IS_FULL;
+			close(output_fl_desc);
+			*byte_write = write_cnt;
+			return FILE_IS_FULL;
+		}
+		break;
 	}
 }
 
@@ -902,12 +909,14 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 		close(output_fl_desc);
 		*end_of_input = true;
 		return FB_SUCCESS;
+		break;
 
 	case (-1):					// read failed 
 		close(output_fl_desc);
 		fprintf(stderr,
 				   "problem when reading input file, errno = %d\n", errno);
 		return FB_FAILURE;
+		break;
 
 	default:					// read ok 
 		break;
@@ -919,16 +928,20 @@ static int final_read_and_write(FILE_DESC input_file_desc,
 	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
+		break;
 
 	default:
 		if (write_cnt == read_cnt)	// write ok 
 			return FB_SUCCESS;
+		else {					// write less data then it reads in 
 
-		fprintf(stderr,
-				   "There is no enough space to write to back up file %s\n",
-				   file_name);
-		close(output_fl_desc);
-		return FB_FAILURE;
+			fprintf(stderr,
+					   "There is no enough space to write to back up file %s\n",
+					   file_name);
+			close(output_fl_desc);
+			return FB_FAILURE;
+		}
+		break;
 	}
 }
 
@@ -966,9 +979,8 @@ static int join_multy_bakup_files( b_fil* file_list)
 
 	SLONG cnt = 0, total_int = 0;
 	// Why two variables to achieve this simple loop?
-	const b_fil* next_fl = NULL;
-	for (const b_fil* fl_ptr = file_list; fl_ptr; fl_ptr = next_fl) 
-	{
+	b_fil* next_fl = NULL;
+	for (b_fil* fl_ptr = file_list; fl_ptr; fl_ptr = next_fl) {
 		cnt++;
 		next_fl = fl_ptr->b_fil_next;
 		const TEXT* file_name = fl_ptr->b_fil_name;
@@ -1077,10 +1089,12 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		case (0):				// no more data to be read 
 			close(input_fl_desc);
 			return FB_SUCCESS;
+			break;
 
 		case (-1):				// read failed 
 			close(input_fl_desc);
 			return FB_FAILURE;
+			break;
 
 		default:				// this is the last read 
 			break;
@@ -1092,6 +1106,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		case (-1):				// write failed 
 			close(input_fl_desc);
 			return FB_FAILURE;
+			break;
 
 		default:
 			fb_assert(write_cnt == read_cnt);
@@ -1119,22 +1134,57 @@ static int conv_ntoc( SLONG numeric_in, TEXT char_out[])
 *********************************************************************
 */
 
-	if (numeric_in <= 0)
-		return FB_FAILURE;
+	SLONG i = numeric_in;
+	SLONG indx = 3;
 
-	int i = numeric_in;
-	int indx = 3;
+	while (true) {
+		const SLONG mod = i % 10;
+		switch (mod) {
+		case (0):
+			char_out[indx] = '0';
+			break;
 
-	while (indx >= 0 && i > 0) 
-	{
-		const int mod = i % 10;
-		char_out[indx] = '0' + mod;
-		--indx;
+		case (1):
+			char_out[indx] = '1';
+			break;
+
+		case (2):
+			char_out[indx] = '2';
+			break;
+
+		case (3):
+			char_out[indx] = '3';
+			break;
+
+		case (4):
+			char_out[indx] = '4';
+			break;
+
+		case (5):
+			char_out[indx] = '5';
+			break;
+
+		case (6):
+			char_out[indx] = '6';
+			break;
+
+		case (7):
+			char_out[indx] = '7';
+			break;
+
+		case (8):
+			char_out[indx] = '8';
+			break;
+
+		default:
+			char_out[indx] = '9';
+			break;
+		}
+		indx = indx - 1;
 		i = i / 10;
+		if (i <= 0)
+			break;
 	}
-
-	if (i > 0) // number was too big
-		return FB_FAILURE;
 
 	for (; indx >= 0; indx--) {
 		char_out[indx] = ' ';
@@ -1143,7 +1193,7 @@ static int conv_ntoc( SLONG numeric_in, TEXT char_out[])
 }
 
 
-static int write_header(const b_fil* fl_ptr,
+static int write_header(b_fil*		fl_ptr,
 						header_rec	hdr_rec,
 						FILE_DESC	output_fl_desc,
 						TEXT		header_str[])
@@ -1191,20 +1241,22 @@ static int write_header(const b_fil* fl_ptr,
 	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
+		break;
 
 	default:
 		end = pos + strlen(file_name);
 		for (indx = pos; indx < end; indx++)
 			header_str[indx] = BLANK;
 		return FB_SUCCESS;
+		break;
 	}
 }
 
 
-static int flush_io_buff(const UCHAR* remaining_io,
+static int flush_io_buff(UCHAR*		remaining_io,
 						 SLONG		remaining_io_len,
 						 FILE_DESC	output_fl_desc,
-						 SINT64		file_size,
+						 double		file_size,
 						 SLONG*		byte_write,
 						 bool*		flush_done)
 {
@@ -1250,6 +1302,7 @@ static int flush_io_buff(const UCHAR* remaining_io,
 		close(output_fl_desc);
 		*flush_done = false;
 		return FB_FAILURE;
+		break;
 
 	default:
 		if (write_cnt == remaining_io_len)	// write ok 
@@ -1261,11 +1314,12 @@ static int flush_io_buff(const UCHAR* remaining_io,
 		}
 		*byte_write = write_cnt;
 		return FB_SUCCESS;
+		break;
 	}
 }
 
 
-static int final_flush_io_buff(const UCHAR* remaining_io,
+static int final_flush_io_buff(UCHAR * remaining_io,
 							   SLONG remaining_io_len,
 							   FILE_DESC output_fl_desc)
 {
@@ -1288,13 +1342,17 @@ static int final_flush_io_buff(const UCHAR* remaining_io,
 	case (-1):					// write failed 
 		close(output_fl_desc);
 		return FB_FAILURE;
+		break;
 
 	default:
 		if (write_cnt == remaining_io_len)	// write ok 
 			return FB_SUCCESS;
+		else {					// could not write out all remaining data 
 
-		close(output_fl_desc);
-		return FB_FAILURE;
+			close(output_fl_desc);
+			return FB_FAILURE;
+		}
+		break;
 	}
 }
 

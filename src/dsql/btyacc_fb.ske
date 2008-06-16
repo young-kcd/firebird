@@ -16,9 +16,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dsql.tab.h"
-#include "Parser.h"
 
 #define YYERROR_DETAILED
+
+typedef int Yshort;
 
 %% tables
 
@@ -37,16 +38,23 @@ extern _C_ Yshort yycheck[];
 extern _C_ Yshort yyctable[];
 
 #if YYDEBUG
-extern _C_ const char *yyname[];
-extern _C_ const char *yyrule[];
+extern _C_ char *yyname[];
+extern _C_ char *yyrule[];
 #endif
 
 %% header
 
+//
+// YYPOSN is user-defined text position type.
+//
+#ifndef YYPOSN
+#define YYPOSN int
+#endif
+
 #ifdef YYREDUCEPOSNFUNC
 #define YYCALLREDUCEPOSN(e)   \
-	if (reduce_posn) {     \
-	  YYREDUCEPOSNFUNC(yyps->pos, &(yyps->psp)[1 - yym], &(yyps->vsp)[1 - yym], \
+	if(reduce_posn) {     \
+	  YYREDUCEPOSNFUNC(yyps->pos, &(yyps->psp)[1-yym], &(yyps->vsp)[1-yym], \
 			   yym, yyps->psp - yyps->ps, yychar, yyposn, e);       \
 	  reduce_posn = 0;    \
 	}
@@ -56,7 +64,7 @@ extern _C_ const char *yyrule[];
 #endif
 
 
-#define YYPOSNARG(n) ((yyps->psp)[1 - yym + (n) - 1])
+#define YYPOSNARG(n) ((yyps->psp)[1-yym+(n)-1])
 #define YYPOSNOUT    (yyps->pos)
 #endif
 
@@ -70,9 +78,9 @@ extern _C_ const char *yyrule[];
 #define YYDELETEPOSN(v, n) 
 #endif
 
-#define yyclearin (yychar = (-1))
+#define yyclearin (yychar=(-1))
 
-#define yyerrok (yyps->errflag = 0)
+#define yyerrok (yyps->errflag=0)
 
 #ifndef YYSTACKGROWTH
 #define YYSTACKGROWTH 16
@@ -86,13 +94,75 @@ extern _C_ const char *yyrule[];
 int yydebug;
 #endif
 
+int yynerrs;
+
+/* These value/posn are taken from the lexer */
+YYSTYPE yylval;
+YYPOSN  yyposn;
+
+/* These value/posn of the root non-terminal are returned to the caller */
+YYSTYPE yyretlval;
+YYPOSN  yyretposn;
 
 #define YYABORT  goto yyabort
 #define YYACCEPT goto yyaccept
 #define YYERROR  goto yyerrlab
 #define YYVALID         do { if (yyps->save)          goto yyvalid; } while(0)
 #define YYVALID_NESTED  do { if (yyps->save && \
-                                 yyps->save->save == 0) goto yyvalid; } while(0)
+                                 yyps->save->save==0) goto yyvalid; } while(0)
+
+struct yyparsestate {
+  yyparsestate *save;        // Previously saved parser state
+  int           state;
+  int           errflag;
+  Yshort       *ssp;         // state stack pointer
+  YYSTYPE      *vsp;         // value stack pointer
+  YYPOSN       *psp;         // position stack pointer
+  YYSTYPE       val;         // value as returned by actions
+  YYPOSN        pos;         // position as returned by universal action
+  Yshort       *ss;          // state stack base
+  YYSTYPE      *vs;          // values stack base
+  YYPOSN       *ps;          // position stack base
+  int           lexeme;      // index of the conflict lexeme in the lexical queue
+  unsigned int  stacksize;   // current maximum stack size
+  Yshort        ctry;        // index in yyctable[] for this conflict
+};
+
+// Current parser state
+static yyparsestate *yyps=0;
+
+// yypath!=NULL: do the full parse, starting at *yypath parser state.
+static yyparsestate *yypath=0;
+
+// Base of the lexical value queue
+static YYSTYPE *yylvals=0;
+
+// Current posistion at lexical value queue
+static YYSTYPE *yylvp=0;
+
+// End position of lexical value queue
+static YYSTYPE *yylve=0;
+
+// The last allocated position at the lexical value queue
+static YYSTYPE *yylvlim=0;
+
+// Base of the lexical position queue
+static YYPOSN *yylpsns=0;
+
+// Current posistion at lexical position queue
+static YYPOSN *yylpp=0;
+
+// End position of lexical position queue
+static YYPOSN *yylpe=0;
+
+// The last allocated position at the lexical position queue
+static YYPOSN *yylplim=0;
+
+// Current position at lexical token queue
+static Yshort *yylexp=0;
+
+static Yshort *yylexemes=0;
+
 //
 // For use in generated program
 //
@@ -102,79 +172,33 @@ int yydebug;
 #define yydepth (yyps->ssp - yyps->ss)
 
 
+//
+// Local prototypes.
+//
+int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous);
+
+int  YYLex1(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous);
+int  yyexpand();
+void YYSCopy(YYSTYPE *to, YYSTYPE *from, int size);
+void YYPCopy(YYPOSN  *to, YYPOSN  *from, int size);
+void YYMoreStack(yyparsestate *yyps);
+yyparsestate *YYNewState(int size);
+void YYFreeState(yyparsestate *p);
+
+
 %% body
 
 
-void Parser::yySCopy(YYSTYPE* to, YYSTYPE* from, int size)
-{
-  int i;                             
-  for (i = size - 1; i >= 0; i--) {
-    to[i] = from[i];
-  }
-}
-
-
-void Parser::yyPCopy(YYPOSN* to, YYPOSN* from, int size)
-{
-  int i;                             
-  for (i = size - 1; i >= 0; i--) {
-    to[i] = from[i];
-  }
-}
-
-
-void Parser::yyMoreStack(yyparsestate* yyps)
-{
-  int p = yyps->ssp - yyps->ss;                               
-  Yshort  *tss = yyps->ss;
-  YYSTYPE *tvs = yyps->vs;
-  YYPOSN  *tps = yyps->ps;
-  yyps->ss = new Yshort [yyps->stacksize + YYSTACKGROWTH];   
-  yyps->vs = new YYSTYPE[yyps->stacksize + YYSTACKGROWTH];  
-  yyps->ps = new YYPOSN [yyps->stacksize + YYSTACKGROWTH];  
-  memcpy(yyps->ss, tss, yyps->stacksize * sizeof(Yshort));  
-  yySCopy(yyps->vs, tvs, yyps->stacksize);
-  yyPCopy(yyps->ps, tps, yyps->stacksize);
-  yyps->stacksize += YYSTACKGROWTH;
-  delete[] tss;
-  delete[] tvs;
-  delete[] tps;
-  yyps->ssp = yyps->ss + p;                                   
-  yyps->vsp = yyps->vs + p;                                   
-  yyps->psp = yyps->ps + p;                                   
-}
-
-
-Parser::yyparsestate* Parser::yyNewState(int size)
-{
-  yyparsestate *p = new yyparsestate;
-  p->stacksize = size + 4;
-  p->ss = new Yshort [size + 4];
-  p->vs = new YYSTYPE[size + 4];
-  p->ps = new YYPOSN [size + 4];
-  memset(&p->vs[0], 0, (size + 4) * sizeof(YYSTYPE));
-  memset(&p->ps[0], 0, (size + 4) * sizeof(YYPOSN));
-  return p;
-}
-
-
-void Parser::yyFreeState(Parser::yyparsestate* p)
-{
-  delete[] p->ss;
-  delete[] p->vs;
-  delete[] p->ps;
-  delete p;
-}
-
-
-int Parser::parseAux()
-{
+//
+// Parser function
+//
+int dsql_yyparse(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous) {
   int yym, yyn, yystate, yychar, yynewerrflag;
   yyparsestate *yyerrctx = NULL;
   int reduce_posn;
 
 #if YYDEBUG
-  const char *yys;
+  char *yys;
   
   if ((yys = getenv("YYDEBUG"))) {
     yyn = *yys;
@@ -183,7 +207,7 @@ int Parser::parseAux()
   }
 #endif
   
-  yyps = yyNewState(YYDEFSTACKSIZE);
+  yyps = YYNewState(YYDEFSTACKSIZE);
   yyps->save = 0;
   yynerrs = 0;
   yyps->errflag = 0;
@@ -207,7 +231,7 @@ int Parser::parseAux()
   // Read one token
   //
   if (yychar < 0) {
-    if ((yychar = yylex1()) < 0) yychar = 0;
+    if ((yychar = YYLex1(client_dialect, db_dialect, parser_version, stmt_ambiguous)) < 0) yychar = 0;
 #if YYDEBUG
     if (yydebug) {
       yys = 0;
@@ -247,7 +271,7 @@ int Parser::parseAux()
       ctry = save->ctry;
       if (save->state != yystate) 
         goto yyabort;
-      yyFreeState(save); 
+      YYFreeState(save); 
 
     } else {
 
@@ -255,7 +279,7 @@ int Parser::parseAux()
       if (yydebug) {
         printf("yydebug[%d,%p]: CONFLICT in state %d. ", 
 	       int(yydepth), yytrial, yystate);
-        if (yyps->save) {
+        if(yyps->save) {
           printf("ALREADY in conflict. Continue trial parse.");
         } else {
           printf("Start trial parse.");
@@ -263,16 +287,16 @@ int Parser::parseAux()
         printf("\n");
       }
 #endif
-      yyparsestate *save = yyNewState(yyps->ssp - yyps->ss);
+      yyparsestate *save = YYNewState(yyps->ssp - yyps->ss);
       save->save    = yyps->save;
       save->state   = yystate;
       save->errflag = yyps->errflag;
       save->ssp     = save->ss + (yyps->ssp - yyps->ss);
       save->vsp     = save->vs + (yyps->vsp - yyps->vs);
       save->psp     = save->ps + (yyps->psp - yyps->ps);
-      memcpy (save->ss, yyps->ss, (yyps->ssp - yyps->ss + 1) * sizeof(Yshort));
-      yySCopy(save->vs, yyps->vs, (yyps->ssp - yyps->ss + 1));
-      yyPCopy(save->ps, yyps->ps, (yyps->ssp - yyps->ss + 1));
+      memcpy (save->ss, yyps->ss, (yyps->ssp - yyps->ss + 1)*sizeof(Yshort));
+      YYSCopy(save->vs, yyps->vs, (yyps->ssp - yyps->ss + 1));
+      YYPCopy(save->ps, yyps->ps, (yyps->ssp - yyps->ss + 1));
       ctry = yytable[yyn];
       if (yyctable[ctry] == -1) {
 #if YYDEBUG
@@ -345,7 +369,7 @@ int Parser::parseAux()
     yystate = yytable[yyn];
   yyshift:
     if (yyps->ssp >= yyps->ss + yyps->stacksize - 1) {
-      yyMoreStack(yyps);
+      YYMoreStack(yyps);
     }
     *++(yyps->ssp) = yystate;
     *++(yyps->vsp) = yylval;
@@ -379,20 +403,20 @@ yyerrhandler:
 #endif
     // Memorize most forward-looking error state in case
     // it's really an error.
-    if (yyerrctx == NULL || yyerrctx->lexeme < yylvp-yylvals) {
+    if(yyerrctx==NULL || yyerrctx->lexeme<yylvp-yylvals) {
       // Free old saved error context state
-      if (yyerrctx) yyFreeState(yyerrctx);
+      if(yyerrctx) YYFreeState(yyerrctx);
       // Create and fill out new saved error context state
-      yyerrctx = yyNewState(yyps->ssp - yyps->ss);
+      yyerrctx = YYNewState(yyps->ssp - yyps->ss);
       yyerrctx->save = yyps->save;
       yyerrctx->state = yystate;
       yyerrctx->errflag = yyps->errflag;
       yyerrctx->ssp = yyerrctx->ss + (yyps->ssp - yyps->ss);
       yyerrctx->vsp = yyerrctx->vs + (yyps->vsp - yyps->vs);
       yyerrctx->psp = yyerrctx->ps + (yyps->psp - yyps->ps);
-      memcpy (yyerrctx->ss, yyps->ss, (yyps->ssp - yyps->ss + 1) * sizeof(Yshort));
-      yySCopy(yyerrctx->vs, yyps->vs, (yyps->ssp - yyps->ss + 1));
-      yyPCopy(yyerrctx->ps, yyps->ps, (yyps->ssp - yyps->ss + 1));
+      memcpy (yyerrctx->ss, yyps->ss, (yyps->ssp - yyps->ss + 1)*sizeof(Yshort));
+      YYSCopy(yyerrctx->vs, yyps->vs, (yyps->ssp - yyps->ss + 1));
+      YYPCopy(yyerrctx->ps, yyps->ps, (yyps->ssp - yyps->ss + 1));
       yyerrctx->lexeme = yylvp - yylvals;
     }
     yylvp  = yylvals   + save->lexeme;
@@ -403,8 +427,8 @@ yyerrhandler:
     yyps->vsp = yyps->vs + (save->vsp - save->vs);
     yyps->psp = yyps->ps + (save->psp - save->ps);
     memcpy (yyps->ss, save->ss, (yyps->ssp - yyps->ss + 1) * sizeof(Yshort));
-    yySCopy(yyps->vs, save->vs,  yyps->vsp - yyps->vs + 1);
-    yyPCopy(yyps->ps, save->ps,  yyps->psp - yyps->ps + 1);
+    YYSCopy(yyps->vs, save->vs,  yyps->vsp - yyps->vs + 1);
+    YYPCopy(yyps->ps, save->ps,  yyps->psp - yyps->ps + 1);
     ctry = ++save->ctry;
     yystate = save->state;
     // We tried shift, try reduce now
@@ -412,7 +436,7 @@ yyerrhandler:
       goto yyreduce;
     }
     yyps->save = save->save;
-    yyFreeState(save);
+    YYFreeState(save);
     //
     // Nothing left on the stack -- error
     //
@@ -434,10 +458,10 @@ yyerrhandler:
       yyps->vsp = yyps->vs + (yyerrctx->vsp - yyerrctx->vs);
       yyps->psp = yyps->ps + (yyerrctx->psp - yyerrctx->ps);
       memcpy (yyps->ss, yyerrctx->ss, (yyps->ssp - yyps->ss + 1) * sizeof(Yshort));
-      yySCopy(yyps->vs, yyerrctx->vs,  yyps->vsp - yyps->vs + 1);
-      yyPCopy(yyps->ps, yyerrctx->ps,  yyps->psp - yyps->ps + 1);
+      YYSCopy(yyps->vs, yyerrctx->vs,  yyps->vsp - yyps->vs + 1);
+      YYPCopy(yyps->ps, yyerrctx->ps,  yyps->psp - yyps->ps + 1);
       yystate = yyerrctx->state;
-      yyFreeState(yyerrctx);
+      YYFreeState(yyerrctx);
       yyerrctx = NULL;
     }
     yynewerrflag = 1; 
@@ -464,7 +488,7 @@ yyerrhandler:
                  int(yydepth), yytrial, *(yyps->ssp), yytable[yyn]);
 #endif
         /* Use label yyerrlab, so that compiler does not warn */
-        if (yyps->errflag != yyps->errflag) goto yyerrlab;
+        if(yyps->errflag != yyps->errflag) goto yyerrlab;
         yystate = yytable[yyn];
         goto yyshift; 
       } else {
@@ -476,9 +500,9 @@ yyerrhandler:
         if (yyps->ssp <= yyps->ss) {
 	  goto yyabort;
 	}
-	if (!yytrial) {
-	  YYDELETEVAL(yyps->vsp[0], 1);
-	  YYDELETEPOSN(yyps->psp[0], 1);
+	if(!yytrial) {
+	  YYDELETEVAL(yyps->vsp[0],1);
+	  YYDELETEPOSN(yyps->psp[0],1);
 	}
         --(yyps->ssp);
         --(yyps->vsp);
@@ -496,9 +520,9 @@ yyerrhandler:
              int(yydepth), yytrial, yystate, yychar, yys); 
     }
 #endif
-    if (!yytrial) {
-      YYDELETEVAL(yylval, 0);
-      YYDELETEPOSN(yyposn, 0);
+    if(!yytrial) {
+      YYDELETEVAL(yylval,0);
+      YYDELETEPOSN(yyposn,0);
     }
     yychar = (-1);
     goto yyloop;
@@ -517,9 +541,9 @@ yyreduce:
     if (yym) {
       int i;
       printf("<");
-      for (i = yym; i > 0; i--) {
-        if (i != yym) printf(", ");
-        YYDBPR((yyps->vsp)[1 - i]);
+      for (i=yym; i>0; i--) {
+        if (i!=yym) printf(", ");
+        YYDBPR((yyps->vsp)[1-i]);
       }
       printf(">");
     }
@@ -528,7 +552,7 @@ yyreduce:
   }
 #endif
   if (yyps->ssp + 1 - yym >= yyps->ss + yyps->stacksize) {
-    yyMoreStack(yyps);
+    YYMoreStack(yyps);
   }
 
   /* default action - assign last argument as in standard yacc */
@@ -558,7 +582,7 @@ yyreduce:
 
   // Perform user-defined position reduction
 #ifdef YYREDUCEPOSNFUNC
-  if (!yytrial) {
+  if(!yytrial) {
     YYCALLREDUCEPOSN(YYREDUCEPOSNFUNCARG);
   }
 #endif
@@ -583,7 +607,7 @@ yyreduce:
     *++(yyps->psp) = yyps->pos;
     yyretposn = yyps->pos;	// return value of root position to yyposn
     if (yychar < 0) {
-      if ((yychar = yylex1()) < 0) {
+      if ((yychar = YYLex1(client_dialect, db_dialect, parser_version, stmt_ambiguous)) < 0) {
         yychar = 0;
       }
 #if YYDEBUG
@@ -612,7 +636,7 @@ yyreduce:
            int(yydepth), yytrial, *(yyps->ssp), yystate);
 #endif
   if (yyps->ssp >= yyps->ss + yyps->stacksize - 1) {
-    yyMoreStack(yyps);
+    YYMoreStack(yyps);
   }
   *++(yyps->ssp) = yystate;
   *++(yyps->vsp) = yyps->val;
@@ -639,17 +663,16 @@ yyvalid:
     printf("yydebug[%d,%p]: CONFLICT trial successful, backtracking to state %d, %d tokens\n",
            int(yydepth), yytrial, yypath->state, int(yylvp - yylvals - yypath->lexeme));
 #endif
-  if (yyerrctx) {
-    yyFreeState(yyerrctx);
-    yyerrctx = NULL;
+  if(yyerrctx) {
+    YYFreeState(yyerrctx); yyerrctx = NULL;
   }
   yychar = -1;
   yyps->ssp = yyps->ss + (yypath->ssp - yypath->ss);
   yyps->vsp = yyps->vs + (yypath->vsp - yypath->vs);
   yyps->psp = yyps->ps + (yypath->psp - yypath->ps);
   memcpy (yyps->ss, yypath->ss, (yyps->ssp - yyps->ss + 1) * sizeof(Yshort));
-  yySCopy(yyps->vs, yypath->vs,  yyps->vsp - yyps->vs + 1);
-  yyPCopy(yyps->ps, yypath->ps,  yyps->psp - yyps->ps + 1);
+  YYSCopy(yyps->vs, yypath->vs,  yyps->vsp - yyps->vs + 1);
+  YYPCopy(yyps->ps, yypath->ps,  yyps->psp - yyps->ps + 1);
   yylvp = yylvals + yypath->lexeme;
   yylpp = yylpsns + yypath->lexeme;
   yylexp = yylexemes + yypath->lexeme;
@@ -658,82 +681,77 @@ yyvalid:
 
 
 yyabort:
-  if (yyerrctx) {
-    yyFreeState(yyerrctx);
-    yyerrctx = NULL;
+  if(yyerrctx) {
+    YYFreeState(yyerrctx); yyerrctx = NULL;
   }
 
   YYSTYPE *pv;
-  for(pv = yyps->vs; pv < yyps->vsp; pv++) {
-    YYDELETEVAL(*pv, 2);
+  for(pv=yyps->vs; pv<yyps->vsp; pv++) {
+    YYDELETEVAL(*pv,2);
   }
 
   YYPOSN *pp;
-  for(pp = yyps->ps; pp < yyps->psp; pp++) {
-    YYDELETEPOSN(*pp, 2);
+  for(pp=yyps->ps; pp<yyps->psp; pp++) {
+    YYDELETEPOSN(*pp,2);
   }
 
   while (yyps) {
     yyparsestate *save = yyps;
     yyps = save->save;
-    yyFreeState(save);
+    YYFreeState(save);
   }
   while (yypath) {
     yyparsestate *save = yypath;
     yypath = save->save;
-    yyFreeState(save); 
+    YYFreeState(save); 
   }
   return (1);
 
 
 yyaccept:
   if (yyps->save) goto yyvalid;
-  if (yyerrctx) {
-    yyFreeState(yyerrctx);
-    yyerrctx = NULL;
+  if(yyerrctx) {
+    YYFreeState(yyerrctx); yyerrctx = NULL;
   }
   while (yyps) {
     yyparsestate *save = yyps;
     yyps = save->save;
-    yyFreeState(save);
+    YYFreeState(save);
   }
   while (yypath) {
     yyparsestate *save = yypath;
     yypath = save->save;
-    yyFreeState(save); 
+    YYFreeState(save); 
   }
   return (0);
 }
 
 
-int Parser::yylex1()
-{
-  if (yylvp < yylve) {
+int YYLex1(USHORT client_dialect, USHORT db_dialect, USHORT parser_version, bool* stmt_ambiguous) {
+  if(yylvp<yylve) {
     yylval = *yylvp++;
     yyposn = *yylpp++;
     return *yylexp++;
   } else {
-    if (yyps->save) {
-      if (yylvp == yylvlim) {
+    if(yyps->save) {
+      if(yylvp==yylvlim) {
 	yyexpand();
       }
-      *yylexp = yylex();
+      *yylexp = yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
       *yylvp++ = yylval;
       yylve++;
       *yylpp++ = yyposn;
       yylpe++;
       return *yylexp++;
     } else {
-      return yylex();
+      return yylex(client_dialect, db_dialect, parser_version, stmt_ambiguous);
     }
   }
 }
 
-
-int Parser::yyexpand()
-{
-  int p = yylvp - yylvals;
-  int s = yylvlim - yylvals;
+int yyexpand() {
+  int p = yylvp-yylvals;
+  int s = yylvlim-yylvals;
   s += YYSTACKGROWTH;
   { Yshort  *tl = yylexemes; 
     YYSTYPE *tv = yylvals;
@@ -741,9 +759,9 @@ int Parser::yyexpand()
     yylvals = new YYSTYPE[s];
     yylpsns = new YYPOSN[s];
     yylexemes = new Yshort[s];
-    memcpy(yylexemes, tl, (s - YYSTACKGROWTH) * sizeof(Yshort));
-    yySCopy(yylvals, tv, s - YYSTACKGROWTH);
-    yyPCopy(yylpsns, tp, s - YYSTACKGROWTH);
+    memcpy(yylexemes, tl, (s-YYSTACKGROWTH)*sizeof(Yshort));
+    YYSCopy(yylvals, tv, s-YYSTACKGROWTH);
+    YYPCopy(yylpsns, tp, s-YYSTACKGROWTH);
     delete[] tl;
     delete[] tv;
     delete[] tp;
@@ -756,3 +774,54 @@ int Parser::yyexpand()
   return 0;
 }
 
+void YYSCopy(YYSTYPE *to, YYSTYPE *from, int size) {
+  int i;                             
+  for (i = size-1; i >= 0; i--) {
+    to[i] = from[i];
+  }
+}
+
+void YYPCopy(YYPOSN *to, YYPOSN *from, int size) {
+  int i;                             
+  for (i = size-1; i >= 0; i--) {
+    to[i] = from[i];
+  }
+}
+
+void YYMoreStack(yyparsestate *yyps) {
+  int p = yyps->ssp - yyps->ss;                               
+  Yshort  *tss = yyps->ss;
+  YYSTYPE *tvs = yyps->vs;
+  YYPOSN  *tps = yyps->ps;
+  yyps->ss = new Yshort [yyps->stacksize + YYSTACKGROWTH];   
+  yyps->vs = new YYSTYPE[yyps->stacksize + YYSTACKGROWTH];  
+  yyps->ps = new YYPOSN [yyps->stacksize + YYSTACKGROWTH];  
+  memcpy(yyps->ss, tss, yyps->stacksize * sizeof(Yshort));  
+  YYSCopy(yyps->vs, tvs, yyps->stacksize);                  
+  YYPCopy(yyps->ps, tps, yyps->stacksize);                  
+  yyps->stacksize += YYSTACKGROWTH;                           
+  delete[] tss;
+  delete[] tvs;
+  delete[] tps;
+  yyps->ssp = yyps->ss + p;                                   
+  yyps->vsp = yyps->vs + p;                                   
+  yyps->psp = yyps->ps + p;                                   
+}
+
+yyparsestate *YYNewState(int size) {
+  yyparsestate *p = new yyparsestate;
+  p->stacksize = size+4;
+  p->ss = new Yshort [size + 4];
+  p->vs = new YYSTYPE[size + 4];
+  p->ps = new YYPOSN [size + 4];
+  memset(&p->vs[0], 0, (size+4)*sizeof(YYSTYPE));
+  memset(&p->ps[0], 0, (size+4)*sizeof(YYPOSN));
+  return p;
+}
+
+void YYFreeState(yyparsestate *p) {
+  delete[] p->ss;
+  delete[] p->vs;
+  delete[] p->ps;
+  delete p;
+}

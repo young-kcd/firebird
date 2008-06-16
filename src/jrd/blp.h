@@ -217,14 +217,9 @@ static const struct
 	{"lowcase", one},
 	{"strlen", strlength},
 	{"trim", trim},
-	// New BLR in FB2.1
 	{"init_variable", variable},
 	{"recurse", union_ops},
 	{"sys_function", function},
-	// New BLR in FB2.5
-	{"auto_trans", byte_verb},
-	{"similar", similar},
-	{"exec_stmt", exec_stmt},
 	{0, 0}
 };
 

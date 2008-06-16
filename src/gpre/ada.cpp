@@ -371,9 +371,6 @@ void ADA_action( const act* action, int column)
 	case ACT_rollback:
 		gen_trans(action, column);
 		break;
-	case ACT_rollback_retain_context:
-		gen_trans(action, column);
-		break;
 	case ACT_routine:
 		gen_routine(action, column);
 		return;
@@ -2781,7 +2778,7 @@ static void gen_routine( const act* action, int column)
 				   "isc_%d\t: firebird.blob_handle;\t-- blob handle --",
 				   blob->blb_ident);
 			SSHORT blob_subtype = blob->blb_const_to_type;
-			if (!blob_subtype) {
+			if (!(blob_subtype)) {
 				const ref* reference = blob->blb_reference;
 				if (reference) {
 					const gpre_fld* field = reference->ref_field;
@@ -3197,21 +3194,13 @@ static void gen_tpb(const tpb* tpb_buffer, int column)
 static void gen_trans( const act* action, int column)
 {
 
-	if (action->act_type == ACT_commit_retain_context) {
+	if (action->act_type == ACT_commit_retain_context)
 		printa(column, "firebird.COMMIT_RETAINING (%s %s%s);",
 			   status_vector(action),
 			   gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
-	}
-	else if (action->act_type == ACT_rollback_retain_context) {
-		printa(column, "firebird.ROLLBACK_RETAINING (%s %s%s);",
-			   status_vector(action),
-			   gpreGlob.ada_package,
-			   (action->act_object) ?
-			   		(const TEXT*) action->act_object : "gds_trans");
-	}
-	else {
+	else
 		printa(column, "firebird.%s_TRANSACTION (%s %s%s);",
 			   (action->act_type == ACT_commit) ?
 			   		"COMMIT" : (action->act_type == ACT_rollback) ?
@@ -3219,7 +3208,6 @@ static void gen_trans( const act* action, int column)
 			   status_vector(action), gpreGlob.ada_package,
 			   (action->act_object) ?
 			   		(const TEXT*) action->act_object : "gds_trans");
-	}
 
 	set_sqlcode(action, column);
 }
@@ -3687,8 +3675,8 @@ static const TEXT* request_trans( const act* action, const gpre_req* request)
 			trname = "gds_trans";
 		return trname;
 	}
-
-	return (request) ? request->req_trans : "gds_trans";
+	else
+		return (request) ? request->req_trans : "gds_trans";
 }
 
 

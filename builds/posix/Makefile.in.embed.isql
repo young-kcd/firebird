@@ -42,8 +42,7 @@ unexport ISC_USER
 unexport ISC_PASSWORD
 
 ISQL_Other_Sources = jrd/path_utils.cpp
-ISQL_Files = extract.epp isql.epp show.epp Extender.cpp InputDevices.cpp \
-    ColList.cpp OptionsBase.cpp
+ISQL_Files = extract.epp isql.epp show.epp Extender.cpp
 ISQL_Sources = $(addprefix isql/, $(ISQL_Files)) $(ISQL_Other_Sources)
 ISQL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ISQL_Sources))))
 

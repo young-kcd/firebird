@@ -63,7 +63,7 @@ offset_t RecordBuffer::store(const Record* new_record)
 
 	fb_assert(!filled);
 
-	space->write(count * length, new_record->rec_data, length);
+	space->write(count * length, (UCHAR*) new_record->rec_data, length);
 
 	return count++;
 }

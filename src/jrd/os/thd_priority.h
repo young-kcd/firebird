@@ -39,6 +39,7 @@
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
+#include "../jrd/thd.h"
 
 #include <windows.h>
 #include <process.h>
@@ -54,8 +55,7 @@ const int lowPriority = THREAD_PRIORITY_NORMAL;
 
 #endif // THREAD_PSCHED
 
-class ThreadPriorityScheduler
-{
+class ThreadPriorityScheduler {
 #ifdef THREAD_PSCHED
 
 private:
@@ -63,7 +63,7 @@ private:
 		Firebird::InlineStorage<ThreadPriorityScheduler*, 16> > TpsPointers;
 	enum OperationMode {Running, Stopping, ShutdownComplete};
 
-	static Firebird::GlobalPtr<Firebird::Mutex> mutex;	// locks modification of thps chains
+	static Firebird::Mutex mutex;	// locks modification of thps chains
 	static ThreadPriorityScheduler* chain;	// where starts thps chain
 	static Firebird::InitMutex<ThreadPriorityScheduler> initialized;
 	static OperationMode opMode;	// current mode
@@ -91,9 +91,7 @@ private:
 	static void doDetach();
 	// Add current instance to the chain
 	void attach();
-
-	~ThreadPriorityScheduler()
-	{
+	~ThreadPriorityScheduler() {
 		if (active)
 		{
 			CloseHandle(handle);
@@ -119,10 +117,21 @@ public:
 	static void Cleanup(void*);
 	
 	// Goes to low priority zone
-	static void enter();
+	static void enter()
+	{
+		ThreadPriorityScheduler *t = get();
+		fb_assert(t);
+		t->inside = true;
+		t->gonein = true;
+	}
 	
 	// Goes from low priority zone
-	static void exit();
+	static void exit()
+	{
+		ThreadPriorityScheduler *t = get();
+		fb_assert(t);
+		t->inside = false;
+	}
 	
 	// Check whether current thread has high priority
 	static bool boosted()
@@ -152,7 +161,6 @@ public:
 public:
 	static void enter() {}
 	static void exit() {}
-
 	static bool boosted()
 	{
 		return false;

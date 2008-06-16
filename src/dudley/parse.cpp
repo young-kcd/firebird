@@ -1607,12 +1607,12 @@ static void define_view(void)
 
 				if (PARSE_match(KW_COMPUTED)) {
 					PARSE_match(KW_BY);
-					if (!PARSE_match(KW_LEFT_PAREN))
+					if (!(PARSE_match(KW_LEFT_PAREN)))
 						PARSE_error(148, 0, 0);	/* msg 148: computed by expression must be parenthesized  */
 					field->fld_compute_src = start_text();
 					field->fld_computed = EXPR_value(0, NULL);
 					end_text(field->fld_compute_src);
-					if (!PARSE_match(KW_RIGHT_PAREN))
+					if (!(PARSE_match(KW_RIGHT_PAREN)))
 						PARSE_error(149, 0, 0);	/* msg 149: unmatched parenthesis */
 					context = my_context;
 				}
@@ -2009,7 +2009,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 		*type |= trig_mod;
 	else if (PARSE_match(KW_PRE_ERASE))
 		*type |= trig_era;
-	else if (!PARSE_match(KW_PRE)) {
+	else if (!(PARSE_match(KW_PRE))) {
 		*type |= trig_post;
 		if (PARSE_match(KW_POST_STORE))
 			*type |= trig_sto;
@@ -2017,7 +2017,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 			*type |= trig_mod;
 		else if (PARSE_match(KW_POST_ERASE))
 			*type |= trig_era;
-		else if (!PARSE_match(KW_POST)) {
+		else if (!(PARSE_match(KW_POST))) {
 			*type &= ~trig_post;
 			*flags &= ~trg_mflag_order;
 		}
@@ -2036,7 +2036,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
 	}
 
 
-	if (!PARSE_match(KW_COLON) && ((*flags & trg_mflag_order) ||
+	if ((!PARSE_match(KW_COLON)) && ((*flags & trg_mflag_order) ||
 							   (*type & (trig_sto | trig_mod | trig_era))))
 	{
 		*sequence = PARSE_number();
@@ -3310,12 +3310,12 @@ static void parse_field_clauses( DUDLEY_FLD field)
 		case KW_COMPUTED:
 			LEX_token();
 			PARSE_match(KW_BY);
-			if (!PARSE_match(KW_LEFT_PAREN))
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(194, 0, 0);	/* msg 194: computed by expression must be parenthesized */
 			field->fld_compute_src = start_text();
 			field->fld_computed = EXPR_value(0, NULL);
 			end_text(field->fld_compute_src);
-			if (!PARSE_match(KW_RIGHT_PAREN))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
@@ -3329,12 +3329,12 @@ static void parse_field_clauses( DUDLEY_FLD field)
 		case KW_VALID_IF:
 			LEX_token();
 			PARSE_match(KW_IF);
-			if (!PARSE_match(KW_LEFT_PAREN))
+			if (!(PARSE_match(KW_LEFT_PAREN)))
 				PARSE_error(196, 0, 0);	/* msg 196: validation expression must be parenthesized */
 			field->fld_valid_src = start_text();
 			field->fld_validation = EXPR_boolean(0);
 			end_text(field->fld_valid_src);
-			if (!PARSE_match(KW_RIGHT_PAREN))
+			if (!(PARSE_match(KW_RIGHT_PAREN)))
 				PARSE_error(195, 0, 0);	/* msg 195: unmatched parenthesis */
 			break;
 
@@ -4066,7 +4066,7 @@ static void sort_out_attributes(
 				PARSE_error(220, 0, 0);	/* msg 220: Attempt to change trigger type from ERASE to STORE */
 		}
 
-	if (!(flags & trg_mflag_order) && (flags & trg_mflag_type))
+	if ((!(flags & trg_mflag_order)) && (flags & trg_mflag_type))
 		switch (trigger->trg_type) {
 		case trg_erase:
 		case trg_post_modify:

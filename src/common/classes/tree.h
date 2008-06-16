@@ -43,8 +43,7 @@ namespace Firebird {
 // This macro controls merging of nodes of all B+ trees
 // Now it merges pages only when resulting page will be 3/4 filled or less
 // Be careful while changing this expression. N=2 must always cause merge
-static inline bool NEED_MERGE(size_t current_count, size_t page_count)
-{
+static inline bool NEED_MERGE(size_t current_count, size_t page_count) {
 	return current_count * 4 / 3 <= page_count;
 }
 
@@ -62,15 +61,12 @@ const int NODE_PAGE_SIZE = 3000;
 // should be more than enough. No checks are performed in code against overflow of this value
 const int MAX_TREE_LEVEL = 30;
 
-class MallocAllocator
-{
+class MallocAllocator {
 public:
-	void *allocate(size_t size)
-	{
+	void *allocate(size_t size) {
 		return malloc(size);
 	}
-	void deallocate(void *p)
-	{
+	void deallocate(void *p) {
 		free(p);
 	}
 };
@@ -107,15 +103,10 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	typename Cmp = DefaultComparator<Key>, 
 	int LeafCount = LEAF_PAGE_SIZE / sizeof(Value), 
 	int NodeCount = NODE_PAGE_SIZE / sizeof(void*)>
-class BePlusTree
-{
+class BePlusTree {
 public:
-	explicit BePlusTree(Allocator *_pool)
+	BePlusTree(Allocator *_pool)
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
-	{ }
-
-	explicit BePlusTree(Allocator& _pool)
-		: pool(&_pool), level(0), root(NULL), defaultAccessor(this)
 	{ }
 
 	BePlusTree(Allocator *_pool, const BePlusTree& from)
@@ -124,15 +115,13 @@ public:
 		append(from);
 	}
 
-	BePlusTree& operator =(BePlusTree& from)
-	{
+	BePlusTree& operator =(BePlusTree& from) {
 		clear();
 		append(from);
 		return *this;
 	}
 
-	void clear()
-	{
+	void clear() {
 		defaultAccessor.curr = NULL;
 
 		// Do not deallocate root page if tree is shallow
@@ -175,14 +164,12 @@ public:
 		level = 0;
 	}
 
-    ~BePlusTree()
-	{
+    ~BePlusTree() {
 		clear();
 		pool->deallocate(root);
 	}
 
-	bool isEmpty() const
-	{
+	bool isEmpty() const {
 		return 
 			root == NULL || 
 			(level == 0 && ((ItemList*)root)->getCount() == 0);
@@ -205,7 +192,7 @@ public:
 	
 	bool locate(const Key& key) { return defaultAccessor.locate(locEqual, key); }
 	
-	bool locate(LocType lt, const Key& key) { return defaultAccessor.locate(lt, key); }
+	bool locate(LocType lt, const Key& key) {	return defaultAccessor.locate(lt, key); }
 	
 	bool getFirst() { return defaultAccessor.getFirst(); }
 	
@@ -218,8 +205,7 @@ public:
     Value& current() const { return defaultAccessor.current(); }
 
 	// Returns true if this tree appears to contain more elements than the other
-	bool seemsBiggerThan(const BePlusTree& other) const
-	{
+	bool seemsBiggerThan(const BePlusTree &other) const {
 		if (level != other.level)
 			return level > other.level;
 
@@ -235,13 +221,11 @@ public:
 	}
 
 	// Compute approximate number of leafs in the tree
-	size_t approxCount() const
-	{
+	size_t approxCount() const {
 		if (!root)
 			return 0;
 
-		if (level == 0)
-			return ((ItemList*) root)->getCount();
+		if (level == 0) return ((ItemList*)root)->getCount();
 
 		// Tree is large. Roughtly estimate number of leaf nodes using number of
 		// items in root list and depth of the tree. Theoretically possible fill
@@ -257,8 +241,7 @@ public:
 	}
 	
 	// Compute approximate memory consumption for tree in bytes
-	size_t approxSize() const
-	{
+	size_t approxSize() const {
 		if (!root)
 			return 0;
 
@@ -276,8 +259,7 @@ public:
 		return ((NodeList*)root)->getCount() * bytes_per_node;
 	}
 
-	void append(BePlusTree& from)
-	{
+	void append(BePlusTree& from) {
 		// This is slow approach especially when used for assignment. 
 		// Optimize it when need arises.
 		Accessor accessor(&from);
@@ -299,17 +281,12 @@ public:
 #endif    
 	class NodeList;
 		
-    class ItemList : public SortedVector<Value, LeafCount, Key, KeyOfValue, Cmp>
-	{
+    class ItemList : public SortedVector<Value, LeafCount, Key, KeyOfValue, Cmp> {
 	public:
-		NodeList* parent;
-		ItemList* next;
-		ItemList* prev;
-
+		NodeList *parent;
+		ItemList *next, *prev;
 		// Adds newly created item to doubly-linked list
-		ItemList(ItemList* items)
-			: parent(NULL)
-		{ 
+		ItemList(ItemList *items) : parent(NULL) { 
 			if ((next = items->next))
 				next->prev = this;
 			prev = items;
@@ -325,13 +302,10 @@ public:
 #endif
 	};
 	
-    class NodeList : public SortedVector<void*, NodeCount, Key, NodeList, Cmp>
-	{
+    class NodeList : public SortedVector<void*, NodeCount, Key, NodeList, Cmp> {
 	public:
 		// Adds newly created item to the doubly-linked list
-		NodeList(NodeList* items)
-			: parent(NULL)
-		{ 
+		NodeList(NodeList *items) : parent(NULL) { 
 			if ((next = items->next))
 				next->prev = this;
 			prev = items; 
@@ -343,8 +317,7 @@ public:
 		int level;
 		NodeList *parent;
 		NodeList *next, *prev;
-		static const Key& generate(const void *sender, void *item)
-		{ 
+		static const Key& generate(const void *sender, void *item) { 
 			for (int lev = ((NodeList *)sender)->level; lev > 0; lev--)
 				item = *((NodeList *)item)->begin();
 
@@ -353,8 +326,7 @@ public:
 			// add ItemList typedef for you compiler with whichever syntax it likes
 			return KeyOfValue::generate(item, *((ItemList *)item)->begin());
 		}
-		static void setNodeParentAndLevel(void* node, int level, NodeList* parent)
-		{
+		static void setNodeParentAndLevel(void *node, int level, NodeList *parent) {
 			if (level) {
 				((NodeList *)node)->parent = parent;
 				((NodeList *)node)->level = level - 1;
@@ -362,30 +334,26 @@ public:
 			else
 				((ItemList *)node)->parent = parent;
 		}		
-		static void setNodeParent(void* node, int level, NodeList* parent)
-		{
+		static void setNodeParent(void *node, int level, NodeList *parent) {
 			if (level)
-				((NodeList*) node)->parent = parent;
+				((NodeList *)node)->parent = parent;
 			else
-				((ItemList*) node)->parent = parent;
+				((ItemList *)node)->parent = parent;
 		}		
 	}; 
 
 public:
-	class Accessor
-	{
+	class Accessor {
 	public:
-		explicit Accessor(BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
+		Accessor(BePlusTree* _tree) : curr(NULL), curPos(0), tree(_tree) {}
 	
-		bool add(const Value& item)
-		{
+		bool add(const Value& item) {
 			return tree->add(item, this);
 		}
 
 		// Remove item. Current position moves to next item after this call. 
 		// If next item doesn't exist method returns false
-		bool fastRemove()
-		{
+		bool fastRemove() {
 			// invalidate current position of defaultAccessor 
 			// if i'm not a defaultAccessor
 			if (this != &tree->defaultAccessor)
@@ -453,21 +421,17 @@ public:
 			return true;
 		}
 
-		bool locate(const Key& key)
-		{
+		bool locate(const Key& key) {
 			return locate(locEqual, key);
 		}
 	
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
-		bool locate(LocType lt, const Key& key)
-		{
+		bool locate(LocType lt, const Key& key) {
 			// Inlining is efficient here because LocType will be known in most cases
 			// and compiler will be able to eliminate most of code
 			void *list = tree->root;
-			if (!list)
-				return false; // Uninitalized tree
-
+			if (!list) return false; // Uninitalized tree
 			for (int lev = tree->level; lev; lev--) {
 				size_t pos;
 				if (!((NodeList *)list)->find(key, pos))
@@ -515,39 +479,34 @@ public:
 		}
 		// If method returns false it means list is empty and 
 		// position of accessor is not defined.
-		bool getFirst()
-		{
-			void* items = tree->root;
-			if (!items)
-				return false; // Uninitalized tree
-
-			for (int i = tree->level; i > 0; i--)
-				items = (*(NodeList*) items)[0];
-			curr = (ItemList*) items;
-			curPos = 0;
-			return ((ItemList*) items)->getCount();
-		}
-		// If method returns false it means list is empty and 
-		// position of accessor is not defined.
-		bool getLast()
-		{
+		bool getFirst() {
 			void *items = tree->root;
 			if (!items)
 				return false; // Uninitalized tree
-
 			for (int i = tree->level; i > 0; i--)
-				items = (*(NodeList*) items)[((NodeList*) items)->getCount() - 1];
+				items = (*(NodeList *)items)[0];
 			curr = (ItemList *)items;
-			if (((ItemList*) items)->getCount()) {
-				curPos = ((ItemList*) items)->getCount() - 1;
+			curPos = 0;
+			return ((ItemList *)items)->getCount();
+		}
+		// If method returns false it means list is empty and 
+		// position of accessor is not defined.
+		bool getLast() {
+			void *items = tree->root;
+			if (!items)
+				return false; // Uninitalized tree
+			for (int i = tree->level; i > 0; i--)
+				items = (*(NodeList *)items)[((NodeList *)items)->getCount() - 1];
+			curr = (ItemList *)items;
+			if (((ItemList *)items)->getCount()) {
+				curPos = ((ItemList *)items)->getCount() - 1;
 				return true;
 			}			
 			return false;
 		}
 		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
-		bool getNext()
-		{
+		bool getNext() {
 			curPos++;
 			if (curPos >= curr->getCount()) {
 				if (curr->next) {
@@ -564,8 +523,7 @@ public:
 		}
 		// Accessor position must be establised via successful call to getFirst(), 
 		// getLast() or locate() before you can call this method
-		bool getPrev()
-		{
+		bool getPrev() {
 			if (curPos == 0) {
 				if (curr->prev) {
 					curr = curr->prev;
@@ -596,7 +554,7 @@ public:
 				KeyOfValue::generate(this, current()) == key);
 		}
 
-		ItemList* curr;
+		ItemList *curr;
   		size_t curPos;
 		
 	private:
@@ -606,9 +564,9 @@ public:
 	}; // class Accessor
 
 private:
-	Allocator* pool;
+	Allocator *pool;
 	int level;
-    void* root;
+    void *root;
 	Accessor defaultAccessor;
 
 	void _removePage(int level, void *node);

@@ -35,7 +35,7 @@ namespace Firebird {
 class StatusHolder
 {
 public:
-	explicit StatusHolder(const ISC_STATUS* status = NULL)
+	StatusHolder(const ISC_STATUS* status = NULL)
 	{
 		memset(m_status_vector, 0, sizeof(m_status_vector));
 		m_raised = false;

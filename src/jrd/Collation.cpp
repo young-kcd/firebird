@@ -98,32 +98,21 @@
 #include "../jrd/evl_string.h"
 #include "../jrd/intl_classes.h"
 #include "../jrd/lck_proto.h"
+
 #include "../jrd/intl_classes.h"
 #include "../jrd/TextType.h"
 
 using namespace Jrd;
 
-#include "../jrd/SimilarToMatcher.h"
-
 
 namespace {
 
-// constants used in matches and sleuth
-const int CHAR_GDML_MATCH_ONE	= TextType::CHAR_QUESTION_MARK;
-const int CHAR_GDML_MATCH_ANY	= TextType::CHAR_ASTERISK;
-const int CHAR_GDML_QUOTE		= TextType::CHAR_AT;
-const int CHAR_GDML_NOT			= TextType::CHAR_TILDE;
-const int CHAR_GDML_RANGE		= TextType::CHAR_MINUS;
-const int CHAR_GDML_CLASS_START	= TextType::CHAR_OPEN_BRACKET;
-const int CHAR_GDML_CLASS_END	= TextType::CHAR_CLOSE_BRACKET;
-const int CHAR_GDML_SUBSTITUTE	= TextType::CHAR_EQUAL;
-const int CHAR_GDML_FLAG_SET	= TextType::CHAR_PLUS;
-const int CHAR_GDML_FLAG_CLEAR	= TextType::CHAR_MINUS;
-const int CHAR_GDML_COMMA		= TextType::CHAR_COMMA;
-const int CHAR_GDML_LPAREN		= TextType::CHAR_OPEN_PAREN;
-const int CHAR_GDML_RPAREN		= TextType::CHAR_CLOSE_PAREN;
+// Below is former evl_like_h file
+// It was not used except Collation.cpp
 
-static const UCHAR SLEUTH_SPECIAL[128] =
+#define SLEUTH_insensitive	1
+
+static const UCHAR special[128] =
 {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -135,53 +124,443 @@ static const UCHAR SLEUTH_SPECIAL[128] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0	// ~     (tilde)
 };
 
+template <class MATCHESTYPE>
+bool MATCHESNAME(Jrd::thread_db* tdbb, Jrd::TextType* obj,
+				 const MATCHESTYPE* p1, SLONG l1_bytes,
+				 const MATCHESTYPE* p2, SLONG l2_bytes)
+{
+/**************************************
+ *
+ *	E V L _ ? ? _ m a t c h e s
+ *	E V L _ w c _ m a t c h e s
+ *	E V L _ n c _ m a t c h e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return true if a string (p1, l1) matches a given pattern (p2, l2).
+ *	The character '?' in the pattern may match any single character
+ *	in the the string, and the character '*' may match any sequence
+ *	of characters.
+ *
+ *	Wide SCHAR version operates on short-based buffer,
+ *	instead of SCHAR-based.
+ *
+ * Matches is not a case-sensitive operation, thus it has no
+ * 8-bit international impact.
+ *
+ **************************************/
+	fb_assert(p1 != NULL);
+	fb_assert(p2 != NULL);
+	fb_assert((l1_bytes % sizeof(MATCHESTYPE)) == 0);
+	fb_assert((l2_bytes % sizeof(MATCHESTYPE)) == 0);
+	fb_assert((obj->getCanonicalWidth() == sizeof(MATCHESTYPE)));
+
+	SLONG l1 = l1_bytes / sizeof(MATCHESTYPE);
+	SLONG l2 = l2_bytes / sizeof(MATCHESTYPE);
+
+	while (l2-- > 0) {
+		const MATCHESTYPE c = *p2++;
+		if (c == *(MATCHESTYPE*)obj->getGdmlMatchAnyCanonic()) {
+			while ((l2 > 0) && (*p2 == *(MATCHESTYPE*)obj->getGdmlMatchAnyCanonic())) {
+				l2--;
+				p2++;
+			}
+			if (l2 == 0)
+				return true;
+			while (l1)
+			{
+				if (MATCHESNAME(tdbb, obj, p1++,
+								l1-- * sizeof(MATCHESTYPE), p2,
+								l2 * sizeof(MATCHESTYPE)))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		if (l1-- == 0)
+			return false;
+		if (c != *(MATCHESTYPE*)obj->getGdmlMatchOneCanonic() && c != *p1)
+			return false;
+		p1++;
+	}
+
+	return !l1;
+}
+
+
+template <class SLEUTHTYPE>
+bool SLEUTHNAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj, USHORT flags,
+				const SLEUTHTYPE* search, SLONG search_len,
+				const SLEUTHTYPE* match, SLONG match_len)
+{
+/**************************************
+ *
+ *	E V L _ ? ? _ s l e u t h _ c h e c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Evaluate the "sleuth" search operator.
+ *
+ *	Turn the (pointer, byte length) input parameters into
+ *	(pointer, end_pointer) for use in SLEUTH_AUX
+ *
+ **************************************/
+	fb_assert((match_len % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((search_len % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
+
+	const SLEUTHTYPE* const end_match = match + (match_len / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_search = search + (search_len / sizeof(SLEUTHTYPE));
+
+	return SLEUTH_AUX(obj, flags, search, end_search, match, end_match);
+}
+
+
+template <class SLEUTHTYPE>
+ULONG SLEUTH_MERGE_NAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj,
+						const SLEUTHTYPE* match, SLONG match_bytes,
+						const SLEUTHTYPE* control, SLONG control_bytes,
+						SLEUTHTYPE* combined, SLONG combined_bytes)
+{
+/**************************************
+ *
+ *	E V L _ ? ? _ s l e u t h _ m e r g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Merge the matching pattern and control strings to give a cannonical
+ *	matching pattern.  Return the length of the combined string. 
+ *
+ * 	What this routine does is to take the language template, strip off 
+ *	the prefix and put it in the output string, then parse the definitions
+ *	into an array of character pointers.  The index array is the defined
+ *	character.   The routine then takes the actual match pattern and uses
+ *	the characters in it to index into the definitions to produce an equivalent
+ *	pattern in the cannonical language.
+ *
+ *	The silly loop setting *v++ to zero initializes the array up to the
+ *	highest character defined (also max_op).  Believe it or not, that part
+ *	is not a bug.
+ *
+ **************************************/
+	fb_assert(match != NULL);
+	fb_assert(control != NULL);
+	fb_assert(combined != NULL);
+
+	fb_assert((match_bytes % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert((control_bytes % sizeof(SLEUTHTYPE)) == 0);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
+
+	const SLEUTHTYPE* const end_match = match + (match_bytes / sizeof(SLEUTHTYPE));
+	const SLEUTHTYPE* const end_control = control + (control_bytes / sizeof(SLEUTHTYPE));
+
+	SLEUTHTYPE max_op = 0;
+	SLEUTHTYPE* comb = combined;
+	SLEUTHTYPE* vector[256];
+	SLEUTHTYPE** v = vector;
+	SLEUTHTYPE temp[256];
+	SLEUTHTYPE* t = temp;
+
+/* Parse control string into substitution strings and initializing string */
+
+	while (control < end_control) {
+		SLEUTHTYPE c = *control++;
+		if (*control == *(SLEUTHTYPE*)obj->getGdmlSubstituteCanonic()) {
+			/* Note: don't allow substitution characters larger than vector */
+			SLEUTHTYPE** const end_vector =
+				vector + (((int)c < FB_NELEM(vector)) ? c : 0);
+			while (v <= end_vector)
+				*v++ = 0;
+			*end_vector = t;
+			++control;
+			while (control < end_control) {
+				c = *control++;
+				if ((t > temp && t[-1] == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic())
+					|| ((c != *(SLEUTHTYPE*)obj->getGdmlCommaCanonic()) && (c != *(SLEUTHTYPE*)obj->getGdmlRParenCanonic())))
+				{
+					*t++ = c;
+				}
+				else
+					break;
+			}
+			*t++ = 0;
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && control < end_control)
+			*comb++ = *control++;
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlRParenCanonic())
+			break;
+		else if (c != *(SLEUTHTYPE*)obj->getGdmlLParenCanonic())
+			*comb++ = c;
+	}
+
+	max_op = v - vector;
+
+/* Interpret matching string, substituting where appropriate */
+
+	while (match < end_match) {
+		const SLEUTHTYPE c = *match++;
+
+		/* if we've got a defined character, slurp the definition */
+
+        SLEUTHTYPE* p;
+		if (c <= max_op && (p = vector[c])) {
+			while (*p)
+				*comb++ = *p++;
+
+			/* if we've got the definition of a quote character, 
+			   slurp the next character too */
+
+			if (comb > combined && comb[-1] == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && *match)
+				*comb++ = *match++;
+		}
+
+		/* at this point we've got a non-match, but as it might be one of ours, 
+		   quote it. */
+
+		else {
+			if ((((size_t) c) < FB_NELEM(special)) && special[c] &&
+				comb > combined && comb[-1] != *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic())
+			{
+				*comb++ = *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic();
+			}
+			*comb++ = c;
+		}
+	}
+
+/* Put in trailing stuff */
+
+	while (control < end_control)
+		*comb++ = *control++;
+
+	/* YYY - need to add code watching for overflow of combined */
+
+	return (comb - combined) * sizeof(SLEUTHTYPE);
+}
+
+
+template <class SLEUTHTYPE>
+static bool SLEUTH_AUX(
+						  Jrd::TextType* obj,
+						  USHORT flags,
+						  const SLEUTHTYPE* search,
+						  const SLEUTHTYPE* end_search,
+	const SLEUTHTYPE* match, const SLEUTHTYPE* end_match)
+{
+/**************************************
+ *
+ *	s l e u t h _ a u x
+ *
+ **************************************
+ *
+ * Functional description
+ *	Evaluate the "sleuth" search operator.
+ *
+ **************************************/
+	fb_assert(search != NULL);
+	fb_assert(end_search != NULL);
+	fb_assert(match != NULL);
+	fb_assert(end_match != NULL);
+	fb_assert(search <= end_search);
+	fb_assert(match <= end_match);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
+
+	while (match < end_match) {
+		SLEUTHTYPE c = *match++;
+		if ((c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic() && (c = *match++)) ||
+			((((size_t) c) < FB_NELEM(special)) && !special[c]))
+		{
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic()) {
+				if (search >= end_search)
+					return false;
+				const SLEUTHTYPE d = *search++;
+				if (c != d)
+					return false;
+			}
+			else {
+				++match;
+				for (;;)
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
+						return true;
+						
+					if (search < end_search)
+					{
+						const SLEUTHTYPE d = *search++;
+						if (c != d)
+							return false;
+					}
+					else
+						return false;
+				}
+			}
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlMatchOneCanonic())
+		{
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic())
+			{
+				if (search >= end_search)
+					return false;
+					
+				search++;
+			}
+			else {
+				if (++match >= end_match)
+					return true;
+					
+				for (;;)
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
+						return true;
+						
+					if (++search >= end_search)
+						return false;
+				}
+			}
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlClassStartCanonic())
+		{
+			const SLEUTHTYPE* const char_class = match;
+			while (*match++ != *(SLEUTHTYPE*)obj->getGdmlClassEndCanonic()) {
+				if (match >= end_match)
+					return false;
+			}
+			const SLEUTHTYPE* const end_class = match - 1;
+			if (match >= end_match || *match != *(SLEUTHTYPE*)obj->getGdmlMatchAnyCanonic())
+			{
+				if (!SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, *search++))
+					return false;
+			}
+			else {
+				++match;
+				for (;;)
+				{
+					if (SLEUTH_AUX(obj, flags, search, end_search, match, end_match))
+						return true;
+						
+					if (search < end_search)
+					{
+						if (!SLEUTH_CLASS_NAME(obj, flags, char_class, end_class, *search++))
+							return false;
+					}
+					else
+						return false;
+				}
+			}
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagSetCanonic())
+		{
+			c = *match++;
+			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
+				flags &= ~SLEUTH_insensitive;
+		}
+		else if (c == *(SLEUTHTYPE*)obj->getGdmlFlagClearCanonic())
+		{
+			c = *match++;
+			if (c == *(SLEUTHTYPE*)obj->getGdmlLowerSCanonic() || c == *(SLEUTHTYPE*)obj->getGdmlUpperSCanonic())
+				flags |= SLEUTH_insensitive;
+		}
+	}
+
+	if (search < end_search)
+		return false;
+
+	return true;
+}
+
+
+template <class SLEUTHTYPE>
+static bool SLEUTH_CLASS_NAME(
+								 Jrd::TextType* obj,
+								 USHORT flags,
+								 const SLEUTHTYPE* char_class,
+								 const SLEUTHTYPE* const end_class, 
+								 SLEUTHTYPE character)
+{
+/**************************************
+ *
+ *	s l e u t h _ c l a s s
+ *
+ **************************************
+ *
+ * Functional description
+ *	See if a character is a member of a class.
+ *	Japanese version operates on short-based buffer,
+ *	instead of SCHAR-based.
+ *
+ **************************************/
+	fb_assert(char_class != NULL);
+	fb_assert(end_class != NULL);
+	fb_assert(char_class <= end_class);
+	fb_assert(obj->getCanonicalWidth() == sizeof(SLEUTHTYPE));
+
+	bool result = true;
+
+	if (*char_class == *(SLEUTHTYPE*)obj->getGdmlNotCanonic()) {
+		++char_class;
+		result = false;
+	}
+
+	while (char_class < end_class) {
+		const SLEUTHTYPE c = *char_class++;
+		if (c == *(SLEUTHTYPE*)obj->getGdmlQuoteCanonic()) {
+			if (*char_class++ == character)
+				return true;
+		}
+		else if (*char_class == *(SLEUTHTYPE*)obj->getGdmlRangeCanonic()) {
+			char_class += 2;
+			if (character >= c && character <= char_class[-1])
+				return result;
+		}
+		else if (character == c)
+			return result;
+	}
+
+	return !result;
+}
+
+
 // Below are templates for functions used in Collation implementation
 
-class NullStrConverter
-{
+class NullStrConverter {
 public:
-	NullStrConverter(MemoryPool& pool, const TextType* obj, const UCHAR* str, SLONG len)
-	{
-	}
+	NullStrConverter(thread_db* tdbb, const TextType* obj, const UCHAR *str, SLONG len) { }
 };
 
 template <typename PrevConverter>
-class UpcaseConverter : public PrevConverter
-{
+class UpcaseConverter : public PrevConverter {
 public:
-	UpcaseConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
+	UpcaseConverter(thread_db* tdbb, TextType* obj, const UCHAR* &str, SLONG &len) :
+		PrevConverter(tdbb, obj, str, len)
 	{
 		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[len];
+			out_str = FB_NEW(*tdbb->getDefaultPool()) UCHAR[len];
 		else
 			out_str = tempBuffer;
 		obj->str_to_upper(len, str, len, out_str);
 		str = out_str;
 	}
-
-	~UpcaseConverter()
-	{
+	~UpcaseConverter() {
 		if (out_str != tempBuffer)
 			delete[] out_str;
 	}
-
 private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
+	UCHAR tempBuffer[100], *out_str;
 };
 
 template <typename PrevConverter>
-class CanonicalConverter : public PrevConverter
-{
+class CanonicalConverter : public PrevConverter {
 public:
-	CanonicalConverter(MemoryPool& pool, TextType* obj, const UCHAR*& str, SLONG& len)
-		: PrevConverter(pool, obj, str, len)
+	CanonicalConverter(thread_db* tdbb, TextType* obj, const UCHAR* &str, SLONG &len) :
+		PrevConverter(tdbb, obj, str, len)
 	{
-		const SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
+		SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
 
 		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[out_len];
+			out_str = FB_NEW(*tdbb->getDefaultPool()) UCHAR[out_len];
 		else
 			out_str = tempBuffer;
 
@@ -193,79 +572,66 @@ public:
 		else
 			len = 0;
 	}
-
-	~CanonicalConverter()
-	{
+	~CanonicalConverter() {
 		if (out_str != tempBuffer)
 			delete[] out_str;
 	}
-
 private:
-	UCHAR tempBuffer[100];
-	UCHAR* out_str;
+	UCHAR tempBuffer[100], *out_str;
 };
 
 template <typename StrConverter, typename CharType>
-class LikeMatcher : public PatternMatcher
-{
+class LikeObjectImpl : public LikeObject {
 public:
-	LikeMatcher(MemoryPool& pool, TextType* ttype, const CharType* str, SLONG str_len,
-			CharType escape, bool use_escape, CharType sql_match_any, CharType sql_match_one)
-		: PatternMatcher(pool, ttype),
-		  evaluator(pool, str, str_len, escape, use_escape, sql_match_any, sql_match_one)
-	{
-	}
+	LikeObjectImpl(MemoryPool& pool, const CharType* str, SLONG str_len,
+				   CharType escape, bool use_escape,
+				   CharType sql_match_any, CharType sql_match_one)
+		: evaluator(pool, str, str_len, escape, use_escape, sql_match_any, sql_match_one)
+	{ }
 
-	void reset()
-	{
-		evaluator.reset();
-	}
+	void reset() { evaluator.reset(); }
 
-	bool result()
-	{
-		return evaluator.getResult();
-	}
+	bool result() { return evaluator.getResult(); }
 
-	bool process(const UCHAR* str, SLONG length)
-	{
-		StrConverter cvt(pool, textType, str, length);
+	bool process(thread_db* tdbb, Jrd::TextType* ttype, const UCHAR* str, SLONG length) {
+		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 		return evaluator.processNextChunk(
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	static LikeMatcher* create(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-		SLONG length, const UCHAR* escape, SLONG escape_length,
+	~LikeObjectImpl() {}
+
+	static LikeObject* create(thread_db* tdbb, TextType* ttype, const UCHAR* str, SLONG length,
+		const UCHAR* escape, SLONG escape_length,
 		const UCHAR* sql_match_any, SLONG match_any_length,
 		const UCHAR* sql_match_one, SLONG match_one_length)
 	{
-		StrConverter cvt(pool, ttype, str, length),
-					 cvt_escape(pool, ttype, escape, escape_length),
-					 cvt_match_any(pool, ttype, sql_match_any, match_any_length),
-					 cvt_match_one(pool, ttype, sql_match_one, match_one_length);
+		StrConverter cvt(tdbb, ttype, str, length),
+					 cvt_escape(tdbb, ttype, escape, escape_length),
+					 cvt_match_any(tdbb, ttype, sql_match_any, match_any_length),
+					 cvt_match_one(tdbb, ttype, sql_match_one, match_one_length);
 
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) LikeMatcher(pool, ttype,
+		return FB_NEW(*tdbb->getDefaultPool()) LikeObjectImpl(*tdbb->getDefaultPool(),
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType),
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0,
 			*reinterpret_cast<const CharType*>(sql_match_any),
 			*reinterpret_cast<const CharType*>(sql_match_one));
 	}
 
-	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length,
-		const UCHAR* sql_match_any, SLONG match_any_length,
-		const UCHAR* sql_match_one, SLONG match_one_length)
+	static bool evaluate(thread_db* tdbb, TextType* ttype, const UCHAR* s, SLONG sl,
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length, const UCHAR* sql_match_any, SLONG match_any_length, const UCHAR* sql_match_one, SLONG match_one_length)
 	{
-		StrConverter cvt1(pool, ttype, p, pl),
-					 cvt2(pool, ttype, s, sl),
-					 cvt_escape(pool, ttype, escape, escape_length),
-					 cvt_match_any(pool, ttype, sql_match_any, match_any_length),
-					 cvt_match_one(pool, ttype, sql_match_one, match_one_length);
+		StrConverter cvt1(tdbb, ttype, p, pl),
+					 cvt2(tdbb, ttype, s, sl),
+					 cvt_escape(tdbb, ttype, escape, escape_length),
+					 cvt_match_any(tdbb, ttype, sql_match_any, match_any_length),
+					 cvt_match_one(tdbb, ttype, sql_match_one, match_one_length);
 
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::LikeEvaluator<CharType> evaluator(pool,
+		Firebird::LikeEvaluator<CharType> evaluator(*tdbb->getDefaultPool(),
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType),
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0,
 			*reinterpret_cast<const CharType*>(sql_match_any),
@@ -279,104 +645,40 @@ private:
 };
 
 template <typename StrConverter, typename CharType>
-class StartsMatcher : public PatternMatcher
+class ContainsObjectImpl : public ContainsObject
 {
 public:
-	StartsMatcher(MemoryPool& pool, TextType* ttype, const CharType* str, SLONG str_len)
-		: PatternMatcher(pool, ttype),
-		  evaluator(pool, str, str_len)
-	{
-	}
+	ContainsObjectImpl(MemoryPool& pool, const CharType* str, SLONG str_len)
+		: evaluator(pool, str, str_len)
+	{ }
 
-	void reset()
-	{
-		evaluator.reset();
-	}
+	void reset() { evaluator.reset(); }
 
-	bool result()
-	{
-		return evaluator.getResult();
-	}
+	bool result() { return evaluator.getResult(); }
 
-	bool process(const UCHAR* str, SLONG length)
-	{
-		StrConverter cvt(pool, textType, str, length);
+	bool process(thread_db* tdbb, Jrd::TextType* ttype, const UCHAR* str, SLONG length) {
+		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
 		return evaluator.processNextChunk(
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	static StartsMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length)
-	{
-		StrConverter cvt(pool, ttype, str, length);
+	~ContainsObjectImpl() {}
+
+	static ContainsObject* create(thread_db* tdbb, TextType* ttype, const UCHAR* str, SLONG length) {
+		StrConverter cvt(tdbb, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) StartsMatcher(pool, ttype,
+		return FB_NEW(*tdbb->getDefaultPool()) ContainsObjectImpl(*tdbb->getDefaultPool(),
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
-	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl)
+	static bool evaluate(thread_db* tdbb, TextType* ttype, const UCHAR* s, SLONG sl,
+			const UCHAR* p, SLONG pl)
 	{
-		StrConverter cvt1(pool, ttype, p, pl);
-		StrConverter cvt2(pool, ttype, s, sl);
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::StartsEvaluator<CharType> evaluator(pool,
-			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
-		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
-		return evaluator.getResult();
-	}
-
-private:
-	Firebird::StartsEvaluator<CharType> evaluator;
-};
-
-template <typename StrConverter, typename CharType>
-class ContainsMatcher : public PatternMatcher
-{
-public:
-	ContainsMatcher(MemoryPool& pool, TextType* ttype, const CharType* str, SLONG str_len)
-		: PatternMatcher(pool, ttype),
-		  evaluator(pool, str, str_len)
-	{
-	}
-
-	void reset()
-	{
-		evaluator.reset();
-	}
-
-	bool result()
-	{
-		return evaluator.getResult();
-	}
-
-	bool process(const UCHAR* str, SLONG length)
-	{
-		StrConverter cvt(pool, textType, str, length);
-		fb_assert(length % sizeof(CharType) == 0);
-		return evaluator.processNextChunk(
-			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
-	}
-
-	static ContainsMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length)
-	{
-		StrConverter cvt(pool, ttype, str, length);
-		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) ContainsMatcher(pool, ttype,
-			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
-	}
-
-	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl)
-	{
-		StrConverter cvt1(pool, ttype, p, pl);
-		StrConverter cvt2(pool, ttype, s, sl);
-		fb_assert(pl % sizeof(CharType) == 0);
-		fb_assert(sl % sizeof(CharType) == 0);
-		Firebird::ContainsEvaluator<CharType> evaluator(pool,
+		Firebird::ContainsEvaluator<CharType> evaluator(*tdbb->getDefaultPool(),
 			reinterpret_cast<const CharType*>(p), pl / sizeof(CharType));
 		evaluator.processNextChunk(reinterpret_cast<const CharType*>(s), sl / sizeof(CharType));
 		return evaluator.getResult();
@@ -387,496 +689,113 @@ private:
 };
 
 template <typename StrConverter, typename CharType>
-class MatchesMatcher
+class MatchesObjectImpl
 {
 public:
-	static bool evaluate(MemoryPool& pool, TextType* ttype,
-		const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
+	static bool evaluate(thread_db* tdbb, TextType* ttype, const UCHAR* s, SLONG sl,
+			const UCHAR* p, SLONG pl)
 	{
-		StrConverter cvt1(pool, ttype, p, pl);
-		StrConverter cvt2(pool, ttype, s, sl);
+		StrConverter cvt1(tdbb, ttype, p, pl), cvt2(tdbb, ttype, s, sl);
 		fb_assert(pl % sizeof(CharType) == 0);
 		fb_assert(sl % sizeof(CharType) == 0);
-		return matches(pool, ttype, reinterpret_cast<const CharType*>(s), sl,
+		return MATCHESNAME(tdbb, ttype, reinterpret_cast<const CharType*>(s), sl,
 						   reinterpret_cast<const CharType*>(p), pl);
-	}
-
-private:
-	 // Return true if a string (p1, l1) matches a given pattern (p2, l2).
-	 // The character '?' in the pattern may match any single character
-	 // in the the string, and the character '*' may match any sequence
-	 // of characters.
-	 //
-	 // Wide SCHAR version operates on short-based buffer,
-	 // instead of SCHAR-based.
-	 //
-	 // Matches is not a case-sensitive operation, thus it has no
-	 // 8-bit international impact.
-	static bool matches(MemoryPool& pool, Jrd::TextType* obj, const CharType* p1,
-		SLONG l1_bytes, const CharType* p2, SLONG l2_bytes)
-	{
-		fb_assert(p1 != NULL);
-		fb_assert(p2 != NULL);
-		fb_assert((l1_bytes % sizeof(CharType)) == 0);
-		fb_assert((l2_bytes % sizeof(CharType)) == 0);
-		fb_assert((obj->getCanonicalWidth() == sizeof(CharType)));
-
-		SLONG l1 = l1_bytes / sizeof(CharType);
-		SLONG l2 = l2_bytes / sizeof(CharType);
-
-		while (l2-- > 0) {
-			const CharType c = *p2++;
-			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)) {
-				while ((l2 > 0) && (*p2 == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))) {
-					l2--;
-					p2++;
-				}
-				if (l2 == 0)
-					return true;
-				while (l1)
-				{
-					if (matches(pool, obj, p1++, l1-- * sizeof(CharType),
-							p2, l2 * sizeof(CharType)))
-					{
-						return true;
-					}
-				}
-				return false;
-			}
-			if (l1-- == 0)
-				return false;
-			if (c != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ONE) && c != *p1)
-				return false;
-			p1++;
-		}
-
-		return !l1;
 	}
 };
 
 template <typename StrConverter, typename CharType>
-class SleuthMatcher
+class SleuthObjectImpl
 {
 public:
-	// Evaluate the "sleuth" search operator.
-	// Turn the (pointer, byte length) input parameters into
-	// (pointer, end_pointer) for use in aux function
-	static bool check(MemoryPool& pool, TextType* ttype, USHORT flags,
-		const UCHAR* search, SLONG search_len,
-		const UCHAR* match, SLONG match_len)
+	static bool check(thread_db* tdbb, TextType* ttype, USHORT flags,
+					  const UCHAR* search, SLONG search_len,
+					  const UCHAR* match, SLONG match_len)
 	{
-		StrConverter cvt1(pool, ttype, search, search_len);//, cvt2(pool, ttype, match, match_len);
-
-		fb_assert((match_len % sizeof(CharType)) == 0);
-		fb_assert((search_len % sizeof(CharType)) == 0);
-		fb_assert(ttype->getCanonicalWidth() == sizeof(CharType));
-
-		const CharType* const end_match = reinterpret_cast<const CharType*>(match) +
-			(match_len / sizeof(CharType));
-		const CharType* const end_search = reinterpret_cast<const CharType*>(search) +
-			(search_len / sizeof(CharType));
-
-		return aux(ttype, flags, reinterpret_cast<const CharType*>(search),
-			end_search, reinterpret_cast<const CharType*>(match), end_match);
+		StrConverter cvt1(tdbb, ttype, search, search_len);//, cvt2(tdbb, ttype, match, match_len);
+		fb_assert(search_len % sizeof(CharType) == 0);
+		fb_assert(match_len % sizeof(CharType) == 0);
+		return SLEUTHNAME(tdbb, ttype, flags,
+						  reinterpret_cast<const CharType*>(search), search_len,
+						  reinterpret_cast<const CharType*>(match), match_len);
 	}
 
-	static ULONG merge(MemoryPool& pool, TextType* ttype,
-		const UCHAR* match, SLONG match_bytes,
-		const UCHAR* control, SLONG control_bytes,
-		UCHAR* combined, SLONG combined_bytes)
+	static ULONG merge(thread_db* tdbb, TextType* ttype,
+					  const UCHAR* match, SLONG match_bytes,
+					  const UCHAR* control, SLONG control_bytes,
+					  UCHAR* combined, SLONG combined_bytes)
 	{
-		StrConverter cvt1(pool, ttype, match, match_bytes);
-		StrConverter cvt2(pool, ttype, control, control_bytes);
+		StrConverter cvt1(tdbb, ttype, match, match_bytes), cvt2(tdbb, ttype, control, control_bytes);
 		fb_assert(match_bytes % sizeof(CharType) == 0);
 		fb_assert(control_bytes % sizeof(CharType) == 0);
-		return actualMerge(pool, ttype,
+		return SLEUTH_MERGE_NAME(tdbb, ttype,
 						   reinterpret_cast<const CharType*>(match), match_bytes,
 						   reinterpret_cast<const CharType*>(control), control_bytes,
 						   reinterpret_cast<CharType*>(combined), combined_bytes);
 	}
-
-private:
-	// Evaluate the "sleuth" search operator.
-	static bool aux(Jrd::TextType* obj, USHORT flags,
-		const CharType* search, const CharType* end_search,
-		const CharType* match, const CharType* end_match)
-	{
-		fb_assert(search != NULL);
-		fb_assert(end_search != NULL);
-		fb_assert(match != NULL);
-		fb_assert(end_match != NULL);
-		fb_assert(search <= end_search);
-		fb_assert(match <= end_match);
-		fb_assert(obj->getCanonicalWidth() == sizeof(CharType));
-
-		while (match < end_match) {
-			CharType c = *match++;
-			if ((c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && (c = *match++)) ||
-				((((size_t) c) < FB_NELEM(SLEUTH_SPECIAL)) && !SLEUTH_SPECIAL[c]))
-			{
-				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY)) {
-					if (search >= end_search)
-						return false;
-					const CharType d = *search++;
-					if (c != d)
-						return false;
-				}
-				else {
-					++match;
-					for (;;)
-					{
-						if (aux(obj, flags, search, end_search, match, end_match))
-							return true;
-							
-						if (search < end_search)
-						{
-							const CharType d = *search++;
-							if (c != d)
-								return false;
-						}
-						else
-							return false;
-					}
-				}
-			}
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ONE))
-			{
-				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))
-				{
-					if (search >= end_search)
-						return false;
-						
-					search++;
-				}
-				else {
-					if (++match >= end_match)
-						return true;
-						
-					for (;;)
-					{
-						if (aux(obj, flags, search, end_search, match, end_match))
-							return true;
-							
-						if (++search >= end_search)
-							return false;
-					}
-				}
-			}
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_CLASS_START))
-			{
-				const CharType* const char_class = match;
-				while (*match++ != *(CharType*) obj->getCanonicalChar(CHAR_GDML_CLASS_END)) {
-					if (match >= end_match)
-						return false;
-				}
-				const CharType* const end_class = match - 1;
-				if (match >= end_match || *match != *(CharType*) obj->getCanonicalChar(CHAR_GDML_MATCH_ANY))
-				{
-					if (!className(obj, flags, char_class, end_class, *search++))
-						return false;
-				}
-				else {
-					++match;
-					for (;;)
-					{
-						if (aux(obj, flags, search, end_search, match, end_match))
-							return true;
-							
-						if (search < end_search)
-						{
-							if (!className(obj, flags, char_class, end_class, *search++))
-								return false;
-						}
-						else
-							return false;
-					}
-				}
-			}
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_FLAG_SET))
-			{
-				c = *match++;
-				if (c == *(CharType*) obj->getCanonicalChar(TextType::CHAR_LOWER_S) ||
-					c == *(CharType*) obj->getCanonicalChar(TextType::CHAR_UPPER_S))
-				{
-					flags &= ~SLEUTH_INSENSITIVE;
-				}
-			}
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_FLAG_CLEAR))
-			{
-				c = *match++;
-				if (c == *(CharType*) obj->getCanonicalChar(TextType::CHAR_LOWER_S) ||
-					c == *(CharType*) obj->getCanonicalChar(TextType::CHAR_UPPER_S))
-				{
-					flags |= SLEUTH_INSENSITIVE;
-				}
-			}
-		}
-
-		if (search < end_search)
-			return false;
-
-		return true;
-	}
-
-	// See if a character is a member of a class.
-	// Japanese version operates on short-based buffer,
-	// instead of SCHAR-based.
-	static bool className(Jrd::TextType* obj, USHORT flags,
-		const CharType* char_class, const CharType* const end_class, 
-		CharType character)
-	{
-		fb_assert(char_class != NULL);
-		fb_assert(end_class != NULL);
-		fb_assert(char_class <= end_class);
-		fb_assert(obj->getCanonicalWidth() == sizeof(CharType));
-
-		bool result = true;
-
-		if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_NOT)) {
-			++char_class;
-			result = false;
-		}
-
-		while (char_class < end_class) {
-			const CharType c = *char_class++;
-			if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)) {
-				if (*char_class++ == character)
-					return true;
-			}
-			else if (*char_class == *(CharType*) obj->getCanonicalChar(CHAR_GDML_RANGE)) {
-				char_class += 2;
-				if (character >= c && character <= char_class[-1])
-					return result;
-			}
-			else if (character == c)
-				return result;
-		}
-
-		return !result;
-	}
-
-	// Merge the matching pattern and control strings to give a cannonical
-	// matching pattern.  Return the length of the combined string. 
-	//
-	// What this routine does is to take the language template, strip off 
-	// the prefix and put it in the output string, then parse the definitions
-	// into an array of character pointers.  The index array is the defined
-	// character.   The routine then takes the actual match pattern and uses
-	// the characters in it to index into the definitions to produce an equivalent
-	// pattern in the cannonical language.
-	//
-	// The silly loop setting *v++ to zero initializes the array up to the
-	// highest character defined (also max_op).  Believe it or not, that part
-	// is not a bug.
-	static ULONG actualMerge(MemoryPool& pool, Jrd::TextType* obj,
-		const CharType* match, SLONG match_bytes,
-		const CharType* control, SLONG control_bytes,
-		CharType* combined, SLONG combined_bytes)
-	{
-		fb_assert(match != NULL);
-		fb_assert(control != NULL);
-		fb_assert(combined != NULL);
-
-		fb_assert((match_bytes % sizeof(CharType)) == 0);
-		fb_assert((control_bytes % sizeof(CharType)) == 0);
-		fb_assert(obj->getCanonicalWidth() == sizeof(CharType));
-
-		const CharType* const end_match = match + (match_bytes / sizeof(CharType));
-		const CharType* const end_control = control + (control_bytes / sizeof(CharType));
-
-		CharType max_op = 0;
-		CharType* comb = combined;
-		CharType* vector[256];
-		CharType** v = vector;
-		CharType temp[256];
-		CharType* t = temp;
-
-		// Parse control string into substitution strings and initializing string
-
-		while (control < end_control) {
-			CharType c = *control++;
-			if (*control == *(CharType*) obj->getCanonicalChar(CHAR_GDML_SUBSTITUTE)) {
-				/* Note: don't allow substitution characters larger than vector */
-				CharType** const end_vector =
-					vector + (((int) c < FB_NELEM(vector)) ? c : 0);
-				while (v <= end_vector)
-					*v++ = 0;
-				*end_vector = t;
-				++control;
-				while (control < end_control) {
-					c = *control++;
-					if ((t > temp && t[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE)) ||
-						((c != *(CharType*) obj->getCanonicalChar(CHAR_GDML_COMMA)) &&
-						(c != *(CharType*) obj->getCanonicalChar(CHAR_GDML_RPAREN))))
-					{
-						*t++ = c;
-					}
-					else
-						break;
-				}
-				*t++ = 0;
-			}
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && control < end_control)
-				*comb++ = *control++;
-			else if (c == *(CharType*) obj->getCanonicalChar(CHAR_GDML_RPAREN))
-				break;
-			else if (c != *(CharType*) obj->getCanonicalChar(CHAR_GDML_LPAREN))
-				*comb++ = c;
-		}
-
-		max_op = v - vector;
-
-		// Interpret matching string, substituting where appropriate
-
-		while (match < end_match) {
-			const CharType c = *match++;
-
-			// if we've got a defined character, slurp the definition
-
-			CharType* p;
-			if (c <= max_op && (p = vector[c])) {
-				while (*p)
-					*comb++ = *p++;
-
-				// if we've got the definition of a quote character, 
-				// slurp the next character too
-
-				if (comb > combined && comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && *match)
-					*comb++ = *match++;
-			}
-
-			// at this point we've got a non-match, but as it might be one of ours, quote it
-
-			else {
-				if ((((size_t) c) < FB_NELEM(SLEUTH_SPECIAL)) && SLEUTH_SPECIAL[c] &&
-					comb > combined && comb[-1] != *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE))
-				{
-					*comb++ = *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE);
-				}
-				*comb++ = c;
-			}
-		}
-
-		// Put in trailing stuff
-
-		while (control < end_control)
-			*comb++ = *control++;
-
-		// YYY - need to add code watching for overflow of combined
-
-		return (comb - combined) * sizeof(CharType);
-	}
-
-private:
-	static const int SLEUTH_INSENSITIVE;
 };
 
-template <typename StrConverter, typename CharType>
-const int SleuthMatcher<StrConverter, CharType>::SLEUTH_INSENSITIVE	= 1;
 
-
-template <typename pStartsMatcher, typename pContainsMatcher, typename pLikeMatcher,
-	typename pSimilarToMatcher, typename pMatchesMatcher, typename pSleuthMatcher>
+template <typename pContainsObjectImpl, typename pLikeObjectImpl,
+		  typename pMatchesObjectImpl, typename pSleuthObjectImpl>
 class CollationImpl : public Collation
 {
 public:
-	CollationImpl(TTYPE_ID a_type, texttype* a_tt, CharSet* a_cs)
-		: Collation(a_type, a_tt, a_cs)
+	CollationImpl(TTYPE_ID a_type, texttype* a_tt, CharSet* a_cs) : Collation(a_type, a_tt, a_cs) {}
+
+	virtual bool matches(thread_db* tdbb, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d)
 	{
+		return pMatchesObjectImpl::evaluate(tdbb, this, a, b, c, d);
 	}
 
-	virtual bool matches(MemoryPool& pool, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d)
+	virtual bool sleuth_check(thread_db* tdbb, USHORT a, const UCHAR* b, SLONG c, const UCHAR* d, SLONG e)
 	{
-		return pMatchesMatcher::evaluate(pool, this, a, b, c, d);
+		return pSleuthObjectImpl::check(tdbb, this, a, b, c, d, e);
 	}
 
-	virtual bool sleuthCheck(MemoryPool& pool, USHORT a, const UCHAR* b,
-		SLONG c, const UCHAR* d, SLONG e)
+	virtual ULONG sleuth_merge(thread_db* tdbb, const UCHAR* a, SLONG b, const UCHAR* c, SLONG d, UCHAR* e, SLONG f)
 	{
-		return pSleuthMatcher::check(pool, this, a, b, c, d, e);
+		return pSleuthObjectImpl::merge(tdbb, this, a, b, c, d, e, f);
 	}
 
-	virtual ULONG sleuthMerge(MemoryPool& pool, const UCHAR* a, SLONG b,
-		const UCHAR* c, SLONG d, UCHAR* e, SLONG f)
+	virtual bool like(thread_db* tdbb, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		return pSleuthMatcher::merge(pool, this, a, b, c, d, e, f);
+		return pLikeObjectImpl::evaluate(tdbb, this, s, sl, p, pl, escape, escape_length, getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(), getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
-	virtual bool starts(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
+	virtual LikeObject *like_create(thread_db* tdbb, const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		return pStartsMatcher::evaluate(pool, this, s, sl, p, pl);
+		return pLikeObjectImpl::create(tdbb, this, p, pl, escape, escape_length, getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(), getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
 	}
 
-	virtual PatternMatcher* createStartsMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl)
+	virtual bool contains(thread_db* tdbb, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
 	{
-		return pStartsMatcher::create(pool, this, p, pl);
+		return pContainsObjectImpl::evaluate(tdbb, this, s, sl, p, pl);
 	}
 
-	virtual bool like(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
+	virtual ContainsObject *contains_create(thread_db* tdbb, const UCHAR* p, SLONG pl)
 	{
-		return pLikeMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length,
-			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
-			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
-	}
-
-	virtual PatternMatcher* createLikeMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escape_length)
-	{
-		return pLikeMatcher::create(pool, this, p, pl, escape, escape_length,
-			getCharSet()->getSqlMatchAny(), getCharSet()->getSqlMatchAnyLength(),
-			getCharSet()->getSqlMatchOne(), getCharSet()->getSqlMatchOneLength());
-	}
-
-	virtual bool similarTo(MemoryPool& pool, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
-	{
-		return pSimilarToMatcher::evaluate(pool, this, s, sl, p, pl, escape, escape_length);
-	}
-
-	virtual PatternMatcher* createSimilarToMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl,
-		const UCHAR* escape, SLONG escape_length)
-	{
-		return pSimilarToMatcher::create(pool, this, p, pl, escape, escape_length);
-	}
-
-	virtual bool contains(MemoryPool& pool, const UCHAR* s, SLONG sl, const UCHAR* p, SLONG pl)
-	{
-		return pContainsMatcher::evaluate(pool, this, s, sl, p, pl);
-	}
-
-	virtual PatternMatcher* createContainsMatcher(MemoryPool& pool, const UCHAR* p, SLONG pl)
-	{
-		return pContainsMatcher::create(pool, this, p, pl);
+		return pContainsObjectImpl::create(tdbb, this, p, pl);
 	}
 };
 
-using namespace Firebird;
+typedef ContainsObjectImpl<UpcaseConverter<NullStrConverter>, UCHAR> uchar_contains_direct;
+typedef ContainsObjectImpl<UpcaseConverter<NullStrConverter>, USHORT> ushort_contains_direct;
+typedef ContainsObjectImpl<UpcaseConverter<NullStrConverter>, ULONG> ulong_contains_direct;
 
-typedef StartsMatcher<NullStrConverter, UCHAR> StartsMatcherUCharDirect;
-typedef StartsMatcher<CanonicalConverter<NullStrConverter>, UCHAR> StartsMatcherUCharCanonical;
+typedef MatchesObjectImpl<CanonicalConverter<NullStrConverter>, UCHAR> uchar_matches_canonical;
+typedef SleuthObjectImpl<CanonicalConverter<NullStrConverter>, UCHAR> uchar_sleuth_canonical;
+typedef LikeObjectImpl<CanonicalConverter<NullStrConverter>, UCHAR> uchar_like_canonical;
+typedef ContainsObjectImpl<CanonicalConverter<UpcaseConverter<NullStrConverter> >, UCHAR> uchar_contains_canonical;
 
-typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, UCHAR> ContainsMatcherUCharDirect;
-//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, USHORT> ContainsMatcherUShortDirect;
-//typedef ContainsMatcher<UpcaseConverter<NullStrConverter>, ULONG> ContainsMatcherULongDirect;
+typedef MatchesObjectImpl<CanonicalConverter<NullStrConverter>, USHORT> ushort_matches_canonical;
+typedef SleuthObjectImpl<CanonicalConverter<NullStrConverter>, USHORT> ushort_sleuth_canonical;
+typedef LikeObjectImpl<CanonicalConverter<NullStrConverter>, USHORT> ushort_like_canonical;
+typedef ContainsObjectImpl<CanonicalConverter<UpcaseConverter<NullStrConverter> >, USHORT> ushort_contains_canonical;
 
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, UCHAR> MatchesMatcherUCharCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SleuthMatcherUCharCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, UCHAR> LikeMatcherUCharCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, UCHAR> SimilarToMatcherUCharCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, UCHAR> ContainsMatcherUCharCanonical;
-
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, USHORT> MatchesMatcherUShortCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, USHORT> SleuthMatcherUShortCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, USHORT> LikeMatcherUShortCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, USHORT> SimilarToMatcherUShortCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, USHORT> ContainsMatcherUShortCanonical;
-
-typedef MatchesMatcher<CanonicalConverter<NullStrConverter>, ULONG> MatchesMatcherULongCanonical;
-typedef SleuthMatcher<CanonicalConverter<NullStrConverter>, ULONG> SleuthMatcherULongCanonical;
-typedef LikeMatcher<CanonicalConverter<NullStrConverter>, ULONG> LikeMatcherULongCanonical;
-typedef SimilarToMatcher<CanonicalConverter<NullStrConverter>, ULONG> SimilarToMatcherULongCanonical;
-typedef ContainsMatcher<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ContainsMatcherULongCanonical;
+typedef MatchesObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_matches_canonical;
+typedef SleuthObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_sleuth_canonical;
+typedef LikeObjectImpl<CanonicalConverter<NullStrConverter>, ULONG> ulong_like_canonical;
+typedef ContainsObjectImpl<CanonicalConverter<UpcaseConverter<NullStrConverter> >, ULONG> ulong_contains_canonical;
 
 }	// namespace
 
@@ -898,38 +817,35 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 		case 1:
 			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
 			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
-					MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
+				return FB_NEW(pool) CollationImpl<uchar_contains_direct, uchar_like_canonical,
+					uchar_matches_canonical, uchar_sleuth_canonical>(id, tt, cs);
 			}
 
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUCharCanonical,
-				LikeMatcherUCharCanonical, SimilarToMatcherUCharCanonical,
-				MatchesMatcherUCharCanonical, SleuthMatcherUCharCanonical>(id, tt, cs);
+			return FB_NEW(pool) CollationImpl<uchar_contains_canonical, uchar_like_canonical,
+				uchar_matches_canonical, uchar_sleuth_canonical>(id, tt, cs);
+			break;
 
 		case 2:
 			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
 			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
-					MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
+				return FB_NEW(pool) CollationImpl<uchar_contains_direct, ushort_like_canonical,
+					ushort_matches_canonical, ushort_sleuth_canonical>(id, tt, cs);
 			}
 
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherUShortCanonical,
-				LikeMatcherUShortCanonical, SimilarToMatcherUShortCanonical,
-				MatchesMatcherUShortCanonical, SleuthMatcherUShortCanonical>(id, tt, cs);
+			return FB_NEW(pool) CollationImpl<ushort_contains_canonical, ushort_like_canonical,
+				ushort_matches_canonical, ushort_sleuth_canonical>(id, tt, cs);
+			break;
 
 		case 4:
 			if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
 			{
-				return FB_NEW(pool) CollationImpl<StartsMatcherUCharDirect, ContainsMatcherUCharDirect,
-					LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
-					MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
+				return FB_NEW(pool) CollationImpl<uchar_contains_direct, ulong_like_canonical,
+					ulong_matches_canonical, ulong_sleuth_canonical>(id, tt, cs);
 			}
 
-			return FB_NEW(pool) CollationImpl<StartsMatcherUCharCanonical, ContainsMatcherULongCanonical,
-				LikeMatcherULongCanonical, SimilarToMatcherULongCanonical,
-				MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
+			return FB_NEW(pool) CollationImpl<ulong_contains_canonical, ulong_like_canonical,
+				ulong_matches_canonical, ulong_sleuth_canonical>(id, tt, cs);
+			break;
 	}
 
 	fb_assert(false);	
@@ -943,20 +859,28 @@ void Collation::destroy()
 		tt->texttype_fn_destroy(tt);
 
 	delete tt;
-
 	if (existenceLock)
 	{
+		thread_db thd_context, *tdbb;
+
 		// Establish a thread context.
-		ThreadContextHolder tdbb;
+		JRD_set_thread_data(tdbb, thd_context);
 
 		tdbb->setDatabase(existenceLock->lck_dbb);
 		tdbb->setAttachment(existenceLock->lck_attachment);
+		tdbb->tdbb_quantum = QUANTUM;
+		tdbb->setRequest(NULL);
+		tdbb->setTransaction(NULL);
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		LCK_release(tdbb, existenceLock);
 
 		delete existenceLock;
-		existenceLock = NULL;
+
+		// Restore the prior thread context
+		JRD_restore_thread_data();
+
+		existenceLock = 0;
 	}
 }
 
@@ -972,10 +896,9 @@ void Collation::decUseCount(thread_db* tdbb)
 	if (--useCount == 0)
 	{
 		if (existenceLock)
-			LCK_re_post(tdbb, existenceLock);
+			LCK_re_post(existenceLock);
 	}
 }
 
 
 }	// namespace Jrd
-

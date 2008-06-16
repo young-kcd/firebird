@@ -35,8 +35,7 @@ namespace Firebird {
 
 // Aligns output parameter (i.e. transfers data in destructor).
 template <typename C>
-class OutAligner
-{
+class OutAligner {
 private:
 	UCHAR* userBuffer;
 #ifdef RISC_ALIGNMENT
@@ -82,8 +81,7 @@ public:
 
 // Aligns input parameter.
 template <typename C>
-class Aligner
-{
+class Aligner {
 private:
 #ifdef RISC_ALIGNMENT
 	Firebird::HalfStaticArray<C, BUFFER_SMALL> localBuffer;

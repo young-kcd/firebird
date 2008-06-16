@@ -73,7 +73,6 @@ static void list_all_procs();
 static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
-static void list_charsets();
 static void list_collations();
 static void list_create_db();
 static void list_domain_table(const SCHAR*, SSHORT);
@@ -125,9 +124,6 @@ int EXTRACT_ddl(LegacyTables flag,
 			return FINI_ERROR;
 		}
 		did_attach = true;
-
-		// Make it read owner name to display grantor correctly
-		SHOW_read_owner();
 	}
 
 	ISQL_get_version(false);
@@ -192,7 +188,6 @@ int EXTRACT_ddl(LegacyTables flag,
 	{
 		list_create_db();
 		list_filters();
-		list_charsets();
 		list_collations();
 		list_functions();
 		list_generators();
@@ -324,8 +319,8 @@ int EXTRACT_list_table(const SCHAR* relation_name,
 	if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_1)
 	{
 		FOR RT IN RDB$RELATIONS
-			WITH RT.RDB$RELATION_NAME EQ relation_name AND
-			RT.RDB$RELATION_TYPE NOT MISSING
+			WITH RT.RDB$RELATION_NAME EQ relation_name
+				AND RT.RDB$RELATION_TYPE NOT MISSING
 
 			rel_type = (rel_t) RT.RDB$RELATION_TYPE;
 
@@ -807,36 +802,6 @@ static void get_procedure_args(const char* proc_name)
 				END_FOR 
 			}
 
-			char relationName[BUFFER_LENGTH128] = "";
-			char relationField[BUFFER_LENGTH128] = "";
-
-			if (ENCODE_ODS(isqlGlob.major_ods, isqlGlob.minor_ods) >= ODS_11_2)
-			{
-				FOR PRM2 IN RDB$PROCEDURE_PARAMETERS
-					WITH PRM2.RDB$PROCEDURE_NAME EQ PRM.RDB$PROCEDURE_NAME AND
-						 PRM2.RDB$PARAMETER_NAME EQ PRM.RDB$PARAMETER_NAME
-
-					if (!PRM2.RDB$RELATION_NAME.NULL)
-					{
-						fb_utils::exact_name(PRM2.RDB$RELATION_NAME);
-						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$RELATION_NAME, relationName, DBL_QUOTE);
-						else
-							strcpy(relationName, PRM2.RDB$RELATION_NAME);
-					}
-
-					if (!PRM2.RDB$FIELD_NAME.NULL)
-					{
-						fb_utils::exact_name(PRM2.RDB$FIELD_NAME);
-						if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-							ISQL_copy_SQL_id(PRM2.RDB$FIELD_NAME, relationField, DBL_QUOTE);
-						else
-							strcpy(relationField, PRM2.RDB$FIELD_NAME);
-					}
-
-				END_FOR 
-			}
-
 			if (first_time)
 			{
 				first_time = false;
@@ -865,26 +830,19 @@ static void get_procedure_args(const char* proc_name)
 
 			isqlGlob.printf("%s ", SQL_identifier);
 
-			const bool basedOnColumn = relationName[0] && relationField[0];
-			if (!fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) || FLD.RDB$SYSTEM_FLAG == 1 ||
-				basedOnColumn)
+			if (!(fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) && FLD.RDB$SYSTEM_FLAG != 1))
 			{
 				if (prm_mech == prm_mech_type_of)
 					isqlGlob.printf("TYPE OF ");
 
-				if (basedOnColumn)
-					isqlGlob.printf("%s.%s", relationName, relationField);
-				else
+				fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 				{
-					fb_utils::exact_name(FLD.RDB$FIELD_NAME);
-					if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-					{
-						ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
-						isqlGlob.prints(SQL_identifier);
-					}
-					else
-						isqlGlob.prints(FLD.RDB$FIELD_NAME);
+					ISQL_copy_SQL_id (FLD.RDB$FIELD_NAME, SQL_identifier, DBL_QUOTE);
+					isqlGlob.prints(SQL_identifier);
 				}
+				else
+					isqlGlob.prints(FLD.RDB$FIELD_NAME);
 
 				// International character sets
 				// Print only the collation
@@ -1099,53 +1057,38 @@ static processing_state list_all_grants2(bool show_role_list,
 		FOR XX IN RDB$ROLES
 			SORTED BY XX.RDB$ROLE_NAME
 
-			bool system_flag = false;
-			if (isqlGlob.major_ods >= ODS_VERSION11) 
+			if (first_role)
 			{
-				FOR SF IN RDB$ROLES
-					WITH SF.RDB$ROLE_NAME = XX.RDB$ROLE_NAME 
-					 AND SF.RDB$SYSTEM_FLAG > 0
-					 
-					system_flag = true;
-					
-				END_FOR
+				isqlGlob.printf("%s/* Grant roles for this database */%s",
+						 NEWLINE,
+						 NEWLINE);
+				first_role = false;
 			}
 
-			if (! system_flag)
+			// Null terminate name string
+			fb_utils::exact_name(XX.RDB$ROLE_NAME);
+			fb_utils::exact_name(XX.RDB$OWNER_NAME);
+
+			if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
 			{
-				if (first_role)
-				{
-					isqlGlob.printf("%s/* Grant roles for this database */%s",
-							 NEWLINE,
-							 NEWLINE);
-					first_role = false;
-				}
-
-				// Null terminate name string
-				fb_utils::exact_name(XX.RDB$ROLE_NAME);
-				fb_utils::exact_name(XX.RDB$OWNER_NAME);
-
-				if (strcmp (prev_owner, XX.RDB$OWNER_NAME) != 0)
-				{
-					isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
-							 NEWLINE,
-							 XX.RDB$ROLE_NAME,
-							 XX.RDB$OWNER_NAME,
-							 NEWLINE);
-					strcpy (prev_owner, XX.RDB$OWNER_NAME);
-				}
-
-				if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-				{
-
-					ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 SQL_identifier, NEWLINE);
-				}
-				else
-					isqlGlob.printf("CREATE ROLE %s;%s",
-							 XX.RDB$ROLE_NAME, NEWLINE);
+				isqlGlob.printf("%s/* Role: %s, Owner: %s */%s",
+						 NEWLINE,
+						 XX.RDB$ROLE_NAME,
+						 XX.RDB$OWNER_NAME,
+						 NEWLINE);
+				strcpy (prev_owner, XX.RDB$OWNER_NAME);
 			}
+
+			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+			{
+
+				ISQL_copy_SQL_id (XX.RDB$ROLE_NAME, SQL_identifier, DBL_QUOTE);
+				isqlGlob.printf("CREATE ROLE %s;%s",
+						 SQL_identifier, NEWLINE);
+			}
+			else
+				isqlGlob.printf("CREATE ROLE %s;%s",
+						 XX.RDB$ROLE_NAME, NEWLINE);
 
 		END_FOR
 		ON_ERROR
@@ -1236,9 +1179,9 @@ static void list_all_procs()
  *
  **************************************/
 	bool header = true;
-	static const char* create_procedure_str1 = "CREATE PROCEDURE %s ";
-	static const char* create_procedure_str2 = "BEGIN EXIT; END %s%s";
-	static const char* create_procedure_str3 = "BEGIN SUSPEND; END %s%s";
+	static const SCHAR* create_procedure_str1 = "CREATE PROCEDURE %s ";
+	static const SCHAR* create_procedure_str2 = "BEGIN EXIT; END %s%s";
+	static const char* create_procedure_str3 = "BEGIN SUSPEND; END %s%s";	
 
 
 	//  First the dummy procedures
@@ -1290,6 +1233,7 @@ static void list_all_procs()
 			isqlGlob.printf(create_procedure_str2, Procterm, NEWLINE);
 		else
 			isqlGlob.printf(create_procedure_str3, Procterm, NEWLINE);
+		
 
 	END_FOR
 	ON_ERROR
@@ -1588,62 +1532,6 @@ static void list_check()
 		ISQL_errmsg(gds_status);
 		return;
 	END_ERROR;
-}
-
-
-static void list_charsets()
-{
-/**************************************
- *
- *	l i s t _ c h a r s e t s
- *
- **************************************
- *
- * Functional description
- *	Alter character sets.
- *
- **************************************/
-
-	bool first = true;
-
-	FOR CS IN RDB$CHARACTER_SETS
-		WITH NOT CS.RDB$CHARACTER_SET_NAME EQ CS.RDB$DEFAULT_COLLATE_NAME
-		SORTED BY CS.RDB$CHARACTER_SET_NAME
-
-		if (first)
-		{
-			isqlGlob.printf(
-					 "%s/*  Character sets */%s",
-					 NEWLINE,
-					 NEWLINE);
-			first = false;
-		}
-
-		isqlGlob.printf("ALTER CHARACTER SET ");
-
-		fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$CHARACTER_SET_NAME, SQL_identifier, DBL_QUOTE);
-		else
-			strcpy (SQL_identifier, CS.RDB$CHARACTER_SET_NAME);
-		isqlGlob.printf("%s", SQL_identifier);
-
-		fb_utils::exact_name(CS.RDB$DEFAULT_COLLATE_NAME);
-		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
-			ISQL_copy_SQL_id (CS.RDB$DEFAULT_COLLATE_NAME, SQL_identifier, DBL_QUOTE);
-		else
-			strcpy (SQL_identifier, CS.RDB$DEFAULT_COLLATE_NAME);
-		isqlGlob.printf(" SET DEFAULT COLLATION %s", SQL_identifier);
-
-		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
-	END_FOR
-	ON_ERROR
-		ISQL_errmsg(gds_status);
-		return;
-	END_ERROR;
-
-	if (! first)
-		isqlGlob.printf(NEWLINE);
 }
 
 

@@ -99,15 +99,12 @@ static ULONG unicode_to_icu(csconvert* cv,
 	{
 		len = INTL_BAD_STR_LENGTH;
 
-		switch (status)
-		{
-		case U_INVALID_CHAR_FOUND:
+		if (status == U_INVALID_CHAR_FOUND)
 			*errCode = CS_CONVERT_ERROR;
-			break;
-		case U_TRUNCATED_CHAR_FOUND:
+		else if (status == U_TRUNCATED_CHAR_FOUND)
 			*errCode = CS_TRUNCATION_ERROR;
-			break;
-		default:
+		else
+		{
 			fb_assert(false);
 			*errCode = CS_CONVERT_ERROR;
 		}

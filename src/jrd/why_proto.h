@@ -29,6 +29,7 @@ extern "C" {
 #endif
 
 
+#ifndef WHY_NO_API
 #ifndef JRD_IBASE_H
 ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
 ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*);
@@ -58,20 +59,20 @@ ISC_STATUS API_ROUTINE isc_dsql_execute_immediate_m(ISC_STATUS*,
 													   FB_API_HANDLE*,
 													   FB_API_HANDLE*, USHORT,
 													   const SCHAR*, USHORT,
-													   USHORT, SCHAR*,
+													   USHORT, const SCHAR*,
 													   USHORT, USHORT,
 													   SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS*, FB_API_HANDLE*,
 												 FB_API_HANDLE*, USHORT,
 												 const SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, USHORT,
-												 const SCHAR*, USHORT, SCHAR*,
+												 const SCHAR*, USHORT, USHORT,
+												 SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS*, FB_API_HANDLE*,
 												 FB_API_HANDLE*, USHORT,
 												 const SCHAR*, USHORT, USHORT,
-												 SCHAR*, USHORT, USHORT,
-												 const SCHAR*, USHORT, SCHAR*,
+												 const SCHAR*, USHORT, USHORT,
+												 SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FB_API_HANDLE*, USHORT, XSQLDA*);
 #ifdef SCROLLABLE_CURSORS
@@ -79,10 +80,10 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch2(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										  XSQLDA*, USHORT, SLONG);
 #endif
 ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS*, FB_API_HANDLE*, USHORT,
-										   SCHAR*, USHORT, USHORT, SCHAR*);
+										   const SCHAR*, USHORT, USHORT, SCHAR*);
 #ifdef SCROLLABLE_CURSORS
 ISC_STATUS API_ROUTINE isc_dsql_fetch2_m(ISC_STATUS*, FB_API_HANDLE*, USHORT,
-											SCHAR*, USHORT, USHORT, SCHAR*,
+											const SCHAR*, USHORT, USHORT, SCHAR*,
 											USHORT, SLONG);
 #endif
 ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS*, FB_API_HANDLE*, USHORT);
@@ -237,27 +238,27 @@ ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS*, FB_API_HANDLE*,
 													SSHORT, ...);
 
 ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
-											USHORT, SCHAR*, USHORT,
+											USHORT, const SCHAR*, USHORT,
 											SCHAR*, USHORT, SCHAR*);
 
 ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 											const SCHAR*, SSHORT, UCHAR*);
 
 ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS*, FB_API_HANDLE*, SSHORT);
+#ifndef REQUESTER
 ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										const UCHAR*, UCHAR*);
+#endif
 
 SLONG API_ROUTINE isc_reset_fpe(USHORT);
 
 #endif	/* JRD_IBASE_H */
+#endif	/* WHY_NO_API */
 
-ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
-
-ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS*, FB_API_HANDLE*);
-
-int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason);
-ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, FB_SHUTDOWN_CALLBACK callBack, 
-											const int mask, void* arg);
+#define CANCEL_disable	1
+#define CANCEL_enable	2
+#define CANCEL_raise	3
+ISC_STATUS API_ROUTINE gds__cancel_operation(ISC_STATUS*, FB_API_HANDLE*, USHORT);
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
@@ -267,12 +268,28 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 int API_ROUTINE gds__disable_subsystem(TEXT*);
 int API_ROUTINE gds__enable_subsystem(TEXT*);
 
+ISC_STATUS gds__handle_cleanup(ISC_STATUS*, FB_API_HANDLE*);
+
+#define INTL_FUNCTION_CHAR_LENGTH		1
+#define INTL_FUNCTION_CONV_TO_METADATA	2
+ISC_STATUS API_ROUTINE gds__intl_function(ISC_STATUS*, FB_API_HANDLE*, USHORT, UCHAR, USHORT, const UCHAR*, void*);
+
+#define DSQL_CACHE_USE		1
+#define DSQL_CACHE_RELEASE	2
+ISC_STATUS API_ROUTINE gds__dsql_cache(ISC_STATUS*, FB_API_HANDLE*, USHORT, int, const char*, bool*);
+
+ISC_STATUS API_ROUTINE gds__internal_compile_request(
+	ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
+	const SCHAR*, USHORT, const char*, USHORT, const UCHAR*);
+
 ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 void WHY_cleanup_transaction(struct why_hndl* transaction);
 
-bool WHY_set_shutdown(bool);
-bool WHY_get_shutdown();
+#ifdef SERVER_SHUTDOWN
+BOOLEAN WHY_set_shutdown(BOOLEAN);
+BOOLEAN WHY_get_shutdown();
+#endif /* SERVER_SHUTDOWN*/
 
 
 #ifdef __cplusplus

@@ -41,10 +41,12 @@
 #include "../alice/alice.h"
 #include "../alice/alice_proto.h"
 #include "../alice/aliceswi.h"
+#include "../alice/all.h"
+#include "../alice/all_proto.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/constants.h"
+#include "../jrd/thd.h"
 #include "../common/classes/ClumpletWriter.h"
 
 
@@ -67,7 +69,7 @@ static const TEXT val_errors[] =
 int EXE_action(const TEXT* database, const ULONG switches)
 {
 	bool error = false;
-	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
+	AliceAutoPool newPool(AliceMemoryPool::createPool());
 	{
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		AliceContextPoolHolder context(tdgbl, newPool);
@@ -87,7 +89,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 			dpb.getBufferLength(), 
 			reinterpret_cast<const SCHAR*>(dpb.getBuffer()));
 
-		tdgbl->uSvc->started();
+		tdgbl->service_blk->svc_started();
 
 		if (tdgbl->status[1] && 
 			// Ignore isc_shutdown error produced when we switch to full shutdown mode. It is expected.
@@ -134,7 +136,7 @@ int EXE_action(const TEXT* database, const ULONG switches)
 int EXE_two_phase(const TEXT* database, const ULONG switches)
 {
 	bool error = false;
-	Firebird::AutoMemoryPool newPool(MemoryPool::createPool());
+	AliceAutoPool newPool(AliceMemoryPool::createPool());
 	{
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 		AliceContextPoolHolder context(tdgbl, newPool);
@@ -154,7 +156,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 			dpb.getBufferLength(), 
 			reinterpret_cast<const SCHAR*>(dpb.getBuffer()));
 
-		tdgbl->uSvc->started();
+		tdgbl->service_blk->svc_started();
 
 		if (tdgbl->status[1])
 		{
@@ -192,7 +194,6 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	dpb.reset(isc_dpb_version1);
 	dpb.insertTag(isc_dpb_gfix_attach);
-	tdgbl->uSvc->getAddressPath(dpb);
 
 	if (switches & sw_sweep) {
 		dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
@@ -216,19 +217,17 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertInt(isc_dpb_sweep_interval, 
 					  tdgbl->ALICE_data.ua_sweep_interval);
 	}
-/*
 	else if (switches & sw_begin_log) {
 		dpb.insertString(isc_dpb_begin_log, 
 						 tdgbl->ALICE_data.ua_log_file, 
 						 strlen(tdgbl->ALICE_data.ua_log_file));
 	}
-	else if (switches & sw_quit_log) {
-		dpb.insertTag(isc_dpb_quit_log);
-	}
-*/
 	else if (switches & sw_buffers) {
 		dpb.insertInt(isc_dpb_set_page_buffers, 
 					  tdgbl->ALICE_data.ua_page_buffers);
+	}
+	else if (switches & sw_quit_log) {
+		dpb.insertTag(isc_dpb_quit_log);
 	}
 	else if (switches & sw_kill) {
 		dpb.insertTag(isc_dpb_delete_shadow);
@@ -237,10 +236,11 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 		dpb.insertByte(isc_dpb_force_write, 
 					   tdgbl->ALICE_data.ua_force ? 1 : 0);
 	}
-	else if (switches & sw_no_reserve) {
+	else if (switches & sw_use) {
 		dpb.insertByte(isc_dpb_no_reserve, 
-					   tdgbl->ALICE_data.ua_no_reserve ? 1 : 0);
+					   tdgbl->ALICE_data.ua_use ? 1 : 0);
 	}
+
 	else if (switches & sw_mode) {
 		dpb.insertByte(isc_dpb_set_db_readonly,
 					   tdgbl->ALICE_data.ua_read_only ? 1 : 0);
@@ -318,21 +318,18 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const ULONG switches)
 						 strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password) {
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc :
+		dpb.insertString(tdgbl->sw_service ? isc_dpb_password_enc :
 						 isc_dpb_password,
 						 tdgbl->ALICE_data.ua_password, 
 						 strlen(tdgbl->ALICE_data.ua_password));
 	}
+#ifdef TRUSTED_SERVICES
 	if (tdgbl->ALICE_data.ua_tr_user) {
-		tdgbl->uSvc->checkService();
 		dpb.insertString(isc_dpb_trusted_auth, 
 						 tdgbl->ALICE_data.ua_tr_user,
 						 strlen(tdgbl->ALICE_data.ua_tr_user));
 	}
-	if (tdgbl->ALICE_data.ua_tr_role) {
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-	}
+#endif
 #ifdef TRUSTED_AUTH
 	if (tdgbl->ALICE_data.ua_trusted) {
 		if (!dpb.find(isc_dpb_trusted_auth)) {

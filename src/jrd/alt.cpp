@@ -34,7 +34,6 @@
 #include <string.h>
 #include <stdio.h>
 #include "../jrd/common.h"
-#include "../common/classes/init.h"
 
 #include <stdarg.h>
 #include "../jrd/ibase.h"
@@ -558,7 +557,7 @@ ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
 							 SSHORT req_level)
 {
 	return isc_send(status_vector, req_handle, msg_type, msg_length, 
-					static_cast<const SCHAR*>(msg), req_level);
+					(const SCHAR*) msg, req_level);
 }
 
 ISC_STATUS API_ROUTINE gds__start_and_send(ISC_STATUS* status_vector,
@@ -702,6 +701,7 @@ SLONG API_ROUTINE isc_vax_integer(const SCHAR* input, SSHORT length)
 	return gds__vax_integer(reinterpret_cast<const UCHAR*>(input), length);
 }
 
+#ifndef REQUESTER
 ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 									  FB_API_HANDLE* db_handle,
 									  SSHORT events_length,
@@ -711,6 +711,7 @@ ISC_STATUS API_ROUTINE gds__event_wait(ISC_STATUS * status_vector,
 	return isc_wait_for_event(status_vector, db_handle, events_length,
 						   events, events_update);
 }
+#endif
 
 /* CVC: This non-const signature is needed for compatibility, see gds.cpp. */
 SLONG API_ROUTINE isc_interprete(SCHAR* buffer, ISC_STATUS** status_vector_p)
@@ -729,7 +730,9 @@ int API_ROUTINE gds__version(
 void API_ROUTINE gds__set_debug(int flag)
 {
 #ifndef SUPERCLIENT
+#ifndef REQUESTER
 	isc_set_debug(flag);
+#endif
 #endif
 }
 
@@ -1218,16 +1221,13 @@ static ISC_STATUS executeSecurityCommand(
 				input_user_data->server);
 	if (handle)
 	{
-		static Firebird::GlobalPtr<Firebird::Mutex> secExecMutex;
-		static Firebird::GlobalPtr<Firebird::CircularStringsBuffer<1024> > secExecBuf;
-
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-		
-		{	// scope for MutexLockGuard
+		static Firebird::CircularStringsBuffer<1024> secExecBuf;
+		static Firebird::Mutex secExecMutex;
+		{
 			Firebird::MutexLockGuard lockMutex(secExecMutex);
-			secExecBuf->makePermanentVector(status, status);
+			secExecBuf.makePermanentVector(status, status);
 		}
-
 		ISC_STATUS_ARRAY user_status;
 		detachRemoteServiceManager(user_status, handle);
 	}

@@ -186,11 +186,11 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 external_libraries:
 ifeq ($(STD_ICU),false)
-	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.icu
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.icu
 endif
 ifeq ($(STD_EDITLINE),false)
 ifeq ($(EDITLINE_FLG),Y)
-	$(MAKE) CFLAGS="@CFLAGS@" -f $(GEN_ROOT)/Makefile.extern.editline
+	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
 endif
 endif
 
@@ -222,7 +222,7 @@ boot_phase1: $(GPRE_STATIC)
 $(GPRE_STATIC):
 	$(MAKE) boot_phase1_build
 
-boot_phase1_build: gpre_boot libfbstatic gpre_static
+boot_phase1_build: gpre_boot libfbstatic gpre_static @MANAGER_PROCESS_TARGET@
 
 
 gpre_boot:
@@ -233,6 +233,10 @@ libfbstatic:
 
 gpre_static:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.static.gpre $@
+
+                             # The lock manager for classic (embedded) 
+lock_mgr :
+	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.lockmgr $@
 
 
 
@@ -327,20 +331,17 @@ otherfiles: misc_files
 
 #_ Embedded Firebird Targets (Classic)_______________________________________
 
-.PHONY: libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql 
+.PHONY: libfbembed inet_server embed_gfix embed_gbak embed_isql 
 .PHONY: embed_gpre embed_util
 
-classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server fb_smp_server embed_gfix embed_gbak embed_isql \
-	embed_gpre libfbclient embed_util embed_gdef embed_qli embed_fbudf $(PLAT_CLASSIC_POST_TARGET)
+classic_targets: $(PLAT_CLASSIC_PRE_TARGET) libfbembed inet_server embed_gfix embed_gbak embed_isql \
+	embed_gpre embed_util embed_gdef embed_qli embed_fbudf libfbclient $(PLAT_CLASSIC_POST_TARGET)
 
 libfbembed:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.libfbembed $@
 
 inet_server:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.inet_server
-
-fb_smp_server:
-	$(MAKE) -f $(GEN_ROOT)/Makefile.smp_server
 
 embed_gfix:
 	$(MAKE) -f $(GEN_ROOT)/Makefile.embed.gfix
@@ -544,13 +545,8 @@ clean_dbs:
 	$(RM) *.fdb *.FDB msg.timestamp
 	$(RM) yachts.lnk
 
-
-# The examples are a bit different, since the makefile is included in the directory
-# and not in the gen directory, deleting it means, make clean; make doesnt work correctly
-# so the code below deletes all the other stuff but not the Makefile.examples MOD Nov-2007
- 
 clean_examples:
-	$(RM) `find $(GEN_ROOT)/examples/ -type f ! -name 'Make*'`
+	$(RM) $(GEN_ROOT)/examples/*
 
 clean_editline:
 	-make -C $(ROOT)/extern/editline clean
@@ -584,7 +580,6 @@ clean_build:
 clean_makefiles:
 	$(RM) $(GEN_ROOT)/Make*
 	$(RM) $(GEN_ROOT)/make*
-	-$(RM) $(GEN_ROOT)/examples/Make*
 	$(RM) $(ROOT)/Makefile
 	$(RM) $(SRC_ROOT)/include/gen/autoconfig.h
 

@@ -50,7 +50,7 @@ static DUDLEY_FLD lookup_field(DUDLEY_FLD);
 static DUDLEY_FLD lookup_global_field(DUDLEY_FLD);
 static DUDLEY_REL lookup_relation(DUDLEY_REL);
 static DUDLEY_TRG lookup_trigger(DUDLEY_TRG);
-static DUDLEY_CTX make_context(const TEXT *, DUDLEY_REL, USHORT);
+static DUDLEY_CTX make_context(TEXT *, DUDLEY_REL, USHORT);
 static DUDLEY_NOD resolve(DUDLEY_NOD, dudley_lls*, dudley_lls*);
 static void resolve_rse(DUDLEY_NOD, dudley_lls**);
 
@@ -672,7 +672,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 }
 
 
-static DUDLEY_CTX make_context( const TEXT * string, DUDLEY_REL relation, USHORT id)
+static DUDLEY_CTX make_context( TEXT * string, DUDLEY_REL relation, USHORT id)
 {
 /**************************************
  *

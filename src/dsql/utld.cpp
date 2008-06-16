@@ -40,17 +40,16 @@
 #include "../jrd/constants.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
-#if !defined(SUPERCLIENT)
+
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 #include "../dsql/metd_proto.h"
 #endif
-#include "../common/classes/init.h"
 
-using namespace Jrd;
 
 static void cleanup(void *);
 static ISC_STATUS error_dsql_804(ISC_STATUS *, ISC_STATUS);
 static SLONG get_numeric_info(const SCHAR**);
-static SSHORT get_string_info(const SCHAR**, SCHAR*, int);
+static SLONG get_string_info(const SCHAR**, SCHAR*, int);
 #ifdef NOT_USED_OR_REPLACED
 #ifdef DEV_BUILD
 static void print_xsqlda(XSQLDA *);
@@ -78,7 +77,6 @@ static inline void ch_stuff_word(BLOB_PTR*& p, const SSHORT value, bool& same_fl
 /* these statics define a round-robin data area for storing
    textual error messages returned to the user */
 
-static Firebird::GlobalPtr<Firebird::Mutex> failuresMutex;
 static TEXT *DSQL_failures, *DSQL_failures_ptr;
 
 const int  DSQL_FAILURE_SPACE = 2048;
@@ -101,13 +99,13 @@ SCHAR* UTLD_skip_sql_info(SCHAR* info)
 	if (*info++ != isc_info_sql_describe_vars)
 		return 0;
 
-	get_numeric_info((const SCHAR**) &info); // skip message->msg_index
+	get_numeric_info((const SCHAR**) &info);
 
 	// Loop over the variables being described
 	while (true)
 	{
 		SCHAR str[256]; // must be big enough to hold metadata name
-		const UCHAR item = *info++;
+		SCHAR item = *info++;
 
 		switch (item)
 		{
@@ -292,22 +290,24 @@ ISC_STATUS	UTLD_parse_sql_info(
 
 			case isc_info_sql_field:
 				xvar->sqlname_length =
-					get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname));
+					static_cast<SSHORT>(get_string_info(&info, xvar->sqlname, sizeof(xvar->sqlname)));
 				break;
 
 			case isc_info_sql_relation:
 				xvar->relname_length =
-					get_string_info(&info, xvar->relname, sizeof(xvar->relname));
+					static_cast<SSHORT>(get_string_info(&info, xvar->relname, sizeof(xvar->relname)));
 				break;
 
 			case isc_info_sql_owner:
 				xvar->ownname_length =
-					get_string_info(&info, xvar->ownname, sizeof(xvar->ownname));
+					static_cast<SSHORT>(get_string_info(&info, xvar->ownname, sizeof(xvar->ownname)));
 				break;
 
 			case isc_info_sql_alias:
 				xvar->aliasname_length =
-					get_string_info(&info, xvar->aliasname, sizeof(xvar->aliasname));
+					static_cast<SSHORT>
+					(get_string_info
+					 (&info, xvar->aliasname, sizeof(xvar->aliasname)));
 				break;
 
 			case isc_info_truncated:
@@ -423,7 +423,6 @@ ISC_STATUS	UTLD_parse_sqlda(
 			xvar = xsqlda->sqlvar - 1;
 		else
 			qvar = sqlda->sqlvar - 1;
-
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
@@ -432,26 +431,21 @@ ISC_STATUS	UTLD_parse_sqlda(
 				qvar++;
 				sqlvar_to_xsqlvar(qvar, xvar);
 			}
-
 			const USHORT dtype = xvar->sqltype & ~1;
-			switch (dtype)
-			{
-			case SQL_VARYING:
-			case SQL_TEXT:
+			if (dtype == SQL_VARYING || dtype == SQL_TEXT)
 				blr_len += 3;
-				break;
-			case SQL_SHORT:
-			case SQL_LONG:
-			case SQL_INT64:
-			case SQL_QUAD:
-			case SQL_BLOB:
-			case SQL_ARRAY:
-				blr_len += 2;
-				break;
-			default:
-				++blr_len;
-			}
-			
+			else
+				if (dtype == SQL_SHORT ||
+					dtype == SQL_LONG ||
+					dtype == SQL_INT64 ||
+					dtype == SQL_QUAD ||
+					dtype == SQL_BLOB
+					|| dtype == SQL_ARRAY)
+				{
+					blr_len += 2;
+				}
+				else
+					blr_len++;
 			blr_len += 2;
 			par_count += 2;
 		}
@@ -785,13 +779,11 @@ ISC_STATUS	UTLD_parse_sqlda(
  **/
 void	UTLD_save_status_strings(ISC_STATUS* vector)
 {
-	Firebird::MutexLockGuard guard(failuresMutex);
-
-	// allocate space for failure strings if it hasn't already been allocated
+// allocate space for failure strings if it hasn't already been allocated
 
 	if (!DSQL_failures)
 	{
-		DSQL_failures = (TEXT *) gds__alloc((SLONG) DSQL_FAILURE_SPACE);
+		DSQL_failures = (TEXT *) ALLOC_LIB_MEMORY((SLONG) DSQL_FAILURE_SPACE);
 		// FREE: by exit handler cleanup() 
 		if (!DSQL_failures)		// NOMEM: don't try to copy the strings 
 			return;
@@ -813,11 +805,9 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 		case isc_arg_cstring:
 			l = static_cast<USHORT>(*vector++);
 
-		case isc_arg_string:
 		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			p = (TEXT*) *vector;
-
+		case isc_arg_string:
+			p = (TEXT *) * vector;
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
@@ -826,20 +816,13 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
 
 			if (DSQL_failures_ptr + l > DSQL_failures + DSQL_FAILURE_SPACE)
 				DSQL_failures_ptr = DSQL_failures;
-
 			*vector++ = (ISC_STATUS) DSQL_failures_ptr;
-
 			if (l)
-			{
 				do
-				{
 					*DSQL_failures_ptr++ = *p++;
-				} while (--l && (DSQL_failures_ptr < DSQL_failures + DSQL_FAILURE_SPACE));
-			}
-
+				while (--l && (DSQL_failures_ptr < DSQL_failures + DSQL_FAILURE_SPACE));
 			if (l)
 				*(DSQL_failures_ptr - 1) = '\0';
-
 			break;
 
 		default:
@@ -860,12 +843,11 @@ void	UTLD_save_status_strings(ISC_STATUS* vector)
     @param arg
 
  **/
-static void cleanup(void* arg)
+static void cleanup( void *arg)
 {
-	Firebird::MutexLockGuard guard(failuresMutex);
 
 	if (DSQL_failures)
-		gds__free(DSQL_failures);
+		FREE_LIB_MEMORY(DSQL_failures);
 
 	gds__unregister_cleanup(cleanup, 0);
 	DSQL_failures = NULL;
@@ -912,7 +894,7 @@ static ISC_STATUS error_dsql_804( ISC_STATUS * status, ISC_STATUS err)
     @param ptr
 
  **/
-static SLONG get_numeric_info(const SCHAR** ptr)
+static SLONG get_numeric_info( const SCHAR** ptr)
 {
 	const SSHORT l =
 		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(*ptr), 2));
@@ -938,23 +920,23 @@ static SLONG get_numeric_info(const SCHAR** ptr)
     @param buffer_len
 
  **/
-static SSHORT get_string_info(const SCHAR** ptr, SCHAR* buffer, int buffer_len)
+static SLONG get_string_info( const SCHAR** ptr, SCHAR * buffer, int buffer_len)
 {
 	const SCHAR* p = *ptr;
-	SSHORT len = static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
-	// CVC: What else can we do here?
-	if (len < 0)
-		len = 0;
-	
-	*ptr += len + 2;
+	SSHORT l =
+		static_cast<SSHORT>(gds__vax_integer(reinterpret_cast<const UCHAR*>(p), 2));
+	*ptr += l + 2;
 	p += 2;
 
-	if (len >= buffer_len)
-		len = buffer_len - 1;
+	if (l >= buffer_len)
+		l = buffer_len - 1;
 
+	SSHORT len = l;
 	if (len)
-		memcpy(buffer, p, len);
-	buffer[len] = 0;
+		do
+			*buffer++ = *p++;
+		while (--l);
+	*buffer = 0;
 
 	return len;
 }
@@ -1078,16 +1060,16 @@ static void xsqlvar_to_sqlvar(const XSQLVAR* xsqlvar, SQLVAR* sqlvar)
 }
 
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 
 UCHAR DSqlDataTypeUtil::maxBytesPerChar(UCHAR charSet)
 {
-	return METD_get_charset_bpc(statement, charSet);
+	return METD_get_charset_bpc(request, charSet);
 }
 
 USHORT DSqlDataTypeUtil::getDialect() const
 {
-	return statement->req_client_dialect;
+	return request->req_client_dialect;
 }
 
 #endif

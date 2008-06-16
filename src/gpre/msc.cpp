@@ -25,6 +25,7 @@
 //
 //____________________________________________________________
 //
+//	$Id: msc.cpp,v 1.22 2004-05-24 17:13:37 brodsom Exp $
 //
 //  
 //  
@@ -106,8 +107,12 @@ UCHAR* MSC_alloc(int size)
 	}
 
 	space->spc_remaining -= size;
-	UCHAR* blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
-	memset(blk, 0, size);
+	UCHAR* const blk = ((UCHAR*) space + sizeof(spc) + space->spc_remaining);
+	UCHAR* p = blk;
+	const UCHAR* const end = p + size;
+
+	while (p < end)
+		*p++ = 0;
 
 	return blk;
 }
@@ -137,9 +142,13 @@ UCHAR* MSC_alloc_permanent(int size)
 	}
 
 	permanent_space->spc_remaining -= size;
-	UCHAR* blk = ((UCHAR*) permanent_space + sizeof(spc) +
+	UCHAR* const blk = ((UCHAR*) permanent_space + sizeof(spc) +
 		 permanent_space->spc_remaining);
-	memset(blk, 0, size);
+	UCHAR* p = blk;
+	const UCHAR* const end = p + size;
+
+	while (p < end)
+		*p++ = 0;
 
 	return blk;
 }
@@ -192,9 +201,11 @@ void MSC_copy(const char* from, int length, char* to)
 {
 
 	if (length)
-		memcpy(to, from, length);
+		do {
+			*to++ = *from++;
+		} while (--length);
 
-	to[length] = 0;
+	*to = 0;
 }
 
 //____________________________________________________________
@@ -207,11 +218,15 @@ void MSC_copy_cat(const char* from1, int length1, const char* from2, int length2
 {
 
 	if (length1)
-		memcpy(to, from1, length1);
+		do {
+			*to++ = *from1++;
+		} while (--length1);
 	if (length2)
-		memcpy(to + length1, from2, length2);
+		do {
+			*to++ = *from2++;
+		} while (--length2);
 
-	to[length1 + length2] = 0;
+	*to = 0;
 }
 
 //____________________________________________________________
@@ -235,7 +250,7 @@ gpre_sym* MSC_find_symbol(gpre_sym* symbol, enum sym_t type)
 //		Free a block.
 //  
 
-void MSC_free(void* block)
+void MSC_free( UCHAR* block)
 {
 
 }
@@ -251,7 +266,7 @@ void MSC_free_request( gpre_req* request)
 
 	gpreGlob.requests = request->req_next;
 	gpreGlob.cur_routine->act_object = (REF) request->req_routine;
-	MSC_free(request);
+	MSC_free((UCHAR *) request);
 }
 
 
@@ -465,7 +480,9 @@ gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ct
 	symbol->sym_string = p;
 
 	if (length)
-		memcpy(p, string, length);
+		do {
+			*p++ = *string++;
+		} while (--length);
 
 	return symbol;
 }

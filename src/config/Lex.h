@@ -1,19 +1,19 @@
 /*
+ *  
+ *     The contents of this file are subject to the Initial 
+ *     Developer's Public License Version 1.0 (the "License"); 
+ *     you may not use this file except in compliance with the 
+ *     License. You may obtain a copy of the License at 
+ *     http://www.ibphoenix.com/idpl.html. 
  *
- *     The contents of this file are subject to the Initial
- *     Developer's Public License Version 1.0 (the "License");
- *     you may not use this file except in compliance with the
- *     License. You may obtain a copy of the License at
- *     http://www.ibphoenix.com/idpl.html.
- *
- *     Software distributed under the License is distributed on
- *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either
- *     express or implied.  See the License for the specific
+ *     Software distributed under the License is distributed on 
+ *     an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either 
+ *     express or implied.  See the License for the specific 
  *     language governing rights and limitations under the License.
  *
  *     The contents of this file or any work derived from this file
- *     may not be distributed under any other license whatsoever
- *     without the express prior written permission of the original
+ *     may not be distributed under any other license whatsoever 
+ *     without the express prior written permission of the original 
  *     author.
  *
  *
@@ -36,45 +36,46 @@
 #endif // _MSC_VER > 1000
 
 #include "Stream.h"
-#include "../common/classes/alloc.h"
 
 START_NAMESPACE
+
+static const int maxToken = 4096;
+
+enum TokenType {
+	END_OF_STREAM,
+	PUNCT,
+	NAME,
+	QUOTED_NAME,
+	NUMBER,
+	END,
+	QUOTED_STRING,
+	SINGLE_QUOTED_STRING,
+	DECIMAL_NUMBER,
+	IP_ADDRESS,
+	NONE
+	};
+
+
+static const int LEX_trace		= 1;
+static const int LEX_list		= 2;
+static const int LEX_verbose	= 4;
+static const int LEX_upcase		= 8;
 
 class InputStream;
 class InputFile;
 class Stream;
 
-class Lex : public Firebird::GlobalStorage
+class Lex  
 {
 public:
-	enum LEX_flags { LEX_none = 0, LEX_trace = 1, LEX_list = 2, /* LEX_verbose = 4, */ LEX_upcase = 8 };
-
-	enum TokenType
-	{
-		END_OF_STREAM,
-		TT_PUNCT,
-		TT_NAME,
-		//QUOTED_NAME,
-		TT_NUMBER,
-		//TT_END,
-		QUOTED_STRING,
-		SINGLE_QUOTED_STRING,
-		//DECIMAL_NUMBER,
-		//IP_ADDRESS,
-		TT_NONE
-	};
-	
-	Lex(const char* punctuation, const LEX_flags debugFlags);
-	virtual ~Lex();
-
 	void captureStuff();
-	int& charTable(int ch);
+	char& charTable(int ch);
 	bool getSegment();
 	void pushStream (InputStream *stream);
 	void setContinuationChar (char c);
 	virtual void syntaxError (const char* expected);
-	Firebird::string getName();
-	Firebird::PathName reparseFilename();
+	JString getName();
+	JString reparseFilename();
 	bool match (const char *word);
 	bool isKeyword (const char *word) const;
 	void setCommentString (const char *start, const char *end);
@@ -83,30 +84,32 @@ public:
 	void getToken();
 	static bool match (const char *pattern, const char *string);
 	void skipWhite();
-protected:
-	LEX_flags		flags;
-	TokenType		tokenType;
-	int				priorLineNumber;
-	bool			eol;
-	InputStream*	inputStream;
-	InputStream*	priorInputStream;
+	Lex(const char *punctuation, int debugFlags);
+	virtual ~Lex();
+
+	int			flags;
+	int			tokenType;
+	int			priorLineNumber;
+	bool		eol;
+	InputStream	*inputStream;
+	InputStream	*priorInputStream;
+
 private:
-	enum { MAXTOKEN = 4096 };
-	InputStream*	tokenInputStream;
-	Stream			stuff;
-	int				tokenOffset;
-	char			captureStart;
-	char			captureEnd;
-	char			token [MAXTOKEN];
-	int				lineNumber;
-	int				tokenLineNumber;
-	const char*		ptr;
-	const char*		end;
-	const char*		lineComment;
-	const char*		commentStart;
-	const char*		commentEnd;
-	char			continuationChar;
-	int				charTableArray [256];	// Don't use directly. Use through charTable.
+	InputStream	*tokenInputStream;
+	Stream		stuff;
+	int			tokenOffset;
+	char		captureStart;
+	char		captureEnd;
+	char		token [maxToken];
+	int			lineNumber;
+	int			tokenLineNumber;
+	const char	*ptr;
+	const char	*end;
+	const char	*lineComment;
+	const char	*commentStart;
+	const char	*commentEnd;
+	char		continuationChar;
+	char		charTableArray [256];	// Don't use directly. Use through charTable.
 };
 
 END_NAMESPACE

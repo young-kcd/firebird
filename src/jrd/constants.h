@@ -65,22 +65,7 @@ typedef TEXT SqlIdentifier[MAX_SQL_IDENTIFIER_SIZE];
 const char* const NULL_STRING_MARK = "*** null ***";
 const char* const UNKNOWN_STRING_MARK = "*** unknown ***";
 
-const char* const ISC_USER = "ISC_USER";
-const char* const ISC_PASSWORD = "ISC_PASSWORD";
-
 const char* const NULL_ROLE = "NONE";
-const char* const ADMIN_ROLE = "RDB$ADMIN";
-
-// User name assigned to any user granted USR_locksmith rights.
-// If this name is changed, modify also the trigger in 
-// jrd/grant.gdl (which turns into jrd/trig.h.
-const char* const SYSDBA_USER_NAME = "SYSDBA";
-
-// This temporary set of flags is needed to implement minimum form of 
-// ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
-// Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
-const SSHORT ROLE_FLAG_MAY_TRUST	= 2;
-const SSHORT ROLE_FLAG_DBO			= 4;
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
 const char* const FOREIGN_KEY		= "FOREIGN KEY";
@@ -152,6 +137,21 @@ const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11
 
 const USHORT SQL_MATCH_1_CHAR		= '_';	/* Not translatable */
 const USHORT SQL_MATCH_ANY_CHARS	= '%';	/* Not translatable */
+
+static const USHORT GDML_MATCH_ONE	= '?';
+static const USHORT GDML_MATCH_ANY	= '*';
+
+static const USHORT GDML_QUOTE		= '@';
+static const USHORT GDML_NOT		= '~';
+static const USHORT GDML_RANGE		= '-';
+static const USHORT GDML_CLASS_START= '[';
+static const USHORT GDML_CLASS_END	= ']';
+static const USHORT GDML_SUBSTITUTE	= '=';
+static const USHORT GDML_FLAG_SET	= '+';
+static const USHORT GDML_FLAG_CLEAR	= '-';
+static const USHORT GDML_COMMA		= ',';
+static const USHORT GDML_LPAREN		= '(';
+static const USHORT GDML_RPAREN		= ')';
 
 const size_t MAX_CONTEXT_VARS	= 1000;		// Maximum number of context variables allowed for a single object
 
@@ -258,17 +258,5 @@ const int DB_TRIGGER_MAX			= 5;
 
 // that's how database trigger action types are encoded
 //    (TRIGGER_TYPE_DB | type)
-
-// switches for username and password used when an username and/or password
-// is specified by the client application
-#define USERNAME_SWITCH "USER"
-#define PASSWORD_SWITCH "PASSWORD"
-#ifdef SERVICE_THREAD
-#define SERVICE_THD_PARAM "-svc_thd"
-#else
-#define SERVICE_THD_PARAM "-svc"
-#endif
-#define TRUSTED_USER_SWITCH "TRUSTED_SVC"
-#define TRUSTED_ROLE_SWITCH "TRUSTED_ROLE"
 
 #endif // JRD_CONSTANTS_H

@@ -1,13 +1,7 @@
 
-============================================
-Firebird 2.5.0 pre alpha (Windows Felépítés)
 ======================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
-
+Firebird 2.1.1  (Windows Felépítés)
+======================================
 
 o Bevezetés
 o Felhasználás
@@ -57,7 +51,7 @@ Ezen verzió szolgáltatásai (minden platformon)
 ==============================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.1.0.ReleaseNotes.pdf
+doc/Firebird_v2.1.1.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -65,7 +59,7 @@ Ebben a verzióban javított hibák (minden platformon)
 ====================================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.1.0.ReleaseNotes.pdf
+doc/Firebird_v2.1.1.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -78,8 +72,8 @@ segédletet.  A telepítés befejezése után ezt a
 dokumentumot a:
 .\doc\teklepitesi_segedlet.txt
 helyen találja. További részletes információk a
-"Firebird 2.1.0 - Újdonságok"
-(doc/Firebird_v2.1.0.ReleaseNotes.pdf)
+"Firebird 2.1.1 - Újdonságok"
+(doc/Firebird_v2.1.1.ReleaseNotes.pdf)
 dokumentumban vannak.
 
 Telepítés zip csomagokból
@@ -150,14 +144,14 @@ szerver  számára, amíg az UDF könyvtárak elérési
 állomány megfelelõ  szakaszában. További
 információkért olvassa el a  megjegyzéseket a
 firebird.conf konfigurációs állományban valamint a "
-Firebird 2.1.0 - Újdonságok" dokumentumban.
+Firebird 2.1.1 - Újdonságok" dokumentumban.
 
 
 Az SQL Nyelv dokumentációja
 ===========================
 Új nyelvi szolgáltatások, kulcsszavak, kiterjesztések
 valamint korlátozások kerültek bevezetésre ebben a
-verzióban. A részletekrõl a "Firebird 2.1.0 -
+verzióban. A részletekrõl a "Firebird 2.1.1 -
 Újdonságok" dokumentumból tudhat meg  többet.
 
 

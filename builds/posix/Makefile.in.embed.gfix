@@ -29,7 +29,13 @@
 #
 #
 ROOT=..
-ObjModuleType=std
+SERVICES_THREADED=@service_thread_CS@
+ifeq ($(SERVICES_THREADED),true)
+    ObjModuleType=superclient
+    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+else
+    ObjModuleType=std
+endif
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -40,10 +46,9 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 GFIX_Files = alice_meta.epp \
-			 alice.cpp exe.cpp tdr.cpp aliceMain.cpp
+			 alice.cpp all.cpp exe.cpp tdr.cpp 
 
-GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp jrd/path_utils.cpp \
-					  common/UtilSvc.cpp 
+GFIX_Other_Sources += jrd/isc.cpp jrd/ThreadData.cpp jrd/path_utils.cpp
 
 GFIX_Sources = $(addprefix alice/, $(GFIX_Files)) $(GFIX_Other_Sources)
 GFIX_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GFIX_Sources))))

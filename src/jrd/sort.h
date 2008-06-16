@@ -27,6 +27,7 @@
 #include "../jrd/common.h"
 #include "../jrd/fil.h"
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 #include "../jrd/TempSpace.h"
 
@@ -243,7 +244,7 @@ struct sort_context
 	sort_record**	scb_first_pointer;	/* Memory for sort */
 	sort_record**	scb_next_pointer;	/* Address for next pointer */
 #ifdef SCROLLABLE_CURSORS
-	sort_record**	scb_last_pointer;	/* Address for last pointer in block */
+	SORTP **scb_last_pointer;	/* Address for last pointer in block */
 #endif
 	//USHORT scb_length;			// Record length. Unused.
 	USHORT scb_longs;			/* Length of record in longwords */

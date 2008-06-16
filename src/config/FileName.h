@@ -1,22 +1,19 @@
 #ifndef _FILENAME_H_
 #define _FILENAME_H_
 
-#include "../common/classes/fb_string.h"
+#include "JString.h"
 
-class FileName : public Firebird::GlobalStorage
+class FileName
 {
 public:
-	explicit FileName(const Firebird::PathName& name);
-	~FileName();
+	FileName(JString name);
+	~FileName(void);
 	
-	Firebird::PathName	pathName;
-	Firebird::PathName	directory;
-	Firebird::PathName	root;
-	Firebird::PathName	extension;
-	bool        isAbsolute() const { return absolute; }
-private:
+	JString		pathName;
+	JString		directory;
+	JString		root;
+	JString		extension;
 	bool		absolute;
 };
 
 #endif
-

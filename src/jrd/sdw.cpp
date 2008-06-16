@@ -34,6 +34,7 @@
 #include "../jrd/lls.h"
 #include "../jrd/req.h"
 #include "../jrd/os/pio.h"
+#include "../jrd/all.h"
 #include "../jrd/sdw.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flags.h"
@@ -48,6 +49,7 @@
 #include "../jrd/pag_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
+#include "../jrd/thd.h"
 
 
 using namespace Jrd;
@@ -58,7 +60,6 @@ using namespace Ods;
 static void shutdown_shadow(Shadow* shadow);
 static void activate_shadow(void);
 static Shadow* allocate_shadow(jrd_file*, USHORT, USHORT);
-static int blocking_ast_shadowing(void*);
 static bool check_for_file(const SCHAR*, USHORT);
 #ifdef NOT_USED_OR_REPLACED
 static void check_if_got_ast(jrd_file*);
@@ -83,7 +84,7 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 	Database* dbb = GET_DBB();
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
-	if (!JRD_verify_database_access(file_name)) {
+	if (!ISC_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "additional database file",
 			isc_arg_string, ERR_cstring(file_name),
@@ -159,7 +160,7 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
-	if (!JRD_verify_database_access(file_name)) {
+	if (!ISC_verify_database_access(file_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "database shadow",
 			isc_arg_string, ERR_cstring(file_name),
@@ -335,7 +336,7 @@ void SDW_check(void)
 	}
 
 	if (SDW_check_conditional()) {
-		if (SDW_lck_update(tdbb, 0)) {
+		if (SDW_lck_update((SLONG) 0)) {
 			Lock temp_lock;
 			Lock* lock = &temp_lock;
 			lock->lck_dbb = dbb;
@@ -345,6 +346,7 @@ void SDW_check(void)
 			lock->lck_owner_handle =
 				LCK_get_owner_handle(tdbb, lock->lck_type);
 			lock->lck_parent = dbb->dbb_lock;
+			lock->lck_owner = tdbb->getAttachment();
 
 			LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT);
 			if (lock->lck_physical == LCK_EX) {
@@ -596,8 +598,8 @@ void SDW_init(bool activate, bool delete_files)
 	lock->lck_parent = dbb->dbb_lock;
 	lock->lck_length = key_length;
 	lock->lck_dbb = dbb;
-	lock->lck_object = dbb;
-	lock->lck_ast = blocking_ast_shadowing;
+	lock->lck_object = reinterpret_cast<blk*>(dbb);
+	lock->lck_ast = SDW_start_shadowing;
 
 	if (activate)
 		activate_shadow();
@@ -615,7 +617,7 @@ void SDW_init(bool activate, bool delete_files)
 }
 
 
-bool SDW_lck_update(thread_db* tdbb, SLONG sdw_update_flags)
+bool SDW_lck_update(SLONG sdw_update_flags)
 {
 /**************************************
  *
@@ -650,17 +652,20 @@ bool SDW_lck_update(thread_db* tdbb, SLONG sdw_update_flags)
 	}
 
 	if (!sdw_update_flags) {
-		return !LCK_read_data(tdbb, lock);
+		if (LCK_read_data(lock))
+			return false;
+		else
+			return true;
 	}
 
-	if (LCK_read_data(tdbb, lock))
+	if (LCK_read_data(lock))
 		return false;
 
-	LCK_write_data(tdbb, lock, lock->lck_id);
-	if (LCK_read_data(tdbb, lock) != lock->lck_id)
+	LCK_write_data(lock, lock->lck_id);
+	if (LCK_read_data(lock) != lock->lck_id)
 		return false;
 
-	LCK_write_data(tdbb, lock, sdw_update_flags);
+	LCK_write_data(lock, sdw_update_flags);
 	return true;
 }
 
@@ -745,6 +750,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	update_lock->lck_owner_handle =
 		LCK_get_owner_handle(tdbb, update_lock->lck_type);
 	update_lock->lck_parent = dbb->dbb_lock;
+	update_lock->lck_owner = tdbb->getAttachment();
 
 	SLONG sdw_update_flags = SDW_rollover;
 
@@ -755,7 +761,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	// code must be executed for valid active attachments only.
 	if (tdbb->getAttachment()->att_flags & ATT_lck_init_done) {
 		if (update_lock->lck_physical != LCK_EX ||
-			file != pageSpace->file || !SDW_lck_update(tdbb, sdw_update_flags))
+			file != pageSpace->file || !SDW_lck_update(sdw_update_flags))
 		{
 			LCK_release(tdbb, update_lock);
 			LCK_lock(tdbb, update_lock, LCK_SR, LCK_NO_WAIT);
@@ -774,7 +780,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 		}
 	}
 	else {
-		if (!SDW_lck_update(tdbb, sdw_update_flags))
+		if (!SDW_lck_update(sdw_update_flags))
 			return true;
 	}
 
@@ -795,13 +801,13 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	}
 
 	if (!shadow) {
-		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
+		LCK_write_data(shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return false;
 	}
 
 	if (file != pageSpace->file) {
-		LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
+		LCK_write_data(shadow_lock, (SLONG) 0);
 		LCK_release(tdbb, update_lock);
 		return true;
 	}
@@ -833,12 +839,12 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	if (!inAst) {
 		if ( (start_conditional = SDW_check_conditional()) ) {
 			sdw_update_flags = (SDW_rollover | SDW_conditional);
-			LCK_write_data(tdbb, shadow_lock, sdw_update_flags);
+			LCK_write_data(shadow_lock, sdw_update_flags);
 		}
 	}
 
 	SDW_notify();
-	LCK_write_data(tdbb, shadow_lock, (SLONG) 0);
+	LCK_write_data(shadow_lock, (SLONG) 0);
 	LCK_release(tdbb, shadow_lock);
 	delete shadow_lock;
 	dbb->dbb_shadow_lock = 0;
@@ -946,12 +952,12 @@ void SDW_start(const TEXT* file_name,
 	{
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
-
-		ERR_post(isc_shadow_accessed, 0);
+		else
+			ERR_post(isc_shadow_accessed, 0);
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
-	if (!JRD_verify_database_access(expanded_name)) {
+	if (!ISC_verify_database_access(expanded_name)) {
 		ERR_post(isc_conf_access_denied,
 			isc_arg_string, "database shadow",
 			isc_arg_string, ERR_cstring(expanded_name),
@@ -975,7 +981,8 @@ void SDW_start(const TEXT* file_name,
 
 	try {
 
-	shadow_file = PIO_open(dbb, expanded_name, file_name, false);
+	shadow_file =
+		PIO_open(dbb, expanded_name, false, file_name, false);
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
@@ -1088,6 +1095,56 @@ void SDW_start(const TEXT* file_name,
 }
 
 
+int SDW_start_shadowing(void* ast_object)
+{
+/**************************************
+ *
+ *	S D W _ s t a r t _ s h a d o w i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	A blocking AST has been issued to give up
+ *	the lock on the shadowing semaphore. 
+ *	Do so after flagging the need to check for
+ *	new shadow files before doing the next physical write.
+ *
+ **************************************/
+	Database* new_dbb = static_cast<Database*>(ast_object);
+
+	// Shouldn't we find a way to call check_if_got_ast() here?
+
+	Lock* lock = new_dbb->dbb_shadow_lock;
+	if (lock->lck_physical != LCK_SR)
+		return 0;
+
+	ISC_ast_enter();
+
+/* Since this routine will be called asynchronously, we must establish
+   a thread context. */
+	thread_db thd_context, *tdbb;
+	JRD_set_thread_data(tdbb, thd_context);
+
+	tdbb->setDatabase(new_dbb);
+	tdbb->tdbb_quantum = QUANTUM;
+	tdbb->setRequest(NULL);
+	tdbb->setTransaction(NULL);
+
+	new_dbb->dbb_ast_flags |= DBB_get_shadows;
+	if (LCK_read_data(lock) & SDW_rollover)
+		update_dbb_to_sdw(new_dbb);
+
+	LCK_release(tdbb, lock);
+
+/* Restore the prior thread context */
+
+	JRD_restore_thread_data();
+
+	ISC_ast_exit();
+	return 0;
+}
+
+
 static void activate_shadow(void)
 {
 /**************************************
@@ -1166,47 +1223,6 @@ static Shadow* allocate_shadow(jrd_file* shadow_file,
 }
 
 
-static int blocking_ast_shadowing(void* ast_object)
-{
-/**************************************
- *
- *	b l o c k i n g _ a s t _ s h a d o w i n g
- *
- **************************************
- *
- * Functional description
- *	A blocking AST has been issued to give up
- *	the lock on the shadowing semaphore. 
- *	Do so after flagging the need to check for
- *	new shadow files before doing the next physical write.
- *
- **************************************/
-	Database* new_dbb = static_cast<Database*>(ast_object);
-
-	try
-	{
-		Database::SyncGuard dsGuard(new_dbb, true);
-
-		Lock* lock = new_dbb->dbb_shadow_lock;
-
-		// Since this routine will be called asynchronously,
-		// we must establish a thread context
-		ThreadContextHolder tdbb;
-		tdbb->setDatabase(new_dbb);
-
-		new_dbb->dbb_ast_flags |= DBB_get_shadows;
-		if (LCK_read_data(tdbb, lock) & SDW_rollover)
-			update_dbb_to_sdw(new_dbb);
-
-		LCK_release(tdbb, lock);
-	}
-	catch (const Firebird::Exception&)
-	{} // no-op
-
-	return 0;
-}
-
-
 static bool check_for_file(const SCHAR* name, USHORT length)
 {
 /**************************************
@@ -1229,7 +1245,7 @@ static bool check_for_file(const SCHAR* name, USHORT length)
 		// This use of PIO_open is NOT checked against DatabaseAccess configuration
 		// parameter. It's not required, because here we only check for presence of
 		// existing file, never really use (or create) it.
-		jrd_file* temp_file = PIO_open(dbb, path, path, false);
+		jrd_file* temp_file = PIO_open(dbb, path, false, path, false);
 		PIO_close(temp_file);
 	}	// try
 	catch (const Firebird::Exception& ex) {

@@ -24,24 +24,19 @@
 #ifndef JRD_ISC_SIGNAL_H
 #define JRD_ISC_SIGNAL_H
 
-#ifdef SUPERSERVER
-
-// In-process signals
-
-const int BLOCKING_SIGNAL	= 0;
-const int WAKEUP_SIGNAL		= 0;
-const int STALL_SIGNAL		= 0;
-const int EVENT_SIGNAL		= 0;
-
+#ifdef WIN_NT
+/* There is no interprocess signaling on Windows NT.  We simulate it
+   by sending messages through named pipes. */
+#define BLOCKING_SIGNAL		1000	/* Lock manager */
+#define WAKEUP_SIGNAL		1100	/* Lock manager */
+#define EVENT_SIGNAL		1200	/* Event manager */
+#define CACHE_SIGNALS		1300	/* Shared cache */
 #else
-
-// Cross-process signals
-
-const int BLOCKING_SIGNAL	= 1;
-const int WAKEUP_SIGNAL		= 1;
-const int STALL_SIGNAL		= 1;
-const int EVENT_SIGNAL		= 1;
-
+#	define BLOCKING_SIGNAL SIGUSR1 // from lock.h
+#	ifdef UNIX // from event.cpp
+#		define EVENT_SIGNAL	SIGUSR2
+#	endif
 #endif
 
-#endif // JRD_ISC_SIGNAL_H
+#endif /* JRD_ISC_SIGNAL_H */
+

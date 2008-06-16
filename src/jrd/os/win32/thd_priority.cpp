@@ -33,8 +33,8 @@
 #ifdef THREAD_PSCHED
 
 #include "../jrd/common.h"
-#include "../jrd/ThreadStart.h"
 #include "../jrd/os/thd_priority.h"
+#include "../jrd/thd.h"
 #ifdef WIN_NT
 #include <windows.h> // HANDLE
 #endif
@@ -49,10 +49,11 @@
 
 // #define DEBUG_THREAD_PSCHED
 
-Firebird::GlobalPtr<Firebird::Mutex> ThreadPriorityScheduler::mutex;
+Firebird::Mutex ThreadPriorityScheduler::mutex;
 ThreadPriorityScheduler* ThreadPriorityScheduler::chain = 0;
 Firebird::InitMutex<ThreadPriorityScheduler> ThreadPriorityScheduler::initialized;
-ThreadPriorityScheduler::OperationMode ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
+ThreadPriorityScheduler::OperationMode 
+	ThreadPriorityScheduler::opMode = ThreadPriorityScheduler::Running;
 ThreadPriorityScheduler::TpsPointers* ThreadPriorityScheduler::toDetach = 0;
 bool ThreadPriorityScheduler::active = true;
 
@@ -68,23 +69,6 @@ ThreadPriorityScheduler* ThreadPriorityScheduler::get()
 	return TLS_GET(currentScheduler);
 }
 
-// Goes to low priority zone
-void ThreadPriorityScheduler::enter()
-{
-	ThreadPriorityScheduler* t = get();
-	fb_assert(t);
-	t->inside = true;
-	t->gonein = true;
-}
-
-// Goes from low priority zone
-void ThreadPriorityScheduler::exit()
-{
-	ThreadPriorityScheduler* t = get();
-	fb_assert(t);
-	t->inside = false;
-}
-
 void ThreadPriorityScheduler::init()
 {
 	if (opMode != Running)
@@ -96,16 +80,16 @@ void ThreadPriorityScheduler::init()
 	toDetach = FB_NEW(*getDefaultMemoryPool()) TpsPointers(*getDefaultMemoryPool());
 
 	// allocate thps for current (i.e. server's main) thread
-	ThreadPriorityScheduler* tps =
-		FB_NEW(*getDefaultMemoryPool()) ThreadPriorityScheduler(0, 0, THPS_PSCHED);
-
+	ThreadPriorityScheduler *tps = FB_NEW(*getDefaultMemoryPool()) 
+						ThreadPriorityScheduler(0, 0, THPS_PSCHED);
 	tps->attach();
 
 	// start scheduler
 	if (active)
 	{
 		unsigned thread_id;
-		HANDLE handle = (HANDLE) _beginthreadex(NULL, 0, schedulerMain, 0, 0, &thread_id);
+		HANDLE handle = (HANDLE)_beginthreadex(NULL, 0,
+			schedulerMain, 0, 0, &thread_id);
 		if (! handle)
 		{
 			Firebird::system_call_failed::raise("_beginthreadex", GetLastError());
@@ -125,8 +109,9 @@ void ThreadPriorityScheduler::Cleanup(void*)
 
 void ThreadPriorityScheduler::cleanup() 
 {
-	Firebird::MutexLockGuard guard(mutex);
+	mutex.enter();
 	opMode = Stopping;
+	mutex.leave();
 }
 
 void ThreadPriorityScheduler::attach()
@@ -135,19 +120,19 @@ void ThreadPriorityScheduler::attach()
 	{
 		HANDLE process = GetCurrentProcess();
 		HANDLE thread = GetCurrentThread();
-		if (! DuplicateHandle(process, thread, process, &handle, 0, FALSE, DUPLICATE_SAME_ACCESS))
+		if (! DuplicateHandle(process, thread, process, &handle, 0, 
+				FALSE, DUPLICATE_SAME_ACCESS))
 		{
 			Firebird::system_call_failed::raise("DuplicateHandle", GetLastError());
 		}
-
-		{	// scope for MutexLockGuard
-			Firebird::MutexLockGuard guard(mutex);
-			next = chain;
-			chain = this;
-		}
-
+		mutex.enter();
+		next = chain;
+		chain = this;
+		mutex.leave();
 #ifdef DEBUG_THREAD_PSCHED
-		gds__log("^ handle=%p priority=%d", handle, flags & THPS_BOOSTED ? highPriority : lowPriority);
+		gds__log("^ handle=%p priority=%d", handle, 
+				flags & THPS_BOOSTED ? 
+				highPriority : lowPriority);
 #endif
 	}
 	else
@@ -167,7 +152,7 @@ void ThreadPriorityScheduler::detach()
 {
 	if (active)
 	{
-		Firebird::MutexLockGuard guard(mutex);
+		mutex.enter();
 		TLS_SET(currentScheduler, 0);
 		if (opMode == ShutdownComplete)
 		{
@@ -188,6 +173,7 @@ void ThreadPriorityScheduler::detach()
 		{
 			toDetach->add(this);
 		}
+		mutex.leave();
 	}
 	else
 	{
@@ -236,7 +222,8 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				// 1.	thread exited single thread zone and didn't 
 				//		return into it since this &last cycle:
 				//			increase priority
-						if (! SetThreadPriority(t->handle, highPriority))
+						if (! SetThreadPriority(t->handle, 
+									highPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
@@ -261,7 +248,8 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 				//		last cycle and didn't leave it completely
 				//		this cycle:
 				//		decrease priority
-						if (! SetThreadPriority(t->handle, lowPriority))
+						if (! SetThreadPriority(t->handle, 
+									lowPriority))
 						{
 							Firebird::system_call_failed::raise("SetThreadPriority");
 						}
@@ -281,8 +269,9 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 
 		if (toDetach->getCount() > 0) 
 		{
-			Firebird::MutexLockGuard guard(mutex);
+			mutex.enter();
 			doDetach();
+			mutex.leave();
 		}
 	}
 	return 0;
@@ -308,8 +297,8 @@ start_label:
 		delete m;
 		if (*pt)
 			goto start_label;
-
-		break;
+		else
+			break;
 	}
 }
 

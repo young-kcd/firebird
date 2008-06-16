@@ -76,10 +76,8 @@ int GENERATE_acl( SCL sec_class, UCHAR * buffer)
 		*p++ = priv_end;
 		*p++ = ACL_priv_list;
 		for (i = 0; i < priv_max; i++)
-		{
 			if (item->sce_privileges & (1 << i))
 				*p++ = i;
-		}
 		*p++ = id_end;
 	}
 

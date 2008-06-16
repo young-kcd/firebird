@@ -54,9 +54,13 @@ inline bool	ISC_expand_filename(const TEXT* unexpanded,
 	return (pn.copyTo(expanded, len_expanded) != 0);
 }
 
+#ifdef VMS
+int			ISC_expand_logical(const TEXT*, USHORT, TEXT*);
+#endif
 void		ISC_expand_share(Firebird::PathName&);
 int			ISC_file_lock(SSHORT);
 int			ISC_file_unlock(SSHORT);
+bool		ISC_verify_database_access(const Firebird::PathName&);
 
 #endif // JRD_ISC_FILE_PROTO_H
 

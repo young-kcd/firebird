@@ -1,53 +1,98 @@
 
-==========================================
-Firebird 2.5.0 pre alpha (Windows Build)
-==========================================
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
+====================================
+Firebird 2.1.1    (Windows Build)
+====================================
 
 
 o Introduction
 o Intended Users
+o Known Issues
+o Features in this release (all platforms)
+o Installation
 o Reporting Bugs
 
 
 Introduction
 ============
 
-Welcome to Firebird 2.5.
+Welcome to Firebird 2.1.
 
 
 Intended Users
 ==============
 
-This is a pre-alpha version of Firebird. 
+Firebird 2.1 has undergone extensive testing and is
+intended for widespread production use. However, users
+are recommended to follow standard practices before
+deploying this release on a production server. ie:
 
-It is not intended for use. It is for 
-test purposes only.
+ o Please make sure you read the installation
+   readme and the release notes.
+
+ o If you have data you value remember to back it up
+   prior to installing this release.
+
+ o It is recommended that you remove any previous
+   version prior to installation. Uninstallation
+   preserves configuration files and log files.
+
+ o It is recommended that you carry out your own
+   tests in a development environment prior to
+   production deployment.
+
+
+Known Issues
+============
+
+Windows Vista - The binary installer fails to start
+Firebird as a service at installation time, however,
+the service does start correctly after a reboot. As a
+workaround, you can shift-right click on the Firebird
+control panel applet, choose 'Run as...' and start the
+service from there.
+
+
+Features in this release
+========================
+
+Please see the Release Notes for details of new
+features.
+
+
+Installation
+============
+
+Installation issues are covered in detail in the
+Installation Guide available in the doc directory after
+install. A brief summary of installation issues can
+also be found in the installation_readme.txt, also
+available from the doc directory after installation.
 
 
 Reporting Bugs
 ==============
 
-This is an experimental version. 
+Before you report a bug:
 
-DO NOT REPORT A BUG IN THIS RELEASE
-unless you really know what you are doing. 
+ o Check you know how Firebird works.
+   Maybe it is not a bug at all.
 
-Check first on the firebird-devel list.
-If you don't know where the firebird-devel 
-list is then you shouldn't be using this 
-version of Firebird!
+ o Perhaps some has already reported this? Browse
+   existing bug reports here:
 
-Please don't use the Firebird-devel list for technical
-support unless the question specifically relates to a
-new feature in Firebird 2.5
+	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
+
+ o If in doubt why not discuss the problem on the
+   Firebird-devel list? You can subscribe here:
+
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
+
+   and the list is viewable via a newsgroup interface
+   here:
+
+	news://news.atkin.com/
 
 
-Happy Testing!
 
 From the Firebird team.
 

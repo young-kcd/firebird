@@ -31,6 +31,10 @@
 
 #include "../jrd/common.h"
 
+#ifdef VMS
+#error "VMS remote must be completed"
+#endif
+
 #ifdef WIN_NT
 #include <sys/types.h>
 #include <winsock.h>
@@ -73,11 +77,6 @@ typedef struct xdr_t
 	caddr_t	x_private;	/* pointer to private data */
 	caddr_t	x_base;		/* private used for position info */
 	int		x_handy;	/* extra private word */
-
-public:
-	xdr_t() :
-		x_op(XDR_ENCODE), x_ops(0), x_public(0), x_private(0), x_base(0), x_handy(0)
-	{ }
 } XDR;
 
 /* Descriminated union crud */

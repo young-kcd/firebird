@@ -93,19 +93,22 @@ const int MAX_TPB = 4000;
 void CMP_check( gpre_req* request, SSHORT min_reqd)
 {
 	int length = request->req_blr - request->req_base;
-	if (!min_reqd && (length < request->req_length - 100))
+	if (!(min_reqd) && (length < request->req_length - 100))
 		return;
 
 	const int n = ((length + min_reqd + 100) > request->req_length * 2) ?
 		length + min_reqd + 100 : request->req_length * 2;
 
 	UCHAR* const old = request->req_base;
-	UCHAR* p = MSC_alloc(n);
+	const UCHAR* q = old;
+	UCHAR* p = (UCHAR *) MSC_alloc(n);
 	request->req_base = p;
 	request->req_length = n;
 	request->req_blr = request->req_base + length;
 
-	memcpy(p, old, length);
+	do {
+		*p++ = *q++;
+	} while (--length);
 
 	MSC_free(old);
 }
@@ -123,7 +126,7 @@ void CMP_compile_request( gpre_req* request)
 //  if there isn't a request handle specified, make one!
 
 	if (!request->req_handle && (request->req_type != REQ_procedure)) {
-		request->req_handle = (TEXT*) MSC_alloc(20);
+		request->req_handle = (TEXT *) MSC_alloc(20);
 		sprintf(request->req_handle, gpreGlob.ident_pattern, CMP_next_ident());
 	}
 
@@ -187,7 +190,7 @@ void CMP_compile_request( gpre_req* request)
 
 //  Initialize the blr string 
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		request->add_byte(blr_version4);
@@ -1127,7 +1130,7 @@ static void cmp_procedure( gpre_req* request)
 	expand_references(request->req_values);
 	expand_references(request->req_references);
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 	if (request->req_flags & REQ_blr_version4)
 		request->add_byte(blr_version4);
@@ -1486,7 +1489,7 @@ static void cmp_slice( gpre_req* request)
 		reference->ref_id = slice->slc_parameters++;
 	}
 
-	request->req_blr = request->req_base = MSC_alloc(500);
+	request->req_blr = request->req_base = (UCHAR *) MSC_alloc(500);
 	request->req_length = 500;
 
 	request->add_byte(isc_sdl_version1);

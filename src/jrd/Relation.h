@@ -34,25 +34,16 @@ namespace Jrd
 class ViewContext
 {
 public:
-	explicit ViewContext(MemoryPool& p, const TEXT* context_name, 
-						 const TEXT* relation_name, USHORT context) : 
-		vcx_context_name(p, context_name, strlen(context_name)),
-		vcx_relation_name(relation_name),
-		vcx_context(context)
-	{		
-	}
-
-	static const USHORT generate(const void*, const ViewContext* vc) 
+	Firebird::MetaName	vcx_context_name;
+	Firebird::MetaName	vcx_relation_name;
+	USHORT	vcx_context;
+	static const USHORT& generate(const void*, const ViewContext& vc) 
 	{ 
-		return vc->vcx_context; 
+		return vc.vcx_context; 
 	}
-
-	const Firebird::string	vcx_context_name;
-	const Firebird::MetaName	vcx_relation_name;
-	const USHORT	vcx_context;
 };
 
-typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>, 
+typedef Firebird::SortedArray<ViewContext, Firebird::EmptyStorage<ViewContext>, 
 		USHORT, ViewContext> ViewContexts;
 
 #ifdef GARBAGE_THREAD
@@ -60,8 +51,7 @@ typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>
 class RelationGarbage
 {
 private:
-	class TranGarbage
-	{
+	class TranGarbage {
 	public:
 		SLONG tran;
 		PageBitmap *bm;
@@ -69,9 +59,7 @@ private:
 		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {}
 
 		static inline const SLONG generate(void const*, const TranGarbage& Item) 
-		{
-			return Item.tran;
-		}
+		{ return Item.tran; }
 	};
 
 	typedef	Firebird::SortedArray<
@@ -92,9 +80,7 @@ public:
 	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
 	
 	SLONG minTranID() const
-	{
-		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
-	}
+	{ return (array.getCount() > 0) ? array[0].tran : MAX_SLONG; }
 };
 
 #endif //GARBAGE_THREAD
@@ -143,8 +129,7 @@ friend class jrd_rel;
 // Primary dependencies from all foreign references to relation's
 // primary/unique keys 
 
-struct prim
-{
+struct prim {
 	vec<int>* prim_reference_ids;
 	vec<int>* prim_relations;
 	vec<int>* prim_indexes;
@@ -153,8 +138,7 @@ struct prim
 
 // Foreign references to other relations' primary/unique keys 
 
-struct frgn
-{
+struct frgn {
 	vec<int>* frgn_reference_ids;
 	vec<int>* frgn_relations;
 	vec<int>* frgn_indexes;
@@ -206,14 +190,13 @@ public:
 	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key 
 	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys 
 
-	bool isSystem() const;
-	bool isTemporary() const;
-	bool isVirtual() const;
+	inline bool isTemporary() const;
+	inline bool isVirtual() const;
 
 	// global temporary relations attributes
-	RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
+	inline RelationPages* getPages(thread_db* tdbb, SLONG tran = -1, bool allocPages = true);
 
-	RelationPages* getBasePages()
+	inline RelationPages* getBasePages()
 	{
 		return &rel_pages_base;
 	}
@@ -230,13 +213,14 @@ public:
 	public:
 		typedef Firebird::Array<RelationPages*> inherited;
 
-		RelPagesSnapshot(thread_db* tdbb, jrd_rel* relation)
-		{
+		RelPagesSnapshot(thread_db* tdbb, jrd_rel* relation) {
 			spt_tdbb = tdbb;
 			spt_relation = relation;
 		}
 		
-		~RelPagesSnapshot() { clear(); }
+		~RelPagesSnapshot() { 
+			clear(); 
+		}
 
 		void clear();
 	private:
@@ -265,8 +249,6 @@ private:
 public:
 	explicit jrd_rel(MemoryPool& p) 
 		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p) { }
-
-	bool hasTriggers() const;
 };
 
 // rel_flags
@@ -289,11 +271,6 @@ const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const USHORT REL_virtual				= 0x8000;	// relation is virtual
 
 
-inline bool jrd_rel::isSystem() const
-{
-	return rel_flags & REL_system;
-}
-
 inline bool jrd_rel::isTemporary() const
 {
 	return (rel_flags & (REL_temp_tran | REL_temp_conn));
@@ -308,8 +285,8 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 {
 	if (!isTemporary()) 
 		return &rel_pages_base;
-
-	return getPagesInternal(tdbb, tran, allocPages);
+	else
+		return getPagesInternal(tdbb, tran, allocPages);
 }
 
 // Field block, one for each field in a scanned relation 

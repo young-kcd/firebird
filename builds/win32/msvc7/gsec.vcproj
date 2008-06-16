@@ -151,12 +151,6 @@
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp">
 			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsecMain.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\gen\utilities\gsec\security.cpp">
-			</File>
 		</Filter>
 		<Filter
 			Name="JRD files"
@@ -165,19 +159,10 @@
 				RelativePath="..\..\..\src\jrd\enc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\isc_file.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\sha.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ThreadData.cpp">
 			</File>
 		</Filter>
 		<Filter

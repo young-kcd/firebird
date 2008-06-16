@@ -38,7 +38,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#ifndef REQUESTER
 #include "../jrd/jrd.h"
+//#else
+//#include "../jrd/common.h"
+#endif
 #include "../jrd/req.h"
 #include "../jrd/val.h"
 #include "../jrd/quad.h"
@@ -50,6 +54,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
+#include "../jrd/thd.h"
 #include "../common/classes/timestamp.h"
 
 
@@ -57,7 +62,9 @@
 #include <sys/types.h>
 #endif
 
+#if !(defined REQUESTER && defined SUPERCLIENT)
 #include "../jrd/intl_classes.h"
+#endif
 
 #ifdef sun
 #define DBL_MAX_10_EXP          308
@@ -69,6 +76,10 @@
 
 #ifndef DBL_MAX_10_EXP
 #include <float.h>
+#endif
+
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
 #endif
 
 /* ERR_post is used to flag whether we were called from mov.cpp or
@@ -130,7 +141,7 @@
 #define CVT_FAILURE_SPACE       128
 
 #define CVT_COPY_BUFF(from, to, len) \
-{if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
+{if (len) {MOVE_FAST(from, to, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME {
 	expect_timestamp,
@@ -138,7 +149,7 @@ enum EXPECT_DATETIME {
 	expect_sql_time
 };
 
-#if defined SUPERCLIENT
+#if (defined REQUESTER || defined SUPERCLIENT)
 static TEXT cvt_failures[CVT_FAILURE_SPACE];
 static TEXT* cvt_failures_ptr = NULL;
 static const TEXT* error_string(const char*, SSHORT);
@@ -149,10 +160,9 @@ static void datetime_to_text(const dsc*, dsc*, FPTR_ERROR);
 static SSHORT decompose(const char*, USHORT, SSHORT, SLONG*, FPTR_ERROR);
 static void float_to_text(const dsc*, dsc*, FPTR_ERROR);
 static void integer_to_text(const dsc*, dsc*, FPTR_ERROR);
-static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME,
+static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, EXPECT_DATETIME,
 							   FPTR_ERROR);
 static double power_of_ten(const int);
-static SINT64 hex_to_value(const char*& string, const char* end);
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
@@ -189,42 +199,37 @@ double CVT_date_to_double(const dsc* desc, FPTR_ERROR err)
  **************************************/
 	SLONG temp[2], *date;
 
-	// If the input descriptor is not in date form, convert it.
+/* If the input descriptor is not in date form, convert it. */
 
-	switch (desc->dsc_dtype)
-	{
-	case dtype_timestamp:
+	if (desc->dsc_dtype == dtype_timestamp)
 		date = (SLONG*) desc->dsc_address;
-		break;
-	case dtype_sql_time:
-		// Temporarily convert the time to a timestamp for conversion
+	else if (desc->dsc_dtype == dtype_sql_time) {
+		/* Temporarily convert the time to a timestamp for conversion */
 		date = temp;
 		date[0] = 0;
 		date[1] = *(SLONG*) desc->dsc_address;
-		break;
-	case dtype_sql_date:
-		// Temporarily convert the date to a timestamp for conversion
+	}
+	else if (desc->dsc_dtype == dtype_sql_date) {
+		/* Temporarily convert the date to a timestamp for conversion */
 		date = temp;
 		date[0] = *(SLONG*) desc->dsc_address;
 		date[1] = 0;
-		break;
-	default:
-		{
-			// Unknown type - most likely a string.  Try to convert it to a
-			// timestamp -- or die trying (reporting an error).
-			// Don't worry about users putting a TIME or DATE here - this
-			// conversion is occuring in really flexible spots - we don't
-			// want to overdo it.
+	}
+	else {
+		/* Unknown type - most likely a string.  Try to convert it to a 
+		   timestamp -- or die trying (reporting an error).
+		   Don't worry about users putting a TIME or DATE here - this
+		   conversion is occuring in really flexible spots - we don't
+		   want to overdo it. */
 
-			dsc temp_desc;
-			MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
+		dsc temp_desc;
+		MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 
-			temp_desc.dsc_dtype = dtype_timestamp;
-			temp_desc.dsc_length = sizeof(temp);
-			date = temp;
-			temp_desc.dsc_address = (UCHAR*) date;
-			CVT_move(desc, &temp_desc, err);
-		}
+		temp_desc.dsc_dtype = dtype_timestamp;
+		temp_desc.dsc_length = sizeof(temp);
+		date = temp;
+		temp_desc.dsc_address = (UCHAR*) date;
+		CVT_move(desc, &temp_desc, err);
 	}
 
 /* Instead of returning the calculated double value in the return
@@ -306,10 +311,15 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 		return *((float*) desc->dsc_address);
 
 	case DEFAULT_DOUBLE:
-		/* memcpy is done in case dsc_address is on a platform dependant
+		/* a MOVE_FAST is done in case dsc_address is on a platform dependant
 		   invalid alignment address for doubles */
-		memcpy(&value, desc->dsc_address, sizeof(double));
+		MOVE_FAST(desc->dsc_address, &value, sizeof(double));
 		return value;
+
+#ifdef VMS
+	case SPECIAL_DOUBLE:
+		return CNVT_TO_DFLT((double*) desc->dsc_address);
+#endif
 
 	case dtype_varying:
 	case dtype_cstring:
@@ -395,7 +405,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 						   later in this routine. */
 
 						if (exp >= SHORT_LIMIT)
-							(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+							(*err) (isc_arith_except, 0);
 					}
 					else if (*p == '-' && !digit_seen && !sign)
 						sign = -1;
@@ -428,7 +438,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
 			   the user know...  */
 
 			if (ABSOLUT(scale) > DBL_MAX_10_EXP)
-				(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err)(isc_arith_except, 0);
 
 /*
   Repeated division is a good way to mung the least significant bits
@@ -470,7 +480,7 @@ double CVT_get_double(const dsc* desc, FPTR_ERROR err)
    the user know... */
 
 	if (ABSOLUT(dscale) > DBL_MAX_10_EXP)
-		(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+		(*err) (isc_arith_except, 0);
 
 	if (dscale > 0)
 		value *= power_of_ten(dscale);
@@ -541,12 +551,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		else if (scale < 0)
 			do {
 				if ((val64 > INT64_LIMIT) || (val64 < -INT64_LIMIT))
-					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+					(*err) (isc_arith_except, 0);
 				val64 *= 10;
 			} while (++scale);
 
 		if ((val64 > LONG_MAX_int64) || (val64 < LONG_MIN_int64))
-			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err) (isc_arith_except, 0);
 		return (SLONG) val64;
 
 	case dtype_quad:
@@ -554,11 +564,14 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		high = ((SLONG *) p)[HIGH_WORD];
 		if ((value >= 0 && !high) || (value < 0 && high == -1))
 			break;
-		(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+		(*err) (isc_arith_except, 0);
 		break;
 
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		if (desc->dsc_dtype == dtype_real)
 		{
 			d = *((float*) p);
@@ -569,7 +582,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			d = *((double*) p);
 			eps = eps_double;
 		}
-
+#ifdef VMS
+		else {
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
+#endif
 		if (scale > 0)
 			d /= power_of_ten(scale);
 		else if (scale < 0)
@@ -588,12 +606,12 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		if (d < (double) LONG_MIN_real) {
 			if (d > (double) LONG_MIN_real - 1.)
 				return LONG_MIN;
-			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err) (isc_arith_except, 0);
 		}
 		if (d > (double) LONG_MAX_real) {
 			if (d < (double) LONG_MAX_real + 1.)
 				return LONG_MAX_int;
-			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err) (isc_arith_except, 0);
 		}
 		return (SLONG) d;
 
@@ -644,7 +662,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else if (scale < 0) {
 		do {
 			if (value > LONG_LIMIT || value < -LONG_LIMIT)
-				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -706,8 +724,8 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 				/* possibility of an overflow */
 				if (value > NUMERIC_LIMIT)
 					break;
-
-				if ((*p > '8' && sign == -1) || (*p > '7' && sign != -1))
+				else if (((*p > '8') && (sign == -1))
+						 || ((*p > '7') && (sign != -1)))
 					break;
 			}
 
@@ -753,19 +771,19 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 		*(SLONG *) ptr = (SLONG) ((sign == -1) ? -value : value);
 		return dtype_long;
 	}
-
-	if ((sign == -1) && (-value == LONG_MIN_int64)) {
+	else if ((sign == -1) && (-value == LONG_MIN_int64)) {
 		*(SLONG *) ptr = LONG_MIN;
 		return dtype_long;
 	}
+	else {
+		/* Either MAX_SLONG < value <= MAX_SINT64, or
+		   ((value == MIN_SINT64) && (sign == -1)).
+		   In the first case, the number can be negated, while in the second
+		   negating the value will not change it on a 2s-complement system. */
 
-	/* Either MAX_SLONG < value <= MAX_SINT64, or
-	   ((value == MIN_SINT64) && (sign == -1)).
-	   In the first case, the number can be negated, while in the second
-	   negating the value will not change it on a 2s-complement system. */
-
-	*(SINT64 *) ptr = ((sign == -1) ? -value : value);
-	return dtype_int64;
+		*(SINT64 *) ptr = ((sign == -1) ? -value : value);
+		return dtype_int64;
+	}
 }
 
 
@@ -815,24 +833,25 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		if (desc->dsc_dtype == dtype_real)
 			d = *((float*) p);
 		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
 			d = *((double*) p);
-
+#ifdef VMS
+		else
+			d = CNVT_TO_DFLT((double*) p);
+#endif
 		if (scale > 0)
-		{
 			do {
 				d /= 10.;
 			} while (--scale);
-		}
 		else if (scale < 0)
-		{
 			do {
 				d *= 10.;
 			} while (++scale);
-		}
-
 		if (d > 0)
 			d += 0.5;
 		else
@@ -847,11 +866,9 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 			if (d > (double) QUAD_MIN_real - 1.)
 				return QUAD_MIN_int;
-
-			if (d < (double) QUAD_MAX_real + 1.)
+			else if (d < (double) QUAD_MAX_real + 1.)
 				return QUAD_MAX_int;
-
-			(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err)(isc_arith_except, 0);
 		}
 		return QUAD_FROM_DOUBLE(d, err);
 
@@ -908,7 +925,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else {
 		do {
 			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
-				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -962,6 +979,9 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 
 	case dtype_real:
 	case dtype_double:
+#ifdef VMS
+	case dtype_d_float:
+#endif
 		if (desc->dsc_dtype == dtype_real)
 		{
 			d = *((float*) p);
@@ -972,7 +992,12 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 			d = *((double*) p);
 			eps = eps_double;
 		}
-
+#ifdef VMS
+		else {
+			d = CNVT_TO_DFLT((double*) p);
+			eps = eps_double;
+		}
+#endif
 		if (scale > 0)
 			d /= power_of_ten(scale);
 		else if (scale < 0)
@@ -995,7 +1020,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 		   double, and thus will have no effect on the sum. */
 
 		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
-			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err) (isc_arith_except, 0);
 
 		return (SINT64) d;
 
@@ -1046,7 +1071,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, FPTR_ERROR err)
 	else if (scale < 0) {
 		do {
 			if (value > INT64_LIMIT || value < -INT64_LIMIT)
-				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err) (isc_arith_except, 0);
 			value *= 10;
 		} while (++scale);
 	}
@@ -1229,13 +1254,11 @@ USHORT CVT_make_string(const dsc*          desc,
 	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp) {
 		*address = reinterpret_cast<char*>(desc->dsc_address);
 		const USHORT from_len = desc->dsc_length;
-
 		if (desc->dsc_dtype == dtype_text)
 			return from_len;
-
 		if (desc->dsc_dtype == dtype_cstring)
-			return MIN((USHORT) strlen((char *) desc->dsc_address), from_len - 1);
-
+			return MIN((USHORT) strlen((char *) desc->dsc_address),
+					   from_len - 1);
 		if (desc->dsc_dtype == dtype_varying) {
 			vary* varying = (vary*) desc->dsc_address;
 			*address = varying->vary_string;
@@ -1282,7 +1305,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	if (DSC_EQUIV(from, to, false)) {
 		if (length) {
-			memcpy(p, q, length);
+			MOVE_FAST(q, p, length);
 		}
 		return;
 	}
@@ -1337,7 +1360,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				}
 				else
 				{
-					cur_date = Firebird::TimeStamp::getCurrentTimeStamp().value().timestamp_date;
+					cur_date = Firebird::TimeStamp().value().timestamp_date;
 				}
 				((GDS_TIMESTAMP*) (to->dsc_address))->timestamp_date = cur_date;
 			}
@@ -1351,6 +1374,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1382,6 +1408,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1413,6 +1442,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 			conversion_error(from, err);
 			break;
 		}
@@ -1448,9 +1480,8 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			 * unless really required is a good optimization.
 			 */
 
-#ifdef SUPERCLIENT
-			(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
-#else
+#ifndef REQUESTER
+#ifndef SUPERCLIENT
 			CHARSET_ID charset1, charset2;
 			if ((INTL_TTYPE(from) == ttype_dynamic) && (err == ERR_post))
 				charset1 = INTL_charset(NULL, INTL_TTYPE(from));
@@ -1476,8 +1507,14 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					INTL_convert_string(to, from, err);
 					return;
 				}
-				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+				else
+#endif
+#endif
+					(*err) (isc_arith_except, 0);
+#ifndef REQUESTER
+#ifndef SUPERCLIENT
 			}
+#endif
 #endif
 
 			{ // scope
@@ -1488,10 +1525,10 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				q = ptr;
 			} // end scope
 
-			const USHORT to_size = TEXT_LEN(to);
+			USHORT to_size = TEXT_LEN(to);
 			UCHAR* start = to->dsc_address;
 			UCHAR fill_char = ASCII_SPACE;
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			CharSet* toCharSet = (err != ERR_post || charset2 == ttype_dynamic || charset2 == CS_METADATA ?
 									NULL : INTL_charset_lookup(NULL, charset2));
 			if (charset2 == ttype_binary)
@@ -1504,7 +1541,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			switch (to->dsc_dtype) {
 			case dtype_text:
 				length = MIN(length, to->dsc_length);
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1517,11 +1554,12 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				CVT_COPY_BUFF(q, p, length);
 				if (fill > 0) {
-					memset(p, fill_char, fill);
-					p += fill;
-					// Note: above is correct only for narrow
-					// and multi-byte character sets which
-					// use ASCII for the SPACE character.
+					do {
+						*p++ = fill_char;
+					} while (--fill);
+					/* Note: above is correct only for narrow 
+					   and multi-byte character sets which 
+					   use ASCII for the SPACE character.  */
 				}
 				break;
 
@@ -1531,7 +1569,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				   byte to represent end-of-string */
 
 				length = MIN(length, to->dsc_length - 1);
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1545,7 +1583,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 			case dtype_varying:
 				length =
 					MIN(length, (SLONG) (to->dsc_length - sizeof(USHORT)));
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 				if (toCharSet && !toCharSet->wellFormed(length, q))
 					(*err)(isc_malformed_string, 0);
 				toLength = length;
@@ -1560,7 +1598,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 				break;
 			}
 
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			if (toCharSet)
 			{
 				Jrd::thread_db* tdbb = NULL;
@@ -1571,7 +1609,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 					toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
 					toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 				{
-					(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+					(*err)(isc_arith_except, 0);
 				}
 			}
 #endif
@@ -1583,9 +1621,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 				do {
 					if (*q++ != fill_char)
-					{
-						(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
-					}
+						(*err) (isc_arith_except, 0);
 				} while (--l);
 			}
 			return;
@@ -1600,6 +1636,9 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 
 		case dtype_real:
 		case dtype_double:
+#ifdef VMS
+		case dtype_d_float:
+#endif
 			float_to_text(from, to, err);
 			return;
 
@@ -1644,7 +1683,7 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		/* fb_assert(l <= MAX_SSHORT); */
 		*(SSHORT *) p = (SSHORT) l;
 		if (*(SSHORT *) p != l)
-			(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+			(*err) (isc_arith_except, 0);
 		return;
 
 	case dtype_long:
@@ -1668,19 +1707,26 @@ void CVT_move(const dsc* from, dsc* to, FPTR_ERROR err)
 		{
 			double d_value = CVT_get_double(from, err);
 			if (ABSOLUT(d_value) > FLOAT_MAX)
-				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err) (isc_arith_except, 0);
 			*(float*) p = (float) d_value;
 		}
 		return;
 
 	case DEFAULT_DOUBLE:
 	#ifdef HPUX
-		const double d_value = CVT_get_double(from, err);
-		memcpy(p, &d_value, sizeof(double));
+		double d_value = CVT_get_double(from, err);
+		MOVE_FAST(&d_value, p, sizeof(double));
 	#else
 		*(double*) p = CVT_get_double(from, err);
 	#endif
 		return;
+
+#ifdef VMS
+	case SPECIAL_DOUBLE:
+		*(double*) p = CVT_get_double(from, err);
+		*(double*) p = CNVT_FROM_DFLT((double*) p);
+		return;
+#endif
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
@@ -1717,7 +1763,7 @@ static void conversion_error(const dsc* desc, FPTR_ERROR err)
 		const USHORT length =
 			CVT_make_string(desc, ttype_ascii, &string,
 							(vary*) s, sizeof(s), err);
-#if defined SUPERCLIENT
+#if (defined REQUESTER || defined SUPERCLIENT)
 		p = error_string(string, length);
 #else
 		p = ERR_string(string, length);
@@ -1745,23 +1791,17 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 
 	fb_assert(DTYPE_IS_TEXT(to->dsc_dtype));
 
-	// Convert a date or time value into a timestamp for manipulation
+/* Convert a date or time value into a timestamp for manipulation */
 
-	tm times = {0};
-	int	fractions = 0;
+	Firebird::TimeStamp ts(true);
 
-	switch (from->dsc_dtype)
-	{
+	switch (from->dsc_dtype) {
 	case dtype_sql_time:
-		Firebird::TimeStamp::decode_time(*(GDS_TIME *) from->dsc_address,
-										 &times.tm_hour, &times.tm_min, &times.tm_sec,
-										 &fractions);
+		ts.value().timestamp_time = *(GDS_TIME *) from->dsc_address;
 		break;
-
 	case dtype_sql_date:
-		Firebird::TimeStamp::decode_date(*(GDS_DATE *) from->dsc_address, &times);
+		ts.value().timestamp_date = *(GDS_DATE *) from->dsc_address;
 		break;
-
 	case dtype_timestamp:
 		/** Cannot call JRD_get_thread_data because that macro calls 
 			BUGCHECK i.e. ERR_bugcheck() which is not part of 
@@ -1769,34 +1809,34 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		tdbb = (thread_db*) ThreadData::getSpecific();
 		if (tdbb && (tdbb->getType() == ThreadData::tddDBB) && tdbb->getRequest())
 			version4 = (tdbb->getRequest()->req_flags & req_blr_version4) ? true : false;
-
-		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) from->dsc_address,
-											  &times, &fractions);
+		ts.value() = *(GDS_TIMESTAMP *) from->dsc_address;
 		break;
-
 	default:
 		fb_assert(false);
-		(*err) (isc_badblk, 0);	// internal error
+		(*err) (isc_badblk, 0);	/* internal error */
 		break;
 	}
 
-	// Decode the timestamp into human readable terms
+/* Decode the timestamp into human readable terms */
 
-	TEXT temp[30];			// yyyy-mm-dd hh:mm:ss.tttt OR dd-MMM-yyyy hh:mm:ss.tttt
+	tm times;
+	ts.decode(&times);
+	
+	TEXT temp[30];			/* yyyy-mm-dd hh:mm:ss.tttt  OR
+							dd-MMM-yyyy hh:mm:ss.tttt */
 	TEXT* p = temp;
 
-	// Make a textual date for data types that include it
+/* Make a textual date for data types that include it */
 
-	if (from->dsc_dtype != dtype_sql_time)
-	{
-		if (from->dsc_dtype == dtype_sql_date || !version4)
-		{
+	if (from->dsc_dtype != dtype_sql_time) {
+
+		if (from->dsc_dtype == dtype_sql_date || !version4) {
 			sprintf(p, "%4.4d-%2.2d-%2.2d",
 					times.tm_year + 1900, times.tm_mon + 1, times.tm_mday);
 		}
-		else
-		{
-			// Prior to BLR version 5 timestamps were converted to text in the dd-MMM-yyyy format
+		else {
+			/* Prior to BLR version 5 - timestamps where converted to
+			   text in the dd-Mon-yyyy format */
 			sprintf(p, "%d-%.3s-%d",
 					times.tm_mday,
 					FB_LONG_MONTHS_UPPER[times.tm_mon], times.tm_year + 1900);
@@ -1805,31 +1845,35 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			p++;
 	}
 
-	// Put in a space to separate date & time components
+/* Put in a space to separate date & time components */
 
 	if ((from->dsc_dtype == dtype_timestamp) && (!version4))
 		*p++ = ' ';
 
-	// Add the time part for data types that include it
+/* Add the time part for data types that include it */
 
-	if (from->dsc_dtype != dtype_sql_date)
-	{
-		if (from->dsc_dtype == dtype_sql_time || !version4)
-		{
+	if (from->dsc_dtype != dtype_sql_date) {
+		if (from->dsc_dtype == dtype_sql_time || !version4) {
 			sprintf(p, "%2.2d:%2.2d:%2.2d.%4.4d",
-					times.tm_hour, times.tm_min, times.tm_sec, fractions);
+					times.tm_hour, times.tm_min, times.tm_sec,
+					(USHORT) (ts.value().timestamp_time %
+							  ISC_TIME_SECONDS_PRECISION));
 		}
-		else if (times.tm_hour || times.tm_min || times.tm_sec || fractions)
+		else if (times.tm_hour || times.tm_min || times.tm_sec
+				 || ts.value().timestamp_time)
 		{
-			// Timestamp formating prior to BLR Version 5 is slightly different
+			/* Timestamp formating prior to BLR Version 5 is slightly
+			   different */
 			sprintf(p, " %d:%.2d:%.2d.%.4d",
-					times.tm_hour, times.tm_min, times.tm_sec, fractions);
+					times.tm_hour, times.tm_min, times.tm_sec,
+					(USHORT) (ts.value().timestamp_time %
+							  ISC_TIME_SECONDS_PRECISION));
 		}
 		while (*p)
 			p++;
 	}
 
-	// Move the text version of the date/time value into the destination
+/* Move the text version of the date/time value into the destination */
 
 	dsc desc;
 	MOVE_CLEAR(&desc, sizeof(desc));
@@ -1838,8 +1882,8 @@ static void datetime_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 	desc.dsc_ttype() = ttype_ascii;
 	desc.dsc_length = (p - temp);
 	if (from->dsc_dtype == dtype_timestamp && version4) {
-		// Prior to BLR Version5, when a timestamp is converted to a string it
-		// is silently truncated if the destination string is not large enough
+		/* Prior to BLR Version5, when a timestamp is converted to a string it
+		   is silently truncated if the destination string is not large enough */
 
 		fb_assert(to->dsc_dtype <= dtype_any_text);
 
@@ -1865,8 +1909,7 @@ static SSHORT decompose(const char* string,
  **************************************
  *
  * Functional description
- *      Decompose a numeric string in mantissa and exponent,
- *      or if it is in hexadecimal notation.
+ *      Decompose a numeric string in mantissa and exponent.
  *
  **************************************/
 #ifndef NATIVE_QUAD
@@ -1894,54 +1937,11 @@ static SSHORT decompose(const char* string,
 	const SINT64 limit_by_10 = upper_limit / 10;	/* used to check for overflow */
 
 	const char* p = string;
-	const char* end = p + length;
+	const char* const end = p + length;
 
 	// skip initial spaces
 	for (; p < end && *p == ' '; p++)
 		;
-
-	// Check if this is a numeric hex string. Must start with 0x or 0X, and be
-	// no longer than 16 hex digits + 2 (the length of the 0x prefix) = 18.
-	if (p[0] == '0' && UPPER(p[1]) == 'X')
-	{
-		p += 2; // skip over 0x part
-
-		// skip non spaces
-		const char* q = p;
-		while (q < end && *q && *q != ' ')
-			++q;
-
-		const char* digits_end = q;
-
-		// skip trailing spaces
-		while (q < end && *q == ' ')
-			q++;
-
-		if (q != end || end - p == 0 || end - p > 16)
-			conversion_error(&errd, err);
-
-		q = p;
-		value = hex_to_value(q, digits_end);
-
-		if (q != digits_end)
-			conversion_error(&errd, err);
-
-		// 0xFFFFFFFF = -1; 0x0FFFFFFFF = 4294967295
-		if (digits_end - p <= 8)
-			value = (SLONG) value;
-
-		if (dtype == dtype_long)
-		{
-			if (value < LONG_MIN_int64 || value > LONG_MAX_int64)
-				(*err)(isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
-
-			*return_value = (SLONG) value;
-		}
-		else
-			*((SINT64*) return_value) = value;
-
-		return 0; // 0 scale for hex literals
-	}
 
 	for (; p < end; p++)
 	{
@@ -1956,13 +1956,11 @@ static SSHORT decompose(const char* string,
 			if (value >= limit_by_10) {
 				/* possibility of an overflow */
 				if (value > limit_by_10)
-				{
-					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
-				}
+					(*err) (isc_arith_except, 0);
 				else if (((*p > '8') && (sign == -1))
 						 || ((*p > '7') && (sign != -1)))
 				{
-					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+					(*err) (isc_arith_except, 0);
 				}
 			}
 
@@ -1985,8 +1983,8 @@ static SSHORT decompose(const char* string,
 		else if (*p == ' ')
 		{
 			// skip spaces
-			while (p < end && *p == ' ')
-				++p;
+			for (; p < end && *p == ' '; p++)
+				;
 
 			// throw if there is something after the spaces
 			if (p < end)
@@ -2018,7 +2016,7 @@ static SSHORT decompose(const char* string,
 				   applied to the value. */
 
 				if (exp >= SHORT_LIMIT)
-					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+					(*err) (isc_arith_except, 0);
 			}
 			else if (*p == '-' && !digit_seen && !sign)
 				sign = -1;
@@ -2056,7 +2054,7 @@ static SSHORT decompose(const char* string,
 }
 
 
-#if defined SUPERCLIENT
+#if (defined REQUESTER || defined SUPERCLIENT)
 static const TEXT* error_string(const char* in_string, SSHORT length)
 {
 /**************************************
@@ -2164,7 +2162,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			/* If we cannot print at least two digits, one on each side of the
 			   ".", report an overflow exception. */
 			if (precision < 2)
-				(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+				(*err) (isc_arith_except, 0);
 
 			chars_printed = sprintf(temp, num_format, width, precision, d);
 
@@ -2176,7 +2174,7 @@ static void float_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 			if (chars_printed > width) {
 				precision -= (chars_printed - width);
 				if (precision < 2)
-					(*err) (isc_arith_except, isc_arg_gds, isc_numeric_out_of_range, 0);
+					(*err) (isc_arith_except, 0);
 			    chars_printed = sprintf(temp, num_format, width, precision, d);
 			}
 		}
@@ -2344,7 +2342,7 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 		int trailing = to->dsc_length - length;
 		if (trailing > 0)
 		{
-#if !defined(SUPERCLIENT)
+#if !defined(REQUESTER) && !defined(SUPERCLIENT)
 			CHARSET_ID chid;
 			if ((INTL_TTYPE(to) == ttype_dynamic) && (err == ERR_post))
 				chid = INTL_charset(NULL, INTL_TTYPE(to));
@@ -2369,9 +2367,10 @@ static void integer_to_text(const dsc* from, dsc* to, FPTR_ERROR err)
 }
 
 
-static void string_to_datetime(const dsc* desc,
+static void string_to_datetime(
+							   const dsc* desc,
 							   GDS_TIMESTAMP* date,
-							   const EXPECT_DATETIME expect_type, FPTR_ERROR err)
+							   EXPECT_DATETIME expect_type, FPTR_ERROR err)
 {
 /**************************************
  *
@@ -2527,7 +2526,7 @@ static void string_to_datetime(const dsc* desc,
 							conversion_error(desc, err);
 
 					// fetch the current datetime
-					*date = Firebird::TimeStamp::getCurrentTimeStamp().value();
+					*date = Firebird::TimeStamp().value();
 
 					if (strcmp(temp, NOW) == 0)
 						return;
@@ -2670,7 +2669,7 @@ static void string_to_datetime(const dsc* desc,
 
 		// Fetch current date/time
 		tm times2;
-		Firebird::TimeStamp::getCurrentTimeStamp().decode(&times2);
+		Firebird::TimeStamp().decode(&times2);
 
 		// Handle defaulting of year
 
@@ -2716,24 +2715,11 @@ static void string_to_datetime(const dsc* desc,
 	// convert day/month/year to Julian and validate result
 	// This catches things like 29-Feb-1995 (not a leap year)
 
-	Firebird::TimeStamp ts(times);
+	Firebird::TimeStamp ts(true);
+	ts.encode(&times);
 
-	if (!ts.isValid()) {
-		switch (expect_type)
-		{
-			case expect_sql_date:
-				(*err)(isc_date_range_exceeded, 0);
-				break;
-			case expect_sql_time:
-				(*err)(isc_time_range_exceeded, 0);
-				break;
-			case expect_timestamp:
-				(*err)(isc_datetime_range_exceeded, 0);
-				break;
-			default: // this should never happen!
-				conversion_error(desc, err);
-				break;
-		}
+	if (!ts.isRangeValid()) {
+		(*err) (isc_date_range_exceeded, 0);
 	}
 
 	if (expect_type != expect_sql_time) {
@@ -2810,55 +2796,3 @@ double power_of_ten(const int scale)
 	return upper_part[scale >> 5] * lower_part[scale & 0x1f];
 }
 
-
-SINT64 hex_to_value(const char*& string, const char* end)
-/*************************************
- *
- *      hex_to_value
- *
- *************************************
- *
- * Functional description
- *      Convert a hex string to a numeric value. This code only
- *      converts a hex string into a numeric value, and the
- *      biggest hex string supported must fit into a BIGINT.
- *
- *************************************/
-{
-	// we already know this is a hex string, and there is no prefix.
-	// So, string is something like DEADBEEF.
-
-	SINT64 value = 0;
-	UCHAR byte = 0;
-	int nibble = ((end - string) & 1);
-	char ch;
-
-	while ((DIGIT((ch = UPPER(*string)))) || ((ch >= 'A') && (ch <= 'F')))
-	{
-		// Now convert the character to a nibble
-		SSHORT c;
-
-		if (ch >= 'A')
-			c = (ch - 'A') + 10;
-		else
-			c = (ch - '0');
-
-		if (nibble)
-		{
-			byte = (byte << 4) + (UCHAR) c;
-			nibble = 0;
-			value = (value << 8) + byte;
-		}
-		else
-		{
-			byte = c;
-			nibble = 1;
-		}
-
-		++string;
-	}
-
-	fb_assert(string <= end);
-
-	return value;
-}

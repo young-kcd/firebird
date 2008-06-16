@@ -30,6 +30,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../jrd/thd.h"
 
 
 using namespace Jrd;
@@ -101,7 +102,7 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
  **************************************/
 	SSHORT length;
 
-	const SCHAR* const start = input;
+	const SCHAR* start = input;
 
 	while (true)
 	{
@@ -114,8 +115,7 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 					*output = 0;
 				return input - start;
 			}
-
-			if ((length = *output++ = *control++) & 128)
+			else if ((length = *output++ = *control++) & 128)
 			{
 				// TMN: This is bad code. It assumes char is 8 bits
 				// and that bit 7 is the sign-bit.
@@ -131,14 +131,13 @@ USHORT SQZ_compress(DataComprControl* dcc, const SCHAR* input, SCHAR* output, in
 					output[-1] = length;
 					if (length > 0)
 					{
-						memcpy(output, input, length);
+						MOVE_FAST(input, output, length);
 						input += length;
 					}
 					return input - start;
 				}
-
 				if (length > 0) {
-					memcpy(output, input, length);
+					MOVE_FAST(input, output, length);
 					output += length;
 					input += length;
 				}
@@ -167,16 +166,14 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
  **************************************/
 	SSHORT length;
 
-	const SCHAR* const start = input;
+	const SCHAR* start = input;
 
 	while (true) {
 		const SCHAR* control = dcc->dcc_string;
 		while (control < dcc->dcc_end)
-		{
 			if (--space <= 0)
 				return input - start;
-
-			if ((length = *control++) & 128) {
+			else if ((length = *control++) & 128) {
 				--space;
 				input += (-length) & 255;
 			}
@@ -188,7 +185,6 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 				}
 				input += length;
 			}
-		}
 		if (!(dcc = dcc->dcc_next))
 			BUGCHECK(178);		/* msg 178 record length inconsistent */
 	}
@@ -196,10 +192,10 @@ USHORT SQZ_compress_length(DataComprControl* dcc, const SCHAR* input, int space)
 
 
 
-UCHAR* SQZ_decompress(const SCHAR*	input,
+SCHAR* SQZ_decompress(const SCHAR*	input,
 					  USHORT		length,
-					  UCHAR*		output,
-					  const UCHAR* const	output_end)
+					  SCHAR*		output,
+					  const SCHAR* const	output_end)
 {
 /**************************************
  *
@@ -212,20 +208,20 @@ UCHAR* SQZ_decompress(const SCHAR*	input,
  *	where the output stopped.
  *
  **************************************/
-	const SCHAR* const last = input + length;
+	const SCHAR* last = input + length;
 
 	while (input < last)
 	{
-		const int l = (signed char) *input++;
+		const SSHORT l = *input++;
 		if (l < 0)
 		{
-			const UCHAR c = *input++;
+			const SCHAR c = *input++;
 
 			if ((output - l) > output_end)
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			memset(output, c, (-1 * l));
+			memset(output, (UCHAR) c, (-1 * l));
 			output -= l;
 		}
 		else
@@ -234,7 +230,7 @@ UCHAR* SQZ_decompress(const SCHAR*	input,
 			{
 				BUGCHECK(179);	/* msg 179 decompression overran buffer */
 			}
-			memcpy(output, input, l);
+			MOVE_FAST(input, output, l);
 			output += l;
 			input += l;
 		}
@@ -405,7 +401,7 @@ void SQZ_fast(DataComprControl* dcc, const SCHAR* input, SCHAR* output)
 			}
 			else if (length > 0)
 			{
-				memcpy(output, input, length);
+				MOVE_FAST(input, output, length);
 				output += length;
 				input += length;
 			}
@@ -476,8 +472,19 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
-				dcc = dcc->dcc_next;
+				if ( (dcc->dcc_next = tdbb->getDefaultPool()->plb_dccs) )
+				{
+					dcc = dcc->dcc_next;
+					tdbb->getDefaultPool()->plb_dccs = dcc->dcc_next;
+					dcc->dcc_next = NULL;
+					fb_assert(dcc->dcc_pool == tdbb->getDefaultPool());
+				}
+				else
+				{
+					dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
+					dcc = dcc->dcc_next;
+					dcc->dcc_pool = tdbb->getDefaultPool();
+				}
 				control = dcc->dcc_string;
 				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
 			}
@@ -503,8 +510,19 @@ USHORT SQZ_length(thread_db* tdbb, const SCHAR* data, int length, DataComprContr
 			if (control == end_control)
 			{
 				dcc->dcc_end = control;
-				dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
-				dcc = dcc->dcc_next;
+				if ( (dcc->dcc_next = tdbb->getDefaultPool()->plb_dccs) )
+				{
+					dcc = dcc->dcc_next;
+					tdbb->getDefaultPool()->plb_dccs = dcc->dcc_next;
+					dcc->dcc_next = NULL;
+					fb_assert(dcc->dcc_pool == tdbb->getDefaultPool());
+				}
+				else
+				{
+					dcc->dcc_next = FB_NEW(*tdbb->getDefaultPool()) DataComprControl();
+					dcc = dcc->dcc_next;
+					dcc->dcc_pool = tdbb->getDefaultPool();
+				}
 				control = dcc->dcc_string;
 				end_control = dcc->dcc_string + sizeof(dcc->dcc_string);
 			}

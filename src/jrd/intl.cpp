@@ -118,7 +118,10 @@
 #include "../jrd/isc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/thd.h"
+#include "../jrd/evl_string.h"
 #include "../jrd/intlobj_new.h"
+#include "../jrd/jrd.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"
@@ -267,12 +270,15 @@ CsConvert CharSetContainer::lookupConverter(thread_db* tdbb, CHARSET_ID toCsId)
 {
 	if (toCsId == CS_UTF16)
 		return CsConvert(cs->getStruct(), NULL);
+	else
+	{
+		CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
 
-	CharSet* toCs = INTL_charset_lookup(tdbb, toCsId);
-	if (cs->getId() == CS_UTF16)
-		return CsConvert(NULL, toCs->getStruct());
-
-	return CsConvert(cs->getStruct(), toCs->getStruct());
+		if (cs->getId() == CS_UTF16)
+			return CsConvert(NULL, toCs->getStruct());
+		else
+			return CsConvert(cs->getStruct(), toCs->getStruct());
+	}
 }
 
 Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
@@ -349,7 +355,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		{
 			Lock* lock = charset_collations[id]->existenceLock =
 				CharSetContainer::createCollationLock(tdbb, tt_id);
-			lock->lck_object = charset_collations[id];
+			lock->lck_object = (blk*)charset_collations[id];
 
 			LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 		}
@@ -376,7 +382,7 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		}
 
 		if (charset_collations[id]->existenceLock)
-			LCK_convert(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
+			LCK_convert_non_blocking(tdbb, charset_collations[id]->existenceLock, LCK_EX, LCK_WAIT);
 
 		charset_collations[id]->obsolete = true;
 
@@ -603,19 +609,21 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		len = src_len - MIN(dest_len, src_len);
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
-
-		(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
+		else
+			(*err) (isc_arith_except, 0);
 	}
-	else if (src_len)
-	{
+	else if (src_len == 0)
+		return (0);
+	else
 		/* character sets are known to be different */
+	{
 		/* Do we know an object from cs1 to cs2? */
 
 		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		return cs_obj.convert(src_len, src_ptr, dest_len, dest_ptr, NULL, true);
 	}
 
-	return 0;
+	return (0);					/* to remove compiler errors.  This should never be executed */
 }
 
 
@@ -791,15 +799,13 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
+		(*err)(isc_arith_except, 0);
 	}
 
 	if (from_fill)
-	{
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, 0);
-	}
+			(*err) (isc_arith_except, 0);
 
 	return 0;
 }
@@ -869,17 +875,24 @@ bool INTL_defined_type(thread_db* tdbb, USHORT t_type)
  **************************************/
 	SET_TDBB(tdbb);
 
+	ISC_STATUS* const original_status = tdbb->tdbb_status_vector;
+	bool defined = true;
+
 	try
 	{
-		ThreadStatusGuard local_status(tdbb);
+		ISC_STATUS_ARRAY local_status;
+		tdbb->tdbb_status_vector = local_status;
+
 		INTL_texttype_lookup(tdbb, t_type);
 	}
 	catch (...)
 	{
-		return false;
+		defined = false;
 	}
 
-	return true;
+	tdbb->tdbb_status_vector = original_status;
+
+	return defined;
 }
 
 
@@ -1161,6 +1174,112 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
+int INTL_str_to_upper(thread_db* tdbb, DSC * pString)
+{
+/**************************************
+ *
+ *      I N T L _ s t r _ t o _ u p p e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Given an input string, convert it to uppercase
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(pString != NULL);
+	fb_assert(pString->dsc_address != NULL);
+
+	UCHAR* src;
+	UCHAR buffer[MAX_KEY];
+	USHORT ttype;
+	USHORT len =
+		CVT_get_string_ptr(pString, &ttype, &src,
+						   reinterpret_cast<vary*>(buffer),
+						   sizeof(buffer), ERR_post);
+
+	UCHAR* dest;
+	switch (ttype) {
+	case ttype_binary:
+		/* cannot uppercase binary strings */
+		break;
+
+	case ttype_none:
+	case ttype_ascii:
+		dest = src;
+		while (len--) {
+			*dest++ = UPPER7(*src);
+			src++;
+		}
+		break;
+
+	default:
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		obj->str_to_upper(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		break;
+	}
+/*
+ * Added to remove compiler errors. Callers are not checking
+ * the return code from this function 4/5/95.
+*/
+	return (0);
+}
+
+
+int INTL_str_to_lower(thread_db* tdbb, DSC * pString)
+{
+/**************************************
+ *
+ *      I N T L _ s t r _ t o _ l o w e r
+ *
+ **************************************
+ *
+ * Functional description
+ *      Given an input string, convert it to lowercase
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	fb_assert(pString != NULL);
+	fb_assert(pString->dsc_address != NULL);
+
+	UCHAR* src;
+	UCHAR buffer[MAX_KEY];
+	USHORT ttype;
+	USHORT len =
+		CVT_get_string_ptr(pString, &ttype, &src,
+						   reinterpret_cast<vary*>(buffer),
+						   sizeof(buffer), ERR_post);
+
+	UCHAR* dest;
+	switch (ttype) {
+	case ttype_binary:
+		/* cannot lowercase binary strings */
+		break;
+
+	case ttype_none:
+	case ttype_ascii:
+		dest = src;
+		while (len--) {
+			*dest++ = LOWWER7(*src);
+			src++;
+		}
+		break;
+
+	default:
+		TextType* obj = INTL_texttype_lookup(tdbb, ttype);
+		obj->str_to_lower(len, src, len, src);	// ASF: this works for all cases? (src and dst buffers are the same)
+		break;
+	}
+/*
+ * Added to remove compiler errors. Callers are not checking
+ * the return code from this function 4/5/95.
+*/
+	return (0);
+}
+
+
 static bool all_spaces(
 						  thread_db* tdbb,
 						  CHARSET_ID charset,
@@ -1200,6 +1319,7 @@ static bool all_spaces(
 			if (*p++ != *obj->getSpace())
 				return false;
 		}
+		return true;
 	}
 	else {
 		const BYTE* p = &ptr[offset];
@@ -1213,9 +1333,8 @@ static bool all_spaces(
 					return false;
 			}
 		}
+		return true;
 	}
-
-	return true;
 }
 
 
@@ -1243,23 +1362,24 @@ static int blocking_ast_collation(void* ast_object)
 
 		if (tt->existenceLock)
 		{
-			try
-			{
-				Database* dbb = tt->existenceLock->lck_dbb;
+			thread_db thd_context, *tdbb;
 
-				Database::SyncGuard dsGuard(dbb, true);
+			// Since this routine will be called asynchronously, we must establish
+			// a thread context.
+			JRD_set_thread_data(tdbb, thd_context);
 
-				ThreadContextHolder tdbb;
-				tdbb->setDatabase(dbb);
-				tdbb->setAttachment(tt->existenceLock->lck_attachment);
-		
-				Jrd::ContextPoolHolder context(tdbb, 0);
+			tdbb->setDatabase(tt->existenceLock->lck_dbb);
+			tdbb->setAttachment(tt->existenceLock->lck_attachment);
+			tdbb->tdbb_quantum = QUANTUM;
+			tdbb->setRequest(NULL);
+			tdbb->setTransaction(NULL);
+			Jrd::ContextPoolHolder context(tdbb, 0);
 
-				LCK_release(tdbb, tt->existenceLock);
-				tt->existenceLock = NULL;
-			}
-			catch (const Firebird::Exception&)
-			{} // no-op
+			LCK_release(tdbb, tt->existenceLock);
+			tt->existenceLock = NULL;
+
+			// Restore the prior thread context
+			JRD_restore_thread_data();
 		}
 	}
 

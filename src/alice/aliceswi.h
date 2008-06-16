@@ -24,7 +24,6 @@
 
 #include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../jrd/constants.h"
 
 // switch definitions 
 
@@ -45,10 +44,10 @@ const unsigned long sw_activate			= 0x00002000UL;
 const unsigned long sw_two_phase		= 0x00004000UL;
 const unsigned long sw_housekeeping		= 0x00008000UL;
 const unsigned long sw_kill				= 0x00010000UL;	// Byte 2, Bit 0 
-//const unsigned long sw_begin_log		= 0x00020000UL;
-//const unsigned long sw_quit_log			= 0x00040000UL;
+const unsigned long sw_begin_log		= 0x00020000UL;
+const unsigned long sw_quit_log			= 0x00040000UL;
 const unsigned long sw_write			= 0x00080000UL;
-const unsigned long sw_no_reserve				= 0x00100000UL;
+const unsigned long sw_use				= 0x00100000UL;
 const unsigned long sw_user				= 0x00200000UL;
 const unsigned long sw_password			= 0x00400000UL;
 const unsigned long sw_shut				= 0x00800000UL;
@@ -82,10 +81,10 @@ enum alice_switches
 	IN_SW_ALICE_TWO_PHASE			=	15,
 	IN_SW_ALICE_HOUSEKEEPING		=	16,
 	IN_SW_ALICE_KILL				=	17,
-	//IN_SW_ALICE_BEGIN_LOG			=	18,
-	//IN_SW_ALICE_QUIT_LOG			=	19,
+	IN_SW_ALICE_BEGIN_LOG			=	18,
+	IN_SW_ALICE_QUIT_LOG			=	19,
 	IN_SW_ALICE_WRITE				=	20,
-	IN_SW_ALICE_NO_RESERVE			=	21,
+	IN_SW_ALICE_USE					=	21,
 	IN_SW_ALICE_USER				=	22,
 	IN_SW_ALICE_PASSWORD			=	23,
 	IN_SW_ALICE_SHUT				=	24,
@@ -108,11 +107,8 @@ enum alice_switches
 	IN_SW_ALICE_HIDDEN_TRAN			=	41,
 	IN_SW_ALICE_HIDDEN_ATTACH		=	42,
 	IN_SW_ALICE_SET_DB_SQL_DIALECT	=	43,
-#ifdef TRUSTED_AUTH
 	IN_SW_ALICE_TRUSTED_AUTH		=	44,
-#endif
-	IN_SW_ALICE_TRUSTED_SVC			=	45,
-	IN_SW_ALICE_TRUSTED_ROLE		=	46
+	IN_SW_ALICE_TRUSTED_SVC			=	45
 };
 
 static const char* ALICE_SW_ASYNC	= "async";
@@ -121,7 +117,7 @@ static const char* ALICE_SW_MODE_RO	= "read_only";
 static const char* ALICE_SW_MODE_RW	= "read_write";
 
 // Switch table 
-static const in_sw_tab_t alice_in_sw_table[] =
+static in_sw_tab_t alice_in_sw_table[] =
 {
 	{IN_SW_ALICE_ACTIVATE, isc_spb_prp_activate, "activate", sw_activate,
 	0, ~(sw_activate | sw_user | sw_password), FALSE, 25, 0, NULL},
@@ -130,11 +126,9 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	sw_shut, 0, FALSE, 26, 0, NULL},
 	// msg 26: \t-attach\tshutdown new database attachments 
 #ifdef DEV_BUILD
-/*
 	{IN_SW_ALICE_BEGIN_LOG, 0, "begin_log", sw_begin_log,
 	0, ~(sw_begin_log | sw_user | sw_password), FALSE, 27, 0, NULL},
 	// msg 27: \t-begin_log\tbegin logging for replay utility 
-*/
 #endif
 	{IN_SW_ALICE_BUFFERS, isc_spb_prp_page_buffers, "buffers", sw_buffers,
 	0, 0, FALSE, 28, 0, NULL},
@@ -188,11 +182,9 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	0, 0, FALSE, 42, 0, NULL},
 	// msg 42: \t-password\tdefault password 
 #ifdef DEV_BUILD
-/*
 	{IN_SW_ALICE_QUIT_LOG, 0, "quit_log", sw_quit_log,
 	0, ~(sw_quit_log | sw_user | sw_password), FALSE, 43, 0, NULL},
 	// msg 43: \t-quit_log\tquit logging for replay utility 
-*/
 #endif
 	{IN_SW_ALICE_ROLLBACK, isc_spb_rpr_rollback_trans, "rollback", sw_rollback,
 	0, ~(sw_rollback | sw_user | sw_password), FALSE, 44, 0, NULL},
@@ -227,13 +219,12 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	0, 0, FALSE, 115, 0, NULL},
 	// msg 115: 	-trusted	use trusted authentication
 #endif
-	// We should better use #defines here, but alice wants lower case
-	{IN_SW_ALICE_TRUSTED_SVC, 0, /*TRUSTED_USER_SWITCH*/ "trusted_svc", 0, 
+#ifdef TRUSTED_SERVICES
+	{IN_SW_ALICE_TRUSTED_SVC, 0, "trusted_svc", 0, 
 	0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_TRUSTED_ROLE, 0, /*TRUSTED_ROLE_SWITCH*/ "trusted_role", 0, 
-	0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_NO_RESERVE, 0, "use", sw_no_reserve,
-	0, ~(sw_no_reserve | sw_user | sw_password), FALSE, 49, 0, NULL},
+#endif
+	{IN_SW_ALICE_USE, 0, "use", sw_use,
+	0, ~(sw_use | sw_user | sw_password), FALSE, 49, 0, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions 
 	{IN_SW_ALICE_USER, 0, "user", sw_user,
 	0, 0, FALSE, 50, 0, NULL},

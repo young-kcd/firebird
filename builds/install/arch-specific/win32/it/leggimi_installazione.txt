@@ -1,11 +1,5 @@
-Firebird Database Server 2.5
+Firebird Database Server 2.0
 ============================
-
-
--------------------------------------------------------
-The information below refers to Firebird 2.1. 
-Documentation for Firebird 2.5 is not yet available.
--------------------------------------------------------
 
   ** IMPORTANTE **
 

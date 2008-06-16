@@ -36,28 +36,30 @@ bool		CCH_exclusive(Jrd::thread_db*, USHORT, SSHORT);
 bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
 void		CCH_expand(Jrd::thread_db*, ULONG);
 Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
-Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, SSHORT, const bool);
+Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, SSHORT, bool);
 SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SCHAR);
-void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, const bool);
+void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, bool);
 void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_fini(Jrd::thread_db*);
 void		CCH_flush(Jrd::thread_db*, USHORT, SLONG);
 bool		CCH_free_page(Jrd::thread_db*);
 SLONG		CCH_get_incarnation(Jrd::win*);
-Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, const bool);
+Ods::pag*	CCH_handoff(Jrd::thread_db*, Jrd::win*, SLONG, SSHORT, SCHAR, SSHORT, SSHORT);
 void		CCH_init(Jrd::thread_db*, ULONG);
 void		CCH_mark(Jrd::thread_db*, Jrd::win*, USHORT, USHORT);
 void		CCH_must_write(Jrd::win*);
+Jrd::Lock*	CCH_page_lock(Jrd::thread_db*);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, SLONG);
 void		CCH_precedence(Jrd::thread_db*, Jrd::win*, Jrd::PageNumber);
 #ifdef SUPERSERVER_V2
 void		CCH_prefetch(Jrd::thread_db*, SLONG*, SSHORT);
 bool		CCH_prefetch_pages(Jrd::thread_db*);
 #endif
-void		CCH_release(Jrd::thread_db*, Jrd::win*, const bool);
+void		CCH_release(Jrd::thread_db*, Jrd::win*, bool);
+void		CCH_release_and_free(Jrd::win*);
 void		CCH_release_exclusive(Jrd::thread_db*);
 bool		CCH_rollover_to_shadow(Jrd::Database*, Jrd::jrd_file*, const bool);
-void		CCH_unwind(Jrd::thread_db*, const bool);
+void		CCH_unwind(Jrd::thread_db*, bool);
 bool		CCH_validate(Jrd::win*);
 void		CCH_flush_ast(Jrd::thread_db*);
 bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
@@ -117,17 +119,17 @@ inline void CCH_MARK_SYSTEM(Jrd::thread_db* tdbb, Jrd::win * window)
 
 inline Ods::pag* CCH_HANDOFF(Jrd::thread_db* tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
 {
-	return CCH_handoff (tdbb, window, page, lock, page_type, 1, false);
+	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 0);
 }
 
 inline Ods::pag* CCH_HANDOFF_TIMEOUT(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type, SSHORT latch_wait)
 {
-	return CCH_handoff (tdbb, window, page, lock, page_type, latch_wait, false);
+	return CCH_handoff (tdbb, window, page, lock, page_type, latch_wait, 0);
 }
 
 inline Ods::pag* CCH_HANDOFF_TAIL(Jrd::thread_db*	tdbb, Jrd::win* window, SLONG page, SSHORT lock, SCHAR page_type)
 {
-	return CCH_handoff (tdbb, window, page, lock, page_type, 1, true);
+	return CCH_handoff (tdbb, window, page, lock, page_type, 1, 1);
 }
 
 inline void CCH_MARK_MUST_WRITE(Jrd::thread_db* tdbb, Jrd::win * window)
@@ -152,9 +154,9 @@ inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
 //#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, true)
 //#define CCH_MARK(tdbb, window)                            CCH_mark (tdbb, window, 0)
 //#define CCH_MARK_SYSTEM(tdbb, window)                     CCH_mark (tdbb, window, 1)
-//#define CCH_HANDOFF(tdbb, window, page, lock, type)       CCH_handoff (tdbb, window, page, lock, type, 1, false)
-//#define CCH_HANDOFF_TIMEOUT(tdbb, window, page, lock, type, latch_wait)   CCH_handoff (tdbb, window, page, lock, type, latch_wait, false)
-//#define CCH_HANDOFF_TAIL(tdbb, window, page, lock, type)  CCH_handoff (tdbb, window, page, lock, type, 1, true)
+//#define CCH_HANDOFF(tdbb, window, page, lock, type)       CCH_handoff (tdbb, window, page, lock, type, 1, 0)
+//#define CCH_HANDOFF_TIMEOUT(tdbb, window, page, lock, type, latch_wait)   CCH_handoff (tdbb, window, page, lock, type, latch_wait, 0)
+//#define CCH_HANDOFF_TAIL(tdbb, window, page, lock, type)  CCH_handoff (tdbb, window, page, lock, type, 1, 1)
 //#define CCH_MARK_MUST_WRITE(tdbb, window)                 CCH_mark_must_write (tdbb, window)
 //#define CCH_PREFETCH(tdbb, pages, count)            CCH_prefetch (tdbb, pages, count)
 

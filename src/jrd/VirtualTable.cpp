@@ -67,42 +67,27 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	jrd_rel* relation = rpb->rpb_relation;
 	fb_assert(relation);
 
-	dsc desc;
-	lck_t lock_type;
-
-	if (relation->rel_id == rel_mon_attachments)
-	{
-		// Get attachment id
-		if (!EVL_field(relation, rpb->rpb_record, f_mon_att_id, &desc))
-			return;
-		lock_type = LCK_attachment;
-	}
-	else if (relation->rel_id == rel_mon_statements)
-	{
-		// Get transaction id
-		if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
-			return;
-		lock_type = LCK_cancel;
-	}
-	else
-	{
+	if (relation->rel_id != rel_mon_statements)
 		ERR_post(isc_read_only, 0);
-	}
+
+	// Get transaction id
+	dsc desc;
+	if (!EVL_field(relation, rpb->rpb_record, f_mon_stmt_tra_id, &desc))
+		return;
 
 	const SLONG id = MOV_get_long(&desc, 0);
 
 	// Post a blocking request
 	Lock temp_lock;
 	temp_lock.lck_dbb = dbb;
-	temp_lock.lck_type = lock_type;
+	temp_lock.lck_type = LCK_cancel;
 	temp_lock.lck_parent = dbb->dbb_lock;
-	temp_lock.lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock.lck_type);
+	temp_lock.lck_owner_handle =
+		LCK_get_owner_handle(tdbb, temp_lock.lck_type);
 	temp_lock.lck_length = sizeof(SLONG);
 	temp_lock.lck_key.lck_long = id;
 
-	ThreadStatusGuard temp_status(tdbb);
-
-	if (LCK_lock(tdbb, &temp_lock, LCK_EX, -1))
+	if (LCK_lock_non_blocking(tdbb, &temp_lock, LCK_EX, -1))
 		LCK_release(tdbb, &temp_lock);
 }
 

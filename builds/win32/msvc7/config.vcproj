@@ -180,6 +180,9 @@
 			Name="Vulcan files"
 			Filter="">
 			<File
+				RelativePath="..\..\..\src\vulcan\JString.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\src\vulcan\PathName.cpp">
 			</File>
 			<File
@@ -189,6 +192,9 @@
 		<Filter
 			Name="Header files"
 			Filter="h">
+			<File
+				RelativePath="..\..\..\src\vulcan\JString.h">
+			</File>
 			<File
 				RelativePath="..\..\..\src\vulcan\PathName.h">
 			</File>

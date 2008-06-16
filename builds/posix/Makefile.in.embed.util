@@ -29,7 +29,13 @@
 #
 #
 ROOT=..
-ObjModuleType=std
+SERVICES_THREADED=@service_thread_CS@
+ifeq ($(SERVICES_THREADED),true)
+    ObjModuleType=superclient
+    CFLAGS+=-DSTD_UTIL -DSUPERCLIENT
+else
+    ObjModuleType=std
+endif
 
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
@@ -61,46 +67,43 @@ CREATEDB_Sources = $(addprefix utilities/, $(CREATEDB_Files))
 CREATEDB_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CREATEDB_Sources))))
 
 
-DROP_Other_Sources += common/utils.cpp jrd/isc_ipc.cpp jrd/isc_sync.cpp jrd/isc.cpp \
+DROP_Other_Sources += common/utils.cpp lock/lock.cpp jrd/isc_ipc.cpp jrd/isc_sync.cpp jrd/isc.cpp \
 common/config/config.cpp common/config/config_file.cpp $(OS_SPECIFIC_Sources)
 
 DROP_Files= drop.cpp
 DROP_Sources = $(addprefix utilities/, $(DROP_Files)) $(DROP_Other_Sources)
-DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources)))) $(FBCOMMON_ClientObjects)
+DROP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DROP_Sources))))
 
 
 GSEC_Other_Sources = jrd/enc.cpp jrd/sha.cpp jrd/guid.cpp \
 jrd/isc_file.cpp common/config/config.cpp common/config/config_file.cpp \
-common/config/dir_list.cpp \
-common/UtilSvc.cpp jrd/ThreadData.cpp \
-$(OS_SPECIFIC_Sources)
+common/config/dir_list.cpp $(OS_SPECIFIC_Sources)
 
-GSEC_Files =  gsec.cpp security.cpp call_service.cpp gsecMain.cpp
+GSEC_Files =  gsec.cpp security.cpp call_service.cpp
 GSEC_Sources = $(addprefix utilities/gsec/, $(GSEC_Files)) $(GSEC_Other_Sources)
 GSEC_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSEC_Sources))))
 
 
 GSTAT_Other_Sources = jrd/btn.cpp jrd/db_alias.cpp common/utils.cpp jrd/ods.cpp \
-common/UtilSvc.cpp jrd/ThreadData.cpp jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
+jrd/isc_file.cpp $(OS_SPECIFIC_Sources)
 
-GSTAT_Files =  dba.epp ppg.cpp gstatMain.cpp
+GSTAT_Files =  dba.epp ppg.cpp
 GSTAT_Sources = $(addprefix utilities/gstat/, $(GSTAT_Files)) $(GSTAT_Other_Sources)
 GSTAT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GSTAT_Sources))))
 
 
 FBSVCMGR_Files= fbsvcmgr.cpp
 FBSVCMGR_Other_Sources = common/classes/fb_string.cpp common/classes/alloc.cpp \
-common/fb_exception.cpp common/utils.cpp common/classes/locks.cpp
+common/fb_exception.cpp common/utils.cpp
 
 FBSVCMGR_Sources = $(addprefix utilities/, $(FBSVCMGR_Files)) $(FBSVCMGR_Other_Sources)
 FBSVCMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBSVCMGR_Sources)))) \
-$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
+$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects)
 
 
-FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
-FBGUARD_Files =  guard.cpp util.cpp
-FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files)) $(FBGUARD_Other_Sources)
-FBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBGUARD_Sources))))
+IBGUARD_Files =  guard.cpp util.cpp
+IBGUARD_Sources = $(addprefix utilities/guard/, $(IBGUARD_Files))
+IBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBGUARD_Sources))))
 
 
 IBMGR_Files =  	ibmgr.cpp srvrmgr.cpp
@@ -122,7 +125,7 @@ LINK_LIBS+=$(ICU_LIBS)
 endif
 
 AllObjects = $(CREATEDB_Object) $(DROP_Object) $(FBSVCMGR_Objects) \
-			 $(GSEC_Objects) $(GSTAT_Object) $(FBGUARD_Objects) \
+			 $(GSEC_Objects) $(GSTAT_Object) $(IBGUARD_Objects) \
 			 $(IBMGR_Objects) $(REBUILD_Objects) $(RELAY_Objects) $(CLUMPLETS_Objects)
 
 AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
@@ -132,7 +135,7 @@ AllObjects = $(CREATEDB_Objects) $(DROP_Objects) \
 Dependencies = $(AllObjects:.o=.d) 
 
 
-.PHONY: create_db gstat gds_drop gds_relay gsec fbguard ibmgr_bin nbackup fb_lock_print fbsvcmgr
+.PHONY: create_db gstat gds_drop gds_relay gsec ibguard ibmgr_bin nbackup fb_lock_print fbsvcmgr
 
 all: $(EMBED_UTIL_TARGETS)
 
@@ -190,10 +193,10 @@ $(GSEC):	$(GSEC_Objects) $(CLUMPLETS_Objects) $(COMMON_Objects)
 	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
-fbguard: $(LIBFBCLIENT_SO) $(FBGUARD)
+ibguard: $(IBGUARD)
 
-$(FBGUARD):	$(FBGUARD_Objects) $(FBCOMMON_Objects) $(FBCLASSES_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbclient $(LIB_GUI) $(LINK_LIBS)
+$(IBGUARD):	$(IBGUARD_Objects) $(LIBFBEMBED_SO)  
+	$(EXE_LINK) $(LINK_OPTS) $(IBGUARD_Objects) -o $@ $(FBEMBED_LINK) $(LINK_LIBS)
 
 
 ibmgr_bin: $(IBMGR_BIN)

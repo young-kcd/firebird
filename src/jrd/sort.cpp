@@ -42,10 +42,15 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/sort_proto.h"
+#include "../jrd/sch_proto.h"
 #include "../jrd/thread_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+
+#ifdef HAVE_LIMITS_H
+#include <limits.h> /* On some systems for ULONG_MAX */
 #endif
 
 #ifdef HAVE_SYS_UIO_H
@@ -69,6 +74,10 @@ const ULONG IO_RETRY			= 20;
 const USHORT RUN_GROUP			= 8;
 const USHORT MAX_MERGE_LEVEL	= 2;
 
+#ifdef VMS
+double MTH$CVT_D_G(), MTH$CVT_G_D();
+#endif
+
 using namespace Jrd;
 
 // The sort buffer size should be just under a multiple of the
@@ -87,7 +96,7 @@ const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 // offset in array of pointers to back record pointer (sr_bckptr)
 #define BACK_OFFSET (-static_cast<signed>(SIZEOF_SR_BCKPTR / sizeof(SLONG*)))
 
-//#define DIFF_LONGS(a, b)         ((a) - (b))
+#define DIFF_LONGS(a, b)         ((a) - (b))
 #define SWAP_LONGS(a, b, t)       {t = a; a = b; b = t;}
 
 // Compare p and q both SORTP pointers for l 32-bit longwords
@@ -105,19 +114,19 @@ const ULONG MAX_SORT_BUFFER_SIZE	= SORT_BUFFER_CHUNK_SIZE * 32;
 static ULONG low_key[] = { 0, 0, 0, 0, 0, 0 };
 
 static ULONG high_key[] = {
-	MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG,
-		MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG, MAX_ULONG};
+	ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX,
+		ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX, ULONG_MAX};
 
 #ifdef SCROLLABLE_CURSORS
 static sort_record*	get_merge(merge_control*, sort_context*, RSE_GET_MODE);
 #else
-static void diddle_key(UCHAR*, sort_context*, bool);
+static void diddle_key(UCHAR *, sort_context*, bool);
 static sort_record*	get_merge(merge_control*, sort_context*);
 #endif
 
@@ -186,18 +195,17 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 		case SKD_varying:
 			if (direction) {
-				USHORT& vlen = ((vary*) p)->vary_length;
-				if (!(scb->scb_flags & scb_sorted))
-				{
-					*((USHORT *) (record + key->skd_vary_offset)) = vlen;
+				if (!(scb->scb_flags & scb_sorted)) {
+					*((USHORT *) (record + key->skd_vary_offset)) =
+						((vary*) p)->vary_length;
 					const UCHAR fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					UCHAR* fill_pos = p + sizeof(USHORT) + vlen;
-					const USHORT fill = n - sizeof(USHORT) - vlen;
+					UCHAR* fill_pos = p + sizeof(USHORT) + ((vary*) p)->vary_length;
+					const USHORT fill = n - sizeof(USHORT) - ((vary*) p)->vary_length;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				vlen = 0;
+				((vary*) p)->vary_length = 0;
 			}
 			break;
 
@@ -205,7 +213,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			if (direction) {
 				const UCHAR fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted)) {
-					const USHORT l = strlen(reinterpret_cast<char*>(p));
+					const USHORT l = strlen(p);
 					*((USHORT *) (record + key->skd_vary_offset)) = l;
 					UCHAR* fill_pos = p + l;
 					const USHORT fill = n - l;
@@ -286,10 +294,13 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *      direction - true for SORT_put() and false for SORT_get()
  *
  **************************************/
-	UCHAR c1, fill_char, *fill_pos;
-	USHORT fill;
+	UCHAR c1, c2, fill_char, *fill_pos;
+	USHORT w, l, fill;
 	SSHORT longs, flag;
 	ULONG lw;
+#ifdef VMS
+	double *dp;
+#endif
 
 	const sort_key_def* key = scb->scb_description;
 	for (const sort_key_def* const end = key + scb->scb_keys; key < end; key++)
@@ -321,31 +332,31 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			// record and zap it so that it doesn't interfere with collation
 
 			if (key->skd_dtype == SKD_varying && direction) {
-				USHORT& vlen = ((vary*) p)->vary_length;
 				if (!(scb->scb_flags & scb_sorted)) {
-					*((USHORT*) (record + key->skd_vary_offset)) = vlen;
+					*((USHORT *) (record + key->skd_vary_offset)) = l =
+						((vary*) p)->vary_length;
 					fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+					fill_pos = p + sizeof(USHORT) + l;
+					fill = n - sizeof(USHORT) - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				vlen = 0;
+				((vary*) p)->vary_length = 0;
 			}
 
 			if (key->skd_dtype == SKD_cstring && direction) {
 				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted)) {
-					const USHORT l = strlen(reinterpret_cast<char*>(p));
-					*((USHORT*) (record + key->skd_vary_offset)) = l;
+					*((USHORT *) (record + key->skd_vary_offset)) = l =
+						strlen(p);
 					fill_pos = p + l;
 					fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
 				else {
-					USHORT l = *((USHORT*) (record + key->skd_vary_offset));
+					l = *((USHORT *) (record + key->skd_vary_offset));
 					*(p + l) = fill_char;
 				}
 			}
@@ -417,40 +428,47 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			break;
 
 #else // IEEE
+#ifdef VMS
+		case SKD_d_float:
+			dp = (double *) p;
+			if (direction)
+				*dp = MTH$CVT_D_G(dp);
+
+#endif
 		case SKD_double:
 			w = wp[2];
 			wp[2] = wp[3];
 			wp[3] = w;
 
+#ifndef VMS
 		case SKD_d_float:
+#endif
 		case SKD_float:
 			if (!direction)
-			{
-				if (complement)
-				{
+				if (complement) {
 					if (p[3] & 1 << 7)
 						complement = !complement;
 					else
 						p[3] ^= 1 << 7;
 				}
-				else
-				{
+				else {
 					if (p[3] & 1 << 7)
 						p[3] ^= 1 << 7;
 					else
 						complement = !complement;
 				}
-			}
 			w = wp[0];
 			wp[0] = wp[1];
 			wp[1] = w;
 			if (direction)
-			{
 				if (p[3] & 1 << 7)
 					complement = !complement;
 				else
 					p[3] ^= 1 << 7;
-			}
+#ifdef VMS
+			else if (key->skd_dtype == SKD_d_float)
+				*dp = MTH$CVT_G_D(dp);
+#endif
 			break;
 #endif // IEEE
 
@@ -458,13 +476,10 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			fb_assert(false);
 			break;
 		}
-
 		if (complement && n)
-		{
-			do {
+			do
 				*p++ ^= -1;
-			} while (--n);
-		}
+			while (--n);
 
 		// Flatter but don't complement control info for non-fixed
 		// data types when restoring the data
@@ -476,7 +491,7 @@ void SORT_diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
 			p = (BLOB_PTR *) record + key->skd_offset;
-			USHORT l = *((USHORT *) (record + key->skd_vary_offset));
+			l = *((USHORT *) (record + key->skd_vary_offset));
 			*(p + l) = 0;
 		}
 	}
@@ -586,7 +601,7 @@ void SORT_get(thread_db* tdbb,
 		}
 
 	if (record)
-		SORT_diddle_key((UCHAR*) record->sort_record_key, scb, false);
+		SORT_diddle_key((UCHAR *) record->sort_record_key, scb, false);
 
 	*record_address = (ULONG *) record;
 
@@ -631,7 +646,7 @@ void SORT_get(thread_db* tdbb,
 	*record_address = (ULONG *) record;
 
 	if (record) {
-		diddle_key((UCHAR*) record->sort_record_key, scb, false);
+		diddle_key((UCHAR *) record->sort_record_key, scb, false);
 	}
 
 	tdbb->bumpStats(RuntimeStatistics::SORT_GETS);
@@ -804,10 +819,10 @@ void SORT_put(thread_db* tdbb, sort_context* scb, ULONG ** record_address)
 	if (record != (SR *) scb->scb_end_memory)
 	{
 #ifdef SCROLLABLE_CURSORS
-		SORT_diddle_key((UCHAR*) (record->sr_sort_record.sort_record_key),
+		SORT_diddle_key((UCHAR *) (record->sr_sort_record.sort_record_key),
 						scb, true);
 #else
-		diddle_key((UCHAR*) (record->sr_sort_record.sort_record_key), scb,
+		diddle_key((UCHAR *) (record->sr_sort_record.sort_record_key), scb,
 				   true);
 #endif
 	}
@@ -943,9 +958,9 @@ void SORT_sort(thread_db* tdbb, sort_context* scb)
 	if (scb->scb_last_record != (SR *) scb->scb_end_memory)
 	{
 #ifdef SCROLLABLE_CURSORS
-		SORT_diddle_key((UCHAR*) KEYOF(scb->scb_last_record), scb, true);
+		SORT_diddle_key((UCHAR *) KEYOF(scb->scb_last_record), scb, true);
 #else
-		diddle_key((UCHAR*) KEYOF(scb->scb_last_record), scb, true);
+		diddle_key((UCHAR *) KEYOF(scb->scb_last_record), scb, true);
 #endif
 	}
 
@@ -1198,7 +1213,7 @@ FB_UINT64 SORT_write_block(ISC_STATUS* status_vector,
 
 #ifndef SCROLLABLE_CURSORS
 #ifdef WORDS_BIGENDIAN
-static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
+static void diddle_key(UCHAR * record, sort_context* scb, bool direction)
 {
 /**************************************
  *
@@ -1214,7 +1229,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *
  **************************************/
 	UCHAR *fill_pos, fill_char;
-	USHORT fill, flag;
+	USHORT l, fill, flag;
 
 	for (sort_key_def* key = scb->scb_description, *end = key + scb->scb_keys;
 		 key < end; key++)
@@ -1234,19 +1249,18 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			// record and zap it so that it doesn't interfere with collation
 
 		case SKD_varying:
-			if (direction)
-			{
-				USHORT& vlen = ((vary*) p)->vary_length;
-				if (!(scb->scb_flags & scb_sorted))
-				{
-					*((USHORT *) (record + key->skd_vary_offset)) = vlen;
-					fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+			if (direction) {
+				if (!(scb->scb_flags & scb_sorted)) {
+					*((USHORT *) (record + key->skd_vary_offset)) =
+						((vary*) p)->vary_length;
+					fill_char =
+						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
+					fill_pos = p + sizeof(USHORT) + ((vary*) p)->vary_length;
+					fill = n - sizeof(USHORT) - ((vary*) p)->vary_length;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				vlen = 0;
+				((vary*) p)->vary_length = 0;
 			}
 			break;
 
@@ -1254,15 +1268,15 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			if (direction) {
 				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted)) {
-					const USHORT l = strlen(reinterpret_cast<char*>(p));
-					*((USHORT *) (record + key->skd_vary_offset)) = l;
+					*((USHORT *) (record + key->skd_vary_offset)) = l =
+						strlen((char*)p);
 					fill_pos = p + l;
 					fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
 				else {
-					USHORT l = *((USHORT *) (record + key->skd_vary_offset));
+					l = *((USHORT *) (record + key->skd_vary_offset));
 					*(p + l) = fill_char;
 				}
 			}
@@ -1271,7 +1285,12 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 		case SKD_text:
 			break;
 
+#ifndef VMS
 		case SKD_d_float:
+#else
+			Deliberate_compile_error++;
+			Fix for any VMS port.
+#endif
 		case SKD_float:
 		case SKD_double:
 			flag = (direction || !complement)
@@ -1311,7 +1330,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
 			p = record + key->skd_offset;
-			USHORT l = *((USHORT *) (record + key->skd_vary_offset));
+			l = *((USHORT *) (record + key->skd_vary_offset));
 			*(p + l) = 0;
 		}
 	}
@@ -1319,7 +1338,7 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 
 #else
-static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
+static void diddle_key(UCHAR * record, sort_context* scb, bool direction)
 {
 /**************************************
  *
@@ -1335,9 +1354,12 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
  *
  **************************************/
 	UCHAR c1, fill_char, *fill_pos;
-	USHORT fill;
+	USHORT l, fill;
 	SSHORT longs, flag;
 	ULONG lw;
+#ifdef VMS
+	double *dp;
+#endif
 #ifndef IEEE
 	USHORT w;
 #endif
@@ -1372,31 +1394,31 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			// record and zap it so that it doesn't interfere with collation
 
 			if (key->skd_dtype == SKD_varying && direction) {
-				USHORT& vlen = ((vary*) p)->vary_length;
 				if (!(scb->scb_flags & scb_sorted)) {
-					*((USHORT *) (record + key->skd_vary_offset)) = vlen;
+					*((USHORT *) (record + key->skd_vary_offset)) = l =
+						((vary*) p)->vary_length;
 					fill_char =
 						(key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
-					fill_pos = p + sizeof(USHORT) + vlen;
-					fill = n - sizeof(USHORT) - vlen;
+					fill_pos = p + sizeof(USHORT) + l;
+					fill = n - sizeof(USHORT) - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
-				vlen = 0;
+				((vary*) p)->vary_length = 0;
 			}
 
 			if (key->skd_dtype == SKD_cstring && direction) {
 				fill_char = (key->skd_flags & SKD_binary) ? 0 : ASCII_SPACE;
 				if (!(scb->scb_flags & scb_sorted)) {
-					const USHORT l = strlen(reinterpret_cast<char*>(p));
-					*((USHORT *) (record + key->skd_vary_offset)) = l;
+					*((USHORT *) (record + key->skd_vary_offset)) = l =
+						strlen(reinterpret_cast<const char*>(p));
 					fill_pos = p + l;
 					fill = n - l;
 					if (fill)
 						memset(fill_pos, fill_char, fill);
 				}
 				else {
-					USHORT l = *((USHORT *) (record + key->skd_vary_offset));
+					l = *((USHORT *) (record + key->skd_vary_offset));
 					*(p + l) = fill_char;
 				}
 			}
@@ -1466,40 +1488,47 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 			break;
 
 #else // IEEE
+#ifdef VMS
+		case SKD_d_float:
+			dp = (double *) p;
+			if (direction)
+				*dp = MTH$CVT_D_G(dp);
+
+#endif
 		case SKD_double:
 			w = wp[2];
 			wp[2] = wp[3];
 			wp[3] = w;
 
+#ifndef VMS
 		case SKD_d_float:
+#endif
 		case SKD_float:
 			if (!direction)
-			{
-				if (complement)
-				{
+				if (complement) {
 					if (p[3] & 1 << 7)
 						complement = !complement;
 					else
 						p[3] ^= 1 << 7;
 				}
-				else
-				{
+				else {
 					if (p[3] & 1 << 7)
 						p[3] ^= 1 << 7;
 					else
 						complement = !complement;
 				}
-			}
 			w = wp[0];
 			wp[0] = wp[1];
 			wp[1] = w;
 			if (direction)
-			{
 				if (p[3] & 1 << 7)
 					complement = !complement;
 				else
 					p[3] ^= 1 << 7;
-			}
+#ifdef VMS
+			else if (key->skd_dtype == SKD_d_float)
+				*dp = MTH$CVT_G_D(dp);
+#endif
 			break;
 #endif // IEEE
 
@@ -1517,12 +1546,12 @@ static void diddle_key(UCHAR* record, sort_context* scb, bool direction)
 
 		if (key->skd_dtype == SKD_varying && !direction) {
 			p = (BLOB_PTR *) record + key->skd_offset;
-			((vary*) p)->vary_length = *((USHORT*) (record + key->skd_vary_offset));
+			((vary*) p)->vary_length = *((USHORT *) (record + key->skd_vary_offset));
 		}
 
 		if (key->skd_dtype == SKD_cstring && !direction) {
 			p = (BLOB_PTR *) record + key->skd_offset;
-			USHORT l = *((USHORT *) (record + key->skd_vary_offset));
+			l = *((USHORT *) (record + key->skd_vary_offset));
 			*(p + l) = 0;
 		}
 	}
@@ -1653,8 +1682,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 
 #ifdef SCROLLABLE_CURSORS
 			if (mode == RSE_get_forward) {
-				run->run_record = 
-						reinterpret_cast<sort_record*>(NEXT_RUN_RECORD(run->run_record));
+				run->run_record = NEXT_RUN_RECORD(run->run_record);
 #endif
 
 				if ((record = (sort_record*) run->run_record) <
@@ -1682,10 +1710,9 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 #else
 			}
 			else {
-				run->run_record = 
-					reinterpret_cast<sort_record*>(PREV_RUN_RECORD(run->run_record));
+				run->run_record = PREV_RUN_RECORD(run->run_record);
 				if ((record = (sort_record*) run->run_record) >=
-					reinterpret_cast<sort_record*>(run->run_buffer))
+					run->run_buffer)
 				{
 					++run->run_records;
 					continue;
@@ -1715,7 +1742,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			else
 				run->run_seek -= l;
 
-			SORT_read_block(scb->scb_status_vector, scb->scb_space,
+			SORT_read_block(scb->scb_status_vector, run->run_sfb,
 							run->run_seek, (UCHAR*) run->run_buffer, l);
 			run->run_cached = l;
 
@@ -1730,7 +1757,7 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 #ifdef SCROLLABLE_CURSORS
 			}
 			else {
-				record = reinterpret_cast<sort_record*>(PREV_RUN_RECORD(run->run_end_buffer));
+				record = PREV_RUN_RECORD(run->run_end_buffer);
 				++run->run_records;
 			}
 
@@ -1766,21 +1793,21 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 		}
 
 		if (!merge->mrg_record_b)
-		{
 			if (merge->mrg_stream_b) {
 				merge = (merge_control*) merge->mrg_stream_b;
+				continue;
 			}
 			else if ( (record = merge->mrg_record_a) ) {
 				merge->mrg_record_a = NULL;
 				merge = merge->mrg_header.rmh_parent;
+				continue;
 			}
 			else {
 				eof = true;
 				record = (sort_record*) - 1;
 				merge = merge->mrg_header.rmh_parent;
+				continue;
 			}
-			continue;
-		}
 
 		if (!merge->mrg_record_a) {
 			record = merge->mrg_record_b;
@@ -1801,11 +1828,11 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 
 		if (l == 0 && scb->scb_dup_callback) {
 #ifdef SCROLLABLE_CURSORS
-			SORT_diddle_key((UCHAR*) merge->mrg_record_a, scb, false);
-			SORT_diddle_key((UCHAR*) merge->mrg_record_b, scb, false);
+			SORT_diddle_key((UCHAR *) merge->mrg_record_a, scb, false);
+			SORT_diddle_key((UCHAR *) merge->mrg_record_b, scb, false);
 #else
-			diddle_key((UCHAR*) merge->mrg_record_a, scb, false);
-			diddle_key((UCHAR*) merge->mrg_record_b, scb, false);
+			diddle_key((UCHAR *) merge->mrg_record_a, scb, false);
+			diddle_key((UCHAR *) merge->mrg_record_b, scb, false);
 #endif
 			if ((*scb->scb_dup_callback) ((const UCHAR*) merge->mrg_record_a,
 										  (const UCHAR*) merge->mrg_record_b,
@@ -1813,18 +1840,18 @@ static sort_record* get_merge(merge_control* merge, sort_context* scb
 			{
 				merge->mrg_record_a = NULL;
 #ifdef SCROLLABLE_CURSORS
-				SORT_diddle_key((UCHAR*) merge->mrg_record_b, scb, true);
+				SORT_diddle_key((UCHAR *) merge->mrg_record_b, scb, true);
 #else
-				diddle_key((UCHAR*) merge->mrg_record_b, scb, true);
+				diddle_key((UCHAR *) merge->mrg_record_b, scb, true);
 #endif
 				continue;
 			}
 #ifdef SCROLLABLE_CURSORS
-			SORT_diddle_key((UCHAR*) merge->mrg_record_a, scb, true);
-			SORT_diddle_key((UCHAR*) merge->mrg_record_b, scb, true);
+			SORT_diddle_key((UCHAR *) merge->mrg_record_a, scb, true);
+			SORT_diddle_key((UCHAR *) merge->mrg_record_b, scb, true);
 #else
-			diddle_key((UCHAR*) merge->mrg_record_a, scb, true);
-			diddle_key((UCHAR*) merge->mrg_record_b, scb, true);
+			diddle_key((UCHAR *) merge->mrg_record_a, scb, true);
+			diddle_key((UCHAR *) merge->mrg_record_b, scb, true);
 #endif
 		}
 
@@ -1924,6 +1951,9 @@ static bool local_fini(sort_context* scb, Attachment* att)
  *      Finish sort, and release all resources.
  *
  **************************************/
+	ULONG** merge_buf;
+	sort_context** ptr;
+
 	bool found_it = true;
 
 	if (att) {
@@ -1938,16 +1968,12 @@ static bool local_fini(sort_context* scb, Attachment* att)
 	// Start by unlinking from que, if present
 
 	if (att)
-	{
-		for (sort_context** ptr = &att->att_active_sorts; *ptr; ptr = &(*ptr)->scb_next)
-		{
+		for (ptr = &att->att_active_sorts; *ptr; ptr = &(*ptr)->scb_next)
 			if (*ptr == scb) {
 				*ptr = scb->scb_next;
 				found_it = true;
 				break;
 			}
-		}
-	}
 
 	// *NO*. I won't free it if it's not in
     // the pointer list that has been passed
@@ -1962,7 +1988,6 @@ static bool local_fini(sort_context* scb, Attachment* att)
 
 	// Get rid of extra merge space
 
-	ULONG** merge_buf;
 	while ( (merge_buf = (ULONG **) scb->scb_merge_space) ) {
 		scb->scb_merge_space = *merge_buf;
 		delete merge_buf;
@@ -2503,13 +2528,16 @@ static ULONG order(sort_context* scb)
 	SORTP* buffer = record_buffer.getBuffer(scb->scb_longs);
 		//(SORTP*) scb->scb_pool->allocate(scb->scb_longs * sizeof(ULONG));
 
+	// Check out the engine
+
+	THREAD_EXIT();
+
 	// Length of the key part of the record
 	const SSHORT length = scb->scb_longs - SIZEOF_SR_BCKPTR_IN_LONGS;
 
 	// scb_next_pointer points to the end of pointer memory or the beginning of
 	// records
-	while (ptr < scb->scb_next_pointer)
-	{
+	while (ptr < scb->scb_next_pointer) {
 		// If the next pointer is null, it's record has been eliminated as a
 		// duplicate. This is the only easy case.
 
@@ -2571,6 +2599,10 @@ static ULONG order(sort_context* scb)
 
 	//delete buffer;
 
+	// Check back into the engine
+
+	THREAD_ENTER();
+
 	return (((SORTP *) output) -
 			((SORTP *) scb->scb_last_record)) / (scb->scb_longs -
 												 SIZEOF_SR_BCKPTR_IN_LONGS);
@@ -2594,7 +2626,7 @@ static void order_and_save(sort_context* scb)
  *		scratch file as one big chunk
  *
  **************************************/
-	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
+	THREAD_EXIT();
 
 	run_control* run = scb->scb_runs;
 	run->run_records = 0;
@@ -2639,12 +2671,16 @@ static void order_and_save(sort_context* scb)
 	}
 	else 
 	{
+		THREAD_ENTER();
 		order(scb);
+		THREAD_EXIT();
 
 		SORT_write_block(scb->scb_status_vector, scb->scb_space,
 						run->run_seek, (UCHAR*) scb->scb_last_record,
 						run->run_size);
 	}
+
+	THREAD_ENTER();
 }
 
 
@@ -2742,7 +2778,9 @@ static void sort(sort_context* scb)
  *
  **************************************/
 
-	Database::Checkout dcoHolder(scb->scb_attachment->att_database);
+	// Check out the engine
+
+	THREAD_EXIT();
 
 	// First, insert a pointer to the high key
 
@@ -2758,8 +2796,7 @@ static void sort(sort_context* scb)
 
 	// Scream through and correct any out of order pairs
 	// hvlad: don't compare user keys against high_key
-	while (j < (SORTP **) scb->scb_next_pointer - 1)
-	{
+	while (j < (SORTP **) scb->scb_next_pointer - 1) {
 		SORTP** i = j;
 		j++;
 		if (**i >= **j) {
@@ -2779,8 +2816,11 @@ static void sort(sort_context* scb)
 
 	// If duplicate handling hasn't been requested, we're done
 
-	if (!scb->scb_dup_callback)
+	if (!scb->scb_dup_callback) {
+		// Check back into the engine
+		THREAD_ENTER();
 		return;
+	}
 
 	// Make another pass and eliminate duplicates. It's possible to do this
 	// is the same pass the final ordering, but the logic is complicated enough
@@ -2791,8 +2831,7 @@ static void sort(sort_context* scb)
 	j = reinterpret_cast<SORTP**>(scb->scb_first_pointer + 1);
 
 	// hvlad: don't compare user keys against high_key
-	while (j < ((SORTP **) scb->scb_next_pointer) - 1)
-	{
+	while (j < ((SORTP **) scb->scb_next_pointer) - 1) {
 		SORTP** i = j;
 		j++;
 		if (**i != **j)
@@ -2802,14 +2841,13 @@ static void sort(sort_context* scb)
 
 		ULONG l = scb->scb_unique_length;
 		DO_32_COMPARE(p, q, l);
-		if (l == 0)
-		{
+		if (l == 0) {
 #ifdef SCROLLABLE_CURSORS
-			SORT_diddle_key((UCHAR*) *i, scb, false);
-			SORT_diddle_key((UCHAR*) *j, scb, false);
+			SORT_diddle_key((UCHAR *) * i, scb, false);
+			SORT_diddle_key((UCHAR *) * j, scb, false);
 #else
-			diddle_key((UCHAR*) *i, scb, false);
-			diddle_key((UCHAR*) *j, scb, false);
+			diddle_key((UCHAR *) * i, scb, false);
+			diddle_key((UCHAR *) * j, scb, false);
 #endif
 			if ((*scb->scb_dup_callback) ((const UCHAR*) *i, (const UCHAR*) *j, scb->scb_dup_callback_arg))
 			{
@@ -2818,14 +2856,18 @@ static void sort(sort_context* scb)
 			}
 			else
 #ifdef SCROLLABLE_CURSORS
-				SORT_diddle_key((UCHAR*) *i, scb, true);
-			SORT_diddle_key((UCHAR*) *j, scb, true);
+				SORT_diddle_key((UCHAR *) * i, scb, true);
+			SORT_diddle_key((UCHAR *) * j, scb, true);
 #else
-				diddle_key((UCHAR*) *i, scb, true);
-			diddle_key((UCHAR*) *j, scb, true);
+				diddle_key((UCHAR *) * i, scb, true);
+			diddle_key((UCHAR *) * j, scb, true);
 #endif
 		}
 	}
+
+	// Check back into the engine
+
+	THREAD_ENTER();
 }
 
 
@@ -2834,13 +2876,11 @@ namespace
 	class RunSort
 	{
 	public:
-		explicit RunSort(run_control* irun) : run(irun) {}
+		RunSort(run_control* irun) : run(irun) {}
 		RunSort() : run(NULL) {}
 
-		static const FB_UINT64 generate(const void*, const RunSort& item)
-		{
-			return item.run->run_seek;
-		}
+		static const FB_UINT64 generate(const void*, const RunSort& item) 
+		{ return item.run->run_seek; }
 
 		run_control* run;
 	};

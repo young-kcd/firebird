@@ -44,7 +44,7 @@ InputStream::InputStream()
 	segmentLength = 0;
 }
 
-InputStream::InputStream(const char* stuff)
+InputStream::InputStream(const char *stuff)
 {
 	init();
 	segment = stuff;
@@ -75,7 +75,7 @@ const char* InputStream::getSegment()
 	return segment;
 }
 
-int InputStream::getOffset(const char* pointer)
+int InputStream::getOffset(const char *pointer)
 {
 	return (int) (segmentOffset + pointer - segment);
 }
@@ -102,7 +102,7 @@ void InputStream::release()
 		delete this;
 }
 
-const char* InputStream::getFileName() const
+const char* InputStream::getFileName()
 {
 	return NULL;
 }

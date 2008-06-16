@@ -109,7 +109,7 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 		bool useSecondary = false;
 		bool useTertiary = false;
 
-		for (int ch = 0; ch <= 255 && !(useSecondary && useTertiary); ++ch)
+		for (int ch = 0; ch <= 255; ++ch)
 		{
 			const SortOrderTblEntry* coll =
 				&((const SortOrderTblEntry*)obj->texttype_impl->texttype_collation_table)[ch];
@@ -267,7 +267,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			}
 		}
 		else {					/* (col->IsCompress) */
-			const bool complete = (USHORT) (i + 1) < iInLen;
+			bool complete = (USHORT) (i + 1) < iInLen;
 
 			if (complete) {
 				const CompressPair* cmp =
@@ -308,10 +308,8 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 	iOutLen -= lprimary;
 
 	if (key_type == INTL_KEY_PARTIAL)
-	{
 		/* return length of key */
 		return (outbuff - pOutChar);
-	}
 
 	bool useLevel = !(obj->texttype_impl->texttype_flags & TEXTTYPE_secondary_insensitive);
 
@@ -407,7 +405,6 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 	ULONG index1 = 0;
 	ULONG index2 = 0;
 
-	const bool noSpecialsFirst = !(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first);
 	while (true) {
 		/* Scan to find ignore char from l1 */
 		while (l1) {
@@ -415,7 +412,8 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s1];
 
-			if (col1->IsExpand && col1->IsCompress && noSpecialsFirst)
+			if (col1->IsExpand && col1->IsCompress &&
+				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
 			{
 				break;
 			}
@@ -430,7 +428,8 @@ static SSHORT special_scan(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, co
 			col2 =
 				&((const SortOrderTblEntry*) obj->texttype_impl->
 				  texttype_collation_table)[*s2];
-			if (col2->IsExpand && col2->IsCompress && noSpecialsFirst)
+			if (col2->IsExpand && col2->IsCompress &&
+				!(obj->texttype_impl->texttype_flags & TEXTTYPE_specials_first))
 			{
 				break;
 			}
@@ -467,8 +466,8 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 	*sum = obj->texttype_impl->primary_sum;
 
 	if (stat->stat_flags & LC_HAVE_WAITING) {
-		--*l;
-		++*p;
+		(*l)--;
+		(*p)++;
 		stat->stat_flags &= ~LC_HAVE_WAITING;
 		fb_assert(stat->stat_waiting);
 		return stat->stat_waiting;
@@ -487,29 +486,29 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 				*sum = obj->texttype_impl->ignore_sum;
 
 				/* Have col */
-				--*l;
-				++*p;
+				(*l)--;
+				(*p)++;
 				return col;
 			}
-
-			/* Both flags set indicate a special value */
-			/* Need a new col */
-			--*l;
-			++*p;
-			stat->stat_flags |= LC_HAVE_SPECIAL;
-			continue;
+			else
+			{
+				/* Both flags set indicate a special value */
+				/* Need a new col */
+				(*l)--;
+				(*p)++;
+				stat->stat_flags |= LC_HAVE_SPECIAL;
+				continue;
+			}
 		}
-
-		if (!((col->IsExpand && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_expansions)) ||
+		else if (!((col->IsExpand && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_expansions)) ||
 				   (col->IsCompress && !(obj->texttype_impl->texttype_flags & TEXTTYPE_disable_compressions))))
 		{
 			/* Have col */
-			--*l;
-			++*p;
+			(*l)--;
+			(*p)++;
 			return col;
 		}
-
-		if (col->IsExpand) {
+		else if (col->IsExpand) {
 			const ExpandChar* exp = &((const ExpandChar*) obj->texttype_impl->texttype_expand_table)[0];
 			while (exp->Ch && exp->Ch != **p)
 				exp++;
@@ -523,29 +522,29 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 			stat->stat_flags |= LC_HAVE_WAITING;
 			return col;
 		}
-
-		/* (col->IsCompress) */
-		if (*l > 1) {
-			const CompressPair* cmp =
-				&((const CompressPair*) obj->texttype_impl->
-				  texttype_compress_table)[0];
-			while (cmp->CharPair[0]) {
-				if ((cmp->CharPair[0] == **p) &&
-					(cmp->CharPair[1] == *(*p + 1)))
-				{
-					/* Have Col */
-					col = &cmp->NoCaseWeight;
-					(*l) -= 2;
-					(*p) += 2;
-					return col;
+		else {					/* (col->IsCompress) */
+			if (*l > 1) {
+				const CompressPair* cmp =
+					&((const CompressPair*) obj->texttype_impl->
+					  texttype_compress_table)[0];
+				while (cmp->CharPair[0]) {
+					if ((cmp->CharPair[0] == **p) &&
+						(cmp->CharPair[1] == *(*p + 1)))
+					{
+						/* Have Col */
+						col = &cmp->NoCaseWeight;
+						(*l) -= 2;
+						(*p) += 2;
+						return col;
+					}
+					cmp++;
 				}
-				cmp++;
 			}
+			/* Have col */
+			(*l)--;
+			(*p)++;
+			return col;
 		}
-		/* Have col */
-		--*l;
-		++*p;
-		return col;
 	}
 	return NULL;
 }
@@ -686,17 +685,15 @@ static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 	for (ULONG i = 0; i < len; i++) {
 		if (key1[i] == key2[i])
 			continue;
-		if (key1[i] < key2[i])
+		else if (key1[i] < key2[i])
 			return (-1);
-
-		return (1);
+		else
+			return (1);
 	}
-
 	if (len1 < len2)
 		return (-1);
-	if (len1 > len2)
+	else if (len1 > len2)
 		return (1);
-	
 	return (0);
 }
 #endif	/* DEBUG_COMPARE */
@@ -1018,8 +1015,8 @@ bool LC_NARROW_family3(
 
 		return true;
 	}
-
-	return false;
+	else
+		return false;
 }
 
 

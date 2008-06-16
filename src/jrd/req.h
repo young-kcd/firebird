@@ -28,16 +28,13 @@
 #ifndef JRD_REQ_H
 #define JRD_REQ_H
 
+#include "../jrd/jrd_blks.h"
 #include "../include/fb_blk.h"
 
 #include "../jrd/exe.h"
 #include "../jrd/RecordNumber.h"
-#include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
-namespace EDS {
-class Statement;
-}
 
 namespace Jrd {
 
@@ -56,8 +53,7 @@ class thread_db;
 
 /* record parameter block */
 
-struct record_param
-{
+struct record_param {
 	record_param() : 
 		rpb_relation(0),
 		rpb_window(DB_PAGE_SPACE, -1)
@@ -86,8 +82,7 @@ struct record_param
 	USHORT rpb_stream_flags;	/* stream flags */
 	SSHORT rpb_org_scans;		/* relation scan count at stream open */
 
-	inline WIN& getWindow(thread_db* tdbb)
-	{
+	inline WIN& getWindow(thread_db* tdbb) {
 		if (rpb_relation) {
 			rpb_window.win_page.setPageSpaceID(
 				rpb_relation->getPages(tdbb)->rel_pg_space_id);
@@ -113,9 +108,8 @@ const USHORT rpb_gc_active	= 256;		/* garbage collecting dead record version */
 
 /* Stream flags */
 
-const USHORT RPB_s_refetch	= 0x1;		// re-fetch required due to sort
-const USHORT RPB_s_update	= 0x2;		// input stream fetched for update
-const USHORT RPB_s_no_data	= 0x4;		// nobody is going to access the data
+const USHORT RPB_s_refetch	= 0x1;		/* re-fetch required due to sort */
+const USHORT RPB_s_update	= 0x2;		/* input stream fetched for update */
 
 #define SET_NULL(record, id)	record->rec_data [id >> 3] |=  (1 << (id & 7))
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
@@ -135,7 +129,7 @@ const USHORT DPM_other		= 3;		/* Independent (or don't care) record */
 class Record : public pool_alloc_rpt<SCHAR, type_rec>
 {
 public:
-	explicit Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
+	Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
 	// ASF: Record is memcopied in realloc_record (vio.cpp), starting at rec_format.
 	// rec_precedence has destructor, so don't move it to after rec_format.
 	MemoryPool& rec_pool;		// pool where record to be expanded
@@ -169,8 +163,7 @@ typedef Firebird::BePlusTree<ULONG, ULONG, MemoryPool> TempBlobIdTree;
 
 /* Affected rows counter class */
 
-class AffectedRows
-{
+class AffectedRows {
 public:
 	AffectedRows();
 
@@ -193,12 +186,11 @@ private:
 class jrd_req : public pool_alloc_rpt<record_param, type_req>
 {
 public:
-	jrd_req(MemoryPool* pool, Firebird::MemoryStats* parent_stats)
-	:	req_pool(pool), req_memory_stats(parent_stats),
+	jrd_req(JrdMemoryPool* pool) :
 		req_blobs(pool), req_external(*pool), req_access(*pool), req_resources(*pool),
-		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool), req_ext_stmt(NULL),
-		req_invariants(*pool), req_sql_text(*pool), req_domain_validation(NULL),
-		req_map_field_info(*pool), req_map_item_info(*pool), req_auto_trans(*pool)
+		req_trg_name(*pool), req_fors(*pool), req_exec_sta(*pool),
+		req_invariants(*pool), req_timestamp(true), req_sql_text(*pool), req_domain_validation(NULL),
+		req_map_field_info(*pool)
 	{}
 
 	Attachment*	req_attachment;		// database attachment
@@ -206,8 +198,7 @@ public:
 	USHORT		req_count;			// number of streams
 	USHORT		req_incarnation;	// incarnation number
 	ULONG		req_impure_size;	// size of impure area
-	MemoryPool* req_pool;
-	Firebird::MemoryStats req_memory_stats;
+	JrdMemoryPool* req_pool;
 	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
 	// Transaction pointer and doubly linked list pointers for requests in this 
@@ -252,7 +243,6 @@ public:
 	jrd_nod*	req_next;			/* next node for execution */
 	Firebird::Array<RecordSource*> req_fors;	/* Vector of for loops, if any */
 	Firebird::Array<jrd_nod*>	req_exec_sta;	// Array of exec_into nodes
-	EDS::Statement*	req_ext_stmt;	// head of list of active dynamic statements
 	vec<RecordSource*>* 		req_cursors;	/* Vector of named cursors, if any */
 	Firebird::Array<jrd_nod*>	req_invariants;	/* Vector of invariant nodes, if any */
 	USHORT		req_label;			/* label for leave */
@@ -266,8 +256,6 @@ public:
 
 	dsc*			req_domain_validation;	// Current VALUE for constraint validation
 	MapFieldInfo	req_map_field_info;		// Map field name to field info
-	MapItemInfo		req_map_item_info;		// Map item to item info
-	Firebird::Stack<jrd_tra*> req_auto_trans;	// Autonomous transactions
 
 	enum req_ta {
 		// order should be maintained because the numbers are stored in BLR
@@ -303,7 +291,7 @@ public:
 // alignment quirks, but from quick glance on code it looks like it should not be
 // causing problems. Good fix for this kludgy behavior is to use some C++ means 
 // to manage impure area and array of record parameter blocks
-const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
+const size_t REQ_SIZE = sizeof (jrd_req) - sizeof (jrd_req::blk_repeat_type);
 
 /* Flags for req_flags */
 const ULONG req_active			= 0x1L;

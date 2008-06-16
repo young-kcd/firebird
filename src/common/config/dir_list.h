@@ -66,12 +66,11 @@ public:
 	// possible symbolic links.
 	bool contains(const ParsedPath& pPath) const;
 	// Returns path, containing elements from 0 to n-1
-	PathName subPath(size_t n) const;
+	PathName subPath(int n) const;
 };
 
 	
-class DirectoryList : public ObjectsArray<ParsedPath>
-{
+class DirectoryList : public ObjectsArray<ParsedPath> {
 private:
 	typedef ObjectsArray<ParsedPath> inherited;
 	// ListMode must be changed together with ListKeys in dir_list.cpp
@@ -86,9 +85,8 @@ private:
 		PathName key, PathName next);
 protected:
 	// Clear allocated memory and reinitialize
-	void clear(void)
-	{
-		((inherited*) this)->clear();
+	void clear(void) {
+		((inherited*)this)->clear();
 		mode = NotInitialized;
 	}
 	// Used for various configuration parameters - 
@@ -112,11 +110,13 @@ public:
 	// Search for file Name in all directories of DirectoryList.
 	// If found, return full path to it in Path. 
 	// Otherwise Path = Name.
-	bool expandFileName(PathName& path, const PathName& name) const;
+	bool expandFileName(PathName& path, 
+						const PathName& name) const;
 
 	// Use first directory in this directory list
 	// to build default full name for a file
-	bool defaultName(PathName& path, const PathName& name) const;
+	bool defaultName(PathName& path, 
+						const PathName& name) const;
 };
 
 class TempDirectoryList : public DirectoryList {

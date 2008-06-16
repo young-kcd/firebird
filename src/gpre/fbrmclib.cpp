@@ -140,7 +140,6 @@ RM_PROTO(rmc_start_and_send);
 RM_PROTO(rmc_start_request);
 RM_PROTO(rmc_transact_request);
 RM_PROTO(rmc_commit_retaining);
-RM_PROTO(rmc_rollback_retaining);
 RM_PROTO(rmc_attach_database);
 RM_PROTO(rmc_modify_dpb);
 RM_PROTO(rmc_free);
@@ -268,7 +267,7 @@ static ISC_USHORT* AllocShortPool()
 // ever one per function call and there is no need to set up a separate pool
 static ISC_STATUS* AllocStatusPool()
 {
-	return (ISC_STATUS*) AllocStringPool(sizeof(ISC_STATUS_ARRAY));
+	return (ISC_STATUS *)AllocStringPool(sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 }
 
 // Return a Cobol argument as a C string.  Trailing spaces are truncated.
@@ -799,18 +798,6 @@ EXPORT RM_ENTRY(rmc_embed_dsql_prepare)
 	return (0);
 }
 
-EXPORT RM_ENTRY(rmc_dsql_allocate_statement)
-{
-	ClearParamPool();
-	ISC_STATUS *stat = AllocStatusPool();
-	isc_dsql_allocate_statement(stat,
-							    (isc_db_handle *)arg_vector[1].a_address,
-							    (isc_tr_handle *)arg_vector[2].a_address);
-	StatusToCobol(&arg_vector[0], stat);
-
-	return (0);
-}
-
 EXPORT RM_ENTRY(rmc_dsql_alloc_statement2)
 {
 	ClearParamPool();
@@ -1080,17 +1067,6 @@ EXPORT RM_ENTRY(rmc_commit_retaining)
 	ISC_STATUS *stat = AllocStatusPool();
 	isc_commit_retaining(stat,
 						 (isc_tr_handle *)arg_vector[1].a_address);
-	StatusToCobol(&arg_vector[0], stat);
-
-	return (0);
-}
-
-EXPORT RM_ENTRY(rmc_rollback_retaining)
-{
-	ClearParamPool();
-	ISC_STATUS *stat = AllocStatusPool();
-	isc_rollback_retaining(stat,
-						   (isc_tr_handle *)arg_vector[1].a_address);
 	StatusToCobol(&arg_vector[0], stat);
 
 	return (0);
@@ -1543,7 +1519,6 @@ EXPORT RM_ENTRY(rmc_ftoc)
 	return (0);
 }
 
-
 // Convert a Cobol alpha (PIC X) field to a C string.  This is done by trimming trailing spaces
 // and adding the trailing '\0'.
 EXPORT RM_ENTRY(rmc_stoc)
@@ -1579,7 +1554,6 @@ EXPORT RM_ENTRY(rmc_ctos)
 
 	return (0);
 }
-
 static char* banner = "Firebird Embedded SQL Interface";
 
 #ifdef __cplusplus
@@ -1624,7 +1598,6 @@ EXPORT entry_table RM_EntryPoints[] = {
 	{ "isc_embed_dsql_open", rmc_embed_dsql_open, "rmc_embed_dsql_open" },
 	{ "isc_embed_dsql_open2", rmc_embed_dsql_open2, "rmc_embed_dsql_open2" },
 	{ "isc_embed_dsql_prepare", rmc_embed_dsql_prepare, "rmc_embed_dsql_prepare" },
-	{ "isc_dsql_allocate_statement", rmc_dsql_allocate_statement, "rmc_dsql_allocate_statement" },
 	{ "isc_dsql_alloc_statement2", rmc_dsql_alloc_statement2, "rmc_dsql_alloc_statement2" },
 	{ "isc_dsql_execute_m", rmc_dsql_execute_m, "rmc_dsql_execute_m" },
 	{ "isc_dsql_free_statement", rmc_dsql_free_statement, "rmc_dsql_free_statement" },
@@ -1643,7 +1616,6 @@ EXPORT entry_table RM_EntryPoints[] = {
 	{ "isc_start_request", rmc_start_request, "rmc_start_request" },
 	{ "isc_transact_request", rmc_transact_request, "rmc_transact_request" },
 	{ "isc_commit_retaining", rmc_commit_retaining, "rmc_commit_retaining" },
-	{ "isc_rollback_retaining", rmc_rollback_retaining, "rmc_rollback_retaining" },
 	{ "isc_attach_database", rmc_attach_database, "rmc_attach_database" },
 	{ "isc_modify_dpb", rmc_modify_dpb, "rmc_modify_dpb" },
 	{ "isc_free", rmc_free, "rmc_free" },

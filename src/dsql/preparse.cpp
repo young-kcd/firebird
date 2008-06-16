@@ -358,7 +358,7 @@ static SSHORT get_next_token(
 							 const SCHAR* stmt_end,
 							 Firebird::string& token)
 {
-	UCHAR c, char_class = 0;
+	UCHAR c, char_class;
 
 	token.erase();
 	const SCHAR* s = *stmt;

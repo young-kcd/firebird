@@ -67,20 +67,20 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	const char* exe_format = 
 		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
 
-	len = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
-	if (len == sizeof(exe_name) || len < 0) {
-		return (*err_handler) (0, "service executable path name is too long", 0);
+	len = snprintf(exe_name, MAX_PATH, exe_format, directory, executable);
+	if (len == MAX_PATH || len < 0) {
+		return (*err_handler) (0, "service exe name too long", 0);
 	}
 
-	char path_name[MAX_PATH * 2];
-	const char* path_format = (strchr(exe_name, ' ') ? "\"%s\"" : "%s");
+	char path_name[1024];
+	const char *path_format = (strchr(exe_name, ' ') ? "\"%s\"" : "%s");
 	sprintf(path_name, path_format, exe_name);
 
 	if (switches) 
 	{
 		len = sizeof(path_name) - strlen(path_name) - 1;
 		if (len < strlen(switches) + 1) {
-			return (*err_handler) (0, "service command line is too long", 0);
+			return (*err_handler) (0, "service command line too long", 0);
 		}
 		strcat(path_name, " ");
 		strcat(path_name, switches);
@@ -100,7 +100,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	SC_HANDLE service = CreateService(manager,
 							service_name,
 							display_name,
-							SERVICE_CHANGE_CONFIG,
+							SERVICE_ALL_ACCESS,
 							dwServiceType,
 							(sw_startup ==
 							 STARTUP_DEMAND) ? SERVICE_DEMAND_START :
@@ -113,8 +113,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		DWORD errnum = GetLastError();
 		if (errnum == ERROR_DUP_NAME || errnum == ERROR_SERVICE_EXISTS)
 			return IB_SERVICE_ALREADY_DEFINED;
-
-		return (*err_handler) (errnum, "CreateService", NULL);
+		else
+			return (*err_handler) (errnum, "CreateService", NULL);
 	}
 
 	// Now enter the description string and failure actions into the service 
@@ -123,10 +123,8 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	if (advapi32 != 0)
 	{
 		typedef BOOL __stdcall proto_config2(SC_HANDLE, DWORD, LPVOID);
-
-		proto_config2* const config2 =
+		proto_config2* config2 =
 			(proto_config2*)GetProcAddress(advapi32, "ChangeServiceConfig2A");
-
 		if (config2 != 0)
 		{
 			// This system supports the ChangeServiceConfig2 API.
@@ -177,9 +175,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
  **************************************/
 	SERVICE_STATUS service_status;
 
-	SC_HANDLE service = OpenService(manager,
-									service_name,
-									SERVICE_QUERY_STATUS | DELETE);
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -206,8 +202,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
 				break;
 		}
-		else		
-			CloseServiceHandle(service);
+		else CloseServiceHandle(service);
 
 		Sleep(100);	// A small nap is always good for health :)
 	}
@@ -232,10 +227,9 @@ USHORT SERVICES_start(SC_HANDLE manager,
  *	Start an installed service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_START | SERVICE_QUERY_STATUS);
-	
+	SERVICE_STATUS service_status;
+
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -259,13 +253,11 @@ USHORT SERVICES_start(SC_HANDLE manager,
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_ALREADY_RUNNING)
 			return FB_SUCCESS;
-
-		return (*err_handler) (errnum, "StartService", NULL);
+		else
+			return (*err_handler) (errnum, "StartService", NULL);
 	}
 
 	/* Wait for the service to actually start before returning. */
-	SERVICE_STATUS service_status;
-
 	do
 	{
 		if (!QueryServiceStatus(service, &service_status))
@@ -298,14 +290,11 @@ USHORT SERVICES_stop(SC_HANDLE manager,
  *	Stop a running service.
  *
  **************************************/
-	const SC_HANDLE service = OpenService(manager,
-	                                      service_name,
-	                                      SERVICE_STOP | SERVICE_QUERY_STATUS);
-	
+	SERVICE_STATUS service_status;
+
+	SC_HANDLE service = OpenService(manager, service_name, SERVICE_ALL_ACCESS);
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
-
-	SERVICE_STATUS service_status;
 
 	if (!ControlService(service, SERVICE_CONTROL_STOP, &service_status))
 	{
@@ -313,8 +302,8 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 		CloseServiceHandle(service);
 		if (errnum == ERROR_SERVICE_NOT_ACTIVE)
 			return FB_SUCCESS;
-
-		return (*err_handler) (errnum, "ControlService", NULL);
+		else
+			return (*err_handler) (errnum, "ControlService", NULL);
 	}
 
 	/* Wait for the service to actually stop before returning. */

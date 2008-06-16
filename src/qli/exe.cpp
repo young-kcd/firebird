@@ -26,8 +26,6 @@
 #include <setjmp.h>
 
 #include "../jrd/ibase.h"
-#include "../jrd/common.h"
-#include "../jrd/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -80,8 +78,7 @@ static void transaction_state(qli_nod*, DBB);
 
 const int COUNT_ITEMS	= 4;
 
-static const SCHAR count_info[] = 
-{
+static const SCHAR count_info[] = {
 	isc_info_req_select_count,
 	isc_info_req_insert_count,
 	isc_info_req_update_count,
@@ -104,17 +101,11 @@ void EXEC_abort(void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	for (DBB database = QLI_databases; database; database = database->dbb_next)
-	{
-		if (database->dbb_handle)
-		{
-			if (fb_cancel_operation(status_vector, &database->dbb_handle, fb_cancel_raise) == 0)
-			{
-				QLI_abort = true;
-			}
-		}
-	}
+	for (qli_req* request = QLI_requests; request; request = request->req_next)
+		if (request->req_handle)
+			isc_unwind_request(status_vector, &request->req_handle, 0);
 
+	QLI_abort = true;
 }
 
 
@@ -134,8 +125,7 @@ void EXEC_execute( qli_nod* node)
 		EXEC_poll_abort();
 
 	if (node) {
-		switch (node->nod_type) 
-		{
+		switch (node->nod_type) {
 		case nod_abort:
 			execute_abort(node);
 
@@ -152,20 +142,19 @@ void EXEC_execute( qli_nod* node)
 				qli_msg* message = (qli_msg*) node->nod_arg[e_era_message];
 				if (message)
 					EXEC_send(message);
+				return;
 			}
-			return;
 
 		case nod_for:
 			execute_for(node);
 			return;
-
 		case nod_list:
 			{
 				qli_nod** ptr = node->nod_arg;
 				for (USHORT i = 0; i < node->nod_count; i++)
 					EXEC_execute(*ptr++);
+				return;
 			}
-			return;
 
 		case nod_modify:
 			execute_modify(node);
@@ -264,7 +253,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 }
 
 
-FILE* EXEC_open_output(qli_nod* node)
+file* EXEC_open_output(qli_nod* node)
 {
 /**************************************
  *
@@ -282,21 +271,21 @@ FILE* EXEC_open_output(qli_nod* node)
 	const TEXT* p = NULL;
 	TEXT temp[64];
 	SSHORT l = MOVQ_get_string(desc, &p, (vary*) temp, sizeof(temp));
-	if (l >= MAXPATHLEN)
-		l = MAXPATHLEN - 1;
 
-	TEXT filename[MAXPATHLEN];
+	TEXT filename[256];
+	TEXT* q = filename;
 	if (l)
-		memcpy(filename, p, l);
-
-	filename[l] = 0;
+		do {
+			*q++ = *p++;
+		} while (--l);
+	*q = 0;
 
 // If output is to a file, just do it
 
 	if (!node->nod_arg[e_out_pipe]) {
 	    FILE* out_file = fopen(filename, FOPEN_WRITE_TYPE);
 		if (out_file)
-			return out_file;
+			return (file*) out_file;
 
 		ERRQ_print_error(42, filename);
 		// Msg42 Can't open output file %s
@@ -304,10 +293,14 @@ FILE* EXEC_open_output(qli_nod* node)
 
 // Output is to a file.  Setup file and fork process
 
+#ifdef VMS
+	IBERROR(35);				// Msg35 output pipe is not supported on VMS
+#else
+
 #ifdef WIN_NT
 	FILE* out_file = _popen(filename, "w");
 	if (out_file)
-		return out_file;
+		return (file*) out_file;
 #else
 	TEXT* argv[20];
 	TEXT** arg = argv;
@@ -343,10 +336,11 @@ FILE* EXEC_open_output(qli_nod* node)
 
 	FILE* out_file = fdopen(pair[1], "w");
 	if (out_file)
-		return out_file;
+		return (file*) out_file;
 #endif
 
 	IBERROR(37);				// Msg37 fdopen failed
+#endif
 	return NULL;
 }
 
@@ -390,9 +384,7 @@ DSC *EXEC_receive(qli_msg* message, qli_par* parameter)
 
 	if (isc_receive(status_vector, &request->req_handle, message->msg_number,
 					 message->msg_length, message->msg_buffer, 0))
-	{
 		db_error(request, status_vector);
-	}
 
 	if (!parameter)
 		return NULL;
@@ -442,8 +434,7 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (message) 
-	{
+	if (message) {
 		map_data(message);
 		if (!isc_start_and_send(status_vector, &request->req_handle,
 								 &request->req_database-> dbb_transaction,
@@ -453,8 +444,7 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
 			return;
 		}
 	}
-	else 
-	{
+	else {
 		if (!isc_start_request(status_vector, &request->req_handle,
 								&request->req_database-> dbb_transaction, 0))
 		{
@@ -526,10 +516,14 @@ static DSC *assignment(	qli_nod*		from_node,
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) 
-		{
-			if (from_desc->dsc_length)
-				memset(from_desc->dsc_address, 0, from_desc->dsc_length);
+		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) {
+			UCHAR* p = from_desc->dsc_address;
+			USHORT l = from_desc->dsc_length;
+			if (l) {
+				do {
+					*p++ = 0;
+				} while (--l);
+			}
 		}
 		else {
 			MOVQ_move(from_desc, to_desc);
@@ -960,12 +954,12 @@ static void execute_output( qli_nod* node)
 
 		EXEC_execute(node->nod_arg[e_out_statement]);
 		memcpy(QLI_env, old_env, sizeof(QLI_env));
-		fclose(print->prt_file);
+		fclose((FILE *) print->prt_file);
 
 	}
 	catch (const Firebird::Exception&) {
 		if (print->prt_file) {
-			fclose(print->prt_file);
+			fclose((FILE *) print->prt_file);
 		}
 		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
@@ -1111,7 +1105,7 @@ static void print_counts( qli_req* request)
 
 	int length = 0;
 	for (UCHAR* c = count_buffer; *c != isc_info_end; c += length) {
-		const UCHAR item = *c++;
+		UCHAR item = *c++;
 		length = gds__vax_integer(c, 2);
 		c += 2;
 		const ULONG number = gds__vax_integer(c, length);

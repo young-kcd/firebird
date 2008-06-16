@@ -54,8 +54,7 @@ goto :EOF
 :BOOT_PROCESS
 @echo.
 @set GPRE=%FB_GEN_DIR%\gpre_boot -lang_internal
-@for %%i in (array, blob) do @call :PREPROCESS dsql %%i
-@for %%i in (metd, DdlNodes) do @call :PREPROCESS dsql %%i GDS
+@for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
 @for %%i in (extract, isql, show) do @call :PREPROCESS isql %%i
@@ -63,8 +62,7 @@ goto :EOF
 
 @set GPRE=%FB_GEN_DIR%\gpre_boot
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
-@for %%i in (array, blob) do @call :PREPROCESS dsql %%i
-@for %%i in (metd, DdlNodes) do @call :PREPROCESS dsql %%i GDS
+@for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS
 @for %%i in (stats) do @call :PREPROCESS utilities %%i
@@ -75,8 +73,7 @@ goto :EOF
 @set GPRE=%FB_GEN_DIR%\gpre_embed
 @for %%i in (alice_meta) do @call :PREPROCESS alice %%i
 @for %%i in (backup, restore) do @call :PREPROCESS burp %%i
-@for %%i in (array, blob) do @call :PREPROCESS dsql %%i
-@for %%i in (metd, DdlNodes) do @call :PREPROCESS dsql %%i GDS
+@for %%i in (array, blob, metd) do @call :PREPROCESS dsql %%i
 @for %%i in (exe, extract) do @call :PREPROCESS dudley %%i
 @for %%i in (gpre_meta) do @call :PREPROCESS gpre %%i
 @for %%i in (dfw, dpm, dyn, dyn_def, dyn_del, dyn_mod, dyn_util, fun, grant, ini, met, pcmet, scl) do @call :PREPROCESS jrd %%i GDS

@@ -28,7 +28,7 @@
 				ImproveFloatingPointConsistency="TRUE"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="TRUE"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_"
 				ExceptionHandling="FALSE"
 				RuntimeLibrary="2"
@@ -94,7 +94,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc-"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include"
+				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;_X86_;DEV_BUILD"
 				ExceptionHandling="FALSE"
 				BasicRuntimeChecks="3"
@@ -669,15 +669,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\fb_string.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp">
 			</File>
 		</Filter>
 		<Filter

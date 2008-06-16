@@ -81,8 +81,10 @@ int			API_ROUTINE gds__get_client_major_version();
 
 int			API_ROUTINE gds__get_client_minor_version();
 
+#ifndef REQUESTER
 ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FB_API_HANDLE*, 
 					    SSHORT, const UCHAR*, UCHAR*);
+#endif
 
 ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FB_API_HANDLE*, 
 					     USHORT*, USHORT, SCHAR*);
