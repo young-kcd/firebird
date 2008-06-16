@@ -44,7 +44,7 @@ en.InstalledProducts=Pre-installation analysis indicates that %s existing Firebi
 en.InstalledProdCountSingular=version has
 en.InstalledProdCountPlural=versions have
 
-en.FbRunning1=An existing Firebird %s Server is running.
+en.FbRunning1=An existing %s Server is running.
 en.FbRunning2= You must close the application or stop the
 en.FbRunning3=         service before continuing.
 

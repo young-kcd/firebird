@@ -44,7 +44,7 @@ pl.InstalledProducts=Analiza przed instalacj¹ wykaza³a, ¿e ju¿ istnieje %s Fireb
 pl.InstalledProdCountSingular=wersja posiada
 pl.InstalledProdCountPlural=wersje posiadaj¹
 
-pl.FbRunning1=Istniej¹cy Firebird %s Server jest uruchomiony.
+pl.FbRunning1=Istniej¹cy %s Server jest uruchomiony.
 pl.FbRunning2= Przed kontynuacj¹ musisz zakoñczyæ program
 pl.FbRunning3=       lub zatrzymaæ us³ugê.
 

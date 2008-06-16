@@ -44,7 +44,7 @@ ba.InstalledProducts='Pre-instalaciona analiza pokazuje da %s postojeæi Firebird
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
-ba.FbRunning1=Postojeæi Firebird %s Server je pokrenut.
+ba.FbRunning1=Postojeæi %s Server je pokrenut.
 ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti
 ba.FbRunning3=         service prije nastavka.
 

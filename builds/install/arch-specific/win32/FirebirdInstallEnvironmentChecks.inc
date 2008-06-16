@@ -858,18 +858,25 @@ begin
   Result := false;
 
   if FirebirdOneRunning then
-    RunningServerVerString := 'Firebird 1.0 or InterBase';
+    RunningServerVerString := 'Firebird v1.0 / InterBase';
 
-  //Look for a running version of Firebird 1.5 or later
-  Handle := FindWindowByClassName('FB_Disabled');
-  if ( Handle = 0 ) then
-    Handle := FindWindowByClassName('FB_Server');
-  if ( Handle = 0 ) then
-    Handle := FindWindowByClassName('FB_Guard');
+  //Look for a valid window handle
+  if RunningServerVerString = '' then begin
+    //This is effectivley a test for Firebird running as an application.
+    //This is useful if Firebird is running without the guardian
+    //because prior to v2.0.4 there is no server mutex.
+    Handle := FindWindowByClassName('FB_Disabled');
+    if ( Handle = 0 ) then
+      Handle := FindWindowByClassName('FB_Server');
+    if ( Handle = 0 ) then
+      Handle := FindWindowByClassName('FB_Guard');
 
-  if (Handle > 0) then
-     RunningServerVerString := '1.5'
-  else begin
+    if (Handle > 0) then
+      RunningServerVerString := 'Firebird';
+  end;
+
+  //Look for a firebird mutex
+  if RunningServerVerString = '' then begin
     //General Notes on testing for mutexes:
     // - Mutexes are case-sensitive.
     // - Don't escape the slash in Global\, Local\ etc. (We don't currently use Local\)
@@ -886,8 +893,10 @@ begin
     mutex_found := CheckForMutexes(mutexes);
 
     if mutex_found then
-      RunningServerVerString := '2.0'
-    else begin
+      RunningServerVerString := 'Firebird';
+  end;
+
+  if RunningServerVerString = '' then begin
       //v2.1.1 notes
       // - v2.1.0 creates mutexes without the global prefix.
       // - v2.1.1 and later should use the correct prefix.
@@ -898,10 +907,9 @@ begin
       mutex_found := CheckForMutexes(mutexes);
 
       if mutex_found then
-        RunningServerVerString := '2.1'
-    end;
-
+        RunningServerVerString := 'v2.1'
   end;
+
   if RunningServerVerString <> '' then
     Result := True;
 
