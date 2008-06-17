@@ -1,3 +1,27 @@
+2008-06-17 15:45  asfernandes
+
+	* firebird2/builds/win32/make_boot.bat (1.40):
+
+	Fix the Windows boot build
+
+2008-06-17 03:05  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.client.fbudf (1.14),
+	builds/posix/Makefile.in.embed.fbudf (1.9),
+	builds/posix/Makefile.in.extlib (1.28),
+	builds/posix/Makefile.in.fbserver (1.26),
+	builds/posix/Makefile.in.libfbembed (1.26), src/include/gen/msgs.h
+	(1.107):
+
+	Fixed Linux SS build
+
+2008-06-17 03:01  asfernandes
+
+	* firebird2/: builds/posix/prefix.darwin_ppc64 (1.6),
+	src/jrd/SysFunction.cpp (1.50), src/jrd/fun.epp (1.96):
+
+	Misc
+
 2008-06-15 18:29  asfernandes
 
 	* firebird2/builds/win32/msvc8/: Firebird2Boot.sln (1.7),
