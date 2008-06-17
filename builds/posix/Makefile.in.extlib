@@ -81,23 +81,23 @@ all: lib_ib_udf lib_ib_util
 # User defined functions.  (I've put the .$(SHRLIB_EXT) extension back onto the library)
 # 
 
-lib_ib_udf: $(UDF)/ib_udf.$(SHRLIB_EXT)
+lib_ib_udf: $(LIBIBUTIL_SO) $(UTIL_Objects) $(UDF)/ib_udf.$(SHRLIB_EXT)
 
-$(UDF)/ib_udf.$(SHRLIB_EXT):	$(UDF_Objects) $(UTIL_Objects) $(LIBIBUTIL_SO)
+$(UDF)/ib_udf.$(SHRLIB_EXT): $(UDF_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $(UDF_Objects) @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lib_util
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lib_util
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) \
-$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $(UDF_Objects) $(THR_LIBS) -L$(LIB) -lib_util
+$(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS) -L$(LIB) -lib_util
 endif
 
 # ib_util
 
 lib_ib_util: $(LIBIBUTIL_SO)
 
-$(LIBIBUTIL_SO):	$(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects)
+$(LIBIBUTIL_SO): $(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(CLIENTLIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) \
+	$(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) \
 $(LIB_LINK_RPATH)$(IbUtilLibraryName) $(LIB_LINK_SONAME) -o $@ $^ $(THR_LIBS)
 else
 	$(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)$(IbUtilLibraryName) \

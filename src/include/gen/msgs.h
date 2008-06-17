@@ -620,7 +620,7 @@ static const struct {
 	{335544916, "numeric value is out of range"},		/* 596, numeric_out_of_range */
 	{335544917, "Firebird shutdown is still in progress after the specified timeout"},		/* 597, shutdown_timeout */
 	{335544918, "Attachment handle is busy"},		/* 598, att_handle_busy */
-	{335544919, "Bad written UDF detected: returning pointer not allocated by ib_util_malloc in FREE_IT function"},		/* 599, bad_udf_freeit */
+	{335544919, "Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc"},		/* 599, bad_udf_freeit */
 	{335740929, "data base file name (@1) already given"},		/* 600, gfix_db_name */
 	{335740930, "invalid switch @1"},		/* 601, gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* 602, gfix_incmp_sw */
