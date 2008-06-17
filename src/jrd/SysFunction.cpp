@@ -2075,6 +2075,8 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 				blobBuffer.getBuffer(auxlen), length, auxlen);
 			BLB_put_data(tdbb, newBlob, blobBuffer.begin(), l2);
 		}
+
+		BLB_close(tdbb, newBlob);
 	}
 	else
 	{
@@ -2084,9 +2086,6 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		impure->vlu_desc.dsc_length = (USHORT) (l1 + len2 + l2);
 	}
-
-	if (newBlob)
-		BLB_close(tdbb, newBlob);
 
 	return &impure->vlu_desc;
 }

@@ -66,6 +66,7 @@ using namespace Jrd;
 
 typedef void* UDF_ARG;
 
+// Defined in extlib/ib_util.cpp
 extern "C" int ib_util_free(void* ptr);
 
 template <typename T>

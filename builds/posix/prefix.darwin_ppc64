@@ -15,7 +15,6 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
-#$Id: prefix.darwin_ppc64,v 1.5 2008-06-14 22:15:53 asfernandes Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 # To use this file to build 64bit version of Firebird for MacOS 10.5 (Leopard)
