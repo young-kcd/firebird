@@ -1,3 +1,9 @@
+2008-06-18 19:09  dimitr
+
+	* firebird2/src/msgs/system_errors2.sql (1.33):
+
+	SQLSTATE correction, as suggested by Bill.
+
 2008-06-17 15:45  asfernandes
 
 	* firebird2/builds/win32/make_boot.bat (1.40):
