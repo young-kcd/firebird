@@ -699,6 +699,13 @@ COMMIT WORK;
 ('shutdown_timeout', NULL, NULL, NULL, 0, 597, NULL, 'Firebird shutdown is still in progress after the specified timeout', NULL, NULL)
 ('att_handle_busy', NULL, NULL, NULL, 0, 598, NULL, 'Attachment handle is busy', NULL, NULL)
 ('bad_udf_freeit', NULL, NULL, NULL, 0, 599, NULL, 'Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc', NULL, NULL)
+('eds_provider_not_found', NULL, 'ExtDS.cpp', NULL, 0, 600, NULL, 'External Data Source provider ''@1'' not found', NULL, NULL)
+('eds_connection', NULL, 'ExtDS.cpp', NULL, 0, 601, NULL, 'Execute statement error at @1 :\n@2Data source : @3', NULL, NULL)
+('eds_preprocess', NULL, 'ExtDS.cpp', NULL, 0, 602, NULL, 'Execute statement preprocess SQL error', NULL, NULL)
+('eds_stmt_expected', NULL, 'ExtDS.cpp', NULL, 0, 603, NULL, 'Statement expected', NULL, NULL)
+('eds_prm_name_expected', NULL, 'ExtDS.cpp', NULL, 0, 604, NULL, 'Parameter name expected', NULL, NULL)
+('eds_unclosed_comment', NULL, 'ExtDS.cpp', NULL, 0, 605, NULL, 'Unclosed comment found near ''@1''', NULL, NULL)
+('eds_statement', NULL, 'ExtDS.cpp', NULL, 0, 606, NULL, 'Execute statement error at @1 :\n@2Statement : @3\nData source : @4', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
