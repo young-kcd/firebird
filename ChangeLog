@@ -1,3 +1,39 @@
+2008-06-19 14:32  robocop
+
+	* firebird2/src/include/gen/msg_facs.h (1.16):
+
+	Repost this header in accordance with the current codes.epp
+	formatting.
+
+2008-06-19 14:30  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.76),
+	lang_helpers/gds_codes.pas (1.76), src/include/gen/sql_state.h
+	(1.18):
+
+	Sync headers with the latest messages db changes.
+
+2008-06-19 12:46  hvlad
+
+	* firebird2/src/include/gen/: codetext.h (1.85), iberror.h (1.89),
+	msg_facs.h (1.15), msgs.h (1.108), sql_code.h (1.91), sql_state.h
+	(1.17):
+
+	Updated error codes
+
+2008-06-19 12:45  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.12):
+
+	Error messages for EXECUTE STATEMENT
+
+2008-06-19 12:41  hvlad
+
+	* firebird2/src/msgs/: facilities2.sql (1.37), messages2.sql
+	(1.45), system_errors2.sql (1.34):
+
+	Error messages for EXECUTE STATEMENT
+
 2008-06-18 19:09  dimitr
 
 	* firebird2/src/msgs/system_errors2.sql (1.33):
