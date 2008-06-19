@@ -29,14 +29,12 @@
 /*   ISC message facilities   */
 /******************************/
 
-struct _facilities
-{
+struct _facilities {
 	int fac_code;
 	const char* facility;
 };
 
-static const struct _facilities facilities[] =
-{
+static const struct _facilities facilities[] = {
 	{0,  "JRD       "},
 	{3,  "GFIX      "},
 	{7,  "DSQL      "},

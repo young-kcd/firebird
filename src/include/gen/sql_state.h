@@ -620,6 +620,13 @@ static const struct {
 	{335544917, "HYT00"}, // 597 shutdown_timeout 
 	{335544918, "42000"}, // 598 att_handle_busy 
 	{335544919, "39000"}, // 599 bad_udf_freeit 
+	{335544920, "42000"}, // 600 eds_provider_not_found 
+	{335544921, "42000"}, // 601 eds_connection 
+	{335544922, "42000"}, // 602 eds_preprocess 
+	{335544923, "42000"}, // 603 eds_stmt_expected 
+	{335544924, "42000"}, // 604 eds_prm_name_expected 
+	{335544925, "42000"}, // 605 eds_unclosed_comment 
+	{335544926, "42000"}, // 606 eds_statement 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
