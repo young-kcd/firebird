@@ -618,7 +618,7 @@ static const struct {
 	{335544915, "22001"}, // 595 blob_truncation 
 	{335544916, "22003"}, // 596 numeric_out_of_range 
 	{335544917, "HYT00"}, // 597 shutdown_timeout 
-	{335544918, "42000"}, // 598 att_handle_busy 
+	{335544918, "HY010"}, // 598 att_handle_busy 
 	{335544919, "39000"}, // 599 bad_udf_freeit 
 	{335544920, "42000"}, // 600 eds_provider_not_found 
 	{335544921, "42000"}, // 601 eds_connection 

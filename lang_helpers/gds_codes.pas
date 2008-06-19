@@ -632,6 +632,13 @@ const
 	gds_shutdown_timeout                 = 335544917;
 	gds_att_handle_busy                  = 335544918;
 	gds_bad_udf_freeit                   = 335544919;
+	gds_eds_provider_not_found           = 335544920;
+	gds_eds_connection                   = 335544921;
+	gds_eds_preprocess                   = 335544922;
+	gds_eds_stmt_expected                = 335544923;
+	gds_eds_prm_name_expected            = 335544924;
+	gds_eds_unclosed_comment             = 335544925;
+	gds_eds_statement                    = 335544926;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
