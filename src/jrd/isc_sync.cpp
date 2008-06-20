@@ -1710,6 +1710,12 @@ UCHAR* ISC_map_file(
 	HANDLE file_handle, event_handle;
 	int retry_count = 0;
 
+	bool trunc_flag = true;
+	if (length < 0) {
+		length = -length;
+		trunc_flag = false;
+	}
+
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
  */
@@ -1719,9 +1725,6 @@ UCHAR* ISC_map_file(
 
 	ISC_get_host(hostname, sizeof(hostname));
 	sprintf(map_file, filename, hostname);
-
-	if (length < 0)
-		length = -length;
 
 	file_handle = CreateFile(map_file,
 				 GENERIC_READ | GENERIC_WRITE,
@@ -1805,7 +1808,7 @@ UCHAR* ISC_map_file(
 	}
 
 	DWORD fdw_create;
-	if (init_flag && file_exists)
+	if (init_flag && file_exists && trunc_flag)
 		fdw_create = TRUNCATE_EXISTING | OPEN_ALWAYS;
 	else
 		fdw_create = OPEN_ALWAYS;

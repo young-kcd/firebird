@@ -348,7 +348,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	SH_MEM_T shmem_data;
 
-	SLONG LOCK_size_mapped = 0;			/* Use length of existing segment */
+	SLONG LOCK_size_mapped = 1024*1024;	/* NS: we cannot use 0, otherwise the file 
+											will be truncated when engine is not running 
+											and engine globals do not exist anymore */
 
 	ISC_STATUS_ARRAY status_vector;
 	
