@@ -1,3 +1,18 @@
+2008-06-20 14:20  alexpeshkoff
+
+	* firebird2/src/jrd/dfw.epp (1.239):
+
+	Fixed CORE-1914: Problem creating table leave the database in
+	inconsistent state
+
+2008-06-20 05:52  skidder
+
+	* firebird2/src/: jrd/isc_sync.cpp (1.136), lock/print.cpp (1.70):
+
+	In firebird 2.1/2.5 fb_lock_print was corrupting (truncating) lock
+	table if run against non-working engine or when -F option is used.
+	This was a regression from Firebird 2.0 for Unix platforms
+
 2008-06-19 14:32  robocop
 
 	* firebird2/src/include/gen/msg_facs.h (1.16):
