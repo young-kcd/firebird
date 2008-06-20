@@ -4221,8 +4221,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		count = MAX(count, tfb->tfb_id);
 
 	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
-	if (version)
-		format->fmt_version = *version;
+	format->fmt_version = version ? *version : 0;
 
 /* Fill in the format block from the temporary field blocks */
 
@@ -4558,6 +4557,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
+						if (REL.RDB$FORMAT.NULL)
+						{
+							DPM_delete_relation(tdbb, relation);
+						}
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
 								 isc_arg_string, ERR_cstring(work->dfw_name), 0);
@@ -4568,6 +4571,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
+						if (REL.RDB$FORMAT.NULL)
+						{
+							DPM_delete_relation(tdbb, relation);
+						}
 						ERR_post_nothrow(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
 								 isc_arg_string, ERR_cstring(work->dfw_name), 0);
@@ -4609,6 +4616,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (null_view && !physical_fields)
 				{
 					EXE_unwind(tdbb, request_fmt1);
+					if (REL.RDB$FORMAT.NULL)
+					{
+						DPM_delete_relation(tdbb, relation);
+					}
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_table_name,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
@@ -4619,10 +4630,11 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				BLB_close(tdbb, blob);
-				USHORT version = REL.RDB$FORMAT;
+				USHORT version = REL.RDB$FORMAT.NULL ? 0 : REL.RDB$FORMAT;
 				version++;
 				relation->rel_current_format = make_format(tdbb, relation,
 														   &version, stack);
+				REL.RDB$FORMAT.NULL = FALSE;
 				REL.RDB$FORMAT = version;
 			END_MODIFY;
 		END_FOR;
