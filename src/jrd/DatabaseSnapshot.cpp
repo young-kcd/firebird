@@ -468,8 +468,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		reader = dumpData(tdbb, false);
 	}
 
-	reader->rewind();
-
 	// Parse the dump
 	RecordBuffer* buffer = NULL;
 	Record* record = NULL;
@@ -477,7 +475,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	int rid = 0;
 	bool fields_processed = false, allowed = false, our_dbb = false;
 
-	while (!reader->isEof())
+	for (reader->rewind(); !reader->isEof(); reader->moveNext())
 	{
 		if (reader->getClumpTag() == TAG_DBB)
 		{
@@ -486,8 +484,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			memcpy(&guid, reader->getBytes(), sizeof(FB_GUID));
 
 			our_dbb = !memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
-
-			reader->moveNext();
 
 			if (fields_processed)
 			{
@@ -498,7 +494,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		else if (reader->getClumpTag() == TAG_RECORD)
 		{
 			rid = reader->getInt();
-			reader->moveNext();
 
 			if (fields_processed)
 			{
@@ -543,8 +538,6 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 			const char* source = checkNull(rid, fid, (char*) reader->getBytes(), length);
 
-			reader->moveNext();
-
 			if (rid == rel_mon_database) // special case for MON$DATABASE
 			{
 				if (fid == f_mon_db_name)
@@ -554,13 +547,13 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 				if (allowed && our_dbb)
 				{
-					putField(record, fid, source, length);
+					putField(record, fid, reader, source == NULL);
 					fields_processed = true;
 				}
 			}
 			else if (allowed) // generic logic that covers all other relations
 			{
-				putField(record, fid, source, length);
+				putField(record, fid, reader, source == NULL);
 				fields_processed = true;
 			}
 		}
@@ -625,26 +618,26 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(Record* record, int id, const void* source, size_t length)
+void DatabaseSnapshot::putField(Record* record, int id, const Firebird::ClumpletReader* reader, bool makeNull)
 {
 	fb_assert(record);
 
 	const Format* const format = record->rec_format;
 	fb_assert(format && id < format->fmt_count);
 
-	const dsc desc = format->fmt_desc[id];
-	UCHAR* const address = record->rec_data + (IPTR) desc.dsc_address;
-
-	if (!source)
+	if (makeNull)
 	{
 		SET_NULL(record, id);
 		return;
 	}
 
-	if (length == sizeof(SINT64) && desc.dsc_dtype == dtype_long)
+	const dsc desc = format->fmt_desc[id];
+	UCHAR* const address = record->rec_data + (IPTR) desc.dsc_address;
+
+	if (reader->getClumpLength() == sizeof(SINT64) && desc.dsc_dtype == dtype_long)
 	{
 		// special case: translate 64-bit global ID into 32-bit local ID
-		const SINT64 global_id = *(SINT64*) source;
+		const SINT64 global_id = reader->getBigInt();
 		SLONG local_id = 0;
 		if (!idMap.get(global_id, local_id))
 		{
@@ -659,18 +652,18 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 	switch (desc.dsc_dtype) {
 	case dtype_text:
 		{
-			const char* const string = (char*) source;
+			const char* const string = (char*) reader->getBytes();
 			const size_t max_length = desc.dsc_length;
-			length = MIN(length, max_length);
+			const size_t length = MIN(reader->getClumpLength(), max_length);
 			memcpy(address, string, length);
 			memset(address + length, ' ', max_length - length);
 		}
 		break;
 	case dtype_varying:
 		{
-			const char* const string = (char*) source;
+			const char* const string = (char*) reader->getBytes();
 			const size_t max_length = desc.dsc_length - sizeof(USHORT);
-			length = MIN(length, max_length);
+			const size_t length = MIN(reader->getClumpLength(), max_length);
 			vary* varying = (vary*) address;
 			varying->vary_length = length;
 			memcpy(varying->vary_string, string, length);
@@ -678,30 +671,30 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 		break;
 
 	case dtype_short:
-		*(SSHORT*) address = *(SSHORT*) source;
+		*(SSHORT*) address = reader->getBigInt();
 		break;
 	case dtype_long:
-		*(SLONG*) address = *(SLONG*) source;
+		*(SLONG*) address = reader->getBigInt();
 		break;
 	case dtype_int64:
-		*(SINT64*) address = *(SINT64*) source;
+		*(SINT64*) address = reader->getBigInt();
 		break;
 
 	case dtype_real:
-		*(float*) address = *(float*) source;
+		*(float*) address = *(float*) reader->getBytes();
 		break;
 	case dtype_double:
-		*(double*) address = *(double*) source;
+		*(double*) address = *(double*) reader->getBytes();
 		break;
 
 	case dtype_sql_date:
-		*(ISC_DATE*) address = *(ISC_DATE*) source;
+		*(ISC_DATE*) address = *(ISC_DATE*) reader->getBytes();
 		break;
 	case dtype_sql_time:
-		*(ISC_TIME*) address = *(ISC_TIME*) source;
+		*(ISC_TIME*) address = *(ISC_TIME*) reader->getBytes();
 		break;
 	case dtype_timestamp:
-		*(ISC_TIMESTAMP*) address = *(ISC_TIMESTAMP*) source;
+		*(ISC_TIMESTAMP*) address = *(ISC_TIMESTAMP*) reader->getBytes();
 		break;
 
 	case dtype_blob:
@@ -736,9 +729,9 @@ void DatabaseSnapshot::putField(Record* record, int id, const void* source, size
 			blb* blob = BLB_create2(tdbb, tdbb->getTransaction(), &blob_id,
 									bpb.getCount(), bpb.begin());
 
-			length = MIN(length, MAX_USHORT);
+			const size_t length = MIN(reader->getClumpLength(), MAX_USHORT);
 
-			BLB_put_segment(tdbb, blob, (UCHAR*) source, length);
+			BLB_put_segment(tdbb, blob, (UCHAR*) reader->getBytes(), length);
 			BLB_close(tdbb, blob);
 
 			*(bid*) address = blob_id;
