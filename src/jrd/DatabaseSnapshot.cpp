@@ -731,7 +731,7 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 
 			const size_t length = MIN(reader->getClumpLength(), MAX_USHORT);
 
-			BLB_put_segment(tdbb, blob, (UCHAR*) reader->getBytes(), length);
+			BLB_put_segment(tdbb, blob, reader->getBytes(), length);
 			BLB_close(tdbb, blob);
 
 			*(bid*) address = blob_id;
