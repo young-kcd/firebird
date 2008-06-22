@@ -1264,6 +1264,12 @@ C --
       PARAMETER (GDS__eds_unclosed_comment             = 335544925)
       INTEGER*4 GDS__eds_statement                   
       PARAMETER (GDS__eds_statement                    = 335544926)
+      INTEGER*4 GDS__eds_input_prm_mismatch          
+      PARAMETER (GDS__eds_input_prm_mismatch           = 335544927)
+      INTEGER*4 GDS__eds_output_prm_mismatch         
+      PARAMETER (GDS__eds_output_prm_mismatch          = 335544928)
+      INTEGER*4 GDS__eds_input_prm_not_set           
+      PARAMETER (GDS__eds_input_prm_not_set            = 335544929)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

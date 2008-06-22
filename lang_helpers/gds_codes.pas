@@ -639,6 +639,9 @@ const
 	gds_eds_prm_name_expected            = 335544924;
 	gds_eds_unclosed_comment             = 335544925;
 	gds_eds_statement                    = 335544926;
+	gds_eds_input_prm_mismatch           = 335544927;
+	gds_eds_output_prm_mismatch          = 335544928;
+	gds_eds_input_prm_not_set            = 335544929;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

@@ -627,6 +627,9 @@ static const struct {
 	{335544924, "42000"}, // 604 eds_prm_name_expected 
 	{335544925, "42000"}, // 605 eds_unclosed_comment 
 	{335544926, "42000"}, // 606 eds_statement 
+	{335544927, "42000"}, // 607 eds_input_prm_mismatch 
+	{335544928, "42000"}, // 608 eds_output_prm_mismatch 
+	{335544929, "42000"}, // 609 eds_input_prm_not_set 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
