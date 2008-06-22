@@ -1261,6 +1261,12 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	shmem_data->sh_mem_length_mapped = length;
 	shmem_data->sh_mem_handle = fd;
 
+	if (!shmem_data->sh_mem_length_mapped)
+	{
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		return NULL;
+	}
+
 /* Try to get an exclusive lock on the lock file.  This will
    fail if somebody else has the exclusive lock */
 
@@ -1757,7 +1763,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	bool init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? false: true;
+	bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
 
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
@@ -1841,12 +1847,24 @@ UCHAR* ISC_map_file(
 				0,
 				2 * sizeof (SLONG),
 				expanded_filename);
-	if (header_obj == NULL) {
+	if (header_obj == NULL) 
+	{
 		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		return NULL;
 	}
+	else
+		if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
+		{
+			/* We have made header_obj but we are not initializing
+			 Previous owner is closed and clear all header_data.
+			 One need to retry */
+			CloseHandle(header_obj);
+			CloseHandle(event_handle);
+			CloseHandle(file_handle);
+			goto retry;
+		}
 
 	SLONG* header_address =
 		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
@@ -1908,6 +1926,13 @@ UCHAR* ISC_map_file(
 
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
+
+	if (!shmem_data->sh_mem_length_mapped)
+	{
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		return NULL;
+	}
+
 	shmem_data->sh_mem_handle = file_handle;
 	shmem_data->sh_mem_object = file_obj;
 	shmem_data->sh_mem_interest = event_handle;
@@ -2760,6 +2785,12 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = new_length;
 
+	if (!shmem_data->sh_mem_length_mapped)
+	{
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		return NULL;
+	}
+
 	return address;
 }
 #endif
@@ -2851,6 +2882,12 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 	shmem_data->sh_mem_address = static_cast<UCHAR*>(address);
 	shmem_data->sh_mem_length_mapped = new_length;
 	shmem_data->sh_mem_object = file_obj;
+
+	if (!shmem_data->sh_mem_length_mapped)
+	{
+		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
+		return NULL;
+	}
 
 	return reinterpret_cast<UCHAR*>(address);
 }
