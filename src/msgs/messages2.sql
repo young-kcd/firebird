@@ -706,6 +706,9 @@ COMMIT WORK;
 ('eds_prm_name_expected', NULL, 'ExtDS.cpp', NULL, 0, 604, NULL, 'Parameter name expected', NULL, NULL)
 ('eds_unclosed_comment', NULL, 'ExtDS.cpp', NULL, 0, 605, NULL, 'Unclosed comment found near ''@1''', NULL, NULL)
 ('eds_statement', NULL, 'ExtDS.cpp', NULL, 0, 606, NULL, 'Execute statement error at @1 :\n@2Statement : @3\nData source : @4', NULL, NULL)
+('eds_input_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 607, NULL, 'Input parameters mismatch', NULL, NULL)
+('eds_output_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 608, NULL, 'Output parameters mismatch', NULL, NULL)
+('eds_input_prm_not_set', NULL, 'ExtDS.cpp', NULL, 0, 609, NULL, 'Input parameter ''@1'' have no value set', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

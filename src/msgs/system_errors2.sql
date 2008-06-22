@@ -607,6 +607,9 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 0, 604, 'eds_prm_name_expected', NULL, NULL)
 (-901, '42', '000', 0, 605, 'eds_unclosed_comment', NULL, NULL)
 (-901, '42', '000', 0, 606, 'eds_statement', NULL, NULL)
+(-901, '42', '000', 0, 607, 'eds_input_prm_mismatch', NULL, NULL)
+(-901, '42', '000', 0, 608, 'eds_output_prm_mismatch', NULL, NULL)
+(-901, '42', '000', 0, 609, 'eds_input_prm_not_set', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

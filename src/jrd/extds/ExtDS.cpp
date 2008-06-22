@@ -1038,7 +1038,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error) {
-		status_exception::raise(isc_random, isc_arg_string, "input parameters mismatch", 0);
+		// Input parameters mismatch
+		status_exception::raise(isc_eds_input_prm_mismatch, isc_arg_end);
 	}
 
 	if (m_sqlParamNames.getCount())
@@ -1060,9 +1061,8 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 
 			if (num == count) 
 			{
-				string err;
-				err.printf("Parameter ''%s'' have no value set", sqlName->c_str());
-				status_exception::raise(isc_random, isc_arg_string, ERR_cstring(err), 0);
+				// Input parameter ''@1'' have no value set
+				status_exception::raise(isc_eds_input_prm_not_set, isc_arg_string, ERR_cstring(*sqlName), isc_arg_end);
 			}
 
 			sqlParams[sqlNum] = params[num];
@@ -1081,7 +1081,8 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 	if (count != getInputs()) 
 	{
 		m_error = true;
-		status_exception::raise(isc_random, isc_arg_string, "input parameters mismatch", 0);
+		// Input parameters mismatch
+		status_exception::raise(isc_eds_input_prm_mismatch, isc_arg_end);
 	}
 
 	if (!count)
@@ -1141,7 +1142,8 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 	if (count != getOutputs())
 	{
 		m_error = true;
-		status_exception::raise(isc_random, isc_arg_string, "output parameters mismatch", 0);
+		// Output parameters mismatch
+		status_exception::raise(isc_eds_output_prm_mismatch, isc_arg_end);
 	}
 
 	if (!count)
