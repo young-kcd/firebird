@@ -424,7 +424,7 @@ void Connection::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere)
 
 	// Execute statement error at @1 :\n@2Data source : @3
 	ERR_post(isc_eds_connection, 
-		isc_arg_string, sWhere, 
+		isc_arg_string, ERR_cstring(sWhere), 
 		isc_arg_string, ERR_cstring(rem_err),
 		isc_arg_string, ERR_cstring(getDataSourceName()),
 		isc_arg_end);
@@ -1306,9 +1306,9 @@ void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
 	ERR_post(isc_eds_statement,
-		isc_arg_string, sWhere,
+		isc_arg_string, ERR_cstring(sWhere),
 		isc_arg_string, ERR_cstring(rem_err),
-		isc_arg_string, ERR_cstring(sQuery ? sQuery->substr(0, 255) : m_sql),
+		isc_arg_string, ERR_cstring(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)),
 		isc_arg_string, ERR_cstring(m_connection.getDataSourceName()),
 		isc_arg_end);
 }
