@@ -1025,7 +1025,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	else
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
-	bool isNumeric = numeric == "1";
+	const bool isNumeric = numeric == "1";
 	if (isNumeric)
 	{
 		icu->ucolSetAttribute(compareCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
