@@ -43,23 +43,31 @@
 // It will return big strange value in case of invalid define
 
 /*
-// ASF: Currently, all little-endian are SWAP_DOUBLE and big-endian aren't.
+// ASF: Currently, all little-endian are FB_SWAP_DOUBLE and big-endian aren't.
 // AP: Left this lines as a reference in case some CPU in the future do not follow mentioned rule.
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
-#define		SWAP_DOUBLE 1
+#define		FB_SWAP_DOUBLE 1
 #elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
-#define		SWAP_DOUBLE 0
+#define		FB_SWAP_DOUBLE 0
 #else
-#error "Define SWAP_DOUBLE for your platform correctly !"
+#error "Define FB_SWAP_DOUBLE for your platform correctly !"
 #endif
 */
 
-#ifndef SWAP_DOUBLE
+#ifndef FB_SWAP_DOUBLE
 #ifdef WORDS_BIGENDIAN
-#define SWAP_DOUBLE 0
+#define FB_SWAP_DOUBLE 0
 #else
-#define SWAP_DOUBLE 1
+#define FB_SWAP_DOUBLE 1
 #endif
+#endif
+
+#if FB_SWAP_DOUBLE
+#define FB_LONG_DOUBLE_FIRST 1
+#define FB_LONG_DOUBLE_SECOND 0
+#else
+#define FB_LONG_DOUBLE_FIRST 0
+#define FB_LONG_DOUBLE_SECOND 1
 #endif
 
 #ifdef BURP
@@ -307,43 +315,27 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 	union {
 		double temp_double;
 		SLONG temp_long[2];
-		SSHORT temp_short[4]; // Not used.
 	} temp;
+
+	fb_assert(sizeof(double) == sizeof(temp));
 
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
-#if SWAP_DOUBLE
-		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
-			PUTLONG(xdrs, &temp.temp_long[0]))
+		if (PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) &&
+			PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
 		{
 			return TRUE;
 		}
 		return FALSE;
-#else
-		if (PUTLONG(xdrs, &temp.temp_long[0]) &&
-			PUTLONG(xdrs, &temp.temp_long[1]))
-		{
-			return TRUE;
-		}
-		return FALSE;
-#endif
 
 	case XDR_DECODE:
-#if SWAP_DOUBLE
-		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
-			!GETLONG(xdrs, &temp.temp_long[0]))
+		if (!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) ||
+			!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
 		{
 			return FALSE;
 		}
-#else
-		if (!GETLONG(xdrs, &temp.temp_long[0]) ||
-			!GETLONG(xdrs, &temp.temp_long[1]))
-		{
-			return FALSE;
-		}
-#endif
 		*ip = temp.temp_double;
 		return TRUE;
 
