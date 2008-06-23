@@ -1,3 +1,60 @@
+2008-06-23 15:38  alexpeshkoff
+
+	* firebird2/src/remote/xdr.cpp (1.41):
+
+	misc
+
+2008-06-23 14:18  robocop
+
+	* firebird2/src/jrd/unicode_util.cpp (1.38):
+
+	Misc.
+
+2008-06-23 10:01  alexpeshkoff
+
+	* firebird2/src/remote/xdr.cpp (1.40):
+
+	Make SWAP_DOUBLE endianess dependent
+
+2008-06-22 22:08  asfernandes
+
+	* firebird2/: doc/README.intl (1.10), src/jrd/unicode_util.cpp
+	(1.37), src/jrd/unicode_util.h (1.14):
+
+	Feature CORE-1945 - Custom attribute for collation to sort numbers
+	in numeric order
+
+2008-06-22 19:31  roman-simakov
+
+	* firebird2/src/jrd/isc_sync.cpp (1.137):
+
+	Fixed server hanging while lock table is initializing by one
+	attachment and one previous attachment is disconnecting. Thanks to
+	Nikolay.
+
+2008-06-22 09:43  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.14):
+
+	Correction
+
+2008-06-22 09:37  hvlad
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.77),
+	lang_helpers/gds_codes.pas (1.77), src/include/gen/codetext.h
+	(1.86), src/include/gen/iberror.h (1.90), src/include/gen/msgs.h
+	(1.109), src/include/gen/sql_code.h (1.92),
+	src/include/gen/sql_state.h (1.19):
+
+	Updated error codes
+
+2008-06-22 09:34  hvlad
+
+	* firebird2/src/: jrd/extds/ExtDS.cpp (1.13), msgs/facilities2.sql
+	(1.38), msgs/messages2.sql (1.46), msgs/system_errors2.sql (1.35):
+
+	More error messages for EXECUTE STATEMENT
+
 2008-06-21 04:25  asfernandes
 
 	* firebird2/src/lock/print.cpp (1.71):
