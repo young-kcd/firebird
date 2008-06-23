@@ -41,13 +41,25 @@
 //   entry_point 'IB_UDF_abs' module_name 'ib_udf';
 // select abs2(2.0 / 3.0) from rdb$database;
 // It will return big strange value in case of invalid define
+
+/*
 // ASF: Currently, all little-endian are SWAP_DOUBLE and big-endian aren't.
+// AP: Left this lines as a reference in case some CPU in the future do not follow mentioned rule.
 #if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
-#define		SWAP_DOUBLE
+#define		SWAP_DOUBLE 1
 #elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
-#undef		SWAP_DOUBLE
+#define		SWAP_DOUBLE 0
 #else
 #error "Define SWAP_DOUBLE for your platform correctly !"
+#endif
+*/
+
+#ifndef SWAP_DOUBLE
+#ifdef WORDS_BIGENDIAN
+#define SWAP_DOUBLE 0
+#else
+#define SWAP_DOUBLE 1
+#endif
 #endif
 
 #ifdef BURP
@@ -302,7 +314,7 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
-#ifdef SWAP_DOUBLE
+#if SWAP_DOUBLE
 		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
 			PUTLONG(xdrs, &temp.temp_long[0]))
 		{
@@ -319,7 +331,7 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 #endif
 
 	case XDR_DECODE:
-#ifdef SWAP_DOUBLE
+#if SWAP_DOUBLE
 		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
 			!GETLONG(xdrs, &temp.temp_long[0]))
 		{
