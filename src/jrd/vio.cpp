@@ -2540,7 +2540,6 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 			pool = dbb->dbb_permanent;
 		}
 		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) Record(*pool);
-		record->rec_length = format->fmt_length;
 	}
 	else if (record->rec_length < format->fmt_length) {
 		Record* const old = record;
@@ -2552,13 +2551,13 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 		else
 			record = realloc_record(rpb->rpb_record, format->fmt_length);
 
-		record->rec_length = format->fmt_length;
 		if (rpb->rpb_prior == old) {
 			rpb->rpb_prior = record;
 		}
 	}
 
 	record->rec_format = format;
+	record->rec_length = format->fmt_length;
 
 	return record;
 }
