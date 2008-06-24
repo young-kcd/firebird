@@ -68,6 +68,10 @@ public:
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
 	const UCHAR* getBytes() const;
+	double getDouble() const;
+	ISC_TIMESTAMP getTimeStamp() const;
+	ISC_TIME getTime() const { return getInt(); }
+	ISC_DATE getDate() const { return getInt(); }
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
@@ -129,6 +133,8 @@ private:
 
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
+
+	static SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length);
 };
 
 } // namespace Firebird

@@ -33,43 +33,6 @@
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
 
-// 30 Dec 2002. Nickolay Samofatov 
-// This needs to be checked for all supported platforms
-// The simpliest way to check it is to issue from correct client:
-// declare external function abs2 double precision
-//   returns double precision by value
-//   entry_point 'IB_UDF_abs' module_name 'ib_udf';
-// select abs2(2.0 / 3.0) from rdb$database;
-// It will return big strange value in case of invalid define
-
-/*
-// ASF: Currently, all little-endian are FB_SWAP_DOUBLE and big-endian aren't.
-// AP: Left this lines as a reference in case some CPU in the future do not follow mentioned rule.
-#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
-#define		FB_SWAP_DOUBLE 1
-#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
-#define		FB_SWAP_DOUBLE 0
-#else
-#error "Define FB_SWAP_DOUBLE for your platform correctly !"
-#endif
-*/
-
-#ifndef FB_SWAP_DOUBLE
-#ifdef WORDS_BIGENDIAN
-#define FB_SWAP_DOUBLE 0
-#else
-#define FB_SWAP_DOUBLE 1
-#endif
-#endif
-
-#if FB_SWAP_DOUBLE
-#define FB_LONG_DOUBLE_FIRST 1
-#define FB_LONG_DOUBLE_SECOND 0
-#else
-#define FB_LONG_DOUBLE_FIRST 0
-#define FB_LONG_DOUBLE_SECOND 1
-#endif
-
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
 inline UCHAR* XDR_ALLOC(ULONG size) {

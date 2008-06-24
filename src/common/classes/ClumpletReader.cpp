@@ -484,18 +484,10 @@ const UCHAR* ClumpletReader::getBytes() const
 	return getBuffer() + cur_offset + getClumpletSize(true, true, false);
 }
 
-SLONG ClumpletReader::getInt() const
+SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 {
-	const UCHAR* ptr = getBytes();
-	size_t length = getClumpLength();
-
-	if (length > 4) {
-		invalid_structure("length of integer exceeds 4 bytes");
-		return 0;
-	}
-
 	// This code is taken from gds__vax_integer
-	SLONG value = 0;
+	SINT64 value = 0;
 	int shift = 0;
 	while (length > 0) {
 		--length;
@@ -506,9 +498,60 @@ SLONG ClumpletReader::getInt() const
 	return value;
 }
 
+SLONG ClumpletReader::getInt() const
+{
+	size_t length = getClumpLength();
+
+	if (length > 4) {
+		invalid_structure("length of integer exceeds 4 bytes");
+		return 0;
+	}
+
+	return fromVaxInteger(getBytes(), length);
+}
+
+double ClumpletReader::getDouble() const
+{
+
+	if (getClumpLength() != sizeof(double)) {
+		invalid_structure("length of double must be equal 8 bytes");
+		return 0;
+	}
+
+	// based on XDR code
+	union {
+		double temp_double;
+		SLONG temp_long[2];
+	} temp;
+
+	fb_assert(sizeof(double) == sizeof(temp));
+
+	const UCHAR* ptr = getBytes();
+	temp.temp_long[FB_LONG_DOUBLE_FIRST] = fromVaxInteger(ptr, sizeof(SLONG));
+	temp.temp_long[FB_LONG_DOUBLE_SECOND] = fromVaxInteger(ptr + sizeof(SLONG), sizeof(SLONG));
+
+	return temp.temp_double;
+}
+
+ISC_TIMESTAMP ClumpletReader::getTimeStamp() const
+{
+	ISC_TIMESTAMP value;
+
+	if (getClumpLength() != sizeof(ISC_TIMESTAMP)) {
+		invalid_structure("length of ISC_TIMESTAMP must be equal 8 bytes");
+		value.timestamp_date = 0;
+		value.timestamp_time = 0;
+		return value;
+	}
+
+	const UCHAR* ptr = getBytes();
+	value.timestamp_date = fromVaxInteger(ptr, sizeof(SLONG));
+	value.timestamp_time = fromVaxInteger(ptr + sizeof(SLONG), sizeof(SLONG));
+	return value;
+}
+
 SINT64 ClumpletReader::getBigInt() const
 {
-	const UCHAR* ptr = getBytes();
 	size_t length = getClumpLength();
 
 	if (length > 8) {
@@ -516,16 +559,7 @@ SINT64 ClumpletReader::getBigInt() const
 		return 0;
 	}
 
-	// This code is taken from isc_portable_integer
-	SINT64 value = 0;
-	int shift = 0;
-	while (length > 0) {
-		--length;
-		value += ((SINT64) *ptr++) << shift;
-		shift += 8;
-	}
-
-	return value;
+	return fromVaxInteger(getBytes(), length);
 }
 
 string& ClumpletReader::getString(string& str) const

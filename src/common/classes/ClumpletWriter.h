@@ -63,6 +63,10 @@ public:
 	void insertString(UCHAR tag, const char* str, size_t length);
 	void insertByte(UCHAR tag, const UCHAR byte);
 	void insertTag(UCHAR tag);
+	void insertDouble(UCHAR tag, double value);
+	void insertTimeStamp(UCHAR tag, ISC_TIMESTAMP value);
+	void insertTime(UCHAR tag, ISC_TIME value) { insertInt(tag, value); }
+	void insertDate(UCHAR tag, ISC_DATE value) { insertInt(tag, value); }
 	void insertEndMarker(UCHAR tag);
 
     // Delete currently selected clumplet from buffer
@@ -87,6 +91,7 @@ private:
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 	
 	void initNewBuffer(UCHAR tag);
+	static void toVaxInteger(UCHAR* ptr, size_t length, SINT64 value);
 };
 
 } // namespace Firebird
