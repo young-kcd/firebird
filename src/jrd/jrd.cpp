@@ -5793,21 +5793,28 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 							   Attachment* attachment, 
 							   Database* dbb)
 {
-	ThreadStatusGuard temp_status(tdbb);
-	
-	dbb->dbb_flags &= ~DBB_being_opened;
-
-	if (attachment)
+	try
 	{
-		release_attachment(tdbb, attachment);
-	}
+		ThreadStatusGuard temp_status(tdbb);
+		
+		dbb->dbb_flags &= ~DBB_being_opened;
 
-	if (dbb->checkHandle())
-	{
-		if (!dbb->dbb_attachments)
+		if (attachment)
 		{
-			shutdown_database(dbb, true);
+			release_attachment(tdbb, attachment);
 		}
+
+		if (dbb->checkHandle())
+		{
+			if (!dbb->dbb_attachments)
+			{
+				shutdown_database(dbb, true);
+			}
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		// no-op
 	}
 
 	Firebird::stuff_exception(userStatus, ex);
