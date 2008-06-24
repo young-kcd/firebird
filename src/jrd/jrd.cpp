@@ -677,6 +677,11 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// Ccheck for correct credentials supplied
 		getUserInfo(userId, options);
 	}
+	catch (const DelayFailedLogin& ex)
+	{
+		ex.sleep();
+		return ex.stuff_exception(user_status);
+	}
 	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(user_status);
@@ -707,6 +712,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	Database* dbb = NULL;
+	Firebird::MutexEnsureUnlock guardDatabases(databases_mutex);
+	guardDatabases.enter();
 
 	try
 	{
@@ -1214,7 +1221,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// if there was an error, the status vector is all set
 
-	databases_mutex->leave();
+	guardDatabases.leave();
 
 	if (options.dpb_sweep & isc_dpb_records)
 	{
@@ -1260,18 +1267,12 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 	}
 
-	// databases_mutex->leave();
+	// guardDatabases.leave();
 
 	*handle = attachment;	
 	attachment->att_mutex.leave();
 
 	}	// try
-	catch (const DelayFailedLogin& ex)
-	{
-		const ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
-		ex.sleep();
-		return s;
-	}
 	catch (const Firebird::Exception& ex)
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
@@ -1657,6 +1658,11 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		// Check for correct credentials supplied
 		getUserInfo(userId, options);
 	}
+	catch (const DelayFailedLogin& ex)
+	{
+		ex.sleep();
+		return ex.stuff_exception(user_status);
+	}
 	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(user_status);
@@ -1687,6 +1693,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	} 
 
 	Database* dbb = NULL;
+	Firebird::MutexEnsureUnlock guardDatabases(databases_mutex);
+	guardDatabases.enter();
 
 	try
 	{
@@ -1958,18 +1966,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_backup_manager->dbCreating = false;
 
-	databases_mutex->leave();
+	guardDatabases.leave();
 
 	*handle = attachment;
 	attachment->att_mutex.leave();
 
 	}	// try
-	catch (const DelayFailedLogin& ex)
-	{
-		const ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
-		ex.sleep();
-		return s;
-	}
 	catch (const Firebird::Exception& ex)
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
@@ -4606,6 +4608,7 @@ static Database* init(thread_db* tdbb,
  * Functional description
  *	Initialize for database access.  First call from both CREATE and
  *	OPEN.
+ *	Upon entry mutex databases_mutex must be locked.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -4623,104 +4626,94 @@ static Database* init(thread_db* tdbb,
 
 	engineStartup.init();
 
-	databases_mutex->enter();
-
 	Database* dbb = NULL;
 
-	try
-	{
-		// Check to see if the database is already actively attached
+	// Check to see if the database is already actively attached
 
 #ifdef SUPERSERVER
-		for (dbb = databases; dbb; dbb = dbb->dbb_next)
+	for (dbb = databases; dbb; dbb = dbb->dbb_next)
+	{
+		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+			 (dbb->dbb_filename == expanded_filename))
 		{
-			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-				 (dbb->dbb_filename == expanded_filename))
-			{
-				if (attach_flag) 
-					return dbb;
+			if (attach_flag) 
+				return dbb;
 
-				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, "DATABASE", 0);
-			}
+			ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, "DATABASE", 0);
 		}
+	}
 #endif
 
-		dbb = Database::create();
-		tdbb->setDatabase(dbb);
+	dbb = Database::create();
+	tdbb->setDatabase(dbb);
 
-		dbb->dbb_bufferpool = dbb->createPool();
+	dbb->dbb_bufferpool = dbb->createPool();
 
-		// provide context pool for the rest stuff
-		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	// provide context pool for the rest stuff
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-		dbb->dbb_next = databases;
-		databases = dbb;
+	dbb->dbb_next = databases;
+	databases = dbb;
 
-		dbb->dbb_flags |= DBB_exclusive;
-		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
+	dbb->dbb_flags |= DBB_exclusive;
+	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
-		GenerateGuid(&dbb->dbb_guid);
+	GenerateGuid(&dbb->dbb_guid);
 
-		// set a garbage collection policy
+	// set a garbage collection policy
 
-		if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
+	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
+	{
+		Firebird::string gc_policy = Config::getGCPolicy();
+		gc_policy.lower();
+		if (gc_policy == GCPolicyCooperative) {
+			dbb->dbb_flags |= DBB_gc_cooperative;
+		}
+		else if (gc_policy == GCPolicyBackground) {
+			dbb->dbb_flags |= DBB_gc_background;
+		}
+		else if (gc_policy == GCPolicyCombined) {
+			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
+		}
+		else // config value is invalid, use default
 		{
-			Firebird::string gc_policy = Config::getGCPolicy();
-			gc_policy.lower();
-			if (gc_policy == GCPolicyCooperative) {
+			if (GCPolicyDefault == GCPolicyCooperative) {
 				dbb->dbb_flags |= DBB_gc_cooperative;
 			}
-			else if (gc_policy == GCPolicyBackground) {
+			else if (GCPolicyDefault == GCPolicyBackground) {
 				dbb->dbb_flags |= DBB_gc_background;
 			}
-			else if (gc_policy == GCPolicyCombined) {
+			else if (GCPolicyDefault == GCPolicyCombined) {
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 			}
-			else // config value is invalid, use default
-			{
-				if (GCPolicyDefault == GCPolicyCooperative) {
-					dbb->dbb_flags |= DBB_gc_cooperative;
-				}
-				else if (GCPolicyDefault == GCPolicyBackground) {
-					dbb->dbb_flags |= DBB_gc_background;
-				}
-				else if (GCPolicyDefault == GCPolicyCombined) {
-					dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
-				}
-				else 
-					fb_assert(false);
-			}
+			else 
+				fb_assert(false);
 		}
-
-		// Initialize the lock manager
-
-		dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
-
-		// Initialize a number of subsystems
-
-		TRA_init(dbb);
-
-		// Lookup some external "hooks"
-
-		PluginManager::Plugin crypt_lib =
-			PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
-		if (crypt_lib) {
-			Firebird::string encrypt_entrypoint(ENCRYPT);
-			Firebird::string decrypt_entrypoint(DECRYPT);
-			dbb->dbb_encrypt =
-				(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
-			dbb->dbb_decrypt =
-				(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
-		}
-
-		INTL_init(tdbb);
 	}
-	catch (const Firebird::Exception&)
-	{
-		databases_mutex->leave();
-		throw;
+
+	// Initialize the lock manager
+
+	dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
+
+	// Initialize a number of subsystems
+
+	TRA_init(dbb);
+
+	// Lookup some external "hooks"
+
+	PluginManager::Plugin crypt_lib =
+		PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
+	if (crypt_lib) {
+		Firebird::string encrypt_entrypoint(ENCRYPT);
+		Firebird::string decrypt_entrypoint(DECRYPT);
+		dbb->dbb_encrypt =
+			(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
+		dbb->dbb_decrypt =
+			(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
 	}
+
+	INTL_init(tdbb);
 
 	return dbb;
 }
@@ -5800,31 +5793,22 @@ static ISC_STATUS unwindAttach(const Firebird::Exception& ex,
 							   Attachment* attachment, 
 							   Database* dbb)
 {
-	try
-	{
-		ThreadStatusGuard temp_status(tdbb);
-		
-		dbb->dbb_flags &= ~DBB_being_opened;
+	ThreadStatusGuard temp_status(tdbb);
+	
+	dbb->dbb_flags &= ~DBB_being_opened;
 
-		if (attachment)
-		{
-			release_attachment(tdbb, attachment);
-		}
-
-		if (dbb->checkHandle())
-		{
-			if (!dbb->dbb_attachments)
-			{
-				shutdown_database(dbb, true);
-			}
-		}
-	}
-	catch (const Firebird::Exception&)
+	if (attachment)
 	{
-		// no-op
+		release_attachment(tdbb, attachment);
 	}
 
-	databases_mutex->leave();
+	if (dbb->checkHandle())
+	{
+		if (!dbb->dbb_attachments)
+		{
+			shutdown_database(dbb, true);
+		}
+	}
 
 	Firebird::stuff_exception(userStatus, ex);
 	return userStatus[1];
