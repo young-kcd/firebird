@@ -1,3 +1,10 @@
+2008-06-24 20:29  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.151.2.12):
+
+	Fixed CORE-1958: Bugcheck 179 (decompression overran buffer) when
+	attempting to update the same record multiple times.
+
 2008-06-11 14:12  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/Makefile.in
