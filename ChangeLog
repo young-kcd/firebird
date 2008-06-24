@@ -1,3 +1,41 @@
+2008-06-24 20:24  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.219):
+
+	Fixed CORE-1958: Bugcheck 179 (decompression overran buffer) when
+	attempting to update the same record multiple times.
+
+2008-06-24 15:06  alexpeshkoff
+
+	* firebird2/src/: common/classes/ClumpletReader.cpp (1.28),
+	common/classes/ClumpletReader.h (1.20),
+	common/classes/ClumpletWriter.cpp (1.24),
+	common/classes/ClumpletWriter.h (1.12), jrd/DatabaseSnapshot.cpp
+	(1.61), jrd/DatabaseSnapshot.h (1.18), jrd/common.h (1.179),
+	remote/xdr.cpp (1.42):
+
+	1. Frontported fix for CORE-1944: Monitoring tables contain wrong
+	data
+
+	2. Added new methods to Clumplet classes - date, time and floating
+	point support.
+
+	3. Avoid endianess #ifdef's in Clumplet classes.
+
+2008-06-24 14:02  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.467):
+
+	Correct error in my previous commit.
+
+2008-06-24 13:56  hvlad
+
+	* firebird2/src/jrd/jrd.cpp (1.466):
+
+	1. Make work with databases_mutex more consistent (lock\unlock it
+	at the same scope of code).  2. Restore accidentally broken pause
+	when attempt to brute-force login\pwd is detected
+
 2008-06-23 15:38  alexpeshkoff
 
 	* firebird2/src/remote/xdr.cpp (1.41):
