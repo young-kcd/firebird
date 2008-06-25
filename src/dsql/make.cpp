@@ -1249,7 +1249,7 @@ void MAKE_desc(dsql_req* request, dsc* desc, dsql_nod* node, dsql_nod* null_repl
 				break;
 
 			case blr_extract_millisecond:
-				desc->makeLong(0);
+				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
 				break;
 
 			default:
