@@ -125,7 +125,7 @@ void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, SINT64 value)
 {
 	int shift = 0;
 	while (length--) {
-		*ptr++ = (UCHAR)(value >> shift);
+		*ptr++ = (UCHAR) (value >> shift);
 		shift += 8;
 	}
 }

@@ -1855,16 +1855,18 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 	else
+	{
 		if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
 		{
-			/* We have made header_obj but we are not initializing
-			 Previous owner is closed and clear all header_data.
-			 One need to retry */
+			// We have made header_obj but we are not initializing.
+			// Previous owner is closed and clear all header_data.
+			// One need to retry.
 			CloseHandle(header_obj);
 			CloseHandle(event_handle);
 			CloseHandle(file_handle);
 			goto retry;
 		}
+	}
 
 	SLONG* header_address =
 		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
