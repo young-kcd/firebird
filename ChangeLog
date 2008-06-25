@@ -1,3 +1,26 @@
+2008-06-25 17:57  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.163), jrd/evl.cpp (1.263):
+
+	Fixed CORE-1962 - Incorrect extraction of MILLISECONDs
+
+2008-06-25 14:37  dimitr
+
+	* firebird2/src/jrd/validation.cpp (1.39):
+
+	Fixed CORE-1961: Bugcheck 210 (page in use during flush) is thrown
+	during database validation.
+
+2008-06-25 03:46  asfernandes
+
+	* firebird2/: doc/README.intl (1.11),
+	src/common/classes/ClumpletWriter.cpp (1.25), src/jrd/isc_sync.cpp
+	(1.138), src/jrd/unicode_util.cpp (1.39), src/jrd/unicode_util.h
+	(1.15):
+
+	Changed attribute name NUMERIC to NUMERIC-SORT - sugested by
+	Claudio
+
 2008-06-24 20:24  dimitr
 
 	* firebird2/src/jrd/vio.cpp (1.219):
