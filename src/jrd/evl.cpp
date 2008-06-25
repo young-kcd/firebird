@@ -3514,20 +3514,21 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	case blr_extract_minute:
 		part = times.tm_min;
 		break;
+
 	case blr_extract_second:
+		impure->vlu_desc.dsc_dtype = dtype_long;
+		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
-		// fall through
+		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+		*(ULONG *) impure->vlu_desc.dsc_address = times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
+		return &impure->vlu_desc;
+
 	case blr_extract_millisecond:
 		impure->vlu_desc.dsc_dtype = dtype_long;
-		impure->vlu_desc.dsc_address =
-			reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
-		*(ULONG *) impure->vlu_desc.dsc_address =
-			times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
-
-		if (extract_part == blr_extract_millisecond)
-			(*(ULONG *) impure->vlu_desc.dsc_address) /= ISC_TIME_SECONDS_PRECISION / 1000;
-
+		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
+		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
+		(*(ULONG *) impure->vlu_desc.dsc_address) = fractions;
 		return &impure->vlu_desc;
 
 	case blr_extract_week:
