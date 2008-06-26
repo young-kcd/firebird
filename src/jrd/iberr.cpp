@@ -123,7 +123,7 @@ void IBERR_bugcheck(
 		strncpy(errmsg + len1, strnum, len2 + 1);
 
 	post_error(status_vector, dbname, raise, isc_bug_check,
-			   isc_arg_string, errmsg, 0);
+			   isc_arg_string, errmsg, isc_arg_end);
 }
 
 
@@ -150,7 +150,7 @@ void IBERR_error(
 		sprintf(errmsg, "error code %d", number);
 
 	post_error(status_vector, dbname, raise, isc_random,
-			   isc_arg_string, errmsg, 0);
+			   isc_arg_string, errmsg, isc_arg_end);
 }
 
 

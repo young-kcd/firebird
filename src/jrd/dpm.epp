@@ -1212,7 +1212,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	if (val || initialize) {
 		if (dbb->dbb_flags & DBB_read_only) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(isc_read_only_database, 0);
+			ERR_post(isc_read_only_database, isc_arg_end);
 		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 

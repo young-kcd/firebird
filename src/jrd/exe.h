@@ -835,7 +835,7 @@ public:
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
 		{
-			ERR_post(isc_too_many_contexts, 0);
+			ERR_post(isc_too_many_contexts, isc_arg_end);
 		}
 		return csb_n_stream++;
 	}

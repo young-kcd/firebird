@@ -840,7 +840,7 @@ namespace
 				{
 					strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
 				}
-				gds__log(buffer, 0);
+				gds__log("%s", buffer);
 				exit(0);
 			}
 
@@ -1508,7 +1508,7 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
 		}
 		else
 		{
-			Firebird::status_exception::raise(isc_random, isc_arg_string, "Nothing to cancel", 0);
+			Firebird::status_exception::raise(isc_random, isc_arg_string, "Nothing to cancel", isc_arg_end);
 		}
 	}
 	catch (const Firebird::Exception& e)

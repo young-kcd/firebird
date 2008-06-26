@@ -105,7 +105,7 @@ bool putSpecTag(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag,
 		}
 	}
 
-	Firebird::status_exception::raise(errorCode, 0);
+	Firebird::status_exception::raise(errorCode, isc_arg_end);
 	return false;	// compiler warning silencer
 }
 
@@ -473,7 +473,7 @@ bool printInfo(const char* p, UserPrint& up)
 					break;
 				default:
 					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
-						static_cast<unsigned char>(p[-1]), 0);
+						static_cast<unsigned char>(p[-1]), isc_arg_end);
 				}
 			}
 			p++;
@@ -504,7 +504,7 @@ bool printInfo(const char* p, UserPrint& up)
 						break;
 					default:
 						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
-							static_cast<unsigned char>(p[-1]), 0);
+							static_cast<unsigned char>(p[-1]), isc_arg_end);
 					}
 					break;
 				case isc_spb_tra_remote_site:
@@ -527,7 +527,7 @@ bool printInfo(const char* p, UserPrint& up)
 						break;
 					default:
 						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
-							static_cast<unsigned char>(p[-1]), 0);
+							static_cast<unsigned char>(p[-1]), isc_arg_end);
 					}
 					break;
 				case isc_spb_multi_tra_id:
@@ -541,7 +541,7 @@ bool printInfo(const char* p, UserPrint& up)
 					break;
 				default:
 					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
-						static_cast<unsigned char>(p[-1]), 0);
+						static_cast<unsigned char>(p[-1]), isc_arg_end);
 				}
 			}
 			p++;
@@ -579,7 +579,7 @@ bool printInfo(const char* p, UserPrint& up)
 
 		default:
 			Firebird::status_exception::raise(isc_fbsvcmgr_query_err, isc_arg_number, 
-				static_cast<unsigned char>(p[-1]), 0);
+				static_cast<unsigned char>(p[-1]), isc_arg_end);
 		}
 	}
 
@@ -636,7 +636,7 @@ int main(int ac, char **av)
 		//Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
-			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, 0);
+			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, isc_arg_end);
 		}
 
 		isc_svc_handle svc_handle = 0;

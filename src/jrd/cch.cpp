@@ -499,7 +499,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
    but can't get the lock, generate an error */
 
 	if (wait_flag == LCK_WAIT) {
-		ERR_post(isc_deadlock, 0);
+		ERR_post(isc_deadlock, isc_arg_end);
 	}
 
 	dbb->dbb_flags &= ~DBB_exclusive;
@@ -590,7 +590,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
 
 					if (wait_flag == LCK_WAIT) {
-						ERR_post(isc_deadlock, 0);
+						ERR_post(isc_deadlock, isc_arg_end);
 					}
 					else {
 						return false;
@@ -1074,7 +1074,7 @@ void CCH_fetch_page(
 						   isc_arg_string, "", // why isn't the db name used here?
 						   isc_arg_gds, isc_bad_checksum,
 						   isc_arg_gds, isc_badpage,
-						   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(), 0);
+						   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(), isc_arg_end);
 		/* We should invalidate this bad buffer. */
 
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -1712,7 +1712,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 			number -= number >> 2;
 
 			if (number < MIN_PAGE_BUFFERS) {
-				ERR_post(isc_cache_too_small, 0);
+				ERR_post(isc_cache_too_small, isc_arg_end);
 			}
 		}
 	}
@@ -1733,7 +1733,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);
 
 	if (bcb->bcb_count < MIN_PAGE_BUFFERS) {
-		ERR_post(isc_cache_too_small, 0);
+		ERR_post(isc_cache_too_small, isc_arg_end);
 	}
 
 	// Log if requested number of page buffers could not be allocated.
@@ -2589,7 +2589,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 						SDW_notify();
 						CCH_unwind(tdbb, false);
 						SDW_dump_pages();
-						ERR_post(isc_deadlock, 0);
+						ERR_post(isc_deadlock, isc_arg_end);
 					}
 				}
 			}
@@ -5355,7 +5355,7 @@ static SSHORT latch_bdb(
 	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred) {
 //		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
-			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, 0);
+			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, isc_arg_end);
 			CCH_unwind(tdbb, true);
 		}
 		else {
@@ -5469,7 +5469,7 @@ static SSHORT lock_buffer(
 		fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 		IBERR_append_status(status, isc_random, isc_arg_string,
-							ERR_cstring(errmsg), 0);
+							ERR_cstring(errmsg), isc_arg_end);
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
 
 		/* CCH_unwind releases all the BufferDesc's and calls ERR_punt()
@@ -5517,7 +5517,7 @@ static SSHORT lock_buffer(
 	fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 	IBERR_append_status(status, isc_random, isc_arg_string,
-						ERR_cstring(errmsg), 0);
+						ERR_cstring(errmsg), isc_arg_end);
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
 	CCH_unwind(tdbb, true);
@@ -5658,7 +5658,7 @@ static void page_validation_error(thread_db* tdbb, WIN * window, SSHORT type)
 					   isc_arg_gds, isc_badpagtyp,
 					   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(),
 					   isc_arg_number, (SLONG) type,
-					   isc_arg_number, (SLONG) page->pag_type, 0);
+					   isc_arg_number, (SLONG) page->pag_type, isc_arg_end);
 /* We should invalidate this bad buffer. */
 	CCH_unwind(tdbb, true);
 }

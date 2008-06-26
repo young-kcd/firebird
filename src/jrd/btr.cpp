@@ -1968,7 +1968,7 @@ retry:
 		if (maybe_no_room) {
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_no_meta_update, isc_arg_gds,
-					 isc_index_root_page_full, 0);
+					 isc_index_root_page_full, isc_arg_end);
 		}
 		compress_root(tdbb, root);
 		maybe_no_room = true;

@@ -141,7 +141,7 @@ public:
 		{
 			if (!dbb->checkHandle())
 			{
-				Firebird::status_exception::raise(isc_bad_db_handle, 0);
+				Firebird::status_exception::raise(isc_bad_db_handle, isc_arg_end);
 			}
 
 			sync.addRef();
@@ -151,7 +151,7 @@ public:
 			{
 				sync.unlock();
 				sync.release();
-				Firebird::status_exception::raise(isc_bad_db_handle, 0);
+				Firebird::status_exception::raise(isc_bad_db_handle, isc_arg_end);
 			}
 		}
 

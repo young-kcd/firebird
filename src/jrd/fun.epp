@@ -486,7 +486,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 							{
 								ERR_post(isc_wish_list,
 										 isc_arg_gds, isc_blobnotsup,
-										 isc_arg_string, "conversion", 0);
+										 isc_arg_string, "conversion", isc_arg_end);
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}
@@ -1132,5 +1132,5 @@ static void invoke(thread_db* tdbb,
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
 	if (!freeItOk)
-		Firebird::status_exception::raise(isc_bad_udf_freeit, 0);
+		Firebird::status_exception::raise(isc_bad_udf_freeit, isc_arg_end);
 }

@@ -124,7 +124,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_string_truncation,
-					0);
+					isc_arg_end);
 			}
 
 			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> temp;
@@ -139,7 +139,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
-					0);
+					isc_arg_end);
 			}
 
 			if (errCode == CS_BAD_INPUT && badInputPos)
@@ -149,7 +149,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
-					0);
+					isc_arg_end);
 			}
 
 			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, reinterpret_cast<const UCHAR*>(temp.begin()),
@@ -160,7 +160,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
-					0);
+					isc_arg_end);
 			}
 			else if (errCode == CS_TRUNCATION_ERROR)
 			{
@@ -182,7 +182,7 @@ public:
 							Firebird::status_exception::raise(
 								isc_arith_except,
 								isc_arg_gds, isc_string_truncation,
-								0);
+								isc_arg_end);
 						}
 					}
 
@@ -196,7 +196,7 @@ public:
 						Firebird::status_exception::raise(
 							isc_arith_except,
 							isc_arg_gds, isc_string_truncation,
-							0);
+							isc_arg_end);
 					}
 				}
 
@@ -218,7 +218,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
-					0);
+					isc_arg_end);
 			}
 
 			return len;
@@ -232,7 +232,7 @@ public:
 			Firebird::status_exception::raise(
 				isc_arith_except,
 				isc_arg_gds, isc_transliteration_failed,
-				0);
+				isc_arg_end);
 		}
 
 		if (errCode == CS_BAD_INPUT && badInputPos)
@@ -257,7 +257,7 @@ public:
 						Firebird::status_exception::raise(
 							isc_arith_except,
 							isc_arg_gds, isc_string_truncation,
-							0);
+							isc_arg_end);
 					}
 				}
 			}
@@ -272,7 +272,7 @@ public:
 					Firebird::status_exception::raise(
 						isc_arith_except,
 						isc_arg_gds, isc_string_truncation,
-						0);
+						isc_arg_end);
 				}
 			}
 			else
@@ -280,7 +280,7 @@ public:
 				Firebird::status_exception::raise(
 					isc_arith_except,
 					isc_arg_gds, isc_transliteration_failed,
-					0);
+					isc_arg_end);
 			}
 		}
 
@@ -305,7 +305,7 @@ public:
 			Firebird::status_exception::raise(
 				isc_arith_except,
 				isc_arg_gds, isc_string_truncation,
-				0);
+				isc_arg_end);
 		}
 
 		return len;

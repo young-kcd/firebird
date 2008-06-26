@@ -83,7 +83,7 @@ public:
 
 	virtual void checkService()
 	{
-		Firebird::status_exception::raise(isc_utl_trusted_switch, 0);
+		Firebird::status_exception::raise(isc_utl_trusted_switch, isc_arg_end);
 	}
 	
 	// do nothing for non-service

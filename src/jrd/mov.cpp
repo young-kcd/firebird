@@ -425,7 +425,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, 0);
+			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, isc_arg_end);
 
 		return size;
 	}

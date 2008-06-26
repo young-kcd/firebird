@@ -235,10 +235,10 @@ void IDX_create_index(
 
 	if (relation->rel_file) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
-				 isc_arg_string, ERR_cstring(relation->rel_name), 0);
+				 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
 	}
 	else if (relation->isVirtual()) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, 0);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
 	}
 
 	get_root_page(tdbb, relation);
@@ -279,7 +279,7 @@ void IDX_create_index(
 				 isc_arg_gds,
 				 isc_keytoobig,
 				 isc_arg_string,
-				 ERR_cstring(index_name), 0);
+				 ERR_cstring(index_name), isc_arg_end);
 	}
 
 	RecordStack stack;
@@ -420,7 +420,7 @@ void IDX_create_index(
 
 					ERR_post(isc_not_valid,
 						isc_arg_string, bad_fld->fld_name.c_str(),
-						isc_arg_string, NULL_STRING_MARK, 0);
+						isc_arg_string, NULL_STRING_MARK, isc_arg_end);
 				}
 			}
 			else {
@@ -443,7 +443,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(isc_key_too_big, 0);
+				ERR_post(isc_key_too_big, isc_arg_end);
 			}
 
 			UCHAR* p;
@@ -460,7 +460,7 @@ void IDX_create_index(
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 				ERR_post(isc_no_dup, isc_arg_string,
-						 ERR_cstring(index_name), 0);
+						 ERR_cstring(index_name), isc_arg_end);
 			}
 
 			USHORT l = key.key_length;
@@ -496,7 +496,7 @@ void IDX_create_index(
 
 	if (ifl_data.ifl_duplicates > 0) {
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), 0);
+				 ERR_cstring(index_name), isc_arg_end);
 	}
 
 	}
@@ -511,7 +511,7 @@ void IDX_create_index(
 	if (ifl_data.ifl_duplicates > 0) {
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), 0);
+				 ERR_cstring(index_name), isc_arg_end);
 	}
 
 	if ((relation->rel_flags & REL_temp_conn) &&

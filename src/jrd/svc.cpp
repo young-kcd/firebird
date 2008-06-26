@@ -140,7 +140,7 @@ namespace {
 		{
 			const UCHAR p = spb.getBufferTag();
 			if (p != isc_spb_version1 && p != isc_spb_current_version) {
-				ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+				ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, isc_arg_end);
 			}
 			spb_version = p;
 
@@ -582,7 +582,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	if (!serv->serv_name) {
 		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
-										  isc_arg_string, ERR_string(svcname), 0);
+										  isc_arg_string, ERR_string(svcname), isc_arg_end);
 	}
 
 	// Process the service parameter block.
@@ -623,7 +623,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			if (!options.spb_user_name.hasData()) {
 				// user name and password are required while
 				// attaching to the services manager
-				Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
+				Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnouser, isc_arg_end);
 			}
 
 			Firebird::string name; // unused after retrieved
@@ -644,7 +644,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		if (options.spb_user_name.length() > USERNAME_LENGTH) {
 			Firebird::status_exception::raise(isc_long_login, 
 											  isc_arg_number, options.spb_user_name.length(), 
-											  isc_arg_number, USERNAME_LENGTH, 0);
+											  isc_arg_number, USERNAME_LENGTH, isc_arg_end);
 		}
 
 		// Check that the validated user has the authority to access this service
@@ -882,7 +882,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			case isc_info_svc_dump_pool_info:
 				break;
 			default:
-				Firebird::status_exception::raise(isc_bad_spb_form, 0);
+				Firebird::status_exception::raise(isc_bad_spb_form, isc_arg_end);
 				break;
 			}
 		}
@@ -1634,12 +1634,12 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}
 
 	if (!serv->serv_name)
-		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_service_not_supported, isc_arg_end);
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
 	if (svc_user_flag == SVC_user_none) {
-		Firebird::status_exception::raise(isc_bad_spb_form, 0);
+		Firebird::status_exception::raise(isc_bad_spb_form, isc_arg_end);
 	}
 
 	{ // scope for locked svc_mutex
@@ -1648,7 +1648,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		if (svc_flags & SVC_thd_running) {
 			Firebird::status_exception::raise(isc_svc_in_use, isc_arg_string,
 					 ERR_string(serv->serv_name, strlen(serv->serv_name)),
-					 0);
+					 isc_arg_end);
 		}
 
 		/* Another service may have been started with this service block.
@@ -1721,13 +1721,13 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	spb.rewind();
 	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
 	{
-		Firebird::status_exception::raise(isc_bad_spb_form, 0);
+		Firebird::status_exception::raise(isc_bad_spb_form, isc_arg_end);
 	}
 
 	// Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(svc_user_flag & SVC_user_dba))
     {
-       	Firebird::status_exception::raise(isc_adm_task_denied, 0);
+       	Firebird::status_exception::raise(isc_adm_task_denied, isc_arg_end);
     }
 
 
@@ -1768,7 +1768,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		Firebird::status_exception::raise(isc_svcnotdef,
 				isc_arg_string,
 				ERR_string(serv->serv_name, strlen(serv->serv_name)),
-				0);
+				isc_arg_end);
 	}
 }
 
@@ -2050,7 +2050,7 @@ bool Service::process_switches(Firebird::ClumpletReader&	spb,
 					// unexpected item in service parameter block, expected @1
 					Firebird::status_exception::raise(isc_unexp_spb_form, isc_arg_string,
 							 ERR_string(SPB_SEC_USERNAME, strlen(SPB_SEC_USERNAME)),
-							 0);
+							 isc_arg_end);
 				}
 
 				found = true;
@@ -2087,7 +2087,7 @@ bool Service::process_switches(Firebird::ClumpletReader&	spb,
 					// unexpected item in service parameter block, expected @1
 					Firebird::status_exception::raise(isc_unexp_spb_form, isc_arg_string,
 							 ERR_string(SPB_SEC_USERNAME, strlen(SPB_SEC_USERNAME)),
-							 0);
+							 isc_arg_end);
 				}
 				found = true;
 			}

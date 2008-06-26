@@ -98,7 +98,7 @@ namespace {
 	{
 		if (!request->req_transaction->checkHandle())
 		{
-			ERR_post(isc_bad_trans_handle, 0);
+			ERR_post(isc_bad_trans_handle, isc_arg_end);
 		}
 	}
 }
@@ -444,7 +444,7 @@ USHORT METD_get_col_default(dsql_req* request,
 					break;
 				}
 				if (blob_handle->blb_fragment_size)
-					Firebird::status_exception::raise(isc_segment, 0);
+					Firebird::status_exception::raise(isc_segment, isc_arg_end);
 				else
 					continue;
 			}
@@ -837,7 +837,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 					break;
 				}
 				if (blob_handle->blb_fragment_size)
-					Firebird::status_exception::raise(isc_segment, 0);
+					Firebird::status_exception::raise(isc_segment, isc_arg_end);
 				else
 					continue;
 	        }

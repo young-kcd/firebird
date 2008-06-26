@@ -119,7 +119,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
-		ERR_post(isc_wrodynver, 0);
+		ERR_post(isc_wrodynver, isc_arg_end);
 	}
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -2059,7 +2059,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			ERR_post_warning(isc_dyn_miss_priv_warning, 
 							 isc_arg_string, privilege_name(temp[0]),
 							 isc_arg_string, ERR_string(object), 
-							 isc_arg_string, ERR_string(user), 0);
+							 isc_arg_string, ERR_string(user), isc_arg_end);
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
 	}

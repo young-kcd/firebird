@@ -141,7 +141,7 @@ void SCL_check_access(const SecurityClass* s_class,
 		ERR_post(isc_no_priv, isc_arg_string, "(ACL unrecognized)",
 				 isc_arg_string, "security_class",
 				 isc_arg_string, ERR_cstring(s_class->scl_name),
-				 0);
+				 isc_arg_end);
 	}
 
 	const Attachment& attachment = *tdbb->getAttachment();
@@ -198,14 +198,14 @@ void SCL_check_access(const SecurityClass* s_class,
 				isc_arg_string, names->p_names_string,
 				isc_arg_string, "DATABASE",
 				isc_arg_string, "",
-				0);
+				isc_arg_end);
 	}
 	else {
 		ERR_post(isc_no_priv,
 				isc_arg_string, names->p_names_string,
 				isc_arg_string, type,
 				isc_arg_string, ERR_cstring(name),
-				0);
+				isc_arg_end);
 	}
 }
 
@@ -633,7 +633,7 @@ void SCL_init(bool create,
 
 					EXE_unwind(tdbb, request);
 					ERR_post(isc_login_same_as_role_name,
-							 isc_arg_string, ERR_cstring(login_name), 0);
+							 isc_arg_string, ERR_cstring(login_name), isc_arg_end);
 
 				END_FOR;
 

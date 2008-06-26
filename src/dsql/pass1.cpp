@@ -369,7 +369,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 						isc_arg_gds, isc_dsql_line_col_error,
 						isc_arg_number, (int) relation_node->nod_line,
 						isc_arg_number, (int) relation_node->nod_column,
-						0);
+						isc_arg_end);
 		}
 	}
 	else if ((cte = statement->findCTE(relation_name)))
@@ -391,7 +391,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 						isc_arg_gds, isc_dsql_line_col_error,
 						isc_arg_number, (int) relation_node->nod_line,
 						isc_arg_number, (int) relation_node->nod_column,
-						0);
+						isc_arg_end);
 		}
 	}
 
@@ -402,7 +402,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 					isc_arg_gds, isc_dsql_line_col_error,
 					isc_arg_number, (int) relation_node->nod_line,
 					isc_arg_number, (int) relation_node->nod_column,
-					0);
+					isc_arg_end);
 	}
 
 	// Set up context block.
@@ -486,7 +486,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 			if (!strcmp(conflict_name, context->ctx_alias)) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
 						  isc_arg_gds, error_code,
-						  isc_arg_string, conflict_name, 0);
+						  isc_arg_string, conflict_name, isc_arg_end);
 			}
 		}
 	}
@@ -507,7 +507,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
 				ERRD_post(isc_prcmismat, isc_arg_string,
-							relation_name->str_data, 0);
+							relation_name->str_data, isc_arg_end);
 			}
 
 			if (count)
@@ -639,7 +639,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 105,
-						  isc_arg_gds, isc_extract_input_mismatch, 0);
+						  isc_arg_gds, isc_extract_input_mismatch, isc_arg_end);
 			}
 			break;
 		case blr_extract_hour:
@@ -651,7 +651,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				sub1->nod_desc.dsc_dtype != dtype_timestamp)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 105,
-						  isc_arg_gds, isc_extract_input_mismatch, 0);
+						  isc_arg_gds, isc_extract_input_mismatch, isc_arg_end);
 			}
 			break;
 		default:
@@ -683,7 +683,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_select:
 	case nod_with:
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				  isc_arg_gds, isc_dsql_command_err, 0);
+				  isc_arg_gds, isc_dsql_command_err, isc_arg_end);
 
 	case nod_derived_table:
 		return pass1_derived_table(statement, input, NULL);
@@ -693,7 +693,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 			if (statement->isPsql())
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-						  isc_arg_gds, isc_dsql_subselect_err, 0);
+						  isc_arg_gds, isc_dsql_subselect_err, isc_arg_end);
 			}
 
 			const DsqlContextStack::iterator base(*statement->req_context);
@@ -736,7 +736,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		if (statement->isPsql())
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_invalid_array, 0);
+					  isc_arg_gds, isc_dsql_invalid_array, isc_arg_end);
 		}
 		else
 			return pass1_field(statement, input, false, NULL);
@@ -784,7 +784,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						isc_arg_gds, isc_dsql_cte_wrong_reference, // Recursive CTE member (%s) can refer itself only in FROM clause
 						isc_arg_string, rel_name->str_data,
-						0);
+						isc_arg_end);
 			}
 
 			for (DsqlNodStack::const_iterator stack(statement->req_curr_ctes); stack.hasData(); ++stack)
@@ -794,7 +794,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						isc_arg_gds, isc_dsql_cte_cycle,			// CTE %s has cyclic dependencies
 						isc_arg_string, rel_name->str_data,
-						0);
+						isc_arg_end);
 				}
 			}
 
@@ -830,7 +830,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		if (statement->isPsql())
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_command_err, 0);
+					  isc_arg_gds, isc_dsql_command_err, isc_arg_end);
 		}
 
 		node = MAKE_node(input->nod_type, e_par_count);
@@ -917,7 +917,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 							  isc_arg_gds, isc_imp_exc,
 							  isc_arg_gds, isc_dsql_too_many_values,
 							  isc_arg_number, MAX_MEMBER_LIST,
-							  0);
+							  isc_arg_end);
 				}
 
 				return PASS1_node(statement, node);
@@ -927,7 +927,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				if (statement->isPsql())
 				{
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-							  isc_arg_gds, isc_dsql_subselect_err, 0);
+							  isc_arg_gds, isc_dsql_subselect_err, isc_arg_end);
 				}
 
 				if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON) {
@@ -998,7 +998,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		if (statement->isPsql())
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_command_err, 0);
+					  isc_arg_gds, isc_dsql_command_err, isc_arg_end);
 		}
 		if (!(statement->req_in_select_list || statement->req_in_where_clause  ||
 			statement->req_in_group_by_clause  || statement->req_in_having_clause ||
@@ -1007,7 +1007,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 			/* not part of a select list, where clause, group by clause,
 			   having clause, or order by clause */
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_agg_ref_err, 0);
+					  isc_arg_gds, isc_dsql_agg_ref_err, isc_arg_end);
 		}
 		node = MAKE_node(input->nod_type, e_agg_function_count);
 		node->nod_count = input->nod_count;  // Copy count, because this must be exactly the same as input.
@@ -1061,7 +1061,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 					ddl_node->nod_type == nod_mod_domain))
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-						  isc_arg_gds, isc_dsql_domain_err, 0);
+						  isc_arg_gds, isc_dsql_domain_err, isc_arg_end);
 			}
 		}
 		node = MAKE_node(input->nod_type, input->nod_count);
@@ -1077,7 +1077,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err, // Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, InternalInfo::getAlias(id), 0);
+					isc_arg_gds, isc_random, isc_arg_string, InternalInfo::getAlias(id), isc_arg_end);
 			}
 		}
 		break;
@@ -1092,7 +1092,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				fb_assert(precision >= 0);
 				if (unsigned(precision) > MAX_TIME_PRECISION) {
 					ERRD_post(isc_invalid_time_precision,
-							  isc_arg_number, MAX_TIME_PRECISION, 0);
+							  isc_arg_number, MAX_TIME_PRECISION, isc_arg_end);
 				}
 			}
 		}
@@ -1402,7 +1402,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 									ERRD_post(isc_sqlerr, isc_arg_number,
 											  (SLONG) - 901, isc_arg_gds,
 											  isc_dsql_var_conflict, isc_arg_string,
-											  field->fld_name.c_str(), 0);
+											  field->fld_name.c_str(), isc_arg_end);
 								}
 							}
 						}
@@ -1423,7 +1423,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 									ERRD_post(isc_sqlerr, isc_arg_number,
 											  (SLONG) - 901, isc_arg_gds,
 											  isc_dsql_var_conflict, isc_arg_string,
-											  field->fld_name.c_str(), 0);
+											  field->fld_name.c_str(), isc_arg_end);
 								}
 							}
 						}
@@ -1472,7 +1472,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
 							isc_arg_gds, isc_dsql_procedure_err,
 							isc_arg_gds, isc_random,
-							isc_arg_string, name->str_data, 0);
+							isc_arg_string, name->str_data, isc_arg_end);
 			}
 
 			if (!statement->isPsql())
@@ -1491,7 +1491,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			if (count > procedure->prc_in_count ||
 				count < procedure->prc_in_count - procedure->prc_def_count)
 			{
-				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, 0);
+				ERRD_post(isc_prcmismat, isc_arg_string, name->str_data, isc_arg_end);
 			}
 
 			node->nod_arg[e_exe_inputs] = PASS1_node(statement, input->nod_arg[e_exe_inputs]);
@@ -1521,7 +1521,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				if (count != procedure->prc_out_count)
 				{
 					ERRD_post(isc_prc_out_param_mismatch,
-							  isc_arg_string, name->str_data, 0);
+							  isc_arg_string, name->str_data, isc_arg_end);
 				}
 
 				node->nod_arg[e_exe_outputs] = PASS1_node(statement, temp);
@@ -1530,7 +1530,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				if (temp) {
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
 							  isc_token_err, // Token unknown
-							  isc_arg_gds, isc_random, isc_arg_string, "RETURNING_VALUES", 0);
+							  isc_arg_gds, isc_random, isc_arg_string, "RETURNING_VALUES", isc_arg_end);
 				}
 				node->nod_arg[e_exe_outputs] =
 					explode_outputs(statement, statement->req_procedure);
@@ -1781,7 +1781,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 					if (names.exist(name->str_data)) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
 								  isc_arg_gds, isc_dsql_duplicate_spec,
-								  isc_arg_string, name->str_data, 0);
+								  isc_arg_string, name->str_data, isc_arg_end);
 					}
 					names.add(name->str_data);
 				}
@@ -1858,7 +1858,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 				if (dupClause) {
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
 							  isc_arg_gds, isc_dsql_duplicate_spec,
-							  isc_arg_string, dupClause, 0);
+							  isc_arg_string, dupClause, isc_arg_end);
 				}
 			}
 		}
@@ -1872,7 +1872,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		if (!statement->req_loop_level)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_token_err,	// Token unknown
-				isc_arg_gds, isc_random, isc_arg_string, "BREAK/LEAVE", 0);
+				isc_arg_gds, isc_random, isc_arg_string, "BREAK/LEAVE", isc_arg_end);
 		input->nod_arg[e_breakleave_label] = pass1_label(statement, input);
 		return input;
 
@@ -1881,7 +1881,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "SUSPEND", isc_arg_end);
 		}
 
 		if (statement->req_flags & REQ_in_auto_trans_block)	// autonomous transaction
@@ -1889,7 +1889,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 					  isc_arg_gds, isc_dsql_unsupported_in_auto_trans,
 					  isc_arg_string, "SUSPEND",
-					  0);
+					  isc_arg_end);
 		}
 
 		statement->req_flags |= REQ_selectable;
@@ -1957,7 +1957,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "SAVEPOINT", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "SAVEPOINT", isc_arg_end);
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
@@ -1965,7 +1965,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "RELEASE", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "RELEASE", isc_arg_end);
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
@@ -1973,7 +1973,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "ROLLBACK", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "ROLLBACK", isc_arg_end);
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
@@ -2000,7 +2000,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_command_err,
 				  isc_arg_gds, isc_union_err,	// union not supported
-				  0);
+				  isc_arg_end);
 		break;
 
 	case nod_cursor:
@@ -2048,7 +2048,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 					  isc_arg_gds, isc_dsql_unsupported_in_auto_trans,
 					  isc_arg_string, stmt,
-					  0);
+					  isc_arg_end);
 		}
 
 		// resolve the cursor
@@ -2083,7 +2083,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_command_err,
 				  isc_arg_gds, isc_dsql_construct_err,	// Unsupported DSQL construct
-				  0);
+				  isc_arg_end);
 		break;
 	}
 
@@ -2469,7 +2469,7 @@ static dsql_nod* ambiguity_check(CompiledStatement* statement, dsql_nod* node,
 					isc_arg_string, ++p,
 					isc_arg_gds, isc_random,
 					isc_arg_string, name->str_data,
-					0);
+					isc_arg_end);
 		return NULL;
 	}
 
@@ -2479,7 +2479,7 @@ static dsql_nod* ambiguity_check(CompiledStatement* statement, dsql_nod* node,
 						isc_arg_string, ++p,
 						isc_arg_gds, isc_random,
 						isc_arg_string, name->str_data,
-						0);
+						isc_arg_end);
 
 	return node;
 }
@@ -2572,7 +2572,7 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 		else {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
 					  isc_arg_gds, isc_dsql_duplicate_spec,
-					  isc_arg_string, name, 0);
+					  isc_arg_string, name, isc_arg_end);
 		}
 	}
 }
@@ -2764,7 +2764,7 @@ static void field_duplication(const TEXT* qualifier_name, const TEXT* field_name
 			  isc_arg_gds, isc_dsql_line_col_error,
 			  isc_arg_number, (int) flawed_node->nod_line,
 			  isc_arg_number, (int) flawed_node->nod_column,
-			  0);
+			  isc_arg_end);
 }
 
 
@@ -2801,14 +2801,14 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 					  isc_arg_gds, isc_dsql_line_col_error,
 					  isc_arg_number, (int) flawed_node->nod_line,
 					  isc_arg_number, (int) flawed_node->nod_column,
-					  0);
+					  isc_arg_end);
 		else
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_dsql_line_col_error,
 					  isc_arg_number, (int) flawed_node->nod_line,
 					  isc_arg_number, (int) flawed_node->nod_column,
-					  0);
+					  isc_arg_end);
 	}
 	else
 	{
@@ -2817,12 +2817,12 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_random, isc_arg_string, field_name,
 					  isc_arg_gds, isc_dsql_unknown_pos,
-					  0);
+					  isc_arg_end);
 		else
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_dsql_unknown_pos,
-					  0);
+					  isc_arg_end);
 	}
 }
 
@@ -3106,7 +3106,7 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 							FIELD_MATCH_TYPE_EQUAL, true))
 					{
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_dsql_agg_nested_err, 0);
+							isc_arg_gds, isc_dsql_agg_nested_err, isc_arg_end);
 						// Nested aggregate functions are not allowed
 					}
 				}
@@ -3651,7 +3651,7 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 	dsql_nod* field = pass1_field(statement, input->nod_arg[e_blb_field], false, NULL);
 	if (field->nod_desc.dsc_dtype != dtype_blob)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
-				  isc_arg_gds, isc_dsql_blob_err, 0);
+				  isc_arg_gds, isc_dsql_blob_err, isc_arg_end);
 
 	statement->req_type = (input->nod_type == nod_get_segment) ?
 		REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
@@ -3817,7 +3817,7 @@ static dsql_nod* pass1_collate( CompiledStatement* statement, dsql_nod* sub1,
 	else {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204,
 				  isc_arg_gds, isc_dsql_datatype_err,
-				  isc_arg_gds, isc_collation_requires_text, 0);
+				  isc_arg_gds, isc_collation_requires_text, isc_arg_end);
 	}
 	DDL_resolve_intl_type(statement, field, collation);
 	MAKE_desc_from_field(&node->nod_desc, field);
@@ -3868,7 +3868,7 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 			// character set name is not defined
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504, isc_arg_gds,
 					isc_charset_not_found, isc_arg_string, string->str_charset,
-					0);
+					isc_arg_end);
 		}
 
 		if (global_temp_collation_name)
@@ -3884,7 +3884,7 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 						isc_dsql_datatype_err, isc_arg_gds,
 						isc_collation_not_found,
 						isc_arg_string, global_temp_collation_name->str_data,
-						isc_arg_string, resolved->intlsym_name, 0);
+						isc_arg_string, resolved->intlsym_name, isc_arg_end);
 			}
 			resolved = resolved_collation;
 		}
@@ -3919,7 +3919,7 @@ static dsql_nod* pass1_constant( CompiledStatement* statement, dsql_nod* input)
 		ERRD_post(isc_sqlerr,
 				  isc_arg_number, (SLONG) - 104,
 				  isc_arg_gds, isc_malformed_string,
-				  0);
+				  isc_arg_end);
 	}
 	else
 	{
@@ -3970,7 +3970,7 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 		// cursor with DISTINCT is not updatable
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
 				  isc_arg_gds, isc_dsql_cursor_update_err,
-				  isc_arg_string, string->str_data, 0);
+				  isc_arg_string, string->str_data, isc_arg_end);
 	}
 
 	const dsql_nod* temp = rse->nod_arg[e_rse_streams];
@@ -3994,7 +3994,7 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 							  isc_arg_gds, isc_dsql_cursor_err,
 							  isc_arg_gds, isc_dsql_cursor_rel_ambiguous,
 							  isc_arg_string, rname->str_data,
-							  isc_arg_string, string->str_data, 0);
+							  isc_arg_string, string->str_data, isc_arg_end);
 				else
 					context = candidate;
 			}
@@ -4003,7 +4003,7 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 			// cursor with aggregation is not updatable
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
 					  isc_arg_gds, isc_dsql_cursor_update_err,
-					  isc_arg_string, string->str_data, 0);
+					  isc_arg_string, string->str_data, isc_arg_end);
 		}
 		// note that nod_union and nod_join will cause the error below,
 		// as well as derived tables. Some cases deserve fixing in the future
@@ -4014,7 +4014,7 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 				  isc_arg_gds, isc_dsql_cursor_err,
 				  isc_arg_gds, isc_dsql_cursor_rel_not_found,
 				  isc_arg_string, rname->str_data,
-				  isc_arg_string, string->str_data, 0);
+				  isc_arg_string, string->str_data, isc_arg_end);
 
 	return context;
 }
@@ -4043,12 +4043,12 @@ static dsql_nod* pass1_cursor_name(CompiledStatement* statement, const dsql_str*
 		if (existence_flag) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 					  isc_arg_gds, isc_dsql_cursor_err,
-					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
+					  isc_arg_gds, isc_dsql_cursor_invalid, isc_arg_end);
 		}
 		else {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 					  isc_arg_gds, isc_dsql_decl_err,
-					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
+					  isc_arg_gds, isc_dsql_cursor_invalid, isc_arg_end);
 		}
 	}
 
@@ -4065,14 +4065,14 @@ static dsql_nod* pass1_cursor_name(CompiledStatement* statement, const dsql_str*
 				  isc_arg_gds, isc_dsql_cursor_err,
 				  isc_arg_gds, isc_dsql_cursor_not_found,
 				  isc_arg_string, string->str_data,
-				  0);
+				  isc_arg_end);
 	}
 	else if (cursor && !existence_flag) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 				  isc_arg_gds, isc_dsql_decl_err,
 				  isc_arg_gds, isc_dsql_cursor_exists,
 				  isc_arg_string, string->str_data,
-				  0);
+				  isc_arg_end);
 	}
 
 	return cursor;
@@ -4107,7 +4107,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 		HSHD_lookup(statement->req_dbb,
 					reinterpret_cast<const char*>(string->str_data),
 					static_cast<SSHORT>(string->str_length), SYM_cursor,
-					0);
+					isc_arg_end);
 
 	if (!symbol) {
 		// cursor is not found
@@ -4115,7 +4115,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 				  isc_arg_gds, isc_dsql_cursor_err,
 				  isc_arg_gds, isc_dsql_cursor_not_found,
 				  isc_arg_string, string->str_data,
-				  0);
+				  isc_arg_end);
 	}
 
 	CompiledStatement* parent = (CompiledStatement*) symbol->sym_object;
@@ -4132,7 +4132,7 @@ static dsql_nod* pass1_cursor_reference( CompiledStatement* statement,
 		// cursor is not updatable
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 510,
 				  isc_arg_gds, isc_dsql_cursor_update_err,
-				  isc_arg_string, string->str_data, 0);
+				  isc_arg_string, string->str_data, isc_arg_end);
 	}
 
 	statement->req_parent = parent;
@@ -4211,7 +4211,7 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 						  isc_arg_gds, isc_dsql_dbkey_from_non_table,
-						  0);
+						  isc_arg_end);
 			}
 
 			if (context->ctx_flags & CTX_null)
@@ -4248,7 +4248,7 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 				{
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
 							  isc_arg_gds, isc_dsql_dbkey_from_non_table,
-							  0);
+							  isc_arg_end);
 				}
 
 				if (context->ctx_flags & CTX_null)
@@ -4436,7 +4436,7 @@ static dsql_nod* pass1_join_is_recursive(CompiledStatement* statement, dsql_nod*
 	if (leftRecursive && join_type != nod_join_inner) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_outer_join,		// Recursive member of CTE can''t be member of an outer join
-			0);
+			isc_arg_end);
 	}
 
 	bool rightRecursive = false;
@@ -4458,13 +4458,13 @@ static dsql_nod* pass1_join_is_recursive(CompiledStatement* statement, dsql_nod*
 	if (rightRecursive && join_type != nod_join_inner) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_outer_join,			// Recursive member of CTE can''t be member of an outer join
-			0);
+			isc_arg_end);
 	}
 
 	if (leftRecursive && rightRecursive) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
-			0);
+			isc_arg_end);
 	}
 
 	if (leftRecursive)
@@ -4520,7 +4520,7 @@ static bool pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* input
 					if (found) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 							isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
-							0);
+							isc_arg_end);
 					}
 					found = true;
 
@@ -4537,7 +4537,7 @@ static bool pass1_rse_is_recursive(CompiledStatement* statement, dsql_nod* input
 					if (found) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 							isc_arg_gds, isc_dsql_cte_mult_references,		// Recursive member of CTE can''t reference itself more than once
-							0);
+							isc_arg_end);
 					}
 					found = true;
 
@@ -4587,7 +4587,7 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_not_a_union,	// Recursive CTE (%s) must be an UNION
 			isc_arg_string, cte_alias->str_data,
-			0);
+			isc_arg_end);
 	}
 
 	// split queries list on two parts: anchor and recursive
@@ -4608,28 +4608,28 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_nonrecurs_after_recurs, // CTE '%s' defined non-recursive member after recursive
 					isc_arg_string, cte_alias->str_data,
-					0);
+					isc_arg_end);
 			}
 			if (rse->nod_arg[e_qry_distinct]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "DISTINCT",
-					0);
+					isc_arg_end);
 			}
 			if (rse->nod_arg[e_qry_group]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "GROUP BY",
-					0);
+					isc_arg_end);
 			}
 			if (rse->nod_arg[e_qry_having]) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_wrong_clause,	// Recursive member of CTE '%s' has %s clause
 					isc_arg_string, cte_alias->str_data,
 					isc_arg_string, "HAVING",
-					0);
+					isc_arg_end);
 			}
 			// hvlad: we need also forbid any aggregate function here
 			// but for now i have no idea how to do it simple
@@ -4638,7 +4638,7 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_cte_union_all, // Recursive members of CTE (%s) must be linked with another members via UNION ALL
 					isc_arg_string, cte_alias->str_data,
-					0);
+					isc_arg_end);
 			}
 			if (!recursive_rse) {
 				recursive_rse = qry;
@@ -4663,7 +4663,7 @@ static dsql_nod* pass1_recursive_cte(CompiledStatement* statement, dsql_nod* inp
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_miss_nonrecursive, // Non-recursive member is missing in CTE '%s'
 			isc_arg_string, cte_alias->str_data,
-			0);
+			isc_arg_end);
 	}
 	
 	qry = recursive_rse;
@@ -4899,7 +4899,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, errcode,
-					  isc_arg_string, aliasname, 0);
+					  isc_arg_string, aliasname, isc_arg_end);
 		}
 
 		// Generate derived fields and assign alias-name to it.
@@ -4967,7 +4967,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 					  isc_arg_gds, isc_dsql_command_err,
 					  isc_arg_gds, isc_dsql_derived_field_unnamed,
 					  isc_arg_number, SLONG(count + 1),
-					  isc_arg_string, aliasname, 0);
+					  isc_arg_string, aliasname, isc_arg_end);
 		}
 	}
 
@@ -4987,7 +4987,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_derived_field_dup_name,
 						  isc_arg_string, name1->str_data,
-						  isc_arg_string, aliasname, 0);
+						  isc_arg_string, aliasname, isc_arg_end);
 			}
 		}
 	}
@@ -5116,7 +5116,7 @@ static void pass1_expand_select_node(CompiledStatement* statement, dsql_nod* nod
 				// Internal dsql error: alias type expected by pass1_expand_select_node
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_dsql_derived_alias_select, 0);
+					  isc_arg_gds, isc_dsql_derived_alias_select, isc_arg_end);
 			}
 
 			dsql_ctx* context = (dsql_ctx*) select_item->nod_arg[e_derived_field_context];
@@ -5396,7 +5396,7 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 										  isc_arg_number, (SLONG) statement->req_client_dialect,
 										  isc_arg_string,
 										  DSC_dtype_tostring(static_cast<UCHAR>
-															 (field->fld_dtype)), 0);
+															 (field->fld_dtype)), isc_arg_end);
 								return NULL;
 						}
 
@@ -5494,7 +5494,7 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 							// Internal dsql error: alias type expected by pass1_field
 							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 								  isc_arg_gds, isc_dsql_command_err,
-								  isc_arg_gds, isc_dsql_derived_alias_field, 0);
+								  isc_arg_gds, isc_dsql_derived_alias_field, isc_arg_end);
 						}
 					}
 
@@ -6157,7 +6157,7 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_command_err,
-			isc_arg_gds, isc_dsql_max_group_items, 0);
+			isc_arg_gds, isc_dsql_max_group_items, isc_arg_end);
 			// cannot group on more than 255 items
 	}
 
@@ -6182,7 +6182,7 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_column_pos_err,
-						  isc_arg_string, "GROUP BY", 0);
+						  isc_arg_string, "GROUP BY", isc_arg_end);
 				// Invalid column position used in the GROUP BY clause
 			}
 			frnode = pass1_node_psql(statement, selectList->nod_arg[position - 1], false);
@@ -6304,7 +6304,7 @@ static dsql_nod* pass1_insert( CompiledStatement* statement, dsql_nod* input, bo
 		if (fields->nod_count != values->nod_count) {
 			// count of column list and value list don't match
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_var_count_err, 0);
+					  isc_arg_gds, isc_dsql_var_count_err, isc_arg_end);
 		}
 
 		dsql_nod** ptr = fields->nod_arg;
@@ -6440,7 +6440,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 				isc_sqlerr, isc_arg_number, (SLONG) -901,
 				isc_arg_gds, isc_dsql_unsupp_feature_dialect,
 				isc_arg_number, statement->req_client_dialect,
-				0);
+				isc_arg_end);
 		}
 
 		DsqlNodStack leftStack, rightStack;
@@ -6523,7 +6523,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 						isc_sqlerr, isc_arg_number, (SLONG) -104,
 						isc_arg_gds, isc_dsql_col_more_than_once_using,
 						isc_arg_string, fldName->str_data,
-						0);
+						isc_arg_end);
 				}
 				else
 					usedColumns.add(fldName->str_data);
@@ -6709,7 +6709,7 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 				isc_arg_gds, isc_dsql_command_err,
 				isc_arg_gds, isc_dsql_invalid_label,
 				isc_arg_string, string->str_data,
-				isc_arg_string, "is not found", 0);
+				isc_arg_string, "is not found", isc_arg_end);
 		}
 		else {
 			// break the current loop
@@ -6723,7 +6723,7 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 				isc_arg_gds, isc_dsql_command_err,
 				isc_arg_gds, isc_dsql_invalid_label,
 				isc_arg_string, string->str_data,
-				isc_arg_string, "already exists", 0);
+				isc_arg_string, "already exists", isc_arg_end);
 		}
 		else {
 			// store label name, if specified
@@ -6849,7 +6849,7 @@ static dsql_nod* pass1_lookup_alias(CompiledStatement* statement, const dsql_str
 					isc_arg_string, buffer2,
 					isc_arg_gds, isc_random,
 					isc_arg_string, name->str_data,
-					0);
+					isc_arg_end);
 			}
 			returnNode = matchingNode;
 		}
@@ -7484,7 +7484,7 @@ static dsql_nod* pass1_alias_list(CompiledStatement* statement, dsql_nod* alias_
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_command_err,
 			isc_arg_gds, isc_dsql_no_relation_alias,
-			isc_arg_string, ((dsql_str*) *arg)->str_data, 0);
+			isc_arg_string, ((dsql_str*) *arg)->str_data, isc_arg_end);
 	}
 
 	return (dsql_nod*) context;
@@ -7555,7 +7555,7 @@ static dsql_ctx* pass1_alias(CompiledStatement* statement, DsqlContextStack& sta
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_self_join,
-						  isc_arg_string, alias->str_data, 0);
+						  isc_arg_string, alias->str_data, isc_arg_end);
 			}
 			relation_context = context;
 		}
@@ -7666,7 +7666,7 @@ static dsql_nod* pass1_returning(CompiledStatement* statement, const dsql_nod* i
 		// RETURNING INTO is not allowed syntax for DSQL
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
 				  isc_arg_gds, isc_token_err, // Token unknown 
-				  isc_arg_gds, isc_random, isc_arg_string, "INTO", 0);
+				  isc_arg_gds, isc_random, isc_arg_string, "INTO", isc_arg_end);
 	}
 	else if (statement->isPsql() && !target)
 	{
@@ -7678,7 +7678,7 @@ static dsql_nod* pass1_returning(CompiledStatement* statement, const dsql_nod* i
 				  isc_arg_gds, isc_command_end_err2,	// Unexpected end of command
 				  isc_arg_number, (SLONG) errSrc->nod_line,
 				  isc_arg_number, (SLONG) errSrc->nod_column,
-				  0);
+				  isc_arg_end);
 	}
 
 	const int count = source->nod_count;
@@ -7692,7 +7692,7 @@ static dsql_nod* pass1_returning(CompiledStatement* statement, const dsql_nod* i
 		if (count != target->nod_count) {
 			// count of column list and value list don't match 
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -804,
-					  isc_arg_gds, isc_dsql_var_count_err, 0);
+					  isc_arg_gds, isc_dsql_var_count_err, isc_arg_end);
 		}
 
 		dsql_nod** src = source->nod_arg;
@@ -7844,7 +7844,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		if (update_lock)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
 					  isc_token_err, // Token unknown
-					  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+					  isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", isc_arg_end);
 
 		return pass1_union(statement, input, order, rows, flags);
 	}
@@ -7868,7 +7868,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", isc_arg_end);
 		}
 	} // end scope block
 
@@ -7878,7 +7878,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 	if (node && rows) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				  isc_arg_gds, isc_token_err,	// Token unknown
-				  isc_arg_gds, isc_random, isc_arg_string, "ROWS", 0);
+				  isc_arg_gds, isc_random, isc_arg_string, "ROWS", isc_arg_end);
 	}
 	else if (node || (node = rows) ) {
 		const int length_index = rows ? e_rows_length : e_limit_length;
@@ -7908,7 +7908,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean],
 				statement->req_scope_level, FIELD_MATCH_TYPE_EQUAL, true))
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				isc_arg_gds, isc_dsql_agg_where_err, 0);
+				isc_arg_gds, isc_dsql_agg_where_err, isc_arg_end);
 			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 	}
 
@@ -7930,7 +7930,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		// More than one column (or asterisk) is specified in column_singleton
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_dsql_count_mismatch, 0);
+				  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
 	}
 
 	// Pass select list
@@ -7961,7 +7961,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		if (update_lock) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", isc_arg_end);
 		}
 
 		parent_context = FB_NEW(*tdbb->getDefaultPool())
@@ -8007,7 +8007,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 				statement->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL, true))
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-				isc_arg_gds, isc_dsql_agg_group_err, 0);
+				isc_arg_gds, isc_dsql_agg_group_err, isc_arg_end);
 			// Cannot use an aggregate in a GROUP BY clause
 		}
 	}
@@ -8021,7 +8021,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		if (update_lock) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_token_err,	// Token unknown
-					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", 0);
+					isc_arg_gds, isc_random, isc_arg_string, "WITH LOCK", isc_arg_end);
 		}
 
 		++statement->req_in_select_list;
@@ -8054,7 +8054,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_agg_column_err,
-					isc_arg_string, "select list", 0);
+					isc_arg_string, "select list", isc_arg_end);
 				// Invalid expression in the select list
 				// (not contained in either an aggregate or the GROUP BY clause)
 			}
@@ -8079,7 +8079,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_agg_column_err,
-					isc_arg_string, "ORDER BY clause", 0);
+					isc_arg_string, "ORDER BY clause", isc_arg_end);
 				// Invalid expression in the ORDER BY clause
 				// (not contained in either an aggregate or the GROUP BY clause)
 			}
@@ -8114,7 +8114,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_agg_having_err,
-					isc_arg_string, "HAVING clause", 0);
+					isc_arg_string, "HAVING clause", isc_arg_end);
 				// Invalid expression in the HAVING clause
 				// (neither an aggregate nor contained in the GROUP BY clause)
 			}
@@ -8127,7 +8127,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 								aggregate->nod_arg[e_agg_group]))
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						isc_arg_gds, isc_field_ref_err, 0);
+						isc_arg_gds, isc_field_ref_err, isc_arg_end);
 				// invalid field reference
 			}
 		}
@@ -8367,7 +8367,7 @@ static dsql_nod* pass1_sort( CompiledStatement* statement, dsql_nod* input, dsql
 
 	if (input->nod_type != nod_list) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
-			isc_dsql_command_err, isc_arg_gds, isc_order_by_err, 0);
+			isc_dsql_command_err, isc_arg_gds, isc_order_by_err, isc_arg_end);
 			// invalid ORDER BY clause
 	}
 
@@ -8375,7 +8375,7 @@ static dsql_nod* pass1_sort( CompiledStatement* statement, dsql_nod* input, dsql
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
 			isc_dsql_command_err, isc_arg_gds, isc_order_by_err,
-			isc_arg_gds, isc_dsql_max_sort_items, 0);
+			isc_arg_gds, isc_dsql_max_sort_items, isc_arg_end);
 			// invalid ORDER BY clause, cannot sort on more than 255 items
 	}
 
@@ -8390,7 +8390,7 @@ static dsql_nod* pass1_sort( CompiledStatement* statement, dsql_nod* input, dsql
 		dsql_nod* node1 = input->nod_arg[sortloop];
 		if (node1->nod_type != nod_order) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, isc_arg_gds,
-				isc_dsql_command_err, isc_arg_gds, isc_order_by_err, 0);
+				isc_dsql_command_err, isc_arg_gds, isc_order_by_err, isc_arg_end);
 				// invalid ORDER BY clause
 		}
 		dsql_nod* node2 = MAKE_node(nod_order, e_order_count);
@@ -8421,7 +8421,7 @@ static dsql_nod* pass1_sort( CompiledStatement* statement, dsql_nod* input, dsql
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 					isc_arg_gds, isc_dsql_column_pos_err,
-					isc_arg_string, "ORDER BY", 0);
+					isc_arg_string, "ORDER BY", isc_arg_end);
 				// Invalid column position used in the ORDER BY clause
 			}
 			// substitute ordinal with appropriate field
@@ -8539,7 +8539,7 @@ static dsql_nod* pass1_udf( CompiledStatement* statement, dsql_nod* input)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_function_err,
 				  isc_arg_gds, isc_random,
-				  isc_arg_string, name->str_data, 0);
+				  isc_arg_string, name->str_data, isc_arg_end);
 
 	dsql_nod* node = MAKE_node(nod_udf, input->nod_count);
 	node->nod_arg[0] = (dsql_nod*) userFunc;
@@ -8682,7 +8682,7 @@ static dsql_nod* pass1_union( CompiledStatement* statement, dsql_nod* input,
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_dsql_count_mismatch,	// overload of msg
-						  0);
+						  isc_arg_end);
 			}
 		}
 	} // end scope block
@@ -8778,14 +8778,14 @@ static dsql_nod* pass1_union( CompiledStatement* statement, dsql_nod* input,
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
-						  0);
+						  isc_arg_end);
 			}
 			const SLONG number = position->getSlong();
 			if (number < 1 || number > union_items->nod_count) {
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
 						  isc_arg_gds, isc_order_by_err,	// invalid ORDER BY clause.
-						  0);
+						  isc_arg_end);
 			}
 
 			// make a new order node pointing at the Nth item in the select list.
@@ -8859,7 +8859,7 @@ static void pass1_union_auto_cast(dsql_nod* input, const dsc& desc,
 					// Internal dsql error: column position out of range in pass1_union_auto_cast
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_auto_field_bad_pos, 0);
+						  isc_arg_gds, isc_dsql_auto_field_bad_pos, isc_arg_end);
 				}
 				else {
 					dsql_nod* select_item = input->nod_arg[position];
@@ -9305,7 +9305,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 		if (base_rel)
 			base_name = MAKE_cstring(base_rel->rel_name.c_str());
 		else
-			ERRD_post(isc_upd_ins_with_complex_view, 0);
+			ERRD_post(isc_upd_ins_with_complex_view, isc_arg_end);
 	}
 
 	dsql_nod* matching = input->nod_arg[e_upi_matching];
@@ -9335,7 +9335,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 		{
 			ERRD_post(isc_primary_key_required,
 					  isc_arg_string, base_name->str_data,
-					  0);
+					  isc_arg_end);
 		}
 	}
 
@@ -9417,12 +9417,12 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	if (match_count != matching->nod_count)
 	{
 		if (input->nod_arg[e_upi_matching])
-			ERRD_post(isc_upd_ins_doesnt_match_matching, 0);
+			ERRD_post(isc_upd_ins_doesnt_match_matching, isc_arg_end);
 		else
 		{
 			ERRD_post(isc_upd_ins_doesnt_match_pk,
 					  isc_arg_string, base_name->str_data,
-					  0);
+					  isc_arg_end);
 		}
 	}
 
@@ -10303,7 +10303,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node, 
 								  isc_arg_gds, isc_imp_exc,
 								  //isc_arg_gds, isc_field_name,
 								  //isc_arg_string, parameter->par_name,
-								  0);
+								  isc_arg_end);
 
 						parameter->par_desc.dsc_length += sizeof(USHORT);
 					}
@@ -10524,7 +10524,7 @@ void CompiledStatement::addCTEs(dsql_nod* with)
 	if (req_ctes.getCount()) {
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_cte_nested_with,	// WITH clause can't be nested
-			0);
+			isc_arg_end);
 	}
 
 	if (with->nod_flags & NOD_UNION_RECURSIVE)
@@ -10587,7 +10587,7 @@ void CompiledStatement::checkUnusedCTEs() const
 
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_dsql_cte_not_used, 
-				isc_arg_string, cte_name->str_data, 0);
+				isc_arg_string, cte_name->str_data, isc_arg_end);
 		}
 	}
 }

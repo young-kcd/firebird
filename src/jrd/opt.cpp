@@ -392,7 +392,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			fb_assert(stream <= MAX_UCHAR);
 			fb_assert(beds[0] < MAX_STREAMS && beds[0] < MAX_UCHAR); // debug check
 			//if (beds[0] >= MAX_STREAMS) // all builds check
-			//	ERR_post(isc_too_many_contexts, 0);
+			//	ERR_post(isc_too_many_contexts, isc_arg_end);
 
 			beds[++beds[0]] = (UCHAR) stream;
 		}
@@ -661,7 +661,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// Check if size of optimizer block exceeded.
 	if (conjunct_count > MAX_CONJUNCTS)
 	{
-		ERR_post(isc_optimizer_blk_exc, 0);
+		ERR_post(isc_optimizer_blk_exc, isc_arg_end);
 		// Msg442: size of optimizer block exceeded
 	}
 
@@ -1391,7 +1391,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 		/* index %s cannot be used in the specified plan */
 		const char* iname =
 			reinterpret_cast<const char*>(access_type->nod_arg[e_access_type_index_name]);
-		ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), 0);
+		ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), isc_arg_end);
 	}
 
 /* check to make sure that all indices are either used or marked not to be used,
@@ -1418,7 +1418,7 @@ static void check_indices(const CompilerScratch::csb_repeat* csb_tail)
 
 				/* index %s cannot be used in the specified plan */
 				ERR_post(isc_index_unused, isc_arg_string,
-						 ERR_cstring(index_name.c_str()), 0);
+						 ERR_cstring(index_name.c_str()), isc_arg_end);
 			}
 		}
 		++idx;
@@ -1724,7 +1724,7 @@ static void class_mask(USHORT count, jrd_nod** eq_class, ULONG* mask)
 #endif
 
 	if (count > MAX_CONJUNCTS) {
-		ERR_post(isc_optimizer_blk_exc, 0);
+		ERR_post(isc_optimizer_blk_exc, isc_arg_end);
 		/* Msg442: size of optimizer block exceeded */
 	}
 
@@ -2032,7 +2032,7 @@ static SLONG decompose(thread_db*		tdbb,
 		if (check_for_nod_from(arg)) {
 			/* Without this ERR_punt(), server was crashing with sub queries
 			 * under "between" predicate, Bug No. 73766 */
-			ERR_post(isc_optimizer_between_err, 0);
+			ERR_post(isc_optimizer_between_err, isc_arg_end);
 			/* Msg 493: Unsupported field type specified in BETWEEN predicate */
 		}
 		jrd_nod* node = OPT_make_binary_node(nod_geq, arg, boolean_node->nod_arg[1], true);
@@ -3143,7 +3143,7 @@ static void find_best(thread_db* tdbb,
 #ifdef OPT_DEBUG
 	// this is used only in development so is not in the message file.
 	if (opt_debug_flag >= DEBUG_PUNT) {
-		ERR_post(isc_random, isc_arg_string, "punt", 0);
+		ERR_post(isc_random, isc_arg_string, "punt", isc_arg_end);
 	}
 #endif
 	// if a plan was specified, check that this order matches the order
@@ -4004,7 +4004,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 				ERR_post(isc_invalid_sort_datatype,
 						 isc_arg_string,
 						 DSC_dtype_tostring(desc->dsc_dtype),
-						 0);
+						 isc_arg_end);
 			}
 
 			sort_key->skd_length = desc->dsc_length;
@@ -5322,7 +5322,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	}
 
 	if (items > MAX_USHORT)
-		ERR_post(isc_imp_exc, 0);
+		ERR_post(isc_imp_exc, isc_arg_end);
 
 /* Now that we know the number of items, allocate a sort map block.  Allocate
    it sufficiently large that there is room for a sort key descriptor on the
@@ -5414,7 +5414,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 			ERR_post(isc_invalid_sort_datatype,
 					 isc_arg_string,
 					 DSC_dtype_tostring(desc->dsc_dtype),
-					 0);
+					 isc_arg_end);
 		}
 		if (sort_key->skd_dtype == SKD_varying ||
 			sort_key->skd_dtype == SKD_cstring)
@@ -5542,7 +5542,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	}
 
 	if (map_length > MAX_SORT_RECORD)
-		ERR_post(isc_sort_rec_size_err, isc_arg_number, map_length, 0);
+		ERR_post(isc_sort_rec_size_err, isc_arg_number, map_length, isc_arg_end);
 	/* Msg438: sort record size of %ld bytes is too big */
 	map->smb_length = (USHORT) map_length;
 /* That was most unpleasant.  Never the less, it's done (except for
@@ -6856,7 +6856,7 @@ static void mark_indices(CompilerScratch::csb_repeat* csb_tail, SSHORT relation_
 					/* index %s cannot be used in the specified plan */
 					const char* iname =
 						reinterpret_cast<const char*>(arg[e_access_type_index_name]);
-					ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), 0);
+					ERR_post(isc_index_unused, isc_arg_string, ERR_cstring(iname), isc_arg_end);
 				}
 				if (idx->idx_id == (USHORT)(IPTR) arg[e_access_type_index])
 				{

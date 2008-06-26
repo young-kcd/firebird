@@ -223,7 +223,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
 		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring(filename), 0);
+				 isc_arg_string, ERR_cstring(filename), isc_arg_end);
 		return 0;
 	}
 }
