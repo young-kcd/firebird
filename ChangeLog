@@ -1,3 +1,113 @@
+2008-06-26 17:22  dimitr
+
+	* firebird2/src/jrd/: met.epp (1.255), pcmet.epp (1.53):
+
+	Rolled back some of my prior changes because of the found
+	regression.
+
+2008-06-26 14:28  dimitr
+
+	* firebird2/src/jrd/: met.epp (1.254), met_proto.h (1.67):
+
+	Rolled back my minor prototype changes as requested by Claudio.
+
+2008-06-26 14:02  robocop
+
+	* firebird2/src/common/classes/ClumpletWriter.cpp (1.26):
+
+	Misc: use sizeof instead.
+
+2008-06-26 13:28  dimitr
+
+	* firebird2/src/include/fb_types.h (1.55):
+
+	Misc.
+
+2008-06-26 13:23  robocop
+
+	* firebird2/src/: jrd/DatabaseSnapshot.cpp (1.63), jrd/event.cpp
+	(1.73), jrd/isc_s_proto.h (1.20), jrd/isc_sync.cpp (1.141),
+	lock/lock.cpp (1.159):
+
+	Cleanup: get rid of useless third param in ISC_unmap_file
+
+2008-06-26 13:20  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.242), met.epp (1.253):
+
+	Final part of the solution for CORE-1938: fixed synchronization.
+
+2008-06-26 13:03  robocop
+
+	* firebird2/src/common/classes/ClumpletReader.cpp (1.29):
+
+	Misc.
+
+2008-06-26 13:01  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.84):
+
+	Relation must be locked for any DPM access. As it's normally done
+	after request optimization, I put an extra lock into the optimizer.
+	 This is one of the possible reasons for CORE-1938 to appear.
+
+2008-06-26 12:58  alexpeshkoff
+
+	* firebird2/src/utilities/gstat/dba.epp (1.100):
+
+	Avoid duplicate Service::finish() call - thanks to Roman Simakov
+
+2008-06-26 12:48  dimitr
+
+	* firebird2/src/jrd/: dfw.epp (1.241), met.epp (1.252), met_proto.h
+	(1.66), par.cpp (1.203), pcmet.epp (1.52):
+
+	1) Keep rel_name for dropped relations in order to report errors
+	properly.  2) Throw an error when the relation cannot be locked
+	because of being already dropped.  3) Don't release the existence
+	lock before RDB$RELATIONS is cleaned up.  This is the first part of
+	the changes intended to fix CORE-1938.
+
+2008-06-26 12:43  robocop
+
+	* firebird2/src/jrd/: event.cpp (1.72), isc_sync.cpp (1.140):
+
+	Misc.
+
+2008-06-26 11:47  alexpeshkoff
+
+	* firebird2/src/: common/UtilSvc.cpp (1.5), dsql/ddl.cpp (1.248),
+	dsql/dsql.cpp (1.251), dsql/gen.cpp (1.160), dsql/make.cpp (1.164),
+	dsql/metd.epp (1.133), dsql/parse.y (1.289), dsql/pass1.cpp
+	(1.397), dsql/user_dsql.cpp (1.54), jrd/CharSet.cpp (1.8),
+	jrd/CsConvert.h (1.13), jrd/DataTypeUtil.cpp (1.15), jrd/Database.h
+	(1.23), jrd/DatabaseSnapshot.cpp (1.62), jrd/DebugInterface.cpp
+	(1.8), jrd/SimilarToMatcher.h (1.12), jrd/SysFunction.cpp (1.51),
+	jrd/VirtualTable.cpp (1.11), jrd/blb.cpp (1.170), jrd/btr.cpp
+	(1.215), jrd/cch.cpp (1.206), jrd/cmp.cpp (1.300), jrd/cvt.cpp
+	(1.95), jrd/cvt2.cpp (1.61), jrd/dfw.epp (1.240), jrd/dpm.epp
+	(1.78), jrd/dyn.epp (1.128), jrd/dyn_def.epp (1.167),
+	jrd/dyn_del.epp (1.77), jrd/dyn_mod.epp (1.104), jrd/err.cpp
+	(1.76), jrd/evl.cpp (1.264), jrd/evl_string.h (1.27), jrd/exe.cpp
+	(1.265), jrd/exe.h (1.123), jrd/execute_statement.cpp (1.40),
+	jrd/ext.cpp (1.81), jrd/fun.epp (1.97), jrd/functions.cpp (1.33),
+	jrd/iberr.cpp (1.16), jrd/idx.cpp (1.135), jrd/intl.cpp (1.110),
+	jrd/isc_sync.cpp (1.139), jrd/jrd.cpp (1.468), jrd/lck.cpp (1.87),
+	jrd/met.epp (1.251), jrd/mov.cpp (1.35), jrd/nbak.cpp (1.82),
+	jrd/opt.cpp (1.316), jrd/pag.cpp (1.187), jrd/par.cpp (1.202),
+	jrd/pcmet.epp (1.51), jrd/pwd.cpp (1.67), jrd/qatest.cpp (1.23),
+	jrd/quad.cpp (1.10), jrd/rlck.cpp (1.42), jrd/rse.cpp (1.150),
+	jrd/scl.epp (1.96), jrd/sdl.cpp (1.50), jrd/sdw.cpp (1.80),
+	jrd/shut.cpp (1.56), jrd/sort.cpp (1.111), jrd/svc.cpp (1.228),
+	jrd/tra.cpp (1.178), jrd/vio.cpp (1.220), jrd/why.cpp (1.205),
+	jrd/os/posix/isc_ipc.cpp (1.31), jrd/os/posix/unix.cpp (1.100),
+	remote/inet.cpp (1.244), remote/interface.cpp (1.192),
+	remote/server.cpp (1.215), utilities/fbsvcmgr.cpp (1.7):
+
+	Fixed CORE-1964: Use of 0 instead of isc_arg_end to terminate list
+	of ERR_post's (and cousines) arguments is invalid.  Also cleaned up
+	use of gds__log() in a few places.
+
 2008-06-25 17:57  asfernandes
 
 	* firebird2/src/: dsql/make.cpp (1.163), jrd/evl.cpp (1.263):
