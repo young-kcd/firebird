@@ -111,10 +111,8 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
             if (!relation)
             {
 				relation = MET_relation(tdbb, REL.RDB$RELATION_ID);
-				if (relation->rel_name.length() == 0)
-				{
-					relation->rel_name = REL.RDB$RELATION_NAME;
-				}
+				relation->rel_name = REL.RDB$RELATION_NAME;
+
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
 					SelectivityList selectivity(*tdbb->getDefaultPool());
@@ -125,6 +123,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					EXE_unwind(tdbb, request);
 					return false;
 				}
+
 				if (IDX.RDB$INDEX_ID)
 				{
 					IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
@@ -134,6 +133,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						IDX.RDB$INDEX_ID.NULL = TRUE;
 					END_MODIFY;
 				}
+
 				if (IDX.RDB$INDEX_INACTIVE)
 				{
 					EXE_unwind(tdbb, request);

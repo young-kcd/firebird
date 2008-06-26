@@ -202,8 +202,7 @@ static void put_summary_blob(blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
-static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
-	const TEXT*, bool);
+static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
@@ -3463,6 +3462,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_use_count)
 			MET_clear_cache(tdbb);
+
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
 				!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX,
@@ -3517,8 +3517,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 #ifdef GARBAGE_THREAD
-		/* Free any memory associated with the relation's
-		   garbage collection bitmap. */
+		// Free any memory associated with the relation's garbage collection bitmap
 
 		if (relation->rel_gc_bitmap)
 		{
@@ -3545,22 +3544,15 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			DPM_delete_relation(tdbb, relation);
 		}
 
-		/* if this is a view (or even if we don't know),
-		   delete dependency lists */
+		// if this is a view (or even if we don't know), delete dependency lists
 
 		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned)) {
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
 		}
 
-		/* Now that the data, pointer, and index pages are gone,
-		   get rid of formats as well */
+		// Now that the data, pointer, and index pages are gone,
+		// get rid of the relation itself
 
-		if (relation->rel_existence_lock) {
-			LCK_release(tdbb, relation->rel_existence_lock);
-		}
-		if (relation->rel_partners_lock) {
-			LCK_release(tdbb, relation->rel_partners_lock);
-		}
 		request = NULL;
 
 		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
@@ -3568,7 +3560,17 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			ERASE X;
 		END_FOR;
 
-		relation->rel_name = "";
+		CMP_release(tdbb, request);
+
+		// Release relation locks
+		if (relation->rel_existence_lock) {
+			LCK_release(tdbb, relation->rel_existence_lock);
+		}
+		if (relation->rel_partners_lock) {
+			LCK_release(tdbb, relation->rel_partners_lock);
+		}
+
+		// Mark relation in the cache as dropped
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
 
@@ -3580,7 +3582,6 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		MET_release_triggers(tdbb, &relation->rel_pre_modify);
 		MET_release_triggers(tdbb, &relation->rel_post_modify);
 
-		CMP_release(tdbb, request);
 		break;
 	}
 
@@ -5432,8 +5433,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation,  blob,  triggers,
-				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+			setup_trigger_details(tdbb, relation, blob, triggers,
+								  TRG.RDB$TRIGGER_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format4))
@@ -5459,8 +5460,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation,  blob,  triggers,
-			    TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+			setup_trigger_details(tdbb, relation, blob, triggers,
+								  TRG.RDB$TRIGGER_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format5))
@@ -5490,8 +5491,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation,  blob,  triggers,
-				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
+			setup_trigger_details(tdbb, relation, blob, triggers,
+								  TRG.RDB$TRIGGER_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format6))
@@ -5506,7 +5507,6 @@ static void setup_trigger_details(thread_db* tdbb,
 								  blb* blob,
 								  trig_vec** triggers,
 								  const TEXT* trigger_name,
-								  const TEXT* relation_name,
 								  bool null_view)
 {
 /**************************************
@@ -5529,8 +5529,6 @@ static void setup_trigger_details(thread_db* tdbb,
 		(const UCHAR*) trigger_name, fb_utils::name_length(trigger_name));
 
 	if (!null_view) {
-		if (relation->rel_name.length() == 0)
-			relation->rel_name = relation_name;
 		MET_load_trigger(tdbb, relation, trigger_name, triggers);
 	}
 }

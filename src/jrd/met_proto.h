@@ -76,7 +76,7 @@ bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info)
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
-								Firebird::MetaName = Firebird::MetaName());
+								const Firebird::MetaName& = Firebird::MetaName());
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_db_triggers(Jrd::thread_db*, int);
@@ -99,7 +99,7 @@ Jrd::jrd_rel*	MET_lookup_relation_id(Jrd::thread_db*, SLONG, bool);
 Jrd::jrd_nod*	MET_parse_blob(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::bid*, Jrd::CompilerScratch**,
 								  Jrd::jrd_req**, bool);
 void		MET_parse_sys_trigger(Jrd::thread_db*, Jrd::jrd_rel*);
-bool		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
+void		MET_post_existence(Jrd::thread_db*, Jrd::jrd_rel*);
 void		MET_prepare(Jrd::thread_db*, Jrd::jrd_tra*, USHORT, const UCHAR*);
 Jrd::jrd_prc*	MET_procedure(Jrd::thread_db*, int, bool, USHORT);
 Jrd::jrd_rel*	MET_relation(Jrd::thread_db*, USHORT);

@@ -260,8 +260,11 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 }
 
 
-Firebird::MetaName MET_get_relation_field(thread_db* tdbb, const Firebird::MetaName& relationName,
-	const Firebird::MetaName& fieldName, dsc* desc, FieldInfo* fieldInfo)
+Firebird::MetaName MET_get_relation_field(thread_db* tdbb,
+										  const Firebird::MetaName& relationName,
+										  const Firebird::MetaName& fieldName,
+										  dsc* desc,
+										  FieldInfo* fieldInfo)
 {
 /**************************************
  *
@@ -709,7 +712,7 @@ bool MET_procedure_in_use(thread_db* tdbb, jrd_prc* proc)
 }
 
 
-void MET_activate_shadow( thread_db* tdbb)
+void MET_activate_shadow(thread_db* tdbb)
 {
 /**************************************
  *
@@ -796,9 +799,7 @@ ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 		break;
 	}
 
-	alignment = MIN(alignment,
-	  dbb->dbb_ods_version >= ODS_VERSION11 ?
-	  FORMAT_ALIGNMENT : ALIGNMENT);
+	alignment = MIN(alignment, dbb->dbb_ods_version >= ODS_VERSION11 ? FORMAT_ALIGNMENT : ALIGNMENT);
 
 	return FB_ALIGN(value, alignment);
 }
@@ -1008,9 +1009,9 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void MET_delete_dependencies(thread_db*					tdbb,
-							 const Firebird::MetaName&	object_name,
-							 int						dependency_type)
+void MET_delete_dependencies(thread_db* tdbb,
+							 const Firebird::MetaName& object_name,
+							 int dependency_type)
 {
 /**************************************
  *
@@ -1047,7 +1048,7 @@ void MET_delete_dependencies(thread_db*					tdbb,
 }
 
 
-void MET_delete_shadow( thread_db* tdbb, USHORT shadow_number)
+void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
 {
 /**************************************
  *
@@ -1240,8 +1241,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
 }
 
 
-bool MET_get_char_coll_subtype(thread_db* tdbb,
-							 USHORT* id, const UCHAR* name, USHORT length)
+bool MET_get_char_coll_subtype(thread_db* tdbb, USHORT* id, const UCHAR* name, USHORT length)
 {
 /**************************************
  *
@@ -1389,17 +1389,17 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 }
 
 
-jrd_nod* MET_get_dependencies(thread_db*				tdbb,
-							  jrd_rel*					relation,
-							  const UCHAR*				blob,
-							  CompilerScratch*			view_csb,
-							  bid*						blob_id,
-							  jrd_req**					request,
-							  CompilerScratch**			csb_ptr,
-							  Firebird::MetaName&		object_name,
-							  int						type,
-							  USHORT					flags,
-							  Firebird::MetaName		domain_validation)
+jrd_nod* MET_get_dependencies(thread_db* tdbb,
+							  jrd_rel* relation,
+							  const UCHAR* blob,
+							  CompilerScratch* view_csb,
+							  bid* blob_id,
+							  jrd_req** request,
+							  CompilerScratch** csb_ptr,
+							  Firebird::MetaName& object_name,
+							  int type,
+							  USHORT flags,
+							  const Firebird::MetaName& domain_validation)
 {
 /**************************************
  *
@@ -1415,8 +1415,7 @@ jrd_nod* MET_get_dependencies(thread_db*				tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5,
-		domain_validation);
+	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, domain_validation);
 	csb->csb_g_flags |= (csb_get_dependencies | flags);
 
 	jrd_nod* node;
@@ -1494,7 +1493,7 @@ jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
 }
 
 
-void MET_get_shadow_files( thread_db* tdbb, bool delete_files)
+void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
 {
 /**************************************
  *
@@ -1729,8 +1728,8 @@ void MET_load_trigger(thread_db* tdbb,
 
 
 void MET_lookup_cnstrt_for_index(thread_db* tdbb,
-								Firebird::MetaName& constraint_name,
-								const Firebird::MetaName& index_name)
+								 Firebird::MetaName& constraint_name,
+								 const Firebird::MetaName& index_name)
 {
 /**************************************
  *
@@ -1764,8 +1763,7 @@ void MET_lookup_cnstrt_for_index(thread_db* tdbb,
 }
 
 
-void MET_lookup_cnstrt_for_trigger(
-								   thread_db* tdbb,
+void MET_lookup_cnstrt_for_trigger(thread_db* tdbb,
 								   Firebird::MetaName& constraint_name,
 								   Firebird::MetaName& relation_name,
 								   const Firebird::MetaName& trigger_name)
@@ -1824,11 +1822,11 @@ void MET_lookup_cnstrt_for_trigger(
 }
 
 
-void MET_lookup_exception(thread_db*			tdbb,
-						  SLONG					number,
-						  Firebird::MetaName&	name,
-						  TEXT*					message,
-						  size_t				messageSize)
+void MET_lookup_exception(thread_db* tdbb,
+						  SLONG number,
+						  Firebird::MetaName& name,
+						  TEXT* message,
+						  size_t messageSize)
 {
 /**************************************
  *
@@ -1972,7 +1970,7 @@ int MET_lookup_field(thread_db* tdbb,
 
 	int id = -1;
 
-	if (relation->rel_name.length() == 0)
+	if (relation->rel_flags & REL_deleted)
 	{
 		return id;
 	}
@@ -2635,8 +2633,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
-		if (relation && (relation->rel_name.length() > 0)
-			&& (!(relation->rel_flags & REL_deleted)))
+		if (relation && (!(relation->rel_flags & REL_deleted)))
 		{
 			/* dimitr: for non-system relations we should also check
 					   REL_scanned and REL_being_scanned flags. Look
@@ -2677,10 +2674,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		}
 
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		if (relation->rel_name.length() == 0)
-		{
-			relation->rel_name = name;
-		}
+		relation->rel_name = X.RDB$RELATION_NAME;
 	END_FOR;
 
 	if (!REQUEST(irq_l_relation))
@@ -2758,10 +2752,9 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
         if (!REQUEST(irq_l_rel_id))
 			REQUEST(irq_l_rel_id) = request;
+
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		if (relation->rel_name.length() == 0) {
-			relation->rel_name = X.RDB$RELATION_NAME;
-		}
+		relation->rel_name = X.RDB$RELATION_NAME;
 	END_FOR;
 
 	if (!REQUEST(irq_l_rel_id))
@@ -2944,8 +2937,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-// Currently, nobody checks the result of this function, but let's keep it.
-bool MET_post_existence( thread_db* tdbb, jrd_rel* relation)
+void MET_post_existence(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -2962,15 +2954,12 @@ bool MET_post_existence( thread_db* tdbb, jrd_rel* relation)
 	if (++relation->rel_use_count == 1 &&
 		!MET_lookup_relation_id(tdbb, relation->rel_id, false))
 	{
-		return false;
+		ERR_post(isc_relnotdef, isc_arg_string, ERR_string(relation->rel_name), isc_arg_end);
 	}
-
-	return true;
 }
 
 
-void MET_prepare( thread_db* tdbb, jrd_tra* transaction, USHORT length,
-	const UCHAR* msg)
+void MET_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCHAR* msg)
 {
 /**************************************
  *
@@ -3464,8 +3453,8 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 }
 
 
-bool MET_relation_default_class (thread_db* tdbb, const Firebird::MetaName& relation_name,
-                                 const Firebird::MetaName& default_security_class_name)
+bool MET_relation_default_class(thread_db* tdbb, const Firebird::MetaName& relation_name,
+                                const Firebird::MetaName& default_security_class_name)
 {
 /**************************************
  *
@@ -3541,7 +3530,7 @@ void MET_release_existence(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
+void MET_remove_procedure(thread_db* tdbb, int id, jrd_prc* procedure)
 {
 /**************************************
  *
@@ -3647,11 +3636,11 @@ void MET_remove_procedure( thread_db* tdbb, int id, jrd_prc* procedure)
 }
 
 
-void MET_revoke(
-				thread_db* tdbb,
+void MET_revoke(thread_db* tdbb,
 				jrd_tra* transaction,
 				const TEXT* relation,
-				const TEXT* revokee, const TEXT* privilege)
+				const TEXT* revokee,
+				const TEXT* privilege)
 {
 /**************************************
  *
@@ -3712,7 +3701,7 @@ void MET_revoke(
 }
 
 
-void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
+void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 {
 /**************************************
  *
@@ -3775,12 +3764,10 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 		if (!REL.RDB$SECURITY_CLASS.NULL) {
 			relation->rel_security_name = REL.RDB$SECURITY_CLASS;
 		}
-		if (relation->rel_name.length() == 0) {
-			relation->rel_name = REL.RDB$RELATION_NAME;
-		}
-		if (relation->rel_owner_name.length() == 0) {
-			relation->rel_owner_name = REL.RDB$OWNER_NAME;
-		}
+
+		relation->rel_name = REL.RDB$RELATION_NAME;
+		relation->rel_owner_name = REL.RDB$OWNER_NAME;
+
 		if (REL.RDB$FLAGS & REL_sql)
 		{
 			relation->rel_flags |= REL_sql_relation;
@@ -4133,7 +4120,7 @@ const TEXT* MET_trigger_msg(thread_db* tdbb, const Firebird::MetaName& name, USH
 }
 
 
-void MET_update_shadow( thread_db* tdbb, Shadow* shadow, USHORT file_flags)
+void MET_update_shadow(thread_db* tdbb, Shadow* shadow, USHORT file_flags)
 {
 /**************************************
  *
@@ -4159,7 +4146,7 @@ void MET_update_shadow( thread_db* tdbb, Shadow* shadow, USHORT file_flags)
 }
 
 
-void MET_update_transaction( thread_db* tdbb, jrd_tra* transaction, const bool do_commit)
+void MET_update_transaction(thread_db* tdbb, jrd_tra* transaction, const bool do_commit)
 {
 /**************************************
  *

@@ -1394,7 +1394,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 								ERR_cstring(name), isc_arg_string,
 								relation->rel_name.c_str(), isc_arg_end);
 					}
-					else if (relation->rel_name.length() > 0)
+					else if (!(relation->rel_flags & REL_deleted))
 					{
 						error(csb, isc_fldnotdef, isc_arg_string,
 							  ERR_cstring(name), isc_arg_string,
