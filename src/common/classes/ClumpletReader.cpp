@@ -500,7 +500,7 @@ SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 
 SLONG ClumpletReader::getInt() const
 {
-	size_t length = getClumpLength();
+	const size_t length = getClumpLength();
 
 	if (length > 4) {
 		invalid_structure("length of integer exceeds 4 bytes");
@@ -552,7 +552,7 @@ ISC_TIMESTAMP ClumpletReader::getTimeStamp() const
 
 SINT64 ClumpletReader::getBigInt() const
 {
-	size_t length = getClumpLength();
+	const size_t length = getClumpLength();
 
 	if (length > 8) {
 		invalid_structure("length of BigInt exceeds 8 bytes");
