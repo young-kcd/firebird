@@ -45,13 +45,13 @@ const ULONG ALLOC_dont_check	= 1L << 5;	/* Stop checking integrity on each call 
 extern "C" {
 #endif
 
-typedef void* pVoid;
+typedef void* VoidPtr;
 
-pVoid	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
+VoidPtr	API_ROUTINE gds__alloc_debug(SLONG, const TEXT*, ULONG);
 void	API_ROUTINE gds_alloc_flag_unfreed(void*);
 void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
 
-pVoid	API_ROUTINE gds__alloc(SLONG);
+VoidPtr	API_ROUTINE gds__alloc(SLONG);
 
 #ifdef DEBUG_GDS_ALLOC
 #define gds__alloc(s)		gds__alloc_debug ((s), (TEXT*)__FILE__, (ULONG)__LINE__)
@@ -117,7 +117,7 @@ void	API_ROUTINE gds__qtoq(const void*, void*);
 void	API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR, void*);
 SLONG	API_ROUTINE gds__sqlcode(const ISC_STATUS*);
 void	API_ROUTINE gds__sqlcode_s(const ISC_STATUS*, ULONG*);
-pVoid	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
+VoidPtr	API_ROUTINE gds__temp_file(BOOLEAN, const TEXT*, TEXT*, TEXT* = NULL,
 	BOOLEAN = FALSE);
 void	API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR, void*);
 BOOLEAN	API_ROUTINE gds__validate_lib_path(const TEXT*, const TEXT*, TEXT*,

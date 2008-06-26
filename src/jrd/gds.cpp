@@ -242,7 +242,7 @@ static CLEAN	cleanup_handlers = NULL;
 static gds_msg* global_default_msg = NULL;
 static bool initialized = false;
 
-pVoid API_ROUTINE gds__alloc_debug(SLONG size_request,
+VoidPtr API_ROUTINE gds__alloc_debug(SLONG size_request,
                                    const TEXT* filename,
                                    ULONG lineno)
 {
@@ -2411,7 +2411,7 @@ void API_ROUTINE gds__sqlcode_s(const ISC_STATUS* status_vector, ULONG* sqlcode)
 }
 
 
-pVoid API_ROUTINE gds__temp_file(
+VoidPtr API_ROUTINE gds__temp_file(
 					 BOOLEAN stdio_flag, const TEXT* string,
 					 TEXT* expanded_string, TEXT* dir, BOOLEAN unlink_flag)
 {
@@ -3640,7 +3640,7 @@ void gds__trace_printer(void* arg, SSHORT offset, const TEXT* line)
 
 #undef gds__alloc
 
-pVoid API_ROUTINE gds__alloc(SLONG size_request)
+VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 {
 	return getDefaultMemoryPool()->allocate_nothrow(size_request, 0
 #ifdef DEBUG_GDS_ALLOC

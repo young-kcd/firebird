@@ -1750,10 +1750,10 @@ int API_ROUTINE BLOB_load(ISC_QUAD* blob_id,
 }
 
 
-pStream API_ROUTINE Bopen(ISC_QUAD* blob_id,
-						   FB_API_HANDLE database, 
-						   FB_API_HANDLE transaction,
-						   const SCHAR* mode)
+StreamPtr API_ROUTINE Bopen(ISC_QUAD* blob_id,
+							FB_API_HANDLE database, 
+							FB_API_HANDLE transaction,
+							const SCHAR* mode)
 {
 /**************************************
  *
@@ -1808,7 +1808,7 @@ pStream API_ROUTINE Bopen(ISC_QUAD* blob_id,
 
 
 // CVC: This routine doesn't open a blob really!
-pStream API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
+StreamPtr API_ROUTINE BLOB_open(FB_API_HANDLE blob, SCHAR* buffer, int length)
 {
 /**************************************
  *
