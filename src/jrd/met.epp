@@ -2633,7 +2633,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
-		if (relation && (!(relation->rel_flags & REL_deleted)))
+		if (relation && !(relation->rel_flags & REL_deleted))
 		{
 			/* dimitr: for non-system relations we should also check
 					   REL_scanned and REL_being_scanned flags. Look
@@ -2674,7 +2674,9 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		}
 
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		relation->rel_name = X.RDB$RELATION_NAME;
+		if (relation->rel_name.length() == 0) {
+			relation->rel_name = name;
+		}
 	END_FOR;
 
 	if (!REQUEST(irq_l_relation))
@@ -2754,7 +2756,9 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 			REQUEST(irq_l_rel_id) = request;
 
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		relation->rel_name = X.RDB$RELATION_NAME;
+		if (relation->rel_name.length() == 0) {
+ 			relation->rel_name = X.RDB$RELATION_NAME;
+		}
 	END_FOR;
 
 	if (!REQUEST(irq_l_rel_id))
