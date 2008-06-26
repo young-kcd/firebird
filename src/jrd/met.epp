@@ -1399,7 +1399,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 							  Firebird::MetaName& object_name,
 							  int type,
 							  USHORT flags,
-							  const Firebird::MetaName& domain_validation)
+							  Firebird::MetaName domain_validation)
 {
 /**************************************
  *

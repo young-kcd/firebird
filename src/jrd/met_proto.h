@@ -76,7 +76,7 @@ bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info)
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
-								const Firebird::MetaName& = Firebird::MetaName());
+								Firebird::MetaName = Firebird::MetaName());
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
 void		MET_load_db_triggers(Jrd::thread_db*, int);
