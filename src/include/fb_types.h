@@ -69,7 +69,7 @@ typedef USHORT ISC_USHORT;
 typedef SLONG ISC_LONG;
 typedef ULONG ISC_ULONG;
 
-#include <types_pub.h>
+#include "types_pub.h"
 
 /*
  * TMN: some misc data types from all over the place
