@@ -132,7 +132,7 @@ void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, SINT64 value)
 
 void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 {
-	UCHAR bytes[4];
+	UCHAR bytes[sizeof(SLONG)];
 
 	toVaxInteger(bytes, sizeof(bytes), value);
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
@@ -140,7 +140,7 @@ void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 
 void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
 {
-	UCHAR bytes[8];
+	UCHAR bytes[sizeof(SINT64)];
 
 	toVaxInteger(bytes, sizeof(bytes), value);
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
@@ -156,7 +156,7 @@ void ClumpletWriter::insertDouble(UCHAR tag, double value)
 	fb_assert(sizeof(double) == sizeof(temp));
 
 	temp.temp_double = value;
-	UCHAR bytes[8];
+	UCHAR bytes[sizeof(double)];
 	toVaxInteger(bytes, sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_FIRST]);
 	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_SECOND]);
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
@@ -164,7 +164,7 @@ void ClumpletWriter::insertDouble(UCHAR tag, double value)
 
 void ClumpletWriter::insertTimeStamp(UCHAR tag, ISC_TIMESTAMP value)
 {
-	UCHAR bytes[8];
+	UCHAR bytes[sizeof(ISC_TIMESTAMP)];
 	toVaxInteger(bytes, sizeof(SLONG), value.timestamp_date);
 	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), value.timestamp_time);
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
