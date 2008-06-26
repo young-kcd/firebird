@@ -937,7 +937,7 @@ static void deliver_request(EVT_REQ request)
 			// since new_buffer will be again and again this number. FIXED.
 			UCHAR* new_buffer = 0;
 			if (event_buffer == buffer)
-				new_buffer = (UCHAR*)gds__alloc((SLONG) MAX_EVENT_BUFFER);
+				new_buffer = (UCHAR*) gds__alloc((SLONG) MAX_EVENT_BUFFER);
 			/* FREE: at procedure exit */
 			if (!new_buffer)
 			{	/* NOMEM: */
@@ -992,7 +992,7 @@ static void exit_handler(void* arg)
 	ISC_STATUS_ARRAY local_status;
 
 #ifdef SOLARIS_MT
-	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**)&EVENT_process,
+	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**) &EVENT_process,
 					 sizeof(prb));
 #endif
 	ISC_unmap_file(local_status, &EVENT_data, 0);
@@ -1408,7 +1408,7 @@ static int validate(void)
 	for (offset = sizeof(evh); offset < EVENT_header->evh_length;
 		offset += block->frb_header.hdr_length)
 	{
-		event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
+		const event_hdr* block = (event_hdr*) SRQ_ABS_PTR(offset);
 		if (!block->frb_header.hdr_length || !block->frb_header.hdr_type
 			|| block->frb_header.hdr_type >= type_max)
 		{
@@ -1416,10 +1416,12 @@ static int validate(void)
 			break;
 		}
 		if (next_free)
+		{
 			if (offset == next_free)
 				next_free = 0;
 			else if (offset > next_free)
 				punt("bad free chain");
+		}
 		if (block->frb_header.hdr_type == type_frb) {
 			next_free = ((FRB) block)->frb_next;
 			if (next_free >= EVENT_header->evh_length)

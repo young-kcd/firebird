@@ -304,8 +304,7 @@ int ISC_event_post(event_t* event)
 	const int ret = cond_broadcast(event->event_semnum);
 	mutex_unlock(event->event_mutex);
 	if (ret)
-		gds__log("ISC_event_post: cond_broadcast failed with errno = %d",
-				 ret);
+		gds__log("ISC_event_post: cond_broadcast failed with errno = %d", ret);
 	return ret;
 }
 
@@ -1030,7 +1029,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		is_critical = false;
 		break;
 	case 0xE06D7363: /* E == Exception. 0x6D7363 == "msc". Intel and Borland use the same code to be compatible */
-		/* If we've catched our own software exception,
+		/* If we've caught our own software exception,
 		   continue rewinding the stack to properly handle it
 		   and deliver an error information to the client side */
 		result = EXCEPTION_CONTINUE_SEARCH;
@@ -1854,25 +1853,23 @@ UCHAR* ISC_map_file(
 		CloseHandle(file_handle);
 		return NULL;
 	}
-	else
+
+	if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
 	{
-		if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
-		{
-			// We have made header_obj but we are not initializing.
-			// Previous owner is closed and clear all header_data.
-			// One need to retry.
-			CloseHandle(header_obj);
-			CloseHandle(event_handle);
-			CloseHandle(file_handle);
-			goto retry;
-		}
+		// We have made header_obj but we are not initializing.
+		// Previous owner is closed and clear all header_data.
+		// One need to retry.
+		CloseHandle(header_obj);
+		CloseHandle(event_handle);
+		CloseHandle(file_handle);
+		goto retry;
 	}
 
 	SLONG* header_address =
 		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
-		error(status_vector, "CreateFileMapping", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
@@ -1915,7 +1912,7 @@ UCHAR* ISC_map_file(
 		(UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
-		error(status_vector, "CreateFileMapping", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(file_obj);
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
@@ -2448,8 +2445,6 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 
 	while (true)
 	{
-		DWORD dwResult;
-		
 		if (dwMilliseconds == 0) {
 			if (!tryLockSharedSection(lpSect))
 				return WAIT_TIMEOUT;
@@ -2482,7 +2477,7 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		unlockSharedSection(lpSect);
 		
 		// TODO actual timeout can be of any length
-		dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
+		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		
 		if (dwResult != WAIT_OBJECT_0)
@@ -2868,7 +2863,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 	LPVOID address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
-		error(status_vector, "CreateFileMapping", GetLastError());
+		error(status_vector, "MapViewOfFile", GetLastError());
 		CloseHandle(file_obj);
 		return NULL;
 	}
@@ -2891,7 +2886,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 		return NULL;
 	}
 
-	return reinterpret_cast<UCHAR*>(address);
+	return static_cast<UCHAR*>(address);
 }
 #endif
 
@@ -3102,7 +3097,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 
 
 #ifdef WIN_NT
-void ISC_unmap_file(ISC_STATUS * status_vector,
+void ISC_unmap_file(ISC_STATUS* status_vector,
 					SH_MEM shmem_data,
 					USHORT flag)
 {
@@ -3115,6 +3110,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector,
  * Functional description
  *	Detach from the shared memory.  Depending upon the flag,
  *	get rid of the semaphore and/or get rid of shared memory.
+ *  Wrong comment, the flag is not used at all.
  *
  **************************************/
 
@@ -3165,13 +3161,13 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
  *	Find the semaphore/shared memory key for a file.
  *
  **************************************/
-	int fd;
-	key_t key;
 
-/* Produce shared memory key for file */
+	// Produce shared memory key for file
 
-	if ((key = ftok(filename, FTOK_KEY)) == -1) {
-		if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)) == -1) {
+	key_t key = ftok(filename, FTOK_KEY);
+	if (key == -1) {
+		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)
+		if (fd == -1) {
 			error(status_vector, "open", errno);
 			return 0L;
 		}
