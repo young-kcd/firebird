@@ -3404,6 +3404,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 		relation->rel_flags &= ~REL_deleting;
+		relation->rel_flags &= ~REL_check_existence;
 		return false;
 
 	case 1:
@@ -3476,6 +3477,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
 					 isc_arg_end);
 		}
+
+		relation->rel_flags |= REL_check_existence;
 		return true;
 
 	case 3:
@@ -3573,6 +3576,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		// Mark relation in the cache as dropped
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
+		relation->rel_flags &= ~REL_check_existence;
 
 		// Release relation triggers
 		MET_release_triggers(tdbb, &relation->rel_pre_store);

@@ -2951,9 +2951,11 @@ void MET_post_existence(thread_db* tdbb, jrd_rel* relation)
  **************************************/
 	SET_TDBB(tdbb);
 
-	if (++relation->rel_use_count == 1 &&
-		!MET_lookup_relation_id(tdbb, relation->rel_id, false))
+	relation->rel_use_count++;
+
+	if (!MET_lookup_relation_id(tdbb, relation->rel_id, false))
 	{
+		relation->rel_use_count--;
 		ERR_post(isc_relnotdef, isc_arg_string, ERR_string(relation->rel_name), isc_arg_end);
 	}
 }
