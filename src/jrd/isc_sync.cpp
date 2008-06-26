@@ -3048,7 +3048,7 @@ void ISC_sync_signals_reset()
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3057,8 +3057,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
  **************************************
  *
  * Functional description
- *	Unmap a given file.  Depending upon the flag,
- *	get rid of the semaphore and/or truncate the file.
+ *	Unmap a given file.
  *
  **************************************/
 	union semun arg;
@@ -3074,7 +3073,7 @@ void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 
 #ifdef UNIX
 #ifndef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3083,8 +3082,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
  **************************************
  *
  * Functional description
- *	Detach from the shared memory.  Depending upon the flag,
- *	get rid of the semaphore and/or get rid of shared memory.
+ *	Detach from the shared memory
  *
  **************************************/
 	struct shmid_ds buf;
@@ -3098,8 +3096,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 
 #ifdef WIN_NT
 void ISC_unmap_file(ISC_STATUS* status_vector,
-					SH_MEM shmem_data,
-					USHORT flag)
+					SH_MEM shmem_data)
 {
 /**************************************
  *
@@ -3108,9 +3105,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector,
  **************************************
  *
  * Functional description
- *	Detach from the shared memory.  Depending upon the flag,
- *	get rid of the semaphore and/or get rid of shared memory.
- *  Wrong comment, the flag is not used at all.
+ *	Detach from the shared memory.
  *
  **************************************/
 

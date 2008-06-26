@@ -995,7 +995,7 @@ static void exit_handler(void* arg)
 	ISC_unmap_object(local_status, &EVENT_data, (UCHAR**) &EVENT_process,
 					 sizeof(prb));
 #endif
-	ISC_unmap_file(local_status, &EVENT_data, 0);
+	ISC_unmap_file(local_status, &EVENT_data);
 
 	EVENT_header = NULL;
 }

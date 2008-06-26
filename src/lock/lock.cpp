@@ -248,7 +248,7 @@ LockManager::~LockManager()
 
 	if (m_header)
 	{
-		ISC_unmap_file(local_status, &m_shmem, 0);
+		ISC_unmap_file(local_status, &m_shmem);
 	}
 
 	Firebird::MutexLockGuard guard(g_mapMutex);

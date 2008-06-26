@@ -101,7 +101,7 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 DatabaseSnapshot::SharedMemory::~SharedMemory()
 {
 	ISC_STATUS_ARRAY statusVector;
-	ISC_unmap_file(statusVector, &handle, 0);
+	ISC_unmap_file(statusVector, &handle);
 }
 
 
