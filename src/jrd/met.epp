@@ -1110,13 +1110,24 @@ void MET_dsql_cache_release(thread_db* tdbb, int type, const Firebird::MetaName&
 {
 	DSqlCacheItem* item = get_dsql_cache_item(tdbb, type, name);
 
-	// notify others through AST to mark as obsolete
-	LCK_lock(tdbb, item->lock, LCK_EX, LCK_WAIT);
-
 	// release lock
 	LCK_release(tdbb, item->lock);
-	item->locked = false;
 
+	// notify others through AST to mark as obsolete
+	Database* const dbb = tdbb->getDatabase();
+	const size_t key_length = item->lock->lck_length;
+	Firebird::AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), key_length) Lock());
+	temp_lock->lck_dbb = dbb;
+	temp_lock->lck_parent = dbb->dbb_lock;
+	temp_lock->lck_type = LCK_dsql_cache;
+	temp_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock->lck_type);
+	temp_lock->lck_length = key_length;
+	memcpy(temp_lock->lck_key.lck_string, item->lock->lck_key.lck_string, key_length);
+
+	if (LCK_lock(tdbb, temp_lock, LCK_EX, LCK_WAIT))
+		LCK_release(tdbb, temp_lock);
+
+	item->locked = false;
 	item->obsolete = false;
 }
 
