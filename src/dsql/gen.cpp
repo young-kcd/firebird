@@ -163,7 +163,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 			  ddl_node->nod_type == nod_mod_domain))
 		{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-						  isc_arg_gds, isc_dsql_domain_err, 0);
+						  isc_arg_gds, isc_dsql_domain_err, isc_arg_end);
 		}
 		stuff(request, blr_fid);
 		stuff(request, 0);				// Context   
@@ -518,7 +518,7 @@ void GEN_expr( dsql_req* request, dsql_nod* node)
 				  isc_arg_gds, isc_dsql_internal_err,
 				  isc_arg_gds, isc_expression_eval_err,
 				  // expression evaluation not supported 
-				  0);
+				  isc_arg_end);
 	}
 
 	stuff(request, blr_operator);
@@ -666,7 +666,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 							  isc_arg_number, (SLONG) request->req_client_dialect,
 							  isc_arg_string,
 							  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
-							  0);
+							  isc_arg_end);
 					break;
 				default:
 					// No special action for other data types 
@@ -685,7 +685,7 @@ void GEN_port( dsql_req* request, dsql_msg* message)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 				  isc_arg_gds, isc_imp_exc,
 				  isc_arg_gds, isc_blktoobig,
-				  0);
+				  isc_arg_end);
 	}
 
 	message->msg_length = (USHORT) offset;
@@ -839,7 +839,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_access:
 			if (sw_access)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 
 			sw_access = true;
 			if (ptr->nod_flags & NOD_READ_ONLY)
@@ -851,7 +851,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_wait:
 			if (sw_wait)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 
 			sw_wait = true;
 			if (ptr->nod_flags & NOD_NO_WAIT)
@@ -863,7 +863,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_isolation:
 			if (sw_isolation)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 
 			sw_isolation = true;
 
@@ -892,7 +892,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 			{
 				if (sw_reserve)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							  isc_arg_gds, isc_dsql_dup_option, 0);
+							  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 
 				sw_reserve = true;
 				const dsql_nod* reserve = ptr->nod_arg[0];
@@ -911,7 +911,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_tra_misc:
 			if (misc_flags & ptr->nod_flags)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 						  
 			misc_flags |= ptr->nod_flags;
 			if (ptr->nod_flags & NOD_NO_AUTO_UNDO)
@@ -925,7 +925,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 		case nod_lock_timeout:
 			if (sw_lock_timeout)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, 0);
+						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
 
 			sw_lock_timeout = true;
 			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
@@ -939,7 +939,7 @@ void GEN_start_transaction( dsql_req* request, const dsql_nod* tran_node)
 
 		default:
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_tran_err, 0);
+					  isc_arg_gds, isc_dsql_tran_err, isc_arg_end);
 		}
 	}
 }
@@ -1241,7 +1241,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 			dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 			if (list->nod_count != list_into->nod_count)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-						  isc_arg_gds, isc_dsql_count_mismatch, 0);
+						  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
 			stuff(request, blr_begin);
 			ptr = list->nod_arg;
 			end = ptr + list->nod_count;
@@ -1265,7 +1265,7 @@ void GEN_statement( dsql_req* request, dsql_nod* node)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_internal_err,
 				  isc_arg_gds, isc_node_err, // gen.c: node not supported
-				  0);
+				  isc_arg_end);
 	}
 }
 
@@ -1467,7 +1467,7 @@ static void gen_constant( dsql_req* request, const dsc* desc, bool negate_value)
 			 */
 			ERRD_post(isc_sqlerr,
 					  isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_arith_except, 0);
+					  isc_arg_gds, isc_arith_except, isc_arg_end);
 		}
 
 		/* We and the lexer both agree that this is an SINT64 constant,
@@ -1523,7 +1523,7 @@ static void gen_constant( dsql_req* request, const dsc* desc, bool negate_value)
 	default:
 		// gen_constant: datatype not understood 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 103,
-				  isc_arg_gds, isc_dsql_constant_err, 0);
+				  isc_arg_gds, isc_dsql_constant_err, isc_arg_end);
 	}
 }
 
@@ -1643,7 +1643,7 @@ static void gen_descriptor( dsql_req* request, const dsc* desc, bool texttype)
 	default:
 		// don't understand dtype 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_datatype_err, 0);
+				  isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 	}
 }
 
@@ -1722,7 +1722,7 @@ static void gen_field( dsql_req* request, const dsql_ctx* context,
 					  isc_arg_number, (SLONG) request->req_client_dialect,
 					  isc_arg_string,
 					  DSC_dtype_tostring(static_cast < UCHAR >
-										 (field->fld_dtype)), 0);
+										 (field->fld_dtype)), isc_arg_end);
 			break;
 		default:
 			// No special action for other data types 
@@ -1808,7 +1808,7 @@ static void gen_for_select( dsql_req* request, const dsql_nod* for_select)
 	{
 		if (list->nod_count != list_to->nod_count)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-					isc_arg_gds, isc_dsql_count_mismatch, 0);
+					isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
 		dsql_nod** ptr = list->nod_arg;
 		dsql_nod** ptr_to = list_to->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
@@ -2932,14 +2932,14 @@ static void gen_union( dsql_req* request, const dsql_nod* union_node)
 static void stuff_context(dsql_req* request, const dsql_ctx* context)
 {
 	if (context->ctx_context > MAX_UCHAR) {
-		ERRD_post(isc_too_many_contexts, 0);
+		ERRD_post(isc_too_many_contexts, isc_arg_end);
 	}
 	stuff(request, context->ctx_context);
 
 	if (context->ctx_flags & CTX_recursive)
 	{
 		if (context->ctx_recursive > MAX_UCHAR) {
-			ERRD_post(isc_too_many_contexts, 0);
+			ERRD_post(isc_too_many_contexts, isc_arg_end);
 		}
 		stuff(request, context->ctx_recursive);
 	}

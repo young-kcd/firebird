@@ -284,7 +284,7 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 	{
 		ERR_post(isc_domnotdef,
 				 isc_arg_string, ERR_cstring(name.c_str()),
-				 0);
+				 isc_arg_end);
 	}
 }
 
@@ -970,7 +970,7 @@ void MET_error(const TEXT* string, ...)
 	va_end(ptr);
 
 	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
-			 ERR_cstring(s), 0);
+			 ERR_cstring(s), isc_arg_end);
 }
 
 Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
@@ -3170,7 +3170,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						JrdMemoryPool::deletePool(csb_pool);
 					}
 					
-					ERR_post(isc_bad_proc_BLR, procedure->prc_name.c_str(), 0);
+					ERR_post(isc_bad_proc_BLR, procedure->prc_name.c_str(), isc_arg_end);
 				}
 
 				procedure->prc_request->req_procedure = procedure;
@@ -4462,7 +4462,7 @@ static bool par_messages(thread_db*	tdbb,
 		}
 
 		if (offset > MAX_FORMAT_SIZE) {
-			ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+			ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, isc_arg_end);
 		}
 
 		format->fmt_length = (USHORT) offset;
@@ -4814,7 +4814,7 @@ static void store_dependencies(thread_db*	tdbb,
 					ERR_post(isc_no_meta_update, isc_arg_gds, isc_met_wrong_gtt_scope, 
 						isc_arg_string, ERR_cstring(sChild.c_str()),
 						isc_arg_string, ERR_cstring(sMaster.c_str()),
-						0);
+						isc_arg_end);
 				}
 			}
 

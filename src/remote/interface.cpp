@@ -1134,7 +1134,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, RDB* handle)
 		if (user_status[1])
 		{
 			gds__log("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
-					"database. \n\tUncommitted work may have been lost", 0);
+					"database. \n\tUncommitted work may have been lost");
 		}
 
 		disconnect(port);
@@ -2016,7 +2016,7 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 			Firebird::status_exception::raise(
 				isc_port_len,
 				isc_arg_number, (SLONG) msg_length,
-				isc_arg_number, (SLONG) statement->rsr_user_select_format->fmt_length, 0);
+				isc_arg_number, (SLONG) statement->rsr_user_select_format->fmt_length, isc_arg_end);
 		}
 		if (statement->rsr_user_select_format == statement->rsr_select_format) {
 			if ((U_IPTR) msg & (ALIGNMENT - 1))
@@ -3562,7 +3562,7 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 			Firebird::status_exception::raise(
 				isc_port_len,
 				isc_arg_number, (SLONG) msg_length,
-				isc_arg_number, (SLONG) tail->rrq_format->fmt_length, 0);
+				isc_arg_number, (SLONG) tail->rrq_format->fmt_length, isc_arg_end);
 		}
 
 		message = tail->rrq_message;

@@ -743,7 +743,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		statement = (stmt*) gds__alloc((SLONG) sizeof(stmt));
 		// FREE: by user calling isc_embed_dsql_release() 
 		if (!statement)			// NOMEM: 
-			error_post(isc_virmemexh, 0);
+			error_post(isc_virmemexh, isc_arg_end);
 
 #ifdef DEBUG_GDS_ALLOC
 		gds_alloc_flag_unfreed((void *) statement);
@@ -1538,7 +1538,7 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, stm
 	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
 // FREE: by exit handler cleanup() or database_cleanup() 
 	if (!name)					// NOMEM: 
-		error_post(isc_virmemexh, 0);
+		error_post(isc_virmemexh, isc_arg_end);
 	name->name_stmt = stmt;
 	name->name_length = l;
 	TEXT* p = name->name_symbol;
@@ -1598,14 +1598,14 @@ static stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
 	if (type == NAME_statement) {
 		error_post(isc_dsql_error,
 				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 518,
-				   isc_arg_gds, isc_dsql_request_err, 0);
+				   isc_arg_gds, isc_dsql_request_err, isc_arg_end);
 	}
 	else {
 		error_post(isc_dsql_error,
 				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 504,
 				   isc_arg_gds, isc_dsql_cursor_err,
 				   isc_arg_gds, isc_dsql_cursor_not_found,
-				   isc_arg_string, name, 0);
+				   isc_arg_string, name, isc_arg_end);
 	}
 	return NULL;
 }

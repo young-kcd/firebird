@@ -240,7 +240,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 
 	// Check for raw device
 	if ((!explicit_diff_name) && database->onRawDevice()) {
-		ERR_post(isc_need_difference, 0);
+		ERR_post(isc_need_difference, isc_arg_end);
 	}
 
 	WIN window(HEADER_PAGE_NUMBER);

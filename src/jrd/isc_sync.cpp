@@ -1605,7 +1605,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		ERR_post(isc_exception_stack_overflow, 0);
+		ERR_post(isc_exception_stack_overflow, isc_arg_end);
 		/* This will never be called, but to be safe it's here */
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;

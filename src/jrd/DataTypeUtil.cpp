@@ -149,7 +149,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			// Unknown datatype
 			status_exception::raise(
 				isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				isc_arg_gds, isc_dsql_datatype_err, 0);
+				isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 		}
 
 		// Initialize some values if this is the first time.
@@ -319,7 +319,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	if (firstarg) {
 		status_exception::raise(
 			isc_sqlerr, isc_arg_number, (SLONG) - 804,
-			isc_arg_gds, isc_dsql_datatype_err, 0);
+			isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
 	}
 
@@ -328,7 +328,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_datatypes_not_comparable,
 			isc_arg_string, "",
-			isc_arg_string, expressionName, 0);
+			isc_arg_string, expressionName, isc_arg_end);
 		// "Datatypes %sare not comparable in expression %s"
 	}
 
@@ -429,7 +429,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_datatypes_not_comparable,
 			isc_arg_string, "",
-			isc_arg_string, expressionName, 0);
+			isc_arg_string, expressionName, isc_arg_end);
 		// "Datatypes %sare not comparable in expression %s"
 	}
 }

@@ -112,7 +112,7 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 inline void err_post_if_database_is_readonly(const Database* dbb)
 {
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, 0);
+		ERR_post(isc_read_only_database, isc_arg_end);
 }
 
 // Class definitions (obsolete platforms are commented out)
@@ -1291,7 +1291,7 @@ void PAG_header(bool info)
 				 isc_arg_string, "read-write",
 				 isc_arg_string, "database",
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 0);
+				 isc_arg_end);
 	}
 
 	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
@@ -1371,7 +1371,7 @@ void PAG_header_init()
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 0);
+				 isc_arg_end);
 	}
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
@@ -1384,7 +1384,7 @@ void PAG_header_init()
 				 isc_arg_number, (SLONG) header->hdr_ods_minor,
 				 isc_arg_number, (SLONG) ODS_VERSION,
 				 isc_arg_number, (SLONG) ODS_CURRENT,
-				 0);
+				 isc_arg_end);
 	}
 
 	// Note that if this check is turned on, it should be recoded in order that
@@ -1414,7 +1414,7 @@ void PAG_header_init()
 	{
 	    ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 0);
+				 isc_arg_end);
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
@@ -1422,7 +1422,7 @@ void PAG_header_init()
 	{
 		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 0);
+				 isc_arg_end);
 	}
 
 	dbb->dbb_ods_version = ods_version;
@@ -1921,7 +1921,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 				header->hdr_flags & hdr_SQL_dialect_3)
 			{
 				// Check the returned value here!
-				ERR_post_warning(isc_dialect_reset_warning, 0);
+				ERR_post_warning(isc_dialect_reset_warning, isc_arg_end);
 			}
 
 			dbb->dbb_flags &= ~DBB_DB_SQL_dialect_3;	/* set to 0 */
@@ -1937,7 +1937,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_inv_dialect_specified, isc_arg_number, flag,
 					 isc_arg_gds, isc_valid_db_dialects, isc_arg_string,
-					 "1 and 3", isc_arg_gds, isc_dialect_not_changed, 0);
+					 "1 and 3", isc_arg_gds, isc_dialect_not_changed, isc_arg_end);
 			break;
 		}
 	}

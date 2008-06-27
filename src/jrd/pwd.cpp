@@ -282,7 +282,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 		}
 		THREAD_ENTER();
 		mutex.leave();
-		ERR_post(isc_psw_attach, 0);
+		ERR_post(isc_psw_attach, isc_arg_end);
 	}
 
 	// Lookup
@@ -293,7 +293,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	{
 		THREAD_ENTER();
 		mutex.leave();
-		ERR_post(isc_psw_start_trans, 0);
+		ERR_post(isc_psw_start_trans, isc_arg_end);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -440,7 +440,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	else
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		ERR_post(isc_login, isc_arg_end);
 	}
 
 	static AmCache useNative = AM_UNKNOWN;
@@ -453,7 +453,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	if (useNative == AM_DISABLED)
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		ERR_post(isc_login, isc_arg_end);
 	}
 
 	// Look up the user name in the userinfo database and use the parameters
@@ -475,7 +475,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 	{
 		usernameFailedLogins().loginFail(name);
 		remoteFailedLogins().loginFail(remoteId);
-		ERR_post(isc_login, 0);
+		ERR_post(isc_login, isc_arg_end);
 	}
 
 	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
@@ -502,7 +502,7 @@ void SecurityDatabase::verifyUser(Firebird::string& name,
 		{
 			usernameFailedLogins().loginFail(name);
 			remoteFailedLogins().loginFail(remoteId);
-			ERR_post(isc_login, 0);
+			ERR_post(isc_login, isc_arg_end);
 		}
 	}
 

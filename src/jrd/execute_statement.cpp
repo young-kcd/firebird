@@ -358,7 +358,7 @@ void ExecuteStatement::getString(thread_db* tdbb, Firebird::string& s, const dsc
 	const SSHORT l = (d && !(r->req_flags & req_null)) ?
 		MOV_make_string2(tdbb, d, d->getTextType(), &p, buffer) : 0; // !!! How call Msgs ?
 	if (! p) {
-		ERR_post(isc_exec_sql_invalid_arg, 0);
+		ERR_post(isc_exec_sql_invalid_arg, isc_arg_end);
 	}
 
 	s.assign((const char*)p, l);

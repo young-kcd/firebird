@@ -594,7 +594,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		{
 			strcpy(buffer, "Unknown failure in shutdown thread in shutSem:enter()");
 		}
-		gds__log(buffer, 0);
+		gds__log("%s", buffer);
 		exit(0);
 	}
 	if (! alreadyClosing)
@@ -631,7 +631,7 @@ static void signal_term(int)
 		{
 			strcpy(buffer, "Unknown failure in semaphore::release()");
 		}
-		gds__log(buffer, 0);
+		gds__log("%s", buffer);
 		exit(0);
 	}
 }

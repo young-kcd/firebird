@@ -157,7 +157,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 	if (dimensions != desc->iad_dimensions) {
 		error(status_vector, isc_invalid_dimension,
 			  isc_arg_number, (SLONG) desc->iad_dimensions,
-			  isc_arg_number, (SLONG) dimensions, 0);
+			  isc_arg_number, (SLONG) dimensions, isc_arg_end);
 		return -1;
 	}
 
@@ -169,7 +169,7 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 	{
 		const SLONG n = *subscripts++;
 		if (n < range->iad_lower || n > range->iad_upper) {
-			error(status_vector, isc_out_of_bounds, 0);
+			error(status_vector, isc_out_of_bounds, isc_arg_end);
 			return -1;
 		}
 		subscript += (n - range->iad_lower) * range->iad_length;
@@ -202,7 +202,7 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 
 	if (*p++ != isc_sdl_version1)
 		return error(status_vector, isc_invalid_sdl,
-					 isc_arg_number, (SLONG) 0, 0);
+					 isc_arg_number, (SLONG) 0, isc_arg_end);
 
 	for (;;)
 		switch (*p++) {
@@ -210,11 +210,11 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 			n = *p++;
 			if (n != 1)
 				return error(status_vector, isc_invalid_sdl,
-							 isc_arg_number, (SLONG) (p - sdl - 1), 0);
+							 isc_arg_number, (SLONG) (p - sdl - 1), isc_arg_end);
 			offset = p - sdl;
 			if (!(p = sdl_desc(p, &info->sdl_info_element)))
 				return error(status_vector, isc_invalid_sdl,
-							 isc_arg_number, (SLONG) offset, 0);
+							 isc_arg_number, (SLONG) offset, isc_arg_end);
 			info->sdl_info_element.dsc_address = 0;
 			break;
 
@@ -373,7 +373,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 				offset = p - sdl - 1;
 				if (!(p = sdl_desc(p, &junk))) 
 					return error(status_vector, isc_invalid_sdl,
-								 isc_arg_number, (SLONG) offset, 0);
+								 isc_arg_number, (SLONG) offset, isc_arg_end);
 			}
 			break;
 
@@ -519,7 +519,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
 			error(arg->sdl_arg_status_vector, isc_invalid_dimension,
 				  isc_arg_number, (SLONG) arg->sdl_arg_desc->iad_dimensions,
-				  isc_arg_number, (SLONG) count, 0);
+				  isc_arg_number, (SLONG) count, isc_arg_end);
 			return NULL;
 		}
 		expr = expressions;
@@ -556,7 +556,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 
 	default:
 		error(arg->sdl_arg_status_vector, isc_invalid_sdl,
-			  isc_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), 0);
+			  isc_arg_number, (SLONG) (p - arg->sdl_arg_sdl - 1), isc_arg_end);
 		return NULL;
 	}
 }
@@ -719,7 +719,7 @@ static bool execute(sdl_arg* arg)
 				{
 					const SLONG n = *stack_ptr++;
 					if (n < range->iad_lower || n > range->iad_upper) {
-						error(arg->sdl_arg_status_vector, isc_out_of_bounds, 0);
+						error(arg->sdl_arg_status_vector, isc_out_of_bounds, isc_arg_end);
 						return false;
 					}
 					subscript += (n - range->iad_lower) * range->iad_length;

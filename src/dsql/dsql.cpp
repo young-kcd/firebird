@@ -519,7 +519,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		{
 			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
 			           isc_arg_gds, isc_bad_req_handle,
-				       0);
+				       isc_arg_end);
 		}
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
@@ -532,7 +532,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 		if (*trans_handle == 0 && request->req_type != REQ_START_TRANS)
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-				  	isc_arg_gds, isc_bad_trans_handle, 0);
+				  	isc_arg_gds, isc_bad_trans_handle, isc_arg_end);
 		}
 
 /* If the request is a SELECT or blob statement then this is an open.
@@ -549,7 +549,7 @@ ISC_STATUS	GDS_DSQL_EXECUTE_CPP(
 			if (request->req_flags & REQ_cursor_open)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-					  	isc_arg_gds, isc_dsql_cursor_open_err, 0);
+					  	isc_arg_gds, isc_dsql_cursor_open_err, isc_arg_end);
 			}
 		}
 
@@ -974,7 +974,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 					  isc_arg_gds, isc_dsql_cursor_err,
-					  isc_arg_gds, isc_dsql_cursor_not_open, 0);
+					  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
 		}
 
 #ifdef SCROLLABLE_CURSORS
@@ -1040,7 +1040,7 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 			default:
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_sqlda_err, 0);
+					  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 			}
 
 			if (offset)
@@ -1183,7 +1183,7 @@ ISC_STATUS GDS_DSQL_FREE_CPP(ISC_STATUS*	user_status,
 
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
-					  isc_arg_gds, isc_dsql_cursor_close_err, 0);
+					  isc_arg_gds, isc_dsql_cursor_close_err, isc_arg_end);
 
 			close_cursor(request);
 		}
@@ -1234,7 +1234,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 		{
 			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
 			           isc_arg_gds, isc_bad_req_handle,
-				       0);
+				       isc_arg_end);
 		}
 		DsqlContextPoolHolder context(tdsql, &request->req_pool);
 
@@ -1244,7 +1244,7 @@ ISC_STATUS GDS_DSQL_INSERT_CPP(	ISC_STATUS*	user_status,
 			if (!(request->req_flags & REQ_cursor_open))
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 					  isc_arg_gds, isc_dsql_cursor_err,
-					  isc_arg_gds, isc_dsql_cursor_not_open, 0);
+					  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
 
 		dsql_msg* message = (dsql_msg*) request->req_receive;
 
@@ -1321,7 +1321,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 		if (!old_request) {
 			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
 			           isc_arg_gds, isc_bad_req_handle,
-				       0);
+				       isc_arg_end);
 		}
 
 		dsql_dbb* database;
@@ -1330,7 +1330,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 			if (!database) {
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
 		                   isc_arg_gds, isc_bad_req_handle,
-			               0);
+			               isc_arg_end);
 			}
 		}
 
@@ -1338,7 +1338,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 
 		if (old_request && (old_request->req_flags & REQ_cursor_open)) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 519,
-				  isc_arg_gds, isc_dsql_open_cursor_request, 0);
+				  isc_arg_gds, isc_dsql_open_cursor_request, isc_arg_end);
 		}
 
 /* Allocate a new request block and then prepare the request.  We want to
@@ -1362,7 +1362,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 					isc_arg_gds, isc_command_end_err2,
 					// CVC: Nothing will be line 1, column 1 for the user.
 					isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
-					0);	// Unexpected end of command
+					isc_arg_end);	// Unexpected end of command
 			}
 
 			if (!length) {
@@ -1411,7 +1411,7 @@ ISC_STATUS GDS_DSQL_PREPARE_CPP(ISC_STATUS*			user_status,
 				(request->req_ddl_node->nod_type == nod_def_database))
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 530,
-					isc_arg_gds, isc_dsql_crdb_prepare_err, 0);
+					isc_arg_gds, isc_dsql_crdb_prepare_err, isc_arg_end);
 			}
 
 			request->req_flags |= REQ_prepared;
@@ -1510,7 +1510,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 		if (length == 0) {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 					  isc_arg_gds, isc_dsql_decl_err,
-					  isc_arg_gds, isc_dsql_cursor_invalid, 0);
+					  isc_arg_gds, isc_dsql_cursor_invalid, isc_arg_end);
 		}
 		if (length > MAX_CURSOR_LENGTH) {
 			length = MAX_CURSOR_LENGTH;
@@ -1529,7 +1529,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 					  isc_arg_gds, isc_dsql_decl_err,
 					  isc_arg_gds, isc_dsql_cursor_redefined,
-					  isc_arg_string, symbol->sym_string, 0);
+					  isc_arg_string, symbol->sym_string, isc_arg_end);
 		}
 
 /* If there already is a cursor and its name isn't the same, ditto.
@@ -1544,7 +1544,7 @@ ISC_STATUS GDS_DSQL_SET_CURSOR_CPP(	ISC_STATUS*	user_status,
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
 					  isc_arg_gds, isc_dsql_decl_err,
 					  isc_arg_gds, isc_dsql_cursor_redefined,
-					  isc_arg_string, request->req_cursor->sym_string, 0);
+					  isc_arg_string, request->req_cursor->sym_string, isc_arg_end);
 		}
 	}
 	catch (const Firebird::Exception& ex)
@@ -3534,7 +3534,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
 					  isc_arg_gds, isc_deadlock, isc_arg_gds,
-					  isc_update_conflict, 0);
+					  isc_update_conflict, isc_arg_end);
 		}
 	}
 	else if (request->req_type == REQ_DELETE_CURSOR)
@@ -3549,7 +3549,7 @@ static ISC_STATUS execute_request(dsql_req*			request,
 		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
 					  isc_arg_gds, isc_deadlock, isc_arg_gds,
-					  isc_update_conflict, 0);
+					  isc_update_conflict, isc_arg_end);
 		}
 	}
 
@@ -4304,7 +4304,7 @@ static dsql_dbb* init(FB_API_HANDLE* db_handle)
 			{
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
 				  isc_arg_gds, isc_dsql_too_old_ods,
-				  isc_arg_number, (SLONG) 8, 0);
+				  isc_arg_number, (SLONG) 8, isc_arg_end);
 			}
 			break;
 
@@ -4435,7 +4435,7 @@ static void map_in_out(	dsql_req*		request,
 	if (parameter || count)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, 0);
+				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 	}
 
 	dsql_par* dbkey;
@@ -4504,13 +4504,13 @@ static USHORT parse_blr(
 	if (*blr != blr_version4 && *blr != blr_version5)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, 0);
+				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 	}
 	blr++;						// skip the blr_version 
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, 0);
+				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 	}
 
 	++blr;						// skip the message number 
@@ -4619,7 +4619,7 @@ static USHORT parse_blr(
 
 		default:
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_sqlda_err, 0);
+					  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 		}
 
 		USHORT align = type_alignments[desc.dsc_dtype];
@@ -4630,7 +4630,7 @@ static USHORT parse_blr(
 
 		if (*blr++ != blr_short || *blr++ != 0)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_sqlda_err, 0);
+					  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 
 		align = type_alignments[dtype_short];
 		if (align)
@@ -4656,7 +4656,7 @@ static USHORT parse_blr(
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
 	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, 0);
+				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
 	}
 
 	return count;
@@ -4691,7 +4691,7 @@ static dsql_req* prepare(
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-				  isc_arg_gds, isc_wish_list, 0);
+				  isc_arg_gds, isc_wish_list, isc_arg_end);
 
 	if (!string_length)
 		string_length = strlen(string);
@@ -4724,7 +4724,7 @@ static dsql_req* prepare(
 		// This may be a special case, but we don't know about positions here.
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_command_end_err,	// Unexpected end of command
-				  0);
+				  isc_arg_end);
 	}
 
 // allocate the send and receive messages 
@@ -4766,7 +4766,7 @@ static dsql_req* prepare(
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 817,
 				  isc_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
 				  isc_arg_number,
-				  (SLONG) request->req_dbb->dbb_db_SQL_dialect, 0);
+				  (SLONG) request->req_dbb->dbb_db_SQL_dialect, isc_arg_end);
 	}
 
 	if (request->req_type == REQ_COMMIT ||
@@ -5175,7 +5175,7 @@ static UCHAR* var_info(
 
 			default:
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-						  isc_arg_gds, isc_dsql_datatype_err, 0);
+						  isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
 			}
 
 			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))

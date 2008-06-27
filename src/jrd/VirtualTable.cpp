@@ -68,7 +68,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	fb_assert(relation);
 
 	if (relation->rel_id != rel_mon_statements)
-		ERR_post(isc_read_only, 0);
+		ERR_post(isc_read_only, isc_arg_end);
 
 	// Get transaction id
 	dsc desc;
@@ -114,7 +114,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 
 void VirtualTable::modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
-	ERR_post(isc_read_only, 0);
+	ERR_post(isc_read_only, isc_arg_end);
 }
 
 
@@ -165,5 +165,5 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 
 void VirtualTable::store(thread_db* tdbb, record_param* rpb)
 {
-	ERR_post(isc_read_only, 0);
+	ERR_post(isc_read_only, isc_arg_end);
 }

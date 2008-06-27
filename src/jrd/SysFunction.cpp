@@ -477,7 +477,7 @@ static void makeBin(DataTypeUtilBase* dataTypeUtil, const SysFunction* function,
 		}
 
 		if (!args[i]->isExact() || args[i]->dsc_scale != 0)
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 		if (first)
 		{
@@ -527,7 +527,7 @@ static void makeBinShift(DataTypeUtilBase* dataTypeUtil, const SysFunction* func
 			isNullable = true;
 
 		if (!args[i]->isExact() || args[i]->dsc_scale != 0)
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 
 	result->setNullable(isNullable);
@@ -820,7 +820,7 @@ static void makeRound(DataTypeUtilBase* dataTypeUtil, const SysFunction* functio
 			result->dsc_scale = 0;
 	}
 	else
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 	result->setNullable(value1->isNullable() || (argsCount > 1 && args[1]->isNullable()));
 }
@@ -908,7 +908,7 @@ static dsc* evlAbs(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 			impure->vlu_misc.vlu_int64 = MOV_get_int64(value, value->dsc_scale);
 
 			if (impure->vlu_misc.vlu_int64 == MIN_SINT64)
-				status_exception::raise(isc_arith_except, 0);
+				status_exception::raise(isc_arith_except, isc_arg_end);
 			else if (impure->vlu_misc.vlu_int64 < 0) 
 				impure->vlu_misc.vlu_int64 = -impure->vlu_misc.vlu_int64;
 
@@ -938,7 +938,7 @@ static dsc* evlAsciiChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd:
 
 	SLONG code = MOV_get_long(value, 0);
 	if (!(code >= 0 && code <= 255))
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_end);
 
 	impure->vlu_misc.vlu_uchar = (UCHAR) code;
 	impure->vlu_desc.makeText(1, ttype_none, &impure->vlu_misc.vlu_uchar);
@@ -1162,7 +1162,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 				part != blr_extract_second &&
 				part != blr_extract_millisecond)
 			{
-				status_exception::raise(isc_expression_eval_err, 0);
+				status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			}
 			break;
 
@@ -1174,7 +1174,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 				part == blr_extract_second ||
 				part == blr_extract_millisecond)
 			{
-				status_exception::raise(isc_expression_eval_err, 0);
+				status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			}
 			break;
 
@@ -1183,7 +1183,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1267,7 +1267,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1288,7 +1288,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1332,7 +1332,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1351,7 +1351,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1388,7 +1388,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_month:
 		case blr_extract_day:
 			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
-				status_exception::raise(isc_expression_eval_err, 0);
+				status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 
 		case blr_extract_hour:
@@ -1396,15 +1396,15 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_second:
 		case blr_extract_millisecond:
 			if (value1Dsc->dsc_dtype == dtype_sql_date || value2Dsc->dsc_dtype == dtype_sql_date)
-				status_exception::raise(isc_expression_eval_err, 0);
+				status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 			// ASF: also throw error if one value is TIMESTAMP and the other is TIME
 			if (value1Dsc->dsc_dtype != value2Dsc->dsc_dtype)
-				status_exception::raise(isc_expression_eval_err, 0);
+				status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1454,7 +1454,7 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 			break;
 
 		default:
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 			break;
 	}
 
@@ -1480,7 +1480,7 @@ static dsc* evlExp(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	if (impure->vlu_misc.vlu_double == HUGE_VAL)
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_end);
 
 	return &impure->vlu_desc;
 }
@@ -1657,7 +1657,7 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 	double v = MOV_get_double(value);
 
 	if (v <= 0)
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 	impure->vlu_misc.vlu_double = log(v);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -1749,7 +1749,7 @@ static dsc* evlMod(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	SINT64 divisor = MOV_get_int64(value2, 0);
 
 	if (divisor == 0)
-		status_exception::raise(isc_arith_except, 0);
+		status_exception::raise(isc_arith_except, isc_arg_end);
 
 	SINT64 result = MOV_get_int64(value1, 0) % divisor;
 
@@ -1808,13 +1808,13 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		length = MOV_get_long(lengthDsc, 0);
 
 		if (length < 0)
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 
 	SLONG from = MOV_get_long(fromDsc, 0);
 
 	if (from <= 0)
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 	USHORT resultTextType = DataTypeUtil::getResultTextType(value, placing);
 	CharSet* cs = INTL_charset_lookup(tdbb, resultTextType);
@@ -1876,7 +1876,7 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	if (!value->isBlob() && !placing->isBlob())
 	{
 		if (len1 - length + len2 > static_cast<signed>(MAX_COLUMN_SIZE - sizeof(USHORT)))
-			status_exception::raise(isc_arith_except, 0);
+			status_exception::raise(isc_arith_except, isc_arg_end);
 
 		dsc desc;
 		desc.makeText(len1 - length + len2, resultTextType);
@@ -1964,7 +1964,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 		return NULL;
 	SLONG padLenArg = MOV_get_long(padLenDsc, 0);
 	if (padLenArg < 0)
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	ULONG padLen = static_cast<ULONG>(padLenArg);
 
 	const dsc* value2 = NULL;
@@ -2009,7 +2009,7 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	else
 	{
 		if (padLen * cs->maxBytesPerChar() > MAX_COLUMN_SIZE - sizeof(USHORT))
-			status_exception::raise(isc_arith_except, 0);
+			status_exception::raise(isc_arith_except, isc_arg_end);
 
 		dsc desc;
 		desc.makeText(padLen * cs->maxBytesPerChar(), ttype);
@@ -2137,7 +2137,7 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 		start = MOV_get_long(value3, 0);
 		if (start <= 0)
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 
 	// make descriptor for return value
@@ -2248,7 +2248,7 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	if ((v1 == 0 && v2 < 0) ||
 		(v1 < 0 && !(value2->isExact() && value2->dsc_scale == 0)))
 	{
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 	else
 		impure->vlu_misc.vlu_double = pow(v1, v2);
@@ -2592,7 +2592,7 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 		scale = -MOV_get_long(scaleDsc, 0);
 		if (!(scale >= MIN_SCHAR && scale <= MAX_SCHAR))
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 
 	impure->vlu_misc.vlu_int64 = MOV_get_int64(value, scale);
@@ -2642,7 +2642,7 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	impure->vlu_misc.vlu_double = MOV_get_double(value);
 
 	if (impure->vlu_misc.vlu_double < 0)
-		status_exception::raise(isc_expression_eval_err, 0);
+		status_exception::raise(isc_expression_eval_err, isc_arg_end);
 
 	impure->vlu_misc.vlu_double = sqrt(impure->vlu_misc.vlu_double);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -2671,7 +2671,7 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 		resultScale = -MOV_get_long(scaleDsc, 0);
 		if (!(resultScale >= MIN_SCHAR && resultScale <= MAX_SCHAR))
-			status_exception::raise(isc_expression_eval_err, 0);
+			status_exception::raise(isc_expression_eval_err, isc_arg_end);
 	}
 
 	if (value->isExact())
@@ -2827,9 +2827,9 @@ dsc* SysFunction::substring(thread_db* tdbb, impure_value* impure,
 	SLONG length_arg = MOV_get_long(length_value, 0);
 
 	if (offset_arg < 0)
-		status_exception::raise(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
+		status_exception::raise(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, isc_arg_end);
 	else if (length_arg < 0)
-		status_exception::raise(isc_bad_substring_length, isc_arg_number, length_arg, 0);
+		status_exception::raise(isc_bad_substring_length, isc_arg_number, length_arg, isc_arg_end);
 
 	dsc desc;
 	DataTypeUtil(tdbb).makeSubstr(&desc, value, offset_value, length_value);
@@ -2975,6 +2975,6 @@ void SysFunction::checkArgsMismatch(int count) const
 	if (count < minArgCount ||
 		(maxArgCount != -1 && count > maxArgCount))
 	{
-		status_exception::raise(isc_funmismat, isc_arg_string, name.c_str(), 0);
+		status_exception::raise(isc_funmismat, isc_arg_string, name.c_str(), isc_arg_end);
 	}
 }

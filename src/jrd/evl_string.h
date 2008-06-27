@@ -299,7 +299,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 			}
-			ERR_post(isc_like_escape_invalid, 0);
+			ERR_post(isc_like_escape_invalid, isc_arg_end);
 		}
 		// percent sign
 		if (c == sql_match_any) {

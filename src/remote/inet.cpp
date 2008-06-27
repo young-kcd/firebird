@@ -732,16 +732,14 @@ rem_port* INET_connect(const TEXT* name,
 
 		if (host_addr.s_addr == INADDR_NONE)
 		{
-			SNPRINTF(msg, FB_NELEM(msg),
-					"INET/INET_connect: gethostbyname (%s) failed, error code = %d",
-					host.c_str(), H_ERRNO);
-			gds__log(msg, 0);
+			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
+					 host.c_str(), H_ERRNO);
 			inet_gen_error(port,
 						   isc_network_error,
 						   isc_arg_string,
 						   port->port_connection->str_data,
 						   isc_arg_gds,
-						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
+						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, isc_arg_end);
 
 			disconnect(port);
 			return NULL;
@@ -804,10 +802,8 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			/* end of modification by FSG */
 			/* this is the original code */
-			SNPRINTF(msg, FB_NELEM(msg),
-					"INET/INET_connect: getservbyname failed, error code = %d",
-					H_ERRNO);
-			gds__log(msg, 0);
+			gds__log("INET/INET_connect: getservbyname failed, error code = %d",
+					 H_ERRNO);
 			inet_gen_error(port,
 						   isc_network_error,
 						   isc_arg_string,
@@ -818,7 +814,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_service_unknown,
 						   isc_arg_string,
 						   protocol.c_str(),
-						   isc_arg_string, "tcp", 0);
+						   isc_arg_string, "tcp", isc_arg_end);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}
@@ -1299,12 +1295,9 @@ static rem_port* alloc_port( rem_port* parent)
 		if (WSAStartup(version, &INET_wsadata)) {
 			if (parent)
 				inet_error(parent, "WSAStartup", isc_net_init_error, INET_ERRNO);
-			else {
-				SNPRINTF(buffer, FB_NELEM(buffer),
-						 "INET/alloc_port: WSAStartup failed, error code = %d",
+			else
+				gds__log("INET/alloc_port: WSAStartup failed, error code = %d",
 						 INET_ERRNO);
-				gds__log(buffer, 0);
-			}
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
@@ -1322,12 +1315,8 @@ static rem_port* alloc_port( rem_port* parent)
 		}
 		INET_max_data = INET_remote_buffer;
 #ifdef DEBUG
-		{
-			char msg[BUFFER_SMALL];
-			SNPRINTF(msg, FB_NELEM(msg), " Info: Remote Buffer Size set to %ld",
-					 INET_remote_buffer);
-			gds__log(msg, 0);
-		}
+		gds__log(" Info: Remote Buffer Size set to %ld",
+				 INET_remote_buffer);
 #endif
 		first_time = false;
 	}
@@ -2480,10 +2469,7 @@ static rem_port* select_accept( rem_port* main_port)
 	if (n >= INET_max_clients) {
 		main_port->port_state = state_closed;
 		SOCLOSE((int) main_port->port_handle);
-		TEXT msg[BUFFER_SMALL];
-		SNPRINTF(msg, FB_NELEM(msg),
-				"INET/select_accept: exec new server at client limit: %d", n);
-		gds__log(msg, 0);
+		gds__log("INET/select_accept: exec new server at client limit: %d", n);
 
 		setreuid(0, 0);
 		kill(getppid(), SIGUSR1);
@@ -2685,8 +2671,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 		if (!found)
 		{
-			gds__log("INET/select_wait: client rundown complete, server exiting",
-				 0);
+			gds__log("INET/select_wait: client rundown complete, server exiting");
 			return FALSE;
 		}
 
@@ -2738,10 +2723,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			}
 			else {
 				THREAD_ENTER();
-				SNPRINTF(msg, FB_NELEM(msg),
-						 "INET/select_wait: select failed, errno = %d",
-						 inetErrNo);
-				gds__log(msg, 0);
+				gds__log("INET/select_wait: select failed, errno = %d", inetErrNo);
 				return FALSE;
 			}
 		}	// for (;;)
@@ -3076,18 +3058,16 @@ static void inet_error(
 						   isc_arg_string,
 						   (ISC_STATUS) port->port_connection->str_data,
 						   isc_arg_gds, operation, isc_arg_string,
-						   (ISC_STATUS) win_errlist[status], 0);
+						   (ISC_STATUS) win_errlist[status], isc_arg_end);
 		}
 		else
 #endif
 			inet_gen_error(port, isc_network_error,
 						   isc_arg_string,
 						   (ISC_STATUS) port->port_connection->str_data,
-						   isc_arg_gds, operation, SYS_ERR, status, 0);
+						   isc_arg_gds, operation, SYS_ERR, status, isc_arg_end);
 
-		SNPRINTF(msg, FB_NELEM(msg),
-				 "INET/inet_error: %s errno = %d", function, status);
-		gds__log(msg, 0);
+		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
 	else {
 		/* No status value, just format the basic arguments. */
@@ -3095,7 +3075,7 @@ static void inet_error(
 		inet_gen_error(port, isc_network_error,
 					   isc_arg_string,
 					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
-					   operation, 0);
+					   operation, isc_arg_end);
 	}
 }
 
@@ -3598,7 +3578,7 @@ static int packet_receive(
 	}
 
 	if (!n) {
-		inet_error(port, "read end_of_file", isc_net_read_err, 0);
+		inet_error(port, "read end_of_file", isc_net_read_err, isc_arg_end);
 		return FALSE;
 	}
 
@@ -3613,7 +3593,7 @@ static int packet_receive(
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
 			inet_error(port, "simulated error - read",
-					   isc_net_read_err, 0);
+					   isc_net_read_err, isc_arg_end);
 			return FALSE;
 		}
 	}
@@ -3758,7 +3738,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
 			inet_error(port, "simulated error - send",
-					   isc_net_write_err, 0);
+					   isc_net_write_err, isc_arg_end);
 			return FALSE;
 		}
 	}

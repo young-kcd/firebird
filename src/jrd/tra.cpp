@@ -432,7 +432,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	}
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(isc_trans_invalid, 0);
+		ERR_post(isc_trans_invalid, isc_arg_end);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
@@ -913,7 +913,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 		return;
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(isc_trans_invalid, 0);
+		ERR_post(isc_trans_invalid, isc_arg_end);
 
 /* If there's a transaction description message, log it to RDB$TRANSACTION
    We should only log a message to RDB$TRANSACTION if there is a message
@@ -983,7 +983,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 
 /* Cannot work on limbo transactions for ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, 0);
+		ERR_post(isc_read_only_database, isc_arg_end);
 
 
 	Jrd::ContextPoolHolder context(tdbb, JrdMemoryPool::createPool());
@@ -1021,7 +1021,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		ERR_post(isc_no_recon,
 				 isc_arg_gds, isc_tra_state,
 				 isc_arg_number, number,
-				 isc_arg_string, ERR_cstring(text), 0);
+				 isc_arg_string, ERR_cstring(text), isc_arg_end);
 	}
 
 	link_transaction(tdbb, trans);
@@ -1510,7 +1510,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 	if (dbb->dbb_ast_flags & DBB_shut_tran) {
 		ERR_post(isc_shutinprog, isc_arg_string,
 				 ERR_string(tdbb->getAttachment()->att_filename),
-				 0);
+				 isc_arg_end);
 	}
 
 /* To handle the problems of relation locks, allocate a temporary
@@ -1602,7 +1602,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb)
 			CCH_RELEASE(tdbb, &window);
 #endif
 		delete trans;
-		ERR_post(isc_lock_conflict, 0);
+		ERR_post(isc_lock_conflict, isc_arg_end);
 	}
 
 /* Link the transaction to the attachment block before releasing
@@ -2195,7 +2195,7 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1) 
 	{
 		CCH_RELEASE(tdbb, window);
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, isc_arg_end);
 	}
 	const SLONG number = ++dbb->dbb_next_transaction;
 
@@ -2249,7 +2249,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1) 
 	{
 		CCH_RELEASE(tdbb, window);
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, 0);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, isc_arg_end);
 	}
 	const SLONG number = header->hdr_next_transaction + 1;
 
@@ -2419,7 +2419,7 @@ static void expand_view_lock(jrd_tra* transaction, jrd_rel* relation, SCHAR lock
 					isc_relnotdef,
 					isc_arg_string,
 					ERR_cstring(ctx[i].vcx_relation_name.c_str()),
-					0);
+					isc_arg_end);
 		}
 
 		/* force a scan to read view information */
@@ -2664,7 +2664,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 			if (!(dbb->dbb_flags & DBB_read_only))
 				CCH_RELEASE(tdbb, &window);
 #endif
-			ERR_post(isc_lock_conflict, 0);
+			ERR_post(isc_lock_conflict, isc_arg_end);
 		}
 	}
 
@@ -2877,7 +2877,7 @@ static void transaction_options(
 	const UCHAR* const end = tpb + tpb_length;
 
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
-		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, 0);
+		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, isc_arg_end);
 
 	TriState wait, lock_timeout;
 	TriState isolation, read_only, rec_version;
@@ -2891,7 +2891,7 @@ static void transaction_options(
 		{
 		case isc_tpb_consistency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 				
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2899,7 +2899,7 @@ static void transaction_options(
 
 		case isc_tpb_concurrency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2907,7 +2907,7 @@ static void transaction_options(
 
 		case isc_tpb_read_committed:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
@@ -2916,30 +2916,30 @@ static void transaction_options(
 		case isc_tpb_shared:
 		case isc_tpb_protected:
 		case isc_tpb_exclusive:
-			ERR_post(isc_bad_tpb_content, 0);
+			ERR_post(isc_bad_tpb_content, isc_arg_end);
 			break;
 
 		case isc_tpb_wait:
 			if (!wait.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 			break;
 
 		case isc_tpb_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 				
 			if (!rec_version.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags |= TRA_rec_version;
 			break;
 
 		case isc_tpb_no_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			if (!rec_version.assignOnce(false))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags &= ~TRA_rec_version;
 			break;
@@ -2947,21 +2947,21 @@ static void transaction_options(
 		case isc_tpb_nowait:
 			if (lock_timeout.asBool() || !wait.assignOnce(false))
 			{
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 			}
 			transaction->tra_lock_timeout = 0;
 			break;
 
 		case isc_tpb_read:
 			if (!read_only.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags |= TRA_readonly;
 			break;
 
 		case isc_tpb_write:
 			if (!read_only.assignOnce(false))
-				ERR_post(isc_bad_tpb_content, 0);
+				ERR_post(isc_bad_tpb_content, isc_arg_end);
 
 			transaction->tra_flags &= ~TRA_readonly;
 			break;
@@ -2979,7 +2979,7 @@ static void transaction_options(
 			{
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_bad_tpb_form, isc_arg_end);
 					
 				USHORT len = *tpb++;
 				if (len > MAX_SQL_IDENTIFIER_LEN) {
@@ -2989,11 +2989,11 @@ static void transaction_options(
 										text, &flags);
 					/* msg 159: Name longer than database column size */
 					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_random,
-							 isc_arg_string, ERR_cstring(text), 0);
+							 isc_arg_string, ERR_cstring(text), isc_arg_end);
 				}
 				// Does the identifier length surpasses the remaining of the TPB?
 				if (tpb >= end || end - tpb < len)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_bad_tpb_form, isc_arg_end);
 				
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
 				tpb += len;
@@ -3001,7 +3001,7 @@ static void transaction_options(
 				if (!relation) {
 					ERR_post(isc_bad_tpb_content,
 						 isc_arg_gds, isc_relnotdef, isc_arg_string,
-						 ERR_cstring(name), 0);
+						 ERR_cstring(name), isc_arg_end);
 				}
 
 				/* force a scan to read view information */
@@ -3032,7 +3032,7 @@ static void transaction_options(
 				// Will be caught at the top of the loop if it goes beyond "end".
 				// Harmless for now even if formally invalid.
 				//if (tpb >= end)
-				//	ERR_post(isc_bad_tpb_form, 0);
+				//	ERR_post(isc_bad_tpb_form, isc_arg_end);
 
 				const USHORT len = *tpb++;
 				tpb += len;
@@ -3051,16 +3051,16 @@ static void transaction_options(
 			{
 				if (wait.isAssigned() && !wait.asBool() || !lock_timeout.assignOnce(true))
 				{
-					ERR_post(isc_bad_tpb_content, 0);
+					ERR_post(isc_bad_tpb_content, isc_arg_end);
 				}
 				// Do we have space for the identifier length?
 				if (tpb >= end)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_bad_tpb_form, isc_arg_end);
 
 				const USHORT len = *tpb++;
 				// Does the encoded number's length surpasses the remaining of the TPB?
 				if (tpb >= end || end - tpb < len)
-					ERR_post(isc_bad_tpb_form, 0);
+					ERR_post(isc_bad_tpb_form, isc_arg_end);
 
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
 				tpb += len;
@@ -3068,14 +3068,14 @@ static void transaction_options(
 			break;
 
 		default:
-			ERR_post(isc_bad_tpb_form, 0);
+			ERR_post(isc_bad_tpb_form, isc_arg_end);
 		}
 	}
 	
 	if (rec_version.isAssigned() &&
 		!(transaction->tra_flags & TRA_read_committed))
 	{
-		ERR_post(isc_bad_tpb_content, 0);
+		ERR_post(isc_bad_tpb_content, isc_arg_end);
 	}
 
 
@@ -3150,7 +3150,7 @@ static void vms_convert(Lock* lock, SLONG* data, SCHAR type, bool wait)
 
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 		ERR_post(isc_sys_request, isc_arg_string,
-				 "sys$enqw (commit retaining lock)", isc_arg_vms, status, 0);
+				 "sys$enqw (commit retaining lock)", isc_arg_vms, status, isc_arg_end);
 
 	if (data && type >= lock->lck_physical)
 		*data = lksb.lksb_value[0];

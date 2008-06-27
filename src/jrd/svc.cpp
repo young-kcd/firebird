@@ -259,7 +259,7 @@ static inline void is_service_running(const Service* service)
 	if (!(service->svc_flags & SVC_forked)) {
 		THREAD_ENTER();
 		ERR_post (isc_svcnoexe, isc_arg_string,
-			service->svc_service->serv_name, 0); 
+			service->svc_service->serv_name, isc_arg_end); 
 	}
 }
 
@@ -539,11 +539,11 @@ Service* SVC_attach(USHORT	service_length,
 	if (!serv->serv_name)
 #ifdef NOT_USED_OR_REPLACED
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported,
-				 0);
+				 isc_arg_end);
 #else
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
 				 isc_arg_string, error_string(misc_buf),
-				 0);
+				 isc_arg_end);
 #endif
 
 	JRD_get_thread_data();
@@ -598,7 +598,7 @@ Service* SVC_attach(USHORT	service_length,
 			{
 				// user name and password are required while
 				// attaching to the services manager
-				ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
+				ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, isc_arg_end);
 			}
 			else 
 			{
@@ -623,7 +623,7 @@ Service* SVC_attach(USHORT	service_length,
 		{
 			Firebird::status_exception::raise(isc_long_login, 
 											  isc_arg_number, options.spb_user_name.length(), 
-											  isc_arg_number, USERNAME_LENGTH, 0);
+											  isc_arg_number, USERNAME_LENGTH, isc_arg_end);
 		}
 
 /* Check that the validated user has the authority to access this service */
@@ -707,7 +707,7 @@ Service* SVC_attach(USHORT	service_length,
 		}
 		else {
 			ERR_post(isc_service_att_err, isc_arg_gds,
-					 isc_svc_in_use, isc_arg_string, serv->serv_name, 0);
+					 isc_svc_in_use, isc_arg_string, serv->serv_name, isc_arg_end);
 		}
 #endif
 	}
@@ -984,7 +984,7 @@ ISC_STATUS SVC_query2(Service* service,
 //			case isc_info_svc_user_dbpath:
 				break;
 			default:
-				ERR_post(isc_bad_spb_form, 0);
+				ERR_post(isc_bad_spb_form, isc_arg_end);
 				break;
 			}
 		}
@@ -1841,12 +1841,12 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 			break;
 
 	if (!serv->serv_name)
-		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, isc_arg_end);
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
 	if (service->svc_user_flag == SVC_user_none) {
-		ERR_post(isc_bad_spb_form, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_end);
 	}
 
 	thd_mutex.enter();
@@ -1854,7 +1854,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		thd_mutex.leave();
 		ERR_post(isc_svc_in_use, isc_arg_string,
 				 error_string(serv->serv_name, strlen(serv->serv_name)),
-				 0);
+				 isc_arg_end);
 	}
 	/* Another service may have been started with this service block.
 	 * If so, we must reset the service flags.
@@ -1933,13 +1933,13 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 	spb.rewind();
 	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
 	{
-		ERR_post(isc_bad_spb_form, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_end);
 	}
 
 // Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(service->svc_user_flag & SVC_user_dba))
     {
-       	ERR_post(isc_adm_task_denied, 0);
+       	ERR_post(isc_adm_task_denied, isc_arg_end);
     }
 
 #ifndef SERVICE_THREAD
@@ -1971,7 +1971,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
 	{
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 	}
 
 	if (serv->serv_thd) {
@@ -2005,7 +2005,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		ERR_post(isc_svcnotdef,
 				isc_arg_string,
 				error_string(serv->serv_name, strlen(serv->serv_name)),
-				0);
+				isc_arg_end);
 	}
 
 #endif /* SERVICE_THREAD */
@@ -2101,7 +2101,7 @@ static void get_options(Firebird::ClumpletReader&	spb,
  **************************************/
 	const UCHAR p = spb.getBufferTag();
 	if (p != isc_spb_version1 && p != isc_spb_current_version) {
-		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, isc_arg_end);
 	}
 	options->spb_version = p;
 
@@ -2186,7 +2186,7 @@ static void io_error(const TEXT* string,
  **************************************/
 
 	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
-			 isc_arg_gds, operation, SYS_ERR, status, 0);
+			 isc_arg_gds, operation, SYS_ERR, status, isc_arg_end);
 }
 #endif
 
@@ -2413,7 +2413,7 @@ static void service_fork(TEXT* service_path, Service* service)
  *	Startup a service. Just a stub.
  *
  **************************************/
-	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, isc_arg_end);
 }
 
 static void service_get(
@@ -2494,7 +2494,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	switch (pid = vfork()) {
 	case -1:
 		THREAD_ENTER();
-		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, 0);
+		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, isc_arg_end);
 		break;
 
 	case 0:
@@ -2868,7 +2868,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
-								 0);
+								 isc_arg_end);
 					}
 					found = true;
 				}
@@ -2906,7 +2906,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
-								 0);
+								 isc_arg_end);
 					}
 					found = true;
 				}

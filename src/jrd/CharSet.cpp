@@ -158,7 +158,7 @@ ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen,
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		Firebird::status_exception::raise(isc_arith_except, 0);
+		Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 
 	return result;
 }
@@ -225,7 +225,7 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		Firebird::status_exception::raise(isc_arith_except, 0);
+		Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
 
 	return result;
 }

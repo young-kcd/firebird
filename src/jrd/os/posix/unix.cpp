@@ -243,7 +243,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool ov
 		ERR_post(isc_io_error,
 				 isc_arg_string, "open O_CREAT",
 				 isc_arg_string, ERR_string(file_name),
-				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, isc_arg_end);
 	}
 #ifdef HAVE_FCHMOD
 	if (fchmod(desc, MASK) < 0)
@@ -259,7 +259,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool ov
 		ERR_post(isc_io_error,
 				 isc_arg_string, "chmod",
 				 isc_arg_string, ERR_string(file_name),
-				 isc_arg_gds, isc_io_create_err, isc_arg_unix, chmodError, 0);
+				 isc_arg_gds, isc_io_create_err, isc_arg_unix, chmodError, isc_arg_end);
 	}
 
 	if (temporary
@@ -276,7 +276,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name, bool ov
 			ERR_post(isc_io_error,
 					 isc_arg_string, "unlink",
 					 isc_arg_string, ERR_string(file_name),
-					 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, 0);
+					 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, isc_arg_end);
 		}
 #endif
 	}
@@ -400,7 +400,7 @@ void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 					 isc_arg_string, "fcntl() SYNC/DIRECT",
 					 isc_arg_cstring, file->fil_length,
 					 ERR_string(file->fil_string, file->fil_length), isc_arg_gds,
-					 isc_io_access_err, isc_arg_unix, errno, 0);
+					 isc_io_access_err, isc_arg_unix, errno, isc_arg_end);
 		}
 #else //FCNTL_BROKEN
 		maybeCloseFile(file->fil_desc);
@@ -410,7 +410,7 @@ void PIO_force_write(jrd_file* file, bool forcedWrites, bool notUseFSCache)
 		{
 			ERR_post(isc_io_error, isc_arg_string, "re open() for SYNC/DIRECT",
 					 isc_arg_cstring, file->fil_length, ERR_string(file->fil_string, file->fil_length),
-					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
+					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, isc_arg_end);
 		}
 #ifdef SOLARIS
 		directio(file->fil_desc, notUseFSCache ? DIRECTIO_ON : DIRECTIO_OFF);
@@ -677,7 +677,7 @@ jrd_file* PIO_open(Database* dbb,
 			ERR_post(isc_io_error,
 					 isc_arg_string, "open",
 					 isc_arg_cstring, file_name.length(), ERR_cstring(file_name),
-					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, 0);
+					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, isc_arg_end);
 		}
 		else {
 			/* If this is the primary file, set Database flag to indicate that it is
@@ -707,7 +707,7 @@ jrd_file* PIO_open(Database* dbb,
 					isc_arg_cstring, file_name.length(),
 						ERR_cstring (file_name),
 					isc_arg_gds, isc_io_open_err,
-					isc_arg_unix, ENOENT, 0);
+					isc_arg_unix, ENOENT, isc_arg_end);
 	}
 #endif /* SUPPORT_RAW_DEVICES */
 
@@ -1091,9 +1091,9 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 						isc_arg_string, "lseek",
 						isc_arg_cstring, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
-						isc_arg_unix, errno, 0);
+						isc_arg_unix, errno, isc_arg_end);
 				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
+					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), isc_arg_end);
 				pageSpace->file = NULL; // Will be set again later by the caller				
 			}
 			catch (const Firebird::Exception&) {
@@ -1148,7 +1148,7 @@ static bool unix_error(
 				 isc_arg_string, ERR_string(file->fil_string,
 											file->fil_length),
 				 isc_arg_gds,
-				 operation, isc_arg_unix, errno, 0);
+				 operation, isc_arg_unix, errno, isc_arg_end);
 
 
     // Added a false for final return - which seems to be the answer,
@@ -1307,7 +1307,7 @@ static bool raw_devices_validate_database (
 					isc_arg_string, "raw_devices_validate_database",
 					isc_arg_string, file_name.length(), ERR_cstring (file_name),
 					isc_arg_gds, isc_io_read_err,
-					isc_arg_unix, errno, 0);
+					isc_arg_unix, errno, isc_arg_end);
 
 	for (int i = 0; i < IO_RETRY; i++)
 	{
@@ -1316,7 +1316,7 @@ static bool raw_devices_validate_database (
 						isc_arg_string, "lseek",
 						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
-						isc_arg_unix, errno, 0);
+						isc_arg_unix, errno, isc_arg_end);
 		const ssize_t bytes = read (desc, header, sizeof(header));
 		if (bytes == sizeof(header))
 			goto read_finished;
@@ -1325,14 +1325,14 @@ static bool raw_devices_validate_database (
 						isc_arg_string, "read",
 						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_read_err,
-						isc_arg_unix, errno, 0);
+						isc_arg_unix, errno, isc_arg_end);
 	}
 
 	ERR_post (isc_io_error,
 				isc_arg_string, "read_retry",
 				isc_arg_string, file_name.length(), ERR_cstring (file_name),
 				isc_arg_gds, isc_io_read_err,
-				isc_arg_unix, errno, 0);
+				isc_arg_unix, errno, isc_arg_end);
 
   read_finished:
 	/* Rewind file pointer */
@@ -1341,7 +1341,7 @@ static bool raw_devices_validate_database (
 					isc_arg_string, "lseek",
 					isc_arg_string, file_name.length(), ERR_cstring (file_name),
 					isc_arg_gds, isc_io_read_err,
-					isc_arg_unix, errno, 0);
+					isc_arg_unix, errno, isc_arg_end);
 
 	/* Validate database header. Code lifted from PAG_header. */
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
@@ -1384,7 +1384,7 @@ static int raw_devices_unlink_database (
 						isc_arg_string, "open",
 						isc_arg_string, file_name.length(), ERR_cstring (file_name),
 						isc_arg_gds, isc_io_open_err,
-						isc_arg_unix, errno, 0);
+						isc_arg_unix, errno, isc_arg_end);
 	}
 
 	memset(header, 0xa5, sizeof(header));
@@ -1400,7 +1400,7 @@ static int raw_devices_unlink_database (
 			isc_arg_string, "write",
 			isc_arg_string, file_name.length(), ERR_cstring (file_name),
 			isc_arg_gds, isc_io_write_err,
-			isc_arg_unix, errno, 0);
+			isc_arg_unix, errno, isc_arg_end);
 	}
 
 	//if (desc != -1) perhaps it's better to check this???

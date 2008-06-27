@@ -150,6 +150,6 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 	if (bad_format) 
 	{
 		dbgInfo.clear();
-		ERR_post_warning(isc_bad_debug_format, 0);
+		ERR_post_warning(isc_bad_debug_format, isc_arg_end);
 	}
 }

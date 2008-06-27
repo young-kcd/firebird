@@ -219,7 +219,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
 		else
-			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, 0);
+			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, isc_arg_end);
 	}
 
 	return cs;
@@ -262,7 +262,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	else
 	{
 		delete csL;
-		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), 0);
+		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), isc_arg_end);
 	}
 }
 
@@ -326,7 +326,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			delete tt;
 			ERR_post(isc_collation_not_installed,
 				isc_arg_string, ERR_cstring(info.collationName.c_str()),
-				isc_arg_string, ERR_cstring(info.charsetName.c_str()), 0);
+				isc_arg_string, ERR_cstring(info.charsetName.c_str()), isc_arg_end);
 		}
 
 		if (charset_collations.getCount() <= id)
@@ -361,7 +361,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		}
 	}
 	else
-		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, 0);
+		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, isc_arg_end);
 
 	return charset_collations[id];
 }
@@ -378,7 +378,7 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, charset_collations[id]->name.c_str(),
-					 0);
+					 isc_arg_end);
 		}
 
 		if (charset_collations[id]->existenceLock)
@@ -596,7 +596,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 			CharSet* toCharSet = INTL_charset_lookup(tdbb, dest_type);
 
 			if (!toCharSet->wellFormed(src_len, src_ptr))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 		}
 
 		len = MIN(dest_len, src_len);
@@ -610,7 +610,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_end);
 	}
 	else if (src_len == 0)
 		return (0);
@@ -728,7 +728,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			to_fill = to_size - to_len;
@@ -755,7 +755,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			if (to_len)
@@ -781,7 +781,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 			/* binary string can always be converted TO by byte-copy */
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			((vary*) p)->vary_length = to_len;
@@ -799,13 +799,13 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, 0);
+		(*err)(isc_arith_except, isc_arg_end);
 	}
 
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_end);
 
 	return 0;
 }

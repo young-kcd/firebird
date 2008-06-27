@@ -238,7 +238,7 @@ bool SHUT_database(Database* dbb, SSHORT flag, SSHORT delay)
 		SHUT_blocking_ast(dbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
-		ERR_post(isc_shutfail, 0);
+		ERR_post(isc_shutfail, isc_arg_end);
 	}
 
 /* Once there are no more transactions active, force all remaining
@@ -463,7 +463,7 @@ static void check_backup_state(thread_db* tdbb)
 			ERR_post(isc_bad_shutdown_mode,
 					 isc_arg_string,
 					 ERR_cstring(dbb->dbb_filename.c_str()),
-					 0);
+					 isc_arg_end);
 		}
 	}
 	catch (const Firebird::Exception&) {

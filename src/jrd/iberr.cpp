@@ -106,7 +106,7 @@ void IBERR_bugcheck(
 	sprintf(errmsg + len, " (%d)", number);
 
 	post_error(status_vector, dbname, longjmp_addr, isc_bug_check,
-			   isc_arg_string, errmsg, 0);
+			   isc_arg_string, errmsg, isc_arg_end);
 }
 
 
@@ -133,7 +133,7 @@ void IBERR_error(
 		sprintf(errmsg, "error code %d", number);
 
 	post_error(status_vector, dbname, longjmp_addr, isc_random,
-			   isc_arg_string, errmsg, 0);
+			   isc_arg_string, errmsg, isc_arg_end);
 }
 
 

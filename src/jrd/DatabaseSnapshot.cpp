@@ -128,7 +128,7 @@ void DatabaseSnapshot::SharedMemory::acquire()
 #else
 		Firebird::status_exception::raise(isc_random, isc_arg_string,
 										  "Monitoring table space exhausted",
-										  0);
+										  isc_arg_end);
 #endif
 	}
 }
@@ -291,7 +291,7 @@ void DatabaseSnapshot::SharedMemory::extend()
 #else
 	Firebird::status_exception::raise(isc_random, isc_arg_string,
 									  "Monitoring table space exhausted",
-									  0);
+									  isc_arg_end);
 #endif
 }
 
