@@ -1,3 +1,32 @@
+2008-06-27 15:40  dimitr
+
+	* firebird2/src/jrd/os/: win32/winnt.cpp (1.73), posix/unix.cpp
+	(1.101):
+
+	Misc.
+
+2008-06-27 15:31  asfernandes
+
+	* firebird2/src/jrd/: ResultSet.cpp (1.4), jrd.h (1.247):
+
+	Misc
+
+2008-06-27 14:11  dimitr
+
+	* firebird2/src/jrd/met.epp (1.256):
+
+	Fixed CORE-1965: Lock manager crash (invalid lock ID) under
+	concurrent DDL load.
+
+2008-06-27 10:44  dimitr
+
+	* firebird2/src/jrd/: Database.h (1.24), dfw.epp (1.243),
+	dfw_proto.h (1.18), grant.epp (1.64), ini.epp (1.102):
+
+	Fixed CORE-1963: Possible server crash on commit when
+	granting/revoking privileges from multiple connections
+	simultaneously.
+
 2008-06-26 17:22  dimitr
 
 	* firebird2/src/jrd/: met.epp (1.255), pcmet.epp (1.53):
