@@ -309,6 +309,7 @@ public:
 	Firebird::Mutex dbb_exe_clone_mutex;
 	Firebird::Mutex dbb_flush_count_mutex;
 	Firebird::Mutex dbb_dyn_mutex;
+	Firebird::Mutex dbb_sys_dfw_mutex;
 
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 

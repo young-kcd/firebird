@@ -491,6 +491,8 @@ void DFW_perform_system_work(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
+
 	DFW_perform_work(tdbb, dbb->dbb_sys_trans);
 }
 
@@ -668,8 +670,28 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 }
 
 
-DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc,
-	USHORT id)
+DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* desc, USHORT id)
+{
+/**************************************
+ *
+ *	D F W _ p o s t _ s y s t e m _ w o r k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post work to be done in the context of system transaction.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
+
+	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
+}
+
+
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id)
 {
 /**************************************
  *
