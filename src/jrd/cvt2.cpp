@@ -483,7 +483,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 
 	case dtype_array:
 		(*err) (isc_wish_list, isc_arg_gds, isc_blobnotsup,
-				isc_arg_string, "compare", 0);
+				isc_arg_string, "compare", isc_arg_end);
 		break;
 
 	default:
@@ -521,7 +521,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 /* DEV_BLKCHK (node, type_nod); */
 
 	if (arg1->dsc_dtype != dtype_blob)
-		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, isc_arg_end);
 
 	USHORT ttype1;
 	if (arg1->dsc_sub_type == isc_blob_text)
@@ -629,7 +629,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2, FPTR_ERROR err)
 	}
 	/* We do not accept arrays for now. Maybe InternalArrayDesc in the future. */
 	else if (arg2->dsc_dtype == dtype_array)
-		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, 0);
+		(*err) (isc_wish_list, isc_arg_gds, isc_datnotsup, isc_arg_end);
 	/* The second parameter should be a string. */
 	else
 	{

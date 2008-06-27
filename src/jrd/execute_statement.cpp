@@ -121,7 +121,7 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 
 	WHY_TRA temp_tra = WHY_alloc_handle(temp_dbb->implementation, HANDLE_transaction);
 	if (!temp_tra)
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 	Transaction = temp_tra->public_handle;
 	temp_tra->handle.h_tra = tdbb->tdbb_transaction;
 	temp_tra->parent = temp_dbb;
@@ -354,7 +354,7 @@ void ExecuteStatement::getString(Firebird::string& s, const dsc* d, const jrd_re
 	const SSHORT l = (d && !(r->req_flags & req_null)) ?
 		MOV_get_string(d, &p, v, BUFFER_LARGE) : 0; // !!! How call Msgs ?
 	if (! p) {
-		ERR_post(isc_exec_sql_invalid_arg, 0);
+		ERR_post(isc_exec_sql_invalid_arg, isc_arg_end);
 	}
 
 	s.assign((const char*)p, l);

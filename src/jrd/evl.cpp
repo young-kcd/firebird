@@ -253,11 +253,11 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 			if (impure->vlu_desc.dsc_address &&
 				!(impure->vlu_desc.dsc_flags & DSC_null))
 			{
-				ERR_post(isc_field_disappeared, 0);
+				ERR_post(isc_field_disappeared, isc_arg_end);
 			}
 		}
 		if (!impure->vlu_desc.dsc_address)
-			ERR_post(isc_read_only_field, 0);
+			ERR_post(isc_read_only_field, isc_arg_end);
 		return &impure->vlu_desc;
 
 	case nod_null:
@@ -1125,7 +1125,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 	DEV_BLKCHK(record, type_rec);
 
 	if (!record) {
-		ERR_warning(isc_no_cur_rec, 0);
+		ERR_warning(isc_no_cur_rec, isc_arg_end);
 		return false;
 	}
 
@@ -1245,7 +1245,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 						{
 							ERR_post(isc_not_valid,
 									 isc_arg_string, temp_field->fld_name.c_str(),
-									 isc_arg_string, "*** null ***", 0);
+									 isc_arg_string, "*** null ***", isc_arg_end);
 						}
 
 						fb_assert(default_literal->nod_type == nod_literal);
@@ -2011,7 +2011,7 @@ static dsc* add2(const dsc* desc, const jrd_nod* node, impure_value* value)
 	if (node->nod_type == nod_subtract2)
 		i1 ^= MIN_SINT64;		/* invert the sign bit */
 	if (((i1 ^ i2) >= 0) && ((i1 ^ value->vlu_misc.vlu_int64) < 0))
-		ERR_post(isc_exception_integer_overflow, 0);
+		ERR_post(isc_exception_integer_overflow, isc_arg_end);
 
 	return result;
 }
@@ -2076,7 +2076,7 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		return add_sql_date(desc, node, value);
 
 	case DTYPE_CANNOT:
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_end);
 		return NULL;
 	}
 }
@@ -2171,7 +2171,7 @@ static dsc* add_sql_date(const dsc* desc, const jrd_nod* node, impure_value* val
 		|| (times.tm_year) + 1900 > MAX_YEAR)
 	{
 		ERR_post(isc_expression_eval_err, isc_arg_gds,
-						   isc_date_range_exceeded, 0);
+						   isc_date_range_exceeded, isc_arg_end);
 	}
 
 	value->vlu_misc.vlu_sql_date = d2;
@@ -2323,7 +2323,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 				*(GDS_TIME *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_end);
 	}
 	else if (desc->dsc_dtype == dtype_sql_date) {
 		/* TIME + DATE */
@@ -2336,7 +2336,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 				*(GDS_DATE *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_end);
 	}
 
 /* For historical reasons (behavior prior to V6),
@@ -2371,7 +2371,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			  DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
 		{
-			ERR_post(isc_expression_eval_err, 0);
+			ERR_post(isc_expression_eval_err, isc_arg_end);
 		}
 
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -2457,7 +2457,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
    which are errors */
 
 	if (op1_is_timestamp == op2_is_timestamp)
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_end);
 
 	if (op1_is_timestamp) {
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -2499,7 +2499,7 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 	isc_decode_timestamp(&new_date, &times);
 
 	if ((times.tm_year + 1900) < MIN_YEAR || (times.tm_year) + 1900 > MAX_YEAR) {
-		ERR_post(isc_expression_eval_err, isc_arg_gds, isc_date_range_exceeded, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_gds, isc_date_range_exceeded, isc_arg_end);
 	}
 
 
@@ -2634,7 +2634,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 		{
 			const double divisor = MOV_get_double(desc2);
 			if (divisor == 0)
-				ERR_post(isc_arith_except, 0);
+				ERR_post(isc_arith_except, isc_arg_end);
 			impure->vlu_misc.vlu_double =
 				DOUBLE_DIVIDE(MOV_get_double(desc1), divisor);
 			impure->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
@@ -2718,7 +2718,7 @@ static dsc* cast(thread_db* tdbb, const dsc* value, const jrd_nod* node, impure_
 		 impure->vlu_desc.dsc_sub_type != value->dsc_sub_type ||
 		 impure->vlu_desc.dsc_sub_type != isc_blob_text))
 	{
-		ERR_post(isc_wish_list, 0);
+		ERR_post(isc_wish_list, isc_arg_end);
 	}
 
 	MOV_move(value, &impure->vlu_desc);
@@ -2867,7 +2867,7 @@ static dsc* concatenate(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 
 		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
 		{
-		    ERR_post(isc_concat_overflow, 0);
+		    ERR_post(isc_concat_overflow, isc_arg_end);
 		    return NULL;
 		}
 
@@ -3061,7 +3061,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 			if (node->nod_arg[e_stat_default])
 				desc = EVL_expr(tdbb, node->nod_arg[e_stat_default]);
 			else
-				ERR_post(isc_from_no_match, 0);
+				ERR_post(isc_from_no_match, isc_arg_end);
 		}
 		flag = request->req_flags;
 		break;
@@ -3188,7 +3188,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			extract_part != blr_extract_minute &&
 			extract_part != blr_extract_second)
 		{
-			ERR_post(isc_expression_eval_err, 0);
+			ERR_post(isc_expression_eval_err, isc_arg_end);
 		}
 		break;
 	case dtype_sql_date:
@@ -3199,7 +3199,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			extract_part == blr_extract_minute ||
 			extract_part == blr_extract_second)
 		{
-			ERR_post(isc_expression_eval_err, 0);
+			ERR_post(isc_expression_eval_err, isc_arg_end);
 		}
 		break;
 	case dtype_timestamp:
@@ -3207,7 +3207,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		isc_decode_timestamp(&timestamp, &times);
 		break;
 	default:
-		ERR_post(isc_expression_eval_err, 0);
+		ERR_post(isc_expression_eval_err, isc_arg_end);
 		break;
 	}
 
@@ -3607,7 +3607,7 @@ static dsc* multiply(const dsc* desc, impure_value* value, const jrd_nod* node)
 		value->vlu_desc.dsc_scale = 0;
 		value->vlu_desc.dsc_address = (UCHAR*) &value->vlu_misc.vlu_double;
 #else
-		ERR_post(isc_exception_integer_overflow, 0);
+		ERR_post(isc_exception_integer_overflow, isc_arg_end);
 #endif
 	}
 	else
@@ -3703,7 +3703,7 @@ static dsc* multiply2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	const FB_UINT64 u_limit = ((i1 ^ i2) >= 0) ? MAX_SINT64 : (FB_UINT64) MAX_SINT64 + 1;
 
 	if ((u1 != 0) && ((u_limit / u1) < u2)) {
-		ERR_post(isc_exception_integer_overflow, 0);
+		ERR_post(isc_exception_integer_overflow, isc_arg_end);
 	}
 
 	value->vlu_desc.dsc_dtype   = dtype_int64;
@@ -3737,7 +3737,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	if (node->nod_flags & nod_double) {
 		const double d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
-			ERR_post(isc_arith_except, 0);
+			ERR_post(isc_arith_except, isc_arg_end);
 		const double d1 = MOV_get_double(&value->vlu_desc);
 		value->vlu_misc.vlu_double = DOUBLE_DIVIDE(d1, d2);
 		value->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
@@ -3786,13 +3786,13 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
  */
 	SINT64 i2 = MOV_get_int64(desc, desc->dsc_scale);
 	if (i2 == 0)
-		ERR_post(isc_arith_except, 0);
+		ERR_post(isc_arith_except, isc_arg_end);
 
 	SINT64 i1 = MOV_get_int64(&value->vlu_desc, node->nod_scale - desc->dsc_scale);
 
 /* MIN_SINT64 / -1 = (MAX_SINT64 + 1), which overflows in SINT64. */
 	if ((i1 == MIN_SINT64) && (i2 == -1))
-		ERR_post(isc_exception_integer_overflow, 0);
+		ERR_post(isc_exception_integer_overflow, isc_arg_end);
 
 /* Scale the dividend by as many of the needed powers of 10 as possible
    without causing an overflow. */
@@ -3849,7 +3849,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		}
 	}
 	if (addl_scale < 0)
-		ERR_post(isc_arith_except, 0);
+		ERR_post(isc_arith_except, isc_arg_end);
 
 	return &value->vlu_desc;
 }
@@ -3874,13 +3874,13 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 	switch (value->vlu_desc.dsc_dtype) {
 	case dtype_short:
 		if (value->vlu_misc.vlu_short == MIN_SSHORT)
-			ERR_post(isc_exception_integer_overflow, 0);
+			ERR_post(isc_exception_integer_overflow, isc_arg_end);
 		value->vlu_misc.vlu_short = -value->vlu_misc.vlu_short;
 		break;
 
 	case dtype_long:
 		if (value->vlu_misc.vlu_long == MIN_SLONG)
-			ERR_post(isc_exception_integer_overflow, 0);
+			ERR_post(isc_exception_integer_overflow, isc_arg_end);
 		value->vlu_misc.vlu_long = -value->vlu_misc.vlu_long;
 		break;
 
@@ -3908,7 +3908,7 @@ static dsc* negate_dsc(thread_db* tdbb, const dsc* desc, impure_value* value)
 
 	case dtype_int64:
 		if (value->vlu_misc.vlu_int64 == MIN_SINT64)
-			ERR_post(isc_exception_integer_overflow, 0);
+			ERR_post(isc_exception_integer_overflow, isc_arg_end);
 		value->vlu_misc.vlu_int64 = -value->vlu_misc.vlu_int64;
 		break;
 
@@ -4305,7 +4305,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					{
 						/* If characters left, or null byte character, return error */
 						BLB_close(tdbb, blob);
-						ERR_post(isc_like_escape_invalid, 0);
+						ERR_post(isc_like_escape_invalid, isc_arg_end);
 					}
 
 					USHORT escape[2] = {0, 0};
@@ -4317,7 +4317,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 					{
 						/* If or null byte character, return error */
 						BLB_close(tdbb, blob);
-						ERR_post(isc_like_escape_invalid, 0);
+						ERR_post(isc_like_escape_invalid, isc_arg_end);
 					}
 				}
 
@@ -4484,7 +4484,7 @@ static bool string_function(
 			if (!escape_length || charset->length(tdbb, escape_length, escape_str, true) != 1)
 			{
 				/* If characters left, or null byte character, return error */
-				ERR_post(isc_like_escape_invalid, 0);
+				ERR_post(isc_like_escape_invalid, isc_arg_end);
 			}
 
 			USHORT escape[2] = {0, 0};
@@ -4495,7 +4495,7 @@ static bool string_function(
 			if (!escape[0])
 			{
 				/* If or null byte character, return error */
-				ERR_post(isc_like_escape_invalid, 0);
+				ERR_post(isc_like_escape_invalid, isc_arg_end);
 			}
 		}
 
@@ -4563,7 +4563,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 				{
 					FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
 					if (l > MAX_SINT64)
-						ERR_post(isc_arith_except, 0);
+						ERR_post(isc_arith_except, isc_arg_end);
 						
 					length = l;
 				}
@@ -4615,7 +4615,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			{
 				FB_UINT64 l = (FB_UINT64) length * 8;
 				if (l > MAX_SINT64)
-					ERR_post(isc_arith_except, 0);
+					ERR_post(isc_arith_except, isc_arg_end);
 
 				length = l;
 			}
@@ -4663,11 +4663,11 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 	const ULONG length = (ULONG) length_arg;
 	if (offset_arg < 0 || offset > MAX_COLUMN_SIZE)
 	{
-		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, 0);
+		ERR_post(isc_bad_substring_offset, isc_arg_number, offset_arg + 1, isc_arg_end);
 	}
 	else if (length_arg < 0 || length > MAX_COLUMN_SIZE)
 	{
-		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, 0);
+		ERR_post(isc_bad_substring_length, isc_arg_number, length_arg, isc_arg_end);
 	}
 	ULONG ul;
 
@@ -4711,7 +4711,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 											 desc.dsc_length, impure->vlu_desc.dsc_address,
 											 offset, length)) == INTL_BAD_STR_LENGTH)
 				{
-					ERR_post(isc_arith_except, 0);
+					ERR_post(isc_arith_except, isc_arg_end);
 				}
 				else
 					impure->vlu_desc.dsc_length = static_cast<USHORT>(ul);
@@ -4802,7 +4802,7 @@ static dsc* substring(thread_db* tdbb, impure_value* impure,
 									 totLen,
 									 impure->vlu_desc.dsc_address, offset, length)) == INTL_BAD_STR_LENGTH)
 		{
-			ERR_post(isc_arith_except, 0);
+			ERR_post(isc_arith_except, isc_arg_end);
 		}
 		else
 			impure->vlu_desc.dsc_length = static_cast<USHORT>(ul);

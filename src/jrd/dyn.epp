@@ -114,7 +114,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
-		ERR_post(isc_wrodynver, 0);
+		ERR_post(isc_wrodynver, isc_arg_end);
 	}
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;

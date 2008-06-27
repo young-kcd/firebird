@@ -36,7 +36,7 @@ SQUAD QUAD_add(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (isc_badblk, isc_arg_end);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -82,7 +82,7 @@ SQUAD QUAD_from_double(const double* d, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (isc_badblk, isc_arg_end);	/* not really badblk, but internal error */
 /* BUGCHECK (190); *//* msg 190 conversion not supported for */
 	/* specified data types */
 
@@ -105,7 +105,7 @@ SQUAD QUAD_multiply(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (isc_badblk, isc_arg_end);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -126,7 +126,7 @@ SQUAD QUAD_negate(const SQUAD* arg1, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (isc_badblk, isc_arg_end);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };
@@ -147,7 +147,7 @@ SQUAD QUAD_subtract(const SQUAD* arg1, const SQUAD* arg2, FPTR_ERROR err)
  *
  **************************************/
 
-	(*err) (isc_badblk, 0);	/* not really badblk, but internal error */
+	(*err) (isc_badblk, isc_arg_end);	/* not really badblk, but internal error */
 /* IBERROR (224); *//* msg 224 quad word arithmetic not supported */
 
 	SQUAD temp = { 0, 0 };

@@ -744,7 +744,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		   that way */
       
 		if (ISC_check_if_remote(expanded_name, true)) {
-			ERR_post(isc_unavailable, 0);
+			ERR_post(isc_unavailable, isc_arg_end);
 		}
 	}
 
@@ -758,7 +758,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				 isc_arg_string, "security database",
 				 isc_arg_string, 
 				 ERR_string(file_name), 
-				 0);
+				 isc_arg_end);
 	}
 
 /* Worry about encryption key */
@@ -776,7 +776,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "database",
 						 isc_arg_string, 
                          ERR_string(file_name), 
-                         0);
+                         isc_arg_end);
 			}
 		}
 		else if (options.dpb_key.hasData()) 
@@ -894,7 +894,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 				 isc_arg_string, 
                  ERR_string(file_name), 
-                 0);
+                 isc_arg_end);
 	}
 
 	if (options.dpb_buffers && !dbb->dbb_page_buffers) {
@@ -916,7 +916,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_inv_client_dialect_specified, isc_arg_number,
 				 options.dpb_sql_dialect,
 				 isc_arg_gds, isc_valid_client_dialects,
-				 isc_arg_string, "1, 2 or 3", 0);
+				 isc_arg_string, "1, 2 or 3", isc_arg_end);
 	}
 	invalid_client_SQL_dialect = false;
 
@@ -1054,7 +1054,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "database",
 						 isc_arg_string, 
                          ERR_string(file_name), 
-                         0);
+                         isc_arg_end);
 		}
 		JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -1087,7 +1087,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 						 isc_arg_string, "database",
 						 isc_arg_string, 
                          ERR_string(file_name), 
-                         0);
+                         isc_arg_end);
 		}
 		JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -1118,15 +1118,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (attachment->att_flags & ATT_shutdown) {
 			if (dbb->dbb_ast_flags & DBB_shutdown) {
 				ERR_post(isc_shutdown, isc_arg_string, 
-						 ERR_string(file_name), 0);
+						 ERR_string(file_name), isc_arg_end);
 			}
 			else {
-				ERR_post(isc_att_shutdown, 0);
+				ERR_post(isc_att_shutdown, isc_arg_end);
 			}
 		}
 		if (!attachment_succeeded) {
 			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name), 0);
+					 ERR_string(file_name), isc_arg_end);
 		}
 	}
 #endif
@@ -1136,7 +1136,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
 		ERR_post(isc_shutinprog, isc_arg_string, 
-				ERR_string(file_name), 0);
+				ERR_string(file_name), isc_arg_end);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown) {
@@ -1161,7 +1161,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		if (!allow_access) {
 			// Note we throw exception here when entering full-shutdown mode
 			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name), 0);
+					 ERR_string(file_name), isc_arg_end);
 		}
 	}
 
@@ -1178,7 +1178,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_verify)
 	{
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
-			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, 0);
+			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, isc_arg_end);
 		}
 
 #ifdef GARBAGE_THREAD
@@ -1206,13 +1206,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 	if (options.dpb_journal.hasData()) {
 		ERR_post(isc_bad_dpb_content,
 				 isc_arg_gds, isc_cant_start_journal,
-				 0);
+				 isc_arg_end);
 	}
 
 	if (options.dpb_wal_action)
 	{
 		// No WAL anymore. We deleted it.
-		ERR_post(isc_no_wal, 0);
+		ERR_post(isc_no_wal, isc_arg_end);
 	}
 
 /*
@@ -1227,7 +1227,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 		 (attachment->att_flags & ATT_gstat_attachment)) &&
 		!(attachment->att_user->usr_flags & (USR_locksmith | USR_owner)))
 	{
-		ERR_post(isc_adm_task_denied, 0);
+		ERR_post(isc_adm_task_denied, isc_arg_end);
 	}
 
 #ifdef REPLAY_OSRI_API_CALLS_SUBSYSTEM
@@ -1237,13 +1237,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, 
                          ERR_string(file_name),
-                         0);
+                         isc_arg_end);
 			}
 			LOG_enable(options.dpb_log, strlen(options.dpb_log));
 		}
 		else {
 			ERR_post(isc_bad_dpb_content, isc_arg_gds,
-					 isc_cant_start_logging, 0);
+					 isc_cant_start_logging, isc_arg_end);
 		}
 	}
 #endif
@@ -1274,7 +1274,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string,
 					 ERR_string(file_name), 
-					 0); 
+					 isc_arg_end); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
 	}
@@ -1299,7 +1299,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS*	user_status,
 				num_attached++;
 			}
 			else {
-				ERR_post(isc_max_att_exceeded, 0);
+				ERR_post(isc_max_att_exceeded, isc_arg_end);
 			}
 		}
 	}
@@ -1857,7 +1857,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 
 		if (ISC_check_if_remote(expanded_name, true)) 
 		{
-			ERR_post(isc_unavailable, 0);
+			ERR_post(isc_unavailable, isc_arg_end);
 		}
 	}
 
@@ -1901,7 +1901,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 		ERR_post(isc_database_create_failed, isc_arg_string,
 				 expanded_name.c_str(), isc_arg_gds, isc_inv_dialect_specified,
 				 isc_arg_number, options.dpb_sql_dialect, isc_arg_gds,
-				 isc_valid_db_dialects, isc_arg_string, "1 and 3", 0);
+				 isc_valid_db_dialects, isc_arg_string, "1 and 3", isc_arg_end);
 		break;
 	}
 
@@ -1986,7 +1986,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 					isc_arg_string, "overwrite",
 					isc_arg_string, "database",
 					isc_arg_string,
-					ERR_cstring(expanded_name.c_str()), 0);
+					ERR_cstring(expanded_name.c_str()), isc_arg_end);
 			}
 		}
 		else
@@ -2020,7 +2020,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
 	if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
-		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), 0);
+		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), isc_arg_end);
 	
 	if (options.dpb_shutdown) {
 		/* By releasing the DBB_MUTX_init_fini mutex here, we would be allowing
@@ -2041,7 +2041,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 					 isc_arg_string, "shutdown or online",
 					 isc_arg_string, "database",
 					 isc_arg_string,
-					 ERR_string(file_name), 0);
+					 ERR_string(file_name), isc_arg_end);
 		}
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
 		V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
@@ -2070,7 +2070,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
             ERR_post (isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
                       isc_arg_string, 
                       ERR_string (file_name), 
-                      0);
+                      isc_arg_end);
         
         PAG_set_db_readonly (dbb, options.dpb_db_readonly);
     }
@@ -2105,7 +2105,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS*	user_status,
 			if (num_attached < (JRD_max_users * ATTACHMENTS_PER_USER))
 				num_attached++;
 			else
-				ERR_post(isc_max_att_exceeded, 0);
+				ERR_post(isc_max_att_exceeded, isc_arg_end);
 		}
 	}
 	else {
@@ -2457,22 +2457,22 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "drop",
 						 isc_arg_string, "database",
-						 isc_arg_string, ERR_cstring(file_name), 0);
+						 isc_arg_string, ERR_cstring(file_name), isc_arg_end);
 
 			if (attachment->att_flags & ATT_shutdown) {
 				if (dbb->dbb_ast_flags & DBB_shutdown) {
 					ERR_post(isc_shutdown, isc_arg_string,
-							 ERR_cstring(file_name), 0);
+							 ERR_cstring(file_name), isc_arg_end);
 				}
 				else {
-					ERR_post(isc_att_shutdown, 0);
+					ERR_post(isc_att_shutdown, isc_arg_end);
 				}
 			}
 
 			if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD))
 				ERR_post(isc_lock_timeout,
 						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(file_name), 0);
+						 isc_arg_string, ERR_cstring(file_name), isc_arg_end);
 
 			JRD_SS_MUTEX_LOCK;
 #if defined(V4_THREADING) && !defined(SUPERSERVER) 
@@ -2491,7 +2491,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 			if ((attach = dbb->dbb_attachments) && (attach->att_next)) {
 				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-						isc_arg_string, "DATABASE", 0);
+						isc_arg_string, "DATABASE", isc_arg_end);
 			}
 
 #ifdef CANCEL_OPERATION
@@ -2622,7 +2622,7 @@ ISC_STATUS GDS_INTL_FUNCTION(ISC_STATUS* user_status, Attachment** handle,
 				{
 					ERR_post(isc_sqlerr,
 							isc_arg_number, (SLONG) - 104,
-							isc_arg_gds, isc_malformed_string, 0);
+							isc_arg_gds, isc_malformed_string, isc_arg_end);
 				}
 				else
 					*result = charSet->length(tdbb, strLen, str, true);
@@ -3949,7 +3949,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		{
 			ERR_post(isc_port_len,
 					 isc_arg_number, (SLONG) in_msg_length,
-					 isc_arg_number, (SLONG) len, 0);
+					 isc_arg_number, (SLONG) len, isc_arg_end);
 		}
 		if ((U_IPTR) in_msg & (ALIGNMENT - 1)) {
 			MOVE_FAST(in_msg, (SCHAR *) request + in_message->nod_impure,
@@ -3973,7 +3973,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 	if (out_msg_length != len) {
 		ERR_post(isc_port_len,
 				 isc_arg_number, (SLONG) out_msg_length,
-				 isc_arg_number, (SLONG) len, 0);
+				 isc_arg_number, (SLONG) len, isc_arg_end);
 	}
 
 	if (out_msg_length) {
@@ -4178,7 +4178,7 @@ void JRD_blocked(Attachment* blocking, BlockingThread** bt_que)
 		 attachment = attachment->att_blocking)
 	{
 		if (attachment == tdbb->tdbb_attachment) {
-			ERR_post(isc_deadlock, 0);
+			ERR_post(isc_deadlock, isc_arg_end);
 		}
 	}
 
@@ -4357,9 +4357,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	gds__prefix(fname, "proc_info.log");
 	FILE* fptr = fopen(fname, "a+");
 	if (!fptr) {
-		char buff[256];
-		sprintf(buff, "Failed to open %s\n", fname);
-		gds__log(buff, 0);
+		gds__log("Failed to open %s\n", fname);
 		return;
 	}
 
@@ -4448,7 +4446,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				if (punt) {
 					CCH_unwind(tdbb, false);
 					ERR_post(isc_shutdown, isc_arg_string,
-							 ERR_cstring(file_name), 0);
+							 ERR_cstring(file_name), isc_arg_end);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -4465,7 +4463,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			{
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_att_shutdown, 0);
+					ERR_post(isc_att_shutdown, isc_arg_end);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -4494,7 +4492,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					attachment->att_flags &= ~ATT_cancel_raise;
 					if (punt) {
 						CCH_unwind(tdbb, false);
-						ERR_post(isc_cancelled, 0);
+						ERR_post(isc_cancelled, isc_arg_end);
 					}
 					else {
 						ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -4907,7 +4905,7 @@ static bool drop_files(const jrd_file* file)
 							   ERR_cstring(file->fil_string),
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
-							   0);
+							   isc_arg_end);
 			Database* dbb = GET_DBB();
 			gds__log_status(dbb->dbb_file->fil_string, status);
 		}
@@ -4934,7 +4932,7 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 	SET_TDBB(tdbb);
 
 	if (!transaction || MemoryPool::blk_type(transaction) != type_tra)
-		ERR_post(isc_bad_trans_handle, 0);
+		ERR_post(isc_bad_trans_handle, isc_arg_end);
 
 	for (; transaction; transaction = transaction->tra_sibling)
 		if (transaction->tra_attachment == tdbb->tdbb_attachment) {
@@ -4942,7 +4940,7 @@ static jrd_tra* find_transaction(thread_db* tdbb, jrd_tra* transaction, ISC_STAT
 			return transaction;
 		}
 
-	ERR_post(error_code, 0);
+	ERR_post(error_code, isc_arg_end);
 	return NULL;		/* Added to remove compiler warnings */
 }
 
@@ -5045,7 +5043,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 		ERR_post(isc_bad_dpb_content,
 				isc_arg_gds, isc_charset_not_found,
 				isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
-				0);
+				isc_arg_end);
 	}
 }
 
@@ -5078,14 +5076,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 	}
 	if (dpb == NULL)
 	{
-		ERR_post(isc_bad_dpb_form, 0);
+		ERR_post(isc_bad_dpb_form, isc_arg_end);
 	}
 
 	Firebird::ClumpletReader rdr(Firebird::ClumpletReader::Tagged, dpb, dpb_length);
 
 	if (rdr.getBufferTag() != isc_dpb_version1)
 	{
-		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, 0);
+		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, isc_arg_end);
 	}
 
 	for (; !(rdr.isEof()); rdr.moveNext())
@@ -5135,7 +5133,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 				(dpb_page_buffers < MIN_PAGE_BUFFERS ||
 				 dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(isc_bad_dpb_content, 0);
+				ERR_post(isc_bad_dpb_content, isc_arg_end);
 			}
 			dpb_set_page_buffers = true;
 			break;
@@ -5144,7 +5142,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			dpb_buffers = rdr.getInt();
 			if (dpb_buffers < 10)
 			{
-				ERR_post(isc_bad_dpb_content, 0);
+				ERR_post(isc_bad_dpb_content, isc_arg_end);
 			}
 			break;
 
@@ -5203,7 +5201,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 
 		case isc_dpb_old_file:
 			//if (num_old_files >= MAX_OLD_FILES) complain here, for now.
-				ERR_post(isc_num_old_files, 0);
+				ERR_post(isc_num_old_files, isc_arg_end);
 			// following code is never executed now !
 			num_old_files++;
 			break;
@@ -5247,7 +5245,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 			 * feature - post an error when they try to access it in 4.0
 			 */
 			ERR_post(isc_uns_ext, isc_arg_gds, isc_random,
-					 isc_arg_string, "Encryption not supported", 0);
+					 isc_arg_string, "Encryption not supported", isc_arg_end);
 #endif
 			break;
 
@@ -5424,7 +5422,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length)
 
 	if (! rdr.isEof())
 	{
-		ERR_post(isc_bad_dpb_form, 0);
+		ERR_post(isc_bad_dpb_form, isc_arg_end);
 	}
 }
 
@@ -6531,7 +6529,7 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 
 		if (count)
-			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
+			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, isc_arg_end);
 
 		// If there's a side transaction for db-key scope, get rid of it
 
@@ -6614,7 +6612,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 		if (!vector || lev >= vector->count() ||
 			!(request = (*vector)[lev]))
 		{
-			ERR_post(isc_req_sync, 0);
+			ERR_post(isc_req_sync, isc_arg_end);
 		}
 	}
 }

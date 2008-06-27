@@ -245,7 +245,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		ERR_post(isc_random,
 			     isc_arg_string,
 				 "Difference file name should be set explicitly for database on raw device",
-				 0);
+				 isc_arg_end);
 	}
 
 	WIN window(HEADER_PAGE);

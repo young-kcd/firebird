@@ -6561,7 +6561,7 @@ yyreduce:
 
   case 328:
 
-    { yyval = make_node (nod_exec_into, (int) e_exec_into_count, yyvsp[-2], 0, make_list (yyvsp[0])); }
+    { yyval = make_node (nod_exec_into, (int) e_exec_into_count, yyvsp[-2], NULL, make_list (yyvsp[0]), NULL); }
     break;
 
   case 329:
@@ -7368,13 +7368,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "BIGINT",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "BIGINT",
-					0);
+					isc_arg_end);
 			lex.g_field->fld_dtype = dtype_int64; 
 			lex.g_field->fld_length = sizeof (SINT64); 
 			}
@@ -7404,7 +7404,7 @@ yyreduce:
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
 					ERRD_post_warning (isc_sqlwarn, isc_arg_number, (SLONG) 301, 
-											   isc_arg_warning, isc_dtype_renamed, 0);
+											   isc_arg_warning, isc_dtype_renamed, isc_arg_end);
 				lex.g_field->fld_dtype = dtype_timestamp; 
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 				}
@@ -7426,13 +7426,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			lex.g_field->fld_dtype = dtype_sql_time; 
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
@@ -7622,7 +7622,7 @@ yyreduce:
 					   isc_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
 					   isc_arg_number, (SLONG) db_dialect,
-					   0);
+					   isc_arg_end);
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
 				lex.g_field->fld_dtype = dtype_double;
@@ -7682,7 +7682,7 @@ yyreduce:
 					   isc_arg_gds,
 					   isc_ddl_not_allowed_by_db_sql_dial,
 					   isc_arg_number, (SLONG) db_dialect,
-					   0);
+					   isc_arg_end);
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
 				lex.g_field->fld_dtype = dtype_double;
@@ -9204,13 +9204,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "DATE",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "DATE",
-					0);
+					isc_arg_end);
 			yyval = make_node (nod_current_date, 0, NULL);
 			}
     break;
@@ -9223,13 +9223,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			yyval = make_node (nod_current_time, 1, yyvsp[0]);
 			}
     break;
@@ -9302,13 +9302,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "DATE",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "DATE",
-					0);
+					isc_arg_end);
 			yyval = MAKE_constant ((dsql_str*) yyvsp[0], CONSTANT_DATE);
 			}
     break;
@@ -9321,13 +9321,13 @@ yyreduce:
 					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					isc_arg_number, (SLONG) client_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
 					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
 					isc_arg_number, (SLONG) db_dialect,
 					isc_arg_string, "TIME",
-					0);
+					isc_arg_end);
 			yyval = MAKE_constant ((dsql_str*) yyvsp[0], CONSTANT_TIME);
 			}
     break;
@@ -11063,7 +11063,7 @@ static void yyerror(const TEXT* error_string)
 			isc_arg_gds, isc_command_end_err2,	/* Unexpected end of command */
 			isc_arg_number, lines,
 			isc_arg_number, (SLONG) (lex.last_token - line_start + 1),
-			0);
+			isc_arg_end);
 	else
 	{
 		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
@@ -11074,7 +11074,7 @@ static void yyerror(const TEXT* error_string)
 			/* Show the token */
 			isc_arg_gds, isc_random,
 			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
-			0);
+			isc_arg_end);
 	}
 }
 
@@ -11094,6 +11094,6 @@ static void yyabandon (SLONG		sql_code,
  **************************************/
 
 	ERRD_post (isc_sqlerr, isc_arg_number, sql_code,
-		isc_arg_gds, error_symbol, 0);
+		isc_arg_gds, error_symbol, isc_arg_end);
 }
 

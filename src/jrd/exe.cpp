@@ -545,7 +545,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 
 		if (count > MAX_CLONES) {
 			THD_MUTEX_UNLOCK(dbb->dbb_mutexes + DBB_MUTX_clone);
-			ERR_post(isc_req_max_clones_exceeded, 0);
+			ERR_post(isc_req_max_clones_exceeded, isc_arg_end);
 		}
 		if (!clone)
 			clone = CMP_clone_request(tdbb, request, n, validate);
@@ -586,7 +586,7 @@ void EXE_receive(thread_db*		tdbb,
 	jrd_tra* transaction = request->req_transaction;
 
 	if (!(request->req_flags & req_active)) {
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 	}
 
 	if (request->req_flags & req_proc_fetch)
@@ -621,19 +621,19 @@ void EXE_receive(thread_db*		tdbb,
 	if (!(request->req_flags & req_active) ||
 		request->req_operation != jrd_req::req_send)
 	{
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 	}
 
 	const jrd_nod* message = request->req_message;
 	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 
 	if (length != format->fmt_length) {
 		ERR_post(isc_port_len,
 				 isc_arg_number, (SLONG) length,
-				 isc_arg_number, (SLONG) format->fmt_length, 0);
+				 isc_arg_number, (SLONG) format->fmt_length, isc_arg_end);
 	}
 
 	if ((U_IPTR) buffer & (ALIGNMENT - 1))
@@ -728,7 +728,7 @@ void EXE_send(thread_db*		tdbb,
 #endif
 
 	if (!(request->req_flags & req_active))
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 
 	jrd_nod* message;
 	jrd_nod* node;
@@ -760,7 +760,7 @@ void EXE_send(thread_db*		tdbb,
 	else {
 #endif
 		if (request->req_operation != jrd_req::req_receive)
-			ERR_post(isc_req_sync, 0);
+			ERR_post(isc_req_sync, isc_arg_end);
 		node = request->req_message;
 #ifdef SCROLLABLE_CURSORS
 	}
@@ -788,12 +788,12 @@ void EXE_send(thread_db*		tdbb,
 	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 
 	if (length != format->fmt_length) {
 		ERR_post(isc_port_len,
 				 isc_arg_number, (SLONG) length,
-				 isc_arg_number, (SLONG) format->fmt_length, 0);
+				 isc_arg_number, (SLONG) format->fmt_length, isc_arg_end);
 	}
 
 	if ((U_IPTR) buffer & (ALIGNMENT - 1))
@@ -826,7 +826,7 @@ void EXE_send(thread_db*		tdbb,
 			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
 			if (!charSet->wellFormed(len, p))
-				ERR_post(isc_malformed_string, 0);
+				ERR_post(isc_malformed_string, isc_arg_end);
 		}
 	}
 
@@ -865,10 +865,10 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	BLKCHK(transaction, type_tra);
 
 	if (request->req_flags & req_active)
-		ERR_post(isc_req_sync, isc_arg_gds, isc_reqinuse, 0);
+		ERR_post(isc_req_sync, isc_arg_gds, isc_reqinuse, isc_arg_end);
 
 	if (transaction->tra_flags & TRA_prepared)
-		ERR_post(isc_req_no_trans, 0);
+		ERR_post(isc_req_no_trans, isc_arg_end);
 
 /* Post resources to transaction block.  In particular, the interest locks
    on relations/indices are copied to the transaction, which is very
@@ -1132,7 +1132,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (rpb->rpb_number.isBof()) {
-		ERR_post(isc_no_cur_rec, 0);
+		ERR_post(isc_no_cur_rec, isc_arg_end);
 	}
 
 	switch (request->req_operation) {
@@ -1300,7 +1300,7 @@ static void exec_sql(thread_db* tdbb, jrd_req* request, DSC* dsc)
 	SET_TDBB(tdbb);
 
 	if (tdbb->tdbb_transaction->tra_callback_count >= MAX_CALLBACKS) {
-		ERR_post(isc_exec_sql_max_call_exceeded, 0);
+		ERR_post(isc_exec_sql_max_call_exceeded, isc_arg_end);
 	}
 
 	Firebird::string SqlStatementText;
@@ -1570,7 +1570,7 @@ static void stuff_stack_trace(const jrd_req* request)
 	}
 
 	if (!isEmpty)
-		ERR_post_nothrow(isc_stack_trace, isc_arg_string, ERR_cstring(sTrace), 0);
+		ERR_post_nothrow(isc_stack_trace, isc_arg_string, ERR_cstring(sTrace), isc_arg_end);
 }
 
 
@@ -1595,7 +1595,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	jrd_tra* transaction = request->req_transaction;
 	if (!transaction) {
-		ERR_post(isc_req_no_trans, 0);
+		ERR_post(isc_req_no_trans, isc_arg_end);
 	}
 
 	SET_TDBB(tdbb);
@@ -1784,7 +1784,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (impure->irsb_flags & irsb_open) {
-						ERR_post(isc_cursor_already_open, 0);
+						ERR_post(isc_cursor_already_open, isc_arg_end);
 					}
 					// open cursor
 					RSE_open(tdbb, rsb);
@@ -1796,7 +1796,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				if (request->req_operation == jrd_req::req_evaluate) {
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_cursor_not_open, 0);
+						ERR_post(isc_cursor_not_open, isc_arg_end);
 					}
 					// close cursor
 					RSE_close(tdbb, rsb);
@@ -1809,7 +1809,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				case jrd_req::req_evaluate:
 					// check cursor state
 					if (!(impure->irsb_flags & irsb_open)) {
-						ERR_post(isc_cursor_not_open, 0);
+						ERR_post(isc_cursor_not_open, isc_arg_end);
 					}
 					request->req_records_affected.clear();
 					// perform preliminary navigation, if specified
@@ -1896,7 +1896,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					}
 					if (!found && operation != blr_savepoint_set) {
 						ERR_post(isc_invalid_savepoint,
-							isc_arg_string, ERR_cstring(node_savepoint_name), 0);
+							isc_arg_string, ERR_cstring(node_savepoint_name), isc_arg_end);
 					}
 
 					switch (operation)
@@ -2555,7 +2555,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	// last savepoint has already been deleted
 
 	if (request->req_flags & req_abort) {
-		ERR_post(isc_req_sync, 0);
+		ERR_post(isc_req_sync, isc_arg_end);
 	}
 
 	return node;
@@ -2587,7 +2587,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	jrd_rel* relation = org_rpb->rpb_relation;
 
 	if (org_rpb->rpb_number.isBof()) {
-		ERR_post(isc_no_cur_rec, 0);
+		ERR_post(isc_no_cur_rec, isc_arg_end);
 	}
 
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
@@ -2998,12 +2998,12 @@ static void seek_rsb(
 	switch (direction) {
 	case blr_forward:
 		if (impure->irsb_flags & irsb_eof)
-			ERR_post(isc_stream_eof, 0);
+			ERR_post(isc_stream_eof, isc_arg_end);
 		break;
 
 	case blr_backward:
 		if (impure->irsb_flags & irsb_bof)
-			ERR_post(isc_stream_bof, 0);
+			ERR_post(isc_stream_bof, isc_arg_end);
 		break;
 
 	case blr_bof_forward:
@@ -3013,7 +3013,7 @@ static void seek_rsb(
 	default:
 		// was: BUGCHECK(232);
 		// replaced with this error to be consistent with find()
-		ERR_post(isc_invalid_direction, 0);
+		ERR_post(isc_invalid_direction, isc_arg_end);
 	}
 
 /* the actual offset to seek may be one less because the next time 
@@ -3243,7 +3243,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 					   replace the above assignment with the following lines:
 
 			if (length > sizeof(message) - 1)
-				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, 0);
+				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, isc_arg_end);
 			*/
 
 			memcpy(message, string, length);
@@ -3260,7 +3260,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	switch (exception->xcp_type)
 	{
 	case xcp_sql_code:
-		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, 0);
+		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, isc_arg_end);
 
 	case xcp_gds_code:
 		if (exception->xcp_code == isc_check_constraint) {
@@ -3268,10 +3268,10 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 										  request->req_trg_name);
 			ERR_post(exception->xcp_code,
 					 isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_string, ERR_cstring(relation_name.c_str()), 0);
+					 isc_arg_string, ERR_cstring(relation_name.c_str()), isc_arg_end);
 		}
 		else
-			ERR_post(exception->xcp_code, 0);
+			ERR_post(exception->xcp_code, isc_arg_end);
 
 	case xcp_xcp_code:
 		// CVC: If we have the exception name, use it instead of the number.
@@ -3290,17 +3290,17 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 0);
+					 isc_arg_end);
 		else if (s)
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 0);
+					 isc_arg_end);
 		else if (name.length())
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
-					 0);
+					 isc_arg_end);
 		else		
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code, 0);
+			ERR_post(isc_except, isc_arg_number, exception->xcp_code, isc_arg_end);
 
 	default:
 		fb_assert(false);
@@ -3610,17 +3610,17 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 				{
 					ERR_post(isc_integ_fail,
 							 isc_arg_number, (SLONG) trigger->req_label,
-							 isc_arg_gds, code, 0);
+							 isc_arg_gds, code, isc_arg_end);
 				}
 			}
 			ERR_post(isc_integ_fail,
 					 isc_arg_number, (SLONG) trigger->req_label,
-					 isc_arg_gds, isc_random, isc_arg_string, msg, 0);
+					 isc_arg_gds, isc_random, isc_arg_string, msg, isc_arg_end);
 		}
 		else
 		{
 			ERR_post(isc_integ_fail, isc_arg_number,
-					 (SLONG) trigger->req_label, 0);
+					 (SLONG) trigger->req_label, isc_arg_end);
 		}
 	}
 	else
@@ -3700,7 +3700,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 			}
 
 			ERR_post(isc_not_valid, isc_arg_string, name,
-					 isc_arg_string, value, 0);
+					 isc_arg_string, value, isc_arg_end);
 		}
 	}
 }

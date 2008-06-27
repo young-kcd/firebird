@@ -615,7 +615,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					 */
 					if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 						CCH_RELEASE(tdbb, &rpb->rpb_window);
-						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
+						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
 					}
 
 					state = tra_limbo;
@@ -632,7 +632,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
 							 jrd_tra::tra_wait);
 				if (state == tra_active)
-					ERR_post(isc_deadlock, 0);
+					ERR_post(isc_deadlock, isc_arg_end);
 
 				/* refetch the record and try again.  The active transaction
 				 * could have updated the record a second time.
@@ -749,7 +749,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 				CCH_RELEASE(tdbb, &rpb->rpb_window);
 				ERR_post(isc_rec_in_limbo,
-						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, 0);
+						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, isc_arg_end);
 			}
 
 		case tra_active:
@@ -1372,7 +1372,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				{
 					ERR_post(isc_no_priv, isc_arg_string, "REVOKE",
 							 isc_arg_string, "TABLE", isc_arg_string,
-							 "RDB$USER_PRIVILEGES", 0);
+							 "RDB$USER_PRIVILEGES", isc_arg_end);
 				}
 			}
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
@@ -1416,7 +1416,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0,
 			stack, false))
 		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, isc_arg_end);
 		}
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -2308,7 +2308,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb,
 				   &temp, new_rpb, stack, false))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, isc_arg_end);
 	}
 
 /* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -2494,7 +2494,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		(!VIO_chase_record_version(tdbb, rpb, NULL, transaction,
 								   tdbb->getDefaultPool(), false)))
 	{
-		ERR_post(isc_no_cur_rec, 0);
+		ERR_post(isc_no_cur_rec, isc_arg_end);
 	}
 
 	VIO_data(tdbb, rpb, tdbb->tdbb_request->req_pool);
@@ -2509,7 +2509,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, isc_arg_end);
 	}
 }
 
@@ -4521,13 +4521,13 @@ static int prepare_update(	thread_db*		tdbb,
 			case tra_committed:
 				// We need to loop waiting in read committed transactions only
 				if (!(transaction->tra_flags & TRA_read_committed)) {
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, 0);
+					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict, isc_arg_end);
 				}
 			case tra_active:
 				return PREPARE_LOCKERR;
 
 			case tra_limbo:
-				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
 
 			case tra_dead:
 				break;

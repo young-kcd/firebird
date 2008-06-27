@@ -109,7 +109,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
 
 	CCH_shutdown_database(dbb);
 
-	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
+	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), isc_arg_end);
 }
 #endif
 
@@ -192,7 +192,7 @@ void ERR_duplicate_error(IDX_E	code,
 	switch (code) {
 	case idx_e_keytoobig:
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, index_name, 0);
+				 isc_arg_string, index_name, isc_arg_end);
 		break;
 
 	case idx_e_conversion:
@@ -202,22 +202,22 @@ void ERR_duplicate_error(IDX_E	code,
 	case idx_e_foreign_target_doesnt_exist:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, ERR_string(relation->rel_name), 
-			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
+			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, isc_arg_end);
 		break;
 
 	case idx_e_foreign_references_present:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, ERR_string(relation->rel_name),
-			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
+			 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
 		break;
 
 	default:
 		if (constraint.length() > 0)
 			ERR_post(isc_unique_key_violation,
 					 isc_arg_string, constraint_name,
-					 isc_arg_string, ERR_string(relation->rel_name), 0);
+					 isc_arg_string, ERR_string(relation->rel_name), isc_arg_end);
 		else
-			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
+			ERR_post(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
 	}
 }
 #endif
@@ -243,7 +243,7 @@ void ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
 }
 #endif
 
@@ -264,7 +264,7 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), isc_arg_end);
 }
 #endif
 
@@ -649,7 +649,7 @@ static void internal_error(ISC_STATUS status, int number,
 		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 	}
 
-	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
+	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
 }
 #endif
 

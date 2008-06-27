@@ -632,7 +632,7 @@ static void signal_term(int)
 		{
 			strcpy(buffer, "Unknown failure in semaphore::release()");
 		}
-		gds__log(buffer, 0);
+		gds__log("%s", buffer);
 		exit(0);
 	}
 }

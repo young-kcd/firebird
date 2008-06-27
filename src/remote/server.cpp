@@ -3207,7 +3207,7 @@ bool process_packet(rem_port* port,
 					if ((server->srvr_flags & SRVR_multi_client) &&
 						port == server->srvr_parent_port)
 					{
-						gds__log("SERVER/process_packet: Multi-client server shutdown", 0);
+						gds__log("SERVER/process_packet: Multi-client server shutdown");
 					}
 					port->disconnect(sendL, receive);
 					ThreadData::restoreSpecific();
@@ -3382,7 +3382,7 @@ bool process_packet(rem_port* port,
 
 		if (port && port->port_state == state_broken) {
 			if (!port->port_parent) {
-				gds__log("SERVER/process_packet: broken port, server exiting", 0);
+				gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
 				ThreadData::restoreSpecific();
 				return false;

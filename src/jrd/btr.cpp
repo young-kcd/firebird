@@ -1913,7 +1913,7 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 	if (root->irt_count > dbb->dbb_max_idx) {
 		CCH_RELEASE(tdbb, &window);
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_max_idx,
-				 isc_arg_number, (SLONG) dbb->dbb_max_idx, 0);
+				 isc_arg_number, (SLONG) dbb->dbb_max_idx, isc_arg_end);
 	}
 	// Scan the index page looking for the high water mark of the descriptions and,
 	// perhaps, an empty index slot
@@ -1956,7 +1956,7 @@ retry:
 		if (maybe_no_room) {
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_no_meta_update, isc_arg_gds,
-					 isc_index_root_page_full, 0);
+					 isc_index_root_page_full, isc_arg_end);
 		}
 		compress_root(tdbb, root);
 		maybe_no_room = true;

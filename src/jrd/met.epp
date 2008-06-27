@@ -795,7 +795,7 @@ void MET_error(const TEXT* string, ...)
 	va_end(ptr);
 
 	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
-			 ERR_cstring(s), 0);
+			 ERR_cstring(s), isc_arg_end);
 }
 
 Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
@@ -2832,7 +2832,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 				// Now, check the result of this function here! Null pointer means failure.
 				// Or should parse_procedure_blr and its callee throw exceptions instead?
 				if (!parse_procedure_blr(tdbb, procedure, &P.RDB$PROCEDURE_BLR, csb))
-					ERR_post(isc_random, isc_arg_string, "Error while parsing procedure's BLR.", 0);
+					ERR_post(isc_random, isc_arg_string, "Error while parsing procedure's BLR.", isc_arg_end);
 				procedure->prc_request->req_procedure = procedure;
 				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
 				{

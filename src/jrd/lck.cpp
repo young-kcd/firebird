@@ -980,7 +980,7 @@ static void bug_lck(TEXT* string)
 
 	sprintf(s, "Fatal lock interface error: %s", string);
 	gds__log(s);
-	ERR_post(isc_db_corrupt, isc_arg_string, string, 0);
+	ERR_post(isc_db_corrupt, isc_arg_string, string, isc_arg_end);
 }
 
 

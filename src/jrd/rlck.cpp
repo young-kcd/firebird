@@ -64,9 +64,9 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 	if (transaction->tra_flags & TRA_system)
 		return NULL;
 	if (write_flag && (tdbb->tdbb_database->dbb_flags & DBB_read_only))
-		ERR_post(isc_read_only_database, 0);
+		ERR_post(isc_read_only_database, isc_arg_end);
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
-		ERR_post(isc_read_only_trans, 0);
+		ERR_post(isc_read_only_trans, isc_arg_end);
 	Lock* lock = RLCK_transaction_relation_lock(transaction, relation);
 	
 /* Next, figure out what kind of lock we need */
@@ -93,7 +93,7 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 	if (transaction->tra_flags & TRA_reserving)
 	{
 		ERR_post(isc_unres_rel, isc_arg_string, 
-				relation->rel_name.c_str(), 0);
+				relation->rel_name.c_str(), isc_arg_end);
 	}
 	*/
 

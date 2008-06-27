@@ -457,7 +457,7 @@ void FUN_evaluate(UserFunction* function, jrd_nod* node, impure_value* value)
 							{
 								ERR_post(isc_wish_list,
 										 isc_arg_gds, isc_blobnotsup,
-										 isc_arg_string, "conversion", 0);
+										 isc_arg_string, "conversion", isc_arg_end);
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}

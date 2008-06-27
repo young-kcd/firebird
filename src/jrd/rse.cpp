@@ -289,7 +289,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				table_rsb->rsb_type != rsb_indexed &&
 				table_rsb->rsb_type != rsb_navigate)
 			{
-				ERR_post(isc_record_lock_not_supp, 0);
+				ERR_post(isc_record_lock_not_supp, isc_arg_end);
 			}
 
 			record_param* org_rpb = request->req_rpb + table_rsb->rsb_stream;
@@ -297,7 +297,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 
 			// Raise error if we cannot lock this kind of stream
 			if (!relation || relation->rel_view_rse || relation->rel_file) {
-				ERR_post(isc_record_lock_not_supp, 0);
+				ERR_post(isc_record_lock_not_supp, isc_arg_end);
 			}
 
 			RLCK_reserve_relation(tdbb, transaction, relation, true, true);
@@ -443,7 +443,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (first_records < 0)
-		            ERR_post(isc_bad_limit_param, 0);
+		            ERR_post(isc_bad_limit_param, isc_arg_end);
 
 				((irsb_first_n*) impure)->irsb_count = first_records;
 				rsb = rsb->rsb_next;
@@ -457,7 +457,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (skip_records < 0)
-		            ERR_post(isc_bad_skip_param, 0);
+		            ERR_post(isc_bad_skip_param, isc_arg_end);
 
 				((irsb_skip_n*) impure)->irsb_count = skip_records + 1;
 				rsb = rsb->rsb_next;
@@ -2371,7 +2371,7 @@ static bool get_record(thread_db*	tdbb,
 		impure->irsb_flags |= irsb_checking_singular;
 		if (get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
-			ERR_post(isc_sing_select_err, 0);
+			ERR_post(isc_sing_select_err, isc_arg_end);
 		}
 		pop_rpbs(request, rsb);
 		impure->irsb_flags &= ~irsb_checking_singular;
@@ -3281,7 +3281,7 @@ static void resynch_merge(
 
 			UCHAR* data = get_sort(tdbb, sort_rsb, mode);
 			if (!data)
-				ERR_post(isc_stream_eof, 0);
+				ERR_post(isc_stream_eof, isc_arg_end);
 
 			/* do an "unget" to fix up the sort record for re-retrieval */
 

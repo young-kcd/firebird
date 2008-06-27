@@ -599,7 +599,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, SSHORT ttype)
 		}
 		else
 		{
-			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, 0);
+			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, isc_arg_end);
 		}
 	}
 
@@ -623,7 +623,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	else
 	{
 		delete csL;
-		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), 0);
+		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), isc_arg_end);
 	}
 }
 
@@ -675,7 +675,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			delete tt;
 			ERR_post(isc_collation_not_installed,
 				isc_arg_string, ERR_cstring(info.collationName.c_str()),
-				isc_arg_string, ERR_cstring(info.charsetName.c_str()), 0);
+				isc_arg_string, ERR_cstring(info.charsetName.c_str()), isc_arg_end);
 		}
 
 		if (charset_collations.getCount() <= id)
@@ -757,7 +757,7 @@ TextType* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 	}
 	else 
 	{
-		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, 0);
+		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, isc_arg_end);
 	}
 
 	return charset_collations[id];
@@ -955,12 +955,12 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 		else
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_end);
 	}
 	else if (src_len == 0)
 		return (0);
 	else if (src_type == CS_BINARY)
-		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+		(*err)(isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 	else
 		/* character sets are known to be different */
 	{
@@ -977,9 +977,9 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 				return (len);
 			}
 			else if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_end);
 			else
-				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 		}
 
 		/* Find a CS1 to UNICODE object */
@@ -1002,9 +1002,9 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		{
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_end);
 			else
-				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 		}
 
 		/* Find a UNICODE to CS2 object */
@@ -1032,9 +1032,9 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		{
 			delete [] tmp_buffer;
 			if (err_code == CS_TRUNCATION_ERROR)
-				(*err) (isc_arith_except, 0);
+				(*err) (isc_arith_except, isc_arg_end);
 			else
-				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, 0);
+				(*err) (isc_arith_except, isc_arg_gds, isc_transliteration_failed, isc_arg_end);
 		}
 
 		delete [] tmp_buffer;
@@ -1145,7 +1145,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			to_fill = to_size - to_len;
@@ -1172,7 +1172,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			if (to_len)
@@ -1198,7 +1198,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 			/* binary string can always be converted TO by byte-copy */
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, 0);
+				(*err)(isc_malformed_string, isc_arg_end);
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			((vary*) p)->vary_length = to_len;
@@ -1216,13 +1216,13 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(tdbb, toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, 0);
+		(*err)(isc_arith_except, isc_arg_end);
 	}
 
 	if (from_fill)
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (isc_arith_except, 0);
+			(*err) (isc_arith_except, isc_arg_end);
 
 	return 0;
 }

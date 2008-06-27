@@ -202,7 +202,7 @@ static inline void is_service_running(const Service* service)
 	if (!(service->svc_flags & SVC_forked)) {
 		THREAD_ENTER();
 		ERR_post (isc_svcnoexe, isc_arg_string,
-			service->svc_service->serv_name, 0); 
+			service->svc_service->serv_name, isc_arg_end); 
 	}
 }
 
@@ -463,11 +463,11 @@ Service* SVC_attach(USHORT	service_length,
 	if (!serv->serv_name)
 #ifdef NOT_USED_OR_REPLACED
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported,
-				 0);
+				 isc_arg_end);
 #else
 		ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
 				 isc_arg_string, error_string(misc_buf),
-				 0);
+				 isc_arg_end);
 #endif
 
 	JRD_get_thread_data();
@@ -514,7 +514,7 @@ Service* SVC_attach(USHORT	service_length,
 		{
 			// user name and password are required while
 			// attaching to the services manager
-			ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
+			ERR_post(isc_service_att_err, isc_arg_gds, isc_svcnouser, isc_arg_end);
 		}
 		else 
 		{
@@ -612,7 +612,7 @@ Service* SVC_attach(USHORT	service_length,
 		}
 		else {
 			ERR_post(isc_service_att_err, isc_arg_gds,
-					 isc_svc_in_use, isc_arg_string, serv->serv_name, 0);
+					 isc_svc_in_use, isc_arg_string, serv->serv_name, isc_arg_end);
 		}
 #endif
 	}
@@ -874,7 +874,7 @@ ISC_STATUS SVC_query2(Service* service,
 //			case isc_info_svc_user_dbpath:
 				break;
 			default:
-				ERR_post(isc_bad_spb_form, 0);
+				ERR_post(isc_bad_spb_form, isc_arg_end);
 				break;
 			}
 		}
@@ -1679,12 +1679,12 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 			break;
 
 	if (!serv->serv_name)
-		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+		ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, isc_arg_end);
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
 	if (service->svc_user_flag == SVC_user_none) {
-		ERR_post(isc_bad_spb_form, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_end);
 	}
 
 	THD_MUTEX_LOCK(thd_mutex);
@@ -1692,7 +1692,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		THD_MUTEX_UNLOCK(thd_mutex);
 		ERR_post(isc_svc_in_use, isc_arg_string,
 				 error_string(serv->serv_name, strlen(serv->serv_name)),
-				 0);
+				 isc_arg_end);
 	}
 	/* Another service may have been started with this service block.
 	 * If so, we must reset the service flags.
@@ -1757,13 +1757,13 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 // All services except for get_ib_log require switches
 	spb.rewind();
 	if ((!service->svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) {
-		ERR_post(isc_bad_spb_form, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_end);
 	}
 
 // Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(service->svc_user_flag & SVC_user_dba))
 	{
-		ERR_post(isc_adm_task_denied, 0);
+		ERR_post(isc_adm_task_denied, isc_arg_end);
 	}
 
 #ifndef SERVICE_THREAD
@@ -1809,7 +1809,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		service->svc_argv = arg;
 		/* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
 		if (!arg)				/* NOMEM: */
-			ERR_post(isc_virmemexh, 0);
+			ERR_post(isc_virmemexh, isc_arg_end);
 
 		*arg++ = (TEXT *)(serv->serv_thd);
 		const TEXT* q = p = service->svc_switches.begin();
@@ -1866,7 +1866,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
 	{
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 	}
 
 	if (serv->serv_thd) {
@@ -1900,7 +1900,7 @@ void* SVC_start(Service* service, USHORT spb_length, const SCHAR* spb_data)
 		ERR_post(isc_svcnotdef,
 				isc_arg_string,
 				error_string(serv->serv_name, strlen(serv->serv_name)),
-				0);
+				isc_arg_end);
 	}
 
 #endif /* SERVICE_THREAD */
@@ -1996,7 +1996,7 @@ static void get_options(Firebird::ClumpletReader&	spb,
  **************************************/
 	const UCHAR p = spb.getBufferTag();
 	if (p != isc_spb_version1 && p != isc_spb_current_version) {
-		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
+		ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, isc_arg_end);
 	}
 	options->spb_version = p;
 
@@ -2075,7 +2075,7 @@ static void io_error(const TEXT* string,
  **************************************/
 
 	ERR_post(isc_io_error, isc_arg_string, string, isc_arg_string, filename,
-			 isc_arg_gds, operation, SYS_ERR, status, 0);
+			 isc_arg_gds, operation, SYS_ERR, status, isc_arg_end);
 }
 #endif
 
@@ -2201,7 +2201,7 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 	service->svc_argv = arg;
 /* FREE: at SVC_detach() - Possible memory leak if ERR_post() occurs */
 	if (!arg)					/* NOMEM: */
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 
 	*arg++ = (TEXT *)(service_executable);
 
@@ -2231,7 +2231,7 @@ static void service_fork(ThreadEntryPoint* service_executable, Service* service)
 	service->svc_stdout = (UCHAR*)gds__alloc((SLONG) SVC_STDOUT_BUFFER_SIZE + 1);
 /* FREE: at SVC_detach() */
 	if (!service->svc_stdout)	/* NOMEM: */
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 
 	THREAD_EXIT();
 	gds__thread_start(service_executable,
@@ -2340,7 +2340,7 @@ static void service_fork(TEXT* service_path, Service* service)
  *	Startup a service. Just a stub.
  *
  **************************************/
-	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
+	ERR_post(isc_service_att_err, isc_arg_gds, isc_service_not_supported, isc_arg_end);
 }
 
 static void service_get(
@@ -2440,7 +2440,7 @@ static void service_fork(TEXT* service_path, Service* service)
 		argv = argv_buf;
 /* FREE: at procedure return */
 	if (!argv)					/* NOMEM: */
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 	service->svc_argc = argc;
 
 	TEXT argv_data_buf[512];
@@ -2454,7 +2454,7 @@ static void service_fork(TEXT* service_path, Service* service)
 	if (!argv_data) {			/* NOMEM: */
 		if (argv != argv_buf)
 			gds__free(argv);
-		ERR_post(isc_virmemexh, 0);
+		ERR_post(isc_virmemexh, isc_arg_end);
 	}
 
 /* Break up the command line into individual arguments. */
@@ -2519,7 +2519,7 @@ static void service_fork(TEXT* service_path, Service* service)
 			gds__free(argv);
 		if (argv_data != argv_data_buf)
 			gds__free(argv_data);
-		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, 0);
+		ERR_post(isc_sys_request, isc_arg_string, "vfork", SYS_ERR, errno, isc_arg_end);
 		break;
 
 	case 0:
@@ -2924,7 +2924,7 @@ static bool process_switches(Firebird::ClumpletReader&	spb,
 						ERR_post(isc_unexp_spb_form, isc_arg_string,
 								 error_string(SPB_SEC_USERNAME,
 												strlen(SPB_SEC_USERNAME)),
-								 0);
+								 isc_arg_end);
 					}
 				}
 			}
