@@ -718,8 +718,6 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #else
 
-	TEXT msg[BUFFER_SMALL];
-
 /* U N I X style sockets */
 
 	address.sin_family = AF_INET;
@@ -1296,8 +1294,7 @@ static rem_port* alloc_port( rem_port* parent)
 			if (parent)
 				inet_error(parent, "WSAStartup", isc_net_init_error, INET_ERRNO);
 			else
-				gds__log("INET/alloc_port: WSAStartup failed, error code = %d",
-						 INET_ERRNO);
+				gds__log("INET/alloc_port: WSAStartup failed, error code = %d", INET_ERRNO);
 			return NULL;
 		}
 		gds__register_cleanup(exit_handler, 0);
@@ -1315,8 +1312,7 @@ static rem_port* alloc_port( rem_port* parent)
 		}
 		INET_max_data = INET_remote_buffer;
 #ifdef DEBUG
-		gds__log(" Info: Remote Buffer Size set to %ld",
-				 INET_remote_buffer);
+		gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 		first_time = false;
 	}
@@ -2572,7 +2568,6 @@ static int select_wait( rem_port* main_port, SLCT * selct)
  *	to read from them.
  *
  **************************************/
-	TEXT msg[BUFFER_SMALL];
 	struct timeval timeout;
 	bool checkPorts = false;
 
@@ -3047,7 +3042,6 @@ static void inet_error(
  *	to format the status vector if any.
  *
  **************************************/
-	TEXT msg[BUFFER_SMALL];
 
 	if (status) {
 #ifdef VMS
