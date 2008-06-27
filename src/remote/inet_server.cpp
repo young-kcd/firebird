@@ -593,7 +593,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 		}
 		else 
 		{
-			gds__log("Unknown failure in shutdown thread in shutSem.enter()", 0);
+			gds__log("Unknown failure in shutdown thread in shutSem.enter()");
 		}
 		exit(0);
 	}
