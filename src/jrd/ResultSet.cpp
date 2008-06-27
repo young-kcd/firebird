@@ -35,7 +35,7 @@ namespace Jrd {
 ResultSet::ResultSet(thread_db* tdbb, PreparedStatement* aStmt, jrd_tra* aTransaction)
 	: stmt(aStmt),
 	  transaction(aTransaction),
-	  firstFetch(false)
+	  firstFetchDone(false)
 {
 	DSQL_execute(tdbb, &transaction, stmt->request, 0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL);
 
@@ -59,7 +59,7 @@ ResultSet::~ResultSet()
 
 bool ResultSet::fetch(thread_db* tdbb)
 {
-	if (stmt->request->req_type == REQ_EXEC_PROCEDURE && firstFetch)
+	if (stmt->request->req_type == REQ_EXEC_PROCEDURE && firstFetchDone)
 		return false;
 
 	memset(stmt->message.begin(), 0, stmt->message.getCount());
@@ -70,7 +70,7 @@ bool ResultSet::fetch(thread_db* tdbb)
 	if (status == 100)
 		return false;
 
-	firstFetch = true;
+	firstFetchDone = true;
 
 	return true;
 }
