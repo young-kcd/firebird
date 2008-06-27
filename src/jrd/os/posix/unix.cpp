@@ -905,10 +905,9 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 
 	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file();
 	file->fil_desc = desc;
+	file->fil_max_page = MAX_ULONG;
 	file->fil_length = file_name.length();
-	file->fil_max_page = -1UL;
-	memcpy(file->fil_string, file_name.c_str(), file_name.length());
-	file->fil_string[file_name.length()] = '\0';
+	strcpy(file->fil_string, file_name.c_str());
 
 /* If this isn't the primary file, we're done */
 

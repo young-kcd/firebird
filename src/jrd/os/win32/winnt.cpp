@@ -1051,16 +1051,14 @@ static jrd_file* setup_file(Database*					dbb,
 
 /* Allocate file block and copy file name string */
 
-	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file;
+	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file();
 	file->fil_desc = desc;
+	file->fil_max_page = MAX_ULONG;
 	file->fil_length = file_name.length();
-	file->fil_max_page = (ULONG) -1;
-	file->fil_ext_lock = NULL;
+	strcpy(file->fil_string, file_name.c_str());
 #ifdef SUPERSERVER_V2
 	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(void*));
 #endif
-	memcpy(file->fil_string, file_name.c_str(), file_name.length());
-	file->fil_string[file_name.length()] = 0;
 
 /* If this isn't the primary file, we're done */
 
