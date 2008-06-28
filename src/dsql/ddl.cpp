@@ -6940,9 +6940,8 @@ void CompiledStatement::end_blr()
 	const ULONG length   = (req_blr_data.getCount() - req_base_offset) - 2;
 
 	if (length > 0xFFFF) {
-		// TODO : need appropriate error message, like "too long BLR"
-		ERRD_post(isc_invalid_blr, isc_arg_number, (SLONG) length,
-				  isc_arg_end);
+		ERRD_post(isc_too_big_blr, isc_arg_number, (SLONG) length,
+				  isc_arg_number, (SLONG) 0xFFFF, isc_arg_end);
 	}
 
 	*blr_base++ = (UCHAR) length;

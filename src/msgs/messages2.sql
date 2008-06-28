@@ -709,6 +709,7 @@ COMMIT WORK;
 ('eds_input_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 607, NULL, 'Input parameters mismatch', NULL, NULL)
 ('eds_output_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 608, NULL, 'Output parameters mismatch', NULL, NULL)
 ('eds_input_prm_not_set', NULL, 'ExtDS.cpp', NULL, 0, 609, NULL, 'Input parameter ''@1'' have no value set', NULL, NULL)
+('too_big_blr', NULL, NULL, NULL, 0, 610, NULL, 'BLR stream length @1 exceeds implementation limit @2', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

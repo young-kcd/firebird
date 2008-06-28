@@ -665,6 +665,7 @@ const ISC_STATUS isc_eds_statement                    = 335544926L;
 const ISC_STATUS isc_eds_input_prm_mismatch           = 335544927L;
 const ISC_STATUS isc_eds_output_prm_mismatch          = 335544928L;
 const ISC_STATUS isc_eds_input_prm_not_set            = 335544929L;
+const ISC_STATUS isc_too_big_blr                      = 335544930L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -937,7 +938,7 @@ const ISC_STATUS isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 881;
+const ISC_STATUS isc_err_max                          = 882;
 
 #else /* c definitions */
 
@@ -1572,6 +1573,7 @@ const ISC_STATUS isc_err_max                          = 881;
 #define isc_eds_input_prm_mismatch           335544927L
 #define isc_eds_output_prm_mismatch          335544928L
 #define isc_eds_input_prm_not_set            335544929L
+#define isc_too_big_blr                      335544930L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1844,7 +1846,7 @@ const ISC_STATUS isc_err_max                          = 881;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          881
+#define isc_err_max                          882
 
 #endif
 

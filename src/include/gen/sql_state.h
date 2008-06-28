@@ -630,6 +630,7 @@ static const struct {
 	{335544927, "42000"}, // 607 eds_input_prm_mismatch 
 	{335544928, "42000"}, // 608 eds_output_prm_mismatch 
 	{335544929, "42000"}, // 609 eds_input_prm_not_set 
+	{335544930, "HY000"}, // 610 too_big_blr 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
