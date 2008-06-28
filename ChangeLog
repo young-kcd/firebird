@@ -1,3 +1,15 @@
+2008-06-28 06:33  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.78),
+	lang_helpers/gds_codes.pas (1.78), src/dsql/ddl.cpp (1.249),
+	src/include/gen/codetext.h (1.87), src/include/gen/iberror.h
+	(1.91), src/include/gen/msgs.h (1.110), src/include/gen/sql_code.h
+	(1.93), src/include/gen/sql_state.h (1.20),
+	src/msgs/facilities2.sql (1.39), src/msgs/messages2.sql (1.47),
+	src/msgs/system_errors2.sql (1.36):
+
+	Implement new message for DSQL.
+
 2008-06-27 15:40  dimitr
 
 	* firebird2/src/jrd/os/: win32/winnt.cpp (1.73), posix/unix.cpp
