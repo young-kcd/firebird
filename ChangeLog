@@ -1,3 +1,16 @@
+2008-06-29 17:52  asfernandes
+
+	* firebird2/src/: common/classes/ClumpletReader.h (1.21),
+	jrd/isc_sync.cpp (1.142):
+
+	Fx Linux build
+
+2008-06-29 14:26  hvlad
+
+	* firebird2/src/jrd/ResultSet.h (1.4):
+
+	Misc
+
 2008-06-28 06:33  robocop
 
 	* firebird2/: lang_helpers/gds_codes.ftn (1.78),
