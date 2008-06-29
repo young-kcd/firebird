@@ -134,7 +134,7 @@ private:
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
 
-	static SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length);
+	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
 };
 
 } // namespace Firebird

@@ -3161,7 +3161,7 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
 
 	key_t key = ftok(filename, FTOK_KEY);
 	if (key == -1) {
-		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)
+		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV);
 		if (fd == -1) {
 			error(status_vector, "open", errno);
 			return 0L;
