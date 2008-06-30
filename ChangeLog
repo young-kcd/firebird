@@ -1,3 +1,12 @@
+2008-06-30 14:23  roman-simakov
+
+	* firebird2/src/jrd/: idx.cpp (1.136), idx_proto.h (1.25), ods.h
+	(1.45), req.h (1.80), vio.cpp (1.221):
+
+	Patch from Alexander Potapchenko for improvement foreign key
+	handling. Now one can reference to key fields of active record when
+	they are not changed.
+
 2008-06-29 17:52  asfernandes
 
 	* firebird2/src/: common/classes/ClumpletReader.h (1.21),
