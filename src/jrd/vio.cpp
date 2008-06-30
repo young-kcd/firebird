@@ -1973,52 +1973,22 @@ bool VIO_get_current(
 			// 2. if record just deleted 
 			//    then FK can't reference it but PK must check it's old value
 			// 3. if record just modified
-			//	  then FK can reference it if old key values are equal to new 
-			//	  key values and equal FK values
-			//	  PK is ok if PK values are not equal to old and not equal to 
-			//	  new values 
+			//	  then FK can reference it if key field values are not changed
 
-/*
 			if (!rpb->rpb_b_page)
 				return !foreign_key;
 
-			if (old_rpb)
-			{
-				Record* data = rpb->rpb_prior;
-				*old_rpb = *rpb;
-				old_rpb->rpb_record = NULL;
-				
-				if (!DPM_fetch(tdbb, old_rpb, LCK_read))
-				{
-					return false; // record deleted 
-				}
+			if (rpb->rpb_flags & rpb_deleted)
+				return !foreign_key;
 
-				// if record was changed between reads  
-				// start all over again
-				if (old_rpb->rpb_b_page != rpb->rpb_b_page ||
-					old_rpb->rpb_b_line != rpb->rpb_b_line ||
-					old_rpb->rpb_f_page != rpb->rpb_f_page ||
-					old_rpb->rpb_f_line != rpb->rpb_f_line ||
-					old_rpb->rpb_flags != rpb->rpb_flags)
-				{
-					continue;
-				}
-
-				if (!old_rpb->rpb_b_page)
-					return !foreign_key;
-
-				old_rpb->rpb_prior = (old_rpb->rpb_flags & rpb_delta) ? data : NULL;
-				if (!DPM_fetch_back(tdbb, old_rpb, LCK_read, 1))
-				{
+			if (rpb->rpb_flags & rpb_uk_modified)
 					return !foreign_key; 
-				}
 
-				VIO_data(tdbb, old_rpb, pool);
-				has_old_values = true;
-				return true;
-			}
-*/
-			return !foreign_key;
+			// clear lock error from status vector
+			tdbb->tdbb_status_vector[0] = isc_arg_gds;
+			tdbb->tdbb_status_vector[1] = FB_SUCCESS;
+			tdbb->tdbb_status_vector[2] = isc_arg_end;
+			return true;
 
 		case tra_dead:
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
@@ -2367,6 +2337,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (org_rpb->rpb_transaction_nr == transaction->tra_number &&
 		org_rpb->rpb_format_number == new_rpb->rpb_format_number)
 	{
+		IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
 		if (!(transaction->tra_flags & TRA_system) &&
 			(transaction->tra_save_point) &&
@@ -2388,6 +2359,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 				 isc_arg_end);
 	}
 
+	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
+
 /* Old record was restored and re-fetched for write.  Now replace it.  */
 
 	org_rpb->rpb_transaction_nr = new_rpb->rpb_transaction_nr;
@@ -2396,8 +2369,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	org_rpb->rpb_b_line = temp.rpb_line;
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;
-	org_rpb->rpb_flags &= ~rpb_delta;
-	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_delta;
+	org_rpb->rpb_flags &= ~(rpb_delta | rpb_uk_modified);
+	org_rpb->rpb_flags |= new_rpb->rpb_flags & (rpb_delta | rpb_uk_modified);
 
 	replace_record(tdbb, org_rpb, &stack, transaction);
 
@@ -4522,7 +4495,6 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 		}
 
-
 		USHORT state =
 			TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
@@ -5043,6 +5015,7 @@ static void update_in_place(
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;
 	org_rpb->rpb_format_number = new_rpb->rpb_format_number;
+	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_uk_modified;
 
 	DEBUG;
 	replace_record(tdbb, org_rpb, &stack, transaction);

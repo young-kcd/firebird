@@ -110,6 +110,7 @@ const USHORT rpb_blob		= 16;
 const USHORT rpb_delta		= 32;		/* prior version is a differences record */
 const USHORT rpb_damaged	= 128;		/* record is busted */
 const USHORT rpb_gc_active	= 256;		/* garbage collecting dead record version */
+const USHORT rpb_uk_modified= 512;		/* record key field values are changed
 
 /* Stream flags */
 

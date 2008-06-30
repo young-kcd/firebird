@@ -544,7 +544,7 @@ const USHORT rhd_delta			= 32;		/* prior version is differences only */
 const USHORT rhd_large			= 64;		/* object is large */
 const USHORT rhd_damaged		= 128;		/* object is known to be damaged */
 const USHORT rhd_gc_active		= 256;		/* garbage collecting dead record version */
-
+const USHORT rhd_uk_modified	= 512;		/* record key field values are changed */
 
 
 /* Log page */
