@@ -1,3 +1,12 @@
+2008-07-01 03:11  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.161), dsql/pass1.cpp (1.398),
+	jrd/dfw.epp (1.244), jrd/event.cpp (1.74), jrd/exe.cpp (1.266),
+	jrd/idx.cpp (1.137), jrd/isc_sync.cpp (1.143), jrd/met.epp (1.257),
+	jrd/pcmet.epp (1.54), jrd/os/posix/unix.cpp (1.102):
+
+	Misc
+
 2008-06-30 14:23  roman-simakov
 
 	* firebird2/src/jrd/: idx.cpp (1.136), idx_proto.h (1.25), ods.h
