@@ -3683,18 +3683,24 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			s = NULL;
 
 		if (s && name.length())
+		{
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
 					 isc_arg_end);
+		}
 		else if (s)
+		{
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
 					 isc_arg_end);
+		}
 		else if (name.length())
+		{
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
 					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
 					 isc_arg_end);
+		}
 		else		
 			ERR_post(isc_except, isc_arg_number, exception->xcp_code, isc_arg_end);
 

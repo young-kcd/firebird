@@ -1022,8 +1022,9 @@ static bool unix_error(const TEXT* string,
 			 isc_arg_string, string,
 			 isc_arg_string, ERR_string(file->fil_string,
 										file->fil_length),
-			 isc_arg_gds,
-			 operation, isc_arg_unix, errno, isc_arg_end);
+			 isc_arg_gds, operation,
+			 isc_arg_unix, errno,
+			 isc_arg_end);
 
     // Added a false for final return - which seems to be the answer,
     // but is better than what it was which was nothing ie random 

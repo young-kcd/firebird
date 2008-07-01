@@ -195,10 +195,12 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 		if (!relation)
+		{
+			// Msg308: can't create index %s
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_idx_create_err,
 					 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
-		// Msg308: can't create index %s
+		}
 
 		// Actually create the index
 

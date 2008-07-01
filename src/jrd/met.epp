@@ -2768,7 +2768,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
 		if (relation->rel_name.length() == 0) {
- 			relation->rel_name = X.RDB$RELATION_NAME;
+			relation->rel_name = X.RDB$RELATION_NAME;
 		}
 	END_FOR;
 

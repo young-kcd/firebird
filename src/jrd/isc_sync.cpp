@@ -1865,8 +1865,7 @@ UCHAR* ISC_map_file(
 		goto retry;
 	}
 
-	SLONG* header_address =
-		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
+	SLONG* header_address = (SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -1908,8 +1907,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	UCHAR* address =
-		(UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	UCHAR* address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -3095,8 +3093,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 
 
 #ifdef WIN_NT
-void ISC_unmap_file(ISC_STATUS* status_vector,
-					SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 {
 /**************************************
  *

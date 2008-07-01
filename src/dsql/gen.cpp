@@ -1842,8 +1842,8 @@ static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 					  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					  isc_arg_number, (SLONG) statement->req_client_dialect,
 					  isc_arg_string,
-					  DSC_dtype_tostring(static_cast < UCHAR >
-										 (field->fld_dtype)), isc_arg_end);
+					  DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype)),
+					  isc_arg_end);
 			break;
 		default:
 			// No special action for other data types 

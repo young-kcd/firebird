@@ -2795,6 +2795,7 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 	if (flawed_node)
 	{
 		if (field_name)
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_random, isc_arg_string, field_name,
@@ -2802,27 +2803,34 @@ static void field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
 					  isc_arg_number, (int) flawed_node->nod_line,
 					  isc_arg_number, (int) flawed_node->nod_column,
 					  isc_arg_end);
+		}
 		else
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_dsql_line_col_error,
 					  isc_arg_number, (int) flawed_node->nod_line,
 					  isc_arg_number, (int) flawed_node->nod_column,
 					  isc_arg_end);
+		}
 	}
 	else
 	{
 		if (field_name)
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_random, isc_arg_string, field_name,
 					  isc_arg_gds, isc_dsql_unknown_pos,
 					  isc_arg_end);
+		}
 		else
+		{
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -206,
 					  isc_arg_gds, isc_dsql_field_err,
 					  isc_arg_gds, isc_dsql_unknown_pos,
 					  isc_arg_end);
+		}
 	}
 }
 
@@ -3105,9 +3113,9 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 					if (pass1_found_aggregate(node->nod_arg[e_agg_function_expression], context->ctx_scope_level,
 							FIELD_MATCH_TYPE_EQUAL, true))
 					{
+						// Nested aggregate functions are not allowed
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 							isc_arg_gds, isc_dsql_agg_nested_err, isc_arg_end);
-						// Nested aggregate functions are not allowed
 					}
 				}
 			}
@@ -3650,8 +3658,10 @@ static void pass1_blob( CompiledStatement* statement, dsql_nod* input)
 	PASS1_make_context(statement, input->nod_arg[e_blb_relation]);
 	dsql_nod* field = pass1_field(statement, input->nod_arg[e_blb_field], false, NULL);
 	if (field->nod_desc.dsc_dtype != dtype_blob)
+	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 206,
 				  isc_arg_gds, isc_dsql_blob_err, isc_arg_end);
+	}
 
 	statement->req_type = (input->nod_type == nod_get_segment) ?
 		REQ_GET_SEGMENT : REQ_PUT_SEGMENT;
@@ -3990,11 +4000,13 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 			if (relation->rel_name == rname->str_data)
 			{
 				if (context)
+				{
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 							  isc_arg_gds, isc_dsql_cursor_err,
 							  isc_arg_gds, isc_dsql_cursor_rel_ambiguous,
 							  isc_arg_string, rname->str_data,
 							  isc_arg_string, string->str_data, isc_arg_end);
+				}
 				else
 					context = candidate;
 			}
@@ -4010,11 +4022,13 @@ static dsql_ctx* pass1_cursor_context( CompiledStatement* statement, const dsql_
 	}
 
 	if (!context)
+	{
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
 				  isc_arg_gds, isc_dsql_cursor_err,
 				  isc_arg_gds, isc_dsql_cursor_rel_not_found,
 				  isc_arg_string, rname->str_data,
 				  isc_arg_string, string->str_data, isc_arg_end);
+	}
 
 	return context;
 }
@@ -5395,8 +5409,8 @@ static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
 										  isc_sql_dialect_datatype_unsupport,
 										  isc_arg_number, (SLONG) statement->req_client_dialect,
 										  isc_arg_string,
-										  DSC_dtype_tostring(static_cast<UCHAR>
-															 (field->fld_dtype)), isc_arg_end);
+										  DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype)),
+										  isc_arg_end);
 								return NULL;
 						}
 
@@ -6155,10 +6169,10 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 
 	if (input->nod_count > MAX_SORT_ITEMS) // sort and group have the same limit for now.
 	{
+		// cannot group on more than 255 items
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 			isc_arg_gds, isc_dsql_command_err,
 			isc_arg_gds, isc_dsql_max_group_items, isc_arg_end);
-			// cannot group on more than 255 items
 	}
 
 	DsqlNodStack stack;
@@ -6180,10 +6194,10 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 			if ((position < 1) || !selectList ||
 				(position > (ULONG) selectList->nod_count))
 			{
+				// Invalid column position used in the GROUP BY clause
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 						  isc_arg_gds, isc_dsql_column_pos_err,
 						  isc_arg_string, "GROUP BY", isc_arg_end);
-				// Invalid column position used in the GROUP BY clause
 			}
 			frnode = pass1_node_psql(statement, selectList->nod_arg[position - 1], false);
 		}
@@ -7907,9 +7921,11 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		   allowed, HAVING should be used instead */
 		if (pass1_found_aggregate(rse->nod_arg[e_rse_boolean],
 				statement->req_scope_level, FIELD_MATCH_TYPE_EQUAL, true))
+		{
+			// Cannot use an aggregate in a WHERE clause, use HAVING instead
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_dsql_agg_where_err, isc_arg_end);
-			// Cannot use an aggregate in a WHERE clause, use HAVING instead
+		}
 	}
 
 #ifdef DSQL_DEBUG
@@ -8006,9 +8022,9 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		    pass1_found_aggregate(aggregate->nod_arg[e_agg_group],
 				statement->req_scope_level, FIELD_MATCH_TYPE_LOWER_EQUAL, true))
 		{
+			// Cannot use an aggregate in a GROUP BY clause
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
 				isc_arg_gds, isc_dsql_agg_group_err, isc_arg_end);
-			// Cannot use an aggregate in a GROUP BY clause
 		}
 	}
 
@@ -10298,12 +10314,14 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node, 
 						// The error msgs is inaccurate, but causing dsc_length
 						// to be outsise range can be worse.
 						if (parameter->par_desc.dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+						{
 							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 								  //isc_arg_gds, isc_dsql_datatype_err,
 								  isc_arg_gds, isc_imp_exc,
 								  //isc_arg_gds, isc_field_name,
 								  //isc_arg_string, parameter->par_name,
 								  isc_arg_end);
+						}
 
 						parameter->par_desc.dsc_length += sizeof(USHORT);
 					}

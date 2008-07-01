@@ -5439,7 +5439,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
  *	      triggers because user-defined triggers can modify
  *	      the values being inserted or updated so that
  *	      the end values stored in the database don't
- *	      fulfill the check constraint.     .
+ *	      fulfill the check constraint.
  *
  **************************************/
 	if (!relation)

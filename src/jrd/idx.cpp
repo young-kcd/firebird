@@ -1577,11 +1577,10 @@ static IDX_E insert_key(
 	return result;
 }
 
-bool IDX_modify_flag_uk_modified(
-								  thread_db* tdbb, 
-								  record_param* org_rpb, 
-								  record_param* new_rpb, 
-								  jrd_tra* transaction)
+bool IDX_modify_flag_uk_modified(thread_db* tdbb, 
+								 record_param* org_rpb, 
+								 record_param* new_rpb, 
+								 jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1613,11 +1612,10 @@ bool IDX_modify_flag_uk_modified(
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 
-	while (BTR_next_index
-		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
+	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
-		if (!(idx.idx_flags & (idx_primary | idx_unique))
-			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
+		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
+			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
 		{
 			continue;
 		}
