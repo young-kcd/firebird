@@ -1578,7 +1578,7 @@ static IDX_E insert_key(
 }
 
 
-bool IDX_modify_flag_uk_modified(thread_db* tdbb, 
+void IDX_modify_flag_uk_modified(thread_db* tdbb, 
 								 record_param* org_rpb, 
 								 record_param* new_rpb, 
 								 jrd_tra* transaction)
@@ -1602,7 +1602,7 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 		(org_rpb->rpb_transaction_nr == new_rpb->rpb_transaction_nr))
 	{
 		new_rpb->rpb_flags |= rpb_uk_modified;
-		return true;	
+		return;	
 	}
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
@@ -1631,12 +1631,10 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 			{
 				new_rpb->rpb_flags |= rpb_uk_modified;	
 				CCH_RELEASE(tdbb, &window);
-				return true;	
+				return;
 			}
 		}
 	}
-
-	return false;
 }
 
 
