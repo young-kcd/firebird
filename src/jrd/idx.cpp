@@ -1624,8 +1624,8 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 		for (USHORT i = 0; i < idx.idx_count; i++, idx_desc++)
 		{
-			bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
-			bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
+			const bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
+			const bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
 
 			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
 			{
