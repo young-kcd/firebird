@@ -1577,6 +1577,7 @@ static IDX_E insert_key(
 	return result;
 }
 
+
 bool IDX_modify_flag_uk_modified(thread_db* tdbb, 
 								 record_param* org_rpb, 
 								 record_param* new_rpb, 
@@ -1597,12 +1598,7 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 	SET_TDBB(tdbb);
 
-	index_desc idx;
-	idx.idx_id = (USHORT) -1;
-	DSC desc1, desc2; 
-	bool flag_org, flag_new;
-
-	if ((org_rpb->rpb_flags & rpb_uk_modified) && 
+	if ((org_rpb->rpb_flags & rpb_uk_modified) &&
 		(org_rpb->rpb_transaction_nr == new_rpb->rpb_transaction_nr))
 	{
 		new_rpb->rpb_flags |= rpb_uk_modified;
@@ -1612,6 +1608,10 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
 
+	DSC desc1, desc2;
+	index_desc idx;
+	idx.idx_id = (USHORT) -1;
+
 	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
@@ -1620,14 +1620,14 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 			continue;
 		}
 
-		index_desc::idx_repeat* idx_desc = idx.idx_rpt;
+		const index_desc::idx_repeat* idx_desc = idx.idx_rpt;
 
 		for (USHORT i = 0; i < idx.idx_count; i++, idx_desc++)
 		{
-			flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
-			flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
+			bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
+			bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
 
-			if ((flag_org != flag_new) || (MOV_compare(&desc1, &desc2) != 0))
+			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
 			{
 				new_rpb->rpb_flags |= rpb_uk_modified;	
 				CCH_RELEASE(tdbb, &window);
@@ -1638,6 +1638,7 @@ bool IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 	return false;
 }
+
 
 static bool key_equal(const temporary_key* key1, const temporary_key* key2)
 {
