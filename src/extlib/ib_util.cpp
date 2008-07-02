@@ -54,15 +54,21 @@ extern "C" int EXPORT ib_util_free(void* ptr)
 	if (!ptr)
 		return true;
 
-	Firebird::MutexLockGuard guard(mutex);
-	size_t pos;
+	bool found = false;
 
-	if (pointers().find(ptr, pos))
-	{
-		pointers().remove(pos);
-		free(ptr);
-		return true;
+	{	// scope
+		Firebird::MutexLockGuard guard(mutex);
+		size_t pos;
+
+		if (pointers().find(ptr, pos))
+		{
+			pointers().remove(pos);
+			found = true;
+		}
 	}
 
-	return false;
+	if (found)
+		free(ptr);
+
+	return found;
 }
