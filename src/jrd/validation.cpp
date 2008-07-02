@@ -1230,6 +1230,7 @@ static RTN walk_data_page(thread_db* tdbb,
 			if ((UCHAR *) header < (UCHAR *) end ||
 				(UCHAR *) header + line->dpg_length > end_page)
 			{
+				CCH_RELEASE(tdbb, &window);
 				return corrupt(tdbb, control, VAL_DATA_PAGE_LINE_ERR,
 							   relation, page_number, sequence,
 							   (SLONG) (line - page->dpg_rpt));
