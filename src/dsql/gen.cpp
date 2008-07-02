@@ -115,9 +115,7 @@ const bool USE_VALUE    = false;
 void GEN_expr( CompiledStatement* statement, dsql_nod* node)
 {
 	UCHAR blr_operator;
-	dsql_ctx* context;
-	dsql_map* map;
-	dsql_var* variable;
+	const dsql_ctx* context;
 
 	switch (node->nod_type) {
 	case nod_alias:
@@ -222,16 +220,18 @@ void GEN_expr( CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_variable:
-		variable = (dsql_var*) node->nod_arg[e_var_variable];
-		if (variable->var_type == VAR_input) {
-			stuff(statement, blr_parameter2);
-			stuff(statement, variable->var_msg_number);
-			stuff_word(statement, variable->var_msg_item);
-			stuff_word(statement, variable->var_msg_item + 1);
-		}
-		else {
-			stuff(statement, blr_variable);
-			stuff_word(statement, variable->var_variable_number);
+		{
+			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
+			if (variable->var_type == VAR_input) {
+				stuff(statement, blr_parameter2);
+				stuff(statement, variable->var_msg_number);
+				stuff_word(statement, variable->var_msg_item);
+				stuff_word(statement, variable->var_msg_item + 1);
+			}
+			else {
+				stuff(statement, blr_variable);
+				stuff_word(statement, variable->var_variable_number);
+			}
 		}
 		return;
 
@@ -240,11 +240,13 @@ void GEN_expr( CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_map:
-		map = (dsql_map*) node->nod_arg[e_map_map];
-		context = (dsql_ctx*) node->nod_arg[e_map_context];
-		stuff(statement, blr_fid);
-		stuff_context(statement, context);
-		stuff_word(statement, map->map_position);
+		{
+			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
+			context = (dsql_ctx*) node->nod_arg[e_map_context];
+			stuff(statement, blr_fid);
+			stuff_context(statement, context);
+			stuff_word(statement, map->map_position);
+		}
 		return;
 
 	case nod_parameter:
@@ -640,8 +642,8 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 			parameter->par_desc.dsc_length -= adjust;
 
-			USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
-			USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
+			const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
+			const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
 
 			INTL_ASSIGN_TTYPE(&parameter->par_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
 				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
@@ -1417,8 +1419,6 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 	SLONG value;
 	SINT64 i64value;
 
-	DSC tmp_desc;
-
 	stuff(statement, blr_literal);
 
 	const UCHAR* p = desc->dsc_address;
@@ -1910,9 +1910,10 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 	gen_rse(statement, rse);
 	stuff(statement, blr_begin);
 
-// Build body of FOR loop 
+	// Build body of FOR loop
 
 	// Handle write locks 
+	/* CVC: Unused code!
 	dsql_nod* streams = rse->nod_arg[e_rse_streams];
 	dsql_ctx* context = NULL;
 
@@ -1921,6 +1922,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		if (item && (item->nod_type == nod_relation))
 			context = (dsql_ctx*) item->nod_arg[e_rel_context];
 	}
+	*/
 	
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
@@ -2760,8 +2762,8 @@ static void gen_statement(CompiledStatement* statement, const dsql_nod* node)
 	}
 
 	dsql_nod* temp;
-	dsql_ctx* context;
-	dsql_str* name;
+	const dsql_ctx* context;
+	const dsql_str* name;
 
 	switch (node->nod_type) {
 	case nod_store:
