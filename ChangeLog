@@ -1,3 +1,54 @@
+2008-07-02 15:02  roman-simakov
+
+	* firebird2/src/jrd/validation.cpp (1.40):
+
+	Fixed bugcheck 210 (page in use during flush) is thrown during
+	database validation.
+
+2008-07-02 14:22  roman-simakov
+
+	* firebird2/src/jrd/idx.cpp (1.140):
+
+	Misc
+
+2008-07-02 12:56  roman-simakov
+
+	* firebird2/src/jrd/: idx.cpp (1.139), idx_proto.h (1.26):
+
+	Correction
+
+2008-07-02 11:46  robocop
+
+	* firebird2/src/dsql/gen.cpp (1.162):
+
+	Misc.
+
+2008-07-02 10:47  robocop
+
+	* firebird2/src/jrd/idx.cpp (1.138):
+
+	Misc.
+
+2008-07-02 02:24  asfernandes
+
+	* firebird2/src/extlib/ib_util.cpp (1.4):
+
+	Call free after release the mutex - thanks to Nikolay
+
+2008-07-02 02:22  asfernandes
+
+	* firebird2/builds/posix/: Makefile.in.smp_server (1.2),
+	make.defaults (1.66), prefix.darwin_i386 (1.9), prefix.darwin_ppc64
+	(1.7), prefix.darwin_x86_64 (1.9):
+
+	Fixed the build problem reported by Nikolay
+
+2008-07-01 23:36  asfernandes
+
+	* firebird2/src/jrd/req.h (1.81):
+
+	Correction
+
 2008-07-01 03:11  asfernandes
 
 	* firebird2/src/: dsql/gen.cpp (1.161), dsql/pass1.cpp (1.398),
