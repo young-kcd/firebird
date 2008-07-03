@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.refDatabases,v 1.29.4.2 2008-05-08 13:11:03 alexpeshkoff Exp $
+#  $Id: Makefile.in.refDatabases,v 1.29.4.3 2008-07-03 13:43:37 alexpeshkoff Exp $
 #
 ROOT=..
 ObjModuleType=std
@@ -110,7 +110,7 @@ $(FIREBIRD)/security2.fdb:	security2.fdb
 
 security2.fdb:	$(SRC_ROOT)/dbs/security.sql
 	$(RM) -f $@
-	make -f Makefile.static.gfix
+	$(MAKE) -f Makefile.static.gfix
 	echo create database \'$@\'\; | $(ISQL_STATIC)
 	$(ISQL_STATIC) -i $^ $@
 	$(GFIX_STATIC) -write sync $@
