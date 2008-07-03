@@ -1,3 +1,9 @@
+2008-07-03 15:43  alexpeshkoff
+
+	* firebird2/builds/posix/Makefile.in.refDatabases (1.29.4.3):
+
+	Fixed solaris build
+
 2008-06-27 19:14  robocop
 
 	* firebird2/src/remote/inet_server.cpp (1.58.4.9):
