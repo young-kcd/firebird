@@ -339,7 +339,7 @@ SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
 
 	// Check for proper termination.
 	if (patternPos < patternEnd)
-		status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 	reset();
 }
@@ -466,7 +466,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 	}
 
 	if (!(flags & FLAG_NOT_EMPTY) && op != canonicalChar(TextType::CHAR_QUESTION_MARK))
-		status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 	// If the last primary is a string, split the last character
 	if (flags & FLAG_EXACTLY)
@@ -531,13 +531,13 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 			if (*patternPos == canonicalChar(TextType::CHAR_CLOSE_BRACE))
 			{
 				if (s1.isEmpty())
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 				break;
 			}
 			else if (*patternPos == canonicalChar(TextType::CHAR_COMMA))
 			{
 				if (comma)
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 				comma = true;
 			}
 			else
@@ -553,20 +553,20 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 						s1 += (char) ch;
 				}
 				else
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 			}
 
 			++patternPos;
 		}
 
 		if (!ok || s1.length() > 9 || s2.length() > 9)
-			status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 		int n1 = atoi(s1.c_str());
 		int n2 = s2.isEmpty() ? (comma ? INT_MAX : n1) : atoi(s2.c_str());
 
 		if (n2 < n1)
-			status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 		*flagp = n1 == 0 ? 0 : FLAG_NOT_EMPTY;
 
@@ -576,7 +576,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 	++patternPos;
 
 	if (patternPos < patternEnd && isRep(*patternPos))
-		status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 }
 
 
@@ -620,7 +620,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 		do
 		{
 			if (patternPos >= patternEnd)
-				status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 			bool range = false;
 			bool charClass = false;
@@ -628,12 +628,12 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			if (useEscape && *patternPos == escapeChar)
 			{
 				if (++patternPos >= patternEnd)
-					status_exception::raise(isc_escape_invalid, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_escape_invalid));
 
 				if (*patternPos != escapeChar &&
 					notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
 				{
-					status_exception::raise(isc_escape_invalid, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_escape_invalid));
 				}
 
 				if (patternPos + 1 < patternEnd)
@@ -646,7 +646,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				else if (*patternPos == canonicalChar(TextType::CHAR_CIRCUMFLEX))
 				{
 					if (but)
-						status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 					but = true;
 
@@ -683,7 +683,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			if (charClass)
 			{
 				if (++patternPos >= patternEnd || *patternPos != canonicalChar(TextType::CHAR_COLON))
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 				const CharType* start = ++patternPos;
 
@@ -693,7 +693,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				const SLONG len = patternPos++ - start;
 
 				if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_BRACKET))
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 				typedef const UCHAR* (TextType::*GetCanonicalFunc)(int*) const;
 
@@ -754,7 +754,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 				}
 
 				if (classN >= FB_NELEM(classes))
-					status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 			}
 			else
 			{
@@ -778,17 +778,17 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 					++patternPos;	// minus
 
 					if (patternPos >= patternEnd)
-						status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+						status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 					if (useEscape && *patternPos == escapeChar)
 					{
 						if (++patternPos >= patternEnd)
-							status_exception::raise(isc_escape_invalid, isc_arg_end);
+							status_exception::raise(Arg::Gds(isc_escape_invalid));
 
 						if (*patternPos != escapeChar &&
 							notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
 						{
-							status_exception::raise(isc_escape_invalid, isc_arg_end);
+							status_exception::raise(Arg::Gds(isc_escape_invalid));
 						}
 					}
 
@@ -817,7 +817,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			}
 
 			if (patternPos >= patternEnd)
-				status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 		} while (*patternPos != canonicalChar(TextType::CHAR_CLOSE_BRACKET));
 
 		CharType* p = (CharType*) alloc(charsBuffer.getCount() * sizeof(CharType));
@@ -844,19 +844,19 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 		parseExpr(&flags);
 
 		if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_PAREN))
-			status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 		*flagp |= flags & FLAG_NOT_EMPTY;
 	}
 	else if (useEscape && op == escapeChar)
 	{
 		if (patternPos >= patternEnd)
-			status_exception::raise(isc_escape_invalid, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_escape_invalid));
 
 		if (*patternPos != escapeChar &&
 			notInSet(patternPos, 1, metaCharacters, FB_NELEM(metaCharacters)) != 0)
 		{
-			status_exception::raise(isc_escape_invalid, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_escape_invalid));
 		}
 
 		nodes.push(Node(opExactly, patternPos++, 1));
@@ -870,7 +870,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 			metaCharacters, FB_NELEM(metaCharacters));
 
 		if (len == 0)
-			status_exception::raise(isc_invalid_similar_pattern, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
 		*flagp |= FLAG_NOT_EMPTY | FLAG_EXACTLY;
 

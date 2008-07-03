@@ -62,6 +62,7 @@
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 #ifdef DEV_BUILD
@@ -130,9 +131,7 @@ void ERRD_error(const char* text)
 	fb_utils::snprintf(s, sizeof(s), "** DSQL error: %s **\n", text);
 	TRACE(s);
 
-	Firebird::status_exception::raise(
-        isc_random, isc_arg_cstring, strlen(s), ERR_cstring(s),
-        isc_arg_end);
+	status_exception::raise(Arg::Gds(isc_random) << Arg::Str(s));
 }
 
 
@@ -365,6 +364,6 @@ void ERRD_punt(const ISC_STATUS* local)
 
 // Give up whatever we were doing and return to the user. 
 
-	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+	status_exception::raise(tdbb->tdbb_status_vector);
 }
 

@@ -1008,7 +1008,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		Firebird::status_exception::raise(isc_exception_stack_overflow, isc_arg_end);
+		Firebird::status_exception::raise(Arg::Gds(isc_exception_stack_overflow));
 		/* This will never be called, but to be safe it's here */
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;

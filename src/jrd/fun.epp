@@ -63,6 +63,7 @@
 #include "../common/classes/auto.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 typedef void* UDF_ARG;
 
@@ -95,7 +96,7 @@ struct udf_blob
 };
 
 
-class OwnedBlobStack : public Firebird::Stack<blb*>
+class OwnedBlobStack : public Stack<blb*>
 {
 public:
 	OwnedBlobStack(thread_db* in_tdbb) :
@@ -125,7 +126,7 @@ OwnedBlobStack::~OwnedBlobStack()
 			else
 				BLB_cancel(m_tdbb, aux);
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			// Ignore exception.
 		}
@@ -168,7 +169,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
  **************************************/
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
-	Firebird::HalfStaticArray<UCHAR, 800> temp;
+	HalfStaticArray<UCHAR, 800> temp;
 
 	SET_TDBB(tdbb);
 
@@ -179,7 +180,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
-	//Firebird::Stack<blb*> blob_stack;
+	//Stack<blb*> blob_stack;
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
 	UCharStack array_stack;
@@ -551,7 +552,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	blob_stack.close();
 
 	} // try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		while (array_stack.hasData()) {
 			delete[] array_stack.pop();
@@ -567,7 +568,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 }
 
 
-UserFunction* FUN_lookup_function(thread_db* tdbb, const Firebird::MetaName& name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -873,7 +874,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 				MOV_move(tdbb, &from, &to);
 			}
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			delete[] data;
 			delete[] temp;
@@ -1029,8 +1030,8 @@ static void invoke(thread_db* tdbb,
 			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
 			/* We'll use it the day we get rid of SEH.
 			For now, if MOV_move calls ERR_post, we leak memory allocated in the UDF.
-			Firebird::AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
-			Firebird::AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
+			AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
+			AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
 			*/
 			
 			if (result_is_null)
@@ -1132,5 +1133,5 @@ static void invoke(thread_db* tdbb,
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
 	if (!freeItOk)
-		Firebird::status_exception::raise(isc_bad_udf_freeit, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_bad_udf_freeit));
 }

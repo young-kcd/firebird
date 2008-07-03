@@ -67,6 +67,7 @@
 #include "../common/classes/init.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 #ifdef DARWIN
 #define O_DIRECT F_NOCACHE
@@ -116,21 +117,21 @@ using namespace Jrd;
 // that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
-static jrd_file* setup_file(Database*, const Firebird::PathName&, int);
+static jrd_file* setup_file(Database*, const PathName&, int);
 static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
 #endif
 #ifdef SUPPORT_RAW_DEVICES
-static bool raw_devices_validate_database (int, const Firebird::PathName&);
-static int  raw_devices_unlink_database (const Firebird::PathName&);
+static bool raw_devices_validate_database (int, const PathName&);
+static int  raw_devices_unlink_database (const PathName&);
 #endif
 static int	openFile(const char*, const bool, const bool, const bool);
 static void	maybeCloseFile(int&);
 
 
-int PIO_add_file(Database* dbb, jrd_file* main_file, const Firebird::PathName& file_name, SLONG start)
+int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, SLONG start)
 {
 /**************************************
  *
@@ -189,7 +190,7 @@ void PIO_close(jrd_file* main_file)
 }
 
 
-jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
+jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	const bool overwrite, const bool temporary, const bool /*share_delete*/)
 {
 /**************************************
@@ -226,6 +227,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
 				 isc_arg_string, "open O_CREAT",
 				 isc_arg_string, ERR_string(file_name),
 				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, isc_arg_end);
+/*		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
+                 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));*/
 	}
 
 #ifdef HAVE_FCHMOD
@@ -268,14 +271,14 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& file_name,
 
 /* File open succeeded.  Now expand the file name. */
 
-	Firebird::PathName expanded_name(file_name);
+	PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
 	jrd_file* file;
 	try 
 	{
 		file = setup_file(dbb, expanded_name, desc);
 	} 
-	catch (const Firebird::Exception&) 
+	catch (const Exception&) 
 	{
 		close(desc);
 		throw;
@@ -336,7 +339,7 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 /* Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this
    is a no-op. */
 #ifndef SUPERSERVER_V2
-	Firebird::MutexLockGuard guard(main_file->fil_mutex);
+	MutexLockGuard guard(main_file->fil_mutex);
 
 	Database::Checkout dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next) {
@@ -505,7 +508,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
-static Firebird::InitInstance<HugeStaticBuffer> zeros;
+static InitInstance<HugeStaticBuffer> zeros;
 
 
 USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
@@ -572,8 +575,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 
 jrd_file* PIO_open(Database* dbb,
-			 const Firebird::PathName& string,
-			 const Firebird::PathName& file_name,
+			 const PathName& string,
+			 const PathName& file_name,
 			 const bool /*share_delete*/)
 {
 /**************************************
@@ -637,7 +640,7 @@ jrd_file* PIO_open(Database* dbb,
 		if (readOnly)
 			file->fil_flags |= FIL_readonly;
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Exception&) {
 		close(desc);
 		throw;
 	}
@@ -888,7 +891,7 @@ static void maybeCloseFile(int& desc)
 }
 
 
-static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, int desc)
+static jrd_file* setup_file(Database* dbb, const PathName& file_name, int desc)
 {
 /**************************************
  *
@@ -972,7 +975,7 @@ static jrd_file* setup_file(Database* dbb, const Firebird::PathName& file_name, 
 					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), isc_arg_end);
 				pageSpace->file = NULL; // Will be set again later by the caller				
 			}
-			catch (const Firebird::Exception&) {
+			catch (const Exception&) {
 				delete dbb->dbb_lock;
 				dbb->dbb_lock = NULL;
 				delete file;
@@ -1118,7 +1121,7 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 
 
 #ifdef SUPPORT_RAW_DEVICES
-int PIO_unlink (const Firebird::PathName& file_name)
+int PIO_unlink (const PathName& file_name)
 {
 /**************************************
  *
@@ -1139,7 +1142,7 @@ int PIO_unlink (const Firebird::PathName& file_name)
 
 
 bool PIO_on_raw_device (
-	const Firebird::PathName& file_name)
+	const PathName& file_name)
 {
 /**************************************
  *
@@ -1160,7 +1163,7 @@ bool PIO_on_raw_device (
 
 static bool raw_devices_validate_database (
 	int desc,
-	const Firebird::PathName& file_name)
+	const PathName& file_name)
 {
 /**************************************
  *
@@ -1245,7 +1248,7 @@ static bool raw_devices_validate_database (
 
 
 static int raw_devices_unlink_database (
-	const Firebird::PathName& file_name)
+	const PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
 	int desc = -1, i;

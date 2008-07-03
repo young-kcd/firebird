@@ -45,6 +45,7 @@
 #include "gen/iberror.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 /* System provided internal filters for filtering internal
  * subtypes to text.
@@ -187,7 +188,7 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
 			localStatus[2] = isc_arg_end;
 		}
 
-		Firebird::status_exception::raise(localStatus);
+		status_exception::raise(localStatus);
 	}
 
 	return status;
@@ -293,7 +294,7 @@ void BLF_put_segment(thread_db* tdbb,
 			localStatus[2] = isc_arg_end;
 		}
 
-		Firebird::status_exception::raise(localStatus);
+		status_exception::raise(localStatus);
 	}
 }
 
@@ -340,10 +341,7 @@ static void open_blob(
 
 	if ((!filter) || (!filter->blf_filter))
 	{
-		Firebird::status_exception::raise(
-			isc_nofilter, isc_arg_number, (ISC_STATUS) from,
-			isc_arg_number, (ISC_STATUS) to,
-			isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_nofilter) << Arg::Num(from) << Arg::Num(to));
 	}
 
 /* Allocate a filter control block and open blob */
@@ -368,7 +366,7 @@ static void open_blob(
 
 	if ((*callback) (action, prior)) {
 		BLF_close_blob(tdbb, &prior);
-		Firebird::status_exception::raise(localStatus);
+		status_exception::raise(localStatus);
 	}
 
 	BlobControl* control = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
@@ -413,7 +411,7 @@ static void open_blob(
 			localStatus[2] = isc_arg_end;
 		}
 
-		Firebird::status_exception::raise(localStatus);
+		status_exception::raise(localStatus);
 	}
 }
 

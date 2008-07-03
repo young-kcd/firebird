@@ -96,6 +96,7 @@
 #include "../common/classes/Aligner.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 namespace
@@ -158,7 +159,7 @@ ULONG FixedWidthCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen,
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		Firebird::status_exception::raise(isc_arith_except, isc_arg_gds, isc_string_truncation, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 
 	return result;
 }
@@ -178,7 +179,7 @@ ULONG MultiByteCharSet::length(ULONG srcLen, const UCHAR* src, bool countTrailin
 	ULONG len = getConvToUnicode().convertLength(srcLen);
 
 	// convert to UTF16
-	Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
+	HalfStaticArray<USHORT, BUFFER_SMALL / sizeof(USHORT)> str;
 	len = getConvToUnicode().convert(srcLen, src, len,
 					str.getBuffer(len / sizeof(USHORT)));
 
@@ -201,7 +202,7 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 			return 0;
 
 		// convert to UTF16
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> str;
+		HalfStaticArray<UCHAR, BUFFER_SMALL> str;
 		ULONG unilength = getConvToUnicode().convertLength(srcLen);
 
 		// ASF: We should pass badInputPos to convert for it not throw in the case
@@ -211,19 +212,19 @@ ULONG MultiByteCharSet::substring(ULONG srcLen, const UCHAR* src, ULONG dstLen, 
 		// this may be costly.
 		ULONG badInputPos;
 		unilength = getConvToUnicode().convert(srcLen, src, unilength,
-			Firebird::OutAligner<USHORT>(str.getBuffer(unilength), unilength), &badInputPos);
+			OutAligner<USHORT>(str.getBuffer(unilength), unilength), &badInputPos);
 
 		// generate substring of UTF16
-		Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
-		unilength = UnicodeUtil::utf16Substring(unilength, Firebird::Aligner<USHORT>(str.begin(), unilength),
-			unilength, Firebird::OutAligner<USHORT>(substr.getBuffer(unilength), unilength), startPos, len);
+		HalfStaticArray<UCHAR, BUFFER_SMALL> substr;
+		unilength = UnicodeUtil::utf16Substring(unilength, Aligner<USHORT>(str.begin(), unilength),
+			unilength, OutAligner<USHORT>(substr.getBuffer(unilength), unilength), startPos, len);
 
 		// convert generated substring to original charset
 		result = getConvFromUnicode().convert(unilength, substr.begin(), dstLen, dst);
 	}
 
 	if (result == INTL_BAD_STR_LENGTH)
-		Firebird::status_exception::raise(isc_arith_except, isc_arg_gds, isc_string_truncation, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 
 	return result;
 }

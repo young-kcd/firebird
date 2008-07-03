@@ -39,23 +39,21 @@ ISC_STATUS dupStringTemp(const char* s)
 	return (ISC_STATUS)(IPTR)(string);
 }
 
-void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
+void fill_status(ISC_STATUS *ptr, const ISC_STATUS *orig_status)
 {
 	// Move in status and clone transient strings
-	*ptr++ = isc_arg_gds;
-	*ptr++ = status;
 	while (true) 
 	{
-		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
+		const ISC_STATUS type = *ptr++ = *orig_status++;
 		if (type == isc_arg_end) 
 			break;
 
 		switch (type) {
 		case isc_arg_cstring: 
 			{				
-				const size_t len = *ptr++ = va_arg(status_args, ISC_STATUS);
+				const size_t len = *ptr++ = *orig_status++;
 				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
-				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
+				const char *temp = reinterpret_cast<char*>(*orig_status++);
 				memcpy(string, temp, len);
 				*ptr++ = (ISC_STATUS)(IPTR)(string);
 				break;
@@ -64,11 +62,11 @@ void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
 			{
-				*ptr++ = dupStringTemp(reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS)));
+				*ptr++ = dupStringTemp(reinterpret_cast<char*>(*orig_status++));
 				break;
 			}
 		default:
-			*ptr++ = va_arg(status_args, ISC_STATUS);
+			*ptr++ = *orig_status++;
 			break;
 		}
 	}	
@@ -203,13 +201,10 @@ void status_exception::raise(const ISC_STATUS *status_vector)
 	throw status_exception(status_vector, true);
 }
 	
-void status_exception::raise(ISC_STATUS status, ...) 
+void status_exception::raise(const Arg::StatusVector& statusVector)
 {
-	va_list args;
-	va_start(args, status);
 	ISC_STATUS_ARRAY temp;
-	fill_status(temp, status, args);
-	va_end(args);
+	fill_status(temp, statusVector.value());
 	throw status_exception(temp, false);
 }
 

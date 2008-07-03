@@ -123,9 +123,7 @@ void DatabaseSnapshot::SharedMemory::acquire()
 			Firebird::status_exception::raise(statusVector);
 		}
 #else
-		Firebird::status_exception::raise(isc_random, isc_arg_string,
-										  "Monitoring table space exhausted",
-										  isc_arg_end);
+		Firebird::status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Monitoring table space exhausted"));
 #endif
 	}
 }
@@ -288,9 +286,7 @@ void DatabaseSnapshot::SharedMemory::extend()
 	}
 	base->allocated = handle.sh_mem_length_mapped;
 #else
-	Firebird::status_exception::raise(isc_random, isc_arg_string,
-									  "Monitoring table space exhausted",
-									  isc_arg_end);
+	Firebird::status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Monitoring table space exhausted"));
 #endif
 }
 

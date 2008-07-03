@@ -1039,7 +1039,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 
 	if (m_error) {
 		// Input parameters mismatch
-		status_exception::raise(isc_eds_input_prm_mismatch, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_eds_input_prm_mismatch));
 	}
 
 	if (m_sqlParamNames.getCount())
@@ -1062,7 +1062,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 			if (num == count) 
 			{
 				// Input parameter ''@1'' have no value set
-				status_exception::raise(isc_eds_input_prm_not_set, isc_arg_string, ERR_cstring(*sqlName), isc_arg_end);
+				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
 			}
 
 			sqlParams[sqlNum] = params[num];
@@ -1082,7 +1082,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 	{
 		m_error = true;
 		// Input parameters mismatch
-		status_exception::raise(isc_eds_input_prm_mismatch, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_eds_input_prm_mismatch));
 	}
 
 	if (!count)
@@ -1143,7 +1143,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 	{
 		m_error = true;
 		// Output parameters mismatch
-		status_exception::raise(isc_eds_output_prm_mismatch, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_eds_output_prm_mismatch));
 	}
 
 	if (!count)
@@ -1158,9 +1158,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 		{
 			m_error = true;
 			status_exception::raise(
-				isc_exec_sql_invalid_var, isc_arg_number, i + 1,
-				isc_arg_string, (ISC_STATUS)(U_IPTR) ERR_cstring(m_sql.substr(0, 31)),
-				isc_arg_end);
+				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
 		}
 */
 

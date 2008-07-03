@@ -73,6 +73,7 @@
 #include "../common/classes/array.h"
 
 using namespace Jrd;
+using namespace Firebird;
 using Firebird::UCharBuffer;
 
 typedef Ods::blob_page blob_page;
@@ -149,7 +150,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	if (!charSet->shouldCheckWellFormedness())
 		return;
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 	ULONG pos = 0;
 
 	while (!(blob->blb_flags & BLB_eof))
@@ -163,7 +164,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 		else
 		{
 			if (pos == 0)
-				Firebird::status_exception::raise(isc_malformed_string, isc_arg_end);
+				status_exception::raise(Arg::Gds(isc_malformed_string));
 			else
 			{
 				buffer.removeCount(0, pos);
@@ -173,7 +174,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	}
 
 	if (pos != 0)
-		Firebird::status_exception::raise(isc_malformed_string, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_malformed_string));
 }
 
 
@@ -494,7 +495,7 @@ void BLB_garbage_collect(
 }
 
 
-void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb)
+void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, UCharBuffer& bpb)
 {
 	bpb.resize(15);
 
@@ -528,7 +529,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 }
 
 
-void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, Firebird::UCharBuffer& bpb)
+void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, UCharBuffer& bpb)
 {
 	BLB_gen_bpb(fromDesc->getBlobSubType(), toDesc->getBlobSubType(),
 		fromDesc->getCharSet(), toDesc->getCharSet(), bpb);
@@ -834,7 +835,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 /* Get someplace to put data */
 
-	Firebird::UCharBuffer data_buffer;
+	UCharBuffer data_buffer;
 	UCHAR* const data = data_buffer.getBuffer(desc->iad_total_length);
 
 /* zero out memory, so that it does not have to be done for each element */
@@ -1369,7 +1370,7 @@ blb* BLB_open2(thread_db* tdbb,
 			blob->blb_segment = blob->getBuffer();
 	}
 
-	Firebird::UCharBuffer new_bpb;
+	UCharBuffer new_bpb;
 
 	if (external_call &&
 		ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
@@ -1805,7 +1806,7 @@ void BLB_scalar(thread_db*		tdbb,
 
 // Get someplace to put data.
 // We need DOUBLE_ALIGNed buffer, that's why some tricks
-	Firebird::HalfStaticArray<double, 64> temp;
+	HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
 	desc.dsc_address = reinterpret_cast<UCHAR*>
 		(temp.getBuffer((desc.dsc_length / sizeof(double)) +
@@ -2030,7 +2031,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 		output->blb_flags |= BLB_stream;
 	}
 
-	Firebird::HalfStaticArray<UCHAR, 2048> buffer;
+	HalfStaticArray<UCHAR, 2048> buffer;
 	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
 
 	while (true) {
@@ -2102,7 +2103,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
-	Firebird::Array<UCHAR> data(dbb->dbb_page_size);
+	Array<UCHAR> data(dbb->dbb_page_size);
 	UCHAR* buffer = data.begin();
 
 	for (; ptr < end; ptr++)
@@ -2460,7 +2461,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 		toCharSet != CS_NONE && toCharSet != CS_BINARY)
 	{
 		if (!INTL_charset_lookup(tdbb, toCharSet)->wellFormed(length, fromstr))
-			Firebird::status_exception::raise(isc_malformed_string, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_malformed_string));
 	}
 
 	UCharBuffer bpb;
@@ -2563,7 +2564,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
 
-	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) *
 		toCharSet->maxBytesPerChar());
 	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
@@ -2694,7 +2695,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			   to slice callback routines */
 			thread_db* tdbb = JRD_get_thread_data();
 
-			Firebird::HalfStaticArray<char, 1024> tmp_buffer;
+			HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;
 			const char* p;
 			const USHORT len = MOV_make_string(slice_desc,

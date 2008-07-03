@@ -147,9 +147,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		{
 			// ERROR !!!!
 			// Unknown datatype
-			status_exception::raise(
-				isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+			status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				Arg::Gds(isc_dsql_datatype_err));
 		}
 
 		// Initialize some values if this is the first time.
@@ -320,18 +319,13 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
 	if (firstarg) {
-		status_exception::raise(
-			isc_sqlerr, isc_arg_number, (SLONG) - 804,
-			isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) << Arg::Gds(isc_dsql_datatype_err));
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
 	}
 
 	if (err) {
-		status_exception::raise(
-			isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_dsql_datatypes_not_comparable,
-			isc_arg_string, "",
-			isc_arg_string, expressionName, isc_arg_end);
+		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
 		// "Datatypes %sare not comparable in expression %s"
 	}
 
@@ -431,11 +425,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// We couldn't do anything with this list, mostly because the
 	// datatypes aren't comparable.
 	// Let's try to give a usefull error message.
-	status_exception::raise(
-		isc_sqlerr, isc_arg_number, (SLONG) - 104,
-		isc_arg_gds, isc_dsql_datatypes_not_comparable,
-		isc_arg_string, "",
-		isc_arg_string, expressionName, isc_arg_end);
+	status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+		Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
 	// "Datatypes %sare not comparable in expression %s"
 }
 
