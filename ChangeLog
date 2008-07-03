@@ -1,3 +1,33 @@
+2008-07-03 14:01  alexpeshkoff
+
+	* firebird2/: src/common/StatusArg.cpp (1.1),
+	src/common/StatusArg.h (1.1), src/common/UtilSvc.cpp (1.6),
+	src/common/fb_exception.cpp (1.36), src/dsql/DdlNodes.epp (1.3),
+	src/dsql/errd.cpp (1.46), src/dsql/metd.epp (1.134),
+	src/include/fb_exception.h (1.28),
+	builds/posix/make.shared.variables (1.96), src/jrd/CharSet.cpp
+	(1.9), src/jrd/CsConvert.h (1.14), src/jrd/DataTypeUtil.cpp (1.16),
+	src/jrd/Database.h (1.25), src/jrd/DatabaseSnapshot.cpp (1.64),
+	src/jrd/SimilarToMatcher.h (1.13), src/jrd/SysFunction.cpp (1.52),
+	src/jrd/UserManagement.cpp (1.3), src/jrd/blb.cpp (1.171),
+	src/jrd/blob_filter.cpp (1.39), src/jrd/dyn.epp (1.129),
+	src/jrd/dyn_mod.epp (1.105), src/jrd/fun.epp (1.98),
+	src/jrd/isc_sync.cpp (1.144), src/jrd/jrd.cpp (1.469),
+	src/jrd/pwd.cpp (1.68), src/jrd/svc.cpp (1.229), src/jrd/why.cpp
+	(1.206), src/jrd/extds/ExtDS.cpp (1.15), src/jrd/os/posix/unix.cpp
+	(1.103), src/remote/interface.cpp (1.193), src/remote/remote.h
+	(1.79), src/utilities/fbsvcmgr.cpp (1.8):
+
+	CORE-1964 - stop vararg mess when reporting errors. Use special
+	class for it. More (ERR_post cleanup) to come.
+
+2008-07-03 09:12  robocop
+
+	* firebird2/src/dsql/: dsql.h (1.136), gen.cpp (1.163), pass1.cpp
+	(1.399):
+
+	Misc.
+
 2008-07-02 15:02  roman-simakov
 
 	* firebird2/src/jrd/validation.cpp (1.40):
