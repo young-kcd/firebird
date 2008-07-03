@@ -353,7 +353,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 
 	DEV_BLKCHK(relation_name, dsql_type_str);
 
-	dsql_nod* cte = NULL;
+	const dsql_nod* cte = NULL;
 	if (relation_node->nod_type == nod_derived_table) {
 		// No processing needed here for derived tables.
 	}
@@ -724,8 +724,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_field_name:
 		if (statement->isPsql())
 			return pass1_variable(statement, input);
-		else
-			return pass1_field(statement, input, false, NULL);
+		return pass1_field(statement, input, false, NULL);
 
 	case nod_field:
 		// AB: nod_field is an already passed node.
@@ -930,7 +929,8 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 							  isc_arg_gds, isc_dsql_subselect_err, isc_arg_end);
 				}
 
-				if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON) {
+				if (sub2->nod_flags & NOD_SELECT_EXPR_SINGLETON)
+				{
 					const DsqlContextStack::iterator base(*statement->req_context);
 					node = MAKE_node(input->nod_type, 2);
 					node->nod_arg[0] = pass1_node_psql(statement, input->nod_arg[0], false);
@@ -952,36 +952,35 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 
 					return node;
 				}
-				else {
-					switch (input->nod_type)
-					{
-					case nod_equiv:
-					case nod_eql:
-					case nod_neq:
-					case nod_gtr:
-					case nod_geq:
-					case nod_lss:
-					case nod_leq:
-						return pass1_any(statement, input, nod_any);
 
-					case nod_eql_any:
-					case nod_neq_any:
-					case nod_gtr_any:
-					case nod_geq_any:
-					case nod_lss_any:
-					case nod_leq_any:
-						return pass1_any(statement, input, nod_ansi_any);
+				switch (input->nod_type)
+				{
+				case nod_equiv:
+				case nod_eql:
+				case nod_neq:
+				case nod_gtr:
+				case nod_geq:
+				case nod_lss:
+				case nod_leq:
+					return pass1_any(statement, input, nod_any);
 
-					case nod_eql_all:
-					case nod_neq_all:
-					case nod_gtr_all:
-					case nod_geq_all:
-					case nod_lss_all:
-					case nod_leq_all:
-						return pass1_any(statement, input, nod_ansi_all);
-					default:	// make compiler happy
-						break;
-					}
+				case nod_eql_any:
+				case nod_neq_any:
+				case nod_gtr_any:
+				case nod_geq_any:
+				case nod_lss_any:
+				case nod_leq_any:
+					return pass1_any(statement, input, nod_ansi_any);
+
+				case nod_eql_all:
+				case nod_neq_all:
+				case nod_gtr_all:
+				case nod_geq_all:
+				case nod_lss_all:
+				case nod_leq_all:
+					return pass1_any(statement, input, nod_ansi_all);
+				default:	// make compiler happy
+					break;
 				}
 			}
 		}
@@ -1085,7 +1084,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_current_time:
 	case nod_current_timestamp:
 		{
-			dsql_nod* const_node = input->nod_arg[0];
+			const dsql_nod* const_node = input->nod_arg[0];
 			if (const_node) {
 				fb_assert(const_node->nod_type == nod_constant);
 				const int precision = const_node->getSlong();
@@ -1486,7 +1485,7 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 
 			// handle input parameters
 
-			USHORT count = input->nod_arg[e_exe_inputs] ?
+			const USHORT count = input->nod_arg[e_exe_inputs] ?
 				input->nod_arg[e_exe_inputs]->nod_count : 0;
 			if (count > procedure->prc_in_count ||
 				count < procedure->prc_in_count - procedure->prc_def_count)
@@ -1517,8 +1516,8 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			dsql_nod* temp = input->nod_arg[e_exe_outputs];
 			if (statement->isPsql())
 			{
-				count = temp ? temp->nod_count : 0;
-				if (count != procedure->prc_out_count)
+				const USHORT ocount = temp ? temp->nod_count : 0;
+				if (ocount != procedure->prc_out_count)
 				{
 					ERRD_post(isc_prc_out_param_mismatch,
 							  isc_arg_string, name->str_data, isc_arg_end);
@@ -1776,14 +1775,15 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 			if (prm[0]->nod_arg[e_named_param_name]) {
 				for (int i = 0; i < cnt; i++)
 				{
-					dsql_str* name = (dsql_str*) prm[i]->nod_arg[e_named_param_name];
-
-					if (names.exist(name->str_data)) {
+					const dsql_str* name = (dsql_str*) prm[i]->nod_arg[e_named_param_name];
+					
+					size_t pos;
+					if (names.find(name->str_data, pos)) {
 						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
 								  isc_arg_gds, isc_dsql_duplicate_spec,
 								  isc_arg_string, name->str_data, isc_arg_end);
 					}
-					names.add(name->str_data);
+					names.insert(pos, name->str_data);
 				}
 			}
 		}
@@ -2568,7 +2568,7 @@ static void check_unique_fields_names(StrArray& names, const dsql_nod* fields)
 
 		size_t pos;
 		if (!names.find(name, pos))
-			names.add(name);
+			names.insert(pos, name);
 		else {
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
 					  isc_arg_gds, isc_dsql_duplicate_spec,
@@ -6531,7 +6531,8 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 				dsql_str* fldName = reinterpret_cast<dsql_str*>(field->nod_arg[e_fln_name]);
 
 				// verify if the column was already used
-				if (usedColumns.exist(fldName->str_data))
+				size_t pos;
+				if (usedColumns.find(fldName->str_data, pos))
 				{
 					ERRD_post(
 						isc_sqlerr, isc_arg_number, (SLONG) -104,
@@ -6540,7 +6541,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 						isc_arg_end);
 				}
 				else
-					usedColumns.add(fldName->str_data);
+					usedColumns.insert(pos, fldName->str_data);
 
 				dsql_ctx* leftCtx = NULL;
 				dsql_ctx* rightCtx = NULL;
@@ -6690,18 +6691,18 @@ static dsql_nod* pass1_label(CompiledStatement* statement, dsql_nod* input)
 
 	// look for a label, if specified
 
-	dsql_str* string = NULL;
+	const dsql_str* string = NULL;
 	USHORT position = 0;
 
 	if (label) {
 		fb_assert(label->nod_type == nod_label);
 		string = (dsql_str*) label->nod_arg[e_label_name];
-		const TEXT* label_string = (TEXT*) string->str_data;
+		const TEXT* label_string = string->str_data;
 		int index = statement->req_loop_level;
 		for (DsqlStrStack::iterator stack(statement->req_labels); stack.hasData(); ++stack) {
 			const dsql_str* obj = stack.object();
 			if (obj) {
-				const TEXT* obj_string = (TEXT*) obj->str_data;
+				const TEXT* obj_string = obj->str_data;
 				if (!strcmp(label_string, obj_string)) {
 					position = index;
 					break;
@@ -6783,7 +6784,7 @@ static dsql_nod* pass1_lookup_alias(CompiledStatement* statement, const dsql_str
 		switch (node->nod_type) {
 			case nod_alias:
 				{
-					dsql_str* alias = (dsql_str*) node->nod_arg[e_alias_alias];
+					const dsql_str* alias = (dsql_str*) node->nod_arg[e_alias_alias];
 					if (!strcmp(alias->str_data, name->str_data)) {
 						matchingNode = node;
 					}
@@ -6792,7 +6793,7 @@ static dsql_nod* pass1_lookup_alias(CompiledStatement* statement, const dsql_str
 
 			case nod_field:
 				{
-					dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
+					const dsql_fld* field = (dsql_fld*) node->nod_arg[e_fld_field];
 					if (field->fld_name == name->str_data)
 						matchingNode = node;
 				}
@@ -6800,7 +6801,7 @@ static dsql_nod* pass1_lookup_alias(CompiledStatement* statement, const dsql_str
 
 			case nod_derived_field:
 				{
-					dsql_str* alias = (dsql_str*) node->nod_arg[e_derived_field_name];
+					const dsql_str* alias = (dsql_str*) node->nod_arg[e_derived_field_name];
 					if (!strcmp(alias->str_data, name->str_data)) {
 						matchingNode = node;
 					}
@@ -6869,10 +6870,7 @@ static dsql_nod* pass1_lookup_alias(CompiledStatement* statement, const dsql_str
 		}
 	}
 
-	if (returnNode) {
-		return returnNode;
-	}
-	return NULL;
+	return returnNode;
 }
 
 /**
@@ -7294,7 +7292,8 @@ static dsql_nod* pass1_not(CompiledStatement* statement,
 		node->nod_arg[0] = PASS1_node(statement, sub);
 		return node;
 	}
-	else if (is_between) {
+	
+	if (is_between) {
 		// handle the special BETWEEN case
 		fb_assert(node_type == nod_or);
 		node = MAKE_node(node_type, 2);
@@ -9180,8 +9179,8 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 		{
 			// ASF: We have the RSE context in the stack.
 			// Then we change his name to "OLD".
-			TEXT* save_alias = old_context->ctx_alias;
-			TEXT* save_internal_alias = old_context->ctx_internal_alias;
+			TEXT* const save_alias = old_context->ctx_alias;
+			TEXT* const save_internal_alias = old_context->ctx_internal_alias;
 			const USHORT save_flags = old_context->ctx_flags;
 
 			old_context->ctx_alias = old_context->ctx_internal_alias =
@@ -9281,9 +9280,9 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	if (!statement->isPsql())
 		statement->req_flags |= REQ_dsql_upd_or_ins;
 
-	dsql_str* relation_name =
+	const dsql_str* relation_name =
 		(dsql_str*) input->nod_arg[e_upi_relation]->nod_arg[e_rpn_name];
-	dsql_str* base_name = relation_name;
+	const dsql_str* base_name = relation_name;
 
 	dsql_nod* values = input->nod_arg[e_upi_values];
 
@@ -9334,7 +9333,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 		statement->req_context->push(context);
 		statement->req_scope_level++;
 
-		dsql_nod* matching_fields = pass1_node_psql(statement, matching, false);
+		const dsql_nod* matching_fields = pass1_node_psql(statement, matching, false);
 
 		statement->req_scope_level--;
 		statement->req_context->pop();
@@ -9777,7 +9776,8 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 				if (lscope_level == context->ctx_scope_level) {
 					return post_map(field, context);
 				}
-				else if (context->ctx_scope_level < lscope_level) {
+
+				if (context->ctx_scope_level < lscope_level) {
 					field->nod_arg[e_derived_field_value] = 
 						remap_field(statement, field->nod_arg[e_derived_field_value], 
 							context, current_level);
@@ -9798,7 +9798,7 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 
 		case nod_map:
 			{
-				dsql_ctx* lcontext =
+				const dsql_ctx* lcontext =
 					reinterpret_cast<dsql_ctx*>(field->nod_arg[e_map_context]);
 				if (lcontext->ctx_scope_level != context->ctx_scope_level) {
 					dsql_map* lmap = reinterpret_cast<dsql_map*>(field->nod_arg[e_map_map]);
@@ -9819,20 +9819,12 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			{
 				USHORT ldeepest_level = statement->req_scope_level;
 				USHORT lcurrent_level = current_level;
-				if (aggregate_found2(statement, field, &lcurrent_level, &ldeepest_level, false)) {
+				if (aggregate_found2(statement, field, &lcurrent_level, &ldeepest_level, false))
+				{
 					if (statement->req_scope_level == ldeepest_level) {
 						return post_map(field, context);
 					}
-					else {
-						if (field->nod_count) {
-							field->nod_arg[e_agg_function_expression] =
-								 remap_field(statement, field->nod_arg[e_agg_function_expression],
-								 context, current_level);
-						}
-						return field;
-					}
-				}
-				else {
+
 					if (field->nod_count) {
 						field->nod_arg[e_agg_function_expression] =
 							 remap_field(statement, field->nod_arg[e_agg_function_expression],
@@ -9840,6 +9832,13 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 					}
 					return field;
 				}
+
+				if (field->nod_count) {
+					field->nod_arg[e_agg_function_expression] =
+						 remap_field(statement, field->nod_arg[e_agg_function_expression],
+						 context, current_level);
+				}
+				return field;
 			}
 
 		case nod_via:
@@ -10220,7 +10219,8 @@ static dsql_nod* resolve_using_field(CompiledStatement* statement, dsql_str* nam
     @param force_varchar
 
  **/
-static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node, dsql_nod* node, bool force_varchar)
+static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
+	dsql_nod* node, bool force_varchar)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* att = tdbb->getAttachment();
@@ -10263,8 +10263,8 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node, 
 
 						if (toCharSet != fromCharSet)
 						{
-							USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
-							USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
+							const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
+							const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
 
 							INTL_ASSIGN_TTYPE(&in_node->nod_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
 								(fromCharSet == toCharSet ? INTL_GET_COLLATE(&in_node->nod_desc) : 0)));

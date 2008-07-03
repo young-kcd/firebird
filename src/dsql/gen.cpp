@@ -474,13 +474,15 @@ void GEN_expr( CompiledStatement* statement, dsql_nod* node)
     case nod_searched_case: 
 		gen_searched_case(statement, node);
 		return;
+
 	case nod_average:
 	//case nod_count:
 	case nod_from:
 	case nod_max:
 	case nod_min:
 	case nod_total:
-		switch (node->nod_type) {
+		switch (node->nod_type)
+		{
 		case nod_average:
 			blr_operator = blr_average;
 			break;
@@ -558,14 +560,16 @@ void GEN_expr( CompiledStatement* statement, dsql_nod* node)
 		node->nod_type == nod_agg_average2) 
 	{
 		dsc desc;
-		const char* s = 0;
-		char message_buf[8];
-
 		MAKE_desc(statement, &desc, node, NULL);
+
 		if ((node->nod_flags & NOD_COMP_DIALECT) &&
 			(statement->req_client_dialect == SQL_DIALECT_V6_TRANSITION)) 
 		{
-			switch (node->nod_type) {
+			const char* s = 0;
+			char message_buf[8];
+
+			switch (node->nod_type)
+			{
 			case nod_add2:
 				s = "add";
 				break;
@@ -1240,42 +1244,42 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_cursor_close:
 	case nod_cursor_fetch:
 		{
-		// op-code
-		stuff(statement, blr_cursor_stmt);
-		if (node->nod_type == nod_cursor_open)
-			stuff(statement, blr_cursor_open);
-		else if (node->nod_type == nod_cursor_close)
-			stuff(statement, blr_cursor_close);
-		else
-			stuff(statement, blr_cursor_fetch);
-		// cursor reference
-		dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
-		stuff_word(statement, (int) (IPTR) cursor->nod_arg[e_cur_number]);
-		// preliminary navigation
-		dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
-		if (seek) {
-			stuff(statement, blr_seek);
-			GEN_expr(statement, seek->nod_arg[0]);
-			GEN_expr(statement, seek->nod_arg[1]);
-		}
-		// assignment
-		dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
-		if (list_into) {
-			dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
-			if (list->nod_count != list_into->nod_count)
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-						  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
-			stuff(statement, blr_begin);
-			ptr = list->nod_arg;
-			end = ptr + list->nod_count;
-			dsql_nod** ptr_to = list_into->nod_arg;
-			while (ptr < end) {
-				stuff(statement, blr_assignment);
-				GEN_expr(statement, *ptr++);
-				GEN_expr(statement, *ptr_to++);
+			// op-code
+			stuff(statement, blr_cursor_stmt);
+			if (node->nod_type == nod_cursor_open)
+				stuff(statement, blr_cursor_open);
+			else if (node->nod_type == nod_cursor_close)
+				stuff(statement, blr_cursor_close);
+			else
+				stuff(statement, blr_cursor_fetch);
+			// cursor reference
+			dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
+			stuff_word(statement, (int) (IPTR) cursor->nod_arg[e_cur_number]);
+			// preliminary navigation
+			const dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
+			if (seek) {
+				stuff(statement, blr_seek);
+				GEN_expr(statement, seek->nod_arg[0]);
+				GEN_expr(statement, seek->nod_arg[1]);
 			}
-			stuff(statement, blr_end);
-		}
+			// assignment
+			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
+			if (list_into) {
+				dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
+				if (list->nod_count != list_into->nod_count)
+					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
+							  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
+				stuff(statement, blr_begin);
+				ptr = list->nod_arg;
+				end = ptr + list->nod_count;
+				dsql_nod** ptr_to = list_into->nod_arg;
+				while (ptr < end) {
+					stuff(statement, blr_assignment);
+					GEN_expr(statement, *ptr++);
+					GEN_expr(statement, *ptr_to++);
+				}
+				stuff(statement, blr_end);
+			}
 		}
 		return;
 
