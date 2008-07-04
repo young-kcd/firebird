@@ -417,7 +417,7 @@ protected:
 
 	// To avoid posix warning about missing public destructor declare 
 	// MemoryPool as friend class. In fact IT releases request memory!
-	friend class MemoryPool;
+	friend class Firebird::MemoryPool;
 };
 
 
