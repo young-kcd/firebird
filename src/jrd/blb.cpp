@@ -1360,7 +1360,11 @@ blb* BLB_open2(thread_db* tdbb,
 		if (blob->blb_flags & BLB_damaged) {
 			if (!(dbb->dbb_flags & DBB_damaged))
 				IBERROR(194);	// msg 194 blob not found
+
 			blob->blb_flags |= BLB_eof;
+			blob->blb_count = 0;
+			blob->blb_max_segment = 0;
+			blob->blb_length = 0;
 			return blob;
 		}
 
