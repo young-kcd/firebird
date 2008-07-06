@@ -411,7 +411,8 @@ void SecurityDatabase::verifyUser(string& name,
 	static AmCache useNative = AM_UNKNOWN;
 	if (useNative == AM_UNKNOWN)
 	{
-		PathName authMethod(Config::getAuthMethod());
+		// We use PathName for case-insensitive string comparison
+		const PathName authMethod(Config::getAuthMethod());
 		useNative = (authMethod == AmNative || authMethod == AmMixed) ? 
 			AM_ENABLED : AM_DISABLED;
 	}

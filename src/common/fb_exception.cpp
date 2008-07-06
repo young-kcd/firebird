@@ -185,6 +185,8 @@ status_exception::~status_exception() throw()
 	release_vector();
 }
 
+/********************************* fatal_exception *******************************/
+
 void fatal_exception::raiseFmt(const char* format, ...) 
 {
 	va_list args;
