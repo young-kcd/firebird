@@ -4587,12 +4587,12 @@ static void add_working_directory(ClumpletWriter& dpb,
 }
 
 
-static rem_port* analyze(PathName&	file_name,
-					ISC_STATUS*					status_vector,
-					const TEXT*					user_string,
-					bool						uv_flag,
-					ClumpletReader&	dpb,
-					PathName&			node_name)
+static rem_port* analyze(PathName& file_name,
+						 ISC_STATUS* status_vector,
+						 const TEXT* user_string,
+						 bool uv_flag,
+						 ClumpletReader& dpb,
+						 PathName& node_name)
 {
 /**************************************
  *
@@ -4726,10 +4726,10 @@ static rem_port* analyze(PathName&	file_name,
 
 
 static rem_port* analyze_service(PathName& service_name,
-							ISC_STATUS* status_vector,
-							const TEXT* user_string,
-							bool uv_flag,
-							ClumpletReader& spb)
+								 ISC_STATUS* status_vector,
+								 const TEXT* user_string,
+								 bool uv_flag,
+								 ClumpletReader& spb)
 {
 /**************************************
  *

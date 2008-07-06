@@ -121,18 +121,18 @@ namespace {
 
 	// Option block for service parameter block
 	struct Options {
-		string	spb_sys_user_name;
-		string	spb_user_name;
-		string	spb_password;
-		string	spb_password_enc;
-		string	spb_command_line;
-		string	spb_network_protocol;
-		string    spb_remote_address;
-		string	spb_trusted_login;
-		string	spb_address_path;
-		USHORT				spb_version;
-		bool				spb_trusted_role;
-		bool				spb_remote;
+		string spb_sys_user_name;
+		string spb_user_name;
+		string spb_password;
+		string spb_password_enc;
+		string spb_command_line;
+		string spb_network_protocol;
+		string spb_remote_address;
+		string spb_trusted_login;
+		string spb_address_path;
+		USHORT spb_version;
+		bool spb_trusted_role;
+		bool spb_remote;
 
 		// Parse service parameter block picking up options and things.
 		Options(ClumpletReader& spb) : 
@@ -642,8 +642,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 
 		if (options.spb_user_name.length() > USERNAME_LENGTH) {
-			status_exception::raise(Arg::Gds(isc_long_login) 
-				<< Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
+			status_exception::raise(Arg::Gds(isc_long_login) <<
+				Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
 		}
 
 		// Check that the validated user has the authority to access this service
@@ -2004,8 +2004,7 @@ const TEXT* Service::find_switch(int in_spb_sw, const in_sw_tab_t* table)
 }
 
 
-bool Service::process_switches(ClumpletReader&	spb,
-							   string&			switches)
+bool Service::process_switches(ClumpletReader& spb, string& switches)
 {
 	if (spb.getBufferLength() == 0)
 		return false;
