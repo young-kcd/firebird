@@ -1076,7 +1076,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 						 ERR_string(file_name), isc_arg_end);
 			}
 			else {
-				ERR_post(isc_att_shutdown));
+				ERR_post(isc_att_shutdown);
 			}
 		}
 		if (!attachment_succeeded) {
