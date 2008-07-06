@@ -41,6 +41,7 @@ class Base
 {
 public:
 	ISC_STATUS kind, value;
+
 protected:
 	Base(ISC_STATUS k, ISC_STATUS v) throw() : kind(k), value(v) { }
 };

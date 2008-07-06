@@ -38,6 +38,7 @@ namespace Firebird {
 
 namespace Arg {
 
+
 void StatusVector::clear() throw()
 {
 	m_length = 0;
@@ -100,6 +101,7 @@ SqlState::SqlState(const char* text) throw() :
 
 SqlState::SqlState(const AbstractString& text) throw() : 
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text.c_str()) { }
+
 
 } // namespace Arg
 

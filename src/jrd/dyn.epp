@@ -283,8 +283,7 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-void DYN_error_punt(bool	status_flag,
-					USHORT	number)
+void DYN_error_punt(bool status_flag, USHORT number)
 {
 /**************************************
  *
@@ -303,10 +302,10 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-bool DYN_is_it_sql_role(Global*						gbl,
+bool DYN_is_it_sql_role(Global* gbl,
 						const MetaName&	input_name,
-						MetaName&			output_name,
-						thread_db*					tdbb)
+						MetaName& output_name,
+						thread_db* tdbb)
 {
 /**************************************
  *
@@ -1418,12 +1417,12 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-static bool grantor_can_grant(Global*					gbl,
-							  const TEXT*				grantor,
-							  const TEXT*				privilege,
-							  const MetaName&	relation_name,
-							  const MetaName&	field_name,
-							  bool						top_level)
+static bool grantor_can_grant(Global* gbl,
+							  const TEXT* grantor,
+							  const TEXT* privilege,
+							  const MetaName& relation_name,
+							  const MetaName& field_name,
+							  bool top_level)
 {
 /**************************************
  *
@@ -1693,10 +1692,10 @@ static bool grantor_can_grant(Global*					gbl,
 }
 
 
-static bool grantor_can_grant_role(	thread_db*	tdbb,
-									Global*		gbl,
-									const MetaName& grantor,
-									const MetaName& role_name)
+static bool grantor_can_grant_role(thread_db* tdbb,
+								   Global* gbl,
+								   const MetaName& grantor,
+								   const MetaName& role_name)
 {
 /**************************************
  *
@@ -2092,9 +2091,9 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(Global*					gbl, 
-								 const MetaName&	relation, 
-								 const MetaName&	field)
+static void set_field_class_name(Global* gbl, 
+								 const MetaName& relation, 
+								 const MetaName& field)
 {
 /**************************************
  *
@@ -2151,14 +2150,14 @@ static void set_field_class_name(Global*					gbl,
 }
 
 
-static void store_privilege(Global*						gbl,
+static void store_privilege(Global* gbl,
 							const MetaName&	object,
 							const MetaName&	user,
 							const MetaName&	field,
-							const TEXT*					privilege,
-							SSHORT						user_type,
-							SSHORT						obj_type,
-							int							option,
+							const TEXT* privilege,
+							SSHORT user_type,
+							SSHORT obj_type,
+							int option,
 							const MetaName&	grantor)
 {
 /**************************************
@@ -2274,8 +2273,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			case isc_dyn_user_passwd:
 				if (text.isEmpty())
 				{
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)));
 					// 249: Password should not be empty string
+					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)));
 				}
 				text.copyTo(userData.password, sizeof(userData.password));
 				userData.password_entered = true;

@@ -405,9 +405,9 @@ public:
 	bool	dpb_trusted_role;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
-// here begin compound objects
-// for constructor to work properly dpb_sys_user_name 
-// MUST be FIRST
+	// here begin compound objects
+	// for constructor to work properly dpb_sys_user_name 
+	// MUST be FIRST
 	string	dpb_sys_user_name;
 	string	dpb_user_name;
 	string	dpb_password;
@@ -689,9 +689,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	PathName file_name =
-		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
-
+	PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
 	PathName expanded_name;
 
 	// Resolve given alias name
@@ -989,8 +987,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					// remove the delimited quotes and escape quote
 					// from ROLE name
 					userId.usr_sql_role_name.erase(0, 1);
-					for (string::iterator p = 
-								userId.usr_sql_role_name.begin(); 
+					for (string::iterator p = userId.usr_sql_role_name.begin(); 
 						 p < userId.usr_sql_role_name.end(); ++p)
 					{
 						if (*p == end_quote)
@@ -1670,9 +1667,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	PathName file_name =
-		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
-
+	PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
 	PathName expanded_name;
 
 	// Resolve given alias name
@@ -5656,18 +5651,18 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
 {
 	// Check for security2.fdb
-	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
-	static GlobalPtr<PathName> ExpandedSecurityNameBuffer;
+	static TEXT securityNameBuffer[MAXPATHLEN] = "";
+	static GlobalPtr<PathName> expandedSecurityNameBuffer;
 	static GlobalPtr<Mutex> mutex;
 
 	MutexLockGuard guard(mutex);
 
-	if (! SecurityNameBuffer[0]) {
-		SecurityDatabase::getPath(SecurityNameBuffer);
-		ExpandedSecurityNameBuffer->assign(SecurityNameBuffer);
-		ISC_expand_filename(ExpandedSecurityNameBuffer, false);
+	if (! securityNameBuffer[0]) {
+		SecurityDatabase::getPath(securityNameBuffer);
+		expandedSecurityNameBuffer->assign(securityNameBuffer);
+		ISC_expand_filename(expandedSecurityNameBuffer, false);
 	}
-	if (name == SecurityNameBuffer || name == ExpandedSecurityNameBuffer)
+	if (name == securityNameBuffer || name == expandedSecurityNameBuffer)
 		return vdnSecurity;
 
 	// Check for .conf

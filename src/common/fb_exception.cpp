@@ -39,7 +39,7 @@ ISC_STATUS dupStringTemp(const char* s)
 	return (ISC_STATUS)(IPTR)(string);
 }
 
-void fill_status(ISC_STATUS *ptr, const ISC_STATUS *orig_status)
+void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
 {
 	// Move in status and clone transient strings
 	while (true) 

@@ -1253,8 +1253,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_local_field(
-							Global* gbl,
+void DYN_modify_local_field(Global* gbl,
 							const UCHAR** ptr,
 							const MetaName* relation_name)
 {
@@ -2546,9 +2545,9 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 }
 
 
-static void modify_lfield_index(thread_db*	tdbb,
-								Database*	dbb,
-								Global*		gbl,
+static void modify_lfield_index(thread_db* tdbb,
+								Database* dbb,
+								Global* gbl,
 								const MetaName&	relation_name,
 								const MetaName&	field_name,
 								const MetaName&	new_fld_name)
@@ -2587,11 +2586,11 @@ static void modify_lfield_index(thread_db*	tdbb,
 }
 
 
-static bool field_exists(thread_db*					tdbb,
-						 Database*					dbb,
-						 Global*					gbl,
-						 const MetaName&	relation_name,
-						 const MetaName&	field_name)
+static bool field_exists(thread_db* tdbb,
+						 Database* dbb,
+						 Global* gbl,
+						 const MetaName& relation_name,
+						 const MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2616,10 +2615,10 @@ static bool field_exists(thread_db*					tdbb,
 }
 
 
-static bool domain_exists(thread_db*				tdbb, 
-						  Database*					dbb, 
-						  Global*					gbl, 
-						  const MetaName&	field_name)
+static bool domain_exists(thread_db* tdbb, 
+						  Database* dbb, 
+						  Global* gbl, 
+						  const MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2642,9 +2641,9 @@ static bool domain_exists(thread_db*				tdbb,
 }
 
 
-void DYN_modify_sql_field(Global*					gbl,
-						  const UCHAR**				ptr,
-						  const MetaName*	relation_name)
+void DYN_modify_sql_field(Global* gbl,
+						  const UCHAR** ptr,
+						  const MetaName* relation_name)
 {
 /**************************************
  *

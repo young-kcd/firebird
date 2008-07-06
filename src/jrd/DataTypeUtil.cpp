@@ -319,14 +319,14 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
 	if (firstarg) {
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) << Arg::Gds(isc_dsql_datatype_err));
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
+		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) << Arg::Gds(isc_dsql_datatype_err));
 	}
 
 	if (err) {
+		// "Datatypes %sare not comparable in expression %s"
 		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 			Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
-		// "Datatypes %sare not comparable in expression %s"
 	}
 
 	// If all the datatypes we've seen are exactly the same, we're done
@@ -425,9 +425,9 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// We couldn't do anything with this list, mostly because the
 	// datatypes aren't comparable.
 	// Let's try to give a usefull error message.
+	// "Datatypes %sare not comparable in expression %s"
 	status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 		Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
-	// "Datatypes %sare not comparable in expression %s"
 }
 
 

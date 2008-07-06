@@ -112,7 +112,7 @@ const bool USE_VALUE    = false;
     @param node
 
  **/
-void GEN_expr( CompiledStatement* statement, dsql_nod* node)
+void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 {
 	UCHAR blr_operator;
 	const dsql_ctx* context;
@@ -1267,8 +1267,10 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 			if (list_into) {
 				dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
 				if (list->nod_count != list_into->nod_count)
+				{
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
 							  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
+				}
 				stuff(statement, blr_begin);
 				ptr = list->nod_arg;
 				end = ptr + list->nod_count;
@@ -1903,7 +1905,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		stuff(statement, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
 	}
 
-// Generate FOR loop 
+	// Generate FOR loop 
 
 	stuff(statement, blr_for);
 

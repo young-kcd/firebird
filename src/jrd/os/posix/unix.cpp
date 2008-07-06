@@ -1121,7 +1121,7 @@ static SLONG pwrite(int fd, SCHAR * buf, SLONG nbytes, SLONG offset)
 
 
 #ifdef SUPPORT_RAW_DEVICES
-int PIO_unlink (const PathName& file_name)
+int PIO_unlink(const PathName& file_name)
 {
 /**************************************
  *
@@ -1141,8 +1141,7 @@ int PIO_unlink (const PathName& file_name)
 }
 
 
-bool PIO_on_raw_device (
-	const PathName& file_name)
+bool PIO_on_raw_device(const PathName& file_name)
 {
 /**************************************
  *
@@ -1161,9 +1160,7 @@ bool PIO_on_raw_device (
 }
 
 
-static bool raw_devices_validate_database (
-	int desc,
-	const PathName& file_name)
+static bool raw_devices_validate_database(int desc, const PathName& file_name)
 {
 /**************************************
  *
@@ -1247,8 +1244,7 @@ static bool raw_devices_validate_database (
 }
 
 
-static int raw_devices_unlink_database (
-	const PathName& file_name)
+static int raw_devices_unlink_database(const PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
 	int desc = -1, i;
