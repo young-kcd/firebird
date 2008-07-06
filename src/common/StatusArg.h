@@ -73,53 +73,53 @@ private:
 class Gds : public StatusVector
 {
 public:
-	Gds(ISC_STATUS s) throw();
+	explicit Gds(ISC_STATUS s) throw();
 };
 
 class Str : public Base
 {
 public:
-	Str(const char* text) throw();
-	Str(const AbstractString& text) throw();
-	Str(const MetaName& text) throw();
+	explicit Str(const char* text) throw();
+	explicit Str(const AbstractString& text) throw();
+	explicit Str(const MetaName& text) throw();
 };
 
 class Num : public Base
 {
 public:
-	Num(ISC_STATUS s) throw();
+	explicit Num(ISC_STATUS s) throw();
 };
 
 class Interpreted : public StatusVector
 {
 public:
-	Interpreted(const char* text) throw();
-	Interpreted(const AbstractString& text) throw();
+	explicit Interpreted(const char* text) throw();
+	explicit Interpreted(const AbstractString& text) throw();
 };
 
 class Unix : public Base
 {
 public:
-	Unix(ISC_STATUS s) throw();
+	explicit Unix(ISC_STATUS s) throw();
 };
 
 class Windows : public Base
 {
 public:
-	Windows(ISC_STATUS s) throw();
+	explicit Windows(ISC_STATUS s) throw();
 };
 
 class Warning : public StatusVector
 {
 public:
-	Warning(ISC_STATUS s) throw();
+	explicit Warning(ISC_STATUS s) throw();
 };
 
 class SqlState : public Base
 {
 public:
-	SqlState(const char* text) throw();
-	SqlState(const AbstractString& text) throw();
+	explicit SqlState(const char* text) throw();
+	explicit SqlState(const AbstractString& text) throw();
 };
 
 } // namespace Arg

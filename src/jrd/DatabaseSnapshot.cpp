@@ -117,13 +117,13 @@ void DatabaseSnapshot::SharedMemory::acquire()
 #if (defined HAVE_MMAP || defined WIN_NT)
 		const size_t newSize = base->allocated;
 		ISC_STATUS_ARRAY statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, FALSE);
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, false);
 		if (!base)
 		{
 			Firebird::status_exception::raise(statusVector);
 		}
 #else
-		Firebird::status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Monitoring table space exhausted"));
+		Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
 	}
 }
@@ -279,14 +279,14 @@ void DatabaseSnapshot::SharedMemory::extend()
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 	ISC_STATUS_ARRAY statusVector;
-	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, TRUE);
+	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
 	if (!base)
 	{
 		Firebird::status_exception::raise(statusVector);
 	}
 	base->allocated = handle.sh_mem_length_mapped;
 #else
-	Firebird::status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Monitoring table space exhausted"));
+	Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
 }
 

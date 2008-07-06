@@ -632,6 +632,7 @@ static const struct {
 	{"eds_output_prm_mismatch", 335544928},
 	{"eds_input_prm_not_set", 335544929},
 	{"too_big_blr", 335544930},
+	{"montabexh", 335544931},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

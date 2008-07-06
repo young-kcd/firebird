@@ -13,7 +13,7 @@ set bulk_insert INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_
 ('bad_tpb_content', NULL, NULL, NULL, 0, 10, NULL, 'invalid parameter in transaction parameter block', NULL, NULL);
 ('bad_tpb_form', NULL, NULL, NULL, 0, 11, NULL, 'invalid format for transaction parameter block', NULL, NULL);
 ('bad_trans_handle', NULL, NULL, NULL, 0, 12, NULL, 'invalid transaction handle (expecting explicit transaction start)', NULL, NULL);
-('bug_check', NULL, NULL, NULL, 0, 13, NULL, 'internal gds software consistency check (@1)', NULL, NULL);
+('bug_check', NULL, NULL, NULL, 0, 13, NULL, 'internal Firebird consistency check (@1)', NULL, NULL);
 ('convert_error', NULL, NULL, 'The "@1" in this message does not refer to the preceding word "string".
 It calls up the message "Do you want to rollback your updates? "
 To test the placement of the string run the following commands in QLI:
@@ -709,7 +709,8 @@ COMMIT WORK;
 ('eds_input_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 607, NULL, 'Input parameters mismatch', NULL, NULL)
 ('eds_output_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 608, NULL, 'Output parameters mismatch', NULL, NULL)
 ('eds_input_prm_not_set', NULL, 'ExtDS.cpp', NULL, 0, 609, NULL, 'Input parameter ''@1'' have no value set', NULL, NULL)
-('too_big_blr', NULL, NULL, NULL, 0, 610, NULL, 'BLR stream length @1 exceeds implementation limit @2', NULL, NULL);
+('too_big_blr', 'end_blr', 'ddl.cpp', NULL, 0, 610, NULL, 'BLR stream length @1 exceeds implementation limit @2', NULL, NULL)
+('montabexh', 'acquire', 'DatabaseSnapshot.cpp', NULL, 0, 611, NULL, 'Monitoring table space exhausted', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

@@ -72,10 +72,10 @@ Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
 
 Interpreted::Interpreted(const char* text) throw() : 
-	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) (text)) { }
+	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) text) { }
 
 Interpreted::Interpreted(const AbstractString& text) throw() : 
-	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) (text.c_str())) { }
+	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) text.c_str()) { }
 
 Unix::Unix(ISC_STATUS s) throw() : 
 	Base(isc_arg_unix, s) { }
@@ -87,19 +87,19 @@ Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
 Str::Str(const char* text) throw() : 
-	Base(isc_arg_string, (ISC_STATUS)(IPTR) (text)) { }
+	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
 Str::Str(const AbstractString& text) throw() : 
-	Base(isc_arg_string, (ISC_STATUS)(IPTR) (text.c_str())) { }
+	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
 
 Str::Str(const MetaName& text) throw() : 
-	Base(isc_arg_string, (ISC_STATUS)(IPTR) (text.c_str())) { }
+	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
 
 SqlState::SqlState(const char* text) throw() : 
-	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) (text)) { }
+	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text) { }
 
 SqlState::SqlState(const AbstractString& text) throw() : 
-	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) (text.c_str())) { }
+	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text.c_str()) { }
 
 } // namespace Arg
 
