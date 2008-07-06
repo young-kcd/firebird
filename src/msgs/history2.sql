@@ -1195,6 +1195,8 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1190, 'dimitr', '2008-03-12 08:02:00', 17, 0, 'Statement failed, SQLCODE = @1', NULL, NULL, 'c_pg')
 (1191, 'dimitr', '2008-03-17 12:33:42', 8, 15, 'STORE RDB$INDICES failed', NULL, NULL, 'c_pg')
 (1192, 'cvc', '2008-07-06 06:06:47', 0, 13, 'internal gds software consistency check (@1)', NULL, NULL, 'c_pg')
+(1193, 'cvc', '2008-07-06 08:47:00', 0, 227, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL, 'c_pg')
+(1194, 'cvc', '2008-07-06 08:47:21', 13, 704, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;

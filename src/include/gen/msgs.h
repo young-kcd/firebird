@@ -248,7 +248,7 @@ static const struct {
 	{335544544, "Cannot rename column being used in an Integrity Constraint."},		/* 224, cnstrnt_fld_rename */
 	{335544545, "Cannot update constraints (RDB$RELATION_CONSTRAINTS)."},		/* 225, rel_cnstrnt_update */
 	{335544546, "Cannot define constraints on views"},		/* 226, constaint_on_view */
-	{335544547, "internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)"},		/* 227, invld_cnstrnt_type */
+	{335544547, "internal Firebird consistency check (invalid RDB$CONSTRAINT_TYPE)"},		/* 227, invld_cnstrnt_type */
 	{335544548, "Attempt to define a second PRIMARY KEY for the same table"},		/* 228, primary_key_exists */
 	{335544549, "cannot modify or erase a system trigger"},		/* 229, systrig_update */
 	{335544550, "only the owner of a table may reassign ownership"},		/* 230, not_rel_owner */
