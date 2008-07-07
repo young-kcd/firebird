@@ -52,7 +52,7 @@ public:
 	StatusVector(ISC_STATUS k, ISC_STATUS v) throw() : Base(k, v)
 	{ 
 		clear();
-		*this << *this;
+		operator<<(*(static_cast<Base*>(this)));
 	}
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
