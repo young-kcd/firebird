@@ -27,7 +27,7 @@
 # Contributor(s):
 # Paul Beach - Firebird 2.x 
 # 
-# $Id: Makefile.in,v 1.3.4.1 2007-08-30 09:26:50 paulbeach Exp $
+# $Id: Makefile.in,v 1.3.4.2 2008-07-07 10:56:01 paulbeach Exp $
 # 
 
 ROOT=..
@@ -41,9 +41,9 @@ include     $(ROOT)/gen/make.shared.variables
 
 
 PGK_FILES=pkginfo prototype preinstall postinstall postremove
-PKG_DIR=$(RealFirebirdPath)/../install
-PKG_NAME=Firebird@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-Solaris-@CPU_TYPE@.pkg
-LGCC_PKG_NAME=LibGCC-3.x.FB-runtime-@CPU_TYPE@.pkg
+PKG_DIR=$(RealFirebirdPath)/install
+PKG_NAME=Firebird@ARCH_TYPE_SUFFIX@-$(FirebirdVersion).$(BuildNum)-$(PackageVersion)-Solaris10-@CPU_TYPE@.pkg
+GCC_PKG_NAME=Firebird-libgcc-Solaris10-@CPU_TYPE@.pkg
 
 install package packages dist:
 	@echo Making Solaris @CPU_TYPE@ package...
@@ -52,13 +52,13 @@ install package packages dist:
 	(cd $(PKG_DIR); pkgmk -o  -d $(PKG_DIR))
 	pkgtrans -s $(PKG_DIR) $(PKG_DIR)/$(PKG_NAME) Firebird2
 libs:
-	@echo Making Solaris @CPU_TYPE@ LIBGCC package...
-	rm -rf $(PKG_DIR)/FBLIBGCC
+	@echo Making Solaris @CPU_TYPE@ libgcc package...
+	rm -rf $(PKG_DIR)/libgcc
 	-mkdir -p $(PKG_DIR)
 	(cd $(PKG_DIR); pkgmk -o -f prototypelg -d $(PKG_DIR))
-	pkgtrans -s $(PKG_DIR) $(PKG_DIR)/$(LGCC_PKG_NAME) FBLIBGCC
+	pkgtrans -s $(PKG_DIR) $(PKG_DIR)/$(GCC_PKG_NAME) Firebird-libgcc 
 	
 clean clobber:
 	rm -rf $(PKG_DIR)/Firebird2
-	rm -rf $(PKG_DIR)/FBLIBGCC
+	rm -rf $(PKG_DIR)/libgcc
 	rm -f $(PKG_DIR)/$(PKG_NAME)

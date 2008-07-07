@@ -280,20 +280,35 @@
 #define ANY_THREADING
 #define MULTI_THREAD
 #endif
+
 /*  Define the following only on platforms whose standard I/O
  *  implementation is so weak that we wouldn't be able to fopen
  *  a file whose underlying file descriptor would be > 255.
- *  Hey, we're not running on PDP-11's any more: would it kill you
- *  to use a short instead of a char to hold the fileno?  :-(
  */
  
-/* Why we (solarises) need to rewrite old BSD stdio
-   so many times I suggest stdIO from 
-   http://www.research.att.com/sw/tools/sfio/ 
+/* Firebird currently uses sfio downloadable from:
+   http://www.research.att.com/~gsf/cgi-bin/download.cgi?action=list&name=sfio
+   For Firebird to build correctly and use sfio properly, you need all of
+   sfio from the above download. However there are problems with it.
+   The Firebird source tree contains the corrected files where applicable.
+   1. The stdio.h created by sfio is not compatible with Firebird, so
+   you must use the amended one provided. After building sfio, copy our
+   version of stdio.h into include 
+   2. Sfio will not compile so some minor modifications need to be made
+   to the sfio (Stdio_b directory) Makefile to pull in the missing symbols 
+   for sfset.c and sfclrlock.c (SRCS and OBJS).
+   3. Finally the modified sfstrtof.h and sfvprintf.c need to be placed
+   in the src/lib/sfio directory for the build of sfio to work.
+
+   Now build SuperServer using --enable-superserver --with-sfio=yourSfioDirectory
+
+   Hopefully we will not need to use sfio for much longer as there is a fix
+   for this problem now in some versions of Solaris 10.
+   See enable_extended_FILE_stdio
+
+   Paul Beach 7th July 2008
 */       
-/* 	Need to use full sfio not just stdio emulation to fix
-	file descriptor number limit. nmcc Dec2002
-*/
+
 #if (!defined(SFIO) && defined(SUPERSERVER))
 #error "need to use SFIO"
 #endif

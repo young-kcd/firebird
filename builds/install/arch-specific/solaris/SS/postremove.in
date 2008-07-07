@@ -1,35 +1,28 @@
 #!/bin/sh
 #
+#  The contents of this file are subject to the Initial
+#  Developer's Public License Version 1.0 (the "License");
+#  you may not use this file except in compliance with the
+#  License. You may obtain a copy of the License at
+#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+#
+#  Software distributed under the License is distributed AS IS,
+#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+#  See the License for the specific language governing rights
+#  and limitations under the License.
+#
+#  The Original Code was created by Paul Beach
+#  for the Firebird Open Source RDBMS project.
+#
+#  Copyright (c) Paul Beach <pbeach@ibphoenix.com>
+#  and all contributors signed below.
+#
+#  All Rights Reserved.
+#  Contributor(s): ______________________________________.
+#
 
-# Remove lock and log files
-FIREBIRD=@prefix@
-rm -rf $FIREBIRD
+# Remove the Firebird Service
+if svcs svc:/network/gds_db/tcp:default > /dev/null 2>&1; then
+	svcadm disable svc:network/gds_db/tcp:default
+	svccfg delete svc:network/gds_db/tcp:default
 
-# restore old modules
-
-case "$LANG" in
-De*) echo "Wiederherstellen des Status vor $PKGINST ...";;
-*)   echo "restoring state before $PKGINST ..."
-esac
-
-cd ${PKGSAV}
-find . -type f -exec /usr/bin/uncompress {} \;
-ERROR_UNCOMPRESS=`find . -type f -name '*.Z' -print`
-
-if [ -n "$ERROR_UNCOMPRESS" ]
-then
-    echo "uncompress of \"${ERROR_UNCOMPRESS}\" failed, \nrun uncompress in ${PKGSAV} manually, \nand rest
-ore the uncompressed files in the correct paths.\n\n"
-    exit 1
-fi
-
-find . -type f -depth -print | cpio -pdum /
-
-if [ $? -ne 0 ]
-then
-    echo "restoring of saved files failed, \n please restore files in ${PKGSAV} manually!\n\n"
-    exit 1
-fi
-
-
-# EOF

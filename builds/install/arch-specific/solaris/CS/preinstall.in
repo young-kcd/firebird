@@ -1,53 +1,39 @@
 #!/bin/sh
+#
+#  The contents of this file are subject to the Initial
+#  Developer's Public License Version 1.0 (the "License");
+#  you may not use this file except in compliance with the
+#  License. You may obtain a copy of the License at
+#  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+#
+#  Software distributed under the License is distributed AS IS,
+#  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+#  See the License for the specific language governing rights
+#  and limitations under the License.
+#
+#  The Original Code was created by Paul Beach
+#  for the Firebird Open Source RDBMS project.
+#
+#  Copyright (c) Paul Beach <pbeach@ibphoenix.com>
+#  and all contributors signed below.
+#
+#  All Rights Reserved.
+#  Contributor(s): ______________________________________.
+#
 
-# $Header: /home/job/firebird/cvs-backup/firebird2/builds/install/arch-specific/solaris/CS/preinstall.in,v 1.2.4.1 2007-08-30 09:26:47 paulbeach Exp $
-#------------------------------------------------------------------------------
-# $Copyright: 
-# Copyright (C) Siemens Nixdorf Informationssysteme AG 1994 - 1998
-# Copyright (C) Siemens AG 1998 1999
-# Copyright (C) Fujitsu Siemens Computers GmbH 1999 2000
-# All rights reserved
-# $
-#------------------------------------------------------------------------------
-
-# save files which will be replaced
-# don't save shell, will not be removed
-
-FILELIST="
-/etc/inet/services
-/etc/inet/inetd.conf
-/etc/profile
-"
-
-echo "saving the original modules $FILELIST ..."
-
-if [ -f /tmp/ERROR.${PKGINST} ]
-then
-	rm /tmp/ERROR.${PKGINST}
+# Create firebird group
+if [ -f /etc/group ]; then
+grep firebird /etc/group > /dev/null 2>&1
+if test $? != 0; then
+echo "Adding Firebird Group"
+groupadd firebird
+fi 
 fi
 
-for file in ${FILELIST};do
-	if [ ! -f ${PKGSAV}${file}.Z -a -f ${file} ];then
-		echo ${file} | tr '\040' '\012' | cpio -pvdum ${PKGSAV}
-		/usr/bin/compress ${PKGSAV}${file}
-	fi
-done >/tmp/ERROR.${PKGINST} 2>&1
-
-# check for successful saved modules
-ERR=0
-for file in ${FILELIST}; do
-	[ ! -s ${file} ] && continue
-	if [ ! -f ${PKGSAV}${file}.Z ]; then
-		if [ "$ERR" = '0' ];then
-			echo "\nAn error occured when saving original modules. \ntmp/ERROR.${PKGINST} contains the reported errors.\n\n"
-			echo "/tmp/ERROR.${PKGINST}:"
-			cat /tmp/ERROR.${PKGINST}
-			ERR=1
-		fi
-		ls -l $file ${PKGSAV}${file}.Z
-	fi
-done
-
-[ "$ERR" = '0' ] && rm -f /tmp/ERROR.${PKGINST}
-
-exit 0
+# Create firebird user
+if [ -f /etc/passwd ]; then
+grep firebird /etc/passwd > /dev/null 2>&1
+if test $? != 0; then
+echo "Adding Firebird User"
+useradd -d @prefix@ -s /bin/false -c "Firebird Database Owner" -g firebird firebird
+fi
