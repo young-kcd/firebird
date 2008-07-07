@@ -1,3 +1,40 @@
+2008-07-07 15:33  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.28):
+
+	Renamed function
+
+2008-07-07 13:09  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.237.2.27):
+
+	Backported fix for CORE-1972: Non-SYSDBA user can change FW mode of
+	database
+
+2008-07-07 12:55  paulbeach
+
+	* firebird2/:
+	builds/install/arch-specific/solaris/CS/postinstall.in (1.2.4.4),
+	builds/install/arch-specific/solaris/CS/postremove.in (1.3.4.1),
+	builds/install/arch-specific/solaris/CS/preinstall.in (1.2.4.2),
+	builds/install/arch-specific/solaris/CS/gds_db-tcp.xml (1.1.2.1),
+	builds/install/arch-specific/solaris/CS/prototype.in (1.1.6.7),
+	builds/install/arch-specific/solaris/Makefile.in (1.3.4.2),
+	builds/install/arch-specific/solaris/SS/postinstall.in (1.1.6.2),
+	builds/install/arch-specific/solaris/SS/postremove.in (1.2.4.2),
+	builds/install/arch-specific/solaris/SS/preinstall.in (1.1.6.1),
+	builds/install/arch-specific/solaris/SS/prototype.in (1.1.6.3),
+	builds/install/arch-specific/solaris/libgcc/pkginfolg.in (1.1.2.3),
+	builds/install/arch-specific/solaris/libgcc/prototypelg.in
+	(1.1.2.2), configure.in (1.241.2.32), extern/SfIO/include/stdio.h
+	(1.1.2.1), extern/SfIO/include/sfstrtof.h (1.1.2.1),
+	extern/SfIO/include/sfvprintf.c (1.1.2.1), extern/SfIO/read.me
+	(1.1.2.1), src/jrd/common.h (1.137.2.12):
+
+	Bring the Solaris installation upto Firebird 2.0. Make it
+	compatible with Solaris 10.  Start to document and add changes for
+	supporting the latest version of Sfio, so this will support gcc 4.x
+
 2008-07-03 15:43  alexpeshkoff
 
 	* firebird2/builds/posix/Makefile.in.refDatabases (1.29.4.3):
