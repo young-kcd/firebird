@@ -265,7 +265,7 @@ namespace
 		bool attLocked;
 	};
 
-	void accessValidation(const Attachment* attachment)
+	void validateAccess(const Attachment* attachment)
 	{
 		if (!attachment->locksmith())
 		{
@@ -1186,34 +1186,34 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_no_db_triggers)
 	{
-		accessValidation(attachment);
+		validateAccess(attachment);
 		attachment->att_flags |= ATT_no_db_triggers;
 	}
 
 	if (options.dpb_set_db_sql_dialect) {
-		accessValidation(attachment);
+		validateAccess(attachment);
 		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
-		accessValidation(attachment);
+		validateAccess(attachment);
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write) {
-		accessValidation(attachment);
+		validateAccess(attachment);
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
 
 	if (options.dpb_set_no_reserve) {
-		accessValidation(attachment);
+		validateAccess(attachment);
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 	}
 
 	if (options.dpb_set_page_buffers) {
 #ifdef SUPERSERVER
-		accessValidation(attachment);
+		validateAccess(attachment);
 #else
 		if (attachment->locksmith())
 #endif
@@ -1221,7 +1221,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_set_db_readonly) {
-		accessValidation(attachment);
+		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string,
