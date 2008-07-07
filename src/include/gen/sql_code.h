@@ -632,6 +632,7 @@ static const struct {
 	{335544929, -901}, /* 609 eds_input_prm_not_set */
 	{335544930, -104}, /* 610 too_big_blr */
 	{335544931,    0}, /* 611 montabexh */
+	{335544932, -172}, /* 612 modnotfound */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

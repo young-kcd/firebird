@@ -1274,6 +1274,8 @@ C --
       PARAMETER (GDS__too_big_blr                      = 335544930)
       INTEGER*4 GDS__montabexh                       
       PARAMETER (GDS__montabexh                        = 335544931)
+      INTEGER*4 GDS__modnotfound                     
+      PARAMETER (GDS__modnotfound                      = 335544932)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

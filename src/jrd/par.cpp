@@ -1490,17 +1490,13 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 	if (!homonyms)
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
-			warning(csb, isc_funnotdef,
-					isc_arg_string, ERR_cstring(name),
-					isc_arg_interpreted,
-					"module name or entrypoint could not be found", isc_arg_end);
+			warning(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name),
+					isc_arg_warning, isc_modnotfound, isc_arg_end);
 		}
 		else {
 			csb->csb_running -= count;
-			error(csb, isc_funnotdef,
-				  isc_arg_string, ERR_cstring(name),
-				  isc_arg_interpreted,
-				  "module name or entrypoint could not be found", isc_arg_end);
+			error(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name),
+				  isc_arg_gds, isc_modnotfound, isc_arg_end);
 		}
 
 	jrd_nod* node = PAR_make_node(tdbb, e_fun_length);
