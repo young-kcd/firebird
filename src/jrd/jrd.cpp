@@ -265,6 +265,14 @@ namespace
 		bool attLocked;
 	};
 
+	void accessValidation(const Attachment* attachment)
+	{
+		if (!attachment->locksmith())
+		{
+			ERR_post(isc_adm_task_denied, isc_arg_end);
+		}
+	}
+
 } // anonymous
 
 #ifdef  WIN_NT
@@ -874,7 +882,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		INI_init2();
 		PAG_init();
 		if (options.dpb_set_page_buffers) {
-			dbb->dbb_page_buffers = options.dpb_page_buffers;
+#ifdef SUPERSERVER
+			// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
+			// cause other flags is UserId can be set only when DB is opened.
+			// No idea how to test for other cases before init is complete.
+			if (userId.locksmith())
+#endif
+				dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
 		CCH_init(tdbb, options.dpb_buffers);
 
@@ -1172,34 +1186,42 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_no_db_triggers)
 	{
-		if (attachment->locksmith())
-			attachment->att_flags |= ATT_no_db_triggers;
-		else
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+		accessValidation(attachment);
+		attachment->att_flags |= ATT_no_db_triggers;
 	}
 
 	if (options.dpb_set_db_sql_dialect) {
+		accessValidation(attachment);
 		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
+		accessValidation(attachment);
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write) {
+		accessValidation(attachment);
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
 
 	if (options.dpb_set_no_reserve) {
+		accessValidation(attachment);
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 	}
 
 	if (options.dpb_set_page_buffers) {
-		PAG_set_page_buffers(options.dpb_page_buffers);
+#ifdef SUPERSERVER
+		accessValidation(attachment);
+#else
+		if (attachment->locksmith())
+#endif
+			PAG_set_page_buffers(options.dpb_page_buffers);
 	}
 
 	if (options.dpb_set_db_readonly) {
+		accessValidation(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string,
