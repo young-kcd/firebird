@@ -1505,7 +1505,7 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
 		}
 		else
 		{
-			status_exception::raise(Arg::Gds(isc_random) << Arg::Str("Nothing to cancel"));
+			status_exception::raise(Arg::Gds(isc_nothing_to_cancel));
 		}
 	}
 	catch (const Exception& e)

@@ -712,6 +712,7 @@ COMMIT WORK;
 ('too_big_blr', 'end_blr', 'ddl.cpp', NULL, 0, 610, NULL, 'BLR stream length @1 exceeds implementation limit @2', NULL, NULL)
 ('montabexh', 'acquire', 'DatabaseSnapshot.cpp', NULL, 0, 611, NULL, 'Monitoring table space exhausted', NULL, NULL)
 ('modnotfound', 'par_function', 'par.cpp', NULL, 0, 612, NULL, 'module name or entrypoint could not be found', NULL, NULL)
+('nothing_to_cancel', 'FB_CANCEL_OPERATION', 'why.cpp', NULL, 0, 613, NULL, 'nothing to cancel', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

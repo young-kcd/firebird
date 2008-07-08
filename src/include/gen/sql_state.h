@@ -633,6 +633,7 @@ static const struct {
 	{335544930, "HY000"}, // 610 too_big_blr 
 	{335544931, "HY001"}, // 611 montabexh 
 	{335544932, "39000"}, // 612 modnotfound 
+	{335544933, "HY018"}, // 613 nothing_to_cancel 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

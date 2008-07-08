@@ -613,6 +613,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-104, 'HY', '000', 0, 610, 'too_big_blr', NULL, NULL)
 (-000, 'HY', '001', 0, 611, 'montabexh', NULL, NULL)
 (-172, '39', '000', 0, 612, 'modnotfound', NULL, NULL)
+(-901, 'HY', '018', 0, 613, 'nothing_to_cancel', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

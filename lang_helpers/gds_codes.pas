@@ -645,6 +645,7 @@ const
 	gds_too_big_blr                      = 335544930;
 	gds_montabexh                        = 335544931;
 	gds_modnotfound                      = 335544932;
+	gds_nothing_to_cancel                = 335544933;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

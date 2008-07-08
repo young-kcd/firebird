@@ -634,6 +634,7 @@ static const struct {
 	{"too_big_blr", 335544930},
 	{"montabexh", 335544931},
 	{"modnotfound", 335544932},
+	{"nothing_to_cancel", 335544933},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

@@ -1276,6 +1276,8 @@ C --
       PARAMETER (GDS__montabexh                        = 335544931)
       INTEGER*4 GDS__modnotfound                     
       PARAMETER (GDS__modnotfound                      = 335544932)
+      INTEGER*4 GDS__nothing_to_cancel               
+      PARAMETER (GDS__nothing_to_cancel                = 335544933)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
