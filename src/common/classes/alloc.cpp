@@ -481,17 +481,24 @@ void* MemoryPool::external_alloc(size_t &size)
 	return VirtualAlloc(NULL, size, MEM_COMMIT, 
 						PAGE_READWRITE);
 # elif defined (HAVE_MMAP) && !defined(SOLARIS)
+
+// No successful return from mmap() will return the value MAP_FAILED.
+// The symbol MAP_FAILED is defined:
+//#define MAP_FAILED      ((void *) -1)
+
 	size = FB_ALIGN(size, get_map_page_size());
+	void *result = NULL;
 #  ifdef MAP_ANONYMOUS
-	return  mmap(NULL, size, PROT_READ | PROT_WRITE, 
-				MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+				  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #  else	
 	// This code is needed for Solaris 2.6, AFAIK  (only?)
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	return mmap(NULL, size, PROT_READ | PROT_WRITE, 
-				MAP_PRIVATE, dev_zero_fd, 0);
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+				  MAP_PRIVATE, dev_zero_fd, 0);
 #  endif //MAP_ANONYMOUS
+	return result == MAP_FAILED ? NULL : result;	
 # elif  defined(SOLARIS)
 
 // No successful return from mmap()  will  return    the value MAP_FAILED.
