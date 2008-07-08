@@ -48,7 +48,7 @@ struct Switches
 	PopulateFunction* populate;
 	const Switches* options;
 	unsigned int tag;
-	unsigned char tagInf;
+	UCHAR tagInf;
 };
 
 // Get message from security database
