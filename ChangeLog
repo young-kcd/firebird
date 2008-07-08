@@ -1,3 +1,10 @@
+2008-07-08 11:02  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.80.2.10):
+
+	Backported fix for CORE-1983: Out of memory condition in OS causes
+	AV
+
 2008-07-07 15:33  alexpeshkoff
 
 	* firebird2/src/jrd/jrd.cpp (1.237.2.28):
