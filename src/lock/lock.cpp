@@ -127,6 +127,9 @@ SSHORT LOCK_debug_level = 0;
 #define DEBUG_DELAY
 #endif
 
+// hvlad: enable to log deadlocked owners and its PIDs in firebird.log
+//#define DEBUG_TRACE_DEADLOCKS
+
 // CVC: Unlike other definitions, SRQ_PTR is not a pointer to something in lowercase.
 // It's LONG.
 
@@ -1727,7 +1730,15 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	// detected a circle in the wait-for graph.  Return "deadlock".
 
 	if (request->lrq_flags & LRQ_deadlock)
+	{
+#ifdef DEBUG_TRACE_DEADLOCKS
+		own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+		prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
+		gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
+			request->lrq_owner, proc->prc_process_id, owner->own_flags);
+#endif
 		return request;
+	}
 
 	// Remember that this request is part of the wait-for graph
 
@@ -1786,6 +1797,14 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 
 		own* owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
+		// hvlad: don't pursue lock owners that waits with timeout as such 
+		// circle in wait-for graph will be broken automatically when permitted 
+		// timeout expires
+
+		if (owner->own_flags & OWN_timeout) {
+			continue;
+		}
+
 		// Don't pursue lock owners that still have to finish processing their AST.
 		// If the blocking queue is not empty, then the owner still has some
 		// AST's to process (or lock reposts).
@@ -1818,7 +1837,15 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		// Check who is blocking the request whose owner is blocking the input request
 
 		if (target = deadlock_walk(target, maybe_deadlock))
+		{
+#ifdef DEBUG_TRACE_DEADLOCKS
+			own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+			prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
+			gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
+				request->lrq_owner, proc->prc_process_id, owner->own_flags);
+#endif
 			return target;
+		}
 	}
 
 	// This branch of the wait-for graph is exhausted, the current waiting
@@ -3377,7 +3404,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 	// Check that no invalid flag bit is set
 	CHECK(!
 		  (owner->own_flags &
-		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled)));
+		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled | OWN_timeout)));
 
 	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq) {
@@ -3624,6 +3651,11 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	owner->own_flags &= ~(OWN_scanned | OWN_wakeup);
 	owner->own_flags |= OWN_waiting;
 
+	if (lck_wait > 0)
+		owner->own_flags &= ~OWN_timeout;
+	else
+		owner->own_flags |= OWN_timeout;
+
 	event_t* event_ptr = &owner->own_wakeup;
 	SLONG value = ISC_event_clear(event_ptr);
 
@@ -3800,9 +3832,10 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			break;
 		}
 
-		// If we've not previously been scanned for a deadlock, go do a deadlock scan
+		// If we've not previously been scanned for a deadlock and going to wait 
+		// forever, go do a deadlock scan
 
-		if (!(owner->own_flags & OWN_scanned) &&
+		if (!(owner->own_flags & (OWN_scanned | OWN_timeout)) &&
 			(blocking_request = deadlock_scan(owner, request)))
 		{
 			// Something has been selected for rejection to prevent a
@@ -3865,7 +3898,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 
 	owner = (own*) SRQ_ABS_PTR(owner_offset);
 	owner->own_pending_request = 0;
-	owner->own_flags &= ~OWN_waiting;
+	owner->own_flags &= ~(OWN_waiting | OWN_timeout);
 
 	return FB_SUCCESS;
 }

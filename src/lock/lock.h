@@ -264,6 +264,7 @@ const USHORT OWN_scanned	= 2;		// Owner has been deadlock scanned
 const USHORT OWN_waiting	= 4;		// Owner is waiting inside wait_for_request()
 const USHORT OWN_wakeup		= 8;		// Owner has been awoken
 const USHORT OWN_signaled	= 16;		// Signal is thought to be delivered
+const USHORT OWN_timeout	= 32;		// Owner is waiting with timeout
 
 // Lock manager history block
 
