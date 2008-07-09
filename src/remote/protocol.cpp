@@ -311,6 +311,7 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 	P_SQLST *prep_stmt;
 	P_SQLDATA *sqldata;
 	P_TRRQ *trrq;
+	const USHORT CNCT_VERSIONS = FB_NELEM(connect->p_cnct_versions);
 #ifdef DEBUG
 	xdr_save_size = xdrs->x_handy;
 #endif
@@ -337,7 +338,15 @@ bool_t xdr_protocol(XDR * xdrs, PACKET * p)
 		MAP(xdr_short, reinterpret_cast < SSHORT & >(connect->p_cnct_count));
 		MAP(xdr_cstring, connect->p_cnct_user_id);
 		for (i = 0, tail = connect->p_cnct_versions;
-			 i < connect->p_cnct_count; i++, tail++) {
+			 i < connect->p_cnct_count; i++, tail++) 
+		{
+			// ignore the rest of protocols in case of too many suggested versions
+			p_cnct::p_cnct_repeat dummy;
+			if (i >= CNCT_VERSIONS)
+			{
+				tail = &dummy;
+			}
+		
 			MAP(xdr_short,
 				reinterpret_cast < SSHORT & >(tail->p_cnct_version));
 			MAP(xdr_enum,
