@@ -1,3 +1,23 @@
+2008-07-09 13:09  alexpeshkoff
+
+	* firebird2/src/remote/protocol.cpp (1.26.2.3):
+
+	Fixed vulnerability - execution of arbitrary code in case of
+	malformed connect packet.
+
+2008-07-09 13:06  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.25.2.12):
+
+	Fixed linux build
+
+2008-07-09 12:19  alexpeshkoff
+
+	* firebird2/src/jrd/flu.cpp (1.34.2.6):
+
+
+	Fixed compilation - avoid calling c_str() twice
+
 2008-05-29 12:31  robocop
 
 	* firebird2/builds/win32/msvc7/: engine.vcproj (1.21.2.7),
