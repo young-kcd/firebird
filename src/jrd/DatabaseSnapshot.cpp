@@ -400,7 +400,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
-	PAG_header(true);
+	PAG_header(tdbb, true);
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);

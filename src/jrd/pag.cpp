@@ -1041,7 +1041,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 }
 
 
-void PAG_format_header()
+void PAG_format_header(thread_db* tdbb)
 {
 /**************************************
  *
@@ -1053,8 +1053,8 @@ void PAG_format_header()
  *	Create the header page for a new file.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Initialize header page */
@@ -1091,7 +1091,7 @@ void PAG_format_header()
 
 // CVC: This function is mostly obsolete. Ann requested to keep it and the code that calls it.
 // We won't read the log, anyway.
-void PAG_format_log()
+void PAG_format_log(thread_db* tdbb)
 {
 /***********************************************
  *
@@ -1104,7 +1104,7 @@ void PAG_format_log()
  *	Set all parameters to 0
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
+	SET_TDBB(tdbb);
 
 	WIN window(LOG_PAGE_NUMBER);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
@@ -1207,7 +1207,7 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* inout_len, UCHAR* entry)
 }
 
 
-void PAG_header(bool info)
+void PAG_header(thread_db* tdbb, bool info)
 {
 /**************************************
  *
@@ -1220,8 +1220,8 @@ void PAG_header(bool info)
  *  Done through the page cache.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -1332,7 +1332,7 @@ void PAG_header(bool info)
 }
 
 
-void PAG_header_init()
+void PAG_header_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -1347,10 +1347,10 @@ void PAG_header_init()
  *  Done using a physical page read.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	// Allocate a spare buffer which is large enough,
@@ -1434,7 +1434,7 @@ void PAG_header_init()
 }
 	
 
-void PAG_init()
+void PAG_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -1446,8 +1446,8 @@ void PAG_init()
  *	Initialize stuff for page handling.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -1518,7 +1518,7 @@ void PAG_init()
 }
 
 
-void PAG_init2(USHORT shadow_number)
+void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 {
 /**************************************
  *
@@ -1531,8 +1531,8 @@ void PAG_init2(USHORT shadow_number)
  *	search for additional files.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* allocate a spare buffer which is large enough,

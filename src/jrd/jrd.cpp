@@ -450,7 +450,7 @@ static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
-static void			init_database_locks(thread_db*, Database*);
+static void			init_database_locks(thread_db*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
@@ -770,8 +770,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ERR_post(isc_no_priv,
 				 isc_arg_string, "direct",
 				 isc_arg_string, "security database",
-				 isc_arg_string, 
-				 ERR_string(file_name), 
+				 isc_arg_string, ERR_string(file_name),
 				 isc_arg_end);
 	}
 
@@ -788,8 +787,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "encryption",
 						 isc_arg_string, "database",
-						 isc_arg_string, 
-                         ERR_string(file_name), 
+						 isc_arg_string, ERR_string(file_name),
                          isc_arg_end);
 			}
 		}
@@ -873,14 +871,19 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 
-		INI_init();
+		INI_init(tdbb);
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
+
+		// Initialize locks
+		init_database_locks(tdbb);
+
 		SHUT_init(tdbb);
-		PAG_header_init();
-		INI_init2();
-		PAG_init();
+		PAG_header_init(tdbb);
+		INI_init2(tdbb);
+		PAG_init(tdbb);
+
 		if (options.dpb_set_page_buffers) {
 #ifdef SUPERSERVER
 			// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
@@ -890,17 +893,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 #endif
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
 		}
-		CCH_init(tdbb, options.dpb_buffers);
 
-		// Initialize locks
-		init_database_locks(tdbb, dbb);
+		CCH_init(tdbb, options.dpb_buffers);
 
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
 
-		PAG_init2(0);
-		PAG_header(false);
+		PAG_init2(tdbb, 0);
+		PAG_header(tdbb, false);
 
 		// initialize shadowing as soon as the database is ready for it
 		// but before any real work is done
@@ -921,9 +922,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_disable_wal) {
-		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
-				 isc_arg_string, 
-                 ERR_string(file_name), 
+		ERR_post(isc_lock_timeout,
+				 isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, ERR_string(file_name), 
                  isc_arg_end);
 	}
 
@@ -943,7 +944,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ERR_post(isc_inv_client_dialect_specified, isc_arg_number,
 				 options.dpb_sql_dialect,
 				 isc_arg_gds, isc_valid_client_dialects,
-				 isc_arg_string, "1, 2 or 3", isc_arg_end);
+				 isc_arg_string, "1, 2 or 3",
+				 isc_arg_end);
 	}
 
 	if (userId.usr_sql_role_name.hasData())
@@ -1083,16 +1085,14 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
 		if (attachment->att_flags & ATT_shutdown) {
 			if (dbb->dbb_ast_flags & DBB_shutdown) {
-				ERR_post(isc_shutdown, isc_arg_string, 
-						 ERR_string(file_name), isc_arg_end);
+				ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
 			}
 			else {
 				ERR_post(isc_att_shutdown);
 			}
 		}
 		if (!attachment_succeeded) {
-			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name), isc_arg_end);
+			ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
 		}
 	}
 #endif
@@ -1101,8 +1101,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
-		ERR_post(isc_shutinprog, isc_arg_string, 
-				ERR_string(file_name), isc_arg_end);
+		ERR_post(isc_shutinprog, isc_arg_string, ERR_string(file_name), isc_arg_end);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown) {
@@ -1126,8 +1125,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 		if (!allow_access) {
 			// Note we throw exception here when entering full-shutdown mode
-			ERR_post(isc_shutdown, isc_arg_string, 
-					 ERR_string(file_name), isc_arg_end);
+			ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
 		}
 	}
 
@@ -1152,9 +1150,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_journal.hasData()) {
-		ERR_post(isc_bad_dpb_content,
-				 isc_arg_gds, isc_cant_start_journal,
-				 isc_arg_end);
+		ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_start_journal, isc_arg_end);
 	}
 
 	if (options.dpb_wal_action)
@@ -1223,9 +1219,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_set_db_readonly) {
 		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string,
-					 ERR_string(file_name), 
+			ERR_post(isc_lock_timeout,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, ERR_string(file_name), 
 					 isc_arg_end); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
@@ -1792,10 +1788,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 		break;
 	default:
-		ERR_post(isc_database_create_failed, isc_arg_string,
-				 expanded_name.c_str(), isc_arg_gds, isc_inv_dialect_specified,
-				 isc_arg_number, options.dpb_sql_dialect, isc_arg_gds,
-				 isc_valid_db_dialects, isc_arg_string, "1 and 3", isc_arg_end);
+		ERR_post(isc_database_create_failed,
+				 isc_arg_string, ERR_string(expanded_name),
+				 isc_arg_gds, isc_inv_dialect_specified,
+				 isc_arg_number, options.dpb_sql_dialect,
+				 isc_arg_gds, isc_valid_db_dialects,
+				 isc_arg_string, "1 and 3", isc_arg_end);
 		break;
 	}
 
@@ -1826,8 +1824,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 
-	INI_init();
-	PAG_init();
+	INI_init(tdbb);
+	PAG_init(tdbb);
 	initing_security = true;
 
     SCL_init(true, userId, tdbb);
@@ -1866,39 +1864,39 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (allow_overwrite)
 			{
 				// file is a database and the user (SYSDBA or owner) has right to overwrite
-				pageSpace->file =
-					PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
+				pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
 			}
 			else
 			{
 				ERR_post(isc_no_priv,
-					isc_arg_string, "overwrite",
-					isc_arg_string, "database",
-					isc_arg_string,
-					ERR_cstring(expanded_name.c_str()), isc_arg_end);
+						 isc_arg_string, "overwrite",
+						 isc_arg_string, "database",
+						 isc_arg_string, ERR_string(expanded_name),
+						 isc_arg_end);
 			}
 		}
 		else
 			throw;
 	}
 
-	const jrd_file* first_dbb_file = pageSpace->file;
+	const jrd_file* const first_dbb_file = pageSpace->file;
+
+	// Initialize locks
+	init_database_locks(tdbb);
 
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
-	CCH_init(tdbb, options.dpb_buffers);
 
-	// Initialize locks
-	init_database_locks(tdbb, dbb);
+	CCH_init(tdbb, options.dpb_buffers);
 
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
 	
 	dbb->dbb_backup_manager->dbCreating = true;
-	PAG_format_header();
-	INI_init2();
-	PAG_format_log();
+	PAG_format_header(tdbb);
+	INI_init2(tdbb);
+	PAG_format_log(tdbb);
 	PAG_format_pip(tdbb, *pageSpace);
 
 	if (options.dpb_set_page_buffers)
@@ -1922,8 +1920,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "shutdown or online",
 					 isc_arg_string, "database",
-					 isc_arg_string,
-					 ERR_string(file_name), isc_arg_end);
+					 isc_arg_string, ERR_string(file_name),
+					 isc_arg_end);
 		}
 	}
 	
@@ -1946,12 +1944,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
     if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
-            ERR_post (isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
-                      isc_arg_string, 
-                      ERR_string (file_name), 
-                      isc_arg_end);
+            ERR_post(isc_lock_timeout,
+					 isc_arg_gds, isc_obj_in_use,
+                     isc_arg_string, ERR_string(file_name),
+                     isc_arg_end);
         
-        PAG_set_db_readonly (dbb, options.dpb_db_readonly);
+        PAG_set_db_readonly(dbb, options.dpb_db_readonly);
     }
 
 	PAG_attachment_id(tdbb);
@@ -1963,8 +1961,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	find_intl_charset(tdbb, attachment, &options);
 
 #ifdef WIN_NT
-	dbb->dbb_filename.assign(first_dbb_file->fil_string,
-									first_dbb_file->fil_length);
+	dbb->dbb_filename.assign(first_dbb_file->fil_string);
 #else
 	dbb->dbb_filename = expanded_name;
 #endif
@@ -2166,17 +2163,18 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "drop",
 					 isc_arg_string, "database",
-					 isc_arg_string, ERR_cstring(file_name), isc_arg_end);
+					 isc_arg_string, ERR_cstring(file_name), 
+					 isc_arg_end);
 		}
 
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (dbb->dbb_ast_flags & DBB_shutdown)
 			{
-				ERR_post(isc_shutdown, isc_arg_string,
-						 ERR_cstring(file_name), isc_arg_end);
+				ERR_post(isc_shutdown, isc_arg_string, ERR_cstring(file_name), isc_arg_end);
 			}
-			else {
+			else
+			{
 				ERR_post(isc_att_shutdown, isc_arg_end);
 			}
 		}
@@ -2185,14 +2183,17 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		{
 			ERR_post(isc_lock_timeout,
 					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(file_name), isc_arg_end);
+					 isc_arg_string, ERR_cstring(file_name),
+					 isc_arg_end);
 		}
 
 		// Check if same process has more attachments
 
 		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next) {
-			ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-					isc_arg_string, "DATABASE", isc_arg_end);
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, "DATABASE",
+					 isc_arg_end);
 		}
 
 		// Forced release of all transactions
@@ -3838,8 +3839,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				const PathName& file_name = attachment->att_filename;
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_shutdown, isc_arg_string,
-							 ERR_cstring(file_name), isc_arg_end);
+					ERR_post(isc_shutdown, isc_arg_string, ERR_cstring(file_name), isc_arg_end);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -4204,9 +4204,9 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 	{
 		// Report an error - we can't do what user has requested
 		ERR_post(isc_bad_dpb_content,
-				isc_arg_gds, isc_charset_not_found,
-				isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
-				isc_arg_end);
+				 isc_arg_gds, isc_charset_not_found,
+				 isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
+				 isc_arg_end);
 	}
 }
 
@@ -4390,7 +4390,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			// Just in case there WAS a customer using this unsupported
 			// feature - post an error when they try to access it in 4.0
 			ERR_post(isc_uns_ext, isc_arg_gds, isc_random,
-					 isc_arg_string, "Encryption not supported", isc_arg_end);
+					 isc_arg_string, "Encryption not supported",
+					 isc_arg_end);
 #endif
 			break;
 
@@ -4650,8 +4651,10 @@ static Database* init(thread_db* tdbb,
 			if (attach_flag) 
 				return dbb;
 
-			ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, "DATABASE", isc_arg_end);
+			ERR_post(isc_no_meta_update,
+					 isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string, "DATABASE",
+					 isc_arg_end);
 		}
 	}
 #endif
@@ -4730,7 +4733,7 @@ static Database* init(thread_db* tdbb,
 }
 
 
-static void init_database_locks(thread_db* tdbb, Database* dbb)
+static void init_database_locks(thread_db* tdbb)
 {
 /**************************************
  *
@@ -4739,16 +4742,63 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
  **************************************
  *
  * Functional description
- *	Initialize secondary database locks.
+ *	Initialize database locks.
  *
  **************************************/
 	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
-	fb_assert(dbb);
+	// Main database lock
+
+	PageSpace* const pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	fb_assert(pageSpace && pageSpace->file);
+
+	UCharBuffer file_id;
+	PIO_get_unique_file_id(pageSpace->file, file_id);
+	size_t key_length = file_id.getCount();
+
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock;
+	dbb->dbb_lock = lock;
+	lock->lck_type = LCK_database;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_object = dbb;
+	lock->lck_length = key_length;
+	lock->lck_dbb = dbb;
+	lock->lck_ast = CCH_down_grade_dbb;
+	memcpy(lock->lck_key.lck_string, file_id.begin(), key_length);
+
+	// Try to get an exclusive lock on database.
+	// If this fails, insist on at least a shared lock.
+
+	dbb->dbb_flags |= DBB_exclusive;
+	if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
+	{
+		dbb->dbb_flags &= ~DBB_exclusive;
+
+		while (!LCK_lock(tdbb, lock, LCK_SW, -1))
+		{
+			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
+
+			// If we are in a single-threaded maintenance mode then clean up and stop waiting
+			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
+			SCHAR* header_page_buffer = (SCHAR*) FB_ALIGN((IPTR) spare_memory, MIN_PAGE_SIZE);
+			Ods::header_page* header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
+
+			PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
+
+			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
+			{
+				ERR_post(isc_shutdown,
+						 isc_arg_string, ERR_cstring(pageSpace->file->fil_string),
+						 isc_arg_end);
+			}
+		}
+	}
 
 	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+
+	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_monitor_lock = lock;
 	lock->lck_type = LCK_monitor;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -4760,7 +4810,8 @@ static void init_database_locks(thread_db* tdbb, Database* dbb)
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	// Lock that identifies a dbb instance
-	const size_t key_length = sizeof(FB_GUID);
+
+	key_length = sizeof(FB_GUID);
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
 	dbb->dbb_instance_lock = lock;
 	lock->lck_type = LCK_instance;

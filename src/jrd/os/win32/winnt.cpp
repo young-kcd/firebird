@@ -107,7 +107,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static bool	maybe_close_file(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
-static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE);
+static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool);
 static bool nt_error(TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
@@ -229,7 +229,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	{
 		ERR_post(isc_io_error,
 				 isc_arg_string, "CreateFile (create)",
-				 isc_arg_cstring, string.length(), ERR_cstring(string),
+				 isc_arg_string, ERR_cstring(string),
 				 isc_arg_gds, isc_io_create_err, isc_arg_win32, GetLastError(),
 				 0);
 	}
@@ -239,16 +239,8 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	Firebird::PathName workspace(string);
 	ISC_expand_filename(workspace, false);
-	jrd_file *file;
-	try {
-		file = setup_file(dbb, workspace, desc);
-	}
-	catch (const Firebird::Exception&) {
-		CloseHandle(desc);
-		throw;
-	}
 
-	return file;
+	return setup_file(dbb, workspace, desc, false);
 }
 
 
@@ -385,9 +377,8 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 			ERR_post(isc_io_error,
 					 isc_arg_string,
 					 "CreateFile (force write)",
-					 isc_arg_cstring,
-					 file->fil_length,
-					 ERR_string(file->fil_string, file->fil_length),
+					 isc_arg_string,
+					 ERR_cstring(file->fil_string),
 					 isc_arg_gds, isc_io_access_err,
 					 isc_arg_win32,
 					 GetLastError(),
@@ -591,8 +582,7 @@ jrd_file* PIO_open(Database* dbb,
 			ERR_post(isc_io_error,
 					 isc_arg_string,
 					 "CreateFile (open)",
-					 isc_arg_cstring,
-					 file_name.length(),
+					 isc_arg_string,
 					 ERR_cstring(file_name),
 					 isc_arg_gds,
 					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
@@ -610,18 +600,7 @@ jrd_file* PIO_open(Database* dbb,
 		}
 	}
 
-	jrd_file *file;
-	try {
-		file = setup_file(dbb, string, desc);
-
-		if (readOnly)
-			file->fil_flags |= FIL_readonly;
-	}
-	catch (const Firebird::Exception&) {
-		CloseHandle(desc);
-		throw;
-	}
-	return file;
+	return setup_file(dbb, string, desc, readOnly);
 }
 
 
@@ -933,6 +912,39 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 }
 
 
+void PIO_get_unique_file_id(const Jrd::jrd_file* file, Firebird::UCharBuffer& id)
+{
+/**************************************
+ *
+ *	P I O _ g e t _ u n i q u e _ f i l e _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a binary string that uniquely identifies the file.
+ *
+ **************************************/
+	BY_HANDLE_FILE_INFORMATION file_info;
+	GetFileInformationByHandle(file->fil_desc, &file_info);
+
+	// The identifier is [nFileIndexHigh, nFileIndexLow]
+	// MSDN says: After a process opens a file, the identifier is constant until
+	// the file is closed. An application can use this identifier and the
+	// volume serial number to determine whether two handles refer to the same file.
+	const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
+	const size_t len2 = sizeof(file_info.nFileIndexHigh);
+	const size_t len3 = sizeof(file_info.nFileIndexLow);
+
+	UCHAR* p = id.getBuffer(len1 + len2 + len3);
+
+	memcpy(p, &file_info.dwVolumeSerialNumber, len1);
+	p += len1;
+	memcpy(p, &file_info.nFileIndexHigh, len2);
+	p += len2;
+	memcpy(p, &file_info.nFileIndexLow, len3);
+}
+
+
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 {
@@ -1034,9 +1046,10 @@ static jrd_file* seek_file(jrd_file*			file,
 }
 
 
-static jrd_file* setup_file(Database*					dbb,
-							const Firebird::PathName&	file_name,
-							HANDLE						desc)
+static jrd_file* setup_file(Database* dbb,
+							const Firebird::PathName& file_name,
+							HANDLE desc,
+							bool read_only)
 {
 /**************************************
  *
@@ -1048,95 +1061,37 @@ static jrd_file* setup_file(Database*					dbb,
  *	Set up file and lock blocks for a file.
  *
  **************************************/
+	jrd_file* file = NULL;
 
-/* Allocate file block and copy file name string */
-
-	jrd_file* file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file();
-	file->fil_desc = desc;
-	file->fil_max_page = MAX_ULONG;
-	file->fil_length = file_name.length();
-	strcpy(file->fil_string, file_name.c_str());
+	try
+	{
+		file = FB_NEW_RPT(*dbb->dbb_permanent, file_name.length() + 1) jrd_file();
+		file->fil_desc = desc;
+		file->fil_max_page = MAX_ULONG;
+		strcpy(file->fil_string, file_name.c_str());
 #ifdef SUPERSERVER_V2
-	memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(void*));
+		memset(file->fil_io_events, 0, MAX_FILE_IO * sizeof(void*));
 #endif
 
-/* If this isn't the primary file, we're done */
+		if (read_only)
+			file->fil_flags |= FIL_readonly;
 
-	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	if (pageSpace && pageSpace->file)
-		return file;
+		// If this isn't the primary file, we're done
 
-/* Build unique lock string for file and construct lock block */
+		const PageSpace* const pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		if (pageSpace && pageSpace->file)
+			return file;
 
-	BY_HANDLE_FILE_INFORMATION file_info;
-	GetFileInformationByHandle(desc, &file_info);
-	UCHAR lock_string[32];
-	UCHAR* p = lock_string;
-
-	// The identifier is [nFileIndexHigh, nFileIndexLow]
-	// MSDN says: After a process opens a file, the identifier is constant until
-	// the file is closed. An application can use this identifier and the
-	// volume serial number to determine whether two handles refer to the same file.
-	size_t l = sizeof(file_info.dwVolumeSerialNumber);
-	memcpy(p, &file_info.dwVolumeSerialNumber, l);
-	p += l;
-
-	l = sizeof(file_info.nFileIndexHigh);
-	memcpy(p, &file_info.nFileIndexHigh, l);
-	p += l;
-
-	l = sizeof(file_info.nFileIndexLow);
-	memcpy(p, &file_info.nFileIndexLow, l);
-	p += l;
-
-	// We know p only was incremented, so can use safely size_t instead of ptrdiff_t
-	l = p - lock_string;
-	fb_assert(l <= sizeof(lock_string)); // In case we continue adding information.
-
-	file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
-
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, l) Lock;
-	dbb->dbb_lock = lock;
-	lock->lck_type = LCK_database;
-	lock->lck_owner_handle = LCK_get_owner_handle(NULL, lock->lck_type);
-	lock->lck_object = dbb;
-	lock->lck_length = l;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = CCH_down_grade_dbb;
-	memcpy(lock->lck_key.lck_string, lock_string, l);
-
-/* Try to get an exclusive lock on database.  If this fails, insist
-   on at least a shared lock */
-
-	dbb->dbb_flags |= DBB_exclusive;
-	if (!LCK_lock(NULL, lock, LCK_EX, LCK_NO_WAIT)) {
-		dbb->dbb_flags &= ~DBB_exclusive;
-		thread_db* tdbb = JRD_get_thread_data();
-		
-		while (!LCK_lock(tdbb, lock, LCK_SW, -1)) {
-			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
-			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
-			SCHAR *header_page_buffer = (SCHAR*) FB_ALIGN((IPTR)spare_memory, MIN_PAGE_SIZE);
-		
-			pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			try {
-				pageSpace->file = file;
-				PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
-				if ((reinterpret_cast<Ods::header_page*>(header_page_buffer)->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-					ERR_post(isc_shutdown, isc_arg_cstring, file_name.length(), ERR_cstring(file_name), 0);
-				pageSpace->file = NULL; // Will be set again later by the caller				
-			}
-			catch (const Firebird::Exception&) {
-				delete dbb->dbb_lock;
-				dbb->dbb_lock = NULL;
-				delete file;
-				pageSpace->file = NULL; // Will be set again later by the caller
-				throw;
-			}
-		}
+		file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
+	}
+	catch (const Firebird::Exception&)
+	{
+		CloseHandle(desc);
+		delete file;
+		throw;
 	}
 
+	fb_assert(file);
 	return file;
 }
 
@@ -1185,8 +1140,7 @@ static bool nt_error(TEXT*	string,
 		*status_vector++ = isc_arg_string;
 		*status_vector++ = (ISC_STATUS) string;
 		*status_vector++ = isc_arg_string;
-		*status_vector++ =
-			(ISC_STATUS)(U_IPTR) ERR_string(file->fil_string, file->fil_length);
+		*status_vector++ = (ISC_STATUS)(U_IPTR) ERR_cstring(file->fil_string);
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = operation;
 		*status_vector++ = isc_arg_win32;
@@ -1197,7 +1151,7 @@ static bool nt_error(TEXT*	string,
 
 	ERR_post(isc_io_error,
 			 isc_arg_string, string,
-			 isc_arg_string, ERR_string(file->fil_string, file->fil_length),
+			 isc_arg_string, ERR_cstring(file->fil_string),
 			 isc_arg_gds, operation, isc_arg_win32, GetLastError(), 0);
 
 	return true;

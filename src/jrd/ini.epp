@@ -537,7 +537,7 @@ USHORT INI_get_trig_flags(const TEXT* trig_name)
 }
 
 
-void INI_init()
+void INI_init(thread_db* tdbb)
 {
 /**************************************
  *
@@ -552,8 +552,8 @@ void INI_init()
  *	format descriptor.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const int* fld;
@@ -614,7 +614,7 @@ void INI_init()
 }
 
 
-void INI_init2()
+void INI_init2(thread_db* tdbb)
 {
 /**************************************
  *
@@ -628,8 +628,8 @@ void INI_init2()
  *	the database when it was created.
  *
  **************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+	SET_TDBB(tdbb);
+	Database* const dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;

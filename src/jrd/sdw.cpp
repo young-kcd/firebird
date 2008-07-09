@@ -1057,7 +1057,8 @@ void SDW_start(const TEXT* file_name,
 
 /* get the ancillary files and reset the error environment */
 
-	PAG_init2(shadow_number);
+	PAG_init2(tdbb, shadow_number);
+
 	if (spare_buffer)
 		delete[] spare_buffer;
 
