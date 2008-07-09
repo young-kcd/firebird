@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.25.2.11 2007-12-17 14:48:24 paulbeach Exp $
+#   $Id: make.defaults,v 1.25.2.12 2008-07-09 11:06:57 alexpeshkoff Exp $
 # 
 
 
@@ -206,7 +206,7 @@ endif
 LIB_LINK_MAPFILE= -Wl,--version-script,
 
 LINK_FIREBIRD_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
-LINK_FIREBIRD_CLIENT_SYMBOLS = $(LIB_LINK_MAPFILE)/builds/posix/firebird.vers
+LINK_FIREBIRD_CLIENT_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.vers
 LINK_FBINTL_SYMBOLS = $(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.vers
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
