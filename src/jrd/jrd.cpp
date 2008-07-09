@@ -4782,7 +4782,7 @@ static void init_database_locks(thread_db* tdbb)
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
 			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
 			SCHAR* header_page_buffer = (SCHAR*) FB_ALIGN((IPTR) spare_memory, MIN_PAGE_SIZE);
-			Ods::header_page* header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
+			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
 
 			PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
 

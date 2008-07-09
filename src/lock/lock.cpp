@@ -1732,8 +1732,8 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	if (request->lrq_flags & LRQ_deadlock)
 	{
 #ifdef DEBUG_TRACE_DEADLOCKS
-		own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
-		prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
+		const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+		const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
 		gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
 			request->lrq_owner, proc->prc_process_id, owner->own_flags);
 #endif
@@ -1797,7 +1797,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 
 		own* owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
-		// hvlad: don't pursue lock owners that waits with timeout as such 
+		// hvlad: don't pursue lock owners that wait with timeout as such 
 		// circle in wait-for graph will be broken automatically when permitted 
 		// timeout expires
 
@@ -1839,8 +1839,8 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		if (target = deadlock_walk(target, maybe_deadlock))
 		{
 #ifdef DEBUG_TRACE_DEADLOCKS
-			own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
-			prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
+			const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+			const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
 			gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
 				request->lrq_owner, proc->prc_process_id, owner->own_flags);
 #endif
