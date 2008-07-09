@@ -1823,7 +1823,13 @@ static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	if (request->req_flags & req_null)	// return NULL if value2 is NULL
 		return NULL;
 
-	impure->vlu_misc.vlu_double = log(MOV_get_double(value2)) / log(MOV_get_double(value1));
+	const double v1 = MOV_get_double(value1);
+	const double v2 = MOV_get_double(value2);
+
+	if (v1 <= 0 || v2 <= 0)
+		status_exception::raise(Arg::Gds(isc_expression_eval_err));
+
+	impure->vlu_misc.vlu_double = log(v2) / log(v1);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
 
 	return &impure->vlu_desc;
