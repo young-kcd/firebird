@@ -23,7 +23,7 @@
 
 #= Main ====================================================================
 
-FBRootDir=/opt/firebird.CS.2.5
+FBRootDir=@prefix@
 FBBin=$FBRootDir/bin
 
 cat <<EOF
@@ -45,6 +45,7 @@ thread)
 	;;
 *)
 	echo "Unknown option $multiAnswer chosen"
+	exit 1
 	;;
 esac
 

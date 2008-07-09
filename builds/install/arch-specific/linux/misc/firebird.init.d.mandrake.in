@@ -35,7 +35,8 @@ case "$1" in
   start)
 	echo -n "Starting $FULLNAME "
 
-	runuser -s /bin/bash $FBRunUser -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
+#	runuser -s /bin/bash $FBRunUser -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
+	su -l $FBRunUser -s /bin/sh -c "$GUARDIAN -pidfile $pidfile -daemon -forever"
 	RETVAL=$?
 	[ $RETVAL -eq 0 ] && success || failure
 	echo
