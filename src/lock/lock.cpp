@@ -3648,8 +3648,9 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	ULONG repost_counter = 0;
 #endif
 
-	int ret;
 	while (true) {
+		int ret = FB_FAILURE;
+
 		// Before starting to wait - look to see if someone resolved
 		// the request for us - if so we're out easy!
 
@@ -3698,6 +3699,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			break;
 		}
 
+		acquire_shmem(owner_offset);
 		// See if we wokeup due to another owner deliberately waking us up
 		// ret==FB_SUCCESS --> we were deliberately woken up
 		// ret==FB_FAILURE --> we still don't know why we woke up
@@ -3706,6 +3708,12 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// by another owner is OWN_wakeup set. This is the only FB_SUCCESS case.
 
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
+		if (ret == FB_SUCCESS)
+		{
+			event_ptr = &owner->own_wakeup;
+			value = ISC_event_clear(event_ptr);
+		}
+
 		if (owner->own_flags & OWN_wakeup)
 			ret = FB_SUCCESS;
 		else
@@ -3724,14 +3732,15 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// wakeup due to timing differences (we use seconds here,
 		// ISC_event_wait() uses finer granularity)
 
-		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout)) {
+		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout)) 
+		{
+			release_shmem(owner_offset);
 			continue;
 		}
 
 		// We apparently woke up for some real reason.  
 		// Make sure everyone is still with us. Then see if we're still blocked.
 
-		acquire_shmem(owner_offset);
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
 		lock = (lbl*) SRQ_ABS_PTR(lock_offset);
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -3770,9 +3779,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// Handle lock event first
 		if (ret == FB_SUCCESS)
 		{
-			event_ptr = &owner->own_wakeup;
-			value = ISC_event_clear(event_ptr);
-
 			// Someone posted our wakeup event, but DIDN'T grant our request.
 			// Re-post what we're blocking on and continue to wait.
 			// This could happen if the lock was granted to a different request,
