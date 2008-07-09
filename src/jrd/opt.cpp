@@ -351,8 +351,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 	// can generate additional booleans by associativity--this will help
 	// to utilize indices that we might not have noticed
 	if (rse->rse_boolean) {
-		conjunct_count =
-			decompose(tdbb, rse->rse_boolean, conjunct_stack, csb);
+		conjunct_count = decompose(tdbb, rse->rse_boolean, conjunct_stack, csb);
 	}
 
 	conjunct_count += distribute_equalities(conjunct_stack, csb, conjunct_count);
@@ -677,19 +676,19 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 
 		if (i == opt->opt_base_conjuncts)
 		{
-			// The base conjunctions.
+			// The base conjunctions
 			j = 0;
 			nodeBase = 0;
 		}
 		else if (i == conjunct_count)
 		{
-			// The new conjunctions created by "distribution" from the stack.
+			// The new conjunctions created by "distribution" from the stack
 			j = 0;
 			nodeBase = opt->opt_base_conjuncts;
 		}
 		else if (i == (conjunct_count - distributed_count))
 		{
-			// The parent conjunctions.
+			// The parent conjunctions
 			j = 0;
 			nodeBase = opt->opt_base_conjuncts + distributed_count;
 		}
@@ -699,14 +698,13 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 		j++;
 	}
 
-	// Put the parent missing nodes on the stack.
+	// Put the parent missing nodes on the stack
 	while (missingStack.hasData() && conjunct_count < MAX_CONJUNCTS)
 	{
 		opt->opt_conjuncts.grow(conjunct_count + 1);
 		jrd_nod* node = missingStack.pop();
 		opt->opt_conjuncts[conjunct_count].opt_conjunct_node = node;
-		compute_dependencies(node,
-			opt->opt_conjuncts[conjunct_count].opt_dependencies);
+		compute_dependencies(node, opt->opt_conjuncts[conjunct_count].opt_dependencies);
 		conjunct_count++;
 	}
 
@@ -2021,8 +2019,9 @@ static SLONG decompose(thread_db*		tdbb,
 	DEV_BLKCHK(csb, type_csb);
 
 	if (boolean_node->nod_type == nod_and) {
-		return decompose(tdbb, boolean_node->nod_arg[0], stack, csb) +
-			decompose(tdbb, boolean_node->nod_arg[1], stack, csb);
+		SLONG count = decompose(tdbb, boolean_node->nod_arg[0], stack, csb);
+		count += decompose(tdbb, boolean_node->nod_arg[1], stack, csb);
+		return count;
 	}
 
 /* turn a between into (a greater than or equal) AND (a less than  or equal) */
