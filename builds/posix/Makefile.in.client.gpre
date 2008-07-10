@@ -38,7 +38,7 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp jrd/path_utils.cpp
+GPRE_Other_Sources = jrd/dsc.cpp jrd/isc.cpp jrd/path_utils.cpp common/cvt.cpp
 GPRE_Files = gpre_meta.epp \
 		cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp gpre.cpp \
 		hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp msc.cpp par.cpp \

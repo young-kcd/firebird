@@ -3671,7 +3671,7 @@ static SINT64 get_day_fraction(const dsc* d)
 	result.dsc_address = reinterpret_cast<UCHAR*>(&result_days);
 
 /* Convert the input number to a double */
-	CVT_move(d, &result, ERR_post);
+	CVT_move(d, &result);
 
 /* There's likely some loss of precision here due to rounding of number */
 
@@ -3767,7 +3767,7 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 	result.dsc_length = sizeof(GDS_TIMESTAMP);
 	result.dsc_address = reinterpret_cast<UCHAR*>(&result_timestamp);
 
-	CVT_move(d, &result, ERR_post);
+	CVT_move(d, &result);
 
 	return ((SINT64) result_timestamp.timestamp_date) * ISC_TICKS_PER_DAY
 		+ (SINT64) result_timestamp.timestamp_time;

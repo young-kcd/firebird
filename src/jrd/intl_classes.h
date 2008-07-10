@@ -34,10 +34,6 @@
 #include "../jrd/constants.h"
 #include "../jrd/unicode_util.h"
 
-typedef SSHORT CHARSET_ID;
-typedef SSHORT COLLATE_ID;
-typedef USHORT TTYPE_ID;
-
 namespace Jrd {
 
 class PatternMatcher

@@ -39,10 +39,11 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-SERVER_JrdFiles = ThreadData.cpp sdl.cpp enc.cpp isc_file.cpp isc.cpp divorce.cpp \
-status.cpp isc_ipc.cpp 
+SERVER_JrdFiles = ThreadData.cpp divorce.cpp dsc.cpp enc.cpp isc_file.cpp isc.cpp \
+isc_ipc.cpp sdl.cpp status.cpp 
 SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles))
+SERVER_Other_sources = common/cvt.cpp 
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles)) $(SERVER_Other_sources)
 
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) \
 $(INTERFACE_Objects) $(COMMON_Objects) $(CLUMPLETS_Objects) \

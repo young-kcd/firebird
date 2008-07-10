@@ -55,7 +55,7 @@
 #include "../remote/parse_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/proto_proto.h"
-#include "../jrd/cvt_proto.h"
+#include "../common/cvt.h"
 #include "../jrd/enc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_f_proto.h"
@@ -159,7 +159,7 @@ static bool init(ISC_STATUS *, rem_port*, P_OP, PathName&,
 				 ClumpletWriter&, const ParametersSet&);
 static Rtr* make_transaction(Rdb*, USHORT);
 static ISC_STATUS mov_dsql_message(ISC_STATUS*, const UCHAR*, const rem_fmt*, UCHAR*, const rem_fmt*);
-static void move_error(ISC_STATUS, ...);
+static void move_error(const Arg::StatusVector& v);
 static void receive_after_start(Rrq*, USHORT);
 static bool receive_packet(rem_port*, PACKET *, ISC_STATUS *);
 static bool receive_packet_noqueue(rem_port*, PACKET *, ISC_STATUS *);
@@ -5844,7 +5844,7 @@ static ISC_STATUS mov_dsql_message(ISC_STATUS* status,
 	try {
 
 		if (!from_fmt || !to_fmt || from_fmt->fmt_count != to_fmt->fmt_count) {
-			move_error(isc_dsql_sqlda_err, isc_arg_end);
+			move_error(Arg::Gds(isc_dsql_sqlda_err));
 			/* Msg 263 SQLDA missing or wrong number of variables */
 		}
 
@@ -5870,7 +5870,7 @@ static ISC_STATUS mov_dsql_message(ISC_STATUS* status,
 }
 
 
-static void move_error(ISC_STATUS status, ...)
+static void move_error(const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -5882,38 +5882,12 @@ static void move_error(ISC_STATUS status, ...)
  *	A conversion error occurred.  Complain.
  *
  **************************************/
-	va_list ap;
-	ISC_STATUS *p_args, *end_args;
 
-/* copy into an array any other arguments which may 
-   have been handed to us, then post the error.
-   N.B., one of the supplied errors should be a 'isc_arg_end' */
+	Arg::Gds status_vector(isc_random);
+	status_vector << "Dynamic SQL Error" << Arg::Gds(isc_sqlerr) << Arg::Num(-303);
 
-	va_start(ap, status);
-
-	ISC_STATUS_ARRAY status_vector;
-	p_args = status_vector;
-	end_args = p_args + ISC_STATUS_LENGTH;
-
-	*p_args++ = isc_arg_gds;
-	*p_args++ = isc_random;
-	*p_args++ = isc_arg_string;
-	*p_args++ = (ISC_STATUS) "Dynamic SQL Error";
-	*p_args++ = isc_arg_gds;
-	*p_args++ = isc_sqlerr;
-	*p_args++ = isc_arg_number;
-	*p_args++ = -303;
-	*p_args++ = isc_arg_gds;
-	*p_args++ = status;
-
-/* NOTE: This loop could potentially set up a bad status vector */
-
-	while ((*p_args++ = (ISC_STATUS) va_arg(ap, ISC_STATUS)) && p_args < end_args);
-	
-	if (p_args >= end_args)
-		end_args[-1] = isc_arg_end;
-		
-	va_end(ap);
+	// append any other arguments which may have been handed to us, then post the error
+	status_vector.append(v);
 
 	status_exception::raise(status_vector);
 }

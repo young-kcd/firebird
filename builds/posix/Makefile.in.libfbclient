@@ -55,7 +55,6 @@ unexport ISC_PASSWORD
 SMD_Sources =	$(addprefix remote/,$(Server_main_dummy))
 SMD_Objects =	$(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SMD_Sources))))
 
-JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles))
 JRD_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_ClientSources))))
 
 DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))

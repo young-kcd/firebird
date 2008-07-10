@@ -37,6 +37,7 @@
 #include "../jrd/req.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../common/cvt.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"

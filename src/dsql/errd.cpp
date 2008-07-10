@@ -65,6 +65,8 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+static void internal_post(const ISC_STATUS* status_vector);
+
 #ifdef DEV_BUILD
 /**
   
@@ -252,12 +254,47 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
  **/
 void ERRD_post(ISC_STATUS status, ...)
 {
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-
 // stuff the status into temp buffer 
 	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS(tmp_status, status);
+	internal_post(tmp_status);
+}
+
+
+/**
+  
+ 	ERRD_post
+  
+    @brief	Post an error, copying any potentially
+ 	transient data before we punt.
+ 
+
+    @param statusVector
+    @param 
+
+ **/
+void ERRD_post(const Firebird::Arg::StatusVector& statusVector)
+{
+	internal_post(statusVector.value());
+}
+
+
+/**
+  
+ 	internal_post
+  
+    @brief	Post an error, copying any potentially
+ 	transient data before we punt.
+ 
+
+    @param tmp_status
+    @param 
+
+ **/
+static void internal_post(const ISC_STATUS* tmp_status)
+{
+	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 // calculate length of the status 
 	int tmp_status_len = 0, warning_indx = 0;

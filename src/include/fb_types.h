@@ -109,6 +109,13 @@ typedef void (*FPTR_EVENT_CALLBACK)(void*, USHORT, const UCHAR*);
 /* The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
  * REMOTE's move_error & GPRE's post_error.
  */
+namespace Firebird {
+	namespace Arg {
+		class StatusVector;
+	}
+}
+typedef void (*ErrorFunction) (const Firebird::Arg::StatusVector& v);
+// kept for backward compatibility with old private API (CVT_move())
 typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
@@ -123,5 +130,10 @@ typedef IPTR FB_THREAD_ID;
 /* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
 #define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
+
+// Intl types
+typedef SSHORT CHARSET_ID;
+typedef SSHORT COLLATE_ID;
+typedef USHORT TTYPE_ID;
 
 #endif /* INCLUDE_FB_TYPES_H */

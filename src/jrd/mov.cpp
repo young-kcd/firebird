@@ -34,6 +34,7 @@
 #include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
+#include "../common/cvt.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
@@ -53,7 +54,7 @@ int MOV_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	return CVT2_compare(arg1, arg2, ERR_post);
+	return CVT2_compare(arg1, arg2);
 }
 
 
@@ -71,7 +72,7 @@ double MOV_date_to_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_date_to_double(desc, ERR_post);
+	return CVT_date_to_double(desc);
 }
 
 
@@ -126,7 +127,7 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  *
  **************************************/
 
-	CVT_double_to_date(real, fixed, ERR_post);
+	CVT_double_to_date(real, fixed);
 }
 
 
@@ -230,7 +231,7 @@ void MOV_get_name(const dsc* desc, TEXT* string)
  *
  **************************************/
 
-	CVT2_get_name(desc, string, ERR_post);
+	CVT2_get_name(desc, string);
 }
 
 
@@ -308,7 +309,7 @@ GDS_DATE MOV_get_sql_date(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_date(desc, ERR_post);
+	return CVT_get_sql_date(desc);
 }
 
 
@@ -325,7 +326,7 @@ GDS_TIME MOV_get_sql_time(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_time(desc, ERR_post);
+	return CVT_get_sql_time(desc);
 }
 
 
@@ -342,7 +343,7 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_timestamp(desc, ERR_post);
+	return CVT_get_timestamp(desc);
 }
 
 
@@ -430,7 +431,7 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		return size;
 	}
 
-	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
+	return CVT2_make_string2(desc, ttype, address, buffer);
 }
 
 
@@ -453,5 +454,5 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 		BLB_move(tdbb, from, to, NULL);
 	}
 	else
-		CVT_move(from, to, ERR_post);
+		CVT_move(from, to);
 }

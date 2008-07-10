@@ -39,9 +39,9 @@
 //  
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
-#include "../jrd/cvt_proto.h"
+#include "../common/cvt.h"
 
-static void post_error(ISC_STATUS, ...);
+static void post_error(const Firebird::Arg::StatusVector&);
 
 
 //____________________________________________________________
@@ -51,7 +51,6 @@ static void post_error(ISC_STATUS, ...);
 
 void MOVG_move(const dsc* from, dsc* to)
 {
-
 	CVT_move(from, to, post_error);
 }
 
@@ -61,9 +60,8 @@ void MOVG_move(const dsc* from, dsc* to)
 //		A conversion error occurred.  Complain.
 //  
 
-static void post_error(ISC_STATUS, ...)
+static void post_error(const Firebird::Arg::StatusVector&)
 {
-
 	CPR_error("conversion error: illegal string literal");
 	CPR_abort();
 }

@@ -110,6 +110,7 @@
 #include "../intl/ld_proto.h"
 #endif
 #include "../jrd/cvt_proto.h"
+#include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
@@ -124,6 +125,7 @@
 #include "../common/classes/init.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 #define IS_TEXT(x)      (((x)->dsc_dtype == dtype_text)   ||\
 			 ((x)->dsc_dtype == dtype_varying)||\
@@ -460,7 +462,7 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 int INTL_compare(thread_db* tdbb,
 				const dsc* pText1,
 				const dsc* pText2,
-				FPTR_ERROR err)
+				ErrorFunction err)
 {
 /**************************************
  *
@@ -541,7 +543,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 						 CHARSET_ID src_type,
 						 const BYTE* src_ptr,
 						 ULONG src_len,
-						 FPTR_ERROR err)
+						 ErrorFunction err)
 {
 /**************************************
  *
@@ -590,7 +592,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 			CharSet* toCharSet = INTL_charset_lookup(tdbb, dest_type);
 
 			if (!toCharSet->wellFormed(src_len, src_ptr))
-				(*err)(isc_malformed_string, isc_arg_end);
+				err(Arg::Gds(isc_malformed_string));
 		}
 
 		len = MIN(dest_len, src_len);
@@ -604,7 +606,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
 			return (dest_ptr - start_dest_ptr);
 
-		(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, isc_arg_end);
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 	else if (src_len)
 	{
@@ -654,7 +656,7 @@ CsConvert INTL_convert_lookup(thread_db* tdbb,
 }
 
 
-int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
+int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 {
 /**************************************
  *
@@ -720,7 +722,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, isc_arg_end);
+				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			to_fill = to_size - to_len;
@@ -747,7 +749,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, isc_arg_end);
+				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			if (to_len)
@@ -773,7 +775,7 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 			/* binary string can always be converted TO by byte-copy */
 			to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
-				(*err)(isc_malformed_string, isc_arg_end);
+				err(Arg::Gds(isc_malformed_string));
 			toLength = to_len;
 			from_fill = from_len - to_len;
 			((vary*) p)->vary_length = to_len;
@@ -791,14 +793,14 @@ int INTL_convert_string(dsc* to, const dsc* from, FPTR_ERROR err)
 		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
 		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		(*err)(isc_arith_except, isc_arg_gds, isc_string_truncation, isc_arg_end);
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 
 	if (from_fill)
 	{
 		/* Make sure remaining characters on From string are spaces */
 		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
-			(*err) (isc_arith_except, isc_arg_gds, isc_string_truncation, isc_arg_end);
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 
 	return 0;
