@@ -127,7 +127,7 @@ if not defined FB2_SNAPSHOT (
 if not defined WIX (
     call :ERROR WIX not defined. WiX is needed to build the MSI kits of the CRT runtimes.
     @goto :EOF
-  ) else (@echo     o WiX found at %WIX%.)
+) else (@echo     o WiX found at %WIX%.)
 
 
 if not DEFINED FB_EXTERNAL_DOCS (
@@ -197,8 +197,8 @@ set FBBUILD_FB25_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
 :: This helps us copy the correct documentation,
 :: as well as set up the correct shortcuts
 set FBBUILD_FB15_CUR_VER=1.5.5
-set FBBUILD_FB20_CUR_VER=2.0.3
-set FBBUILD_FB21_CUR_VER=2.1.0
+set FBBUILD_FB20_CUR_VER=2.0.4
+set FBBUILD_FB21_CUR_VER=2.1.1
 
 ::End of SED_MAGIC
 ::----------------
@@ -330,7 +330,7 @@ mkdir %FB_OUTPUT_DIR%\misc\upgrade\ib_udf 2>nul
 :: if the docs are available then we can include them.
 if defined FB_EXTERNAL_DOCS (
 @echo   Copying pdf docs...
-@for %%v in ( Firebird-2.0-QuickStart.pdf Firebird_v%FBBUILD_FB15_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.BugFixes.pdf) do (
+@for %%v in ( Firebird-2.1-QuickStart.pdf Firebird_v%FBBUILD_FB15_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.ReleaseNotes.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.InstallationGuide.pdf Firebird_v%FBBUILD_FB21_CUR_VER%.BugFixes.pdf) do (
   @echo     ... %%v
   (@copy /Y %FB_EXTERNAL_DOCS%\%%v %FB_OUTPUT_DIR%\doc\%%v > nul) || (call :WARNING Copying %FB_EXTERNAL_DOCS%\%%v failed.)
 )
