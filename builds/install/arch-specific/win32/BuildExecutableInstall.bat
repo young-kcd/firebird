@@ -192,7 +192,7 @@ sed -f  %temp%.\b$3.txt FirebirdInstall_20.iss > FirebirdInstall_%FBBUILD_FILE_I
 del %temp%.\b$?.txt
 
 set FBBUILD_FB25_CUR_VER=%FB_MAJOR_VER%.%FB_MINOR_VER%.%FB_REV_NO%
-set FBBUILD_CUR_VER=%FBBUILD_FB25_CUR_VER%
+set FBBUILD_FB_CUR_VER=%FBBUILD_FB25_CUR_VER%
 
 :: Now set some version strings of our legacy releases.
 :: This helps us copy the correct documentation,
