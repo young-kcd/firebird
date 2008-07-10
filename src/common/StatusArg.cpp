@@ -42,7 +42,47 @@ namespace Arg {
 void StatusVector::clear() throw()
 {
 	m_length = 0;
+	m_warning = 0;
 	m_status_vector[0] = isc_arg_end;
+}
+
+void StatusVector::append(const StatusVector& v) throw()
+{
+	StatusVector newVector;
+	if (newVector.appendErrors(this))
+		if (newVector.appendErrors(&v))
+			if (newVector.appendWarnings(this))
+				newVector.appendWarnings(&v);
+	*this = newVector;
+}
+
+bool StatusVector::appendErrors(const StatusVector* v) throw()
+{
+	return append(v->m_status_vector, v->m_warning ? v->m_warning : v->m_length);
+}	
+
+bool StatusVector::appendWarnings(const StatusVector* v) throw()
+{
+	if (! v->m_warning)
+		return true;
+	return append(v->m_status_vector + v->m_warning, v->m_length - v->m_warning);
+}	
+
+bool StatusVector::append(const ISC_STATUS* from, int count) throw()
+{
+	int copied = 0;
+	for (int i = 0; i < count; i += (from[i] == isc_arg_cstring ? 3 : 2))
+	{
+		copied = i;
+		if (m_length + copied > FB_NELEM(m_status_vector) - 1)
+		{
+			break;
+		}
+	}
+	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
+	m_length += copied;
+	m_status_vector[m_length] = isc_arg_end;
+	return copied == count;
 }
 
 StatusVector& StatusVector::operator<<(const Base& arg) throw()
@@ -53,6 +93,33 @@ StatusVector& StatusVector::operator<<(const Base& arg) throw()
 		m_status_vector[m_length++] = arg.value;
 		m_status_vector[m_length] = isc_arg_end;
 	}
+	return *this;
+}
+
+StatusVector& StatusVector::operator<<(const Warning& arg) throw()
+{
+	int cur = m_warning ? 0 : m_length;
+	operator<<(*static_cast<const Base*>(&arg));
+	if (cur && m_status_vector[cur] == isc_arg_warning)
+		m_warning = cur;
+	return *this;
+}
+
+StatusVector& StatusVector::operator<<(const char* text) throw()
+{
+	operator<<(Str(text));
+	return *this;
+}
+
+StatusVector& StatusVector::operator<<(const AbstractString& text) throw()
+{
+	operator<<(Str(text));
+	return *this;
+}
+
+StatusVector& StatusVector::operator<<(const MetaName& text) throw()
+{
+	operator<<(Str(text));
 	return *this;
 }
 

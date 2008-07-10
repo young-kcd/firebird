@@ -37,6 +37,9 @@ class MetaName;
 
 namespace Arg {
 
+// forward
+class Warning;
+
 class Base
 {
 public:
@@ -48,26 +51,46 @@ protected:
 
 class StatusVector : public Base
 {
-public:
+protected:
 	StatusVector(ISC_STATUS k, ISC_STATUS v) throw() : Base(k, v)
 	{ 
 		clear();
 		operator<<(*(static_cast<Base*>(this)));
 	}
 
+	StatusVector() throw() : Base(0, 0)
+	{ 
+		clear();
+	}
+
+public:
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
+	int length() const throw() { return m_length; }
 	bool hasData() const throw() { return m_length > 0; }
 
 	~StatusVector() { }
 
 	void clear() throw();
+	void append(const StatusVector& v) throw();
 	void raise() const;
 
+	// generic argument insert
 	StatusVector& operator<<(const Base& arg) throw();
+	// warning special case - to setup first warning location
+	StatusVector& operator<<(const Warning& arg) throw();
+	// Str special case - make the code simpler & better readable
+	StatusVector& operator<<(const char* text) throw();
+	StatusVector& operator<<(const AbstractString& text) throw();
+	StatusVector& operator<<(const MetaName& text) throw();
 
 private:
 	ISC_STATUS_ARRAY m_status_vector;
-	int m_length;
+	int m_length, m_warning;
+
+private:
+	bool appendErrors(const StatusVector* v) throw();
+	bool appendWarnings(const StatusVector* v) throw();
+	bool append(const ISC_STATUS* from, int count) throw();
 };
 
 
