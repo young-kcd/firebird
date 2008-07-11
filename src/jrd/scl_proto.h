@@ -42,9 +42,13 @@ void SCL_check_relation(const dsc*, Jrd::SecurityClass::flags_t);
 Jrd::SecurityClass* SCL_get_class(const TEXT*);
 Jrd::SecurityClass::flags_t SCL_get_mask(const TEXT*, const TEXT*);
 void SCL_init(bool, const Jrd::UserId& tempId, Jrd::thread_db*);
-void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release(Jrd::SecurityClass*);
+
+namespace Jrd {
+typedef Firebird::Array<UCHAR> Acl;
+}
+void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
 
 #endif // JRD_SCL_PROTO_H
 

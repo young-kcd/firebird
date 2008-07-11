@@ -65,67 +65,35 @@ const SecurityClass::flags_t VIEW_PRIVS		= SCL_read | SCL_write | SCL_delete;
 const ULONG ACL_BUFFER_SIZE	= 4096;
 static const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
-#define CHECK_ACL_BOUND(to, start, length_ptr, move_length)\
-		{\
-			if (((start).begin() + *length_ptr) < (to + move_length))  {\
-				GRANT_realloc_acl(start, &to, length_ptr);\
-			}\
-		}
-#define CHECK_AND_MOVE(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = from;}
-#define CHECK_MOVE_INCR(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = (from)++;}
+inline void CHECK_AND_MOVE(Acl& to, UCHAR from) 
+{
+	to.add(from);
+}
 
 DATABASE DB = STATIC "yachts.lnk";
 
-static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, const UCHAR*, USHORT);
+static void define_default_class(thread_db*, const TEXT*, Firebird::MetaName&, const Acl&);
 #ifdef NOT_USED_OR_REPLACED
 static void delete_security_class(thread_db*, const TEXT*);
 #endif
-static void finish_security_class(UCHAR**, SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
+static void finish_security_class(Acl&, SecurityClass::flags_t);
 static void get_object_info(thread_db*, const TEXT*, SSHORT,
 							Firebird::MetaName&, Firebird::MetaName&, Firebird::MetaName&, bool&);
 static SecurityClass::flags_t get_public_privs(thread_db*, const TEXT*, SSHORT);
-static void get_user_privs(thread_db*, UCHAR**, const TEXT*, SSHORT, const Firebird::MetaName&,
-							SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
-static void grant_user(UCHAR**, const Firebird::MetaName&, SSHORT, SecurityClass::flags_t,
-						Firebird::UCharBuffer&, ULONG*);
+static void get_user_privs(thread_db*, Acl&, const TEXT*, SSHORT, const Firebird::MetaName&,
+							SecurityClass::flags_t);
+static void grant_user(Acl&, const Firebird::MetaName&, SSHORT, SecurityClass::flags_t);
 #ifdef NOT_USED_OR_REPLACED
-static void grant_views(TEXT**, SecurityClass::flags_t, Firebird::UCharBuffer&, ULONG*);
+static void grant_views(TEXT**, SecurityClass::flags_t);
 static void purge_default_class(TEXT*, SSHORT);
 #endif
-static SecurityClass::flags_t save_field_privileges(thread_db*, Firebird::UCharBuffer&, UCHAR**,
+static SecurityClass::flags_t save_field_privileges(thread_db*, Acl&,
 									const TEXT*, const Firebird::MetaName&, 
-									SecurityClass::flags_t, ULONG*);
-static void save_security_class(thread_db*, const Firebird::MetaName&, const UCHAR*, USHORT);
+									SecurityClass::flags_t);
+static void save_security_class(thread_db*, const Firebird::MetaName&, const Acl&);
 static SecurityClass::flags_t trans_sql_priv(const TEXT*);
-static SecurityClass::flags_t squeeze_acl(UCHAR*, UCHAR**, const Firebird::MetaName&, SSHORT);
+static SecurityClass::flags_t squeeze_acl(Acl&, const Firebird::MetaName&, SSHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
-
-
-void GRANT_realloc_acl(Firebird::UCharBuffer&	start_ptr,
-					  UCHAR**	write_ptr,
-					  ULONG*	buffer_length)
-{
-/**************************************
- *
- *	G R A N T _ r e a l l o c _ a c l 
- *
- **************************************
- *
- * Functional description
- *	The ACl list is greater than  the current length, Increase it by
- *	MAX_AXL_SIZE. Do a ERR_punt in case of no memory!
- *
- **************************************/
-
-	const ULONG old_offset = *write_ptr - start_ptr.begin();
-	const ULONG realloc_length = *buffer_length + ACL_BUFFER_SIZE;
-
-// realloc the new length, ERR_punt incase of no memory
-// the write_ptr is set back to the same offset in the new buffer
-	*write_ptr = start_ptr.getBuffer(realloc_length) + old_offset;
-
-	*buffer_length = realloc_length;
-}
 
 
 bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
@@ -152,7 +120,8 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			ULONG length = ACL_BUFFER_SIZE, *length_ptr = &length;
+			ULONG length = ACL_BUFFER_SIZE;
+			ULONG* length_ptr = &length;
 			ULONG default_length = ACL_BUFFER_SIZE;
 			ULONG* default_length_ptr = &default_length;
 
@@ -171,52 +140,25 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			}
 
 			/* start the acl off by giving the owner all privileges */
-			Firebird::UCharBuffer str_buffer;
-			Firebird::UCharBuffer str_default_buffer;
 
-			UCHAR* acl = str_buffer.getBuffer(ACL_BUFFER_SIZE);
-			str_default_buffer.getBuffer(ACL_BUFFER_SIZE);
+			Acl acl, default_acl;
 
-			CHECK_AND_MOVE(acl, ACL_version, str_buffer, length_ptr);
-			grant_user(&acl,
-						owner,
-						obj_user,
-						((work->dfw_id == obj_procedure) ?
-							(SCL_execute | OWNER_PRIVS) : OWNER_PRIVS),
-						str_buffer,
-						length_ptr);
+			CHECK_AND_MOVE(acl, ACL_version);
+			grant_user(acl, owner, obj_user,
+					   ((work->dfw_id == obj_procedure) ? (SCL_execute | OWNER_PRIVS) : OWNER_PRIVS));
 
 			/* Pick up any relation-level privileges */
 
 			const SecurityClass::flags_t public_priv =
 				get_public_privs(tdbb, work->dfw_name.c_str(), work->dfw_id);
-			get_user_privs(tdbb, &acl, work->dfw_name.c_str(), work->dfw_id,
-						   owner, public_priv, str_buffer, length_ptr);
+			get_user_privs(tdbb, acl, work->dfw_name.c_str(), work->dfw_id, owner, public_priv);
 
 			if (work->dfw_id == obj_relation)
 			{
-				/* If we have the space to copy the acl list 
-				   no need to realloc */
-				if (length > default_length) {
-					str_default_buffer.getBuffer(length);
-					default_length = length;
-				}
-				/* Now handle field-level privileges.  This might require adding
-				   UPDATE privilege to the relation-level acl,  Therefore, save
-				   off the relation acl because we need to add a default field
-				   acl in that case. */
-
-				MOVE_FAST(str_buffer.begin(), str_default_buffer.begin(),
-						  (int) (acl - str_buffer.begin()));
-				UCHAR* default_acl =
-					str_default_buffer.begin() + (acl - str_buffer.begin());
-				const UCHAR* const temp_acl = acl;
+				default_acl.assign(acl);
 
 				const SecurityClass::flags_t aggregate_public =
-					save_field_privileges(tdbb, str_buffer,
-														 &acl, work->dfw_name.c_str(),
-														 owner, public_priv,
-														 length_ptr);
+					save_field_privileges(tdbb, acl, work->dfw_name.c_str(), owner, public_priv);
 
 				/* SQL tables don't need the 'all priviliges to all views' acl anymore.
 				   This special acl was only generated for SQL. */
@@ -226,15 +168,11 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				/* finish off and store the security class for the relation */
 
-				finish_security_class(&acl, aggregate_public, str_buffer,
-									  length_ptr);
+				finish_security_class(acl, aggregate_public);
 
-				save_security_class(tdbb,
-									s_class,
-									str_buffer.begin(),
-									(USHORT)(acl - str_buffer.begin()));
+				save_security_class(tdbb, s_class, acl);
 
-				if (temp_acl != acl)	/* relation privs were added? */
+				if (acl.getCount() != default_acl.getCount())	/* relation privs were added? */
 					restrct = true;
 
 				/* if there have been privileges added at the relation level which
@@ -243,21 +181,13 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 				if (restrct)
 				{
-					finish_security_class(&default_acl, public_priv,
-										  str_default_buffer,
-										  default_length_ptr);
-					define_default_class(
-						tdbb,
-						work->dfw_name.c_str(),
-						default_class,
-						str_default_buffer.begin(),
-						(USHORT)(default_acl - str_default_buffer.begin()));
+					finish_security_class(default_acl, public_priv);
+					define_default_class(tdbb, work->dfw_name.c_str(), default_class, default_acl);
 				}
 			}
 			else {
-				finish_security_class(&acl, public_priv, str_buffer, length_ptr);
-				save_security_class(tdbb, s_class, str_buffer.begin(),
-									(USHORT)(acl - str_buffer.begin()));
+				finish_security_class(acl, public_priv);
+				save_security_class(tdbb, s_class, acl);
 			}
 
 			break;
@@ -277,7 +207,7 @@ static void define_default_class(
 								 thread_db* tdbb,
 								 const TEXT* relation_name,
 								 Firebird::MetaName& default_class,
-								 const UCHAR* buffer, USHORT length)
+								 const Acl& acl)
 {
 /**************************************
  *
@@ -324,7 +254,7 @@ static void define_default_class(
 			REQUEST(irq_grant7) = request;
 	}
 
-	save_security_class(tdbb, default_class, buffer, length);
+	save_security_class(tdbb, default_class, acl);
 
 	dsc desc;
 	desc.dsc_dtype = dtype_text;
@@ -366,10 +296,7 @@ static void delete_security_class( thread_db* tdbb, const TEXT* s_class)
 #endif // NOT_USED_OR_REPLACED
 
 
-static void finish_security_class(UCHAR**	acl_ptr,
-								  SecurityClass::flags_t public_priv,
-								  Firebird::UCharBuffer& start_ptr,
-								  ULONG*	length_ptr)
+static void finish_security_class(Acl& acl, SecurityClass::flags_t public_priv)
 {
 /**************************************
  *
@@ -382,16 +309,12 @@ static void finish_security_class(UCHAR**	acl_ptr,
  *	in a wildcard for any public privileges.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
-
 	if (public_priv) {
-		CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
-		SCL_move_priv(&acl, public_priv, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, ACL_id_list);
+		SCL_move_priv(public_priv, acl);
 	}
 
-	CHECK_AND_MOVE(acl, ACL_end, start_ptr, length_ptr);
-
-	*acl_ptr = acl;
+	CHECK_AND_MOVE(acl, ACL_end);
 }
 
 
@@ -504,13 +427,11 @@ static void get_object_info(thread_db* tdbb,
 
 
 static void get_user_privs(thread_db*					tdbb,
-						   UCHAR**						acl_ptr,
+						   Acl&							acl,
 						   const TEXT*					object_name,
 						   SSHORT						obj_type,
 						   const Firebird::MetaName&	owner,
-						   SecurityClass::flags_t		public_priv,
-						   Firebird::UCharBuffer&		start_ptr,
-						   ULONG*						length_ptr)
+						   SecurityClass::flags_t		public_priv)
 {
 /**************************************
  *
@@ -525,7 +446,6 @@ static void get_user_privs(thread_db*					tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	UCHAR* acl = *acl_ptr;
 	Firebird::MetaName user;
 	SSHORT user_type = -2;
 	SecurityClass::flags_t priv = 0;
@@ -549,7 +469,7 @@ static void get_user_privs(thread_db*					tdbb,
 		{
 			if (user.length())
 			{
-				grant_user(&acl, user, user_type, priv, start_ptr, length_ptr);
+				grant_user(acl, user, user_type, priv);
 			}
 			user_type = PRV.RDB$USER_TYPE;
 			if (user_type == obj_user)
@@ -569,18 +489,14 @@ static void get_user_privs(thread_db*					tdbb,
 		REQUEST(irq_grant2) = request;
 
 	if (user.length())
-		grant_user(&acl, user, user_type, priv, start_ptr, length_ptr);
-
-	*acl_ptr = acl;
+		grant_user(acl, user, user_type, priv);
 }
 
 
-static void grant_user(UCHAR**						acl_ptr,
+static void grant_user(Acl&							acl,
 					   const Firebird::MetaName&	user,
 					   SSHORT						user_type,
-					   SecurityClass::flags_t		privs,
-					   Firebird::UCharBuffer&		start_ptr,
-					   ULONG*						length_ptr)
+					   SecurityClass::flags_t		privs)
 {
 /**************************************
  *
@@ -592,32 +508,30 @@ static void grant_user(UCHAR**						acl_ptr,
  *	Grant privileges to a particular user.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
-
-	CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, ACL_id_list);
 	switch (user_type) {
 	case obj_user_group:
-		CHECK_AND_MOVE(acl, id_group, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_group);
 		break;
 
 	case obj_sql_role:
-		CHECK_AND_MOVE(acl, id_sql_role, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_sql_role);
 		break;
 
 	case obj_user:
-		CHECK_AND_MOVE(acl, id_person, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_person);
 		break;
 
 	case obj_procedure:
-		CHECK_AND_MOVE(acl, id_procedure, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_procedure);
 		break;
 
 	case obj_trigger:
-		CHECK_AND_MOVE(acl, id_trigger, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_trigger);
 		break;
 
 	case obj_view:
-		CHECK_AND_MOVE(acl, id_view, start_ptr, length_ptr);
+		CHECK_AND_MOVE(acl, id_view);
 		break;
 
 	default:
@@ -626,16 +540,12 @@ static void grant_user(UCHAR**						acl_ptr,
 	}
 
 	const UCHAR length = user.length();
-	CHECK_AND_MOVE(acl, length, start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, length);
 	if (length) {
-		CHECK_ACL_BOUND(acl, start_ptr, length_ptr, length);
-		MOVE_FAST(user.c_str(), acl, length);
-		acl += length;
+		acl.add(reinterpret_cast<const UCHAR*>(user.c_str()), length);
 	}
 
-	SCL_move_priv(&acl, privs, start_ptr, length_ptr);
-
-	*acl_ptr = acl;
+	SCL_move_priv(privs, acl);
 }
 
 #ifdef NOT_USED_OR_REPLACED
@@ -654,14 +564,10 @@ static void grant_views(
  *	Grant privileges to all views.
  *
  **************************************/
-	UCHAR* acl = *acl_ptr;
-
-	CHECK_AND_MOVE(acl, ACL_id_list, start_ptr, length_ptr);
-	CHECK_AND_MOVE(acl, id_views, start_ptr, length_ptr);
-	CHECK_AND_MOVE(acl, 0, start_ptr, length_ptr);
-	SCL_move_priv(&acl, privs, start_ptr, length_ptr);
-
-	*acl_ptr = acl;
+	CHECK_AND_MOVE(acl, ACL_id_list);
+	CHECK_AND_MOVE(acl, id_views);
+	CHECK_AND_MOVE(acl, 0);
+	SCL_move_priv(privs, acl);
 }
 
 
@@ -716,12 +622,10 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 
 
 static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
-									Firebird::UCharBuffer&		str_relation_buffer,
-									UCHAR**						acl_ptr,
+									Acl&						relation_acl,
 									const TEXT*					relation_name,
 									const Firebird::MetaName&	owner,
-									SecurityClass::flags_t		public_priv,
-									ULONG*						length_ptr)
+									SecurityClass::flags_t		public_priv)
 {
 /**************************************
  *
@@ -736,30 +640,13 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
  *	security class to be effective.
  *
  **************************************/
-	Firebird::UCharBuffer str_field_buffer;
-	Firebird::UCharBuffer str_field_buffer_start;
+	Acl field_acl, acl_start;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	// initialize the field-level acl buffer to include all relation-level privs
-	str_field_buffer_start.getBuffer(*length_ptr - 1);
-	str_field_buffer.getBuffer(*length_ptr - 1);
-
-	ULONG field_length, start_length;
-	field_length = start_length = *length_ptr;
-	ULONG* field_length_ptr = &field_length;
-
-	MOVE_FAST(str_relation_buffer.begin(), str_field_buffer.begin(),
-			  (int) (*acl_ptr - str_relation_buffer.begin()));
-	const int field_buffer_start_index = (int) (*acl_ptr - str_relation_buffer.begin());
-	UCHAR* field_acl = str_field_buffer.begin() + field_buffer_start_index;
-	UCHAR* relation_acl = str_relation_buffer.begin() + field_buffer_start_index;
-
-	int i;
-/* remember this starting point for subsequent fields. */
-	for (i = 0; field_buffer_start_index > i;
-		 i++, str_field_buffer_start[i] = str_field_buffer[i]);
+	field_acl.assign(relation_acl);
+	acl_start.assign(field_acl);
 
 	Firebird::MetaName field_name, user, s_class;
 	SecurityClass::flags_t aggregate_public = public_priv;
@@ -797,31 +684,11 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 				if (user != "PUBLIC")
 				{
 					const SecurityClass::flags_t field_priv =
-							public_priv |
-									priv |
-									squeeze_acl(str_field_buffer.begin(),
-												&field_acl,
-												user,
-												user_type);
-					grant_user(&field_acl,
-								user,
-								user_type,
-								field_priv,
-								str_field_buffer,
-								field_length_ptr);
+						public_priv | priv | squeeze_acl(field_acl, user, user_type);
+					grant_user(field_acl, user, user_type, field_priv);
 					const SecurityClass::flags_t relation_priv =
-							public_priv |
-									priv |
-									squeeze_acl(str_relation_buffer.begin(),
-												&relation_acl,
-												user,
-												user_type);
-					grant_user(&relation_acl,
-								user,
-								user_type,
-								relation_priv,
-								str_relation_buffer,
-								length_ptr);
+						public_priv | priv | squeeze_acl(relation_acl, user, user_type);
+					grant_user(relation_acl, user, user_type, relation_priv);
 				}
 				else
 				{
@@ -845,15 +712,8 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 
 			if (field_name.length()) {
 				aggregate_public |= field_public;
-				finish_security_class(&field_acl,
-										(field_public | public_priv),
-										str_field_buffer,
-										field_length_ptr);
-				save_security_class(
-						tdbb,
-						s_class,
-						str_field_buffer.begin(),
-						(USHORT)(field_acl - str_field_buffer.begin()));
+				finish_security_class(field_acl, (field_public | public_priv));
+				save_security_class(tdbb, s_class, field_acl);
 			}
 
 			/* initialize for new field */
@@ -892,15 +752,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 			field_public = 0;
 
 			/* restart a security class at the end of the relation-level privs */
-
-			i = 0;
-			while (field_buffer_start_index > i)
-			{
-				++i;
-				str_field_buffer[i] = str_field_buffer_start[i];
-			}
-
-			field_acl = str_field_buffer.begin() + field_buffer_start_index;
+			field_acl.assign(acl_start);
 		}
 
 		priv |= trans_sql_priv(PRV.RDB$PRIVILEGE);
@@ -922,31 +774,11 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 		if (user != "PUBLIC")
 		{
 			const SecurityClass::flags_t field_priv =
-					public_priv |
-							priv |
-							squeeze_acl(str_field_buffer.begin(),
-										&field_acl,
-										user,
-										user_type);
-			grant_user(&field_acl,
-						user,
-						user_type,
-						field_priv,
-						str_field_buffer,
-						field_length_ptr);
+				public_priv | priv | squeeze_acl(field_acl, user, user_type);
+			grant_user(field_acl, user, user_type, field_priv);
 			const SecurityClass::flags_t relation_priv =
-					public_priv |
-							priv |
-							squeeze_acl(str_relation_buffer.begin(),
-										&relation_acl,
-										user,
-										user_type);
-			grant_user(&relation_acl,
-						user,
-						user_type,
-						relation_priv,
-						str_relation_buffer,
-						length_ptr);
+				public_priv | priv | squeeze_acl(relation_acl, user, user_type);
+			grant_user(relation_acl, user, user_type, relation_priv);
 		}
 		else
 		{
@@ -959,14 +791,8 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 	if (field_name.length())
 	{
 		aggregate_public |= field_public;
-		finish_security_class(&field_acl,
-							(field_public | public_priv),
-							str_field_buffer,
-							field_length_ptr);
-		save_security_class(tdbb,
-							s_class,
-							str_field_buffer.begin(),
-							(USHORT)(field_acl - str_field_buffer.begin()));
+		finish_security_class(field_acl, (field_public | public_priv));
+		save_security_class(tdbb, s_class, field_acl);
 							
 		dsc desc;
 		desc.dsc_dtype = dtype_text;
@@ -978,16 +804,13 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 		DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);
 	}
 
-	*acl_ptr = relation_acl;
-
 	return aggregate_public;
 }
 
 
 static void save_security_class(thread_db*					tdbb,
 								const Firebird::MetaName&	s_class,
-								const UCHAR*				buffer,
-								USHORT						length)
+								const Acl&					acl)
 {
 /**************************************
  *
@@ -1004,7 +827,15 @@ static void save_security_class(thread_db*					tdbb,
 
 	bid blob_id;
 	blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &blob_id);
-	BLB_put_segment(tdbb, blob, buffer, length);
+	size_t length = acl.getCount();
+	const UCHAR *buffer = acl.begin();
+	while (length)
+	{
+		size_t step = length > ACL_BLOB_BUFFER_SIZE ? ACL_BLOB_BUFFER_SIZE : length;
+		BLB_put_segment(tdbb, blob, buffer, static_cast<USHORT>(step));
+		length -= step;
+		buffer += step;
+	}
 	BLB_close(tdbb, blob);
 
 	jrd_req* request = CMP_find_request(tdbb, irq_grant3, IRQ_REQUESTS);
@@ -1079,8 +910,7 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
 }
 
 
-static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
-						 UCHAR**					acl_ptr,
+static SecurityClass::flags_t squeeze_acl(Acl&		acl,
 						 const Firebird::MetaName&	user,
 						 SSHORT						user_type)
 {
@@ -1102,53 +932,54 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
 	UCHAR c;
 
 /* Make sure that this half-finished acl looks good enough to process. */
-	**acl_ptr = 0;
-	UCHAR* acl = acl_base;
+	acl.push(0);
 
-	if (*acl++ != ACL_version)
+	UCHAR* a = acl.begin(); 
+
+	if (*a++ != ACL_version)
 		BUGCHECK(160);			/* msg 160 wrong ACL version */
 
 	bool hit = false;
 	
-	while ( (c = *acl++) )
+	while ( (c = *a++) )
 		switch (c) {
 		case ACL_id_list:
-			dup_acl = acl - 1;
+			dup_acl = a - 1;
 			hit = true;
-			while ( (c = *acl++) ) {
+			while ( (c = *a++) ) {
 				switch (c) {
 				case id_person:
 					if (user_type != obj_user)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
 				case id_sql_role:
 					if (user_type != obj_sql_role)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
 				case id_view:
 					if (user_type != obj_view)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
 				case id_procedure:
 					if (user_type != obj_procedure)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
 				case id_trigger:
 					if (user_type != obj_trigger)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
@@ -1157,7 +988,7 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
 					hit = false;
 					// CVC: What's the idea of calling a function whose only
 					// result is boolean without checking it?
-					check_string(acl, user);
+					check_string(a, user);
 					break;
 
 				case id_views:
@@ -1166,29 +997,27 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
 
 				case id_node:
 				case id_user:
-					{
 					hit = false;
-					for (UCHAR l = *acl++; l; acl++, l--);
+					a += *a + 1;
 					break;
-					}
 
 				case id_group:
 					if (user_type != obj_user_group)
 						hit = false;
-					if (check_string(acl, user))
+					if (check_string(a, user))
 						hit = false;
 					break;
 
 				default:
 					BUGCHECK(293);	/* bad ACL */
 				}
-				acl += *acl + 1;
+				a += *a + 1;
 			}
 			break;
 
 		case ACL_priv_list:
 			if (hit) {
-				while ( (c = *acl++) )
+				while ( (c = *a++) )
 					switch (c) {
 					case priv_control:
 						privilege |= SCL_control;
@@ -1238,20 +1067,19 @@ static SecurityClass::flags_t squeeze_acl(UCHAR*	acl_base,
 						BUGCHECK(293);	/* bad ACL */
 					}
 				/* Squeeze out duplicate acl element. */
-				UCHAR* dest = dup_acl;
-				const UCHAR* source = acl;
-				int length = *acl_ptr - source + 1; // ptrdiff_t
-				*acl_ptr = *acl_ptr - (source - dest);
-				acl = dup_acl;
-				for (; length; *dest++ = *source++, length--);
+				acl.remove(dup_acl, a);
+				a = dup_acl;
 			}
 			else
-				while (*acl++);
+				while (*a++);
 			break;
 
 		default:
 			BUGCHECK(293);		/* bad ACL */
 		}
+
+	// remove added extra '\0' byte
+    acl.pop();
 
 	return privilege;
 }

@@ -72,28 +72,22 @@ const int UIC_BASE	= 8;
 const int UIC_BASE	= 10;
 #endif
 
-const SLONG BLOB_BUFFER_SIZE	= 4096;	/* used to read in acl blob */
-
 using namespace Jrd;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
 static bool check_hex(const UCHAR*, USHORT);
 static bool check_number(const UCHAR*, USHORT);
-static bool check_user_group(const UCHAR*, USHORT, const ULONG);
+static bool check_user_group(const UCHAR*, USHORT);
 static bool check_string(const UCHAR*, const Firebird::MetaName&);
 static SecurityClass::flags_t compute_access(thread_db*, const SecurityClass*,
 	const jrd_rel*,	const Firebird::MetaName&, const Firebird::MetaName&);
-static SecurityClass::flags_t walk_acl(thread_db*, const UCHAR*, const jrd_rel*,
-	const Firebird::MetaName&, const Firebird::MetaName&, const ULONG);
+static SecurityClass::flags_t walk_acl(thread_db*, const Acl&, const jrd_rel*,
+	const Firebird::MetaName&, const Firebird::MetaName&);
 
-static inline void check_and_move(UCHAR*& to, UCHAR from, Firebird::UCharBuffer& start, ULONG* length_ptr)
+static inline void check_and_move(UCHAR from, Acl& to)
 {
-	if ((start.begin() + *length_ptr) < (to + 1))
-	{
-		GRANT_realloc_acl(start, &to, length_ptr);
-	}
-	*to++ = from;
+	to.push(from);
 }
 
 struct P_NAMES {
@@ -165,6 +159,8 @@ void SCL_check_access(const SecurityClass* s_class,
 		return;
 	}
 
+	//printf("%s %s\n", s_class ? s_class->scl_name : "<None>", name.c_str());
+
 	bool denied_db = false;
 
 	const SecurityClass* const att_class = attachment->att_security_class;
@@ -175,6 +171,7 @@ void SCL_check_access(const SecurityClass* s_class,
 	else
 	{
 		if (!s_class ||	(mask & s_class->scl_flags)) {
+			//printf("%08x %08x\n", mask, s_class ? s_class->scl_flags : 0xFFFFFFFF);
 			return;
 		}
 		const jrd_rel* view = NULL;
@@ -706,8 +703,7 @@ void SCL_init(bool create,
 }
 
 
-void SCL_move_priv(UCHAR** acl_ptr, SecurityClass::flags_t mask,
-	Firebird::UCharBuffer& start_ptr, ULONG* length_ptr)
+void SCL_move_priv(SecurityClass::flags_t mask, Acl& acl)
 {
 /**************************************
  *
@@ -719,25 +715,21 @@ void SCL_move_priv(UCHAR** acl_ptr, SecurityClass::flags_t mask,
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	UCHAR* p = *acl_ptr;
-
 	// Terminate identification criteria, and move privileges
 
-	check_and_move(p, ACL_end, start_ptr, length_ptr);
-	check_and_move(p, ACL_priv_list, start_ptr, length_ptr);
+	check_and_move(ACL_end, acl);
+	check_and_move(ACL_priv_list, acl);
 
 	for (const P_NAMES* priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			fb_assert(priv->p_names_acl <= MAX_UCHAR);
-			check_and_move(p, priv->p_names_acl, start_ptr, length_ptr);
+			check_and_move(priv->p_names_acl, acl);
 		}
 	}
 
-	check_and_move(p, 0, start_ptr, length_ptr);
-
-	*acl_ptr = p;
+	check_and_move(0, acl);
 }
 
 
@@ -867,8 +859,7 @@ static bool check_number(const UCHAR* acl, USHORT number)
 
 
 static bool check_user_group(const UCHAR* acl,
-							 USHORT number,
-							 const ULONG length)
+							 USHORT number)
 {
 /**************************************
  *
@@ -908,18 +899,14 @@ static bool check_user_group(const UCHAR* acl,
 		}
 		else				// processing group name
 		{
-			Firebird::UCharBuffer buffer;
-			UCHAR* user_group_name = buffer.getBuffer(length);
+			Firebird::string user_group_name;
 			do {
 				const TEXT one_char = *acl++;
-				*user_group_name++ = LOWWER(one_char);
+				user_group_name += LOWWER(one_char);
 			} while (--l);
-			*user_group_name = '\0';
-			user_group_name = buffer.begin();
 
 			// convert unix group name to unix group id
-
-			n = ISC_get_user_group_id(reinterpret_cast<const TEXT*>(user_group_name));
+			n = ISC_get_user_group_id(user_group_name.c_str());
 		}
 	}
 
@@ -967,10 +954,7 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	Firebird::UCharBuffer str_buffer;
-	UCHAR* buffer = str_buffer.getBuffer(BLOB_BUFFER_SIZE);
-
-	SLONG length = BLOB_BUFFER_SIZE;
+	Acl acl;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -987,13 +971,11 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 		privileges |= SCL_exists;
 		blb* blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
-		UCHAR* acl = buffer;
+		UCHAR* buffer = acl.getBuffer(ACL_BLOB_BUFFER_SIZE);
+		UCHAR* end = buffer;
 		while (true)
 		{
-			acl += BLB_get_segment(tdbb, blob, acl,
-								   (USHORT) (length -
-											 ((acl - buffer) *
-											  (sizeof(buffer[0])))));
+			end += BLB_get_segment(tdbb, blob, end, (USHORT) (acl.getCount() - (end - buffer)) );
 			if (blob->blb_flags & BLB_eof)
 				break;
 
@@ -1001,22 +983,21 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 			if (blob->blb_fragment_size)
 			{
-				const ULONG old_offset = (ULONG) (acl - buffer);
-				length += BLOB_BUFFER_SIZE;
-				buffer = str_buffer.getBuffer(length);
-				acl = buffer + old_offset;
+				const ptrdiff_t old_offset = end - buffer;
+				buffer = acl.getBuffer(acl.getCount() + ACL_BLOB_BUFFER_SIZE);
+				end = buffer + old_offset;
 			}
 		}
 		BLB_close(tdbb, blob);
 		blob = NULL;
-		if (acl != buffer)
+		acl.shrink(end - buffer);
+		if (acl.getCount() > 0)
 		{
 			privileges |= walk_acl(	tdbb,
-									buffer,
+									acl,
 									view,
 									trg_name,
-									prc_name,
-									length);
+									prc_name);
 		}
 	END_FOR;
 
@@ -1028,11 +1009,10 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 
 
 static SecurityClass::flags_t walk_acl(thread_db* tdbb,
-					  const UCHAR* acl,
+					  const Acl& acl,
 					  const jrd_rel* view,
 					  const Firebird::MetaName& trg_name,
-					  const Firebird::MetaName& prc_name,
-					  const ULONG length)
+					  const Firebird::MetaName& prc_name)
 {
 /**************************************
  *
@@ -1063,9 +1043,11 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 
 		user.usr_user_name = view->rel_owner_name.c_str();
 	}
-	SecurityClass::flags_t privilege = 0;
 
-	if (*acl++ != ACL_version)
+	SecurityClass::flags_t privilege = 0;
+	const UCHAR* a = acl.begin();
+
+	if (*a++ != ACL_version)
 	{
 		BUGCHECK(160);	// msg 160 wrong ACL version
 	}
@@ -1079,42 +1061,40 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 	bool hit = false;
 	UCHAR c;
 	
-	while ( (c = *acl++) )
+	while ( (c = *a++) )
 	{
 		switch (c)
 		{
 		case ACL_id_list:
 			hit = true;
-			while ( (c = *acl++) )
+			while ( (c = *a++) )
 			{
 				switch (c)
 				{
 				case id_person:
-					if (!(p = user.usr_user_name.nullStr()) || check_string(acl, p))
+					if (!(p = user.usr_user_name.nullStr()) || check_string(a, p))
 						hit = false;
 					break;
 
 				case id_project:
-					if (!(p = user.usr_project_name.nullStr()) || check_string(acl, p))
+					if (!(p = user.usr_project_name.nullStr()) || check_string(a, p))
 						hit = false;
 					break;
 
 				case id_organization:
-					if (!(p = user.usr_org_name.nullStr()) || check_string(acl, p))
+					if (!(p = user.usr_org_name.nullStr()) || check_string(a, p))
 						hit = false;
 					break;
 
 				case id_group:
-					if (check_user_group(acl,
-										user.usr_group_id,
-										length))
+					if (check_user_group(a, user.usr_group_id))
 					{
 						hit = false;
 					}
 					break;
 
 				case id_sql_role:
-					if (!role_name || check_string(acl, role_name))
+					if (!role_name || check_string(a, role_name))
 						hit = false;
 					else
 					{
@@ -1150,17 +1130,17 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_view:
-					if (!view || check_string(acl, view->rel_name))
+					if (!view || check_string(a, view->rel_name))
 						hit = false;
 					break;
 
 				case id_procedure:
-					if (check_string(acl, prc_name))
+					if (check_string(a, prc_name))
 						hit = false;
 					break;
 
 				case id_trigger:
-					if (check_string(acl, trg_name))
+					if (check_string(a, trg_name))
 					{
 						hit = false;
 					}
@@ -1179,13 +1159,13 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					break;
 
 				case id_user:
-					if (check_number(acl, user.usr_user_id)) {
+					if (check_number(a, user.usr_user_id)) {
 						hit = false;
 					}
 					break;
 
 				case id_node:
-					if (check_hex(acl, user.usr_node_id)) {
+					if (check_hex(a, user.usr_node_id)) {
 						hit = false;
 					}
 					break;
@@ -1193,13 +1173,13 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				default:
 					return SCL_corrupt;
 				}
-				acl += *acl + 1;
+				a += *a + 1;
 			}
 			break;
 
 		case ACL_priv_list:
 			if (hit) {
-				while ( (c = *acl++) )
+				while ( (c = *a++) )
 					switch (c) {
 					case priv_control:
 						privilege |= SCL_control;
@@ -1262,7 +1242,7 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				// -- Madhukar Thakur (May 1, 1995)
 			}
 			else
-				while (*acl++);
+				while (*a++);
 			break;
 
 		default:

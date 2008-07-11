@@ -159,6 +159,12 @@ public:
 		data[count++] = item;
   		return count;
 	}
+	void add(const T* items, size_t itemsSize)
+	{
+		ensureCapacity(count + itemsSize);
+		memcpy(data + count, items, sizeof(T) * itemsSize);
+		count += itemsSize;
+	}
 	// NOTE: remove method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
 	T* remove(size_t index) {
@@ -184,6 +190,10 @@ public:
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
+	}
+	T* remove(T* itrFrom, T* itrTo)
+	{
+		return removeRange(itrFrom - begin(), itrTo - begin());
 	}
 	void shrink(size_t newCount) {
 		fb_assert(newCount <= count);
@@ -221,6 +231,12 @@ public:
 		ensureCapacity(count + L.count);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
+	}
+	void assign(const Array<T, Storage>& L)
+	{
+		ensureCapacity(L.count);
+		memcpy(data, L.data, sizeof(T) * L.count);
+		count = L.count;
 	}
 	// NOTE: getCount method must be signal safe
 	// Used as such in GlobalRWLock::blockingAstHandler
