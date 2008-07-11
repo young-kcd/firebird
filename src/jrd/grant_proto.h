@@ -29,7 +29,6 @@
 class Jrd::DeferredWork;
 
 bool GRANT_privileges(Jrd::thread_db*, SSHORT, Jrd::DeferredWork*, Jrd::jrd_tra*);
-void GRANT_realloc_acl(Firebird::UCharBuffer&, UCHAR**, ULONG *);
 
 #endif // JRD_GRANT_PROTO_H
 
