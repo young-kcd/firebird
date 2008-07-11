@@ -518,60 +518,6 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 }
 
 
-void ISC_prefix(TEXT* string, const TEXT* root)
-{
-/**************************************
- *
- *      i s c _ $ p r e f i x   
- *
- **************************************
- *
- * Functional description
- *      Wrapper function for gds__prefix.
- *
- **************************************/
-
-	gds__prefix(string, root);
-	return;
-}
-
-
-void ISC_prefix_lock(TEXT* string, const TEXT* root)
-{
-/**************************************
- *
- *      i s c _ $ p r e f i x _ l o c k
- *
- **************************************
- *
- * Functional description
- *      Wrapper function for gds__prefix_lock.
- *
- **************************************/
-
-	gds__prefix_lock(string, root);
-	return;
-}
-
-
-void ISC_prefix_msg(TEXT* string, const TEXT* root)
-{
-/**************************************
- *
- *      i s c _ $ p r e f i x _ m s g  
- *
- **************************************
- *
- * Functional description
- *      Wrapper function for gds__prefix_msg.
- *
- **************************************/
-
-	gds__prefix_msg(string, root);
-	return;
-}
-
-
 #ifdef UNIX
 #ifdef AIX_PPC
 #define _UNIX95
