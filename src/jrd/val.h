@@ -37,7 +37,8 @@
 
 #define FLAG_BYTES(n)	(((n + BITS_PER_LONG) & ~((ULONG)BITS_PER_LONG - 1)) >> 3)
 
-const UCHAR DEFAULT_DOUBLE  = dtype_double;
+const UCHAR DEFAULT_DOUBLE	= dtype_double;
+
 const ULONG MAX_FORMAT_SIZE	= 65535;
 
 namespace Jrd {

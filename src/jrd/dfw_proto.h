@@ -32,7 +32,6 @@ void DFW_merge_work(Jrd::jrd_tra*, SLONG, SLONG);
 void DFW_perform_system_work(Jrd::thread_db*);
 void DFW_perform_work(Jrd::thread_db*, Jrd::jrd_tra*);
 void DFW_perform_post_commit_work(Jrd::jrd_tra*);
-Jrd::DeferredWork* DFW_post_system_work(Jrd::thread_db*, enum Jrd::dfw_t, const dsc*, USHORT);
 Jrd::DeferredWork* DFW_post_work(Jrd::jrd_tra*, enum Jrd::dfw_t, const dsc*, USHORT);
 Jrd::DeferredWork* DFW_post_work_arg(Jrd::jrd_tra*, Jrd::DeferredWork*, const dsc*, USHORT);
 void DFW_update_index(const TEXT*, USHORT, const Jrd::SelectivityList&, Jrd::jrd_tra*);

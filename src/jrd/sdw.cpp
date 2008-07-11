@@ -846,7 +846,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	if (start_conditional && !inAst) {
 		CCH_unwind(tdbb, false);
 		SDW_dump_pages();
-		ERR_post(isc_deadlock, isc_arg_end);
+		ERR_post(isc_deadlock, 0);
 	}
 
 	return true;
@@ -947,7 +947,7 @@ void SDW_start(const TEXT* file_name,
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
 
-		ERR_post(isc_shadow_accessed, isc_arg_end);
+		ERR_post(isc_shadow_accessed, 0);
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
@@ -1057,8 +1057,7 @@ void SDW_start(const TEXT* file_name,
 
 /* get the ancillary files and reset the error environment */
 
-	PAG_init2(tdbb, shadow_number);
-
+	PAG_init2(shadow_number);
 	if (spare_buffer)
 		delete[] spare_buffer;
 
@@ -1076,7 +1075,7 @@ void SDW_start(const TEXT* file_name,
 			delete[] spare_buffer;
 		if (file_flags & FILE_manual && !delete_files) {
 			ERR_post(isc_shadow_missing, isc_arg_number,
-					 (SLONG) shadow_number, isc_arg_end);
+					 (SLONG) shadow_number, 0);
 		}
 		else
 		{

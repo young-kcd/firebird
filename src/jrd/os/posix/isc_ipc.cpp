@@ -229,7 +229,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 		}
 		sprintf(arg, "%d", pipes[0]);
 		if (!vfork()) {
-			execl(process, process, arg, NULL);
+			execl(process, process, arg, 0);
 			gds__log("ISC_kill: error %d starting gds_relay %s", errno,
 					 process);
 			_exit(0);

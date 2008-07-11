@@ -112,10 +112,12 @@ const bool USE_VALUE    = false;
     @param node
 
  **/
-void GEN_expr(CompiledStatement* statement, dsql_nod* node)
+void GEN_expr( CompiledStatement* statement, dsql_nod* node)
 {
 	UCHAR blr_operator;
-	const dsql_ctx* context;
+	dsql_ctx* context;
+	dsql_map* map;
+	dsql_var* variable;
 
 	switch (node->nod_type) {
 	case nod_alias:
@@ -220,18 +222,16 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_variable:
-		{
-			const dsql_var* variable = (dsql_var*) node->nod_arg[e_var_variable];
-			if (variable->var_type == VAR_input) {
-				stuff(statement, blr_parameter2);
-				stuff(statement, variable->var_msg_number);
-				stuff_word(statement, variable->var_msg_item);
-				stuff_word(statement, variable->var_msg_item + 1);
-			}
-			else {
-				stuff(statement, blr_variable);
-				stuff_word(statement, variable->var_variable_number);
-			}
+		variable = (dsql_var*) node->nod_arg[e_var_variable];
+		if (variable->var_type == VAR_input) {
+			stuff(statement, blr_parameter2);
+			stuff(statement, variable->var_msg_number);
+			stuff_word(statement, variable->var_msg_item);
+			stuff_word(statement, variable->var_msg_item + 1);
+		}
+		else {
+			stuff(statement, blr_variable);
+			stuff_word(statement, variable->var_variable_number);
 		}
 		return;
 
@@ -240,13 +240,11 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_map:
-		{
-			const dsql_map* map = (dsql_map*) node->nod_arg[e_map_map];
-			context = (dsql_ctx*) node->nod_arg[e_map_context];
-			stuff(statement, blr_fid);
-			stuff_context(statement, context);
-			stuff_word(statement, map->map_position);
-		}
+		map = (dsql_map*) node->nod_arg[e_map_map];
+		context = (dsql_ctx*) node->nod_arg[e_map_context];
+		stuff(statement, blr_fid);
+		stuff_context(statement, context);
+		stuff_word(statement, map->map_position);
 		return;
 
 	case nod_parameter:
@@ -474,15 +472,13 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
     case nod_searched_case: 
 		gen_searched_case(statement, node);
 		return;
-
 	case nod_average:
 	//case nod_count:
 	case nod_from:
 	case nod_max:
 	case nod_min:
 	case nod_total:
-		switch (node->nod_type)
-		{
+		switch (node->nod_type) {
 		case nod_average:
 			blr_operator = blr_average;
 			break;
@@ -535,7 +531,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 				  isc_arg_gds, isc_dsql_internal_err,
 				  isc_arg_gds, isc_expression_eval_err,
 				  // expression evaluation not supported 
-				  isc_arg_end);
+				  0);
 	}
 
 	stuff(statement, blr_operator);
@@ -560,16 +556,14 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		node->nod_type == nod_agg_average2) 
 	{
 		dsc desc;
-		MAKE_desc(statement, &desc, node, NULL);
+		const char* s = 0;
+		char message_buf[8];
 
+		MAKE_desc(statement, &desc, node, NULL);
 		if ((node->nod_flags & NOD_COMP_DIALECT) &&
 			(statement->req_client_dialect == SQL_DIALECT_V6_TRANSITION)) 
 		{
-			const char* s = 0;
-			char message_buf[8];
-
-			switch (node->nod_type)
-			{
+			switch (node->nod_type) {
 			case nod_add2:
 				s = "add";
 				break;
@@ -646,8 +640,8 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 			parameter->par_desc.dsc_length -= adjust;
 
-			const USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
-			const USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
+			USHORT fromCharSetBPC = METD_get_charset_bpc(statement, fromCharSet);
+			USHORT toCharSetBPC = METD_get_charset_bpc(statement, toCharSet);
 
 			INTL_ASSIGN_TTYPE(&parameter->par_desc, INTL_CS_COLL_TO_TTYPE(toCharSet,
 				(fromCharSet == toCharSet ? INTL_GET_COLLATE(&parameter->par_desc) : 0)));
@@ -685,7 +679,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 							  isc_arg_number, (SLONG) statement->req_client_dialect,
 							  isc_arg_string,
 							  DSC_dtype_tostring(parameter->par_desc.dsc_dtype),
-							  isc_arg_end);
+							  0);
 					break;
 				default:
 					// No special action for other data types 
@@ -704,7 +698,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
 				  isc_arg_gds, isc_imp_exc,
 				  isc_arg_gds, isc_blktoobig,
-				  isc_arg_end);
+				  0);
 	}
 
 	message->msg_length = (USHORT) offset;
@@ -861,7 +855,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		case nod_access:
 			if (sw_access)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_access = true;
 			if (ptr->nod_flags & NOD_READ_ONLY)
@@ -873,7 +867,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		case nod_wait:
 			if (sw_wait)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_wait = true;
 			if (ptr->nod_flags & NOD_NO_WAIT)
@@ -885,7 +879,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		case nod_isolation:
 			if (sw_isolation)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_isolation = true;
 
@@ -914,7 +908,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 			{
 				if (sw_reserve)
 					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-							  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+							  isc_arg_gds, isc_dsql_dup_option, 0);
 
 				sw_reserve = true;
 				const dsql_nod* reserve = ptr->nod_arg[0];
@@ -933,7 +927,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		case nod_tra_misc:
 			if (misc_flags & ptr->nod_flags)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 						  
 			misc_flags |= ptr->nod_flags;
 			if (ptr->nod_flags & NOD_NO_AUTO_UNDO)
@@ -947,7 +941,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 		case nod_lock_timeout:
 			if (sw_lock_timeout)
 				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-						  isc_arg_gds, isc_dsql_dup_option, isc_arg_end);
+						  isc_arg_gds, isc_dsql_dup_option, 0);
 
 			sw_lock_timeout = true;
 			if (ptr->nod_count == 1 && ptr->nod_arg[0]->nod_type == nod_constant)
@@ -961,7 +955,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 
 		default:
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-					  isc_arg_gds, isc_dsql_tran_err, isc_arg_end);
+					  isc_arg_gds, isc_dsql_tran_err, 0);
 		}
 	}
 }
@@ -1244,44 +1238,42 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_cursor_close:
 	case nod_cursor_fetch:
 		{
-			// op-code
-			stuff(statement, blr_cursor_stmt);
-			if (node->nod_type == nod_cursor_open)
-				stuff(statement, blr_cursor_open);
-			else if (node->nod_type == nod_cursor_close)
-				stuff(statement, blr_cursor_close);
-			else
-				stuff(statement, blr_cursor_fetch);
-			// cursor reference
-			dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
-			stuff_word(statement, (int) (IPTR) cursor->nod_arg[e_cur_number]);
-			// preliminary navigation
-			const dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
-			if (seek) {
-				stuff(statement, blr_seek);
-				GEN_expr(statement, seek->nod_arg[0]);
-				GEN_expr(statement, seek->nod_arg[1]);
+		// op-code
+		stuff(statement, blr_cursor_stmt);
+		if (node->nod_type == nod_cursor_open)
+			stuff(statement, blr_cursor_open);
+		else if (node->nod_type == nod_cursor_close)
+			stuff(statement, blr_cursor_close);
+		else
+			stuff(statement, blr_cursor_fetch);
+		// cursor reference
+		dsql_nod* cursor = node->nod_arg[e_cur_stmt_id];
+		stuff_word(statement, (int) (IPTR) cursor->nod_arg[e_cur_number]);
+		// preliminary navigation
+		dsql_nod* seek = node->nod_arg[e_cur_stmt_seek];
+		if (seek) {
+			stuff(statement, blr_seek);
+			GEN_expr(statement, seek->nod_arg[0]);
+			GEN_expr(statement, seek->nod_arg[1]);
+		}
+		// assignment
+		dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
+		if (list_into) {
+			dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
+			if (list->nod_count != list_into->nod_count)
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
+						  isc_arg_gds, isc_dsql_count_mismatch, 0);
+			stuff(statement, blr_begin);
+			ptr = list->nod_arg;
+			end = ptr + list->nod_count;
+			dsql_nod** ptr_to = list_into->nod_arg;
+			while (ptr < end) {
+				stuff(statement, blr_assignment);
+				GEN_expr(statement, *ptr++);
+				GEN_expr(statement, *ptr_to++);
 			}
-			// assignment
-			dsql_nod* list_into = node->nod_arg[e_cur_stmt_into];
-			if (list_into) {
-				dsql_nod* list = cursor->nod_arg[e_cur_rse]->nod_arg[e_rse_items];
-				if (list->nod_count != list_into->nod_count)
-				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-							  isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
-				}
-				stuff(statement, blr_begin);
-				ptr = list->nod_arg;
-				end = ptr + list->nod_count;
-				dsql_nod** ptr_to = list_into->nod_arg;
-				while (ptr < end) {
-					stuff(statement, blr_assignment);
-					GEN_expr(statement, *ptr++);
-					GEN_expr(statement, *ptr_to++);
-				}
-				stuff(statement, blr_end);
-			}
+			stuff(statement, blr_end);
+		}
 		}
 		return;
 
@@ -1294,7 +1286,7 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_dsql_internal_err,
 				  isc_arg_gds, isc_node_err, // gen.c: node not supported
-				  isc_arg_end);
+				  0);
 	}
 }
 
@@ -1425,6 +1417,8 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 	SLONG value;
 	SINT64 i64value;
 
+	DSC tmp_desc;
+
 	stuff(statement, blr_literal);
 
 	const UCHAR* p = desc->dsc_address;
@@ -1495,7 +1489,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 					  isc_arg_number, (SLONG) - 104,
 					  isc_arg_gds, isc_arith_except,
 					  isc_arg_gds, isc_numeric_out_of_range,
-					  isc_arg_end);
+					  0);
 		}
 
 		/* We and the lexer both agree that this is an SINT64 constant,
@@ -1549,7 +1543,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 	default:
 		// gen_constant: datatype not understood 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 103,
-				  isc_arg_gds, isc_dsql_constant_err, isc_arg_end);
+				  isc_arg_gds, isc_dsql_constant_err, 0);
 	}
 }
 
@@ -1669,7 +1663,7 @@ static void gen_descriptor( CompiledStatement* statement, const dsc* desc, bool 
 	default:
 		// don't understand dtype 
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+				  isc_arg_gds, isc_dsql_datatype_err, 0);
 	}
 }
 
@@ -1848,8 +1842,8 @@ static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 					  isc_arg_gds, isc_sql_dialect_datatype_unsupport,
 					  isc_arg_number, (SLONG) statement->req_client_dialect,
 					  isc_arg_string,
-					  DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype)),
-					  isc_arg_end);
+					  DSC_dtype_tostring(static_cast < UCHAR >
+										 (field->fld_dtype)), 0);
 			break;
 		default:
 			// No special action for other data types 
@@ -1905,7 +1899,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		stuff(statement, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
 	}
 
-	// Generate FOR loop 
+// Generate FOR loop 
 
 	stuff(statement, blr_for);
 
@@ -1916,10 +1910,9 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 	gen_rse(statement, rse);
 	stuff(statement, blr_begin);
 
-	// Build body of FOR loop
+// Build body of FOR loop 
 
 	// Handle write locks 
-	/* CVC: Unused code!
 	dsql_nod* streams = rse->nod_arg[e_rse_streams];
 	dsql_ctx* context = NULL;
 
@@ -1928,7 +1921,6 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		if (item && (item->nod_type == nod_relation))
 			context = (dsql_ctx*) item->nod_arg[e_rel_context];
 	}
-	*/
 	
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
@@ -1937,7 +1929,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 	{
 		if (list->nod_count != list_to->nod_count)
 			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 313,
-					isc_arg_gds, isc_dsql_count_mismatch, isc_arg_end);
+					isc_arg_gds, isc_dsql_count_mismatch, 0);
 		dsql_nod** ptr = list->nod_arg;
 		dsql_nod** ptr_to = list_to->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
@@ -2768,8 +2760,8 @@ static void gen_statement(CompiledStatement* statement, const dsql_nod* node)
 	}
 
 	dsql_nod* temp;
-	const dsql_ctx* context;
-	const dsql_str* name;
+	dsql_ctx* context;
+	dsql_str* name;
 
 	switch (node->nod_type) {
 	case nod_store:
@@ -3069,14 +3061,14 @@ static void gen_union( CompiledStatement* statement, const dsql_nod* union_node)
 static void stuff_context(CompiledStatement* statement, const dsql_ctx* context)
 {
 	if (context->ctx_context > MAX_UCHAR) {
-		ERRD_post(isc_too_many_contexts, isc_arg_end);
+		ERRD_post(isc_too_many_contexts, 0);
 	}
 	stuff(statement, context->ctx_context);
 
 	if (context->ctx_flags & CTX_recursive)
 	{
 		if (context->ctx_recursive > MAX_UCHAR) {
-			ERRD_post(isc_too_many_contexts, isc_arg_end);
+			ERRD_post(isc_too_many_contexts, 0);
 		}
 		stuff(statement, context->ctx_recursive);
 	}

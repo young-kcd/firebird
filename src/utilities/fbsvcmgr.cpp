@@ -36,11 +36,9 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 
-using namespace Firebird;
-
 // Here we define main control structure
 
-typedef bool PopulateFunction(char**&, ClumpletWriter&, unsigned int);
+typedef bool PopulateFunction(char**&, Firebird::ClumpletWriter&, unsigned int);
 
 struct Switches
 {
@@ -48,24 +46,24 @@ struct Switches
 	PopulateFunction* populate;
 	const Switches* options;
 	unsigned int tag;
-	UCHAR tagInf;
+	unsigned char tagInf;
 };
 
 // Get message from security database
 
-string getMessage(int n)
+Firebird::string getMessage(int n)
 {
 	char buffer[256];
 	const int FACILITY = 22;
 
 	fb_msg_format(0, FACILITY, n, sizeof(buffer), buffer, MsgFormat::SafeArg());
 
-	return string(buffer);
+	return Firebird::string(buffer);
 }
 
-string prepareSwitch(const char* arg)
+Firebird::string prepareSwitch(const char* arg)
 {
-	string s(arg);
+	Firebird::string s(arg);
 	if (s[0] == '-')
 	{
 		s.erase(0, 1);
@@ -77,13 +75,13 @@ string prepareSwitch(const char* arg)
 
 // add string tag to spb
 
-bool putStringArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putStringArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
 
 	char* x = *av++;
-	string s(tag == isc_spb_password ? fb_utils::get_passwd(x) : x);
+	Firebird::string s(tag == isc_spb_password ? fb_utils::get_passwd(x) : x);
 	spb.insertString(tag, s);
 
 	return true;
@@ -91,13 +89,13 @@ bool putStringArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 
 // add some special format tags to spb
 
-bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
+bool putSpecTag(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag,
 				const Switches* sw, ISC_STATUS errorCode)
 {
 	if (! *av)
 		return false;
 
-	const string s(prepareSwitch(*av++));
+	const Firebird::string s(prepareSwitch(*av++));
 	for (; sw->name; ++sw)
 	{
 		if (s == sw->name)
@@ -107,7 +105,7 @@ bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
 		}
 	}
 
-	status_exception::raise(Arg::Gds(errorCode));
+	Firebird::status_exception::raise(errorCode, 0);
 	return false;	// compiler warning silencer
 }
 
@@ -117,7 +115,7 @@ const Switches amSwitch[] = {
 	{0, 0, 0, 0, 0}
 };
 
-bool putAccessMode(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putAccessMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, amSwitch, isc_fbsvcmgr_bad_am);
 }
@@ -128,7 +126,7 @@ const Switches wmSwitch[] = {
 	{0, 0, 0, 0, 0}
 };
 
-bool putWriteMode(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putWriteMode(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, wmSwitch, isc_fbsvcmgr_bad_wm);
 }
@@ -139,14 +137,14 @@ const Switches rsSwitch[] = {
 	{0, 0, 0, 0, 0}
 };
 
-bool putReserveSpace(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putReserveSpace(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
 
 // add numeric (int32) tag to spb
 
-bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+bool putNumericArgument(char**& av, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	if (! *av)
 		return false;
@@ -159,7 +157,7 @@ bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 
 // add boolean option to spb
 
-bool putOption(char**&, ClumpletWriter& spb, unsigned int tag)
+bool putOption(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertInt(isc_spb_options, tag);
 
@@ -168,7 +166,7 @@ bool putOption(char**&, ClumpletWriter& spb, unsigned int tag)
 
 // add argument-less tag to spb
 
-bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
+bool putSingleTag(char**&, Firebird::ClumpletWriter& spb, unsigned int tag)
 {
 	spb.insertTag(tag);
 
@@ -179,14 +177,14 @@ bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
 // and programmer-defined set of Switches array
 
 bool populateSpbFromSwitches(char**& av, 
-		ClumpletWriter& spb, 
+		Firebird::ClumpletWriter& spb, 
 		const Switches* sw, 
-		ClumpletWriter* infoSpb)
+		Firebird::ClumpletWriter* infoSpb)
 {
 	if (! *av)
 		return false;
 
-	const string s(prepareSwitch(*av));
+	const Firebird::string s(prepareSwitch(*av));
 
 	for (; sw->name; ++sw)
 	{
@@ -346,7 +344,7 @@ const Switches actionSwitch[] = {
 
 // print information, returned by isc_svc_query() call
 
-bool getLine(string& dest, const char*& p)
+bool getLine(Firebird::string& dest, const char*& p)
 {
 	unsigned short length = (unsigned short)
 		isc_vax_integer (p, sizeof(unsigned short));
@@ -366,7 +364,7 @@ int getNumeric(const char*& p)
 
 bool printLine(const char*& p)
 {
-	string s;
+	Firebird::string s;
 	bool rc = getLine(s, p);
 	printf ("%s\n", s.c_str());
 	return rc;
@@ -394,7 +392,7 @@ void printNumeric(const char*& p, int num)
 class UserPrint
 {
 public:
-	string login, first, middle, last;
+	Firebird::string login, first, middle, last;
 	int gid, uid;
 
 private:
@@ -474,8 +472,8 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 17);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
-											Arg::Num(static_cast<unsigned char>(p[-1])));
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), 0);
 				}
 			}
 			p++;
@@ -505,8 +503,8 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(41);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
-												Arg::Num(static_cast<unsigned char>(p[-1])));
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), 0);
 					}
 					break;
 				case isc_spb_tra_remote_site:
@@ -528,8 +526,8 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(46);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
-												Arg::Num(static_cast<unsigned char>(p[-1])));
+						Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+							static_cast<unsigned char>(p[-1]), 0);
 					}
 					break;
 				case isc_spb_multi_tra_id:
@@ -542,8 +540,8 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 37);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
-											Arg::Num(static_cast<unsigned char>(p[-1])));
+					Firebird::status_exception::raise(isc_fbsvcmgr_info_err, isc_arg_number, 
+						static_cast<unsigned char>(p[-1]), 0);
 				}
 			}
 			p++;
@@ -580,8 +578,8 @@ bool printInfo(const char* p, UserPrint& up)
 			return false;
 
 		default:
-			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) << 
-									Arg::Num(static_cast<unsigned char>(p[-1])));
+			Firebird::status_exception::raise(isc_fbsvcmgr_query_err, isc_arg_number, 
+				static_cast<unsigned char>(p[-1]), 0);
 		}
 	}
 
@@ -620,12 +618,12 @@ int main(int ac, char **av)
 			av++;
 		}	
 
-		ClumpletWriter spbAtt(ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
+		Firebird::ClumpletWriter spbAtt(Firebird::ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
 			;
 
-		ClumpletWriter spbStart(ClumpletWriter::SpbStart, maxbuf);
-		ClumpletWriter spbItems(ClumpletWriter::SpbItems, 256);
+		Firebird::ClumpletWriter spbStart(Firebird::ClumpletWriter::SpbStart, maxbuf);
+		Firebird::ClumpletWriter spbItems(Firebird::ClumpletWriter::SpbItems, 256);
 		// single action per one utility run, it may populate info items also
 		populateSpbFromSwitches(av, spbStart, actionSwitch, &spbItems);
 
@@ -638,7 +636,7 @@ int main(int ac, char **av)
 		//Here we are over with av parse, look - may be unknown switch left
 		if (*av)
 		{
-			status_exception::raise(Arg::Gds(isc_fbsvcmgr_switch_unknown) << Arg::Str(*av));
+			Firebird::status_exception::raise(isc_fbsvcmgr_switch_unknown, isc_arg_string, *av, 0);
 		}
 
 		isc_svc_handle svc_handle = 0;
@@ -686,7 +684,7 @@ int main(int ac, char **av)
 		isc_service_detach(status, &svc_handle);
 		return 0;
 	}
-	catch (const Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
 		isc_print_status(status);

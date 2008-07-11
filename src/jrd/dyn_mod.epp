@@ -77,7 +77,6 @@
 using MsgFormat::SafeArg;
 
 using namespace Jrd;
-using namespace Firebird;
 
 
 DATABASE DB = STATIC "ODS.RDB";
@@ -92,16 +91,16 @@ static const UCHAR alloc_info[] = { isc_info_allocation, isc_info_end };
 static void change_backup_mode(Global*, UCHAR verb);
 
 static void modify_lfield_position(thread_db*, Database*, Global*,
-	const MetaName&, const MetaName&, USHORT, USHORT);
+	const Firebird::MetaName&, const Firebird::MetaName&, USHORT, USHORT);
 static bool check_view_dependency(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
 static bool check_sptrig_dependency(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
 static void modify_lfield_index(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&);
 static bool field_exists(thread_db*, Database*, Global*, 
-	const MetaName&, const MetaName&);
-static bool domain_exists(thread_db*, Database*, Global*, const MetaName&);
+	const Firebird::MetaName&, const Firebird::MetaName&);
+static bool domain_exists(thread_db*, Database*, Global*, const Firebird::MetaName&);
 static void get_domain_type(thread_db*, Database*, Global*, dyn_fld&);
 static ULONG check_update_fld_type(const dyn_fld&, const dyn_fld&);
 static ULONG check_update_numeric_type(const dyn_fld&, const dyn_fld&);
@@ -156,8 +155,8 @@ void DYN_modify_charset(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_chset))
 			DYN_REQUEST(drq_m_chset) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 85);
 		// msg 85: "MODIFY RDB$CHARACTER_SETS failed"
@@ -219,8 +218,8 @@ void DYN_modify_collation(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_coll))
 			DYN_REQUEST(drq_m_coll) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 86);
 		// msg 86: "MODIFY RDB$COLLATIONS failed"
@@ -314,7 +313,7 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 
 				case isc_dyn_fld_collation:
 					{
-						MetaName collation;
+						Firebird::MetaName collation;
 						GET_STRING(ptr, collation);
 
 						if (!DBB.RDB$CHARACTER_SET_NAME.NULL)
@@ -337,8 +336,8 @@ void DYN_modify_database( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_database) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 84);
 		// msg 84: "MODIFY DATABASE failed"
@@ -372,7 +371,7 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 
 	try {
 
-	MetaName t;
+	Firebird::MetaName t;
 	GET_STRING(ptr, t);
 
 	found = false;
@@ -410,8 +409,8 @@ void DYN_modify_exception( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_xcp) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 145);
 		// msg 145: "MODIFY EXCEPTION failed"
@@ -474,8 +473,8 @@ void DYN_modify_filter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_bfil))
 			DYN_REQUEST(drq_m_bfil) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 88);
 		// msg 88: "MODIFY RDB$BLOB_FILTERS failed"
@@ -548,8 +547,8 @@ void DYN_modify_function(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_fun))
 			DYN_REQUEST(drq_m_fun) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 92);
 		// msg 92: "MODIFY RDB$FUNCTIONS failed"
@@ -610,8 +609,8 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_gen))
 			DYN_REQUEST(drq_m_gen) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 94);
 		// msg 94: "MODIFY GENERATOR failed"
@@ -627,8 +626,8 @@ void DYN_modify_generator(Global* gbl, const UCHAR** ptr)
 
 void DYN_modify_global_field(Global* gbl,
 							 const UCHAR** ptr,
-							 const MetaName* relation_name, 
-							 MetaName* field_name)
+							 const Firebird::MetaName* relation_name, 
+							 Firebird::MetaName* field_name)
 {
 /**************************************
  *
@@ -711,7 +710,7 @@ void DYN_modify_global_field(Global* gbl,
 			{
 			case isc_dyn_fld_name:
 				{
-					MetaName newfld;
+					Firebird::MetaName newfld;
 
 					if (GET_STRING(ptr, newfld))
 					{
@@ -1153,8 +1152,8 @@ void DYN_modify_global_field(Global* gbl,
 		DYN_REQUEST(drq_m_gfield) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 87);
 		/* msg 87: "MODIFY RDB$FIELDS failed" */
@@ -1180,7 +1179,7 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
  *	Modify an existing index
  *
  **************************************/
-	MetaName name;
+	Firebird::MetaName name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -1238,8 +1237,8 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_index) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 91);
 		// msg 91: "MODIFY RDB$INDICES failed"
@@ -1253,9 +1252,10 @@ void DYN_modify_index( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_local_field(Global* gbl,
+void DYN_modify_local_field(
+							Global* gbl,
 							const UCHAR** ptr,
-							const MetaName* relation_name)
+							const Firebird::MetaName* relation_name)
 {
 /**************************************
  *
@@ -1268,7 +1268,7 @@ void DYN_modify_local_field(Global* gbl,
  *
  **************************************/
 	USHORT position;
-	MetaName f, r;
+	Firebird::MetaName f, r;
 	const UCHAR* query_name;
 	const UCHAR* edit_string;
 	const UCHAR* security_class;
@@ -1383,7 +1383,7 @@ void DYN_modify_local_field(Global* gbl,
 			}
 
 			if (nnflag) {
-				MetaName new_fld;
+				Firebird::MetaName new_fld;
 				GET_STRING(&new_name, new_fld);
 				if (new_fld.length() == 0)
 				{
@@ -1442,8 +1442,8 @@ void DYN_modify_local_field(Global* gbl,
 	if (npflag && found && position != existing_position)
 		modify_lfield_position(tdbb, dbb, gbl, r, f, position, existing_position);
 	} // try
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 95);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
@@ -1516,8 +1516,8 @@ void DYN_modify_parameter(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_prm))
 			DYN_REQUEST(drq_m_prm) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 100);
 		// msg 100: "MODIFY RDB$PROCEDURE_PARAMETERS failed"
@@ -1543,7 +1543,7 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
  *	Execute a dynamic ddl statement.
  *
  **************************************/
-	MetaName procedure_name;
+	Firebird::MetaName procedure_name;
 
 	GET_STRING(ptr, procedure_name);
 
@@ -1667,8 +1667,8 @@ void DYN_modify_procedure( Global* gbl, const UCHAR** ptr)
 	if (!DYN_REQUEST(drq_m_prcs))
 		DYN_REQUEST(drq_m_prcs) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 141);
 		/* msg 141: "MODIFY RDB$PROCEDURES failed" */
@@ -1693,7 +1693,7 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
  *	Modify an existing relation
  *
  **************************************/
-	MetaName name, field_name;
+	Firebird::MetaName name, field_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -1763,8 +1763,8 @@ void DYN_modify_relation( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_relation) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -1825,8 +1825,8 @@ void DYN_modify_role(Global* gbl, const UCHAR** ptr)
 		if (!DYN_REQUEST(drq_m_rol))
 			DYN_REQUEST(drq_m_rol) = request;
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 158);
 		// msg 158: "MODIFY RDB$ROLES failed"
@@ -1852,7 +1852,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
  *	Modify a trigger for a relation.
  *
  **************************************/
-	MetaName trigger_name;
+	Firebird::MetaName trigger_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -1877,7 +1877,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		}
 
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+			ERR_post(isc_adm_task_denied, 0);
 
 		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
 		// Why would a user want to fiddle with triggers that were generated automatically?
@@ -1918,7 +1918,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 				switch (verb) {
 				case isc_dyn_trg_name:
 					{
-						MetaName new_trigger_name;
+						Firebird::MetaName new_trigger_name;
 						GET_STRING(ptr, new_trigger_name);
 						if (new_trigger_name.length() == 0)
 							DYN_error_punt(false, 212);
@@ -2011,8 +2011,8 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 	}
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 102);
 		/* msg 102: "MODIFY TRIGGER failed" */
@@ -2025,7 +2025,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 }
 
 
-void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_name)
+void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, Firebird::MetaName* trigger_name)
 {
 /**************************************
  *
@@ -2037,7 +2037,7 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
  *	Modify a trigger message.
  *
  **************************************/
-	MetaName t;
+	Firebird::MetaName t;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -2086,8 +2086,8 @@ void DYN_modify_trigger_msg( Global* gbl, const UCHAR** ptr, MetaName* trigger_n
 		DYN_REQUEST(drq_m_trg_msg) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 105);
 		/* msg 105: "MODIFY TRIGGER MESSAGE failed" */
@@ -2110,7 +2110,7 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-	MetaName view_name;
+	Firebird::MetaName view_name;
 	GET_STRING(ptr, view_name);
 
 	if (view_name.length() == 0)
@@ -2208,8 +2208,8 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 		DYN_REQUEST(drq_m_view) = request;
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 99);
 		/* msg 99: "MODIFY RDB$RELATIONS failed" */
@@ -2242,7 +2242,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(isc_adm_task_denied, 0);
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
@@ -2294,8 +2294,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 	}
 	
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, drq_d_difference); 
 		DYN_error_punt(true, 63);
 		/* msg 63: ERASE RDB$FILE failed */
@@ -2322,8 +2322,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 				DYN_REQUEST(drq_s_difference) = request;
 			}		
 		}
-		catch (const Exception& ex) {
-			stuff_exception(tdbb->tdbb_status_vector, ex);
+		catch (const Firebird::Exception& ex) {
+			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 			DYN_rundown_request(request, drq_s_difference);
 			DYN_error_punt(true, 150);
 			/* msg 150: STORE RDB$FILES failed */
@@ -2348,8 +2348,8 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 static void modify_lfield_position(thread_db* tdbb,
 								   Database* dbb,
 								   Global* gbl,
-								   const MetaName& relation_name,
-								   const MetaName& field_name,
+								   const Firebird::MetaName& relation_name,
+								   const Firebird::MetaName& field_name,
 								   USHORT new_position,
 								   USHORT existing_position)
 {
@@ -2450,8 +2450,8 @@ static void modify_lfield_position(thread_db* tdbb,
 
 	CMP_release(tdbb, request);
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95);
 		/* msg 95: "MODIFY RDB$RELATION_FIELDS failed" */
 	}
@@ -2461,8 +2461,8 @@ static void modify_lfield_position(thread_db* tdbb,
 static bool check_view_dependency(thread_db* tdbb,
 									 Database* dbb,
 									 Global* gbl,
-									 const MetaName& relation_name,
-									 const MetaName& field_name)
+									 const Firebird::MetaName& relation_name,
+									 const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2477,7 +2477,7 @@ static bool check_view_dependency(thread_db* tdbb,
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	MetaName view_name;
+	Firebird::MetaName view_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
@@ -2508,8 +2508,8 @@ static bool check_view_dependency(thread_db* tdbb,
 static bool check_sptrig_dependency(thread_db* tdbb,
 									   Database* dbb,
 									   Global* gbl,
-									   const MetaName& relation_name,
-									   const MetaName& field_name)
+									   const Firebird::MetaName& relation_name,
+									   const Firebird::MetaName& field_name)
 {
 /***********************************************************
  *
@@ -2523,7 +2523,7 @@ static bool check_sptrig_dependency(thread_db* tdbb,
  ***********************************************************/
 	jrd_req* request = NULL;
 	bool retval = false;
-	MetaName dep_name;
+	Firebird::MetaName dep_name;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 		FIRST 1
@@ -2545,12 +2545,12 @@ static bool check_sptrig_dependency(thread_db* tdbb,
 }
 
 
-static void modify_lfield_index(thread_db* tdbb,
-								Database* dbb,
-								Global* gbl,
-								const MetaName&	relation_name,
-								const MetaName&	field_name,
-								const MetaName&	new_fld_name)
+static void modify_lfield_index(thread_db*	tdbb,
+								Database*	dbb,
+								Global*		gbl,
+								const Firebird::MetaName&	relation_name,
+								const Firebird::MetaName&	field_name,
+								const Firebird::MetaName&	new_fld_name)
 {
 /***********************************************************
  *
@@ -2586,11 +2586,11 @@ static void modify_lfield_index(thread_db* tdbb,
 }
 
 
-static bool field_exists(thread_db* tdbb,
-						 Database* dbb,
-						 Global* gbl,
-						 const MetaName& relation_name,
-						 const MetaName& field_name)
+static bool field_exists(thread_db*					tdbb,
+						 Database*					dbb,
+						 Global*					gbl,
+						 const Firebird::MetaName&	relation_name,
+						 const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2615,10 +2615,10 @@ static bool field_exists(thread_db* tdbb,
 }
 
 
-static bool domain_exists(thread_db* tdbb, 
-						  Database* dbb, 
-						  Global* gbl, 
-						  const MetaName& field_name)
+static bool domain_exists(thread_db*				tdbb, 
+						  Database*					dbb, 
+						  Global*					gbl, 
+						  const Firebird::MetaName&	field_name)
 {
 /***********************************************************
  *
@@ -2641,9 +2641,9 @@ static bool domain_exists(thread_db* tdbb,
 }
 
 
-void DYN_modify_sql_field(Global* gbl,
-						  const UCHAR** ptr,
-						  const MetaName* relation_name)
+void DYN_modify_sql_field(Global*					gbl,
+						  const UCHAR**				ptr,
+						  const Firebird::MetaName*	relation_name)
 {
 /**************************************
  *
@@ -2735,7 +2735,7 @@ void DYN_modify_sql_field(Global* gbl,
 		bool fld_position_change = false;
 		SSHORT view_context = 0;
 		bool view_context_change = false;
-		MetaName fld_base_field;
+		Firebird::MetaName fld_base_field;
 		bool fld_base_field_change = false;
 		bool orig_computed = false;
 
@@ -3396,8 +3396,8 @@ void DYN_modify_sql_field(Global* gbl,
 						orig_fld.dyn_fld_name);
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 95);
 		// msg 95: "MODIFY RDB$RELATION_FIELDS failed"
 	}
@@ -3417,7 +3417,7 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 	jrd_req* request = CMP_find_request(tdbb, drq_m_map, DYN_REQUESTS);
 	bool found = false;
 
-	string osName, dbName;
+	Firebird::string osName, dbName;
 	GET_STRING(ptr, osName);
 	const UCHAR op = *(*ptr)++;
 	GET_STRING(ptr, dbName);
@@ -3427,11 +3427,11 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 
 	if (dbName != ADMIN_ROLE)
 	{
-		status_exception::raise(Arg::Gds(isc_no_meta_update) << Arg::Gds(isc_wish_list));
+		Firebird::status_exception::raise(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
 	}
 
 	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(isc_adm_task_denied, 0);
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -3464,8 +3464,9 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 
 	if (!found)
 	{
-		status_exception::raise(Arg::Gds(isc_no_meta_update) <<
-			Arg::Gds(isc_random) << Arg::Str("Missing RDB$ADMIN role in the database"));
+		Firebird::status_exception::raise(isc_no_meta_update, isc_arg_gds, 
+			isc_random, isc_arg_string, "Missing RDB$ADMIN role in the database", 
+			isc_arg_end);
 	}
 }
 

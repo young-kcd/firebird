@@ -75,6 +75,7 @@ void ConfigRoot::osConfigRoot()
 	initialized = true;
 
 	// check the registry first
+//#if !defined(EMBEDDED)
 #if defined(SUPERCLIENT)
 	if (getRootFromRegistry(root_dir))
 	{

@@ -1,10 +1,9 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="common"
 	ProjectGUID="{15605F44-BFFD-444F-AD4C-55DC9D704465}"
-	RootNamespace="common"
 	>
 	<Platforms>
 		<Platform
@@ -324,10 +323,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\cvt.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\db_alias.cpp"
 				>
 			</File>
@@ -365,10 +360,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.cpp"
 				>
 			</File>
 			<File
@@ -437,10 +428,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\cvt.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\db_alias.h"
 				>
 			</File>
@@ -466,10 +453,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.h"
 				>
 			</File>
 			<File

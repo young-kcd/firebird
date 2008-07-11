@@ -110,7 +110,6 @@ static void		set_external_flag();
 static bool		terminator();
 
 static int		brace_count;
-static int		namespace_count;
 static bool		routine_decl;
 static act*		cur_statement;
 static act*		cur_item;
@@ -294,23 +293,6 @@ act* PAR_action(const TEXT* base_dir)
 				return cur_statement = par_trans(ACT_rollback);
 			case KW_PREPARE:
 				return cur_statement = par_trans(ACT_prepare);
-
-			case KW_NAMESPACE:
-				if (gpreGlob.sw_language == lang_internal || gpreGlob.sw_language == lang_cxx ||
-					gpreGlob.sw_language == lang_cplusplus)
-				{
-					if (CPR_token())
-					{
-						if (gpreGlob.token_global.tok_keyword == KW_L_BRACE)
-						{
-							CPR_token();
-							++namespace_count;
-							++brace_count;
-							return NULL;
-						}
-					}
-				}
-				break;
 
 			case KW_L_BRACE:
 				return par_left_brace();
@@ -898,7 +880,6 @@ void PAR_init()
 
 	flag_field = NULL;
 	brace_count = 0;
-	namespace_count = 0;
 }
 
 static inline void gobble(SCHAR*& string)
@@ -2215,7 +2196,7 @@ static act* par_function()
 
 static act* par_left_brace()
 {
-	if (brace_count++ - namespace_count > 0)
+	if (brace_count++ > 0)
 		return NULL;
 
 	act* action = MSC_action(0, ACT_routine);
@@ -2741,12 +2722,6 @@ static act* par_right_brace()
 {
 	if (--brace_count < 0)
 		brace_count = 0;
-
-	if (brace_count <= 0)
-	{
-		if (--namespace_count < 0)
-			namespace_count = 0;
-	}
 
 	return NULL;
 }

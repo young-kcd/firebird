@@ -444,7 +444,7 @@ public:
 	{
 		if (! r->checkHandle())
 		{
-			Firebird::status_exception::raise(Firebird::Arg::Gds(R::badHandle()));
+			Firebird::status_exception::raise(R::badHandle(), isc_arg_end);
 		}
 		return r;
 	}
@@ -736,7 +736,7 @@ public:
 		}
 		if (id >= port_objects.getCount() || port_objects[id].isMissing())
 		{
-			Firebird::status_exception::raise(Firebird::Arg::Gds(T::badHandle()));
+			Firebird::status_exception::raise(T::badHandle(), isc_arg_end);
 		}
 		blk = port_objects[id];
 	}

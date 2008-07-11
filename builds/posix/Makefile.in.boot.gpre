@@ -45,11 +45,6 @@ JRDBOOT_Sources = $(addprefix jrd/, $(JRDBOOT_Files))
 JRDBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRDBOOT_Sources))))
 
 
-COMMONBOOT_Files =	 cvt.cpp
-COMMONBOOT_Sources = $(addprefix common/, $(COMMONBOOT_Files))
-COMMONBOOT_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(COMMONBOOT_Sources))))
-
-
 GPRECOMMON_Files += cmd.cpp cme.cpp cmp.cpp c_cxx.cpp exp.cpp \
 		gpre.cpp hsh.cpp int_cxx.cpp jrdmet.cpp movg.cpp \
 		msc.cpp par.cpp pat.cpp sqe.cpp sql.cpp
@@ -61,8 +56,7 @@ GPRE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(GPRE_Sources)))
 
 
 GPREBOOT_Objects = $(JRDBOOT_Objects) $(GPRE_Objects) $(OS_SPECIFIC_Objects) \
- $(FBCOMMON_Objects) $(FBCONFIG_Objects) $(FBCLASSES_ClientObjects) \
- $(FBCLASSES_MsgObjects) $(COMMONBOOT_Objects)
+ $(FBCOMMON_Objects) $(FBCONFIG_Objects) $(FBCLASSES_ClientObjects) $(FBCLASSES_MsgObjects)
 
 AllObjects = $(GPREBOOT_Objects)
 

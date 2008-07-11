@@ -39,21 +39,23 @@ ISC_STATUS dupStringTemp(const char* s)
 	return (ISC_STATUS)(IPTR)(string);
 }
 
-void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
+void fill_status(ISC_STATUS *ptr, ISC_STATUS status, va_list status_args)
 {
 	// Move in status and clone transient strings
+	*ptr++ = isc_arg_gds;
+	*ptr++ = status;
 	while (true) 
 	{
-		const ISC_STATUS type = *ptr++ = *orig_status++;
+		const ISC_STATUS type = *ptr++ = va_arg(status_args, ISC_STATUS);
 		if (type == isc_arg_end) 
 			break;
 
 		switch (type) {
 		case isc_arg_cstring: 
 			{				
-				const size_t len = *ptr++ = *orig_status++;
+				const size_t len = *ptr++ = va_arg(status_args, ISC_STATUS);
 				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
-				const char *temp = reinterpret_cast<char*>(*orig_status++);
+				const char *temp = reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS));
 				memcpy(string, temp, len);
 				*ptr++ = (ISC_STATUS)(IPTR)(string);
 				break;
@@ -62,11 +64,11 @@ void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
 		case isc_arg_interpreted:
 		case isc_arg_sql_state:
 			{
-				*ptr++ = dupStringTemp(reinterpret_cast<char*>(*orig_status++));
+				*ptr++ = dupStringTemp(reinterpret_cast<char*>(va_arg(status_args, ISC_STATUS)));
 				break;
 			}
 		default:
-			*ptr++ = *orig_status++;
+			*ptr++ = va_arg(status_args, ISC_STATUS);
 			break;
 		}
 	}	
@@ -185,8 +187,6 @@ status_exception::~status_exception() throw()
 	release_vector();
 }
 
-/********************************* fatal_exception *******************************/
-
 void fatal_exception::raiseFmt(const char* format, ...) 
 {
 	va_list args;
@@ -203,10 +203,13 @@ void status_exception::raise(const ISC_STATUS *status_vector)
 	throw status_exception(status_vector, true);
 }
 	
-void status_exception::raise(const Arg::StatusVector& statusVector)
+void status_exception::raise(ISC_STATUS status, ...) 
 {
+	va_list args;
+	va_start(args, status);
 	ISC_STATUS_ARRAY temp;
-	fill_status(temp, statusVector.value());
+	fill_status(temp, status, args);
+	va_end(args);
 	throw status_exception(temp, false);
 }
 

@@ -63,12 +63,8 @@
 #include "../common/classes/auto.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 typedef void* UDF_ARG;
-
-// Defined in extlib/ib_util.cpp
-extern "C" int ib_util_free(void* ptr);
 
 template <typename T>
 T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
@@ -96,7 +92,7 @@ struct udf_blob
 };
 
 
-class OwnedBlobStack : public Stack<blb*>
+class OwnedBlobStack : public Firebird::Stack<blb*>
 {
 public:
 	OwnedBlobStack(thread_db* in_tdbb) :
@@ -126,7 +122,7 @@ OwnedBlobStack::~OwnedBlobStack()
 			else
 				BLB_cancel(m_tdbb, aux);
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			// Ignore exception.
 		}
@@ -152,7 +148,6 @@ static void invoke(thread_db* tdbb,
 				   UDF_ARG*,
 				   const udf_blob* const return_blob_struct,
 				   bool&,
-				   bool&,
 				   bool&);
 
 
@@ -170,7 +165,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
  **************************************/
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
-	HalfStaticArray<UCHAR, 800> temp;
+	Firebird::HalfStaticArray<UCHAR, 800> temp;
 
 	SET_TDBB(tdbb);
 
@@ -181,7 +176,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
-	//Stack<blb*> blob_stack;
+	//Firebird::Stack<blb*> blob_stack;
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
 	UCharStack array_stack;
@@ -488,7 +483,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 							{
 								ERR_post(isc_wish_list,
 										 isc_arg_gds, isc_blobnotsup,
-										 isc_arg_string, "conversion", isc_arg_end);
+										 isc_arg_string, "conversion", 0);
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}
@@ -531,20 +526,13 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	// internal blob and this has been always the tale.
 	bool result_was_null = false;
 	
-	// Did the udf mismanage memory marked with FREE_IT,
-	//that should be deallocated by the engine?
-	bool freeItOk = true;
-	
 	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
-		unsup_datatype, freeItOk, result_was_null);
+		unsup_datatype, result_was_null);
 
 	if (unsup_datatype) {
 		IBERROR(169);			// msg 169 return data type not supported
 	}
 	
-	if (!freeItOk)
-		status_exception::raise(Arg::Gds(isc_bad_udf_freeit));
-		
 	if (result_was_null)
 	{
 		request->req_flags |= req_null;
@@ -560,7 +548,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	blob_stack.close();
 
 	} // try
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		while (array_stack.hasData()) {
 			delete[] array_stack.pop();
@@ -576,7 +564,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 }
 
 
-UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool ShowAccessError)
+UserFunction* FUN_lookup_function(thread_db* tdbb, const Firebird::MetaName& name, bool ShowAccessError)
 {
 /**************************************
  *
@@ -882,7 +870,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 				MOV_move(tdbb, &from, &to);
 			}
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			delete[] data;
 			delete[] temp;
@@ -914,8 +902,6 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 }
 
 /* We'll use it the day we get rid of SEH.
-ASF: This class doesn't detect bad free_it pointers - see the logic of "freeItOk"
-in "invoke" function.
 namespace {
 	class MemoryFree
 	{
@@ -923,7 +909,7 @@ namespace {
 		static void clear(void* p)
 		{
 			if (p)
-				ib_util_free(p);
+				free(p);
 		}
 	};
 } // namespace
@@ -937,7 +923,6 @@ static void invoke(thread_db* tdbb,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
 				   bool& unsup_datatype,
-				   bool& freeItOk,
 				   bool& result_is_null
 )
 {
@@ -1037,8 +1022,8 @@ static void invoke(thread_db* tdbb,
 			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
 			/* We'll use it the day we get rid of SEH.
 			For now, if MOV_move calls ERR_post, we leak memory allocated in the UDF.
-			AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
-			AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
+			Firebird::AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
+			Firebird::AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
 			*/
 			
 			if (result_is_null)
@@ -1123,15 +1108,14 @@ static void invoke(thread_db* tdbb,
 
 			// Check if this is function has the FREE_IT set, if set and
 			// return_value is not null, then free the return value.
-			if (must_free)
-			{
+			if (must_free) {
 				//sentryData = 0;
 				if (temp_ptr)
-					freeItOk = ib_util_free(temp_ptr) && freeItOk;
+					free(temp_ptr);
 				// CVC: Let's free the descriptor, too.
 				//sentryDsc = 0;
 				if (return_dsc)
-					freeItOk = ib_util_free(return_dsc) && freeItOk;
+					free(return_dsc);
 			}
 		}
 		else

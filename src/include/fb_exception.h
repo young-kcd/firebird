@@ -33,7 +33,6 @@
 #include <stddef.h>
 #include <string.h>
 #include "fb_types.h"
-#include "../common/StatusArg.h"
 
 namespace Firebird {
 
@@ -131,8 +130,8 @@ public:
 	// Takes permanent strings
 	static void raise(const ISC_STATUS *status_vector);
 	
-	// Takes transient strings
-	static void raise(const Arg::StatusVector& statusVector);
+	// Take transient strings
+	static void raise(ISC_STATUS status, ...);
 	
 protected:
 	// Create exception with undefined status vector, this constructor allows 

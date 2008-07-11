@@ -33,6 +33,23 @@
 #include "../remote/xdr_proto.h"
 #include "../jrd/gds_proto.h"
 
+// 30 Dec 2002. Nickolay Samofatov 
+// This needs to be checked for all supported platforms
+// The simpliest way to check it is to issue from correct client:
+// declare external function abs2 double precision
+//   returns double precision by value
+//   entry_point 'IB_UDF_abs' module_name 'ib_udf';
+// select abs2(2.0 / 3.0) from rdb$database;
+// It will return big strange value in case of invalid define
+// ASF: Currently, all little-endian are SWAP_DOUBLE and big-endian aren't.
+#if defined(i386) || defined(I386) || defined(_M_IX86) || defined(AMD64) || defined(ARM) || defined(MIPSEL) || defined(DARWIN64) || defined(IA64)
+#define		SWAP_DOUBLE
+#elif defined(sparc) || defined(PowerPC) || defined(PPC) || defined(__ppc__) || defined(HPUX) || defined(MIPS) || defined(__ppc64__)
+#undef		SWAP_DOUBLE
+#else
+#error "Define SWAP_DOUBLE for your platform correctly !"
+#endif
+
 #ifdef BURP
 #include "../burp/misc_proto.h"	/* Was "../burp/misc_pro.h" -Jeevan */
 inline UCHAR* XDR_ALLOC(ULONG size) {
@@ -278,27 +295,43 @@ bool_t xdr_double(XDR * xdrs, double *ip)
 	union {
 		double temp_double;
 		SLONG temp_long[2];
+		SSHORT temp_short[4]; // Not used.
 	} temp;
-
-	fb_assert(sizeof(double) == sizeof(temp));
 
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		temp.temp_double = *ip;
-		if (PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) &&
-			PUTLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef SWAP_DOUBLE
+		if (PUTLONG(xdrs, &temp.temp_long[1]) &&
+			PUTLONG(xdrs, &temp.temp_long[0]))
 		{
 			return TRUE;
 		}
 		return FALSE;
+#else
+		if (PUTLONG(xdrs, &temp.temp_long[0]) &&
+			PUTLONG(xdrs, &temp.temp_long[1]))
+		{
+			return TRUE;
+		}
+		return FALSE;
+#endif
 
 	case XDR_DECODE:
-		if (!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_FIRST]) ||
-			!GETLONG(xdrs, &temp.temp_long[FB_LONG_DOUBLE_SECOND]))
+#ifdef SWAP_DOUBLE
+		if (!GETLONG(xdrs, &temp.temp_long[1]) ||
+			!GETLONG(xdrs, &temp.temp_long[0]))
 		{
 			return FALSE;
 		}
+#else
+		if (!GETLONG(xdrs, &temp.temp_long[0]) ||
+			!GETLONG(xdrs, &temp.temp_long[1]))
+		{
+			return FALSE;
+		}
+#endif
 		*ip = temp.temp_double;
 		return TRUE;
 

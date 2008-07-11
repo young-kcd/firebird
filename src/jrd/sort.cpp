@@ -883,7 +883,7 @@ FB_UINT64 SORT_read_block(
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		ERR_post(isc_sort_err, isc_arg_end);
+		ERR_post(isc_sort_err, 0);
 	}
 #ifndef SCROLLABLE_CURSORS
 	return seek;
@@ -1189,7 +1189,7 @@ FB_UINT64 SORT_write_block(ISC_STATUS* status_vector,
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		ERR_post(isc_sort_err, isc_arg_end);
+		ERR_post(isc_sort_err, 0);
 	}
 
 	return seek;

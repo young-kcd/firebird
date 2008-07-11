@@ -74,7 +74,6 @@ typedef enum kwwords {
 	KW_L_BRACE,
 	KW_MODIFY,
 	KW_MONTH,
-	KW_NAMESPACE,
 	KW_NATIONAL,
 	KW_NCHAR,
 	KW_ON,

@@ -121,7 +121,10 @@ public:
 
 			if (len == INTL_BAD_STR_LENGTH || errCode != 0)
 			{
-				raiseError(isc_string_truncation);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_string_truncation,
+					0);
 			}
 
 			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> temp;
@@ -133,14 +136,20 @@ public:
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 
 			if (errCode == CS_BAD_INPUT && badInputPos)
 				*badInputPos = errPos;
 			else if (errCode != 0)
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 
 			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, reinterpret_cast<const UCHAR*>(temp.begin()),
@@ -148,7 +157,10 @@ public:
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 			else if (errCode == CS_TRUNCATION_ERROR)
 			{
@@ -167,7 +179,10 @@ public:
 							if (badInputPos)
 								break;
 
-							raiseError(isc_string_truncation);
+							Firebird::status_exception::raise(
+								isc_arith_except,
+								isc_arg_gds, isc_string_truncation,
+								0);
 						}
 					}
 
@@ -178,7 +193,10 @@ public:
 				{
 					if (!badInputPos)
 					{
-						raiseError(isc_string_truncation);
+						Firebird::status_exception::raise(
+							isc_arith_except,
+							isc_arg_gds, isc_string_truncation,
+							0);
 					}
 				}
 
@@ -197,7 +215,10 @@ public:
 			}
 			else if (errCode != 0)
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 
 			return len;
@@ -208,7 +229,10 @@ public:
 
 		if (len == INTL_BAD_STR_LENGTH)
 		{
-			raiseError(isc_transliteration_failed);
+			Firebird::status_exception::raise(
+				isc_arith_except,
+				isc_arg_gds, isc_transliteration_failed,
+				0);
 		}
 
 		if (errCode == CS_BAD_INPUT && badInputPos)
@@ -230,7 +254,10 @@ public:
 							break;
 						}
 
-						raiseError(isc_string_truncation);
+						Firebird::status_exception::raise(
+							isc_arith_except,
+							isc_arg_gds, isc_string_truncation,
+							0);
 					}
 				}
 			}
@@ -242,12 +269,18 @@ public:
 				}
 				else
 				{
-					raiseError(isc_string_truncation);
+					Firebird::status_exception::raise(
+						isc_arith_except,
+						isc_arg_gds, isc_string_truncation,
+						0);
 				}
 			}
 			else
 			{
-				raiseError(isc_transliteration_failed);
+				Firebird::status_exception::raise(
+					isc_arith_except,
+					isc_arg_gds, isc_transliteration_failed,
+					0);
 			}
 		}
 
@@ -269,7 +302,10 @@ public:
 
 		if (len == INTL_BAD_STR_LENGTH || errCode != 0)
 		{
-			raiseError(isc_string_truncation);
+			Firebird::status_exception::raise(
+				isc_arith_except,
+				isc_arg_gds, isc_string_truncation,
+				0);
 		}
 
 		return len;
@@ -284,14 +320,6 @@ private:
 	charset* charSet2;
 	csconvert* cnvt1;
 	csconvert* cnvt2;
-
-private:
-	void raiseError(ISC_STATUS code)
-	{
-		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_arith_except) <<
-			Firebird::Arg::Gds(code));
-	}
-
 };
 
 }	// namespace Jrd

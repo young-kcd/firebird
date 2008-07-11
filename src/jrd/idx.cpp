@@ -235,10 +235,10 @@ void IDX_create_index(
 
 	if (relation->rel_file) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
-				 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+				 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 	}
 	else if (relation->isVirtual()) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, 0);
 	}
 
 	get_root_page(tdbb, relation);
@@ -279,7 +279,7 @@ void IDX_create_index(
 				 isc_arg_gds,
 				 isc_keytoobig,
 				 isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+				 ERR_cstring(index_name), 0);
 	}
 
 	RecordStack stack;
@@ -420,7 +420,7 @@ void IDX_create_index(
 
 					ERR_post(isc_not_valid,
 						isc_arg_string, bad_fld->fld_name.c_str(),
-						isc_arg_string, NULL_STRING_MARK, isc_arg_end);
+						isc_arg_string, NULL_STRING_MARK, 0);
 				}
 			}
 			else {
@@ -443,7 +443,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(isc_key_too_big, isc_arg_end);
+				ERR_post(isc_key_too_big, 0);
 			}
 
 			UCHAR* p;
@@ -460,7 +460,7 @@ void IDX_create_index(
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 				ERR_post(isc_no_dup, isc_arg_string,
-						 ERR_cstring(index_name), isc_arg_end);
+						 ERR_cstring(index_name), 0);
 			}
 
 			USHORT l = key.key_length;
@@ -496,7 +496,7 @@ void IDX_create_index(
 
 	if (ifl_data.ifl_duplicates > 0) {
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+				 ERR_cstring(index_name), 0);
 	}
 
 	}
@@ -511,7 +511,7 @@ void IDX_create_index(
 	if (ifl_data.ifl_duplicates > 0) {
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
 		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+				 ERR_cstring(index_name), 0);
 	}
 
 	if ((relation->rel_flags & REL_temp_conn) &&
@@ -1575,66 +1575,6 @@ static IDX_E insert_key(
 	}
 
 	return result;
-}
-
-
-void IDX_modify_flag_uk_modified(thread_db* tdbb, 
-								 record_param* org_rpb, 
-								 record_param* new_rpb, 
-								 jrd_tra* transaction)
-{
-/**************************************
- *
- *	I D X _ m o d i f y _ f l a g _ u k _ m o d i f i e d
- *
- **************************************
- *
- * Functional description
- *	Set record flag if key field value was changed by this update or 
- *  if this is second update of this record in the same transaction and 
- *  flag is already set by one of the previous update.  
- *
- **************************************/
-
-	SET_TDBB(tdbb);
-
-	if ((org_rpb->rpb_flags & rpb_uk_modified) &&
-		(org_rpb->rpb_transaction_nr == new_rpb->rpb_transaction_nr))
-	{
-		new_rpb->rpb_flags |= rpb_uk_modified;
-		return;	
-	}
-
-	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
-	WIN window(relPages->rel_pg_space_id, -1);
-
-	DSC desc1, desc2;
-	index_desc idx;
-	idx.idx_id = (USHORT) -1;
-
-	while (BTR_next_index(tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
-	{
-		if (!(idx.idx_flags & (idx_primary | idx_unique)) ||
-			!MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
-		{
-			continue;
-		}
-
-		const index_desc::idx_repeat* idx_desc = idx.idx_rpt;
-
-		for (USHORT i = 0; i < idx.idx_count; i++, idx_desc++)
-		{
-			const bool flag_org = EVL_field(org_rpb->rpb_relation, org_rpb->rpb_record, idx_desc->idx_field, &desc1);
-			const bool flag_new = EVL_field(new_rpb->rpb_relation, new_rpb->rpb_record, idx_desc->idx_field, &desc2);
-
-			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
-			{
-				new_rpb->rpb_flags |= rpb_uk_modified;	
-				CCH_RELEASE(tdbb, &window);
-				return;
-			}
-		}
-	}
 }
 
 

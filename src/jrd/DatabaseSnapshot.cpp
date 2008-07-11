@@ -101,7 +101,7 @@ DatabaseSnapshot::SharedMemory::SharedMemory()
 DatabaseSnapshot::SharedMemory::~SharedMemory()
 {
 	ISC_STATUS_ARRAY statusVector;
-	ISC_unmap_file(statusVector, &handle);
+	ISC_unmap_file(statusVector, &handle, 0);
 }
 
 
@@ -117,13 +117,15 @@ void DatabaseSnapshot::SharedMemory::acquire()
 #if (defined HAVE_MMAP || defined WIN_NT)
 		const size_t newSize = base->allocated;
 		ISC_STATUS_ARRAY statusVector;
-		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, false);
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, FALSE);
 		if (!base)
 		{
 			Firebird::status_exception::raise(statusVector);
 		}
 #else
-		Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
+		Firebird::status_exception::raise(isc_random, isc_arg_string,
+										  "Monitoring table space exhausted",
+										  0);
 #endif
 	}
 }
@@ -279,14 +281,16 @@ void DatabaseSnapshot::SharedMemory::extend()
 
 #if (defined HAVE_MMAP || defined WIN_NT)
 	ISC_STATUS_ARRAY statusVector;
-	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true);
+	base = (Header*) ISC_remap_file(statusVector, &handle, newSize, TRUE);
 	if (!base)
 	{
 		Firebird::status_exception::raise(statusVector);
 	}
 	base->allocated = handle.sh_mem_length_mapped;
 #else
-	Firebird::status_exception::raise(Arg::Gds(isc_montabexh));
+	Firebird::status_exception::raise(isc_random, isc_arg_string,
+									  "Monitoring table space exhausted",
+									  0);
 #endif
 }
 
@@ -400,7 +404,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	: snapshot(pool), idMap(pool), idCounter(0)
 {
-	PAG_header(tdbb, true);
+	PAG_header(true);
 
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
@@ -468,6 +472,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		reader = dumpData(tdbb, false);
 	}
 
+	reader->rewind();
+
 	// Parse the dump
 	RecordBuffer* buffer = NULL;
 	Record* record = NULL;
@@ -475,7 +481,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	int rid = 0;
 	bool fields_processed = false, allowed = false, our_dbb = false;
 
-	for (reader->rewind(); !reader->isEof(); reader->moveNext())
+	while (!reader->isEof())
 	{
 		if (reader->getClumpTag() == TAG_DBB)
 		{
@@ -484,6 +490,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			memcpy(&guid, reader->getBytes(), sizeof(FB_GUID));
 
 			our_dbb = !memcmp(&guid, &dbb->dbb_guid, sizeof(FB_GUID));
+
+			reader->moveNext();
 
 			if (fields_processed)
 			{
@@ -494,6 +502,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		else if (reader->getClumpTag() == TAG_RECORD)
 		{
 			rid = reader->getInt();
+			reader->moveNext();
 
 			if (fields_processed)
 			{
@@ -551,6 +560,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 			const char* source = checkNull(rid, fid, (char*) reader->getBytes(), length);
 
+			reader->moveNext();
+
 			if (rid == rel_mon_database) // special case for MON$DATABASE
 			{
 				if (fid == f_mon_db_name)
@@ -560,13 +571,13 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 				if (record && allowed && our_dbb)
 				{
-					putField(record, fid, reader, source == NULL);
+					putField(record, fid, source, length);
 					fields_processed = true;
 				}
 			}
 			else if (record && allowed) // generic logic that covers all other relations
 			{
-				putField(record, fid, reader, source == NULL);
+				putField(record, fid, source, length);
 				fields_processed = true;
 			}
 		}
@@ -633,26 +644,26 @@ void DatabaseSnapshot::clearRecord(Record* record)
 }
 
 
-void DatabaseSnapshot::putField(Record* record, int id, const Firebird::ClumpletReader* reader, bool makeNull)
+void DatabaseSnapshot::putField(Record* record, int id, const void* source, size_t length)
 {
 	fb_assert(record);
 
 	const Format* const format = record->rec_format;
 	fb_assert(format && id < format->fmt_count);
 
-	if (makeNull)
+	const dsc desc = format->fmt_desc[id];
+	UCHAR* const address = record->rec_data + (IPTR) desc.dsc_address;
+
+	if (!source)
 	{
 		SET_NULL(record, id);
 		return;
 	}
 
-	const dsc desc = format->fmt_desc[id];
-	UCHAR* const address = record->rec_data + (IPTR) desc.dsc_address;
-
-	if (reader->getClumpLength() == sizeof(SINT64) && desc.dsc_dtype == dtype_long)
+	if (length == sizeof(SINT64) && desc.dsc_dtype == dtype_long)
 	{
 		// special case: translate 64-bit global ID into 32-bit local ID
-		const SINT64 global_id = reader->getBigInt();
+		const SINT64 global_id = *(SINT64*) source;
 		SLONG local_id = 0;
 		if (!idMap.get(global_id, local_id))
 		{
@@ -667,18 +678,18 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 	switch (desc.dsc_dtype) {
 	case dtype_text:
 		{
-			const char* const string = (char*) reader->getBytes();
+			const char* const string = (char*) source;
 			const size_t max_length = desc.dsc_length;
-			const size_t length = MIN(reader->getClumpLength(), max_length);
+			length = MIN(length, max_length);
 			memcpy(address, string, length);
 			memset(address + length, ' ', max_length - length);
 		}
 		break;
 	case dtype_varying:
 		{
-			const char* const string = (char*) reader->getBytes();
+			const char* const string = (char*) source;
 			const size_t max_length = desc.dsc_length - sizeof(USHORT);
-			const size_t length = MIN(reader->getClumpLength(), max_length);
+			length = MIN(length, max_length);
 			vary* varying = (vary*) address;
 			varying->vary_length = length;
 			memcpy(varying->vary_string, string, length);
@@ -686,30 +697,30 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 		break;
 
 	case dtype_short:
-		*(SSHORT*) address = reader->getBigInt();
+		*(SSHORT*) address = *(SSHORT*) source;
 		break;
 	case dtype_long:
-		*(SLONG*) address = reader->getBigInt();
+		*(SLONG*) address = *(SLONG*) source;
 		break;
 	case dtype_int64:
-		*(SINT64*) address = reader->getBigInt();
+		*(SINT64*) address = *(SINT64*) source;
 		break;
 
 	case dtype_real:
-		*(float*) address = reader->getDouble();
+		*(float*) address = *(float*) source;
 		break;
 	case dtype_double:
-		*(double*) address = reader->getDouble();
+		*(double*) address = *(double*) source;
 		break;
 
 	case dtype_sql_date:
-		*(ISC_DATE*) address = reader->getDate();
+		*(ISC_DATE*) address = *(ISC_DATE*) source;
 		break;
 	case dtype_sql_time:
-		*(ISC_TIME*) address = reader->getTime();
+		*(ISC_TIME*) address = *(ISC_TIME*) source;
 		break;
 	case dtype_timestamp:
-		*(ISC_TIMESTAMP*) address = reader->getTimeStamp();
+		*(ISC_TIMESTAMP*) address = *(ISC_TIMESTAMP*) source;
 		break;
 
 	case dtype_blob:
@@ -744,9 +755,9 @@ void DatabaseSnapshot::putField(Record* record, int id, const Firebird::Clumplet
 			blb* blob = BLB_create2(tdbb, tdbb->getTransaction(), &blob_id,
 									bpb.getCount(), bpb.begin());
 
-			const size_t length = MIN(reader->getClumpLength(), MAX_USHORT);
+			length = MIN(length, MAX_USHORT);
 
-			BLB_put_segment(tdbb, blob, reader->getBytes(), length);
+			BLB_put_segment(tdbb, blob, (const UCHAR*) source, length);
 			BLB_close(tdbb, blob);
 
 			*(bid*) address = blob_id;
@@ -985,7 +996,9 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	temp = (database->dbb_flags & DBB_no_reserve) ? 0 : 1;
 	writer.insertInt(f_mon_db_res_space, temp);
 	// creation date
-	writer.insertTimeStamp(f_mon_db_created, database->dbb_creation_date.value());
+	writer.insertBytes(f_mon_db_created,
+					   (UCHAR*) &database->dbb_creation_date.value(),
+					   sizeof(ISC_TIMESTAMP));
 	// database size
 	writer.insertBigInt(f_mon_db_pages, PageSpace::actAlloc(database));
 
@@ -1065,7 +1078,9 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	// charset
 	writer.insertInt(f_mon_att_charset_id, attachment->att_charset);
 	// timestamp
-	writer.insertTimeStamp(f_mon_att_timestamp, attachment->att_timestamp.value());
+	writer.insertBytes(f_mon_att_timestamp,
+					   (UCHAR*) &attachment->att_timestamp.value(),
+					   sizeof(ISC_TIMESTAMP));
 	// garbage collection flag
 	temp = (attachment->att_flags & ATT_no_cleanup) ? 0 : 1;
 	writer.insertInt(f_mon_att_gc, temp);
@@ -1095,7 +1110,9 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	temp = transaction->tra_requests ? mon_state_active : mon_state_idle;
 	writer.insertInt(f_mon_tra_state, temp);
 	// timestamp
-	writer.insertTimeStamp(f_mon_tra_timestamp, transaction->tra_timestamp.value());
+	writer.insertBytes(f_mon_tra_timestamp,
+					   (UCHAR*) &transaction->tra_timestamp.value(),
+					   sizeof(ISC_TIMESTAMP));
 	// top transaction
 	writer.insertInt(f_mon_tra_top, transaction->tra_top);
 	// oldest transaction
@@ -1156,13 +1173,17 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 		const int tra_id = request->req_transaction ?
 			request->req_transaction->tra_number : 0;
 		writer.insertInt(f_mon_stmt_tra_id, tra_id);
-		writer.insertTimeStamp(f_mon_stmt_timestamp, request->req_timestamp.value());
+		writer.insertBytes(f_mon_stmt_timestamp,
+						   (UCHAR*) &request->req_timestamp.value(),
+						   sizeof(ISC_TIMESTAMP));
 	}
 	else {
 		writer.insertInt(f_mon_stmt_state, mon_state_idle);
 		writer.insertInt(f_mon_stmt_tra_id, 0);
 		ISC_TIMESTAMP empty = {0, 0};
-		writer.insertTimeStamp(f_mon_stmt_timestamp, empty);
+		writer.insertBytes(f_mon_stmt_timestamp,
+						   (UCHAR*) &empty,
+						   sizeof(ISC_TIMESTAMP));
 	}
 	// sql text
 	writer.insertString(f_mon_stmt_sql_text, request->req_sql_text);
@@ -1217,7 +1238,9 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 		writer.insertInt(f_mon_call_type, 0);
 	}
 	// timestamp
-	writer.insertTimeStamp(f_mon_call_timestamp, request->req_timestamp.value());
+	writer.insertBytes(f_mon_call_timestamp,
+					   (const UCHAR*) &request->req_timestamp.value(),
+					   sizeof(ISC_TIMESTAMP));
 	// source line/column
 	writer.insertInt(f_mon_call_src_line, request->req_src_line);
 	writer.insertInt(f_mon_call_src_column, request->req_src_column);

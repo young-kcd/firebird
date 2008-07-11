@@ -116,7 +116,7 @@ namespace {
 						isc_arg_string, "fopen",
 						isc_arg_string,
 						ERR_cstring(file_name),
-						isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+						isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 			}
 			else {
 				ext_file->ext_flags |= EXT_readonly;
@@ -156,7 +156,7 @@ void EXT_erase(record_param* rpb, jrd_tra* transaction)
  *
  **************************************/
 
-	ERR_post(isc_ext_file_delete, isc_arg_end);
+	ERR_post(isc_ext_file_delete, 0);
 }
 
 
@@ -280,7 +280,7 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 				 isc_arg_string, "fseek",
 				 isc_arg_string,
 				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
 	if (!fread(p, l, 1, file->ext_ifi))
@@ -332,8 +332,8 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transacti
  *
  **************************************/
 
-/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", isc_arg_end); */
-	ERR_post(isc_ext_file_modify, isc_arg_end);
+/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", 0); */
+	ERR_post(isc_ext_file_modify, 0);
 }
 
 
@@ -481,13 +481,13 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
-			ERR_post(isc_read_only_database, isc_arg_end);
+			ERR_post(isc_read_only_database, 0);
 		else {
 			ERR_post(isc_io_error,
 					 isc_arg_string, "insert",
 					 isc_arg_string, file->ext_filename,
 					 isc_arg_gds, isc_io_write_err,
-					 isc_arg_gds, isc_ext_readonly_err, isc_arg_end);
+					 isc_arg_gds, isc_ext_readonly_err, 0);
 		}
 	}
 
@@ -529,14 +529,14 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
 				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
 		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
 				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, 0);
 	}
 
 	// fflush(file->ext_ifi);

@@ -29,9 +29,8 @@
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 
-using namespace Jrd;
-using namespace Firebird;
 
+using namespace Jrd;
 
 UserManagement::UserManagement(thread_db* tdbb)
 {
@@ -39,19 +38,19 @@ UserManagement::UserManagement(thread_db* tdbb)
 	SecurityDatabase::getPath(securityDatabaseName);
 	ISC_STATUS_ARRAY status;
 
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
 
 	if (isc_attach_database(status, 0, securityDatabaseName, &database, 
 							dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
-		status_exception::raise(status);
+		Firebird::status_exception::raise(status);
 	}
 
 	if (isc_start_transaction(status, &transaction, 1, &database, 0, NULL))
 	{
-		status_exception::raise(status);
+		Firebird::status_exception::raise(status);
 	}
 }
 
@@ -63,7 +62,7 @@ void UserManagement::commit()
 		// Commit transaction in security database
 		if (isc_commit_transaction(status, &transaction)) 
 		{
-			status_exception::raise(status);
+			Firebird::status_exception::raise(status);
 		}
 		transaction = 0;
 	}
@@ -77,7 +76,7 @@ UserManagement::~UserManagement()
 		// Rollback transaction in security database ...
 		if (isc_rollback_transaction(status, &transaction)) 
 		{
-			status_exception::raise(status);
+			Firebird::status_exception::raise(status);
 		}
 	}
 
@@ -85,7 +84,7 @@ UserManagement::~UserManagement()
 	{
 		if (isc_detach_database(status, &database)) 
 		{
-			status_exception::raise(status);
+			Firebird::status_exception::raise(status);
 		}
 	}
 }
@@ -93,7 +92,7 @@ UserManagement::~UserManagement()
 int UserManagement::execute(ISC_STATUS* status, internal_user_data* u)
 {
 #if (defined BOOT_BUILD || defined EMBEDDED)
-	status_exception::raise(Arg::Gds(isc_wish_list));
+	Firebird::status_exception::raise(isc_wish_list, isc_arg_end);
 	return 0; // make the compiler happy
 #else
 	return (!u->user_name_entered) ? GsecMsg18 : SECURITY_exec_line(status, database, transaction, u, NULL, NULL);

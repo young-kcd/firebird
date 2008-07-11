@@ -630,7 +630,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					 */
 					if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
+						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
 					}
 
 					state = tra_limbo;
@@ -647,7 +647,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
 							 jrd_tra::tra_wait);
 				if (state == tra_active)
-					ERR_post(isc_deadlock, isc_arg_end);
+					ERR_post(isc_deadlock, 0);
 
 				/* refetch the record and try again.  The active transaction
 				 * could have updated the record a second time.
@@ -765,7 +765,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 			if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				ERR_post(isc_rec_in_limbo,
-						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, isc_arg_end);
+						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, 0);
 			}
 
 		case tra_active:
@@ -1412,7 +1412,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				{
 					ERR_post(isc_no_priv, isc_arg_string, "REVOKE",
 							 isc_arg_string, "TABLE", isc_arg_string,
-							 "RDB$USER_PRIVILEGES", isc_arg_end);
+							 "RDB$USER_PRIVILEGES", 0);
 				}
 			}
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
@@ -1458,7 +1458,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		{
 			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
 					 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
-					 isc_arg_end);
+					 0);
 		}
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -1973,22 +1973,52 @@ bool VIO_get_current(
 			// 2. if record just deleted 
 			//    then FK can't reference it but PK must check it's old value
 			// 3. if record just modified
-			//	  then FK can reference it if key field values are not changed
+			//	  then FK can reference it if old key values are equal to new 
+			//	  key values and equal FK values
+			//	  PK is ok if PK values are not equal to old and not equal to 
+			//	  new values 
 
+/*
 			if (!rpb->rpb_b_page)
 				return !foreign_key;
 
-			if (rpb->rpb_flags & rpb_deleted)
-				return !foreign_key;
+			if (old_rpb)
+			{
+				Record* data = rpb->rpb_prior;
+				*old_rpb = *rpb;
+				old_rpb->rpb_record = NULL;
+				
+				if (!DPM_fetch(tdbb, old_rpb, LCK_read))
+				{
+					return false; // record deleted 
+				}
 
-			if (rpb->rpb_flags & rpb_uk_modified)
+				// if record was changed between reads  
+				// start all over again
+				if (old_rpb->rpb_b_page != rpb->rpb_b_page ||
+					old_rpb->rpb_b_line != rpb->rpb_b_line ||
+					old_rpb->rpb_f_page != rpb->rpb_f_page ||
+					old_rpb->rpb_f_line != rpb->rpb_f_line ||
+					old_rpb->rpb_flags != rpb->rpb_flags)
+				{
+					continue;
+				}
+
+				if (!old_rpb->rpb_b_page)
+					return !foreign_key;
+
+				old_rpb->rpb_prior = (old_rpb->rpb_flags & rpb_delta) ? data : NULL;
+				if (!DPM_fetch_back(tdbb, old_rpb, LCK_read, 1))
+				{
 					return !foreign_key; 
+				}
 
-			// clear lock error from status vector
-			tdbb->tdbb_status_vector[0] = isc_arg_gds;
-			tdbb->tdbb_status_vector[1] = FB_SUCCESS;
-			tdbb->tdbb_status_vector[2] = isc_arg_end;
-			return true;
+				VIO_data(tdbb, old_rpb, pool);
+				has_old_values = true;
+				return true;
+			}
+*/
+			return !foreign_key;
 
 		case tra_dead:
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
@@ -2337,7 +2367,6 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (org_rpb->rpb_transaction_nr == transaction->tra_number &&
 		org_rpb->rpb_format_number == new_rpb->rpb_format_number)
 	{
-		IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
 		update_in_place(tdbb, transaction, org_rpb, new_rpb);
 		if (!(transaction->tra_flags & TRA_system) &&
 			(transaction->tra_save_point) &&
@@ -2356,10 +2385,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	{
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
 				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, org_rpb->rpb_transaction_nr,
-				 isc_arg_end);
+				 0);
 	}
-
-	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
 
 /* Old record was restored and re-fetched for write.  Now replace it.  */
 
@@ -2369,8 +2396,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	org_rpb->rpb_b_line = temp.rpb_line;
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;
-	org_rpb->rpb_flags &= ~(rpb_delta | rpb_uk_modified);
-	org_rpb->rpb_flags |= new_rpb->rpb_flags & (rpb_delta | rpb_uk_modified);
+	org_rpb->rpb_flags &= ~rpb_delta;
+	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_delta;
 
 	replace_record(tdbb, org_rpb, &stack, transaction);
 
@@ -2513,6 +2540,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 			pool = dbb->dbb_permanent;
 		}
 		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) Record(*pool);
+		record->rec_length = format->fmt_length;
 	}
 	else if (record->rec_length < format->fmt_length) {
 		Record* const old = record;
@@ -2524,13 +2552,13 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 		else
 			record = realloc_record(rpb->rpb_record, format->fmt_length);
 
+		record->rec_length = format->fmt_length;
 		if (rpb->rpb_prior == old) {
 			rpb->rpb_prior = record;
 		}
 	}
 
 	record->rec_format = format;
-	record->rec_length = format->fmt_length;
 
 	return record;
 }
@@ -2556,7 +2584,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		(!VIO_chase_record_version(tdbb, rpb, NULL, transaction,
 								   tdbb->getDefaultPool(), false)))
 	{
-		ERR_post(isc_no_cur_rec, isc_arg_end);
+		ERR_post(isc_no_cur_rec, 0);
 	}
 
 	VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
@@ -2573,7 +2601,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 	{
 		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
 				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
-				 isc_arg_end);
+				 0);
 	}
 }
 
@@ -4495,6 +4523,7 @@ static int prepare_update(	thread_db*		tdbb,
 			}
 		}
 
+
 		USHORT state =
 			TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
@@ -4685,13 +4714,13 @@ static int prepare_update(	thread_db*		tdbb,
 				{
 					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
 							 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, update_conflict_trans,
-							 isc_arg_end);
+							 0);
 				}
 			case tra_active:
 				return PREPARE_LOCKERR;
 
 			case tra_limbo:
-				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
+				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, 0);
 
 			case tra_dead:
 				break;
@@ -5015,7 +5044,6 @@ static void update_in_place(
 	org_rpb->rpb_address = new_rpb->rpb_address;
 	org_rpb->rpb_length = new_rpb->rpb_length;
 	org_rpb->rpb_format_number = new_rpb->rpb_format_number;
-	org_rpb->rpb_flags |= new_rpb->rpb_flags & rpb_uk_modified;
 
 	DEBUG;
 	replace_record(tdbb, org_rpb, &stack, transaction);

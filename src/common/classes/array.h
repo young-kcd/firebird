@@ -344,8 +344,6 @@ public:
 	explicit SortedArray(size_t s) : Array<Value, Storage>(s) {}
 	SortedArray() : Array<Value, Storage>() {}
 
-	// When item is not found, set pos to the position where the element should be
-	// stored if/when added.
 	bool find(const Key& item, size_t& pos) const
 	{
 		size_t highBound = this->count, lowBound = 0;

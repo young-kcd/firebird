@@ -88,8 +88,9 @@ Provider* Manager::getProvider(const string &prvName)
 		}
 	}
 
-	// External Data Source provider ''@1'' not found
-	ERR_post(isc_eds_provider_not_found, isc_arg_string, ERR_cstring(prvName), isc_arg_end); 
+	string err;
+	err.printf("External Data Source provider ''%s'' not found", prvName.c_str());
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(err), 0);
 	return NULL; 
 }
 
@@ -419,15 +420,20 @@ Transaction* Connection::findTransaction(thread_db *tdbb, TraScope traScope) con
 
 void Connection::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere)
 {
+	// hvlad: TODO error message like 
+	// "Execute statement error at %s :\n%sData source : %s" or
+	// "Execute statement error at @1 :\n@2Data source : @3" 
+
+	string err;
+	err.printf("Execute statement error at %s :\n", sWhere);
+
 	string rem_err;
 	m_provider.getRemoteError(status, rem_err);
+	err += rem_err;
 
-	// Execute statement error at @1 :\n@2Data source : @3
-	ERR_post(isc_eds_connection, 
-		isc_arg_string, ERR_cstring(sWhere), 
-		isc_arg_string, ERR_cstring(rem_err),
-		isc_arg_string, ERR_cstring(getDataSourceName()),
-		isc_arg_end);
+	err += "Data source : " + getDataSourceName();
+
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(err), 0);
 }
 
 
@@ -914,9 +920,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	}
 
 	if (p >= end || tok != ttIdent) {
-		// Execute statement preprocess SQL error
-		// Statement expected
-		ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_stmt_expected, isc_arg_end);
+		ERR_post(isc_random, isc_arg_string, "Statement expected", isc_arg_end);
 	}
 
 	start = i; // skip leading comments ??
@@ -933,9 +937,7 @@ void Statement::preprocess(const string& sql, string& ret)
 			tok = getToken(&p, end);
 		}
 		if (p >= end || tok != ttIdent) {
-			// Execute statement preprocess SQL error
-			// Statement expected
-			ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_stmt_expected, isc_arg_end);
+			ERR_post(isc_random, isc_arg_string, "Statement expected", isc_arg_end);
 		}
 		string ident2(i2, p - i2);
 		ident2.upper();
@@ -986,9 +988,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				m_sqlParamsMap.add(m_sqlParamNames[n]);
 			}
 			else {
-				// Execute statement preprocess SQL error
-				// Parameter name expected
-				ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_prm_name_expected, isc_arg_end);
+				ERR_post(isc_random, isc_arg_string, "Parameter name expected", 0);
 			}
 			ret += '?';
 			break;
@@ -1015,17 +1015,15 @@ void Statement::preprocess(const string& sql, string& ret)
 
 		case ttBrokenComment:
 			{
-				// Execute statement preprocess SQL error
-				// Unclosed comment found near ''@1''
-				Firebird::string s(start, MIN(16, end - start));
-				ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_unclosed_comment, isc_arg_string, ERR_cstring(s), isc_arg_end);
+				Firebird::string s;
+				s = "Unclosed comment found near \"" + Firebird::string(start, MIN(16, end - start)) + "\"";
+				ERR_post(isc_random, isc_arg_string, ERR_string(s), isc_arg_end);
 			}
 			break;
 
 
 		case ttNone: 
-			// Execute statement preprocess SQL error
-			ERR_post(isc_eds_preprocess, isc_arg_end);
+			ERR_post(isc_random, isc_arg_string, "parse error", 0);
 			break;
 		}
 	}
@@ -1038,8 +1036,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error) {
-		// Input parameters mismatch
-		status_exception::raise(Arg::Gds(isc_eds_input_prm_mismatch));
+		status_exception::raise(isc_random, isc_arg_string, "input parameters mismatch", 0);
 	}
 
 	if (m_sqlParamNames.getCount())
@@ -1061,8 +1058,9 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 
 			if (num == count) 
 			{
-				// Input parameter ''@1'' have no value set
-				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
+				string err;
+				err.printf("Parameter ''%s'' have no value set", sqlName->c_str());
+				status_exception::raise(isc_random, isc_arg_string, ERR_cstring(err), 0);
 			}
 
 			sqlParams[sqlNum] = params[num];
@@ -1081,8 +1079,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 	if (count != getInputs()) 
 	{
 		m_error = true;
-		// Input parameters mismatch
-		status_exception::raise(Arg::Gds(isc_eds_input_prm_mismatch));
+		status_exception::raise(isc_random, isc_arg_string, "input parameters mismatch", 0);
 	}
 
 	if (!count)
@@ -1142,8 +1139,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 	if (count != getOutputs())
 	{
 		m_error = true;
-		// Output parameters mismatch
-		status_exception::raise(Arg::Gds(isc_eds_output_prm_mismatch));
+		status_exception::raise(isc_random, isc_arg_string, "output parameters mismatch", 0);
 	}
 
 	if (!count)
@@ -1158,7 +1154,9 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 		{
 			m_error = true;
 			status_exception::raise(
-				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
+				isc_exec_sql_invalid_var, isc_arg_number, i + 1,
+				isc_arg_string, (ISC_STATUS)(U_IPTR) ERR_cstring(m_sql.substr(0, 31)),
+				isc_arg_end);
 		}
 */
 
@@ -1289,10 +1287,17 @@ void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 {
 	m_error = true;
 
-	string rem_err;
+	// hvlad: TODO error message like 
+	// "Execute statement error at %s :\n%sStatement : %s\nData source : %s" or
+	// "Execute statement error at @1 :\n@2Statement : @3\nData source : @4" 
+	string err;
+	err.printf("Execute statement error at %s :\n", sWhere);
+
 	if (status)
 	{
+		string rem_err;
 		m_provider.getRemoteError(status, rem_err);
+		err += rem_err;
 
 		if (status == tdbb->tdbb_status_vector)
 		{
@@ -1302,13 +1307,11 @@ void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 		}
 	}
 
-	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(isc_eds_statement,
-		isc_arg_string, ERR_cstring(sWhere),
-		isc_arg_string, ERR_cstring(rem_err),
-		isc_arg_string, ERR_cstring(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)),
-		isc_arg_string, ERR_cstring(m_connection.getDataSourceName()),
-		isc_arg_end);
+	sQuery = sQuery ? sQuery : &m_sql;
+	err += "Statement : " + sQuery->substr(0, 255) + "\n";
+	err += "Data source : " + m_connection.getDataSourceName();
+
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(err), 0);
 }
 
 void Statement::bindToRequest(jrd_req* request, Statement** impure)

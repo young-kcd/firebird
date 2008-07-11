@@ -33,12 +33,11 @@
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
-#include "../common/cvt.h"
+#include "../jrd/cvt_proto.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
-static void post_error(const Arg::StatusVector&);
+static void post_error(ISC_STATUS, ...);
 
 
 /**
@@ -70,12 +69,44 @@ void MOVD_move(const dsc* from, dsc* to)
     @param 
 
  **/
-static void post_error(const Arg::StatusVector& v)
+static void post_error(ISC_STATUS status, ...)
 {
-	Arg::Gds status_vector(isc_dsql_error);
-	status_vector << Arg::Gds(isc_sqlerr) << Arg::Num(-303);
-	status_vector.append(v);
+	ISC_STATUS *v;
+	const ISC_STATUS* temp, *v_end;
+	ISC_STATUS_ARRAY temp_status;
 
-	ERRD_punt(status_vector.value());
+	thread_db* tdbb = JRD_get_thread_data();
+
+/* copy into a temporary array any other arguments which may 
+ * have been handed to us, then post the error.
+ * N.B., the last supplied error should be a 0.
+ */
+
+	STUFF_STATUS(temp_status, status);
+
+	v = tdbb->tdbb_status_vector;
+	v_end = v + ISC_STATUS_LENGTH;
+	*v++ = isc_arg_gds;
+	*v++ = isc_dsql_error;
+	*v++ = isc_arg_gds;
+	*v++ = isc_sqlerr;
+	*v++ = isc_arg_number;
+	*v++ = -303;
+
+	for (temp = temp_status; v < v_end && (*v = *temp) != isc_arg_end;
+		 v++, temp++)
+	{
+		switch (*v) {
+		case isc_arg_cstring:
+			*++v = *++temp;
+			*++v = *++temp;
+			break;
+		default:
+			*++v = *++temp;
+			break;
+		}
+	}
+
+	ERRD_punt();
 }
 

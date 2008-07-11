@@ -43,7 +43,7 @@ set bulk_insert INSERT INTO SQLSTATES (SQL_CLASS, SQL_SUBCLASS, SQL_STATE_TEXT) 
 -- 0P Invalid Role Specification
 ('0P', '000', 'Invalid role specification')
 -- 0U Attempt to Assign to Non-Updatable Column
-('0U', '000', 'Attempt to assign to non-updatable column')
+('0U', '000', 'Attempt to assign to non-updtable column')
 -- OV Attempt to Assign to Ordering Column
 ('OV', '000', 'Attempt to assign to Ordering Column')
 -- 20 Case Not Found For Case Statement

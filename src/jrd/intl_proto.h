@@ -35,11 +35,11 @@ struct dsc;
 struct SubtypeInfo;
 
 CHARSET_ID	INTL_charset(Jrd::thread_db*, USHORT);
-int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, ErrorFunction);
+int			INTL_compare(Jrd::thread_db*, const dsc*, const dsc*, FPTR_ERROR);
 ULONG		INTL_convert_bytes(Jrd::thread_db*, CHARSET_ID, UCHAR*, ULONG, CHARSET_ID,
-								const BYTE*, ULONG, ErrorFunction);
+								const BYTE*, ULONG, FPTR_ERROR);
 Jrd::CsConvert	INTL_convert_lookup(Jrd::thread_db*, CHARSET_ID, CHARSET_ID);
-int			INTL_convert_string(dsc*, const dsc*, ErrorFunction);
+int			INTL_convert_string(dsc*, const dsc*, FPTR_ERROR);
 int			INTL_data(const dsc*);
 int			INTL_data_or_binary(const dsc*);
 bool		INTL_defined_type(Jrd::thread_db*, USHORT);

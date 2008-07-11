@@ -105,8 +105,6 @@
 
 #define statistics	stat
 
-using namespace Firebird;
-
 const int SVC_user_dba			= 2;
 const int SVC_user_any			= 1;
 const int SVC_user_none			= 0;
@@ -121,28 +119,28 @@ namespace {
 
 	// Option block for service parameter block
 	struct Options {
-		string spb_sys_user_name;
-		string spb_user_name;
-		string spb_password;
-		string spb_password_enc;
-		string spb_command_line;
-		string spb_network_protocol;
-		string spb_remote_address;
-		string spb_trusted_login;
-		string spb_address_path;
-		USHORT spb_version;
-		bool spb_trusted_role;
-		bool spb_remote;
+		Firebird::string	spb_sys_user_name;
+		Firebird::string	spb_user_name;
+		Firebird::string	spb_password;
+		Firebird::string	spb_password_enc;
+		Firebird::string	spb_command_line;
+		Firebird::string	spb_network_protocol;
+		Firebird::string    spb_remote_address;
+		Firebird::string	spb_trusted_login;
+		Firebird::string	spb_address_path;
+		USHORT				spb_version;
+		bool				spb_trusted_role;
+		bool				spb_remote;
 
 		// Parse service parameter block picking up options and things.
-		Options(ClumpletReader& spb) : 
+		Options(Firebird::ClumpletReader& spb) : 
 			spb_version(0),
 			spb_trusted_role(false),
 			spb_remote(false)
 		{
 			const UCHAR p = spb.getBufferTag();
 			if (p != isc_spb_version1 && p != isc_spb_current_version) {
-				ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, isc_arg_end);
+				ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, 0);
 			}
 			spb_version = p;
 
@@ -182,7 +180,7 @@ namespace {
 					spb.getString(spb_address_path);
 					spb_remote = true;
 					{
-						ClumpletReader address_stack(ClumpletReader::UnTagged, 
+						Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged, 
 							spb.getBytes(), spb.getClumpLength());
 						while (!address_stack.isEof()) 
 						{
@@ -192,7 +190,7 @@ namespace {
 								continue;
 							}
 
-							ClumpletReader address(ClumpletReader::UnTagged, 
+							Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged, 
 								address_stack.getBytes(), address_stack.getClumpLength());
 
 							while (!address.isEof()) 
@@ -223,17 +221,18 @@ namespace {
 	};
 
 	// Generic mutex to synchronize services
-	GlobalPtr<Mutex> svc_mutex;
+	Firebird::GlobalPtr<Firebird::Mutex> svc_mutex;
 
 	// All that we need to shutdown service threads when shutdown in progress
-	typedef Array<Jrd::Service*> AllServices;
-	GlobalPtr<AllServices> allServices;	// protected by svc_mutex
+	typedef Firebird::Array<Jrd::Service*> AllServices;
+	Firebird::GlobalPtr<AllServices> allServices;	// protected by svc_mutex
 	volatile bool svcShutdown = false;
 
 } // anonymous namespace
 
 
 using namespace Jrd;
+
 
 void Service::parseSwitches()
 {
@@ -252,11 +251,11 @@ void Service::parseSwitches()
 	{
 		switch (svc_parsed_sw[i])
 		{
-		case SVC_TRMNTR:
+		case Firebird::SVC_TRMNTR:
 			svc_parsed_sw.erase(i, 1);
 			if (inStr)
 			{
-				if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != SVC_TRMNTR)
+				if (i < svc_parsed_sw.length() && svc_parsed_sw[i] != Firebird::SVC_TRMNTR)
 				{
 					inStr = false;
 					--i;
@@ -298,7 +297,7 @@ void Service::printf(const SCHAR* format, ...)
 		return;
 	}
 
-	string buf;
+	Firebird::string buf;
 	va_list arglist;
 	va_start(arglist, format);
 	buf.vprintf(format, arglist);
@@ -321,7 +320,7 @@ void Service::started()
 {
 	if (!(svc_flags & SVC_evnt_fired)) 
 	{
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 		svc_flags |= SVC_evnt_fired;
 		svcStart.release();
 	}
@@ -417,7 +416,7 @@ void Service::checkService()
 	// no action
 }
 
-void Service::getAddressPath(ClumpletWriter& dpb)
+void Service::getAddressPath(Firebird::ClumpletWriter& dpb)
 {
 	if (svc_address_path.hasData())
 	{
@@ -563,7 +562,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 	{	// scope
 		// Account service block in global array
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 		checkForShutdown();
 		allServices->add(this);
 	}
@@ -574,7 +573,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	}
 
 	// Find the service by looking for an exact match.
-	const string svcname(service_name);
+	const Firebird::string svcname(service_name);
 	const serv_entry* serv;
 	for (serv = services; serv->serv_name; serv++) {
 		if (svcname == serv->serv_name)
@@ -582,11 +581,12 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	}
 
 	if (!serv->serv_name) {
-		status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
+		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnotdef,
+										  isc_arg_string, ERR_string(svcname), 0);
 	}
 
 	// Process the service parameter block.
-	ClumpletReader spb(ClumpletReader::SpbAttach, spb_data, spb_length);
+	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbAttach, spb_data, spb_length);
 	Options options(spb);
 
 	// Perhaps checkout the user in the security database.
@@ -623,13 +623,13 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			if (!options.spb_user_name.hasData()) {
 				// user name and password are required while
 				// attaching to the services manager
-				status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
+				Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_svcnouser, 0);
 			}
 
-			string name; // unused after retrieved
+			Firebird::string name; // unused after retrieved
 			int id, group, node_id;
 
-			const string remote = options.spb_network_protocol +
+			const Firebird::string remote = options.spb_network_protocol +
 						(options.spb_network_protocol.isEmpty() || 
 						 options.spb_remote_address.isEmpty() ? "" : "/") +
 									  options.spb_remote_address;
@@ -642,12 +642,13 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 
 		if (options.spb_user_name.length() > USERNAME_LENGTH) {
-			status_exception::raise(Arg::Gds(isc_long_login) <<
-				Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
+			Firebird::status_exception::raise(isc_long_login, 
+											  isc_arg_number, options.spb_user_name.length(), 
+											  isc_arg_number, USERNAME_LENGTH, 0);
 		}
 
 		// Check that the validated user has the authority to access this service
-		string uName(options.spb_user_name);
+		Firebird::string uName(options.spb_user_name);
 		uName.upper();
 		if ((uName != SYSDBA_USER_NAME) && !options.spb_trusted_role) {
 			user_flag = SVC_user_any;
@@ -658,7 +659,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	}
 
 	// move service switches in
-	string switches;
+	Firebird::string switches;
 	if (serv->serv_std_switches)
 		switches = serv->serv_std_switches;
 	if (options.spb_command_line.hasData() && serv->serv_std_switches)
@@ -712,7 +713,7 @@ void Service::detach()
 	{
 		if (fb_shutdown(10 * 1000 /* 10 seconds */, fb_shutrsn_services) == FB_SUCCESS)
 		{
-			InstanceControl::registerShutdown(0);
+			Firebird::InstanceControl::registerShutdown(0);
 			exit(0);
 		}
 	}
@@ -732,7 +733,7 @@ Service::~Service()
 #ifdef WIN_NT
 	CloseHandle((HANDLE) svc_handle);
 #endif
-	MutexLockGuard guard(svc_mutex);
+	Firebird::MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
 
 	for (unsigned int pos = 0; pos < all.getCount(); ++pos)
@@ -750,7 +751,7 @@ bool Service::checkForShutdown()
 {
 	if (svcShutdown)
 	{
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 
 		if (svc_flags & SVC_shutdown)
 		{
@@ -759,7 +760,7 @@ bool Service::checkForShutdown()
 		}
 
 		svc_flags |= SVC_shutdown;
-		status_exception::raise(Arg::Gds(isc_att_shutdown));
+		Firebird::status_exception::raise(isc_att_shutdown, isc_arg_end);
 	}
 
 	return false;
@@ -770,7 +771,7 @@ void Service::shutdownServices()
 {
 	svcShutdown = true;
 
-	MutexLockGuard guard(svc_mutex);
+	Firebird::MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
 
 	for (unsigned int pos = 0; pos < all.getCount(); )
@@ -881,7 +882,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			case isc_info_svc_dump_pool_info:
 				break;
 			default:
-				status_exception::raise(Arg::Gds(isc_bad_spb_form));
+				Firebird::status_exception::raise(isc_bad_spb_form, 0);
 				break;
 			}
 		}
@@ -1127,7 +1128,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {	// NOMEM:
+					catch (const Firebird::BadAlloc&) {	// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
 						l = 0;	// set the length to zero
@@ -1535,7 +1536,7 @@ void Service::query(USHORT			send_item_length,
 					try {
 						svc_resp_buf = svc_resp_alloc.getBuffer(l);
 					}
-					catch (const BadAlloc&) {	// NOMEM:
+					catch (const Firebird::BadAlloc&) {	// NOMEM:
 						DEV_REPORT("SVC_query: out of memory");
 						// NOMEM: not really handled well
 						l = 0;	// set the length to zero
@@ -1621,7 +1622,7 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
-	ClumpletReader spb(ClumpletReader::SpbStart, spb_data, spb_length);
+	Firebird::ClumpletReader spb(Firebird::ClumpletReader::SpbStart, spb_data, spb_length);
 
 /* The name of the service is the first element of the buffer */
 	const UCHAR svc_id = spb.getClumpTag();
@@ -1633,19 +1634,21 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}
 
 	if (!serv->serv_name)
-		status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_service_not_supported));
+		Firebird::status_exception::raise(isc_service_att_err, isc_arg_gds, isc_service_not_supported, 0);
 
 /* currently we do not use "anonymous" service for any purposes but
    isc_service_query() */
 	if (svc_user_flag == SVC_user_none) {
-		status_exception::raise(Arg::Gds(isc_bad_spb_form));
+		Firebird::status_exception::raise(isc_bad_spb_form, 0);
 	}
 
 	{ // scope for locked svc_mutex
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 
 		if (svc_flags & SVC_thd_running) {
-			status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
+			Firebird::status_exception::raise(isc_svc_in_use, isc_arg_string,
+					 ERR_string(serv->serv_name, strlen(serv->serv_name)),
+					 0);
 		}
 
 		/* Another service may have been started with this service block.
@@ -1718,13 +1721,13 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	spb.rewind();
 	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
 	{
-		status_exception::raise(Arg::Gds(isc_bad_spb_form));
+		Firebird::status_exception::raise(isc_bad_spb_form, 0);
 	}
 
 	// Do not let everyone look at server log
 	if (svc_id == isc_action_svc_get_fb_log && !(svc_user_flag & SVC_user_dba))
     {
-       	status_exception::raise(Arg::Gds(isc_adm_task_denied));
+       	Firebird::status_exception::raise(isc_adm_task_denied, 0);
     }
 
 
@@ -1736,7 +1739,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	if (serv->serv_thd) {
 		{	// scope
-			MutexLockGuard guard(svc_mutex);
+			Firebird::MutexLockGuard guard(svc_mutex);
 			svc_flags &= ~SVC_evnt_fired;
 			svc_flags |= SVC_thd_running;
 		}
@@ -1762,7 +1765,10 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}
 	else
 	{
-		status_exception::raise(Arg::Gds(isc_svcnotdef) << Arg::Str(serv->serv_name));
+		Firebird::status_exception::raise(isc_svcnotdef,
+				isc_arg_string,
+				ERR_string(serv->serv_name, strlen(serv->serv_name)),
+				0);
 	}
 }
 
@@ -1896,7 +1902,7 @@ void Service::get(SCHAR*	buffer,
 	*return_length = 0;
 
 	{	// scope
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 		svc_flags &= ~SVC_timeout;
 	}
 
@@ -1912,7 +1918,7 @@ void Service::get(SCHAR*	buffer,
 #endif
 		if ((timeout) && (elapsed_time >= timeout))
 		{
-			MutexLockGuard guard(svc_mutex);
+			Firebird::MutexLockGuard guard(svc_mutex);
 			svc_flags &= SVC_timeout;
 			return;
 		}
@@ -1950,7 +1956,7 @@ void Service::finish(USHORT flag)
 {
 	if (flag == SVC_finished || flag == SVC_detached)
 	{
-		MutexLockGuard guard(svc_mutex);
+		Firebird::MutexLockGuard guard(svc_mutex);
 
 		svc_flags |= flag;
 		if (! (svc_flags & SVC_thd_running))
@@ -1975,7 +1981,7 @@ void Service::finish(USHORT flag)
 }
 
 
-void Service::conv_switches(ClumpletReader& spb, string& switches)
+void Service::conv_switches(Firebird::ClumpletReader& spb, Firebird::string& switches)
 {
 	spb.rewind();
 	if (spb.getClumpTag() < isc_action_min || spb.getClumpTag() > isc_action_max) {
@@ -1983,7 +1989,7 @@ void Service::conv_switches(ClumpletReader& spb, string& switches)
 	}
 
 	// convert to string
-	string sw;
+	Firebird::string sw;
 	if (! process_switches(spb, sw)) {
 		return;
 	}
@@ -2004,7 +2010,8 @@ const TEXT* Service::find_switch(int in_spb_sw, const in_sw_tab_t* table)
 }
 
 
-bool Service::process_switches(ClumpletReader& spb, string& switches)
+bool Service::process_switches(Firebird::ClumpletReader&	spb,
+							   Firebird::string&			switches)
 {
 	if (spb.getBufferLength() == 0)
 		return false;
@@ -2013,7 +2020,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	const UCHAR svc_action = spb.getClumpTag();
 	spb.moveNext();
 
-	string burp_database, burp_backup;
+	Firebird::string burp_database, burp_backup;
 	int burp_options = 0;
 	bool found = false;
 
@@ -2041,7 +2048,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					spb.getClumpTag() != isc_spb_dbname)
 				{
 					// unexpected item in service parameter block, expected @1
-					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
+					Firebird::status_exception::raise(isc_unexp_spb_form, isc_arg_string,
+							 ERR_string(SPB_SEC_USERNAME, strlen(SPB_SEC_USERNAME)),
+							 0);
 				}
 
 				found = true;
@@ -2076,7 +2085,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 				if (spb.getClumpTag() != isc_spb_sec_username) {
 					// unexpected item in service parameter block, expected @1
-					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
+					Firebird::status_exception::raise(isc_unexp_spb_form, isc_arg_string,
+							 ERR_string(SPB_SEC_USERNAME, strlen(SPB_SEC_USERNAME)),
+							 0);
 				}
 				found = true;
 			}
@@ -2128,7 +2139,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 			case isc_spb_command_line:
 				{
-					string s;
+					Firebird::string s;
 					spb.getString(s);
 					switches += s;
 					switches += ' ';
@@ -2256,9 +2267,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 }
 
 
-bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
+bool Service::get_action_svc_bitmask(const Firebird::ClumpletReader& spb,
 									 const in_sw_tab_t* table,
-									 string& switches)
+									 Firebird::string& switches)
 {
 	const int opt = spb.getInt();
 	ISC_ULONG mask = 1;
@@ -2282,19 +2293,19 @@ bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
 }
 
 
-void Service::get_action_svc_string(const ClumpletReader& spb,
-									string& switches)
+void Service::get_action_svc_string(const Firebird::ClumpletReader& spb,
+									Firebird::string& switches)
 {
-	string s;
+	Firebird::string s;
 	spb.getString(s);
 	addStringWithSvcTrmntr(s, switches);
 }
 
 
-void Service::get_action_svc_data(const ClumpletReader& spb,
-								  string& switches)
+void Service::get_action_svc_data(const Firebird::ClumpletReader& spb,
+								  Firebird::string& switches)
 {
-	string s;
+	Firebird::string s;
 	s.printf("%"ULONGFORMAT" ", spb.getInt());
 	switches += s;
 }
@@ -2302,7 +2313,7 @@ void Service::get_action_svc_data(const ClumpletReader& spb,
 
 bool Service::get_action_svc_parameter(UCHAR action, 
 									   const in_sw_tab_t* table,
-									   string& switches)
+									   Firebird::string& switches)
 {
 	const TEXT* s_ptr = find_switch(action, table);
 	if (!s_ptr)

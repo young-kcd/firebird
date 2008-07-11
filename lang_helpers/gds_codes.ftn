@@ -1248,36 +1248,6 @@ C --
       PARAMETER (GDS__shutdown_timeout                 = 335544917)
       INTEGER*4 GDS__att_handle_busy                 
       PARAMETER (GDS__att_handle_busy                  = 335544918)
-      INTEGER*4 GDS__bad_udf_freeit                  
-      PARAMETER (GDS__bad_udf_freeit                   = 335544919)
-      INTEGER*4 GDS__eds_provider_not_found          
-      PARAMETER (GDS__eds_provider_not_found           = 335544920)
-      INTEGER*4 GDS__eds_connection                  
-      PARAMETER (GDS__eds_connection                   = 335544921)
-      INTEGER*4 GDS__eds_preprocess                  
-      PARAMETER (GDS__eds_preprocess                   = 335544922)
-      INTEGER*4 GDS__eds_stmt_expected               
-      PARAMETER (GDS__eds_stmt_expected                = 335544923)
-      INTEGER*4 GDS__eds_prm_name_expected           
-      PARAMETER (GDS__eds_prm_name_expected            = 335544924)
-      INTEGER*4 GDS__eds_unclosed_comment            
-      PARAMETER (GDS__eds_unclosed_comment             = 335544925)
-      INTEGER*4 GDS__eds_statement                   
-      PARAMETER (GDS__eds_statement                    = 335544926)
-      INTEGER*4 GDS__eds_input_prm_mismatch          
-      PARAMETER (GDS__eds_input_prm_mismatch           = 335544927)
-      INTEGER*4 GDS__eds_output_prm_mismatch         
-      PARAMETER (GDS__eds_output_prm_mismatch          = 335544928)
-      INTEGER*4 GDS__eds_input_prm_not_set           
-      PARAMETER (GDS__eds_input_prm_not_set            = 335544929)
-      INTEGER*4 GDS__too_big_blr                     
-      PARAMETER (GDS__too_big_blr                      = 335544930)
-      INTEGER*4 GDS__montabexh                       
-      PARAMETER (GDS__montabexh                        = 335544931)
-      INTEGER*4 GDS__modnotfound                     
-      PARAMETER (GDS__modnotfound                      = 335544932)
-      INTEGER*4 GDS__nothing_to_cancel               
-      PARAMETER (GDS__nothing_to_cancel                = 335544933)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

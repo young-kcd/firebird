@@ -332,7 +332,7 @@ static void define_default_class(
 	desc.dsc_ttype() = ttype_metadata;
 	desc.dsc_address = (UCHAR *) relation_name;
 	desc.dsc_length = strlen(relation_name);
-	DFW_post_system_work(tdbb, dfw_scan_relation, &desc, 0);
+	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 
 
@@ -709,7 +709,7 @@ static void purge_default_class( TEXT* object_name, SSHORT obj_type)
 	desc.dsc_ttype() = ttype_metadata;
 	desc.dsc_address = (UCHAR *) object_name;
 	desc.dsc_length = strlen(object_name);
-	DFW_post_system_work(tdbb, dfw_scan_relation, &desc, 0);
+	DFW_post_work(dbb->dbb_sys_trans, dfw_scan_relation, &desc, 0);
 }
 #endif // NOT_USED_OR_REPLACED
 
@@ -974,7 +974,7 @@ static SecurityClass::flags_t save_field_privileges(thread_db*	tdbb,
 		desc.dsc_ttype() = ttype_metadata;
 		desc.dsc_address = (UCHAR *) relation_name;
 		desc.dsc_length = strlen(relation_name);
-		DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
+		DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);
 	}
 
 	*acl_ptr = relation_acl;

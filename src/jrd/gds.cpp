@@ -916,8 +916,8 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 		sprintf(s, "unknown dos error %ld", code);	// TXNN
 		break;
 
-	case isc_arg_win32:
 #ifdef WIN_NT
+	case isc_arg_win32:
 		if (!FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_MAX_WIDTH_MASK,
 										 NULL,
 										 code,
@@ -932,11 +932,11 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 										 s,
 										 bufsize,
 										 NULL))
-#endif
 		{
 			sprintf(s, "unknown Win32 error %ld", code);	// TXNN
 		}
 		break;
+#endif
 
 	default:
 		if (temp)

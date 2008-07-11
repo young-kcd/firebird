@@ -39,11 +39,10 @@ include     $(ROOT)/gen/make.shared.variables
 
 @SET_MAKE@
 
-SERVER_JrdFiles = ThreadData.cpp divorce.cpp dsc.cpp enc.cpp isc_file.cpp isc.cpp \
-isc_ipc.cpp sdl.cpp status.cpp 
+SERVER_JrdFiles = ThreadData.cpp sdl.cpp enc.cpp isc_file.cpp isc.cpp divorce.cpp \
+status.cpp isc_ipc.cpp 
 SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
-SERVER_Other_sources = common/cvt.cpp 
-SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles)) $(SERVER_Other_sources)
+SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles))
 
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) \
 $(INTERFACE_Objects) $(COMMON_Objects) $(CLUMPLETS_Objects) \
@@ -56,7 +55,7 @@ $(OS_SPECIFIC_Objects)
 fb_smp_server:	$(FB_DAEMON)
 
 $(FB_DAEMON):	$(SERVER_Objects)
-	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ $(FBEMBED_LINK) $(LINK_LIBS) $(ICU_LIBS)
+	$(EXE_LINK) $(LINK_OPTS) $^ -o $@ -L$(LIB) -lfbembed $(LINK_LIBS) $(ICU_LIBS)
 
 AllObjects = $(SERVER_Objects)
 

@@ -43,7 +43,6 @@
 #include "../common/classes/ClumpletWriter.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 // BLR to search database for user name record
 
@@ -112,17 +111,17 @@ namespace {
 	class FailedLogin
 	{
 	public:
-		string login;
+		Firebird::string login;
 		int	failCount;
 		time_t lastAttempt;
 
-		explicit FailedLogin(const string& l)
+		explicit FailedLogin(const Firebird::string& l)
 			: login(l), failCount(1), lastAttempt(time(0)) {}
 
-		FailedLogin(MemoryPool& p, const FailedLogin& fl) 
+		FailedLogin(Firebird::MemoryPool& p, const FailedLogin& fl) 
 			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt) {}
 
-		static const string* generate(const void* sender, const FailedLogin* f)
+		static const Firebird::string* generate(const void* sender, const FailedLogin* f)
 		{
 			return &(f->login);
 		}
@@ -132,25 +131,25 @@ namespace {
 	const int MAX_FAILED_ATTEMPTS = 4;
 	const int FAILURE_DELAY = 8; // seconds
 
-	class FailedLogins : private SortedObjectsArray<FailedLogin, 
-		InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
-		const string, FailedLogin> 
+	class FailedLogins : private Firebird::SortedObjectsArray<FailedLogin, 
+		Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
+		const Firebird::string, FailedLogin> 
 	{
 	private:
 		// as long as we have voluntary threads scheduler,
 		// this mutex should be entered AFTER that scheduler entered!
-		Mutex fullAccess;
+		Firebird::Mutex fullAccess;
 
-		typedef SortedObjectsArray<FailedLogin, 
-			InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
-			const string, FailedLogin> inherited;
+		typedef Firebird::SortedObjectsArray<FailedLogin, 
+			Firebird::InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
+			const Firebird::string, FailedLogin> inherited;
 
 	public:
 		explicit FailedLogins(MemoryPool& p) : inherited(p) {}
 
-		void loginFail(const string& login)
+		void loginFail(const Firebird::string& login)
 		{
-			MutexLockGuard guard(fullAccess);
+			Firebird::MutexLockGuard guard(fullAccess);
 
 			const time_t t = time(0);
 
@@ -195,9 +194,9 @@ namespace {
 			add(FailedLogin(login));
 		}
 
-		void loginSuccess(const string& login)
+		void loginSuccess(const Firebird::string& login)
 		{
-			MutexLockGuard guard(fullAccess);
+			Firebird::MutexLockGuard guard(fullAccess);
 			size_t pos;
 			if (find(login, pos))
 			{
@@ -206,8 +205,8 @@ namespace {
 		}
 	};
 
-	InitInstance<FailedLogins> usernameFailedLogins;
-	InitInstance<FailedLogins> remoteFailedLogins;
+	Firebird::InitInstance<FailedLogins> usernameFailedLogins;
+	Firebird::InitInstance<FailedLogins> remoteFailedLogins;
 }
 #endif //EMBEDDED
 
@@ -218,7 +217,7 @@ namespace {
 
 void SecurityDatabase::fini()
 {
-	MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(mutex);
 	if (--counter == 1)
 	{
 		if (lookup_req)
@@ -234,7 +233,7 @@ void SecurityDatabase::fini()
 
 void SecurityDatabase::init()
 {
-	MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(mutex);
 	++counter;
 }
 
@@ -256,7 +255,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 	strncpy(uname, user_name, sizeof uname);
 	uname[sizeof uname - 1] = 0;
 
-	MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(mutex);
 
 	// Attach database and compile request
 
@@ -272,7 +271,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 			lookup_db = 0;
 			isc_detach_database(status, &tmp);
 		}
-		status_exception::raise(Arg::Gds(isc_psw_attach));
+		Firebird::status_exception::raise(isc_psw_attach, 0);
 	}
 
 	// Lookup
@@ -281,7 +280,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
 	{
-		status_exception::raise(Arg::Gds(isc_psw_start_trans));
+		Firebird::status_exception::raise(isc_psw_start_trans, 0);
 	}
 
 	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
@@ -324,7 +323,7 @@ bool SecurityDatabase::prepare()
 	getPath(user_info_name);
 
 	// Perhaps build up a dpb
-	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	// Attachment is for the security database
 	dpb.insertByte(isc_dpb_sec_attach, TRUE);
@@ -383,14 +382,14 @@ void SecurityDatabase::shutdown()
 	instance.fini();
 }
 
-void SecurityDatabase::verifyUser(string& name,
+void SecurityDatabase::verifyUser(Firebird::string& name,
 								  const TEXT* user_name,
 								  const TEXT* password,
 								  const TEXT* password_enc,
 								  int* uid,
 								  int* gid,
 								  int* node_id, 
-								  const string& remoteId)
+								  const Firebird::string& remoteId)
 {
 	if (user_name)
 	{
@@ -405,22 +404,20 @@ void SecurityDatabase::verifyUser(string& name,
 	else
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		status_exception::raise(Arg::Gds(isc_login));
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	static AmCache useNative = AM_UNKNOWN;
 	if (useNative == AM_UNKNOWN)
 	{
-		// We use PathName for string comparison using platform filename comparison
-		// rules (case-sensitive or case-insensitive).
-		const PathName authMethod(Config::getAuthMethod());
+		Firebird::PathName authMethod(Config::getAuthMethod());
 		useNative = (authMethod == AmNative || authMethod == AmMixed) ? 
 			AM_ENABLED : AM_DISABLED;
 	}
 	if (useNative == AM_DISABLED)
 	{
 		remoteFailedLogins().loginFail(remoteId);
-		status_exception::raise(Arg::Gds(isc_login));
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	// Look up the user name in the userinfo database and use the parameters
@@ -430,7 +427,7 @@ void SecurityDatabase::verifyUser(string& name,
 	TEXT pw1[MAX_PASSWORD_LENGTH + 1];
 	const bool found = instance.lookup_user(name.c_str(), uid, gid, pw1);
 	pw1[MAX_PASSWORD_LENGTH] = 0;
-	string storedHash(pw1, MAX_PASSWORD_LENGTH);
+	Firebird::string storedHash(pw1, MAX_PASSWORD_LENGTH);
 	storedHash.rtrim();
 
 	// Punt if the user has specified neither a raw nor an encrypted password,
@@ -442,7 +439,7 @@ void SecurityDatabase::verifyUser(string& name,
 	{
 		usernameFailedLogins().loginFail(name);
 		remoteFailedLogins().loginFail(remoteId);
-		status_exception::raise(Arg::Gds(isc_login));
+		Firebird::status_exception::raise(isc_login, 0);
 	}
 
 	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
@@ -452,7 +449,7 @@ void SecurityDatabase::verifyUser(string& name,
 		password_enc = pwt + 2;
 	}
 
-	string newHash;
+	Firebird::string newHash;
 	hash(newHash, name, password_enc, storedHash);
 	if (newHash != storedHash)
 	{
@@ -469,7 +466,7 @@ void SecurityDatabase::verifyUser(string& name,
 		{
 			usernameFailedLogins().loginFail(name);
 			remoteFailedLogins().loginFail(remoteId);
-			status_exception::raise(Arg::Gds(isc_login));
+			Firebird::status_exception::raise(isc_login, 0);
 		}
 	}
 
@@ -485,7 +482,7 @@ void DelayFailedLogin::raise(int sec)
 	throw DelayFailedLogin(sec);
 }
 
-ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, StringsBuffer*) const throw()
+ISC_STATUS DelayFailedLogin::stuff_exception(ISC_STATUS* const status_vector, Firebird::StringsBuffer*) const throw()
 {
 	ISC_STATUS *sv = status_vector;
 

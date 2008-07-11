@@ -304,7 +304,8 @@ int ISC_event_post(event_t* event)
 	const int ret = cond_broadcast(event->event_semnum);
 	mutex_unlock(event->event_mutex);
 	if (ret)
-		gds__log("ISC_event_post: cond_broadcast failed with errno = %d", ret);
+		gds__log("ISC_event_post: cond_broadcast failed with errno = %d",
+				 ret);
 	return ret;
 }
 
@@ -1008,7 +1009,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		Firebird::status_exception::raise(Firebird::Arg::Gds(isc_exception_stack_overflow));
+		Firebird::status_exception::raise(isc_exception_stack_overflow, 0);
 		/* This will never be called, but to be safe it's here */
 		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
 		is_critical = false;
@@ -1029,7 +1030,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		is_critical = false;
 		break;
 	case 0xE06D7363: /* E == Exception. 0x6D7363 == "msc". Intel and Borland use the same code to be compatible */
-		/* If we've caught our own software exception,
+		/* If we've catched our own software exception,
 		   continue rewinding the stack to properly handle it
 		   and deliver an error information to the client side */
 		result = EXCEPTION_CONTINUE_SEARCH;
@@ -1259,12 +1260,6 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 	shmem_data->sh_mem_handle = fd;
-
-	if (!shmem_data->sh_mem_length_mapped)
-	{
-		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
 
 /* Try to get an exclusive lock on the lock file.  This will
    fail if somebody else has the exclusive lock */
@@ -1715,12 +1710,6 @@ UCHAR* ISC_map_file(
 	HANDLE file_handle, event_handle;
 	int retry_count = 0;
 
-	bool trunc_flag = true;
-	if (length < 0) {
-		length = -length;
-		trunc_flag = false;
-	}
-
 /* retry to attach to mmapped file if the process initializing
  * dies during initialization.
  */
@@ -1730,6 +1719,9 @@ UCHAR* ISC_map_file(
 
 	ISC_get_host(hostname, sizeof(hostname));
 	sprintf(map_file, filename, hostname);
+
+	if (length < 0)
+		length = -length;
 
 	file_handle = CreateFile(map_file,
 				 GENERIC_READ | GENERIC_WRITE,
@@ -1762,7 +1754,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
+	bool init_flag = (GetLastError() == ERROR_ALREADY_EXISTS) ? false: true;
 
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
@@ -1813,7 +1805,7 @@ UCHAR* ISC_map_file(
 	}
 
 	DWORD fdw_create;
-	if (init_flag && file_exists && trunc_flag)
+	if (init_flag && file_exists)
 		fdw_create = TRUNCATE_EXISTING | OPEN_ALWAYS;
 	else
 		fdw_create = OPEN_ALWAYS;
@@ -1846,29 +1838,18 @@ UCHAR* ISC_map_file(
 				0,
 				2 * sizeof (SLONG),
 				expanded_filename);
-	if (header_obj == NULL) 
-	{
+	if (header_obj == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
 		return NULL;
 	}
 
-	if (!init_flag && GetLastError() != ERROR_ALREADY_EXISTS)
-	{
-		// We have made header_obj but we are not initializing.
-		// Previous owner is closed and clear all header_data.
-		// One need to retry.
-		CloseHandle(header_obj);
-		CloseHandle(event_handle);
-		CloseHandle(file_handle);
-		goto retry;
-	}
-
-	SLONG* header_address = (SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
+	SLONG* header_address =
+		(SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
-		error(status_vector, "MapViewOfFile", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(header_obj);
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
@@ -1907,10 +1888,11 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	UCHAR* address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	UCHAR* address =
+		(UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
-		error(status_vector, "MapViewOfFile", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(file_obj);
 		UnmapViewOfFile(header_address);
 		CloseHandle(header_obj);
@@ -1923,13 +1905,6 @@ UCHAR* ISC_map_file(
 
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
-
-	if (!shmem_data->sh_mem_length_mapped)
-	{
-		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
-
 	shmem_data->sh_mem_handle = file_handle;
 	shmem_data->sh_mem_object = file_obj;
 	shmem_data->sh_mem_interest = event_handle;
@@ -2443,6 +2418,8 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 
 	while (true)
 	{
+		DWORD dwResult;
+		
 		if (dwMilliseconds == 0) {
 			if (!tryLockSharedSection(lpSect))
 				return WAIT_TIMEOUT;
@@ -2475,7 +2452,7 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 		unlockSharedSection(lpSect);
 		
 		// TODO actual timeout can be of any length
-		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
+		dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		
 		if (dwResult != WAIT_OBJECT_0)
@@ -2780,12 +2757,6 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = new_length;
 
-	if (!shmem_data->sh_mem_length_mapped)
-	{
-		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
-
 	return address;
 }
 #endif
@@ -2861,7 +2832,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 	LPVOID address = MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
-		error(status_vector, "MapViewOfFile", GetLastError());
+		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(file_obj);
 		return NULL;
 	}
@@ -2878,13 +2849,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 	shmem_data->sh_mem_length_mapped = new_length;
 	shmem_data->sh_mem_object = file_obj;
 
-	if (!shmem_data->sh_mem_length_mapped)
-	{
-		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
-
-	return static_cast<UCHAR*>(address);
+	return reinterpret_cast<UCHAR*>(address);
 }
 #endif
 
@@ -3046,7 +3011,7 @@ void ISC_sync_signals_reset()
 
 #ifdef UNIX
 #ifdef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS * status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
  *
@@ -3055,7 +3020,8 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
  **************************************
  *
  * Functional description
- *	Unmap a given file.
+ *	Unmap a given file.  Depending upon the flag,
+ *	get rid of the semaphore and/or truncate the file.
  *
  **************************************/
 	union semun arg;
@@ -3071,7 +3037,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 
 #ifdef UNIX
 #ifndef HAVE_MMAP
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data, USHORT flag)
 {
 /**************************************
  *
@@ -3080,7 +3046,8 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
  **************************************
  *
  * Functional description
- *	Detach from the shared memory
+ *	Detach from the shared memory.  Depending upon the flag,
+ *	get rid of the semaphore and/or get rid of shared memory.
  *
  **************************************/
 	struct shmid_ds buf;
@@ -3093,7 +3060,9 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 
 
 #ifdef WIN_NT
-void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
+void ISC_unmap_file(ISC_STATUS * status_vector,
+					SH_MEM shmem_data,
+					USHORT flag)
 {
 /**************************************
  *
@@ -3102,7 +3071,8 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
  **************************************
  *
  * Functional description
- *	Detach from the shared memory.
+ *	Detach from the shared memory.  Depending upon the flag,
+ *	get rid of the semaphore and/or get rid of shared memory.
  *
  **************************************/
 
@@ -3153,13 +3123,13 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
  *	Find the semaphore/shared memory key for a file.
  *
  **************************************/
+	int fd;
+	key_t key;
 
-	// Produce shared memory key for file
+/* Produce shared memory key for file */
 
-	key_t key = ftok(filename, FTOK_KEY);
-	if (key == -1) {
-		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV);
-		if (fd == -1) {
+	if ((key = ftok(filename, FTOK_KEY)) == -1) {
+		if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)) == -1) {
 			error(status_vector, "open", errno);
 			return 0L;
 		}

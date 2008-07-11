@@ -172,7 +172,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary) {
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, 0);
 	}
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
@@ -258,7 +258,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		// "Context variable %s is not found in namespace %s"
 		ERR_post(isc_ctx_var_not_found,
 			isc_arg_string, ERR_cstring(name_str.c_str()),
-			isc_arg_string, ERR_cstring(ns_str.c_str()), isc_arg_end);
+			isc_arg_string, ERR_cstring(ns_str.c_str()), 0);
 	}
 
 	// Handle user-defined variables
@@ -285,7 +285,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	// "Invalid namespace name %s passed to %s"
 	ERR_post(isc_ctx_namespace_invalid,
 		isc_arg_string, ERR_cstring(ns_str.c_str()),
-		isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
+		isc_arg_string, RDB_GET_CONTEXT, 0);
 	return NULL;
 }
 
@@ -294,7 +294,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary)
 	{
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
+		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_SET_CONTEXT, 0);
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -322,7 +322,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
+			ERR_post(isc_ctx_too_big, 0);
 		}
 
 		return att->att_context_vars.put(name_str,
@@ -343,7 +343,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
+			ERR_post(isc_ctx_too_big, 0);
 		}
 
 		return tra->tra_context_vars.put(name_str,
@@ -353,7 +353,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	// "Invalid namespace name %s passed to %s"
 	ERR_post(isc_ctx_namespace_invalid,
 		isc_arg_string, ERR_cstring(ns_str.c_str()),
-		isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
+		isc_arg_string, RDB_SET_CONTEXT, 0);
 	return 0;
 }
 

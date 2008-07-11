@@ -43,6 +43,7 @@
 #include "../gpre/lang_proto.h"
 #include "../gpre/pat_proto.h"
 #include "../gpre/prett_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../gpre/msc_proto.h"
 #include "../common/utils_proto.h"
 
@@ -1366,7 +1367,7 @@ static void gen_database_data(const act* action)
 {
 	TEXT include_buffer[MAXPATHLEN];
 
-	gds__prefix(include_buffer, INCLUDE_FTN_FILE);
+	ISC_prefix(include_buffer, INCLUDE_FTN_FILE);
 	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer);
 
 	FTN_print_buffer(output_buffer);

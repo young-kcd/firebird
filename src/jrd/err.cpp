@@ -51,7 +51,6 @@
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 //#define JRD_FAILURE_SPACE	2048
 //#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
@@ -60,7 +59,6 @@ using namespace Firebird;
 static void internal_error(ISC_STATUS status, int number, 
 						   const TEXT* file = NULL, int line = 0);
 static void internal_post(ISC_STATUS status, va_list args);
-static void internal_post2(const ISC_STATUS* status_vector);
 
 
 void ERR_bugcheck(int number, const TEXT* file, int line)
@@ -102,7 +100,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
 	DEBUG;
 	CCH_shutdown_database(dbb);
 
-	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), isc_arg_end);
+	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), 0);
 }
 
 
@@ -160,7 +158,7 @@ void ERR_duplicate_error(IDX_E	code,
 	switch (code) {
 	case idx_e_keytoobig:
 		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, index_name, isc_arg_end);
+				 isc_arg_string, index_name, 0);
 		break;
 
 	case idx_e_conversion:
@@ -170,22 +168,22 @@ void ERR_duplicate_error(IDX_E	code,
 	case idx_e_foreign_target_doesnt_exist:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, ERR_cstring(relation->rel_name), 
-			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, isc_arg_end);
+			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, 0);
 		break;
 
 	case idx_e_foreign_references_present:
 		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
 			 	 isc_arg_string, ERR_cstring(relation->rel_name),
-			 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
+			 	 isc_arg_gds, isc_foreign_key_references_present, 0);
 		break;
 
 	default:
 		if (constraint.length() > 0)
 			ERR_post(isc_unique_key_violation,
 					 isc_arg_string, constraint_name,
-					 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+					 isc_arg_string, ERR_cstring(relation->rel_name), 0);
 		else
-			ERR_post(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
+			ERR_post(isc_no_dup, isc_arg_string, index_name, 0);
 	}
 }
 
@@ -209,7 +207,7 @@ void ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), 0);
 }
 
 
@@ -228,7 +226,7 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), isc_arg_end);
+	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), 0);
 }
 
 
@@ -260,7 +258,8 @@ void ERR_log(int facility, int number, const TEXT* message)
 	fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 
 	gds__log("Database: %s\n\t%s", (tdbb && tdbb->getAttachment()) ?
-		tdbb->getAttachment()->att_filename.c_str() : "", errmsg);
+		tdbb->getAttachment()->att_filename.c_str() : "",
+		errmsg, 0);
 }
 
 
@@ -399,36 +398,6 @@ void ERR_post(ISC_STATUS status, ...)
 }
 
 
-void ERR_post(const Arg::StatusVector& statusVector)
-/**************************************
- *
- *	E R R _ p o s t
- *
- **************************************
- *
- * Functional description
- *	Create a status vector and return to the user.
- *
- **************************************/
-{
-	ISC_STATUS_ARRAY vector;
-	memcpy(vector, statusVector.value(), sizeof(vector));
-
-	for (int i = 0; i < statusVector.length(); i += 2)
-	{
-		if (vector[i] == isc_arg_string)
-		{
-			vector[i + 1] = (ISC_STATUS)(IPTR) ERR_cstring((char*)(IPTR) vector[i + 1]);
-		}
-	}
-
-	internal_post2(vector);
-
-	DEBUG;
-	ERR_punt();
-}
-
-
 static void internal_post(ISC_STATUS status, va_list args)
 {
 /**************************************
@@ -439,37 +408,21 @@ static void internal_post(ISC_STATUS status, va_list args)
  *
  * Functional description
  *	Append status vector with new values.
+ *  Used in ERR_post and ERR_post_nothrow
  *
  **************************************/
+
+	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 /* stuff the status into temp buffer */
 	ISC_STATUS_ARRAY tmp_status;
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
 	STUFF_STATUS_function(tmp_status, status, args);
 
-	internal_post2(tmp_status);
-}
-
-
-static void internal_post2(const ISC_STATUS* tmp_status)
-{
-/**************************************
- *
- *	i n t e r n a l _ p o s t 2
- *
- **************************************
- *
- * Functional description
- *	Append status vector with new values.
- *
- **************************************/
-
-	/* calculate length of the status */
+/* calculate length of the status */
 	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
-
-	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -627,6 +580,6 @@ static void internal_error(ISC_STATUS status, int number,
 		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 	}
 
-	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
+	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), 0);
 }
 

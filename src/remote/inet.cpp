@@ -659,7 +659,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_arg_string,
 						   port->port_connection->str_data,
 						   isc_arg_gds,
-						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, isc_arg_end);
+						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, 0);
 
 			disconnect(port);
 			return NULL;
@@ -726,7 +726,7 @@ rem_port* INET_connect(const TEXT* name,
 						   isc_service_unknown,
 						   isc_arg_string,
 						   protocol.c_str(),
-						   isc_arg_string, "tcp", isc_arg_end);
+						   isc_arg_string, "tcp", 0);
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}
@@ -2357,7 +2357,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 		if (!found)
 		{
 			if (!INET_shutting_down && (main_port->port_server_flags & SRVR_multi_client)) {
-				gds__log("INET/select_wait: client rundown complete, server exiting");
+				gds__log("INET/select_wait: client rundown complete, server exiting", 0);
 			}
 			return FALSE;
 		}
@@ -2751,7 +2751,7 @@ static void inet_error(
 		inet_gen_error(port, isc_network_error,
 					   isc_arg_string,
 					   (ISC_STATUS) port->port_connection->str_data,
-					   isc_arg_gds, operation, SYS_ERR, status, isc_arg_end);
+					   isc_arg_gds, operation, SYS_ERR, status, 0);
 
 		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
@@ -2761,7 +2761,7 @@ static void inet_error(
 		inet_gen_error(port, isc_network_error,
 					   isc_arg_string,
 					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
-					   operation, isc_arg_end);
+					   operation, 0);
 	}
 }
 
@@ -3226,7 +3226,7 @@ static int packet_receive(
 	}
 
 	if (!n) {
-		inet_error(port, "read end_of_file", isc_net_read_err, isc_arg_end);
+		inet_error(port, "read end_of_file", isc_net_read_err, 0);
 		return FALSE;
 	}
 
@@ -3240,7 +3240,7 @@ static int packet_receive(
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
 			inet_error(port, "simulated error - read",
-					   isc_net_read_err, isc_arg_end);
+					   isc_net_read_err, 0);
 			return FALSE;
 		}
 	}
@@ -3378,7 +3378,7 @@ static bool_t packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_le
 		if (INET_force_error == 0) {
 			INET_force_error = 1;
 			inet_error(port, "simulated error - send",
-					   isc_net_write_err, isc_arg_end);
+					   isc_net_write_err, 0);
 			return FALSE;
 		}
 	}

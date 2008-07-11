@@ -132,6 +132,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
  *	These entrypoints are *NOT* designed for customer use!
  *
  **************************************/
+	char filename[MAXPATHLEN];
 	Shadow* shadow;
 #ifdef WIN_NT
 	HANDLE desc;
@@ -158,19 +159,23 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 			return -1;
 
 #ifdef WIN_NT
+
 		desc =
 			(HANDLE) ((file->fil_flags & FIL_force_write) ?
 					  file->fil_force_write_desc : file->fil_desc);
 
 		CloseHandle(desc);
+		desc = INVALID_HANDLE_VALUE;
 #else
 		close(file->fil_desc);
 #endif
+		strncpy((char *) filename, file->fil_string, file->fil_length);
+		filename[file->fil_length] = 0;
 
 #ifdef WIN_NT
-		DeleteFile(file->fil_string);
+		DeleteFile(filename);
 #else
-		unlink(file->fil_string);
+		unlink(filename);
 #endif
 		return 0;
 
@@ -179,27 +184,29 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		/* Close & delete specified shadow file */
 
 		tdbb = JRD_get_thread_data();
-
 		if (!(shadow = dbb->dbb_shadow))
 			return -1;
-
 		for (; shadow; shadow = shadow->sdw_next)
 			if (shadow->sdw_number == *(ULONG *) arg1) {
 #ifdef WIN_NT
+
 				desc =
 					(HANDLE) ((shadow->sdw_file->fil_flags & FIL_force_write) ?
 							  shadow->sdw_file->fil_force_write_desc :
 							  shadow->sdw_file->fil_desc);
 
 				CloseHandle(desc);
+				desc = INVALID_HANDLE_VALUE;
 #else
 				close(shadow->sdw_file->fil_desc);
 #endif
-
+				strncpy((char *) filename, shadow->sdw_file->fil_string,
+						shadow->sdw_file->fil_length);
+				filename[shadow->sdw_file->fil_length] = 0;
 #ifdef WIN_NT
-				DeleteFile(shadow->sdw_file->fil_string);
+				DeleteFile(filename);
 #else
-				unlink(shadow->sdw_file->fil_string);
+				unlink(filename);
 #endif
 				return 0;
 			}
@@ -216,7 +223,7 @@ int QATEST_entrypoint(ULONG * function, void *arg1, void *arg2, void *arg3)
 		sprintf(filename, "Unknown QATEST_entrypoint #%lu",	/* TXNN */
 				*function);
 		ERR_post(isc_random,
-				 isc_arg_string, ERR_cstring(filename), isc_arg_end);
+				 isc_arg_string, ERR_cstring(filename), 0);
 		return 0;
 	}
 }

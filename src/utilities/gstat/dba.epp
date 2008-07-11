@@ -850,6 +850,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 			delete tmp2;
 		}
 
+		// Mark service thread as finished and cleanup memory being
+		// used by service in case if client detached from the service 
+		uSvc->finish();
+
 		exit_code = tddba->exit_code;
 		tdba::restoreSpecific();
 	}

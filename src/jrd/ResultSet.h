@@ -49,7 +49,7 @@ public:
 private:
 	PreparedStatement* stmt;
 	jrd_tra* transaction;
-	bool firstFetchDone;
+	bool firstFetch;
 };
 
 

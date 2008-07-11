@@ -277,25 +277,6 @@ Format: SPECIALS-FIRST={0 | 1}
 Example: SPECIALS-FIRST=1
 
 
-NUMERIC-SORT: Specify how numbers are sorted.
-Valid for: UNICODE collations.
-Format: NUMERIC-SORT={0 | 1} (0 is the default)
-
-NUMERIC-SORT=0 sorts number in alphabetic order. Example:
-1
-10
-100
-2
-20
-
-NUMERIC-SORT=1 sorts number in numeric order. Example:
-1
-2
-10
-20
-100
-
-
 Collation changes
 -----------------
 

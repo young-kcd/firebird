@@ -34,7 +34,6 @@
 #include "../jrd/intl.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cvt_proto.h"
-#include "../common/cvt.h"
 #include "../jrd/cvt2_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intl_proto.h"
@@ -54,7 +53,7 @@ int MOV_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-	return CVT2_compare(arg1, arg2);
+	return CVT2_compare(arg1, arg2, ERR_post);
 }
 
 
@@ -72,7 +71,7 @@ double MOV_date_to_double(const dsc* desc)
  *
  **************************************/
 
-	return CVT_date_to_double(desc);
+	return CVT_date_to_double(desc, ERR_post);
 }
 
 
@@ -127,7 +126,7 @@ void MOV_double_to_date(double real, SLONG fixed[2])
  *
  **************************************/
 
-	CVT_double_to_date(real, fixed);
+	CVT_double_to_date(real, fixed, ERR_post);
 }
 
 
@@ -231,7 +230,7 @@ void MOV_get_name(const dsc* desc, TEXT* string)
  *
  **************************************/
 
-	CVT2_get_name(desc, string);
+	CVT2_get_name(desc, string, ERR_post);
 }
 
 
@@ -309,7 +308,7 @@ GDS_DATE MOV_get_sql_date(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_date(desc);
+	return CVT_get_sql_date(desc, ERR_post);
 }
 
 
@@ -326,7 +325,7 @@ GDS_TIME MOV_get_sql_time(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_sql_time(desc);
+	return CVT_get_sql_time(desc, ERR_post);
 }
 
 
@@ -343,7 +342,7 @@ GDS_TIMESTAMP MOV_get_timestamp(const dsc* desc)
  *
  **************************************/
 
-	return CVT_get_timestamp(desc);
+	return CVT_get_timestamp(desc, ERR_post);
 }
 
 
@@ -426,12 +425,12 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, isc_arg_end);
+			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, 0);
 
 		return size;
 	}
 
-	return CVT2_make_string2(desc, ttype, address, buffer);
+	return CVT2_make_string2(desc, ttype, address, buffer, ERR_post);
 }
 
 
@@ -454,5 +453,5 @@ void MOV_move(Jrd::thread_db* tdbb, /*const*/ dsc* from, dsc* to)
 		BLB_move(tdbb, from, to, NULL);
 	}
 	else
-		CVT_move(from, to);
+		CVT_move(from, to, ERR_post);
 }

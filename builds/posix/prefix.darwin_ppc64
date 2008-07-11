@@ -15,6 +15,7 @@
 # All Rights Reserved.
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
+#$Id: prefix.darwin_ppc64,v 1.4 2008-06-09 14:05:39 paulbeach Exp $
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 # To use this file to build 64bit version of Firebird for MacOS 10.5 (Leopard)
@@ -55,12 +56,11 @@ LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
-LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed -lib_util
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
 PLATFORM_FALLBACK=os/posix
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework

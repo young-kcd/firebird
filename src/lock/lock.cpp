@@ -127,9 +127,6 @@ SSHORT LOCK_debug_level = 0;
 #define DEBUG_DELAY
 #endif
 
-// hvlad: enable to log deadlocked owners and its PIDs in firebird.log
-//#define DEBUG_TRACE_DEADLOCKS
-
 // CVC: Unlike other definitions, SRQ_PTR is not a pointer to something in lowercase.
 // It's LONG.
 
@@ -251,7 +248,7 @@ LockManager::~LockManager()
 
 	if (m_header)
 	{
-		ISC_unmap_file(local_status, &m_shmem);
+		ISC_unmap_file(local_status, &m_shmem, 0);
 	}
 
 	Firebird::MutexLockGuard guard(g_mapMutex);
@@ -1730,15 +1727,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 	// detected a circle in the wait-for graph.  Return "deadlock".
 
 	if (request->lrq_flags & LRQ_deadlock)
-	{
-#ifdef DEBUG_TRACE_DEADLOCKS
-		const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
-		const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
-		gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
-			request->lrq_owner, proc->prc_process_id, owner->own_flags);
-#endif
 		return request;
-	}
 
 	// Remember that this request is part of the wait-for graph
 
@@ -1797,14 +1786,6 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 
 		own* owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
-		// hvlad: don't pursue lock owners that wait with timeout as such 
-		// circle in wait-for graph will be broken automatically when permitted 
-		// timeout expires
-
-		if (owner->own_flags & OWN_timeout) {
-			continue;
-		}
-
 		// Don't pursue lock owners that still have to finish processing their AST.
 		// If the blocking queue is not empty, then the owner still has some
 		// AST's to process (or lock reposts).
@@ -1837,15 +1818,7 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		// Check who is blocking the request whose owner is blocking the input request
 
 		if (target = deadlock_walk(target, maybe_deadlock))
-		{
-#ifdef DEBUG_TRACE_DEADLOCKS
-			const own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
-			const prc* proc = (prc*) SRQ_ABS_PTR(owner->own_process);
-			gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
-				request->lrq_owner, proc->prc_process_id, owner->own_flags);
-#endif
 			return target;
-		}
 	}
 
 	// This branch of the wait-for graph is exhausted, the current waiting
@@ -3404,7 +3377,7 @@ void LockManager::validate_owner(const SRQ_PTR own_ptr, USHORT freed)
 	// Check that no invalid flag bit is set
 	CHECK(!
 		  (owner->own_flags &
-		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled | OWN_timeout)));
+		  		~(OWN_blocking | OWN_scanned | OWN_waiting | OWN_wakeup | OWN_signaled)));
 
 	const srq* lock_srq;
 	SRQ_LOOP(owner->own_requests, lock_srq) {
@@ -3651,11 +3624,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	owner->own_flags &= ~(OWN_scanned | OWN_wakeup);
 	owner->own_flags |= OWN_waiting;
 
-	if (lck_wait > 0)
-		owner->own_flags &= ~OWN_timeout;
-	else
-		owner->own_flags |= OWN_timeout;
-
 	event_t* event_ptr = &owner->own_wakeup;
 	SLONG value = ISC_event_clear(event_ptr);
 
@@ -3680,9 +3648,8 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 	ULONG repost_counter = 0;
 #endif
 
+	int ret;
 	while (true) {
-		int ret = FB_FAILURE;
-
 		// Before starting to wait - look to see if someone resolved
 		// the request for us - if so we're out easy!
 
@@ -3731,7 +3698,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			break;
 		}
 
-		acquire_shmem(owner_offset);
 		// See if we wokeup due to another owner deliberately waking us up
 		// ret==FB_SUCCESS --> we were deliberately woken up
 		// ret==FB_FAILURE --> we still don't know why we woke up
@@ -3740,12 +3706,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// by another owner is OWN_wakeup set. This is the only FB_SUCCESS case.
 
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
-		if (ret == FB_SUCCESS)
-		{
-			event_ptr = &owner->own_wakeup;
-			value = ISC_event_clear(event_ptr);
-		}
-
 		if (owner->own_flags & OWN_wakeup)
 			ret = FB_SUCCESS;
 		else
@@ -3764,15 +3724,14 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// wakeup due to timing differences (we use seconds here,
 		// ISC_event_wait() uses finer granularity)
 
-		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout)) 
-		{
-			release_shmem(owner_offset);
+		if ((ret != FB_SUCCESS) && (current_time + 1 < timeout)) {
 			continue;
 		}
 
 		// We apparently woke up for some real reason.  
 		// Make sure everyone is still with us. Then see if we're still blocked.
 
+		acquire_shmem(owner_offset);
 		request = (lrq*) SRQ_ABS_PTR(request_offset);
 		lock = (lbl*) SRQ_ABS_PTR(lock_offset);
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -3811,6 +3770,9 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 		// Handle lock event first
 		if (ret == FB_SUCCESS)
 		{
+			event_ptr = &owner->own_wakeup;
+			value = ISC_event_clear(event_ptr);
+
 			// Someone posted our wakeup event, but DIDN'T grant our request.
 			// Re-post what we're blocking on and continue to wait.
 			// This could happen if the lock was granted to a different request,
@@ -3832,10 +3794,9 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			break;
 		}
 
-		// If we've not previously been scanned for a deadlock and going to wait 
-		// forever, go do a deadlock scan
+		// If we've not previously been scanned for a deadlock, go do a deadlock scan
 
-		if (!(owner->own_flags & (OWN_scanned | OWN_timeout)) &&
+		if (!(owner->own_flags & OWN_scanned) &&
 			(blocking_request = deadlock_scan(owner, request)))
 		{
 			// Something has been selected for rejection to prevent a
@@ -3898,7 +3859,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 
 	owner = (own*) SRQ_ABS_PTR(owner_offset);
 	owner->own_pending_request = 0;
-	owner->own_flags &= ~(OWN_waiting | OWN_timeout);
+	owner->own_flags &= ~OWN_waiting;
 
 	return FB_SUCCESS;
 }

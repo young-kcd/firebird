@@ -112,7 +112,7 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 inline void err_post_if_database_is_readonly(const Database* dbb)
 {
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(isc_read_only_database, 0);
 }
 
 // Class definitions (obsolete platforms are commented out)
@@ -1041,7 +1041,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 }
 
 
-void PAG_format_header(thread_db* tdbb)
+void PAG_format_header()
 {
 /**************************************
  *
@@ -1053,8 +1053,8 @@ void PAG_format_header(thread_db* tdbb)
  *	Create the header page for a new file.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 /* Initialize header page */
@@ -1091,7 +1091,7 @@ void PAG_format_header(thread_db* tdbb)
 
 // CVC: This function is mostly obsolete. Ann requested to keep it and the code that calls it.
 // We won't read the log, anyway.
-void PAG_format_log(thread_db* tdbb)
+void PAG_format_log()
 {
 /***********************************************
  *
@@ -1104,7 +1104,7 @@ void PAG_format_log(thread_db* tdbb)
  *	Set all parameters to 0
  *
  **************************************/
-	SET_TDBB(tdbb);
+	thread_db* tdbb = JRD_get_thread_data();
 
 	WIN window(LOG_PAGE_NUMBER);
 	log_info_page* logp = (log_info_page*) CCH_fake(tdbb, &window, 1);
@@ -1207,7 +1207,7 @@ bool PAG_get_clump(SLONG page_num, USHORT type, USHORT* inout_len, UCHAR* entry)
 }
 
 
-void PAG_header(thread_db* tdbb, bool info)
+void PAG_header(bool info)
 {
 /**************************************
  *
@@ -1220,8 +1220,8 @@ void PAG_header(thread_db* tdbb, bool info)
  *  Done through the page cache.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
 	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
@@ -1291,7 +1291,7 @@ void PAG_header(thread_db* tdbb, bool info)
 				 isc_arg_string, "read-write",
 				 isc_arg_string, "database",
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+				 0);
 	}
 
 	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
@@ -1332,7 +1332,7 @@ void PAG_header(thread_db* tdbb, bool info)
 }
 
 
-void PAG_header_init(thread_db* tdbb)
+void PAG_header_init()
 {
 /**************************************
  *
@@ -1347,10 +1347,10 @@ void PAG_header_init(thread_db* tdbb)
  *  Done using a physical page read.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
-	Attachment* const attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
 	// Allocate a spare buffer which is large enough,
@@ -1371,7 +1371,7 @@ void PAG_header_init(thread_db* tdbb)
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
 		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+				 0);
 	}
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
@@ -1384,7 +1384,7 @@ void PAG_header_init(thread_db* tdbb)
 				 isc_arg_number, (SLONG) header->hdr_ods_minor,
 				 isc_arg_number, (SLONG) ODS_VERSION,
 				 isc_arg_number, (SLONG) ODS_CURRENT,
-				 isc_arg_end);
+				 0);
 	}
 
 	// Note that if this check is turned on, it should be recoded in order that
@@ -1414,7 +1414,7 @@ void PAG_header_init(thread_db* tdbb)
 	{
 		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+				 0);
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
@@ -1422,7 +1422,7 @@ void PAG_header_init(thread_db* tdbb)
 	{
 		ERR_post(isc_bad_db_format,
 				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+				 0);
 	}
 
 	dbb->dbb_ods_version = ods_version;
@@ -1434,7 +1434,7 @@ void PAG_header_init(thread_db* tdbb)
 }
 	
 
-void PAG_init(thread_db* tdbb)
+void PAG_init()
 {
 /**************************************
  *
@@ -1446,8 +1446,8 @@ void PAG_init(thread_db* tdbb)
  *	Initialize stuff for page handling.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
@@ -1518,7 +1518,7 @@ void PAG_init(thread_db* tdbb)
 }
 
 
-void PAG_init2(thread_db* tdbb, USHORT shadow_number)
+void PAG_init2(USHORT shadow_number)
 {
 /**************************************
  *
@@ -1531,8 +1531,8 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
  *	search for additional files.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
 
 /* allocate a spare buffer which is large enough,
@@ -1911,7 +1911,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 				header->hdr_flags & hdr_SQL_dialect_3)
 			{
 				// Check the returned value here!
-				ERR_post_warning(isc_dialect_reset_warning, isc_arg_end);
+				ERR_post_warning(isc_dialect_reset_warning, 0);
 			}
 
 			dbb->dbb_flags &= ~DBB_DB_SQL_dialect_3;	/* set to 0 */
@@ -1927,7 +1927,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 			CCH_RELEASE(tdbb, &window);
 			ERR_post(isc_inv_dialect_specified, isc_arg_number, flag,
 					 isc_arg_gds, isc_valid_db_dialects, isc_arg_string,
-					 "1 and 3", isc_arg_gds, isc_dialect_not_changed, isc_arg_end);
+					 "1 and 3", isc_arg_gds, isc_dialect_not_changed, 0);
 			break;
 		}
 	}

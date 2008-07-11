@@ -56,7 +56,6 @@
 #include "../common/classes/init.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 /* NOTE: The static definition of DB and gds_trans by gpre will not
          be used by the meta data routines.  Each of those routines has
@@ -99,13 +98,13 @@ namespace {
 	{
 		if (!request->req_transaction->checkHandle())
 		{
-			ERR_post(isc_bad_trans_handle, isc_arg_end);
+			ERR_post(isc_bad_trans_handle, 0);
 		}
 	}
 }
 
 
-void METD_drop_charset(dsql_req* request, const MetaName& name)
+void METD_drop_charset(dsql_req* request, const Firebird::MetaName& name)
 {
 /**************************************
  *
@@ -445,7 +444,7 @@ USHORT METD_get_col_default(dsql_req* request,
 					break;
 				}
 				if (blob_handle->blb_fragment_size)
-					status_exception::raise(Arg::Gds(isc_segment));
+					Firebird::status_exception::raise(isc_segment, 0);
 				else
 					continue;
 			}
@@ -457,7 +456,7 @@ USHORT METD_get_col_default(dsql_req* request,
 				BLB_close(tdbb, blob_handle);
 				blob_handle = NULL;
 			}
-			catch (Exception&)
+			catch (Firebird::Exception&)
 			{
 			}
 
@@ -593,7 +592,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 		cs_sym = dbb->dbb_charsets_by_id[pos];
 	}
 	else {
-		const MetaName cs_name = METD_get_charset_name(request, charset_id);
+		const Firebird::MetaName cs_name = METD_get_charset_name(request, charset_id);
 		cs_sym = METD_get_charset(request, cs_name.length(), cs_name.c_str());
 	}
 	
@@ -603,7 +602,7 @@ USHORT METD_get_charset_bpc(dsql_req* request, SSHORT charset_id)
 }
 
 
-MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
+Firebird::MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
 {
 /**************************************
  *
@@ -620,7 +619,7 @@ MetaName METD_get_charset_name(dsql_req* request, SSHORT charset_id)
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-    MetaName name;
+    Firebird::MetaName name;
     
     dsql_dbb* dbb = request->req_dbb;
     
@@ -838,7 +837,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 					break;
 				}
 				if (blob_handle->blb_fragment_size)
-					status_exception::raise(Arg::Gds(isc_segment));
+					Firebird::status_exception::raise(isc_segment, 0);
 				else
 					continue;
 	        }
@@ -850,7 +849,7 @@ USHORT METD_get_domain_default(dsql_req* request,
 				BLB_close(tdbb, blob_handle);
 				blob_handle = NULL;
 			}
-			catch (Exception&)
+			catch (Firebird::Exception&)
 			{
 			}
 
@@ -1749,7 +1748,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			relation = METD_get_relation(statement, relation_name);
 			delete relation_name;
 
-			Array<MetaName> ambiguities;
+			Firebird::Array<Firebird::MetaName> ambiguities;
 			MetaNamePairMap currentAux;
 
 			if (!relation)
@@ -1770,12 +1769,12 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 				if (RFL.RDB$BASE_FIELD.NULL || RFL.RDB$FIELD_NAME.NULL)
 					continue;
 
-				const MetaName baseField(RFL.RDB$BASE_FIELD);
+				const Firebird::MetaName baseField(RFL.RDB$BASE_FIELD);
 				if (currentAux.exist(baseField))
 					ambiguities.add(baseField);
 				else
 				{
-					const MetaName fieldName(RFL.RDB$FIELD_NAME);
+					const Firebird::MetaName fieldName(RFL.RDB$FIELD_NAME);
 					if (first)
 					{
 						fields.put(fieldName, baseField);
@@ -1783,7 +1782,7 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 					}
 					else
 					{
-						MetaName field;
+						Firebird::MetaName field;
 
 						if (previousAux.get(fieldName, field))
 						{
@@ -1798,9 +1797,9 @@ dsql_rel* METD_get_view_base(CompiledStatement* statement,
 			if (!DSQL_REQUEST(irq_view_base_flds))
 				DSQL_REQUEST(irq_view_base_flds) = handle2;
 
-			for (const MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
+			for (const Firebird::MetaName* i = ambiguities.begin(); i != ambiguities.end(); ++i)
 			{
-				MetaName field;
+				Firebird::MetaName field;
 
 				if (currentAux.get(*i, field))
 				{

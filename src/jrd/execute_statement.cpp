@@ -56,7 +56,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 	if (transaction->tra_callback_count >= MAX_CALLBACKS)
 	{
-		ERR_post(isc_exec_sql_max_call_exceeded, isc_arg_end);
+		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 	}
 
 	Firebird::string sqlStatementText;
@@ -81,7 +81,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 				isc_sqlerr, isc_arg_number, (SLONG) -902,
 				isc_arg_gds, isc_exec_sql_invalid_req, 
 				isc_arg_string, ERR_string(sqlStatementText),
-				isc_arg_end);
+				0);
 		}
 
 		stmt->execute(tdbb, transaction);
@@ -107,7 +107,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 
 	if (transaction->tra_callback_count >= MAX_CALLBACKS)
 	{
-		ERR_post(isc_exec_sql_max_call_exceeded, isc_arg_end);
+		ERR_post(isc_exec_sql_max_call_exceeded, 0);
 	}
 
 	varCount = nVars;
@@ -132,7 +132,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 			ERR_post(
 				isc_exec_sql_invalid_req,
 				isc_arg_string, ERR_cstring(startOfSqlOperator),
-				isc_arg_end);
+				0);
 		}
 
 		if (stmt->getResultCount() != varCount)
@@ -140,7 +140,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 			delete stmt;
 			stmt = NULL;
 
-			ERR_post(isc_wronumarg, isc_arg_end);
+			ERR_post(isc_wronumarg, 0);
 		}
 
 		resultSet = stmt->executeQuery(tdbb, transaction);
@@ -186,7 +186,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
 			return false;
 		}
 
-		ERR_post(isc_sing_select_err, isc_arg_end);
+		ERR_post(isc_sing_select_err, 0);
 	}
 
 	return true;
@@ -216,7 +216,7 @@ void ExecuteStatement::getString(thread_db* tdbb,
 
 	if (!ptr)
 	{
-		ERR_post(isc_exec_sql_invalid_arg, isc_arg_end);
+		ERR_post(isc_exec_sql_invalid_arg, 0);
 	}
 
 	sql.assign((const char*) ptr, len);

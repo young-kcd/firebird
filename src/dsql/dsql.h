@@ -76,7 +76,7 @@ namespace Jrd
 	class dsql_intlsym;
 
 	typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
-	typedef Firebird::Stack<const dsql_str*> DsqlStrStack;
+	typedef Firebird::Stack<dsql_str*> DsqlStrStack;
 	typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 };
 

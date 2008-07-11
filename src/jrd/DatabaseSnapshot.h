@@ -115,7 +115,7 @@ protected:
 private:
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
 	void clearRecord(Record*);
-	void putField(Record*, int, const Firebird::ClumpletReader*, bool);
+	void putField(Record*, int, const void*, size_t);
 
 	static Firebird::ClumpletReader* dumpData(thread_db*, bool);
 	static const char* checkNull(int, int, const char*, size_t);

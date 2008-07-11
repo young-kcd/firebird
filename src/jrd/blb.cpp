@@ -73,7 +73,6 @@
 #include "../common/classes/array.h"
 
 using namespace Jrd;
-using namespace Firebird;
 using Firebird::UCharBuffer;
 
 typedef Ods::blob_page blob_page;
@@ -150,7 +149,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	if (!charSet->shouldCheckWellFormedness())
 		return;
 
-	HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
+	Firebird::HalfStaticArray<UCHAR, BUFFER_MEDIUM> buffer;
 	ULONG pos = 0;
 
 	while (!(blob->blb_flags & BLB_eof))
@@ -164,7 +163,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 		else
 		{
 			if (pos == 0)
-				status_exception::raise(Arg::Gds(isc_malformed_string));
+				Firebird::status_exception::raise(isc_malformed_string, 0);
 			else
 			{
 				buffer.removeCount(0, pos);
@@ -174,7 +173,7 @@ void BLB_check_well_formed(Jrd::thread_db* tdbb, const dsc* desc, Jrd::blb* blob
 	}
 
 	if (pos != 0)
-		status_exception::raise(Arg::Gds(isc_malformed_string));
+		Firebird::status_exception::raise(isc_malformed_string, 0);
 }
 
 
@@ -273,7 +272,7 @@ blb* BLB_create2(thread_db* tdbb,
 
 	// FIXME! Temporary BLOBs are not supported in read only databases
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(isc_read_only_database, 0);
 
 /* Create a blob large enough to hold a single data page */
 	SSHORT from, to;
@@ -495,7 +494,7 @@ void BLB_garbage_collect(
 }
 
 
-void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, UCharBuffer& bpb)
+void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR targetCharset, Firebird::UCharBuffer& bpb)
 {
 	bpb.resize(15);
 
@@ -529,7 +528,7 @@ void BLB_gen_bpb(SSHORT source, SSHORT target, UCHAR sourceCharset, UCHAR target
 }
 
 
-void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, UCharBuffer& bpb)
+void BLB_gen_bpb_from_descs(const dsc* fromDesc, const dsc* toDesc, Firebird::UCharBuffer& bpb)
 {
 	BLB_gen_bpb(fromDesc->getBlobSubType(), toDesc->getBlobSubType(),
 		fromDesc->getCharSet(), toDesc->getCharSet(), bpb);
@@ -835,7 +834,7 @@ SLONG BLB_get_slice(thread_db* tdbb,
 
 /* Get someplace to put data */
 
-	UCharBuffer data_buffer;
+	Firebird::UCharBuffer data_buffer;
 	UCHAR* const data = data_buffer.getBuffer(desc->iad_total_length);
 
 /* zero out memory, so that it does not have to be done for each element */
@@ -910,7 +909,7 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************/
 
 	if (!(blob->blb_flags & BLB_stream))
-		ERR_post(isc_bad_segstr_type, isc_arg_end);
+		ERR_post(isc_bad_segstr_type, 0);
 
 	if (mode == 1)
 		offset += blob->blb_seek;
@@ -959,7 +958,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (from_desc->dsc_dtype != dtype_array &&
 			from_desc->dsc_dtype != dtype_quad)
 		{
-			ERR_post(isc_array_convert_error, isc_arg_end);
+			ERR_post(isc_array_convert_error, 0);
 		}
 	}
 	else if (DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
@@ -1047,7 +1046,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {
-		ERR_post(isc_read_only, isc_arg_end);
+		ERR_post(isc_read_only, 0);
 	}
 
 	RelationPages* relPages = relation->getPages(tdbb);
@@ -1117,7 +1116,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 						} while (temp_req);
 						if (!temp_req) {
 							// Trying to use temporary id of materialized blob from another request
-							ERR_post(isc_bad_segstr_id, isc_arg_end);
+							ERR_post(isc_bad_segstr_id, 0);
 						}
 					}
 					source = &blobIndex->bli_blob_id;
@@ -1129,7 +1128,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 				if (!blob || !(blob->blb_flags & BLB_closed))
 				{
-					ERR_post(isc_bad_segstr_id, isc_arg_end);
+					ERR_post(isc_bad_segstr_id, 0);
 				}
 
 				if (blob->blb_level &&
@@ -1162,7 +1161,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 		if (!blob || !(blob->blb_flags & BLB_closed))
 		{
-			ERR_post(isc_bad_segstr_id, isc_arg_end);
+			ERR_post(isc_bad_segstr_id, 0);
 		}
 
 		break;
@@ -1296,7 +1295,7 @@ blb* BLB_open2(thread_db* tdbb,
 				if (!new_blob || !(new_blob->blb_flags & BLB_temporary) ||
 					!(new_blob->blb_flags & BLB_closed))
 				{
-					ERR_post(isc_bad_segstr_id, isc_arg_end);
+					ERR_post(isc_bad_segstr_id, 0);
 				}
 
 				blob->blb_lead_page = new_blob->blb_lead_page;
@@ -1349,7 +1348,7 @@ blb* BLB_open2(thread_db* tdbb,
 		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
 			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
 		{
-				ERR_post(isc_bad_segstr_id, isc_arg_end);
+				ERR_post(isc_bad_segstr_id, 0);
 		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
@@ -1360,11 +1359,7 @@ blb* BLB_open2(thread_db* tdbb,
 		if (blob->blb_flags & BLB_damaged) {
 			if (!(dbb->dbb_flags & DBB_damaged))
 				IBERROR(194);	// msg 194 blob not found
-
 			blob->blb_flags |= BLB_eof;
-			blob->blb_count = 0;
-			blob->blb_max_segment = 0;
-			blob->blb_length = 0;
 			return blob;
 		}
 
@@ -1374,7 +1369,7 @@ blb* BLB_open2(thread_db* tdbb,
 			blob->blb_segment = blob->getBuffer();
 	}
 
-	UCharBuffer new_bpb;
+	Firebird::UCharBuffer new_bpb;
 
 	if (external_call &&
 		ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
@@ -1663,7 +1658,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	if (!array_desc)
 	{
 		ERR_post(isc_invalid_dimension, isc_arg_number, (SLONG) 0,
-				 isc_arg_number, (SLONG) 1, isc_arg_end);
+				 isc_arg_number, (SLONG) 1, 0);
 	}
 
 /* Find and/or allocate array block.  There are three distinct cases:
@@ -1708,7 +1703,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	{
 		array = find_array(transaction, blob_id);
 		if (!array) {
-			ERR_post(isc_invalid_array_id, isc_arg_end);
+			ERR_post(isc_invalid_array_id, 0);
 		}
 
 		arg.slice_high_water = array->arr_data + array->arr_effective_length;
@@ -1810,7 +1805,7 @@ void BLB_scalar(thread_db*		tdbb,
 
 // Get someplace to put data.
 // We need DOUBLE_ALIGNed buffer, that's why some tricks
-	HalfStaticArray<double, 64> temp;
+	Firebird::HalfStaticArray<double, 64> temp;
 	dsc desc = array_desc->iad_rpt[0].iad_desc;
 	desc.dsc_address = reinterpret_cast<UCHAR*>
 		(temp.getBuffer((desc.dsc_length / sizeof(double)) +
@@ -2001,7 +1996,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return BLB_lseek(control->source_handle, mode, offset);
 
 	default:
-		ERR_post(isc_uns_ext, isc_arg_end);
+		ERR_post(isc_uns_ext, 0);
 		return FB_SUCCESS;
 	}
 }
@@ -2035,7 +2030,7 @@ static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 		output->blb_flags |= BLB_stream;
 	}
 
-	HalfStaticArray<UCHAR, 2048> buffer;
+	Firebird::HalfStaticArray<UCHAR, 2048> buffer;
 	UCHAR* buff = buffer.getBuffer(input->blb_max_segment);
 
 	while (true) {
@@ -2074,7 +2069,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	CHECK_DBB(dbb);
 
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(isc_read_only_database, 0);
 
 	// Level 0 blobs don't need cleanup
 
@@ -2107,7 +2102,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	window.win_flags = WIN_large_scan;
 	window.win_scans = 1;
 
-	Array<UCHAR> data(dbb->dbb_page_size);
+	Firebird::Array<UCHAR> data(dbb->dbb_page_size);
 	UCHAR* buffer = data.begin();
 
 	for (; ptr < end; ptr++)
@@ -2420,7 +2415,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		(*vector)[l] = window.win_page.getPageNum();
 	}
 	else {
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_blobtoobig, isc_arg_end);
+		ERR_post(isc_imp_exc, isc_arg_gds, isc_blobtoobig, 0);
 	}
 
 	CCH_precedence(tdbb, &window, page_number);
@@ -2465,7 +2460,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 		toCharSet != CS_NONE && toCharSet != CS_BINARY)
 	{
 		if (!INTL_charset_lookup(tdbb, toCharSet)->wellFormed(length, fromstr))
-			status_exception::raise(Arg::Gds(isc_malformed_string));
+			Firebird::status_exception::raise(isc_malformed_string, 0);
 	}
 
 	UCharBuffer bpb;
@@ -2568,13 +2563,13 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	CharSet* fromCharSet = INTL_charset_lookup(tdbb, fromDesc->dsc_scale);
 	CharSet* toCharSet = INTL_charset_lookup(tdbb, INTL_GET_CHARSET(&blobAsText));
 
-	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) *
 		toCharSet->maxBytesPerChar());
 	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
-		ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, isc_arg_end);
+		ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, 0);
 
 	blobAsText.dsc_address = buffer.begin();
 	blobAsText.dsc_length = (USHORT)len;
@@ -2665,7 +2660,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		slice_desc->dsc_address + arg->slice_element_length;
 
 	if (next > arg->slice_end)
-		ERR_post(isc_out_of_bounds, isc_arg_end);
+		ERR_post(isc_out_of_bounds, 0);
 
 	if (array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */
@@ -2699,7 +2694,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 			   to slice callback routines */
 			thread_db* tdbb = JRD_get_thread_data();
 
-			HalfStaticArray<char, 1024> tmp_buffer;
+			Firebird::HalfStaticArray<char, 1024> tmp_buffer;
 			const USHORT tmp_len = array_desc->dsc_length;
 			const char* p;
 			const USHORT len = MOV_make_string(slice_desc,

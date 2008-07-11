@@ -843,6 +843,12 @@ ISC_STATUS API_ROUTINE isc_print_blr(const SCHAR* blr,
 
 extern "C" {
 
+void CVT_move (const dsc* a, dsc* b, FPTR_VOID c)
+{  
+    fb_assert(0);
+    // Not available in boot_gpre 
+}
+
 void ERR_bugcheck(int number)
 {
 }

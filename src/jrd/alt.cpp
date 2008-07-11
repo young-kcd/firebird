@@ -836,14 +836,6 @@ int API_ROUTINE isc_blob_load(
 					  name_length);
 }
 
-void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
-// I believe noone could use this private API in his routines.
-// This requires knowledge about our descriptors, which are hardly usable
-// outside Firebird,	AP-2008.
-{
-	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
-}
-
 #if !defined(SUPERSERVER) || defined(EMBEDDED) || defined(SUPERCLIENT)
 // AP: isc_*_user entrypoints are used only in any kind of embedded 
 // server (both posix and windows) and fbclient

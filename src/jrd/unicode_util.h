@@ -103,7 +103,6 @@ public:
 		UCollator* sortCollator;
 		USet* contractions;
 		int contractionsCount;
-		bool numericSort;
 	};
 	
 	friend class Utf16Collation;

@@ -58,7 +58,7 @@ public:
 
 		if (rc < 0)
 		{
-			system_call_failed::raise("StandaloneUtilityInterface::printf()/vprintf()");
+			Firebird::system_call_failed::raise("StandaloneUtilityInterface::printf()/vprintf()");
 		}
 	}
 
@@ -83,7 +83,7 @@ public:
 
 	virtual void checkService()
 	{
-		status_exception::raise(Arg::Gds(isc_utl_trusted_switch));
+		Firebird::status_exception::raise(isc_utl_trusted_switch, 0);
 	}
 	
 	// do nothing for non-service
@@ -95,7 +95,7 @@ public:
 	virtual void stuffStatus(const ISC_STATUS*) { }
 	virtual void stuffStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual ISC_STATUS* getStatus() { return 0; }
-	virtual void getAddressPath(ClumpletWriter& dpb) { }
+	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) { }
 };
 
 

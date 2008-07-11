@@ -53,12 +53,11 @@ LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
 LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
 LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
-LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed -lib_util
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
 PLATFORM_FALLBACK=os/posix
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework

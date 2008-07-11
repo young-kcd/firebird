@@ -14,16 +14,13 @@ WHY_Sources = why.cpp
 # why.cpp does the switch to determine the actual implementation to use
 
 
-JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
+JRD_ClientFiles = alt.cpp cvt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
 		isc_sync.cpp perf.cpp sdl.cpp status.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
-JRD_ClientSources = $(addprefix jrd/, $(JRD_ClientFiles)) common/cvt.cpp
-
-
-JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
+JRD_ServerFiles=  blob_filter.cpp dpm.epp dyn.epp dyn_def.epp \
         dyn_del.epp dyn_mod.epp dyn_util.epp fun.epp \
         grant.epp ini.epp met.epp pcmet.epp scl.epp \
         CharSet.cpp Collation.cpp DatabaseSnapshot.cpp VirtualTable.cpp RecordBuffer.cpp \
@@ -44,10 +41,11 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		unicode_util.cpp RuntimeStatistics.cpp DebugInterface.cpp \
 		extds/ExtDS.cpp extds/InternalDS.cpp extds/IscDS.cpp
 
-JRD_ServerSources = $(addprefix jrd/, $(JRD_ServerFiles))
 
+JRD_Files = $(JRD_ClientFiles) $(JRD_ServerFiles)
 
-JRD_Sources = $(JRD_ClientSources) $(JRD_ServerSources)
+# expands list to jrd/xx.cpp ...
+JRD_Sources = $(addprefix jrd/, $(JRD_Files))
 
 # expands list to ../<module>/jrd/xx.o entries
 JRD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(JRD_Sources))))
@@ -240,7 +238,7 @@ VULCAN_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(VULCAN_Source
 #
 # common
 
-FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp StatusArg.cpp
+FBCOMMON_ClientFiles = fb_exception.cpp thd.cpp classes/MetaName.cpp StatusHolder.cpp classes/init.cpp
 FBCOMMON_ServerFiles = utils.cpp
 
 FBCOMMON_ClientObjects = $(addprefix $(OBJ)/common/, $(addsuffix .o, $(basename $(FBCOMMON_ClientFiles))))
@@ -319,10 +317,6 @@ LIBFBSERVER_Objects =$(LIBFBEMBED_Objects)
 # gbak modules.  These are then used to compile the rest of the system.
 # MOD 29-July-2002
 
-# Statically link ib_util in libfbstatic.
-IBUTIL_Sources = $(addprefix extlib/, ib_util.cpp)
-IBUTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(IBUTIL_Sources))))
-
 # Notice that $(SECURITY_Objects) are missing, because that file can't be
 # compiled until later in the build process.
 
@@ -334,8 +328,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
 				$(CLUMPLETS_Objects) \
-				$(UTIL_Objects) \
-				$(IBUTIL_Objects)
+				$(UTIL_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

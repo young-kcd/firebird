@@ -147,8 +147,9 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		{
 			// ERROR !!!!
 			// Unknown datatype
-			status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				Arg::Gds(isc_dsql_datatype_err));
+			status_exception::raise(
+				isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				isc_arg_gds, isc_dsql_datatype_err, 0);
 		}
 
 		// Initialize some values if this is the first time.
@@ -319,14 +320,19 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 
 	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
 	if (firstarg) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 804,
+			isc_arg_gds, isc_dsql_datatype_err, 0);
 		// Dynamic SQL Error SQL error code = -804 Data type unknown
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) << Arg::Gds(isc_dsql_datatype_err));
 	}
 
 	if (err) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expressionName, 0);
 		// "Datatypes %sare not comparable in expression %s"
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
 	}
 
 	// If all the datatypes we've seen are exactly the same, we're done
@@ -425,9 +431,12 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// We couldn't do anything with this list, mostly because the
 	// datatypes aren't comparable.
 	// Let's try to give a usefull error message.
+	status_exception::raise(
+		isc_sqlerr, isc_arg_number, (SLONG) - 104,
+		isc_arg_gds, isc_dsql_datatypes_not_comparable,
+		isc_arg_string, "",
+		isc_arg_string, expressionName, 0);
 	// "Datatypes %sare not comparable in expression %s"
-	status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-		Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") << Arg::Str(expressionName));
 }
 
 

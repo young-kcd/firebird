@@ -44,7 +44,6 @@
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
 
@@ -603,10 +602,7 @@ double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Form
 		return (double) 10000;
 	}
 
-	MET_post_existence(tdbb, relation);
-	const double cardinality = DPM_cardinality(tdbb, relation, format);
-	MET_release_existence(tdbb, relation);
-	return cardinality;
+	return DPM_cardinality(tdbb, relation, format);
 }
 
 

@@ -202,7 +202,8 @@ static void put_summary_blob(blb*, enum rsr_t, bid*, jrd_tra*);
 static void put_summary_record(blb*, enum rsr_t, const UCHAR*, USHORT);
 static void	setup_array(thread_db*, blb*, const TEXT*, USHORT, TemporaryField*);
 static blb*	setup_triggers(thread_db*, jrd_rel*, bool, trig_vec**, blb*);
-static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*, bool);
+static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const TEXT*,
+	const TEXT*, bool);
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
@@ -309,7 +310,7 @@ USHORT DFW_assign_index_type(thread_db* tdbb,
 
 		ERR_post_nothrow(isc_no_meta_update,
 				 isc_arg_gds, isc_random, isc_arg_string,
-				 ERR_cstring(work->dfw_name), isc_arg_end);
+				 ERR_cstring(work->dfw_name), 0);
 		INTL_texttype_lookup(tdbb, ttype);	// should punt
 		ERR_punt(); // if INTL_texttype_lookup hasn't punt
 	}
@@ -491,8 +492,6 @@ void DFW_perform_system_work(thread_db* tdbb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
 	DFW_perform_work(tdbb, dbb->dbb_sys_trans);
 }
 
@@ -670,28 +669,8 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 }
 
 
-DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* desc, USHORT id)
-{
-/**************************************
- *
- *	D F W _ p o s t _ s y s t e m _ w o r k
- *
- **************************************
- *
- * Functional description
- *	Post work to be done in the context of system transaction.
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-
-	Database::CheckoutLockGuard guard(dbb, dbb->dbb_sys_dfw_mutex);
-
-	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
-}
-
-
-DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc, USHORT id)
+DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* desc,
+	USHORT id)
 {
 /**************************************
  *
@@ -834,7 +813,7 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				 isc_arg_gds, isc_lock_timeout,
 				 isc_arg_gds, isc_obj_in_use,
 				 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
-				 isc_arg_end);
+				 0);
 		return false;
 
 	case 4:
@@ -1019,7 +998,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 								 isc_arg_gds, isc_obj_in_use,
 								 isc_arg_string,
 								 ERR_cstring(dbb->dbb_filename.c_str()),
-								 isc_arg_end);
+								 0);
 					}
 					break;
 				}
@@ -1120,7 +1099,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(isc_wish_list, 0);
 
 	switch (phase)
 	{
@@ -1136,7 +1115,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
+						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
@@ -1168,7 +1147,7 @@ static bool delete_difference(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(isc_wish_list, 0);
 
 	switch (phase)
 	{
@@ -1184,7 +1163,7 @@ static bool delete_difference(	thread_db*	tdbb,
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
 				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
+						 isc_arg_gds, isc_wrong_backup_state, 0);
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
 		}
@@ -1214,7 +1193,7 @@ static bool begin_backup(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(isc_wish_list, 0);
 
 	switch (phase)
 	{
@@ -1250,7 +1229,7 @@ static bool end_backup(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(isc_wish_list, 0);
 
 	switch (phase)
 	{
@@ -1402,7 +1381,7 @@ static void check_dependencies(thread_db* tdbb,
 					isc_arg_string, ERR_cstring(field_name),
 					isc_arg_gds, isc_dependency,
 					isc_arg_number, total,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+					0);	/* Msg310: there are %ld dependencies */
 	}
 	else
 	{
@@ -1449,7 +1428,7 @@ static void check_dependencies(thread_db* tdbb,
 					isc_arg_string, ERR_cstring(dpdo_name),
 					isc_arg_gds, isc_dependency,
 					isc_arg_number, total,
-					isc_arg_end);	/* there are %ld dependencies */
+					0);	/* there are %ld dependencies */
 	}
 }
 
@@ -1471,7 +1450,7 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
 	const bool valid = file_name.find("::") == Firebird::PathName::npos;
 
 	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, isc_arg_end);
+		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, 0);
 		/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 	}
 
@@ -1497,7 +1476,7 @@ static void check_system_generator(const TEXT* gen_name, const dfw_t action)
 				isc_arg_string, ERR_cstring(gen_name),
 				isc_arg_gds, isc_random,
 				isc_arg_string, "This is a system generator.",
-				isc_arg_end);
+				0);
 }
 
 
@@ -1822,7 +1801,7 @@ static bool create_index(	thread_db*	tdbb,
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_idx_create_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 					/* Msg308: can't create index %s */
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
@@ -1879,13 +1858,13 @@ static bool create_index(	thread_db*	tdbb,
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_idx_seg_err,
 								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 isc_arg_end);
+								 0);
 					/* Msg304: segment count of 0 defined for index %s */
 					else
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_idx_key_err,
 								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 isc_arg_end);
+								 0);
 					/* Msg311: too many keys defined for index %s */
 				}
 				if (IDX.RDB$UNIQUE_FLAG)
@@ -1919,7 +1898,7 @@ static bool create_index(	thread_db*	tdbb,
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_idx_key_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 				/* Msg311: too many keys defined for index %s */
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
 					ERR_post(isc_no_meta_update,
@@ -1929,18 +1908,18 @@ static bool create_index(	thread_db*	tdbb,
 							 isc_arg_string, ERR_cstring(RFR.RDB$FIELD_NAME),
 							 isc_arg_gds, isc_index_name,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 				else if (FLD.RDB$FIELD_TYPE == blr_blob)
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_blob_idx_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 				/* Msg350: attempt to index blob column in index %s */
 				else
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_array_idx_err,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 				/* Msg351: attempt to index array column in index %s */
 			}
 
@@ -1975,13 +1954,13 @@ static bool create_index(	thread_db*	tdbb,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_key_field_err,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 		/* Msg352: too few key columns found for index %s (incorrect column name?) */
 		if (!relation)
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_idx_create_err,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 		/* Msg308: can't create index %s */
 
 		/* Make sure the relation info is all current */
@@ -1992,7 +1971,7 @@ static bool create_index(	thread_db*	tdbb,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_idx_create_err,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 		/* Msg308: can't create index %s */
 
 		/* Actually create the index */
@@ -2021,7 +2000,7 @@ static bool create_index(	thread_db*	tdbb,
 					Firebird::MetaName constraint_name;
 					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
 					ERR_post(isc_partner_idx_not_found,
-							 isc_arg_string, ERR_cstring(constraint_name), isc_arg_end);
+							 isc_arg_string, ERR_cstring(constraint_name), 0);
 				}
 
 				// Get an protected_read lock on the both relations if the index being
@@ -2038,7 +2017,7 @@ static bool create_index(	thread_db*	tdbb,
 					ERR_post(isc_no_meta_update,
 							isc_arg_gds, isc_partner_idx_incompat_type,
 							isc_arg_number, bad_segment + 1,
-							isc_arg_end);
+							0);
 				}
 
 /* hvlad: this code was never called but i preserve it for Claudio review and decision
@@ -2261,7 +2240,7 @@ static bool create_relation(thread_db*	tdbb,
 								 isc_arg_gds, isc_table_name,
 								 isc_arg_string, ERR_cstring(work->dfw_name),
 								 isc_arg_gds, isc_imp_exc,
-								 isc_arg_end);
+								 0);
 					}
 				}
 				X.RDB$RELATION_ID = (rel_id > MAX_RELATION_ID) ?
@@ -2473,7 +2452,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_max_coll_per_charset,
-								 isc_arg_end);
+								 0);
 					}
 					else
 					{
@@ -2692,7 +2671,7 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					 isc_arg_string, ERR_cstring(gen_name),
 					 isc_arg_gds, isc_random,
 					 isc_arg_string, "Only can modify description for user generators.",
-					 isc_arg_end);
+					 0);
 
 			return true;
 		case 2:
@@ -2860,7 +2839,7 @@ static bool delete_field(	thread_db*	tdbb,
 					isc_arg_string, ERR_cstring(work->dfw_name),
 					isc_arg_gds, isc_dependency,
 					isc_arg_number, (SLONG) field_count,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+					0);	/* Msg310: there are %ld dependencies */
 
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_field, transaction);
@@ -3113,7 +3092,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					ERR_post(isc_no_meta_update,
 							isc_arg_gds, isc_obj_in_use,
 							isc_arg_string, "INDEX",
-							isc_arg_end);
+							0);
 				}
 				index->idl_count++;
 			}
@@ -3318,7 +3297,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+						 0);
 			}
 		}
 
@@ -3344,7 +3323,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
@@ -3367,7 +3346,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+						 0);
 			}
 
 			CMP_release(tdbb, procedure->prc_request);
@@ -3426,7 +3405,6 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
 		return false;
 
 	case 1:
@@ -3455,7 +3433,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					isc_arg_string, ERR_cstring(work->dfw_name),
 					isc_arg_gds, isc_dependency,
 					isc_arg_number, (SLONG) view_count,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+					0);	/* Msg310: there are %ld dependencies */
 		}
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_relation, transaction);
@@ -3485,7 +3463,6 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_use_count)
 			MET_clear_cache(tdbb);
-
 		if (relation->rel_use_count ||
 			(relation->rel_existence_lock &&
 				!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX,
@@ -3497,10 +3474,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 		}
-
-		relation->rel_flags |= REL_check_existence;
 		return true;
 
 	case 3:
@@ -3538,11 +3513,12 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			ERR_post(isc_no_meta_update,
 					 isc_arg_gds, isc_obj_in_use,
 					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+					 0);
 		}
 
 #ifdef GARBAGE_THREAD
-		// Free any memory associated with the relation's garbage collection bitmap
+		/* Free any memory associated with the relation's
+		   garbage collection bitmap. */
 
 		if (relation->rel_gc_bitmap)
 		{
@@ -3569,15 +3545,22 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			DPM_delete_relation(tdbb, relation);
 		}
 
-		// if this is a view (or even if we don't know), delete dependency lists
+		/* if this is a view (or even if we don't know),
+		   delete dependency lists */
 
 		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned)) {
 			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
 		}
 
-		// Now that the data, pointer, and index pages are gone,
-		// get rid of the relation itself
+		/* Now that the data, pointer, and index pages are gone,
+		   get rid of formats as well */
 
+		if (relation->rel_existence_lock) {
+			LCK_release(tdbb, relation->rel_existence_lock);
+		}
+		if (relation->rel_partners_lock) {
+			LCK_release(tdbb, relation->rel_partners_lock);
+		}
 		request = NULL;
 
 		FOR(REQUEST_HANDLE request) X IN RDB$FORMATS WITH
@@ -3585,20 +3568,9 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			ERASE X;
 		END_FOR;
 
-		CMP_release(tdbb, request);
-
-		// Release relation locks
-		if (relation->rel_existence_lock) {
-			LCK_release(tdbb, relation->rel_existence_lock);
-		}
-		if (relation->rel_partners_lock) {
-			LCK_release(tdbb, relation->rel_partners_lock);
-		}
-
-		// Mark relation in the cache as dropped
+		relation->rel_name = "";
 		relation->rel_flags |= REL_deleted;
 		relation->rel_flags &= ~REL_deleting;
-		relation->rel_flags &= ~REL_check_existence;
 
 		// Release relation triggers
 		MET_release_triggers(tdbb, &relation->rel_pre_store);
@@ -3608,6 +3580,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		MET_release_triggers(tdbb, &relation->rel_pre_modify);
 		MET_release_triggers(tdbb, &relation->rel_post_modify);
 
+		CMP_release(tdbb, request);
 		break;
 	}
 
@@ -3673,7 +3646,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					 isc_arg_string, ERR_cstring(f),
 					 isc_arg_gds, isc_dependency,
 					 isc_arg_number, (SLONG) field_count,
-					 isc_arg_end);	/* Msg310: there are %ld dependencies */
+					 0);	/* Msg310: there are %ld dependencies */
 
 		/* now check if there are any dependencies generated through the blr
 		   that defines the relation */
@@ -3715,7 +3688,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			{
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_del_last_field,
-						 isc_arg_end);
+						 0);
 				/* Msg354: last column in a relation cannot be deleted */
 			}
 		}
@@ -4248,7 +4221,8 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		count = MAX(count, tfb->tfb_id);
 
 	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
-	format->fmt_version = version ? *version : 0;
+	if (version)
+		format->fmt_version = *version;
 
 /* Fill in the format block from the temporary field blocks */
 
@@ -4306,7 +4280,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 				 isc_arg_number, (SLONG) offset,
 				 isc_arg_gds, isc_table_name,
 				 isc_arg_string, ERR_cstring(relation->rel_name),
-				 isc_arg_end);
+				 0);
 		/* Msg361: new record size of %ld bytes is too big */
 	}
 
@@ -4447,7 +4421,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						 isc_arg_gds, isc_table_name,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
 						 isc_arg_gds, isc_version_err,
-						 isc_arg_end);
+						 0);
 				/* Msg357: too many versions */
 			}
 			MODIFY REL USING
@@ -4584,13 +4558,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
-						if (REL.RDB$FORMAT.NULL)
-						{
-							DPM_delete_relation(tdbb, relation);
-						}
 						ERR_post(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
-								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
+								 isc_arg_string, ERR_cstring(work->dfw_name), 0);
 					}
 
 					/* Make sure the text type specified is implemented */
@@ -4598,13 +4568,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						EXE_unwind(tdbb, request_fmt1);
 						EXE_unwind(tdbb, request_fmtx);
-						if (REL.RDB$FORMAT.NULL)
-						{
-							DPM_delete_relation(tdbb, relation);
-						}
 						ERR_post_nothrow(isc_no_meta_update,
 								 isc_arg_gds, isc_random,
-								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
+								 isc_arg_string, ERR_cstring(work->dfw_name), 0);
 						INTL_texttype_lookup(tdbb,
 							(DTYPE_IS_TEXT(tfb->tfb_desc.dsc_dtype) ?
 								tfb->tfb_desc.dsc_ttype() : tfb->tfb_desc.dsc_blob_ttype()));	// should punt
@@ -4643,25 +4609,20 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				if (null_view && !physical_fields)
 				{
 					EXE_unwind(tdbb, request_fmt1);
-					if (REL.RDB$FORMAT.NULL)
-					{
-						DPM_delete_relation(tdbb, relation);
-					}
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_table_name,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
 			 				 isc_arg_gds, isc_must_have_phys_field,
-							 isc_arg_end);
+							 0);
 				}
 
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
 
 				BLB_close(tdbb, blob);
-				USHORT version = REL.RDB$FORMAT.NULL ? 0 : REL.RDB$FORMAT;
+				USHORT version = REL.RDB$FORMAT;
 				version++;
 				relation->rel_current_format = make_format(tdbb, relation,
 														   &version, stack);
-				REL.RDB$FORMAT.NULL = FALSE;
 				REL.RDB$FORMAT = version;
 			END_MODIFY;
 		END_FOR;
@@ -4784,7 +4745,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+						 0);
 			}
 		}
 
@@ -4810,7 +4771,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 				ERR_post(isc_no_meta_update,
 						 isc_arg_gds, isc_obj_in_use,
 						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+						 0);
 				*/
 				gds__log("Modifying procedure %s which is currently in use by active user requests",
 						 work->dfw_name.c_str());
@@ -4822,7 +4783,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 							 isc_arg_gds, isc_proc_name,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
 							 isc_arg_gds, isc_version_err,
-							 isc_arg_end);
+							 0);
 					/* Msg357: too many versions */
 				}
 
@@ -4846,7 +4807,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 					ERR_post(isc_no_meta_update,
 							 isc_arg_gds, isc_obj_in_use,
 							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 0);
 
 				/* release the request */
 
@@ -5252,7 +5213,7 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 		ERR_post(isc_no_meta_update,
 				isc_arg_gds, isc_obj_in_use,
 				isc_arg_string, relation->rel_name.c_str(),
-				isc_arg_end);
+				0);
 	}
 
 	return relLock;
@@ -5439,7 +5400,7 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
  *	      triggers because user-defined triggers can modify
  *	      the values being inserted or updated so that
  *	      the end values stored in the database don't
- *	      fulfill the check constraint.
+ *	      fulfill the check constraint.     .
  *
  **************************************/
 	if (!relation)
@@ -5459,8 +5420,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
+			setup_trigger_details(tdbb, relation,  blob,  triggers,
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format4))
@@ -5486,8 +5447,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
+			setup_trigger_details(tdbb, relation,  blob,  triggers,
+			    TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format5))
@@ -5517,8 +5478,8 @@ static blb* setup_triggers(thread_db* tdbb, jrd_rel* relation, bool null_view,
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
 		if (!TRG.RDB$TRIGGER_INACTIVE)
-			setup_trigger_details(tdbb, relation, blob, triggers,
-								  TRG.RDB$TRIGGER_NAME, null_view);
+			setup_trigger_details(tdbb, relation,  blob,  triggers,
+				TRG.RDB$TRIGGER_NAME, TRG.RDB$RELATION_NAME, null_view);
 	END_FOR;
 
 	if (!REQUEST(irq_format6))
@@ -5533,6 +5494,7 @@ static void setup_trigger_details(thread_db* tdbb,
 								  blb* blob,
 								  trig_vec** triggers,
 								  const TEXT* trigger_name,
+								  const TEXT* relation_name,
 								  bool null_view)
 {
 /**************************************
@@ -5555,6 +5517,8 @@ static void setup_trigger_details(thread_db* tdbb,
 		(const UCHAR*) trigger_name, fb_utils::name_length(trigger_name));
 
 	if (!null_view) {
+		if (relation->rel_name.length() == 0)
+			relation->rel_name = relation_name;
 		MET_load_trigger(tdbb, relation, trigger_name, triggers);
 	}
 }

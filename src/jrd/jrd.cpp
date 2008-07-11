@@ -134,7 +134,6 @@
 #include "../dsql/dsql_proto.h"
 
 using namespace Jrd;
-using namespace Firebird;
 
 const SSHORT WAIT_PERIOD	= -1;
 
@@ -149,7 +148,10 @@ int debug;
 namespace
 {
 	Database* databases = NULL;
-	GlobalPtr<Mutex> databases_mutex;
+	Firebird::GlobalPtr<Firebird::Mutex> databases_mutex;
+#ifdef WIN_NT
+	ModuleLoader::Module* ibUtilModule = NULL;
+#endif
 	bool engineShuttingDown = false;
 
 	class EngineStartup
@@ -159,21 +161,33 @@ namespace
 		{
 			IntlManager::initialize();
 			PluginManager::load_engine_plugins();
+
+#ifdef WIN_NT
+			// Try to load ib_util.dll now because loading UDFs with altered search
+			// path will not search the server bin directory and will fail.
+			Firebird::PathName dir;
+			PathUtils::concatPath(dir, Config::getInstallDirectory(), "ib_util.dll");
+			ibUtilModule = ModuleLoader::loadModule(dir);
+#endif
 		}
 
 		static void cleanup()
 		{
+#ifdef WIN_NT
+			delete ibUtilModule;
+			ibUtilModule = NULL;
+#endif
 		}
 	};
 
-	InitMutex<EngineStartup> engineStartup;
+	Firebird::InitMutex<EngineStartup> engineStartup;
 
 	inline void validateHandle(thread_db* tdbb, Attachment* const attachment)
 	{
 		if (!attachment->checkHandle() ||
 			!attachment->att_database->checkHandle())
 		{
-			status_exception::raise(Arg::Gds(isc_bad_db_handle));
+			Firebird::status_exception::raise(isc_bad_db_handle, 0);
 		}
 
 		tdbb->setAttachment(attachment);
@@ -183,7 +197,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, jrd_tra* const transaction)
 	{
 		if (!transaction->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
 
 		validateHandle(tdbb, transaction->tra_attachment);
 
@@ -193,7 +207,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, jrd_req* const request)
 	{
 		if (!request->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_req_handle));
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
 		validateHandle(tdbb, request->req_attachment);
 	}
@@ -201,7 +215,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, dsql_req* const statement)
 	{
 		if (!statement->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_req_handle));
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
 		validateHandle(tdbb, statement->req_dbb->dbb_attachment);
 	}
@@ -209,7 +223,7 @@ namespace
 	inline void validateHandle(thread_db* tdbb, blb* blob)
 	{
 		if (!blob->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
 
 		validateHandle(tdbb, blob->blb_transaction);
 		validateHandle(tdbb, blob->blb_attachment);
@@ -218,7 +232,7 @@ namespace
 	inline void validateHandle(Service* service)
 	{
 		if (!service->checkHandle())
-			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
+			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 	}
 
 	class DatabaseContextHolder : public Database::SyncGuard, public Jrd::ContextPoolHolder
@@ -234,7 +248,7 @@ namespace
 			{
 				attLocked = attachment->att_mutex.tryEnter();
 				if (!attLocked || engineShuttingDown)
-					status_exception::raise(Arg::Gds(isc_att_handle_busy));
+					Firebird::status_exception::raise(isc_att_handle_busy, 0);
 			}
 			else
 				attLocked = false;
@@ -264,14 +278,6 @@ namespace
 		thread_db* tdbb;
 		bool attLocked;
 	};
-
-	void validateAccess(const Attachment* attachment)
-	{
-		if (!attachment->locksmith())
-		{
-			ERR_post(isc_adm_task_denied, isc_arg_end);
-		}
-	}
 
 } // anonymous
 
@@ -323,7 +329,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 			delete csb;
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			compile_in_progress = false;
 			if (csb) {
@@ -413,25 +419,25 @@ public:
 	bool	dpb_trusted_role;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
-	// here begin compound objects
-	// for constructor to work properly dpb_sys_user_name 
-	// MUST be FIRST
-	string	dpb_sys_user_name;
-	string	dpb_user_name;
-	string	dpb_password;
-	string	dpb_password_enc;
-	string	dpb_role_name;
-	string	dpb_journal;
-	string	dpb_key;
-	PathName	dpb_lc_messages;
-	string	dpb_lc_ctype;
-	PathName	dpb_working_directory;
-	string	dpb_set_db_charset;
-	string	dpb_network_protocol;
-	string	dpb_remote_address;
-	string	dpb_trusted_login;
-	PathName	dpb_remote_process;
-	PathName	dpb_org_filename;
+// here begin compound objects
+// for constructor to work properly dpb_sys_user_name 
+// MUST be FIRST
+	Firebird::string	dpb_sys_user_name;
+	Firebird::string	dpb_user_name;
+	Firebird::string	dpb_password;
+	Firebird::string	dpb_password_enc;
+	Firebird::string	dpb_role_name;
+	Firebird::string	dpb_journal;
+	Firebird::string	dpb_key;
+	Firebird::PathName	dpb_lc_messages;
+	Firebird::string	dpb_lc_ctype;
+	Firebird::PathName	dpb_working_directory;
+	Firebird::string	dpb_set_db_charset;
+	Firebird::string	dpb_network_protocol;
+	Firebird::string	dpb_remote_address;
+	Firebird::string	dpb_trusted_login;
+	Firebird::PathName	dpb_remote_process;
+	Firebird::PathName	dpb_org_filename;
 
 public:
 	DatabaseOptions()
@@ -450,7 +456,7 @@ static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
 static jrd_tra*		find_transaction(thread_db*, ISC_STATUS);
-static void			init_database_locks(thread_db*);
+static void			init_database_locks(thread_db*, Database*);
 static ISC_STATUS	handle_error(ISC_STATUS*, ISC_STATUS);
 static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static void			verify_request_synchronization(jrd_req*& request, SSHORT level);
@@ -458,8 +464,8 @@ static unsigned int purge_transactions(thread_db*, Attachment*, const bool, cons
 namespace {
 	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
 }
-static vdnResult	verify_database_name(const PathName&, ISC_STATUS*);
-static ISC_STATUS	unwindAttach(const Exception& ex, 
+static vdnResult	verify_database_name(const Firebird::PathName&, ISC_STATUS*);
+static ISC_STATUS	unwindAttach(const Firebird::Exception& ex, 
 								 ISC_STATUS* userStatus, 
 								 thread_db* tdbb, 
 								 Attachment* attachment, 
@@ -468,13 +474,13 @@ static ISC_STATUS	unwindAttach(const Exception& ex,
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
 #endif
 
-static Database*	init(thread_db*, const PathName&, bool);
+static Database*	init(thread_db*, const Firebird::PathName&, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		release_attachment(thread_db*, Attachment*);
 static void		detachLocksFromAttachment(Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
-static void		strip_quotes(string&);
+static void		strip_quotes(Firebird::string&);
 static void		purge_attachment(thread_db*, ISC_STATUS*, Attachment*, const bool);
 static void		getUserInfo(UserId&, const DatabaseOptions&);
 static bool		shutdown_dbb(thread_db*, Database*);
@@ -486,7 +492,7 @@ static void cancel_attachments()
 {
 	engineShuttingDown = true;
 
-	MutexLockGuard guard(databases_mutex);
+	Firebird::MutexLockGuard guard(databases_mutex);
 	for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 	{
 		if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) )
@@ -686,19 +692,16 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// Ccheck for correct credentials supplied
 		getUserInfo(userId, options);
 	}
-	catch (const DelayFailedLogin& ex)
-	{
-		ex.sleep();
-		return ex.stuff_exception(user_status);
-	}
-	catch (const Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(user_status);
 		return user_status[1];
 	}
 
-	const PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
-	PathName expanded_name;
+	Firebird::PathName file_name =
+		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+
+	Firebird::PathName expanded_name;
 
 	// Resolve given alias name
 	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
@@ -719,15 +722,13 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	Database* dbb = NULL;
-	MutexEnsureUnlock guardDatabases(databases_mutex);
-	guardDatabases.enter();
 
 	try
 	{
 		// Unless we're already attached, do some initialization
 		dbb = init(tdbb, expanded_name, true);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(user_status);
 		return user_status[1];
@@ -758,7 +759,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// that way
       
 		if (ISC_check_if_remote(expanded_name, true)) {
-			ERR_post(isc_unavailable, isc_arg_end);
+			ERR_post(isc_unavailable, 0);
 		}
 	}
 
@@ -770,8 +771,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ERR_post(isc_no_priv,
 				 isc_arg_string, "direct",
 				 isc_arg_string, "security database",
-				 isc_arg_string, ERR_string(file_name),
-				 isc_arg_end);
+				 isc_arg_string, 
+				 ERR_string(file_name), 
+				 0);
 	}
 
 	// Worry about encryption key
@@ -787,8 +789,9 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				ERR_post(isc_no_priv,
 						 isc_arg_string, "encryption",
 						 isc_arg_string, "database",
-						 isc_arg_string, ERR_string(file_name),
-                         isc_arg_end);
+						 isc_arg_string, 
+                         ERR_string(file_name), 
+                         0);
 			}
 		}
 		else if (options.dpb_key.hasData()) 
@@ -847,7 +850,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		{
 			if (d->dbb_filename == expanded_name)
 			{
-				fatal_exception::raise(("Attempt to reopen " + expanded_name).c_str());
+				Firebird::fatal_exception::raise(("Attempt to reopen " + expanded_name).c_str());
 			}
 		}
 #endif
@@ -871,37 +874,28 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		LCK_init(tdbb, LCK_OWNER_database);
 		dbb->dbb_flags |= DBB_lck_init_done;
 
-		INI_init(tdbb);
+		INI_init();
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		pageSpace->file = PIO_open(dbb, expanded_name, file_name, false);
+		SHUT_init(tdbb);
+		PAG_header_init();
+		INI_init2();
+		PAG_init();
+		if (options.dpb_set_page_buffers) {
+			dbb->dbb_page_buffers = options.dpb_page_buffers;
+		}
+		CCH_init(tdbb, options.dpb_buffers);
 
 		// Initialize locks
-		init_database_locks(tdbb);
-
-		SHUT_init(tdbb);
-		PAG_header_init(tdbb);
-		INI_init2(tdbb);
-		PAG_init(tdbb);
-
-		if (options.dpb_set_page_buffers) {
-#ifdef SUPERSERVER
-			// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
-			// cause other flags is UserId can be set only when DB is opened.
-			// No idea how to test for other cases before init is complete.
-			if (userId.locksmith())
-#endif
-				dbb->dbb_page_buffers = options.dpb_page_buffers;
-		}
-
-		CCH_init(tdbb, options.dpb_buffers);
+		init_database_locks(tdbb, dbb);
 
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
 
-		PAG_init2(tdbb, 0);
-		PAG_header(tdbb, false);
+		PAG_init2(0);
+		PAG_header(false);
 
 		// initialize shadowing as soon as the database is ready for it
 		// but before any real work is done
@@ -912,7 +906,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		if ((dbb->dbb_flags & options.dpb_flags) != options.dpb_flags)
 		{
 			// looks like someone tries to attach incompatibly
-			status_exception::raise(Arg::Gds(isc_bad_dpb_content));
+			Firebird::status_exception::raise(isc_bad_dpb_content, 0);
 		}
 	}
 
@@ -922,10 +916,10 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_disable_wal) {
-		ERR_post(isc_lock_timeout,
-				 isc_arg_gds, isc_obj_in_use,
-				 isc_arg_string, ERR_string(file_name), 
-                 isc_arg_end);
+		ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, 
+                 ERR_string(file_name), 
+                 0);
 	}
 
 	if (options.dpb_buffers && !dbb->dbb_page_buffers) {
@@ -944,8 +938,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		ERR_post(isc_inv_client_dialect_specified, isc_arg_number,
 				 options.dpb_sql_dialect,
 				 isc_arg_gds, isc_valid_client_dialects,
-				 isc_arg_string, "1, 2 or 3",
-				 isc_arg_end);
+				 isc_arg_string, "1, 2 or 3", 0);
 	}
 
 	if (userId.usr_sql_role_name.hasData())
@@ -1003,7 +996,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					// remove the delimited quotes and escape quote
 					// from ROLE name
 					userId.usr_sql_role_name.erase(0, 1);
-					for (string::iterator p = userId.usr_sql_role_name.begin(); 
+					for (Firebird::string::iterator p = 
+								userId.usr_sql_role_name.begin(); 
 						 p < userId.usr_sql_role_name.end(); ++p)
 					{
 						if (*p == end_quote)
@@ -1052,7 +1046,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
 						 isc_arg_string, ERR_string(file_name), 
-						 isc_arg_end);
+						 0);
 		}
 	}
 
@@ -1067,7 +1061,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 						 isc_arg_string, "shutdown or online",
 						 isc_arg_string, "database",
 						 isc_arg_string, ERR_string(file_name), 
-						 isc_arg_end);
+						 0);
 		}
 	}
 
@@ -1085,14 +1079,16 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			CCH_exclusive_attachment(tdbb, LCK_none, LCK_WAIT);
 		if (attachment->att_flags & ATT_shutdown) {
 			if (dbb->dbb_ast_flags & DBB_shutdown) {
-				ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
+				ERR_post(isc_shutdown, isc_arg_string, 
+						 ERR_string(file_name), 0);
 			}
 			else {
-				ERR_post(isc_att_shutdown);
+				ERR_post(isc_att_shutdown, 0);
 			}
 		}
 		if (!attachment_succeeded) {
-			ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
+			ERR_post(isc_shutdown, isc_arg_string, 
+					 ERR_string(file_name), 0);
 		}
 	}
 #endif
@@ -1101,7 +1097,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
 	{
-		ERR_post(isc_shutinprog, isc_arg_string, ERR_string(file_name), isc_arg_end);
+		ERR_post(isc_shutinprog, isc_arg_string, 
+				ERR_string(file_name), 0);
 	}
 
 	if (dbb->dbb_ast_flags & DBB_shutdown) {
@@ -1125,7 +1122,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 		if (!allow_access) {
 			// Note we throw exception here when entering full-shutdown mode
-			ERR_post(isc_shutdown, isc_arg_string, ERR_string(file_name), isc_arg_end);
+			ERR_post(isc_shutdown, isc_arg_string, 
+					 ERR_string(file_name), 0);
 		}
 	}
 
@@ -1136,7 +1134,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_verify)
 	{
 		if (!CCH_exclusive(tdbb, LCK_PW, WAIT_PERIOD)) {
-			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, isc_arg_end);
+			ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_validate, 0);
 		}
 
 #ifdef GARBAGE_THREAD
@@ -1150,13 +1148,15 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	}
 
 	if (options.dpb_journal.hasData()) {
-		ERR_post(isc_bad_dpb_content, isc_arg_gds, isc_cant_start_journal, isc_arg_end);
+		ERR_post(isc_bad_dpb_content,
+				 isc_arg_gds, isc_cant_start_journal,
+				 0);
 	}
 
 	if (options.dpb_wal_action)
 	{
 		// No WAL anymore. We deleted it.
-		ERR_post(isc_no_wal, isc_arg_end);
+		ERR_post(isc_no_wal, 0);
 	}
 
 /*
@@ -1171,7 +1171,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		 (attachment->att_flags & ATT_gstat_attachment)) &&
 		!attachment->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(isc_adm_task_denied, 0);
 	}
 
 	if (((attachment->att_flags & ATT_gfix_attachment) ||
@@ -1182,47 +1182,39 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	if (options.dpb_no_db_triggers)
 	{
-		validateAccess(attachment);
-		attachment->att_flags |= ATT_no_db_triggers;
+		if (attachment->locksmith())
+			attachment->att_flags |= ATT_no_db_triggers;
+		else
+			ERR_post(isc_adm_task_denied, 0);
 	}
 
 	if (options.dpb_set_db_sql_dialect) {
-		validateAccess(attachment);
 		PAG_set_db_SQL_dialect(dbb, options.dpb_set_db_sql_dialect);
 	}
 
 	if (options.dpb_sweep_interval != -1) {
-		validateAccess(attachment);
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
 	}
 
 	if (options.dpb_set_force_write) {
-		validateAccess(attachment);
 		PAG_set_force_write(dbb, options.dpb_force_write);
 	}
 
 	if (options.dpb_set_no_reserve) {
-		validateAccess(attachment);
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 	}
 
 	if (options.dpb_set_page_buffers) {
-#ifdef SUPERSERVER
-		validateAccess(attachment);
-#else
-		if (attachment->locksmith())
-#endif
-			PAG_set_page_buffers(options.dpb_page_buffers);
+		PAG_set_page_buffers(options.dpb_page_buffers);
 	}
 
 	if (options.dpb_set_db_readonly) {
-		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
-			ERR_post(isc_lock_timeout,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_string(file_name), 
-					 isc_arg_end); 
+			ERR_post(isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+					 isc_arg_string,
+					 ERR_string(file_name), 
+					 0); 
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
 	}
@@ -1237,7 +1229,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// if there was an error, the status vector is all set
 
-	guardDatabases.leave();
+	databases_mutex->leave();
 
 	if (options.dpb_sweep & isc_dpb_records)
 	{
@@ -1275,7 +1267,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			// and commit the transaction
 			TRA_commit(tdbb, transaction, false);
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			if (!(dbb->dbb_flags & DBB_bugcheck) && transaction)
 				TRA_rollback(tdbb, transaction, false, false);
@@ -1283,13 +1275,19 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		}
 	}
 
-	// guardDatabases.leave();
+	// databases_mutex->leave();
 
 	*handle = attachment;	
 	attachment->att_mutex.leave();
 
 	}	// try
-	catch (const Exception& ex)
+	catch (const DelayFailedLogin& ex)
+	{
+		const ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		ex.sleep();
+		return s;
+	}
+	catch (const Firebird::Exception& ex)
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -1326,9 +1324,9 @@ ISC_STATUS GDS_BLOB_INFO(ISC_STATUS*	user_status,
 
 		INF_blob_info(blob, items, item_length, buffer, buffer_length);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1358,9 +1356,9 @@ ISC_STATUS GDS_CANCEL_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 		BLB_cancel(tdbb, blob);
 		*blob_handle = NULL;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1391,9 +1389,9 @@ ISC_STATUS GDS_CANCEL_EVENTS(ISC_STATUS*	user_status,
 
 		EVENT_cancel(*id);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1448,9 +1446,9 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 			fb_assert(false);
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1481,9 +1479,9 @@ ISC_STATUS GDS_CLOSE_BLOB(ISC_STATUS * user_status, blb** blob_handle)
 		BLB_close(tdbb, blob);
 		*blob_handle = NULL;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1513,9 +1511,9 @@ ISC_STATUS GDS_COMMIT(ISC_STATUS * user_status, jrd_tra** tra_handle)
 
 		JRD_commit_transaction(tdbb, tra_handle);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1545,9 +1543,9 @@ ISC_STATUS GDS_COMMIT_RETAINING(ISC_STATUS * user_status, jrd_tra** tra_handle)
 
 		JRD_commit_retaining(tdbb, tra_handle);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1583,9 +1581,9 @@ ISC_STATUS GDS_COMPILE(ISC_STATUS* user_status,
 			blr_length, reinterpret_cast<const UCHAR*>(blr),
 			0, NULL, 0, NULL);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1615,7 +1613,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 	try
 	{
 		if (*blob_handle)
-			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
 
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
@@ -1627,9 +1625,9 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 		blb* blob = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
 		*blob_handle = blob;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -1674,19 +1672,16 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		// Check for correct credentials supplied
 		getUserInfo(userId, options);
 	}
-	catch (const DelayFailedLogin& ex)
-	{
-		ex.sleep();
-		return ex.stuff_exception(user_status);
-	}
-	catch (const Exception& e)
+	catch (const Firebird::Exception& e)
 	{
 		e.stuff_exception(user_status);
 		return user_status[1];
 	}
 
-	const PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
-	PathName expanded_name;
+	Firebird::PathName file_name =
+		options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+
+	Firebird::PathName expanded_name;
 
 	// Resolve given alias name
 	const bool is_alias = ResolveDatabaseAlias(file_name, expanded_name);
@@ -1707,14 +1702,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	} 
 
 	Database* dbb = NULL;
-	MutexEnsureUnlock guardDatabases(databases_mutex);
-	guardDatabases.enter();
 
 	try
 	{
 		dbb = init(tdbb, expanded_name, false);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(user_status);
 		return user_status[1];
@@ -1744,7 +1737,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 		if (ISC_check_if_remote(expanded_name, true)) 
 		{
-			ERR_post(isc_unavailable, isc_arg_end);
+			ERR_post(isc_unavailable, 0);
 		}
 	}
 
@@ -1788,12 +1781,10 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		dbb->dbb_flags |= DBB_DB_SQL_dialect_3;
 		break;
 	default:
-		ERR_post(isc_database_create_failed,
-				 isc_arg_string, ERR_string(expanded_name),
-				 isc_arg_gds, isc_inv_dialect_specified,
-				 isc_arg_number, options.dpb_sql_dialect,
-				 isc_arg_gds, isc_valid_db_dialects,
-				 isc_arg_string, "1 and 3", isc_arg_end);
+		ERR_post(isc_database_create_failed, isc_arg_string,
+				 expanded_name.c_str(), isc_arg_gds, isc_inv_dialect_specified,
+				 isc_arg_number, options.dpb_sql_dialect, isc_arg_gds,
+				 isc_valid_db_dialects, isc_arg_string, "1 and 3", 0);
 		break;
 	}
 
@@ -1824,8 +1815,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	LCK_init(tdbb, LCK_OWNER_database);
 	dbb->dbb_flags |= DBB_lck_init_done;
 
-	INI_init(tdbb);
-	PAG_init(tdbb);
+	INI_init();
+	PAG_init();
 	initing_security = true;
 
     SCL_init(true, userId, tdbb);
@@ -1838,7 +1829,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		// try to create with overwrite = false
 		pageSpace->file = PIO_create(dbb, expanded_name, false, false, false);
 	}
-	catch (status_exception)
+	catch (Firebird::status_exception)
 	{
 		if (options.dpb_overwrite)
 		{
@@ -1864,39 +1855,39 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			if (allow_overwrite)
 			{
 				// file is a database and the user (SYSDBA or owner) has right to overwrite
-				pageSpace->file = PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
+				pageSpace->file =
+					PIO_create(dbb, expanded_name, options.dpb_overwrite, false, false);
 			}
 			else
 			{
 				ERR_post(isc_no_priv,
-						 isc_arg_string, "overwrite",
-						 isc_arg_string, "database",
-						 isc_arg_string, ERR_string(expanded_name),
-						 isc_arg_end);
+					isc_arg_string, "overwrite",
+					isc_arg_string, "database",
+					isc_arg_string,
+					ERR_cstring(expanded_name.c_str()), 0);
 			}
 		}
 		else
 			throw;
 	}
 
-	const jrd_file* const first_dbb_file = pageSpace->file;
-
-	// Initialize locks
-	init_database_locks(tdbb);
+	const jrd_file* first_dbb_file = pageSpace->file;
 
 	if (options.dpb_set_page_buffers)
 		dbb->dbb_page_buffers = options.dpb_page_buffers;
-
 	CCH_init(tdbb, options.dpb_buffers);
+
+	// Initialize locks
+	init_database_locks(tdbb, dbb);
 
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
 	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
 	
 	dbb->dbb_backup_manager->dbCreating = true;
-	PAG_format_header(tdbb);
-	INI_init2(tdbb);
-	PAG_format_log(tdbb);
+	PAG_format_header();
+	INI_init2();
+	PAG_format_log();
 	PAG_format_pip(tdbb, *pageSpace);
 
 	if (options.dpb_set_page_buffers)
@@ -1911,7 +1902,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
 	if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
-		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), isc_arg_end);
+		ERR_post(isc_bad_shutdown_mode, isc_arg_string, ERR_string(file_name), 0);
 	
 	if (options.dpb_shutdown) {
 		if (!SHUT_database(tdbb, options.dpb_shutdown,
@@ -1920,8 +1911,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "shutdown or online",
 					 isc_arg_string, "database",
-					 isc_arg_string, ERR_string(file_name),
-					 isc_arg_end);
+					 isc_arg_string,
+					 ERR_string(file_name), 0);
 		}
 	}
 	
@@ -1944,12 +1935,12 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
     if (options.dpb_set_db_readonly) {
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
-            ERR_post(isc_lock_timeout,
-					 isc_arg_gds, isc_obj_in_use,
-                     isc_arg_string, ERR_string(file_name),
-                     isc_arg_end);
+            ERR_post (isc_lock_timeout, isc_arg_gds, isc_obj_in_use,
+                      isc_arg_string, 
+                      ERR_string (file_name), 
+                      0);
         
-        PAG_set_db_readonly(dbb, options.dpb_db_readonly);
+        PAG_set_db_readonly (dbb, options.dpb_db_readonly);
     }
 
 	PAG_attachment_id(tdbb);
@@ -1961,7 +1952,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	find_intl_charset(tdbb, attachment, &options);
 
 #ifdef WIN_NT
-	dbb->dbb_filename.assign(first_dbb_file->fil_string);
+	dbb->dbb_filename.assign(first_dbb_file->fil_string,
+									first_dbb_file->fil_length);
 #else
 	dbb->dbb_filename = expanded_name;
 #endif
@@ -1981,13 +1973,19 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	dbb->dbb_backup_manager->dbCreating = false;
 
-	guardDatabases.leave();
+	databases_mutex->leave();
 
 	*handle = attachment;
 	attachment->att_mutex.leave();
 
 	}	// try
-	catch (const Exception& ex)
+	catch (const DelayFailedLogin& ex)
+	{
+		const ISC_STATUS s = unwindAttach(ex, user_status, tdbb, attachment, dbb);
+		ex.sleep();
+		return s;
+	}
+	catch (const Firebird::Exception& ex)
 	{
 		return unwindAttach(ex, user_status, tdbb, attachment, dbb);
 	}
@@ -2025,9 +2023,9 @@ ISC_STATUS GDS_DATABASE_INFO(ISC_STATUS* user_status,
 
 		INF_database_info(items, item_length, buffer, buffer_length);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2062,8 +2060,8 @@ ISC_STATUS GDS_DDL(ISC_STATUS* user_status,
 
 		JRD_ddl(tdbb, attachment, transaction, ddl_length, reinterpret_cast<const UCHAR*>(ddl));
 	}
-	catch (const Exception& ex) {
-		stuff_exception(user_status, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2087,7 +2085,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 	try
 	{
 		{ // scope
-			MutexLockGuard guard(databases_mutex);
+			Firebird::MutexLockGuard guard(databases_mutex);
 
 			Attachment* attachment = *handle;
 			validateHandle(tdbb, attachment);
@@ -2111,7 +2109,7 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 					attachment->att_flags |= ATT_cancel_disable;
 					purge_attachment(tdbb, user_status, attachment, false);
 				}
-				catch (const Exception&)
+				catch (const Firebird::Exception&)
 				{
 					dbb->dbb_flags &= ~DBB_not_in_use;
 					throw;
@@ -2123,9 +2121,9 @@ ISC_STATUS GDS_DETACH(ISC_STATUS* user_status, Attachment** handle)
 
 		SecurityDatabase::shutdown();
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2148,7 +2146,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 	try
 	{
-		MutexLockGuard guard(databases_mutex);
+		Firebird::MutexLockGuard guard(databases_mutex);
 
 		Attachment* attachment = *handle;
 		validateHandle(tdbb, attachment);
@@ -2156,26 +2154,25 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		Database* dbb = tdbb->getDatabase();
 
-		const PathName& file_name = attachment->att_filename;
+		const Firebird::PathName& file_name = attachment->att_filename;
 
 		if (!attachment->locksmith())
 		{
 			ERR_post(isc_no_priv,
 					 isc_arg_string, "drop",
 					 isc_arg_string, "database",
-					 isc_arg_string, ERR_cstring(file_name), 
-					 isc_arg_end);
+					 isc_arg_string, ERR_cstring(file_name), 0);
 		}
 
 		if (attachment->att_flags & ATT_shutdown)
 		{
 			if (dbb->dbb_ast_flags & DBB_shutdown)
 			{
-				ERR_post(isc_shutdown, isc_arg_string, ERR_cstring(file_name), isc_arg_end);
+				ERR_post(isc_shutdown, isc_arg_string,
+						 ERR_cstring(file_name), 0);
 			}
-			else
-			{
-				ERR_post(isc_att_shutdown, isc_arg_end);
+			else {
+				ERR_post(isc_att_shutdown, 0);
 			}
 		}
 
@@ -2183,17 +2180,14 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 		{
 			ERR_post(isc_lock_timeout,
 					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(file_name),
-					 isc_arg_end);
+					 isc_arg_string, ERR_cstring(file_name), 0);
 		}
 
 		// Check if same process has more attachments
 
 		if (dbb->dbb_attachments && dbb->dbb_attachments->att_next) {
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, "DATABASE",
-					 isc_arg_end);
+			ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+					isc_arg_string, "DATABASE", 0);
 		}
 
 		// Forced release of all transactions
@@ -2243,9 +2237,9 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 			user_status[2] = isc_arg_end;
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2288,9 +2282,9 @@ ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
 			user_status[1] = isc_segment;
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2344,9 +2338,9 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 									   slice_length, slice);
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2376,7 +2370,7 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 	try
 	{
 		if (*blob_handle)
-			status_exception::raise(Arg::Gds(isc_bad_segstr_handle));
+			Firebird::status_exception::raise(isc_bad_segstr_handle, 0);
 
 		validateHandle(tdbb, *db_handle);
 		validateHandle(tdbb, *tra_handle);
@@ -2388,9 +2382,9 @@ ISC_STATUS GDS_OPEN_BLOB2(ISC_STATUS* user_status,
 		blb* blob = BLB_open2(tdbb, transaction, blob_id, bpb_length, bpb, true);
 		*blob_handle = blob;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2424,9 +2418,9 @@ ISC_STATUS GDS_PREPARE(ISC_STATUS * user_status,
 
 		prepare(tdbb, transaction, length, msg);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2459,9 +2453,9 @@ ISC_STATUS GDS_PUT_SEGMENT(ISC_STATUS* user_status,
 
 		BLB_put_segment(tdbb, blob, buffer, buffer_length);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2507,9 +2501,9 @@ ISC_STATUS GDS_PUT_SLICE(ISC_STATUS* user_status,
 				  param_length,
 				  reinterpret_cast<const SLONG*>(param), slice_length, slice);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2557,9 +2551,9 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 						lock->lck_length,
 						(const TEXT*) &lock->lck_key, length, items, ast, arg);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2605,9 +2599,9 @@ ISC_STATUS GDS_RECEIVE(ISC_STATUS * user_status,
 #endif
 			);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2635,7 +2629,7 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 	try
 	{
 		if (*tra_handle)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
 
 		Attachment* attachment = *db_handle;
 		validateHandle(tdbb, attachment);
@@ -2645,9 +2639,9 @@ ISC_STATUS GDS_RECONNECT(ISC_STATUS* user_status,
 		jrd_tra* transaction = TRA_reconnect(tdbb, id, length);
 		*tra_handle = transaction;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2678,9 +2672,9 @@ ISC_STATUS GDS_RELEASE_REQUEST(ISC_STATUS * user_status, jrd_req** req_handle)
 		CMP_release(tdbb, request);
 		*req_handle = NULL;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2716,9 +2710,9 @@ ISC_STATUS GDS_REQUEST_INFO(ISC_STATUS* user_status,
 
 		JRD_request_info(tdbb, request, level, item_length, items, buffer_length, buffer);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2749,9 +2743,9 @@ ISC_STATUS GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
 
 		JRD_rollback_retaining(tdbb, tra_handle);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2781,9 +2775,9 @@ ISC_STATUS GDS_ROLLBACK(ISC_STATUS * user_status, jrd_tra** tra_handle)
 
 		JRD_rollback_transaction(tdbb, tra_handle);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2817,9 +2811,9 @@ ISC_STATUS GDS_SEEK_BLOB(ISC_STATUS * user_status,
 
 		*result = BLB_lseek(blob, mode, offset);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2863,9 +2857,9 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2893,18 +2887,18 @@ ISC_STATUS GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 	try
 	{
 		if (*svc_handle)
-			status_exception::raise(Arg::Gds(isc_bad_svc_handle));
+			Firebird::status_exception::raise(isc_bad_svc_handle, 0);
 
 		*svc_handle = new Service(service_name, spb_length, reinterpret_cast<const UCHAR*>(spb));
 	}
 	catch (const DelayFailedLogin& ex)
 	{
 		ex.sleep();
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2933,9 +2927,9 @@ ISC_STATUS GDS_SERVICE_DETACH(ISC_STATUS* user_status, Service** svc_handle)
 		service->detach();
 		*svc_handle = NULL;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -2997,9 +2991,9 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 			}
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3046,9 +3040,9 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 			*tdbb_status = isc_arg_end;
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3088,9 +3082,9 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 	
 		JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3127,9 +3121,9 @@ ISC_STATUS GDS_START(ISC_STATUS * user_status,
 
 		JRD_start(tdbb, request, transaction, level);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3166,13 +3160,13 @@ int GDS_SHUTDOWN(unsigned int timeout)
 
 		if (timeout)
 		{
-			Semaphore shutdown_semaphore;
+			Firebird::Semaphore shutdown_semaphore;
 
 			ThreadStart::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, 0);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
 			{
-				status_exception::raise(Arg::Gds(isc_shutdown_timeout));
+				Firebird::status_exception::raise(isc_shutdown_timeout, isc_arg_end);
 			}
 		}
 		else
@@ -3180,9 +3174,9 @@ int GDS_SHUTDOWN(unsigned int timeout)
 			shutdown_thread(NULL);
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(status, ex);
+		Firebird::stuff_exception(status, ex);
 		gds__log_status(0, status);
 	}
 
@@ -3211,9 +3205,9 @@ ISC_STATUS GDS_START_MULTIPLE(ISC_STATUS * user_status,
 	{
 		JRD_start_multiple(tdbb, tra_handle, count, vector);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3241,11 +3235,12 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 	{
 		if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
 		{
-			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) <<
-				Arg::Num(MAX_DB_PER_TRANS));
+			Firebird::status_exception::raise(isc_max_db_per_trans_allowed,
+											  isc_arg_number, MAX_DB_PER_TRANS,
+											  0);
 		}
 
-		HalfStaticArray<TEB, 16> tebs;
+		Firebird::HalfStaticArray<TEB, 16> tebs;
 		tebs.grow(count);
 
 		va_list ptr;
@@ -3261,9 +3256,9 @@ ISC_STATUS GDS_START_TRANSACTION(ISC_STATUS * user_status,
 
 		JRD_start_multiple(tdbb, tra_handle, count, tebs.begin());
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3334,7 +3329,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 				}
 			}
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			if (request)
 				CMP_release(tdbb, request);
@@ -3362,7 +3357,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 				ERR_post(isc_port_len,
 						 isc_arg_number, (SLONG) in_msg_length,
 						 isc_arg_number, (SLONG) len,
-						 isc_arg_end);
+						 0);
 			}
 
 			memcpy((SCHAR*) request + in_message->nod_impure, in_msg, in_msg_length);
@@ -3381,7 +3376,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		if (out_msg_length != len) {
 			ERR_post(isc_port_len,
 					 isc_arg_number, (SLONG) out_msg_length,
-					 isc_arg_number, (SLONG) len, isc_arg_end);
+					 isc_arg_number, (SLONG) len, 0);
 		}
 
 		if (out_msg_length) {
@@ -3393,9 +3388,9 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 		CMP_release(tdbb, request);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3431,9 +3426,9 @@ ISC_STATUS GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 		INF_transaction_info(transaction, items, item_length, buffer,
 						 buffer_length);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3466,9 +3461,9 @@ ISC_STATUS GDS_UNWIND(ISC_STATUS * user_status,
 
 		JRD_unwind_request(tdbb, request, level);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3484,7 +3479,7 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 	try
 	{
 		if (*stmt_handle)
-			status_exception::raise(Arg::Gds(isc_bad_req_handle));
+			Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
 		Attachment* const attachment = *db_handle;
 		validateHandle(tdbb, attachment);
@@ -3493,9 +3488,9 @@ ISC_STATUS GDS_DSQL_ALLOCATE(ISC_STATUS* user_status,
 
 		*stmt_handle = DSQL_allocate_statement(tdbb, attachment);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3527,9 +3522,9 @@ ISC_STATUS GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 					 out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
 					 out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3563,9 +3558,9 @@ ISC_STATUS GDS_DSQL_EXECUTE_IMMEDIATE(ISC_STATUS* user_status,
 							   out_blr_length, reinterpret_cast<UCHAR*>(out_blr),
 							   out_msg_type, out_msg_length, reinterpret_cast<UCHAR*>(out_msg));
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3598,9 +3593,9 @@ ISC_STATUS GDS_DSQL_FETCH(ISC_STATUS* user_status,
 #endif
 						  );
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3625,9 +3620,9 @@ ISC_STATUS GDS_DSQL_FREE(ISC_STATUS* user_status,
 		if (option & DSQL_drop)
 			*stmt_handle = NULL;
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3652,9 +3647,9 @@ ISC_STATUS GDS_DSQL_INSERT(ISC_STATUS* user_status,
 					blr_length, reinterpret_cast<const UCHAR*>(blr),
 					msg_type, msg_length, reinterpret_cast<const UCHAR*>(dsql_msg_buf));
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3684,9 +3679,9 @@ ISC_STATUS GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 					 item_length, reinterpret_cast<const UCHAR*>(items),
 					 buffer_length, reinterpret_cast<UCHAR*>(buffer));
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3709,9 +3704,9 @@ ISC_STATUS GDS_DSQL_SET_CURSOR(ISC_STATUS* user_status,
 
 		DSQL_set_cursor(tdbb, statement, cursor, type);
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3736,9 +3731,9 @@ ISC_STATUS GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 					  item_length, reinterpret_cast<const UCHAR*>(items),
 					  info_length, reinterpret_cast<UCHAR*>(info));
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	return user_status[1];
@@ -3764,7 +3759,9 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	gds__prefix(fname, "proc_info.log");
 	FILE* fptr = fopen(fname, "a+");
 	if (!fptr) {
-		gds__log("Failed to open %s\n", fname);
+		char buff[MAXPATHLEN + 25];
+		sprintf(buff, "Failed to open %s\n", fname);
+		gds__log(buff, 0);
 		return;
 	}
 
@@ -3836,10 +3833,11 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			if (dbb->dbb_ast_flags & DBB_shutdown &&
 				attachment->att_flags & ATT_shutdown)
 			{
-				const PathName& file_name = attachment->att_filename;
+				const Firebird::PathName& file_name = attachment->att_filename;
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_shutdown, isc_arg_string, ERR_cstring(file_name), isc_arg_end);
+					ERR_post(isc_shutdown, isc_arg_string,
+							 ERR_cstring(file_name), 0);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -3856,7 +3854,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			{
 				if (punt) {
 					CCH_unwind(tdbb, false);
-					ERR_post(isc_att_shutdown, isc_arg_end);
+					ERR_post(isc_att_shutdown, 0);
 				}
 				else {
 					ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -3881,7 +3879,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					attachment->att_flags &= ~ATT_cancel_raise;
 					if (punt) {
 						CCH_unwind(tdbb, false);
-						ERR_post(isc_cancelled, isc_arg_end);
+						ERR_post(isc_cancelled, 0);
 					}
 					else {
 						ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -3903,7 +3901,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 			if (punt) {
 				CCH_unwind(tdbb, false);
-				ERR_post(isc_cancelled, isc_arg_end);
+				ERR_post(isc_cancelled, 0);
 			}
 			else {
 				ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -3991,12 +3989,14 @@ static void check_database(thread_db* tdbb)
 		attach = attach->att_next;
 
 	if (!attach)
-		status_exception::raise(Arg::Gds(isc_bad_db_handle));
+		Firebird::status_exception::raise(isc_bad_db_handle, 0);
 
 	if (dbb->dbb_flags & DBB_bugcheck)
 	{
 		static const char string[] = "can't continue after bugcheck";
-		status_exception::raise(Arg::Gds(isc_bug_check) << Arg::Str(string));
+		Firebird::status_exception::raise(isc_bug_check,
+										  isc_arg_string, string,
+										  0);
 	}
 
 	if (attachment->att_flags & ATT_shutdown ||
@@ -4006,12 +4006,14 @@ static void check_database(thread_db* tdbb)
 	{
 		if (dbb->dbb_ast_flags & DBB_shutdown)
 		{
-			const PathName& filename = attachment->att_filename;
-			status_exception::raise(Arg::Gds(isc_shutdown) << Arg::Str(filename));
+			const Firebird::PathName& filename = attachment->att_filename;
+			Firebird::status_exception::raise(isc_shutdown,
+											  isc_arg_string, ERR_cstring(filename),
+											  0);
 		}
 		else
 		{
-			status_exception::raise(Arg::Gds(isc_att_shutdown));
+			Firebird::status_exception::raise(isc_att_shutdown, 0);
 		}
 	}
 
@@ -4019,7 +4021,7 @@ static void check_database(thread_db* tdbb)
 		!(attachment->att_flags & ATT_cancel_disable))
 	{
 		attachment->att_flags &= ~ATT_cancel_raise;
-		status_exception::raise(Arg::Gds(isc_cancelled));
+		Firebird::status_exception::raise(isc_cancelled, 0);
 	}
 
 	// Enable signal handler for the monitoring stuff
@@ -4052,7 +4054,7 @@ static void check_transaction(thread_db* tdbb, jrd_tra* transaction)
 		transaction->tra_flags &= ~TRA_cancel_request;
 		tdbb->tdbb_flags |= TDBB_sys_error;
 
-		status_exception::raise(Arg::Gds(isc_cancelled));
+		Firebird::status_exception::raise(isc_cancelled, 0);
 	}
 }
 
@@ -4125,7 +4127,7 @@ static bool drop_files(const jrd_file* file)
 							   ERR_cstring(file->fil_string),
 							   isc_arg_gds, isc_io_delete_err,
 							   SYS_ERR, errno,
-							   isc_arg_end);
+							   0);
 			Database* dbb = GET_DBB();
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 			gds__log_status(pageSpace->file->fil_string, status);
@@ -4162,7 +4164,7 @@ static jrd_tra* find_transaction(thread_db* tdbb, ISC_STATUS error_code)
 		}
 	}
 
-	status_exception::raise(Arg::Gds(error_code));
+	Firebird::status_exception::raise(error_code, 0);
 	return NULL;	// Added to remove compiler warnings
 }
 
@@ -4204,9 +4206,9 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 	{
 		// Report an error - we can't do what user has requested
 		ERR_post(isc_bad_dpb_content,
-				 isc_arg_gds, isc_charset_not_found,
-				 isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
-				 isc_arg_end);
+				isc_arg_gds, isc_charset_not_found,
+				isc_arg_string, ERR_cstring(options->dpb_lc_ctype),
+				0);
 	}
 }
 
@@ -4243,14 +4245,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	}
 	if (dpb == NULL)
 	{
-		ERR_post(isc_bad_dpb_form, isc_arg_end);
+		ERR_post(isc_bad_dpb_form, 0);
 	}
 
-	ClumpletReader rdr(ClumpletReader::Tagged, dpb, dpb_length);
+	Firebird::ClumpletReader rdr(Firebird::ClumpletReader::Tagged, dpb, dpb_length);
 
 	if (rdr.getBufferTag() != isc_dpb_version1)
 	{
-		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, isc_arg_end);
+		ERR_post(isc_bad_dpb_form, isc_arg_gds, isc_wrodpbver, 0);
 	}
 
 	for (; !(rdr.isEof()); rdr.moveNext())
@@ -4267,7 +4269,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 				(dpb_page_buffers < MIN_PAGE_BUFFERS ||
 				 dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(isc_bad_dpb_content, isc_arg_end);
+				ERR_post(isc_bad_dpb_content, 0);
 			}
 			dpb_set_page_buffers = true;
 			break;
@@ -4276,7 +4278,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_buffers = rdr.getInt();
 			if (dpb_buffers < 10)
 			{
-				ERR_post(isc_bad_dpb_content, isc_arg_end);
+				ERR_post(isc_bad_dpb_content, 0);
 			}
 			break;
 
@@ -4335,7 +4337,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_old_file:
 			//if (num_old_files >= MAX_OLD_FILES) complain here, for now.
-				ERR_post(isc_num_old_files, isc_arg_end);
+				ERR_post(isc_num_old_files, 0);
 			// following code is never executed now !
 			num_old_files++;
 			break;
@@ -4390,8 +4392,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			// Just in case there WAS a customer using this unsupported
 			// feature - post an error when they try to access it in 4.0
 			ERR_post(isc_uns_ext, isc_arg_gds, isc_random,
-					 isc_arg_string, "Encryption not supported",
-					 isc_arg_end);
+					 isc_arg_string, "Encryption not supported", 0);
 #endif
 			break;
 
@@ -4457,7 +4458,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_reserved:
 			{
-				string single;
+				Firebird::string single;
 				rdr.getString(single);
 				if (single == "YES")
 				{
@@ -4478,7 +4479,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_gbak_attach:
 			{
-				string gbakStr;
+				Firebird::string gbakStr;
 				rdr.getString(gbakStr);
 				dpb_gbak_attach = gbakStr.hasData();
 			}
@@ -4529,14 +4530,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_address_path:
 			{
-				ClumpletReader address_stack(ClumpletReader::UnTagged,
+				Firebird::ClumpletReader address_stack(Firebird::ClumpletReader::UnTagged,
 					rdr.getBytes(), rdr.getClumpLength());
 				while (!address_stack.isEof()) {
 					if (address_stack.getClumpTag() != isc_dpb_address) {
 						address_stack.moveNext();
 						continue;
 					}
-					ClumpletReader address(ClumpletReader::UnTagged,
+					Firebird::ClumpletReader address(Firebird::ClumpletReader::UnTagged,
 						address_stack.getBytes(), address_stack.getClumpLength());
 					while (!address.isEof()) {
 						switch (address.getClumpTag()) {
@@ -4579,7 +4580,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 	if (! rdr.isEof())
 	{
-		ERR_post(isc_bad_dpb_form, isc_arg_end);
+		ERR_post(isc_bad_dpb_form, 0);
 	}
 }
 
@@ -4608,7 +4609,7 @@ static ISC_STATUS handle_error(ISC_STATUS* user_status, ISC_STATUS code)
 
 
 static Database* init(thread_db* tdbb,
-					  const PathName& expanded_filename,
+					  const Firebird::PathName& expanded_filename,
 					  bool attach_flag)
 {
 /**************************************
@@ -4620,7 +4621,6 @@ static Database* init(thread_db* tdbb,
  * Functional description
  *	Initialize for database access.  First call from both CREATE and
  *	OPEN.
- *	Upon entry mutex databases_mutex must be locked.
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -4638,102 +4638,110 @@ static Database* init(thread_db* tdbb,
 
 	engineStartup.init();
 
+	databases_mutex->enter();
+
 	Database* dbb = NULL;
 
-	// Check to see if the database is already actively attached
+	try
+	{
+		// Check to see if the database is already actively attached
 
 #ifdef SUPERSERVER
-	for (dbb = databases; dbb; dbb = dbb->dbb_next)
-	{
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
-			 (dbb->dbb_filename == expanded_filename))
+		for (dbb = databases; dbb; dbb = dbb->dbb_next)
 		{
-			if (attach_flag) 
-				return dbb;
+			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
+				 (dbb->dbb_filename == expanded_filename))
+			{
+				if (attach_flag) 
+					return dbb;
 
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, "DATABASE",
-					 isc_arg_end);
+				ERR_post(isc_no_meta_update, isc_arg_gds, isc_obj_in_use,
+						 isc_arg_string, "DATABASE", 0);
+			}
 		}
-	}
 #endif
 
-	dbb = Database::create();
-	tdbb->setDatabase(dbb);
+		dbb = Database::create();
+		tdbb->setDatabase(dbb);
 
-	dbb->dbb_bufferpool = dbb->createPool();
+		dbb->dbb_bufferpool = dbb->createPool();
 
-	// provide context pool for the rest stuff
-	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+		// provide context pool for the rest stuff
+		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-	dbb->dbb_next = databases;
-	databases = dbb;
+		dbb->dbb_next = databases;
+		databases = dbb;
 
-	dbb->dbb_flags |= DBB_exclusive;
-	dbb->dbb_sweep_interval = SWEEP_INTERVAL;
+		dbb->dbb_flags |= DBB_exclusive;
+		dbb->dbb_sweep_interval = SWEEP_INTERVAL;
 
-	GenerateGuid(&dbb->dbb_guid);
+		GenerateGuid(&dbb->dbb_guid);
 
-	// set a garbage collection policy
+		// set a garbage collection policy
 
-	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
-	{
-		string gc_policy = Config::getGCPolicy();
-		gc_policy.lower();
-		if (gc_policy == GCPolicyCooperative) {
-			dbb->dbb_flags |= DBB_gc_cooperative;
-		}
-		else if (gc_policy == GCPolicyBackground) {
-			dbb->dbb_flags |= DBB_gc_background;
-		}
-		else if (gc_policy == GCPolicyCombined) {
-			dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
-		}
-		else // config value is invalid, use default
+		if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 		{
-			if (GCPolicyDefault == GCPolicyCooperative) {
+			Firebird::string gc_policy = Config::getGCPolicy();
+			gc_policy.lower();
+			if (gc_policy == GCPolicyCooperative) {
 				dbb->dbb_flags |= DBB_gc_cooperative;
 			}
-			else if (GCPolicyDefault == GCPolicyBackground) {
+			else if (gc_policy == GCPolicyBackground) {
 				dbb->dbb_flags |= DBB_gc_background;
 			}
-			else if (GCPolicyDefault == GCPolicyCombined) {
+			else if (gc_policy == GCPolicyCombined) {
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 			}
-			else 
-				fb_assert(false);
+			else // config value is invalid, use default
+			{
+				if (GCPolicyDefault == GCPolicyCooperative) {
+					dbb->dbb_flags |= DBB_gc_cooperative;
+				}
+				else if (GCPolicyDefault == GCPolicyBackground) {
+					dbb->dbb_flags |= DBB_gc_background;
+				}
+				else if (GCPolicyDefault == GCPolicyCombined) {
+					dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
+				}
+				else 
+					fb_assert(false);
+			}
 		}
+
+		// Initialize the lock manager
+
+		dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
+
+		// Initialize a number of subsystems
+
+		TRA_init(dbb);
+
+		// Lookup some external "hooks"
+
+		PluginManager::Plugin crypt_lib =
+			PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
+		if (crypt_lib) {
+			Firebird::string encrypt_entrypoint(ENCRYPT);
+			Firebird::string decrypt_entrypoint(DECRYPT);
+			dbb->dbb_encrypt =
+				(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
+			dbb->dbb_decrypt =
+				(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
+		}
+
+		INTL_init(tdbb);
 	}
-
-	// Initialize the lock manager
-
-	dbb->dbb_lock_mgr = LockManager::create(expanded_filename);
-
-	// Initialize a number of subsystems
-
-	TRA_init(dbb);
-
-	// Lookup some external "hooks"
-
-	PluginManager::Plugin crypt_lib =
-		PluginManager::enginePluginManager().findPlugin(CRYPT_IMAGE);
-	if (crypt_lib) {
-		string encrypt_entrypoint(ENCRYPT);
-		string decrypt_entrypoint(DECRYPT);
-		dbb->dbb_encrypt =
-			(Database::crypt_routine) crypt_lib.lookupSymbol(encrypt_entrypoint);
-		dbb->dbb_decrypt =
-			(Database::crypt_routine) crypt_lib.lookupSymbol(decrypt_entrypoint);
+	catch (const Firebird::Exception&)
+	{
+		databases_mutex->leave();
+		throw;
 	}
-
-	INTL_init(tdbb);
 
 	return dbb;
 }
 
 
-static void init_database_locks(thread_db* tdbb)
+static void init_database_locks(thread_db* tdbb, Database* dbb)
 {
 /**************************************
  *
@@ -4742,63 +4750,16 @@ static void init_database_locks(thread_db* tdbb)
  **************************************
  *
  * Functional description
- *	Initialize database locks.
+ *	Initialize secondary database locks.
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
 
-	// Main database lock
-
-	PageSpace* const pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-	fb_assert(pageSpace && pageSpace->file);
-
-	UCharBuffer file_id;
-	PIO_get_unique_file_id(pageSpace->file, file_id);
-	size_t key_length = file_id.getCount();
-
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock;
-	dbb->dbb_lock = lock;
-	lock->lck_type = LCK_database;
-	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
-	lock->lck_object = dbb;
-	lock->lck_length = key_length;
-	lock->lck_dbb = dbb;
-	lock->lck_ast = CCH_down_grade_dbb;
-	memcpy(lock->lck_key.lck_string, file_id.begin(), key_length);
-
-	// Try to get an exclusive lock on database.
-	// If this fails, insist on at least a shared lock.
-
-	dbb->dbb_flags |= DBB_exclusive;
-	if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
-	{
-		dbb->dbb_flags &= ~DBB_exclusive;
-
-		while (!LCK_lock(tdbb, lock, LCK_SW, -1))
-		{
-			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
-
-			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
-			SCHAR* header_page_buffer = (SCHAR*) FB_ALIGN((IPTR) spare_memory, MIN_PAGE_SIZE);
-			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
-
-			PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
-
-			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
-			{
-				ERR_post(isc_shutdown,
-						 isc_arg_string, ERR_cstring(pageSpace->file->fil_string),
-						 isc_arg_end);
-			}
-		}
-	}
+	fb_assert(dbb);
 
 	// Lock shared by all dbb owners, used to signal other processes
 	// to dump their monitoring data and synchronize operations
-
-	lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
+	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, sizeof(SLONG)) Lock();
 	dbb->dbb_monitor_lock = lock;
 	lock->lck_type = LCK_monitor;
 	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
@@ -4810,8 +4771,7 @@ static void init_database_locks(thread_db* tdbb)
 	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
 
 	// Lock that identifies a dbb instance
-
-	key_length = sizeof(FB_GUID);
+	const size_t key_length = sizeof(FB_GUID);
 	lock = FB_NEW_RPT(*dbb->dbb_permanent, key_length) Lock();
 	dbb->dbb_instance_lock = lock;
 	lock->lck_type = LCK_instance;
@@ -4997,7 +4957,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_lc_messages(*pool),
 	att_working_directory(*pool), 
 	att_filename(*pool),
-	att_timestamp(TimeStamp::getCurrentTimeStamp()),
+	att_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
 	att_context_vars(*pool),
 	att_network_protocol(*pool),
 	att_remote_address(*pool),
@@ -5021,8 +4981,8 @@ Attachment::~Attachment()
 }
 
 
-PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, MemoryPool& pool,
-	jrd_tra* transaction, const string& text)
+PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
+	jrd_tra* transaction, const Firebird::string& text)
 {
 	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text);
 }
@@ -5072,7 +5032,7 @@ static void rollback(thread_db* tdbb,
 						// run ON TRANSACTION ROLLBACK triggers
 						EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
 					}
-					catch (const Exception&)
+					catch (const Firebird::Exception&)
 					{
 						if (dbb->dbb_flags & DBB_bugcheck)
 							throw;
@@ -5083,22 +5043,22 @@ static void rollback(thread_db* tdbb,
 				tdbb->setTransaction(transaction);
 				TRA_rollback(tdbb, transaction, retaining_flag, false);
 			}
-			catch (const Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
-				stuff_exception(user_status, ex);
+				Firebird::stuff_exception(user_status, ex);
 				tdbb->tdbb_status_vector = local_status;
 			}
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
-		stuff_exception(user_status, ex);
+		Firebird::stuff_exception(user_status, ex);
 	}
 
 	tdbb->tdbb_status_vector = orig_status;
 
 	if (user_status[1] != FB_SUCCESS)
-		status_exception::raise(user_status);
+		Firebird::status_exception::raise(user_status);
 }
 
 
@@ -5201,7 +5161,7 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 }
 
 
-static void strip_quotes(string& out)
+static void strip_quotes(Firebird::string& out)
 {
 /**************************************
  *
@@ -5225,7 +5185,7 @@ static void strip_quotes(string& out)
 		out.erase(0, 1);
 // Search for same quote
 		size_t pos = out.find(quote);
-		if (pos != string::npos)
+		if (pos != Firebird::string::npos)
 		{
 			out.erase(pos);
 		}
@@ -5271,7 +5231,7 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 				// purge attachment, rollback any open transactions
 				purge_attachment(tdbb, temp_status, attach, true);
 			}
-			catch (const Exception&)
+			catch (const Firebird::Exception&)
 			{
 				return false;
 			}
@@ -5323,11 +5283,11 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 	ULONG num_att = 0;
 	ULONG drive_mask = 0L;
 	ULONG total = 0;
-	HalfStaticArray<PathName, 8> dbFiles;
+	Firebird::HalfStaticArray<Firebird::PathName, 8> dbFiles;
 
 	try
 	{
-		MutexLockGuard guard(databases_mutex);
+		Firebird::MutexLockGuard guard(databases_mutex);
 
 		// Zip through the list of databases and count the number of local
 		// connections.  If buf is not NULL then copy all the database names
@@ -5365,9 +5325,9 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 					// Get drive letters for temp directories
 
 					if (flag == JRD_info_drivemask) {
-						const TempDirectoryList dirList;
+						const Firebird::TempDirectoryList dirList;
 						for (size_t i = 0; i < dirList.getCount(); i++) {
-							const PathName& path = dirList[i];
+							const Firebird::PathName& path = dirList[i];
 							ExtractDriveLetter(path.c_str(), &drive_mask);
 						}
 					}
@@ -5376,7 +5336,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 			}
 		}
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		// Here we ignore possible errors from databases_mutex.
 		// They were always silently ignored, and for this function 
@@ -5586,7 +5546,7 @@ static void purge_attachment(thread_db*		tdbb,
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
 				}
-				catch (const Exception&)
+				catch (const Firebird::Exception&)
 				{
 					if (dbb->dbb_flags & DBB_bugcheck)
 						throw;
@@ -5596,7 +5556,7 @@ static void purge_attachment(thread_db*		tdbb,
 						if (transaction)
 							TRA_rollback(tdbb, transaction, false, false);
 					}
-					catch (const Exception&)
+					catch (const Firebird::Exception&)
 					{
 						if (dbb->dbb_flags & DBB_bugcheck)
 							throw;
@@ -5604,7 +5564,7 @@ static void purge_attachment(thread_db*		tdbb,
 				}
 			}
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			attachment->att_flags |= ATT_shutdown;
 			throw;
@@ -5622,7 +5582,7 @@ static void purge_attachment(thread_db*		tdbb,
 		unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
 		if (count)
 		{
-			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, isc_arg_end);
+			ERR_post(isc_open_trans, isc_arg_number, (SLONG) count, 0);
 		}
 
 		SORT_shutdown(attachment);
@@ -5671,7 +5631,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 								jrd_req::req_trigger_trans_commit);
 		VIO_verb_cleanup(tdbb, transaction);
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		if (!(tdbb->getDatabase()->dbb_flags & DBB_bugcheck))
 		{
@@ -5703,7 +5663,7 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 		if (!vector || lev >= vector->count() ||
 			!(request = (*vector)[lev]))
 		{
-			ERR_post(isc_req_sync, isc_arg_end);
+			ERR_post(isc_req_sync, 0);
 		}
 	}
 }
@@ -5721,21 +5681,21 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
     @param status
 
  **/
-static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
+static vdnResult verify_database_name(const Firebird::PathName& name, ISC_STATUS* status)
 {
 	// Check for security2.fdb
-	static TEXT securityNameBuffer[MAXPATHLEN] = "";
-	static GlobalPtr<PathName> expandedSecurityNameBuffer;
-	static GlobalPtr<Mutex> mutex;
+	static TEXT SecurityNameBuffer[MAXPATHLEN] = "";
+	static Firebird::GlobalPtr<Firebird::PathName> ExpandedSecurityNameBuffer;
+	static Firebird::GlobalPtr<Firebird::Mutex> mutex;
 
-	MutexLockGuard guard(mutex);
+	Firebird::MutexLockGuard guard(mutex);
 
-	if (! securityNameBuffer[0]) {
-		SecurityDatabase::getPath(securityNameBuffer);
-		expandedSecurityNameBuffer->assign(securityNameBuffer);
-		ISC_expand_filename(expandedSecurityNameBuffer, false);
+	if (! SecurityNameBuffer[0]) {
+		SecurityDatabase::getPath(SecurityNameBuffer);
+		ExpandedSecurityNameBuffer->assign(SecurityNameBuffer);
+		ISC_expand_filename(ExpandedSecurityNameBuffer, false);
 	}
-	if (name == securityNameBuffer || name == expandedSecurityNameBuffer)
+	if (name == SecurityNameBuffer || name == ExpandedSecurityNameBuffer)
 		return vdnSecurity;
 
 	// Check for .conf
@@ -5771,7 +5731,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 {
 	int id = -1, group = -1;	// CVC: This var contained trash
 	int node_id = 0;
-	string name;
+	Firebird::string name;
 
 #ifdef BOOT_BUILD
 	bool wheel = true;
@@ -5793,7 +5753,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 		if (options.dpb_user_name.hasData() || (id == -1))
 		{
-			string remote = options.dpb_network_protocol + 
+			Firebird::string remote = options.dpb_network_protocol + 
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
 
@@ -5824,8 +5784,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) << 
-			Arg::Num(name.length()) << Arg::Num(USERNAME_LENGTH));
+		Firebird::status_exception::raise(isc_long_login, 
+										  isc_arg_number, name.length(), 
+										  isc_arg_number, USERNAME_LENGTH,
+										  0);
 	}
 
 	user.usr_user_name = name;
@@ -5847,7 +5809,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 }
 
-static ISC_STATUS unwindAttach(const Exception& ex, 
+static ISC_STATUS unwindAttach(const Firebird::Exception& ex, 
 							   ISC_STATUS* userStatus, 
 							   thread_db* tdbb, 
 							   Attachment* attachment, 
@@ -5872,12 +5834,14 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 			}
 		}
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		// no-op
 	}
 
-	stuff_exception(userStatus, ex);
+	databases_mutex->leave();
+
+	Firebird::stuff_exception(userStatus, ex);
 	return userStatus[1];
 }
 
@@ -5893,7 +5857,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
  *	Shutdown the engine.
  *
  **************************************/
-	Semaphore* const semaphore = static_cast<Semaphore*>(arg);
+	Firebird::Semaphore* const semaphore = static_cast<Firebird::Semaphore*>(arg);
 
 	ThreadContextHolder tdbb;
 
@@ -5901,7 +5865,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	try
 	{
-		MutexLockGuard guard(databases_mutex);
+		Firebird::MutexLockGuard guard(databases_mutex);
 
 		cancel_attachments();
 
@@ -5918,7 +5882,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 		Service::shutdownServices();
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		success = false;
 	}
@@ -5972,7 +5936,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 		{
 			TRA_commit(tdbb, transaction, true);
 		}
-		catch (const Exception&)
+		catch (const Firebird::Exception&)
 		{
 			try
 			{
@@ -5980,7 +5944,7 @@ void JRD_autocommit_ddl(thread_db* tdbb, jrd_tra* transaction)
 
 				TRA_rollback(tdbb, transaction, true, false);
 			}
-			catch (const Exception&)
+			catch (const Firebird::Exception&)
 			{
 				// no-op
 			}
@@ -6202,22 +6166,24 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 	try
 	{
 		if (*tra_handle)
-			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+			Firebird::status_exception::raise(isc_bad_trans_handle, 0);
 
 		if (count < 1 || count > MAX_DB_PER_TRANS)
 		{
-			status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
+			Firebird::status_exception::raise(isc_max_db_per_trans_allowed,
+											  isc_arg_number, MAX_DB_PER_TRANS,
+											  0);
 		}
 
 		if (vector == NULL)
 		{
-			status_exception::raise(Arg::Gds(isc_bad_teb_form));
+			Firebird::status_exception::raise(isc_bad_teb_form, isc_arg_end);
 		}
 
 		for (TEB* v = vector; v < vector + count; v++)
 		{
 			Attachment* attachment = *v->teb_database;
-			AutoPtr<DatabaseContextHolder> dbbHolder;
+			Firebird::AutoPtr<DatabaseContextHolder> dbbHolder;
 
 			if (attachment != tdbb->getAttachment())
 			{
@@ -6229,7 +6195,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 			if ((v->teb_tpb_length < 0) ||
 				(v->teb_tpb_length > 0 && v->teb_tpb == NULL))
 			{
-				status_exception::raise(Arg::Gds(isc_bad_tpb_form));
+				Firebird::status_exception::raise(isc_bad_tpb_form, isc_arg_end);
 			}
 
 			transaction = TRA_start(tdbb, v->teb_tpb_length, v->teb_tpb);
@@ -6244,7 +6210,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 
 		*tra_handle = transaction;
 	}
-	catch (const Exception&)
+	catch (const Firebird::Exception&)
 	{
 		if (prior)
 		{
@@ -6254,7 +6220,7 @@ void JRD_start_multiple(thread_db* tdbb, jrd_tra** tra_handle, USHORT count, TEB
 			{
 				rollback(tdbb, prior, false);
 			}
-			catch (const Exception&)
+			catch (const Firebird::Exception&)
 			{
 			}
 		}
@@ -6278,10 +6244,12 @@ void JRD_start_transaction(thread_db* tdbb, jrd_tra** transaction, SSHORT count,
  **************************************/
 	if (count < 1 || USHORT(count) > MAX_DB_PER_TRANS)
 	{
-		status_exception::raise(Arg::Gds(isc_max_db_per_trans_allowed) << Arg::Num(MAX_DB_PER_TRANS));
+		Firebird::status_exception::raise(isc_max_db_per_trans_allowed,
+										  isc_arg_number, MAX_DB_PER_TRANS,
+										  0);
 	}
 
-	HalfStaticArray<TEB, 16> tebs;
+	Firebird::HalfStaticArray<TEB, 16> tebs;
 	tebs.grow(count);
 
 	va_list ptr;
@@ -6339,7 +6307,7 @@ void JRD_compile(thread_db* tdbb,
  *
  **************************************/
 	if (*req_handle)
-		status_exception::raise(Arg::Gds(isc_bad_req_handle));
+		Firebird::status_exception::raise(isc_bad_req_handle, 0);
 
 	jrd_req* request = CMP_compile2(tdbb, blr, FALSE, dbginfo_length, dbginfo);
 
@@ -6354,11 +6322,11 @@ void JRD_compile(thread_db* tdbb,
 
 
 namespace {
-	class DatabaseDirectoryList : public DirectoryList
+	class DatabaseDirectoryList : public Firebird::DirectoryList
 	{
 	private:
-		const PathName getConfigString() const {
-			return PathName(Config::getDatabaseAccess());
+		const Firebird::PathName getConfigString() const {
+			return Firebird::PathName(Config::getDatabaseAccess());
 		}
 	public:
 		explicit DatabaseDirectoryList(MemoryPool& p)
@@ -6367,11 +6335,11 @@ namespace {
 			initialize();
 		}
 	};
-	InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
+	Firebird::InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
 }
 
 
-bool JRD_verify_database_access(const PathName& name)
+bool JRD_verify_database_access(const Firebird::PathName& name)
 {
 /**************************************
  *

@@ -50,6 +50,7 @@ public:
 	//int *fil_trace;				/* Trace file, if any */
 	Firebird::Mutex fil_mutex;
 	USHORT fil_flags;
+	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 
@@ -83,6 +84,7 @@ public:
 	void* fil_io_events[MAX_FILE_IO];	/* Overlapped I/O events */
 #endif
 	USHORT fil_flags;
+	USHORT fil_length;			/* Length of expanded file name */
 	SCHAR fil_string[1];		/* Expanded file name */
 };
 

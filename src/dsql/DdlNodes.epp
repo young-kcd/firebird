@@ -27,15 +27,13 @@
 #include "../jrd/met_proto.h"
 #include "../dsql/metd_proto.h"
 
-using namespace Firebird;
-
 namespace Jrd {
 
 
 DATABASE DB = STATIC "ODS.RDB";
 
 
-void AlterCharSetNode::print(string& text, Array<dsql_nod*>& nodes) const
+void AlterCharSetNode::print(Firebird::string& text, Firebird::Array<dsql_nod*>& nodes) const
 {
 	text.printf(
 		"alter character set\n"
@@ -100,13 +98,15 @@ void AlterCharSetNode::execute(thread_db* tdbb, jrd_tra* transaction)
 
 	if (!charSetFound)
 	{
-		status_exception::raise(Arg::Gds(isc_charset_not_found) << Arg::Str(charSet));
+		Firebird::status_exception::raise(isc_charset_not_found,
+			isc_arg_string, ERR_cstring(charSet), 0);
 	}
 
 	if (!collationFound)
 	{
-		status_exception::raise(Arg::Gds(isc_collation_not_found) <<
-			Arg::Str(defaultCollation) << Arg::Str(charSet));
+		Firebird::status_exception::raise(isc_collation_not_found,
+			isc_arg_string, ERR_cstring(defaultCollation),
+			isc_arg_string, ERR_cstring(charSet), 0);
 	}
 }
 

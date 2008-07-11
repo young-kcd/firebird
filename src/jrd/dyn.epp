@@ -85,18 +85,17 @@ using MsgFormat::SafeArg;
 DATABASE DB = STATIC "ODS.RDB";
 
 using namespace Jrd;
-using namespace Firebird;
 
 
 static void grant(Global*, const UCHAR**);
-static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const MetaName&,
-	const MetaName&, bool);
-static bool grantor_can_grant_role(thread_db*, Global*, const MetaName&, const MetaName&);
+static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const Firebird::MetaName&,
+	const Firebird::MetaName&, bool);
+static bool grantor_can_grant_role(thread_db*, Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static const char* privilege_name(char symbol);
 static void	revoke_permission(Global*, const UCHAR**);
-static void store_privilege(Global*, const MetaName&, const MetaName&, const MetaName&,
-	const TEXT*, SSHORT, SSHORT, int, const MetaName&);
-static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
+static void store_privilege(Global*, const Firebird::MetaName&, const Firebird::MetaName&, const Firebird::MetaName&,
+	const TEXT*, SSHORT, SSHORT, int, const Firebird::MetaName&);
+static void	set_field_class_name(Global*, const Firebird::MetaName&, const Firebird::MetaName&);
 static void dyn_user(Global*, const UCHAR**);
 
 
@@ -120,7 +119,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
-		ERR_post(isc_wrodynver, isc_arg_end);
+		ERR_post(isc_wrodynver, 0);
 	}
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
@@ -145,8 +144,8 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 		transaction->tra_save_point->sav_verb_count--;
 		VIO_verb_cleanup(tdbb, transaction);
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		const Savepoint* savepoint = transaction->tra_save_point;
 		if (savepoint && savepoint->sav_verb_count)
 		{
@@ -157,7 +156,7 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 			try {
 				VIO_verb_cleanup(tdbb, transaction);
 			}
-			catch (const Exception&) {
+			catch (const Firebird::Exception&) {
 				BUGCHECK(290);	/* msg 290 error during savepoint backout */
 			}
 		}
@@ -283,7 +282,8 @@ void DYN_error_punt(bool	status_flag,
 }
 
 
-void DYN_error_punt(bool status_flag, USHORT number)
+void DYN_error_punt(bool	status_flag,
+					USHORT	number)
 {
 /**************************************
  *
@@ -302,10 +302,10 @@ void DYN_error_punt(bool status_flag, USHORT number)
 }
 
 
-bool DYN_is_it_sql_role(Global* gbl,
-						const MetaName&	input_name,
-						MetaName& output_name,
-						thread_db* tdbb)
+bool DYN_is_it_sql_role(Global*						gbl,
+						const Firebird::MetaName&	input_name,
+						Firebird::MetaName&			output_name,
+						thread_db*					tdbb)
 {
 /**************************************
  *
@@ -369,11 +369,11 @@ void DYN_unsupported_verb(void)
 
 void DYN_execute(Global* gbl,
 				 const UCHAR** ptr,
-				 const MetaName* relation_name,
-				 MetaName* field_name,
-				 MetaName* trigger_name,
-				 MetaName* function_name,
-				 MetaName* procedure_name)
+				 const Firebird::MetaName* relation_name,
+				 Firebird::MetaName* field_name,
+				 Firebird::MetaName* trigger_name,
+				 Firebird::MetaName* function_name,
+				 Firebird::MetaName* procedure_name)
 {
 /**************************************
  *
@@ -701,7 +701,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
 	
-	HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
+	Firebird::HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
 
 	if (l) {
@@ -732,7 +732,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::MetaName& field, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -773,7 +773,7 @@ USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliter
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::string& field, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -814,7 +814,7 @@ USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterat
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::PathName& field, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -839,7 +839,7 @@ USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliter
 	if (transliterate)
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		PathName temp;
+		Firebird::PathName temp;
 
 		temp.reserve(
 			INTL_convert_bytes(tdbb,
@@ -856,7 +856,7 @@ USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliter
 }
 
 
-USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transliterate)
+USHORT DYN_get_string(const TEXT** ptr, Firebird::UCharBuffer& array, size_t, bool transliterate)
 {
 /**************************************
  *
@@ -875,7 +875,7 @@ USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transli
 
 	if (transliterate)
 	{
-		UCharBuffer temp;
+		Firebird::UCharBuffer temp;
 		memcpy(temp.getBuffer(length), p, length);
 
 		thread_db* tdbb = JRD_get_thread_data();
@@ -928,8 +928,8 @@ USHORT DYN_put_blr_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		BLB_put_segment(tdbb, blob, p, length);
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -966,7 +966,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 	const UCHAR* end = NULL;
 
 	try {
-		UCharBuffer bpb;
+		Firebird::UCharBuffer bpb;
 
 		Database* dbb = tdbb->getDatabase();
 		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1) 
@@ -1005,8 +1005,8 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		}
 		BLB_close(tdbb, blob);
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_error_punt(true, 106);
 		/* msg 106: "Create metadata blob failed" */
 	}
@@ -1102,15 +1102,15 @@ static void grant( Global* gbl, const UCHAR** ptr)
 
 	SSHORT id;
 	char privileges[16];
-	MetaName object;
-	MetaName field;
-	MetaName user;
+	Firebird::MetaName object;
+	Firebird::MetaName field;
+	Firebird::MetaName user;
 	TEXT priv[2];
 	bool grant_role_stmt = false;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
-	MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
+	Firebird::MetaName grantor = tdbb->getAttachment()->att_user->usr_user_name;
 
 	const USHORT major_version  = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -1123,7 +1123,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	int    options   = 0;
 	SSHORT user_type = -1;
 	SSHORT obj_type  = -1;
-    MetaName dummy_name;
+    Firebird::MetaName dummy_name;
 
 	UCHAR verb;
 	while ((verb = *(*ptr)++) != isc_dyn_end)
@@ -1375,8 +1375,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 	}	// for (...)
 
 	}	// try
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
@@ -1417,12 +1417,12 @@ do_punt:	// ugly, rethink logic of this function
 }
 
 
-static bool grantor_can_grant(Global* gbl,
-							  const TEXT* grantor,
-							  const TEXT* privilege,
-							  const MetaName& relation_name,
-							  const MetaName& field_name,
-							  bool top_level)
+static bool grantor_can_grant(Global*					gbl,
+							  const TEXT*				grantor,
+							  const TEXT*				privilege,
+							  const Firebird::MetaName&	relation_name,
+							  const Firebird::MetaName&	field_name,
+							  bool						top_level)
 {
 /**************************************
  *
@@ -1679,8 +1679,8 @@ static bool grantor_can_grant(Global* gbl,
 	// all done.
 
 	}	// try
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, err_num);
 		/* msg 77: "SELECT RDB$USER_PRIVILEGES failed in grant" */
@@ -1692,10 +1692,10 @@ static bool grantor_can_grant(Global* gbl,
 }
 
 
-static bool grantor_can_grant_role(thread_db* tdbb,
-								   Global* gbl,
-								   const MetaName& grantor,
-								   const MetaName& role_name)
+static bool grantor_can_grant_role(	thread_db*	tdbb,
+									Global*		gbl,
+									const Firebird::MetaName& grantor,
+									const Firebird::MetaName& role_name)
 {
 /**************************************
  *
@@ -1717,7 +1717,7 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	// Fetch the name of the owner of the ROLE
-	MetaName owner;
+	Firebird::MetaName owner;
 	if (DYN_is_it_sql_role(gbl, role_name, owner, tdbb))
 	{
 		// Both SYSDBA and the owner of this ROLE can grant membership
@@ -1829,8 +1829,8 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
  **************************************/
 	UCHAR verb;
 	char privileges[16];
-	MetaName object, field, user;
-	MetaName dummy_name;
+	Firebird::MetaName object, field, user;
+	Firebird::MetaName dummy_name;
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
@@ -1841,7 +1841,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 /* Stash away a copy of the revoker's name, in uppercase form */
 
 	const UserId* revoking_user = tdbb->getAttachment()->att_user;
-	MetaName revoking_as_user_name(revoking_user->usr_user_name);
+	Firebird::MetaName revoking_as_user_name(revoking_user->usr_user_name);
 	revoking_as_user_name.upper7();
 
 	GET_STRING(ptr, privileges);
@@ -2059,14 +2059,14 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			ERR_post_warning(isc_dyn_miss_priv_warning, 
 							 isc_arg_string, privilege_name(temp[0]),
 							 isc_arg_string, ERR_string(object), 
-							 isc_arg_string, ERR_string(user), isc_arg_end);
+							 isc_arg_string, ERR_string(user), 0);
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
 	}
 
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
 		   But in case the error is from store_priveledge we have already 
 		   unwound the request so passing that as null */
@@ -2091,9 +2091,9 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(Global* gbl, 
-								 const MetaName& relation, 
-								 const MetaName& field)
+static void set_field_class_name(Global*					gbl, 
+								 const Firebird::MetaName&	relation, 
+								 const Firebird::MetaName&	field)
 {
 /**************************************
  *
@@ -2150,15 +2150,15 @@ static void set_field_class_name(Global* gbl,
 }
 
 
-static void store_privilege(Global* gbl,
-							const MetaName&	object,
-							const MetaName&	user,
-							const MetaName&	field,
-							const TEXT* privilege,
-							SSHORT user_type,
-							SSHORT obj_type,
-							int option,
-							const MetaName&	grantor)
+static void store_privilege(Global*						gbl,
+							const Firebird::MetaName&	object,
+							const Firebird::MetaName&	user,
+							const Firebird::MetaName&	field,
+							const TEXT*					privilege,
+							SSHORT						user_type,
+							SSHORT						obj_type,
+							int							option,
+							const Firebird::MetaName&	grantor)
 {
 /**************************************
  *
@@ -2202,8 +2202,8 @@ static void store_privilege(Global* gbl,
 			DYN_REQUEST(drq_s_grant) = request;
 		}
 	}
-	catch (const Exception& ex) {
-		stuff_exception(tdbb->tdbb_status_vector, ex);
+	catch (const Firebird::Exception& ex) {
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		DYN_rundown_request(request, -1);
 		DYN_error_punt(true, 79);
 		/* msg 79: "STORE RDB$USER_PRIVILEGES failed in grant" */
@@ -2244,7 +2244,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		UCHAR verb;
 		while ((verb = *(*ptr)++) != isc_user_end)
 		{
-			string text;
+			Firebird::string text;
 			GET_STRING(ptr, text);
 
 			switch(verb)
@@ -2273,8 +2273,8 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			case isc_dyn_user_passwd:
 				if (text.isEmpty())
 				{
+					Firebird::status_exception::raise(ENCODE_ISC_MSG(249, DYN_MSG_FAC), isc_arg_end);
 					// 249: Password should not be empty string
-					status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(249, DYN_MSG_FAC)));
 				}
 				text.copyTo(userData.password, sizeof(userData.password));
 				userData.password_entered = true;
@@ -2328,18 +2328,18 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 		case 0: // nothing
 		    break;
 		case GsecMsg22:
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)) <<
-									Arg::Str(userData.user_name));
+			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC),
+				isc_arg_string, ERR_cstring(userData.user_name), isc_arg_end);
 		default:
-			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)));
+			Firebird::status_exception::raise(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC), isc_arg_end);
 		}
 	}
-	catch(const Exception& e)
+	catch(const Firebird::Exception& e)
 	{
 		e.stuff_exception(status);
 		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));
 		status[0] = isc_arg_gds;
 		status[1] = isc_no_meta_update;
-		status_exception::raise(status);
+		Firebird::status_exception::raise(status);
 	}
 }

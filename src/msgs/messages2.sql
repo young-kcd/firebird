@@ -13,7 +13,7 @@ set bulk_insert INSERT INTO MESSAGES (SYMBOL, ROUTINE, MODULE, TRANS_NOTES, FAC_
 ('bad_tpb_content', NULL, NULL, NULL, 0, 10, NULL, 'invalid parameter in transaction parameter block', NULL, NULL);
 ('bad_tpb_form', NULL, NULL, NULL, 0, 11, NULL, 'invalid format for transaction parameter block', NULL, NULL);
 ('bad_trans_handle', NULL, NULL, NULL, 0, 12, NULL, 'invalid transaction handle (expecting explicit transaction start)', NULL, NULL);
-('bug_check', NULL, NULL, NULL, 0, 13, NULL, 'internal Firebird consistency check (@1)', NULL, NULL);
+('bug_check', NULL, NULL, NULL, 0, 13, NULL, 'internal gds software consistency check (@1)', NULL, NULL);
 ('convert_error', NULL, NULL, 'The "@1" in this message does not refer to the preceding word "string".
 It calls up the message "Do you want to rollback your updates? "
 To test the placement of the string run the following commands in QLI:
@@ -323,7 +323,7 @@ without specifying a character set.', NULL);
 ('cnstrnt_fld_rename', 'trigger_messages', 'ini.e', NULL, 0, 224, NULL, 'Cannot rename column being used in an Integrity Constraint.', NULL, NULL);
 ('rel_cnstrnt_update', 'trigger_messages', 'ini.e', NULL, 0, 225, NULL, 'Cannot update constraints (RDB$RELATION_CONSTRAINTS).', NULL, NULL);
 ('constaint_on_view', 'trigger_messages', 'ini.e', NULL, 0, 226, NULL, 'Cannot define constraints on views', NULL, NULL);
-('invld_cnstrnt_type', 'trigger_messages', 'ini.e', NULL, 0, 227, NULL, 'internal Firebird consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL);
+('invld_cnstrnt_type', 'trigger_messages', 'ini.e', NULL, 0, 227, NULL, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL);
 ('primary_key_exists', 'trigger_messages', 'ini.e', NULL, 0, 228, NULL, 'Attempt to define a second PRIMARY KEY for the same table', NULL, NULL);
 ('systrig_update', 'trigger_messages', 'ini.e', NULL, 0, 229, NULL, 'cannot modify or erase a system trigger', NULL, NULL);
 ('not_rel_owner', 'trigger_messages', 'ini.e', NULL, 0, 230, NULL, 'only the owner of a table may reassign ownership', NULL, NULL);
@@ -698,21 +698,6 @@ COMMIT WORK;
 ('numeric_out_of_range', NULL, NULL, NULL, 0, 596, NULL, 'numeric value is out of range', NULL, NULL)
 ('shutdown_timeout', NULL, NULL, NULL, 0, 597, NULL, 'Firebird shutdown is still in progress after the specified timeout', NULL, NULL)
 ('att_handle_busy', NULL, NULL, NULL, 0, 598, NULL, 'Attachment handle is busy', NULL, NULL)
-('bad_udf_freeit', NULL, NULL, NULL, 0, 599, NULL, 'Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc', NULL, NULL)
-('eds_provider_not_found', NULL, 'ExtDS.cpp', NULL, 0, 600, NULL, 'External Data Source provider ''@1'' not found', NULL, NULL)
-('eds_connection', NULL, 'ExtDS.cpp', NULL, 0, 601, NULL, 'Execute statement error at @1 :\n@2Data source : @3', NULL, NULL)
-('eds_preprocess', NULL, 'ExtDS.cpp', NULL, 0, 602, NULL, 'Execute statement preprocess SQL error', NULL, NULL)
-('eds_stmt_expected', NULL, 'ExtDS.cpp', NULL, 0, 603, NULL, 'Statement expected', NULL, NULL)
-('eds_prm_name_expected', NULL, 'ExtDS.cpp', NULL, 0, 604, NULL, 'Parameter name expected', NULL, NULL)
-('eds_unclosed_comment', NULL, 'ExtDS.cpp', NULL, 0, 605, NULL, 'Unclosed comment found near ''@1''', NULL, NULL)
-('eds_statement', NULL, 'ExtDS.cpp', NULL, 0, 606, NULL, 'Execute statement error at @1 :\n@2Statement : @3\nData source : @4', NULL, NULL)
-('eds_input_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 607, NULL, 'Input parameters mismatch', NULL, NULL)
-('eds_output_prm_mismatch', NULL, 'ExtDS.cpp', NULL, 0, 608, NULL, 'Output parameters mismatch', NULL, NULL)
-('eds_input_prm_not_set', NULL, 'ExtDS.cpp', NULL, 0, 609, NULL, 'Input parameter ''@1'' have no value set', NULL, NULL)
-('too_big_blr', 'end_blr', 'ddl.cpp', NULL, 0, 610, NULL, 'BLR stream length @1 exceeds implementation limit @2', NULL, NULL)
-('montabexh', 'acquire', 'DatabaseSnapshot.cpp', NULL, 0, 611, NULL, 'Monitoring table space exhausted', NULL, NULL)
-('modnotfound', 'par_function', 'par.cpp', NULL, 0, 612, NULL, 'module name or entrypoint could not be found', NULL, NULL)
-('nothing_to_cancel', 'FB_CANCEL_OPERATION', 'why.cpp', NULL, 0, 613, NULL, 'nothing to cancel', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2497,7 +2482,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 687, NULL, 'count of column list and variable list do not match', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 697, NULL, 'Incompatible column/host variable data type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 703, NULL, 'Operation violates CHECK constraint @1 on view or table', NULL, NULL);
-(NULL, NULL, NULL, NULL, 13, 704, NULL, 'internal Firebird consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL);
+(NULL, NULL, NULL, NULL, 13, 704, NULL, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 705, NULL, 'Cannot update constraints (RDB$RELATION_CONSTRAINTS).', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 706, NULL, 'Cannot delete CHECK constraint entry (RDB$CHECK_CONSTRAINTS)', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 707, NULL, 'Cannot update constraints (RDB$CHECK_CONSTRAINTS).', NULL, NULL);

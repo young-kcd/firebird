@@ -124,8 +124,8 @@ static const TEXT history_names[][10] = {
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-static const TEXT valid_switches[] = 
-	"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>, -m \n";
+static const TEXT valid_switches[] = "Valid switches are: -o, -p, -l, -r, \
+		-a, -h, -n, -s <n>, -c, -i <n> <n>, -m \n";
 
 // The same table is in lock.cpp, maybe worth moving to a common file?
 static const UCHAR compatibility[LCK_max][LCK_max] =
@@ -348,9 +348,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	SH_MEM_T shmem_data;
 
-	SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file 
-											   will be truncated when engine is not running 
-											   and engine globals do not exist anymore */
+	SLONG LOCK_size_mapped = 0;			/* Use length of existing segment */
 
 	ISC_STATUS_ARRAY status_vector;
 	
@@ -1006,7 +1004,6 @@ static void prt_owner(OUTFILE outfile,
 		FPRINTF(outfile, " %s", (flags & OWN_wakeup) ? "wake" : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_scanned) ? "scan" : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? "wait" : "    ");
-		FPRINTF(outfile, " %s", (flags & OWN_waiting) ? ((flags & OWN_timeout) ? "tout" : "infn") : "    ");
 		FPRINTF(outfile, " %s", (flags & OWN_signaled) ? "sgnl" : "    ");
 		FPRINTF(outfile, "\n");
 	}

@@ -537,7 +537,7 @@ USHORT INI_get_trig_flags(const TEXT* trig_name)
 }
 
 
-void INI_init(thread_db* tdbb)
+void INI_init()
 {
 /**************************************
  *
@@ -552,8 +552,8 @@ void INI_init(thread_db* tdbb)
  *	format descriptor.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	const int* fld;
@@ -614,7 +614,7 @@ void INI_init(thread_db* tdbb)
 }
 
 
-void INI_init2(thread_db* tdbb)
+void INI_init2()
 {
 /**************************************
  *
@@ -628,8 +628,8 @@ void INI_init2(thread_db* tdbb)
  *	the database when it was created.
  *
  **************************************/
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
 	const USHORT major_version = dbb->dbb_ods_version;
 	const USHORT minor_original = dbb->dbb_minor_original;
@@ -934,7 +934,7 @@ static void add_relation_fields(thread_db* tdbb, USHORT minor_version)
 				INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
 				desc.dsc_address = (UCHAR*) names[relfld[RFLD_R_NAME]];
 				desc.dsc_length = strlen((char*)desc.dsc_address);
-				DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
+				DFW_post_work(dbb->dbb_sys_trans, dfw_update_format, &desc, 0);
 			}
 		}
 	}
@@ -1148,6 +1148,8 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
 	STORE(REQUEST_HANDLE * handle) X IN RDB$GENERATORS
 		PAD(generator->gen_name, X.RDB$GENERATOR_NAME);
 		X.RDB$GENERATOR_ID = generator->gen_id;
@@ -1155,7 +1157,7 @@ static void store_generator(thread_db* tdbb, const gen* generator, jrd_req** han
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		if (generator->gen_description)
 		{
-			blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$DESCRIPTION);
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DESCRIPTION);
 			BLB_put_segment(tdbb,
 							blob,
 							reinterpret_cast<const UCHAR*>(generator->gen_description),
@@ -1188,6 +1190,8 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
 	STORE(REQUEST_HANDLE * handle) X IN RDB$FIELDS
 		PAD(names[(USHORT)gfield->gfld_name], X.RDB$FIELD_NAME);
 		X.RDB$FIELD_LENGTH = gfield->gfld_length;
@@ -1200,7 +1204,7 @@ static void store_global_field(thread_db* tdbb, const gfld* gfield, jrd_req** ha
 		X.RDB$SEGMENT_LENGTH.NULL = TRUE;
 		if (gfield->gfld_dflt_blr)
 		{
-			blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$DEFAULT_VALUE);
+			blb* blob = BLB_create(tdbb, trans, &X.RDB$DEFAULT_VALUE);
 			BLB_put_segment(tdbb,
 							blob,
 							gfield->gfld_dflt_blr,
@@ -1359,6 +1363,8 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 	CMP_release(tdbb, handle);
 	handle = NULL;
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
 	for (const IntlManager::CollationDefinition* collation = IntlManager::defaultCollations;
 		collation->name; ++collation)
 	{
@@ -1381,7 +1387,7 @@ static void store_intlnames(thread_db* tdbb, Database* dbb)
 
 			if (collation->specificAttributes)
 			{
-				blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$SPECIFIC_ATTRIBUTES);
+				blb* blob = BLB_create(tdbb, trans, &X.RDB$SPECIFIC_ATTRIBUTES);
 				BLB_put_segment(tdbb,
 								blob,
 								reinterpret_cast<const UCHAR*>(collation->specificAttributes),
@@ -1553,13 +1559,15 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	jrd_tra* trans = dbb->dbb_sys_trans;
+
 /* indicate that the relation format needs revising */
 	dsc desc;
 	desc.dsc_dtype = dtype_text;
 	INTL_ASSIGN_DSC(&desc, CS_METADATA, COLLATE_NONE);
 	desc.dsc_address = (UCHAR*) names[trigger->trg_relation];
 	desc.dsc_length = strlen((char*)desc.dsc_address);
-	DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
+	DFW_post_work(trans, dfw_update_format, &desc, 0);
 
 /* store the trigger */
 
@@ -1571,7 +1579,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 		X.RDB$TRIGGER_TYPE = trigger->trg_type;
 		X.RDB$FLAGS = trigger->trg_flags;
-		blb* blob = BLB_create(tdbb, dbb->dbb_sys_trans, &X.RDB$TRIGGER_BLR);
+		blb* blob = BLB_create(tdbb, trans, &X.RDB$TRIGGER_BLR);
 		BLB_put_segment(tdbb,
 						blob,
 						trigger->trg_blr,
@@ -1579,3 +1587,4 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, jrd_req** han
 		BLB_close(tdbb, blob);
 	END_STORE;
 }
+

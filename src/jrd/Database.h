@@ -141,7 +141,7 @@ public:
 		{
 			if (!dbb->checkHandle())
 			{
-				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
+				Firebird::status_exception::raise(isc_bad_db_handle, 0);
 			}
 
 			sync.addRef();
@@ -151,7 +151,7 @@ public:
 			{
 				sync.unlock();
 				sync.release();
-				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
+				Firebird::status_exception::raise(isc_bad_db_handle, 0);
 			}
 		}
 
@@ -309,7 +309,6 @@ public:
 	Firebird::Mutex dbb_exe_clone_mutex;
 	Firebird::Mutex dbb_flush_count_mutex;
 	Firebird::Mutex dbb_dyn_mutex;
-	Firebird::Mutex dbb_sys_dfw_mutex;
 
 	//SLONG dbb_sort_size;				// Size of sort space per sort, unused for now
 

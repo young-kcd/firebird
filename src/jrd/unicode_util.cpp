@@ -937,10 +937,10 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	texttype* tt, USHORT attributes,
 	Firebird::IntlUtil::SpecificAttributesMap& specificAttributes, const Firebird::string& configInfo)
 {
+	string locale;
 	int attributeCount = 0;
 	bool error;
 
-	string locale;
 	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("LOCALE"), locale))
 		++attributeCount;
 
@@ -951,16 +951,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 
 		collVersion = IntlUtil::convertUtf16ToAscii(collVersion, &error);
 		if (error)
-			return NULL;
-	}
-
-	string numericSort;
-	if (specificAttributes.get(IntlUtil::convertAsciiToUtf16("NUMERIC-SORT"), numericSort))
-	{
-		++attributeCount;
-
-		numericSort = IntlUtil::convertUtf16ToAscii(numericSort, &error);
-		if (error || !(numericSort == "0" || numericSort == "1"))
 			return NULL;
 	}
 
@@ -1025,14 +1015,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	else
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
-	const bool isNumericSort = numericSort == "1";
-	if (isNumericSort)
-	{
-		icu->ucolSetAttribute(compareCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-		icu->ucolSetAttribute(partialCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-		icu->ucolSetAttribute(sortCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
-	}
-
 	USet* contractions = icu->usetOpen(0, 0);
 	// status not verified here.
 	icu->ucolGetContractions(partialCollator, contractions, &status);
@@ -1046,7 +1028,6 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	obj->sortCollator = sortCollator;
 	obj->contractions = contractions;
 	obj->contractionsCount = icu->usetGetItemCount(contractions);
-	obj->numericSort = isNumericSort;
 
 	return obj;
 }
@@ -1125,21 +1106,6 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 					srcLen -= len;
 					break;
 				}
-			}
-
-			if (numericSort)
-			{
-				// ASF: Wee need to remove trailing numbers to return sub key that
-				// matches full key. Example: "abc1" becomes "abc" to match "abc10".
-				const USHORT* p = src + srcLen - 1;
-
-				for (; p >= src; --p)
-				{
-					if (!(*p >= '0' && *p <= '9'))
-						break;
-				}
-
-				srcLen = p - src + 1;
 			}
 
 			break;

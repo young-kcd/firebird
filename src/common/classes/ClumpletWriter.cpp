@@ -121,53 +121,38 @@ void ClumpletWriter::size_overflow()
 	fatal_exception::raise("Clumplet buffer size limit reached");
 }
 
-void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, SINT64 value)
-{
-	int shift = 0;
-	while (length--) {
-		*ptr++ = (UCHAR) (value >> shift);
-		shift += 8;
-	}
-}
-
 void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 {
-	UCHAR bytes[sizeof(SLONG)];
-
-	toVaxInteger(bytes, sizeof(bytes), value);
+#if defined(WORDS_BIGENDIAN)
+	UCHAR bytes[4];
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+	bytes[0] = ptr[3];
+	bytes[1] = ptr[2];
+	bytes[2] = ptr[1];
+	bytes[3] = ptr[0];
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
+#else
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+#endif 
 }
 
 void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
 {
-	UCHAR bytes[sizeof(SINT64)];
-
-	toVaxInteger(bytes, sizeof(bytes), value);
+#if defined(WORDS_BIGENDIAN)
+	UCHAR bytes[8];
+	const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+	bytes[0] = ptr[7];
+	bytes[1] = ptr[6];
+	bytes[2] = ptr[5];
+	bytes[3] = ptr[4];
+	bytes[4] = ptr[3];
+	bytes[5] = ptr[2];
+	bytes[6] = ptr[1];
+	bytes[7] = ptr[0];
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
-}
-
-void ClumpletWriter::insertDouble(UCHAR tag, double value)
-{
-	union {
-		double temp_double;
-		SLONG temp_long[2];
-	} temp;
-
-	fb_assert(sizeof(double) == sizeof(temp));
-
-	temp.temp_double = value;
-	UCHAR bytes[sizeof(double)];
-	toVaxInteger(bytes, sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_FIRST]);
-	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), temp.temp_long[FB_LONG_DOUBLE_SECOND]);
-	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
-}
-
-void ClumpletWriter::insertTimeStamp(UCHAR tag, ISC_TIMESTAMP value)
-{
-	UCHAR bytes[sizeof(ISC_TIMESTAMP)];
-	toVaxInteger(bytes, sizeof(SLONG), value.timestamp_date);
-	toVaxInteger(bytes + sizeof(SLONG), sizeof(SLONG), value.timestamp_time);
-	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
+#else
+	insertBytesLengthCheck(tag, reinterpret_cast<UCHAR*>(&value), sizeof(value));
+#endif 
 }
 
 void ClumpletWriter::insertString(UCHAR tag, const string& str)
@@ -281,17 +266,35 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 		break;
 	case 2:
 		{
+			USHORT value = static_cast<USHORT>(length);
+			fb_assert(sizeof(USHORT) == 2);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+#if defined(WORDS_BIGENDIAN)
 			UCHAR b[2];
-			toVaxInteger(b, sizeof(b), length);
+			b[0] = ptr[1];
+			b[1] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
+#else
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
+#endif
 			cur_offset += 2;
 		}
 		break;
 	case 4:
 		{
+			ULONG value = static_cast<ULONG>(length);
+			fb_assert(sizeof(ULONG) == 4);
+			const UCHAR* ptr = reinterpret_cast<UCHAR*>(&value);
+#if defined(WORDS_BIGENDIAN)
 			UCHAR b[4];
-			toVaxInteger(b, sizeof(b), length);
+			b[0] = ptr[3];
+			b[1] = ptr[2];
+			b[2] = ptr[1];
+			b[3] = ptr[0];
 			dynamic_buffer.insert(cur_offset, b, sizeof(b));
+#else
+			dynamic_buffer.insert(cur_offset, ptr, sizeof(value));
+#endif
 			cur_offset += 4;
 		}
 		break;
