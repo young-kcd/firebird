@@ -484,10 +484,10 @@ void* MemoryPool::external_alloc(size_t &size)
 
 // No successful return from mmap() will return the value MAP_FAILED.
 // The symbol MAP_FAILED is defined:
-//#define MAP_FAILED      ((void *) -1)
+//#define MAP_FAILED      ((void*) -1)
 
 	size = FB_ALIGN(size, get_map_page_size());
-	void *result = NULL;
+	void* result = NULL;
 #  ifdef MAP_ANONYMOUS
 	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
 				  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);

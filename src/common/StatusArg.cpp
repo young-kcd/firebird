@@ -49,10 +49,16 @@ void StatusVector::clear() throw()
 void StatusVector::append(const StatusVector& v) throw()
 {
 	StatusVector newVector;
+
 	if (newVector.appendErrors(this))
+	{
 		if (newVector.appendErrors(&v))
+		{
 			if (newVector.appendWarnings(this))
 				newVector.appendWarnings(&v);
+		}
+	}
+	
 	*this = newVector;
 }
 
@@ -71,6 +77,7 @@ bool StatusVector::appendWarnings(const StatusVector* v) throw()
 bool StatusVector::append(const ISC_STATUS* from, int count) throw()
 {
 	int copied = 0;
+
 	for (int i = 0; i < count; i += (from[i] == isc_arg_cstring ? 3 : 2))
 	{
 		copied = i;
@@ -79,9 +86,11 @@ bool StatusVector::append(const ISC_STATUS* from, int count) throw()
 			break;
 		}
 	}
+
 	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
 	m_length += copied;
 	m_status_vector[m_length] = isc_arg_end;
+
 	return copied == count;
 }
 

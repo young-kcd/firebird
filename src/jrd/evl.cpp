@@ -3769,8 +3769,8 @@ static SINT64 get_timestamp_to_isc_ticks(const dsc* d)
 
 	CVT_move(d, &result);
 
-	return ((SINT64) result_timestamp.timestamp_date) * ISC_TICKS_PER_DAY
-		+ (SINT64) result_timestamp.timestamp_time;
+	return ((SINT64) result_timestamp.timestamp_date) * ISC_TICKS_PER_DAY +
+		(SINT64) result_timestamp.timestamp_time;
 }
 
 

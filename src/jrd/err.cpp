@@ -407,20 +407,21 @@ void ERR_post(const Arg::StatusVector& statusVector)
  **************************************
  *
  * Functional description
- *	Create a status vector and return to 
- * the user.
+ *	Create a status vector and return to the user.
  *
  **************************************/
 {
 	ISC_STATUS_ARRAY vector;
-	memcpy (vector, statusVector.value(), sizeof(vector));
+	memcpy(vector, statusVector.value(), sizeof(vector));
+
 	for (int i = 0; i < statusVector.length(); i += 2)
 	{
 		if (vector[i] == isc_arg_string)
 		{
-			vector[i + 1] = (ISC_STATUS)(IPTR)ERR_cstring((char*)(IPTR)vector[i + 1]);
+			vector[i + 1] = (ISC_STATUS)(IPTR) ERR_cstring((char*)(IPTR) vector[i + 1]);
 		}
 	}
+
 	internal_post2(vector);
 
 	DEBUG;

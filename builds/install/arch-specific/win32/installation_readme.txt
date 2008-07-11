@@ -9,8 +9,8 @@ primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
 familiar with Firebird 2.1. If you are evaluating
-Firebird 2.5 as part of a migration from Fb 2.1 you are
-advised to review the Fb 2.1 documentation to
+Firebird 2.5 as part of a migration from FB 2.1 you are
+advised to review the FB 2.1 documentation to
 understand the changes made between 2.1 and 2.5.
 
 

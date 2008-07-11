@@ -839,7 +839,7 @@ int API_ROUTINE isc_blob_load(
 void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 // I believe noone could use this private API in his routines.
 // This requires knowledge about our descriptors, which are hardly usable
-// outside firebird,	AP-2008.
+// outside Firebird,	AP-2008.
 {
 	err(isc_random, isc_arg_string, "CVT_move() private API not supported any more", isc_arg_end);
 }
