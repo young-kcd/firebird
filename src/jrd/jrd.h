@@ -320,6 +320,7 @@ public:
 #endif
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::string, DSqlCacheItem> > > att_dsql_cache;	// DSQL cache locks
+	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex
 

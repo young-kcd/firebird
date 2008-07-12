@@ -29,6 +29,7 @@
 #include "../jrd/license.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc_proto.h"
+#include "../jrd/fun_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
 
@@ -140,7 +141,7 @@ FPTR_INT FUNCTIONS_entrypoint(const char* module, const char* entrypoint)
 }
 
 static vary* make_result_str(const char* str, size_t str_len) {
-	vary *result_vary = (vary*) malloc(str_len + 2);
+	vary *result_vary = (vary*) IbUtil::alloc(str_len + 2);
 	result_vary->vary_length = str_len;
 	memcpy(result_vary->vary_string, str, result_vary->vary_length);
 	return result_vary;
@@ -415,7 +416,7 @@ static SLONG* byteLen(const dsc* v)
 	if (!v || !v->dsc_address || (v->dsc_flags & DSC_null))
 		return 0;
 
-	SLONG& rc = *(SLONG*) malloc(sizeof(SLONG));
+	SLONG& rc = *(SLONG*) IbUtil::alloc(sizeof(SLONG));
 	switch (v->dsc_dtype)
 	{
 	case dtype_text:

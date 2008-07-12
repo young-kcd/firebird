@@ -61,14 +61,120 @@
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/blb.h"
 #include "../common/classes/auto.h"
+#include "../common/utils_proto.h"
+
+#ifndef WIN_NT
+#include <dlfcn.h>	// dladdr
+#endif
 
 using namespace Jrd;
 using namespace Firebird;
 
-typedef void* UDF_ARG;
 
-// Defined in extlib/ib_util.cpp
-extern "C" int ib_util_free(void* ptr);
+#ifndef BOOT_BUILD
+// ASF: This code should better be moved to make Config::getInstallDirectory() work in posix.
+// I leave it for another day because there is different config code for darwin and other posix
+// systems, but darwin is posix and there is no need to have two different implementation files for
+// them.
+namespace
+{
+	GlobalPtr<PathName> libUtilPath;
+
+	struct IbUtilStartup
+	{
+		IbUtilStartup()
+		{
+#ifdef WIN_NT
+			libUtilPath->assign("ib_util");
+#else
+			Dl_info info;
+			if (dladdr((void*) IbUtil::initialize, &info) != 0)
+			{
+				PathName temp1, temp2, temp3;
+
+				if (PathUtils::isRelative(info.dli_fname))
+				{
+					fb_utils::getCwd(temp2);
+					PathUtils::concatPath(temp1, temp2, info.dli_fname);
+				}
+				else
+					temp1 = info.dli_fname;
+
+				PathUtils::splitLastComponent(temp3, temp2, temp1);
+				PathUtils::concatPath(libUtilPath, temp3, "../lib/libib_util");
+			}
+			else
+				libUtilPath->assign("libib_util");
+#endif
+
+			ModuleLoader::doctorModuleExtention(libUtilPath);
+		}
+	} ibUtilStartup;
+}
+#endif
+
+
+void IbUtil::initialize()
+{
+#ifndef BOOT_BUILD
+#ifdef WIN_NT
+	Firebird::PathName path = "ib_util";
+#else
+	Firebird::PathName path = "libib_util";
+#endif
+
+	ModuleLoader::Module* module = ModuleLoader::loadModule(libUtilPath);
+
+	if (module)
+	{
+		void (*ibUtilUnit)(void* (*)(long));
+
+		if (module->findSymbol("ib_util_init", ibUtilUnit))
+			ibUtilUnit(alloc);
+		else
+			gds__log("ib_util_init not found in %s", libUtilPath->c_str());
+	}
+	else
+		gds__log("%s library has not been found", libUtilPath->c_str());
+#endif	// !BOOT_BUILD
+}
+
+void* IbUtil::alloc(long size)
+{
+	thread_db* tdbb = JRD_get_thread_data();
+
+	void* const ptr = tdbb->getDefaultPool()->allocate(size);
+
+	if (ptr)
+		tdbb->getAttachment()->att_udf_pointers.add(ptr);
+
+	return ptr;
+}
+
+bool IbUtil::free(void* ptr)
+{
+	if (!ptr)
+		return true;
+
+	thread_db* tdbb = JRD_get_thread_data();
+	Attachment* attachment = tdbb->getAttachment();
+	bool found = false;
+	size_t pos;
+
+	if (attachment->att_udf_pointers.find(ptr, pos))
+	{
+		attachment->att_udf_pointers.remove(pos);
+		found = true;
+	}
+
+	if (found)
+		tdbb->getDefaultPool()->deallocate(ptr);
+
+	return found;
+}
+
+
+typedef void* UDF_ARG;
 
 template <typename T>
 T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
@@ -532,7 +638,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	bool result_was_null = false;
 	
 	// Did the udf mismanage memory marked with FREE_IT,
-	//that should be deallocated by the engine?
+	// that should be deallocated by the engine?
 	bool freeItOk = true;
 	
 	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
@@ -923,7 +1029,7 @@ namespace {
 		static void clear(void* p)
 		{
 			if (p)
-				ib_util_free(p);
+				IbUtil::free(p);
 		}
 	};
 } // namespace
@@ -1127,11 +1233,12 @@ static void invoke(thread_db* tdbb,
 			{
 				//sentryData = 0;
 				if (temp_ptr)
-					freeItOk = ib_util_free(temp_ptr) && freeItOk;
+					freeItOk = IbUtil::free(temp_ptr) && freeItOk;
+
 				// CVC: Let's free the descriptor, too.
 				//sentryDsc = 0;
 				if (return_dsc)
-					freeItOk = ib_util_free(return_dsc) && freeItOk;
+					freeItOk = IbUtil::free(return_dsc) && freeItOk;
 			}
 		}
 		else

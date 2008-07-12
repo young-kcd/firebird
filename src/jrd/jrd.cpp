@@ -157,6 +157,7 @@ namespace
 	public:
 		static void init()
 		{
+			IbUtil::initialize();
 			IntlManager::initialize();
 			PluginManager::load_engine_plugins();
 		}
@@ -5002,7 +5003,8 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_network_protocol(*pool),
 	att_remote_address(*pool),
 	att_remote_process(*pool),
-	att_dsql_cache(*pool)
+	att_dsql_cache(*pool),
+	att_udf_pointers(*pool)
 {
 	att_mutex.enter();
 }

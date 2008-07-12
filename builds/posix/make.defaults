@@ -270,7 +270,7 @@ LIB_LINK_OPTIONS = $(LDFLAGS) $(THR_FLAGS) -shared
 LIB_LINK_RPATH = -Wl,-rpath,
 LIB_LINK_SONAME = -Wl,-soname,
 LIB_LINK_MAPFILE= -Wl,--version-script,
-FBEMBED_LINK= -L$(LIB) -lfbembed -lib_util
+FBEMBED_LINK= -L$(LIB) -lfbembed
 
 FB_SUPER_SERVER	= $(BIN)/fbserver$(EXEC_EXT)
 FB_CLASSIC_SERVER = $(BIN)/fb_inet_server$(EXEC_EXT)

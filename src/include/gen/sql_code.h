@@ -634,6 +634,7 @@ static const struct {
 	{335544931,    0}, /* 611 montabexh */
 	{335544932, -172}, /* 612 modnotfound */
 	{335544933, -901}, /* 613 nothing_to_cancel */
+	{335544934, -901}, /* 614 ibutil_not_loaded */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

@@ -334,8 +334,7 @@ LIBFBSTATIC_Objects = $(OS_SPECIFIC_Objects) \
                 $(GPRELIB_Objects) \
 				$(FBCONFIG_Objects) \
 				$(CLUMPLETS_Objects) \
-				$(UTIL_Objects) \
-				$(IBUTIL_Objects)
+				$(UTIL_Objects)
 
 
 # Not needed since loaded into libfbmemory.a already

@@ -27,5 +27,5 @@
 
 
 +e ib_util_malloc
-+e ib_util_free
++e ib_util_init
 

@@ -1278,6 +1278,8 @@ C --
       PARAMETER (GDS__modnotfound                      = 335544932)
       INTEGER*4 GDS__nothing_to_cancel               
       PARAMETER (GDS__nothing_to_cancel                = 335544933)
+      INTEGER*4 GDS__ibutil_not_loaded               
+      PARAMETER (GDS__ibutil_not_loaded                = 335544934)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

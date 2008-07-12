@@ -22,5 +22,5 @@
 #   Adriano dos Santos Fernandes
 	
 	_ib_util_malloc
-	_ib_util_free
+	_ib_util_init
 

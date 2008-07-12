@@ -49,16 +49,8 @@ UTIL_Files = ib_util.cpp
 UTIL_Sources = $(addprefix extlib/, $(UTIL_Files))
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Sources))))
 
-COMMON_Files = fb_exception.cpp
-COMMON_Sources = $(addprefix common/, $(COMMON_Files))
-COMMON_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(COMMON_Sources))))
 
-CLASSES_Files = alloc.cpp init.cpp locks.cpp
-CLASSES_Sources = $(addprefix common/classes/, $(CLASSES_Files))
-CLASSES_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(CLASSES_Sources))))
-
-
-AllObjects = $(UDF_Objects) $(UTIL_Objects) $(COMMON_Objects) $(CLASSES_Objects) $(FBUDF_Objects)
+AllObjects = $(UDF_Objects) $(UTIL_Objects) $(FBUDF_Objects)
 Dependencies = $(AllObjects:.o=.d)
 
 

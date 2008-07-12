@@ -28,7 +28,7 @@
 {
 global:
 	ib_util_malloc;
-	ib_util_free;
+	ib_util_init;
 
 local:
 	*;

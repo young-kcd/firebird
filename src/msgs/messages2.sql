@@ -713,6 +713,7 @@ COMMIT WORK;
 ('montabexh', 'acquire', 'DatabaseSnapshot.cpp', NULL, 0, 611, NULL, 'Monitoring table space exhausted', NULL, NULL)
 ('modnotfound', 'par_function', 'par.cpp', NULL, 0, 612, NULL, 'module name or entrypoint could not be found', NULL, NULL)
 ('nothing_to_cancel', 'FB_CANCEL_OPERATION', 'why.cpp', NULL, 0, 613, NULL, 'nothing to cancel', NULL, NULL)
+('ibutil_not_loaded', NULL, NULL, NULL, 0, 614, NULL, 'ib_util library has not been loaded to deallocate memory returned by FREE_IT function', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

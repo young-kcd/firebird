@@ -635,6 +635,7 @@ static const struct {
 	{"montabexh", 335544931},
 	{"modnotfound", 335544932},
 	{"nothing_to_cancel", 335544933},
+	{"ibutil_not_loaded", 335544934},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
