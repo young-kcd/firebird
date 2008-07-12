@@ -787,10 +787,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\cvt.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cvt2_proto.h"
 				>
 			</File>

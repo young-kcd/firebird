@@ -107,7 +107,7 @@ StatusVector& StatusVector::operator<<(const Base& arg) throw()
 
 StatusVector& StatusVector::operator<<(const Warning& arg) throw()
 {
-	int cur = m_warning ? 0 : m_length;
+	const int cur = m_warning ? 0 : m_length;
 	operator<<(*static_cast<const Base*>(&arg));
 	if (cur && m_status_vector[cur] == isc_arg_warning)
 		m_warning = cur;

@@ -132,6 +132,13 @@ enum EXPECT_DATETIME {
 };
 
 
+static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err)
+static CharSet* getToCharset(CHARSET_ID charset2)
+static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err)
+static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err)
+static CHARSET_ID getChid(const dsc* to)
+static SLONG getCurDate()
+static void isVersion4(bool& v4)
 static const double eps_double = 1e-14;
 static const double eps_float  = 1e-5;
 
@@ -465,7 +472,7 @@ static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, Error
 }
 
 
-static void validateLength(CharSet* toCharSet, SLONG toLength, UCHAR* start, const USHORT to_size, ErrorFunction err)
+static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err)
 {
 	if (toCharSet)
 	{

@@ -87,7 +87,7 @@ using namespace Firebird;
 /* It turns out to be tricky to write the INT64 versions of those constant in
    a way that will do the right thing on all platforms.  Here we go. */
 
-#define LONG_MAX_int64 ((SINT64)2147483647)	/* max int64 value of an SLONG */
+#define LONG_MAX_int64 ((SINT64) 2147483647)	/* max int64 value of an SLONG */
 #define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
 
 #define QUAD_MIN_real   -9223372036854775808.	/* min decimal value of quad */
@@ -116,19 +116,17 @@ using namespace Firebird;
  */
 #define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
-#define NUMERIC_LIMIT   (INT64_LIMIT)
 
 #define TODAY           "TODAY"
 #define NOW             "NOW"
 #define TOMORROW        "TOMORROW"
 #define YESTERDAY       "YESTERDAY"
 
-#define CVT_FAILURE_SPACE       128
-
 #define CVT_COPY_BUFF(from, to, len) \
 {if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
 
-enum EXPECT_DATETIME {
+enum EXPECT_DATETIME
+{
 	expect_timestamp,
 	expect_sql_date,
 	expect_sql_time
@@ -139,6 +137,16 @@ static void float_to_text(const dsc*, dsc*, Callbacks*);
 static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME, ErrorFunction);
 static SINT64 hex_to_value(const char*& string, const char* end);
+
+
+static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err);
+static Jrd::CharSet* getToCharset(CHARSET_ID charset2);
+static void validateData(Jrd::CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err);
+static void validateLength(Jrd::CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
+static CHARSET_ID getChid(const dsc* to);
+static SLONG getCurDate();
+static void isVersion4(bool& v4);
+
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
@@ -1384,7 +1392,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			} // end scope
 
 			const USHORT to_size = TEXT_LEN(to);
-			UCHAR* start = to->dsc_address;
+			const UCHAR* start = to->dsc_address;
 			UCHAR fill_char = ASCII_SPACE;
 			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
 			USHORT toLength;
@@ -1542,12 +1550,12 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case DEFAULT_DOUBLE:
-	#ifdef HPUX
+#ifdef HPUX
 		const double d_value = CVT_get_double(from, cb->err);
 		memcpy(p, &d_value, sizeof(double));
-	#else
+#else
 		*(double*) p = CVT_get_double(from, cb->err);
-	#endif
+#endif
 		return;
 	}
 
@@ -2445,7 +2453,7 @@ static void validateData(Jrd::CharSet*, SLONG, const UCHAR*, ErrorFunction)
 }
 
 
-static void validateLength(Jrd::CharSet*, SLONG, UCHAR*, const USHORT, ErrorFunction)
+static void validateLength(Jrd::CharSet*, SLONG, const UCHAR*, const USHORT, ErrorFunction)
 {
 }
 
