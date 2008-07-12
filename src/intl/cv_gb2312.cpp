@@ -35,13 +35,16 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 							 USHORT* err_code,
 							 ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVGB_gb2312_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
@@ -85,8 +88,8 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 		}
 
 		/* Convert from GB2312 to UNICODE */
-		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256]
+		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256]
 			 + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -114,13 +117,16 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 							 USHORT* err_code, 
 							 ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_unicode_str != NULL || gb_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVGB_unicode_to_gb2312);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -137,8 +143,8 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		/* Convert from UNICODE to GB2312 code */
 		const USHORT wide = *unicode_str++;
 
-		const USHORT gb_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+		const USHORT gb_ch = ((const USHORT*) impl->csconvert_datatable)
+				[((const USHORT*) impl->csconvert_misc)
 					[(USHORT)wide / 256]
 				 + (wide % 256)];
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {

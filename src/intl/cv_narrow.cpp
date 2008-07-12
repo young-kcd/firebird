@@ -39,8 +39,8 @@ void CV_convert_init(csconvert* csptr,
 	csptr->csconvert_fn_convert = cvt_fn;
 	csptr->csconvert_fn_destroy = CV_convert_destroy;
 	csptr->csconvert_impl = new CsConvertImpl();
-	csptr->csconvert_impl->csconvert_datatable = (const BYTE*) datatable;
-	csptr->csconvert_impl->csconvert_misc = (const BYTE*) datatable2;
+	static_cast<CsConvertImpl*>(csptr->csconvert_impl)->csconvert_datatable = (const BYTE*) datatable;
+	static_cast<CsConvertImpl*>(csptr->csconvert_impl)->csconvert_misc = (const BYTE*) datatable2;
 }
 
 
@@ -52,13 +52,16 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 					   USHORT *err_code,
 					   ULONG *err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CV_unicode_to_nc);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
@@ -70,10 +73,8 @@ ULONG CV_unicode_to_nc(csconvert* obj,
 	const BYTE* const start = dest_ptr;
 	while ((src_len > 1) && dest_len) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
-		const UCHAR ch = obj->csconvert_impl->csconvert_datatable[
-									  ((const USHORT*) obj->csconvert_impl->
-									   csconvert_misc)[(USHORT) uni / 256]
-									  + (uni % 256)];
+		const UCHAR ch = impl->csconvert_datatable[
+			((const USHORT*) impl->csconvert_misc)[(USHORT) uni / 256] + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -102,13 +103,16 @@ ULONG CV_wc_to_wc(csconvert* obj,
 				  USHORT *err_code,
 				  ULONG *err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CV_wc_to_wc);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
@@ -125,9 +129,8 @@ ULONG CV_wc_to_wc(csconvert* obj,
 	const USHORT* const start = dest_ptr;
 	while ((src_len > 1) && (dest_len > 1)) {
 		const UNICODE uni = *((const UNICODE*) src_ptr);
-		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)[
-			((const USHORT*) obj->csconvert_impl->csconvert_misc)[
-				(USHORT) uni / 256] + (uni % 256)];
+		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)[
+			((const USHORT*) impl->csconvert_misc)[(USHORT) uni / 256] + (uni % 256)];
 		if ((ch == CS_CANT_MAP) && !(uni == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -156,12 +159,15 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 					   USHORT* err_code,
 					   ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CV_nc_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
 	fb_assert(sizeof(UNICODE) == 2);
 
 	const ULONG src_start = src_len;
@@ -173,7 +179,7 @@ ULONG CV_nc_to_unicode(csconvert* obj,
 
 	const BYTE* const start = dest_ptr;
 	while (src_len && (dest_len > 1)) {
-		const UNICODE ch = ((const UNICODE*) (obj->csconvert_impl->csconvert_datatable))[*src_ptr];
+		const UNICODE ch = ((const UNICODE*) (impl->csconvert_datatable))[*src_ptr];
 		/* No need to check for CS_CONVERT_ERROR, all charsets
 		 * must convert to unicode.
 		 */
@@ -239,12 +245,15 @@ ULONG eight_bit_convert(csconvert* obj,
 						USHORT *err_code,
 						ULONG *err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == eight_bit_convert);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
@@ -255,7 +264,7 @@ ULONG eight_bit_convert(csconvert* obj,
 
 	const BYTE* const start = dest_ptr;
 	while (src_len && dest_len) {
-		const UCHAR ch = obj->csconvert_impl->csconvert_datatable[*src_ptr];
+		const UCHAR ch = impl->csconvert_datatable[*src_ptr];
 		if ((ch == CS_CANT_MAP) && (*src_ptr != CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;

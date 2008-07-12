@@ -45,19 +45,6 @@ typedef SCHAR ASCII;
 
 typedef USHORT INTL_BOOL;
 
-#ifdef __cplusplus
-namespace {
-#endif
-
-/* Forward declarations to be implemented in collation driver */
-struct TextTypeImpl;
-struct CharSetImpl;
-struct CsConvertImpl;
-
-#ifdef __cplusplus
-}
-#endif
-
 struct texttype; /* forward decl for the fc signatures before the struct itself. */
 struct csconvert;
 struct charset;
@@ -150,7 +137,7 @@ typedef void (*pfn_INTL_tt_destroy) (
 struct texttype {
 	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
-	TextTypeImpl* texttype_impl;   /* collation object implemented in driver */
+	void* texttype_impl;   /* collation object implemented in driver */
 
     /* Used only for debugging purposes. Should contain string in form 
       <charset>.<collation>. For example "WIN1251.PXW_CYRL"
@@ -225,7 +212,7 @@ typedef void (*pfn_INTL_cv_destroy) (
 
 struct csconvert {
 	USHORT csconvert_version;
-	CsConvertImpl* csconvert_impl;
+	void* csconvert_impl;
 
     /* Used only for debugging purposes. Should contain string in form 
       <source_charset>-><destination_charset>. For example "WIN1251->DOS866"
@@ -298,7 +285,7 @@ typedef void (*pfn_INTL_cs_destroy) (
 struct charset
 {
 	USHORT charset_version;
-	CharSetImpl* charset_impl;
+	void* charset_impl;
 	const ASCII* charset_name;
 	BYTE charset_min_bytes_per_char;
 	BYTE charset_max_bytes_per_char;

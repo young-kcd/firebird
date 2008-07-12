@@ -42,7 +42,8 @@ namespace
 
 static UConverter* create_converter(csconvert* cv, UErrorCode* status)
 {
-	UConverter* conv = ucnv_open(cv->csconvert_impl->cs->charset_name, status);
+	UConverter* conv = ucnv_open(
+		static_cast<CsConvertImpl*>(cv->csconvert_impl)->cs->charset_name, status);
 	const void* oldContext;
 
 	UConverterFromUCallback oldFromAction;
@@ -71,7 +72,7 @@ static UConverter* create_converter(csconvert* cv, UErrorCode* status)
 
 static void convert_destroy(csconvert* cv)
 {
-	delete cv->csconvert_impl;
+	delete static_cast<CsConvertImpl*>(cv->csconvert_impl);
 }
 
 
@@ -87,7 +88,10 @@ static ULONG unicode_to_icu(csconvert* cv,
 	*errPosition = 0;
 
 	if (dst == NULL)
-		return srcLen / sizeof(UChar) * cv->csconvert_impl->cs->charset_max_bytes_per_char;
+	{
+		return srcLen / sizeof(UChar) *
+			static_cast<CsConvertImpl*>(cv->csconvert_impl)->cs->charset_max_bytes_per_char;
+	}
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
@@ -131,7 +135,10 @@ static ULONG icu_to_unicode(csconvert* cv,
 	*errPosition = 0;
 
 	if (dst == NULL)
-		return srcLen / cv->csconvert_impl->cs->charset_min_bytes_per_char * sizeof(UChar);
+	{
+		return srcLen / static_cast<CsConvertImpl*>(cv->csconvert_impl)->cs->charset_min_bytes_per_char *
+			sizeof(UChar);
+	}
 
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
@@ -169,12 +176,12 @@ void CVICU_convert_init(charset* cs)
 	cs->charset_to_unicode.csconvert_fn_convert = icu_to_unicode;
 	cs->charset_to_unicode.csconvert_fn_destroy = convert_destroy;
 	cs->charset_to_unicode.csconvert_impl = new CsConvertImpl();
-	cs->charset_to_unicode.csconvert_impl->cs = cs;
+	static_cast<CsConvertImpl*>(cs->charset_to_unicode.csconvert_impl)->cs = cs;
 
 	cs->charset_from_unicode.csconvert_version = CSCONVERT_VERSION_1;
 	cs->charset_from_unicode.csconvert_name = "UNICODE->ICU";
 	cs->charset_from_unicode.csconvert_fn_convert = unicode_to_icu;
 	cs->charset_from_unicode.csconvert_fn_destroy = convert_destroy;
 	cs->charset_from_unicode.csconvert_impl = new CsConvertImpl();
-	cs->charset_from_unicode.csconvert_impl->cs = cs;
+	static_cast<CsConvertImpl*>(cs->charset_from_unicode.csconvert_impl)->cs = cs;
 }

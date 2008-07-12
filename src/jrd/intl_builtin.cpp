@@ -59,7 +59,7 @@ static inline bool FAMILY_INTERNAL(texttype* tt,
 	tt->texttype_fn_str_to_lower	= internal_str_to_lower;
 	tt->texttype_fn_destroy			= internal_destroy;
 	tt->texttype_impl				= new TextTypeImpl;
-	tt->texttype_impl->texttype_pad_char = ' ';
+	static_cast<TextTypeImpl*>(tt->texttype_impl)->texttype_pad_char = ' ';
 
 	return true;
 }
@@ -471,7 +471,7 @@ static USHORT internal_string_to_key(
  *
  **************************************/
 	const UCHAR* const pStart = dest;
-	const UCHAR pad_char = obj->texttype_impl->texttype_pad_char;
+	const UCHAR pad_char = static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_pad_char;
 	while (inLen-- && outLen--)
 		*dest++ = *src++;
 
@@ -502,7 +502,7 @@ static SSHORT internal_compare(
  * Functional description
  *
  **************************************/
-	const UCHAR pad = obj->texttype_impl->texttype_pad_char;
+	const UCHAR pad = static_cast<TextTypeImpl*>(obj->texttype_impl)->texttype_pad_char;
 	SLONG fill = length1 - length2;
 	if (length1 >= length2) {
 		if (length2)
@@ -606,7 +606,7 @@ static void internal_destroy(texttype* obj)
  * Functional description
  *
  **************************************/
-	delete obj->texttype_impl;
+	delete static_cast<TextTypeImpl*>(obj->texttype_impl);
 }
 
 
@@ -1017,7 +1017,7 @@ static INTL_BOOL ttype_binary_init(texttype* tt, const ASCII* texttype_name, con
 	{
 		tt->texttype_fn_str_to_upper = internal_str_copy;
 		tt->texttype_fn_str_to_lower = internal_str_copy;
-		tt->texttype_impl->texttype_pad_char = '\0';
+		static_cast<TextTypeImpl*>(tt->texttype_impl)->texttype_pad_char = '\0';
 		return true;
 	}
 

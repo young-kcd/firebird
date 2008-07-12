@@ -48,7 +48,7 @@ struct TextTypeImpl
 
 static void famasc_destroy(texttype* obj)
 {
-	TextTypeImpl* impl = obj->texttype_impl;
+	TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
 
 	if (impl)
 	{
@@ -65,8 +65,9 @@ static ULONG famasc_str_to_lower(texttype* obj, ULONG iLen, const BYTE* pStr, UL
 {
 	try
 	{
-		return Firebird::IntlUtil::toLower(obj->texttype_impl->charSet, iLen, pStr, iOutLen, pOutStr,
-			obj->texttype_impl->lower_exceptions);
+		TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
+		return Firebird::IntlUtil::toLower(impl->charSet, iLen, pStr, iOutLen, pOutStr,
+			impl->lower_exceptions);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -79,8 +80,9 @@ static ULONG famasc_str_to_upper(texttype* obj, ULONG iLen, const BYTE* pStr, UL
 {
 	try
 	{
-		return Firebird::IntlUtil::toUpper(obj->texttype_impl->charSet, iLen, pStr, iOutLen, pOutStr,
-			obj->texttype_impl->upper_exceptions);
+		TextTypeImpl* impl = static_cast<TextTypeImpl*>(obj->texttype_impl);
+		return Firebird::IntlUtil::toUpper(impl->charSet, iLen, pStr, iOutLen, pOutStr,
+			impl->upper_exceptions);
 	}
 	catch (const Firebird::Exception&)
 	{

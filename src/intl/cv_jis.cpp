@@ -37,13 +37,16 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 							USHORT* err_code,
 							ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_eucj_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = src_len;
 	*err_code = 0;
@@ -82,8 +85,8 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 			this_len = 2;
 
 			/* Step 2: Convert from JIS to UNICODE */
-			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+			ch = ((const USHORT*) impl->csconvert_datatable)
+				[((const USHORT*) impl->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		}
@@ -135,13 +138,16 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 							USHORT* err_code,
 							ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(sjis_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_sjis_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = sjis_len;
 	*err_code = 0;
@@ -202,8 +208,8 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 		/* Step 2: Convert from JIS code (in wide) to UNICODE */
 		USHORT ch;
 		if (table == 1)
-			ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+			ch = ((const USHORT*) impl->csconvert_datatable)
+				[((const USHORT*) impl->csconvert_misc)
 					[(USHORT)wide /	256]
 				 + (wide % 256)];
 		else {
@@ -393,13 +399,16 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 							USHORT* err_code,
 							ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_unicode_str != NULL || sjis_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_unicode_to_sjis);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -416,8 +425,8 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 		/* Step 1: Convert from UNICODE to JIS code */
 		const USHORT wide = *unicode_str++;
 
-		USHORT jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		USHORT jis_ch = ((const USHORT*) impl->csconvert_datatable)
+			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 
@@ -471,13 +480,16 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 							ULONG eucj_len, UCHAR* eucj_str,
 							USHORT* err_code, ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_unicode_str != NULL || eucj_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVJIS_unicode_to_eucj);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -499,8 +511,8 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 		if (wide <= 0x007F)
 			jis_ch = wide;
 		else
-			jis_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-					[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+			jis_ch = ((const USHORT*) impl->csconvert_datatable)
+					[((const USHORT*) impl->csconvert_misc)
 						[(USHORT)wide /	256]
 					 + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {

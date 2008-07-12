@@ -41,13 +41,16 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 						   USHORT* err_code,
 						   ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(ksc_str != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVKSC_ksc_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = ksc_len;
 	*err_code = 0;
@@ -88,8 +91,8 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 			this_len = 1;
 		}
 
-		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256] +
+		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] +
 			 (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
@@ -116,13 +119,16 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 						   USHORT* err_code,
 						   ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_unicode_str != NULL || ksc_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVKSC_unicode_to_ksc);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -137,8 +143,8 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 	while (ksc_len && unicode_len > 1) {
 		const USHORT wide = *unicode_str++;
 
-		const USHORT ksc_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-				[((const USHORT*) obj->csconvert_impl->csconvert_misc)
+		const USHORT ksc_ch = ((const USHORT*) impl->csconvert_datatable)
+				[((const USHORT*) impl->csconvert_misc)
 					[wide /	256] + (wide % 256)];
 		if ((ksc_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;

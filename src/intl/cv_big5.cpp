@@ -35,13 +35,16 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 							 USHORT* err_code,
 							 ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(src_ptr != NULL || p_dest_ptr == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVBIG5_big5_to_unicode);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
     const ULONG src_start = src_len;
 	*err_code = 0;
@@ -85,8 +88,8 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 		}
 
 		/* Convert from BIG5 to UNICODE */
-		const USHORT ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
+		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -113,13 +116,16 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 							 USHORT* err_code,
 							 ULONG* err_position)
 {
+	fb_assert(obj != NULL);
+
+	CsConvertImpl* impl = static_cast<CsConvertImpl*>(obj->csconvert_impl);
+
 	fb_assert(p_unicode_str != NULL || big5_str == NULL);
 	fb_assert(err_code != NULL);
 	fb_assert(err_position != NULL);
-	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CVBIG5_unicode_to_big5);
-	fb_assert(obj->csconvert_impl->csconvert_datatable != NULL);
-	fb_assert(obj->csconvert_impl->csconvert_misc != NULL);
+	fb_assert(impl->csconvert_datatable != NULL);
+	fb_assert(impl->csconvert_misc != NULL);
 
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
@@ -136,8 +142,8 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		/* Convert from UNICODE to BIG5 code */
 		const USHORT wide = *unicode_str++;
 
-		const USHORT big5_ch = ((const USHORT*) obj->csconvert_impl->csconvert_datatable)
-			[((const USHORT*) obj->csconvert_impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+		const USHORT big5_ch = ((const USHORT*) impl->csconvert_datatable)
+			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 		if ((big5_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;

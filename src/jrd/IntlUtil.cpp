@@ -649,14 +649,14 @@ bool IntlUtil::readAttributeChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR*
 static void unicodeDestroy(texttype* tt)
 {
 	delete [] const_cast<ASCII*>(tt->texttype_name);
-	delete tt->texttype_impl;
+	delete static_cast<TextTypeImpl*>(tt->texttype_impl);
 }
 
 
 static USHORT unicodeKeyLength(texttype* tt, USHORT len)
 {
-	return tt->texttype_impl->collation->keyLength(
-		len / tt->texttype_impl->cs->charset_max_bytes_per_char * 4);
+	return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->keyLength(
+		len / static_cast<TextTypeImpl*>(tt->texttype_impl)->cs->charset_max_bytes_per_char * 4);
 }
 
 
@@ -665,7 +665,7 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 {
 	try
 	{
-		charset* cs = tt->texttype_impl->cs;
+		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -690,7 +690,7 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 			&errorCode,
 			&offendingPos);
 
-		return tt->texttype_impl->collation->stringToKey(
+		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->stringToKey(
 			utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
 	}
 	catch (BadAlloc)
@@ -708,7 +708,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 	{
 		*errorFlag = false;
 
-		charset* cs = tt->texttype_impl->cs;
+		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
@@ -753,7 +753,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 			&errorCode,
 			&offendingPos);
 
-		return tt->texttype_impl->collation->compare(
+		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->compare(
 			utf16Len1, (USHORT*)utf16Str1.begin(),
 			utf16Len2, (USHORT*)utf16Str2.begin(), errorFlag);
 	}
@@ -769,7 +769,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 {
 	try
 	{
-		charset* cs = tt->texttype_impl->cs;
+		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -794,7 +794,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 			&errorCode,
 			&offendingPos);
 
-		return tt->texttype_impl->collation->canonical(
+		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->canonical(
 			utf16Len, Firebird::Aligner<USHORT>(utf16Str.begin(), utf16Len),
 			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), NULL);
 	}
