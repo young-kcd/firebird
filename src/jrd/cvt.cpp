@@ -59,18 +59,6 @@
 
 #include "../jrd/intl_classes.h"
 
-#ifdef sun
-#define DBL_MAX_10_EXP          308
-#endif
-
-#ifdef SCO_UNIX
-#define DBL_MAX_10_EXP          308
-#endif
-
-#ifndef DBL_MAX_10_EXP
-#include <float.h>
-#endif
-
 /* ERR_post is used to flag whether we were called from mov.cpp or
    anywhere else CVT is used from (by comparing with param err) */
 
@@ -83,31 +71,13 @@
    So, instead of some including <limits.h> and others using these
    definitions, just always use these definitions (huh?) */
 
-#define LONG_MIN_real   -2147483648.	/* min decimal value of an "SLONG" */
-#define LONG_MAX_real   2147483647.	/* max decimal value of an "SLONG" */
-#define LONG_MIN_int    -2147483648	/* min integer value of an "SLONG" */
-#define LONG_MAX_int    2147483647	/* max integer value of an "SLONG" */
-
 /* It turns out to be tricky to write the INT64 versions of those constant in
    a way that will do the right thing on all platforms.  Here we go. */
 
-#define LONG_MAX_int64 ((SINT64)2147483647)	/* max int64 value of an SLONG */
+#define LONG_MAX_int64 ((SINT64) 2147483647)	/* max int64 value of an SLONG */
 #define LONG_MIN_int64 (-LONG_MAX_int64 - 1)	/* min int64 value of an SLONG */
 
-#define FLOAT_MAX       3.4e38	/* max float (32 bit) value  */
-
-#define LETTER7(c)      ((c) >= 'A' && (c) <= 'Z')
 #define DIGIT(c)        ((c) >= '0' && (c) <= '9')
-#define ABSOLUT(x)      ((x) < 0 ? -(x) : (x))
-
-/* The expressions for SHORT_LIMIT, LONG_LIMIT, INT64_LIMIT and
- * QUAD_LIMIT return the largest value that permit you to multiply by
- * 10 without getting an overflow.  The right operand of the << is two
- * less than the number of bits in the type: one bit is for the sign,
- * and the other is because we divide by 5, rather than 10.  */
-
-#define SHORT_LIMIT     ((1 << 14) / 5)
-#define LONG_LIMIT      ((1L << 30) / 5)
 
 /* NOTE: The syntax for the below line may need modification to ensure
  *	 the result of 1 << 62 is a quad
@@ -115,35 +85,18 @@
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 #define NUMERIC_LIMIT   (INT64_LIMIT)
 
-#define TODAY           "TODAY"
-#define NOW             "NOW"
-#define TOMORROW        "TOMORROW"
-#define YESTERDAY       "YESTERDAY"
-
-#define CVT_FAILURE_SPACE       128
-
-#define CVT_COPY_BUFF(from, to, len) \
-{if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
-
-enum EXPECT_DATETIME {
-	expect_timestamp,
-	expect_sql_date,
-	expect_sql_time
-};
-
-
-static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err)
-static CharSet* getToCharset(CHARSET_ID charset2)
-static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err)
-static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err)
-static CHARSET_ID getChid(const dsc* to)
-static SLONG getCurDate()
-static void isVersion4(bool& v4)
-static const double eps_double = 1e-14;
-static const double eps_float  = 1e-5;
-
 using namespace Jrd;
 using namespace Firebird;
+
+
+static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err);
+static CharSet* getToCharset(CHARSET_ID charset2);
+static void validateData(CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err);
+static void validateLength(CharSet* toCharSet, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
+static CHARSET_ID getChid(const dsc* to);
+static SLONG getCurDate();
+static void isVersion4(bool& v4);
+
 
 double CVT_date_to_double(const dsc* desc)
 {

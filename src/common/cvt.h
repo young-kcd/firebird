@@ -44,7 +44,7 @@ struct Callbacks
 	ErrorFunction err;
 	Jrd::CharSet* (*getToCharset)(CHARSET_ID charset2);
 	void (*validateData)(Jrd::CharSet* toCharset, SLONG length, const UCHAR* q, ErrorFunction err);
-	void (*validateLength)(Jrd::CharSet* toCharset, SLONG toLength, UCHAR* start, const USHORT to_size, ErrorFunction err);
+	void (*validateLength)(Jrd::CharSet* toCharset, SLONG toLength, const UCHAR* start, const USHORT to_size, ErrorFunction err);
 	SLONG (*getCurDate)();
 	void (*isVersion4)(bool& v4);
 };
