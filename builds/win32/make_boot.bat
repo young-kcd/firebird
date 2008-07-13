@@ -68,7 +68,6 @@ if "%ERRLEV%"=="1" goto :END
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\gpre_embed.exe %FB_GEN_DIR% > nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\isql_embed.exe %FB_GEN_DIR% > nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\fbembed.dll %FB_GEN_DIR% > nul
-@copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\bin\ib_util.dll %FB_GEN_DIR% > nul
 
 for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_GEN_DIR% >nul 2>&1
