@@ -554,7 +554,8 @@
 	jrd/license.h (1.30.2.2), jrd/pag.cpp (1.37.2.10), jrd/unix.cpp
 	(1.25.2.3), remote/inet.cpp (1.70.2.10), remote/inet_server.cpp
 	(1.26.2.5), remote/remote_def.h (1.23.2.1), remote/xdr.cpp
-	(1.9.2.6), utilities/rebuild.cpp (1.8.2.1):
+	(1.9.2.6), utilities/rebuild.cpp (1.8.2.1), v5_examples/align.h
+	(1.6.2.1):
 
 	Make HPUX consistent across the source
 
@@ -2410,7 +2411,7 @@
 2004-09-18 07:32  skidder
 
 	* firebird2/src/: jrd/evl.cpp (1.34.2.7), lock/print.cpp
-	(1.19.2.2):
+	(1.19.2.2), wal/walw.cpp (1.20.2.2):
 
 	Backport fix for the broken CURRENT_TIMESTAMP issue on 64-bit
 	platforms
@@ -2457,7 +2458,9 @@
 	src/jrd/jrd.h (1.42.2.5), src/jrd/vmsevent.cpp (1.5.2.1),
 	src/qli/meta.epp (1.17.2.2), src/remote/inet_server.cpp (1.26.2.1),
 	src/remote/server_stub.cpp (1.1.2.1),
-	src/remote/os/sun/server_main_dummy.cpp (1.2.2.1):
+	src/remote/os/sun/server_main_dummy.cpp (1.2.2.1), src/wal/wal.cpp
+	(1.16.2.1), src/wal/wal.h (1.6.2.1), src/wal/walc.cpp (1.14.2.1),
+	src/wal/walw.cpp (1.20.2.1), src/wal/wstatus.cpp (1.6.2.1):
 
 	Support GCC 3.4 build, backport version script at the same time
 	because we want to allow linking of C++ programs with Firebird and
@@ -3780,6 +3783,13 @@
 
 	Rolled back one of the previous bugfixes diue to unpredicted
 	behaviour.
+
+2004-01-28 16:32  hvlad
+
+	* firebird2/src/v5_examples/: empbld.sql (1.4.2.1), empbuild.e
+	(1.3.2.1), empddl.sql (1.5.2.1), intlbld.e (1.2.2.1):
+
+	Restore examples build. Thanks to Helen Borrie and Paul Beach
 
 2004-01-28 10:28  dimitr
 
@@ -7076,6 +7086,19 @@
 
 	-Remove unneeded messages -Replace cat (unix) with type (win)
 
+2003-07-04 20:48  brodsom
+
+	* firebird2/src/v5_examples/: empbuild.c (1.12), empbuild.e (1.3):
+
+	-Add check for input files -Solve format warnings -Update
+	empbuild.c
+
+2003-07-04 20:46  brodsom
+
+	* firebird2/src/v5_examples/empddl.sql (1.5):
+
+	Change DATE to TIMESTAMP
+
 2003-07-04 18:45  brodsom
 
 	* firebird2/src/gpre/sql.cpp (1.14):
@@ -8957,7 +8980,19 @@
 	utilities/dba_full.epp (1.16), utilities/drop.cpp (1.19),
 	utilities/gsec.cpp (1.16), utilities/gsec.h (1.5),
 	utilities/print_pool.cpp (1.4), utilities/sbc_print.cpp (1.8),
-	utilities/security.epp (1.20), utilities/srvrmgr.cpp (1.13):
+	utilities/security.epp (1.20), utilities/srvrmgr.cpp (1.13),
+	v5_examples/api1.c (1.5), v5_examples/api10.c (1.5),
+	v5_examples/api11.c (1.5), v5_examples/api12.c (1.5),
+	v5_examples/api13.c (1.5), v5_examples/api14.e (1.3),
+	v5_examples/api15.c (1.5), v5_examples/api16.c (1.6),
+	v5_examples/api16t.c (1.5), v5_examples/api2.c (1.5),
+	v5_examples/api3.c (1.5), v5_examples/api4.c (1.5),
+	v5_examples/api5.c (1.5), v5_examples/api6.c (1.5),
+	v5_examples/api7.c (1.5), v5_examples/api8.c (1.5),
+	v5_examples/api9.c (1.5), v5_examples/apifull.c (1.6),
+	v5_examples/empbuild.c (1.11), v5_examples/winevent.c (1.8),
+	wal/driver.cpp (1.10), wal/wal.cpp (1.16), wal/wal_prnt.cpp (1.10),
+	wal/walc.cpp (1.14), wal/walw.cpp (1.20):
 
 	Introduce of ISC_STATUS_ARRAY
 
@@ -9126,13 +9161,24 @@
 
 	STATUS -> ISC_STATUS. Finalize
 
+2003-04-10 12:42  aafemt
+
+	* firebird2/src/wal/: driver.cpp (1.9), wal.cpp (1.15),
+	wal_prnt.cpp (1.9), wal_proto.h (1.4), walc.cpp (1.13),
+	walc_proto.h (1.2), walf.cpp (1.6), walf_proto.h (1.2), walr.cpp
+	(1.6), walr_proto.h (1.2), walw.cpp (1.19), walw_proto.h (1.2):
+
+	STATUS -> ISC_STATUS
+
 2003-04-10 12:38  aafemt
 
-	* firebird2/src/utilities/: cache.cpp (1.6), cmd_util.cpp (1.6),
-	cmd_util_proto.h (1.3), dba.epp (1.25), dba_full.epp (1.15),
-	drop.cpp (1.18), gsec.cpp (1.15), gsec.h (1.4), sbc_print.cpp
-	(1.7), secur_proto.h (1.4), security.epp (1.19), srvrmgr.cpp
-	(1.12):
+	* firebird2/src/: utilities/cache.cpp (1.6), utilities/cmd_util.cpp
+	(1.6), utilities/cmd_util_proto.h (1.3), utilities/dba.epp (1.25),
+	utilities/dba_full.epp (1.15), utilities/drop.cpp (1.18),
+	utilities/gsec.cpp (1.15), utilities/gsec.h (1.4),
+	utilities/sbc_print.cpp (1.7), utilities/secur_proto.h (1.4),
+	utilities/security.epp (1.19), utilities/srvrmgr.cpp (1.12),
+	v5_examples/winevent.c (1.7):
 
 	STATUS -> ISC_STATUS
 
@@ -9434,6 +9480,12 @@
 
 	REMOTE warning fixes
 
+2003-04-08 03:03  brodsom
+
+	* firebird2/src/wal/walc.cpp (1.12):
+
+	WAL warning fixes
+
 2003-04-08 03:02  brodsom
 
 	* firebird2/src/lock/lock.cpp (1.45):
@@ -9581,9 +9633,10 @@
 
 	Avoid signed unsigned comparisons
 
-2003-04-03 20:42  brodsom
+2003-04-03 20:41  brodsom
 
-	* firebird2/src/: jrd/vio.cpp (1.43), jrd/thd.cpp (1.18),
+	* firebird2/src/: wal/walw.cpp (1.18), wal/walf.cpp (1.5),
+	wal/walr.cpp (1.5), jrd/vio.cpp (1.43), jrd/thd.cpp (1.18),
 	dsql/make.cpp (1.29):
 
 	Avoid signed unsigned comparisons
@@ -9883,6 +9936,12 @@
 
 	Correct formats
 
+2003-04-01 23:56  brodsom
+
+	* firebird2/src/wal/: wstatus.cpp (1.6), walw.cpp (1.17):
+
+	Correct formats
+
 2003-04-01 19:58  brodsom
 
 	* firebird2/src/jrd/: sdl.cpp (1.10), vio.cpp (1.41), dpm.epp
@@ -9901,6 +9960,13 @@
 	* firebird2/src/remote/: allr_proto.h (1.3), allr.cpp (1.10):
 
 	Fixed parameters names & some preprocessing cleanup
+
+2003-04-01 14:37  brodsom
+
+	* firebird2/src/wal/: walc.cpp (1.11), walw.cpp (1.16), wstatus.cpp
+	(1.5):
+
+	Correct formats
 
 2003-04-01 13:49  brodsom
 
@@ -10452,7 +10518,26 @@
 	src/utilities/isc.gdl (1.2), src/utilities/rebuild.gdl (1.2),
 	src/utilities/rmet.epp (1.5), src/utilities/rstore.epp (1.6),
 	src/utilities/scrty_unix.gdl (1.2), src/utilities/scrty_vms.gdl
-	(1.2), src/utilities/security.epp (1.18):
+	(1.2), src/utilities/security.epp (1.18), src/v5_examples/api1.c
+	(1.4), src/v5_examples/api10.c (1.4), src/v5_examples/api11.c
+	(1.4), src/v5_examples/api12.c (1.4), src/v5_examples/api13.c
+	(1.4), src/v5_examples/api14.e (1.2), src/v5_examples/api15.c
+	(1.4), src/v5_examples/api16.c (1.5), src/v5_examples/api16t.c
+	(1.4), src/v5_examples/api2.c (1.4), src/v5_examples/api3.c (1.4),
+	src/v5_examples/api4.c (1.4), src/v5_examples/api5.c (1.4),
+	src/v5_examples/api6.c (1.4), src/v5_examples/api7.c (1.4),
+	src/v5_examples/api8.c (1.4), src/v5_examples/api9.c (1.4),
+	src/v5_examples/dyn1.e (1.2), src/v5_examples/dyn2.e (1.2),
+	src/v5_examples/dyn3.e (1.2), src/v5_examples/dyn4.e (1.2),
+	src/v5_examples/dyn5.e (1.2), src/v5_examples/dynfull.e (1.4),
+	src/v5_examples/empbld.sql (1.4), src/v5_examples/empbuild.c
+	(1.10), src/v5_examples/empbuild.e (1.2),
+	src/v5_examples/empddl.sql (1.4), src/v5_examples/employe2.sql
+	(1.2), src/v5_examples/intlbld.e (1.2), src/v5_examples/intlbld.sql
+	(1.3), src/v5_examples/intlddl.sql (1.4),
+	src/v5_examples/intldml.sql (1.2), src/v5_examples/stat10.e (1.2),
+	src/v5_examples/stat11.e (1.2), src/v5_examples/stat12.e (1.2),
+	src/v5_examples/stat12t.e (1.2), src/v5_examples/winevent.c (1.6):
 
 	Changed the default extensions for databases from .gdb to .fdb The
 	Windows and OS X builds have not been updated yet.
@@ -11616,7 +11701,17 @@
 
 2003-02-28 14:19  brodsom
 
-	* firebird2/src/: gpre/c_cxx.cpp (1.18), include/fb_types.h (1.17):
+	* firebird2/src/: gpre/c_cxx.cpp (1.18), v5_examples/api1.c (1.3),
+	v5_examples/api10.c (1.3), v5_examples/api11.c (1.3),
+	v5_examples/api12.c (1.3), v5_examples/api13.c (1.3),
+	v5_examples/api15.c (1.3), v5_examples/api16.c (1.4),
+	v5_examples/api16t.c (1.3), v5_examples/api2.c (1.3),
+	v5_examples/api3.c (1.3), v5_examples/api4.c (1.3),
+	v5_examples/api5.c (1.3), v5_examples/api6.c (1.3),
+	v5_examples/api7.c (1.3), v5_examples/api8.c (1.3),
+	v5_examples/api9.c (1.3), v5_examples/apifull.c (1.5),
+	v5_examples/dynfull.e (1.3), v5_examples/empbuild.c (1.9),
+	v5_examples/stat8.e (1.2), include/fb_types.h (1.17):
 
 	Remove ISC_FAR
 
@@ -12501,6 +12596,20 @@
 
 	Adding intl C++ conversion
 
+2003-02-19 14:18  brodsom
+
+	* firebird2/src/v5_examples/: api9f.def (1.3), example.def (1.3),
+	udflib.def (1.3), winevent.def (1.3):
+
+	Move def files left in the directory (but not v5_example ones)
+
+2003-02-19 14:13  brodsom
+
+	* firebird2/src/v5_examples/: api9f.def (1.2), example.def (1.2),
+	udflib.def (1.2), winevent.def (1.2):
+
+	Move def files to builds directory
+
 2003-02-19 13:58  brodsom
 
 	* firebird2/builds/win32/: msvc6/fbclient.dsp (1.27),
@@ -12849,6 +12958,12 @@
 	lc_ksc.c (1.7), lc_narrow.c (1.6), lc_unicode_ucs2.c (1.2):
 
 	Add firebird header to intl
+
+2003-02-17 10:58  brodsom
+
+	* firebird2/src/v5_examples/example.h (1.4):
+
+	Patch wrong previous commit
 
 2003-02-17 09:42  dimitr
 
@@ -13233,8 +13348,10 @@
 
 2003-02-14 03:48  brodsom
 
-	* firebird2/src/jrd/: gds.cpp (1.57), intl.cpp (1.22), thd.cpp
-	(1.15):
+	* firebird2/src/: jrd/gds.cpp (1.57), jrd/intl.cpp (1.22),
+	jrd/thd.cpp (1.15), v5_examples/align.h (1.6), v5_examples/api16.c
+	(1.3), v5_examples/apifull.c (1.4), v5_examples/dynfull.e (1.2),
+	v5_examples/example.h (1.3), v5_examples/winevent.c (1.5):
 
 	Remove __BORLANDC__ define
 
@@ -13432,9 +13549,9 @@
 
 2003-02-13 16:31  brodsom
 
-	* firebird2/src/: qli/nounix.cpp (1.3), jrd/ib_stdio.h (1.9),
-	jrd/common.h (1.57), jrd/gdsold.h (1.18), jrd/align.cpp (1.8),
-	jrd/blrtable.cpp (1.12):
+	* firebird2/src/: v5_examples/example.h (1.2), qli/nounix.cpp
+	(1.3), jrd/ib_stdio.h (1.9), jrd/common.h (1.57), jrd/gdsold.h
+	(1.18), jrd/align.cpp (1.8), jrd/blrtable.cpp (1.12):
 
 	Remove __STDC__ obsolete define (used for pre C88 code)
 
@@ -13471,7 +13588,8 @@
 
 2003-02-13 14:09  dimitr
 
-	* firebird2/src/utilities/: dba.epp (1.17), gsec.cpp (1.12):
+	* firebird2/src/: utilities/dba.epp (1.17), utilities/gsec.cpp
+	(1.12), wal/walw.cpp (1.15):
 
 	Fixed exception handling.
 
@@ -13915,6 +14033,12 @@
 
 	Remove notdef unused define
 
+2003-02-11 01:59  brodsom
+
+	* firebird2/src/v5_examples/winevent.c (1.4):
+
+	Correct previous change
+
 2003-02-11 01:56  brodsom
 
 	* firebird2/src/jrd/sort.cpp (1.26):
@@ -13934,6 +14058,12 @@
 	(1.11):
 
 	Change define name IP_TRACE to DEBUG_IP_TRACE
+
+2003-02-11 01:43  brodsom
+
+	* firebird2/src/v5_examples/winevent.c (1.3):
+
+	Change define
 
 2003-02-11 01:37  brodsom
 
@@ -13979,6 +14109,12 @@
 	jrd/intlnames.h (1.6):
 
 	Remove BUG_6925 define and wrong (and not used) collations.
+
+2003-02-10 20:27  brodsom
+
+	* firebird2/src/v5_examples/align.h (1.5):
+
+	Remove osf & alpha, correct wrong ifdef
 
 2003-02-10 20:25  brodsom
 
@@ -14099,7 +14235,7 @@
 	src/qli/mov_proto.h (1.2), src/remote/inter_proto.h (1.2),
 	src/remote/interface.cpp (1.31), src/remote/protocol.cpp (1.17),
 	src/remote/xdr.cpp (1.8), src/remote/xdr_proto.h (1.7),
-	src/utilities/rebuild.cpp (1.6):
+	src/utilities/rebuild.cpp (1.6), src/v5_examples/api9f.c (1.4):
 
 	Removed "register" variables from the source code. It's up to the
 	compiler to hold variables in CPU registers.
@@ -16413,7 +16549,7 @@
 	src/jrd/par.cpp (1.29), src/jrd/unix.cpp (1.16), src/jrd/vio.cpp
 	(1.24), src/msgs/build_file.epp (1.9), src/msgs/change_msgs.epp
 	(1.7), src/msgs/enter_msgs.epp (1.6), src/msgs/modify_msgs.epp
-	(1.7), src/remote/inet.cpp (1.46):
+	(1.7), src/remote/inet.cpp (1.46), src/wal/walc.cpp (1.10):
 
 	Removed unused variables.
 
@@ -17760,9 +17896,13 @@
 
 2002-11-14 09:32  dimitr
 
-	* firebird2/src/utilities/: ibmgr.cpp (1.7), install_reg.cpp (1.5),
-	install_svc.cpp (1.10), registry.cpp (1.8), services.cpp (1.7),
-	srvrmgr.cpp (1.11):
+	* firebird2/src/: utilities/ibmgr.cpp (1.7),
+	utilities/install_reg.cpp (1.5), utilities/install_svc.cpp (1.10),
+	utilities/registry.cpp (1.8), utilities/services.cpp (1.7),
+	utilities/srvrmgr.cpp (1.11), v5_examples/api9f.c (1.3),
+	wal/driver.cpp (1.8), wal/wal.cpp (1.14), wal/wal.h (1.6),
+	wal/wal_prnt.cpp (1.8), wal/walc.cpp (1.9), wal/walf.cpp (1.4),
+	wal/walr.cpp (1.4), wal/walw.cpp (1.14):
 
 	Global names change: FBOK=>FB_SUCCESS FAILURE=>FB_FAILURE
 	xxx_FBOK=>xxx_SUCCESS
@@ -17926,7 +18066,10 @@
 	remote/remote.cpp (1.6), remote/server.cpp (1.14),
 	utilities/ibmgr.cpp (1.6), utilities/install_reg.cpp (1.4),
 	utilities/install_svc.cpp (1.9), utilities/registry.cpp (1.7),
-	utilities/services.cpp (1.6), utilities/srvrmgr.cpp (1.10):
+	utilities/services.cpp (1.6), utilities/srvrmgr.cpp (1.10),
+	v5_examples/api9f.c (1.2), wal/driver.cpp (1.7), wal/wal.cpp
+	(1.13), wal/wal_prnt.cpp (1.7), wal/walc.cpp (1.8), wal/walf.cpp
+	(1.3), wal/walr.cpp (1.3), wal/walw.cpp (1.13):
 
 	Renaming all occurences of SUCCESS to FBOK
 
@@ -18596,7 +18739,7 @@
 	(1.14), jrd/y-valve.cpp (1.15), lock/lock.cpp (1.21),
 	lock/print.cpp (1.11), remote/inet.cpp (1.34), remote/interface.cpp
 	(1.20), remote/wnet.cpp (1.4), remote/xnet.cpp (1.6),
-	utilities/util.cpp (1.8):
+	utilities/util.cpp (1.8), wal/wal.h (1.5):
 
 	Do not redefine MAXPATHLEN. Always use the value supplied by the
 	operating system (header files).
@@ -18720,7 +18863,8 @@
 	* firebird2/src/: jrd/builtin.cpp (1.5), jrd/divorce.cpp (1.7),
 	jrd/event.cpp (1.12), jrd/isc.cpp (1.21), jrd/isc_ipc.cpp (1.28),
 	jrd/log.cpp (1.5), jrd/svc.cpp (1.29), lock/lock.cpp (1.20),
-	remote/inet.cpp (1.33), utilities/srvrmgr.cpp (1.8):
+	remote/inet.cpp (1.33), utilities/srvrmgr.cpp (1.8), wal/wal.cpp
+	(1.12):
 
 	Arrays that hold filenames must be at least MAXPATHLEN long.
 
@@ -18911,7 +19055,8 @@
 2002-10-31 12:58  dimitr
 
 	* firebird2/src/: jrd/isc_file.cpp (1.22), jrd/par.cpp (1.18),
-	remote/property.cpp (1.7), remote/server.cpp (1.12):
+	remote/property.cpp (1.7), remote/server.cpp (1.12),
+	wal/wal_prnt.cpp (1.6):
 
 	Finilized Sean's cleanup.
 
@@ -18967,7 +19112,7 @@
 	msgs/build_file.epp (1.8), qli/dtr.cpp (1.7), qli/help.epp (1.4),
 	qli/lex.cpp (1.6), qli/proc.epp (1.5), remote/inet.cpp (1.31),
 	remote/inet_server.cpp (1.16), remote/remote.h (1.7),
-	remote/server.cpp (1.11):
+	remote/server.cpp (1.11), wal/wal_proto.h (1.3):
 
 	Removed support for obsolete "PC_PLATFORM" define
 
@@ -19025,7 +19170,10 @@
 	src/remote/xdr.cpp (1.4), src/remote/xdr.h (1.3),
 	src/remote/xnet.cpp (1.5), src/utilities/dba.epp (1.11),
 	src/utilities/dba_full.epp (1.7), src/utilities/drop.cpp (1.13),
-	src/utilities/ibmgr.cpp (1.5), src/utilities/sbc_print.cpp (1.6):
+	src/utilities/ibmgr.cpp (1.5), src/utilities/sbc_print.cpp (1.6),
+	src/wal/wal.cpp (1.11), src/wal/wal_prnt.cpp (1.5),
+	src/wal/wal_proto.h (1.2), src/wal/walc.cpp (1.7), src/wal/walw.cpp
+	(1.12), src/wal/wstat_proto.h (1.2), src/wal/wstatus.cpp (1.4):
 
 	Removed obsolete "Netware" port
 
@@ -19131,7 +19279,8 @@
 	jrd/flu.cpp (1.15), jrd/isc_sync.cpp (1.27), jrd/license.h (1.23),
 	jrd/pag.cpp (1.28), jrd/shrinit.cpp (1.5), jrd/y-valve.cpp (1.12),
 	lock/lock.h (1.15), lock/print.cpp (1.9), remote/inet_server.cpp
-	(1.14), remote/protocol.cpp (1.9), remote/remote_def.h (1.18):
+	(1.14), remote/protocol.cpp (1.9), remote/remote_def.h (1.18),
+	v5_examples/align.h (1.4):
 
 	Code cleanup, removed obsolete "SGI" port
 
@@ -19143,7 +19292,8 @@
 	(1.17), jrd/isc_sync.cpp (1.26), jrd/jrd.h (1.22), jrd/license.h
 	(1.22), jrd/pag.cpp (1.27), jrd/y-valve.cpp (1.11), lock/lock.h
 	(1.14), remote/inet_server.cpp (1.13), remote/interface.cpp (1.15),
-	remote/protocol.h (1.8), remote/remote_def.h (1.17):
+	remote/protocol.h (1.8), remote/remote_def.h (1.17),
+	v5_examples/align.h (1.3):
 
 	Code cleanup, removed obsolete "DecOSF" port
 
@@ -19218,7 +19368,7 @@
 	jrd/utl.cpp (1.15), lock/lock.h (1.12), lock/print.cpp (1.8),
 	remote/inet.cpp (1.27), remote/interface.cpp (1.14),
 	remote/protocol.cpp (1.8), remote/protocol.h (1.7),
-	remote/remote_def.h (1.15):
+	remote/remote_def.h (1.15), v5_examples/align.h (1.2):
 
 	Code Cleanup, removed obsolete "Ultrix" and "Ultrix/MIPS" ports
 
@@ -19251,7 +19401,7 @@
 2002-10-28 04:52  seanleyne
 
 	* firebird2/src/: jrd/svc.cpp (1.25), lock/lock.cpp (1.18),
-	utilities/drop.cpp (1.12):
+	utilities/drop.cpp (1.12), wal/wal.cpp (1.10):
 
 	Completed removal of obsolete "IMP" port
 
@@ -19259,7 +19409,7 @@
 
 	* firebird2/src/: jrd/llio.cpp (1.8), jrd/svc.cpp (1.24),
 	jrd/unix.cpp (1.13), lock/lock.cpp (1.17), lock/print.cpp (1.7),
-	utilities/drop.cpp (1.11):
+	utilities/drop.cpp (1.11), wal/wal.cpp (1.9):
 
 	Completed removal of obsolete "DELTA" port
 
@@ -19390,7 +19540,19 @@
 	(1.9), remote/srvr_w32.cpp (1.9), utilities/cache.cpp (1.4),
 	utilities/create_db.cpp (1.4), utilities/dba_full.epp (1.6),
 	utilities/drop.cpp (1.10), utilities/print_pool.cpp (1.3),
-	utilities/sbc_print.cpp (1.5), utilities/security.epp (1.10):
+	utilities/sbc_print.cpp (1.5), utilities/security.epp (1.10),
+	v5_examples/api1.c (1.2), v5_examples/api10.c (1.2),
+	v5_examples/api11.c (1.2), v5_examples/api12.c (1.2),
+	v5_examples/api13.c (1.2), v5_examples/api15.c (1.2),
+	v5_examples/api16.c (1.2), v5_examples/api16t.c (1.2),
+	v5_examples/api2.c (1.2), v5_examples/api3.c (1.2),
+	v5_examples/api4.c (1.2), v5_examples/api5.c (1.2),
+	v5_examples/api6.c (1.2), v5_examples/api7.c (1.2),
+	v5_examples/api8.c (1.2), v5_examples/api9.c (1.2),
+	v5_examples/apifull.c (1.3), v5_examples/empbuild.c (1.8),
+	v5_examples/winevent.c (1.2), wal/driver.cpp (1.6), wal/wal.cpp
+	(1.8), wal/wal_prnt.cpp (1.4), wal/walc.cpp (1.6), wal/walw.cpp
+	(1.11):
 
 	Code cleanup:
 
@@ -20059,7 +20221,8 @@
 	jrd/math.cpp (1.3), jrd/mov.cpp (1.5), jrd/perf.cpp (1.12),
 	jrd/svc.cpp (1.20), jrd/utl.cpp (1.11), lock/lock.cpp (1.13),
 	qli/format.cpp (1.4), qli/mov.cpp (1.8), qli/picstr.cpp (1.7),
-	remote/inet.cpp (1.22):
+	remote/inet.cpp (1.22), wal/wal.cpp (1.7), wal/walc.cpp (1.5),
+	wal/walw.cpp (1.10):
 
 	renamed header files jrd/math.h and jrd/time.h to jrd/jrd_math.h
 	and jrd/jrd_time.h.
@@ -20444,7 +20607,9 @@
 	src/msgs/check_msgs.epp (1.3), src/remote/inet.cpp (1.19),
 	src/remote/inet_server.cpp (1.10), src/utilities/analyse.cpp (1.4),
 	src/utilities/drop.cpp (1.9), src/utilities/srvrmgr.cpp (1.5),
-	src/utilities/util.cpp (1.7):
+	src/utilities/util.cpp (1.7), src/v5_examples/apifull.c (1.2),
+	src/v5_examples/udflib.c (1.2), src/wal/driver.cpp (1.5),
+	src/wal/wal.cpp (1.6):
 
 	Autoconf cleanup:  o use predefined macros to test for sys/wait.h,
 	time.h and sys/time.h  o search strcasecmp in libresolv only if
@@ -20687,7 +20852,8 @@
 	* firebird2/src/: iscguard/iscguard.cpp (1.5), iscguard/iscguard.h
 	(1.3), jrd/jrd.cpp (1.15), remote/ibconfig.h (1.2),
 	remote/inet_server.cpp (1.9), remote/window.h (1.3),
-	utilities/guard.cpp (1.5), utilities/util.cpp (1.5):
+	utilities/guard.cpp (1.5), utilities/util.cpp (1.5),
+	v5_examples/makefile.old (1.2):
 
 	fbserver instead of ibserver.
 
@@ -21010,7 +21176,8 @@
 	* firebird2/src/: burp/mvol.cpp (1.6), jrd/isc_file.cpp (1.11),
 	jrd/jrd.cpp (1.14), jrd/llio.cpp (1.7), jrd/thd.cpp (1.6),
 	jrd/y-valve.cpp (1.5), jrd/os/posix/mod_loader.cpp (1.3),
-	remote/xnet.cpp (1.3), utilities/srvrmgr.cpp (1.4):
+	remote/xnet.cpp (1.3), utilities/srvrmgr.cpp (1.4), wal/walw.cpp
+	(1.9):
 
 	Added / replaced ifdef's around unistd.h with the define
 	HAVE_UNISTD_H generated by autoconf.
@@ -21035,7 +21202,7 @@
 
 	* firebird2/src/: jrd/common.h (1.22), jrd/event.cpp (1.9),
 	jrd/isc_s_proto.h (1.3), lock/lock.cpp (1.10), lock/print.cpp
-	(1.5), utilities/drop.cpp (1.7):
+	(1.5), utilities/drop.cpp (1.7), wal/walc.cpp (1.4):
 
 	Another autoconf cleanup:  o check for the existence of the
 	function mmap  o replaced MMAP_SUPPORTED by HAVE_MMAP
@@ -21228,7 +21395,7 @@
 	src/extlib/fbudf/fbudf.cpp (1.3), src/include/gen/autoconfig_msvc.h
 	(1.17), src/journal/misc.cpp (1.6), src/jrd/gds.cpp (1.16),
 	src/jrd/isc.cpp (1.13), src/jrd/perf.cpp (1.9), src/jrd/svc.cpp
-	(1.11):
+	(1.11), src/wal/driver.cpp (1.4):
 
 	Huge 'gettimeofday' cleanup:
 
@@ -21418,7 +21585,7 @@
 	utilities/cmd_util.cpp (1.3), utilities/dba.epp (1.7),
 	utilities/guard.cpp (1.4), utilities/ibmgr.cpp (1.4),
 	utilities/rebuild.cpp (1.4), utilities/util.cpp (1.4),
-	utilities/util_proto.h (1.2):
+	utilities/util_proto.h (1.2), v5_examples/empbuild.c (1.7):
 
 	Changes to make fb2 compile super version for linux
 
@@ -21545,7 +21712,7 @@
 	(1.14), src/jrd/grant.epp (1.6), src/jrd/inf.cpp (1.8),
 	src/jrd/met.epp (1.13), src/jrd/scl.epp (1.9), src/jrd/sort.cpp
 	(1.9), src/qli/all.cpp (1.7), src/qli/picstr.cpp (1.6),
-	src/utilities/dba.epp (1.6):
+	src/utilities/dba.epp (1.6), src/v5_examples/empbuild.c (1.6):
 
 	Changes to get compiling on linux (post fb1 changes).
 
@@ -21736,6 +21903,13 @@
 	stdafx.h (1.1):
 
 	Ported code changes from fb1
+
+2002-06-29 16:28  skywalker
+
+	* firebird2/src/v5_examples/: empbld.sql (1.3), empddl.sql (1.3),
+	intlddl.sql (1.3):
+
+	Merge changes from fb1.
 
 2002-06-29 15:47  skywalker
 
@@ -22439,7 +22613,9 @@
 	(1.5), jrd/common.h (1.16), jrd/cvt_proto.h (1.3), jrd/gdsold.h
 	(1.9), jrd/ibase.h (1.10), jrd/isc_file.cpp (1.8), jrd/isc_sync.cpp
 	(1.9), jrd/license.h (1.14), jrd/perf.h (1.4), remote/inet.cpp
-	(1.11), remote/protocol.cpp (1.4), remote/remote_def.h (1.12):
+	(1.11), remote/protocol.cpp (1.4), remote/remote_def.h (1.12),
+	v5_examples/empbuild.c (1.5), wal/wal.cpp (1.5), wal/walw.cpp
+	(1.8):
 
 	Main changes were to add cr to end of the files.  cvt_proto.h
 	removed a duplicate extern directive gen/codes.h added back appolo
@@ -22570,7 +22746,8 @@
 	* firebird2/src/: include/gen/autoconfig_msvc.h (1.8),
 	journal/misc.cpp (1.4), jrd/common.h (1.13), jrd/gds.cpp (1.10),
 	jrd/isc_ipc.cpp (1.11), jrd/jio.cpp (1.6), jrd/license.h (1.10),
-	jrd/pag.cpp (1.13), lock/lock.h (1.7), remote/remote_def.h (1.9):
+	jrd/pag.cpp (1.13), lock/lock.h (1.7), remote/remote_def.h (1.9),
+	wal/driver.cpp (1.3):
 
 	Code cleanup of obsolete M88K and NT Power PC ports
 
@@ -22598,7 +22775,8 @@
 	jrd/llio.cpp (1.6), jrd/pag.cpp (1.11), jrd/perf.cpp (1.7),
 	jrd/shdef.h (1.3), jrd/shrinit.cpp (1.3), jrd/svc.cpp (1.9),
 	lock/lock.cpp (1.6), lock/lock.h (1.5), remote/inet.cpp (1.8),
-	remote/protocol.cpp (1.3), remote/remote_def.h (1.7):
+	remote/protocol.cpp (1.3), remote/remote_def.h (1.7), wal/wal.cpp
+	(1.4), wal/wal.h (1.4), wal/walw.cpp (1.7):
 
 	Code cleanup of obsolete IMP port
 
@@ -22611,7 +22789,7 @@
 	jrd/isc_sync.cpp (1.6), jrd/jio.cpp (1.5), jrd/license.h (1.7),
 	jrd/llio.cpp (1.5), jrd/pag.cpp (1.10), jrd/perf.cpp (1.6),
 	lock/lock.h (1.4), msgs/build_file.epp (1.4), remote/remote_def.h
-	(1.6), remote/xdr.h (1.2):
+	(1.6), remote/xdr.h (1.2), wal/wal.h (1.3), wal/walw.cpp (1.6):
 
 	Code cleanup of obsolete DELTA port
 
@@ -22661,7 +22839,7 @@
 
 2002-01-06 14:06  skywalker
 
-	* firebird2/src/jrd/sdl.cpp (1.5):
+	* firebird2/src/: jrd/sdl.cpp (1.5), v5_examples/empbuild.c (1.4):
 
 	Changed to force write of update build #.
 
@@ -22711,7 +22889,7 @@
 	jrd/tra.cpp (1.6), jrd/vio.cpp (1.6), lock/lock.cpp (1.5),
 	qli/eval.cpp (1.5), qli/exe.cpp (1.5), qli/mov.cpp (1.5),
 	remote/allr.cpp (1.6), remote/inet.cpp (1.5), remote/remote.cpp
-	(1.4), utilities/drop.cpp (1.5):
+	(1.4), utilities/drop.cpp (1.5), v5_examples/empddl.sql (1.2):
 
 	Changes to make it compile on linux.  and work through a few
 	issues.
@@ -22728,7 +22906,8 @@
 	jrd/nav.cpp (1.4), jrd/scl.epp (1.4), qli/dtr.cpp (1.5),
 	qli/err.cpp (1.5), remote/allr.cpp (1.5), remote/interface.cpp
 	(1.7), remote/server.cpp (1.4), utilities/dba.epp (1.4),
-	utilities/dba_full.epp (1.4), utilities/gsec.h (1.3):
+	utilities/dba_full.epp (1.4), utilities/gsec.h (1.3), wal/walw.cpp
+	(1.5):
 
 	cleaning up
 
@@ -22913,7 +23092,8 @@
 	utilities/gsec.h (1.2), utilities/guard.cpp (1.3),
 	utilities/ibmgr.cpp (1.3), utilities/ibmgr.h (1.2),
 	utilities/ibmgrswi.h (1.3), utilities/sbc_print.cpp (1.3),
-	utilities/srvrmgr.cpp (1.3), utilities/util.cpp (1.3):
+	utilities/srvrmgr.cpp (1.3), utilities/util.cpp (1.3),
+	wal/wal_prnt.cpp (1.3), wal/walw.cpp (1.4), wal/wstatus.cpp (1.3):
 
 	New C++ memory pool
 
@@ -22983,7 +23163,8 @@
 2001-08-15 20:10  skywalker
 
 	* firebird2/: configure.in (1.9),
-	src/install/arch-specific/linux/Makefile.in (1.2):
+	src/install/arch-specific/linux/Makefile.in (1.2),
+	src/v5_examples/empbuild.c (1.3):
 
 	Some changes to work on classic install, (it's not complete as yet
 	but it's getting there)
@@ -23175,7 +23356,13 @@
 	utilities/rmet.epp (1.2), utilities/rstore.epp (1.2),
 	utilities/run_service.cpp (1.2), utilities/sbc_print.cpp (1.2),
 	utilities/security.epp (1.2), utilities/services.cpp (1.2),
-	utilities/srvrmgr.cpp (1.2), utilities/util.cpp (1.2):
+	utilities/srvrmgr.cpp (1.2), utilities/util.cpp (1.2),
+	v5_examples/empbld.sql (1.2), v5_examples/empbuild.c (1.2),
+	v5_examples/intlbld.sql (1.2), v5_examples/intlddl.sql (1.2),
+	wal/driver.cpp (1.2), wal/wal.cpp (1.3), wal/wal.h (1.2),
+	wal/wal_prnt.cpp (1.2), wal/walc.cpp (1.3), wal/walf.cpp (1.2),
+	wal/walr.cpp (1.2), wal/walw.cpp (1.3), wal/walw_main.cpp (1.2),
+	wal/wstatus.cpp (1.2):
 
 	Global changes for new Makefile and firebird2 compile on linux
 
@@ -23232,6 +23419,32 @@
 	(1.1), msgs.h (1.1), rdb_codes.h (1.1), sql_code.h (1.1):
 
 	These files are all generated by programs in jrd, mainly codes.epp
+
+2001-07-23 18:05  skywalker
+
+	* firebird2/src/v5_examples/: align.h (1.1), api1.c (1.1), api10.c
+	(1.1), api11.c (1.1), api12.c (1.1), api13.c (1.1), api14.e (1.1),
+	api15.c (1.1), api16.c (1.1), api16t.c (1.1), api2.c (1.1), api3.c
+	(1.1), api4.c (1.1), api5.c (1.1), api6.c (1.1), api7.c (1.1),
+	api8.c (1.1), api9.c (1.1), api9f.c (1.1), api9f.def (1.1),
+	api9f.sql (1.1), apifull.c (1.1), dyn1.e (1.1), dyn2.e (1.1),
+	dyn3.e (1.1), dyn4.e (1.1), dyn5.e (1.1), dynfull.e (1.1),
+	empbld.sql (1.1), empbuild.c (1.1), empbuild.e (1.1), empddl.sql
+	(1.1), empdml.sql (1.1), employe2.sql (1.1), example.def (1.1),
+	example.h (1.1), example.mak (1.1), functions.c (1.1), indexoff.sql
+	(1.1), indexon.sql (1.1), intlbld.e (1.1), intlbld.sql (1.1),
+	intlddl.sql (1.1), intldml.sql (1.1), job.inp (1.1), lang.inp
+	(1.1), makefile.old (1.1), prefix.hp10 (1.1), prefix.linux (1.1),
+	prefix.sco_ev (1.1), prefix.solaris (1.1), prefix.win32_bc (1.1),
+	prefix.win32_msc (1.1), proj.inp (1.1), qtr.inp (1.1), readme
+	(1.1), sfx.unix_makefile (1.1), sfx.win32_makefile (1.1), stat1.e
+	(1.1), stat10.e (1.1), stat11.e (1.1), stat12.e (1.1), stat12t.e
+	(1.1), stat2.e (1.1), stat3.e (1.1), stat4.e (1.1), stat5.e (1.1),
+	stat6.e (1.1), stat7.e (1.1), stat8.e (1.1), stat9.e (1.1), udf.sql
+	(1.1), udflib.c (1.1), udflib.def (1.1), winevent.c (1.1),
+	winevent.def (1.1), winevent.rc (1.1):
+
+	Added v5_examples to the firebird2 tree
 
 2001-07-14 02:44  skywalker
 
@@ -23311,7 +23524,8 @@
 	remote/interface.cpp (1.3), remote/protocol.h (1.2),
 	remote/remote.cpp (1.2), remote/remote_def.h (1.2),
 	utilities/drop.cpp (1.2), utilities/gsec.cpp (1.2),
-	utilities/relay.cpp (1.2):
+	utilities/relay.cpp (1.2), wal/wal.cpp (1.2), wal/walc.cpp (1.2),
+	wal/walw.cpp (1.2):
 
 	Changes to bring FB2 to c++ on *nix.
 
@@ -23613,7 +23827,12 @@
 	utilities/services.cpp (1.1), utilities/srvrmgr.cpp (1.1),
 	utilities/util.cpp (1.1), utilities/util_proto.h (1.1),
 	utilities/analyse.cpp (1.1), utilities/gsec.h (1.1),
-	utilities/ibmgr.h (1.1):
+	utilities/ibmgr.h (1.1), wal/driver.cpp (1.1), wal/wal.cpp (1.1),
+	wal/wal.h (1.1), wal/wal_prnt.cpp (1.1), wal/wal_proto.h (1.1),
+	wal/walc.cpp (1.1), wal/walc_proto.h (1.1), wal/walf.cpp (1.1),
+	wal/walf_proto.h (1.1), wal/walr.cpp (1.1), wal/walr_proto.h (1.1),
+	wal/walw.cpp (1.1), wal/walw_main.cpp (1.1), wal/walw_proto.h
+	(1.1), wal/wstat_proto.h (1.1), wal/wstatus.cpp (1.1):
 
 	Initial revision
 
