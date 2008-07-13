@@ -79,16 +79,22 @@ public:
 	}
 	Array() : count(0), 
 		capacity(this->getStorageSize()), data(this->getStorage()) { }
-	explicit Array(size_t InitialCapacity) : count(0), 
-		capacity(this->getStorageSize()), data(this->getStorage())
+	explicit Array(size_t InitialCapacity)
+		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
+	}
+	Array(const Array<T, Storage>& L)
+		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
+	{
+		copyFrom(L);
 	}
 	~Array()
 	{
 		freeData();
 	}
 	void clear() { count = 0; }
+
 protected:
 	const T& getElement(size_t index) const
 	{
@@ -105,14 +111,19 @@ protected:
 		if (data != this->getStorage())
 			this->getPool().deallocate(data);
 	}
+	void copyFrom(const Array<T, Storage>& L)
+	{
+		ensureCapacity(L.count, false);
+		memcpy(data, L.data, sizeof(T) * L.count);
+		count = L.count;
+	}
+
 public:
 	typedef T* iterator;
 	typedef const T* const_iterator;
 	Array<T, Storage>& operator =(const Array<T, Storage>& L) 
 	{
-		ensureCapacity(L.count);
-		memcpy(data, L.data, sizeof(T) * L.count);
-		count = L.count;
+		copyFrom(L);
 		return *this;
 	}
 	const T& operator[](size_t index) const
@@ -260,9 +271,7 @@ public:
 	}
 	void assign(const Array<T, Storage>& L)
 	{
-		ensureCapacity(L.count);
-		memcpy(data, L.data, sizeof(T) * L.count);
-		count = L.count;
+		copyFrom(L);
 	}
 	// NOTE: getCount method must be signal safe
 	// Used as such in GlobalRWLock::blockingAstHandler
@@ -300,6 +309,8 @@ public:
 		data = this->getStorage();
 	}
 
+	// This method only assigns "pos" if the element is found.
+	// Maybe we should modify it to iterate directy with "pos".
 	bool find(const T& item, size_t& pos) const
 	{
 		for (size_t i = 0; i < count; i++) {
@@ -316,11 +327,23 @@ public:
 		size_t pos;	// ignored
 		return find(item, pos);
 	}
+	
+	// Member function only for some debugging tests. Hope nobody is bothered.
+	void swapElems()
+	{
+		const size_t limit = count / 2;
+		for (size_t i = 0; i < limit; ++i)
+		{
+			T temp = data[i];
+			data[i] = data[count - 1 - i];
+			data[count - 1 - i] = temp;
+		}
+	}
 
 protected:
 	size_t count, capacity;
 	T* data;
-	void ensureCapacity(size_t newcapacity)
+	void ensureCapacity(size_t newcapacity, bool preserve = true)
 	{
 		if (newcapacity > capacity) {
 			if (newcapacity < capacity * 2) {
@@ -332,7 +355,8 @@ protected:
 					, __FILE__, __LINE__
 #endif
 						));
-			memcpy(newdata, data, sizeof(T) * count);
+			if (preserve)
+				memcpy(newdata, data, sizeof(T) * count);
 			freeData();
 			data = newdata;
 			capacity = newcapacity;
