@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -45,7 +45,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -121,7 +121,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -201,7 +201,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -280,7 +280,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -336,10 +336,6 @@
 			Name="COMMON"
 			>
 			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\config\config_file.cpp"
 				>
 			</File>
@@ -375,7 +371,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -383,7 +379,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -391,7 +387,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -399,7 +395,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -411,7 +407,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -419,7 +415,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -427,7 +423,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -435,7 +431,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -447,7 +443,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -455,7 +451,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -463,7 +459,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -471,7 +467,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -483,7 +479,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -491,7 +487,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -499,7 +495,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -507,7 +503,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -519,7 +515,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -527,7 +523,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -535,7 +531,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -543,7 +539,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -555,7 +551,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -563,7 +559,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -571,7 +567,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -579,7 +575,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -591,7 +587,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -599,7 +595,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -607,7 +603,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -615,7 +611,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -627,7 +623,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -635,7 +631,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -643,7 +639,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -651,7 +647,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>
@@ -663,7 +659,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -671,7 +667,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;SUPERSERVER;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DEV_BUILD;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -679,7 +675,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -687,7 +683,7 @@
 					>
 					<Tool
 						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;SUPERSERVER;EMBEDDED;SUPERCLIENT;$(NoInherit)"
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EMBEDDED;SUPERCLIENT;$(NoInherit)"
 					/>
 				</FileConfiguration>
 			</File>

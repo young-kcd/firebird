@@ -46,7 +46,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,EMBEDDED,NAMESPACE=Vulcan"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -110,7 +110,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,SUPERSERVER,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_LIB,EMBEDDED,NAMESPACE=Vulcan"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -170,7 +170,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -230,7 +230,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/icu/include;../../../src/vulcan"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,SUPERSERVER,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_LIB,DEV_BUILD,EMBEDDED,NAMESPACE=Vulcan"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool

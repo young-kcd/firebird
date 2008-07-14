@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="Windows-1252"?>
+<?xml version="1.0" encoding="windows-1251"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="common_static"
 	ProjectGUID="{DC8E2FAB-B3E1-4A13-A1EC-60D05D0135C9}"
 	RootNamespace="common_static"
@@ -47,7 +47,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER,BOOT_BUILD"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,BOOT_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -110,7 +110,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER,BOOT_BUILD"
+				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,BOOT_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -168,7 +168,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER,BOOT_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,BOOT_BUILD"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool
@@ -228,7 +228,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER,BOOT_BUILD"
+				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,BOOT_BUILD"
 				UsePrecompiledHeader="0"
 			/>
 			<Tool

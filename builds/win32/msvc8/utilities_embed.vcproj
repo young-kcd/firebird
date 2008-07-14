@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,EMBEDDED,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -101,7 +101,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="_DEBUG,_LIB,EMBEDDED,WIN32,DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -163,7 +163,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,EMBEDDED,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -225,7 +225,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				PreprocessorDefinitions="NDEBUG,_LIB,SUPERSERVER,EMBEDDED,WIN32"
+				PreprocessorDefinitions="NDEBUG,_LIB,EMBEDDED,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
