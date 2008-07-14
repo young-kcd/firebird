@@ -129,9 +129,6 @@ static char fb_prefix_val[MAXPATHLEN];
 static char fb_prefix_lock_val[MAXPATHLEN];
 static char fb_prefix_msg_val[MAXPATHLEN];
 static char fbTempDir[MAXPATHLEN];
-#ifdef EMBEDDED
-static char fbEmbeddedRoot[MAXPATHLEN];
-#endif
 static char *fb_prefix = 0;
 static char *fb_prefix_lock = 0;
 static char *fb_prefix_msg = 0;
@@ -1756,12 +1753,6 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	string[0] = 0;
 
 	gdsPrefixInit();
-
-#ifdef EMBEDDED
-	char buf[MAXPATHLEN];
-	fb_utils::snprintf(buf, MAXPATHLEN, root, fbEmbeddedRoot);
-	root = buf;
-#endif
 
 	strcpy(string, fb_prefix_lock);	// safe - no BO
 	safe_concat_path(string, root);
@@ -3684,24 +3675,13 @@ public:
 		}
 		strcpy(fbTempDir, tempDir.c_str());
 
-#ifdef EMBEDDED
-		// Generate filename based on the current PID
-		Firebird::PathName buf;
-		buf.printf(FB_PID_FILE, getpid());
-		buf.copyTo(fbEmbeddedRoot, sizeof(fbEmbeddedRoot));
-#endif
-
 		// Find appropriate Firebird lock file prefix
 		// Override conditional defines with the enviroment
 		// variable FIREBIRD_LOCK if it is set.
 		Firebird::PathName lockPrefix;
 		if (!fb_utils::readenv(FB_LOCK_ENV, lockPrefix))
 		{
-#ifdef EMBEDDED
-			lockPrefix = tempDir;
-#else
 			lockPrefix = prefix;
-#endif
 		}
 		lockPrefix.copyTo(fb_prefix_lock_val, sizeof(fb_prefix_lock_val));
 		fb_prefix_lock = fb_prefix_lock_val;

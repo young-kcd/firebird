@@ -86,7 +86,7 @@ using namespace NAMESPACE;
 #define NULL            0L
 #endif
 
-#if defined(WIN_NT) && defined(SUPERSERVER) && !defined(EMBEDDED)
+#if defined(WIN_NT) && defined(SUPERSERVER)
 // Comment this definition to build without priority scheduler 
 //	OR:
 // Uncomment this definition to build with priority scheduler

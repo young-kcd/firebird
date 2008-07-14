@@ -1736,11 +1736,7 @@ UCHAR* ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 OPEN_ALWAYS,
-#ifdef EMBEDDED
 				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-#else
-				 FILE_ATTRIBUTE_NORMAL,
-#endif
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
@@ -1823,11 +1819,7 @@ UCHAR* ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 fdw_create,
-#ifdef EMBEDDED
 				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-#else
-				 FILE_ATTRIBUTE_NORMAL,
-#endif
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		CloseHandle(event_handle);
@@ -2386,14 +2378,14 @@ static inline BOOL switchToThread()
 	BOOL res = FALSE;
 	if (fnSwitchToThread) 
 	{
-#if !defined SUPERSERVER && !defined EMBEDDED
+#if !defined SUPERSERVER
 		const HANDLE hThread = GetCurrentThread();
 		SetThreadPriority(hThread, THREAD_PRIORITY_ABOVE_NORMAL);
 #endif
 
 		res = (*fnSwitchToThread) ();
 
-#if !defined SUPERSERVER && !defined EMBEDDED
+#if !defined SUPERSERVER
 		SetThreadPriority(hThread, THREAD_PRIORITY_NORMAL);
 #endif
 	}
@@ -3232,8 +3224,6 @@ static void make_object_name(
 	// misunderstanding between processes
 	strlwr(buffer);
 
-#ifndef EMBEDDED
 	fb_utils::prefix_kernel_object_name(buffer, bufsize);
-#endif
 }
 #endif // WIN_NT
