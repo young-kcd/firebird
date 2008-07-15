@@ -2916,6 +2916,14 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 			CMP_release(tdbb, handle);
 
+			const DeferredWork* arg = work->dfw_args;
+			while (arg && (arg->dfw_type != dfw_arg_new_name))
+				arg = arg->dfw_next;
+
+			// ASF: If there are procedures depending on the domain, it can't be renamed.
+			if (arg && depName != arg->dfw_name.c_str())
+				check_dependencies(tdbb, depName.c_str(), NULL, obj_field, transaction);
+
 			MET_delete_dependencies(tdbb, depName, obj_validation);
 
 			if (!validation.isEmpty())

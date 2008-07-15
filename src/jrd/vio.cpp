@@ -2251,7 +2251,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 					}
 				}
 
-				DFW_post_work(transaction, dfw_modify_field, &desc1, 0);
+				dw = DFW_post_work(transaction, dfw_modify_field, &desc1, 0);
+				DFW_post_work_arg(transaction, dw, &desc2, 0)->dfw_type = dfw_arg_new_name;
 			}
 			break;
 
