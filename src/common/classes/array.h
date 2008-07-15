@@ -72,14 +72,14 @@ class Array : protected Storage
 public:
 	explicit Array(MemoryPool& p) : 
 		Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage()) { }
-	Array(MemoryPool& p, size_t InitialCapacity) : 
+	Array(MemoryPool& p, const size_t InitialCapacity) : 
 		Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
 	Array() : count(0), 
 		capacity(this->getStorageSize()), data(this->getStorage()) { }
-	explicit Array(size_t InitialCapacity)
+	explicit Array(const size_t InitialCapacity)
 		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
@@ -158,14 +158,14 @@ public:
 	}
 	T* begin() { return data; }
 	T* end() { return data + count; }
-	void insert(size_t index, const T& item)
+	void insert(const size_t index, const T& item)
 	{
 		fb_assert(index <= count);
 		ensureCapacity(count + 1);
 		memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 		data[index] = item;
 	}
-	void insert(size_t index, const Array<T, Storage>& L)
+	void insert(const size_t index, const Array<T, Storage>& L)
 	{
 		fb_assert(index <= count);
 		ensureCapacity(count + L.count);
@@ -173,7 +173,7 @@ public:
 		memcpy(data + index, L.data, L.count);
 		count += L.count;
 	}
-	void insert(size_t index, const T* items, size_t itemsSize)
+	void insert(const size_t index, const T* items, const size_t itemsSize)
 	{
 		fb_assert(index <= count);
 		ensureCapacity(count + itemsSize);
@@ -187,7 +187,7 @@ public:
 		data[count] = item;
   		return ++count;
 	}
-	void add(const T* items, size_t itemsSize)
+	void add(const T* items, const size_t itemsSize)
 	{
 		ensureCapacity(count + itemsSize);
 		memcpy(data + count, items, sizeof(T) * itemsSize);
@@ -195,13 +195,13 @@ public:
 	}
 	// NOTE: remove method must be signal safe
 	// This function may be called in AST. The function doesn't wait.
-	T* remove(size_t index)
+	T* remove(const size_t index)
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
-	T* removeRange(size_t from, size_t to)
+	T* removeRange(const size_t from, const size_t to)
 	{
   		fb_assert(from <= to);
   		fb_assert(to <= count);
@@ -209,7 +209,7 @@ public:
 		count -= (to - from);
 		return &data[from];
 	}
-	T* removeCount(size_t index, size_t n)
+	T* removeCount(const size_t index, const size_t n)
 	{
   		fb_assert(index + n <= count);
   		memmove(data + index, data + index + n, sizeof(T) * (count - index - n));
@@ -233,7 +233,7 @@ public:
 		count = newCount;
 	}
 	// Grow size of our array and zero-initialize new items
-	void grow(size_t newCount)
+	void grow(const size_t newCount)
 	{
 		fb_assert(newCount >= count);
 		ensureCapacity(newCount);
@@ -241,7 +241,7 @@ public:
 		count = newCount;
 	}
 	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount, const T& val)
+	void resize(const size_t newCount, const T& val)
 	{
 		if (newCount > count) {
 			ensureCapacity(newCount);
@@ -254,7 +254,7 @@ public:
 		}
 	}
 	// Resize array according to STL's vector::resize() rules
-	void resize(size_t newCount)
+	void resize(const size_t newCount)
 	{
 		if (newCount > count) {
 			grow(newCount);
@@ -281,7 +281,7 @@ public:
 	{
 		add(item);
 	}
-	void push(const T* items, size_t itemsSize)
+	void push(const T* items, const size_t itemsSize)
 	{
 		ensureCapacity(count + itemsSize);
 		memcpy(data + count, items, sizeof(T) * itemsSize);
@@ -294,7 +294,7 @@ public:
 		return data[count];
 	}
 	// prepare array to be used as a buffer of capacity items
-	T* getBuffer(size_t capacityL)
+	T* getBuffer(const size_t capacityL)
 	{
 		ensureCapacity(capacityL);
 		count = capacityL;
