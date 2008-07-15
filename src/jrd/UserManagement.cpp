@@ -34,6 +34,7 @@ using namespace Firebird;
 
 
 UserManagement::UserManagement(thread_db* tdbb)
+	: database(0), transaction(0)
 {
 	char securityDatabaseName[MAXPATHLEN];
 	SecurityDatabase::getPath(securityDatabaseName);
