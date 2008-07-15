@@ -120,11 +120,6 @@ bool GRANT_privileges( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 	case 3:
 		{
-			ULONG length = ACL_BUFFER_SIZE;
-			ULONG* length_ptr = &length;
-			ULONG default_length = ACL_BUFFER_SIZE;
-			ULONG* default_length_ptr = &default_length;
-
 			SET_TDBB(tdbb);
 
 			bool restrct = false;
