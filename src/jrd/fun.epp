@@ -118,9 +118,9 @@ void IbUtil::initialize()
 {
 #ifndef BOOT_BUILD
 #ifdef WIN_NT
-	Firebird::PathName path = "ib_util";
+	PathName path = "ib_util";
 #else
-	Firebird::PathName path = "libib_util";
+	PathName path = "libib_util";
 #endif
 
 	ModuleLoader::Module* module = ModuleLoader::loadModule(libUtilPath);

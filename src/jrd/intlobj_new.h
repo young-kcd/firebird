@@ -49,8 +49,8 @@ struct texttype; /* forward decl for the fc signatures before the struct itself.
 struct csconvert;
 struct charset;
 
-#define INTL_BAD_KEY_LENGTH ((USHORT)(-1))
-#define INTL_BAD_STR_LENGTH ((ULONG)(-1))
+#define INTL_BAD_KEY_LENGTH ((USHORT) -1)
+#define INTL_BAD_STR_LENGTH ((ULONG) -1)
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
 typedef USHORT (*pfn_INTL_keylength) (
@@ -137,7 +137,7 @@ typedef void (*pfn_INTL_tt_destroy) (
 struct texttype {
 	/* Data which needs to be initialized by collation driver */
 	USHORT texttype_version;	/* version ID of object */
-	void* texttype_impl;   /* collation object implemented in driver */
+	void* texttype_impl;		/* collation object implemented in driver */
 
     /* Used only for debugging purposes. Should contain string in form 
       <charset>.<collation>. For example "WIN1251.PXW_CYRL"

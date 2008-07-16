@@ -1055,13 +1055,10 @@ static SecurityClass::flags_t compute_access(thread_db* tdbb,
 		BLB_close(tdbb, blob);
 		blob = NULL;
 		acl.shrink(end - buffer);
+
 		if (acl.getCount() > 0)
 		{
-			privileges |= walk_acl(	tdbb,
-									acl,
-									view,
-									trg_name,
-									prc_name);
+			privileges |= walk_acl(tdbb, acl, view, trg_name, prc_name);
 		}
 	END_FOR;
 
@@ -1242,9 +1239,12 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 			break;
 
 		case ACL_priv_list:
-			if (hit) {
+			if (hit)
+			{
 				while ( (c = *a++) )
-					switch (c) {
+				{
+					switch (c)
+					{
 					case priv_control:
 						privilege |= SCL_control;
 						break;
@@ -1253,7 +1253,6 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 						// Note that READ access must imply REFERENCES
 						// access for upward compatibility of existing
 						// security classes
-
 						privilege |= SCL_read | SCL_sql_references;
 						break;
 
@@ -1298,6 +1297,8 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					default:
 						return SCL_corrupt;
 					}
+				}
+
 				// For a relation the first hit does not give the privilege. 
 				// Because, there could be some permissions for the table 
 				// (for user1) and some permissions for a column on that 

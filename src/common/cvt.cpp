@@ -138,7 +138,6 @@ static void integer_to_text(const dsc*, dsc*, Callbacks*);
 static void string_to_datetime(const dsc*, GDS_TIMESTAMP*, const EXPECT_DATETIME, ErrorFunction);
 static SINT64 hex_to_value(const char*& string, const char* end);
 
-
 static bool transliterate(const dsc* from, dsc* to, CHARSET_ID& charset2, ErrorFunction err);
 static Jrd::CharSet* getToCharset(CHARSET_ID charset2);
 static void validateData(Jrd::CharSet* toCharSet, SLONG length, const UCHAR* q, ErrorFunction err);

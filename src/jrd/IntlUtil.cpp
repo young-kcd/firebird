@@ -655,17 +655,19 @@ static void unicodeDestroy(texttype* tt)
 
 static USHORT unicodeKeyLength(texttype* tt, USHORT len)
 {
-	return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->keyLength(
-		len / static_cast<TextTypeImpl*>(tt->texttype_impl)->cs->charset_max_bytes_per_char * 4);
+	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
+	return impl->collation->keyLength(len / impl->cs->charset_max_bytes_per_char * 4);
 }
 
 
 static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 	USHORT dstLen, UCHAR* dst, USHORT keyType)
 {
+	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
+
 	try
 	{
-		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
+		charset* cs = impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -690,8 +692,7 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 			&errorCode,
 			&offendingPos);
 
-		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->stringToKey(
-			utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
+		return impl->collation->stringToKey(utf16Len, (USHORT*)utf16Str.begin(), dstLen, dst, keyType);
 	}
 	catch (BadAlloc)
 	{
@@ -704,11 +705,13 @@ static USHORT unicodeStrToKey(texttype* tt, USHORT srcLen, const UCHAR* src,
 static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 	ULONG len2, const UCHAR* str2, INTL_BOOL* errorFlag)
 {
+	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
+
 	try
 	{
 		*errorFlag = false;
 
-		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
+		charset* cs = impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str1;
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str2;
@@ -753,8 +756,7 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 			&errorCode,
 			&offendingPos);
 
-		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->compare(
-			utf16Len1, (USHORT*)utf16Str1.begin(),
+		return impl->collation->compare(utf16Len1, (USHORT*)utf16Str1.begin(),
 			utf16Len2, (USHORT*)utf16Str2.begin(), errorFlag);
 	}
 	catch (BadAlloc)
@@ -767,9 +769,11 @@ static SSHORT unicodeCompare(texttype* tt, ULONG len1, const UCHAR* str1,
 
 static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst)
 {
+	TextTypeImpl* impl = static_cast<TextTypeImpl*>(tt->texttype_impl);
+
 	try
 	{
-		charset* cs = static_cast<TextTypeImpl*>(tt->texttype_impl)->cs;
+		charset* cs = impl->cs;
 
 		HalfStaticArray<UCHAR, BUFFER_SMALL> utf16Str;
 		USHORT errorCode;
@@ -794,7 +798,7 @@ static ULONG unicodeCanonical(texttype* tt, ULONG srcLen, const UCHAR* src, ULON
 			&errorCode,
 			&offendingPos);
 
-		return static_cast<TextTypeImpl*>(tt->texttype_impl)->collation->canonical(
+		return impl->collation->canonical(
 			utf16Len, Firebird::Aligner<USHORT>(utf16Str.begin(), utf16Len),
 			dstLen, Firebird::OutAligner<ULONG>(dst, dstLen), NULL);
 	}

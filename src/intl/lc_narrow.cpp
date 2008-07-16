@@ -143,8 +143,7 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 
 	USHORT len = impl->texttype_bytes_per_key * MAX(inLen, 2);
 
-	if (impl->texttype_expand_table &&
-		((const ExpandChar*) impl->texttype_expand_table)[0].Ch)
+	if (impl->texttype_expand_table && ((const ExpandChar*) impl->texttype_expand_table)[0].Ch)
 	{
 		len += (USHORT) log10(inLen + 1.0) * 4 * impl->texttype_bytes_per_key;
 	}
@@ -258,9 +257,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 			fb_assert(exp->Ch == *pInChar);
 			for (int j = 0; j < 2; j++) {
 				if (j)
-					coll =
-						&((const SortOrderTblEntry*) impl->
-						  texttype_collation_table)[exp->ExpCh2];
+					coll = &((const SortOrderTblEntry*) impl->texttype_collation_table)[exp->ExpCh2];
 				if (coll->Primary != NULL_WEIGHT && lprimary < iOutLen)
 					outbuff[lprimary++] = coll->Primary + impl->primary_sum;
 				if (coll->Secondary != NULL_SECONDARY && lsecondary < sizeof(secondary))

@@ -92,8 +92,7 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 		}
 
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] +
-			 (wide % 256)];
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;

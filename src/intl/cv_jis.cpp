@@ -87,8 +87,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 			/* Step 2: Convert from JIS to UNICODE */
 			ch = ((const USHORT*) impl->csconvert_datatable)
 				[((const USHORT*) impl->csconvert_misc)
-					[(USHORT)wide /	256]
-				 + (wide % 256)];
+					[(USHORT)wide /	256] + (wide % 256)];
 		}
 
 
@@ -210,8 +209,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 		if (table == 1)
 			ch = ((const USHORT*) impl->csconvert_datatable)
 				[((const USHORT*) impl->csconvert_misc)
-					[(USHORT)wide /	256]
-				 + (wide % 256)];
+					[(USHORT)wide /	256] + (wide % 256)];
 		else {
 			fb_assert(table == 2);
 			fb_assert(wide <= 255);
@@ -513,8 +511,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 		else
 			jis_ch = ((const USHORT*) impl->csconvert_datatable)
 					[((const USHORT*) impl->csconvert_misc)
-						[(USHORT)wide /	256]
-					 + (wide % 256)];
+						[(USHORT)wide /	256] + (wide % 256)];
 		if ((jis_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
