@@ -1763,7 +1763,6 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 	for (IndexScratchSegment** tail = indexScratch->segments.begin();
 		 tail != indexScratch->segments.end() && ((*tail)->lowerValue || (*tail)->upperValue); ++tail)
 	{
-		bool changed = false;
 		dsc dsc0;
 		CMP_get_desc(tdbb, optimizer->opt_csb, (*tail)->matches[0]->nod_arg[0], &dsc0);
 
@@ -1778,10 +1777,9 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 			{
 				// ASF: Order is more precise than equivalence class.
 				// It's necessary to use the partial key.
-				// For multi-segmented indices, don't use all segments.
-
 				retrieval->irb_generic |= irb_starting;
 
+				// For multi-segmented indices we can't use the remaining segments.
 				int diff = indexScratch->lowerCount - indexScratch->upperCount;
 
 				if (diff >= 0)
@@ -1795,12 +1793,9 @@ jrd_nod* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 					retrieval->irb_upper_count = tail - indexScratch->segments.begin() + 1;
 				}
 
-				changed = true;
+				break;
 			}
 		}
-
-		if (changed)
-			break;
 	}
 
 	// This index is never used for IS NULL, thus we can ignore NULLs

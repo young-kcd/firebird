@@ -1115,10 +1115,9 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 					{
 						// ASF: Order is more precise than equivalence class.
 						// It's necessary to use the partial key.
-						// For multi-segmented indices, don't use all segments.
-
 						retrieval->irb_generic |= irb_starting;
 
+						// For multi-segmented indices, don't use all segments.
 						int diff = retrieval->irb_lower_count - retrieval->irb_upper_count;
 
 						if (diff >= 0)
