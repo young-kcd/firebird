@@ -68,7 +68,7 @@ public:
 	MetaName& operator=(const char* s) { return assign(s); }
 	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
-	char* getBuffer(size_t l);
+	char* getBuffer(const size_t l);
 
 	size_t length() const { return count; }
 	const char* c_str() const { return data; }

@@ -396,7 +396,8 @@ public:
 				return true;
 			}
 
-			if (!treeAccessor.getFirst()) return false;
+			if (!treeAccessor.getFirst())
+				return false;
 
 			BUNCH_T tree_bits = treeAccessor.current().bits;
 			bit_mask = BUNCH_ONE;

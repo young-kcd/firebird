@@ -63,7 +63,7 @@ public:
 			system_call_failed::raise("CloseHandle");
 	}	
 
-	bool tryEnter(int seconds = 0, int milliseconds = 0)
+	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		milliseconds += seconds * 1000;
 		DWORD result = WaitForSingleObject(
@@ -185,7 +185,7 @@ public:
 #ifdef HAVE_SEM_TIMEDWAIT
 	// In case when sem_timedwait() is implemented by host OS, 
 	// class SignalSafeSemaphore may have this function:
-	bool tryEnter(int seconds = 0, int milliseconds = 0)
+	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		milliseconds += seconds * 1000;
 		// Return true in case of success
@@ -287,7 +287,7 @@ public:
 			system_call_failed::raise("semaphore.h: ~Semaphore: semctl()");
 	}
 
-	bool tryEnter(int seconds = 0, int milliseconds = 0) // Returns true in case of success
+	bool tryEnter(const int seconds = 0, int milliseconds = 0) // Returns true in case of success
 	{
 		milliseconds += seconds * 1000;
 		timespec timeout;
@@ -400,7 +400,7 @@ public:
 		}
 	}
 	
-	bool tryEnter(int seconds = 0, int milliseconds = 0)
+	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		bool rt = false;
 		// Return true in case of success

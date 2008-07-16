@@ -79,7 +79,7 @@ namespace Firebird
 
 		// Reserve buffer to allow storing at least newLen characters there
 		// (not including null terminator). Existing contents of our string are preserved.
-		void reserveBuffer(size_type newLen)
+		void reserveBuffer(const size_type newLen)
 		{
 			size_type newSize = newLen + 1;
 			if (newSize > bufferSize) {
@@ -114,7 +114,7 @@ namespace Firebird
 		// Make sure our buffer is large enough to store at least <length> characters in it
 		// (not including null terminator). Resulting buffer is not initialized. 
 		// Use it in constructors only when stringBuffer is not assigned yet.
-		void initialize(size_type len)
+		void initialize(const size_type len)
 		{
 			if (len < INLINE_BUFFER_SIZE) {
 				stringBuffer = inlineBuffer;
@@ -145,10 +145,10 @@ namespace Firebird
 		}
 
 	protected:
-		AbstractString(size_type sizeL, const_pointer datap);
+		AbstractString(const size_type sizeL, const_pointer datap);
 
-		AbstractString(const_pointer p1, size_type n1, 
-					 const_pointer p2, size_type n2);
+		AbstractString(const_pointer p1, const size_type n1,
+					 const_pointer p2, const size_type n2);
 
 		AbstractString(const AbstractString& v);
 
@@ -158,7 +158,7 @@ namespace Firebird
 			stringBuffer[0] = 0;
 		}
 
-		AbstractString(size_type sizeL, char_type c);
+		AbstractString(const size_type sizeL, char_type c);
 
 		inline explicit AbstractString(MemoryPool& p) : AutoStorage(p),
 			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
@@ -173,26 +173,26 @@ namespace Firebird
 			memcpy(stringBuffer, v.c_str(), stringLength);
 		}
 
-		inline AbstractString(MemoryPool& p, const char_type* s, size_type l) 
+		inline AbstractString(MemoryPool& p, const char_type* s, const size_type l)
 			: AutoStorage(p)
 		{
 			initialize(l);
 			memcpy(stringBuffer, s, l);
 		}
 
-		pointer Modify(void)
+		pointer modify()
 		{
 			return stringBuffer;
 		}
 
 		// Trim the range making sure that it fits inside specified length
-		static void AdjustRange(size_type length, size_type& pos, size_type& n);
+		static void adjustRange(const size_type length, size_type& pos, size_type& n);
 
-		pointer baseAssign(size_type n);
+		pointer baseAssign(const size_type n);
 
-		pointer baseAppend(size_type n);
+		pointer baseAppend(const size_type n);
 
-		pointer baseInsert(size_type p0, size_type n);
+		pointer baseInsert(const size_type p0, size_type n);
 
 		void baseErase(size_type p0, size_type n);
 
@@ -225,7 +225,7 @@ namespace Firebird
 		}
 
 		void reserve(size_type n = 0);
-		void resize(size_type n, char_type c = ' ');
+		void resize(const size_type n, char_type c = ' ');
 
 		inline pointer getBuffer(size_t l)
 		{
@@ -257,8 +257,8 @@ namespace Firebird
 		{
 			return rfind(str.c_str(), pos);
 		}
-		size_type rfind(const_pointer s, size_type pos = npos) const;
-		size_type rfind(char_type c, size_type pos = npos) const;
+		size_type rfind(const_pointer s, const size_type pos = npos) const;
+		size_type rfind(char_type c, const size_type pos = npos) const;
 		inline size_type find_first_of(const AbstractString& str, size_type pos = 0) const
 		{
 			return find_first_of(str.c_str(), pos, str.length());
@@ -276,7 +276,7 @@ namespace Firebird
 		{
 			return find_last_of(str.c_str(), pos, str.length());
 		}
-		size_type find_last_of(const_pointer s, size_type pos, size_type n = npos) const;
+		size_type find_last_of(const_pointer s, const size_type pos, size_type n = npos) const;
 		inline size_type find_last_of(const_pointer s, size_type pos = npos) const
 		{
 			return find_last_of(s, pos, strlen(s));
@@ -296,27 +296,27 @@ namespace Firebird
 		}
 		inline size_type find_first_not_of(char_type c, size_type pos = 0) const
 		{
-			const char s[2] = {c, 0};
+			const char_type s[2] = {c, 0};
 			return find_first_not_of(s, pos, 1);
 		}
 		inline size_type find_last_not_of(const AbstractString& str, size_type pos = npos) const
 		{
 			return find_last_not_of(str.c_str(), pos, str.length());
 		}
-		size_type find_last_not_of(const_pointer s, size_type pos, size_type n = npos) const;
+		size_type find_last_not_of(const_pointer s, const size_type pos, size_type n = npos) const;
 		inline size_type find_last_not_of(const_pointer s, size_type pos = npos) const
 		{
 			return find_last_not_of(s, pos, strlen(s));
 		}
 		inline size_type find_last_not_of(char_type c, size_type pos = npos) const
 		{
-			const char s[2] = {c, 0};
+			const char_type s[2] = {c, 0};
 			return find_last_not_of(s, pos, 1);
 		}
 
 		inline iterator begin()
 		{
-			return Modify();
+			return modify();
 		}
 		inline const_iterator begin() const
 		{
@@ -324,21 +324,21 @@ namespace Firebird
 		}
 		inline iterator end()
 		{
-			return Modify() + length();
+			return modify() + length();
 		}
 		inline const_iterator end() const
 		{
 			return c_str() + length();
 		}
-		inline const_reference at(size_type pos) const
+		inline const_reference at(const size_type pos) const
 		{
 			checkPos(pos);
 			return c_str()[pos];
 		}
-		inline reference at(size_type pos)
+		inline reference at(const size_type pos)
 		{
 			checkPos(pos);
-			return Modify()[pos];
+			return modify()[pos];
 		}
 		inline const_reference operator[](size_type pos) const
 		{
@@ -397,7 +397,7 @@ namespace Firebird
 			baseTrim(TrimBoth, ToTrim);
 		}
 
-		bool LoadFromFile(FILE *file);
+		bool LoadFromFile(FILE* file);
 		void vprintf(const char* Format, va_list params);
 		void printf(const char* Format, ...);
 
@@ -414,7 +414,7 @@ namespace Firebird
 			return toSize;
 		}
 
-		static unsigned int hash(const_pointer string, size_type tableSize);
+		static unsigned int hash(const_pointer string, const size_type tableSize);
 
 		inline unsigned int hash(size_type tableSize) const
 		{
@@ -478,10 +478,10 @@ namespace Firebird
 		inline StringType& append(const StringType& str, size_type pos, size_type n)
 		{
 			fb_assert(&str != this);
-			AdjustRange(str.length(), pos, n);
+			adjustRange(str.length(), pos, n);
 			return append(str.c_str() + pos, n);
 		}
-		inline StringType& append(const_pointer s, size_type n)
+		inline StringType& append(const_pointer s, const size_type n)
 		{
 			memcpy(baseAppend(n), s, n);
 			return *this;
@@ -508,7 +508,7 @@ namespace Firebird
 		inline StringType& assign(const StringType& str, size_type pos, size_type n)
 		{
 			fb_assert(&str != this);
-			AdjustRange(str.length(), pos, n);
+			adjustRange(str.length(), pos, n);
 			return assign(&str.c_str()[pos], n);
 		}
 		inline StringType& assign(const_pointer s, size_type n)
@@ -587,10 +587,10 @@ namespace Firebird
 		inline StringType& insert(size_type p0, const StringType& str, size_type pos, size_type n)
 		{
 			fb_assert(&str != this);
-			AdjustRange(str.length(), pos, n);
+			adjustRange(str.length(), pos, n);
 			return insert(p0, &str.c_str()[pos], n);
 		}
-		inline StringType& insert(size_type p0, const_pointer s, size_type n)
+		inline StringType& insert(size_type p0, const_pointer s, const size_type n)
 		{
 			if (p0 >= length()) {
 				return append(s, n);
@@ -602,7 +602,7 @@ namespace Firebird
 		{
 			return insert(p0, s, strlen(s));
 		}
-		inline StringType& insert(size_type p0, size_type n, char_type c)
+		inline StringType& insert(size_type p0, const size_type n, const char_type c)
 		{
 			if (p0 >= length()) {
 				return append(n, c);
@@ -641,13 +641,14 @@ namespace Firebird
 			fb_assert(&str != this);
 			return replace(p0, n0, str.c_str(), str.length());
 		}
-		inline StringType& replace(size_type p0, size_type n0, const StringType& str, size_type pos, size_type n)
+		inline StringType& replace(const size_type p0, const size_type n0, const StringType& str,
+			size_type pos, size_type n)
 		{
 			fb_assert(&str != this);
-			AdjustRange(str.length(), pos, n);
+			adjustRange(str.length(), pos, n);
 			return replace(p0, n0, &str.c_str()[pos], n);
 		}
-		inline StringType& replace(size_type p0, size_type n0, const_pointer s, size_type n)
+		inline StringType& replace(const size_type p0, const size_type n0, const_pointer s, size_type n)
 		{
 			erase(p0, n0);
 			return insert(p0, s, n);
@@ -656,7 +657,7 @@ namespace Firebird
 		{
 			return replace(p0, n0, s, strlen(s));
 		}
-		inline StringType& replace(size_type p0, size_type n0, size_type n, char_type c)
+		inline StringType& replace(const size_type p0, const size_type n0, size_type n, char_type c)
 		{
 			erase(p0, n0);
 			return insert(p0, n, c);
@@ -685,7 +686,7 @@ namespace Firebird
 
 		inline StringType substr(size_type pos = 0, size_type n = npos) const
 		{
-			AdjustRange(length(), pos, n);
+			adjustRange(length(), pos, n);
 			return StringType(&c_str()[pos], n);
 		}
 		inline int compare(const StringType& str) const
@@ -698,21 +699,21 @@ namespace Firebird
 		}
 		inline int compare(size_type p0, size_type n0, const StringType& str, size_type pos, size_type n)
 		{
-			AdjustRange(str.length(), pos, n);
+			adjustRange(str.length(), pos, n);
 			return compare(p0, n0, &str.c_str()[pos], n);
 		}
 		inline int compare(const_pointer s) const
 		{
 			return compare(s, strlen(s));
 		}
-		int compare(size_type p0, size_type n0, const_pointer s, size_type n) const
+		int compare(size_type p0, size_type n0, const_pointer s, const size_type n) const
 		{
-			AdjustRange(length(), p0, n0);
+			adjustRange(length(), p0, n0);
 			const size_type ml = n0 < n ? n0 : n;
 			const int rc = Comparator::compare(&c_str()[p0], s, ml);
 			return rc ? rc : n0 - n;
 		}
-		int compare(const_pointer s, size_type n) const
+		int compare(const_pointer s, const size_type n) const
 		{
 			const size_type ml = length() < n ? length() : n;
 			const int rc = Comparator::compare(c_str(), s, ml);

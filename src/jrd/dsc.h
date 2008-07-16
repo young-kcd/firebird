@@ -34,34 +34,41 @@
 
 /* Data type information */
 
-inline bool DTYPE_IS_TEXT(UCHAR d) {
+inline bool DTYPE_IS_TEXT(UCHAR d)
+{
 	return ((d >= dtype_text) && (d <= dtype_varying));
 }
 
-inline bool DTYPE_IS_DATE(UCHAR t) {
+inline bool DTYPE_IS_DATE(UCHAR t)
+{
 	return ((t >= dtype_sql_date) && (t <= dtype_timestamp));
 }
 
 /* DTYPE_IS_BLOB includes both BLOB and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB(UCHAR d) {
+inline bool DTYPE_IS_BLOB(UCHAR d)
+{
 	return ((d == dtype_blob) || (d == dtype_array));
 }
 
 /* DTYPE_IS_BLOB_OR_QUAD includes both BLOB, QUAD and ARRAY since array's are implemented over blobs. */
-inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d) {
+inline bool DTYPE_IS_BLOB_OR_QUAD(UCHAR d)
+{
 	return ((d == dtype_blob) || (d == dtype_quad) || (d == dtype_array));
 }
 
 /* Exact numeric? */
-inline bool DTYPE_IS_EXACT(UCHAR d) {
+inline bool DTYPE_IS_EXACT(UCHAR d)
+{
 	return ((d == dtype_int64) || (d == dtype_long) || (d == dtype_short));
 }
 
-inline bool DTYPE_IS_APPROX(UCHAR d) {
+inline bool DTYPE_IS_APPROX(UCHAR d)
+{
 	return ((d == dtype_double) || (d == dtype_real));
 }
 
-inline bool DTYPE_IS_NUMERIC(UCHAR d) {
+inline bool DTYPE_IS_NUMERIC(UCHAR d)
+{
 	return (((d >= dtype_byte) && (d <= dtype_d_float)) || (d  == dtype_int64));
 }
 
@@ -137,8 +144,8 @@ typedef struct dsc
 	{
 		if (isBlob())
 			return dsc_sub_type;
-		else
-			return isc_blob_text;
+
+		return isc_blob_text;
 	}
 
 	void setBlobSubType(SSHORT subType)
@@ -151,30 +158,32 @@ typedef struct dsc
 	{
 		if (isText())
 			return dsc_sub_type & 0xFF;
-		else if (isBlob())
+
+		if (isBlob())
 		{
 			if (dsc_sub_type == isc_blob_text)
 				return dsc_scale;
-			else
-				return CS_BINARY;
+
+			return CS_BINARY;
 		}
-		else
-			return CS_ASCII;
+
+		return CS_ASCII;
 	}
 
 	USHORT getTextType() const
 	{
 		if (isText())
 			return dsc_sub_type;
-		else if (isBlob())
+
+		if (isBlob())
 		{
 			if (dsc_sub_type == isc_blob_text)
 				return dsc_scale | (dsc_flags & 0xFF00);
-			else
-				return CS_BINARY;
+
+			return CS_BINARY;
 		}
-		else
-			return CS_ASCII;
+
+		return CS_ASCII;
 	}
 
 	void setTextType(USHORT ttype)
@@ -289,7 +298,8 @@ typedef struct dsc
 		dsc_flags(od.dsc_flags),
 		dsc_address((UCHAR*)(IPTR)(od.dsc_offset))
 	{}
-	operator Ods::Descriptor() const {
+	operator Ods::Descriptor() const
+	{
 #ifdef DEV_BUILD
 		address32bit();
 #endif
@@ -308,15 +318,18 @@ typedef struct dsc
 	    
 } DSC;
 
-inline SSHORT DSC_GET_CHARSET(const dsc* desc) {
+inline SSHORT DSC_GET_CHARSET(const dsc* desc)
+{
 	return (desc->dsc_sub_type & 0x00FF);
 }
 
-inline SSHORT DSC_GET_COLLATE(const dsc* desc) {
+inline SSHORT DSC_GET_COLLATE(const dsc* desc)
+{
 	return (desc->dsc_sub_type >> 8);
 }
 
-typedef struct alt_dsc {
+typedef struct alt_dsc
+{
 	SLONG dsc_combined_type;
 	SSHORT dsc_sub_type;
 	USHORT dsc_flags;			/* Not currently used */
@@ -356,7 +369,8 @@ const UCHAR dtype_max_comp	= dtype_d_float;
 /* NOTE: For types <= dtype_any_text the dsc_sub_type field defines
    the text type */
 
-inline USHORT TEXT_LEN(const dsc* desc) {
+inline USHORT TEXT_LEN(const dsc* desc)
+{
 	return ((desc->dsc_dtype == dtype_text) ? desc->dsc_length 
 		: (desc->dsc_dtype == dtype_cstring) ? desc->dsc_length - 1 : desc->dsc_length - sizeof(USHORT));
 }
@@ -379,7 +393,8 @@ const SSHORT dsc_num_type_decimal	= 2;	/* defined as DECIMAL(n,m)        */
 
 /* Date type information */
 
-inline SCHAR NUMERIC_SCALE(const dsc desc) {
+inline SCHAR NUMERIC_SCALE(const dsc desc)
+{
 	return ((DTYPE_IS_TEXT(desc.dsc_dtype)) ? 0 : desc.dsc_scale);
 }
 

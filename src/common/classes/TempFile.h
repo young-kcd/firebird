@@ -70,7 +70,7 @@ public:
 
 private:
 	void init(const Firebird::PathName&, const Firebird::PathName&);
-	void seek(offset_t);
+	void seek(const offset_t);
 
 #if defined(WIN_NT)
 	HANDLE handle;

@@ -112,7 +112,7 @@ namespace Firebird {
 		va_end(params);
 	}
 
-	char* MetaName::getBuffer(size_t l) 
+	char* MetaName::getBuffer(const size_t l)
 	{
 		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
 		init();

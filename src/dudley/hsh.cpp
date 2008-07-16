@@ -300,12 +300,9 @@ void HSH_insert( SYM symbol)
  *	Insert a symbol into the hash table.
  *
  **************************************/
-	USHORT h;
-	SYM old;
+	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
-	h = hash(symbol->sym_string, symbol->sym_length);
-
-	for (old = hash_table[h]; old; old = old->sym_collision)
+	for (SYM old = hash_table[h]; old; old = old->sym_collision)
 		if (scompare(symbol->sym_string, symbol->sym_length,
 					 old->sym_string, old->sym_length))
 		{
@@ -331,13 +328,11 @@ SYM HSH_lookup(const SCHAR* string, USHORT length)
  *	Perform a string lookup against hash table.
  *
  **************************************/
-	SYM symbol;
-
-	for (symbol = hash_table[hash(string, length)]; symbol;
-		 symbol = symbol->sym_collision)
-			if (scompare
-				(string, length, symbol->sym_string,
-				 symbol->sym_length)) return symbol;
+	for (SYM symbol = hash_table[hash(string, length)]; symbol; symbol = symbol->sym_collision)
+	{
+		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
+			return symbol;
+	}
 
 	return NULL;
 }

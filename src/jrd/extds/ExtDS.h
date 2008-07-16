@@ -96,8 +96,7 @@ public:
 	// Notify provider when some jrd attachment is about to be released
 	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) = 0;
 
-	const Firebird::string& getName() const
-	{ return m_name; }
+	const Firebird::string& getName() const { return m_name; }
 
 	virtual void initialize() = 0;
 

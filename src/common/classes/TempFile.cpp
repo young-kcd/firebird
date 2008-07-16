@@ -230,10 +230,11 @@ TempFile::~TempFile()
 // Performs a positioning operation
 //
 
-void TempFile::seek(offset_t offset)
+void TempFile::seek(const offset_t offset)
 {
 	if (position == offset)
 		return;
+		
 #if defined(WIN_NT)
 	LARGE_INTEGER liOffset;
 	liOffset.QuadPart = offset;

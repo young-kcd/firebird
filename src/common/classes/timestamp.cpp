@@ -240,7 +240,7 @@ void TimeStamp::decode_timestamp(const ISC_TIMESTAMP ts, struct tm* times, int* 
 	decode_time(ts.timestamp_time, &times->tm_hour, &times->tm_min, &times->tm_sec, fractions);
 }
 
-ISC_TIMESTAMP TimeStamp::encode_timestamp(const struct tm* times, int fractions)
+ISC_TIMESTAMP TimeStamp::encode_timestamp(const struct tm* times, const int fractions)
 {
 	fb_assert(fractions >= 0 && fractions < ISC_TIME_SECONDS_PRECISION);
 
@@ -251,13 +251,14 @@ ISC_TIMESTAMP TimeStamp::encode_timestamp(const struct tm* times, int fractions)
 	return ts;
 }
 
-void TimeStamp::round_time(ISC_TIME &ntime, int precision)
+void TimeStamp::round_time(ISC_TIME &ntime, const int precision)
 {
 	const int scale = -ISC_TIME_SECONDS_PRECISION_SCALE - precision;
 
 	// for the moment, if greater precision was requested than we can 
 	// provide return what we have.
-	if (scale <= 0) return;
+	if (scale <= 0)
+		return;
 
 	static const ISC_TIME pow10table[] = 
 		{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};

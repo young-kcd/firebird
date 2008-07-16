@@ -70,16 +70,14 @@ public:
 
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 
-	virtual bool isConnected() const 
-	{ return (m_attachment != 0); }
+	virtual bool isConnected() const { return (m_attachment != 0); }
 
 	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) const;
 
 	bool isCurrent() const { return m_isCurrent; }
 
-	Jrd::Attachment* getJrdAtt() 
-	{ return m_attachment; }
+	Jrd::Attachment* getJrdAtt() { return m_attachment; }
 
 	virtual Blob* createBlob();
 
@@ -106,8 +104,7 @@ protected:
 	virtual ~InternalTransaction() {}
 
 public:
-	Jrd::jrd_tra* getJrdTran()
-	{ return m_transaction; }
+	Jrd::jrd_tra* getJrdTran() { return m_transaction; }
 
 protected:
 	virtual void doStart(ISC_STATUS* status, Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb);
@@ -139,7 +136,9 @@ protected:
 	virtual void getExtBlob(Jrd::thread_db *tdbb, const dsc &src, dsc &dst);
 
 	InternalTransaction* getIntTransaction()
-	{ return (InternalTransaction*) m_transaction; }
+	{
+		return (InternalTransaction*) m_transaction;
+	}
 
 	InternalConnection& m_intConnection;
 	InternalTransaction* m_intTransaction;

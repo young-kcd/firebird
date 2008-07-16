@@ -6014,7 +6014,8 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 {
 	DEV_BLKCHK(node, dsql_type_nod);
 
-	if (node == NULL) return false;
+	if (node == NULL)
+		return false;
 
 	switch (node->nod_type)
 	{

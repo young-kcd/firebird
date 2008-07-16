@@ -504,8 +504,7 @@ protected:
 	virtual ~IscConnection();
 
 public:
-	FB_API_HANDLE& getAPIHandle()
-	{ return m_handle; }
+	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd);
@@ -513,8 +512,7 @@ public:
 
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 
-	virtual bool isConnected() const
-	{ return (m_handle != 0); }
+	virtual bool isConnected() const { return (m_handle != 0); }
 
 	virtual Blob* createBlob();
 
@@ -532,8 +530,7 @@ class IscTransaction : public Transaction
 	friend class IscConnection;
 
 public:
-	FB_API_HANDLE& getAPIHandle()
-	{ return m_handle; }
+	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 protected:
 	explicit IscTransaction(IscConnection &conn) :
@@ -561,8 +558,7 @@ class IscStatement : public Statement
 	friend class IscConnection;
 
 public:
-	FB_API_HANDLE& getAPIHandle()
-	{ return m_handle; }
+	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
 protected:
 	explicit IscStatement(IscConnection &conn);
@@ -578,8 +574,7 @@ protected:
 	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names, 
 		Jrd::jrd_nod **params);
 
-	IscTransaction *getIscTransaction() 
-	{ return (IscTransaction*) m_transaction; }
+	IscTransaction *getIscTransaction() { return (IscTransaction*) m_transaction; }
 
 	IscProvider &m_iscProvider;
 	IscConnection &m_iscConnection;

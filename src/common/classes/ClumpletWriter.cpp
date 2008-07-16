@@ -103,7 +103,7 @@ void ClumpletWriter::reset(UCHAR tag)
 	rewind();
 }
 
-void ClumpletWriter::reset(const UCHAR* buffer, size_t buffLen)
+void ClumpletWriter::reset(const UCHAR* buffer, const size_t buffLen)
 {
 	dynamic_buffer.clear();
 	if (buffer && buffLen) {
@@ -121,7 +121,7 @@ void ClumpletWriter::size_overflow()
 	fatal_exception::raise("Clumplet buffer size limit reached");
 }
 
-void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, SINT64 value)
+void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value)
 {
 	int shift = 0;
 	while (length--) {
@@ -130,7 +130,7 @@ void ClumpletWriter::toVaxInteger(UCHAR* ptr, size_t length, SINT64 value)
 	}
 }
 
-void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
+void ClumpletWriter::insertInt(UCHAR tag, const SLONG value)
 {
 	UCHAR bytes[sizeof(SLONG)];
 
@@ -138,7 +138,7 @@ void ClumpletWriter::insertInt(UCHAR tag, SLONG value)
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
 }
 
-void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
+void ClumpletWriter::insertBigInt(UCHAR tag, const SINT64 value)
 {
 	UCHAR bytes[sizeof(SINT64)];
 
@@ -146,7 +146,7 @@ void ClumpletWriter::insertBigInt(UCHAR tag, SINT64 value)
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
 }
 
-void ClumpletWriter::insertDouble(UCHAR tag, double value)
+void ClumpletWriter::insertDouble(UCHAR tag, const double value)
 {
 	union {
 		double temp_double;
@@ -162,7 +162,7 @@ void ClumpletWriter::insertDouble(UCHAR tag, double value)
 	insertBytesLengthCheck(tag, bytes, sizeof(bytes));
 }
 
-void ClumpletWriter::insertTimeStamp(UCHAR tag, ISC_TIMESTAMP value)
+void ClumpletWriter::insertTimeStamp(UCHAR tag, const ISC_TIMESTAMP value)
 {
 	UCHAR bytes[sizeof(ISC_TIMESTAMP)];
 	toVaxInteger(bytes, sizeof(SLONG), value.timestamp_date);
@@ -195,7 +195,7 @@ void ClumpletWriter::insertByte(UCHAR tag, const UCHAR byte)
 	insertBytesLengthCheck(tag, &byte, 1);
 }
 
-void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length)
+void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length)
 {
 	// Check that we're not beyond the end of buffer.
 	// We get there when we set end marker.
@@ -298,7 +298,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_
 	}
 	dynamic_buffer.insert(cur_offset, bytes, length);
 	cur_offset += length;
-	size_t new_offset = cur_offset;
+	const size_t new_offset = cur_offset;
 	cur_offset = saved_offset;
     adjustSpbState();
 	cur_offset = new_offset;

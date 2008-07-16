@@ -89,14 +89,14 @@ namespace Firebird {
 		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
-	AbstractString::AbstractString(size_type sizeL, const_pointer dataL)
+	AbstractString::AbstractString(const size_type sizeL, const_pointer dataL)
 	{
 		initialize(sizeL);
 		memcpy(stringBuffer, dataL, sizeL);
 	}
 
-	AbstractString::AbstractString(const_pointer p1, size_type n1, 
-				 const_pointer p2, size_type n2)
+	AbstractString::AbstractString(const_pointer p1, const size_type n1,
+				 const_pointer p2, const size_type n2)
 	{
 		// CVC: npos must be maximum size_type value for all platforms.
 		// fb_assert(n2 < npos - n1 && n1 + n2 <= max_length());
@@ -110,13 +110,13 @@ namespace Firebird {
 		memcpy(stringBuffer + n1, p2, n2);
 	}
 
-	AbstractString::AbstractString(size_type sizeL, char_type c)
+	AbstractString::AbstractString(const size_type sizeL, char_type c)
 	{
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);
 	}
 	
-	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n)
+	void AbstractString::adjustRange(const size_type length, size_type& pos, size_type& n)
 	{
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
@@ -130,7 +130,7 @@ namespace Firebird {
 		}
 	}
 
-	AbstractString::pointer AbstractString::baseAssign(size_type n)
+	AbstractString::pointer AbstractString::baseAssign(const size_type n)
 	{
 		reserveBuffer(n);
 		stringLength = n;
@@ -139,7 +139,7 @@ namespace Firebird {
 		return stringBuffer;
 	}
 
-	AbstractString::pointer AbstractString::baseAppend(size_type n)
+	AbstractString::pointer AbstractString::baseAppend(const size_type n)
 	{
 		reserveBuffer(stringLength + n);
 		stringLength += n;
@@ -147,7 +147,7 @@ namespace Firebird {
 		return stringBuffer + stringLength - n;
 	}
 
-	AbstractString::pointer AbstractString::baseInsert(size_type p0, size_type n)
+	AbstractString::pointer AbstractString::baseInsert(const size_type p0, const size_type n)
 	{
 		if (p0 >= length()) {
 			return baseAppend(n);
@@ -161,7 +161,7 @@ namespace Firebird {
 
 	void AbstractString::baseErase(size_type p0, size_type n)
 	{
-		AdjustRange(length(), p0, n);
+		adjustRange(length(), p0, n);
 		memmove(stringBuffer + p0, 
 				stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
 		stringLength -= n;
@@ -177,7 +177,7 @@ namespace Firebird {
 		reserveBuffer(n);
 	}
 
-	void AbstractString::resize(size_type n, char_type c)
+	void AbstractString::resize(const size_type n, char_type c)
 	{
 		if (n == length()) {
 			return;
@@ -191,7 +191,7 @@ namespace Firebird {
 		shrinkBuffer();
 	}
 
-	AbstractString::size_type AbstractString::rfind(const_pointer s, size_type pos) const
+	AbstractString::size_type AbstractString::rfind(const_pointer s, const size_type pos) const
 	{
 		const size_type l = strlen(s);
 		int lastpos = length() - l;
@@ -211,7 +211,7 @@ namespace Firebird {
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::rfind(char_type c, size_type pos) const
+	AbstractString::size_type AbstractString::rfind(char_type c, const size_type pos) const
 	{
 		int lastpos = length() - 1;
 		if (lastpos < 0) {
@@ -243,7 +243,7 @@ namespace Firebird {
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_last_of(const_pointer s, size_type pos, size_type n) const
+	AbstractString::size_type AbstractString::find_last_of(const_pointer s, const size_type pos, size_type n) const
 	{
 		const strBitMask sm(s, n);
 		int lpos = length() - 1;
@@ -273,7 +273,7 @@ namespace Firebird {
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, size_type pos, size_type n) const
+	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, const size_type pos, size_type n) const
 	{
 		const strBitMask sm(s, n);
 		int lpos = length() - 1;
@@ -290,11 +290,12 @@ namespace Firebird {
 		return npos;
 	}
 
-	bool AbstractString::LoadFromFile(FILE *file)
+	bool AbstractString::LoadFromFile(FILE* file)
 	{
 		baseErase(0, length());
 		if (! file)
 			return false;
+			
 		bool rc = false;
 		int c;
 		while ((c = getc(file)) != EOF) {
@@ -320,9 +321,9 @@ extern "C" {
 	void AbstractString::upper()
 	{
 #ifdef WIN_NT
-			CharUpperBuffA(Modify(), length());
+			CharUpperBuffA(modify(), length());
 #else  // WIN_NT
-		for (pointer p = Modify(); *p; p++) {
+		for (pointer p = modify(); *p; p++) {
 			*p = toupper(*p);
 		}
 #endif // WIN_NT
@@ -331,9 +332,9 @@ extern "C" {
 	void AbstractString::lower()
 	{
 #ifdef WIN_NT
-			CharLowerBuffA(Modify(), length());
+			CharLowerBuffA(modify(), length());
 #else  // WIN_NT
-		for (pointer p = Modify(); *p; p++) {
+		for (pointer p = modify(); *p; p++) {
 			*p = tolower(*p);
 		}
 #endif // WIN_NT
@@ -436,7 +437,7 @@ extern "C" {
 		}
 	}
 
-	unsigned int AbstractString::hash(const_pointer string, size_t tableSize)
+	unsigned int AbstractString::hash(const_pointer string, const size_t tableSize)
 	{
 		unsigned int value = 0;
 		unsigned char c;
@@ -450,10 +451,12 @@ extern "C" {
 		return value % tableSize;
 	}
 
-	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n)
+	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
+		const AbstractString::size_type n)
 	{
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);
+
 		return STRNCASECMP(s1, s2, n);
 	}
 

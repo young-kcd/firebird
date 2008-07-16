@@ -353,7 +353,7 @@ public:
 			// add ItemList typedef for you compiler with whichever syntax it likes
 			return KeyOfValue::generate(item, *((ItemList *)item)->begin());
 		}
-		static void setNodeParentAndLevel(void* node, int level, NodeList* parent)
+		static void setNodeParentAndLevel(void* node, const int level, NodeList* parent)
 		{
 			if (level) {
 				((NodeList *)node)->parent = parent;
@@ -362,7 +362,7 @@ public:
 			else
 				((ItemList *)node)->parent = parent;
 		}		
-		static void setNodeParent(void* node, int level, NodeList* parent)
+		static void setNodeParent(void* node, const int level, NodeList* parent)
 		{
 			if (level)
 				((NodeList*) node)->parent = parent;
@@ -460,7 +460,7 @@ public:
 	
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
-		bool locate(LocType lt, const Key& key)
+		bool locate(const LocType lt, const Key& key)
 		{
 			// Inlining is efficient here because LocType will be known in most cases
 			// and compiler will be able to eliminate most of code
@@ -481,7 +481,8 @@ public:
 			curr = (ItemList *)list;
 			const bool found = curr->find(key, curPos);
 			switch (lt) {
-			case locEqual: return found;
+			case locEqual:
+				return found;
 			case locGreatEqual:
 				if (curPos == curr->getCount()) {
 					curr = curr->next;
@@ -836,7 +837,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::a
 }
 
 template <typename Value, typename Key, typename Allocator, typename KeyOfValue, typename Cmp, int LeafCount, int NodeCount>
-void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_removePage(int nodeLevel, void *node)
+void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp, LeafCount, NodeCount>::_removePage(const int nodeLevel, void *node)
 {
 	NodeList *list;
 	// Get parent and adjust the links

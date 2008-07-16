@@ -52,19 +52,19 @@ public:
 	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
 	void reset(UCHAR tag);
-	void reset(const UCHAR* buffer, size_t buffLen);
+	void reset(const UCHAR* buffer, const size_t buffLen);
 
 	// Methods to create new clumplet at current position
-	void insertInt(UCHAR tag, SLONG value);
-	void insertBigInt(UCHAR tag, SINT64 value);
+	void insertInt(UCHAR tag, const SLONG value);
+	void insertBigInt(UCHAR tag, const SINT64 value);
 	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
 	void insertByte(UCHAR tag, const UCHAR byte);
 	void insertTag(UCHAR tag);
-	void insertDouble(UCHAR tag, double value);
-	void insertTimeStamp(UCHAR tag, ISC_TIMESTAMP value);
+	void insertDouble(UCHAR tag, const double value);
+	void insertTimeStamp(UCHAR tag, const ISC_TIMESTAMP value);
 	void insertTime(UCHAR tag, ISC_TIME value) { insertInt(tag, value); }
 	void insertDate(UCHAR tag, ISC_DATE value) { insertInt(tag, value); }
 	void insertEndMarker(UCHAR tag);
@@ -80,7 +80,7 @@ public:
 protected:
 	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }
 	virtual void size_overflow();
-	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length);
+	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
 private:
 	size_t sizeLimit;
 
@@ -91,7 +91,7 @@ private:
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 	
 	void initNewBuffer(UCHAR tag);
-	static void toVaxInteger(UCHAR* ptr, size_t length, SINT64 value);
+	static void toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value);
 };
 
 } // namespace Firebird
