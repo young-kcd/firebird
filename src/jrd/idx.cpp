@@ -1337,32 +1337,42 @@ static IDX_E check_partner_index(
 	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, index_id))
 		BUGCHECK(175);			/* msg 175 partner index description not found */
 
-	bool fuzzy = false;
+	bool starting = false;
+	USHORT segment;
 
-	const index_desc::idx_repeat* idx_desc = idx->idx_rpt;
-	for (USHORT i = 0; i < idx->idx_count; i++, idx_desc++)
+	if (!(partner_idx.idx_flags & idx_unique))
 	{
-		if (idx_desc->idx_itype >= idx_first_intl_string)
+		const index_desc::idx_repeat* idx_desc = partner_idx.idx_rpt;
+		for (segment = 0; segment < partner_idx.idx_count; ++segment, ++idx_desc)
 		{
-			TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype));
-
-			if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
+			if (idx_desc->idx_itype >= idx_first_intl_string)
 			{
-				fuzzy = true;
-				break;
+				TextType* textType = INTL_texttype_lookup(tdbb, INTL_INDEX_TO_TEXT(idx_desc->idx_itype));
+
+				if (textType->getFlags() & TEXTTYPE_SEPARATE_UNIQUE)
+				{
+					starting = true;
+					++segment;
+					break;
+				}
 			}
 		}
 	}
-	
+	else
+		segment = idx->idx_count;
+
 /* get the key in the original index */
 	// AB: Fake the index to be an unique index, because the INTL makes 
 	// different keys depending on unique index or not.
 	// The key build should be exactly the same as stored in the 
 	// unique index, because a comparison is done on both keys.
 	index_desc tmpIndex = *idx;
-	tmpIndex.idx_flags |= idx_unique;
+	// ASF: Was incorrect to verify broken foreign keys.
+	// Should not use a unique key to search a non-unique index.
+	// tmpIndex.idx_flags |= idx_unique;
+	tmpIndex.idx_flags = (tmpIndex.idx_flags & ~idx_unique) | (partner_idx.idx_flags & idx_unique);
 	temporary_key key;
-	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, fuzzy);
+	result = BTR_key(tdbb, relation, record, &tmpIndex, &key, 0, starting);
 	CCH_RELEASE(tdbb, &window);
 
 /* now check for current duplicates */
@@ -1376,10 +1386,14 @@ static IDX_E check_partner_index(
 		//retrieval.blk_type = type_irb;
 		retrieval.irb_index = partner_idx.idx_id;
 		memcpy(&retrieval.irb_desc, &partner_idx, sizeof(retrieval.irb_desc));
-		retrieval.irb_generic = irb_equality | (fuzzy ? irb_starting : 0);
+		retrieval.irb_generic = irb_equality | (starting ? irb_starting : 0);
 		retrieval.irb_relation = partner_relation;
 		retrieval.irb_key = &key;
-		retrieval.irb_upper_count = retrieval.irb_lower_count = idx->idx_count;
+		retrieval.irb_upper_count = retrieval.irb_lower_count = segment;
+
+		if (starting && segment < partner_idx.idx_count)
+			retrieval.irb_generic |= irb_partial;
+
 		if (partner_idx.idx_flags & idx_descending) {
 			retrieval.irb_generic |= irb_descending;
 		}
