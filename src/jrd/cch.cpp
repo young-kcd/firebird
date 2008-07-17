@@ -785,7 +785,7 @@ pag* CCH_fetch(
 	// FETCH_LOCK will return 0, 1, -1 or -2
 	
 	const SSHORT fetch_lock_return =
-		CCH_FETCH_LOCK(tdbb, window, lock_type, LCK_WAIT, latch_wait, page_type);
+		CCH_FETCH_LOCK(tdbb, window, lock_type, latch_wait, page_type);
 
 	if (fetch_lock_return == 1)
 	{
@@ -852,7 +852,6 @@ SSHORT CCH_fetch_lock(
 		WIN * window,
 		USHORT lock_type,
 		SSHORT wait,
-		SSHORT latch_wait,
 		SCHAR page_type)
 {
 /**************************************
@@ -862,24 +861,19 @@ SSHORT CCH_fetch_lock(
  **************************************
  *
  * Functional description
- *	Fetch a lock for a specific page.
- *	Return TRUE if the page needs to be
- *	read and FALSE if not. If a timeout
- *	was passed (wait < 0) and the lock
- *	could not be granted return wait.
+ *	Fetch a latch and lock for a specific page.
  *
  * input
  *
- *	wait: LCK_WAIT = TRUE = 1	=> Wait as long a necessary to get the lock.
- *	      LCK_NO_WAIT = FALSE = 0	=> If the lock can't be acquired immediately,
- *						give up and return -1.
- *	      <negative number>		=> Lock timeout interval in seconds.
+ *	wait: 
+ *	LCK_WAIT (1)	=> Wait as long a necessary to get the lock. 
+ *		This can cause deadlocks of course.
  *
- *	latch_wait:	1 => Wait as long as necessary to get the latch.
- *				This can cause deadlocks of course.
- *			0 => If the latch can't be acquired immediately,
- *				give up and return -2.
- *	      		<negative number> => Latch timeout interval in seconds.
+ *	LCK_NO_WAIT (0)	=> 
+ *		If the latch can't be acquired immediately, give up and return -2.
+ *		If the lock can't be acquired immediately, give up and return -1.
+ *
+ *	<negative number>	=> Lock (latch) timeout interval in seconds.
  *
  * return
  *	0:	fetch & lock were successful, page doesn't need to be read.
@@ -901,9 +895,9 @@ SSHORT CCH_fetch_lock(
 /* Look for the page in the cache. */
 
 	BufferDesc* bdb = get_buffer(tdbb, window->win_page,
-					 ((lock_type >= LCK_write) ? LATCH_exclusive :
-					  LATCH_shared), latch_wait);
-	if ((latch_wait != 1) && (bdb == 0)) {
+		((lock_type >= LCK_write) ? LATCH_exclusive : LATCH_shared), wait);
+
+	if ((wait != 1) && (bdb == 0)) {
 		return -2;				/* latch timeout */
 	}
 
@@ -1592,7 +1586,7 @@ pag* CCH_handoff(
 	WIN temp = *window;
 	window->win_page = PageNumber(window->win_page.getPageSpaceID(), page);
 	const SSHORT must_read =
-		CCH_FETCH_LOCK(tdbb, window, lock, LCK_WAIT, latch_wait, page_type);
+		CCH_FETCH_LOCK(tdbb, window, lock, latch_wait, page_type);
 
 /* Latch or lock timeout, return failure. */
 

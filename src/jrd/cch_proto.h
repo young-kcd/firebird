@@ -37,7 +37,7 @@ bool		CCH_exclusive_attachment(Jrd::thread_db*, USHORT, SSHORT);
 void		CCH_expand(Jrd::thread_db*, ULONG);
 Ods::pag*	CCH_fake(Jrd::thread_db*, Jrd::win*, SSHORT);
 Ods::pag*	CCH_fetch(Jrd::thread_db*, Jrd::win*, USHORT, SCHAR, SSHORT, SSHORT, const bool);
-SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SSHORT, SCHAR);
+SSHORT		CCH_fetch_lock(Jrd::thread_db*, Jrd::win*, USHORT, SSHORT, SCHAR);
 void		CCH_fetch_page(Jrd::thread_db*, Jrd::win*, SSHORT, const bool);
 void		CCH_forget_page(Jrd::thread_db*, Jrd::win*);
 void		CCH_fini(Jrd::thread_db*);
@@ -85,9 +85,9 @@ inline Ods::pag* CCH_FETCH_TIMEOUT(Jrd::thread_db* tdbb, Jrd::win* window, USHOR
 	return CCH_fetch (tdbb, window, lock_type, page_type, 0, latch_wait, true);
 }
 
-inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win * window, USHORT lock_type, SSHORT wait,  SSHORT latch_wait, SCHAR page_type)
+inline SSHORT CCH_FETCH_LOCK(Jrd::thread_db* tdbb, Jrd::win * window, USHORT lock_type, SSHORT wait, SCHAR page_type)
 {
-	return CCH_fetch_lock(tdbb, window, lock_type, wait, latch_wait, page_type);
+	return CCH_fetch_lock(tdbb, window, lock_type, wait, page_type);
 }
 
 inline void CCH_FETCH_PAGE(Jrd::thread_db* tdbb, Jrd::win * window, SSHORT compute_checksum, bool read_shadow)
@@ -146,7 +146,7 @@ inline void CCH_PREFETCH(Jrd::thread_db* tdbb, SLONG * pages, SSHORT count)
 //#define CCH_FETCH_NO_SHADOW(tdbb, window, lock, type)		  CCH_fetch (tdbb, window, lock, type, 1, 1, false)
 //#define CCH_FETCH_NO_CHECKSUM(tdbb, window, lock, type)   CCH_fetch (tdbb, window, lock, type, 0, 1, true)
 //#define CCH_FETCH_TIMEOUT(tdbb, window, lock, type, latch_wait)   CCH_fetch (tdbb, window, lock, type, 0, latch_wait, true)
-//#define CCH_FETCH_LOCK(tdbb, window, lock, wait, latch_wait, type) CCH_fetch_lock (tdbb, window, lock, wait, latch_wait, type)
+//#define CCH_FETCH_LOCK(tdbb, window, lock, wait, type) CCH_fetch_lock (tdbb, window, lock, wait, type)
 //#define CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow)       CCH_fetch_page (tdbb, window, checksum, read_shadow)
 //#define CCH_RELEASE(tdbb, window)                         CCH_release (tdbb, window, false)
 //#define CCH_RELEASE_TAIL(tdbb, window)                    CCH_release (tdbb, window, true)
