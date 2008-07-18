@@ -145,6 +145,9 @@ static void validateLength(Jrd::CharSet* toCharSet, SLONG toLength, const UCHAR*
 static CHARSET_ID getChid(const dsc* to);
 static SLONG getCurDate();
 static void isVersion4(bool& v4);
+static void localError(const Firebird::Arg::StatusVector&);
+
+class DummyException {};
 
 
 #ifndef NATIVE_QUAD
@@ -1234,6 +1237,13 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
+#ifdef DEV_BUILD
+	// To be activated by the debugger.
+	static int t = 0;
+	if (t)
+		CVT_conversion_error(from, cb->err);
+#endif
+
 /* If the datatypes and lengths are identical, just move the
    stuff byte by byte.  Although this may seem slower than 
    optimal, it would cost more to find the fast move than the
@@ -1586,11 +1596,42 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		p = "BLOB";
 	else if (desc->dsc_dtype == dtype_array)
 		p = "ARRAY";
-	else {
-		const USHORT length =
-			CVT_make_string(desc, ttype_ascii, &p,
-							(vary*) s, sizeof(s) - 1, err);
-		const_cast<char*>(p)[length] = 0;
+	else
+	{
+		// CVC: I don't have access here to JRD_get_thread_data())->tdbb_status_vector
+		// to be able to clear it (I don't want errors appended, but replacing
+		// the existing, misleading one). Since localError doesn't fill the thread's
+		// status vector as ERR_post would do, our new error is the first and only one.
+		// We discard errors from CVT_make_string because we are interested in reporting
+		// isc_convert_error, not isc_arith_exception if CVT_make_string fails.
+		// If someone finds a better way, these hacks can be deleted.
+		// Initially I was trapping here status_exception and testing
+		// e.value()[1] == isc_arith_except.
+
+		try
+	    {
+			const USHORT length = CVT_make_string(desc, ttype_ascii, &p,
+									(vary*) s, sizeof(s) - 1, localError);
+			const_cast<char*>(p)[length] = 0;
+		}
+		/*
+		catch (status_exception& e)
+		{
+			if (e.value()[1] == isc_arith_except)
+			{
+				// Apparently we can't do this line:
+				JRD_get_thread_data())->tdbb_status_vector[0] = 0;
+
+			    p = "<Too long string or can't be translated>";
+			}
+			else
+				throw;
+		}
+		*/
+		catch (DummyException&)
+		{
+			p = "<Too long string or can't be translated>";
+		}
 	}
 
 	err(Arg::Gds(isc_convert_error) << p);
@@ -2471,6 +2512,11 @@ static SLONG getCurDate()
 
 static void isVersion4(bool& v4)
 {
+}
+
+static void localError(const Firebird::Arg::StatusVector&)
+{
+	throw DummyException();
 }
 
 
