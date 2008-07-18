@@ -158,19 +158,16 @@ bool IbUtil::free(void* ptr)
 
 	thread_db* tdbb = JRD_get_thread_data();
 	Attachment* attachment = tdbb->getAttachment();
-	bool found = false;
-	size_t pos;
 
+	size_t pos;
 	if (attachment->att_udf_pointers.find(ptr, pos))
 	{
 		attachment->att_udf_pointers.remove(pos);
-		found = true;
+		tdbb->getDefaultPool()->deallocate(ptr);
+		return true;
 	}
 
-	if (found)
-		tdbb->getDefaultPool()->deallocate(ptr);
-
-	return found;
+	return false;
 }
 
 
@@ -246,20 +243,28 @@ void OwnedBlobStack::close()
 }
 
 
+enum UdfError
+{
+	UeNone,
+	UeUnsupDtype,
+	UeMove,
+	UeDealloc
+};
+
 
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
 static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
-				   UserFunction*, 
-				   fun_repeat*, 
-				   impure_value*,
-				   UDF_ARG*,
+				   UserFunction* function,
+				   fun_repeat* return_ptr,
+				   impure_value* value,
+				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
-				   bool&,
-				   bool&,
-				   bool&);
+				   bool& result_is_null,
+				   UdfError& udfError);
+static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
 void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure_value* value)
@@ -623,9 +628,6 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 		temp_ptr += length;
 	} // for
 
-	// We don't know or can't handle the data type is some cases.
-	bool unsup_datatype = false;
-
 	// Did the udf manage to signal null in some way?
 	// We acknowledge null in three cases:
 	// a) rc_ptr = udf(); returns a null pointer -> result_was_null becomes true
@@ -636,20 +638,29 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	// Udfs work in the assumption that they ignore that the handle is the real
 	// internal blob and this has been always the tale.
 	bool result_was_null = false;
-	
+
+	// Did the udf send an unknown data type or one we can't handle?
 	// Did the udf mismanage memory marked with FREE_IT,
 	// that should be deallocated by the engine?
-	bool freeItOk = true;
+	// Did the udf send an ill-formed descriptor back?
+	UdfError udfError = UeNone;
 	
 	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
-		unsup_datatype, freeItOk, result_was_null);
+		result_was_null, udfError);
 
-	if (unsup_datatype) {
+	switch (udfError)
+	{
+	case UeUnsupDtype:
 		IBERROR(169);			// msg 169 return data type not supported
-	}
-	
-	if (!freeItOk)
+		break;
+	case UeMove:
+		//CVT_conversion_error(&desc, ERR_post);
+		ERR_punt(); // The error is already in the thread's tdbb_status_vector
+		break;
+	case UeDealloc:
 		status_exception::raise(Arg::Gds(isc_bad_udf_freeit));
+		break;
+	}
 		
 	if (result_was_null)
 	{
@@ -1019,33 +1030,15 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
-/* We'll use it the day we get rid of SEH.
-ASF: This class doesn't detect bad free_it pointers - see the logic of "freeItOk"
-in "invoke" function.
-namespace {
-	class MemoryFree
-	{
-	public:
-		static void clear(void* p)
-		{
-			if (p)
-				IbUtil::free(p);
-		}
-	};
-} // namespace
-*/
-
 
 static void invoke(thread_db* tdbb,
-				   UserFunction* function, 
-				   fun_repeat* return_ptr, 
+				   UserFunction* function,
+				   fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
-				   bool& unsup_datatype,
-				   bool& freeItOk,
-				   bool& result_is_null
-)
+				   bool& result_is_null,
+				   UdfError& udfError)
 {
 /**************************************
  *
@@ -1060,7 +1053,7 @@ static void invoke(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
-
+	
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
@@ -1113,14 +1106,13 @@ static void invoke(thread_db* tdbb,
 
 		case dtype_timestamp:
 		default:
-			unsup_datatype = true;
+			udfError = UeUnsupDtype;
 			break;
 		}
 	}
 	else
 	{
-		UCHAR* temp_ptr =
-			CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
+		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
 		
 		if (temp_ptr != NULL)
 		{
@@ -1141,18 +1133,14 @@ static void invoke(thread_db* tdbb,
 			}
 			
 			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
-			/* We'll use it the day we get rid of SEH.
-			For now, if MOV_move calls ERR_post, we leak memory allocated in the UDF.
-			AutoPtr<void, MemoryFree> sentryData(must_free ? temp_ptr: 0);
-			AutoPtr<void, MemoryFree> sentryDsc(must_free ? return_dsc : 0);
-			*/
-			
+
 			if (result_is_null)
 				; // nothing to do
 			else
 			if (return_dsc)
 			{
-				MOV_move(tdbb, return_dsc, &value->vlu_desc);
+				if (!private_move(tdbb, return_dsc, &value->vlu_desc))
+					udfError = UeMove;
 			}
 			else
 			{
@@ -1188,7 +1176,8 @@ static void invoke(thread_db* tdbb,
 				case dtype_text:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
+						udfError = UeMove;
 					break;
 
 				case dtype_cstring:
@@ -1198,7 +1187,8 @@ static void invoke(thread_db* tdbb,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
+						udfError = UeMove;
 					break;
 
 				case dtype_varying:
@@ -1206,7 +1196,8 @@ static void invoke(thread_db* tdbb,
 					temp_desc.dsc_address = temp_ptr;
 					temp_desc.dsc_length =
 						reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
-					MOV_move(tdbb, &temp_desc, &value->vlu_desc);
+					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
+						udfError = UeMove;
 					break;
 
 				case dtype_timestamp:
@@ -1218,31 +1209,40 @@ static void invoke(thread_db* tdbb,
 					break;
 
 				default:
-					unsup_datatype = true;
+					udfError = UeUnsupDtype;
 					break;
 				}
 			}
 			
-			// We'll use it the day we get rid of SEH and the destructor can work.
-			// CVC: This code is explicit but redundant. If it doesn't run,
-			// the destructor of AutoPtr will invoke the cleanup anyway.
-
 			// Check if this is function has the FREE_IT set, if set and
 			// return_value is not null, then free the return value.
 			if (must_free)
 			{
-				//sentryData = 0;
-				if (temp_ptr)
-					freeItOk = IbUtil::free(temp_ptr) && freeItOk;
+				if (temp_ptr && !IbUtil::free(temp_ptr) && udfError == UeNone)
+					udfError = UeDealloc;
 
 				// CVC: Let's free the descriptor, too.
-				//sentryDsc = 0;
-				if (return_dsc)
-					freeItOk = IbUtil::free(return_dsc) && freeItOk;
+				if (return_dsc && !IbUtil::free(return_dsc) && udfError == UeNone)
+					udfError = UeDealloc;
 			}
 		}
 		else
 			result_is_null = true;
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
+}
+
+
+static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to)
+{
+	SET_TDBB(tdbb);
+	try
+	{
+		MOV_move(tdbb, from, to);
+		return true;
+	}
+	catch (Firebird::status_exception&)
+	{
+		return false;
+	}
 }
