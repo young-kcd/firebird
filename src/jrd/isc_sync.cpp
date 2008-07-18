@@ -1736,7 +1736,7 @@ UCHAR* ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 OPEN_ALWAYS,
-				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+				 FILE_ATTRIBUTE_NORMAL,
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		error(status_vector, "CreateFile", GetLastError());
@@ -1819,7 +1819,7 @@ UCHAR* ISC_map_file(
 				 FILE_SHARE_READ | FILE_SHARE_WRITE,
 				 NULL,
 				 fdw_create,
-				 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+				 FILE_ATTRIBUTE_NORMAL,
 				 NULL);
 	if (file_handle == INVALID_HANDLE_VALUE) {
 		CloseHandle(event_handle);
