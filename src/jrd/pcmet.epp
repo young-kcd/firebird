@@ -78,7 +78,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	switch (phase)
 	{
 	case 0:
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_expression_index, transaction);
 		return false;
 		
 	case 1:
@@ -130,7 +130,7 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				{
 					IDX_delete_index(tdbb, relation, IDX.RDB$INDEX_ID - 1);
 					MET_delete_dependencies(tdbb, work->dfw_name,
-											obj_expression_index);
+						obj_expression_index, transaction);
 					MODIFY IDX
 						IDX.RDB$INDEX_ID.NULL = TRUE;
 					END_MODIFY;
@@ -168,7 +168,8 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 															  &IDX.RDB$EXPRESSION_BLR,
 															  &idx.idx_expression_request,
 															  &csb, tmp,
-															  obj_expression_index, 0);
+															  obj_expression_index, 0,
+															  transaction);
 					}
 				}
 

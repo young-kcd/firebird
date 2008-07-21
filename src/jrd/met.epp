@@ -130,7 +130,8 @@ static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*,
 											 const UCHAR*);
 static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*, bid*,
 	const TEXT*, UCHAR, bool, USHORT);
-static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*, const Firebird::MetaName&, int);
+static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
+	const Firebird::MetaName&, int, jrd_tra*);
 static bool verify_TRG_ignore_perm(thread_db*, const Firebird::MetaName&);
 
 
@@ -1011,7 +1012,8 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 
 void MET_delete_dependencies(thread_db* tdbb,
 							 const Firebird::MetaName& object_name,
-							 int dependency_type)
+							 int dependency_type,
+							 jrd_tra* transaction)
 {
 /**************************************
  *
@@ -1410,6 +1412,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 							  Firebird::MetaName& object_name,
 							  int type,
 							  USHORT flags,
+							  jrd_tra* transaction,
 							  Firebird::MetaName domain_validation)
 {
 /**************************************
@@ -1463,7 +1466,7 @@ jrd_nod* MET_get_dependencies(thread_db* tdbb,
 		CMP_release(tdbb, handle);
 	}
 
-	store_dependencies(tdbb, csb, relation, object_name, type);
+	store_dependencies(tdbb, csb, relation, object_name, type, transaction);
 
 	if (csb_ptr)
 	{
@@ -3741,6 +3744,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 	blb* blob = NULL;
 	jrd_req* request = NULL;
 
+	jrd_tra* depTrans = (tdbb->getTransaction() ? tdbb->getTransaction() : dbb->dbb_sys_trans);
+
 /* If anything errors, catch it to reset the scan flag.  This will
    make sure that the error will be caught if the operation is tried
    again. */
@@ -3800,7 +3805,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				relation->rel_view_rse =
 					(RecordSelExpr*) MET_get_dependencies(tdbb, relation, NULL, NULL,
 											&REL.RDB$VIEW_BLR, NULL,
-											&csb, depName, obj_view, 0);
+											&csb, depName, obj_view, 0, depTrans);
 			}
 			else
 			{
@@ -3909,7 +3914,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 					field->fld_source =
 						PAR_make_field(tdbb, csb, view_context, (TEXT*)p);
 					const Firebird::MetaName depName(REL.RDB$RELATION_NAME);
-					store_dependencies(tdbb, csb, 0, depName, obj_view); 
+					store_dependencies(tdbb, csb, 0, depName, obj_view, depTrans); 
 				}
 				else {
 					field->fld_source =
@@ -3921,7 +3926,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				field->fld_computation = (dependencies) ?
 					MET_get_dependencies(tdbb, relation, p, csb,
 										 NULL, NULL, NULL, field->fld_name,
-										 obj_computed, 0) :
+										 obj_computed, 0, depTrans) :
 					PAR_blr(tdbb, relation, p, csb, NULL, NULL, false, 0);
 				break;
 
@@ -4954,11 +4959,12 @@ const Trigger* findTrigger(trig_vec* triggers, const Firebird::MetaName& trig_na
 }
 
 
-static void store_dependencies(thread_db*	tdbb,
-							   CompilerScratch*	csb,
-							   const jrd_rel*	dep_rel,
+static void store_dependencies(thread_db* tdbb,
+							   CompilerScratch* csb,
+							   const jrd_rel* dep_rel,
 							   const Firebird::MetaName& object_name,
-							   int dependency_type)
+							   int dependency_type,
+							   jrd_tra* transaction)
 {
 /**************************************
  *
@@ -5112,7 +5118,7 @@ static void store_dependencies(thread_db*	tdbb,
 				CMP_find_request(tdbb, irq_c_deps_f, IRQ_REQUESTS);
 			bool found = false;
 			fb_assert(dpdo_name);
-			FOR(REQUEST_HANDLE request) X IN RDB$DEPENDENCIES WITH
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction) X IN RDB$DEPENDENCIES WITH
 				X.RDB$DEPENDENT_NAME = object_name.c_str() AND
 					X.RDB$DEPENDED_ON_NAME = dpdo_name->c_str() AND
 					X.RDB$DEPENDED_ON_TYPE = dpdo_type AND
@@ -5135,7 +5141,7 @@ static void store_dependencies(thread_db*	tdbb,
 		{
 			jrd_req* request = CMP_find_request(tdbb, irq_c_deps, IRQ_REQUESTS);
 			bool found = false;
-			FOR(REQUEST_HANDLE request) X IN RDB$DEPENDENCIES WITH
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction) X IN RDB$DEPENDENCIES WITH
 				X.RDB$DEPENDENT_NAME = object_name.c_str() AND
 					X.RDB$DEPENDED_ON_NAME = dpdo_name->c_str() AND
 					X.RDB$DEPENDED_ON_TYPE = dpdo_type AND
@@ -5159,7 +5165,7 @@ static void store_dependencies(thread_db*	tdbb,
 		jrd_req* request = CMP_find_request(tdbb, irq_s_deps, IRQ_REQUESTS);
 
 		fb_assert(dpdo_name);
-		STORE(REQUEST_HANDLE request) DEP IN RDB$DEPENDENCIES
+		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE transaction) DEP IN RDB$DEPENDENCIES
 			strcpy(DEP.RDB$DEPENDENT_NAME, object_name.c_str());
 			DEP.RDB$DEPENDED_ON_TYPE = dpdo_type;
 			strcpy(DEP.RDB$DEPENDED_ON_NAME, dpdo_name->c_str());

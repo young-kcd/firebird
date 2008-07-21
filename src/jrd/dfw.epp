@@ -192,8 +192,8 @@ static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
 static void get_array_desc(thread_db*, const TEXT*, Ods::InternalArrayDesc*);
-static void get_procedure_dependencies(DeferredWork*, bool);
-static void get_trigger_dependencies(DeferredWork*, bool);
+static void get_procedure_dependencies(DeferredWork*, bool, jrd_tra*);
+static void get_trigger_dependencies(DeferredWork*, bool, jrd_tra*);
 static void	load_trigs(thread_db*, jrd_rel*, trig_vec**);
 static Format*	make_format(thread_db*, jrd_rel*, USHORT *, TemporaryField*);
 static DeferredWork*	post_work(jrd_tra*, SLONG, DeferredWork**, enum dfw_t,
@@ -2139,7 +2139,7 @@ static bool create_procedure(	thread_db*	tdbb,
 			while (arg && (arg->dfw_type != dfw_arg_check_blr))
 				arg = arg->dfw_next;
 
-			get_procedure_dependencies(work, arg == NULL);
+			get_procedure_dependencies(work, arg == NULL, transaction);
 
 			jrd_prc* procedure = MET_lookup_procedure(tdbb, work->dfw_name, (arg ? false : true));
 			if (!procedure) {
@@ -2369,7 +2369,7 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			while (arg && (arg->dfw_type != dfw_arg_check_blr))
 				arg = arg->dfw_next;
 
-			get_trigger_dependencies(work, arg == NULL);
+			get_trigger_dependencies(work, arg == NULL, transaction);
 			return true;
 		}
 
@@ -2790,7 +2790,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-					NULL, NULL, depName, obj_validation, 0, depName);
+					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				dbb->deletePool(new_pool);
 			}
@@ -2869,8 +2869,8 @@ static bool delete_field(	thread_db*	tdbb,
 		return true;
 
 	case 3:
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_validation);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_validation, transaction);
 		break;
 	}
 
@@ -2924,7 +2924,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			if (arg && depName != arg->dfw_name.c_str())
 				check_dependencies(tdbb, depName.c_str(), NULL, obj_field, transaction);
 
-			MET_delete_dependencies(tdbb, depName, obj_validation);
+			MET_delete_dependencies(tdbb, depName, obj_validation, transaction);
 
 			if (!validation.isEmpty())
 			{
@@ -2932,7 +2932,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				Jrd::ContextPoolHolder context(tdbb, new_pool);
 
 				MET_get_dependencies(tdbb, NULL, NULL, NULL, &validation,
-					NULL, NULL, depName, obj_validation, 0, depName);
+					NULL, NULL, depName, obj_validation, 0, transaction, depName);
 
 				dbb->deletePool(new_pool);
 			}
@@ -2980,7 +2980,7 @@ static bool delete_global(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				FLD.RDB$FIELD_NAME EQ work->dfw_name.c_str() AND
 				FLD.RDB$COMPUTED_BLR NOT MISSING
 
-				MET_delete_dependencies(tdbb, work->dfw_name, obj_computed);
+				MET_delete_dependencies(tdbb, work->dfw_name, obj_computed, transaction);
 
 		END_FOR;
 		CMP_release(tdbb, handle);
@@ -3140,7 +3140,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (work->dfw_type == dfw_delete_expression_index)
 		{
-			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index);
+			MET_delete_dependencies(tdbb, arg->dfw_name, obj_expression_index, transaction);
 		}
 
 		// if index was bound to deleted FK constraint
@@ -3356,7 +3356,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
 
 			if (procedure->prc_existence_lock) {
 				LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3384,7 +3384,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 
 		/* delete dependency lists */
 
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
 
 		if (procedure->prc_existence_lock) {
 			LCK_release(tdbb, procedure->prc_existence_lock);
@@ -3580,7 +3580,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		// if this is a view (or even if we don't know), delete dependency lists
 
 		if (relation->rel_view_rse || !(relation->rel_flags & REL_scanned)) {
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_view, transaction);
 		}
 
 		// Now that the data, pointer, and index pages are gone,
@@ -3817,7 +3817,7 @@ static bool delete_trigger(	thread_db*	tdbb,
 
 	case 3:
 		/* get rid of dependencies */
-		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
+		MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger, transaction);
 		return true;
 
 	case 4:
@@ -4049,7 +4049,7 @@ static void get_array_desc(thread_db* tdbb, const TEXT* field_name,
 }
 
 
-static void get_procedure_dependencies(DeferredWork* work, bool compile)
+static void get_procedure_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -4107,7 +4107,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 			Firebird::MetaName depName(work->dfw_name);
 			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id,
 							compile ? &request : NULL,
-							NULL, depName, obj_procedure, 0);
+							NULL, depName, obj_procedure, 0, transaction);
 
 			if (request)
 				CMP_release(tdbb, request);
@@ -4122,7 +4122,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 }
 
 
-static void get_trigger_dependencies(DeferredWork* work, bool compile)
+static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* transaction)
 {
 /**************************************
  *
@@ -4179,7 +4179,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile)
 		Firebird::MetaName depName(work->dfw_name);
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 compile ? &request : NULL,
-							 NULL, depName, obj_trigger, par_flags);
+							 NULL, depName, obj_trigger, par_flags, transaction);
 
 		if (request)
 			CMP_release(tdbb, request);
@@ -4691,7 +4691,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		   and setting a flag for MET_scan_relation to find the new ones */
 
 		if (!null_view)
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_view);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_view, transaction);
 
 		{ // begin scope
 			const DeferredWork* arg = work->dfw_args;
@@ -4701,7 +4701,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (arg && arg->dfw_type == dfw_arg_force_computed)
 			{
 				computed_field = true;
-				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed);
+				MET_delete_dependencies(tdbb, arg->dfw_name, obj_computed, transaction);
 			}
 		} // end scope
 
@@ -4864,7 +4864,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 
 			/* delete dependency lists */
 
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_procedure, transaction);
 
 			/* the procedure has just been scanned by MET_lookup_procedure_id
 			   and its PRC_scanned flag is set. We are going to reread it
@@ -4887,7 +4887,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 			while (arg && (arg->dfw_type != dfw_arg_check_blr))
 				arg = arg->dfw_next;
 
-			get_procedure_dependencies(work, arg == NULL);
+			get_procedure_dependencies(work, arg == NULL, transaction);
 
 			procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 		}
@@ -4975,8 +4975,8 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				arg = arg->dfw_next;
 
 			/* get rid of old dependencies, bring in the new */
-			MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger);
-			get_trigger_dependencies(work, arg == NULL);
+			MET_delete_dependencies(tdbb, work->dfw_name, obj_trigger, transaction);
+			get_trigger_dependencies(work, arg == NULL, transaction);
 		}
 		return true;
 

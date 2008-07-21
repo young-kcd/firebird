@@ -65,7 +65,7 @@ void		MET_activate_shadow(Jrd::thread_db*);
 ULONG		MET_align(Jrd::Database* dbb, const dsc*, ULONG);
 Jrd::DeferredWork*	MET_change_fields(Jrd::thread_db*, Jrd::jrd_tra*, const dsc*);
 Jrd::Format*	MET_current(Jrd::thread_db*, Jrd::jrd_rel*);
-void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int);
+void		MET_delete_dependencies(Jrd::thread_db*, const Firebird::MetaName&, int, Jrd::jrd_tra*);
 void		MET_delete_shadow(Jrd::thread_db*, USHORT);
 bool		MET_dsql_cache_use(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
 void		MET_dsql_cache_release(Jrd::thread_db* tdbb, int type, const Firebird::MetaName& name);
@@ -76,6 +76,7 @@ bool		MET_get_char_coll_subtype_info(Jrd::thread_db*, USHORT, SubtypeInfo* info)
 Jrd::jrd_nod*	MET_get_dependencies(Jrd::thread_db*, Jrd::jrd_rel*, const UCHAR*,
 								Jrd::CompilerScratch*, Jrd::bid*, Jrd::jrd_req**,
 								Jrd::CompilerScratch**, Firebird::MetaName&, int, USHORT,
+								Jrd::jrd_tra*,
 								Firebird::MetaName = Firebird::MetaName());
 Jrd::jrd_fld*	MET_get_field(Jrd::jrd_rel*, USHORT);
 void		MET_get_shadow_files(Jrd::thread_db*, bool);
