@@ -609,7 +609,7 @@ static DUDLEY_FLD lookup_global_field( DUDLEY_FLD field)
 /* Find symbol */
 
 	name = (field->fld_source) ? field->fld_source : field->fld_name;
-	if (symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_global))
+	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_global)))
 		return (DUDLEY_FLD) symbol->sym_object;
 
 	expand_error(103, SafeArg() << name->sym_string);	/* msg 103: global field %s isn't defined */
@@ -634,9 +634,8 @@ static DUDLEY_REL lookup_relation( DUDLEY_REL relation)
 /* Find symbol */
 
 	name = (relation->rel_name);
-	if (
-		(symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation))
-		&& symbol->sym_object)
+	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_relation)) &&
+		symbol->sym_object)
 	{
 		return (DUDLEY_REL) symbol->sym_object;
 	}
@@ -663,7 +662,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 /* Find symbol */
 
 	name = (trigger->trg_name);
-	if (symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_trigger))
+	if ((symbol = HSH_typed_lookup(name->sym_string, name->sym_length, SYM_trigger)))
 		return (DUDLEY_TRG) symbol->sym_object;
 
 	expand_error(105, SafeArg() << name->sym_string);	/* msg 105: trigger %s isn't defined */

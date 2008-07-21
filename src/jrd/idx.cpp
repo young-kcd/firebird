@@ -1368,7 +1368,7 @@ static IDX_E check_partner_index(
 	// unique index, because a comparison is done on both keys.
 	index_desc tmpIndex = *idx;
 	// ASF: Was incorrect to verify broken foreign keys.
-	// Should not use a unique key to search a non-unique index.
+	// Should not use an unique key to search a non-unique index.
 	// tmpIndex.idx_flags |= idx_unique;
 	tmpIndex.idx_flags = (tmpIndex.idx_flags & ~idx_unique) | (partner_idx.idx_flags & idx_unique);
 	temporary_key key;

@@ -303,6 +303,7 @@ void HSH_insert( SYM symbol)
 	const USHORT h = hash(symbol->sym_string, symbol->sym_length);
 
 	for (SYM old = hash_table[h]; old; old = old->sym_collision)
+	{
 		if (scompare(symbol->sym_string, symbol->sym_length,
 					 old->sym_string, old->sym_length))
 		{
@@ -310,6 +311,7 @@ void HSH_insert( SYM symbol)
 			old->sym_homonym = symbol;
 			return;
 		}
+	}
 
 	symbol->sym_collision = hash_table[h];
 	hash_table[h] = symbol;

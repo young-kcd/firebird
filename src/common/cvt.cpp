@@ -1237,13 +1237,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
 
-#ifdef DEV_BUILD
-	// To be activated by the debugger.
-	static int t = 0;
-	if (t)
-		CVT_conversion_error(from, cb->err);
-#endif
-
 /* If the datatypes and lengths are identical, just move the
    stuff byte by byte.  Although this may seem slower than 
    optimal, it would cost more to find the fast move than the
