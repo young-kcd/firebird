@@ -96,18 +96,18 @@ static const TEXT acl_ids[][16] = {
 };
 
 /* TXNN: Used on filter of internal data structure to text */
-static const TEXT dtypes[][36] = {
-	"",
-	"TEXT, length %d",
-	"COUNTED_STRING, length %d",
-	"VARYING, max length %d",
-	"",
-	"",
-	"PACKED DECIMAL, length %d, scale %d",
-	"BYTE, scale %d",
-	"SHORT, scale %d",
-	"LONG, scale %d",
-	"QUAD, scale %d",
+static const TEXT dtypes[DTYPE_TYPE_MAX][36] = {
+	"none",
+	"CHAR",
+	"CSTRING",
+	"VARCHAR",
+	"unused?",
+	"unused?",
+	"PACKED DECIMAL",
+	"BYTE",
+	"SHORT",
+	"LONG",
+	"QUAD",
 	"FLOAT",
 	"DOUBLE",
 	"D_FLOAT",
@@ -116,7 +116,7 @@ static const TEXT dtypes[][36] = {
 	"TIMESTAMP",
 	"BLOB",
 	"ARRAY",
-	"BIGINT, scale %d"
+	"BIGINT"
 };
 
 
@@ -263,49 +263,34 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 	if (action != isc_blob_filter_get_segment)
 		return FB_SUCCESS;
 
-/* Loop thru descriptors looking for one with a data type */
-	dsc desc;
-	for (;;) {
-        USHORT length;
-		const ISC_STATUS status = caller(isc_blob_filter_get_segment,
-						control,
-						sizeof(desc),
-						reinterpret_cast<UCHAR*>(&desc), &length);
-		if (status != FB_SUCCESS && status != isc_segment)
-			return status;
-		if (desc.dsc_dtype)
-			break;
-		++control->ctl_data[0];
-	}
+/* Try to get next descriptor */
+	Ods::Descriptor desc;
+	memset(&desc, 0, sizeof(desc));
 
-	int value = desc.dsc_scale;
-	const TEXT* p = dtypes[desc.dsc_dtype];
+    USHORT length;
+	const ISC_STATUS status = caller(isc_blob_filter_get_segment,
+					control,
+					sizeof(desc),
+					reinterpret_cast<UCHAR*>(&desc), &length);
+	if (status != FB_SUCCESS && status != isc_segment)
+		return status;
 
-	if (desc.dsc_dtype == dtype_text)
-		value = desc.dsc_length;
-	else if (desc.dsc_dtype == dtype_varying)
-		value = desc.dsc_length - sizeof(SSHORT);
-	else if (desc.dsc_dtype > dtype_int64) {
-		p = "data type %d unknown";
-		value = desc.dsc_dtype;
-	}
+    char buffer[256];
 
-    TEXT temp1[64], temp2[64];
-	if ((desc.dsc_dtype <= dtype_any_text) && (desc.dsc_ttype() != dtype_unknown)) {
-		sprintf(temp2, p, value);
-		sprintf(temp1, "%s, sub-type %d", temp2, INTL_TTYPE(&desc));
-	}
-	else
-		sprintf(temp1, p, value);
+    sprintf(buffer, "%5d: type=%d (%s) length=%d sub_type=%d flags=0x%X",
+		desc.dsc_offset, 
+		desc.dsc_dtype, 
+		desc.dsc_dtype >= DTYPE_TYPE_MAX ? "unknown" : dtypes[desc.dsc_dtype],
+		desc.dsc_length,
+		desc.dsc_sub_type,
+		desc.dsc_flags);
 
-	sprintf(temp2, "%ld: %s", control->ctl_data[0]++, temp1);
-
-	USHORT length = strlen(temp2);
+	length = strlen(buffer);
 	if (length > control->ctl_buffer_length)
 		length = control->ctl_buffer_length;
 
 	control->ctl_segment_length = length;
-	memcpy(control->ctl_buffer, temp2, length);
+	memcpy(control->ctl_buffer, buffer, length);
 
 	return FB_SUCCESS;
 }
