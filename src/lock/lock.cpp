@@ -390,6 +390,12 @@ bool LockManager::setOwnerHandle(SRQ_PTR request_offset, SRQ_PTR new_owner_offse
 	request->lrq_owner = new_owner_offset;
 	insert_tail(&new_owner->own_requests, &request->lrq_own_requests);
 
+	if (request->lrq_flags & LRQ_blocking)
+	{
+		remove_que(&request->lrq_own_blocks);
+		insert_tail(&new_owner->own_blocks, &request->lrq_own_blocks);
+	}
+
 	release_shmem(new_owner_offset);
 
 	return true;
