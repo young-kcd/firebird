@@ -172,6 +172,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	COS_TRACE(("request new lock, type=%i, level=%i", cached_lock->lck_type, level));
 	if (!LCK_lock(tdbb, newLock, level, wait)) {
 		COS_TRACE(("Can't get a lock"));
+		internal_blocking--;
 		delete newLock;
 		return false;
 	}
@@ -252,18 +253,21 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 	}
 	else {
 		fb_assert(writer.owner_handle == owner_handle);
-		fb_assert(writer.entry_count == 1);
+		fb_assert(writer.entry_count > 0);
 		fb_assert(cached_lock->lck_physical == LCK_write);
 		
-		writer.entry_count = 0;
-		writer.owner_handle = 0;
+		writer.entry_count--;
 
-		// Optimize non-contention case - downgrade to PR and re-use the lock
-		if (!internal_blocking && !external_blocking && lockCaching)
+		if (!writer.entry_count)
 		{
-			if (!LCK_convert(tdbb, cached_lock, LCK_read, 0))
-				ERR_bugcheck_msg("LCK_convert call failed in GlobalRWLock::unlock()");
-			return;
+			writer.owner_handle = 0;
+			// Optimize non-contention case - downgrade to PR and re-use the lock
+			if (!internal_blocking && !external_blocking && lockCaching)
+			{
+				if (!LCK_convert(tdbb, cached_lock, LCK_read, 0))
+					ERR_bugcheck_msg("LCK_convert call failed in GlobalRWLock::unlock()");
+				return;
+			}
 		}
 	}
 
@@ -342,7 +346,7 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 		}
 	}
 	else {
-		fb_assert(writer.entry_count == 1);
+		fb_assert(writer.entry_count > 0);
 		writer.owner_handle = new_owner_handle;
 	}
 }
