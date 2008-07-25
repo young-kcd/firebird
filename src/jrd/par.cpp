@@ -1491,7 +1491,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
 		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 		{
 			warning(csb, isc_funnotdef, isc_arg_string, ERR_cstring(name),
-					isc_arg_warning, isc_modnotfound, isc_arg_end);
+					isc_arg_gds, isc_modnotfound, isc_arg_end);
 		}
 		else {
 			csb->csb_running -= count;
@@ -3526,7 +3526,7 @@ static void warning(CompilerScratch* csb, ...)
 /* Now place your warning messages starting
    with position [2] */
 
-	*p++ = isc_arg_gds;
+	*p++ = isc_arg_warning;
 	*p++ = va_arg(args, ISC_STATUS);
 
 /* Pick up remaining args */
