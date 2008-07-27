@@ -279,6 +279,7 @@ void TimeStamp::encode(const struct tm* times, int fractions)
 // Decode timestamp into UNIX datetime structure
 void TimeStamp::decode(struct tm* times, int* fractions) const
 {
+	fb_assert(!isEmpty());
 	decode_timestamp(mValue, times, fractions);
 }
 
