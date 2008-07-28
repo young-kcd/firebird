@@ -476,21 +476,8 @@ static void isVersion4(bool& v4)
 	}
 }
 
-static Callbacks toEngine = {transliterate, getChid, ERR_post, getToCharset, 
-							 validateData, validateLength, getCurDate, isVersion4};
-
-
-void CVT_move(const dsc* from, dsc* to)
+namespace Jrd
 {
-/**************************************
- *
- *      C V T _ m o v e
- *
- **************************************
- *
- * Functional description
- *      Move (and possible convert) something to something else.
- *
- **************************************/
-	CVT_move_common(from, to, &toEngine);
+	Callbacks toEngine = {transliterate, getChid, ERR_post, getToCharset, 
+						  validateData, validateLength, getCurDate, isVersion4};
 }

@@ -24,13 +24,23 @@
 #ifndef JRD_CVT_PROTO_H
 #define JRD_CVT_PROTO_H
 
+#include "../common/cvt.h"
+
 double		CVT_date_to_double(const dsc*);
 void		CVT_double_to_date(double, SLONG[2]);
 UCHAR		CVT_get_numeric(const UCHAR*, const USHORT, SSHORT*, double*);
 GDS_DATE	CVT_get_sql_date(const dsc*);
 GDS_TIME	CVT_get_sql_time(const dsc*);
 GDS_TIMESTAMP CVT_get_timestamp(const dsc*);
-void		CVT_move(const dsc*, dsc*);
+
+namespace Jrd {
+	extern Firebird::Callbacks toEngine;
+}
+
+inline void CVT_move(const dsc* from, dsc* to)
+{
+	CVT_move_common(from, to, &Jrd::toEngine);
+}
 
 #endif // JRD_CVT_PROTO_H
 
