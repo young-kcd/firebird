@@ -2954,6 +2954,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			jrd_req* request2 = CMP_find_request(tdbb, drq_s_prm_src, DYN_REQUESTS);
 			STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
+
+				// ODS_11_1
+				P.RDB$NULL_FLAG.NULL = f_notnull_null;
+				P.RDB$NULL_FLAG = f_notnull;
+
 				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
 				strcpy(P.RDB$FIELD_SOURCE, PS.RDB$FIELD_NAME);
 				P.RDB$FIELD_SOURCE.NULL = FALSE;
