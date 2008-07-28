@@ -1814,9 +1814,12 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 		// Don't pursue lock owners that still have to finish processing their AST.
 		// If the blocking queue is not empty, then the owner still has some
 		// AST's to process (or lock reposts).
+		// hvlad: also lock maybe just granted to owner and blocked owners have no
+		// time to send blocking ATS
 		// Remember this fact because they still might be part of a deadlock.
 
-		if (owner->own_flags & OWN_signaled || !SRQ_EMPTY((owner->own_blocks)))
+		if (owner->own_flags & (OWN_signaled | OWN_wakeup) || !SRQ_EMPTY((owner->own_blocks)) ||
+			block->lrq_flags & LRQ_just_granted)
 		{
 			*maybe_deadlock = true;
 			continue;
@@ -2541,7 +2544,7 @@ void LockManager::post_blockage(thread_db* tdbb, lrq* request, lbl* lock)
 		if (!(block->lrq_flags & LRQ_blocking)) {
 			insert_tail(&blocking_owner->own_blocks, &block->lrq_own_blocks);
 			block->lrq_flags |= LRQ_blocking;
-			block->lrq_flags &= ~LRQ_blocking_seen;
+			block->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 		}
 
 		if (blocking_owner != owner)
@@ -2654,7 +2657,7 @@ void LockManager::post_pending(lbl* lock)
 				post_wakeup(owner);
 				if (lockOrdering()) {
 					CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-					return;
+					break;
 				}
 			}
 		}
@@ -2668,12 +2671,24 @@ void LockManager::post_pending(lbl* lock)
 			post_wakeup(owner);
 			if (lockOrdering()) {
 				CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-				return;
+				break;
 			}
 		}
 	}
 
-	CHECK(lock->lbl_pending_lrq_count == pending_counter);
+	CHECK(lock->lbl_pending_lrq_count >= pending_counter);
+
+	if (lock->lbl_pending_lrq_count) {
+		SRQ_LOOP(lock->lbl_requests, lock_srq) 
+		{
+			lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+			if (request->lrq_flags & LRQ_pending)
+				break;
+
+			if (!(request->lrq_flags & (LRQ_blocking | LRQ_blocking_seen)))
+				request->lrq_flags |= LRQ_just_granted;
+		}
+	}
 }
 
 
@@ -3005,7 +3020,7 @@ void LockManager::release_request(lrq* request)
 		request->lrq_flags &= ~LRQ_blocking;
 	}
 
-	request->lrq_flags &= ~LRQ_blocking_seen;
+	request->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 
 	// Update counts if we are cleaning up something we're waiting on!
 	// This should only happen if we are purging out an owner that died.
@@ -3552,7 +3567,7 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
 		  (request->lrq_flags &
 		   		~(LRQ_blocking | LRQ_pending | LRQ_converting |
 					 LRQ_rejected | LRQ_timed_out | LRQ_deadlock |
-					 LRQ_repost | LRQ_scanned | LRQ_blocking_seen)));
+					 LRQ_repost | LRQ_scanned | LRQ_blocking_seen | LRQ_just_granted)));
 
 	// LRQ_converting & LRQ_timed_out are defined, but never actually used
 	CHECK(!(request->lrq_flags & (LRQ_converting | LRQ_timed_out)));

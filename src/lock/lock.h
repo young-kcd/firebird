@@ -225,6 +225,7 @@ const USHORT LRQ_deadlock		= 32;		// Request has been seen by the deadlock-walk
 const USHORT LRQ_repost			= 64;		// Request block used for repost
 const USHORT LRQ_scanned		= 128;		// Request already scanned for deadlock
 const USHORT LRQ_blocking_seen	= 256;		// Blocking notification received by owner
+const USHORT LRQ_just_granted	= 512;		// Request is just granted and blocked owners still have not sent blocking AST
 
 // Process block
 
