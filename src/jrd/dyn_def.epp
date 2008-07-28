@@ -3004,7 +3004,11 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
 				PS IN RDB$FIELDS USING
-				
+
+				// ODS_11_1
+				P.RDB$NULL_FLAG.NULL = f_notnull_null;
+				P.RDB$NULL_FLAG = f_notnull;
+
 				PS.RDB$SYSTEM_FLAG = 0;
 				PS.RDB$SYSTEM_FLAG.NULL = FALSE;
 				DYN_UTIL_generate_field_name(tdbb, gbl, PS.RDB$FIELD_NAME);
