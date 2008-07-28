@@ -172,8 +172,10 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	COS_TRACE(("request new lock, type=%i, level=%i", cached_lock->lck_type, level));
 	if (!LCK_lock(tdbb, newLock, level, wait)) {
 		COS_TRACE(("Can't get a lock"));
-		internal_blocking--;
 		delete newLock;
+		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
+		fb_assert(internal_blocking > 0);
+		internal_blocking--;
 		return false;
 	}
 	COS_TRACE(("Lock is got, type=%i", cached_lock->lck_type));
