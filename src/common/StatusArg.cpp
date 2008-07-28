@@ -78,13 +78,14 @@ bool StatusVector::append(const ISC_STATUS* from, int count) throw()
 {
 	int copied = 0;
 
-	for (int i = 0; i < count; i += (from[i] == isc_arg_cstring ? 3 : 2))
+	for (int i = 0; i < count; )
 	{
-		copied = i;
-		if (m_length + copied > FB_NELEM(m_status_vector) - 1)
+		i += (from[i] == isc_arg_cstring ? 3 : 2);
+		if (m_length + i > FB_NELEM(m_status_vector) - 1)
 		{
 			break;
 		}
+		copied = i;
 	}
 
 	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
