@@ -4312,10 +4312,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 		{
 		case isc_arg_warning:
 		case isc_arg_gds:
-			/* When talking with older (pre 6.0) clients, do not send
-			 * warnings.
-			 */
-
+			// When talking with older (pre 6.0) clients, do not send warnings
 			if (*status_vector == isc_arg_warning &&
 				this->port_protocol < PROTOCOL_VERSION10)
 			{
@@ -4405,8 +4402,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	*v = isc_arg_end;
 
-/* Format and send response.  Note: the blob_id and data address fields
-   of the response packet may contain valid data.  Don't trash them. */
+	// Format and send response.  Note: the blob_id and data address fields
+	// of the response packet may contain valid data.  Don't trash them.
 
 	sendL->p_operation = op_response;
 
