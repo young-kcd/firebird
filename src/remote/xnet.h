@@ -141,6 +141,10 @@ typedef struct xps
     ULONG       xps_data[1];				// start of data area
 } *XPS;
 
+// XPS flags
+
+const USHORT XPS_DISCONNECTED = 1;
+
 // xps_channel numbers
 
 const int XPS_CHANNEL_C2S_DATA		= 0;	// 0 - client to server data

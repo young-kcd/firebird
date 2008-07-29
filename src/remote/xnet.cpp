@@ -104,6 +104,12 @@ static xdr_t::xdr_ops xnet_ops =
 	xnet_destroy
 };
 
+#ifdef SUPERCLIENT
+const ISC_STATUS CONN_LOST_ERROR = isc_lost_db_connection;
+#else
+const ISC_STATUS CONN_LOST_ERROR = isc_conn_lost;
+#endif
+
 static ULONG global_pages_per_slot = XPS_DEF_PAGES_PER_CLI;
 static ULONG global_slots_per_map = XPS_DEF_NUM_CLI;
 static XPM global_client_maps = NULL;
@@ -931,6 +937,8 @@ static void cleanup_comm(XCC xcc)
  *  unmap its file, and free it.
  *
  **************************************/
+	XPS xps = (XPS) xcc->xcc_mapped_addr;
+	xps->xps_flags |= XPS_DISCONNECTED;
 
 	if (xcc->xcc_event_send_channel_filled) {
 		CloseHandle(xcc->xcc_event_send_channel_filled);
@@ -1659,8 +1667,8 @@ static bool_t xnet_getbytes(XDR * xdrs, SCHAR * buff, u_int count)
 	XCH xch = (XCH)xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
 
-	while (bytecount && !xnet_shutdown) {
-
+	while (bytecount && !xnet_shutdown)
+	{
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
@@ -1772,9 +1780,10 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_send_channel;
 	XPM xpm = xcc->xcc_xpm;
+	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
-	while (bytecount && !xnet_shutdown) {
-
+	while (bytecount && !xnet_shutdown)
+	{
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
@@ -1797,7 +1806,6 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 
 				while (!xnet_shutdown)
 				{
-
 #ifdef SUPERCLIENT
 					if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
@@ -1818,16 +1826,18 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 					{
 						// Check whether another side is alive
 						if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
-							continue; // another side is alive
+							// Check whether the channel has been disconnected
+							if (!(xps->xps_flags & XPS_DISCONNECTED))
+								continue; // another side is alive
 						}
 
 						// Another side is dead or something bad has happened
 #ifdef SUPERCLIENT
-						server_shutdown(port);
-						xnet_error(port, isc_lost_db_connection, 0);
-#else
-						xnet_error(port, isc_conn_lost, 0);
+						if (!(xps->xps_flags & XPS_DISCONNECTED)) {
+							server_shutdown(port);
+						}
 #endif
+						xnet_error(port, CONN_LOST_ERROR, 0);
 						return FALSE;
 					}
 
@@ -1894,6 +1904,7 @@ static bool_t xnet_read(XDR * xdrs)
 	XCC xcc = (XCC)port->port_xcc;
 	XCH xch = (XCH)xcc->xcc_recv_channel;
 	XPM xpm = xcc->xcc_xpm;
+	XPS xps = (XPS) xcc->xcc_mapped_addr;
 
 	if (xnet_shutdown)
 		return FALSE;
@@ -1905,7 +1916,6 @@ static bool_t xnet_read(XDR * xdrs)
 
 	while (!xnet_shutdown)
 	{
-
 #ifdef SUPERCLIENT
 		if (xpm->xpm_flags & XPMF_SERVER_SHUTDOWN) {
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN)) {
@@ -1930,16 +1940,18 @@ static bool_t xnet_read(XDR * xdrs)
 		{
 			// Check if another side is alive
 			if (WaitForSingleObject(xcc->xcc_proc_h, 1) == WAIT_TIMEOUT) {
-				continue; // another side is alive
+				// Check whether the channel has been disconnected
+				if (!(xps->xps_flags & XPS_DISCONNECTED))
+					continue; // another side is alive
 			}
 
 			// Another side is dead or something bad has happened
 #ifdef SUPERCLIENT
-			server_shutdown(port);
-			xnet_error(port, isc_lost_db_connection, 0);
-#else
-			xnet_error(port, isc_conn_lost, 0);
+			if (!(xps->xps_flags & XPS_DISCONNECTED)) {
+				server_shutdown(port);
+			}
 #endif
+			xnet_error(port, CONN_LOST_ERROR, 0);
 			return FALSE;
 		}
 
