@@ -2681,7 +2681,7 @@ void LockManager::post_pending(lbl* lock)
 	if (lock->lbl_pending_lrq_count) {
 		SRQ_LOOP(lock->lbl_requests, lock_srq) 
 		{
-			lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+			lrq* request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
 			if (request->lrq_flags & LRQ_pending)
 				break;
 
@@ -3563,8 +3563,7 @@ void LockManager::validate_request(const SRQ_PTR lrq_ptr, USHORT freed, USHORT r
 		CHECK(request->lrq_type == type_lrq);
 
 	// Check that no invalid flag bit is set
-	CHECK(!
-		  (request->lrq_flags &
+	CHECK(!(request->lrq_flags &
 		   		~(LRQ_blocking | LRQ_pending | LRQ_converting |
 					 LRQ_rejected | LRQ_timed_out | LRQ_deadlock |
 					 LRQ_repost | LRQ_scanned | LRQ_blocking_seen | LRQ_just_granted)));

@@ -5018,6 +5018,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME procptr)
 			X.RDB$PARAMETER_MECHANISM = prm_mech_normal;
 			X.RDB$PARAMETER_MECHANISM.NULL = FALSE;
 
+			// DB_VERSION_DDL11_2
 			X.RDB$FIELD_NAME.NULL = TRUE;
 			X.RDB$RELATION_NAME.NULL = TRUE;
 
