@@ -911,18 +911,39 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 	case nod_field:
 		{
+			const USHORT stream = (USHORT) (IPTR) node->nod_arg[e_fld_stream];
 			const USHORT id = (USHORT) (IPTR) node->nod_arg[e_fld_id];
-			const Format* format =
-				CMP_format(tdbb, csb, (USHORT) (IPTR) node->nod_arg[e_fld_stream]);
-			if (id >= format->fmt_count) {
+			const Format* format = CMP_format(tdbb, csb, stream);
+
+			if (id >= format->fmt_count)
+			{
 				desc->dsc_dtype = dtype_unknown;
 				desc->dsc_length = 0;
 				desc->dsc_scale = 0;
 				desc->dsc_sub_type = 0;
 				desc->dsc_flags = 0;
 			}
-			else {
+			else
+			{
 				*desc = format->fmt_desc[id];
+
+				// fix UNICODE_FSS wrong length used in system tables
+				jrd_rel* relation = csb->csb_rpt[stream].csb_relation;
+
+				if (relation && (relation->rel_flags & REL_system) &&
+					desc->isText() && desc->getCharSet() == CS_UNICODE_FSS)
+				{
+					USHORT adjust = 0;
+
+					if (desc->dsc_dtype == dtype_varying)
+						adjust = sizeof(USHORT);
+					else if (desc->dsc_dtype == dtype_cstring)
+						adjust = 1;
+
+					desc->dsc_length -= adjust;
+					desc->dsc_length *= 3;
+					desc->dsc_length += adjust;
+				}
 			}
 			return;
 		}
