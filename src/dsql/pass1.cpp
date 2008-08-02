@@ -411,7 +411,12 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 	context->ctx_relation = relation;
 	context->ctx_procedure = procedure;
 	context->ctx_request = statement;
-	context->ctx_context = statement->req_context_number++;
+
+	if (relation_node->nod_type == nod_derived_table)
+		context->ctx_context = MAX_UCHAR + 1 + statement->req_derived_context_number++;
+	else
+		context->ctx_context = statement->req_context_number++;
+
 	context->ctx_scope_level = statement->req_scope_level;
 	// When we're in a outer-join part mark context for it.
 	if (statement->req_in_outer_join) {

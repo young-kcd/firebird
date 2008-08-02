@@ -523,6 +523,7 @@ public:
 	class dsql_ctx* req_outer_agg_context;	//!< agg context for outer ref
 	ULONG	req_base_offset;		//!< place to go back and stuff in blr length
 	USHORT	req_context_number;	//!< Next available context number
+	USHORT	req_derived_context_number;	//!< Next available context number for derived tables
 	USHORT	req_scope_level;		//!< Scope level for parsing aliases in subqueries
 	//USHORT	req_message_number;	//!< Next available message number
 	USHORT	req_loop_level;		//!< Loop level
