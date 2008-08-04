@@ -148,6 +148,10 @@ SSHORT LOCK_debug_level = 0;
 #define DEBUG_DELAY				/* nothing */
 #endif
 
+// hvlad: enable to log deadlocked owners and its PIDs in firebird.log
+//#define DEBUG_TRACE_DEADLOCKS
+
+
 const SRQ_PTR DUMMY_OWNER_CREATE	= -1;
 const SRQ_PTR DUMMY_OWNER_DELETE	= -2;
 const SRQ_PTR DUMMY_OWNER_SHUTDOWN	= -3;
@@ -2417,7 +2421,14 @@ static LRQ deadlock_walk(LRQ request,
    detected a circle in the wait-for graph.  Return "deadlock". */
 
 	if (request->lrq_flags & LRQ_deadlock)
+	{
+#ifdef DEBUG_TRACE_DEADLOCKS
+		own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+		gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
+			request->lrq_owner, owner->own_process_id, owner->own_flags);
+#endif
 		return request;
+	}
 
 /* Remember that this request is part of the wait-for graph. */
 
@@ -2478,13 +2489,24 @@ static LRQ deadlock_walk(LRQ request,
 
 		own* owner = (OWN) SRQ_ABS_PTR(block->lrq_owner);
 
+		// hvlad: don't pursue lock owners that waits with timeout as such 
+		// circle in wait-for graph will be broken automatically when permitted 
+		// timeout expires
+
+		if (owner->own_flags & OWN_timeout) {
+			continue;
+		}
+
 		/* Don't pursue lock owners that still have to finish processing their AST.
 		   If the blocking queue is not empty, then the owner still has some
 		   AST's to process (or lock reposts).
+		   hvlad: also lock maybe just granted to owner and blocked owners have no
+		   time to send blocking ATS
 		   Remember this fact because they still might be part of a deadlock. */
 
-		if (owner->own_ast_flags & OWN_signaled ||
-			!SRQ_EMPTY((owner->own_blocks)))
+		if (owner->own_ast_flags & (OWN_signaled | OWN_wakeup) ||
+			!SRQ_EMPTY((owner->own_blocks)) || 
+			block->lrq_flags & LRQ_just_granted)
 		{
 			*maybe_deadlock = true;
 			continue;
@@ -2513,7 +2535,14 @@ static LRQ deadlock_walk(LRQ request,
 		   request. */
 
 		if (target = deadlock_walk(target, maybe_deadlock))
+		{
+#ifdef DEBUG_TRACE_DEADLOCKS
+			own* owner = (own*) SRQ_ABS_PTR(request->lrq_owner);
+			gds__log("deadlock chain: OWNER BLOCK %6"SLONGFORMAT"\tProcess id: %6d\tFlags: 0x%02X ", 
+				request->lrq_owner, owner->own_process_id, owner->own_flags);
+#endif
 			return target;
+		}
 	}
 
 /* This branch of the wait-for graph is exhausted, the current waiting
@@ -3486,7 +3515,7 @@ static void post_blockage(LRQ request,
 		if (!(block->lrq_flags & LRQ_blocking)) {
 			insert_tail(&blocking_owner->own_blocks, &block->lrq_own_blocks);
 			block->lrq_flags |= LRQ_blocking;
-			block->lrq_flags &= ~LRQ_blocking_seen;
+			block->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 		}
 
 		if (force) {
@@ -3589,7 +3618,7 @@ static void post_pending( LBL lock)
 				post_wakeup(owner);
 				if (LOCK_ordering) {
 					CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-					return;
+					break;
 				}
 			}
 		}
@@ -3603,12 +3632,24 @@ static void post_pending( LBL lock)
 			post_wakeup(owner);
 			if (LOCK_ordering) {
 				CHECK(lock->lbl_pending_lrq_count >= pending_counter);
-				return;
+				break;
 			}
 		}
 	}
 
-	CHECK(lock->lbl_pending_lrq_count == pending_counter);
+	CHECK(lock->lbl_pending_lrq_count >= pending_counter);
+
+	if (lock->lbl_pending_lrq_count) {
+		SRQ_LOOP(lock->lbl_requests, lock_srq) 
+		{
+			lrq* request = (lrq*) ((UCHAR *) lock_srq - OFFSET(lrq*, lrq_lbl_requests));
+			if (request->lrq_flags & LRQ_pending)
+				break;
+
+			if (!(request->lrq_flags & (LRQ_blocking_seen | LRQ_blocking)))
+				request->lrq_flags |= LRQ_just_granted;
+		}
+	}
 }
 
 
@@ -3982,7 +4023,7 @@ static void release_request( LRQ request)
 		request->lrq_flags &= ~LRQ_blocking;
 	}
 
-	request->lrq_flags &= ~LRQ_blocking_seen;
+	request->lrq_flags &= ~(LRQ_blocking_seen | LRQ_just_granted);
 
 /* Update counts if we are cleaning up something we're waiting on!
    This should only happen if we are purging out an owner that died */
@@ -4524,7 +4565,7 @@ static void validate_owner( SRQ_PTR own_ptr, USHORT freed)
 	CHECK(!
 		  (owner->own_flags &
 		  		~(OWN_blocking | OWN_scanned | OWN_manager | OWN_signal
-					 | OWN_wakeup | OWN_starved)));
+					 | OWN_wakeup | OWN_starved | OWN_timeout)));
 
 /* Check that no invalid flag bit is set */
 	CHECK(!(owner->own_ast_flags & ~(OWN_signaled)));
@@ -4697,7 +4738,7 @@ static void validate_request( SRQ_PTR lrq_ptr, USHORT freed, USHORT recurse)
 		  (request->lrq_flags &
 		   		~(LRQ_blocking | LRQ_pending | LRQ_converting |
 					 LRQ_rejected | LRQ_timed_out | LRQ_deadlock |
-					 LRQ_repost | LRQ_scanned | LRQ_blocking_seen)));
+					 LRQ_repost | LRQ_scanned | LRQ_blocking_seen | LRQ_just_granted)));
 
 /* LRQ_converting & LRQ_timed_out are defined, but never actually used */
 	CHECK(!(request->lrq_flags & (LRQ_converting | LRQ_timed_out)));
@@ -4804,7 +4845,7 @@ static USHORT wait_for_request(
 	own* owner = (OWN) SRQ_ABS_PTR(owner_offset);
 	SRQ_PTR request_offset = SRQ_REL_PTR(request);
 	owner->own_pending_request = request_offset;
-	owner->own_flags &= ~(OWN_scanned | OWN_wakeup);
+	owner->own_flags &= ~(OWN_scanned | OWN_wakeup | OWN_timeout);
 
 #ifdef USE_STATIC_SEMAPHORES
 /* If semaphore hasn't been allocated for lock, allocate it now. */
@@ -4828,6 +4869,9 @@ static USHORT wait_for_request(
 	ResetEvent(wakeup_event[0]);
 #endif
 #endif
+
+	if (lck_wait < 0)
+		owner->own_flags |= OWN_timeout;
 
 /* Post blockage.  If the blocking owner has disappeared, the blockage
    may clear spontaneously. */
@@ -5089,10 +5133,10 @@ static USHORT wait_for_request(
 		}
 #endif /* SUPERSERVER */
 
-		/* If we've not previously been scanned for a deadlock, go do a
-		   deadlock scan */
+		/* If we've not previously been scanned for a deadlock and going to wait
+		   forever, go do a deadlock scan */
 
-		else if (!(owner->own_flags & OWN_scanned) &&
+		else if (!(owner->own_flags & (OWN_scanned | OWN_timeout)) &&
 				 (blocking_request = deadlock_scan(owner, request)))
 		{
 			/* Something has been selected for rejection to prevent a
@@ -5163,6 +5207,7 @@ static USHORT wait_for_request(
 	owner->own_semaphore = 0;
 #endif
 
+	owner->own_flags &= ~OWN_timeout;
 	return FB_SUCCESS;
 }
 
