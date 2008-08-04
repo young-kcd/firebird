@@ -271,6 +271,7 @@ const USHORT LRQ_deadlock		= 32;		/* Request has been seen by the deadlock-walk 
 const USHORT LRQ_repost			= 64;		/* Request block used for repost */
 const USHORT LRQ_scanned		= 128;		/* Request already scanned for deadlock */
 const USHORT LRQ_blocking_seen	= 256;		/* Blocking notification received by owner */
+const USHORT LRQ_just_granted	= 512;		// Request is just granted and blocked owners still have not sent blocking AST
 
 /* Owner block */
 
@@ -314,6 +315,7 @@ const USHORT OWN_manager	= 4;		// Owner is privileged manager
 const USHORT OWN_signal		= 8;		// Owner needs signal delivered
 const USHORT OWN_wakeup		= 32;		// Owner has been awoken
 const USHORT OWN_starved	= 128;		// This thread may be starved
+const USHORT OWN_timeout	= 256;		// Owner is waiting with timeout
 
 /* Flags in own_ast_flags */
 const UATOM OWN_signaled	= 16;		/* Signal is thought to be delivered */

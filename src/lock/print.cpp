@@ -1040,6 +1040,7 @@ static void prt_owner(OUTFILE outfile,
 		FPRINTF(outfile, " %s", (tmp & OWN_signal) ? "sgnl" : "    ");
 		FPRINTF(outfile, " %s", (tmp & OWN_wakeup) ? "wake" : "    ");
 		FPRINTF(outfile, " %s", (tmp & OWN_scanned) ? "scan" : "    ");
+		FPRINTF(outfile, " %s", (tmp & OWN_timeout) ? "tout" : "    ");
 		FPRINTF(outfile, "\n");
 	}
 
