@@ -301,25 +301,37 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	if (rpb->rpb_b_page) {
 		temp.rpb_record = gc_rec1 = VIO_gc_record(tdbb, relation);
-		if (!DPM_get(tdbb, &temp, LCK_read))
-			goto gc_cleanup;
-		if (temp.rpb_b_page != rpb->rpb_b_page ||
-			temp.rpb_b_line != rpb->rpb_b_line ||
-			temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
+		while (true)
 		{
-			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
-			goto gc_cleanup;
+			if (!DPM_get(tdbb, &temp, LCK_read))
+				goto gc_cleanup;
+			if (temp.rpb_b_page != rpb->rpb_b_page ||
+				temp.rpb_b_line != rpb->rpb_b_line ||
+				temp.rpb_transaction_nr != rpb->rpb_transaction_nr)
+			{
+				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+				goto gc_cleanup;
+			}
+			if (temp.rpb_flags & rpb_delta)
+				temp.rpb_prior = data;
+			if (!DPM_fetch_back(tdbb, &temp, LCK_read, -1))
+			{
+				tdbb->tdbb_status_vector[0] = isc_arg_gds;
+				tdbb->tdbb_status_vector[1] = 0;
+				tdbb->tdbb_status_vector[2] = isc_arg_end;
+
+				continue;
+			}
+			if (temp.rpb_flags & rpb_deleted)
+				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+			else
+				VIO_data(tdbb, &temp, dbb->dbb_permanent);
+			gc_rec1 = temp.rpb_record;
+			temp.rpb_page = rpb->rpb_b_page;
+			temp.rpb_line = rpb->rpb_b_line;
+		
+			break;
 		}
-		if (temp.rpb_flags & rpb_delta)
-			temp.rpb_prior = data;
-		DPM_fetch_back(tdbb, &temp, LCK_read, 1);
-		if (temp.rpb_flags & rpb_deleted)
-			CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
-		else
-			VIO_data(tdbb, &temp, dbb->dbb_permanent);
-		gc_rec1 = temp.rpb_record;
-		temp.rpb_page = rpb->rpb_b_page;
-		temp.rpb_line = rpb->rpb_b_line;
 	}
 
 /* Re-fetch the record. */
@@ -4216,16 +4228,33 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 		/* Each time thru the for-loop, we process the next older version.
 		   The while-loop finds this next older version. */
 
+		bool timed_out = false;
 		while (temp.rpb_b_page &&
 			   !(temp.rpb_page == (SLONG) next_page && temp.rpb_line == (SSHORT) next_line))
 		{
 			temp.rpb_prior = (temp.rpb_flags & rpb_delta) ? data : NULL;
-			DPM_fetch_back(tdbb, &temp, LCK_read, 1);
+
+			if (!DPM_fetch_back(tdbb, &temp, LCK_read, -1))
+			{
+				tdbb->tdbb_status_vector[0] = isc_arg_gds;
+				tdbb->tdbb_status_vector[1] = 0;
+				tdbb->tdbb_status_vector[2] = isc_arg_end;
+
+				clearRecordStack(staying);
+				next_page = rpb->rpb_page;
+				next_line = rpb->rpb_line;
+				max_depth = 0;
+				timed_out = true;
+				break;
+			}
 			depth++;
 			/* Don't monopolize the server while chasing long
 			   back version chains. */
 			if (--tdbb->tdbb_quantum < 0)
 				JRD_reschedule(tdbb, 0, true);
+		}
+		if (timed_out) {
+			continue;
 		}
 
 		/* If there is a next older version, then process it: remember that
