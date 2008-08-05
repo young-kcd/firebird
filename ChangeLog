@@ -1,3 +1,21 @@
+2008-08-04 23:07  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.129.2.16), cch_proto.h (1.24.4.2),
+	vio.cpp (1.151.2.14):
+
+	Backported fix for bug CORE-1970 : Lock conversion denied (215)
+	error may occurs
+
+2008-08-04 23:05  hvlad
+
+	* firebird2/src/lock/: lock.cpp (1.114.4.6), lock.h (1.33.4.4),
+	print.cpp (1.48.2.2):
+
+	Backported fixes for bugs : CORE-1984 : Lock manager reported false
+	deadlocks if one of deadlock participants waits with permitted
+	timeout CORE-2000 : Lock manager reported false deadlocks under
+	high load
+
 2008-08-02 18:04  asfernandes
 
 	* firebird2/src/gpre/: hsh.h (1.6.6.1), par.cpp (1.61.4.1), words.h
