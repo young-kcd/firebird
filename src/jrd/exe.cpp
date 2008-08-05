@@ -3169,6 +3169,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		}						/* for (fmt_count) */
 	}
 
+	new_rpb->rpb_number = org_rpb->rpb_number;
+	new_rpb->rpb_number.setValid(true);
+
 	if (node->nod_arg[e_mod_map_view]) {
 		impure->sta_state = 1;
 		return node->nod_arg[e_mod_map_view];
