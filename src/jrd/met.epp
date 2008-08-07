@@ -3170,7 +3170,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						JrdMemoryPool::deletePool(csb_pool);
 					}
 					
-					ERR_post(isc_bad_proc_BLR, procedure->prc_name.c_str(), isc_arg_end);
+					ERR_post(isc_bad_proc_BLR,
+							 isc_arg_string, ERR_cstring(procedure->prc_name.c_str()),
+							 isc_arg_end);
 				}
 
 				procedure->prc_request->req_procedure = procedure;
