@@ -186,6 +186,8 @@ static bool user_management(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 /* ---------------------------------------------------------------- */
 
+static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
+	const Firebird::MetaName& fieldName);
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, int, jrd_tra*);
 static void check_filename(const Firebird::string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
@@ -1309,6 +1311,16 @@ static bool user_management(thread_db*		tdbb,
 static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 	const Firebird::MetaName& fieldName)
 {
+/**************************************
+ *
+ *	c h e c k _ c o m p u t e d _ d e p e n d e n c i e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Checks if a computed field has circular dependencies.
+ *
+ **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
