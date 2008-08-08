@@ -153,6 +153,7 @@ enum irq_type_t
 	irq_cs_name,			// lookup a charset name
 	irq_default_cs,			// lookup the default charset
 	irq_rel_ids,			// check relation/field ids
+	irq_comp_circ_dpd,		// check computed circular dependencies
 
 	irq_MAX
 };

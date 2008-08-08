@@ -1034,7 +1034,7 @@ void MET_delete_dependencies(thread_db* tdbb,
 //
 	jrd_req* request = CMP_find_request(tdbb, irq_d_deps, IRQ_REQUESTS);
 
-	FOR(REQUEST_HANDLE request)
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		DEP IN RDB$DEPENDENCIES
 			WITH DEP.RDB$DEPENDENT_NAME = object_name.c_str()
 			AND DEP.RDB$DEPENDENT_TYPE = dependency_type

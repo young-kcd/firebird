@@ -1305,6 +1305,65 @@ static bool user_management(thread_db*		tdbb,
 	return false;
 }
 
+
+static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
+	const Firebird::MetaName& fieldName)
+{
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	bool err = false;
+	Firebird::SortedObjectsArray<Firebird::MetaName> sortedNames(*tdbb->getDefaultPool());
+	Firebird::ObjectsArray<Firebird::MetaName> names;
+
+	sortedNames.add(fieldName);
+	names.add(fieldName);
+
+	for (size_t pos = 0; !err && pos < names.getCount(); ++pos)
+	{
+		jrd_req* request = CMP_find_request(tdbb, irq_comp_circ_dpd, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+			DEP IN RDB$DEPENDENCIES CROSS
+			RFL IN RDB$RELATION_FIELDS WITH
+				DEP.RDB$DEPENDENT_NAME EQ names[pos].c_str() AND
+				DEP.RDB$DEPENDENT_TYPE EQ obj_computed AND
+				DEP.RDB$DEPENDED_ON_TYPE = obj_relation AND
+				RFL.RDB$RELATION_NAME = DEP.RDB$DEPENDED_ON_NAME AND
+				RFL.RDB$FIELD_NAME = DEP.RDB$FIELD_NAME
+		{
+			if (!REQUEST(irq_comp_circ_dpd))
+				REQUEST(irq_comp_circ_dpd) = request;
+
+			Firebird::MetaName fieldSource(RFL.RDB$FIELD_SOURCE);
+
+			if (fieldName == fieldSource)
+			{
+				err = true;
+				break;
+			}
+
+			if (!sortedNames.exist(fieldSource))
+			{
+				sortedNames.add(fieldSource);
+				names.add(fieldSource);
+			}
+		}
+		END_FOR;
+
+		if (!REQUEST(irq_comp_circ_dpd))
+			REQUEST(irq_comp_circ_dpd) = request;
+	}
+
+	if (err)
+	{
+		ERR_post(isc_no_meta_update,
+				 isc_arg_gds, isc_circular_computed,
+				 isc_arg_end);
+	}
+}
+
+
 static void check_dependencies(thread_db* tdbb,
 							   const TEXT* dpdo_name,
 							   const TEXT* field_name,
@@ -2795,7 +2854,14 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				dbb->deletePool(new_pool);
 			}
 		}
+		// fall through
+ 
+	case 2:
+	case 3:
+		return true;
 
+	case 4:	// after scan_relation (phase 3)
+		check_computed_dependencies(tdbb, transaction, work->dfw_name);
 		break;
 	}
 
@@ -2937,7 +3003,14 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 				dbb->deletePool(new_pool);
 			}
 		}
+		// fall through
+ 
+	case 2:
+	case 3:
+		return true;
 
+	case 4:	// after scan_relation (phase 3)
+		check_computed_dependencies(tdbb, transaction, work->dfw_name);
 		break;
 	}
 

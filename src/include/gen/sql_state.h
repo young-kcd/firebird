@@ -635,6 +635,7 @@ static const struct {
 	{335544932, "39000"}, // 612 modnotfound 
 	{335544933, "HY018"}, // 613 nothing_to_cancel 
 	{335544934, "39000"}, // 614 ibutil_not_loaded 
+	{335544935, "42000"}, // 615 circular_computed 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 
