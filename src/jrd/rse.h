@@ -342,8 +342,9 @@ const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
 
 // bits for the smb_flags field
 
-const USHORT SMB_project = 1;	// sort is really a project
-//const USHORT SMB_tag = 2;		// beast is a tag sort. What is this?
+const USHORT SMB_project = 1;		// sort is really a project
+//const USHORT SMB_tag = 2;			// beast is a tag sort. What is this?
+const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and group by
 
 
 // Blocks used to compute optimal join order:

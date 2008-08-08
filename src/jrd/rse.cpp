@@ -2994,8 +2994,8 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 					(USHORT)(IPTR) item->smb_desc.dsc_address <
 					map->smb_key_length * sizeof(ULONG))
 				{
-					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc),
-									   from, &to, INTL_KEY_SORT);
+					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(&item->smb_desc), from, &to,
+						(map->smb_flags & SMB_unique_sort ? INTL_KEY_UNIQUE : INTL_KEY_SORT));
 				}
 				else
 					MOV_move(tdbb, from, &to);

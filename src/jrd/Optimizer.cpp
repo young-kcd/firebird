@@ -1368,15 +1368,30 @@ RecordSource* OptimizerRetrieval::generateNavigation()
 
 			// ASF: "desc.dsc_ttype() > ttype_last_internal" is to avoid recursion
 			// when looking for charsets/collations
-			if ((idx->idx_flags & idx_unique) && DTYPE_IS_TEXT(desc.dsc_dtype) &&
-				desc.dsc_ttype() > ttype_last_internal)
+
+			if (DTYPE_IS_TEXT(desc.dsc_dtype) && desc.dsc_ttype() > ttype_last_internal)
 			{
 				TextType* tt = INTL_texttype_lookup(tdbb, desc.dsc_ttype());
 
-				if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
+				if (idx->idx_flags & idx_unique)
 				{
-					usableIndex = false;
-					break;
+					if (tt->getFlags() & TEXTTYPE_UNSORTED_UNIQUE)
+					{
+						usableIndex = false;
+						break;
+					}
+				}
+				else
+				{
+					// ASF: We currently can't use non-unique index for GROUP BY and DISTINCT with
+					// multi-level and insensitive collation. In NAV, keys are verified with memcmp
+					// but there we don't know length of each level.
+					if ((sortPtr->nod_flags & nod_unique_sort) &&
+						(tt->getFlags() & TEXTTYPE_SEPARATE_UNIQUE))
+					{
+						usableIndex = false;
+						break;
+					}
 				}
 			}
 		}

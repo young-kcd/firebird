@@ -748,8 +748,9 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			sort_can_be_used = false;
 			// AB: We could already have multiple rivers at this
 			// point so try to do some sort/merging now.
-			while (rivers_stack.hasMore(1)
-			   && gen_sort_merge(tdbb, opt, rivers_stack));
+			while (rivers_stack.hasMore(1) && gen_sort_merge(tdbb, opt, rivers_stack))
+				;
+
 			// AB: Mark the previous used streams (sub-RecordSelExpr's) again
 			// as active, because a SORT/MERGE could reset the flags
 			for (i = 1; i <= sub_streams[0]; i++) {
@@ -835,8 +836,8 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				 rse->rse_plan);
 
 		// If there are multiple rivers, try some sort/merging
-		while (rivers_stack.hasMore(1)
-			&& gen_sort_merge(tdbb, opt, rivers_stack));
+		while (rivers_stack.hasMore(1) && gen_sort_merge(tdbb, opt, rivers_stack))
+			;
 
 		rsb = make_cross(tdbb, opt, rivers_stack);
 
@@ -5330,11 +5331,15 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		(sizeof(sort_key_def) * 2 * sort->nod_count + sizeof(smb_repeat) -
 		 1) / sizeof(smb_repeat);
 	SortMap* map = FB_NEW_RPT(*tdbb->getDefaultPool(), count) SortMap();
+
 	map->smb_keys = sort->nod_count * 2;
 	map->smb_count = (USHORT) items;
-	if (project_flag) {
+
+	if (project_flag)
 		map->smb_flags |= SMB_project;
-	}
+
+	if (sort->nod_flags & nod_unique_sort)
+		map->smb_flags |= SMB_unique_sort;
 
     ULONG map_length = 0;
 

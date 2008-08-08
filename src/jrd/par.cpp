@@ -2473,6 +2473,8 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 
 	SSHORT count = (unsigned int) BLR_BYTE;
 	jrd_nod* clause = PAR_make_node(tdbb, count * 3);
+	if (!flag)
+		clause->nod_flags = nod_unique_sort;
 	clause->nod_type = nod_sort;
 	clause->nod_count = count;
 	jrd_nod** ptr = clause->nod_arg;
