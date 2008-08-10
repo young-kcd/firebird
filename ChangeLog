@@ -1,3 +1,11 @@
+2008-08-10 12:06  hvlad
+
+	* firebird2/src/jrd/blb.cpp (1.173):
+
+	Allow to create temporary blobs on read-only databases.  This also
+	fixed bug CORE-2026 : Problem with a read-only marked database and
+	Firebird 2.1
+
 2008-08-08 19:26  asfernandes
 
 	* firebird2/src/jrd/dfw.epp (1.248):
