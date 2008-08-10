@@ -1,3 +1,796 @@
+2008-08-08 19:26  asfernandes
+
+	* firebird2/src/jrd/dfw.epp (1.248):
+
+	Misc
+
+2008-08-08 18:00  asfernandes
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.83),
+	lang_helpers/gds_codes.pas (1.83), src/include/gen/codetext.h
+	(1.92), src/include/gen/iberror.h (1.96), src/include/gen/msgs.h
+	(1.116), src/include/gen/sql_code.h (1.98),
+	src/include/gen/sql_state.h (1.25), src/jrd/dfw.epp (1.247),
+	src/jrd/irq.h (1.17), src/jrd/met.epp (1.260),
+	src/msgs/messages2.sql (1.55), src/msgs/system_errors2.sql (1.41):
+
+	Fixed CORE-1894 - Circular dependencies between computed fields
+	crashs the engine
+
+2008-08-08 03:44  asfernandes
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.86), exe.h (1.124), opt.cpp
+	(1.319), par.cpp (1.207), rse.cpp (1.151), rse.h (1.55):
+
+	Fixed CORE-2034 - Problems related to CORE-1254 (Problem with
+	DISTINCT and insensitive collations) re. UNICODE insensitive
+	collations with DISTINCT or GROUP BY.
+
+2008-08-05 17:14  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.267):
+
+	Fixed CORE-2031 - Null in the first record in a condition on
+	rdb$db_key
+
+2008-08-05 12:49  alexpeshkoff
+
+	* firebird2/builds/posix/make.defaults (1.68):
+
+	Fixed CORE-2033:Unresolved symbol _Unwind_GetIP in client library
+
+2008-08-03 22:52  asfernandes
+
+	* firebird2/src/jrd/met.epp (1.259):
+
+	Fix bug - missing isc_arg_cstring
+
+2008-08-03 01:47  asfernandes
+
+	* firebird2/src/dsql/: dsql.h (1.140), pass1.cpp (1.401):
+
+	Improvement CORE-2029 - Increase number of contexts avaiable when
+	using derived tables
+
+2008-08-01 17:26  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.301):
+
+	Fixed CORE-2027 - Incorrect buffer size for ORDER BY expression
+	with system fields
+
+2008-07-31 02:45  asfernandes
+
+	* firebird2/src/: burp/restore.epp (1.146), lock/lock.cpp (1.165):
+
+	Misc
+
+2008-07-29 13:02  dimitr
+
+	* firebird2/src/remote/: xnet.cpp (1.112), xnet.h (1.18):
+
+	Fixed CORE-2016: Client hang at use of XNET protocol in cases when
+	database or attachment has been shut down.
+
+2008-07-29 12:36  dimitr
+
+	* firebird2/src/remote/server.cpp (1.216):
+
+	Misc.
+
+2008-07-28 23:21  hvlad
+
+	* firebird2/src/lock/: lock.cpp (1.164), lock.h (1.46):
+
+	Fixed bug CORE-2000 : Lock manager reported false deadlocks under
+	high load
+
+2008-07-28 17:39  asfernandes
+
+	* firebird2/src/jrd/dyn_def.epp (1.168):
+
+	Fixed CORE-2008 - NOT NULL procedure parameters
+
+2008-07-28 14:39  alexpeshkoff
+
+	* firebird2/src/jrd/: cvt.cpp (1.99), cvt_proto.h (1.13):
+
+	Inline optimization as suggested by Claudio
+
+2008-07-28 14:18  roman-simakov
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.20):
+
+	Added missed synchronization. Thanks to Adriano.
+
+2008-07-28 12:07  alexpeshkoff
+
+	* firebird2/src/common/StatusArg.cpp (1.7):
+
+	Fixed bug when appending vectors, thanks to Claudio
+
+2008-07-28 00:33  dimitr
+
+	* firebird2/src/common/classes/timestamp.cpp (1.19):
+
+	Misc.
+
+2008-07-25 10:57  hvlad
+
+	* firebird2/src/jrd/par.cpp (1.206):
+
+	Warnings must be passed in status-vector as isc_arg_gds, 0,
+	isc_arg_warning, ...  Note 1 : warning() overwrites status-vector
+	Note 2 : somewhere in DFW status-vector is cleaned up and warnings
+	not passed to the client
+
+2008-07-25 10:43  hvlad
+
+	* firebird2/src/burp/restore.epp (1.145):
+
+	It is good idea to set NULL flag for nullable fields if backup have
+	no value for its ;)
+
+2008-07-23 18:14  roman-simakov
+
+	* firebird2/src/lock/lock.cpp (1.163):
+
+	Add missed que changing in LockManager::setOwnerHandle
+
+2008-07-23 18:03  roman-simakov
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.19):
+
+	Fixed using GlobalRWLock for multiple writes by the some logical
+	owner.
+
+2008-07-22 06:18  skidder
+
+	* firebird2/src/jrd/filters.cpp (1.62):
+
+	Fix broken RDB$FORMATS blob printing on 64-bit platforms.
+	Implement filter output that is more useful for debugging issues
+
+2008-07-21 17:49  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.246), met.epp (1.258), met_proto.h
+	(1.68), pcmet.epp (1.55):
+
+	Do not update RDB$DEPENDENCIES in system transaction, to be
+	consistent with most of metadata updates and as work in progress
+	for possible solution for CORE-1894
+
+2008-07-21 04:20  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.5), dudley/expand.cpp (1.31),
+	dudley/hsh.cpp (1.20), jrd/fun.epp (1.103), jrd/idx.cpp (1.142):
+
+	Misc
+
+2008-07-18 14:21  hvlad
+
+	* firebird2/src/jrd/isc_sync.cpp (1.147):
+
+	Allow CS processes to share MMF's again ;)
+
+2008-07-18 10:58  robocop
+
+	* firebird2/src/jrd/fun.epp (1.102):
+
+	Fix CORE-2002.
+
+2008-07-18 10:58  robocop
+
+	* firebird2/src/common/cvt.cpp (1.4):
+
+	Fix CORE-2001.
+
+2008-07-17 14:49  hvlad
+
+	* firebird2/src/jrd/: cch.cpp (1.207), cch_proto.h (1.30), vio.cpp
+	(1.223):
+
+	Fixed bug CORE-1970 : Lock conversion denied (215) error may occurs
+
+2008-07-16 16:16  asfernandes
+
+	* firebird2/src/jrd/idx.cpp (1.141):
+
+	Fixed CORE-1989 - UTF8 UNICODE_CI collate can´t be used in foreing
+	key constraint
+
+2008-07-16 15:55  asfernandes
+
+	* firebird2/src/jrd/: opt.cpp (1.318), Optimizer.cpp (1.85):
+
+	Misc
+
+2008-07-16 13:13  robocop
+
+	* firebird2/src/: common/classes/ClumpletWriter.cpp (1.27),
+	common/classes/ClumpletWriter.h (1.13),
+	common/classes/fb_string.cpp (1.40), common/classes/fb_string.h
+	(1.16), common/classes/MetaName.cpp (1.8),
+	common/classes/MetaName.h (1.8), common/classes/semaphore.h (1.56),
+	common/classes/sparse_bitmap.h (1.23), common/classes/TempFile.cpp
+	(1.14), common/classes/TempFile.h (1.9),
+	common/classes/timestamp.cpp (1.18), common/classes/timestamp.h
+	(1.17), common/classes/tree.h (1.73), jrd/dsc.h (1.40),
+	dudley/expand.cpp (1.30), dudley/hsh.cpp (1.19), jrd/extds/ExtDS.h
+	(1.11), jrd/extds/InternalDS.h (1.7), jrd/extds/IscDS.h (1.9),
+	dsql/pass1.cpp (1.400):
+
+	Style.
+
+2008-07-16 03:38  asfernandes
+
+	* firebird2/src/: common/cvt.cpp (1.3), common/classes/array.h
+	(1.53), intl/cv_jis.cpp (1.19), intl/cv_ksc.cpp (1.16),
+	intl/lc_narrow.cpp (1.36), jrd/IntlUtil.cpp (1.20), jrd/fun.epp
+	(1.101), jrd/grant.epp (1.67), jrd/intlobj_new.h (1.19),
+	jrd/scl.epp (1.99):
+
+	Misc
+
+2008-07-15 17:41  asfernandes
+
+	* firebird2/src/jrd/: dfw.epp (1.245), tra.h (1.88), vio.cpp
+	(1.222):
+
+	Fixed CORE-1986 - Altering domains name drops dependencies using
+	the domain
+
+2008-07-15 15:11  dimitr
+
+	* firebird2/src/jrd/UserManagement.cpp (1.4):
+
+	Fixed CORE-1994.
+
+2008-07-15 13:37  robocop
+
+	* firebird2/src/common/classes/array.h (1.52):
+
+	const.
+
+2008-07-15 13:37  robocop
+
+	* firebird2/builds/win32/msvc7/Firebird2.sln (1.29):
+
+	Remove for VC7 the same projects as for VC8.
+
+2008-07-15 13:33  robocop
+
+	* firebird2/builds/win32/msvc7/: alice_classic.vcproj (1.21),
+	burp_classic.vcproj (1.22), utilities_classic.vcproj (1.23):
+
+	Remove for VC7 the same projects as for VC8.
+
+2008-07-15 12:47  robocop
+
+	* firebird2/src/jrd/scl.epp (1.98):
+
+	Misc check.
+
+2008-07-15 08:24  robocop
+
+	* firebird2/src/jrd/grant.epp (1.66):
+
+	More cleanup.
+
+2008-07-14 20:14  dimitr
+
+	* firebird2/src/: jrd/alt.cpp (1.73), jrd/gds.cpp (1.262),
+	jrd/isc_sync.cpp (1.146), include/firebird.h (1.47):
+
+	Corrections for the new embedded implementation.  Removed some
+	embedded specifics that shouldn't be necessary once the required
+	changes are committed.	Please note that the lock table is still
+	per-instance, so multi-process usage is still unsafe. To be fixed
+	later.
+
+2008-07-14 20:01  dimitr
+
+	* firebird2/builds/win32/msvc8/: common_static.vcproj (1.10),
+	engine_embed.vcproj (1.26), Firebird2.sln (1.13), fbembed.vcproj
+	(1.18), Firebird2Boot.sln (1.9), utilities_embed.vcproj (1.6):
+
+	Build embedded as Classic.
+
+2008-07-14 19:57  dimitr
+
+	* firebird2/builds/win32/msvc8/: utilities.vcproj (1.7),
+	utilities_classic.vcproj (1.7):
+
+	Same for utilities.
+
+2008-07-14 19:52  dimitr
+
+	* firebird2/builds/win32/msvc8/: alice.vcproj (1.8), burp.vcproj
+	(1.6), alice_classic.vcproj (1.9), burp_classic.vcproj (1.7):
+
+	Cleanup. ALICE and BURP don't depend on SS/CS conditionals anymore.
+
+2008-07-13 18:20  asfernandes
+
+	* firebird2/builds/win32/: msvc8/Firebird2Boot.sln (1.8),
+	msvc8/ib_util.vcproj (1.7), make_boot.bat (1.41):
+
+	Undo more changes of previous ib_util patch - thanks to Claudio
+
+2008-07-13 11:52  robocop
+
+	* firebird2/src/common/classes/array.h (1.51):
+
+	- Make a protected function with repetitive code.  - Little
+	optimization when an array is overwritten (operator= or assign).  -
+	Misc changes.
+
+2008-07-12 23:23  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.extlib (1.29),
+	builds/posix/Makefile.in.fbserver (1.27),
+	builds/posix/Makefile.in.libfbembed (1.27),
+	builds/posix/ib_util.darwin.vers (1.2),
+	builds/posix/ib_util.hpux.vers (1.2), builds/posix/ib_util.vers
+	(1.2), builds/posix/make.defaults (1.67),
+	builds/posix/make.shared.variables (1.98),
+	builds/posix/prefix.darwin_i386 (1.10),
+	builds/posix/prefix.darwin_ppc64 (1.8),
+	builds/posix/prefix.darwin_x86_64 (1.10),
+	builds/win32/defs/ib_util.def (1.3),
+	builds/win32/msvc8/Firebird2.sln (1.12), lang_helpers/gds_codes.ftn
+	(1.82), lang_helpers/gds_codes.pas (1.82), src/extlib/ib_util.cpp
+	(1.5), src/include/gen/codetext.h (1.91), src/include/gen/iberror.h
+	(1.95), src/include/gen/msgs.h (1.115), src/include/gen/sql_code.h
+	(1.97), src/include/gen/sql_state.h (1.24), src/jrd/fun.epp
+	(1.100), src/jrd/fun_proto.h (1.16), src/jrd/functions.cpp (1.34),
+	src/jrd/jrd.cpp (1.477), src/jrd/jrd.h (1.248),
+	src/msgs/facilities2.sql (1.43), src/msgs/messages2.sql (1.54),
+	src/msgs/system_errors2.sql (1.40):
+
+	Rework of ib_util changes. Dynamically load it in the engine and
+	inform callback functions to alloc and free memory. Allocate memory
+	from the default pool.
+
+2008-07-12 21:36  asfernandes
+
+	* firebird2/src/: intl/cv_big5.cpp (1.15), intl/cv_gb2312.cpp
+	(1.13), intl/cv_icu.cpp (1.4), intl/cv_jis.cpp (1.18),
+	intl/cv_ksc.cpp (1.15), intl/cv_narrow.cpp (1.13),
+	intl/lc_ascii.cpp (1.25), intl/lc_dos.cpp (1.12),
+	intl/lc_narrow.cpp (1.35), jrd/IntlUtil.cpp (1.19),
+	jrd/intl_builtin.cpp (1.42), jrd/intlobj_new.h (1.18):
+
+	GCC emits warning when struct in non-anonymous namespace references
+	struct from the anonymous namespace. Use void* and cast
+	appropriatelly, because multiple declaration of struct using the
+	same name is not good and caused problem during V2.0 development.
+
+2008-07-12 10:04  robocop
+
+	* firebird2/: builds/win32/msvc8/common_classic.vcproj (1.13),
+	builds/win32/msvc8/engine_classic.vcproj (1.29), src/jrd/cvt.cpp
+	(1.97), src/common/StatusArg.cpp (1.6), src/common/cvt.cpp (1.2),
+	src/common/cvt.h (1.2), src/jrd/cvt.cpp (1.98):
+
+	Minor cleanup after Alex' changes.
+
+2008-07-11 15:50  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.50), jrd/grant.epp
+	(1.65), jrd/grant_proto.h (1.14), jrd/scl.epp (1.97), jrd/scl.h
+	(1.23), jrd/scl_proto.h (1.29):
+
+	Fixed CORE-1957 & CORE-216: too many grants lose privileges. ACLs
+	cleanup.
+
+2008-07-11 10:44  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	FirebirdInstallEnvironmentChecks.inc (1.12), custom_messages.inc
+	(1.7):
+
+	Provide a coherent and meaningful message
+
+2008-07-11 09:49  dimitr
+
+	* firebird2/builds/: win32/msvc8/gpre.vcproj (1.9),
+	posix/Makefile.in.client.gpre (1.31), posix/Makefile.in.embed.gpre
+	(1.26):
+
+	Cleanup.
+
+2008-07-11 09:44  dimitr
+
+	* firebird2/src/: jrd/isc.cpp (1.80), jrd/isc_proto.h (1.23),
+	gpre/ftn.cpp (1.64):
+
+	Cleanup.
+
+2008-07-11 08:47  dimitr
+
+	* firebird2/src/jrd/os/win32/config_root.cpp (1.24):
+
+	Misc cleanup.
+
+2008-07-11 04:37  asfernandes
+
+	* firebird2/:
+	builds/install/arch-specific/win32/installation_readme.txt (1.19),
+	src/common/StatusArg.cpp (1.5), src/common/classes/alloc.cpp
+	(1.114), src/jrd/alt.cpp (1.72), src/jrd/err.cpp (1.78),
+	src/jrd/evl.cpp (1.266):
+
+	Misc
+
+2008-07-10 21:13  skidder
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.12),
+	common_classic.vcproj (1.12), common_static.vcproj (1.9),
+	engine_classic.vcproj (1.28), fbclient.vcproj (1.15):
+
+	Fix MSVC8 build after recent Alex' commits
+
+2008-07-10 17:59  alexpeshkoff
+
+	* firebird2/src/msgs/messages2.sql (1.53):
+
+	Rolled back accidential change
+
+2008-07-10 17:56  alexpeshkoff
+
+	* firebird2/: src/common/cvt.cpp (1.1), src/common/cvt.h (1.1),
+	src/dsql/errd.cpp (1.47), src/dsql/errd_proto.h (1.13),
+	src/dsql/make.cpp (1.165), src/dsql/movd.cpp (1.21),
+	src/gpre/gpre_meta_boot.cpp (1.52), src/gpre/movg.cpp (1.11),
+	src/include/fb_types.h (1.56), src/jrd/SysFunction.cpp (1.54),
+	src/jrd/alt.cpp (1.71), src/jrd/alt_proto.h (1.17), src/jrd/cvt.cpp
+	(1.96), src/jrd/cvt2.cpp (1.62), src/jrd/cvt2_proto.h (1.9),
+	src/jrd/cvt_proto.h (1.12), src/jrd/err.cpp (1.77),
+	src/jrd/err_proto.h (1.29), src/jrd/evl.cpp (1.265),
+	src/jrd/intl.cpp (1.111), src/jrd/intl_classes.h (1.29),
+	src/jrd/intl_proto.h (1.23), src/jrd/mov.cpp (1.36),
+	src/jrd/par.cpp (1.205), src/jrd/quad.cpp (1.11),
+	src/jrd/quad_proto.h (1.6), src/jrd/val.h (1.39),
+	src/msgs/messages2.sql (1.52), src/remote/interface.cpp (1.195),
+	builds/posix/Makefile.in.boot.gpre (1.30),
+	builds/posix/Makefile.in.client.gpre (1.30),
+	builds/posix/Makefile.in.embed.gpre (1.25),
+	builds/posix/Makefile.in.libfbclient (1.40),
+	builds/posix/Makefile.in.smp_server (1.3),
+	builds/posix/make.shared.variables (1.97):
+
+	Separated CVT functions to common and jrd parts.
+
+	This made possible to avoid ugly CVT_move export.
+
+	Cleanup of errors handling in CVT functions.
+
+2008-07-10 17:46  alexpeshkoff
+
+	* firebird2/src/common/: StatusArg.cpp (1.4), StatusArg.h (1.5):
+
+	Added new methods
+
+2008-07-10 16:52  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.41):
+
+	It's even better if it is declared correctly.
+
+2008-07-10 16:47  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/BuildExecutableInstall.bat
+	(1.40):
+
+	It helps to define an env var before using it :-(
+
+2008-07-10 16:42  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+	(1.11):
+
+	Be slightly more vague, but at least include both current
+	possibilities.	(This is an area that needs reworking.)
+
+2008-07-10 16:14  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.39), FirebirdInstall_20.iss (1.35):
+
+	Make a reasonably sane attempt to include the correct documentation
+	for 2.5 Alpha 1
+
+2008-07-10 14:45  paul_reeves
+
+	*
+	firebird2/builds/install/arch-specific/win32/installation_readme.txt
+	(1.18):
+
+	Forward port installer changes from 2.1.1 to 2.5.000
+
+2008-07-10 14:42  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.38),
+	FirebirdInstallEnvironmentChecks.inc (1.10),
+	FirebirdInstallSupportFunctions.inc (1.8), FirebirdInstall_20.iss
+	(1.34), Readme.txt (1.19):
+
+	Forward port installer changes from 2.1.1 to 2.5.000
+
+2008-07-09 17:30  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.53):
+
+	Fixed CORE-1936 - The log(base, number) built-in function doesn't
+	check parameters and delivers NAN values instead
+
+2008-07-09 17:20  asfernandes
+
+	* firebird2/src/misc/intl.sql (1.5):
+
+	Fixed CORE-1927 - sp_register_character_set can generate the
+	negative RDB$CHARACTER_SET_ID
+
+2008-07-09 14:34  robocop
+
+	* firebird2/src/: jrd/jrd.cpp (1.476), lock/lock.cpp (1.162):
+
+	Misc.
+
+2008-07-09 13:46  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.317):
+
+	Fixed the main problem of CORE-1971: inconsistency in the
+	evaluation order between Windows and POSIX.  Now the order is
+	always right-to-left. I would prefer to see it reversed, but that's
+	for another day.
+
+2008-07-09 10:50  alexpeshkoff
+
+	* firebird2/builds/install/:
+	arch-specific/linux/misc/firebird.init.d.mandrake.in (1.12),
+	misc/changeMultiConnectMode.sh.in (1.3):
+
+	Fixed issues detected by QA
+
+2008-07-09 10:39  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.66), inf.cpp (1.85),
+	ini.epp (1.103), ini_proto.h (1.14), jrd.cpp (1.475), pag.cpp
+	(1.188), pag_proto.h (1.21), qatest.cpp (1.24), sdw.cpp (1.81),
+	os/pio.h (1.24), os/pio_proto.h (1.31), os/posix/unix.cpp (1.105),
+	os/win32/winnt.cpp (1.74):
+
+	1) Fixed the layering, as dbb_lock shouldn't belong to PIO.  2)
+	Passed tdbb to some engine routines that were dealing with TLS.  3)
+	Got rid of fil_length and some minor cleanup.
+
+2008-07-09 09:57  hvlad
+
+	* firebird2/src/lock/: lock.cpp (1.161), lock.h (1.45), print.cpp
+	(1.72):
+
+	Fixed bug CORE-1984 : Lock manager reported false deadlocks if one
+	of deadlock participants waits with permitted timeout
+
+2008-07-09 09:52  hvlad
+
+	* firebird2/src/lock/lock.cpp (1.160):
+
+	Fixed bug CORE-1985 : Lock manager code may create 100% CPU load
+	for some time
+
+2008-07-08 17:39  asfernandes
+
+	* firebird2/src/common/classes/array.h (1.49):
+
+	Misc
+
+2008-07-08 17:32  asfernandes
+
+	* firebird2/src/gpre/: hsh.h (1.11), par.cpp (1.70), words.h (1.9):
+
+	Fixed CORE-1982 - Simultaneous backups or restores could interfere
+	each with other using the services API
+
+2008-07-08 10:57  alexpeshkoff
+
+	* firebird2/src/common/classes/alloc.cpp (1.113):
+
+	Fixed CORE-1983: Out of memory condition in OS causes AV
+
+2008-07-08 09:48  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.81),
+	lang_helpers/gds_codes.pas (1.81), src/include/gen/codetext.h
+	(1.90), src/include/gen/iberror.h (1.94), src/include/gen/msgs.h
+	(1.114), src/include/gen/sql_code.h (1.96),
+	src/include/gen/sql_state.h (1.23), src/jrd/why.cpp (1.207),
+	src/msgs/facilities2.sql (1.42), src/msgs/messages2.sql (1.51),
+	src/msgs/system_errors2.sql (1.39):
+
+	Adding one more message for localization.
+
+2008-07-08 09:02  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.9):
+
+	Use FB type where acceptable
+
+2008-07-08 08:47  robocop
+
+	* firebird2/builds/win32/msvc8/: common.vcproj (1.11),
+	common_classic.vcproj (1.11), common_static.vcproj (1.8),
+	intl.vcproj (1.17):
+
+	Fixed the Windows build after Alex' changes.
+
+2008-07-08 08:45  robocop
+
+	* firebird2/src/jrd/pwd.cpp (1.71):
+
+	Totally misc.
+
+2008-07-08 08:44  robocop
+
+	* firebird2/src/jrd/jrd.cpp (1.474):
+
+	const
+
+2008-07-08 08:44  robocop
+
+	* firebird2/src/jrd/fun.epp (1.99):
+
+	Workaround for a VC limitation: don't mix SEH and C++ EH.
+
+2008-07-07 16:03  alexpeshkoff
+
+	* firebird2/src/common/StatusArg.h (1.4):
+
+	Improved human readability - thanks to Claudio
+
+2008-07-07 15:33  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.473):
+
+	Renamed function
+
+2008-07-07 15:30  alexpeshkoff
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.80),
+	lang_helpers/gds_codes.pas (1.80), src/include/gen/codetext.h
+	(1.89), src/include/gen/iberror.h (1.93), src/include/gen/msgs.h
+	(1.113), src/include/gen/sql_code.h (1.95),
+	src/include/gen/sql_state.h (1.22), src/jrd/par.cpp (1.204),
+	src/msgs/facilities2.sql (1.41), src/msgs/messages2.sql (1.50),
+	src/msgs/system_errors2.sql (1.38):
+
+	Use regular message code instead of arg_interpreted
+
+2008-07-07 15:03  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.261):
+
+	misc gcc warning
+
+2008-07-07 14:45  alexpeshkoff
+
+	* firebird2/src/jrd/gds.cpp (1.260):
+
+	Do not skip win32 errors on non-win32 systems - print as "unknown
+	Win32"
+
+2008-07-07 12:42  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.472):
+
+	Fixed CORE-1972: Non-SYSDBA user can change FW mode of database
+
+2008-07-06 20:08  asfernandes
+
+	* firebird2/src/: jrd/pwd.cpp (1.70), jrd/svc.cpp (1.230),
+	remote/interface.cpp (1.194):
+
+	Misc
+
+2008-07-06 18:42  asfernandes
+
+	* firebird2/src/: common/StatusArg.cpp (1.3), common/StatusArg.h
+	(1.3), common/fb_exception.cpp (1.38), dsql/gen.cpp (1.164),
+	jrd/DataTypeUtil.cpp (1.17), jrd/dyn.epp (1.130), jrd/dyn_mod.epp
+	(1.106), jrd/jrd.cpp (1.471), jrd/os/posix/unix.cpp (1.104):
+
+	Misc
+
+2008-07-06 14:51  robocop
+
+	* firebird2/src/: include/gen/msgs.h (1.112), msgs/history2.sql
+	(1.10), msgs/messages2.sql (1.49):
+
+	More legacy messages.
+
+2008-07-06 13:03  robocop
+
+	* firebird2/src/jrd/: isc_sync.cpp (1.145), jrd.cpp (1.470):
+
+	Fixing the Win32 build after Alex' changes.
+
+2008-07-06 12:57  robocop
+
+	* firebird2/src/: common/fb_exception.cpp (1.37), jrd/pwd.cpp
+	(1.69):
+
+	Misc.
+
+2008-07-06 12:56  robocop
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.65):
+
+	Misc: Updating legacy message Adding a message Fixing some typos
+
+2008-07-06 12:51  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.79),
+	lang_helpers/gds_codes.pas (1.79), src/common/StatusArg.cpp (1.2),
+	src/common/StatusArg.h (1.2), src/include/gen/codetext.h (1.88),
+	src/include/gen/iberror.h (1.92), src/include/gen/msgs.h (1.111),
+	src/include/gen/sql_code.h (1.94), src/include/gen/sql_state.h
+	(1.21), src/msgs/facilities2.sql (1.40), src/msgs/history2.sql
+	(1.9), src/msgs/messages2.sql (1.48), src/msgs/sqlstates.sql (1.6),
+	src/msgs/system_errors2.sql (1.37):
+
+	Misc: Updating legacy message Adding a message Fixing some typos
+
+2008-07-05 21:31  skidder
+
+	* firebird2/src/jrd/blb.cpp (1.172):
+
+	When GFIX is invoked with -MEND option it marks blobs and records
+	with inconsistencies as damaged (rhd_damaged). When later GBAK is
+	invoked with -IGNORE option it instructs the engine to skip such
+	marked blobs and records to be able to create backup of the
+	database.
+
+	However, for damaged BLOBs the engine returns inconsistent
+	statistics via isc_blob_info call making GBAK to fail defeating the
+	purpose of GFIX -MEND.	This problem is present in all Firebird
+	versions.
+
+	This patch corrects the above behavior, and makes the engine return
+	damaged blobs to GBAK with -IGNORE option as consistent zero-length
+	blobs permitting database backup to succeed.
+
+2008-07-04 12:37  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.h (1.139):
+
+	restored const correctness after tag move
+
+2008-07-04 12:35  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.h (1.138):
+
+	fixed Darwin/gcc 4.0 build
+
+2008-07-04 12:33  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.h (1.137):
+
+	temporary reverted to be able to fix A1 tag
+
+2008-07-04 07:05  dimitr
+
+	* firebird2/doc/sql.extensions/README.update_or_insert (1.5):
+
+	Correction.
+
 2008-07-03 14:01  alexpeshkoff
 
 	* firebird2/: src/common/StatusArg.cpp (1.1),
