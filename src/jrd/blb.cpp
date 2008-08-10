@@ -271,10 +271,6 @@ blb* BLB_create2(thread_db* tdbb,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	// FIXME! Temporary BLOBs are not supported in read only databases
-	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
-
 /* Create a blob large enough to hold a single data page */
 	SSHORT from, to;
 	SSHORT from_charset, to_charset;
@@ -290,7 +286,7 @@ blb* BLB_create2(thread_db* tdbb,
 	if (type & isc_bpb_type_stream)
 		blob->blb_flags |= BLB_stream;
 
-	if (type & isc_bpb_storage_temp) {
+	if (type & isc_bpb_storage_temp || dbb->dbb_flags & DBB_read_only) {
 		blob->blb_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
 	}
 	else {
@@ -1033,7 +1029,11 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			UCharBuffer bpb;
 			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), DB_PAGE_SPACE);
+			Database *dbb = tdbb->getDatabase();
+			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ? 
+				dbb->dbb_page_manager.getTempPageSpaceID(tdbb) : DB_PAGE_SPACE;
+			
+			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), pageSpace);
 		}
 		else
 			*destination = *source;
@@ -2073,7 +2073,9 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	if (dbb->dbb_flags & DBB_read_only)
+	const USHORT pageSpaceID = blob->blb_pg_space_id;
+	const USHORT tempSpaceID = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
+	if (dbb->dbb_flags & DBB_read_only && pageSpaceID != tempSpaceID)
 		ERR_post(isc_read_only_database, isc_arg_end);
 
 	// Level 0 blobs don't need cleanup
@@ -2081,7 +2083,6 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	if (blob->blb_level == 0)
 		return;
 
-	const USHORT pageSpaceID = blob->blb_pg_space_id;
 	const PageNumber prior(pageSpaceID, prior_page);
 
 	// Level 1 blobs just need the root page level released
