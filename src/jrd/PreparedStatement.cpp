@@ -95,29 +95,40 @@ int PreparedStatement::getResultCount() const
 void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
 	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
 {
-	// Parameters in dsqlMsg->msg_parameters linked in descending order by par_index.
-	// To generate correct BLR we must walk params in ascending par_index order. So 
-	// store all params in array and walk array in reverse order.
+	// Parameters in dsqlMsg->msg_parameters almost always linked in descending 
+	// order by par_index. The only known exception is EXECUTE BLOCK statement. 
+	// To generate correct BLR we must walk params in ascending par_index order. 
+	// So store all params in array in an ascending par_index order despite of 
+	// order in linked list.
 
 	Firebird::HalfStaticArray<const dsql_par*, 16> params;
+	USHORT first_index = 0;
 	for (const dsql_par* par = dsqlMsg->msg_parameters; par; par = par->par_next)
 	{
 		if (par->par_index)
-			params.add(par);
+		{
+			if (!first_index)
+				first_index = par->par_index;
+
+			if (first_index > par->par_index)
+				params.insert(0, par);
+			else
+				params.add(par);
+		}
 	}
 
 	size_t msgLength = 0;
 	int paramCount = params.getCount();
-	int i = paramCount - 1;
+	int i = 0;
 	
-	for (; i >= 0; i--)
+	for (; i < paramCount; i++)
 	{
 		const dsql_par* par = params[i];
 #ifdef DEV_BUILD
-		// Verify that par_index is ascending when going in reverse order
+		// Verify that par_index is in ascending order
 		if (i < paramCount - 1)
 		{
-			fb_assert(par->par_index > params[i + 1]->par_index);
+			fb_assert(par->par_index < params[i + 1]->par_index);
 		}
 #endif
 		if (type_alignments[par->par_desc.dsc_dtype])
@@ -142,7 +153,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	msgLength = 0;
 	dsc* value = values.begin();
 
-	for (i = paramCount / 2 - 1; i >= 0; i--)
+	for (i = 0; i < paramCount / 2; i++)
 	{
 		const dsql_par* par = params[i];
 
