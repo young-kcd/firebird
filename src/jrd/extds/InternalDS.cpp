@@ -240,9 +240,11 @@ void InternalTransaction::doPrepare(ISC_STATUS* status, thread_db *tdbb,
 void InternalTransaction::doCommit(ISC_STATUS* status, thread_db *tdbb, bool retain)
 {
 	fb_assert(m_transaction);
-	
+
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
-		m_transaction = 0;
+		if (!retain) {
+			m_transaction = 0;
+		}
 	}
 	else
 	{
@@ -259,7 +261,9 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db *tdbb, bool r
 	fb_assert(m_transaction);
 
 	if (m_scope == traCommon && m_IntConnection.isCurrent()) {
-		m_transaction = 0;
+		if (!retain) {
+			m_transaction = 0;
+		}
 	}
 	else
 	{
