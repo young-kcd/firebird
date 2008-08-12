@@ -1,3 +1,31 @@
+2008-08-12 09:22  dimitr
+
+	* firebird2/src/jrd/evl.cpp (1.267):
+
+	Fixed CORE-2039: Domain-level CHECK constraints wrongly process
+	NULL values.
+
+2008-08-12 08:18  dimitr
+
+	* firebird2/src/jrd/extds/InternalDS.cpp (1.11):
+
+	Fixed CORE-2038: New EXECUTE STATEMENT implementation asserts or
+	throws an error if used both before and after commin/rollback
+	retaining.
+
+2008-08-12 02:26  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.174):
+
+	Misc
+
+2008-08-11 00:11  hvlad
+
+	* firebird2/src/jrd/PreparedStatement.cpp (1.11):
+
+	Fixed bug CORE-2036 : Parameters order of EXECUTE BLOCK statement
+	is reversed if called from EXECUTE STATEMENT
+
 2008-08-10 12:06  hvlad
 
 	* firebird2/src/jrd/blb.cpp (1.173):
