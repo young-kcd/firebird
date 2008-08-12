@@ -1,3 +1,23 @@
+2008-08-12 17:34  asfernandes
+
+	* firebird2/src/misc/upgrade/v2.1/metadata_charset.txt (1.4):
+
+	Documentation for -FIX_FSS_DATA and -FIX_FSS_METADATA
+
+2008-08-12 15:46  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/security.epp (1.20):
+
+	Fixed multithread safety problems in security.epp when used as
+	service.  This also fixes CORE-2022 - "EXECUTE BLOCK" statement
+	does not support "CREATE USER".
+
+	SECURITY_exec_line() is deoptimized now, i.e. requests will be
+	recompiled each times they are used.  It can be optimized again by
+	passing request handles from outside world together with
+	transaction handle, but I see no big use in optimizing user
+	database management code.
+
 2008-08-12 09:22  dimitr
 
 	* firebird2/src/jrd/evl.cpp (1.267):
