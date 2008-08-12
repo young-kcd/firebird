@@ -2001,18 +2001,25 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		request->req_map_field_info.get(itemInfo->field, fieldInfo) &&
 		fieldInfo.validation)
 	{
+		if (desc && null)
+		{
+			desc->dsc_flags |= DSC_null;
+		}
+
+		const bool desc_is_null = !desc || (desc->dsc_flags & DSC_null);
+
 		request->req_domain_validation = desc;
 		const USHORT flags = request->req_flags;
 
 		if (!EVL_boolean(tdbb, fieldInfo.validation) &&
 			!(request->req_flags & req_null))
 		{
-			const USHORT length = desc && !(desc->dsc_flags & DSC_null) ?
+			const USHORT length = desc_is_null ? 0 :
 				MOV_make_string(desc, ttype_dynamic, &value,
 								reinterpret_cast<vary*>(temp),
-								sizeof(temp)) : 0;
+								sizeof(temp));
 
-			if (desc == NULL || (desc->dsc_flags & DSC_null))
+			if (desc_is_null)
 				value = NULL_STRING_MARK;
 			else if (!length)
 				value = "";
