@@ -1,3 +1,26 @@
+v2.5 notes
+==========
+
+This script should not be used anymore in "normal" conditions in favour of GBAK options -FIX_FSS_DATA
+and -FIX_FSS_METADATA. It serves as a reference to fix malformed data stored in inconsistent way, for
+example after restore with -FIX_FSS_DATA NONE.
+
+GBAK (restore) options:
+
+-FIX_FSS_DATA <charset>: This option works for user (i.e., non-system) tables.
+If <charset> is NONE, UNICODE_FSS columns ([VAR]CHAR and BLOB) are created using NONE charset.
+If <charset> is not NONE, UNICODE_FSS columns are created normally but data read from backup
+is considerer to be in <charset> encoding instead of UNICODE_FSS, and is transliterated to be stored
+on the columns.
+
+-FIX_FSS_METADATA <charset>: This option is to fix wrong stored metadata, as replacement for the
+metadata script. Metadata read from backup is considered to be in <charset> encoding instead of
+UNICODE_FSS, and is transliterated to be stored on the restored database. NONE charset was no effect
+for this option.
+
+
+---------------------------------------
+
 Firebird versions prior 2.1 has two problems related to character sets and metadata extraction:
  - 1. When creating/altering objects, they never transliterate metadata texts (procedures/triggers sources,
 descriptions, constraints/defaults texts, etc) from the client character set to the system (UNICODE_FSS) character set.
