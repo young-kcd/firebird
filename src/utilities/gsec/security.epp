@@ -36,11 +36,12 @@
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/secur_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/classes/init.h"
 
 DATABASE DB = STATIC FILENAME "security2.fdb";
 
 static const char* SYSDBA_USER_NAME	= "SYSDBA";
-
+static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
 SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 						  FB_API_HANDLE DB,
@@ -109,6 +110,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
  *	    -lname <lastname>
  *
  **************************************/
+	Firebird::MutexLockGuard guard(execLineMutex);
+
 	SCHAR encrypted1[MAX_PASSWORD_LENGTH + 2];
 	Firebird::string encrypted2;
 	bool found;
@@ -121,12 +124,14 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		}
 	}
 
+	isc_req_handle request = 0;
+
 	switch (io_user_data->operation) {
 	case ADD_OPER:
 		/* this checks the "entered" flags for each parameter (except the name)
 		   and makes all non-entered parameters null valued */
 
-		STORE (TRANSACTION_HANDLE trans) U IN USERS USING
+		STORE (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS USING
 			strcpy(U.USER_NAME, io_user_data->user_name);
 			if (io_user_data->uid_entered) {
 				U.UID = io_user_data->uid;
@@ -184,7 +189,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		   changes the current value to the null value */
 
 		found = false;
-		FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+		FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS 
+				WITH U.USER_NAME EQ io_user_data->user_name
 			found = true;
 			MODIFY U USING
 				if (io_user_data->uid_entered) {
@@ -251,7 +257,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		if (!fb_utils::stricmp(io_user_data->user_name, SYSDBA_USER_NAME))
 			ret = GsecMsg23;
 		else {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS 
+					WITH U.USER_NAME EQ io_user_data->user_name
 				found = true;
 				ERASE U
 				ON_ERROR
@@ -272,7 +279,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 
 		found = false;
 		if (!io_user_data->user_name_entered) {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
 				*(io_user_data->sys_user_name) = '\0';
@@ -291,7 +298,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			END_ERROR;
 		}
 		else {
-			FOR (TRANSACTION_HANDLE trans) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
 				*(io_user_data->sys_user_name) = '\0';
@@ -316,6 +323,17 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		break;
 	}
 
+	if (request)
+	{
+		ISC_STATUS_ARRAY s;
+		if (isc_release_request(s, &request) != FB_SUCCESS)
+		{
+			if (! ret)
+			{
+				ret = GsecMsg93;	// error closing security database
+			}
+		}
+	}
 	return ret;
 }
 
