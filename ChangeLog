@@ -1,3 +1,9 @@
+2008-08-13 11:02  roman-simakov
+
+	* firebird2/src/jrd/: GlobalRWLock.cpp (1.21), cch.cpp (1.208):
+
+	Style
+
 2008-08-12 17:34  asfernandes
 
 	* firebird2/src/misc/upgrade/v2.1/metadata_charset.txt (1.4):
