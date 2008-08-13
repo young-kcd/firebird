@@ -105,14 +105,18 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
 		size_t n = size_t(-1);
-		if (level == LCK_read) {
-			if (readers.find(owner_handle, n)) {
+		if (level == LCK_read) 
+		{
+			if (readers.find(owner_handle, n)) 
+			{
 				readers[n].entry_count++;
 				return true;
 			}
 		} 
-		else {
-			if (writer.owner_handle == owner_handle) {
+		else 
+		{
+			if (writer.owner_handle == owner_handle) 
+			{
 				writer.entry_count++;
 				return true;
 			}
@@ -127,7 +131,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		if (cached_lock->lck_physical >= level && all_compatible && 
 			!internal_blocking && !external_blocking) 
 		{
-			if (level == LCK_read) {
+			if (level == LCK_read) 
+			{
 				ObjectOwnerData ownerData;
 				ownerData.owner_handle = owner_handle;
 				ownerData.entry_count++;
@@ -170,7 +175,8 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	memcpy(&newLock->lck_key, &cached_lock->lck_key, cached_lock->lck_length);
 
 	COS_TRACE(("request new lock, type=%i, level=%i", cached_lock->lck_type, level));
-	if (!LCK_lock(tdbb, newLock, level, wait)) {
+	if (!LCK_lock(tdbb, newLock, level, wait)) 
+	{
 		COS_TRACE(("Can't get a lock"));
 		delete newLock;
 		Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
@@ -187,18 +193,22 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		internal_blocking--;
 
 		// Here old lock is not protecting shared object. We must refresh state by fetch.
-		if (newLock->lck_physical >= LCK_read) {
-			try {
+		if (newLock->lck_physical >= LCK_read) 
+		{
+			try 
+			{
 				fetch(tdbb);
 			}
-			catch(const Firebird::Exception&) {
+			catch(const Firebird::Exception&) 
+			{
 				LCK_release(tdbb, newLock);
 				delete newLock;
 				return false;
 			}
 		}
 
-		if (level == LCK_read) {
+		if (level == LCK_read) 
+		{
 			ObjectOwnerData ownerData;
 			ownerData.entry_count++;
 			ownerData.owner_handle = owner_handle;
@@ -212,18 +222,21 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 
 		// Replace cached lock with the new lock if needed
 		COS_TRACE(("Replace lock, type=%i", cached_lock->lck_type));
-		if (newLock->lck_physical > cached_lock->lck_physical) {
+		if (newLock->lck_physical > cached_lock->lck_physical) 
+		{
 			LCK_release(tdbb, cached_lock);
 			Lock* const old_lock = cached_lock;
 			cached_lock = newLock;
 			delete old_lock;
-			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner))) {
+			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner))) 
+			{
 				COS_TRACE(("Error: set owner handle for captured lock, type=%i", cached_lock->lck_type));
 				LCK_release(tdbb, cached_lock);
 				return false;
 			}
 		}
-		else {
+		else 
+		{
 			LCK_release(tdbb, newLock);
 			delete newLock;
 		}
@@ -243,9 +256,11 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 	COS_TRACE(("unlock level=%i", level));
 
 	// Check if this is a recursion case
-	if (level == LCK_read) {
+	if (level == LCK_read)
+	{
 		size_t n;
-		if (!readers.find(owner_handle, n)) {
+		if (!readers.find(owner_handle, n))
+		{
 			ERR_bugcheck_msg("Attempt to call GlobalRWLock::unlock() while not holding a valid lock for logical owner");
 		}
 		fb_assert(readers[n].entry_count > 0);
@@ -253,7 +268,8 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 		if (readers[n].entry_count == 0)
 			readers.remove(n);
 	}
-	else {
+	else 
+	{
 		fb_assert(writer.owner_handle == owner_handle);
 		fb_assert(writer.entry_count > 0);
 		fb_assert(cached_lock->lck_physical == LCK_write);
@@ -273,14 +289,17 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 		}
 	}
 
-	if ( (readers.getCount() == 0) && (writer.entry_count == 0) ) {
+	if ( (readers.getCount() == 0) && (writer.entry_count == 0) )
+	{
 		COS_TRACE(("check for release a lock, type=%i", cached_lock->lck_type));
-		if (internal_blocking || !lockCaching) {
+		if (internal_blocking || !lockCaching)
+		{
 			LCK_release(tdbb, cached_lock);
 			invalidate(tdbb, false);
 			external_blocking = false;
 		} 
-		else if (external_blocking) {
+		else if (external_blocking)
+		{
 			LCK_downgrade(tdbb, cached_lock);
 			if (cached_lock->lck_physical < LCK_read)
 				invalidate(tdbb, false);
@@ -300,10 +319,12 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 	COS_TRACE_AST("bloackingAstHandler");
 	// When we request a new lock counters are not updated until we get it.
 	// As such, we need to check internal_blocking flag that is set during such situation.
-	if ( !internal_blocking && (readers.getCount() == 0) && (writer.entry_count == 0) ) {
+	if ( !internal_blocking && (readers.getCount() == 0) && (writer.entry_count == 0) )
+	{
 		COS_TRACE_AST("downgrade");
 		LCK_downgrade(tdbb, cached_lock);
-		if (cached_lock->lck_physical < LCK_read) {
+		if (cached_lock->lck_physical < LCK_read)
+		{
 			invalidate(tdbb, true);
 			external_blocking = false;
 		}
@@ -326,9 +347,11 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 	Database::CheckoutLockGuard lockHolder(tdbb->getDatabase(), lockMutex);
 
-	if (level == LCK_read) {
+	if (level == LCK_read)
+	{
 		size_t n;
-		if (readers.find(old_owner_handle, n)) {
+		if (readers.find(old_owner_handle, n))
+		{
 			fb_assert(readers[n].entry_count > 0);
 			readers[n].entry_count--;
 			if (readers[n].entry_count == 0)
@@ -336,18 +359,21 @@ void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old
 
 			if (readers.find(new_owner_handle, n))
 				readers[n].entry_count++;
-			else {
+			else
+			{
 				ObjectOwnerData ownerData;
 				ownerData.entry_count++;
 				ownerData.owner_handle = new_owner_handle;
 				readers.insert(n, ownerData);
 			}
 		}
-		else {
+		else
+		{
 			ERR_bugcheck_msg("Attempt to perform GlobalRWLock::change_lock_owner() while not holding a valid lock for logical owner");
 		}
 	}
-	else {
+	else
+	{
 		fb_assert(writer.entry_count > 0);
 		writer.owner_handle = new_owner_handle;
 	}

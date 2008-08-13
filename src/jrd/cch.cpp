@@ -792,7 +792,8 @@ pag* CCH_fetch(
 		CCH_TRACE(("FETCH FROM DISK PAGE=%d", window->win_page));
 		CCH_FETCH_PAGE(tdbb, window, checksum, read_shadow);	/* must read page from disk */
 	}
-	else if (fetch_lock_return == -2 || fetch_lock_return == -1) {
+	else if (fetch_lock_return == -2 || fetch_lock_return == -1)
+	{
 		if (window->win_page == HEADER_PAGE_NUMBER)
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		return NULL;			/* latch or lock timeout */
@@ -901,7 +902,8 @@ SSHORT CCH_fetch_lock(
 		return -2;				/* latch timeout */
 	}
 
-	if (lock_type >= LCK_write) {
+	if (lock_type >= LCK_write) 
+	{
 		bdb->bdb_flags |= BDB_writer;
 	}
 
