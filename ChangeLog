@@ -1,3 +1,10 @@
+2008-08-14 20:46  asfernandes
+
+	* firebird2/src/jrd/blb.cpp (1.175):
+
+	Fixed CORE-2042 - Connection lost to database when used AUTONOMOUS
+	TRANSACTION
+
 2008-08-13 11:02  roman-simakov
 
 	* firebird2/src/jrd/: GlobalRWLock.cpp (1.21), cch.cpp (1.208):
