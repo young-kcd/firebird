@@ -1891,6 +1891,10 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
+	// If we are in an autonomous transaction, link the blob on the transaction started by the user.
+	while (transaction->tra_outer)
+		transaction = transaction->tra_outer;
+
 /* Create a blob large enough to hold a single data page */
 
 	blb* blob = FB_NEW(*transaction->tra_pool) blb(*transaction->tra_pool, dbb->dbb_page_size);
