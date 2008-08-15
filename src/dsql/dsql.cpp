@@ -64,6 +64,7 @@
 #ifdef SCROLLABLE_CURSORS
 #include "../jrd/scroll_cursors.h"
 #endif
+#include "../common/StatusArg.h"
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -71,6 +72,7 @@
 
 using namespace Jrd;
 using namespace Dsql;
+using namespace Firebird;
 
 
 static void		close_cursor(thread_db*, dsql_req*);
@@ -205,9 +207,8 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (request->req_flags & REQ_orphan) 
 	{
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
-		           isc_arg_gds, isc_bad_req_handle,
-			       isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+		          Arg::Gds(isc_bad_req_handle));
 	}
 
 	if ((SSHORT) in_msg_type == -1) {
@@ -218,8 +219,8 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (!*tra_handle && request->req_type != REQ_START_TRANS)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-			  	isc_arg_gds, isc_bad_trans_handle, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_bad_trans_handle));
 	}
 
 /* If the request is a SELECT or blob statement then this is an open.
@@ -235,8 +236,8 @@ void DSQL_execute(thread_db* tdbb,
 	{
 		if (request->req_flags & REQ_cursor_open)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  	isc_arg_gds, isc_dsql_cursor_open_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+					  Arg::Gds(isc_dsql_cursor_open_err));
 		}
 	}
 
@@ -368,9 +369,9 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		request->req_type == REQ_GET_SEGMENT)
 	{
 		if (!(request->req_flags & REQ_cursor_open))
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
-				  isc_arg_gds, isc_dsql_cursor_err,
-				  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+					  Arg::Gds(isc_dsql_cursor_err) <<
+					  Arg::Gds(isc_dsql_cursor_not_open));
 	}
 
 #ifdef SCROLLABLE_CURSORS
@@ -435,8 +436,8 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 			break;
 
 		default:
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					  Arg::Gds(isc_dsql_sqlda_err));
 		}
 
 		if (offset)
@@ -555,8 +556,8 @@ void DSQL_free_statement(thread_db* tdbb,
 		// Just close the cursor associated with the request
 		if (!(request->req_flags & REQ_cursor_open))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 501,
-				  isc_arg_gds, isc_dsql_cursor_close_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 501) <<
+					  Arg::Gds(isc_dsql_cursor_close_err));
 		}
 		close_cursor(tdbb, request);
 	}
@@ -590,9 +591,8 @@ void DSQL_insert(thread_db* tdbb,
 
 	if (request->req_flags & REQ_orphan) 
 	{
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
-		           isc_arg_gds, isc_bad_req_handle,
-			       isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+		          Arg::Gds(isc_bad_req_handle));
 	}
 
 // if the cursor isn't open, we've got a problem 
@@ -601,9 +601,9 @@ void DSQL_insert(thread_db* tdbb,
 	{
 		if (!(request->req_flags & REQ_cursor_open))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
-				  isc_arg_gds, isc_dsql_cursor_err,
-				  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_dsql_cursor_err) <<
+				  Arg::Gds(isc_dsql_cursor_not_open));
 		}
 	}
 
@@ -658,23 +658,21 @@ void DSQL_prepare(thread_db* tdbb,
 	dsql_req* const old_request = *req_handle;
 
 	if (!old_request) {
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
-		           isc_arg_gds, isc_bad_req_handle,
-			       isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+		          Arg::Gds(isc_bad_req_handle));
 	}
 
 	dsql_dbb* database = old_request->req_dbb;
 	if (!database) {
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -901,
-                   isc_arg_gds, isc_bad_req_handle,
-	               isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+                  Arg::Gds(isc_bad_req_handle));
 	}
 
 	// check to see if old request has an open cursor 
 
 	if (old_request && (old_request->req_flags & REQ_cursor_open)) {
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 519,
-			  isc_arg_gds, isc_dsql_open_cursor_request, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
+				  Arg::Gds(isc_dsql_open_cursor_request));
 	}
 
 	dsql_req* request = NULL;
@@ -682,11 +680,10 @@ void DSQL_prepare(thread_db* tdbb,
 	try {
 
 		if (!string) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
-				isc_arg_gds, isc_command_end_err2,
-				// CVC: Nothing will be line 1, column 1 for the user.
-				isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
-				isc_arg_end);	// Unexpected end of command
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Unexpected end of command
+					  // CVC: Nothing will be line 1, column 1 for the user.
+					  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 		}
 
 		if (!length) {
@@ -739,8 +736,8 @@ void DSQL_prepare(thread_db* tdbb,
 
 		if (request->req_type == REQ_CREATE_DB)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 530,
-				isc_arg_gds, isc_dsql_crdb_prepare_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-530) <<
+					  Arg::Gds(isc_dsql_crdb_prepare_err));
 		}
 
 		request->req_flags |= REQ_prepared;
@@ -820,9 +817,9 @@ void DSQL_set_cursor(thread_db* tdbb,
 	USHORT length = (USHORT) fb_utils::name_length(cursor.c_str());
 
 	if (length == 0) {
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err,
-				  isc_arg_gds, isc_dsql_cursor_invalid, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				  Arg::Gds(isc_dsql_decl_err) <<
+				  Arg::Gds(isc_dsql_cursor_invalid));
 	}
 	if (length > MAX_CURSOR_LENGTH) {
 		length = MAX_CURSOR_LENGTH;
@@ -838,10 +835,9 @@ void DSQL_set_cursor(thread_db* tdbb,
 		if (request->req_cursor == symbol)
 			return;
 
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err,
-				  isc_arg_gds, isc_dsql_cursor_redefined,
-				  isc_arg_string, symbol->sym_string, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				  Arg::Gds(isc_dsql_decl_err) <<
+				  Arg::Gds(isc_dsql_cursor_redefined) << Arg::Str(symbol->sym_string));
 	}
 
 	// If there already is a cursor and its name isn't the same, ditto.
@@ -853,10 +849,9 @@ void DSQL_set_cursor(thread_db* tdbb,
 	}
 	else {
 		fb_assert(request->req_cursor != symbol);
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 502,
-				  isc_arg_gds, isc_dsql_decl_err,
-				  isc_arg_gds, isc_dsql_cursor_redefined,
-				  isc_arg_string, request->req_cursor->sym_string, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				  Arg::Gds(isc_dsql_decl_err) <<
+				  Arg::Gds(isc_dsql_cursor_redefined) << Arg::Str(request->req_cursor->sym_string));
 	}
 }
 
@@ -1375,9 +1370,9 @@ static void execute_request(thread_db* tdbb,
 
 		if (!request->req_updates)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
-					  isc_arg_gds, isc_deadlock, isc_arg_gds,
-					  isc_update_conflict, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+					  Arg::Gds(isc_deadlock) <<
+					  Arg::Gds(isc_update_conflict));
 		}
 	}
 	else if (request->req_type == REQ_DELETE_CURSOR)
@@ -1390,9 +1385,9 @@ static void execute_request(thread_db* tdbb,
 
 		if (!request->req_deletes)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 913,
-					  isc_arg_gds, isc_deadlock, isc_arg_gds,
-					  isc_update_conflict, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-913) <<
+					  Arg::Gds(isc_deadlock) <<
+					  Arg::Gds(isc_update_conflict));
 		}
 	}
 }
@@ -2100,9 +2095,8 @@ static dsql_dbb* init(Attachment* attachment)
 				database->dbb_ods_version = gds__vax_integer(data, l);
 				if (database->dbb_ods_version <= 7)
 				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_too_old_ods,
-					  isc_arg_number, (SLONG) 8, isc_arg_end);
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					  Arg::Gds(isc_dsql_too_old_ods) << Arg::Num(8));
 				}
 				break;
 
@@ -2234,8 +2228,8 @@ static void map_in_out(	dsql_req*		request,
 
 	if (parameter || count)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
 	dsql_par* dbkey;
@@ -2303,14 +2297,14 @@ static USHORT parse_blr(
 
 	if (*blr != blr_version4 && *blr != blr_version5)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 	blr++;						// skip the blr_version 
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
 	++blr;						// skip the message number 
@@ -2422,8 +2416,8 @@ static USHORT parse_blr(
 			break;
 
 		default:
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					  Arg::Gds(isc_dsql_sqlda_err));
 		}
 
 		USHORT align = type_alignments[desc.dsc_dtype];
@@ -2433,8 +2427,10 @@ static USHORT parse_blr(
 		offset += desc.dsc_length;
 
 		if (*blr++ != blr_short || *blr++ != 0)
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-					  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					  Arg::Gds(isc_dsql_sqlda_err));
+		}
 
 		align = type_alignments[dtype_short];
 		if (align)
@@ -2459,8 +2455,8 @@ static USHORT parse_blr(
 
 	if (*blr++ != (UCHAR) blr_end || offset != msg_length)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-				  isc_arg_gds, isc_dsql_sqlda_err, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
 	return count;
@@ -2492,8 +2488,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	if (client_dialect > SQL_DIALECT_CURRENT)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-				  isc_arg_gds, isc_wish_list, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_wish_list));
 	}
 
 	if (!string_length)
@@ -2534,9 +2530,9 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		// CVC: Apparently, dsql_ypparse won't return if the command is incomplete,
 		// because yyerror() will call ERRD_post().
 		// This may be a special case, but we don't know about positions here.
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104,
-			isc_arg_gds, isc_command_end_err,	// Unexpected end of command
-				  isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  Arg::Gds(isc_command_end_err));
 	}
 
 	// allocate the send and receive messages 
@@ -2575,10 +2571,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
 		statement->req_dbb->dbb_db_SQL_dialect != client_dialect)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 817,
-				  isc_arg_gds, isc_ddl_not_allowed_by_db_sql_dial,
-				  isc_arg_number,
-				  (SLONG) statement->req_dbb->dbb_db_SQL_dialect, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+				  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(statement->req_dbb->dbb_db_SQL_dialect));
 	}
 
 	if (statement->req_type == REQ_COMMIT ||
@@ -3173,8 +3167,8 @@ static UCHAR* var_info(
 				break;
 
 			default:
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 804,
-						  isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+						  Arg::Gds(isc_dsql_datatype_err));
 			}
 
 			if (sql_type && (param->par_desc.dsc_flags & DSC_nullable))

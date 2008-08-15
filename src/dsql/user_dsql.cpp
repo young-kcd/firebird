@@ -45,11 +45,13 @@
 #include "gen/iberror.h"
 #include "../common/classes/init.h"
 #include "../common/classes/rwlock.h"
+#include "../common/StatusArg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
+using namespace Firebird;
 
 enum name_type {
 	NAME_statement = 1,
@@ -99,7 +101,7 @@ static void		cleanup(void*);
 static void		cleanup_database(FB_API_HANDLE*, void*);
 static ISC_STATUS	error(const Firebird::Exception& ex);
 static ISC_STATUS	error();
-static void		error_post(ISC_STATUS, ...);
+static void		error_post(const Arg::StatusVector& v);
 static dsql_name*		lookup_name(const SCHAR*, dsql_name*);
 static dsql_stmt*		lookup_stmt(const SCHAR*, dsql_name*, name_type);
 static void		init(FB_API_HANDLE*);
@@ -712,7 +714,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 		statement = (dsql_stmt*) gds__alloc((SLONG) sizeof(dsql_stmt));
 		// FREE: by user calling isc_embed_dsql_release() 
 		if (!statement)			// NOMEM: 
-			error_post(isc_virmemexh, isc_arg_end);
+			error_post(Arg::Gds(isc_virmemexh));
 
 #ifdef DEBUG_GDS_ALLOC
 		gds_alloc_flag_unfreed((void *) statement);
@@ -1267,60 +1269,12 @@ static ISC_STATUS error()
 //	exception that it uses a different error block - one which
 //	is local to the V3 DSQL routines...
 //
-static void error_post(ISC_STATUS status, ...)
+static void error_post(const Arg::StatusVector& v)
 {
-	va_list	args;
-	ISC_STATUS*	p;
-	int		type;
-
-/* Get the addresses of the argument vector and the status vector, and do
-   word-wise copy. */
-
-	va_start(args, status);
-	p = UDSQL_error->dsql_status;
-
-// Copy first argument 
-
-	*p++ = isc_arg_gds;
-	*p++ = status;
-
-// Pick up remaining args 
-
-	while (type = va_arg(args, int))
-	{
-		switch (*p++ = type) {
-		case isc_arg_gds:
-			*p++ = (ISC_STATUS) va_arg(args, ISC_STATUS);
-			break;
-
-		case isc_arg_number:
-			*p++ = (ISC_STATUS) va_arg(args, SLONG);
-			break;
-
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
-			*p++ = va_arg(args, int);
-			break;
-
-		case isc_arg_string:
-		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			*p++ = (ISC_STATUS)(IPTR) va_arg(args, TEXT *);
-			break;
-
-		case isc_arg_cstring:
-			*p++ = (ISC_STATUS) va_arg(args, int);
-			*p++ = (ISC_STATUS)(IPTR) va_arg(args, TEXT *);
-			break;
-		}
-	}
-
-	va_end(args);
-	*p = isc_arg_end;
+	// Save status vector in appropriate place
+	v.copyTo(UDSQL_error->dsql_status);
 
 	// Give up whatever we were doing and return to the user.
-
 	Firebird::status_exception::raise(UDSQL_error->dsql_status);
 }
 
@@ -1393,7 +1347,7 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, dsq
 	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
 // FREE: by exit handler cleanup() or database_cleanup() 
 	if (!name)					// NOMEM: 
-		error_post(isc_virmemexh, isc_arg_end);
+		error_post(Arg::Gds(isc_virmemexh));
 	name->name_stmt = stmt;
 	name->name_length = l;
 	memcpy(name->name_symbol, symbol_name, l);
@@ -1451,16 +1405,15 @@ static dsql_stmt* lookup_stmt(const TEXT* name, dsql_name* list, name_type type)
 		return found->name_stmt;
 
 	if (type == NAME_statement) {
-		error_post(isc_dsql_error,
-				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 518,
-				   isc_arg_gds, isc_dsql_request_err, isc_arg_end);
+		error_post(Arg::Gds(isc_dsql_error) <<
+				   Arg::Gds(isc_sqlerr) << Arg::Num(-518) <<
+				   Arg::Gds(isc_dsql_request_err));
 	}
 	else {
-		error_post(isc_dsql_error,
-				   isc_arg_gds, isc_sqlerr, isc_arg_number, (SLONG) - 504,
-				   isc_arg_gds, isc_dsql_cursor_err,
-				   isc_arg_gds, isc_dsql_cursor_not_found,
-				   isc_arg_string, name, isc_arg_end);
+		error_post(Arg::Gds(isc_dsql_error) <<
+				   Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				   Arg::Gds(isc_dsql_cursor_err) <<
+				   Arg::Gds(isc_dsql_cursor_not_found) << Arg::Str(name));
 	}
 	return NULL;
 }

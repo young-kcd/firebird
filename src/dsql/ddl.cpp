@@ -96,6 +96,7 @@
 #include "../jrd/why_proto.h"
 #include "../common/utils_proto.h"
 #include "../dsql/DdlNodes.h"
+#include "../common/StatusArg.h"
 
 #ifdef DSQL_DEBUG
 #include "../gpre/prett_proto.h"
@@ -103,6 +104,7 @@
 
 using namespace Jrd;
 using namespace Dsql;
+using namespace Firebird;
 
 
 const int BLOB_BUFFER_SIZE    = 4096;	// to read in blr blob for default values
@@ -273,7 +275,7 @@ void CompiledStatement::append_raw_string(const UCHAR* string, USHORT len)
 //
 //	Write out a string valued attribute. (Overload 2.)
 //
-inline void CompiledStatement::append_string(UCHAR verb, const Firebird::MetaName& name)
+inline void CompiledStatement::append_string(UCHAR verb, const MetaName& name)
 {
 	append_string(verb, name.c_str(), name.length());
 }
@@ -282,7 +284,7 @@ inline void CompiledStatement::append_string(UCHAR verb, const Firebird::MetaNam
 //
 //	Write out a string valued attribute. (Overload 3.)
 //
-inline void CompiledStatement::append_string(UCHAR verb, const Firebird::string& name)
+inline void CompiledStatement::append_string(UCHAR verb, const string& name)
 {
 	append_string(verb, name.c_str(), name.length());
 }
@@ -416,7 +418,7 @@ void DDL_generate(CompiledStatement* statement, dsql_nod* node)
  **************************************/
 
 	if (statement->req_dbb->dbb_read_only) {
-		ERRD_post(isc_read_only_database, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_read_only_database));
 		return;
 	}
 
@@ -522,12 +524,9 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 	{
 		if (ENCODE_ODS(statement->req_dbb->dbb_ods_version, statement->req_dbb->dbb_minor_version) < ODS_11_1)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -804,
-					  isc_arg_gds, isc_dsql_feature_not_supported_ods,
-					  isc_arg_number, 11,
-					  isc_arg_number, 1,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  // Feature not supported on ODS version older than %d.%d
-					  isc_arg_end);
+					  Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << Arg::Num(1));
 		}
 
 		if (field->fld_type_of_table)
@@ -537,7 +536,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 			if (relation)
 			{
-				const Firebird::MetaName fieldName(field->fld_type_of_name);
+				const MetaName fieldName(field->fld_type_of_name);
 				for (fld = relation->rel_fields; fld; fld = fld->fld_next)
 				{
 					if (fieldName == fld->fld_name)
@@ -560,25 +559,19 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 			if (!fld)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dyn_column_does_not_exist,
-						  isc_arg_string, field->fld_type_of_name.c_str(),
-						  isc_arg_string, field->fld_type_of_table->str_data,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) << 
 						  // column @1 does not exist in table/view @2
-						  isc_arg_end);
+						  Arg::Gds(isc_dyn_column_does_not_exist) <<
+						  Arg::Str(field->fld_type_of_name) << Arg::Str(field->fld_type_of_table->str_data));
 			}
 		}
 		else
 		{
 			if (!METD_get_domain(statement, field, field->fld_type_of_name.c_str()))
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_domain_not_found,
-						  isc_arg_string, field->fld_type_of_name.c_str(),
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) <<
 						  // Specified domain or source field does not exist
-						  isc_arg_end);
+						  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
 			}
 		}
 	}
@@ -588,9 +581,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		if (field->fld_character_set || collation_name ||
 			field->fld_flags & FLD_national)
 		{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-						  isc_arg_gds, isc_dsql_datatype_err,
-						  isc_arg_gds, isc_collation_requires_text, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_dsql_datatype_err) << Arg::Gds(isc_collation_requires_text));
 		}
 		return;
 	}
@@ -605,18 +597,16 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 								"RDB$FIELD_SUB_TYPE",
 								&blob_sub_type))
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-							isc_dsql_datatype_err, isc_arg_gds,
-							isc_dsql_blob_type_unknown, isc_arg_string,
-							((dsql_str*) field->fld_sub_type_name)->str_data, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << 
+						  Arg::Gds(isc_dsql_datatype_err) << 
+						  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(((dsql_str*)field->fld_sub_type_name)->str_data));
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
 		if (field->fld_sub_type > isc_blob_text)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-						isc_dsql_datatype_err, isc_arg_gds,
-						isc_subtype_for_internal_use, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+					  Arg::Gds(isc_subtype_for_internal_use));
 		}
 		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
 		{
@@ -624,15 +614,13 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		}
 		if (field->fld_character_set && (field->fld_sub_type != isc_blob_text))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-						isc_dsql_datatype_err, isc_arg_gds,
-						isc_collation_requires_text, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_collation_requires_text));
 		}
 		if (collation_name && (field->fld_sub_type != isc_blob_text))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-						isc_dsql_datatype_err, isc_arg_gds,
-						isc_collation_requires_text, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_collation_requires_text));
 		}
 		if (field->fld_sub_type != isc_blob_text) {
 			return;
@@ -728,10 +716,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		if (!resolved_charset)
 		{
 			// specified character set not found
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-					  isc_arg_gds, isc_dsql_datatype_err,
-					  isc_arg_gds, isc_charset_not_found, isc_arg_string,
-					  charset_name, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_charset_not_found) << Arg::Str(charset_name));
 		}
 		field->fld_character_set_id = resolved_charset->intlsym_charset_id;
 		resolved_type = resolved_charset;
@@ -744,7 +730,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 		if (!resolved_collation)
 		{
-			Firebird::MetaName charSetName;
+			MetaName charSetName;
 
 			if (charset_name)
 				charSetName = charset_name;
@@ -752,11 +738,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 				charSetName = METD_get_charset_name(statement, field->fld_character_set_id);
 
 			// Specified collation not found
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-					  isc_arg_gds, isc_dsql_datatype_err,
-					  isc_arg_gds, isc_collation_not_found,
-					  isc_arg_string, collation_name->str_data,
-					  isc_arg_string, charSetName.c_str(), isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_collation_not_found) << Arg::Str(collation_name->str_data) << Arg::Str(charSetName));
 		}
 
 		// If both specified, must be for same character set
@@ -766,10 +749,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id)
 			&& (field->fld_character_set_id != ttype_dynamic))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-					  isc_dsql_datatype_err, isc_arg_gds,
-					  isc_collation_not_for_charset, isc_arg_string,
-					  collation_name->str_data, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_collation_not_for_charset) << Arg::Str(collation_name->str_data));
 		}
 
 		field->fld_explicit_collation = true;
@@ -814,11 +795,9 @@ static void assign_field_length (
 		}
 		if (field_length > MAX_COLUMN_SIZE)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-					  isc_arg_gds, isc_dsql_datatype_err,
-					  isc_arg_gds, isc_imp_exc,
-					  isc_arg_gds, isc_field_name, isc_arg_string,
-					  field->fld_name.c_str(), isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+                      Arg::Gds(isc_imp_exc) <<
+					  Arg::Gds(isc_field_name) << Arg::Str(field->fld_name));
 		}
 		field->fld_length = (USHORT) field_length;
 	}
@@ -918,7 +897,7 @@ static bool is_array_or_blob(CompiledStatement* statement, const dsql_nod* node)
 		{
 			const dsql_str* name = (dsql_str*) node->nod_arg[e_sysfunc_name];
 			dsql_nod* nodeArgs = node->nod_arg[e_sysfunc_args];
-			Firebird::Array<const dsc*> args;
+			Array<const dsc*> args;
 
 			if (nodeArgs)
 			{
@@ -1047,10 +1026,8 @@ static void check_one_call (USHORT* repetition_count,
  **************************************/
 	if (++repetition_count[pos] > 1)
 	{
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -637,
-				   isc_arg_gds, isc_dsql_duplicate_spec,
-				   isc_arg_string, error_msg,
-				   isc_arg_end);
+		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+				   Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(error_msg));
 	}
 }
 
@@ -1164,8 +1141,7 @@ static void define_computed(CompiledStatement* statement,
 
 	if (is_array_or_blob(statement, input))
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-				  isc_arg_gds, isc_dsql_no_array_computed, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_no_array_computed));
 	}
 
 	// try to calculate size of the computed field. The calculated size
@@ -1726,8 +1702,7 @@ static void define_dimensions( CompiledStatement* statement, const dsql_fld* fie
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -604,
-				  isc_arg_gds, isc_dsql_max_arr_dim_exceeded, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_max_arr_dim_exceeded));
 	}
 
 	statement->append_number(isc_dyn_fld_dimensions, (SSHORT) dims);
@@ -1749,8 +1724,7 @@ static void define_dimensions( CompiledStatement* statement, const dsql_fld* fie
 		statement->append_uchar(isc_dyn_end);
 		if (lrange >= hrange)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -604,
-					  isc_arg_gds, isc_dsql_arr_range_error, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-604) << Arg::Gds(isc_dsql_arr_range_error));
 		}
 	}
 }
@@ -1774,9 +1748,8 @@ static void define_domain(CompiledStatement* statement)
 
 	if (fb_utils::implicit_domain(field->fld_name.c_str()))
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-				  isc_arg_gds, isc_dsql_implicit_domain_name,
-				  isc_arg_string, field->fld_name.c_str(), isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) << 
+				  Arg::Gds(isc_dsql_implicit_domain_name) << Arg::Str(field->fld_name));
 	}
 
 	statement->append_string(isc_dyn_def_global_fld, field->fld_name);
@@ -1821,19 +1794,16 @@ static void define_domain(CompiledStatement* statement)
 					}
 					else
 					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-								  isc_arg_gds, isc_dsql_duplicate_spec,
-								  isc_arg_string, "NOT NULL", isc_arg_end);
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str("NOT NULL"));
 					}
 				}
 				else if (node1->nod_type == nod_def_constraint)
 				{
 					if (check_flag)
 					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-								  isc_arg_gds, isc_dsql_duplicate_spec,
-								  isc_arg_string, "DOMAIN CHECK CONSTRAINT",
-								  isc_arg_end);
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+								  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str("DOMAIN CHECK CONSTRAINT"));
 					}
 					check_flag = true;
 
@@ -1971,12 +1941,10 @@ static void define_field(CompiledStatement* statement,
 
 		if (!METD_get_domain(statement, field, domain_name->str_data))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_dsql_domain_not_found,
-					  isc_arg_string, domain_name->str_data,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // Specified domain or source field does not exist
-					  isc_arg_end);
+					  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 		}
 
 		DDL_resolve_intl_type(	statement,
@@ -2014,12 +1982,9 @@ static void define_field(CompiledStatement* statement,
 	{
 		const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
 
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-			isc_arg_gds, isc_dsql_type_not_supp_ext_tab,
-			isc_arg_string, typeName,
-			isc_arg_string, relation->rel_name.c_str(),
-			isc_arg_string, field->fld_name.c_str(),
-			isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+			Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) << 
+			Arg::Str(relation->rel_name) << Arg::Str(field->fld_name));
 	}
 
 	if (position != -1)
@@ -2066,10 +2031,9 @@ static void define_field(CompiledStatement* statement,
 				case nod_primary:
 					if (default_null_flag)
 					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-								  isc_arg_gds, isc_bad_default_value,
-								  isc_arg_gds, isc_invalid_clause,
-								  isc_arg_string, "default null not null", isc_arg_end);
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+								  Arg::Gds(isc_bad_default_value) <<
+								  Arg::Gds(isc_invalid_clause) << Arg::Str("default null not null"));
 					}
 					if (!not_null_flag)
 					{
@@ -2154,7 +2118,7 @@ static void define_field(CompiledStatement* statement,
 	}
 
 	} // try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		clearPermanentField(relation, permanent);
 		throw;
@@ -2195,10 +2159,9 @@ static SSHORT getBlobFilterSubType(CompiledStatement* statement, const dsql_nod*
 						"RDB$FIELD_SUB_TYPE",
 						&blob_sub_type))
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204, isc_arg_gds,
-					isc_dsql_datatype_err, isc_arg_gds,
-					isc_dsql_blob_type_unknown, isc_arg_string,
-					((const dsql_str*)(node->nod_arg[0]))->str_data, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_dsql_datatype_err) <<
+				  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(((const dsql_str*)(node->nod_arg[0]))->str_data));
 	}
 	return blob_sub_type;
 }
@@ -2260,9 +2223,8 @@ static void define_collation(CompiledStatement* statement)
 	if (!resolved_charset)
 	{
 		// specified character set not found
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -504,
-				  isc_arg_gds, isc_charset_not_found, isc_arg_string,
-				  coll_for->str_data, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_charset_not_found) << Arg::Str(coll_for->str_data));
 	}
 
 	if (coll_specific_attributes)
@@ -2282,11 +2244,9 @@ static void define_collation(CompiledStatement* statement)
 			if (!resolved_collation)
 			{
 				// Specified collation not found
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-						  isc_arg_gds, isc_collation_not_found,
-						  isc_arg_string, ((dsql_str*)coll_from->nod_arg[0])->str_data,
-						  isc_arg_string, resolved_charset->intlsym_name,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_collation_not_found) << Arg::Str(((dsql_str*)coll_from->nod_arg[0])->str_data) << 
+						  									   Arg::Str(resolved_charset->intlsym_name));
 			}
 
 			statement->append_number(isc_dyn_coll_from,
@@ -2524,10 +2484,9 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 			}
 			else if (defaults) {
 				// parameter without default value after parameters with default
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -204,
-						  isc_arg_gds, isc_bad_default_value,
-						  isc_arg_gds, isc_invalid_clause,
-						  isc_arg_string, "defaults must be last", isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_bad_default_value) <<
+						  Arg::Gds(isc_invalid_clause) << Arg::Str("defaults must be last"));
 			}
 
 			*ptr = MAKE_variable(field, field->fld_name.c_str(),
@@ -3051,9 +3010,9 @@ static void define_shadow(CompiledStatement* statement)
 
 	if (!ptr[e_shadow_number])
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_dsql_shadow_number_err, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_dsql_command_err) << 
+				  Arg::Gds(isc_dsql_shadow_number_err));
 	}
 
 	statement->append_number(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
@@ -3082,12 +3041,10 @@ static void define_shadow(CompiledStatement* statement)
 
 			if (!length && !file->fil_start)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_file_length_err,
-						  isc_arg_number, (ISC_STATUS) file->fil_name->str_data,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_command_err) <<
 						  // Preceding file did not specify length, so %s must include starting page number
-						  isc_arg_end);
+						  Arg::Gds(isc_dsql_file_length_err) << Arg::Str(file->fil_name->str_data));
 			}
 
 			const SLONG start = file->fil_start;
@@ -3136,9 +3093,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		{
 			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 			{
-				ERRD_post(isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+						  Arg::Gds(isc_dsql_incompatible_trigger_type));
 			}
 
 			const dsql_str* relation_name =
@@ -3152,9 +3108,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		{
 			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DB)
 			{
-				ERRD_post(isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_incompatible_trigger_type,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+						  Arg::Gds(isc_dsql_incompatible_trigger_type));
 			}
 		}
 
@@ -3179,9 +3134,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 			{
 				if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 				{
-					ERRD_post(isc_dsql_command_err,
-							  isc_arg_gds, isc_dsql_incompatible_trigger_type,
-							  isc_arg_end);
+					ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+							  Arg::Gds(isc_dsql_incompatible_trigger_type));
 				}
 
 				relation_node = FB_NEW_RPT(*tdbb->getDefaultPool(), e_rln_count) dsql_nod;
@@ -3193,9 +3147,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 			}
 			else if (found && type_node && (USHORT) type_node->getSlong() != trig_type)
 			{
-				ERRD_post(isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_db_trigger_type_cant_change,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_dsql_command_err) <<
+						  Arg::Gds(isc_dsql_db_trigger_type_cant_change));
 			}
 		}
 	}
@@ -3352,11 +3305,10 @@ static void define_udf(CompiledStatement* statement)
 			 field->fld_dtype == dtype_blob ||
 			 field->fld_dtype == dtype_timestamp))
 		{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_return_mode_err,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-60) <<
+						  Arg::Gds(isc_dsql_command_err) <<
 						  // Return mode by value not allowed for this data type
-						  isc_arg_end);
+						  Arg::Gds(isc_return_mode_err));
 		}
 
 		/* For functions returning a blob, coerce return argument position to
@@ -3367,12 +3319,11 @@ static void define_udf(CompiledStatement* statement)
 			blob_position = (arguments) ? arguments->nod_count + 1 : 1;
 			if (blob_position > MAX_UDF_ARGUMENTS)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_extern_func_err,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_command_err) <<
 						  // External functions can not have more than 10 parameters
 						  // Or 9 if the function returns a BLOB
-						  isc_arg_end);
+						  Arg::Gds(isc_extern_func_err));
 			}
 
 			statement->append_number(isc_dyn_func_return_argument, blob_position);
@@ -3393,15 +3344,14 @@ static void define_udf(CompiledStatement* statement)
 
 		if (!arguments || position > arguments->nod_count || position < 1)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					isc_arg_gds, isc_dsql_udf_return_pos_err, //gds__extern_func_err,
-					isc_arg_number, (SLONG) (arguments ? arguments->nod_count : 0),
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					Arg::Gds(isc_dsql_udf_return_pos_err) << //gds__extern_func_err,
+					Arg::Num(arguments ? arguments->nod_count : 0));
 					// CVC: We should devise new msg "position should be between 1 and #params";
 					// here it is: dsql_udf_return_pos_err
 
 					// External functions can not have more than 10 parameters
 					// Not strictly correct -- return position error
-					isc_arg_end);
 		}
 
 		// We'll verify that SCALAR_ARRAY can't be used as a return type.
@@ -3412,10 +3362,8 @@ static void define_udf(CompiledStatement* statement)
 		{
 			const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
 			if (arg_mechanism == FUN_scalar_array)
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					isc_arg_gds, isc_random,
-					isc_arg_string, "BY SCALAR_ARRAY can't be used as a return parameter",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_random) << Arg::Str("BY SCALAR_ARRAY can't be used as a return parameter"));
 		}
 
 		statement->append_number(isc_dyn_func_return_argument, position);
@@ -3463,11 +3411,10 @@ static void define_udf(CompiledStatement* statement)
 		{
 			if (position > MAX_UDF_ARGUMENTS)
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_extern_func_err,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_command_err) <<
 						  // External functions can not have more than 10 parameters
-						  isc_arg_end);
+						  Arg::Gds(isc_extern_func_err));
 			}
 
 			/*field = (dsql_fld*) *ptr; */
@@ -3750,11 +3697,9 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		view_relation = METD_get_relation(statement, view_name);
 		if (!view_relation)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_dsql_view_not_found,
-					  isc_arg_string, view_name->str_data,
-					  isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
+					  Arg::Gds(isc_dsql_view_not_found) << Arg::Str(view_name->str_data));
 		}
 	}
 
@@ -3810,11 +3755,11 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 			if (procedure)
 			{
 				// Disallow procedure-based views
-				ERRD_post(isc_wish_list, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_wish_list));
 			}
 			*/
 
-			const Firebird::MetaName& name = relation ? relation->rel_name : procedure->prc_name;
+			const MetaName& name = relation ? relation->rel_name : procedure->prc_name;
 			statement->append_string(isc_dyn_view_relation, name);
 			statement->append_number(isc_dyn_view_context, context->ctx_context);
 
@@ -3846,7 +3791,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 	dsql_nod* items = rse->nod_arg[e_rse_items];
 	dsql_nod** i_ptr = items->nod_arg;
-	Firebird::SortedArray<dsql_fld*> modified_fields;
+	SortedArray<dsql_fld*> modified_fields;
 
 	for (const dsql_nod* const* const i_end = i_ptr + items->nod_count;
 		i_ptr < i_end; i_ptr++, position++)
@@ -3886,11 +3831,10 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 		if (!ptr && !field_string)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_specify_field_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // must specify field name for view select expression
-					  isc_arg_end);
+					  Arg::Gds(isc_specify_field_err));
 		}
 
 		// CVC: Small modification here to catch any mismatch between number of
@@ -3919,12 +3863,10 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 				{
 					if (modified_fields.exist(rel_field))
 					{
-						ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-								  isc_arg_gds, isc_dsql_command_err,
-								  isc_arg_gds, isc_dsql_col_more_than_once_view,
-								  isc_arg_string, field_string,
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+								  Arg::Gds(isc_dsql_command_err) <<
 								  // column @1 appears more than once in ALTER VIEW
-								  isc_arg_end);
+								  Arg::Gds(isc_dsql_col_more_than_once_view) << Arg::Str(field_string));
 					}
 
 					modified_fields.add(rel_field);
@@ -3981,11 +3923,10 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 	if (ptr != end)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_num_field_err,
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_dsql_command_err) <<
 				  // number of fields does not match select list
-				  isc_arg_end);
+				  Arg::Gds(isc_num_field_err));
 	}
 
 	if (view_relation)	// modifying a view
@@ -4009,51 +3950,46 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	{
 		if (!updatable)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_col_name_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // Only simple column names permitted for VIEW WITH CHECK OPTION
-					  isc_arg_end);
+					  Arg::Gds(isc_col_name_err));
 		}
 
 		select_expr = select_expr->nod_arg[e_sel_query_spec];
 
 		if (select_expr->nod_type == nod_list)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_table_view_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // Only one table allowed for VIEW WITH CHECK OPTION
-					  isc_arg_end);
+					  Arg::Gds(isc_table_view_err));
 		}
 
 		if (select_expr->nod_arg[e_qry_from]->nod_count != 1)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_table_view_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // Only one table allowed for VIEW WITH CHECK OPTION
-					  isc_arg_end);
+					  Arg::Gds(isc_table_view_err));
 		}
 
 		if (!select_expr->nod_arg[e_qry_where])
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_where_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // No where clause for VIEW WITH CHECK OPTION
-					  isc_arg_end);
+					  Arg::Gds(isc_where_err));
 		}
 
 		if (select_expr->nod_arg[e_qry_distinct] ||
 			select_expr->nod_arg[e_qry_group] ||
 			select_expr->nod_arg[e_qry_having])
 		{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_distinct_err,
-						  // DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
-						  isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
+					  // DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
+					  Arg::Gds(isc_distinct_err));
 		}
 
 		dsql_nod* relation_node = MAKE_node(nod_relation_name, e_rln_count);
@@ -4352,22 +4288,18 @@ static void delete_relation_view (CompiledStatement* statement,
 		if (!relation && !silent_deletion ||
 			relation && (relation->rel_flags & REL_view))
 		{
-			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
-					   isc_arg_gds, isc_dsql_command_err,
-					   isc_arg_gds, isc_dsql_table_not_found,
-					   isc_arg_string, string->str_data,
-					   isc_arg_end);
+			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					   Arg::Gds(isc_dsql_command_err) <<
+					   Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
 		}
 	}
 	else { /* node->nod_type == nod_del_view, nod_redef_view */
 		if (!relation && !silent_deletion ||
 			relation && !(relation->rel_flags & REL_view))
 		{
-			ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -607,
-					   isc_arg_gds, isc_dsql_command_err,
-					   isc_arg_gds, isc_dsql_view_not_found,
-					   isc_arg_string, string->str_data,
-					   isc_arg_end);
+			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					   Arg::Gds(isc_dsql_command_err) <<
+					   Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
 		}
 	}
 	if (relation) {
@@ -4527,22 +4459,20 @@ static void foreign_key(CompiledStatement* statement, dsql_nod* element, const c
 		   referenced field, fail. */
 		if (!columns2)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_reftable_requires_pk,
+			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					   Arg::Gds(isc_dsql_command_err) <<
 					  /* "REFERENCES table" without "(column)" requires PRIMARY
 					     KEY on referenced table */
-					  isc_arg_end);
+					  Arg::Gds(isc_reftable_requires_pk));
 		}
 	}
 
 	if (columns2 && (columns1->nod_count != columns2->nod_count))
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-				  isc_arg_gds, isc_dsql_command_err,
-				  isc_arg_gds, isc_key_field_count_err,
+		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				   Arg::Gds(isc_dsql_command_err) <<
 				  // foreign key field count does not match primary key
-				  isc_arg_end);
+				  Arg::Gds(isc_key_field_count_err));
 	}
 
 /* define the foreign key index and the triggers that may be needed
@@ -5338,12 +5268,10 @@ static void modify_domain( CompiledStatement* statement)
 			   correct type, length, scale, etc. */
 			if (!METD_get_domain(statement, &local_field, domain_name->str_data))
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_domain_not_found,
-						  isc_arg_string, domain_name->str_data,
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_command_err) <<
 						  // Specified domain or source field does not exist
-						  isc_arg_end);
+						  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 			}
 			if (element->nod_arg[e_cnstr_condition])
 			{
@@ -5663,10 +5591,10 @@ static void modify_relation(CompiledStatement* statement)
 		TEXT linecol[64];
 		sprintf (linecol, "At line %d, column %d.",
 				(int) relation_node->nod_line, (int) relation_node->nod_column);
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 204, isc_arg_gds,
-					isc_dsql_relation_err, isc_arg_gds, isc_random,
-					isc_arg_string, relation_name->str_data, isc_arg_gds,
-					isc_random, isc_arg_string, linecol, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+				  Arg::Gds(isc_dsql_relation_err) <<
+				  Arg::Gds(isc_random) << Arg::Str(relation_name->str_data) <<
+				  Arg::Gds(isc_random) << Arg::Str(linecol));
 	}
 
 /* need to handle error that occur in generating dyn string.
@@ -5746,9 +5674,9 @@ static void modify_relation(CompiledStatement* statement)
 			if ((element->nod_arg[1])->nod_type == nod_cascade)
 			{
 				// Unsupported DSQL construct
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -901,
-						  isc_arg_gds, isc_dsql_command_err,
-						  isc_arg_gds, isc_dsql_construct_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+						  Arg::Gds(isc_dsql_command_err) <<
+						  Arg::Gds(isc_dsql_construct_err));
 			}
 
 			fb_assert((element->nod_arg[1])->nod_type == nod_restrict);
@@ -5773,7 +5701,7 @@ static void modify_relation(CompiledStatement* statement)
 	statement->append_uchar(isc_dyn_end);
 
 	}	// try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		METD_drop_relation(statement, relation_name);
 		statement->req_relation = 0;
@@ -5794,12 +5722,11 @@ static void modify_udf(CompiledStatement* statement)
 	const dsql_str* obj_name = (dsql_str*) node->nod_arg[e_mod_udf_name];
 
 	if (!node->nod_arg[e_mod_udf_entry_pt] && !node->nod_arg[e_mod_udf_module])
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-					isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-					isc_arg_number, (SLONG) node->nod_line,
-					isc_arg_number,
-					(SLONG) node->nod_column + obj_name->str_length, // + strlen("FUNCTION"),
-					isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+													Arg::Num(node->nod_column + obj_name->str_length));
+																		   // + strlen("FUNCTION")
 
 	statement->append_cstring(isc_dyn_mod_function, obj_name->str_data);
 	const dsql_str* entry_point_name = (dsql_str*) node->nod_arg[e_mod_udf_entry_pt];
@@ -5855,11 +5782,10 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 		{
 			if (i == e_user_name || (i == e_user_passwd && op == isc_dyn_user_add))
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-						  isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-						  isc_arg_number, (SLONG) node->nod_line,
-						  isc_arg_number, (SLONG) node->nod_column,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  // Unexpected end of command
+						  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+															Arg::Num(node->nod_column));
 			}
 
 			continue;
@@ -5889,11 +5815,10 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 
 	if (argCount < 2 && op != isc_dyn_user_del)
 	{
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -104,
-				  isc_arg_gds, isc_command_end_err2,    // Unexpected end of command
-				  isc_arg_number, (SLONG) node->nod_line,
-				  isc_arg_number, (SLONG) node->nod_column,
-				  isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+													Arg::Num(node->nod_column));
 	}
 
 	statement->append_uchar(isc_user_end);
@@ -6322,9 +6247,8 @@ static void put_local_variables(CompiledStatement* statement, dsql_nod* paramete
 						const dsql_fld* rest_field = (dsql_fld*) (*rest)->nod_arg[e_dfl_field];
 						if (field->fld_name == rest_field->fld_name)
 						{
-							ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -637,
-									  isc_arg_gds, isc_dsql_duplicate_spec,
-									  isc_arg_string, field->fld_name.c_str(), isc_arg_end);
+							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+									  Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(field->fld_name));
 						}
 					}
 				}
@@ -6407,11 +6331,10 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 
 		if ((*ptr)->nod_type == nod_select_expr)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-					  isc_arg_gds, isc_dsql_command_err,
-					  isc_arg_gds, isc_subquery_err,
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  // No subqueries permitted for VIEW WITH CHECK OPTION
-					  isc_arg_end);
+					  Arg::Gds(isc_subquery_err));
 		}
 
 		if ((*ptr)->nod_type == nod_field_name)
@@ -6770,9 +6693,8 @@ static void modify_field(CompiledStatement*	statement,
 
 			if (is_array_or_blob(statement, computedNod))
 			{
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-						  isc_arg_gds, isc_dsql_no_array_computed,
-						  isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+						  Arg::Gds(isc_dsql_no_array_computed));
 			}
 
 			statement->begin_blr(isc_dyn_fld_computed_blr);
@@ -6811,12 +6733,10 @@ static void modify_field(CompiledStatement*	statement,
 				// Get the domain information
 				if (!METD_get_domain(statement, field, domain_name->str_data))
 				{
-					ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) -607,
-							  isc_arg_gds, isc_dsql_command_err,
-							  isc_arg_gds, isc_dsql_domain_not_found,
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+							  Arg::Gds(isc_dsql_command_err) <<
 							  // Specified domain or source field does not exist
-							  isc_arg_string, domain_name->str_data,
-							  isc_arg_end);
+							  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 				}
 				DDL_resolve_intl_type(statement, field, NULL);
 			}
@@ -6853,7 +6773,7 @@ static void modify_field(CompiledStatement*	statement,
 
 		statement->append_uchar(isc_dyn_end);
 	} // try
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		clearPermanentField(relation, permanent);
 		throw;
@@ -6940,8 +6860,7 @@ void CompiledStatement::end_blr()
 	const ULONG length   = (req_blr_data.getCount() - req_base_offset) - 2;
 
 	if (length > 0xFFFF) {
-		ERRD_post(isc_too_big_blr, isc_arg_number, (SLONG) length,
-				  isc_arg_number, (SLONG) 0xFFFF, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_too_big_blr) << Arg::Num(length) << Arg::Num(0xFFFF));
 	}
 
 	*blr_base++ = (UCHAR) length;
@@ -6988,7 +6907,7 @@ void CompiledStatement::append_meta_string(const char* string)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	ISC_STATUS_ARRAY status_vector = {0};
-	Firebird::UCharBuffer nameBuffer;
+	UCharBuffer nameBuffer;
 
 	CsConvert cv(INTL_charset_lookup(tdbb, CS_dynamic)->getStruct(),
 		INTL_charset_lookup(tdbb, CS_METADATA)->getStruct());

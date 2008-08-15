@@ -148,12 +148,8 @@ void ERRD_error(const char* text)
     @param 
 
  **/
-bool ERRD_post_warning(ISC_STATUS status, ...)
+bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 {
-	va_list args;
-
-	va_start(args, status);
-
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 	int indx = 0;
 
@@ -177,88 +173,14 @@ bool ERRD_post_warning(ISC_STATUS status, ...)
 		}
 	}
 
-// stuff the warning 
-	if (indx + 3 >= ISC_STATUS_LENGTH)
+	if (indx + v.length() < ISC_STATUS_LENGTH)
 	{
-		// not enough free space 
-		// Hey, before returning, clean the varargs thing!
-	    va_end(args);
-		return false;
+		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
+		return true;
 	}
 
-	status_vector[indx++] = isc_arg_warning;
-	status_vector[indx++] = status;
-	int type, len;
-	while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
-	{
-
-        const char* pszTmp = NULL;
-		switch (status_vector[indx++] = type)
-		{
-		case isc_arg_warning:
-			status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
-			break;
-
-		case isc_arg_string: 
-            pszTmp = va_arg(args, char*);
-            if (strlen(pszTmp) >= (size_t) MAX_ERRSTR_LEN) {
-                status_vector[(indx - 1)] = isc_arg_cstring;
-                status_vector[indx++] = MAX_ERRSTR_LEN;
-            }
-            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
-			break;
-
-		case isc_arg_interpreted: 
-		case isc_arg_sql_state:
-            pszTmp = va_arg(args, char*);
-            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
-			break;
-
-		case isc_arg_cstring:
-            len = va_arg(args, int);
-            status_vector[indx++] =
-                (ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-            pszTmp = va_arg(args, char*);
-            status_vector[indx++] = reinterpret_cast<ISC_STATUS>(ERR_cstring(pszTmp));
-			break;
-
-		case isc_arg_number:
-			status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
-			break;
-
-		case isc_arg_vms:
-		case isc_arg_unix:
-		case isc_arg_win32:
-		default:
-			status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
-			break;
-		}
-    }
-    va_end(args);
-	status_vector[indx] = isc_arg_end;
-	return true;
-}
-
-
-/**
-  
- 	ERRD_post
-  
-    @brief	Post an error, copying any potentially
- 	transient data before we punt.
- 
-
-    @param status
-    @param 
-
- **/
-void ERRD_post(ISC_STATUS status, ...)
-{
-// stuff the status into temp buffer 
-	ISC_STATUS_ARRAY tmp_status;
-	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	STUFF_STATUS(tmp_status, status);
-	internal_post(tmp_status);
+	// not enough free space 
+	return false;
 }
 
 

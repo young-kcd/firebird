@@ -143,6 +143,20 @@ void StatusVector::raise() const
 		Str("Attempt to raise empty exception"));
 }
 
+ISC_STATUS StatusVector::copyTo(ISC_STATUS* dest) const throw()
+{
+	if (hasData())
+	{
+		memcpy(dest, value(), (length() + 1) * sizeof(ISC_STATUS));
+	}
+	else {
+		dest[0] = isc_arg_gds;
+		dest[1] = FB_SUCCESS;
+		dest[2] = isc_arg_end;
+	}
+	return dest[1];
+}
+
 Gds::Gds(ISC_STATUS s) throw() : 
 	StatusVector(isc_arg_gds, s) { }
 

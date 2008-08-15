@@ -40,6 +40,9 @@
 #include "../dsql/array_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../common/StatusArg.h"
+
+using namespace Firebird;
 
 DATABASE DB = STATIC FILENAME "yachts.lnk";
 
@@ -57,7 +60,7 @@ typedef gen_t *GEN_T;
 
 static void adjust_length(ISC_ARRAY_DESC*);
 static void copy_exact_name (const char*, char*, SSHORT);
-static ISC_STATUS error(ISC_STATUS*, SSHORT, ...);
+static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v);
 static ISC_STATUS gen_sdl(ISC_STATUS*, const ISC_ARRAY_DESC*, SSHORT*, UCHAR**,
 					  SSHORT*, bool);
 static ISC_STATUS lookup_desc(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, const SCHAR*,
@@ -317,14 +320,11 @@ ISC_STATUS API_ROUTINE isc_array_set_desc(ISC_STATUS* status,
 		desc->array_desc_dtype = blr_quad;
 		break;
 	default:
-		return error(status, 7, (ISC_STATUS) isc_sqlerr,
-					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) - 804,
-					 (ISC_STATUS) isc_arg_gds, (ISC_STATUS) isc_random,
-					 (ISC_STATUS) isc_arg_string,
-					 (ISC_STATUS) "data type not understood");
+		return error(status, Arg::Gds(isc_sqlerr) << Arg::Num(-804) << 
+							 Arg::Gds(isc_random) << Arg::Str("data type not understood"));
 	}
 
-	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
+	return error(status, Arg::Gds(FB_SUCCESS));
 }
 
 
@@ -370,7 +370,7 @@ static void copy_exact_name (
 }
 
 
-static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
+static ISC_STATUS error(ISC_STATUS* status, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -382,20 +382,7 @@ static ISC_STATUS error( ISC_STATUS* status, SSHORT count, ...)
  *	Stuff a status vector.
  *
  **************************************/
-	ISC_STATUS* stat;
-	va_list ptr;
-
-	va_start(ptr, count);
-	stat = status;
-	*stat++ = isc_arg_gds;
-
-	for (; count; --count)
-		*stat++ = (ISC_STATUS) va_arg(ptr, ISC_STATUS);
-
-	va_end(ptr);
-	*stat = isc_arg_end;
-
-	return status[1];
+	return v.copyTo(status);
 }
 
 
@@ -418,9 +405,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 	const SSHORT dimensions = desc->array_desc_dimensions;
 
 	if (dimensions > 16)
-		return error(status, 5, (ISC_STATUS) isc_invalid_dimension,
-					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) dimensions,
-					 (ISC_STATUS) isc_arg_number, (ISC_STATUS) 16);
+		return error(status, Arg::Gds(isc_invalid_dimension) << Arg::Num(dimensions) << Arg::Num(16));
 
 	gen_t gen_block;
 	gen_t* gen = &gen_block;
@@ -501,7 +486,7 @@ static ISC_STATUS gen_sdl(ISC_STATUS* status,
 		return status[1];
 	*sdl_length = gen->gen_sdl - *gen->gen_sdl_ptr;
 
-	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
+	return error(status, Arg::Gds(FB_SUCCESS));
 }
 
 
@@ -561,13 +546,10 @@ static ISC_STATUS lookup_desc(ISC_STATUS* status,
     isc_release_request(isc_status, &handle);
 
 	if (!flag)
-		return error(status, 5, (ISC_STATUS) isc_fldnotdef,
-					 (ISC_STATUS) isc_arg_string,
-					 (ISC_STATUS) desc->array_desc_field_name,
-					 (ISC_STATUS) isc_arg_string,
-					 (ISC_STATUS) desc->array_desc_relation_name);
+		return error(status, Arg::Gds(isc_fldnotdef) << Arg::Str(desc->array_desc_field_name) << 
+							 Arg::Str(desc->array_desc_relation_name));
 
-	return error(status, 1, (ISC_STATUS) FB_SUCCESS);
+	return error(status, Arg::Gds(FB_SUCCESS));
 }
 
 
@@ -588,9 +570,7 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 
 	if (gen->gen_sdl + count >= gen->gen_end) {
 		if (gen->gen_internal < 0) {
-			return error(gen->gen_status, 3, (ISC_STATUS) isc_misc_interpreted,
-						 (ISC_STATUS) isc_arg_string,
-						 (ISC_STATUS) "SDL buffer overflow");
+			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow"));
 		}
 
 		// The sdl buffer is too small.  Allocate a larger one. 
@@ -598,10 +578,8 @@ static ISC_STATUS stuff_args(gen_t* gen, SSHORT count, ...)
 		const SSHORT new_len = gen->gen_end - *gen->gen_sdl_ptr + 512 + count;
 		UCHAR* const new_sdl = (UCHAR*) gds__alloc(new_len);
 		if (!new_sdl) {
-			return error(gen->gen_status, 5, (ISC_STATUS) isc_misc_interpreted,
-						 (ISC_STATUS) isc_arg_string,
-						 (ISC_STATUS) "SDL buffer overflow", (ISC_STATUS) isc_arg_gds,
-						 (ISC_STATUS) isc_virmemexh);
+			return error(gen->gen_status, Arg::Gds(isc_misc_interpreted) << Arg::Str("SDL buffer overflow") <<
+										  Arg::Gds(isc_virmemexh));
 		}
 
 		const SSHORT current_len = gen->gen_sdl - *gen->gen_sdl_ptr;

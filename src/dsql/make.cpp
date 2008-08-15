@@ -62,9 +62,11 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/why_proto.h"
 #include "../common/config/config.h"
+#include "../common/StatusArg.h"
 
 using namespace Jrd;
 using namespace Dsql;
+using namespace Firebird;
 
 /* Firebird provides transparent conversion from string to date in
  * contexts where it makes sense.  This macro checks a descriptor to
@@ -451,7 +453,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			desc->dsc_dtype = dtype_double;
@@ -464,7 +466,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
@@ -482,7 +484,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		else if (desc->dsc_dtype == dtype_short) {
 			desc->dsc_dtype = dtype_long;
@@ -503,7 +505,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
@@ -641,8 +643,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype = MAX(dtype1, dtype2);
 
 		if (DTYPE_IS_BLOB(dtype)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
@@ -654,7 +656,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 				DTYPE_IS_TEXT(desc2.dsc_dtype))
 			{
-				ERRD_post(isc_expression_eval_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_expression_eval_err));
 			}
 
 		case dtype_timestamp:
@@ -691,7 +693,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 						dtype = dtype_timestamp;
 					}
 					else {
-						ERRD_post(isc_expression_eval_err, isc_arg_end);
+						ERRD_post(Arg::Gds(isc_expression_eval_err));
 					}
 
 					if (dtype == dtype_sql_date) {
@@ -721,7 +723,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				}
 				else {
 					/* <date> + <date> */
-					ERRD_post(isc_expression_eval_err, isc_arg_end);
+					ERRD_post(Arg::Gds(isc_expression_eval_err));
 				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
@@ -738,7 +740,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			else {
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract);
-				ERRD_post(isc_expression_eval_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_expression_eval_err));
 			}
 			return;
 
@@ -780,15 +782,15 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		// Arrays and blobs can never partipate in addition/subtraction 
 		if (DTYPE_IS_BLOB(dtype1) || DTYPE_IS_BLOB(dtype2)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		// In Dialect 2 or 3, strings can never partipate in addition / sub
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
 		{
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 
 		/* Determine the TYPE of arithmetic to perform, store it
@@ -852,7 +854,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 							dtype = dtype_timestamp;
 					}
 					else {
-						ERRD_post(isc_expression_eval_err, isc_arg_end);
+						ERRD_post(Arg::Gds(isc_expression_eval_err));
 					}
 
 					if (dtype == dtype_sql_date) {
@@ -883,7 +885,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				}
 				else {
 					/* <date> + <date> */
-					ERRD_post(isc_expression_eval_err, isc_arg_end);
+					ERRD_post(Arg::Gds(isc_expression_eval_err));
 				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
@@ -900,7 +902,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			else {
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract2);
-				ERRD_post(isc_expression_eval_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_expression_eval_err));
 			}
 			return;
 
@@ -934,7 +936,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		default:
 			// a type which cannot participate in an add or subtract 
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		return;
 
@@ -952,8 +954,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		// Arrays and blobs can never partipate in multiplication
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		dtype = DSC_multiply_blr4_result[desc1.dsc_dtype][desc2.dsc_dtype];
@@ -975,7 +977,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		return;
 
@@ -995,13 +997,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 
 		// Arrays and blobs can never partipate in multiplication 
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
@@ -1024,7 +1026,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		return;
 
@@ -1052,8 +1054,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 		// Arrays and blobs can never partipate in division 
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		dtype1 = desc1.dsc_dtype;
@@ -1067,7 +1069,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype = MAX(dtype1, dtype2);
 
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 
 		desc->dsc_dtype = dtype_double;
@@ -1092,13 +1094,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 
 		// Arrays and blobs can never partipate in division 
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 
 		dtype = DSC_multiply_result[desc1.dsc_dtype][desc2.dsc_dtype];
@@ -1118,7 +1120,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 
 		return;
@@ -1137,7 +1139,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			if (statement->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
-				ERRD_post(isc_expression_eval_err, isc_arg_end);
+				ERRD_post(Arg::Gds(isc_expression_eval_err));
 			}
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
@@ -1145,12 +1147,12 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// Forbid blobs and arrays
 		else if (DTYPE_IS_BLOB(desc->dsc_dtype))
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_no_blob_array, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_no_blob_array));
 		}
 		// Forbid other not numeric datatypes
 		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
-			ERRD_post(isc_expression_eval_err, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_expression_eval_err));
 		}
 		return;
 
@@ -1172,8 +1174,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			desc->dsc_ttype() = ttype_binary;
 		}
 		else {
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_dbkey_from_non_table, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_dbkey_from_non_table));
 		}
 		return;
 
@@ -1261,8 +1263,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		}
 		else
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 203,
-					  isc_arg_gds, isc_dsql_field_ref, isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-203) <<
+					  Arg::Gds(isc_dsql_field_ref));
 		}
 		return;
 
@@ -1522,9 +1524,8 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	else {
 		if (indices)
 		{
-			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 607,
-					  isc_arg_gds, isc_dsql_only_can_subscript_array,
-					  isc_arg_string, field->fld_name.c_str(), isc_arg_end);
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_only_can_subscript_array) << Arg::Str(field->fld_name));
 		}
 
 		MAKE_desc_from_field(&node->nod_desc, field);
@@ -1641,8 +1642,8 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	USHORT sqlda_index, const dsql_nod* node)
 {
 	if (!message) {
-		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
-			isc_arg_gds, isc_badmsgnum, isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_badmsgnum));
 	}
 	
 	DEV_BLKCHK(message, dsql_type_msg);

@@ -73,6 +73,7 @@ public:
 	void clear() throw();
 	void append(const StatusVector& v) throw();
 	void raise() const;
+	ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
 
 	// generic argument insert
 	StatusVector& operator<<(const Base& arg) throw();

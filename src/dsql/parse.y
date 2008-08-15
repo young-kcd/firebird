@@ -95,6 +95,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/intlobj_new.h"
+#include "../common/StatusArg.h"
 
 /* since UNIX isn't standard, we have to define
    stuff which is in <limits.h> (which isn't available
@@ -143,6 +144,7 @@ const int MAX_TOKEN_LEN = 256;
 
 using namespace Jrd;
 using namespace Dsql;
+using namespace Firebird;
 
 #ifdef NOT_USED_OR_REPLACED
 static bool		long_int(dsql_nod*, SLONG*);
@@ -2713,17 +2715,13 @@ non_charset_simple_type	: national_character_type
 		| BIGINT
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "BIGINT",
-					isc_arg_end);
+				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+																	Arg::Str("BIGINT"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "BIGINT",
-					isc_arg_end);
+				ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
+																	Arg::Str("BIGINT"));
 			lex.g_field->fld_dtype = dtype_int64; 
 			lex.g_field->fld_length = sizeof (SINT64); 
 			}
@@ -2743,8 +2741,8 @@ non_charset_simple_type	: national_character_type
 			if (client_dialect <= SQL_DIALECT_V5)
 				{
 				/* Post warning saying that DATE is equivalent to TIMESTAMP */
-					ERRD_post_warning (isc_sqlwarn, isc_arg_number, (SLONG) 301, 
-											   isc_arg_warning, isc_dtype_renamed, isc_arg_end);
+				ERRD_post_warning(Arg::Warning(isc_sqlwarn) << Arg::Num(301) <<
+								  Arg::Warning(isc_dtype_renamed));
 				lex.g_field->fld_dtype = dtype_timestamp; 
 				lex.g_field->fld_length = sizeof (GDS_TIMESTAMP);
 				}
@@ -2759,17 +2757,13 @@ non_charset_simple_type	: national_character_type
 		| TIME
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+																		  Arg::Str("TIME"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+																		  Arg::Str("TIME"));
 			lex.g_field->fld_dtype = dtype_sql_time; 
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
@@ -2938,34 +2932,23 @@ prec_scale	:
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect	 <= SQL_DIALECT_V5) ) )
-					ERRD_post (isc_sqlerr,
-					   isc_arg_number, (SLONG) -817,
-					   isc_arg_gds,
-					   isc_ddl_not_allowed_by_db_sql_dial,
-					   isc_arg_number, (SLONG) db_dialect,
-					   isc_arg_end);
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
-				lex.g_field->fld_dtype = dtype_double;
-				lex.g_field->fld_length = sizeof (double);
+					lex.g_field->fld_dtype = dtype_double;
+					lex.g_field->fld_length = sizeof (double);
 					}
 				else
 					{
-				if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-					{
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous,
-					isc_arg_end );
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous1,
-					isc_arg_end );
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous2,
-					isc_arg_end );
-
-					}
-				lex.g_field->fld_dtype = dtype_int64;
-				lex.g_field->fld_length = sizeof (SINT64);
+					if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+						{
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
+						}
+					lex.g_field->fld_dtype = dtype_int64;
+					lex.g_field->fld_length = sizeof (SINT64);
 					}
 				}
 			else 
@@ -2995,34 +2978,24 @@ prec_scale	:
 				   (db_dialect	 >  SQL_DIALECT_V5) ) ||
 				 ( (client_dialect >  SQL_DIALECT_V5) &&
 				   (db_dialect	 <= SQL_DIALECT_V5) ) )
-					ERRD_post (isc_sqlerr,
-					   isc_arg_number, (SLONG) -817,
-					   isc_arg_gds,
-					   isc_ddl_not_allowed_by_db_sql_dial,
-					   isc_arg_number, (SLONG) db_dialect,
-					   isc_arg_end);
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-817) <<
+							  Arg::Gds(isc_ddl_not_allowed_by_db_sql_dial) << Arg::Num(db_dialect));
 				if (client_dialect <= SQL_DIALECT_V5)
 					{
-				lex.g_field->fld_dtype = dtype_double;
-				lex.g_field->fld_length = sizeof (double); 
+					lex.g_field->fld_dtype = dtype_double;
+					lex.g_field->fld_length = sizeof (double); 
 					}
 				else
 					{
-				if (client_dialect == SQL_DIALECT_V6_TRANSITION)
-				  {
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous,
-					isc_arg_end );
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous1,
-					isc_arg_end );
-					ERRD_post_warning (
-					isc_dsql_warn_precision_ambiguous2,
-					isc_arg_end );
-				  }
-				  /* client_dialect >= SQL_DIALECT_V6 */
-				lex.g_field->fld_dtype = dtype_int64;
-				lex.g_field->fld_length = sizeof (SINT64);
+					if (client_dialect == SQL_DIALECT_V6_TRANSITION)
+						{
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous1));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warn_precision_ambiguous2));
+						}
+					/* client_dialect >= SQL_DIALECT_V6 */
+					lex.g_field->fld_dtype = dtype_int64;
+					lex.g_field->fld_length = sizeof (SINT64);
 					}
 				}
 			else
@@ -4278,33 +4251,25 @@ value	: column_name
 datetime_value_expression : CURRENT_DATE
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "DATE",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  												  Arg::Str("DATE"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "DATE",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  												  Arg::Str("DATE"));
 			$$ = make_node (nod_current_date, 0, NULL);
 			}
 		| CURRENT_TIME sec_precision_opt
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  												  Arg::Str("TIME"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  												  Arg::Str("TIME"));
 			$$ = make_node (nod_current_time, 1, $2);
 			}
 		| CURRENT_TIMESTAMP sec_precision_opt
@@ -4355,33 +4320,25 @@ u_constant	: u_numeric_constant
 		| DATE STRING
 			{ 
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "DATE",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  												  Arg::Str("DATE"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "DATE",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  												  Arg::Str("DATE"));
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_DATE);
 			}
 		| TIME STRING
 			{
 			if (client_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_dialect_datatype_unsupport,
-					isc_arg_number, (SLONG) client_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(client_dialect) << 
+						  												  Arg::Str("TIME"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
-				ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104, 
-					isc_arg_gds, isc_sql_db_dialect_dtype_unsupport,
-					isc_arg_number, (SLONG) db_dialect,
-					isc_arg_string, "TIME",
-					isc_arg_end);
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  												  Arg::Str("TIME"));
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIME);
 			}
 		| TIMESTAMP STRING
@@ -6064,12 +6021,9 @@ int Parser::yylexAux()
 						 * the message text exceeds the 119-character limit
 						 * of our message database.
 						 */
-						ERRD_post_warning( isc_dsql_warning_number_ambiguous,
-							   isc_arg_string,
-							   ERR_string( lex.last_token, lex.ptr - lex.last_token ),
-							   isc_arg_end );
-						ERRD_post_warning( isc_dsql_warning_number_ambiguous1,
-							   isc_arg_end );
+						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous) << 
+										  Arg::Str(Firebird::string(lex.last_token, lex.ptr - lex.last_token)));
+						ERRD_post_warning(Arg::Warning(isc_dsql_warning_number_ambiguous1));
 					}
 
 					yylval = (dsql_nod*) MAKE_string(lex.last_token, lex.ptr - lex.last_token);
@@ -6172,22 +6126,18 @@ void Parser::yyerror_detailed(const TEXT* error_string, int yychar, YYSTYPE&, YY
 	}
 
 	if (yychar < 1)
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
-			isc_arg_gds, isc_command_end_err2,	/* Unexpected end of command */
-			isc_arg_number, lines,
-			isc_arg_number, (SLONG) (lex.last_token - line_start + 1),
-			isc_arg_end);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  /* Unexpected end of command */
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) << 
+													Arg::Num(lex.last_token - line_start + 1));
 	else
 	{
-		ERRD_post (isc_sqlerr, isc_arg_number, (SLONG) -104,
-			/* Token unknown - line %d, column %d */
-			isc_arg_gds, isc_dsql_token_unk_err,
-			isc_arg_number, (SLONG) lines,
-			isc_arg_number, (SLONG) (lex.last_token - line_start + 1), /*CVC: +1*/
-			/* Show the token */
-			isc_arg_gds, isc_random,
-			isc_arg_cstring, (int) (lex.ptr - lex.last_token), lex.last_token,
-			isc_arg_end);
+		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  /* Token unknown - line %d, column %d */
+				  Arg::Gds(isc_dsql_token_unk_err) << Arg::Num(lines) << 
+				  									  Arg::Num(lex.last_token - line_start + 1) << /*CVC: +1*/
+				  /* Show the token */
+				  Arg::Gds(isc_random) << Arg::Str(string(lex.last_token, lex.ptr - lex.last_token)));
 	}
 }
 
@@ -6216,6 +6166,6 @@ static void yyabandon (SLONG		sql_code,
  *
  **************************************/
 
-	ERRD_post (isc_sqlerr, isc_arg_number, sql_code,
-		isc_arg_gds, error_symbol, isc_arg_end);
+	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(sql_code) <<
+			  Arg::Gds(error_symbol));
 }
