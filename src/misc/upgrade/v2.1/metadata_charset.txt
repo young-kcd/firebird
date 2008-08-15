@@ -10,7 +10,7 @@ GBAK (restore) options:
 -FIX_FSS_DATA <charset>: This option works for user (i.e., non-system) tables.
 If <charset> is NONE, UNICODE_FSS columns ([VAR]CHAR and BLOB) are created using NONE charset.
 If <charset> is not NONE, UNICODE_FSS columns are created normally but data read from backup
-is considerer to be in <charset> encoding instead of UNICODE_FSS, and is transliterated to be stored
+is considered to be in <charset> encoding instead of UNICODE_FSS, and is transliterated to be stored
 on the columns.
 
 -FIX_FSS_METADATA <charset>: This option is to fix wrong stored metadata, as replacement for the

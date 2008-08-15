@@ -1895,14 +1895,14 @@ static blb* allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 	while (transaction->tra_outer)
 		transaction = transaction->tra_outer;
 
-/* Create a blob large enough to hold a single data page */
+	// Create a blob large enough to hold a single data page.
 
 	blb* blob = FB_NEW(*transaction->tra_pool) blb(*transaction->tra_pool, dbb->dbb_page_size);
 	blob->blb_attachment = tdbb->getAttachment();
 	blob->blb_transaction = transaction;
 
-/* Compute some parameters governing various maximum sizes based on
-   database page size. */
+	// Compute some parameters governing various maximum sizes based on
+	// database page size.
 
 	blob->blb_clump_size = dbb->dbb_page_size -
 							sizeof(Ods::data_page) -

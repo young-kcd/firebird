@@ -298,7 +298,8 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			END_ERROR;
 		}
 		else {
-			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS WITH U.USER_NAME EQ io_user_data->user_name
+			FOR (TRANSACTION_HANDLE trans REQUEST_HANDLE request) U IN USERS
+					WITH U.USER_NAME EQ io_user_data->user_name
 				io_user_data->uid = U.UID;
 				io_user_data->gid = U.GID;
 				*(io_user_data->sys_user_name) = '\0';
@@ -334,6 +335,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 			}
 		}
 	}
+
 	return ret;
 }
 
