@@ -1,3 +1,34 @@
+2008-08-15 18:32  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.251), dsql.h (1.141), gen.cpp
+	(1.166), gen_proto.h (1.19), make.cpp (1.167), node.h (1.116),
+	pass1.cpp (1.403):
+
+	Fixed CORE-2041 - update or insert with gen_id() with wrong
+	generator value
+
+2008-08-15 13:21  alexpeshkoff
+
+	* firebird2/src/: common/StatusArg.cpp (1.8), common/StatusArg.h
+	(1.6), dsql/array.epp (1.40), dsql/blob.epp (1.23), dsql/ddl.cpp
+	(1.250), dsql/dsql.cpp (1.252), dsql/errd.cpp (1.48),
+	dsql/errd_proto.h (1.14), dsql/gen.cpp (1.165), dsql/make.cpp
+	(1.166), dsql/parse.y (1.290), dsql/pass1.cpp (1.402),
+	dsql/user_dsql.cpp (1.55):
+
+	fixing CORE-1964: Use of 0 instead of isc_arg_end to terminate list
+	of ERR_post's (and cousines) arguments is invalid
+
+	finished cleanup of vararg in error diagnostics in DSQL
+
+2008-08-15 04:06  asfernandes
+
+	* firebird2/src/: jrd/blb.cpp (1.176),
+	misc/upgrade/v2.1/metadata_charset.txt (1.5),
+	utilities/gsec/security.epp (1.21):
+
+	Misc
+
 2008-08-14 20:46  asfernandes
 
 	* firebird2/src/jrd/blb.cpp (1.175):
