@@ -1836,7 +1836,8 @@ dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type t
 	strcpy(variable->var_name, name);
 	//variable->var_flags = 0;
 	variable->var_type = type;
-	MAKE_desc_from_field(&node->nod_desc, field);
+	if (field)
+		MAKE_desc_from_field(&node->nod_desc, field);
 
 	return node;
 }
@@ -2006,7 +2007,8 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_variable:
 		{
 			dsql_var* variable = (dsql_var*) item->nod_arg[e_var_variable];
-			name_alias = variable->var_field->fld_name.c_str();
+			if (variable->var_field)
+				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
 	case nod_udf: 

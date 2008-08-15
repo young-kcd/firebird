@@ -433,6 +433,7 @@ public:
 		  req_dt_context(p),
 		  req_labels(p),
 		  req_cursors(p),
+		  req_hidden_vars(p),
 		  req_curr_ctes(p),
 		  req_ctes(p),
 		  req_cte_aliases(p)
@@ -539,6 +540,8 @@ public:
 	USHORT	req_client_dialect;	//!< dialect passed into the API call
 	USHORT	req_in_outer_join;	//!< processing inside outer-join part
 	dsql_str*		req_alias_relation_prefix;	//!< prefix for every relation-alias.
+	DsqlNodStack	req_hidden_vars;			// hidden variables
+	USHORT			req_hidden_vars_number;		// next hidden variable number
 
 	DsqlNodStack req_curr_ctes;			// current processing CTE's
 	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE

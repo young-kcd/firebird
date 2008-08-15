@@ -67,7 +67,6 @@ static void gen_cast(CompiledStatement*, const dsql_nod*);
 static void gen_coalesce(CompiledStatement*, const dsql_nod*);
 static void gen_constant(CompiledStatement*, const dsc*, bool);
 static void gen_constant(CompiledStatement*, dsql_nod*, bool);
-static void gen_descriptor(CompiledStatement*, const dsc*, bool);
 static void gen_error_condition(CompiledStatement*, const dsql_nod*);
 static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node);
 static void gen_field(CompiledStatement*, const dsql_ctx*, const dsql_fld*, dsql_nod*);
@@ -101,6 +100,29 @@ static void stuff_word(CompiledStatement*, USHORT);
 // The following are passed as the third argument to gen_constant 
 const bool NEGATE_VALUE = true;
 const bool USE_VALUE    = false;
+
+
+void GEN_hidden_variables(CompiledStatement* statement)
+{
+/**************************************
+ *
+ *	G E N _ h i d d e n _ v a r i a b l e s
+ *
+ **************************************
+ *
+ * Function
+ *	Emit BLR for hidden variables.
+ *
+ **************************************/
+	for (DsqlNodStack::const_iterator i(statement->req_hidden_vars);
+		i.hasData(); ++i)
+	{
+		dsql_var* var = ((dsql_var*) i.object()->nod_arg[e_var_variable]);
+		statement->append_uchar(blr_dcl_variable);
+		statement->append_ushort(var->var_variable_number);
+		GEN_descriptor(statement, &i.object()->nod_desc, true);
+	}
+}
 
 
 /**
@@ -694,7 +716,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 		parameter->par_desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += parameter->par_desc.dsc_length;
 //		if (statement->req_blr_string)
-			gen_descriptor(statement, &parameter->par_desc, false);
+			GEN_descriptor(statement, &parameter->par_desc, false);
 	}
 
 	if (offset > MAX_FORMAT_SIZE) {
@@ -757,6 +779,8 @@ void GEN_request( CompiledStatement* statement, dsql_nod* node)
 	else 
 	{	
 		stuff(statement, blr_begin);
+
+		GEN_hidden_variables(statement);
 
 		switch (statement->req_type)
 		{
@@ -1033,13 +1057,15 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_list:
-		stuff(statement, blr_begin);
+		if (!(node->nod_flags & NOD_SIMPLE_LIST))
+			stuff(statement, blr_begin);
 		for (ptr = node->nod_arg, end = ptr + node->nod_count; ptr < end;
 			 ptr++)
 		{
 			GEN_statement(statement, *ptr);
 		}
-		stuff(statement, blr_end);
+		if (!(node->nod_flags & NOD_SIMPLE_LIST))
+			stuff(statement, blr_end);
 		return;
 
 	case nod_erase:
@@ -1382,7 +1408,7 @@ static void gen_coalesce( CompiledStatement* statement, const dsql_nod* node)
 	// blr_value_if is used for building the coalesce function
 	dsql_nod* list = node->nod_arg[0];
 	stuff(statement, blr_cast);
-	gen_descriptor(statement, &node->nod_desc, true);
+	GEN_descriptor(statement, &node->nod_desc, true);
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + (list->nod_count - 1);
 		ptr < end; ptr++)
@@ -1427,7 +1453,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 	switch (desc->dsc_dtype) {
 	case dtype_short:
-		gen_descriptor(statement, desc, true);
+		GEN_descriptor(statement, desc, true);
 		value = *(SSHORT *) p;
 		if (negate_value)
 			value = -value;
@@ -1435,7 +1461,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 		break;
 
 	case dtype_long:
-		gen_descriptor(statement, desc, true);
+		GEN_descriptor(statement, desc, true);
 		value = *(SLONG *) p;
 		if (negate_value)
 			value = -value;
@@ -1446,7 +1472,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 	case dtype_sql_time:
 	case dtype_sql_date:
-		gen_descriptor(statement, desc, true);
+		GEN_descriptor(statement, desc, true);
 		value = *(SLONG *) p;
 		stuff_word(statement, value);
 		stuff_word(statement, value >> 16);
@@ -1457,7 +1483,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			/* this is used for approximate/large numeric literal
 			   which is transmitted to the engine as a string.
 			 */
-			gen_descriptor(statement, desc, true);
+			GEN_descriptor(statement, desc, true);
 			// Length of string literal, cast because it could be > 127 bytes.
 			const USHORT l = (USHORT)(UCHAR) desc->dsc_scale;
 			if (negate_value) {
@@ -1521,7 +1547,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 	case dtype_blob:
 	case dtype_array:
 	case dtype_timestamp:
-		gen_descriptor(statement, desc, true);
+		GEN_descriptor(statement, desc, true);
 		value = *(SLONG *) p;
 		stuff_word(statement, value);
 		stuff_word(statement, value >> 16);
@@ -1534,7 +1560,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 		{
 			const USHORT length = desc->dsc_length;
 
-			gen_descriptor(statement, desc, true);
+			GEN_descriptor(statement, desc, true);
 			if (length)
 				statement->append_raw_string(p, length);
 		}
@@ -1571,7 +1597,7 @@ static void gen_constant( CompiledStatement* statement, dsql_nod* node, bool neg
 
 /**
   
- 	gen_descriptor
+ 	GEN_descriptor
   
     @brief	Generate a blr descriptor from an internal descriptor.
  
@@ -1581,7 +1607,7 @@ static void gen_constant( CompiledStatement* statement, dsql_nod* node, bool neg
     @param texttype
 
  **/
-static void gen_descriptor( CompiledStatement* statement, const dsc* desc, bool texttype)
+void GEN_descriptor( CompiledStatement* statement, const dsc* desc, bool texttype)
 {
 	switch (desc->dsc_dtype) {
 	case dtype_text:
@@ -2417,7 +2443,7 @@ static void gen_searched_case( CompiledStatement* statement, const dsql_nod* nod
 	// blr_value_if is used for building the case expression
 
 	stuff(statement, blr_cast);
-	gen_descriptor(statement, &node->nod_desc, true);
+	GEN_descriptor(statement, &node->nod_desc, true);
 	const SSHORT count =
 		node->nod_arg[e_searched_case_search_conditions]->nod_count;
 	dsql_nod* boolean_list = node->nod_arg[e_searched_case_search_conditions];
@@ -2637,7 +2663,7 @@ static void gen_simple_case( CompiledStatement* statement, const dsql_nod* node)
 	// blr_value_if is used for building the case expression 
 
 	stuff(statement, blr_cast);
-	gen_descriptor(statement, &node->nod_desc, true);
+	GEN_descriptor(statement, &node->nod_desc, true);
 	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
 	dsql_nod* when_list = node->nod_arg[e_simple_case_when_operands];
 	dsql_nod* results_list = node->nod_arg[e_simple_case_results];

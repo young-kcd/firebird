@@ -2640,14 +2640,18 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 
 	put_local_variables(statement, procedure_node->nod_arg[e_prc_dcls], locals);
 
+	statement->req_loop_level = 0;
+	statement->req_cursor_number = 0;
+
+	dsql_nod* stmtNode = PASS1_statement(statement, procedure_node->nod_arg[e_prc_body]);
+	GEN_hidden_variables(statement);
+
 	statement->append_uchar(blr_stall);
 	// put a label before body of procedure,
 	// so that any EXIT statement can get out
 	statement->append_uchar(blr_label);
 	statement->append_uchar(0);
-	statement->req_loop_level = 0;
-	statement->req_cursor_number = 0;
-	GEN_statement(statement, PASS1_statement(statement, procedure_node->nod_arg[e_prc_body]));
+	GEN_statement(statement, stmtNode);
 	statement->req_type = REQ_DDL;
 	statement->append_uchar(blr_end);
 	GEN_return(statement, procedure_node->nod_arg[e_prc_outputs], true);
@@ -2789,13 +2793,17 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 
 	put_local_variables(statement, node->nod_arg[e_exe_blk_dcls], locals);
 
+	statement->req_loop_level = 0;
+
+	dsql_nod* stmtNode = PASS1_statement(statement, node->nod_arg[e_exe_blk_body]);
+	GEN_hidden_variables(statement);
+
 	statement->append_uchar(blr_stall);
 	// Put a label before body of procedure, so that
 	// any exit statement can get out
 	statement->append_uchar(blr_label);
 	statement->append_uchar(0);
-	statement->req_loop_level = 0;
-	GEN_statement(statement, PASS1_statement(statement, node->nod_arg[e_exe_blk_body]));
+	GEN_statement(statement, stmtNode);
 	if (outputs)
 		statement->req_type = REQ_SELECT_BLOCK;
 	else
@@ -3238,6 +3246,9 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 			trigger_node->nod_arg[e_trg_actions]->nod_arg[e_trg_act_dcls], 0);
 
 		statement->req_scope_level++;
+		statement->req_loop_level = 0;
+		statement->req_cursor_number = 0;
+		actions = PASS1_statement(statement, actions);
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		//		   hence I've added zero label at the beginning.
 		//		   My first suspicion regarding an obvious conflict
@@ -3247,9 +3258,8 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		//		   Hopefully, system triggers are never recompiled.
 		statement->append_uchar(blr_label);
 		statement->append_uchar(0);
-		statement->req_loop_level = 0;
-		statement->req_cursor_number = 0;
-		GEN_statement(statement, PASS1_statement(statement, actions));
+		GEN_hidden_variables(statement);
+		GEN_statement(statement, actions);
 		statement->req_scope_level--;
 		statement->append_uchar(blr_end);
 		statement->end_blr();
@@ -6209,6 +6219,8 @@ static void put_local_variable( CompiledStatement* statement, dsql_var* variable
 
 	statement->put_debug_variable(variable->var_variable_number,
 		variable->var_name);
+
+	++statement->req_hidden_vars_number;
 }
 
 

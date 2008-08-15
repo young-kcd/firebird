@@ -241,6 +241,7 @@ static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(CompiledStatement*, dsql_nod*, dsql_nod*);
+static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* value);
 static dsql_nod* pass1_insert(CompiledStatement*, dsql_nod*, bool);
 static dsql_nod* pass1_join(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_label(CompiledStatement*, dsql_nod*);
@@ -6155,6 +6156,30 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 }
 
 
+// Create (if necessary) a hidden variable to store a temporary value.
+static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* value)
+{
+	// For some node types, it's better to not create temporary value.
+	switch (value->nod_type)
+	{
+		case nod_constant:
+		case nod_dbkey:
+		case nod_field:
+		case nod_parameter:
+		case nod_user_name:
+		case nod_variable:
+			return NULL;
+	}
+
+	dsql_nod* var = MAKE_variable(NULL, "", VAR_local, 0, 0, statement->req_hidden_vars_number++);
+	MAKE_desc(statement, &var->nod_desc, value, NULL);
+
+	statement->req_hidden_vars.push(var);
+
+	return var;
+}
+
+
 /**
 
  	pass1_insert
@@ -9286,6 +9311,8 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	dsql_nod* match = NULL;
 	USHORT match_count = 0;
 
+	DsqlNodStack varStack;
+
 	DsqlNodStack stack;
 	dsql_nod** field_ptr = fields->nod_arg;
 	dsql_nod** value_ptr = values->nod_arg;
@@ -9296,12 +9323,12 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 		DEV_BLKCHK(*field_ptr, dsql_type_nod);
 		DEV_BLKCHK(*value_ptr, dsql_type_nod);
 
-		dsql_nod* temp = MAKE_node(nod_assign, e_asgn_count);
-		temp->nod_arg[e_asgn_value] = *value_ptr;
-		temp->nod_arg[e_asgn_field] = *field_ptr;
-		stack.push(temp);
+		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+		assign->nod_arg[e_asgn_value] = *value_ptr;
+		assign->nod_arg[e_asgn_field] = *field_ptr;
+		stack.push(assign);
 
-		temp = *value_ptr;
+		dsql_nod* temp = *value_ptr;
 		dsql_nod* temp2 = insert->nod_arg[e_sto_statement]->nod_arg[field_ptr - fields->nod_arg]->nod_arg[1];
 		set_parameter_type(statement, temp, temp2, false);
 
@@ -9337,9 +9364,25 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 				{
 					++match_count;
 
+					dsql_nod*& expr = insert->nod_arg[e_sto_statement]->nod_arg[
+							field_ptr - fields->nod_arg]->nod_arg[0];
+					dsql_nod* var = pass1_hidden_variable(statement, expr);
+
+					if (var)
+					{
+						temp = MAKE_node(nod_assign, e_asgn_count);
+						temp->nod_arg[e_asgn_value] = expr;
+						temp->nod_arg[e_asgn_field] = var;
+						varStack.push(temp);
+
+						assign->nod_arg[e_asgn_value] = expr = var;
+					}
+					else
+						var = *value_ptr;
+
 					dsql_nod* eql = MAKE_node(equality_type, 2);
 					eql->nod_arg[0] = *field_ptr;
-					eql->nod_arg[1] = *value_ptr;
+					eql->nod_arg[1] = var;
 
 					if (match)
 					{
@@ -9424,9 +9467,11 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	if_nod->nod_arg[e_if_true] = insert;
 
 	// build the UPDATE / IF nodes
-	dsql_nod* list = MAKE_node(nod_list, 2);
-	list->nod_arg[0] = update;
-	list->nod_arg[1] = if_nod;
+	dsql_nod* list = MAKE_node(nod_list, 3);
+	list->nod_arg[0] = MAKE_list(varStack);
+	list->nod_arg[0]->nod_flags |= NOD_SIMPLE_LIST;
+	list->nod_arg[1] = update;
+	list->nod_arg[2] = if_nod;
 
 	// if RETURNING is present, req_type is already REQ_EXEC_PROCEDURE
 	if (!input->nod_arg[e_upi_return])

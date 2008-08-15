@@ -1043,6 +1043,7 @@ enum nod_flags_vals {
 
 	NOD_UNION_ALL			= 1, // nod_list
 	NOD_UNION_RECURSIVE 	= 2,
+	NOD_SIMPLE_LIST			= 4,	// no need to enclose with blr_begin ... blr_end
 
 	NOD_READ_ONLY			= 1, // nod_access
 	NOD_READ_WRITE			= 2,
