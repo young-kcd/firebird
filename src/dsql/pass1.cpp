@@ -9142,6 +9142,10 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 				MAKE_cstring(OLD_CONTEXT)->str_data;
 			old_context->ctx_flags |= CTX_system | CTX_returning;
 
+			// ASF: Trick to make OLD.* nullable - CORE-2044.
+			if (insert_or_update)
+				old_context->ctx_flags |= CTX_outer_join;
+
 			// push the modify context in the same scope level
 			statement->req_context->push(mod_context);
 
