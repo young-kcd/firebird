@@ -1,3 +1,17 @@
+2008-08-16 17:42  asfernandes
+
+	* firebird2/src/dsql/: ddl.cpp (1.252), dsql.cpp (1.253), gen.cpp
+	(1.167), parse.y (1.291), pass1.cpp (1.405):
+
+	Misc
+
+2008-08-16 02:59  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.404):
+
+	Fixed CORE-2044 - Incorrect result with UPDATE OR INSERT ...
+	RETURNING OLD and non-nullable columns
+
 2008-08-15 18:32  asfernandes
 
 	* firebird2/src/dsql/: ddl.cpp (1.251), dsql.h (1.141), gen.cpp
