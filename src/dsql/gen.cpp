@@ -727,12 +727,12 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 	message->msg_length = (USHORT) offset;
 
-// Allocate buffer for message 
+	// Allocate buffer for message 
 	const ULONG new_len = message->msg_length + DOUBLE_ALIGN - 1;
 	dsql_str* buffer = FB_NEW_RPT(*tdbb->getDefaultPool(), new_len) dsql_str;
 	message->msg_buffer = (UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 
-// Relocate parameter descriptors to point direction into message buffer 
+	// Relocate parameter descriptors to point direction into message buffer 
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)

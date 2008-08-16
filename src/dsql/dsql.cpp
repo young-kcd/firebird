@@ -556,7 +556,7 @@ void DSQL_free_statement(thread_db* tdbb,
 		// Just close the cursor associated with the request
 		if (!(request->req_flags & REQ_cursor_open))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 501) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
 					  Arg::Gds(isc_dsql_cursor_close_err));
 		}
 		close_cursor(tdbb, request);
@@ -602,8 +602,8 @@ void DSQL_insert(thread_db* tdbb,
 		if (!(request->req_flags & REQ_cursor_open))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-				  Arg::Gds(isc_dsql_cursor_err) <<
-				  Arg::Gds(isc_dsql_cursor_not_open));
+					  Arg::Gds(isc_dsql_cursor_err) <<
+					  Arg::Gds(isc_dsql_cursor_not_open));
 		}
 	}
 

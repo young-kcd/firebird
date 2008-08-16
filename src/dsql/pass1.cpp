@@ -691,7 +691,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		{
 			if (statement->isPsql())
 			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 206) <<
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-206) <<
 						  Arg::Gds(isc_dsql_subselect_err));
 			}
 
@@ -1858,10 +1858,12 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 
 	case nod_breakleave:
 		if (!statement->req_loop_level)
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("BREAK/LEAVE"));
+		}
 		input->nod_arg[e_breakleave_label] = pass1_label(statement, input);
 		return input;
 
@@ -1943,28 +1945,34 @@ dsql_nod* PASS1_statement(CompiledStatement* statement, dsql_nod* input)
 
 	case nod_user_savepoint:
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("SAVEPOINT"));
+		}
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
 	case nod_release_savepoint:
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("RELEASE"));
+		}
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
 	case nod_undo_savepoint:
 		if (statement->req_flags & REQ_block) // blocks, procedures and triggers
+		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("ROLLBACK"));
+		}
 		statement->req_type = REQ_SAVEPOINT;
 		return input;
 
@@ -4404,7 +4412,7 @@ static dsql_nod* pass1_join_is_recursive(CompiledStatement* statement, dsql_nod*
 
 	if (leftRecursive && join_type != nod_join_inner) {
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Recursive member of CTE can''t be member of an outer join
+				  // Recursive member of CTE can't be member of an outer join
 				  Arg::Gds(isc_dsql_cte_outer_join));
 	}
 
@@ -9369,7 +9377,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 					++match_count;
 
 					dsql_nod*& expr = insert->nod_arg[e_sto_statement]->nod_arg[
-							field_ptr - fields->nod_arg]->nod_arg[0];
+						field_ptr - fields->nod_arg]->nod_arg[0];
 					dsql_nod* var = pass1_hidden_variable(statement, expr);
 
 					if (var)
@@ -9470,7 +9478,7 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 	if_nod->nod_arg[e_if_condition] = eql;
 	if_nod->nod_arg[e_if_true] = insert;
 
-	// build the UPDATE / IF nodes
+	// build the temporary vars / UPDATE / IF nodes
 	dsql_nod* list = MAKE_node(nod_list, 3);
 	list->nod_arg[0] = MAKE_list(varStack);
 	list->nod_arg[0]->nod_flags |= NOD_SIMPLE_LIST;
@@ -10293,8 +10301,7 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 									  //Arg::Gds(isc_dsql_datatype_err)
 									  Arg::Gds(isc_imp_exc)
-									  //Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name)
-									  );
+									  //Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name));
 						}
 
 						parameter->par_desc.dsc_length += sizeof(USHORT);

@@ -524,8 +524,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 	{
 		if (ENCODE_ODS(statement->req_dbb->dbb_ods_version, statement->req_dbb->dbb_minor_version) < ODS_11_1)
 		{
+			// Feature not supported on ODS version older than %d.%d
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					  // Feature not supported on ODS version older than %d.%d
 					  Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << Arg::Num(1));
 		}
 
@@ -559,8 +559,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 			if (!fld)
 			{
+				// column @1 does not exist in table/view @2
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) << 
-						  // column @1 does not exist in table/view @2
 						  Arg::Gds(isc_dyn_column_does_not_exist) <<
 						  Arg::Str(field->fld_type_of_name) << Arg::Str(field->fld_type_of_table->str_data));
 			}
@@ -569,8 +569,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		{
 			if (!METD_get_domain(statement, field, field->fld_type_of_name.c_str()))
 			{
+				// Specified domain or source field does not exist
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) <<
-						  // Specified domain or source field does not exist
 						  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
 			}
 		}
@@ -599,13 +599,14 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << 
 						  Arg::Gds(isc_dsql_datatype_err) << 
-						  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(((dsql_str*)field->fld_sub_type_name)->str_data));
+						  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(((dsql_str*) field->fld_sub_type_name)->str_data));
 			}
 			field->fld_sub_type = blob_sub_type;
 		}
 		if (field->fld_sub_type > isc_blob_text)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
 					  Arg::Gds(isc_subtype_for_internal_use));
 		}
 		if (field->fld_character_set && (field->fld_sub_type == isc_blob_untyped))
@@ -614,12 +615,14 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		}
 		if (field->fld_character_set && (field->fld_sub_type != isc_blob_text))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
 		if (collation_name && (field->fld_sub_type != isc_blob_text))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_requires_text));
 		}
 		if (field->fld_sub_type != isc_blob_text) {
@@ -716,7 +719,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		if (!resolved_charset)
 		{
 			// specified character set not found
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_charset_not_found) << Arg::Str(charset_name));
 		}
 		field->fld_character_set_id = resolved_charset->intlsym_charset_id;
@@ -738,7 +742,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 				charSetName = METD_get_charset_name(statement, field->fld_character_set_id);
 
 			// Specified collation not found
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_not_found) << Arg::Str(collation_name->str_data) << Arg::Str(charSetName));
 		}
 
@@ -749,7 +754,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 		if ((field->fld_character_set_id != resolved_type->intlsym_charset_id)
 			&& (field->fld_character_set_id != ttype_dynamic))
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_collation_not_for_charset) << Arg::Str(collation_name->str_data));
 		}
 
@@ -795,7 +801,8 @@ static void assign_field_length (
 		}
 		if (field_length > MAX_COLUMN_SIZE)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << Arg::Gds(isc_dsql_datatype_err) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+					  Arg::Gds(isc_dsql_datatype_err) <<
                       Arg::Gds(isc_imp_exc) <<
 					  Arg::Gds(isc_field_name) << Arg::Str(field->fld_name));
 		}
@@ -1830,7 +1837,7 @@ static void define_domain(CompiledStatement* statement)
 					   constraint, context number 0 is reserved for the
 					   "blr_fid, 0, 0, 0," which is emitted for a
 					   nod_dom_value, corresponding to an occurance of the
-					   VALUE keyword in the bod of the check constraint.
+					   VALUE keyword in the body of the check constraint.
 					   -- chrisj 1999-08-20 */
 					statement->req_context_number++;
 
@@ -1941,15 +1948,15 @@ static void define_field(CompiledStatement* statement,
 
 		if (!METD_get_domain(statement, field, domain_name->str_data))
 		{
+			// Specified domain or source field does not exist
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_command_err) <<
-					  // Specified domain or source field does not exist
 					  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 		}
 
-		DDL_resolve_intl_type(	statement,
-								field,
-								reinterpret_cast<const dsql_str*>(element->nod_arg[e_dfl_collate]));
+		DDL_resolve_intl_type(statement, field,
+			reinterpret_cast<const dsql_str*>(element->nod_arg[e_dfl_collate]));
+
 		if (element->nod_arg[e_dfl_collate]) {
 			statement->append_number(isc_dyn_fld_collation,
 					   field->fld_collation_id);
@@ -3049,9 +3056,9 @@ static void define_shadow(CompiledStatement* statement)
 
 			if (!length && !file->fil_start)
 			{
+				// Preceding file did not specify length, so %s must include starting page number
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 						  Arg::Gds(isc_dsql_command_err) <<
-						  // Preceding file did not specify length, so %s must include starting page number
 						  Arg::Gds(isc_dsql_file_length_err) << Arg::Str(file->fil_name->str_data));
 			}
 
@@ -3315,9 +3322,9 @@ static void define_udf(CompiledStatement* statement)
 			 field->fld_dtype == dtype_blob ||
 			 field->fld_dtype == dtype_timestamp))
 		{
+				// Return mode by value not allowed for this data type
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-60) <<
 						  Arg::Gds(isc_dsql_command_err) <<
-						  // Return mode by value not allowed for this data type
 						  Arg::Gds(isc_return_mode_err));
 		}
 
@@ -3329,10 +3336,10 @@ static void define_udf(CompiledStatement* statement)
 			blob_position = (arguments) ? arguments->nod_count + 1 : 1;
 			if (blob_position > MAX_UDF_ARGUMENTS)
 			{
+				// External functions can not have more than 10 parameters
+				// Or 9 if the function returns a BLOB
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 						  Arg::Gds(isc_dsql_command_err) <<
-						  // External functions can not have more than 10 parameters
-						  // Or 9 if the function returns a BLOB
 						  Arg::Gds(isc_extern_func_err));
 			}
 
@@ -3421,9 +3428,9 @@ static void define_udf(CompiledStatement* statement)
 		{
 			if (position > MAX_UDF_ARGUMENTS)
 			{
+				// External functions can not have more than 10 parameters
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 						  Arg::Gds(isc_dsql_command_err) <<
-						  // External functions can not have more than 10 parameters
 						  Arg::Gds(isc_extern_func_err));
 			}
 
@@ -3841,9 +3848,9 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 		if (!ptr && !field_string)
 		{
+			// must specify field name for view select expression
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_command_err) <<
-					  // must specify field name for view select expression
 					  Arg::Gds(isc_specify_field_err));
 		}
 
@@ -3873,9 +3880,9 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 				{
 					if (modified_fields.exist(rel_field))
 					{
+						// column @1 appears more than once in ALTER VIEW
 						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 								  Arg::Gds(isc_dsql_command_err) <<
-								  // column @1 appears more than once in ALTER VIEW
 								  Arg::Gds(isc_dsql_col_more_than_once_view) << Arg::Str(field_string));
 					}
 
@@ -3933,9 +3940,9 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 
 	if (ptr != end)
 	{
+		// number of fields does not match select list
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 				  Arg::Gds(isc_dsql_command_err) <<
-				  // number of fields does not match select list
 				  Arg::Gds(isc_num_field_err));
 	}
 
@@ -4469,19 +4476,19 @@ static void foreign_key(CompiledStatement* statement, dsql_nod* element, const c
 		   referenced field, fail. */
 		if (!columns2)
 		{
-			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					   Arg::Gds(isc_dsql_command_err) <<
-					  /* "REFERENCES table" without "(column)" requires PRIMARY
-					     KEY on referenced table */
+			// "REFERENCES table" without "(column)" requires PRIMARY
+			// KEY on referenced table
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					  Arg::Gds(isc_dsql_command_err) <<
 					  Arg::Gds(isc_reftable_requires_pk));
 		}
 	}
 
 	if (columns2 && (columns1->nod_count != columns2->nod_count))
 	{
-		ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				   Arg::Gds(isc_dsql_command_err) <<
-				  // foreign key field count does not match primary key
+		// foreign key field count does not match primary key
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+				  Arg::Gds(isc_dsql_command_err) <<
 				  Arg::Gds(isc_key_field_count_err));
 	}
 
@@ -7139,4 +7146,3 @@ void clearPermanentField (dsql_rel* relation, bool perm)
 		relation->rel_fields->fld_relation = relation;
 	}
 }
-
