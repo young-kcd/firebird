@@ -1,3 +1,21 @@
+2008-08-18 15:26  alexpeshkoff
+
+	* firebird2/src/jrd/GlobalRWLock.cpp (1.22):
+
+	fixed gcc warning
+
+2008-08-18 09:12  alexpeshkoff
+
+	* firebird2/src/dsql/metd.epp (1.135):
+
+	misc CORE-1964
+
+2008-08-18 08:44  alexpeshkoff
+
+	* firebird2/src/dsql/pass1.cpp (1.406):
+
+	fixed compile error
+
 2008-08-16 17:42  asfernandes
 
 	* firebird2/src/dsql/: ddl.cpp (1.252), dsql.cpp (1.253), gen.cpp
