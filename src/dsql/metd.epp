@@ -99,7 +99,7 @@ namespace {
 	{
 		if (!request->req_transaction->checkHandle())
 		{
-			ERR_post(isc_bad_trans_handle, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
 	}
 }
