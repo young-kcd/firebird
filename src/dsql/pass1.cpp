@@ -10300,8 +10300,8 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 						{
 							ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
 									  //Arg::Gds(isc_dsql_datatype_err)
-									  Arg::Gds(isc_imp_exc)
-									  //Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name));
+									  Arg::Gds(isc_imp_exc));
+									  //Arg::Gds(isc_field_name) << Arg::Str(parameter->par_name)
 						}
 
 						parameter->par_desc.dsc_length += sizeof(USHORT);
