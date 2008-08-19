@@ -1337,7 +1337,13 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 					is_column = true;
 				}
 				else {
-					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+					if (relation->rel_flags & REL_system)
+					{
+						jrd_nod* node = PAR_make_node(tdbb, 0);
+						node->nod_type = nod_null;
+						return node;
+ 					}
+					else if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
 						warning(csb, isc_fldnotdef, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
