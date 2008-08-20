@@ -1,3 +1,11 @@
+2008-08-20 08:41  alexpeshkoff
+
+	* firebird2/src/remote/: xnet.cpp (1.70.4.8), os/win32/wnet.cpp
+	(1.36.4.3):
+
+	fixing CORE-1964: Use of 0 instead of isc_arg_end to terminate list
+	of ERR_post's (and cousines) arguments is invalid
+
 2008-08-04 23:07  hvlad
 
 	* firebird2/src/jrd/: cch.cpp (1.129.2.16), cch_proto.h (1.24.4.2),
