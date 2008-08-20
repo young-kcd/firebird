@@ -1,3 +1,24 @@
+2008-08-20 17:18  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.303):
+
+	Correction
+
+2008-08-20 03:54  asfernandes
+
+	* firebird2/src/: dsql/gen.cpp (1.168), dsql/make.cpp (1.168),
+	dsql/pass1.cpp (1.407), jrd/cmp.cpp (1.302), jrd/evl.cpp (1.268),
+	jrd/par.cpp (1.209):
+
+	Fixed CORE-501 - Optimization problem with COALESCE
+
+2008-08-19 17:40  asfernandes
+
+	* firebird2/src/jrd/par.cpp (1.208):
+
+	Fixed CORE-2045 - References to non-existent system fields with
+	blr_field are not resolved to NULL
+
 2008-08-18 15:26  alexpeshkoff
 
 	* firebird2/src/jrd/GlobalRWLock.cpp (1.22):
