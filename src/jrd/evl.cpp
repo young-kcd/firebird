@@ -1145,6 +1145,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 	case nod_internal_info:
 		return internal_info(tdbb, values[0], impure);
 
+	case nod_assignment:
+		EXE_assignment(tdbb, node);
+		return EVL_expr(tdbb, node->nod_arg[e_asgn_to]);
+
 	default:
 		BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */
 	}

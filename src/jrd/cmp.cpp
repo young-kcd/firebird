@@ -1925,6 +1925,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
 		return;
 
+	case nod_assignment:
+		CMP_get_desc(tdbb, csb, node->nod_arg[0], desc);
+		return;
+
 	default:
 		fb_assert(false);
 		break;

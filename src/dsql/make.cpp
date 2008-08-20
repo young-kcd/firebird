@@ -1390,6 +1390,10 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags |= DSC_nullable;
 		return;
 
+	case nod_assign:
+		MAKE_desc(statement, desc, node->nod_arg[e_asgn_field], null_replacement);
+		return;
+
 	default:
 		fb_assert(false);			// unexpected dsql_nod type 
 

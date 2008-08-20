@@ -2677,15 +2677,21 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
 
-	if (expected && (expected != type_table[blr_operator])) {
-		if (expected_optional) {
-			if (expected_optional != type_table[blr_operator]) {
+	// ASF: blr_assignment is recognized as STATEMENT and VALUE, but is marked as STATEMENT
+	// in blrtable.cpp.
+	if (expected && (expected != type_table[blr_operator]) &&
+		!(blr_operator == nod_assignment && expected == VALUE))
+	{
+		if (expected_optional)
+		{
+			if (expected_optional != type_table[blr_operator] &&
+				!(blr_operator == nod_assignment && expected_optional == VALUE))
+			{
 				PAR_syntax_error(csb, elements[expected]);
 			}
 		}
-		else {
+		else
 			PAR_syntax_error(csb, elements[expected]);
-		}
 	}
 
 /* If there is a length given in the length table, pre-allocate

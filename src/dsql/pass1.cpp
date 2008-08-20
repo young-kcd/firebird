@@ -3735,28 +3735,40 @@ static dsql_nod* pass1_coalesce( CompiledStatement* statement, dsql_nod* input)
 	dsql_nod* node = MAKE_node(nod_coalesce, 2);
 
 	// Pass list of arguments 2..n on stack and make a list from it
-	{ // scope
-		DsqlNodStack stack;
-		pass1_put_args_on_stack(statement, input->nod_arg[0], stack);
-		pass1_put_args_on_stack(statement, input->nod_arg[1], stack);
-		node->nod_arg[0] = MAKE_list(stack);
-	} // end scope
+	DsqlNodStack stack;
+	pass1_put_args_on_stack(statement, input->nod_arg[0], stack);
+	pass1_put_args_on_stack(statement, input->nod_arg[1], stack);
+	node->nod_arg[0] = MAKE_list(stack);
 
-	// Parse the items again for the return values.
-	// We can't copy else we get an 'context in use error' with sub-selects.
-	{ // scope
-		DsqlNodStack stack;
-		pass1_put_args_on_stack(statement, input->nod_arg[0], stack);
-		pass1_put_args_on_stack(statement, input->nod_arg[1], stack);
-		node->nod_arg[1] = MAKE_list(stack);
-	} // end scope
+	DsqlNodStack stack2;
+	dsql_nod** ptr = node->nod_arg[0]->nod_arg;
+	const dsql_nod* const* end = ptr + node->nod_arg[0]->nod_count;
+
+	for (; ptr < end - 1; ptr++)
+	{
+		dsql_nod* var = pass1_hidden_variable(statement, *ptr);
+
+		if (var)
+		{
+			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+			assign->nod_arg[e_asgn_value] = *ptr;
+			assign->nod_arg[e_asgn_field] = var;
+
+			*ptr = assign;
+
+			stack2.push(var);
+		}
+		else
+			stack2.push(*ptr);
+	}
+
+	node->nod_arg[1] = MAKE_list(stack2);
 
 	// Set descriptor for output node
 	MAKE_desc(statement, &node->nod_desc, node, NULL);
 
 	// Set parameter-types if parameters are there
-	dsql_nod** ptr = node->nod_arg[0]->nod_arg;
-	const dsql_nod* const* end = ptr + node->nod_arg[0]->nod_count;
+	ptr = node->nod_arg[0]->nod_arg;
 	for (; ptr < end; ptr++) {
 		set_parameter_type(statement, *ptr, node, false);
 	}

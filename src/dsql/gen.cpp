@@ -554,6 +554,12 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		GEN_expr(statement, node->nod_arg[e_trim_value]);
 		return;
 
+	case nod_assign:
+		stuff(statement, blr_assignment);
+		GEN_expr(statement, node->nod_arg[0]);
+		GEN_expr(statement, node->nod_arg[1]);
+		return;
+
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<
@@ -1419,6 +1425,7 @@ static void gen_coalesce( CompiledStatement* statement, const dsql_nod* node)
 		GEN_expr(statement, *ptr);
 	}
 	// Return values
+	GEN_expr(statement, *ptr);
 	list = node->nod_arg[1];
 	const dsql_nod* const* const begin = list->nod_arg;
 	ptr = list->nod_arg + list->nod_count;
