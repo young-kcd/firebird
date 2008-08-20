@@ -1692,9 +1692,9 @@ static int xnet_error(rem_port* port, const TEXT* function,
 	xnet_log_error(function, status);
 
 	if (status)
-		xnet_gen_error(port, operation, SYS_ERR, status, 0);
+		xnet_gen_error(port, operation, SYS_ERR, status, isc_arg_end);
 	else
-		xnet_gen_error(port, operation, 0);
+		xnet_gen_error(port, operation, isc_arg_end);
 
 	return 0;
 }

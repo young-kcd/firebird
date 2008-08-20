@@ -1086,7 +1086,7 @@ static int wnet_error(
 					   isc_arg_string, (ISC_STATUS) node_name,
 					   isc_arg_gds, operation,
 					   SYS_ERR, status,
-					   0);
+					   isc_arg_end);
 		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
             TEXT msg[BUFFER_TINY];
 			sprintf(msg, "WNET/wnet_error: %s errno = %d", function, status);
@@ -1096,7 +1096,7 @@ static int wnet_error(
 	else {
 		wnet_gen_error(port, isc_network_error,
 					   isc_arg_string, (ISC_STATUS) node_name,
-					   isc_arg_gds, operation, 0);
+					   isc_arg_gds, operation, isc_arg_end);
 	}
 
 	return 0;
