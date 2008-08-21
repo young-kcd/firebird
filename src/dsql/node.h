@@ -914,6 +914,7 @@ enum node_args {
 	e_simple_case_case_operand = 0,	// 1 value
 	e_simple_case_when_operands,	// list
 	e_simple_case_results,			// list including else_result
+	e_simple_case_case_operand2,	// operand for use after the first test
 
 	// CASE {WHEN <search_condition> THEN <when_result>}.. [ELSE <else_result>] END
 	// Node-constants for after pass1

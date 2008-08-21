@@ -8236,10 +8236,24 @@ static dsql_nod* pass1_simple_case( CompiledStatement* statement, dsql_nod* inpu
 	DEV_BLKCHK(input, dsql_type_nod);
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
-	dsql_nod* node = MAKE_node(nod_simple_case, 3);
+	dsql_nod* node = MAKE_node(nod_simple_case, 4);
 
 	// build case_operand node
 	node->nod_arg[e_simple_case_case_operand] = PASS1_node(statement, input->nod_arg[0]);
+	node->nod_arg[e_simple_case_case_operand2] =
+		pass1_hidden_variable(statement, node->nod_arg[e_simple_case_case_operand]);
+
+	// If it's not a simple expression, create a assignment node for the initial test.
+	if (node->nod_arg[e_simple_case_case_operand2])
+	{
+		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
+		assign->nod_arg[e_asgn_value] = node->nod_arg[e_simple_case_case_operand];
+		assign->nod_arg[e_asgn_field] = node->nod_arg[e_simple_case_case_operand2];
+
+		node->nod_arg[e_simple_case_case_operand] = assign;
+	}
+	else
+		node->nod_arg[e_simple_case_case_operand2] = node->nod_arg[e_simple_case_case_operand];
 
 	dsql_nod* list = input->nod_arg[1];
 

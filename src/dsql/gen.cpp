@@ -2682,7 +2682,8 @@ static void gen_simple_case( CompiledStatement* statement, const dsql_nod* node)
 	{
 		stuff(statement, blr_value_if);
 		stuff(statement, blr_eql);
-		GEN_expr(statement, node->nod_arg[e_simple_case_case_operand]);
+		GEN_expr(statement, node->nod_arg[(wptr == when_list->nod_arg ?
+			e_simple_case_case_operand : e_simple_case_case_operand2)]);
 		GEN_expr(statement, *wptr);
 		GEN_expr(statement, *rptr);
 	}
