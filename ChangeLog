@@ -1,3 +1,10 @@
+2008-08-21 03:58  asfernandes
+
+	* firebird2/src/dsql/: gen.cpp (1.169), node.h (1.117), pass1.cpp
+	(1.408):
+
+	Fixed CORE-1343 - Bug with a simple case and a subquery
+
 2008-08-20 17:18  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.303):
