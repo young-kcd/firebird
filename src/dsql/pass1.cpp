@@ -6179,6 +6179,7 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 // Create (if necessary) a hidden variable to store a temporary value.
 static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* value)
 {
+#if 0
 	// For some node types, it's better to not create temporary value.
 	switch (value->nod_type)
 	{
@@ -6197,6 +6198,10 @@ static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* v
 	statement->req_hidden_vars.push(var);
 
 	return var;
+#else
+#pragma FB_COMPILER_MESSAGE("Let the boot build work for now - regressions introduced!")
+	return NULL;
+#endif
 }
 
 
