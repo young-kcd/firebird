@@ -67,10 +67,11 @@ public:
 	void enable() throw() { }
 #endif
 private:
-	// Forbid copy constructor
+	// Forbid copy constructor & assignment
 	SignalInhibit(const SignalInhibit&);
+	SignalInhibit& operator=(const SignalInhibit&);
 #ifndef WIN_NT
-	bool enabled;
+	bool locked;
 #endif
 };
 

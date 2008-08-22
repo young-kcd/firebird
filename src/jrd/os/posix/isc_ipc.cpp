@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.17.4.3 2008-06-27 11:28:48 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17.4.4 2008-08-22 13:17:55 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -168,42 +168,48 @@ void ISC_enter(void)
 }
 
 namespace {
-	volatile sig_atomic_t inhibit_counter = 0;
-	sigset_t saved_sigmask;
+	volatile sig_atomic_t inhibitCounter = 0;
 	Firebird::Mutex inhibitMutex;
+	volatile bool inSignalHandler = false;
+	volatile FB_UINT64 pendingSignals = 0;
 }
 
 SignalInhibit::SignalInhibit() throw()
-	: enabled(false) 
+	: locked(!inSignalHandler)	// When called from signal handler, no need
+								// to care - signals are already inhibited.
 {
+	if (!locked)
+		return;
+
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
-	if (inhibit_counter == 0) {
-		sigset_t set, oset;
-		sigfillset(&set);
-		sigprocmask(SIG_BLOCK, &set, &saved_sigmask);
-	}
-	inhibit_counter++;
+	++inhibitCounter;
 }
-
 
 void SignalInhibit::enable() throw()
 {
-	if (enabled)
+	if (!locked)
 		return;
 
-	enabled = true;
+	locked = false;
 
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
-	fb_assert(inhibit_counter > 0);
-	inhibit_counter--;
-	if (inhibit_counter == 0) {
-		// Return to the mask as it were before the first recursive 
-		// call to ISC_inhibit
-		sigprocmask(SIG_SETMASK, &saved_sigmask, NULL);
+	fb_assert(inhibitCounter > 0);
+	if (--inhibitCounter == 0) {
+		while (pendingSignals)
+		{
+			for (int n = 0; pendingSignals && n < 64; n++)
+			{
+				if (pendingSignals & (1 << n)) 
+				{
+					pendingSignals &= ~(1 << n);
+					ISC_kill(process_id, n + 1);
+				}
+			}
+		}
 	}
-}
+}		
 
 
 void ISC_exit(void)
@@ -461,6 +467,10 @@ static void cleanup(void* arg)
  **************************************/
 	signals = NULL;
 
+	pendingSignals = 0;
+
+	inhibitCounter = 0;
+
 	process_id = 0;
 
 	initialized_signals = false;
@@ -558,6 +568,21 @@ static void CLIB_ROUTINE signal_handler(int number)
  *	Checkin with various signal handlers.
  *
  **************************************/
+	if (inhibitCounter > 0 && number != SIGALRM)
+	{
+		pendingSignals |= QUADCONST(1) << (number - 1);
+		return;
+	}
+
+#ifndef SUPERSERVER
+	// Save signal delivery status.
+	const bool restoreState = inSignalHandler;
+	inSignalHandler = true;
+	sigset_t set, localSavedSigmask;
+	sigfillset(&set);
+	sigprocmask(SIG_BLOCK, &set, &localSavedSigmask);
+#endif
+
 	/* Invoke everybody who may have expressed an interest. */
 
 	for (SIG sig = signals; sig; sig = sig->sig_next)
@@ -571,5 +596,10 @@ static void CLIB_ROUTINE signal_handler(int number)
 			}
 			else
 				(*sig->sig_routine.user) (sig->sig_arg);
+
+#ifndef SUPERSERVER
+	sigprocmask(SIG_SETMASK, &localSavedSigmask, NULL);
+	inSignalHandler = restoreState;
+#endif
 }
 
