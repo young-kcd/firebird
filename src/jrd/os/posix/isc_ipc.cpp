@@ -168,8 +168,8 @@ void ISC_enter(void)
 namespace {
 	volatile int inhibitCounter = 0;
 	Firebird::Mutex inhibitMutex;
-	sigset_t savedSigmask;
 	volatile bool inSignalHandler = false;
+	volatile FB_UINT64 pendingSignals = 0;
 }
 
 SignalInhibit::SignalInhibit() throw()
@@ -181,12 +181,7 @@ SignalInhibit::SignalInhibit() throw()
 
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
-	if (inhibitCounter == 0) {
-		sigset_t set;
-		sigfillset(&set);
-		sigprocmask(SIG_BLOCK, &set, &savedSigmask);
-	}
-	inhibitCounter++;
+	++inhibitCounter;
 }
 
 void SignalInhibit::enable() throw()
@@ -199,11 +194,18 @@ void SignalInhibit::enable() throw()
 	Firebird::MutexLockGuard lock(inhibitMutex);
 
 	fb_assert(inhibitCounter > 0);
-	inhibitCounter--;
-	if (inhibitCounter == 0) {
-		// Return to the mask as it were before the first recursive 
-		// call to ISC_inhibit
-		sigprocmask(SIG_SETMASK, &savedSigmask, NULL);
+	if (--inhibitCounter == 0) {
+		while (pendingSignals)
+		{
+			for (int n = 0; pendingSignals && n < 64; n++)
+			{
+				if (pendingSignals & (1 << n)) 
+				{
+					pendingSignals &= ~(1 << n);
+					ISC_kill(process_id, n + 1);
+				}
+			}
+		}
 	}
 }		
 
@@ -465,6 +467,10 @@ static void cleanup(void* arg)
  **************************************/
 	signals = NULL;
 
+	pendingSignals = 0;
+
+	inhibitCounter = 0;
+
 	process_id = 0;
 
 	initialized_signals = false;
@@ -565,6 +571,12 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
  *	Checkin with various signal handlers.
  *
  **************************************/
+
+	if (inhibitCounter > 0 && number != SIGALRM)
+	{
+		pendingSignals |= QUADCONST(1) << (number - 1);
+		return;
+	}
 
 #ifndef SUPERSERVER
 	// Save signal delivery status.
