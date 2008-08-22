@@ -1,3 +1,9 @@
+2008-08-22 04:13  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.409):
+
+	Temporary fix for the boot build
+
 2008-08-21 03:58  asfernandes
 
 	* firebird2/src/dsql/: gen.cpp (1.169), node.h (1.117), pass1.cpp
