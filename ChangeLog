@@ -1,3 +1,16 @@
+2008-08-23 13:08  robocop
+
+	* firebird2/src/dsql/ddl.cpp (1.253):
+
+	Correction.
+
+2008-08-23 05:23  asfernandes
+
+	* firebird2/src/gpre/cmp.cpp (1.38):
+
+	Fixed CORE-1690 - Arithmetic exception, numeric overflow, or string
+	truncation in utf8 tables
+
 2008-08-22 04:13  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.409):
