@@ -3323,7 +3323,7 @@ static void define_udf(CompiledStatement* statement)
 			 field->fld_dtype == dtype_timestamp))
 		{
 				// Return mode by value not allowed for this data type
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-60) <<
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 						  Arg::Gds(isc_dsql_command_err) <<
 						  Arg::Gds(isc_return_mode_err));
 		}
