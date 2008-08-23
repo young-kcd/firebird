@@ -736,7 +736,7 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 
 	switch (field->fld_dtype) {
 	case dtype_cstring:
-		if (!(field->fld_flags & FLD_charset)) {
+		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
 			request->add_byte(blr_cstring);
 			request->add_word(field->fld_length);
 		}
@@ -750,7 +750,7 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		break;
 
 	case dtype_text:
-		if (!(field->fld_flags & FLD_charset)) {
+		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
 			request->add_byte(blr_text);
 			request->add_word(field->fld_length);
 		}
@@ -764,7 +764,7 @@ static void cmp_field( gpre_req* request, const gpre_fld* field,
 		break;
 
 	case dtype_varying:
-		if (!(field->fld_flags & FLD_charset)) {
+		if (!(field->fld_flags & FLD_charset) && field->fld_ttype) {
 			request->add_byte(blr_varying);
 			request->add_word(field->fld_length);
 		}
