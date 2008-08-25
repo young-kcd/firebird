@@ -3040,11 +3040,11 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
 
 	jrd_prc* procedure = (*vector)[id];
-	if (procedure)
+
+	if (procedure && !(procedure->prc_flags & PRC_obsolete))
 	{
-		/* Make sure PRC_being_scanned and PRC_scanned
-		   are not set at the same time
-		 */
+		// Make sure PRC_being_scanned and PRC_scanned are not set at the same time
+
 		fb_assert(!(procedure->prc_flags & PRC_being_scanned) ||
 			   !(procedure->prc_flags & PRC_scanned));
 
@@ -3066,8 +3066,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		   came here to get it from disk. But only one was able to lock
 		   the mutex and do the scanning, others were waiting. As soon as
 		   the first thread releases the mutex another thread gets in and
-		   it would be just unfair to make it do the work again
+		   it would be just unfair to make it do the work again.
 		 */
+
 		if ((procedure->prc_flags & PRC_being_scanned) ||
 			(procedure->prc_flags & PRC_scanned))
 		{
@@ -3075,7 +3076,16 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		}
 	}
 
-	if (!procedure)
+	// A new procedure object is created if nothing is found in the metadata cache
+	// or if the cached procedure instance is in use and thus cannot be re-scanned.
+	// In the latter case, the metadata cache slot is updated with the new instance
+	// and the old one will be automagically destroyed when all the interested
+	// requests are released (see CMP_decrement_prc_use_count).
+	//
+	// Otherwise, if the cached procedure instance exists but is not used
+	// by any compiled statements, then it can be safely re-scanned in place.
+
+	if (!procedure || procedure->prc_use_count)
 	{
 		procedure = FB_NEW(*dbb->dbb_permanent) jrd_prc(*dbb->dbb_permanent);
 	}
@@ -3099,9 +3109,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 		lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
 		lock->lck_object = procedure;
 		lock->lck_ast = blocking_ast_procedure;
-
-		LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 	}
+
+	LCK_lock(tdbb, procedure->prc_existence_lock, LCK_SR, LCK_WAIT);
 
 	if (!noscan)
 	{
@@ -3196,7 +3206,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					paramVector = procedure->prc_input_fields;
 				}
 
-				/* should be error if field already exists */
+				// should be error if field already exists
 				Parameter* parameter =
 					FB_NEW(*dbb->dbb_permanent) Parameter(*dbb->dbb_permanent);
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
@@ -3247,10 +3257,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 					 ptr < end; ++ptr, ++desc)
 				{
 					Parameter* parameter = *ptr;
-					/* check for parameter to be null, this can only happen if the
-					 * parameter numbers get out of sync. This was added to fix bug
-					 * 10534. -Shaunak Mistry 12-May-99
-					 */
+					// check for parameter to be null, this can only happen if the
+					// parameter numbers get out of sync. This was added to fix bug
+					// 10534. -Shaunak Mistry 12-May-99
 					if (parameter)
 					{
 						*desc = parameter->prm_desc;
@@ -3368,9 +3377,9 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 
 			CMP_release(tdbb, request5);
 		}
-	} /* if !noscan */
+	} // if !noscan
 
-/* Make sure that it is really being Scanned ! */
+	// Make sure that it is really being scanned
 	fb_assert(procedure->prc_flags & PRC_being_scanned);
 
 	procedure->prc_flags &= ~PRC_being_scanned;
