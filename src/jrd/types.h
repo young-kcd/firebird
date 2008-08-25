@@ -120,6 +120,7 @@ TYPE("TYPE OF", prm_mech_type_of, nam_prm_mechanism)
 
 TYPE ("IDLE", mon_state_idle, nam_mon_state)
 TYPE ("ACTIVE", mon_state_active, nam_mon_state)
+TYPE ("STALLED", mon_state_stalled, nam_mon_state)
 
 TYPE ("ONLINE", shut_mode_online, nam_mon_shut_mode)
 TYPE ("MULTI_USER_SHUTDOWN", shut_mode_multi, nam_mon_shut_mode)

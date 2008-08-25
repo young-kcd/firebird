@@ -1047,17 +1047,13 @@ void DatabaseSnapshot::putAttachment(const Attachment* attachment,
 	// attachment name
 	writer.insertPath(f_mon_att_name, attachment->att_filename);
 	// user
-	writer.insertString(f_mon_att_user,
-						attachment->att_user->usr_user_name);
+	writer.insertString(f_mon_att_user, attachment->att_user->usr_user_name);
 	// role
-	writer.insertString(f_mon_att_role,
-						attachment->att_user->usr_sql_role_name);
+	writer.insertString(f_mon_att_role, attachment->att_user->usr_sql_role_name);
 	// remote protocol
-	writer.insertString(f_mon_att_remote_proto,
-						attachment->att_network_protocol);
+	writer.insertString(f_mon_att_remote_proto, attachment->att_network_protocol);
 	// remote address
-	writer.insertString(f_mon_att_remote_addr,
-						attachment->att_remote_address);
+	writer.insertString(f_mon_att_remote_addr, attachment->att_remote_address);
 	// remote process id
 	writer.insertInt(f_mon_att_remote_pid, attachment->att_remote_pid);
 	// remote process name
@@ -1089,8 +1085,7 @@ void DatabaseSnapshot::putTransaction(const jrd_tra* transaction,
 	// transaction id
 	writer.insertInt(f_mon_tra_id, transaction->tra_number);
 	// attachment id
-	writer.insertInt(f_mon_tra_att_id,
-					 transaction->tra_attachment->att_attachment_id);
+	writer.insertInt(f_mon_tra_att_id, transaction->tra_attachment->att_attachment_id);
 	// state
 	temp = transaction->tra_requests ? mon_state_active : mon_state_idle;
 	writer.insertInt(f_mon_tra_state, temp);
@@ -1144,17 +1139,16 @@ void DatabaseSnapshot::putRequest(const jrd_req* request,
 	writer.insertBigInt(f_mon_stmt_id, getGlobalId(request->req_id));
 	// attachment id
 	if (request->req_attachment) {
-		writer.insertInt(f_mon_stmt_att_id,
-						 request->req_attachment->att_attachment_id);
+		writer.insertInt(f_mon_stmt_att_id, request->req_attachment->att_attachment_id);
 	}
 	else {
 		writer.insertInt(f_mon_stmt_att_id, 0);
 	}
 	// state, transaction ID, timestamp
 	if (request->req_flags & req_active) {
-		writer.insertInt(f_mon_stmt_state, mon_state_active);
-		const int tra_id = request->req_transaction ?
-			request->req_transaction->tra_number : 0;
+		const bool is_stalled = (request->req_flags & req_stall);
+		writer.insertInt(f_mon_stmt_state, is_stalled ? mon_state_stalled : mon_state_active);
+		const int tra_id = request->req_transaction ? request->req_transaction->tra_number : 0;
 		writer.insertInt(f_mon_stmt_tra_id, tra_id);
 		writer.insertTimeStamp(f_mon_stmt_timestamp, request->req_timestamp.value());
 	}
@@ -1195,18 +1189,15 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 		writer.insertInt(f_mon_call_caller_id, 0);
 	}
 	else {
-		writer.insertInt(f_mon_call_caller_id,
-						 request->req_caller->req_id);
+		writer.insertInt(f_mon_call_caller_id, request->req_caller->req_id);
 	}
 	// object name/type
 	if (request->req_procedure) {
-		writer.insertString(f_mon_call_name,
-							request->req_procedure->prc_name.c_str());
+		writer.insertString(f_mon_call_name, request->req_procedure->prc_name.c_str());
 		writer.insertInt(f_mon_call_type, obj_procedure);
 	}
 	else if (!request->req_trg_name.isEmpty()) {
-		writer.insertString(f_mon_call_name,
-							request->req_trg_name.c_str());
+		writer.insertString(f_mon_call_name, request->req_trg_name.c_str());
 		writer.insertInt(f_mon_call_type, obj_trigger);
 	}
 	else {

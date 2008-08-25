@@ -203,7 +203,8 @@ enum prm_mech_t {
 
 enum mon_state_t {
 	mon_state_idle = 0,
-	mon_state_active = 1
+	mon_state_active = 1,
+	mon_state_stalled = 2
 };
 
 // shutdown modes
