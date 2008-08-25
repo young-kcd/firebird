@@ -1,3 +1,46 @@
+2008-08-25 10:13  dimitr
+
+	* firebird2/builds/install/misc/firebird.conf (1.45):
+
+	Fixed CORE-903: Update Field update / result Updated.
+
+2008-08-25 09:57  dimitr
+
+	* firebird2/src/: dsql/pass1.cpp (1.410), common/config/config.cpp
+	(1.90), common/config/config.h (1.50):
+
+	Fixed CORE-903: Update Field update / result Updated.
+
+2008-08-25 09:02  dimitr
+
+	* firebird2/src/common/classes/timestamp.cpp (1.20):
+
+	Correction by Dmitry Kovalenko.
+
+2008-08-25 08:58  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.67), constants.h
+	(1.55), types.h (1.20):
+
+	Implemented CORE-1583: Enhance MON$STATEMENTS / MON$STATE to
+	represent real CPU consumption.
+
+2008-08-25 08:23  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.304):
+
+	Fixed CORE-2053: Computed expressions may be optimized badly if
+	used inside the RETURNING clause of the INSERT statement.
+
+2008-08-25 07:28  dimitr
+
+	* firebird2/src/jrd/met.epp (1.261):
+
+	Attempt to fix CORE-210: "CS server crash altering SP in 2 connect"
+	and implement CORE-2052: "Allow the Classic Server to see the
+	altered stored procedure immediately after the modifier transaction
+	commit" with a single change.
+
 2008-08-23 13:08  robocop
 
 	* firebird2/src/dsql/ddl.cpp (1.253):
