@@ -114,7 +114,8 @@ class Config
 		KEY_AUTH_METHOD,							// 39
 		KEY_DATABASE_GROWTH_INCREMENT,				// 40
 		KEY_MAX_FILESYSTEM_CACHE,					// 41
-		KEY_RELAXED_ALIAS_CHECKING					// 42
+		KEY_RELAXED_ALIAS_CHECKING,					// 42
+		KEY_OLD_SET_CLAUSE_SEMANTICS				// 43
 	};
 
 public:
@@ -218,11 +219,6 @@ public:
 		Deadlock timeout
 	*/
 	static int getDeadlockTimeout();
-
-	/*
-		Solaris stall value
-	*/
-	static int getSolarisStallValue();
 
 	/*
 		Priority switch delay
@@ -344,6 +340,8 @@ public:
 	static int getMaxFileSystemCache();
 
 	static bool getRelaxedAliasChecking();
+
+	static bool getOldSetClauseSemantics();
 };
 
 namespace Firebird {

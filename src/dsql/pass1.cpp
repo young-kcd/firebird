@@ -9038,10 +9038,7 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 	DEV_BLKCHK(statement, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
 
-	// NOTE!!!	Macro SQL_COMPLIANT_UPDATE shows what code should be
-	//			enabled and what one should be removed when we decide
-	//			to make our UPDATE statements SQL-compliant. Currently,
-	//			it's targeted for Firebird 3.0.
+	const bool isUpdateSqlCompliant = !Config::getOldSetClauseSemantics();
 
 	// Separate old and new context references
 
@@ -9063,30 +9060,37 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 	dsql_nod* cursor = input->nod_arg[e_upd_cursor];
 	dsql_nod* relation = input->nod_arg[e_upd_relation];
 
-	if (cursor && statement->isPsql()) {
+	if (cursor && statement->isPsql())
+	{
 		dsql_nod* anode = MAKE_node(nod_modify_current, e_mdc_count);
 		dsql_ctx* context = pass1_cursor_context(statement, cursor, relation);
 		anode->nod_arg[e_mdc_context] = (dsql_nod*) context;
-#ifdef SQL_COMPLIANT_UPDATE
-		// Process old context values
-		statement->req_context->push(context);
-		statement->req_scope_level++;
-		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+
+		if (isUpdateSqlCompliant)
 		{
-			*ptr = PASS1_node(statement, *ptr, false);
+			// Process old context values
+			statement->req_context->push(context);
+			statement->req_scope_level++;
+			for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+			{
+				*ptr = pass1_node_psql(statement, *ptr, false);
+			}
+			statement->req_scope_level--;
+			statement->req_context->pop();
 		}
-		statement->req_scope_level--;
-		statement->req_context->pop();
-#endif
+
 		// Process relation
 		anode->nod_arg[e_mdc_update] = pass1_node_psql(statement, relation, false);
-#ifndef SQL_COMPLIANT_UPDATE
-		// Process old context values
-		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+
+		if (!isUpdateSqlCompliant)
 		{
-			*ptr = pass1_node_psql(statement, *ptr, false);
+			// Process old context values
+			for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+			{
+				*ptr = pass1_node_psql(statement, *ptr, false);
+			}
 		}
-#endif
+
 		// Process new context values
 		for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
 		{
@@ -9120,13 +9124,15 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 	node->nod_arg[e_mod_update] = pass1_node_psql(statement, relation, false);
 	dsql_ctx* mod_context = get_context(node->nod_arg[e_mod_update]);
 
-#ifndef SQL_COMPLIANT_UPDATE
-	// Process old context values
-	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+	if (!isUpdateSqlCompliant)
 	{
-		*ptr = pass1_node_psql(statement, *ptr, false);
+		// Process old context values
+		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+		{
+			*ptr = pass1_node_psql(statement, *ptr, false);
+		}
 	}
-#endif
+
 	// Process new context values
 	for (ptr = new_values.begin(); ptr < new_values.end(); ++ptr)
 	{
@@ -9218,18 +9224,20 @@ static dsql_nod* pass1_update(CompiledStatement* statement, dsql_nod* input, boo
 	node->nod_arg[e_mod_source] = rse->nod_arg[e_rse_streams]->nod_arg[0];
 	node->nod_arg[e_mod_rse] = rse;
 
-#ifdef SQL_COMPLIANT_UPDATE
-	// Process old context values
-	for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+	if (isUpdateSqlCompliant)
 	{
-		*ptr = PASS1_node(statement, *ptr, false);
+		// Process old context values
+		for (ptr = org_values.begin(); ptr < org_values.end(); ++ptr)
+		{
+			*ptr = pass1_node_psql(statement, *ptr, false);
+		}
 	}
-#endif
+
 	statement->req_context->pop();
 
 	// Recreate list of assignments
-	node->nod_arg[e_mod_statement] = list =
-		MAKE_node(nod_list, list->nod_count);
+	node->nod_arg[e_mod_statement] = list = MAKE_node(nod_list, list->nod_count);
+
 	for (int j = 0; j < list->nod_count; ++j)
 	{
 		dsql_nod* const sub1 = org_values[j];
