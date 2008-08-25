@@ -5028,13 +5028,16 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	// handle sub-expressions here
 
+	// AB: Mark the streams involved with INSERT/UPDATE statements active.
+	// So that the optimizer can use indices for eventually used sub-selects.
 	if (node->nod_type == nod_modify) {
-		// AB: Mark the streams involved with an UPDATE statement
-		// active. So that the optimizer can use indices for 
-		// eventually used sub-selects.
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
+		csb->csb_rpt[stream].csb_flags |= csb_active;
+	}
+	else if (node->nod_type == nod_store) {
+		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags |= csb_active;
 	}
 
@@ -5046,11 +5049,15 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		CMP_pass2(tdbb, csb, *ptr, node);
 	}
 
+	// AB: Remove the previous flags
 	if (node->nod_type == nod_modify) {
-		// AB: Remove the previous flags
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_org_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 		stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
+		csb->csb_rpt[stream].csb_flags &= ~csb_active;
+	}
+	else if (node->nod_type == nod_store) {
+		stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 		csb->csb_rpt[stream].csb_flags &= ~csb_active;
 	}
 
