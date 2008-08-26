@@ -117,7 +117,7 @@ void GEN_hidden_variables(CompiledStatement* statement)
 	for (DsqlNodStack::const_iterator i(statement->req_hidden_vars);
 		i.hasData(); ++i)
 	{
-		dsql_var* var = ((dsql_var*) i.object()->nod_arg[e_var_variable]);
+		const dsql_var* var = ((dsql_var*) i.object()->nod_arg[e_var_variable]);
 		statement->append_uchar(blr_dcl_variable);
 		statement->append_ushort(var->var_variable_number);
 		GEN_descriptor(statement, &i.object()->nod_desc, true);
@@ -1520,7 +1520,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			 * didn't contain an exponent so it's not a valid DOUBLE
 			 * PRECISION literal either, so we have to bounce it.
 			 */
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 104) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_arith_except) <<
 					  Arg::Gds(isc_numeric_out_of_range));
 		}
@@ -2671,7 +2671,7 @@ static void gen_simple_case( CompiledStatement* statement, const dsql_nod* node)
 
 	stuff(statement, blr_cast);
 	GEN_descriptor(statement, &node->nod_desc, true);
-	SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
+	const SSHORT count = node->nod_arg[e_simple_case_when_operands]->nod_count;
 	dsql_nod* when_list = node->nod_arg[e_simple_case_when_operands];
 	dsql_nod* results_list = node->nod_arg[e_simple_case_results];
 
