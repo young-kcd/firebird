@@ -15,7 +15,7 @@ on the columns.
 
 -FIX_FSS_METADATA <charset>: This option is to fix wrong stored metadata, as replacement for the
 metadata script. Metadata read from backup is considered to be in <charset> encoding instead of
-UNICODE_FSS, and is transliterated to be stored on the restored database. NONE charset was no effect
+UNICODE_FSS, and is transliterated to be stored on the restored database. NONE charset has no effect
 for this option.
 
 
