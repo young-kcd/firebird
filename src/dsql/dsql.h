@@ -447,9 +447,23 @@ protected:
 
 public:
 	// begin - member functions that should be private
-	void		append_uchar(UCHAR byte);
-	void		append_ushort(USHORT val);
-	void		append_ulong(ULONG val);
+	void append_uchar(UCHAR byte)
+	{
+		req_blr_data.add(byte);
+	}
+
+	void append_ushort(USHORT val)
+	{
+		append_uchar(val);
+		append_uchar(val >> 8);
+	}
+
+	void append_ulong(ULONG val)
+	{
+		append_ushort(val);
+		append_ushort(val >> 16);
+	}
+
 	void		append_cstring(UCHAR verb, const char* string);
 	void		append_meta_string(const char* string);
 	void        append_raw_string(const char* string, USHORT len);

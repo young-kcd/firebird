@@ -275,7 +275,7 @@ void CompiledStatement::append_raw_string(const UCHAR* string, USHORT len)
 //
 //	Write out a string valued attribute. (Overload 2.)
 //
-inline void CompiledStatement::append_string(UCHAR verb, const MetaName& name)
+void CompiledStatement::append_string(UCHAR verb, const MetaName& name)
 {
 	append_string(verb, name.c_str(), name.length());
 }
@@ -284,29 +284,10 @@ inline void CompiledStatement::append_string(UCHAR verb, const MetaName& name)
 //
 //	Write out a string valued attribute. (Overload 3.)
 //
-inline void CompiledStatement::append_string(UCHAR verb, const string& name)
+void CompiledStatement::append_string(UCHAR verb, const string& name)
 {
 	append_string(verb, name.c_str(), name.length());
 }
-
-
-inline void CompiledStatement::append_uchar(UCHAR byte)
-{
-	req_blr_data.add(byte);
-}
-
-inline void CompiledStatement::append_ushort(USHORT val)
-{
-	append_uchar(val);
-	append_uchar(val >> 8);
-}
-
-inline void CompiledStatement::append_ulong(ULONG val)
-{
-	append_ushort(val);
-	append_ushort(val >> 16);
-}
-
 
 
 void DDL_execute(dsql_req* request)
