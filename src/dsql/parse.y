@@ -2762,9 +2762,9 @@ non_charset_simple_type	: national_character_type
 																		  Arg::Str("TIME"));
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 																		  Arg::Str("TIME"));
-			lex.g_field->fld_dtype = dtype_sql_time; 
+			lex.g_field->fld_dtype = dtype_sql_time;  
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
 		| TIMESTAMP
@@ -4263,7 +4263,7 @@ datetime_value_expression : CURRENT_DATE
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 						  												  Arg::Str("DATE"));
 			}
 			$$ = make_node (nod_current_date, 0, NULL);
@@ -4279,7 +4279,7 @@ datetime_value_expression : CURRENT_DATE
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 						  												  Arg::Str("TIME"));
 			}
 			$$ = make_node (nod_current_time, 1, $2);
@@ -4340,7 +4340,7 @@ u_constant	: u_numeric_constant
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 						  												  Arg::Str("DATE"));
 			}
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_DATE);
@@ -4356,7 +4356,7 @@ u_constant	: u_numeric_constant
 			if (db_dialect < SQL_DIALECT_V6_TRANSITION)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-						  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(db_dialect) << 
+						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 						  												  Arg::Str("TIME"));
 			}
 			$$ = MAKE_constant ((dsql_str*) $2, CONSTANT_TIME);
