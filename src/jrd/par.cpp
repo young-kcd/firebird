@@ -32,7 +32,7 @@
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
- * 2004.01.16 Vlad Horsun: Added support for default parameters 
+ * 2004.01.16 Vlad Horsun: Added support for default parameters
  * Adriano dos Santos Fernandes
  */
 
@@ -182,7 +182,7 @@ jrd_nod* PAR_blr(thread_db*	tdbb,
 	if (view_csb) {
 		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
 		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
-		// be more then just csb_n_stream-numbers that hold data. 
+		// be more then just csb_n_stream-numbers that hold data.
 		// Certainly csb_stream (see par_context where the context is retrieved)
 		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
 		for (SSHORT stream = 0; ptr != end; ++ptr, ++stream) {
@@ -228,7 +228,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, DSC* desc, ItemInfo* item
 {
 /**************************************
  *
- *	P A R _ d e s c 
+ *	P A R _ d e s c
  *
  **************************************
  *
@@ -525,7 +525,7 @@ jrd_nod* PAR_gen_field(thread_db* tdbb, USHORT stream, USHORT id)
 }
 
 
-jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb, 
+jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 						USHORT context,
 						const Firebird::MetaName& base_field)
 {
@@ -567,7 +567,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
  * there is nothing we can do but post an error and exit.
  * Note: This will most likely happen if we have a large list
  * of deferred work which can not complete because of some
- * error, and while we are trying to commit, we find 
+ * error, and while we are trying to commit, we find
  * that we have a dependency on something later in the list.
  * IF there were no error, then the dependency woyld have
  * been resolved, because we would have fully loaded the
@@ -614,7 +614,7 @@ jrd_nod* PAR_make_field(thread_db* tdbb, CompilerScratch* csb,
 	}
 	else
 	*/
-	if (field) 
+	if (field)
 	{
 		if (field->fld_default_value && field->fld_not_null)
 			temp_node->nod_arg[e_fld_default_value] = field->fld_default_value;
@@ -645,7 +645,7 @@ jrd_nod* PAR_make_list(thread_db* tdbb, NodeStack& stack)
 	node->nod_type = nod_list;
 	jrd_nod** ptr = node->nod_arg + count;
 
-	while (stack.hasData()) 
+	while (stack.hasData())
 	{
 		*--ptr = stack.pop();
 	}
@@ -823,8 +823,8 @@ static void error(CompilerScratch* csb, ...)
 		case isc_arg_vms:
 		case isc_arg_unix:
 		case isc_arg_win32:
-			*p++ = va_arg(args, int);   
-			break; 
+			*p++ = va_arg(args, int);
+			break;
 		}
 	}
 	va_end(args);
@@ -970,7 +970,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) PsqlException();
 	exception_list->xcp_count = 1;
 	xcp_repeat& item = exception_list->xcp_rpt[0];
-	
+
 	switch (code_type) {
 	case blr_sql_code:
 		item.xcp_type = xcp_sql_code;
@@ -1036,7 +1036,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 	for (int i = 0; i < n; i++) {
 		const USHORT code_type = BLR_BYTE;
 		xcp_repeat& item = exception_list->xcp_rpt[i];
-		
+
 		switch (code_type) {
 		case blr_sql_code:
 			item.xcp_type = xcp_sql_code;
@@ -1090,8 +1090,8 @@ static SSHORT par_context(CompilerScratch* csb, SSHORT* context_ptr)
  **************************************
  *
  * Functional description
- *	Introduce a new context into the system.  This involves 
- *	assigning a stream and possibly extending the compile 
+ *	Introduce a new context into the system.  This involves
+ *	assigning a stream and possibly extending the compile
  *	scratch block.
  *
  **************************************/
@@ -1167,7 +1167,7 @@ static void par_dependency(thread_db*   tdbb,
 		jrd_nod* field_node = PAR_make_node(tdbb, 1);
 		node->nod_arg[e_dep_field] = field_node;
 		field_node->nod_type = nod_literal;
-		field_node->nod_arg[0] = (jrd_nod*) 
+		field_node->nod_arg[0] = (jrd_nod*)
 			stringDup(*tdbb->getDefaultPool(), field_name.c_str());
 	}
 	else if (id >= 0) {
@@ -1381,7 +1381,8 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 			}
 
 			par_name(csb, name);
-			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0) {
+			if ((id = MET_lookup_field(tdbb, relation, name.c_str(), 0)) < 0)
+			{
 				if (csb->csb_g_flags & csb_validation) {
 					id = 0;
 					flags |= nod_id;
@@ -1394,7 +1395,8 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 						node->nod_type = nod_null;
 						return node;
  					}
-					else if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+
+ 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
 						warning(csb, isc_fldnotdef, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
@@ -1468,7 +1470,7 @@ static jrd_nod* par_function(thread_db* tdbb, CompilerScratch* csb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	
+
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
@@ -1737,7 +1739,7 @@ static jrd_nod* par_modify(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_ope
 /* Parse the original and new contexts */
 
 	USHORT context = (unsigned int) BLR_BYTE;
-	if (context >= csb->csb_rpt.getCount() || 
+	if (context >= csb->csb_rpt.getCount() ||
 		!(csb->csb_rpt[context].csb_flags & csb_used))
 	{
 		error(csb, isc_ctxnotdef, isc_arg_end);
@@ -1807,7 +1809,7 @@ static USHORT par_name(CompilerScratch* csb, Firebird::MetaName& name)
 
 	char* s = name.getBuffer(l);
 
-	while (l--) 
+	while (l--)
 	{
 		*s++ = BLR_BYTE;
 	}
@@ -1825,14 +1827,14 @@ static size_t par_name(CompilerScratch* csb, Firebird::string& name)
  **************************************
  *
  * Functional description
- *	Parse a counted string of virtually unlimited size 
+ *	Parse a counted string of virtually unlimited size
  *  (up to 64K, actually <= 255), returning count.
  *
  **************************************/
 	size_t l = BLR_BYTE;
 	char* s = name.getBuffer(l);
 
-	while (l--) 
+	while (l--)
 	{
 		*s++ = BLR_BYTE;
 	}
@@ -1850,9 +1852,9 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
  **************************************
  *
  * Functional description
- *	Parse an access plan expression.  
- *	At this stage we are just generating the 
- *	parse tree and checking contexts 
+ *	Parse an access plan expression.
+ *	At this stage we are just generating the
+ *	parse tree and checking contexts
  *	and indices.
  *
  **************************************/
@@ -1878,7 +1880,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		jrd_nod* plan = PAR_make_node(tdbb, e_retrieve_length);
 		plan->nod_type = (NOD_T) (USHORT) blr_table[node_type];
 
-		/* parse the relation name and context--the relation 
+		/* parse the relation name and context--the relation
 		   itself is redundant except in the case of a view,
 		   in which case the base relation (and alias) must be specified */
 
@@ -1890,7 +1892,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		}
 
 		/* don't have par_relation() parse the context, because
-		   this would add a new context; while this is a reference to 
+		   this would add a new context; while this is a reference to
 		   an existing context */
 
 		jrd_nod* relation_node = par_relation(tdbb, csb, n, false);
@@ -1912,7 +1914,7 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		jrd_nod* access_type = 0;
 		Firebird::MetaName name;
 		TEXT* idx_name = 0;
-		
+
 		switch (node_type) {
 		case blr_navigational:
 			{
@@ -2131,10 +2133,10 @@ static void par_procedure_parms(
 	SLONG count = BLR_WORD;
 
 /** Check to see if the parameter count matches **/
-	if (input_flag ? 
+	if (input_flag ?
 			(count < (procedure->prc_inputs - procedure->prc_defaults) ||
-			(count > procedure->prc_inputs) ) : 
-			(count != procedure->prc_outputs)) 
+			(count > procedure->prc_inputs) ) :
+			(count != procedure->prc_outputs))
 	{
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
 		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
@@ -2211,7 +2213,7 @@ static void par_procedure_parms(
 			asgn->nod_type = nod_assignment;
 			asgn->nod_count = count_table[blr_assignment];
 
-			// default value for parameter 
+			// default value for parameter
 			if ((count <= 0) && input_flag) {
 				Parameter* parameter = (*procedure->prc_input_fields)[procedure->prc_inputs - n];
 				asgn->nod_arg[asgn_arg1] = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
@@ -2296,7 +2298,7 @@ static jrd_nod* par_relation(
 
 	if (alias_string)
 	{
-		node->nod_arg[e_rel_alias] = 
+		node->nod_arg[e_rel_alias] =
 			(jrd_nod*) stringDup(*tdbb->getDefaultPool(), alias_string->c_str());
 	}
 
@@ -2315,7 +2317,7 @@ static jrd_nod* par_relation(
 		MET_parse_sys_trigger(tdbb, relation);
 	}
 
-/* generate a stream for the relation reference, 
+/* generate a stream for the relation reference,
    assuming it is a real reference */
 
 	if (parse_context) {
@@ -2415,16 +2417,16 @@ static jrd_nod* par_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 		case blr_plan:
 			rse->rse_plan = par_plan(tdbb, csb);
 			break;
-			
+
 		case blr_writelock:
 			rse->rse_writelock = true;
 			break;
 
 #ifdef SCROLLABLE_CURSORS
-			/* if a receive is seen here, then it is intended to be an asynchronous 
-			   receive which can happen at any time during the scope of the RecordSelExpr-- 
-			   this is intended to be a more efficient mechanism for scrolling through 
-			   a record stream, to prevent having to send a message to the engine 
+			/* if a receive is seen here, then it is intended to be an asynchronous
+			   receive which can happen at any time during the scope of the RecordSelExpr--
+			   this is intended to be a more efficient mechanism for scrolling through
+			   a record stream, to prevent having to send a message to the engine
 			   for each record */
 
 		case blr_receive:
@@ -2502,7 +2504,7 @@ static jrd_nod* par_sort(thread_db* tdbb, CompilerScratch* csb, bool flag)
 			default:
 				*ptr3++ = (jrd_nod*) (IPTR) rse_nulls_default;
 			}
-			  
+
 			*ptr2++ =
 				(jrd_nod*) (IPTR) ((code == blr_descending) ? TRUE : FALSE);
 		}
@@ -2563,7 +2565,7 @@ static jrd_nod* par_sys_function(thread_db* tdbb, CompilerScratch* csb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	
+
 	Firebird::MetaName name;
 	const USHORT count = par_name(csb, name);
 
@@ -2814,7 +2816,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_exec_sql:
 		{
-			n = e_exec_stmt_fixed_count; 
+			n = e_exec_stmt_fixed_count;
 
 			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
 			node->nod_count = n;
@@ -2822,15 +2824,15 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			set_type = false;
 
 			arg = node->nod_arg;
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
-			*arg++ = NULL;		// e_exec_stmt_data_src	
-			*arg++ = NULL;		// e_exec_stmt_user	
-			*arg++ = NULL;		// e_exec_stmt_password	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql
+			*arg++ = NULL;		// e_exec_stmt_data_src
+			*arg++ = NULL;		// e_exec_stmt_user
+			*arg++ = NULL;		// e_exec_stmt_password
 			*arg++ = NULL;		// e_exec_stmt_proc_block;
 
-			*arg++ = NULL;		// e_exec_stmt_extra_inputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_inputs
 			*arg++ = NULL;		// e_exec_stmt_extra_input_names
-			*arg++ = NULL;		// e_exec_stmt_extra_outputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_outputs
 			*arg++ = NULL;		// e_exec_stmt_extra_tran
 		}
 		break;
@@ -2838,7 +2840,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_exec_into:
 		{
 			const USHORT outputs = BLR_WORD;
-			n = outputs + e_exec_stmt_fixed_count; 
+			n = outputs + e_exec_stmt_fixed_count;
 
 			node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
 			node->nod_count = n;
@@ -2846,10 +2848,10 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			set_type = false;
 
 			arg = node->nod_arg;
-			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql	
-			*arg++ = NULL;		// e_exec_stmt_data_src	
-			*arg++ = NULL;		// e_exec_stmt_user	
-			*arg++ = NULL;		// e_exec_stmt_password	
+			*arg++ = PAR_parse_node(tdbb, csb, VALUE);		// e_exec_stmt_stmt_sql
+			*arg++ = NULL;		// e_exec_stmt_data_src
+			*arg++ = NULL;		// e_exec_stmt_user
+			*arg++ = NULL;		// e_exec_stmt_password
 
 			if (BLR_BYTE)	// singleton flag
 				*arg++ = NULL;							// e_exec_stmt_proc_block
@@ -2861,9 +2863,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 				*arg++ = PAR_parse_node(tdbb, csb, VALUE);
 			}
 
-			*arg++ = NULL;		// e_exec_stmt_extra_inputs	
+			*arg++ = NULL;		// e_exec_stmt_extra_inputs
 			*arg++ = NULL;		// e_exec_stmt_extra_input_names
-			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
+			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs
 			*arg++ = NULL;		// e_exec_stmt_extra_tran
 		}
 		break;
@@ -2890,7 +2892,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 					break;
 
 				case blr_exec_stmt_sql:
-					n = inputs + outputs + e_exec_stmt_fixed_count; 
+					n = inputs + outputs + e_exec_stmt_fixed_count;
 
 					node = PAR_make_node(tdbb, n + e_exec_stmt_extra_count);
 					node->nod_count = n;
@@ -2971,9 +2973,9 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			}
 
 			arg = node->nod_arg + node->nod_count;
-			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs	
+			*arg++ = (jrd_nod*)(IPTR) inputs;		// e_exec_stmt_extra_inputs
 			*arg++ = (jrd_nod*) paramNames;			// e_exec_stmt_extra_input_names
-			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs	
+			*arg++ = (jrd_nod*)(IPTR) outputs;		// e_exec_stmt_extra_outputs
 			*arg++ = (jrd_nod*)(IPTR) tra_mode;		// e_exec_stmt_extra_tran
 			*arg++ = (jrd_nod*)(IPTR) use_caller_privs;		// e_exec_stmt_extra_privs
 		}
@@ -3052,7 +3054,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		node->nod_arg[e_erase_stream] =
 			(jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
 		break;
-	
+
 	case blr_modify:
 	case blr_modify2:
 		node = par_modify(tdbb, csb, blr_operator);
@@ -3514,7 +3516,7 @@ static void warning(CompilerScratch* csb, ...)
  *      fully implement warning at the engine level.
  *
  *	We will use the status vector like a warning vector.  What
- *	we are going to do is leave the [1] position of the vector 
+ *	we are going to do is leave the [1] position of the vector
  *	as 0 so that this will not be treated as an error, and we
  *	will place our warning message in the consecutive positions.
  *	It will be up to the caller to check these positions for
@@ -3572,8 +3574,8 @@ static void warning(CompilerScratch* csb, ...)
 		case isc_arg_vms:
 		case isc_arg_unix:
 		case isc_arg_win32:
-			*p++ = va_arg(args, int);   
-			break; 
+			*p++ = va_arg(args, int);
+			break;
 		}
 	}
 	va_end(args);
