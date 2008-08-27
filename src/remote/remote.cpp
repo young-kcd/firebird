@@ -602,6 +602,10 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 			if (status != isc_arg_cstring)
 				l = strlen(p) + 1;
 
+			// if string too long, truncate it
+			if (l > ATTACH_FAILURE_SPACE / 4)
+				l = ATTACH_FAILURE_SPACE / 4;
+
 			/* If there isn't any more room in the buffer,
 			   start at the beginning again */
 
