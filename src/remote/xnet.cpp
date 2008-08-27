@@ -51,6 +51,8 @@
 #pragma FB_COMPILER_MESSAGE("POSIX implementation is required")
 #endif // WIN_NT
 
+using namespace Firebird;
+
 static int accept_connection(rem_port*, const P_CNCT*);
 static rem_port* alloc_port(rem_port*, UCHAR *, ULONG, UCHAR *, ULONG);
 static rem_port* aux_connect(rem_port*, PACKET*, t_event_ast);

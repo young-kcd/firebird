@@ -47,6 +47,8 @@
 
 #include <stdarg.h>
 
+using namespace Firebird;
+
 const int MAX_DATA		= 2048;
 const int BUFFER_SIZE	= MAX_DATA;
 
@@ -985,7 +987,7 @@ static int wnet_error(
 		wnet_gen_error(port, Arg::Gds(isc_network_error) << Arg::Str(node_name) <<
 					   Arg::Gds(operation) << SYS_ERR(status));
 		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
-			gds__log(msg, "WNET/wnet_error: %s errno = %d", function, status);
+			gds__log("WNET/wnet_error: %s errno = %d", function, status);
 		}
 	}
 	else {

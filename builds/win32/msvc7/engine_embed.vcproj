@@ -251,9 +251,6 @@
 				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\iberr.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\idx.cpp">
 			</File>
 			<File
