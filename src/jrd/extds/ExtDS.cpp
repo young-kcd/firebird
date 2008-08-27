@@ -89,7 +89,7 @@ Provider* Manager::getProvider(const string &prvName)
 	}
 
 	// External Data Source provider ''@1'' not found
-	ERR_post(isc_eds_provider_not_found, isc_arg_string, ERR_cstring(prvName), isc_arg_end); 
+	ERR_post(Arg::Gds(isc_eds_provider_not_found) << Arg::Str(prvName)); 
 	return NULL; 
 }
 
@@ -407,7 +407,7 @@ Transaction* Connection::findTransaction(thread_db *tdbb, TraScope traScope) con
 		break;
 
 	case traTwoPhase :
-		ERR_post(isc_random, isc_arg_string, "2PC transactions not implemented", isc_arg_end);
+		ERR_post(Arg::Gds(isc_random) << Arg::Str("2PC transactions not implemented"));
 
 		//ext_tran = tran->tra_ext_two_phase;
 		// join transaction if not already joined
@@ -423,11 +423,9 @@ void Connection::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere)
 	m_provider.getRemoteError(status, rem_err);
 
 	// Execute statement error at @1 :\n@2Data source : @3
-	ERR_post(isc_eds_connection, 
-		isc_arg_string, ERR_cstring(sWhere), 
-		isc_arg_string, ERR_cstring(rem_err),
-		isc_arg_string, ERR_cstring(getDataSourceName()),
-		isc_arg_end);
+	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) << 
+											 Arg::Str(rem_err) << 
+											 Arg::Str(getDataSourceName()));
 }
 
 
@@ -605,9 +603,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 				throw;
 
 			// ignore rollback error
-			tdbb->tdbb_status_vector[0] = isc_arg_gds;
-			tdbb->tdbb_status_vector[0] = 0;
-			tdbb->tdbb_status_vector[0] = isc_arg_end;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
 
 		tran = next;
@@ -749,7 +745,8 @@ bool Statement::fetch(thread_db *tdbb, int out_count, jrd_nod **out_params)
 	{
 		if (doFetch(tdbb))
 		{
-			ISC_STATUS_ARRAY status = {isc_arg_gds, isc_sing_select_err, isc_arg_end};
+			ISC_STATUS_ARRAY status;
+			Arg::Gds(isc_sing_select_err).copyTo(status);
 			raise(status, tdbb, "isc_dsql_fetch");
 		}
 		return false;
@@ -916,7 +913,8 @@ void Statement::preprocess(const string& sql, string& ret)
 	if (p >= end || tok != ttIdent) {
 		// Execute statement preprocess SQL error
 		// Statement expected
-		ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_stmt_expected, isc_arg_end);
+		ERR_post(Arg::Gds(isc_eds_preprocess) <<
+				 Arg::Gds(isc_eds_stmt_expected));
 	}
 
 	start = i; // skip leading comments ??
@@ -935,7 +933,8 @@ void Statement::preprocess(const string& sql, string& ret)
 		if (p >= end || tok != ttIdent) {
 			// Execute statement preprocess SQL error
 			// Statement expected
-			ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_stmt_expected, isc_arg_end);
+			ERR_post(Arg::Gds(isc_eds_preprocess) <<
+					 Arg::Gds(isc_eds_stmt_expected));
 		}
 		string ident2(i2, p - i2);
 		ident2.upper();
@@ -988,7 +987,8 @@ void Statement::preprocess(const string& sql, string& ret)
 			else {
 				// Execute statement preprocess SQL error
 				// Parameter name expected
-				ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_prm_name_expected, isc_arg_end);
+				ERR_post(Arg::Gds(isc_eds_preprocess) <<
+						 Arg::Gds(isc_eds_prm_name_expected));
 			}
 			ret += '?';
 			break;
@@ -1017,15 +1017,16 @@ void Statement::preprocess(const string& sql, string& ret)
 			{
 				// Execute statement preprocess SQL error
 				// Unclosed comment found near ''@1''
-				Firebird::string s(start, MIN(16, end - start));
-				ERR_post(isc_eds_preprocess, isc_arg_gds, isc_eds_unclosed_comment, isc_arg_string, ERR_cstring(s), isc_arg_end);
+				string s(start, MIN(16, end - start));
+				ERR_post(Arg::Gds(isc_eds_preprocess) <<
+						 Arg::Gds(isc_eds_unclosed_comment) << Arg::Str(s));
 			}
 			break;
 
 
 		case ttNone: 
 			// Execute statement preprocess SQL error
-			ERR_post(isc_eds_preprocess, isc_arg_end);
+			ERR_post(Arg::Gds(isc_eds_preprocess));
 			break;
 		}
 	}
@@ -1296,19 +1297,15 @@ void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 
 		if (status == tdbb->tdbb_status_vector)
 		{
-			status [0] = isc_arg_gds;
-			status [1] = 0;
-			status [2] = isc_arg_end;
+			fb_utils::init_status(status);
 		}
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(isc_eds_statement,
-		isc_arg_string, ERR_cstring(sWhere),
-		isc_arg_string, ERR_cstring(rem_err),
-		isc_arg_string, ERR_cstring(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)),
-		isc_arg_string, ERR_cstring(m_connection.getDataSourceName()),
-		isc_arg_end);
+	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) << 
+											Arg::Str(rem_err) << 
+											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) << 
+											Arg::Str(m_connection.getDataSourceName()));
 }
 
 void Statement::bindToRequest(jrd_req* request, Statement** impure)

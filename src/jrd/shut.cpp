@@ -39,6 +39,7 @@
 #include "../jrd/tra_proto.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 const SSHORT SHUT_WAIT_TIME	= 5;
 
@@ -239,7 +240,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 		SHUT_blocking_ast(tdbb);
 		attachment->att_flags &= ~ATT_shutdown_manager;
 		++dbb->dbb_use_count;
-		ERR_post(isc_shutfail, isc_arg_end);
+		ERR_post(Arg::Gds(isc_shutfail));
 	}
 
 /* Once there are no more transactions active, force all remaining
@@ -441,12 +442,7 @@ static bool bad_mode(thread_db* tdbb, bool ignore)
 	if (!ignore) {
 		Database* dbb = tdbb->getDatabase();
 		
-		ISC_STATUS* status = tdbb->tdbb_status_vector;
-		*status++ = isc_arg_gds;
-		*status++ = isc_bad_shutdown_mode;
-		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) (IPTR) ERR_cstring(dbb->dbb_filename.c_str());
-		*status++ = isc_arg_end;
+		ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
 	return ignore;
 }
@@ -460,10 +456,7 @@ static void check_backup_state(thread_db* tdbb)
 
 	if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 	{
-		ERR_post(isc_bad_shutdown_mode,
-				 isc_arg_string,
-				 ERR_cstring(dbb->dbb_filename.c_str()),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
 }
 

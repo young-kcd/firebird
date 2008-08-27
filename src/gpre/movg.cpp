@@ -29,7 +29,6 @@
 #include "../jrd/common.h"
 #include <stdarg.h>
 
-#include "../jrd/iberr.h"
 #include "../jrd/dsc.h"
 #include "../gpre/movg_proto.h"
 //  TMN: Unfortunately we need to include gpre.h before gpre_proto.h since

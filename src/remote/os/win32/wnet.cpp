@@ -32,7 +32,6 @@
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
 #include "../common/thd.h"
-#include "../jrd/iberr.h"
 
 #include "../utilities/install/install_nt.h"
 
@@ -71,7 +70,7 @@ static int		xdrwnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR *, int);
 static int		wnet_destroy(XDR *);
 static int		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
-static void		wnet_gen_error(rem_port*, ISC_STATUS, ...);
+static void		wnet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	wnet_getlong(XDR *, SLONG *);
 static u_int	wnet_getpostn(XDR *);
@@ -983,28 +982,22 @@ static int wnet_error(
 		*p = '\0';
 
 	if (status) {
-		wnet_gen_error(port, isc_network_error,
-					   isc_arg_string, (ISC_STATUS) node_name,
-					   isc_arg_gds, operation,
-					   SYS_ERR, status,
-					   0);
+		wnet_gen_error(port, Arg::Gds(isc_network_error) << Arg::Str(node_name) <<
+					   Arg::Gds(operation) << SYS_ERR(status));
 		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
-            TEXT msg[BUFFER_TINY];
-			sprintf(msg, "WNET/wnet_error: %s errno = %d", function, status);
-			gds__log(msg, 0, 0, 0, 0);
+			gds__log(msg, "WNET/wnet_error: %s errno = %d", function, status);
 		}
 	}
 	else {
-		wnet_gen_error(port, isc_network_error,
-					   isc_arg_string, (ISC_STATUS) node_name,
-					   isc_arg_gds, operation, 0);
+		wnet_gen_error(port, Arg::Gds(isc_network_error) << Arg::Str(node_name) <<
+					   Arg::Gds(operation));
 	}
 
 	return 0;
 }
 
 
-static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
+static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -1026,7 +1019,7 @@ static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 	if (status_vector == NULL)
 		status_vector = port->port_status_vector;
 	if (status_vector != NULL) {
-		STUFF_STATUS(status_vector, status);
+		v.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
 }

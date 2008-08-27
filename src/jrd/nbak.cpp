@@ -62,11 +62,13 @@
 #endif
 
 #ifdef NBAK_DEBUG
+#include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(nbak_trace, "NBAK")
 #endif
 
 
 using namespace Jrd;
+using namespace Firebird;
 
 /******************************** NBACKUP STATE SYNCHRONIZER ******************************/
 NBackupState::NBackupState(thread_db* tdbb, MemoryPool& p, BackupManager *bakMan):
@@ -238,7 +240,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 
 	// Check for raw device
 	if ((!explicit_diff_name) && database->onRawDevice()) {
-		ERR_post(isc_need_difference, isc_arg_end);
+		ERR_post(Arg::Gds(isc_need_difference));
 	}
 
 	WIN window(HEADER_PAGE_NUMBER);
@@ -562,12 +564,8 @@ bool BackupManager::actualize_alloc(thread_db* tdbb)
 				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page.getPageNum() + i + 1)))
 				{
 					database->dbb_flags |= DBB_bugcheck;
-					status_vector[0] = isc_arg_gds;
-					status_vector[1] = isc_bug_check;
-					status_vector[2] = isc_arg_string;
-					status_vector[3] =
-						(ISC_STATUS)(U_IPTR) ERR_cstring("Duplicated item in allocation table detected");
-					status_vector[4] = isc_arg_end;
+					ERR_build_status(status_vector, 
+						Arg::Gds(isc_bug_check) << Arg::Str("Duplicated item in allocation table detected"));
 					return false;
 				}
 			}

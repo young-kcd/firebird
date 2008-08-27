@@ -44,6 +44,7 @@
 #include <math.h>
 
 using namespace Jrd;
+using namespace Firebird;
 using Firebird::AutoPtr;
 
 
@@ -56,7 +57,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 	if (transaction->tra_callback_count >= MAX_CALLBACKS)
 	{
-		ERR_post(isc_exec_sql_max_call_exceeded, isc_arg_end);
+		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 	}
 
 	Firebird::string sqlStatementText;
@@ -77,11 +78,8 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 
 		if (!((1 << stmt->getRequest()->req_type) & requests))
 		{
-			ERR_post(
-				isc_sqlerr, isc_arg_number, (SLONG) -902,
-				isc_arg_gds, isc_exec_sql_invalid_req, 
-				isc_arg_string, ERR_string(sqlStatementText),
-				isc_arg_end);
+			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(-902) <<
+					 Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(sqlStatementText));
 		}
 
 		stmt->execute(tdbb, transaction);
@@ -107,7 +105,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 
 	if (transaction->tra_callback_count >= MAX_CALLBACKS)
 	{
-		ERR_post(isc_exec_sql_max_call_exceeded, isc_arg_end);
+		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 	}
 
 	varCount = nVars;
@@ -129,10 +127,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 			delete stmt;
 			stmt = NULL;
 
-			ERR_post(
-				isc_exec_sql_invalid_req,
-				isc_arg_string, ERR_cstring(startOfSqlOperator),
-				isc_arg_end);
+			ERR_post(Arg::Gds(isc_exec_sql_invalid_req) << Arg::Str(startOfSqlOperator));
 		}
 
 		if (stmt->getResultCount() != varCount)
@@ -140,7 +135,7 @@ void ExecuteStatement::open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool si
 			delete stmt;
 			stmt = NULL;
 
-			ERR_post(isc_wronumarg, isc_arg_end);
+			ERR_post(Arg::Gds(isc_wronumarg));
 		}
 
 		resultSet = stmt->executeQuery(tdbb, transaction);
@@ -186,7 +181,7 @@ bool ExecuteStatement::fetch(thread_db* tdbb, jrd_nod** jrdVar)
 			return false;
 		}
 
-		ERR_post(isc_sing_select_err, isc_arg_end);
+		ERR_post(Arg::Gds(isc_sing_select_err));
 	}
 
 	return true;
@@ -216,7 +211,7 @@ void ExecuteStatement::getString(thread_db* tdbb,
 
 	if (!ptr)
 	{
-		ERR_post(isc_exec_sql_invalid_arg, isc_arg_end);
+		ERR_post(Arg::Gds(isc_exec_sql_invalid_arg));
 	}
 
 	sql.assign((const char*) ptr, len);

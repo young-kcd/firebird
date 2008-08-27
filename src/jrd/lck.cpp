@@ -32,7 +32,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/lck.h"
 #include "gen/iberror.h"
-#include "../jrd/iberr.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -53,6 +52,7 @@
 
 
 using namespace Jrd;
+using namespace Firebird;
 
 static void bug_lck(const TEXT*);
 static bool compatible(const Lock*, const Lock*, USHORT);
@@ -759,7 +759,7 @@ static void bug_lck(const TEXT* string)
 
 	sprintf(s, "Fatal lock interface error: %.96s", string);
 	gds__log(s);
-	ERR_post(isc_db_corrupt, isc_arg_string, string, isc_arg_end);
+	ERR_post(Arg::Gds(isc_db_corrupt) << Arg::Str(string));
 }
 
 
@@ -1316,9 +1316,7 @@ static bool internal_enqueue(
 			/* for now return a lock conflict; it would be better if we were to 
 			   do a wait on the other lock by setting some flag bit or some such */
 
-			status[0] = isc_arg_gds;
-			status[1] = isc_lock_conflict;
-			status[2] = isc_arg_end;
+			Arg::Gds(isc_lock_conflict).copyTo(status);
 			return false;
 		}
 

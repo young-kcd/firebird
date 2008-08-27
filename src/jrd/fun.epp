@@ -597,9 +597,8 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 							if (input->dsc_dtype != dtype_quad &&
 								input->dsc_dtype != dtype_blob)
 							{
-								ERR_post(isc_wish_list,
-										 isc_arg_gds, isc_blobnotsup,
-										 isc_arg_string, "conversion", isc_arg_end);
+								ERR_post(Arg::Gds(isc_wish_list) <<
+										 Arg::Gds(isc_blobnotsup) << Arg::Str("conversion"));
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}

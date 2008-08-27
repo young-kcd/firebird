@@ -42,10 +42,11 @@ class MemoryPool;
 class StringsBuffer 
 {
 public:
-	virtual char* alloc(const char* string, size_t length) = 0;
+	virtual char* alloc(const char* string, size_t& length) = 0;
 	virtual ~StringsBuffer() {}
 
 	void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* temp);
+	static void makeEnginePermanentVector(ISC_STATUS* v);
 };
 
 template <size_t BUFFER_SIZE>
@@ -55,15 +56,20 @@ public:
 	CircularStringsBuffer() throw() { init(); }
 	explicit CircularStringsBuffer(MemoryPool&) throw() { init(); }
 
-	virtual char* alloc(const char* string, size_t length) {
-		// fb_assert(length + 1 < BUFFER_SIZE);
+	virtual char* alloc(const char* string, size_t& length) {
+		// if string too long, truncate it
+		if (length > BUFFER_SIZE / 4)
+			length = BUFFER_SIZE / 4;	
+
 		// If there isn't any more room in the buffer, start at the beginning again
 		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
 			buffer_ptr = buffer;
+
 		char* new_string = buffer_ptr;
 		memcpy(new_string, string, length);
 		new_string[length] = 0;
 		buffer_ptr += length + 1;	
+
 		return new_string;
 	}
 
@@ -181,12 +187,6 @@ public:
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex, StringsBuffer* sb = NULL) throw();
-
-// These routines put strings into process-level circular buffer
-// They are obsolete, use transient version of status_exception::raise in combination with
-// stuff_exception instead
-const char* status_string(const char* string);
-const char* status_nstring(const char* string, size_t length);
 
 }	// namespace Firebird
 

@@ -33,14 +33,10 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
-#ifdef HAVE_STDARG_H
-#include <stdarg.h>
-#endif
 
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
 #include "gen/iberror.h"
-#include "../jrd/iberr.h"
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/utld_proto.h"
@@ -173,9 +169,10 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 		}
 	}
 
-	if (indx + v.length() < ISC_STATUS_LENGTH)
+	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
 	{
 		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
+		ERR_make_permanent(&status_vector[indx]);
 		return true;
 	}
 
@@ -286,6 +283,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	{
 		memcpy(&status_vector[err_status_len], tmp_status,
 					sizeof(ISC_STATUS) * tmp_status_len);
+		ERR_make_permanent(&status_vector[err_status_len]);
 		// copy current warning(s) to the status_vector 
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{

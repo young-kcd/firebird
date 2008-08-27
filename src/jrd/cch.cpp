@@ -43,13 +43,11 @@
 #include "../jrd/sdw.h"
 #include "../jrd/tra.h"
 #include "../jrd/sbm.h"
-#include "../jrd/iberr.h"
 #include "../jrd/nbak.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/iberr_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/jrd_proto.h"
@@ -67,6 +65,7 @@
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 /* In the superserver mode, no page locks are acquired through the lock manager.
    Instead, a latching mechanism is used.  So the calls to lock subsystem for
@@ -74,6 +73,7 @@ using namespace Ods;
    any undesirable side-effects.  The following defines help us achieve that.  */
 
 #ifdef CCH_DEBUG
+#include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cch_trace, "CCH")
 #endif
 
@@ -499,7 +499,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
    but can't get the lock, generate an error */
 
 	if (wait_flag == LCK_WAIT) {
-		ERR_post(isc_deadlock, isc_arg_end);
+		ERR_post(Arg::Gds(isc_deadlock));
 	}
 
 	dbb->dbb_flags &= ~DBB_exclusive;
@@ -590,7 +590,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 					tdbb->getAttachment()->att_flags &= ~ATT_exclusive_pending;
 
 					if (wait_flag == LCK_WAIT) {
-						ERR_post(isc_deadlock, isc_arg_end);
+						ERR_post(Arg::Gds(isc_deadlock));
 					}
 					else {
 						return false;
@@ -1065,12 +1065,10 @@ void CCH_fetch_page(
 	if ((compute_checksum == 1 || (compute_checksum == 2 && page->pag_type)) &&
 		page->pag_checksum != CCH_checksum(bdb) && !(dbb->dbb_flags & DBB_damaged))
 	{
-		IBERR_build_status(status,
-						   isc_db_corrupt,
-						   isc_arg_string, "", // why isn't the db name used here?
-						   isc_arg_gds, isc_bad_checksum,
-						   isc_arg_gds, isc_badpage,
-						   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(), isc_arg_end);
+		ERR_build_status(status,
+						 Arg::Gds(isc_db_corrupt) << Arg::Str("") <<	// why isn't the db name used here?
+						 Arg::Gds(isc_bad_checksum) <<
+						 Arg::Gds(isc_badpage) << Arg::Num(bdb->bdb_page.getPageNum()));
 		/* We should invalidate this bad buffer. */
 
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
@@ -1708,7 +1706,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 			number -= number >> 2;
 
 			if (number < MIN_PAGE_BUFFERS) {
-				ERR_post(isc_cache_too_small, isc_arg_end);
+				ERR_post(Arg::Gds(isc_cache_too_small));
 			}
 		}
 	}
@@ -1729,7 +1727,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	bcb->bcb_free_minimum = (SSHORT) MIN(bcb->bcb_count / 4, 128);
 
 	if (bcb->bcb_count < MIN_PAGE_BUFFERS) {
-		ERR_post(isc_cache_too_small, isc_arg_end);
+		ERR_post(Arg::Gds(isc_cache_too_small));
 	}
 
 	// Log if requested number of page buffers could not be allocated.
@@ -2585,7 +2583,7 @@ bool CCH_write_all_shadows(thread_db* tdbb,
 						SDW_notify();
 						CCH_unwind(tdbb, false);
 						SDW_dump_pages();
-						ERR_post(isc_deadlock, isc_arg_end);
+						ERR_post(Arg::Gds(isc_deadlock));
 					}
 				}
 			}
@@ -4124,7 +4122,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	}
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
-	Attachment::destroy(attachment);
+	Attachment::destroy(attachment);	// no need saving warning error strings here
 	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
 	ISC_event_post(reader_event);
@@ -4284,7 +4282,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 
 		LCK_fini(tdbb, LCK_OWNER_attachment);
-		Attachment::destroy(attachment);
+		Attachment::destroy(attachment);	// no need saving warning error strings here
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
@@ -5351,7 +5349,7 @@ static SSHORT latch_bdb(
 	if ((lwt->lwt_flags & LWT_pending) && timeout_occurred) {
 //		LATCH_MUTEX_RELEASE;
 		if (latch_wait == 1) {
-			IBERR_build_status(tdbb->tdbb_status_vector, isc_deadlock, isc_arg_end);
+			ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_deadlock));
 			CCH_unwind(tdbb, true);
 		}
 		else {
@@ -5464,8 +5462,7 @@ static SSHORT lock_buffer(
 
 		fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
-		IBERR_append_status(status, isc_random, isc_arg_string,
-							ERR_cstring(errmsg), isc_arg_end);
+		ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
 		ERR_log(JRD_BUGCHK, 215, errmsg);	/* msg 215 page %ld, page type %ld lock conversion denied */
 
 		/* CCH_unwind releases all the BufferDesc's and calls ERR_punt()
@@ -5512,8 +5509,7 @@ static SSHORT lock_buffer(
 
 	fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
-	IBERR_append_status(status, isc_random, isc_arg_string,
-						ERR_cstring(errmsg), isc_arg_end);
+	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
 	ERR_log(JRD_BUGCHK, 216, errmsg);	/* msg 216 page %ld, page type %ld lock denied */
 
 	CCH_unwind(tdbb, true);
@@ -5647,14 +5643,12 @@ static void page_validation_error(thread_db* tdbb, WIN * window, SSHORT type)
 
 	PageSpace* pages = tdbb->getDatabase()->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 
-	IBERR_build_status(tdbb->tdbb_status_vector,
-					   isc_db_corrupt,
-					   isc_arg_string, ERR_cstring(pages->file->fil_string),
-					   isc_arg_gds, isc_page_type_err,
-					   isc_arg_gds, isc_badpagtyp,
-					   isc_arg_number, (SLONG) bdb->bdb_page.getPageNum(),
-					   isc_arg_number, (SLONG) type,
-					   isc_arg_number, (SLONG) page->pag_type, isc_arg_end);
+	ERR_build_status(tdbb->tdbb_status_vector,
+					 Arg::Gds(isc_db_corrupt) << Arg::Str(pages->file->fil_string) <<
+					 Arg::Gds(isc_page_type_err) <<
+					 Arg::Gds(isc_badpagtyp) << Arg::Num(bdb->bdb_page.getPageNum()) << 
+												Arg::Num(type) << 
+												Arg::Num(page->pag_type));
 /* We should invalidate this bad buffer. */
 	CCH_unwind(tdbb, true);
 }
@@ -6350,11 +6344,7 @@ static bool write_page(
  *
  **************************************/
 	if (bdb->bdb_flags & BDB_not_valid) {
-		*status++ = isc_arg_gds;
-		*status++ = isc_buf_invalid;
-		*status++ = isc_arg_number;
-		*status++ = bdb->bdb_page.getPageNum();
-		*status++ = isc_arg_end;
+		ERR_build_status(status, Arg::Gds(isc_buf_invalid) << Arg::Num(bdb->bdb_page.getPageNum()));
 		return false;
 	}
 

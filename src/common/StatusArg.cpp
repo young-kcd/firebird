@@ -80,6 +80,10 @@ bool StatusVector::append(const ISC_STATUS* from, int count) throw()
 
 	for (int i = 0; i < count; )
 	{
+		if (from[i] == isc_arg_end)
+		{
+			break;
+		}
 		i += (from[i] == isc_arg_cstring ? 3 : 2);
 		if (m_length + i > FB_NELEM(m_status_vector) - 1)
 		{

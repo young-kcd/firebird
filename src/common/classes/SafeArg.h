@@ -80,14 +80,12 @@ struct safe_cell
 		at_int128,
 		at_double,
 		at_str,
-		at_counted_str,
 		at_ptr
 	};
 	
 	struct safe_str
 	{
 		const char* s_string;
-		size_t s_len; // Optional, meaningful if type == at_counted_str.
 	};
 
 
@@ -102,29 +100,6 @@ struct safe_cell
 		void* p_value;
 	};
 };
-
-
-
-// Used to invoke the operator<< or we can't distinguish from null terminated string.
-// Construct a counted_string on the fly (anonymous object) and pass it your
-// unterminated string and its length.
-struct counted_string
-{
-	counted_string(const char* s, size_t len);
-	counted_string(const unsigned char* s, size_t len);
-	const char* const cs_string;
-	const size_t cs_len;
-};
-
-inline counted_string::counted_string(const char* s, size_t len)
-	: cs_string(s), cs_len(len)
-{
-}
-
-inline counted_string::counted_string(const unsigned char* s, size_t len)
-	: cs_string(reinterpret_cast<const char*>(s)), cs_len(len)
-{
-}
 
 
 
@@ -184,7 +159,6 @@ public:
 	SafeArg& operator<<(double c);
 	SafeArg& operator<<(const char* c);
 	SafeArg& operator<<(const unsigned char* c);
-	SafeArg& operator<<(const counted_string& c);
 	SafeArg& operator<<(void* c);
 	void dump(const TEXT* target[], size_t v_size) const;
 	const safe_cell& getCell(size_t index) const;

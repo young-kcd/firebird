@@ -42,6 +42,9 @@
 struct serv_entry; 
 namespace Firebird {
 	class ClumpletReader;
+	namespace Arg {
+		class StatusVector;
+	}
 }
 
 namespace Jrd {
@@ -188,7 +191,7 @@ private:
 	// add it to the command line
 	static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t* table, Firebird::string&);
 	// Create 'SYSDBA needed' error in status vector 
-	static void need_admin_privs(ISC_STATUS** status, const char* message);
+	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
 	static bool ck_space_for_numeric(char*& info, const char* const end);
 

@@ -144,7 +144,7 @@ void IscConnection::attach(thread_db *tdbb, const string &dbName, const string &
 
 			case isc_info_truncated:
 			case isc_info_error:
-				ERR_post(isc_random, isc_arg_string, "Unexpected error in isc_database_info");
+				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
 
 			case isc_info_end:
 				p = end;
@@ -389,11 +389,7 @@ void IscStatement::doPrepare(thread_db *tdbb, const string &sql)
 	
 	if (info_buff[0] != stmt_info[0]) 
 	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_random;
-		status[2] = isc_arg_string;
-		status[3] = (ISC_STATUS) (IPTR) "Unknown statement type";
-		status[4] = isc_arg_end;
+		ERR_build_status(status, Arg::Gds(isc_random) << "Unknown statement type");
 
 		sWhereError = "isc_dsql_sql_info";
 		raise(status, tdbb, sWhereError, &sql);
@@ -624,9 +620,7 @@ void IscBlob::cancel(thread_db *tdbb)
 
 ISC_STATUS IscProvider::notImplemented(ISC_STATUS* status) const
 {
-	status[0] = isc_arg_gds;
-	status[1] = isc_unavailable;
-	status[2] = isc_arg_end;
+	Arg::Gds(isc_unavailable).copyTo(status);
 
 	return status[1];
 }

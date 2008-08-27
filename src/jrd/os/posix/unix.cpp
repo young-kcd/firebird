@@ -118,7 +118,7 @@ using namespace Firebird;
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const PathName&, int, bool);
-static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS*);
+static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = 0);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -223,12 +223,9 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	const int desc = open(file_name.c_str(), flag, 0666);
 	if (desc == -1) 
 	{
-		ERR_post(isc_io_error,
-				 isc_arg_string, "open O_CREAT",
-				 isc_arg_string, ERR_string(file_name),
-				 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, isc_arg_end);
-/*		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
-                 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));*/
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << 
+										   Arg::Str(file_name) <<
+                 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 	}
 
 #ifdef HAVE_FCHMOD
@@ -242,10 +239,9 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 		// we cannot help much with former recovery
 		close(desc);
 		unlink(file_name.c_str());
-		ERR_post(isc_io_error,
-				 isc_arg_string, "chmod",
-				 isc_arg_string, ERR_string(file_name),
-				 isc_arg_gds, isc_io_create_err, isc_arg_unix, chmodError, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("chmod") << 
+										   Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_create_err) << Arg::Unix(chmodError));
 	}
 
 	if (temporary
@@ -259,10 +255,9 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #ifdef DEV_BUILD
 		if (rc < 0)
 		{
-			ERR_post(isc_io_error,
-					 isc_arg_string, "unlink",
-					 isc_arg_string, ERR_string(file_name),
-					 isc_arg_gds, isc_io_create_err, isc_arg_unix, errno, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("unlink") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 		}
 #endif
 	}
@@ -370,11 +365,6 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 #ifndef FCNTL_BROKEN
 		if (fcntl(file->fil_desc, F_SETFL, control) == -1)
 		{
-			ERR_post(isc_io_error,
-					 isc_arg_string, "fcntl() SYNC/DIRECT",
-					 isc_arg_string, ERR_cstring(file->fil_string),
-					 isc_arg_gds, isc_io_access_err,
-					 isc_arg_unix, errno, isc_arg_end);
 		}
 #else //FCNTL_BROKEN
 		maybeCloseFile(file->fil_desc);
@@ -382,10 +372,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 								  notUseFSCache, file->fil_flags & FIL_readonly);
 		if (file->fil_desc == -1)
 		{
-			ERR_post(isc_io_error, isc_arg_string, "re open() for SYNC/DIRECT",
-					 isc_arg_string, ERR_cstring(file->fil_string),
-					 isc_arg_gds, isc_io_open_err,
-					 isc_arg_unix, errno, isc_arg_end);
+			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
 		}
 #endif //FCNTL_BROKEN
 
@@ -411,13 +398,13 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
  **************************************/
 
 	if (file->fil_desc == -1) {
-		unix_error("fstat", file, isc_io_access_err, 0);
+		unix_error("fstat", file, isc_io_access_err);
 		return (0);
 	}
 
 	struct stat statistics;
 	if (fstat(file->fil_desc, &statistics)) {
-		unix_error("fstat", file, isc_io_access_err, 0);
+		unix_error("fstat", file, isc_io_access_err);
 	}
 
 	const FB_UINT64 length = statistics.st_size;
@@ -480,7 +467,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 	jrd_file* file = pageSpace->file;
 
 	if (file->fil_desc == -1)
-		unix_error("PIO_header", file, isc_io_read_err, 0);
+		unix_error("PIO_header", file, isc_io_read_err);
 
 	for (i = 0; i < IO_RETRY; i++) {
 #ifdef ISC_DATABASE_ENCRYPTION
@@ -490,7 +477,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1) {
 				if (SYSCALL_INTERRUPTED(errno))
 					continue;
-				unix_error("read", file, isc_io_read_err, 0);
+				unix_error("read", file, isc_io_read_err);
 			}
 
 			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
@@ -501,7 +488,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1) {
 			if (SYSCALL_INTERRUPTED(errno))
 				continue;
-			unix_error("read", file, isc_io_read_err, 0);
+			unix_error("read", file, isc_io_read_err);
 		}
 		else
 			break;
@@ -519,7 +506,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 			fprintf(stderr, "PIO_header: retry count exceeded\n");
 			fflush(stderr);
 #endif
-			unix_error("read_retry", file, isc_io_read_err, 0);
+			unix_error("read_retry", file, isc_io_read_err);
 		}
 	}
 }
@@ -617,10 +604,9 @@ jrd_file* PIO_open(Database* dbb,
 		 */
 		desc = openFile(ptr, false, false, true);
 		if (desc == -1) {
-			ERR_post(isc_io_error,
-					 isc_arg_string, "open",
-					 isc_arg_string, ERR_cstring(file_name),
-					 isc_arg_gds, isc_io_open_err, isc_arg_unix, errno, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
 		/* If this is the primary file, set Database flag to indicate that it is
 		 * being opened ReadOnly. This flag will be used later to compare with
@@ -643,11 +629,9 @@ jrd_file* PIO_open(Database* dbb,
 	if (PIO_on_raw_device(file_name)
 		&& !raw_devices_validate_database(desc, file_name))
 	{
-		ERR_post (isc_io_error,
-					isc_arg_string, "open",
-					isc_arg_string, ERR_cstring(file_name),
-					isc_arg_gds, isc_io_open_err,
-					isc_arg_unix, ENOENT, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+										   Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
 	}
 #endif /* SUPPORT_RAW_DEVICES */
 
@@ -722,7 +706,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 			fprintf(stderr, "PIO_read: retry count exceeded\n");
 			fflush(stderr);
 #endif
-			unix_error("read_retry", file, isc_io_read_err, 0);
+			unix_error("read_retry", file, isc_io_read_err);
 		}
 	}
 
@@ -954,27 +938,16 @@ static bool unix_error(const TEXT* string,
  **************************************/
 	ISC_STATUS* status = status_vector;
 	if (status) {
-		*status++ = isc_arg_gds;
-		*status++ = isc_io_error;
-		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) string; // pointer to ISC_STATUS!!!
-		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS)(U_IPTR) ERR_cstring(file->fil_string);
-		*status++ = isc_arg_gds;
-		*status++ = operation;
-		*status++ = isc_arg_unix;
-		*status++ = errno;
-		*status++ = isc_arg_end;
+		ERR_build_status(status, Arg::Gds(isc_io_error) << Arg::Str(string) <<
+														   Arg::Str(file->fil_string) <<
+								 Arg::Gds(operation) << Arg::Unix(errno));
 		gds__log_status(0, status_vector);
 		return false;
 	}
 
-	ERR_post(isc_io_error,
-			 isc_arg_string, string,
-			 isc_arg_string, ERR_cstring(file->fil_string),
-			 isc_arg_gds, operation,
-			 isc_arg_unix, errno,
-			 isc_arg_end);
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << 
+									   Arg::Str(file->fil_string) <<
+			 Arg::Gds(operation) << Arg::Unix(errno));
 
     // Added a false for final return - which seems to be the answer,
     // but is better than what it was which was nothing ie random 
@@ -1125,45 +1098,35 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 	/* Read in database header. Code lifted from PIO_header. */
 	if (desc == -1)
-		ERR_post (isc_io_error,
-					isc_arg_string, "raw_devices_validate_database",
-					isc_arg_string, ERR_cstring(file_name),
-					isc_arg_gds, isc_io_read_err,
-					isc_arg_unix, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("raw_devices_validate_database") << 
+										   Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
 	for (int i = 0; i < IO_RETRY; i++)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
-			ERR_post (isc_io_error,
-						isc_arg_string, "lseek",
-						isc_arg_string, ERR_cstring(file_name),
-						isc_arg_gds, isc_io_read_err,
-						isc_arg_unix, errno, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		const ssize_t bytes = read (desc, header, sizeof(header));
 		if (bytes == sizeof(header))
 			goto read_finished;
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
-			ERR_post (isc_io_error,
-						isc_arg_string, "read",
-						isc_arg_string, ERR_cstring(file_name),
-						isc_arg_gds, isc_io_read_err,
-						isc_arg_unix, errno, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 	}
 
-	ERR_post (isc_io_error,
-				isc_arg_string, "read_retry",
-				isc_arg_string, ERR_cstring(file_name),
-				isc_arg_gds, isc_io_read_err,
-				isc_arg_unix, errno, isc_arg_end);
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") << 
+									   Arg::Str(file_name) <<
+			 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
   read_finished:
 	/* Rewind file pointer */
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
-		ERR_post (isc_io_error,
-					isc_arg_string, "lseek",
-					isc_arg_string, ERR_cstring(file_name),
-					isc_arg_gds, isc_io_read_err,
-					isc_arg_unix, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
+										   Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
 	/* Validate database header. Code lifted from PAG_header. */
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
@@ -1201,11 +1164,9 @@ static int raw_devices_unlink_database(const PathName& file_name)
 		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
 			break;
 		if (!SYSCALL_INTERRUPTED(errno))
-			ERR_post (isc_io_error,
-						isc_arg_string, "open",
-						isc_arg_string, ERR_cstring(file_name),
-						isc_arg_gds, isc_io_open_err,
-						isc_arg_unix, errno, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 	}
 
 	memset(header, 0xa5, sizeof(header));
@@ -1217,11 +1178,9 @@ static int raw_devices_unlink_database(const PathName& file_name)
 			break;
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
-		ERR_post (isc_io_error,
-			isc_arg_string, "write",
-			isc_arg_string, ERR_cstring(file_name),
-			isc_arg_gds, isc_io_write_err,
-			isc_arg_unix, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") << 
+										   Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_write_err) << Arg::Unix(errno));
 	}
 
 	//if (desc != -1) perhaps it's better to check this???

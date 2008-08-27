@@ -394,8 +394,7 @@
 
 #define NO_NFS
 
-#define SYS_ARG		isc_arg_win32
-#define SYS_ERR		isc_arg_win32
+#define SYS_ERR		Arg::Windows
 //#define SLONGFORMAT	"ld"
 //#define ULONGFORMAT	"lu"
 //#define XLONGFORMAT "lX"
@@ -480,12 +479,11 @@ typedef unsigned __int64 FB_UINT64;
 *****************************************************/
 #ifdef UNIX
 #define NO_CHECKSUM
-#define SYS_ARG		isc_arg_unix
-#define SYS_ERR		isc_arg_unix
+#define SYS_ERR		Arg::Unix
 #endif /* UNIX */
 
 #ifndef SYS_ERR
-#define SYS_ERR		isc_arg_unix
+#define SYS_ERR		Arg::Unix
 #endif
 
 #ifndef ERRNO

@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -62,6 +61,7 @@
 using MsgFormat::SafeArg;
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 DATABASE DB = STATIC "ODS.RDB";
@@ -1734,7 +1734,7 @@ void DYN_delete_shadow( Global* gbl, const UCHAR** ptr)
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_e_shadow, DYN_REQUESTS);
@@ -1801,7 +1801,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
             DYN_REQUEST(drq_e_trg_msgs) = request;
 
 		if (TR.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		ERASE TM;
 	END_FOR;
@@ -1822,7 +1822,7 @@ void DYN_delete_trigger( Global* gbl, const UCHAR** ptr)
             DYN_REQUEST(drq_e_trigger) = request;
 
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		r = X.RDB$RELATION_NAME;
 		ERASE X;

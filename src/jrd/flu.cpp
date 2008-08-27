@@ -69,6 +69,7 @@
 #define DYNAMIC_SHARED_LIBRARIES
 #endif
 
+using namespace Firebird;
 
 namespace {
 	Firebird::InitInstance<Jrd::Module::LoadedModules> loadedModules;
@@ -280,10 +281,8 @@ namespace Jrd
 				// must satisfy UdfAccess entry in config file.
 				if (! iUdfDirectoryList().isPathInList(fixedModule))
 				{
-					ERR_post(isc_conf_access_denied,
-						isc_arg_string, "UDF/BLOB-filter module",
-						isc_arg_string, ERR_cstring(initialModule),
-						isc_arg_end);
+					ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("UDF/BLOB-filter module") << 
+																 Arg::Str(initialModule));
 				}
 				
 				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);

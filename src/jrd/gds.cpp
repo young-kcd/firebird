@@ -43,17 +43,18 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/file_params.h"
 #include "../jrd/msg_encode.h"
-#include "../jrd/iberr.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/dsc.h"
 #include "../jrd/constants.h"
+#include "../jrd/status.h"
 
 #include "../common/classes/alloc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
 #include "../common/classes/TempFile.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

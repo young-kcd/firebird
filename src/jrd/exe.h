@@ -835,7 +835,7 @@ public:
 	{
 		if (csb_n_stream >= MAX_STREAMS && check)
 		{
-			ERR_post(isc_too_many_contexts, isc_arg_end);
+			ERR_post(Firebird::Arg::Gds(isc_too_many_contexts));
 		}
 		return csb_n_stream++;
 	}

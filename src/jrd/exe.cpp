@@ -108,6 +108,7 @@
 
 
 using namespace Jrd;
+using namespace Firebird;
 
 // AffectedRows class implementation
 
@@ -161,9 +162,7 @@ StatusXcp::StatusXcp()
 
 void StatusXcp::clear()
 {
-	status[0] = isc_arg_gds;
-	status[1] = FB_SUCCESS;
-	status[2] = isc_arg_end;
+	fb_utils::init_status(status);
 }
 
 void StatusXcp::init(const ISC_STATUS* vector)
@@ -409,21 +408,21 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 				case dtype_sql_date:
 					if (!Firebird::TimeStamp::isValidDate(*(GDS_DATE*) from_desc->dsc_address))
 					{
-						ERR_post(isc_date_range_exceeded, isc_arg_end);
+						ERR_post(Arg::Gds(isc_date_range_exceeded));
 					}
 					break;
 
 				case dtype_sql_time:
 					if (!Firebird::TimeStamp::isValidTime(*(GDS_TIME*) from_desc->dsc_address))
 					{
-						ERR_post(isc_time_range_exceeded, isc_arg_end);
+						ERR_post(Arg::Gds(isc_time_range_exceeded));
 					}
 					break;
 
 				case dtype_timestamp:
 					if (!Firebird::TimeStamp::isValidTimeStamp(*(GDS_TIMESTAMP*) from_desc->dsc_address))
 					{
-						ERR_post(isc_datetime_range_exceeded, isc_arg_end);
+						ERR_post(Arg::Gds(isc_datetime_range_exceeded));
 					}
 					break;
 
@@ -678,7 +677,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 		}
 
 		if (count > MAX_CLONES) {
-			ERR_post(isc_req_max_clones_exceeded, isc_arg_end);
+			ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 		}
 		if (!clone)
 			clone = CMP_clone_request(tdbb, request, n, validate);
@@ -720,7 +719,7 @@ void EXE_receive(thread_db*		tdbb,
 	jrd_tra* transaction = request->req_transaction;
 
 	if (!(request->req_flags & req_active)) {
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
 	if (request->req_flags & req_proc_fetch)
@@ -755,19 +754,18 @@ void EXE_receive(thread_db*		tdbb,
 	if (!(request->req_flags & req_active) ||
 		request->req_operation != jrd_req::req_send)
 	{
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
 	const jrd_nod* message = request->req_message;
 	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length) {
-		ERR_post(isc_port_len,
-				 isc_arg_number, (SLONG) length,
-				 isc_arg_number, (SLONG) format->fmt_length, isc_arg_end);
+		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << 
+										   Arg::Num(format->fmt_length));
 	}
 
 	memcpy(buffer, (SCHAR*) request + message->nod_impure, length);
@@ -885,7 +883,7 @@ void EXE_send(thread_db*		tdbb,
 		JRD_reschedule(tdbb, 0, true);
 
 	if (!(request->req_flags & req_active))
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 
 	jrd_nod* message;
 	jrd_nod* node;
@@ -919,7 +917,7 @@ void EXE_send(thread_db*		tdbb,
 	else {
 #endif
 		if (request->req_operation != jrd_req::req_receive)
-			ERR_post(isc_req_sync, isc_arg_end);
+			ERR_post(Arg::Gds(isc_req_sync));
 		node = request->req_message;
 #ifdef SCROLLABLE_CURSORS
 	}
@@ -947,12 +945,11 @@ void EXE_send(thread_db*		tdbb,
 	const Format* format = (Format*) message->nod_arg[e_msg_format];
 
 	if (msg != (USHORT)(IPTR) message->nod_arg[e_msg_number])
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length) {
-		ERR_post(isc_port_len,
-				 isc_arg_number, (SLONG) length,
-				 isc_arg_number, (SLONG) format->fmt_length, isc_arg_end);
+		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << 
+										   Arg::Num(format->fmt_length));
 	}
 
 	memcpy((SCHAR*) request + message->nod_impure, buffer, length);
@@ -982,7 +979,7 @@ void EXE_send(thread_db*		tdbb,
 			CharSet* charSet = INTL_charset_lookup(tdbb, DSC_GET_CHARSET(desc));
 
 			if (!charSet->wellFormed(len, p))
-				ERR_post(isc_malformed_string, isc_arg_end);
+				ERR_post(Arg::Gds(isc_malformed_string));
 		}
 		else if (desc->isBlob())
 		{
@@ -1035,10 +1032,11 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	BLKCHK(transaction, type_tra);
 
 	if (request->req_flags & req_active)
-		ERR_post(isc_req_sync, isc_arg_gds, isc_reqinuse, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync) << 
+				 Arg::Gds(isc_reqinuse));
 
 	if (transaction->tra_flags & TRA_prepared)
-		ERR_post(isc_req_no_trans, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_no_trans));
 
 /* Post resources to transaction block.  In particular, the interest locks
    on relations/indices are copied to the transaction, which is very
@@ -1319,7 +1317,7 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (rpb->rpb_number.isBof() ||
 		(!relation->rel_view_rse && !rpb->rpb_number.isValid()))
 	{
-		ERR_post(isc_no_cur_rec, isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
 	switch (request->req_operation) {
@@ -1885,7 +1883,7 @@ static void stuff_stack_trace(const jrd_req* request)
 	}
 
 	if (!isEmpty)
-		ERR_post_nothrow(isc_stack_trace, isc_arg_string, ERR_cstring(sTrace), isc_arg_end);
+		ERR_post_nothrow(Arg::Gds(isc_stack_trace) << Arg::Str(sTrace));
 }
 
 
@@ -1910,7 +1908,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 	jrd_tra* transaction = request->req_transaction;
 	if (!transaction) {
-		ERR_post(isc_req_no_trans, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_no_trans));
 	}
 
 	SET_TDBB(tdbb);
@@ -2095,7 +2093,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (request->req_operation == jrd_req::req_evaluate) {
 						// check cursor state
 						if (impure->irsb_flags & irsb_open) {
-							ERR_post(isc_cursor_already_open, isc_arg_end);
+							ERR_post(Arg::Gds(isc_cursor_already_open));
 						}
 						// open cursor
 						RSE_open(tdbb, rsb);
@@ -2107,7 +2105,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					if (request->req_operation == jrd_req::req_evaluate) {
 						// check cursor state
 						if (!(impure->irsb_flags & irsb_open)) {
-							ERR_post(isc_cursor_not_open, isc_arg_end);
+							ERR_post(Arg::Gds(isc_cursor_not_open));
 						}
 						// close cursor
 						RSE_close(tdbb, rsb);
@@ -2120,7 +2118,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 					case jrd_req::req_evaluate:
 						// check cursor state
 						if (!(impure->irsb_flags & irsb_open)) {
-							ERR_post(isc_cursor_not_open, isc_arg_end);
+							ERR_post(Arg::Gds(isc_cursor_not_open));
 						}
 						request->req_records_affected.clear();
 						// perform preliminary navigation, if specified
@@ -2206,8 +2204,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						savepoint = savepoint->sav_next;
 					}
 					if (!found && operation != blr_savepoint_set) {
-						ERR_post(isc_invalid_savepoint,
-							isc_arg_string, ERR_cstring(node_savepoint_name), isc_arg_end);
+						ERR_post(Arg::Gds(isc_invalid_savepoint) << Arg::Str(node_savepoint_name));
 					}
 
 					switch (operation)
@@ -2931,7 +2928,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	// last savepoint has already been deleted
 
 	if (request->req_flags & req_abort) {
-		ERR_post(isc_req_sync, isc_arg_end);
+		ERR_post(Arg::Gds(isc_req_sync));
 	}
 
 	return node;
@@ -2965,7 +2962,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 	if (org_rpb->rpb_number.isBof() ||
 		(!relation->rel_view_rse && !org_rpb->rpb_number.isValid()))
 	{
-		ERR_post(isc_no_cur_rec, isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
 	const SSHORT new_stream = (USHORT)(IPTR) node->nod_arg[e_mod_new_stream];
@@ -3397,12 +3394,12 @@ static void seek_rsb(
 	switch (direction) {
 	case blr_forward:
 		if (impure->irsb_flags & irsb_eof)
-			ERR_post(isc_stream_eof, isc_arg_end);
+			ERR_post(Arg::Gds(isc_stream_eof));
 		break;
 
 	case blr_backward:
 		if (impure->irsb_flags & irsb_bof)
-			ERR_post(isc_stream_bof, isc_arg_end);
+			ERR_post(Arg::Gds(isc_stream_bof));
 		break;
 
 	case blr_bof_forward:
@@ -3412,7 +3409,7 @@ static void seek_rsb(
 	default:
 		// was: BUGCHECK(232);
 		// replaced with this error to be consistent with find()
-		ERR_post(isc_invalid_direction, isc_arg_end);
+		ERR_post(Arg::Gds(isc_invalid_direction));
 	}
 
 /* the actual offset to seek may be one less because the next time 
@@ -3642,7 +3639,8 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 					replace the above assignment with the following lines:
 
 			 if (length > sizeof(message) - 1)
-				ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, isc_arg_end);
+				ERR_post(Arg::Gds(isc_imp_exc) << 
+						 Arg::Gds(isc_blktoobig));
 			*/
 
 			memcpy(message, string, length);
@@ -3659,18 +3657,17 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	switch (exception->xcp_type)
 	{
 	case xcp_sql_code:
-		ERR_post(isc_sqlerr, isc_arg_number, exception->xcp_code, isc_arg_end);
+		ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(exception->xcp_code));
 
 	case xcp_gds_code:
 		if (exception->xcp_code == isc_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
-			ERR_post(exception->xcp_code,
-					 isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_string, ERR_cstring(relation_name.c_str()), isc_arg_end);
+			ERR_post(Arg::Gds(exception->xcp_code) << Arg::Str(name) << 
+													  Arg::Str(relation_name));
 		}
 		else
-			ERR_post(exception->xcp_code, isc_arg_end);
+			ERR_post(Arg::Gds(exception->xcp_code));
 
 	case xcp_xcp_code:
 		// CVC: If we have the exception name, use it instead of the number.
@@ -3687,25 +3684,22 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 
 		if (s && name.length())
 		{
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+					 Arg::Gds(isc_random) << Arg::Str(name) <<
+					 Arg::Gds(isc_random) << Arg::Str(s));
 		}
 		else if (s)
 		{
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(s),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+					 Arg::Gds(isc_random) << Arg::Str(s));
 		}
 		else if (name.length())
 		{
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code,
-					 isc_arg_gds, isc_random, isc_arg_string, ERR_cstring(name.c_str()),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
+					 Arg::Gds(isc_random) << Arg::Str(name));
 		}
 		else		
-			ERR_post(isc_except, isc_arg_number, exception->xcp_code, isc_arg_end);
+			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code));
 
 	default:
 		fb_assert(false);
@@ -3975,9 +3969,7 @@ static bool test_and_fixup_error(thread_db* tdbb, const PsqlException* condition
 		if (found)
 		{
 			request->req_last_xcp.init(status_vector);
-			status_vector[0] = isc_arg_gds;
-			status_vector[1] = 0;
-			status_vector[2] = isc_arg_end;
+			fb_utils::init_status(status_vector);
 			break;
 		}
     }
@@ -4018,19 +4010,16 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 				ISC_STATUS code = PAR_symbol_to_gdscode(msg);
 				if (code)
 				{
-					ERR_post(isc_integ_fail,
-							 isc_arg_number, (SLONG) trigger->req_label,
-							 isc_arg_gds, code, isc_arg_end);
+					ERR_post(Arg::Gds(isc_integ_fail) << Arg::Num(trigger->req_label) <<
+							 Arg::Gds(code));
 				}
 			}
-			ERR_post(isc_integ_fail,
-					 isc_arg_number, (SLONG) trigger->req_label,
-					 isc_arg_gds, isc_random, isc_arg_string, msg, isc_arg_end);
+			ERR_post(Arg::Gds(isc_integ_fail) << Arg::Num(trigger->req_label) <<
+					 Arg::Gds(isc_random) << Arg::Str(msg));
 		}
 		else
 		{
-			ERR_post(isc_integ_fail, isc_arg_number,
-					 (SLONG) trigger->req_label, isc_arg_end);
+			ERR_post(Arg::Gds(isc_integ_fail) << Arg::Num(trigger->req_label));
 		}
 	}
 	else
@@ -4073,7 +4062,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 			const USHORT length = (desc && !(request->req_flags & req_null)) ?
 				MOV_make_string(desc, ttype_dynamic, &value,
 								reinterpret_cast<vary*>(temp),
-								sizeof(temp)) : 0;
+								sizeof(temp) - 1) : 0;
 
 			if (!desc || (request->req_flags & req_null))
 			{
@@ -4085,7 +4074,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 			}
 			else
 			{
-				value = ERR_string(value, length);
+				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
 			}
 
 			const TEXT*	name = 0;
@@ -4100,7 +4089,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				if (vector && id < vector->count() &&
 					(field = (*vector)[id]))
 				{
-					name = ERR_cstring(field->fld_name.c_str());
+					name = field->fld_name.c_str();
 				}
 			}
 
@@ -4109,8 +4098,8 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				name = UNKNOWN_STRING_MARK;
 			}
 
-			ERR_post(isc_not_valid, isc_arg_string, name,
-					 isc_arg_string, value, isc_arg_end);
+			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) << 
+												Arg::Str(value));
 		}
 	}
 }

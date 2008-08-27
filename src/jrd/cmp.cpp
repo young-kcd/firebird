@@ -124,6 +124,7 @@ const int MAX_RECURSION		= 128;
 const int MAX_REQUEST_SIZE	= 10485760;	// 10 MB - just to be safe
 
 using namespace Jrd;
+using namespace Firebird;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
@@ -155,6 +156,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig_vec* triggers, jrd_rel* view);
 
 #ifdef CMP_DEBUG
+#include <stdarg.h>
 IMPLEMENT_TRACE_ROUTINE(cmp_trace, "CMP")
 #endif
 
@@ -676,9 +678,8 @@ jrd_req* CMP_find_request(thread_db* tdbb, USHORT id, USHORT which)
 
 	for (int n = 1; true; n++) {
 		if (n > MAX_RECURSION) {
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_req_depth_exceeded,
-					 isc_arg_number, (SLONG) MAX_RECURSION, isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_req_depth_exceeded) << Arg::Num(MAX_RECURSION));
 			// Msg363 "request depth exceeded. (Recursive definition?)"
 		}
 		jrd_req* clone = CMP_clone_request(tdbb, request, n, false);
@@ -1119,7 +1120,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 					DTYPE_IS_TEXT(desc2.dsc_dtype))
 				{
-						ERR_post(isc_expression_eval_err, isc_arg_end);
+						ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
 				// FALL INTO
 			case dtype_timestamp:
@@ -1162,7 +1163,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 							dtype = dtype_timestamp;
 						}
 						else {
-							ERR_post(isc_expression_eval_err, isc_arg_end);
+							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
 						if (dtype == dtype_sql_date) {
@@ -1200,7 +1201,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					}
 					else {
 						// <date> + <date>
-						ERR_post(isc_expression_eval_err, isc_arg_end);
+						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
@@ -1220,7 +1221,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				}
 				else {
 					// <non-date> - <date>
-					ERR_post(isc_expression_eval_err, isc_arg_end);
+					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
 				return;
 
@@ -1295,7 +1296,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 			// In Dialect 2 or 3, strings can never partipate in addition / sub
 			// (use a specific cast instead)
 			if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
-				ERR_post(isc_expression_eval_err, isc_arg_end);
+				ERR_post(Arg::Gds(isc_expression_eval_err));
 
 			// Because dtype_int64 > dtype_double, we cannot just use the MAX macro to set
 			// the result dtype. The rule is that two exact numeric operands yield an int64
@@ -1371,7 +1372,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 							dtype = dtype_timestamp;
 						}
 						else {
-							ERR_post(isc_expression_eval_err, isc_arg_end);
+							ERR_post(Arg::Gds(isc_expression_eval_err));
 						}
 
 						if (dtype == dtype_sql_date) {
@@ -1410,7 +1411,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					}
 					else {
 						// <date> + <date>
-						ERR_post(isc_expression_eval_err, isc_arg_end);
+						ERR_post(Arg::Gds(isc_expression_eval_err));
 					}
 				}
 				else if (DTYPE_IS_DATE(desc1.dsc_dtype) ||
@@ -1430,7 +1431,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				}
 				else {
 					// <non-date> - <date>
-					ERR_post(isc_expression_eval_err, isc_arg_end);
+					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
 				return;
 
@@ -1813,8 +1814,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					// error() is a local routine in par.cpp, so we use plain ERR_post
 					if (offset < 0)
 					{
-						ERR_post(isc_bad_substring_offset,
-								 isc_arg_number, offset + 1, isc_arg_end);
+						ERR_post(Arg::Gds(isc_bad_substring_offset) << Arg::Num(offset + 1));
 					}
 				}
 				if (length_node->nod_type == nod_literal &&
@@ -1824,8 +1824,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 					// error() is a local routine in par.cpp, so we use plain ERR_post
 					if (length < 0)
 					{
-						ERR_post(isc_bad_substring_length,
-								 isc_arg_number, length, isc_arg_end);
+						ERR_post(Arg::Gds(isc_bad_substring_length) << Arg::Num(length));
 					}
 				}
 			}
@@ -1937,7 +1936,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 	if (dtype == dtype_quad)
 		IBERROR(224);				// msg 224 quad word arithmetic not supported
 
-	ERR_post(isc_datype_notsup, isc_arg_end);	// data type not supported for arithmetic
+	ERR_post(Arg::Gds(isc_datype_notsup));	// data type not supported for arithmetic
 }
 
 
@@ -3570,9 +3569,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				if (!relation->rel_view_rse)
 					break;
 
-				ERR_post(isc_no_field_access,
-						 isc_arg_string, ERR_cstring(field->fld_name),
-						 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) << 
+														  Arg::Str(relation->rel_name));
 				// Msg 364 "cannot access column %s in view %s"
 			}
 
@@ -3891,7 +3889,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			sub->nod_type != nod_variable &&
 			sub->nod_type != nod_null)
 		{
-			ERR_post(isc_read_only_field, isc_arg_end);
+			ERR_post(Arg::Gds(isc_read_only_field));
 		}
 		else if (sub->nod_type == nod_field)
 		{
@@ -3901,14 +3899,14 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// for all trigger types
 			if ((tail->csb_flags & csb_trigger) && stream == 0)
 			{
-				ERR_post(isc_read_only_field, isc_arg_end);
+				ERR_post(Arg::Gds(isc_read_only_field));
 			}
 			// assignments to the NEW context are prohibited
 			// for post-action triggers
 			if ((tail->csb_flags & csb_trigger) && stream == 1 &&
 				(csb->csb_g_flags & csb_post_trigger))
 			{
-				ERR_post(isc_read_only_field, isc_arg_end);
+				ERR_post(Arg::Gds(isc_read_only_field));
 			}
 		}
 	}
@@ -4846,7 +4844,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 		rse->rse_sorted ||
 		!(node = rse->rse_relation[0]) || node->nod_type != nod_relation)
 	{
-		ERR_post(isc_read_only_view, isc_arg_string, relation->rel_name.c_str(), isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_view) << Arg::Str(relation->rel_name));
 	}
 
 	// for an updateable view, return the view source
@@ -4954,7 +4952,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_from:
 		rse_node = node->nod_arg[e_stat_rse];
 		if (! rse_node) {
-			ERR_post(isc_wish_list, isc_arg_end);
+			ERR_post(Arg::Gds(isc_wish_list));
 		}
 		if (!(rse_node->nod_flags & rse_variant)) {
 			node->nod_flags |= nod_invariant;
@@ -5262,8 +5260,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 				node->nod_arg[e_fun_function] =
 					(jrd_nod*) FUN_resolve(tdbb, csb, function, value);
 				if (!node->nod_arg[e_fun_function]) {
-					ERR_post(isc_funmismat, isc_arg_string,
-							function->fun_name.c_str(), isc_arg_end);
+					ERR_post(Arg::Gds(isc_funmismat) << Arg::Str(function->fun_name));
 				}
 			}
 			dsc descriptor_a;
@@ -5303,7 +5300,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_sleuth:
 		if (node->nod_count > 2) {
 			if (node->nod_arg[2]->nod_flags & nod_agg_dbkey) {
-				ERR_post(isc_bad_dbkey, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_dbkey));
 			}
 			dsc descriptor_c;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_c);
@@ -5329,7 +5326,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			if ((node->nod_arg[0]->nod_flags & nod_agg_dbkey) ||
 				(node->nod_arg[1]->nod_flags & nod_agg_dbkey))
 			{
-				ERR_post(isc_bad_dbkey, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_dbkey));
 			}
 			dsc descriptor_a, descriptor_b;
 			CMP_get_desc(tdbb, csb, node->nod_arg[0], &descriptor_a);
@@ -5349,7 +5346,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 	case nod_missing:
 		{
 			if (node->nod_arg[0]->nod_flags & nod_agg_dbkey) {
-				ERR_post(isc_bad_dbkey, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_dbkey));
 			}
 
 			// check for syntax errors in the calculation
@@ -5566,8 +5563,7 @@ static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
 		if ((*ptr)->nod_type == nod_relation) {
 			const USHORT stream = (USHORT)(IPTR) (*ptr)->nod_arg[e_rel_stream];
 			if (!(csb->csb_rpt[stream].csb_plan)) {
-				ERR_post(isc_no_stream_plan, isc_arg_string,
-						 csb->csb_rpt[stream].csb_relation->rel_name.c_str(), isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_stream_plan) << Arg::Str(csb->csb_rpt[stream].csb_relation->rel_name));
 			}
 		}
 		else if ((*ptr)->nod_type == nod_rse) {
@@ -5659,8 +5655,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				}
 				else {
 					// view %s has more than one base relation; use aliases to distinguish
-					ERR_post(isc_view_alias, isc_arg_string,
-							 plan_relation->rel_name.c_str(), isc_arg_end);
+					ERR_post(Arg::Gds(isc_view_alias) << Arg::Str(plan_relation->rel_name));
 				}
 
 				break;
@@ -5682,9 +5677,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 					if (relation && relation->rel_id == plan_relation->rel_id) {
 						if (duplicate_relation) {
 							// table %s is referenced twice in view; use an alias to distinguish
-							ERR_post(isc_duplicate_base_table,
-									 isc_arg_string,
-									 duplicate_relation->rel_name.c_str(), isc_arg_end);
+							ERR_post(Arg::Gds(isc_duplicate_base_table) << Arg::Str(duplicate_relation->rel_name));
 						}
 						else {
 							duplicate_relation = relation;
@@ -5731,8 +5724,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 			if (!*map) {
 				// table %s is referenced in the plan but not the from list
-				ERR_post(isc_stream_not_found, isc_arg_string,
-						 plan_relation->rel_name.c_str(), isc_arg_end);
+				ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 			}
 		}
 
@@ -5740,8 +5732,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 		if (!map || !*map) {
 			// table %s is referenced in the plan but not the from list
-			ERR_post(isc_stream_not_found, isc_arg_string,
-					 plan_relation->rel_name.c_str(), isc_arg_end);
+			ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 		}
 
 		plan_relation_node->nod_arg[e_rel_stream] = (jrd_nod*) (IPTR) *map;
@@ -5751,24 +5742,21 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 
 	if (!tail->csb_relation) {
 		// table %s is referenced in the plan but not the from list
-		ERR_post(isc_stream_not_found, isc_arg_string,
-				 plan_relation->rel_name.c_str(), isc_arg_end);
+		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 	}
 
 	if ((tail->csb_relation->rel_id != plan_relation->rel_id)
 		&& !view_relation)
 	{
 		// table %s is referenced in the plan but not the from list
-		ERR_post(isc_stream_not_found, isc_arg_string,
-				 plan_relation->rel_name.c_str(), isc_arg_end);
+		ERR_post(Arg::Gds(isc_stream_not_found) << Arg::Str(plan_relation->rel_name));
 	}
 
 	// check if we already have a plan for this stream
 
 	if (tail->csb_plan) {
 		// table %s is referenced more than once in plan; use aliases to distinguish
-		ERR_post(isc_stream_twice, isc_arg_string,
-				 tail->csb_relation->rel_name.c_str(), isc_arg_end);
+		ERR_post(Arg::Gds(isc_stream_twice) << Arg::Str(tail->csb_relation->rel_name));
 	}
 
 	tail->csb_plan = plan;
@@ -6030,7 +6018,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, isc_arg_end);
+		ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = (USHORT) offset;
 }

@@ -66,6 +66,7 @@
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 //#define DEBUG_BTR_SPLIT
 
@@ -1913,8 +1914,8 @@ void BTR_reserve_slot(thread_db* tdbb, jrd_rel* relation, jrd_tra* transaction,
 	// check that we create no more indexes than will fit on a single root page
 	if (root->irt_count > dbb->dbb_max_idx) {
 		CCH_RELEASE(tdbb, &window);
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_max_idx,
-				 isc_arg_number, (SLONG) dbb->dbb_max_idx, 0);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_max_idx) << Arg::Num(dbb->dbb_max_idx));
 	}
 	// Scan the index page looking for the high water mark of the descriptions and,
 	// perhaps, an empty index slot
@@ -1967,8 +1968,8 @@ retry:
 		// If this is the second try already, then there really is no more room.
 		if (maybe_no_room) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(isc_no_meta_update, isc_arg_gds,
-					 isc_index_root_page_full, isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_index_root_page_full));
 		}
 		compress_root(tdbb, root);
 		maybe_no_room = true;

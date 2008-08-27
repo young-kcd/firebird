@@ -69,7 +69,7 @@
 #include "../lock/lock_proto.h"
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
-//#include "../common/classes/GenericMap.h"
+#include "../common/StatusArg.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -78,6 +78,7 @@ static const SLONG MAX_TRA_NUMBER = MAX_SLONG;
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 #ifdef GARBAGE_THREAD
 #include "../jrd/isc_s_proto.h"
@@ -418,7 +419,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	}
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(isc_trans_invalid, isc_arg_end);
+		ERR_post(Arg::Gds(isc_trans_invalid));
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
 
@@ -937,7 +938,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length,
 		return;
 
 	if (transaction->tra_flags & TRA_invalidated)
-		ERR_post(isc_trans_invalid, isc_arg_end);
+		ERR_post(Arg::Gds(isc_trans_invalid));
 
 /* If there's a transaction description message, log it to RDB$TRANSACTION
    We should only log a message to RDB$TRANSACTION if there is a message
@@ -1008,7 +1009,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 
 /* Cannot work on limbo transactions for ReadOnly database */
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_database));
 
 	MemoryPool* const pool = dbb->createPool();
 	Jrd::ContextPoolHolder context(tdbb, pool);
@@ -1042,10 +1043,9 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 		USHORT flags = 0;
 		gds__msg_lookup(NULL, JRD_BUGCHK, message, sizeof(text), text, &flags);
 
-		ERR_post(isc_no_recon,
-				 isc_arg_gds, isc_tra_state,
-				 isc_arg_number, number,
-				 isc_arg_string, ERR_cstring(text), isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_recon) <<
+				 Arg::Gds(isc_tra_state) << Arg::Num(number) << 
+											Arg::Str(text));
 	}
 
 	link_transaction(tdbb, trans);
@@ -1315,9 +1315,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		catch (const Firebird::Exception&) {
 			/* Prevent a bugcheck in TRA_set_state to cause a loop */
 			/* Clear the error because the rollback will succeed. */
-			tdbb->tdbb_status_vector[0] = isc_arg_gds;
-			tdbb->tdbb_status_vector[1] = 0;
-			tdbb->tdbb_status_vector[2] = isc_arg_end;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
 	}
 	else if (!(transaction->tra_flags & TRA_write)) {
@@ -1544,9 +1542,7 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
-		ERR_post(isc_shutinprog, isc_arg_string,
-				 ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(attachment->att_filename));
 	}
 
 	// To handle the problems of relation locks, allocate a temporary
@@ -1581,9 +1577,7 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 
 	if (dbb->dbb_ast_flags & DBB_shut_tran)
 	{
-		ERR_post(isc_shutinprog, isc_arg_string,
-				 ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(attachment->att_filename));
 	}
 
 	// To handle the problems of relation locks, allocate a temporary
@@ -1660,9 +1654,7 @@ bool TRA_sweep(thread_db* tdbb, jrd_tra* trans)
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
 		// clear lock error from status vector
-		tdbb->tdbb_status_vector[0] = isc_arg_gds;
-		tdbb->tdbb_status_vector[1] = 0;
-		tdbb->tdbb_status_vector[2] = isc_arg_end;
+		fb_utils::init_status(tdbb->tdbb_status_vector);
 
 		return true;
 	}
@@ -1925,7 +1917,8 @@ static SLONG bump_transaction_id(thread_db* tdbb, WIN * window)
 	if (dbb->dbb_next_transaction >= MAX_TRA_NUMBER - 1)
 	{
 		CCH_RELEASE(tdbb, window);
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, isc_arg_end);
+		ERR_post(Arg::Gds(isc_imp_exc) <<
+				 Arg::Gds(isc_tra_num_exc));
 	}
 	const SLONG number = ++dbb->dbb_next_transaction;
 
@@ -1979,7 +1972,8 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN * window)
 	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1)
 	{
 		CCH_RELEASE(tdbb, window);
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_tra_num_exc, isc_arg_end);
+		ERR_post(Arg::Gds(isc_imp_exc) <<
+				 Arg::Gds(isc_tra_num_exc));
 	}
 	const SLONG number = header->hdr_next_transaction + 1;
 
@@ -2141,8 +2135,8 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 	
 	if (level == 30)
 	{
-		ERR_post(isc_bad_tpb_content, isc_arg_gds,
-			isc_tpb_reserv_max_recursion, isc_arg_number, 30, isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+				 Arg::Gds(isc_tpb_reserv_max_recursion) << Arg::Num(30));
 	}
 
 	const char* const relation_name = relation->rel_name.c_str();
@@ -2159,15 +2153,16 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 		if (level)
 		{
 			lock_type = oldlock; // Preserve the old, more powerful lock.
-			ERR_post_warning(isc_tpb_reserv_stronger_wng,
-				isc_arg_string, relation_name, isc_arg_string, oldname,
-				isc_arg_string, newname, isc_arg_end);
+			ERR_post_warning(Arg::Warning(isc_tpb_reserv_stronger_wng) << Arg::Str(relation_name) << 
+																		  Arg::Str(oldname) << 
+																		  Arg::Str(newname));
 		}
 		else
 		{
-			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_stronger,
-				isc_arg_string, relation_name, isc_arg_string, oldname,
-				isc_arg_string, newname, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_stronger) << Arg::Str(relation_name) << 
+														  Arg::Str(oldname) << 
+														  Arg::Str(newname));
 		}
 	}
 
@@ -2177,24 +2172,24 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 		// Reject explicit attempts to take locks on virtual tables.
 		if (relation->isVirtual())
 		{
-			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_virtualtbl,
-				isc_arg_string, relation_name, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_virtualtbl) << Arg::Str(relation_name));
 		}
 			
 		// Reject explicit attempts to take locks on system tables, but RDB$ADMIN role
 		// can do that for whatever is needed.
 		if (relation->isSystem() && !tdbb->getAttachment()->locksmith())
 		{
-		    ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_systbl,
-				isc_arg_string, relation_name, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+		    		 Arg::Gds(isc_tpb_reserv_systbl) << Arg::Str(relation_name));
 		}
 
 		if (relation->isTemporary() && (lock_type == LCK_PR || lock_type == LCK_EX))
 		{
-			ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_reserv_temptbl,
-				isc_arg_string, get_lockname_v3(LCK_PR),
-				isc_arg_string, get_lockname_v3(LCK_EX),
-				isc_arg_string, relation_name, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_temptbl) << Arg::Str(get_lockname_v3(LCK_PR)) << 
+					 									 Arg::Str(get_lockname_v3(LCK_EX)) << 
+														 Arg::Str(relation_name));
 		}
 	}
 	else
@@ -2233,16 +2228,11 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 		jrd_rel* base_rel = MET_lookup_relation(tdbb, ctx[i]->vcx_relation_name);
 		if (!base_rel)
 		{
-			ERR_post(isc_bad_tpb_content,
-					isc_arg_gds,
-					isc_tpb_reserv_baserelnotfound,	/* should be a BUGCHECK */
-					isc_arg_string,
-					ERR_cstring(ctx[i]->vcx_relation_name.c_str()),
-					isc_arg_string,
-					ERR_cstring(relation_name),
-					isc_arg_string,
-					option_name,
-					isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 /* should be a BUGCHECK */
+					 Arg::Gds(isc_tpb_reserv_baserelnotfound) << Arg::Str(ctx[i]->vcx_relation_name) << 
+																 Arg::Str(relation_name) << 
+																 Arg::Str(option_name));
 		}
 
 		/* force a scan to read view information */
@@ -2519,7 +2509,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction,
 			if (!(dbb->dbb_flags & DBB_read_only))
 				CCH_RELEASE(tdbb, &window);
 #endif
-			ERR_post(isc_lock_conflict, isc_arg_end);
+			ERR_post(Arg::Gds(isc_lock_conflict));
 		}
 	}
 
@@ -2634,9 +2624,7 @@ static void start_sweeper(thread_db* tdbb, Database* dbb)
 	if (!LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT))
 	{
 		// clear lock error from status vector
-		tdbb->tdbb_status_vector[0] = isc_arg_gds;
-		tdbb->tdbb_status_vector[1] = 0;
-		tdbb->tdbb_status_vector[2] = isc_arg_end;
+		fb_utils::init_status(tdbb->tdbb_status_vector);
 
 		return; // false;
 	}
@@ -2726,7 +2714,8 @@ static void transaction_options(thread_db* tdbb,
 	const UCHAR* const end = tpb + tpb_length;
 
 	if (*tpb != isc_tpb_version3 && *tpb != isc_tpb_version1)
-		ERR_post(isc_bad_tpb_form, isc_arg_gds, isc_wrotpbver, isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_tpb_form) <<
+				 Arg::Gds(isc_wrotpbver));
 
 	RelationLockTypeMap	lockmap;
 
@@ -2743,7 +2732,8 @@ static void transaction_options(thread_db* tdbb,
 		{
 		case isc_tpb_consistency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_multiple_txn_isolation));
 
 			transaction->tra_flags |= TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2751,7 +2741,8 @@ static void transaction_options(thread_db* tdbb,
 
 		case isc_tpb_concurrency:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_multiple_txn_isolation));
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags &= ~TRA_read_committed;
@@ -2759,25 +2750,26 @@ static void transaction_options(thread_db* tdbb,
 
 		case isc_tpb_read_committed:
 			if (!isolation.assignOnce(true))
-				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_multiple_txn_isolation, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_multiple_txn_isolation));
 
 			transaction->tra_flags &= ~TRA_degree3;
 			transaction->tra_flags |= TRA_read_committed;
 			break;
 
 		case isc_tpb_shared:
-			ERR_post(isc_bad_tpb_content, isc_arg_gds,
-				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_shared", isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_before_table) << Arg::Str("isc_tpb_shared"));
 			break;
 			
 		case isc_tpb_protected:
-			ERR_post(isc_bad_tpb_content, isc_arg_gds,
-				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_protected", isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_before_table) << Arg::Str("isc_tpb_protected"));
 			break;
 			
 		case isc_tpb_exclusive:
-			ERR_post(isc_bad_tpb_content, isc_arg_gds,
-				isc_tpb_reserv_before_table, isc_arg_string, "isc_tpb_exclusive", isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_reserv_before_table) << Arg::Str("isc_tpb_exclusive"));
 			break;
 
 		case isc_tpb_wait:
@@ -2785,14 +2777,14 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (!wait.asBool())
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_wait",
-						isc_arg_string, "isc_tpb_nowait", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_wait") << 
+																	  Arg::Str("isc_tpb_nowait"));
 				}
 				else
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_wait", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_wait"));
 				}
 			}
 			break;
@@ -2800,14 +2792,14 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 			{
-				ERR_post(isc_bad_tpb_content, isc_arg_gds,
-					isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_rec_version"));
 			}
 
 			if (!rec_version.assignOnce(true))
 			{
-				ERR_post(isc_bad_tpb_content, isc_arg_gds,
-					isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_rec_version", isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_rec_version"));
 			}
 
 			transaction->tra_flags |= TRA_rec_version;
@@ -2816,14 +2808,14 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_no_rec_version:
 			if (isolation.isAssigned() && !(transaction->tra_flags & TRA_read_committed))
 			{
-				ERR_post(isc_bad_tpb_content, isc_arg_gds,
-					isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_no_rec_version"));
 			}
 
 			if (!rec_version.assignOnce(false))
 			{
-				ERR_post(isc_bad_tpb_content, isc_arg_gds,
-					isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_no_rec_version", isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_no_rec_version"));
 			}
 
 			transaction->tra_flags &= ~TRA_rec_version;
@@ -2832,23 +2824,23 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_nowait:
 			if (lock_timeout.asBool())
 			{
-				ERR_post(isc_bad_tpb_content, isc_arg_gds,
-					isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
-					isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+						 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_nowait") << 
+																  Arg::Str("isc_tpb_lock_timeout"));
 			}
 
 			if (!wait.assignOnce(false))
 			{
 				if (wait.asBool())
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_nowait",
-						isc_arg_string, "isc_tpb_wait", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_nowait") << 
+																	  Arg::Str("isc_tpb_wait"));
 				}
 				else
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_nowait", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_nowait"));
 				}
 			}
 
@@ -2860,20 +2852,21 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (!read_only.asBool())
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_read",
-						isc_arg_string, "isc_tpb_write", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_read") << 
+																	  Arg::Str("isc_tpb_write"));
 				}
 				else
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_read", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_read"));
 				}
 			}
 			
 			// Cannot set the whole txn to R/O if we already saw a R/W table reservation.
 			if (anylock_write)
-				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_readtxn_after_writelock, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) << 
+						 Arg::Gds(isc_tpb_readtxn_after_writelock));
 
 			transaction->tra_flags |= TRA_readonly;
 			break;
@@ -2883,14 +2876,14 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (read_only.asBool())
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_write",
-						isc_arg_string, "isc_tpb_read", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_write") << 
+																	  Arg::Str("isc_tpb_read"));
 				}
 				else
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_write", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_write"));
 				}
 			}
 
@@ -2908,7 +2901,8 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_lock_write:
 			// Cannot set a R/W table reservation if the whole txn is R/O.
 			if (read_only.asBool())
-				ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_writelock_after_readtxn, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_tpb_content) << 
+						 Arg::Gds(isc_tpb_writelock_after_readtxn));
 				
 			anylock_write = true;
 			// fall into
@@ -2920,37 +2914,35 @@ static void transaction_options(thread_db* tdbb,
 				// Do we have space for the identifier length?
 				if (tpb >= end)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_missing_tlen, isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_missing_tlen) << Arg::Str(option_name));
 				}
 
 				const USHORT len = *tpb++;
 				if (len > MAX_SQL_IDENTIFIER_LEN)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_long_tlen, isc_arg_number, len,
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_long_tlen) << Arg::Num(len) << 
+																   Arg::Str(option_name));
 				}
 
 				if (!len)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_null_tlen, isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_null_tlen) << Arg::Str(option_name));
 				}
 
 				// Does the identifier length surpasses the remaining of the TPB?
 				if (tpb >= end)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_missing_tname, isc_arg_number, len,
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_missing_tname) << Arg::Num(len) << Arg::Str(option_name));
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_corrup_tlen, isc_arg_number, len,
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_corrup_tlen) << Arg::Num(len) << Arg::Str(option_name));
 				}
 
 				const Firebird::MetaName name(reinterpret_cast<const char*>(tpb), len);
@@ -2958,9 +2950,9 @@ static void transaction_options(thread_db* tdbb,
 				jrd_rel* relation = MET_lookup_relation(tdbb, name);
 				if (!relation)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_reserv_relnotfound, isc_arg_string, ERR_cstring(name),
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_reserv_relnotfound) << Arg::Str(name) << 
+																	 Arg::Str(option_name));
 				}
 
 				/* force a scan to read view information */
@@ -2981,7 +2973,7 @@ static void transaction_options(thread_db* tdbb,
 						break;
 					// We'll assume table reservation doesn't make the concurrency type mandatory.
 					//default:
-					//    ERR_post(isc_arg_end);
+					//    ERR_post(isc-arg-end);
 					}
 				}
 
@@ -2997,24 +2989,22 @@ static void transaction_options(thread_db* tdbb,
 				// Harmless for now even if formally invalid.
 				if (tpb >= end)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_missing_len, isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_missing_len) << Arg::Str(option_name));
 				}
 
 				const USHORT len = *tpb++;
 
 				if (tpb >= end && len > 0)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_missing_value, isc_arg_number, len,
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_missing_value) << Arg::Num(len) << Arg::Str(option_name));
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_corrupt_len, isc_arg_number, len,
-						isc_arg_string, option_name, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_corrupt_len) << Arg::Num(len) << Arg::Str(option_name));
 				}
 
 				tpb += len;
@@ -3033,22 +3023,22 @@ static void transaction_options(thread_db* tdbb,
 			{
 				if (wait.isAssigned() && !wait.asBool())
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_conflicting_options, isc_arg_string, "isc_tpb_lock_timeout",
-						isc_arg_string, "isc_tpb_nowait", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_conflicting_options) << Arg::Str("isc_tpb_lock_timeout") << 
+																	  Arg::Str("isc_tpb_nowait"));
 				}
 
 				if (!lock_timeout.assignOnce(true))
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_multiple_spec, isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_multiple_spec) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				// Do we have space for the identifier length?
 				if (tpb >= end)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_missing_len, isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_missing_len) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				const USHORT len = *tpb++;
@@ -3056,38 +3046,37 @@ static void transaction_options(thread_db* tdbb,
 				// Does the encoded number's length surpasses the remaining of the TPB?
 				if (tpb >= end)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_missing_value, isc_arg_number, len,
-						isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_missing_value) << Arg::Num(len) << 
+																Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				if (end - tpb < len)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_corrupt_len, isc_arg_number, len,
-						isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_corrupt_len) << Arg::Num(len) << 
+															  Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				if (len > sizeof(transaction->tra_lock_timeout))
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_overflow_len, isc_arg_number, len,
-						isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_overflow_len) << Arg::Num(len) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				if (!len)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds,
-						isc_tpb_null_len, isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+							 Arg::Gds(isc_tpb_null_len) << Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				transaction->tra_lock_timeout = gds__vax_integer(tpb, len);
 
 				if (transaction->tra_lock_timeout <= 0)
 				{
-					ERR_post(isc_bad_tpb_content, isc_arg_gds, isc_tpb_invalid_value,
-						isc_arg_number, transaction->tra_lock_timeout,
-						isc_arg_string, "isc_tpb_lock_timeout", isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_tpb_content) << 
+							 Arg::Gds(isc_tpb_invalid_value) << Arg::Num(transaction->tra_lock_timeout) << 
+																Arg::Str("isc_tpb_lock_timeout"));
 				}
 
 				tpb += len;
@@ -3095,7 +3084,7 @@ static void transaction_options(thread_db* tdbb,
 			break;
 
 		default:
-			ERR_post(isc_bad_tpb_form, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_form));
 		}
 	}
 
@@ -3103,13 +3092,13 @@ static void transaction_options(thread_db* tdbb,
 	{
 		if (rec_version.asBool())
 		{
-			ERR_post(isc_bad_tpb_content, isc_arg_gds,
-				isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_rec_version", isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_rec_version"));
 		}
 		else
 		{
-			ERR_post(isc_bad_tpb_content, isc_arg_gds,
-				isc_tpb_option_without_rc, isc_arg_string, "isc_tpb_no_rec_version", isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
+					 Arg::Gds(isc_tpb_option_without_rc) << Arg::Str("isc_tpb_no_rec_version"));
 		}
 	}
 
@@ -3242,7 +3231,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			CCH_RELEASE(tdbb, &window);
 #endif
 		jrd_tra::destroy(dbb, trans);
-		ERR_post(isc_lock_conflict, isc_arg_end);
+		ERR_post(Arg::Gds(isc_lock_conflict));
 	}
 
 /* Link the transaction to the attachment block before releasing

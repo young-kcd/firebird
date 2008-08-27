@@ -848,6 +848,19 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 // AP: isc_*_user entrypoints are used only in any kind of embedded 
 // server (both posix and windows) and fbclient
 
+#ifndef BOOT_BUILD
+namespace {
+ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
+{
+	vector[0] = isc_arg_gds;
+	vector[1] = code;
+	vector[2] = isc_arg_end;
+
+	return vector[1];
+}
+}
+#endif // BOOT_BUILD
+
 // CVC: Who was the genius that named the input param "user_data" when the
 // function uses "struct user_data userInfo" to define a different variable type
 // only few lines below? Same for the other two isc_*_user functions.
@@ -875,10 +888,7 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 31) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_usrname_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
+			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
 		for (l = 0;
@@ -892,18 +902,12 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_usrname_required;
-		status[2] = isc_arg_end;
-		return status[1];
+		return user_error(status, isc_usrname_required);
 	}
 
 	if (input_user_data->password) {
 		if (strlen(input_user_data->password) > 8) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_password_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
+			return user_error(status, isc_password_too_long);
 		}
 		size_t l;
 		for (l = 0;
@@ -918,10 +922,7 @@ return 1;
 		userInfo.password_specified = true;
 	}
 	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_password_required;
-		status[2] = isc_arg_end;
-		return status[1];
+		return user_error(status, isc_password_required);
 	}
 
 
@@ -1025,10 +1026,7 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 32) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_usrname_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
+			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
 		for (l = 0;
@@ -1042,10 +1040,7 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_usrname_required;
-		status[2] = isc_arg_end;
-		return status[1];
+		return user_error(status, isc_usrname_required);
 	}
 
 	return executeSecurityCommand(status, input_user_data, userInfo);
@@ -1076,10 +1071,7 @@ return 1;
 
 	if (input_user_data->user_name) {
 		if (strlen(input_user_data->user_name) > 32) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_usrname_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
+			return user_error(status, isc_usrname_too_long);
 		}
 		size_t l;
 		for (l = 0;
@@ -1093,18 +1085,12 @@ return 1;
 		userInfo.user_name_entered = true;
 	}
 	else {
-		status[0] = isc_arg_gds;
-		status[1] = isc_usrname_required;
-		status[2] = isc_arg_end;
-		return status[1];
+		return user_error(status, isc_usrname_required);
 	}
 
 	if (input_user_data->sec_flags & sec_password_spec) {
 		if (strlen(input_user_data->password) > 8) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_password_too_long;
-			status[2] = isc_arg_end;
-			return status[1];
+			return user_error(status, isc_password_too_long);
 		}
 		size_t l;
 		for (l = 0;

@@ -10651,6 +10651,8 @@ bool dsql_ctx::getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& n
 
 #ifdef DSQL_DEBUG
 
+#include <stdarg.h>
+
 static void trace_line(const char* message, ...) {
 	char buffer[1024];
 	va_list params;

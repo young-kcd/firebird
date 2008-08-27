@@ -31,8 +31,5 @@ void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,
 							 USHORT  errcode,
 							 const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value);
-void CMD_UTIL_put_status_arg(ISC_STATUS*& status, const char* value);
-
 #endif // UTILITIES_CMD_UTIL_PROTO_H
 

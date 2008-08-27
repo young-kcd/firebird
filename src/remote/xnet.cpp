@@ -28,7 +28,6 @@
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
 #include "../common/thd.h"
-#include "../jrd/iberr.h"
 #include "../remote/xnet.h"
 #include "../utilities/install/install_nt.h"
 #include "../remote/proto_proto.h"
@@ -1594,7 +1593,7 @@ static int xnet_destroy( XDR * xdrs)
 }
 
 
-static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
+static void xnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -1618,7 +1617,7 @@ static void xnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 		status_vector = port->port_status_vector;
 	}
 	if (status_vector != NULL) {
-		STUFF_STATUS(status_vector, status)
+		v.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
 }
@@ -1639,9 +1638,9 @@ static int xnet_error(rem_port* port, ISC_STATUS operation, int status)
  *
  **************************************/
 	if (status)
-		xnet_gen_error(port, operation, SYS_ERR, status, 0);
+		xnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
 	else
-		xnet_gen_error(port, operation, 0);
+		xnet_gen_error(port, Arg::Gds(operation));
 
 	return 0;
 }

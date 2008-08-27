@@ -70,6 +70,7 @@
 #include "../common/classes/fb_tls.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
+#include "../common/StatusArg.h"
 
 #ifdef UNIX
 #include <setjmp.h>
@@ -155,6 +156,7 @@ static size_t getpagesize(void)
 #endif
 
 using namespace Jrd;
+using namespace Firebird;
 
 static void		error(ISC_STATUS*, const TEXT*, ISC_STATUS);
 static bool		event_blocked(USHORT count, const event_t* const* events, const SLONG* values);
@@ -1299,9 +1301,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			munmap((char *) address, length);
 			close(fd);
 			close(fd_init);
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_unavailable;
-			*status_vector++ = isc_arg_end;
+			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
 
@@ -1660,9 +1660,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			shmdt(address);
 			next_shared_memory -= length;
 			fclose(fp);
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_unavailable;
-			*status_vector++ = isc_arg_end;
+			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
 		buf.shm_perm.mode = 0666;
@@ -1763,9 +1761,7 @@ UCHAR* ISC_map_file(
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
 		CloseHandle(file_handle);
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_unavailable;
-		*status_vector++ = isc_arg_end;
+		Arg::Gds(isc_unavailable).copyTo(status_vector);
 		return NULL;
 	}
 
@@ -2898,9 +2894,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_unavailable;
-	*status_vector++ = isc_arg_end;
+	Arg::Gds(isc_unavailable).copyTo(status_vector);
 
 	return NULL;
 }
@@ -3122,13 +3116,7 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
  *
  **************************************/
 
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_sys_request;
-	*status_vector++ = isc_arg_string;
-	*status_vector++ = (ISC_STATUS)(U_IPTR) string;
-	*status_vector++ = SYS_ARG;
-	*status_vector++ = status;
-	*status_vector++ = isc_arg_end;
+	(Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status)).copyTo(status_vector);
 }
 
 

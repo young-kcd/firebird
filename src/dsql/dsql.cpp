@@ -41,7 +41,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
 #include "../jrd/intl.h"
-#include "../jrd/iberr.h"
 #include "../jrd/jrd.h"
 #include "../dsql/Parser.h"
 #include "../dsql/ddl_proto.h"

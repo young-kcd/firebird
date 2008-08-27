@@ -31,7 +31,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
 #include "gen/iberror.h"
-#include "../jrd/iberr.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
@@ -40,6 +39,7 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/classes/auto.h"
+#include "../common/utils_proto.h"
 
 using namespace Jrd;
 
@@ -250,11 +250,11 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 			/* If we can't get a lock on the transaction, it must be active. */
 
 			if (!LCK_lock(tdbb, &temp_lock, LCK_read, LCK_NO_WAIT)) {
-				INIT_STATUS(tdbb->tdbb_status_vector);
+				fb_utils::init_status(tdbb->tdbb_status_vector);
 				return tra_active;
 			}
 
-			INIT_STATUS(tdbb->tdbb_status_vector);
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 			LCK_release(tdbb, &temp_lock);
 
 			/* as a last resort we must look at the TIP page to see

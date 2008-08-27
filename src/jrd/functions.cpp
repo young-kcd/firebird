@@ -34,6 +34,7 @@
 #include "../jrd/thread_proto.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 struct FN {
 	const char* fn_module;
@@ -173,7 +174,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary) {
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
 	}
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
@@ -257,9 +258,8 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		}
 
 		// "Context variable %s is not found in namespace %s"
-		ERR_post(isc_ctx_var_not_found,
-			isc_arg_string, ERR_cstring(name_str.c_str()),
-			isc_arg_string, ERR_cstring(ns_str.c_str()), isc_arg_end);
+		ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(name_str) << 
+													Arg::Str(ns_str));
 	}
 
 	// Handle user-defined variables
@@ -284,9 +284,8 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	} 
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(isc_ctx_namespace_invalid,
-		isc_arg_string, ERR_cstring(ns_str.c_str()),
-		isc_arg_string, RDB_GET_CONTEXT, isc_arg_end);
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << 
+													Arg::Str(RDB_GET_CONTEXT));
 	return NULL;
 }
 
@@ -295,7 +294,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary)
 	{
-		ERR_post(isc_ctx_bad_argument, isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -323,7 +322,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		if (att->att_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
+			ERR_post(Arg::Gds(isc_ctx_too_big));
 		}
 
 		return att->att_context_vars.put(name_str,
@@ -344,7 +343,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		if (tra->tra_context_vars.count() >= MAX_CONTEXT_VARS) {
 			// "Too many context variables"
-			ERR_post(isc_ctx_too_big, isc_arg_end);
+			ERR_post(Arg::Gds(isc_ctx_too_big));
 		}
 
 		return tra->tra_context_vars.put(name_str,
@@ -352,9 +351,8 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	} 
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(isc_ctx_namespace_invalid,
-		isc_arg_string, ERR_cstring(ns_str.c_str()),
-		isc_arg_string, RDB_SET_CONTEXT, isc_arg_end);
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << 
+													Arg::Str(RDB_SET_CONTEXT));
 	return 0;
 }
 

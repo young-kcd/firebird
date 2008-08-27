@@ -44,6 +44,7 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../common/config/config.h"
+#include "../common/utils_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1378,9 +1379,7 @@ static ISC_STATUS return_ok(ISC_STATUS * status_vector)
  *
  **************************************/
 
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = 0;
-	*status_vector = isc_arg_end;
+	fb_utils::init_status(status_vector);
 
 	return 0;
 }

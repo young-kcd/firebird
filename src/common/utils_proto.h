@@ -30,6 +30,7 @@
 
 #include <string.h>
 #include "../common/classes/fb_string.h"
+#include "gen/iberror.h"
 
 namespace fb_utils
 {
@@ -97,6 +98,14 @@ namespace fb_utils
 	SLONG genUniqueId();
 
 	void getCwd(Firebird::PathName& pn);
+
+	void inline init_status(ISC_STATUS* status)
+	{
+		status[0] = isc_arg_gds;
+		status[1] = 0;
+		status[2] = isc_arg_end;
+	}
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

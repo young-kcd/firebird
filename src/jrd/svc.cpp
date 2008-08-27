@@ -142,7 +142,8 @@ namespace {
 		{
 			const UCHAR p = spb.getBufferTag();
 			if (p != isc_spb_version1 && p != isc_spb_current_version) {
-				ERR_post(isc_bad_spb_form, isc_arg_gds, isc_wrospbver, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_spb_form)<<
+						 Arg::Gds(isc_wrospbver));
 			}
 			spb_version = p;
 
@@ -425,14 +426,9 @@ void Service::getAddressPath(ClumpletWriter& dpb)
 	}
 }
 
-void Service::need_admin_privs(ISC_STATUS** status, const char* message)
+void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 {
-	ISC_STATUS* stat = *status;
-	*stat++ = isc_insufficient_svc_privileges;
-	*stat++ = isc_arg_string;
-	*stat++ = (ISC_STATUS)(U_IPTR) ERR_string(message, strlen(message));
-	*stat++ = isc_arg_end;
-	*status = stat;
+	status << Arg::Gds(isc_insufficient_svc_privileges) << Arg::Str(message);
 }
 
 bool Service::ck_space_for_numeric(char*& info, const char* const end)
@@ -802,8 +798,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 	USHORT l, length, version, get_flags;
 
 	// Setup the status vector
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	*status++ = isc_arg_gds;
+	Arg::StatusVector status;
 
 	// Process the send portion of the query first.
 	USHORT timeout = 0;
@@ -942,7 +937,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					*info++ = isc_info_flag_end;
 			}
 			else
-				need_admin_privs(&status, "isc_info_svc_svr_db_info");
+				need_admin_privs(status, "isc_info_svc_svr_db_info");
 
 			break;
 
@@ -953,7 +948,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				WHY_set_shutdown(false);
 			}
 			else
-				need_admin_privs(&status, "isc_info_svc_svr_online");
+				need_admin_privs(status, "isc_info_svc_svr_online");
 			break;
 
 		case isc_info_svc_svr_offline:
@@ -963,7 +958,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				WHY_set_shutdown(true);
 			}
 			else
-				need_admin_privs(&status, "isc_info_svc_svr_offline");
+				need_admin_privs(status, "isc_info_svc_svr_offline");
 			break;
 
 			/* The following 3 service commands (or items) stuff the response
@@ -999,7 +994,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			}
 			else
 			{
-				need_admin_privs(&status, "isc_info_svc_get_env");
+				need_admin_privs(status, "isc_info_svc_get_env");
 			}
 			break;
 
@@ -1028,7 +1023,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				// TODO: reset the config values to defaults
 			}
 			else
-				need_admin_privs(&status, "isc_info_svc_default_config");
+				need_admin_privs(status, "isc_info_svc_default_config");
 			break;
 
 		case isc_info_svc_set_config:
@@ -1037,7 +1032,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				// TODO: set the config values
 			}
 			else {
-				need_admin_privs(&status, "isc_info_svc_set_config");
+				need_admin_privs(status, "isc_info_svc_set_config");
 			}
 			break;
 */
@@ -1102,7 +1097,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				}
 			}
 			else
-				need_admin_privs(&status, "isc_info_svc_user_dbpath");
+				need_admin_privs(status, "isc_info_svc_user_dbpath");
 			break;
 
 		case isc_info_svc_response:
@@ -1220,8 +1215,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 			break;
 
 		default:
-			*status++ = isc_wish_list;
-			*status++ = isc_arg_end;
+			status << Arg::Gds(isc_wish_list);
 			break;
 		}
 
@@ -1245,6 +1239,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		finish(SVC_finished);
 	}
 
+	status.copyTo(tdbb->tdbb_status_vector);
 	return tdbb->tdbb_status_vector[1];
 }
 
@@ -1344,7 +1339,7 @@ void Service::query(USHORT			send_item_length,
 			/*
 			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_svr_db_info");
+				need_admin_privs(status, "isc_info_svc_svr_db_info");
 			 */
 			break;
 
@@ -1400,7 +1395,7 @@ void Service::query(USHORT			send_item_length,
 			/*
 			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_get_env");
+				need_admin_privs(status, "isc_info_svc_get_env");
 			 */
 			break;
 
@@ -1431,7 +1426,7 @@ void Service::query(USHORT			send_item_length,
 			*
 			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_default_config:");
+				need_admin_privs(status, "isc_info_svc_default_config:");
 			 *
 			break;
 
@@ -1443,7 +1438,7 @@ void Service::query(USHORT			send_item_length,
 			*
 			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_set_config:");
+				need_admin_privs(status, "isc_info_svc_set_config:");
 			 *
 			break;
 */
@@ -1508,7 +1503,7 @@ void Service::query(USHORT			send_item_length,
 			/*
 			 * Can not return error for service v.1 => simply ignore request
 			else
-				need_admin_privs(&status, "isc_info_svc_user_dbpath");
+				need_admin_privs(status, "isc_info_svc_user_dbpath");
 			 */
 			break;
 
@@ -1777,15 +1772,12 @@ THREAD_ENTRY_DECLARE Service::readFbLog(THREAD_ENTRY_PARAM arg)
 void Service::readFbLog()
 {
 	bool svc_started = false;
-	ISC_STATUS *status = svc_status;
-	*status++ = isc_arg_gds;
 
 	TEXT name[MAXPATHLEN];
 	gds__prefix(name, LOGFILE);
 	FILE* file = fopen(name, "r");
 	if (file != NULL) {
-		*status++ = FB_SUCCESS;
-		*status++ = isc_arg_end;
+		fb_utils::init_status(svc_status);
 		started();
 		svc_started = true;
 		TEXT buffer[100];
@@ -1796,11 +1788,9 @@ void Service::readFbLog()
 	}
 
 	if (!file || file && ferror(file)) {
-		*status++ = isc_sys_request;
-		CMD_UTIL_put_status_arg(status, file ? "fgets" : "fopen");
-		*status++ = SYS_ARG;
-		*status++ = errno;
-		*status++ = isc_arg_end;
+		(Arg::Gds(isc_sys_request) << Arg::Str(file ? "fgets" : "fopen") <<
+									  SYS_ERR(errno)).copyTo(svc_status);
+		StringsBuffer::makeEnginePermanentVector(svc_status);
 		if (!svc_started)
 		{
 			started();

@@ -101,7 +101,6 @@ const int INET_RETRY_CALL	= 5;
 
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
-#include "../jrd/iberr.h"
 #include "../common/thd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/proto_proto.h"
@@ -117,6 +116,8 @@ const int INET_RETRY_CALL	= 5;
 #if (defined HPUX || defined SCO_UNIX)
 extern int h_errno;
 #endif
+
+using namespace Firebird;
 
 const char* PROXY_FILE	= "/etc/gds_proxy";
 const char* HOSTS_FILE	= "/etc/hosts.equiv";
@@ -275,7 +276,7 @@ static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										size_t							nEntries);
 
 static int		inet_destroy(XDR *);
-static void		inet_gen_error(rem_port*, ISC_STATUS, ...);
+static void		inet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR *, SCHAR *, u_int);
 static bool_t	inet_getlong(XDR *, SLONG *);
 static u_int	inet_getpostn(XDR *);
@@ -654,12 +655,10 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					 host.c_str(), H_ERRNO);
-			inet_gen_error(port,
-						   isc_network_error,
-						   isc_arg_string,
-						   port->port_connection->str_data,
-						   isc_arg_gds,
-						   isc_net_lookup_err, isc_arg_gds, isc_host_unknown, isc_arg_end);
+			inet_gen_error(port, 
+						   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
+						   Arg::Gds(isc_net_lookup_err) <<
+						   Arg::Gds(isc_host_unknown));
 
 			disconnect(port);
 			return NULL;
@@ -717,16 +716,10 @@ rem_port* INET_connect(const TEXT* name,
 			/* this is the original code */
 			gds__log("INET/INET_connect: getservbyname failed, error code = %d", H_ERRNO);
 			inet_gen_error(port,
-						   isc_network_error,
-						   isc_arg_string,
-						   port->port_connection->str_data,
-						   isc_arg_gds,
-						   isc_net_lookup_err,
-						   isc_arg_gds,
-						   isc_service_unknown,
-						   isc_arg_string,
-						   protocol.c_str(),
-						   isc_arg_string, "tcp", isc_arg_end);
+                           Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
+						   Arg::Gds(isc_net_lookup_err) <<
+						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) << 
+															Arg::Str("tcp"));
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
 	}
@@ -2542,7 +2535,7 @@ static XDR_INT inet_destroy( XDR* xdrs)
 	return (XDR_INT)0;
 }
 
-static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
+static void inet_gen_error (rem_port* port, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -2566,7 +2559,7 @@ static void inet_gen_error( rem_port* port, ISC_STATUS status, ...)
 		status_vector = port->port_status_vector;
 	}
 	if (status_vector != NULL) {
-		STUFF_STATUS(status_vector, status);
+		v.copyTo(status_vector);
 		REMOTE_save_status_strings(status_vector);
 	}
 }
@@ -2748,20 +2741,18 @@ static void inet_error(
  *
  **************************************/
 	if (status) {
-		inet_gen_error(port, isc_network_error,
-					   isc_arg_string,
-					   (ISC_STATUS) port->port_connection->str_data,
-					   isc_arg_gds, operation, SYS_ERR, status, isc_arg_end);
+		inet_gen_error(port,
+					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
+					   Arg::Gds(operation) << SYS_ERR(status));
 
 		gds__log("INET/inet_error: %s errno = %d", function, status);
 	}
 	else {
 		/* No status value, just format the basic arguments. */
 
-		inet_gen_error(port, isc_network_error,
-					   isc_arg_string,
-					   (ISC_STATUS) port->port_connection->str_data, isc_arg_gds,
-					   operation, isc_arg_end);
+		inet_gen_error(port,
+					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
+					   Arg::Gds(operation));
 	}
 }
 

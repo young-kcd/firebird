@@ -44,7 +44,6 @@
 #include <stdlib.h>
 
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -83,6 +82,7 @@
 using MsgFormat::SafeArg;
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 typedef Firebird::ObjectsArray<Firebird::MetaName> MetaNameArray;
@@ -991,7 +991,7 @@ void DYN_define_file(Global*		gbl,
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	jrd_req* request = NULL;
@@ -1117,7 +1117,7 @@ void DYN_define_difference(Global*		gbl,
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	try {
@@ -2878,10 +2878,8 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) < ODS_11_1)
 				{
 					// Feature not supported on ODS version older than %d.%d
-					ERR_post(isc_dsql_feature_not_supported_ods,
-							 isc_arg_number, 11,
-							 isc_arg_number, 1,
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
+																			 Arg::Num(1));
 				}
 
 				f_notnull = TRUE;
@@ -3097,10 +3095,8 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 		else
 		{
 			// Feature not supported on ODS version older than %d.%d
-			ERR_post(isc_dsql_feature_not_supported_ods,
-					 isc_arg_number, 11,
-					 isc_arg_number, 1,
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
+																	 Arg::Num(1));
 		}
 	}
 
@@ -3136,10 +3132,8 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 			request = NULL;
 			id = -1;
 
-			ERR_post(isc_dsql_feature_not_supported_ods,
-					 isc_arg_number, 11,
-					 isc_arg_number, 2,
-					 isc_arg_end);	// ODS_11_2
+			ERR_post(Arg::Gds(isc_dsql_feature_not_supported_ods) << Arg::Num(11) << 
+																	 Arg::Num(2));
 		}
 	}
 
@@ -3538,17 +3532,11 @@ void DYN_define_relation( Global* gbl, const UCHAR** ptr)
 
 						if (!(priv & SCL_read)) {
 							ISC_STATUS* s = tdbb->tdbb_status_vector;
-							*s++ = isc_arg_gds;
-							*s++ = isc_no_priv;
-							*s++ = isc_arg_string;
-							*s++ = (ISC_STATUS) "SELECT";	/* Non-Translatable */
-							*s++ = isc_arg_string;
-							// Remember, a view may be based on a view.
-							*s++ = (ISC_STATUS) "TABLE/VIEW";	/* Non-Translatable */
-							*s++ = isc_arg_string;
-							// We want to print the name of the base table or view.
-							*s++ = (ISC_STATUS) ERR_cstring(PREL.RDB$RELATION_NAME);
-							*s = 0;
+							ERR_post_nothrow(Arg::Gds(isc_no_priv) << Arg::Str("SELECT") <<		//	Non-Translatable
+															// Remember, a view may be based on a view.
+																	  Arg::Str("TABLE/VIEW") <<	//  Non-Translatable
+															// We want to print the name of the base table or view.
+																	  Arg::Str(PREL.RDB$RELATION_NAME));
 							/* msg 32: no permission for %s access to %s %s */
 							DYN_error_punt(true, 115);
 							/* msg 115: "CREATE VIEW failed" */
@@ -3659,8 +3647,7 @@ void DYN_define_role( Global* gbl, const UCHAR** ptr)
 
 	if (ENCODE_ODS(major_version, minor_original) < ODS_9_0)
 	{
-		DYN_error(false, 196);
-		ERR_punt();
+		DYN_error_punt(false, 196);
 	}
 
 	Firebird::MetaName owner_name(tdbb->getAttachment()->att_user->usr_user_name);
@@ -4358,7 +4345,7 @@ void DYN_define_trigger(Global*						gbl,
 		}
 
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		b_ending_store = true;
 

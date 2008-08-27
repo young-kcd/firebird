@@ -44,6 +44,7 @@
 #include "../jrd/VirtualTable.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 void VirtualTable::close(thread_db* tdbb, RecordSource* rsb)
@@ -86,7 +87,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	}
 	else
 	{
-		ERR_post(isc_read_only, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only));
 	}
 
 	const SLONG id = MOV_get_long(&desc, 0);
@@ -129,7 +130,7 @@ bool VirtualTable::get(thread_db* tdbb, RecordSource* rsb)
 
 void VirtualTable::modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb)
 {
-	ERR_post(isc_read_only, isc_arg_end);
+	ERR_post(Arg::Gds(isc_read_only));
 }
 
 
@@ -180,5 +181,5 @@ Jrd::RecordSource* VirtualTable::optimize(thread_db* tdbb, OptimizerBlk* opt, SS
 
 void VirtualTable::store(thread_db* tdbb, record_param* rpb)
 {
-	ERR_post(isc_read_only, isc_arg_end);
+	ERR_post(Arg::Gds(isc_read_only));
 }

@@ -59,6 +59,7 @@
 #include "../common/classes/init.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 
 namespace {
@@ -95,10 +96,8 @@ namespace {
 
 		if (!iExternalFileDirectoryList().isPathInList(file_name))
 		{
-			ERR_post(isc_conf_access_denied,
-				isc_arg_string, "external file",
-				isc_arg_string, ERR_cstring(file_name),
-				isc_arg_end);
+			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("external file") << 
+														 Arg::Str(file_name));
 		}
 
 		// If the database is updateable, then try opening the external files in
@@ -112,11 +111,9 @@ namespace {
 			// could not open the file as read write attempt as read only 
 			if (!(ext_file->ext_ifi = fopen(file_name, FOPEN_READ_ONLY)))
 			{
-				ERR_post(isc_io_error,
-						isc_arg_string, "fopen",
-						isc_arg_string,
-						ERR_cstring(file_name),
-						isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+				ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fopen") << 
+												   Arg::Str(file_name) <<
+						 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 			}
 			else {
 				ext_file->ext_flags |= EXT_readonly;
@@ -156,7 +153,7 @@ void EXT_erase(record_param* rpb, jrd_tra* transaction)
  *
  **************************************/
 
-	ERR_post(isc_ext_file_delete, isc_arg_end);
+	ERR_post(Arg::Gds(isc_ext_file_delete));
 }
 
 
@@ -276,11 +273,9 @@ bool EXT_get(thread_db* tdbb, RecordSource* rsb)
 		( (ftell(file->ext_ifi) != rpb->rpb_ext_pos || !(file->ext_flags & EXT_last_read)) &&
 		 (fseek(file->ext_ifi, rpb->rpb_ext_pos, 0) != 0)) )
 	{
-		ERR_post(isc_io_error,
-				 isc_arg_string, "fseek",
-				 isc_arg_string,
-				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << 
+										   Arg::Str(file->ext_filename) <<
+				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	if (!fread(p, l, 1, file->ext_ifi))
@@ -332,8 +327,7 @@ void EXT_modify(record_param* old_rpb, record_param* new_rpb, jrd_tra* transacti
  *
  **************************************/
 
-/* ERR_post (isc_wish_list, isc_arg_interpreted, "EXT_modify: not yet implemented", isc_arg_end); */
-	ERR_post(isc_ext_file_modify, isc_arg_end);
+	ERR_post(Arg::Gds(isc_ext_file_modify));
 }
 
 
@@ -481,13 +475,12 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		CHECK_DBB(dbb);
 		/* Distinguish error message for a ReadOnly database */
 		if (dbb->dbb_flags & DBB_read_only)
-			ERR_post(isc_read_only_database, isc_arg_end);
+			ERR_post(Arg::Gds(isc_read_only_database));
 		else {
-			ERR_post(isc_io_error,
-					 isc_arg_string, "insert",
-					 isc_arg_string, file->ext_filename,
-					 isc_arg_gds, isc_io_write_err,
-					 isc_arg_gds, isc_ext_readonly_err, isc_arg_end);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("insert") << 
+											   Arg::Str(file->ext_filename) <<
+					 Arg::Gds(isc_io_write_err) <<
+					 Arg::Gds(isc_ext_readonly_err));
 		}
 	}
 
@@ -527,16 +520,16 @@ void EXT_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (file->ext_ifi == NULL || 
 		(!(file->ext_flags & EXT_last_write) && fseek(file->ext_ifi, (SLONG) 0, 2) != 0) )
 	{
-		ERR_post(isc_io_error, isc_arg_string, "fseek", isc_arg_string,
-				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fseek") << 
+										   Arg::Str(file->ext_filename) <<
+				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	if (!fwrite(p, l, 1, file->ext_ifi))
 	{
-		ERR_post(isc_io_error, isc_arg_string, "fwrite", isc_arg_string,
-				 ERR_cstring(file->ext_filename),
-				 isc_arg_gds, isc_io_open_err, SYS_ERR, errno, isc_arg_end);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fwrite") << 
+										   Arg::Str(file->ext_filename) <<
+				 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));
 	}
 
 	// fflush(file->ext_ifi);

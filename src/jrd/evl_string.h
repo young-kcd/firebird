@@ -335,7 +335,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 					continue;
 				}
 			}
-			ERR_post(isc_escape_invalid, isc_arg_end);
+			ERR_post(Firebird::Arg::Gds(isc_escape_invalid));
 		}
 		// percent sign
 		if (c == sql_match_any) {

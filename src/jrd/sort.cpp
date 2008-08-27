@@ -70,6 +70,7 @@ const USHORT RUN_GROUP			= 8;
 const USHORT MAX_MERGE_LEVEL	= 2;
 
 using namespace Jrd;
+using namespace Firebird;
 
 // The sort buffer size should be just under a multiple of the
 // hardware memory page size to account for memory allocator
@@ -765,9 +766,7 @@ sort_context* SORT_init(thread_db* tdbb,
 
 	}
 	catch (const Firebird::BadAlloc&) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_sort_mem_err;
-		*status_vector = isc_arg_end;
+		Arg::Gds(isc_sort_mem_err).copyTo(status_vector);
 		delete scb;
 		ERR_punt();
 	}
@@ -883,7 +882,7 @@ FB_UINT64 SORT_read_block(
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		ERR_post(isc_sort_err, isc_arg_end);
+		ERR_post(Arg::Gds(isc_sort_err));
 	}
 #ifndef SCROLLABLE_CURSORS
 	return seek;
@@ -1189,7 +1188,7 @@ FB_UINT64 SORT_write_block(ISC_STATUS* status_vector,
 	}
 	catch (const Firebird::status_exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
-		ERR_post(isc_sort_err, isc_arg_end);
+		ERR_post(Arg::Gds(isc_sort_err));
 	}
 
 	return seek;
@@ -1546,9 +1545,7 @@ static void error_memory(sort_context* scb)
 	ISC_STATUS* status_vector = scb->scb_status_vector;
 	fb_assert(status_vector);
 
-	*status_vector++ = isc_arg_gds;
-	*status_vector++ = isc_sort_mem_err;
-	*status_vector = isc_arg_end;
+	Arg::Gds(isc_sort_mem_err).copyTo(status_vector);
 
 	ERR_punt();
 }
@@ -2903,9 +2900,7 @@ static void validate(sort_context* scb)
 		SORTP* record = *ptr;
 		if (record[-SIZEOF_SR_BCKPTR_IN_LONGS] != (SORTP) ptr) {
 			ISC_STATUS* status_vector = scb->scb_status_vector;
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_crrp_data_err; // Msg360: corruption in data structure
-			*status_vector = isc_arg_end;
+			Arg::Gds(isc_crrp_data_err).copyTo(status_vector);
 			ERR_punt();
 		}
 	}

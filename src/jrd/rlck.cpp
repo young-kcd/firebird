@@ -33,6 +33,7 @@
 #include "../jrd/rlck_proto.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 Lock* RLCK_reserve_relation(thread_db* tdbb,
 							jrd_tra* transaction,
@@ -55,9 +56,9 @@ Lock* RLCK_reserve_relation(thread_db* tdbb,
 	if (transaction->tra_flags & TRA_system)
 		return NULL;
 	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only))
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_database));
 	if (write_flag && (transaction->tra_flags & TRA_readonly))
-		ERR_post(isc_read_only_trans, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_trans));
 
 	Lock* lock = RLCK_transaction_relation_lock(tdbb, transaction, relation);
 

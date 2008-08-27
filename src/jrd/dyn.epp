@@ -42,7 +42,6 @@
 #include <string.h>
 
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"
@@ -120,13 +119,11 @@ void DYN_ddl(Attachment* attachment, jrd_tra* transaction, USHORT length,
 	const UCHAR* ptr = ddl;
 
 	if (*ptr++ != isc_dyn_version_1) {
-		ERR_post(isc_wrodynver, isc_arg_end);
+		ERR_post(Arg::Gds(isc_wrodynver));
 	}
 
 	ISC_STATUS* status = tdbb->tdbb_status_vector;
-	*status++ = isc_arg_gds;
-	*status++ = 0;
-	*status = isc_arg_end;
+	fb_utils::init_status(status);
 
 	Global gbl(transaction);
 
@@ -191,55 +188,29 @@ void DYN_error(bool	status_flag,
 		return;
 
 	TEXT error_buffer[BUFFER_MEDIUM];
-	FB_SQLSTATE_STRING sqlstate;
+	Arg::Gds local_status(isc_no_meta_update);
 
 	if (number)
 	{
 		fb_msg_format(NULL, DYN_MSG_FAC, number,
 					  sizeof(error_buffer), error_buffer, sarg);
 
-		ISC_STATUS_ARRAY temp_status = {isc_arg_gds, 0, isc_arg_end};
+		ISC_STATUS_ARRAY temp_status;
+		fb_utils::init_status(temp_status);
 		temp_status[1] = ENCODE_ISC_MSG(number, DYN_MSG_FAC);
+		FB_SQLSTATE_STRING sqlstate;
 		fb_sqlstate(sqlstate, temp_status);
 		if (!strcmp(sqlstate, "HY000"))
 			strcpy(sqlstate, "42000"); // default SQLSTATE for DYN
-	}
 
-	ISC_STATUS_ARRAY local_status;
-	ISC_STATUS* v1 = local_status;
-
-	*v1++ = isc_arg_gds;
-	*v1++ = isc_no_meta_update;
-	if (number) {
-		*v1++ = isc_arg_gds;
-		*v1++ = isc_random;
-		*v1++ = isc_arg_string;
-		*v1++ = (ISC_STATUS) ERR_cstring(error_buffer);
-		*v1++ = isc_arg_sql_state;
-		*v1++ = (ISC_STATUS) ERR_cstring(sqlstate);
+		local_status << Arg::Gds(isc_random) << Arg::Str(error_buffer) << Arg::SqlState(sqlstate);
 	}
 	if (status_flag) {
-		const ISC_STATUS* v2 = tdbb->tdbb_status_vector;
-
-		/* check every other argument for end of vector */
-
-		ISC_STATUS arg;
-		ISC_STATUS* const end = local_status + FB_NELEM(local_status) - 1;
-		while (v1 < end - 1 &&
-			   ((arg = *v2++) != isc_arg_cstring || v1 + 1 < end - 1) &&
-			   (*v1++ = arg))
-		{
-			*v1++ = *v2++;
-			if (arg == isc_arg_cstring)
-				*v1++ = *v2++;
-		}
+		local_status.append(Arg::StatusVector(tdbb->tdbb_status_vector));
 	}
-	*v1 = isc_arg_end;
-	ISC_STATUS* const end = v1 + 1;
 
-	v1 = local_status;
-	for (ISC_STATUS* dest = tdbb->tdbb_status_vector; v1 < end;)
-		*dest++ = *v1++;
+	local_status.copyTo(tdbb->tdbb_status_vector);
+	ERR_make_permanent(tdbb->tdbb_status_vector);
 }
 
 
@@ -2056,10 +2027,9 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		
 		if (!grant_erased)
 		{
-			ERR_post_warning(isc_dyn_miss_priv_warning, 
-							 isc_arg_string, privilege_name(temp[0]),
-							 isc_arg_string, ERR_string(object), 
-							 isc_arg_string, ERR_string(user), isc_arg_end);
+			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << Arg::Str(privilege_name(temp[0])) << 
+																		Arg::Str(object) << 
+																		Arg::Str(user));
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
 	}

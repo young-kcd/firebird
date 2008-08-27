@@ -68,6 +68,7 @@
 const int UIC_BASE	= 10;
 
 using namespace Jrd;
+using namespace Firebird;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
@@ -132,10 +133,9 @@ void SCL_check_access(const SecurityClass* s_class,
 
 	if (s_class && (s_class->scl_flags & SCL_corrupt))
 	{
-		ERR_post(isc_no_priv, isc_arg_string, "(ACL unrecognized)",
-				 isc_arg_string, "security_class",
-				 isc_arg_string, ERR_cstring(s_class->scl_name),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("(ACL unrecognized)") << 
+										  Arg::Str("security_class") << 
+										  Arg::Str(s_class->scl_name));
 	}
 
 	const Attachment& attachment = *tdbb->getAttachment();
@@ -188,18 +188,14 @@ void SCL_check_access(const SecurityClass* s_class,
 	}
 
 	if (denied_db) {
-		ERR_post(isc_no_priv,
-				isc_arg_string, names->p_names_string,
-				isc_arg_string, "DATABASE",
-				isc_arg_string, "",
-				isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) << 
+										  Arg::Str("DATABASE") << 
+										  Arg::Str(""));
 	}
 	else {
-		ERR_post(isc_no_priv,
-				isc_arg_string, names->p_names_string,
-				isc_arg_string, type,
-				isc_arg_string, ERR_cstring(name),
-				isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) << 
+										  Arg::Str(type) << 
+										  Arg::Str(name));
 	}
 }
 
@@ -626,8 +622,7 @@ void SCL_init(bool create,
                         REQUEST(irq_get_role_name) = request;
 
 					EXE_unwind(tdbb, request);
-					ERR_post(isc_login_same_as_role_name,
-							 isc_arg_string, ERR_cstring(login_name), isc_arg_end);
+					ERR_post(Arg::Gds(isc_login_same_as_role_name) << Arg::Str(login_name));
 
 				END_FOR;
 

@@ -48,6 +48,7 @@
 #include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/GenericMap.h"
+#include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
@@ -93,6 +94,10 @@
 
 // Error codes
 #include "../include/gen/iberror.h"
+
+namespace Firebird {
+class StringsBuffer;
+}
 
 class str;
 struct dsc;
@@ -323,6 +328,8 @@ public:
 	Firebird::SortedArray<void*> att_udf_pointers;
 	dsql_dbb* att_dsql_instance;
 	Firebird::Mutex att_mutex;				// attachment mutex
+
+	Firebird::StringsBuffer* att_strings_buffer;	// per attachment circular strings buffer
 
 	bool locksmith() const;
 
@@ -636,9 +643,7 @@ public:
 		reqStat = traStat = attStat = dbbStat = RuntimeStatistics::getDummy();
 
 		tdbb_status_vector = status;
-		tdbb_status_vector[0] = isc_arg_gds;
-		tdbb_status_vector[1] = FB_SUCCESS;
-		tdbb_status_vector[2] = isc_arg_end;
+		fb_utils::init_status(tdbb_status_vector);
 	}
 	ISC_STATUS*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
@@ -775,8 +780,7 @@ public:
 	explicit ThreadStatusGuard(thread_db* tdbb)
 		: m_tdbb(tdbb), m_old_status(tdbb->tdbb_status_vector)
 	{
-		m_local_status[0] = isc_arg_gds;
-		m_local_status[1] = m_local_status[2] = 0; // isc_arg_end is zero
+		fb_utils::init_status(m_local_status);
 		m_tdbb->tdbb_status_vector = m_local_status;
 	}
 

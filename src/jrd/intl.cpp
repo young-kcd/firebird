@@ -114,7 +114,6 @@
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"
 #include "../jrd/gds_proto.h"
-#include "../jrd/iberr_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/lck_proto.h"
@@ -218,7 +217,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
 		else
-			ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) ttype, isc_arg_end);
+			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
 	}
 
 	return cs;
@@ -261,7 +260,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	else
 	{
 		delete csL;
-		ERR_post(isc_charset_not_installed, isc_arg_string, ERR_cstring(info->charsetName.c_str()), isc_arg_end);
+		ERR_post(Arg::Gds(isc_charset_not_installed) << Arg::Str(info->charsetName));
 	}
 }
 
@@ -320,9 +319,8 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (!lookup_texttype(tt, &info))
 		{
 			delete tt;
-			ERR_post(isc_collation_not_installed,
-				isc_arg_string, ERR_cstring(info.collationName.c_str()),
-				isc_arg_string, ERR_cstring(info.charsetName.c_str()), isc_arg_end);
+			ERR_post(Arg::Gds(isc_collation_not_installed) << Arg::Str(info.collationName) << 
+															  Arg::Str(info.charsetName));
 		}
 
 		if (charset_collations.getCount() <= id)
@@ -357,7 +355,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		}
 	}
 	else
-		ERR_post(isc_text_subtype, isc_arg_number, (ISC_STATUS) tt_id, isc_arg_end);
+		ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(tt_id));
 
 	return charset_collations[id];
 }
@@ -371,10 +369,8 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 	{
 		if (charset_collations[id]->useCount != 0)
 		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, charset_collations[id]->name.c_str(),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(charset_collations[id]->name));
 		}
 
 		if (charset_collations[id]->existenceLock)

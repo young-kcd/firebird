@@ -78,6 +78,7 @@
 #endif
 
 using namespace Jrd;
+using namespace Firebird;
 
 static void close_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void close_procedure(thread_db*, RecordSource*);
@@ -295,7 +296,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				table_rsb->rsb_type != rsb_indexed &&
 				table_rsb->rsb_type != rsb_navigate)
 			{
-				ERR_post(isc_record_lock_not_supp, isc_arg_end);
+				ERR_post(Arg::Gds(isc_record_lock_not_supp));
 			}
 
 			record_param* org_rpb = &request->req_rpb[table_rsb->rsb_stream];
@@ -307,7 +308,7 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 				relation->rel_file ||
 				relation->isVirtual())
 			{
-				ERR_post(isc_record_lock_not_supp, isc_arg_end);
+				ERR_post(Arg::Gds(isc_record_lock_not_supp));
 			}
 
 			RLCK_reserve_relation(tdbb, transaction, relation, true);
@@ -453,7 +454,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (first_records < 0)
-		            ERR_post(isc_bad_limit_param, isc_arg_end);
+		            ERR_post(Arg::Gds(isc_bad_limit_param));
 
 				((irsb_first_n*) impure)->irsb_count = first_records;
 				rsb = rsb->rsb_next;
@@ -467,7 +468,7 @@ void RSE_open(thread_db* tdbb, RecordSource* rsb)
 					MOV_get_int64(desc, 0) : 0;
 
 	            if (skip_records < 0)
-		            ERR_post(isc_bad_skip_param, isc_arg_end);
+		            ERR_post(Arg::Gds(isc_bad_skip_param));
 
 				((irsb_skip_n*) impure)->irsb_count = skip_records + 1;
 				rsb = rsb->rsb_next;
@@ -2452,7 +2453,7 @@ static bool get_record(thread_db*	tdbb,
 		impure->irsb_flags |= irsb_checking_singular;
 		if (get_record(tdbb, rsb, parent_rsb, mode)) {
 			impure->irsb_flags &= ~irsb_checking_singular;
-			ERR_post(isc_sing_select_err, isc_arg_end);
+			ERR_post(Arg::Gds(isc_sing_select_err));
 		}
 		pop_rpbs(request, rsb);
 		impure->irsb_flags &= ~irsb_checking_singular;
@@ -3485,7 +3486,7 @@ static void resynch_merge(
 
 			UCHAR* data = get_sort(tdbb, sort_rsb, mode);
 			if (!data)
-				ERR_post(isc_stream_eof, isc_arg_end);
+				ERR_post(Arg::Gds(isc_stream_eof));
 
 			/* do an "unget" to fix up the sort record for re-retrieval */
 
@@ -3658,7 +3659,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		{
 			// Stop infinite recursion of bad queries 
 			if (irsb->irsb_level > MAX_RECURSE_LEVEL)
-				ERR_post(isc_req_max_clones_exceeded, isc_arg_end);
+				ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 
 			// Save where we are
 			char* tmp = FB_NEW(*request->req_pool) char[inner_size + rpbs_size];

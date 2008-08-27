@@ -219,23 +219,6 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 				
 			return out_stream.write(s, n);
 		}
-	case safe_cell::at_counted_str:
-		{
-			size_t n = item.st_value.s_len;
-			const char* s = item.st_value.s_string;
-			if (!s)
-			{
-				if (!n) // Do not bother with null pointer if length is zero.
-					return 0;
-					
-				s = "(null)";
-				n = strlen(s);
-			}
-			else if (n > MAX_STRING)
-				n = MAX_STRING;
-
-			return out_stream.write(s, n);
-		}
 	case safe_cell::at_ptr:
 		{
 			uint64_t v = reinterpret_cast<uint64_t>(item.p_value);

@@ -138,13 +138,6 @@ using namespace Firebird;
 
 const int IO_RETRY	= 20;
 
-inline void init_status(ISC_STATUS* vector)
-{
-	vector[0] = isc_arg_gds;
-	vector[1] = FB_SUCCESS;
-	vector[2] = isc_arg_end;
-}
-
 inline bool is_network_error(const ISC_STATUS* vector)
 {
 	return vector[1] == isc_network_error || vector[1] == isc_net_write_err ||
@@ -793,7 +786,7 @@ namespace
 		explicit Status(ISC_STATUS* v) throw()
 			: local_vector(v ? v : local_status)
 		{
-			init_status(local_vector);
+			fb_utils::init_status(local_vector);
 		}
 
 		operator ISC_STATUS*() const
@@ -1414,9 +1407,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 	{
 		if (user_status) 
 		{
-			user_status[0] = isc_arg_gds;
-			user_status[1] = 0;
-			user_status[2] = isc_arg_end;
+			fb_utils::init_status(user_status);
 		}
 		return FB_SUCCESS;
 	}
@@ -2844,9 +2835,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM2_M(ISC_STATUS* user_status,
 		}
 
 		if (ret_v3_error) {
-			status[0] = isc_arg_gds;
-			status[1] = isc_srvr_version_too_old;
-			status[2] = isc_arg_end;
+			Firebird::Arg::Gds(isc_srvr_version_too_old).copyTo(status);
 			return status[1];
 		}
 
@@ -4353,7 +4342,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 
 		if (is_network_error(status))
 		{
-			init_status(status);
+			fb_utils::init_status(status);
 		}
 
 		while (transaction) 
@@ -5621,9 +5610,7 @@ static ISC_STATUS no_entrypoint(ISC_STATUS * user_status, ...)
  *
  **************************************/
 
-	*user_status++ = isc_arg_gds;
-	*user_status++ = isc_unavailable;
-	*user_status = isc_arg_end;
+	Firebird::Arg::Gds(isc_unavailable).copyTo(user_status);
 
 	return isc_unavailable;
 }
@@ -5673,9 +5660,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 	TEXT* p = description;
 	if (!p) 
 	{
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
+		Firebird::Arg::Gds(isc_virmemexh).copyTo(status);
 		return status[1];
 	}
 	

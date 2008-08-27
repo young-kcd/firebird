@@ -65,7 +65,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
@@ -139,6 +138,7 @@ const int WAIT_PERIOD	= -1;
 DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
+using namespace Firebird;
 
 /*==================================================================
  *
@@ -309,9 +309,8 @@ USHORT DFW_assign_index_type(thread_db* tdbb,
 		if (INTL_defined_type(tdbb, ttype))
 			return INTL_TEXT_TO_INDEX(ttype);
 
-		ERR_post_nothrow(isc_no_meta_update,
-				 isc_arg_gds, isc_random, isc_arg_string,
-				 ERR_cstring(work->dfw_name), isc_arg_end);
+		ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
 		INTL_texttype_lookup(tdbb, ttype);	// should punt
 		ERR_punt(); // if INTL_texttype_lookup hasn't punt
 	}
@@ -832,11 +831,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
 			return true;
 
-		ERR_post(isc_no_meta_update,
-				 isc_arg_gds, isc_lock_timeout,
-				 isc_arg_gds, isc_obj_in_use,
-				 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_lock_timeout) <<
+				 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
 		return false;
 
 	case 4:
@@ -1017,11 +1014,8 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						/* We cannot add a file to a shadow that is still
 						 * in the process of being created.
 						 */
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_obj_in_use,
-								 isc_arg_string,
-								 ERR_cstring(dbb->dbb_filename.c_str()),
-								 isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
 					}
 					break;
 				}
@@ -1122,7 +1116,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(Arg::Gds(isc_wish_list));
 
 	switch (phase)
 	{
@@ -1137,8 +1131,8 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			BackupManager::SharedDatabaseHolder sdbHolder(tdbb, dbb->dbb_backup_manager);
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_wrong_backup_state));
 			}
 			check_filename(work->dfw_name, true);
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
@@ -1170,7 +1164,7 @@ static bool delete_difference(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(Arg::Gds(isc_wish_list));
 
 	switch (phase)
 	{
@@ -1185,8 +1179,8 @@ static bool delete_difference(	thread_db*	tdbb,
 
 			if (dbb->dbb_backup_manager->get_state() != nbak_state_normal)
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_wrong_backup_state, isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_wrong_backup_state));
 			}
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
 		}
@@ -1216,7 +1210,7 @@ static bool begin_backup(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(Arg::Gds(isc_wish_list));
 
 	switch (phase)
 	{
@@ -1252,7 +1246,7 @@ static bool end_backup(	thread_db*	tdbb,
 	Database* dbb = tdbb->getDatabase();
 
 	if (dbb->dbb_ods_version < ODS_VERSION11)
-		ERR_post(isc_wish_list, isc_arg_end);
+		ERR_post(Arg::Gds(isc_wish_list));
 
 	switch (phase)
 	{
@@ -1369,9 +1363,8 @@ static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 
 	if (err)
 	{
-		ERR_post(isc_no_meta_update,
-				 isc_arg_gds, isc_circular_computed,
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_circular_computed));
 	}
 }
 
@@ -1467,13 +1460,10 @@ static void check_dependencies(thread_db* tdbb,
 
 	if (field_name)
 	{
-		ERR_post(	isc_no_meta_update,
-					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
-					isc_arg_gds, isc_field_name,
-					isc_arg_string, ERR_cstring(field_name),
-					isc_arg_gds, isc_dependency,
-					isc_arg_number, total,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+		ERR_post(	Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(isc_no_delete) <<						/* Msg353: can not delete */
+					Arg::Gds(isc_field_name) << Arg::Str(field_name) <<
+					Arg::Gds(isc_dependency) << Arg::Num(total));	/* Msg310: there are %ld dependencies */
 	}
 	else
 	{
@@ -1514,13 +1504,10 @@ static void check_dependencies(thread_db* tdbb,
 			break;
 		}
 
-		ERR_post(	isc_no_meta_update,
-					isc_arg_gds, isc_no_delete,	/* can not delete */
-					isc_arg_gds, obj_type,
-					isc_arg_string, ERR_cstring(dpdo_name),
-					isc_arg_gds, isc_dependency,
-					isc_arg_number, total,
-					isc_arg_end);	/* there are %ld dependencies */
+		ERR_post(	Arg::Gds(isc_no_meta_update) <<
+					Arg::Gds(isc_no_delete) <<						/* can not delete */
+					Arg::Gds(obj_type) << Arg::Str(dpdo_name) <<
+					Arg::Gds(isc_dependency) << Arg::Num(total));	/* there are %ld dependencies */
 	}
 }
 
@@ -1542,15 +1529,14 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
 	const bool valid = file_name.find("::") == Firebird::PathName::npos;
 
 	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_node_name_err));
 		/* Msg305: A node name is not permitted in a secondary, shadow, or log file name */
 	}
 
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "additional database file",
-			isc_arg_string, ERR_cstring(name),
-			isc_arg_end);
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+													 Arg::Str(name));
 	}
 }
 
@@ -1560,15 +1546,11 @@ static void check_system_generator(const TEXT* gen_name, const dfw_t action)
 	// CVC: Replace this with a call to SCL when we have ACL's for gens.
 	for (const gen* generator = generators; generator->gen_name; generator++)
 		if (!strcmp(generator->gen_name, gen_name)) // did we find a sys gen?
-			ERR_post(isc_no_meta_update,
-				isc_arg_gds, action == dfw_delete_generator ?
-					isc_no_delete // Msg353: can not delete
-					: isc_no_update, // Msg520: can not update
-				isc_arg_gds, isc_generator_name,
-				isc_arg_string, ERR_cstring(gen_name),
-				isc_arg_gds, isc_random,
-				isc_arg_string, "This is a system generator.",
-				isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(action == dfw_delete_generator ? isc_no_delete : isc_no_update) <<
+												   // Msg353: can not delete   Msg520: can not update
+					 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
+					 Arg::Gds(isc_random) << Arg::Str("This is a system generator."));
 }
 
 
@@ -1890,10 +1872,8 @@ static bool create_index(	thread_db*	tdbb,
 				if (!relation)
 				{
 					EXE_unwind(tdbb, request);
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_idx_create_err,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
 					/* Msg308: can't create index %s */
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
@@ -1947,16 +1927,12 @@ static bool create_index(	thread_db*	tdbb,
 				{
 					EXE_unwind(tdbb, request);
 					if (!idx.idx_count)
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_idx_seg_err,
-								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_idx_seg_err) << Arg::Str(work->dfw_name));
 					/* Msg304: segment count of 0 defined for index %s */
 					else
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_idx_key_err,
-								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
 					/* Msg311: too many keys defined for index %s */
 				}
 				if (IDX.RDB$UNIQUE_FLAG)
@@ -1987,31 +1963,22 @@ static bool create_index(	thread_db*	tdbb,
 			{
 				EXE_unwind(tdbb, request);
 				if (key_count > idx.idx_count)
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_idx_key_err,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
 				/* Msg311: too many keys defined for index %s */
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_inval_key_posn,
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_inval_key_posn) <<
 							 /* Msg358: invalid key position */
-							 isc_arg_gds, isc_field_name,
-							 isc_arg_string, ERR_cstring(RFR.RDB$FIELD_NAME),
-							 isc_arg_gds, isc_index_name,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+							 Arg::Gds(isc_field_name) << Arg::Str(RFR.RDB$FIELD_NAME) <<
+							 Arg::Gds(isc_index_name) << Arg::Str(work->dfw_name));
 				else if (FLD.RDB$FIELD_TYPE == blr_blob)
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_blob_idx_err,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_blob_idx_err) << Arg::Str(work->dfw_name));
 				/* Msg350: attempt to index blob column in index %s */
 				else
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_array_idx_err,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_array_idx_err) << Arg::Str(work->dfw_name));
 				/* Msg351: attempt to index array column in index %s */
 			}
 
@@ -2043,16 +2010,12 @@ static bool create_index(	thread_db*	tdbb,
 			REQUEST(irq_c_index) = request;
 
 		if (key_count != idx.idx_count)
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_key_field_err,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_key_field_err) << Arg::Str(work->dfw_name));
 		/* Msg352: too few key columns found for index %s (incorrect column name?) */
 		if (!relation)
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_idx_create_err,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
 		/* Msg308: can't create index %s */
 
 		/* Make sure the relation info is all current */
@@ -2060,10 +2023,8 @@ static bool create_index(	thread_db*	tdbb,
 		MET_scan_relation(tdbb, relation);
 
 		if (relation->rel_view_rse)
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_idx_create_err,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
 		/* Msg308: can't create index %s */
 
 		/* Actually create the index */
@@ -2091,8 +2052,7 @@ static bool create_index(	thread_db*	tdbb,
 				{
 					Firebird::MetaName constraint_name;
 					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
-					ERR_post(isc_partner_idx_not_found,
-							 isc_arg_string, ERR_cstring(constraint_name), isc_arg_end);
+					ERR_post(Arg::Gds(isc_partner_idx_not_found) << Arg::Str(constraint_name));
 				}
 
 				// Get an protected_read lock on the both relations if the index being
@@ -2106,10 +2066,8 @@ static bool create_index(	thread_db*	tdbb,
 				int bad_segment;
 				if (!IDX_check_master_types(tdbb, idx, partner_relation, bad_segment))
 				{
-					ERR_post(isc_no_meta_update,
-							isc_arg_gds, isc_partner_idx_incompat_type,
-							isc_arg_number, bad_segment + 1,
-							isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_partner_idx_incompat_type) << Arg::Num(bad_segment + 1));
 				}
 
 /* hvlad: this code was never called but i preserve it for Claudio review and decision
@@ -2328,11 +2286,9 @@ static bool create_relation(thread_db*	tdbb,
 					if (rel_id == X.RDB$RELATION_ID)
 					{
 						EXE_unwind(tdbb, request);
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_table_name,
-								 isc_arg_string, ERR_cstring(work->dfw_name),
-								 isc_arg_gds, isc_imp_exc,
-								 isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
+								 Arg::Gds(isc_imp_exc));
 					}
 				}
 				X.RDB$RELATION_ID = (rel_id > MAX_RELATION_ID) ?
@@ -2542,9 +2498,8 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 					if (COLL.RDB$COLLATION_ID.NULL)
 					{
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_max_coll_per_charset,
-								 isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_max_coll_per_charset));
 					}
 					else
 					{
@@ -2758,12 +2713,9 @@ static bool modify_generator(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		case 1:
 			check_system_generator(gen_name, dfw_modify_generator);
 			if (work->dfw_id) // != 0 means not only the desc was changed.
-				ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_generator_name,
-					 isc_arg_string, ERR_cstring(gen_name),
-					 isc_arg_gds, isc_random,
-					 isc_arg_string, "Only can modify description for user generators.",
-					 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_generator_name) << Arg::Str(gen_name) <<
+						 Arg::Gds(isc_random) << Arg::Str("Only can modify description for user generators."));
 
 			return true;
 		case 2:
@@ -2932,13 +2884,10 @@ static bool delete_field(	thread_db*	tdbb,
 		CMP_release(tdbb, handle);
 
 		if (field_count)
-			ERR_post(isc_no_meta_update,
-					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
-					isc_arg_gds, isc_domain_name,
-					isc_arg_string, ERR_cstring(work->dfw_name),
-					isc_arg_gds, isc_dependency,
-					isc_arg_number, (SLONG) field_count,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_no_delete) <<								/* Msg353: can not delete */
+					 Arg::Gds(isc_domain_name) << Arg::Str(work->dfw_name) <<
+					 Arg::Gds(isc_dependency) << Arg::Num(field_count)); 	/* Msg310: there are %ld dependencies */
 
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_field, transaction);
@@ -3203,10 +3152,8 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						index->idl_count++;
 					}
 
-					ERR_post(isc_no_meta_update,
-							isc_arg_gds, isc_obj_in_use,
-							isc_arg_string, "INDEX",
-							isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
 				}
 				index->idl_count++;
 			}
@@ -3408,10 +3355,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
 							 transaction->getLockWait()))
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 			}
 		}
 
@@ -3434,10 +3379,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
 			/*
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
@@ -3457,10 +3400,8 @@ static bool delete_procedure(	thread_db*	tdbb,
 			if (CMP_clone_is_active(procedure->prc_request))
 			{
 				procedure->prc_flags = old_flags;
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 			}
 
 			CMP_release(tdbb, procedure->prc_request);
@@ -3542,13 +3483,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (view_count)
 		{
-			ERR_post(isc_no_meta_update,
-					isc_arg_gds, isc_no_delete, /* Msg353: can not delete */
-					isc_arg_gds, isc_table_name,
-					isc_arg_string, ERR_cstring(work->dfw_name),
-					isc_arg_gds, isc_dependency,
-					isc_arg_number, (SLONG) view_count,
-					isc_arg_end);	/* Msg310: there are %ld dependencies */
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_no_delete) << /* Msg353: can not delete */
+					 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
+					 Arg::Gds(isc_dependency) << Arg::Num(view_count));
+					 /* Msg310: there are %ld dependencies */
 		}
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_relation, transaction);
@@ -3587,10 +3526,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (adjusted) {
 				++relation->rel_use_count;
 			}
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 		}
 
 		relation->rel_flags |= REL_check_existence;
@@ -3628,10 +3565,8 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 		if (relation->rel_sweep_count)
 		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 		}
 
 #ifdef GARBAGE_THREAD
@@ -3760,13 +3695,11 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		CMP_release(tdbb, handle);
 
 		if (field_count)
-			ERR_post(isc_no_meta_update,
-					isc_arg_gds, isc_no_delete,	/* Msg353: can not delete */
-					 isc_arg_gds, isc_field_name,
-					 isc_arg_string, ERR_cstring(f),
-					 isc_arg_gds, isc_dependency,
-					 isc_arg_number, (SLONG) field_count,
-					 isc_arg_end);	/* Msg310: there are %ld dependencies */
+			ERR_post(Arg::Gds(isc_no_meta_update) <<
+					 Arg::Gds(isc_no_delete) <<	/* Msg353: can not delete */
+					 Arg::Gds(isc_field_name) << Arg::Str(f) <<
+					 Arg::Gds(isc_dependency) << Arg::Num(field_count));
+					 /* Msg310: there are %ld dependencies */
 
 		/* now check if there are any dependencies generated through the blr
 		   that defines the relation */
@@ -3806,9 +3739,8 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (!field_count)
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_del_last_field,
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_del_last_field));
 				/* Msg354: last column in a relation cannot be deleted */
 			}
 		}
@@ -4394,12 +4326,9 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 	if (offset > MAX_FORMAT_SIZE)
 	{
 		delete format;
-		ERR_post(isc_no_meta_update,
-				 isc_arg_gds, isc_rec_size_err,
-				 isc_arg_number, (SLONG) offset,
-				 isc_arg_gds, isc_table_name,
-				 isc_arg_string, ERR_cstring(relation->rel_name),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_rec_size_err) << Arg::Num(offset) <<
+				 Arg::Gds(isc_table_name) << Arg::Str(relation->rel_name));
 		/* Msg361: new record size of %ld bytes is too big */
 	}
 
@@ -4536,11 +4465,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
 			{
 				EXE_unwind(tdbb, request_fmt1);
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_table_name,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_gds, isc_version_err,
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
+						 Arg::Gds(isc_version_err));
 				/* Msg357: too many versions */
 			}
 			MODIFY REL USING
@@ -4681,9 +4608,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						{
 							DPM_delete_relation(tdbb, relation);
 						}
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_random,
-								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
+						ERR_post(Arg::Gds(isc_no_meta_update) <<
+								 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
 					}
 
 					/* Make sure the text type specified is implemented */
@@ -4695,9 +4621,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						{
 							DPM_delete_relation(tdbb, relation);
 						}
-						ERR_post_nothrow(isc_no_meta_update,
-								 isc_arg_gds, isc_random,
-								 isc_arg_string, ERR_cstring(work->dfw_name), isc_arg_end);
+						ERR_post_nothrow(Arg::Gds(isc_no_meta_update) <<
+										 Arg::Gds(isc_random) << Arg::Str(work->dfw_name));
 						INTL_texttype_lookup(tdbb,
 							(DTYPE_IS_TEXT(tfb->tfb_desc.dsc_dtype) ?
 								tfb->tfb_desc.dsc_ttype() : tfb->tfb_desc.dsc_blob_ttype()));	// should punt
@@ -4740,11 +4665,9 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					{
 						DPM_delete_relation(tdbb, relation);
 					}
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_table_name,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-			 				 isc_arg_gds, isc_must_have_phys_field,
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
+			 				 Arg::Gds(isc_must_have_phys_field));
 				}
 
 				blob = setup_triggers(tdbb, relation, null_view, triggers, blob);
@@ -4874,10 +4797,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX,
 							 transaction->getLockWait()))
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 			}
 		}
 
@@ -4900,10 +4821,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 			{
 				/*
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_meta_update) <<
+						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 				*/
 				gds__log("Modifying procedure %s which is currently in use by active user requests",
 						 work->dfw_name.c_str());
@@ -4911,11 +4830,9 @@ static bool modify_procedure(	thread_db*	tdbb,
 				USHORT prc_alter_count = procedure->prc_alter_count;
 				if (prc_alter_count > MAX_PROC_ALTER)
 				{
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_proc_name,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_gds, isc_version_err,
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_proc_name) << Arg::Str(work->dfw_name) <<
+							 Arg::Gds(isc_version_err));
 					/* Msg357: too many versions */
 				}
 
@@ -4936,10 +4853,8 @@ static bool modify_procedure(	thread_db*	tdbb,
 			if (procedure->prc_request)
 			{
 				if (CMP_clone_is_active(procedure->prc_request))
-					ERR_post(isc_no_meta_update,
-							 isc_arg_gds, isc_obj_in_use,
-							 isc_arg_string, ERR_cstring(work->dfw_name),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
 
 				/* release the request */
 
@@ -5342,10 +5257,8 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 	}
 
 	if (inUse ) {
-		ERR_post(isc_no_meta_update,
-				isc_arg_gds, isc_obj_in_use,
-				isc_arg_string, relation->rel_name.c_str(),
-				isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_obj_in_use) << Arg::Str(relation->rel_name));
 	}
 
 	return relLock;

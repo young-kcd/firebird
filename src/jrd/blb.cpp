@@ -906,7 +906,7 @@ SLONG BLB_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************/
 
 	if (!(blob->blb_flags & BLB_stream))
-		ERR_post(isc_bad_segstr_type, isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_segstr_type));
 
 	if (mode == 1)
 		offset += blob->blb_seek;
@@ -955,7 +955,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		if (from_desc->dsc_dtype != dtype_array &&
 			from_desc->dsc_dtype != dtype_quad)
 		{
-			ERR_post(isc_array_convert_error, isc_arg_end);
+			ERR_post(Arg::Gds(isc_array_convert_error));
 		}
 	}
 	else if (DTYPE_IS_BLOB_OR_QUAD(to_desc->dsc_dtype))
@@ -1047,7 +1047,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	jrd_rel* relation = rpb->rpb_relation;
 
 	if (relation->isVirtual()) {
-		ERR_post(isc_read_only, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only));
 	}
 
 	RelationPages* relPages = relation->getPages(tdbb);
@@ -1117,7 +1117,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 						} while (temp_req);
 						if (!temp_req) {
 							// Trying to use temporary id of materialized blob from another request
-							ERR_post(isc_bad_segstr_id, isc_arg_end);
+							ERR_post(Arg::Gds(isc_bad_segstr_id));
 						}
 					}
 					source = &blobIndex->bli_blob_id;
@@ -1129,7 +1129,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 				if (!blob || !(blob->blb_flags & BLB_closed))
 				{
-					ERR_post(isc_bad_segstr_id, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_segstr_id));
 				}
 
 				if (blob->blb_level &&
@@ -1162,7 +1162,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 
 		if (!blob || !(blob->blb_flags & BLB_closed))
 		{
-			ERR_post(isc_bad_segstr_id, isc_arg_end);
+			ERR_post(Arg::Gds(isc_bad_segstr_id));
 		}
 
 		break;
@@ -1296,7 +1296,7 @@ blb* BLB_open2(thread_db* tdbb,
 				if (!new_blob || !(new_blob->blb_flags & BLB_temporary) ||
 					!(new_blob->blb_flags & BLB_closed))
 				{
-					ERR_post(isc_bad_segstr_id, isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_segstr_id));
 				}
 
 				blob->blb_lead_page = new_blob->blb_lead_page;
@@ -1349,7 +1349,7 @@ blb* BLB_open2(thread_db* tdbb,
 		if (blob_id->bid_internal.bid_relation_id >= vector->count() ||
 			!(blob->blb_relation = (*vector)[blob_id->bid_internal.bid_relation_id] ) )
 		{
-				ERR_post(isc_bad_segstr_id, isc_arg_end);
+				ERR_post(Arg::Gds(isc_bad_segstr_id));
 		}
 
 		blob->blb_pg_space_id = blob->blb_relation->getPages(tdbb)->rel_pg_space_id;
@@ -1662,8 +1662,8 @@ void BLB_put_slice(	thread_db*	tdbb,
 	ArrayField* array_desc = field->fld_array;
 	if (!array_desc)
 	{
-		ERR_post(isc_invalid_dimension, isc_arg_number, (SLONG) 0,
-				 isc_arg_number, (SLONG) 1, isc_arg_end);
+		ERR_post(Arg::Gds(isc_invalid_dimension) << Arg::Num(0) << 
+													Arg::Num(1));
 	}
 
 /* Find and/or allocate array block.  There are three distinct cases:
@@ -1708,7 +1708,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	{
 		array = find_array(transaction, blob_id);
 		if (!array) {
-			ERR_post(isc_invalid_array_id, isc_arg_end);
+			ERR_post(Arg::Gds(isc_invalid_array_id));
 		}
 
 		arg.slice_high_water = array->arr_data + array->arr_effective_length;
@@ -2005,7 +2005,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 		return BLB_lseek(control->source_handle, mode, offset);
 
 	default:
-		ERR_post(isc_uns_ext, isc_arg_end);
+		ERR_post(Arg::Gds(isc_uns_ext));
 		return FB_SUCCESS;
 	}
 }
@@ -2080,7 +2080,7 @@ static void delete_blob(thread_db* tdbb, blb* blob, ULONG prior_page)
 	const USHORT pageSpaceID = blob->blb_pg_space_id;
 	const USHORT tempSpaceID = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
 	if ((dbb->dbb_flags & DBB_read_only) && pageSpaceID != tempSpaceID)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_database));
 
 	// Level 0 blobs don't need cleanup
 
@@ -2425,7 +2425,8 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		(*vector)[l] = window.win_page.getPageNum();
 	}
 	else {
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_blobtoobig, isc_arg_end);
+		ERR_post(Arg::Gds(isc_imp_exc) << 
+				 Arg::Gds(isc_blobtoobig));
 	}
 
 	CCH_precedence(tdbb, &window, page_number);
@@ -2579,7 +2580,8 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
-		ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, isc_arg_end);
+		ERR_post(Arg::Gds(isc_arith_except) << 
+				 Arg::Gds(isc_blob_truncation));
 
 	blobAsText.dsc_address = buffer.begin();
 	blobAsText.dsc_length = (USHORT)len;
@@ -2670,7 +2672,7 @@ static void slice_callback(array_slice* arg, ULONG count, DSC* descriptors)
 		slice_desc->dsc_address + arg->slice_element_length;
 
 	if (next > arg->slice_end)
-		ERR_post(isc_out_of_bounds, isc_arg_end);
+		ERR_post(Arg::Gds(isc_out_of_bounds));
 
 	if (array_desc->dsc_address < arg->slice_base)
 		ERR_error(198);			/* msg 198 array subscript computation error */

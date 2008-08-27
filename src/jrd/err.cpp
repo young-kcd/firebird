@@ -30,9 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "gen/iberror.h"
-#include "../jrd/iberr.h"
 #include <errno.h>
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
@@ -59,8 +57,7 @@ using namespace Firebird;
 
 static void internal_error(ISC_STATUS status, int number, 
 						   const TEXT* file = NULL, int line = 0);
-static void internal_post(ISC_STATUS status, va_list args);
-static void internal_post2(const ISC_STATUS* status_vector);
+static void internal_post(const ISC_STATUS* status_vector);
 
 
 void ERR_bugcheck(int number, const TEXT* file, int line)
@@ -102,7 +99,7 @@ void ERR_bugcheck_msg(const TEXT* msg)
 	DEBUG;
 	CCH_shutdown_database(dbb);
 
-	ERR_post(isc_bug_check, isc_arg_string, ERR_cstring(msg), isc_arg_end);
+	ERR_post(Arg::Gds(isc_bug_check) << Arg::Str(msg));
 }
 
 
@@ -137,30 +134,28 @@ void ERR_duplicate_error(IDX_E	code,
  *	Duplicate error during index update.
  *
  **************************************/
-	Firebird::MetaName index, constraint;
-	const TEXT* index_name;
-	const TEXT* constraint_name;
-
 	thread_db* tdbb = JRD_get_thread_data();
 
+	Firebird::MetaName index, constraint;
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
-	if (index.length()) {
-		index_name = ERR_cstring(index);
+
+	bool haveConstraint = true;
+	if (index.hasData()) {
 		MET_lookup_cnstrt_for_index(tdbb, constraint, index);
-		if (constraint.length() > 0)
-			constraint_name = ERR_cstring(constraint);
-		else
-			constraint_name = "***unknown***";
+		if (constraint.isEmpty()) {
+			haveConstraint = false;
+			constraint = "***unknown***";
+		}
 	}
 	else {
-		index_name = "***unknown***";
-		constraint_name = "***unknown***";
+		haveConstraint = false;
+		index = constraint = "***unknown***";
 	}
 
 	switch (code) {
 	case idx_e_keytoobig:
-		ERR_post(isc_imp_exc, isc_arg_gds, isc_keytoobig,
-				 isc_arg_string, index_name, isc_arg_end);
+		ERR_post(Arg::Gds(isc_imp_exc) <<
+				 Arg::Gds(isc_keytoobig) << Arg::Str(index));
 		break;
 
 	case idx_e_conversion:
@@ -168,24 +163,23 @@ void ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
-		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name), 
-			 	 isc_arg_gds, isc_foreign_key_target_doesnt_exist, isc_arg_end);
+		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) << 
+											  Arg::Str(relation->rel_name) <<
+			 	 Arg::Gds(isc_foreign_key_target_doesnt_exist));
 		break;
 
 	case idx_e_foreign_references_present:
-		ERR_post(isc_foreign_key, isc_arg_string, constraint_name,
-			 	 isc_arg_string, ERR_cstring(relation->rel_name),
-			 	 isc_arg_gds, isc_foreign_key_references_present, isc_arg_end);
+		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) << 
+											  Arg::Str(relation->rel_name) <<
+			 	 Arg::Gds(isc_foreign_key_references_present));
 		break;
 
 	default:
-		if (constraint.length() > 0)
-			ERR_post(isc_unique_key_violation,
-					 isc_arg_string, constraint_name,
-					 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+		if (haveConstraint)
+			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) << 
+														   Arg::Str(relation->rel_name));
 		else
-			ERR_post(isc_no_dup, isc_arg_string, index_name, isc_arg_end);
+			ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index));
 	}
 }
 
@@ -209,7 +203,7 @@ void ERR_error(int number)
 	if (gds__msg_lookup(0, JRD_BUGCHK, number, sizeof(errmsg), errmsg, NULL) < 1)
 		sprintf(errmsg, "error code %d", number);
 
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
+	ERR_post(Arg::Gds(isc_random) << Arg::Str(errmsg));
 }
 
 
@@ -228,7 +222,7 @@ void ERR_error_msg(const TEXT* msg)
  **************************************/
 
 	DEBUG;
-	ERR_post(isc_random, isc_arg_string, ERR_cstring(msg), isc_arg_end);
+	ERR_post(Arg::Gds(isc_random) << Arg::Str(msg));
 }
 
 
@@ -264,7 +258,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 }
 
 
-bool ERR_post_warning(ISC_STATUS status, ...)
+bool ERR_post_warning(const Firebird::Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -276,88 +270,41 @@ bool ERR_post_warning(ISC_STATUS status, ...)
  *	Post a warning to the current status vector.
  *
  **************************************/
-	va_list args;
 	int type, len;
 	ISC_STATUS* q;
 	int indx = 0, warning_indx = 0;
-	ISC_STATUS* status_vector;
-
-	va_start(args, status);
-	status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
+	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 		 status_vector[2] != isc_arg_warning))
 	{
 		/* this is a blank status vector */
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = 0;
-		status_vector[2] = isc_arg_end;
+		fb_utils::init_status(status_vector);
 		indx = 2;
 	}
-	else {
+	else 
+	{
 		/* find end of a status vector */
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx)
 			--indx;
 	}
 
-/* stuff the warning */
-	if (indx + 3 < ISC_STATUS_LENGTH) {
-		status_vector[indx++] = isc_arg_warning;
-		status_vector[indx++] = status;
-		while ((type = va_arg(args, int)) && (indx + 3 < ISC_STATUS_LENGTH))
-			switch (status_vector[indx++] = type) {
-			case isc_arg_warning:
-				status_vector[indx++] = (ISC_STATUS) va_arg(args, ISC_STATUS);
-				break;
-
-			case isc_arg_string:
-				q = reinterpret_cast<ISC_STATUS*>(va_arg(args, TEXT*));
-				if (strlen((TEXT *) q) >= (size_t)MAX_ERRSTR_LEN) {
-					status_vector[(indx - 1)] = isc_arg_cstring;
-					status_vector[indx++] = MAX_ERRSTR_LEN;
-				}
-				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
-				status_vector[indx++] = (ISC_STATUS)(U_IPTR) q;
-				break;
-
-			case isc_arg_interpreted:
-			case isc_arg_sql_state:
-				status_vector[indx++] = va_arg(args, ISC_STATUS);
-				break;
-
-			case isc_arg_cstring:
-				len = va_arg(args, int);
-				status_vector[indx++] =
-					(ISC_STATUS) (len >= MAX_ERRSTR_LEN) ? MAX_ERRSTR_LEN : len;
-				// TEXT* forced to platform's int and stored as ISC_STATUS !!!
-				status_vector[indx++] = (ISC_STATUS) (U_IPTR) va_arg(args, TEXT*);
-				break;
-
-			case isc_arg_number:
-				status_vector[indx++] = (ISC_STATUS) va_arg(args, SLONG);
-				break;
-
-			case isc_arg_vms:
-			case isc_arg_unix:
-			case isc_arg_win32:
-			default:
-				status_vector[indx++] = (ISC_STATUS) va_arg(args, int);
-				break;
-			}
-		status_vector[indx] = isc_arg_end;
-		va_end(args);
+	/* stuff the warning */
+	if (indx + v.length() + 1 < ISC_STATUS_LENGTH) 
+	{
+		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
+        ERR_make_permanent(&status_vector[indx]);
 		return true;
 	}
 
 	/* not enough free space */
-	va_end(args);
 	return false;
 }
 
 
-void ERR_post_nothrow(ISC_STATUS status, ...)
+void ERR_post_nothrow(const Arg::StatusVector& v)
 /**************************************
  *
  *	E R R _ p o s t _ n o t h r o w
@@ -369,37 +316,45 @@ void ERR_post_nothrow(ISC_STATUS status, ...)
  *
  **************************************/
 {
-	va_list args;
-	va_start(args, status);
-	internal_post(status, args);
-	va_end(args);
+	ISC_STATUS_ARRAY vector;
+	v.copyTo(vector);
+	ERR_make_permanent(vector);
+	internal_post(vector);
 }
 
 
-void ERR_post(ISC_STATUS status, ...)
+void ERR_make_permanent(ISC_STATUS* s)
 /**************************************
  *
- *	E R R _ p o s t
+ *	E R R _ m a k e _ p e r m a n e n t
  *
  **************************************
  *
  * Functional description
- *	Create a status vector and return to 
- * the user.
+ *	Make strings in vector permanent
  *
  **************************************/
 {
-	va_list args;
-	va_start(args, status);
-	internal_post(status, args);
-	va_end(args);
+	Firebird::StringsBuffer* sb = 0;
+	Attachment* att = JRD_get_thread_data()->getAttachment();
+	if (att) {
+		Firebird::MutexLockGuard(att->att_mutex);
+		if (att->att_strings_buffer != ((Firebird::StringsBuffer*)(~0)))
+		{
+			if (!att->att_strings_buffer)
+			{
+				att->att_strings_buffer = FB_NEW(*att->att_pool) Firebird::CircularStringsBuffer<MAXPATHLEN * 4>;
+			}
+			att->att_strings_buffer->makePermanentVector(s, s);
+			return;
+		}
+	}
 
-	DEBUG;
-	ERR_punt();
+	Firebird::StringsBuffer::makeEnginePermanentVector(s);
 }
 
 
-void ERR_post(const Arg::StatusVector& statusVector)
+void ERR_post(const Arg::StatusVector& v)
 /**************************************
  *
  *	E R R _ p o s t
@@ -411,47 +366,14 @@ void ERR_post(const Arg::StatusVector& statusVector)
  *
  **************************************/
 {
-	ISC_STATUS_ARRAY vector;
-	memcpy(vector, statusVector.value(), sizeof(vector));
-
-	for (int i = 0; i < statusVector.length(); i += 2)
-	{
-		if (vector[i] == isc_arg_string)
-		{
-			vector[i + 1] = (ISC_STATUS)(IPTR) ERR_cstring((char*)(IPTR) vector[i + 1]);
-		}
-	}
-
-	internal_post2(vector);
+	ERR_post_nothrow(v);
 
 	DEBUG;
 	ERR_punt();
 }
 
 
-static void internal_post(ISC_STATUS status, va_list args)
-{
-/**************************************
- *
- *	i n t e r n a l _ p o s t
- *
- **************************************
- *
- * Functional description
- *	Append status vector with new values.
- *
- **************************************/
-
-/* stuff the status into temp buffer */
-	ISC_STATUS_ARRAY tmp_status;
-	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	STUFF_STATUS_function(tmp_status, status, args);
-
-	internal_post2(tmp_status);
-}
-
-
-static void internal_post2(const ISC_STATUS* tmp_status)
+static void internal_post(const ISC_STATUS* tmp_status)
 {
 /**************************************
  *
@@ -469,7 +391,7 @@ static void internal_post2(const ISC_STATUS* tmp_status)
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
-	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
+	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -566,7 +488,7 @@ void ERR_punt(void)
 }
 
 
-void ERR_warning(ISC_STATUS status, ...)
+void ERR_warning(const Firebird::Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -583,10 +505,53 @@ void ERR_warning(ISC_STATUS status, ...)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
+	ISC_STATUS* s = tdbb->tdbb_status_vector;
 
-	STUFF_STATUS(tdbb->tdbb_status_vector, status);
+	v.copyTo(s);
+	ERR_make_permanent(s);
 	DEBUG;
 	tdbb->getRequest()->req_flags |= req_warning;
+}
+
+
+void ERR_append_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+{
+/**************************************
+ *
+ *	E R R _  a p p e n d _ s t a t u s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Append the given status vector with the passed arguments.
+ *
+ **************************************/
+	// First build a status vector with the passed one
+	Arg::StatusVector passed(status_vector);
+
+	// Now append the newly vector to the passed one
+	passed.append(v);
+
+	// Return the result
+	passed.copyTo(status_vector);
+	ERR_make_permanent(status_vector);
+}
+
+
+void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+{
+/**************************************
+ *
+ *	E R R _  a p p e n d _ s t a t u s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Append the given status vector with the passed arguments.
+ *
+ **************************************/
+	v.copyTo(status_vector);
+	ERR_make_permanent(status_vector);
 }
 
 
@@ -627,6 +592,6 @@ static void internal_error(ISC_STATUS status, int number,
 		fb_utils::snprintf(errmsg + len, sizeof(errmsg) - len, " (%d)", number);
 	}
 
-	ERR_post(status, isc_arg_string, ERR_cstring(errmsg), isc_arg_end);
+	ERR_post(Arg::Gds(status) << Arg::Str(errmsg));
 }
 

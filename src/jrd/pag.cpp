@@ -77,7 +77,6 @@
 #include "../jrd/os/pio.h"
 #include "../jrd/os/path_utils.h"
 #include "../jrd/ibase.h"
-#include "../jrd/iberr.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"
@@ -102,6 +101,7 @@
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 static int blocking_ast_attachment(void*);
 static void find_clump_space(SLONG, WIN*, pag**, USHORT, USHORT, const UCHAR*,
@@ -112,7 +112,7 @@ static bool find_type(SLONG, WIN*, pag**, USHORT, USHORT, UCHAR**,
 inline void err_post_if_database_is_readonly(const Database* dbb)
 {
 	if (dbb->dbb_flags & DBB_read_only)
-		ERR_post(isc_read_only_database, isc_arg_end);
+		ERR_post(Arg::Gds(isc_read_only_database));
 }
 
 // Class definitions (obsolete platforms are commented out)
@@ -497,10 +497,8 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "additional database file",
-			isc_arg_string, ERR_cstring(file_name),
-			isc_arg_end);
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+													 Arg::Str(file_name));
 	}
 
 /* Create the file.  If the sequence number comes back zero, it didn't
@@ -1287,11 +1285,9 @@ void PAG_header(thread_db* tdbb, bool info)
 		 * file system permission gives only ReadOnly access. Punt out with
 		 * isc_no_priv error (no privileges)
 		 */
-		ERR_post(isc_no_priv,
-				 isc_arg_string, "read-write",
-				 isc_arg_string, "database",
-				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("read-write") << 
+										  Arg::Str("database") << 
+										  Arg::Str(attachment->att_filename));
 	}
 
 	const bool useFSCache = dbb->dbb_bcb->bcb_count < Config::getMaxFileSystemCache();
@@ -1369,22 +1365,18 @@ void PAG_header_init(thread_db* tdbb)
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 
 	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
-		ERR_post(isc_bad_db_format,
-				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-		ERR_post(isc_wrong_ods,
-				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_number, (SLONG) ods_version,
-				 isc_arg_number, (SLONG) header->hdr_ods_minor,
-				 isc_arg_number, (SLONG) ODS_VERSION,
-				 isc_arg_number, (SLONG) ODS_CURRENT,
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_wrong_ods) << Arg::Str(attachment->att_filename) << 
+											Arg::Num(ods_version) << 
+											Arg::Num(header->hdr_ods_minor) << 
+											Arg::Num(ODS_VERSION) << 
+											Arg::Num(ODS_CURRENT));
 	}
 
 	// Note that if this check is turned on, it should be recoded in order that
@@ -1412,17 +1404,13 @@ void PAG_header_init(thread_db* tdbb)
 		   archMatrix[header->hdr_implementation] != archMatrix[CLASS])
 	   )
 	{
-		ERR_post(isc_bad_db_format,
-				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
 		header->hdr_page_size > MAX_PAGE_SIZE) 
 	{
-		ERR_post(isc_bad_db_format,
-				 isc_arg_string, ERR_string(attachment->att_filename),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
 
 	dbb->dbb_ods_version = ods_version;
@@ -1643,10 +1631,8 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
 		if (!JRD_verify_database_access(file_name)) {
-			ERR_post(isc_conf_access_denied,
-				isc_arg_string, "additional database file",
-				isc_arg_string, ERR_cstring(file_name),
-				isc_arg_end);
+			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+														 Arg::Str(file_name));
 		}
 
 		file->fil_next = PIO_open(dbb, file_name, file_name, false);
@@ -1911,7 +1897,7 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 				header->hdr_flags & hdr_SQL_dialect_3)
 			{
 				// Check the returned value here!
-				ERR_post_warning(isc_dialect_reset_warning, isc_arg_end);
+				ERR_post_warning(Arg::Warning(isc_dialect_reset_warning));
 			}
 
 			dbb->dbb_flags &= ~DBB_DB_SQL_dialect_3;	/* set to 0 */
@@ -1925,9 +1911,9 @@ void PAG_set_db_SQL_dialect(Database* dbb, SSHORT flag)
 
 		default:
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(isc_inv_dialect_specified, isc_arg_number, flag,
-					 isc_arg_gds, isc_valid_db_dialects, isc_arg_string,
-					 "1 and 3", isc_arg_gds, isc_dialect_not_changed, isc_arg_end);
+			ERR_post(Arg::Gds(isc_inv_dialect_specified) << Arg::Num(flag) <<
+					 Arg::Gds(isc_valid_db_dialects) << Arg::Str("1 and 3") <<
+					 Arg::Gds(isc_dialect_not_changed));
 			break;
 		}
 	}
@@ -2370,7 +2356,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 				if (extPages > reqPages) 
 				{
 					extPages = MAX(reqPages, extPages / 2);
-					INIT_STATUS(tdbb->tdbb_status_vector);
+					fb_utils::init_status(tdbb->tdbb_status_vector);
 				}
 				else 
 				{

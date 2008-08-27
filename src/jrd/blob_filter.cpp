@@ -162,7 +162,8 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
  *	Get segment from a blob filter.
  *
  **************************************/
-	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+	ISC_STATUS_ARRAY localStatus;
+	fb_utils::init_status(localStatus);
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -270,7 +271,8 @@ void BLF_put_segment(thread_db* tdbb,
  *
  **************************************/
 
-	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+	ISC_STATUS_ARRAY localStatus;
+	fb_utils::init_status(localStatus);
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -357,7 +359,8 @@ static void open_blob(
 	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp); // ISC_STATUS to pointer!
 	prior->ctl_source = callback;
 
-	ISC_STATUS_ARRAY localStatus = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
+	ISC_STATUS_ARRAY localStatus;
+	fb_utils::init_status(localStatus);
 	prior->ctl_status = localStatus;
 
 	prior->ctl_internal[0] = dbb;

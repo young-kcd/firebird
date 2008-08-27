@@ -58,17 +58,23 @@ protected:
 		operator<<(*(static_cast<Base*>(this)));
 	}
 
+public:
+	explicit StatusVector(const ISC_STATUS* s) throw() : Base(0, 0)
+	{ 
+		clear();
+		append(s, FB_NELEM(m_status_vector) - 1);
+	}
+
 	StatusVector() throw() : Base(0, 0)
 	{ 
 		clear();
 	}
 
-public:
+	~StatusVector() { }
+
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 	int length() const throw() { return m_length; }
 	bool hasData() const throw() { return m_length > 0; }
-
-	~StatusVector() { }
 
 	void clear() throw();
 	void append(const StatusVector& v) throw();

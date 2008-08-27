@@ -22,7 +22,7 @@ class InterlockedStringsBuffer : public CircularBuffer
 public:
 	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
 		: CircularBuffer() { }
-	virtual char* alloc(const char* string, size_t length) 
+	virtual char* alloc(const char* string, size_t& length) 
 	{
 		Firebird::MutexLockGuard guard(buffer_lock);
 		return CircularBuffer::alloc(string, length);
@@ -31,12 +31,17 @@ private:
 	Firebird::Mutex buffer_lock;
 };
 
-ISC_STATUS dupStringTemp(const char* s)
+char* dupStringTemp2(const char* s)
 {
 	const size_t len = strlen(s);
 	char *string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 	memcpy(string, s, len + 1);
-	return (ISC_STATUS)(IPTR)(string);
+	return string;
+}
+
+ISC_STATUS dupStringTemp(const char* s)
+{
+	return (ISC_STATUS)(IPTR)(dupStringTemp2(s));
 }
 
 void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)
@@ -91,9 +96,10 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 			return;
 		case isc_arg_cstring: 
 			{				
-				const size_t len = *perm++ = *trans++;
+				size_t len = *perm++ = *trans++;
 				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
+				perm[-2] = len;
 			}
 			break;
 		case isc_arg_string:
@@ -101,7 +107,8 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 		case isc_arg_sql_state:
 			{
 				const char* temp = reinterpret_cast<char*>(*trans++);
-				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
+				size_t len = strlen(temp);
+				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
 			}
 			break;
 		default:
@@ -110,7 +117,12 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 		}
 	}
 }
-	
+
+void StringsBuffer::makeEnginePermanentVector(ISC_STATUS* v)
+{
+	engine_failures->makePermanentVector(v, v);
+}
+
 /********************************* status_exception *******************************/
 
 status_exception::status_exception() throw() : 
@@ -296,12 +308,10 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 system_call_failed::system_call_failed(const char* v_syscall, int v_error_code) : 
 	status_exception(0, false), errorCode(v_error_code)
 {
-	ISC_STATUS temp[] = {isc_arg_gds, 
-						isc_sys_request, 
-						isc_arg_string, dupStringTemp(v_syscall), 
-						SYS_ARG, errorCode, 
-						isc_arg_end};
-	set_status(temp, false);
+	Arg::Gds temp(isc_sys_request);
+	temp << Arg::Str(dupStringTemp2(v_syscall));
+	temp << SYS_ERR(errorCode);
+	set_status(temp.value(), false);
 }
 
 void system_call_failed::raise(const char* syscall, int error_code)
@@ -347,16 +357,6 @@ void fatal_exception::raise(const char* message)
 }
 
 /************************** exception handling routines ***************************/
-
-const char* status_string(const char* string) 
-{
-	return status_nstring(string, strlen(string));
-}
-
-const char* status_nstring(const char* string, size_t length) 
-{
-	return engine_failures->alloc(string, length);
-}
 
 // Serialize exception into status_vector, put transient strings from exception into given StringsBuffer
 ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const Firebird::Exception& ex, StringsBuffer* sb) throw()

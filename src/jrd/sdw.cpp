@@ -52,6 +52,7 @@
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 
 // Out of alpha order because the first one was public.
@@ -84,10 +85,8 @@ void SDW_add(const TEXT* file_name, USHORT shadow_number, USHORT file_flags)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "additional database file",
-			isc_arg_string, ERR_cstring(file_name),
-			isc_arg_end);
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+													 Arg::Str(file_name));
 	}
 
 	jrd_file* shadow_file = PIO_create(dbb, file_name, false, false, false);
@@ -160,10 +159,8 @@ int SDW_add_file(const TEXT* file_name, SLONG start, USHORT shadow_number)
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "database shadow",
-			isc_arg_string, ERR_cstring(file_name),
-			isc_arg_end);
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("database shadow") << 
+													 Arg::Str(file_name));
 	}
 
 	const SLONG sequence = PIO_add_file(dbb, shadow_file, file_name, start);
@@ -846,7 +843,7 @@ bool SDW_rollover_to_shadow(jrd_file* file, const bool inAst)
 	if (start_conditional && !inAst) {
 		CCH_unwind(tdbb, false);
 		SDW_dump_pages();
-		ERR_post(isc_deadlock, isc_arg_end);
+		ERR_post(Arg::Gds(isc_deadlock));
 	}
 
 	return true;
@@ -947,15 +944,13 @@ void SDW_start(const TEXT* file_name,
 		if (shadow && (shadow->sdw_flags & SDW_rollover))
 			return;
 
-		ERR_post(isc_shadow_accessed, isc_arg_end);
+		ERR_post(Arg::Gds(isc_shadow_accessed));
 	}
 
 // Verify shadow file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(expanded_name)) {
-		ERR_post(isc_conf_access_denied,
-			isc_arg_string, "database shadow",
-			isc_arg_string, ERR_cstring(expanded_name),
-			isc_arg_end);
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("database shadow") << 
+													 Arg::Str(expanded_name));
 	}
 
 /* catch errors: delete the shadow file if missing,
@@ -1075,8 +1070,7 @@ void SDW_start(const TEXT* file_name,
 		if (spare_buffer)
 			delete[] spare_buffer;
 		if (file_flags & FILE_manual && !delete_files) {
-			ERR_post(isc_shadow_missing, isc_arg_number,
-					 (SLONG) shadow_number, isc_arg_end);
+			ERR_post(Arg::Gds(isc_shadow_missing) << Arg::Num(shadow_number));
 		}
 		else
 		{

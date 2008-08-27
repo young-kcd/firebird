@@ -96,6 +96,7 @@ private:
 } // namespace Jrd
 
 using namespace Jrd;
+using namespace Firebird;
 
 #ifdef TEXT
 #undef TEXT
@@ -227,11 +228,9 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	if (desc == INVALID_HANDLE_VALUE)
 	{
-		ERR_post(isc_io_error,
-				 isc_arg_string, "CreateFile (create)",
-				 isc_arg_string, ERR_cstring(string),
-				 isc_arg_gds, isc_io_create_err, isc_arg_win32, GetLastError(),
-				 0);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (create)") << 
+										   Arg::Str(string) <<
+				 Arg::Gds(isc_io_create_err) << Arg::Windows(GetLastError()));
 	}
 
 /* File open succeeded.  Now expand the file name. */
@@ -374,15 +373,9 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
-			ERR_post(isc_io_error,
-					 isc_arg_string,
-					 "CreateFile (force write)",
-					 isc_arg_string,
-					 ERR_cstring(file->fil_string),
-					 isc_arg_gds, isc_io_access_err,
-					 isc_arg_win32,
-					 GetLastError(),
-					 0);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (force write)") << 
+											   Arg::Str(file->fil_string) <<
+					 Arg::Gds(isc_io_access_err) << Arg::Windows(GetLastError()));
 		}
 		
 		if (forceWrite) {
@@ -579,13 +572,9 @@ jrd_file* PIO_open(Database* dbb,
 						  g_dwExtraFlags, 0);
 
 		if (desc == INVALID_HANDLE_VALUE) {
-			ERR_post(isc_io_error,
-					 isc_arg_string,
-					 "CreateFile (open)",
-					 isc_arg_string,
-					 ERR_cstring(file_name),
-					 isc_arg_gds,
-					 isc_io_open_err, isc_arg_win32, GetLastError(), 0);
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") << 
+											   Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_open_err) << Arg::Windows(GetLastError()));
 		}
 		else {
 			/* If this is the primary file, set Database flag to indicate that it is
@@ -1135,24 +1124,15 @@ static bool nt_error(TEXT*	string,
  **************************************/
 
 	if (status_vector) {
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = isc_io_error;
-		*status_vector++ = isc_arg_string;
-		*status_vector++ = (ISC_STATUS) string;
-		*status_vector++ = isc_arg_string;
-		*status_vector++ = (ISC_STATUS)(U_IPTR) ERR_cstring(file->fil_string);
-		*status_vector++ = isc_arg_gds;
-		*status_vector++ = operation;
-		*status_vector++ = isc_arg_win32;
-		*status_vector++ = GetLastError();
-		*status_vector++ = isc_arg_end;
+		ERR_build_status(status_vector, Arg::Gds(isc_io_error) << Arg::Str(string) << 
+																  Arg::Str(file->fil_string) <<
+										Arg::Gds(operation) << Arg::Windows(GetLastError()));
 		return false;
 	}
 
-	ERR_post(isc_io_error,
-			 isc_arg_string, string,
-			 isc_arg_string, ERR_cstring(file->fil_string),
-			 isc_arg_gds, operation, isc_arg_win32, GetLastError(), 0);
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << 
+									   Arg::Str(file->fil_string) <<
+			 Arg::Gds(operation) << Arg::Windows(GetLastError()));
 
 	return true;
 }

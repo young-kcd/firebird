@@ -41,7 +41,6 @@
 #include <string.h>
 
 #include "../jrd/common.h"
-#include <stdarg.h>
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/scl.h"
@@ -1877,7 +1876,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 		}
 
 		if (X.RDB$RELATION_NAME.NULL && !tdbb->getAttachment()->locksmith())
-			ERR_post(isc_adm_task_denied, isc_arg_end);
+			ERR_post(Arg::Gds(isc_adm_task_denied));
 
 		// CVC: I think that we'll do well by hiding our automatic triggers from this function.
 		// Why would a user want to fiddle with triggers that were generated automatically?
@@ -2242,7 +2241,7 @@ static void change_backup_mode( Global* gbl, UCHAR verb)
 
 	if (!tdbb->getAttachment()->locksmith())
 	{
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(Arg::Gds(isc_adm_task_denied));
 	}
 
 	jrd_req* request = CMP_find_request(tdbb, drq_d_difference, DYN_REQUESTS);
@@ -3431,7 +3430,7 @@ void DYN_modify_mapping(Global* gbl, const UCHAR** ptr)
 	}
 
 	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
-		ERR_post(isc_adm_task_denied, isc_arg_end);
+		ERR_post(Arg::Gds(isc_adm_task_denied));
 
 	found = false;
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)

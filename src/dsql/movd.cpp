@@ -24,12 +24,10 @@
 #include "firebird.h"
 #include "../jrd/common.h"
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include "../dsql/dsql.h"
 #include "gen/iberror.h"
-#include "../jrd/iberr.h"
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"

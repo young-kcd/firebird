@@ -64,6 +64,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/sqz_proto.h"
+#include "../common/StatusArg.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/dbg_proto.h"
@@ -78,6 +79,7 @@ DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 static void delete_tail(thread_db*, rhdf*, const USHORT, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, DataComprControl*, SSHORT, const jrd_tra*);
@@ -1212,7 +1214,7 @@ SINT64 DPM_gen_id(thread_db* tdbb, SLONG generator, bool initialize, SINT64 val)
 	if (val || initialize) {
 		if (dbb->dbb_flags & DBB_read_only) {
 			CCH_RELEASE(tdbb, &window);
-			ERR_post(isc_read_only_database, isc_arg_end);
+			ERR_post(Arg::Gds(isc_read_only_database));
 		}
 		CCH_MARK_SYSTEM(tdbb, &window);
 

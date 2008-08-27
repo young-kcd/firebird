@@ -27,6 +27,8 @@
 #include "fb_exception.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/StatusArg.h"
+#include "../jrd/status.h"
 
 namespace Jrd {
 
@@ -46,7 +48,7 @@ typedef idx_e IDX_E;
 class jrd_rel;
 } //namespace Jrd
 
-bool	ERR_post_warning(ISC_STATUS, ...);
+bool	ERR_post_warning(const Firebird::Arg::StatusVector& v);
 void	ERR_assert(const TEXT*, int);
 void	ERR_bugcheck(int, const TEXT* = NULL, int = 0);
 void	ERR_bugcheck_msg(const TEXT*);
@@ -54,46 +56,14 @@ void	ERR_corrupt(int);
 void	ERR_duplicate_error(Jrd::idx_e, const Jrd::jrd_rel*, USHORT);
 void	ERR_error(int);
 void	ERR_error_msg(const TEXT*);
-void	ERR_post(ISC_STATUS, ...);
-void	ERR_post(const Firebird::Arg::StatusVector&);
-void	ERR_post_nothrow(ISC_STATUS, ...);
+void	ERR_post(const Firebird::Arg::StatusVector& v);
+void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);
 void	ERR_punt(void);
-void	ERR_warning(ISC_STATUS, ...);
+void	ERR_warning(const Firebird::Arg::StatusVector& v);
 void	ERR_log(int, int, const TEXT*);
-
-inline const TEXT*		ERR_string(const TEXT* in_string, int length)
-{
-	return Firebird::status_nstring(in_string, length);
-}
-inline const TEXT*		ERR_cstring(const TEXT* in_string)
-{
-	return Firebird::status_string(in_string);
-}
-
-inline const TEXT*		ERR_cstring(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_cstring(const Firebird::PathName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_cstring(const Firebird::MetaName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::string& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::PathName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
-inline const TEXT*		ERR_string(const Firebird::MetaName& in_string)
-{
-	return ERR_cstring(in_string.c_str());
-}
+void	ERR_make_permanent(ISC_STATUS* s);
+void	ERR_append_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
+void	ERR_build_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 
 #endif /* JRD_ERR_PROTO_H */
 

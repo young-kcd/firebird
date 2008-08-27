@@ -69,6 +69,7 @@
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 /* Data to be passed to index fast load duplicates routine */
 
@@ -234,11 +235,12 @@ void IDX_create_index(
 	Database* dbb = tdbb->getDatabase();
 
 	if (relation->rel_file) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_extfile_uns_op,
-				 isc_arg_string, ERR_cstring(relation->rel_name), isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_extfile_uns_op) << Arg::Str(relation->rel_name));
 	}
 	else if (relation->isVirtual()) {
-		ERR_post(isc_no_meta_update, isc_arg_gds, isc_wish_list, isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_wish_list));
 	}
 
 	get_root_page(tdbb, relation);
@@ -275,11 +277,8 @@ void IDX_create_index(
 		isODS11 ? MAX_KEY_LIMIT : MAX_KEY_PRE_ODS11;
 
 	if (key_length >= max_key_size) {
-		ERR_post(isc_no_meta_update,
-				 isc_arg_gds,
-				 isc_keytoobig,
-				 isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));
 	}
 
 	RecordStack stack;
@@ -418,9 +417,8 @@ void IDX_create_index(
 					const USHORT bad_id = idx->idx_rpt[key.key_null_segment].idx_field;
 					const jrd_fld *bad_fld = MET_get_field(relation, bad_id);
 
-					ERR_post(isc_not_valid,
-						isc_arg_string, bad_fld->fld_name.c_str(),
-						isc_arg_string, NULL_STRING_MARK, isc_arg_end);
+					ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(bad_fld->fld_name) << 
+														Arg::Str(NULL_STRING_MARK));
 				}
 			}
 			else {
@@ -443,7 +441,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(isc_key_too_big, isc_arg_end);
+				ERR_post(Arg::Gds(isc_key_too_big));
 			}
 
 			UCHAR* p;
@@ -459,8 +457,7 @@ void IDX_create_index(
 				gc_record->rec_flags &= ~REC_gc_active;
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
-				ERR_post(isc_no_dup, isc_arg_string,
-						 ERR_cstring(index_name), isc_arg_end);
+				ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 			}
 
 			USHORT l = key.key_length;
@@ -495,8 +492,7 @@ void IDX_create_index(
 	SORT_sort(tdbb, sort_handle);
 
 	if (ifl_data.ifl_duplicates > 0) {
-		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
 	}
@@ -510,8 +506,7 @@ void IDX_create_index(
 
 	if (ifl_data.ifl_duplicates > 0) {
 		// we don't need SORT_fini() here, as it's called inside BTR_create()
-		ERR_post(isc_no_dup, isc_arg_string,
-				 ERR_cstring(index_name), isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index_name));
 	}
 
 	if ((relation->rel_flags & REL_temp_conn) &&

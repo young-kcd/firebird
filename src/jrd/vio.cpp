@@ -86,8 +86,10 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
+#include "../common/StatusArg.h"
 
 using namespace Jrd;
+using namespace Firebird;
 
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static void check_control(thread_db*);
@@ -330,9 +332,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 				temp.rpb_prior = data;
 			if (!DPM_fetch_back(tdbb, &temp, LCK_read, -1))
 			{
-				tdbb->tdbb_status_vector[0] = isc_arg_gds;
-				tdbb->tdbb_status_vector[1] = 0;
-				tdbb->tdbb_status_vector[2] = isc_arg_end;
+				fb_utils::init_status(tdbb->tdbb_status_vector);
 
 				continue;
 			}
@@ -642,7 +642,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					 */
 					if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-						ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
+						ERR_post(Arg::Gds(isc_deadlock) <<
+								 Arg::Gds(isc_trainlim));
 					}
 
 					state = tra_limbo;
@@ -659,7 +660,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 					TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr,
 							 jrd_tra::tra_wait);
 				if (state == tra_active)
-					ERR_post(isc_deadlock, isc_arg_end);
+					ERR_post(Arg::Gds(isc_deadlock));
 
 				/* refetch the record and try again.  The active transaction
 				 * could have updated the record a second time.
@@ -776,8 +777,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb, RecordSource* 
 
 			if (!(transaction->tra_flags & TRA_ignore_limbo)) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				ERR_post(isc_rec_in_limbo,
-						 isc_arg_number, (SLONG) rpb->rpb_transaction_nr, isc_arg_end);
+				ERR_post(Arg::Gds(isc_rec_in_limbo) << 
+						 Arg::Num(rpb->rpb_transaction_nr));
 			}
 
 		case tra_active:
@@ -1422,9 +1423,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				EVL_field(0, rpb->rpb_record, f_prv_grantor, &desc);
 				if (!check_user(tdbb, &desc))
 				{
-					ERR_post(isc_no_priv, isc_arg_string, "REVOKE",
-							 isc_arg_string, "TABLE", isc_arg_string,
-							 "RDB$USER_PRIVILEGES", isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("REVOKE") << 
+													  Arg::Str("TABLE") << 
+													  Arg::Str("RDB$USER_PRIVILEGES"));
 				}
 			}
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
@@ -1468,9 +1469,9 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		if (prepare_update(tdbb, transaction, tid_fetch, rpb, &temp, 0,
 			stack, false))
 		{
-			ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
-					 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
-					 isc_arg_end);
+			ERR_post(Arg::Gds(isc_deadlock) <<
+					 Arg::Gds(isc_update_conflict) <<
+					 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 		}
 
 		/* Old record was restored and re-fetched for write.  Now replace it.  */
@@ -1997,9 +1998,7 @@ bool VIO_get_current(
 					return !foreign_key; 
 
 			// clear lock error from status vector
-			tdbb->tdbb_status_vector[0] = isc_arg_gds;
-			tdbb->tdbb_status_vector[1] = FB_SUCCESS;
-			tdbb->tdbb_status_vector[2] = isc_arg_end;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 			return true;
 
 		case tra_dead:
@@ -2367,9 +2366,9 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	if (prepare_update(tdbb, transaction, org_rpb->rpb_transaction_nr, org_rpb,
 				   &temp, new_rpb, stack, false))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
-				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, org_rpb->rpb_transaction_nr,
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_deadlock) <<
+				 Arg::Gds(isc_update_conflict) <<
+				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
 	}
 
 	IDX_modify_flag_uk_modified(tdbb, org_rpb, new_rpb, transaction);
@@ -2569,7 +2568,7 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		(!VIO_chase_record_version(tdbb, rpb, NULL, transaction,
 								   tdbb->getDefaultPool(), false)))
 	{
-		ERR_post(isc_no_cur_rec, isc_arg_end);
+		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
 	VIO_data(tdbb, rpb, tdbb->getRequest()->req_pool);
@@ -2584,9 +2583,9 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb,
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
 	{
-		ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
-				 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, rpb->rpb_transaction_nr,
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_deadlock) <<
+				 Arg::Gds(isc_update_conflict) <<
+				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 	}
 }
 
@@ -3870,7 +3869,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	tdbb->tdbb_quantum = SWEEP_QUANTUM;
 	tdbb->tdbb_flags = TDBB_sweeper;
 
-	ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 /* Surrender if resources to start up aren't available. */
 	bool found = false, flush = false;
@@ -4132,7 +4131,7 @@ gc_exit:
 		Attachment* const attachment = tdbb->getAttachment();
 		if (attachment) {
 			LCK_fini(tdbb, LCK_OWNER_attachment);
-			Attachment::destroy(attachment);
+			Attachment::destroy(attachment);	// no need saving warning error strings here
 			tdbb->setAttachment(NULL);
 		}
 
@@ -4221,9 +4220,7 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 
 			if (!DPM_fetch_back(tdbb, &temp, LCK_read, -1))
 			{
-				tdbb->tdbb_status_vector[0] = isc_arg_gds;
-				tdbb->tdbb_status_vector[1] = 0;
-				tdbb->tdbb_status_vector[2] = isc_arg_end;
+				fb_utils::init_status(tdbb->tdbb_status_vector);
 
 				clearRecordStack(staying);
 				next_page = rpb->rpb_page;
@@ -4323,7 +4320,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 /* A relation's garbage collect bitmap is allocated
    from the database permanent pool. */
 
-	ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	const SLONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
 
 	if (!relation->rel_garbage) {
@@ -4713,15 +4710,16 @@ static int prepare_update(	thread_db*		tdbb,
 				// We need to loop waiting in read committed transactions only
 				if (!(transaction->tra_flags & TRA_read_committed))
 				{
-					ERR_post(isc_deadlock, isc_arg_gds, isc_update_conflict,
-							 isc_arg_gds, isc_concurrent_transaction, isc_arg_number, update_conflict_trans,
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_deadlock) <<
+							 Arg::Gds(isc_update_conflict) <<
+							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(update_conflict_trans));
 				}
 			case tra_active:
 				return PREPARE_LOCKERR;
 
 			case tra_limbo:
-				ERR_post(isc_deadlock, isc_arg_gds, isc_trainlim, isc_arg_end);
+				ERR_post(Arg::Gds(isc_deadlock) <<
+						 Arg::Gds(isc_trainlim));
 
 			case tra_dead:
 				break;

@@ -92,7 +92,6 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/iberr.h"
 #include "../common/utils_proto.h"
 
 #include "../../src/jrd/DebugInterface.h"
@@ -112,6 +111,7 @@ const char BLANK	= '\040';
 DATABASE DB = FILENAME "ODS.RDB";
 
 using namespace Jrd;
+using namespace Firebird;
 
 static int blocking_ast_dsql_cache(void* ast_object);
 static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const Firebird::MetaName& name);
@@ -254,9 +254,7 @@ void MET_get_domain(thread_db* tdbb, const Firebird::MetaName& name, dsc* desc, 
 
 	if (!found)
 	{
-		ERR_post(isc_domnotdef,
-				 isc_arg_string, ERR_cstring(name.c_str()),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_domnotdef) << Arg::Str(name));
 	}
 }
 
@@ -348,10 +346,8 @@ Firebird::MetaName MET_get_relation_field(thread_db* tdbb,
 
 	if (!found)
 	{
-		ERR_post(isc_dyn_column_does_not_exist,
-				 isc_arg_string, ERR_cstring(fieldName.c_str()),
-				 isc_arg_string, ERR_cstring(relationName.c_str()),
-				 isc_arg_end);
+		ERR_post(Arg::Gds(isc_dyn_column_does_not_exist) << Arg::Str(fieldName) << 
+															Arg::Str(relationName));
 	}
 
 	return sourceName;
@@ -1154,8 +1150,8 @@ void MET_error(const TEXT* string, ...)
 	VSNPRINTF(s, sizeof(s), string, ptr);
 	va_end(ptr);
 
-	ERR_post(isc_no_meta_update, isc_arg_gds, isc_random, isc_arg_string,
-			 ERR_cstring(s), isc_arg_end);
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(isc_random) << Arg::Str(s));
 }
 
 Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
@@ -2974,7 +2970,7 @@ void MET_post_existence(thread_db* tdbb, jrd_rel* relation)
 	if (!MET_lookup_relation_id(tdbb, relation->rel_id, false))
 	{
 		relation->rel_use_count--;
-		ERR_post(isc_relnotdef, isc_arg_string, ERR_string(relation->rel_name), isc_arg_end);
+		ERR_post(Arg::Gds(isc_relnotdef) << Arg::Str(relation->rel_name));
 	}
 }
 
@@ -3321,9 +3317,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, int id, bool noscan, USHORT flags)
 						dbb->deletePool(csb_pool);
 					}
 					
-					ERR_post(isc_bad_proc_BLR,
-							 isc_arg_string, ERR_cstring(procedure->prc_name.c_str()),
-							 isc_arg_end);
+					ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->prc_name));
 				}
 
 				procedure->prc_request->req_procedure = procedure;
@@ -4143,7 +4137,7 @@ const TEXT* MET_trigger_msg(thread_db* tdbb, const Firebird::MetaName& name, USH
 
         if (!REQUEST(irq_s_msgs))
             REQUEST(irq_s_msgs) = request;
-		msg = ERR_cstring(MSG.RDB$MESSAGE);
+		msg = MSG.RDB$MESSAGE;
 	END_FOR;
 
 	if (!REQUEST(irq_s_msgs))
@@ -4689,7 +4683,8 @@ static bool par_messages(thread_db*	tdbb,
 		}
 
 		if (offset > MAX_FORMAT_SIZE) {
-			ERR_post(isc_imp_exc, isc_arg_gds, isc_blktoobig, isc_arg_end);
+			ERR_post(Arg::Gds(isc_imp_exc) <<
+					 Arg::Gds(isc_blktoobig));
 		}
 
 		format->fmt_length = (USHORT) offset;
@@ -5040,10 +5035,9 @@ static void store_dependencies(thread_db* tdbb,
 					make_relation_scope_name(dep_rel->rel_name.c_str(), 
 						dep_rel->rel_flags, sChild);
 
-					ERR_post(isc_no_meta_update, isc_arg_gds, isc_met_wrong_gtt_scope, 
-						isc_arg_string, ERR_cstring(sChild.c_str()),
-						isc_arg_string, ERR_cstring(sMaster.c_str()),
-						isc_arg_end);
+					ERR_post(Arg::Gds(isc_no_meta_update) <<
+							 Arg::Gds(isc_met_wrong_gtt_scope) << Arg::Str(sChild) << 
+																  Arg::Str(sMaster));
 				}
 			}
 

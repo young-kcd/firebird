@@ -32,7 +32,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		DataTypeUtil.cpp dfw.cpp UserManagement.cpp divorce.cpp \
 		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
-		iberr.cpp idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
+		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
 		IntlUtil.cpp \
 		jrd.cpp Database.cpp lck.cpp \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \

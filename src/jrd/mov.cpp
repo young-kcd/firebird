@@ -40,6 +40,7 @@
 #include "../jrd/intl_proto.h"
 #include "../jrd/mov_proto.h"
 
+using namespace Firebird;
 
 int MOV_compare(const dsc* arg1, const dsc* arg2)
 {
@@ -426,7 +427,8 @@ int MOV_make_string2(Jrd::thread_db* tdbb,
 		size = BLB_get_data(tdbb, blob, *address, size, true);
 
 		if (limit && size > MAX_COLUMN_SIZE)
-			ERR_post(isc_arith_except, isc_arg_gds, isc_blob_truncation, isc_arg_end);
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_blob_truncation));
 
 		return size;
 	}
