@@ -270,8 +270,6 @@ bool ERR_post_warning(const Firebird::Arg::StatusVector& v)
  *	Post a warning to the current status vector.
  *
  **************************************/
-	int type, len;
-	ISC_STATUS* q;
 	int indx = 0, warning_indx = 0;
 	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
 
