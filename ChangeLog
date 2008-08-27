@@ -1,3 +1,132 @@
+2008-08-27 17:37  asfernandes
+
+	* firebird2/src/jrd/err.cpp (1.80):
+
+	Warnings
+
+2008-08-27 17:33  asfernandes
+
+	* firebird2/: builds/win32/msvc7/engine.vcproj (1.77),
+	builds/win32/msvc7/engine_classic.vcproj (1.77),
+	builds/win32/msvc7/engine_embed.vcproj (1.66),
+	builds/win32/msvc8/engine.vcproj (1.28),
+	builds/win32/msvc8/engine_classic.vcproj (1.30),
+	builds/win32/msvc8/engine_embed.vcproj (1.27), src/remote/xnet.cpp
+	(1.114), src/remote/os/win32/wnet.cpp (1.58):
+
+	Partial fix for the Windows build
+
+2008-08-27 14:19  alexpeshkoff
+
+	* firebird2/src/: jrd/os/posix/unix.cpp (1.106),
+	jrd/os/win32/winnt.cpp (1.75), remote/inet.cpp (1.245),
+	remote/xnet.cpp (1.113), remote/os/win32/wnet.cpp (1.57),
+	utilities/common/cmd_util.cpp (1.18),
+	utilities/common/cmd_util_proto.h (1.7):
+
+	1. Final fix for CORE-1964 - finished vararg cleanup in jrd.
+
+	2. Generic cleanup of error reporting functions all around engine.
+
+2008-08-27 14:16  alexpeshkoff
+
+	* firebird2/: builds/posix/make.shared.variables (1.99),
+	src/common/StatusArg.cpp (1.9), src/common/StatusArg.h (1.7),
+	src/common/fb_exception.cpp (1.39), src/common/utils_proto.h
+	(1.25), src/common/classes/MsgPrint.cpp (1.6),
+	src/common/classes/SafeArg.cpp (1.7), src/common/classes/SafeArg.h
+	(1.4), src/dsql/blob.epp (1.24), src/dsql/dsql.cpp (1.254),
+	src/dsql/errd.cpp (1.49), src/dsql/movd.cpp (1.22),
+	src/dsql/pass1.cpp (1.412), src/dsql/user_dsql.cpp (1.56),
+	src/gpre/movg.cpp (1.12), src/include/fb_exception.h (1.29),
+	src/jrd/DebugInterface.cpp (1.9), src/jrd/GlobalRWLock.cpp (1.23),
+	src/jrd/VirtualTable.cpp (1.12), src/jrd/alt.cpp (1.74),
+	src/jrd/blb.cpp (1.177), src/jrd/blob_filter.cpp (1.40),
+	src/jrd/btr.cpp (1.216), src/jrd/cch.cpp (1.209), src/jrd/cmp.cpp
+	(1.305), src/jrd/common.h (1.180), src/jrd/dfw.epp (1.249),
+	src/jrd/dpm.epp (1.79), src/jrd/dyn.epp (1.131),
+	src/jrd/dyn_def.epp (1.169), src/jrd/dyn_del.epp (1.78),
+	src/jrd/dyn_mod.epp (1.107), src/jrd/dyn_util.epp (1.52),
+	src/jrd/err.cpp (1.79), src/jrd/err_proto.h (1.30),
+	src/jrd/event.cpp (1.75), src/jrd/evl.cpp (1.269),
+	src/jrd/evl_string.h (1.28), src/jrd/exe.cpp (1.268), src/jrd/exe.h
+	(1.125), src/jrd/execute_statement.cpp (1.41), src/jrd/ext.cpp
+	(1.82), src/jrd/flu.cpp (1.66), src/jrd/fun.epp (1.104),
+	src/jrd/functions.cpp (1.35), src/jrd/gds.cpp (1.263),
+	src/jrd/iberr.cpp (1.17), src/jrd/iberr.h (1.11),
+	src/jrd/iberr_proto.h (1.6), src/jrd/idx.cpp (1.143),
+	src/jrd/intl.cpp (1.112), src/jrd/isc_sync.cpp (1.148),
+	src/jrd/jrd.cpp (1.478), src/jrd/jrd.h (1.249), src/jrd/lck.cpp
+	(1.88), src/jrd/met.epp (1.262), src/jrd/mov.cpp (1.37),
+	src/jrd/nbak.cpp (1.83), src/jrd/opt.cpp (1.320), src/jrd/pag.cpp
+	(1.189), src/jrd/par.cpp (1.211), src/jrd/pcmet.epp (1.56),
+	src/jrd/pwd.cpp (1.72), src/jrd/rlck.cpp (1.43), src/jrd/rse.cpp
+	(1.152), src/jrd/scl.epp (1.100), src/jrd/sdl.cpp (1.51),
+	src/jrd/sdw.cpp (1.82), src/jrd/shut.cpp (1.57), src/jrd/sort.cpp
+	(1.112), src/jrd/status.cpp (1.17), src/jrd/status.h (1.9),
+	src/jrd/svc.cpp (1.231), src/jrd/svc.h (1.61), src/jrd/tpc.cpp
+	(1.35), src/jrd/tra.cpp (1.179), src/jrd/vio.cpp (1.224),
+	src/jrd/why.cpp (1.208), src/jrd/extds/ExtDS.cpp (1.16),
+	src/jrd/extds/IscDS.cpp (1.12):
+
+	1. Final fix for CORE-1964 - finished vararg cleanup in jrd.
+
+	2. Generic cleanup of error reporting functions all around engine.
+
+2008-08-27 13:06  alexpeshkoff
+
+	* firebird2/src/dsql/: dsql.h (1.142), ddl.cpp (1.254):
+
+	fixed release gcc build
+
+2008-08-27 12:40  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.64):
+
+	Better fix for CORE-2055, thanks to Claudio
+
+2008-08-27 11:43  robocop
+
+	* firebird2/src/jrd/par.cpp (1.210):
+
+	Style.
+
+2008-08-27 10:05  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.63):
+
+	Fixed CORE-2055: BOF in fbclient
+
+2008-08-27 09:33  alexpeshkoff
+
+	* firebird2/src/dsql/parse.y (1.292):
+
+	Fixed diagnostics broken by my previous commit - thanks to Claudio
+
+2008-08-27 08:17  robocop
+
+	* firebird2/builds/install/misc/firebird.conf (1.46):
+
+	Misc.
+
+2008-08-26 14:30  robocop
+
+	* firebird2/src/misc/upgrade/v2.1/metadata_charset.txt (1.6):
+
+	Little correction.
+
+2008-08-26 13:04  robocop
+
+	* firebird2/src/dsql/pass1.cpp (1.411):
+
+	Misc.
+
+2008-08-26 12:28  robocop
+
+	* firebird2/src/dsql/gen.cpp (1.170):
+
+	Misc.
+
 2008-08-25 10:13  dimitr
 
 	* firebird2/builds/install/misc/firebird.conf (1.45):
