@@ -1343,7 +1343,8 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 						node->nod_type = nod_null;
 						return node;
  					}
-					else if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+
+					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
 						warning(csb, isc_fldnotdef, isc_arg_string,
 								ERR_cstring(name), isc_arg_string,
@@ -2629,13 +2630,13 @@ static jrd_nod* parse(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
 
- 	if (expected && (expected != type_table[blr_operator])) {
- 		if (expected_optional) {
- 			if (expected_optional != type_table[blr_operator]) {
+	if (expected && (expected != type_table[blr_operator])) {
+		if (expected_optional) {
+			if (expected_optional != type_table[blr_operator]) {
 				syntax_error(csb, elements[expected]);
 			}
 		}
- 		else {
+		else {
 			syntax_error(csb, elements[expected]);
 		}
 	}
