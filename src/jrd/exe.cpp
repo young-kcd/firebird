@@ -200,6 +200,7 @@ static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_p
 	enum jrd_req::req_ta, SSHORT);
 static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
 static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
+static void looper_seh(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
 static void release_blobs(thread_db*, jrd_req*);
@@ -1096,23 +1097,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	request->req_src_line = 0;
 	request->req_src_column = 0;
 
-#ifdef WIN_NT
-	START_CHECK_FOR_EXCEPTIONS(NULL);
-#endif
-	// TODO:
-	// 1. Try to fix the problem with MSVC C++ runtime library, making
-	// even C++ exceptions that are implemented in terms of Win32 SEH
-	// getting catched by the SEH handler below.
-	// 2. Check if it really is correct that only Win32 catches CPU
-	// exceptions (such as SEH) here. Shouldn't any platform capable
-	// of handling signals use this stuff?
-	// (see jrd/ibsetjmp.h for implementation of these macros)
-
-	looper(tdbb, request, request->req_top_node);
-
-#ifdef WIN_NT
-	END_CHECK_FOR_EXCEPTIONS(NULL);
-#endif
+	looper_seh(tdbb, request, request->req_top_node);
 
 	// If any requested modify/delete/insert ops have completed, forget them
 
@@ -2932,6 +2917,29 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	}
 
 	return node;
+}
+
+
+// Start looper under Windows SEH (Structured Exception Handling) control
+static void looper_seh(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
+{
+#ifdef WIN_NT
+	START_CHECK_FOR_EXCEPTIONS(NULL);
+#endif
+	// TODO:
+	// 1. Try to fix the problem with MSVC C++ runtime library, making
+	// even C++ exceptions that are implemented in terms of Win32 SEH
+	// getting catched by the SEH handler below.
+	// 2. Check if it really is correct that only Win32 catches CPU
+	// exceptions (such as SEH) here. Shouldn't any platform capable
+	// of handling signals use this stuff?
+	// (see jrd/ibsetjmp.h for implementation of these macros)
+
+	looper(tdbb, request, request->req_top_node);
+
+#ifdef WIN_NT
+	END_CHECK_FOR_EXCEPTIONS(NULL);
+#endif
 }
 
 
