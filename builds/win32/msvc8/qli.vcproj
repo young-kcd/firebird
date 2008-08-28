@@ -432,10 +432,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\iberr.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp"
 				>
 			</File>

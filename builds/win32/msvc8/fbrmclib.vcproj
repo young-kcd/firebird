@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8,00"
+	Version="8.00"
 	Name="fbrmclib"
 	ProjectGUID="{FAF9AD25-8238-49E9-9AC9-8C56E190440A}"
 	>
@@ -189,6 +189,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\locks.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusArg.cpp"
 				>
 			</File>
 		</Filter>
