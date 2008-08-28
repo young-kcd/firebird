@@ -1,3 +1,58 @@
+2008-08-28 17:54  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.269):
+
+	Fix Windows build
+
+2008-08-28 17:39  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.479):
+
+	Misc
+
+2008-08-28 17:36  asfernandes
+
+	* firebird2/src/jrd/fun.epp (1.105):
+
+	Do not assume that exceptions will always be automatically in
+	tdbb->tdbb_status_vector
+
+2008-08-28 12:49  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/unix.cpp (1.107):
+
+	restored lost line - thanks to Claudio
+
+2008-08-28 11:02  hvlad
+
+	* firebird2/builds/win32/msvc8/: fbrmclib.vcproj (1.8), gdef.vcproj
+	(1.7), qli.vcproj (1.8):
+
+	Make gdef, qli and fbrmclib compilable again (after removal of
+	iberr.cpp)
+
+2008-08-28 09:14  robocop
+
+	* firebird2/src/: jrd/alt.cpp (1.75), jrd/blb.cpp (1.178),
+	common/StatusArg.cpp (1.10), common/StatusArg.h (1.8):
+
+	Misc.
+
+2008-08-28 07:49  robocop
+
+	* firebird2/builds/win32/: msvc7/engine.vcproj (1.78),
+	msvc7/engine_classic.vcproj (1.78), msvc7/engine_embed.vcproj
+	(1.67), msvc8/engine.vcproj (1.29), msvc8/engine_classic.vcproj
+	(1.31), msvc8/engine_embed.vcproj (1.28):
+
+	Finish cleanup (header files).
+
+2008-08-28 07:14  robocop
+
+	* firebird2/src/msgs/facilities2.sql (1.44):
+
+	Correction.
+
 2008-08-27 17:37  asfernandes
 
 	* firebird2/src/jrd/err.cpp (1.80):
