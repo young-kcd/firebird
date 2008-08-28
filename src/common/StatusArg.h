@@ -97,7 +97,7 @@ private:
 private:
 	bool appendErrors(const StatusVector* v) throw();
 	bool appendWarnings(const StatusVector* v) throw();
-	bool append(const ISC_STATUS* from, int count) throw();
+	bool append(const ISC_STATUS* from, const int count) throw();
 };
 
 

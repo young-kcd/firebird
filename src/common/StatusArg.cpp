@@ -74,7 +74,7 @@ bool StatusVector::appendWarnings(const StatusVector* v) throw()
 	return append(v->m_status_vector + v->m_warning, v->m_length - v->m_warning);
 }	
 
-bool StatusVector::append(const ISC_STATUS* from, int count) throw()
+bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
 {
 	int copied = 0;
 

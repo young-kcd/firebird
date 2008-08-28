@@ -1662,8 +1662,7 @@ void BLB_put_slice(	thread_db*	tdbb,
 	ArrayField* array_desc = field->fld_array;
 	if (!array_desc)
 	{
-		ERR_post(Arg::Gds(isc_invalid_dimension) << Arg::Num(0) << 
-													Arg::Num(1));
+		ERR_post(Arg::Gds(isc_invalid_dimension) << Arg::Num(0) << Arg::Num(1));
 	}
 
 /* Find and/or allocate array block.  There are three distinct cases:
@@ -2425,8 +2424,7 @@ static void insert_page(thread_db* tdbb, blb* blob)
 		(*vector)[l] = window.win_page.getPageNum();
 	}
 	else {
-		ERR_post(Arg::Gds(isc_imp_exc) << 
-				 Arg::Gds(isc_blobtoobig));
+		ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig));
 	}
 
 	CCH_precedence(tdbb, &window, page_number);
@@ -2580,8 +2578,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	ULONG len = BLB_get_data(tdbb, blob, buffer.begin(), buffer.getCapacity(), true);
 
 	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
-		ERR_post(Arg::Gds(isc_arith_except) << 
-				 Arg::Gds(isc_blob_truncation));
+		ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_blob_truncation));
 
 	blobAsText.dsc_address = buffer.begin();
 	blobAsText.dsc_length = (USHORT)len;

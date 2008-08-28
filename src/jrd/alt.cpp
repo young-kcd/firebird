@@ -850,14 +850,14 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 
 #ifndef BOOT_BUILD
 namespace {
-ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
-{
-	vector[0] = isc_arg_gds;
-	vector[1] = code;
-	vector[2] = isc_arg_end;
+	ISC_STATUS user_error(ISC_STATUS* vector, ISC_STATUS code)
+	{
+		vector[0] = isc_arg_gds;
+		vector[1] = code;
+		vector[2] = isc_arg_end;
 
-	return vector[1];
-}
+		return vector[1];
+	}
 }
 #endif // BOOT_BUILD
 
