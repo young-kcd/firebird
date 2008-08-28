@@ -1,3 +1,9 @@
+2008-08-28 08:37  alexpeshkoff
+
+	* firebird2/src/jrd/os/posix/isc_ipc.cpp (1.17.4.5):
+
+	added QUADCONST()
+
 2008-08-22 15:17  alexpeshkoff
 
 	* firebird2/src/jrd/os/: isc_i_proto.h (1.4.12.2),
