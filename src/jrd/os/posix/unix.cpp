@@ -365,6 +365,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 #ifndef FCNTL_BROKEN
 		if (fcntl(file->fil_desc, F_SETFL, control) == -1)
 		{
+			unix_error("fcntl() SYNC/DIRECT", file, isc_io_access_err);
 		}
 #else //FCNTL_BROKEN
 		maybeCloseFile(file->fil_desc);
