@@ -696,7 +696,8 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		return user_status[1];
 	}
 
-	const PathName file_name = options.dpb_org_filename.hasData() ?  options.dpb_org_filename : filename;
+	const PathName file_name = options.dpb_org_filename.hasData() ?
+		options.dpb_org_filename : filename;
 	PathName expanded_name;
 
 	// Resolve given alias name
