@@ -645,12 +645,6 @@
 				RelativePath="..\..\..\src\jrd\ibase.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\iberr.h">
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\iberr_proto.h">
-			</File>
-			<File
 				RelativePath="..\..\..\src\include\gen\iberror.h">
 			</File>
 			<File
