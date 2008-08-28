@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.17.4.4 2008-08-22 13:17:55 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17.4.5 2008-08-28 06:37:33 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -201,9 +201,9 @@ void SignalInhibit::enable() throw()
 		{
 			for (int n = 0; pendingSignals && n < 64; n++)
 			{
-				if (pendingSignals & (1 << n)) 
+				if (pendingSignals & (QUADCONST(1) << n)) 
 				{
-					pendingSignals &= ~(1 << n);
+					pendingSignals &= ~(QUADCONST(1) << n);
 					ISC_kill(process_id, n + 1);
 				}
 			}
