@@ -943,8 +943,8 @@ void Statement::preprocess(const string& sql, string& ret)
 		passAsIs = false;
 	}
 	else {
-		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" 
-			|| ident == "MERGE" || ident == "SELECT" || ident == "WITH");
+		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" || 
+			ident == "MERGE" || ident == "SELECT" || ident == "WITH");
 	}
 
 	if (passAsIs)

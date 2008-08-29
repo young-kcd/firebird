@@ -56,7 +56,8 @@ public:
 	CircularStringsBuffer() throw() { init(); }
 	explicit CircularStringsBuffer(MemoryPool&) throw() { init(); }
 
-	virtual char* alloc(const char* string, size_t& length) {
+	virtual char* alloc(const char* string, size_t& length)
+	{
 		// if string too long, truncate it
 		if (length > BUFFER_SIZE / 4)
 			length = BUFFER_SIZE / 4;	

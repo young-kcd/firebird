@@ -571,12 +571,14 @@ jrd_file* PIO_open(Database* dbb,
 						  FILE_ATTRIBUTE_NORMAL |
 						  g_dwExtraFlags, 0);
 
-		if (desc == INVALID_HANDLE_VALUE) {
+		if (desc == INVALID_HANDLE_VALUE)
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") << 
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Windows(GetLastError()));
 		}
-		else {
+		else
+		{
 			/* If this is the primary file, set Database flag to indicate that it is
 			 * being opened ReadOnly. This flag will be used later to compare with
 			 * the Header Page flag setting to make sure that the database is set
@@ -1123,7 +1125,8 @@ static bool nt_error(TEXT*	string,
  *
  **************************************/
 
-	if (status_vector) {
+	if (status_vector)
+	{
 		ERR_build_status(status_vector, Arg::Gds(isc_io_error) << Arg::Str(string) << 
 																  Arg::Str(file->fil_string) <<
 										Arg::Gds(operation) << Arg::Windows(GetLastError()));

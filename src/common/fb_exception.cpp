@@ -41,7 +41,7 @@ char* dupStringTemp2(const char* s)
 
 ISC_STATUS dupStringTemp(const char* s)
 {
-	return (ISC_STATUS)(IPTR)(dupStringTemp2(s));
+	return (ISC_STATUS)(IPTR) dupStringTemp2(s);
 }
 
 void fill_status(ISC_STATUS* ptr, const ISC_STATUS* orig_status)

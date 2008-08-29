@@ -107,13 +107,12 @@ class BaseStream;
 
 // This is the main class that does the magic of receiving a chain of type-safe
 // parameters. All parameters should be appended to it using the << operator.
-// Only basic data types are supported, with the exception of length counted strings.
+// Only basic data types are supported.
 // The allowed types are char, UCHAR, all lengths of signed/unsigned integral values,
-// the SINT128 fake type (a struct, really), double, strings, UCHAR strings,
-// counted string and the (non-const) void pointer. Care should be taken to not
-// pass something by address (except char* and UCHAR* types) because the compiler
-// may route it to the overload for the void pointer and it will be printed as an
-// address in hex.
+// the SINT128 fake type (a struct, really), double, strings, UCHAR strings and the
+// (non-const) void pointer. Care should be taken to not pass something by address
+// (except char* and UCHAR* types) because the compiler may route it to the overload
+// for the void pointer and it will be printed as an address in hex.
 // An object of this class can be created, filled and passed later to the printing
 // routines, cleaned with clear(), refilled and passed again to the printing routines
 // or simply constructed as an anonymous object and being filled at the same time

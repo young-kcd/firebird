@@ -118,7 +118,7 @@ using namespace Firebird;
 
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
 static jrd_file* setup_file(Database*, const PathName&, int, bool);
-static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = 0);
+static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR *, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR *, SLONG, SLONG);
@@ -1099,23 +1099,31 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 	/* Read in database header. Code lifted from PIO_header. */
 	if (desc == -1)
+	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("raw_devices_validate_database") << 
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
+	}
 
 	for (int i = 0; i < IO_RETRY; i++)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
+		}
+
 		const ssize_t bytes = read (desc, header, sizeof(header));
 		if (bytes == sizeof(header))
 			goto read_finished;
+		
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << 
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
+		}
 	}
 
 	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") << 
@@ -1124,10 +1132,12 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
   read_finished:
 	/* Rewind file pointer */
-	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t)-1)
+	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
+	}
 
 	/* Validate database header. Code lifted from PAG_header. */
 	if (hp->hdr_header.pag_type != pag_header /*|| hp->hdr_sequence*/)
@@ -1164,10 +1174,13 @@ static int raw_devices_unlink_database(const PathName& file_name)
 	{
 		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
 			break;
+
 		if (!SYSCALL_INTERRUPTED(errno))
+		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
+		}
 	}
 
 	memset(header, 0xa5, sizeof(header));

@@ -281,15 +281,13 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	i = err_status_len + tmp_status_len;
 	if (i < ISC_STATUS_LENGTH)
 	{
-		memcpy(&status_vector[err_status_len], tmp_status,
-					sizeof(ISC_STATUS) * tmp_status_len);
+		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		ERR_make_permanent(&status_vector[err_status_len]);
 		// copy current warning(s) to the status_vector 
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
 			memcpy(&status_vector[i - 1], warning_status,
 						sizeof(ISC_STATUS) * warning_count);
-
 		}
 	}
 	ERRD_punt();

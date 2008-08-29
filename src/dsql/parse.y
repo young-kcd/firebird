@@ -2764,7 +2764,7 @@ non_charset_simple_type	: national_character_type
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_sql_db_dialect_dtype_unsupport) << Arg::Num(db_dialect) << 
 																		  Arg::Str("TIME"));
-			lex.g_field->fld_dtype = dtype_sql_time;  
+			lex.g_field->fld_dtype = dtype_sql_time;
 			lex.g_field->fld_length = sizeof (SLONG);
 			}
 		| TIMESTAMP
