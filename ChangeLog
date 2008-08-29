@@ -1,3 +1,12 @@
+2008-08-29 04:18  asfernandes
+
+	* firebird2/src/: common/fb_exception.cpp (1.40),
+	common/classes/SafeArg.h (1.5), dsql/errd.cpp (1.50), dsql/parse.y
+	(1.293), include/fb_exception.h (1.30), jrd/extds/ExtDS.cpp (1.17),
+	jrd/os/posix/unix.cpp (1.108), jrd/os/win32/winnt.cpp (1.76):
+
+	Misc
+
 2008-08-28 17:54  asfernandes
 
 	* firebird2/src/jrd/exe.cpp (1.269):
