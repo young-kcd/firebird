@@ -1033,8 +1033,7 @@ void EXE_start(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
 	BLKCHK(transaction, type_tra);
 
 	if (request->req_flags & req_active)
-		ERR_post(Arg::Gds(isc_req_sync) << 
-				 Arg::Gds(isc_reqinuse));
+		ERR_post(Arg::Gds(isc_req_sync) << Arg::Gds(isc_reqinuse));
 
 	if (transaction->tra_flags & TRA_prepared)
 		ERR_post(Arg::Gds(isc_req_no_trans));
@@ -3647,8 +3646,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 					replace the above assignment with the following lines:
 
 			 if (length > sizeof(message) - 1)
-				ERR_post(Arg::Gds(isc_imp_exc) << 
-						 Arg::Gds(isc_blktoobig));
+				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 			*/
 
 			memcpy(message, string, length);

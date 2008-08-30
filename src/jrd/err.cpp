@@ -176,8 +176,10 @@ void ERR_duplicate_error(IDX_E	code,
 
 	default:
 		if (haveConstraint)
+		{
 			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) << 
 														   Arg::Str(relation->rel_name));
+		}
 		else
 			ERR_post(Arg::Gds(isc_no_dup) << Arg::Str(index));
 	}
@@ -271,7 +273,7 @@ bool ERR_post_warning(const Firebird::Arg::StatusVector& v)
  *
  **************************************/
 	int indx = 0, warning_indx = 0;
-	ISC_STATUS* status_vector = ((thread_db*) JRD_get_thread_data())->tdbb_status_vector;
+	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -516,7 +518,7 @@ void ERR_append_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
 {
 /**************************************
  *
- *	E R R _  a p p e n d _ s t a t u s
+ *	E R R _ a p p e n d _ s t a t u s
  *
  **************************************
  *

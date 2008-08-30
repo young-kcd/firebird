@@ -58,7 +58,7 @@ void	ERR_error(int);
 void	ERR_error_msg(const TEXT*);
 void	ERR_post(const Firebird::Arg::StatusVector& v);
 void	ERR_post_nothrow(const Firebird::Arg::StatusVector& v);
-void	ERR_punt(void);
+void	ERR_punt();
 void	ERR_warning(const Firebird::Arg::StatusVector& v);
 void	ERR_log(int, int, const TEXT*);
 void	ERR_make_permanent(ISC_STATUS* s);
@@ -66,4 +66,3 @@ void	ERR_append_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 void	ERR_build_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 
 #endif /* JRD_ERR_PROTO_H */
-

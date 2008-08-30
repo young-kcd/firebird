@@ -1120,14 +1120,15 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 				if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 					DTYPE_IS_TEXT(desc2.dsc_dtype))
 				{
-						ERR_post(Arg::Gds(isc_expression_eval_err));
+					ERR_post(Arg::Gds(isc_expression_eval_err));
 				}
 				// FALL INTO
+
 			case dtype_timestamp:
 				node->nod_flags |= nod_date;
 
 				fb_assert(DTYPE_IS_DATE(desc1.dsc_dtype) ||
-					   DTYPE_IS_DATE(desc2.dsc_dtype));
+					DTYPE_IS_DATE(desc2.dsc_dtype));
 
 				if (COULD_BE_DATE(desc1) && COULD_BE_DATE(desc2)) {
 					if (node->nod_type == nod_subtract) {

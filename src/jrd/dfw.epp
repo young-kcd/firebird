@@ -1460,10 +1460,10 @@ static void check_dependencies(thread_db* tdbb,
 
 	if (field_name)
 	{
-		ERR_post(	Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_no_delete) <<						/* Msg353: can not delete */
-					Arg::Gds(isc_field_name) << Arg::Str(field_name) <<
-					Arg::Gds(isc_dependency) << Arg::Num(total));	/* Msg310: there are %ld dependencies */
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_no_delete) <<						/* Msg353: can not delete */
+				 Arg::Gds(isc_field_name) << Arg::Str(field_name) <<
+				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* Msg310: there are %ld dependencies */
 	}
 	else
 	{
@@ -1504,10 +1504,10 @@ static void check_dependencies(thread_db* tdbb,
 			break;
 		}
 
-		ERR_post(	Arg::Gds(isc_no_meta_update) <<
-					Arg::Gds(isc_no_delete) <<						/* can not delete */
-					Arg::Gds(obj_type) << Arg::Str(dpdo_name) <<
-					Arg::Gds(isc_dependency) << Arg::Num(total));	/* there are %ld dependencies */
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_no_delete) <<						/* can not delete */
+				 Arg::Gds(obj_type) << Arg::Str(dpdo_name) <<
+				 Arg::Gds(isc_dependency) << Arg::Num(total));	/* there are %ld dependencies */
 	}
 }
 
@@ -1576,12 +1576,12 @@ static bool formatsAreEqual(const Format* old_format, const Format* new_format)
 
 	while (old_desc != old_end)
 	{
-		if ((old_desc->dsc_dtype != new_desc->dsc_dtype)
-			|| (old_desc->dsc_scale != new_desc->dsc_scale)
-			|| (old_desc->dsc_length != new_desc->dsc_length)
-			|| (old_desc->dsc_sub_type != new_desc->dsc_sub_type)
-			|| (old_desc->dsc_flags != new_desc->dsc_flags)
-			|| (old_desc->dsc_address != new_desc->dsc_address))
+		if ((old_desc->dsc_dtype != new_desc->dsc_dtype) ||
+			(old_desc->dsc_scale != new_desc->dsc_scale) ||
+			(old_desc->dsc_length != new_desc->dsc_length) ||
+			(old_desc->dsc_sub_type != new_desc->dsc_sub_type) ||
+			(old_desc->dsc_flags != new_desc->dsc_flags) ||
+			(old_desc->dsc_address != new_desc->dsc_address))
 		{
 			return false;
 		}
@@ -1927,13 +1927,17 @@ static bool create_index(	thread_db*	tdbb,
 				{
 					EXE_unwind(tdbb, request);
 					if (!idx.idx_count)
+					{
 						ERR_post(Arg::Gds(isc_no_meta_update) <<
 								 Arg::Gds(isc_idx_seg_err) << Arg::Str(work->dfw_name));
-					/* Msg304: segment count of 0 defined for index %s */
+						/* Msg304: segment count of 0 defined for index %s */
+					}
 					else
+					{
 						ERR_post(Arg::Gds(isc_no_meta_update) <<
 								 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
-					/* Msg311: too many keys defined for index %s */
+						/* Msg311: too many keys defined for index %s */
+					}
 				}
 				if (IDX.RDB$UNIQUE_FLAG)
 					idx.idx_flags |= idx_unique;
@@ -1962,24 +1966,33 @@ static bool create_index(	thread_db*	tdbb,
 				!FLD.RDB$DIMENSIONS.NULL)
 			{
 				EXE_unwind(tdbb, request);
+
 				if (key_count > idx.idx_count)
+				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_idx_key_err) << Arg::Str(work->dfw_name));
-				/* Msg311: too many keys defined for index %s */
+					/* Msg311: too many keys defined for index %s */
+				}
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
+				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_inval_key_posn) <<
 							 /* Msg358: invalid key position */
 							 Arg::Gds(isc_field_name) << Arg::Str(RFR.RDB$FIELD_NAME) <<
 							 Arg::Gds(isc_index_name) << Arg::Str(work->dfw_name));
+				}
 				else if (FLD.RDB$FIELD_TYPE == blr_blob)
+				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_blob_idx_err) << Arg::Str(work->dfw_name));
-				/* Msg350: attempt to index blob column in index %s */
+					/* Msg350: attempt to index blob column in index %s */
+				}
 				else
+				{
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_array_idx_err) << Arg::Str(work->dfw_name));
-				/* Msg351: attempt to index array column in index %s */
+					/* Msg351: attempt to index array column in index %s */
+				}
 			}
 
 			idx.idx_rpt[SEG.RDB$FIELD_POSITION].idx_field = RFR.RDB$FIELD_ID;
@@ -2010,22 +2023,28 @@ static bool create_index(	thread_db*	tdbb,
 			REQUEST(irq_c_index) = request;
 
 		if (key_count != idx.idx_count)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_key_field_err) << Arg::Str(work->dfw_name));
-		/* Msg352: too few key columns found for index %s (incorrect column name?) */
+			/* Msg352: too few key columns found for index %s (incorrect column name?) */
+		}
 		if (!relation)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-		/* Msg308: can't create index %s */
+			/* Msg308: can't create index %s */
+		}
 
 		/* Make sure the relation info is all current */
 
 		MET_scan_relation(tdbb, relation);
 
 		if (relation->rel_view_rse)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_idx_create_err) << Arg::Str(work->dfw_name));
-		/* Msg308: can't create index %s */
+			/* Msg308: can't create index %s */
+		}
 
 		/* Actually create the index */
 
@@ -2884,10 +2903,12 @@ static bool delete_field(	thread_db*	tdbb,
 		CMP_release(tdbb, handle);
 
 		if (field_count)
+		{
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
 					 Arg::Gds(isc_no_delete) <<								/* Msg353: can not delete */
 					 Arg::Gds(isc_domain_name) << Arg::Str(work->dfw_name) <<
 					 Arg::Gds(isc_dependency) << Arg::Num(field_count)); 	/* Msg310: there are %ld dependencies */
+		}
 
 		check_dependencies(tdbb, work->dfw_name.c_str(), NULL,
 						   obj_field, transaction);
@@ -3153,7 +3174,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 					}
 
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
+							 Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
 				}
 				index->idl_count++;
 			}

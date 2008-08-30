@@ -395,8 +395,8 @@
 #define NO_NFS
 
 #define SYS_ERR		Arg::Windows
-//#define SLONGFORMAT	"ld"
-//#define ULONGFORMAT	"lu"
+//#define SLONGFORMAT "ld"
+//#define ULONGFORMAT "lu"
 //#define XLONGFORMAT "lX"
 //#define xLONGFORMAT "lx"
 
