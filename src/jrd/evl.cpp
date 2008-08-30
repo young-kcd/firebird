@@ -2008,6 +2008,8 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		request->req_flags = flags;
 	}
 
+	Firebird::string s;
+
 	if (err)
 	{
 		ISC_STATUS status = isc_not_valid_for_var;
@@ -2025,7 +2027,6 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 				int index = item.index + 1;
 
 				status = isc_not_valid_for;
-				Firebird::string s;
 
 				if (item.type == nod_variable)
 				{
