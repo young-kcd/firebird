@@ -1,3 +1,16 @@
+2008-08-30 05:14  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.306), common.h (1.181), dfw.epp
+	(1.250), err.cpp (1.81), err_proto.h (1.31), exe.cpp (1.270):
+
+	Misc
+
+2008-08-30 05:07  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.270):
+
+	Do not store pointer to string already destructed
+
 2008-08-29 04:18  asfernandes
 
 	* firebird2/src/: common/fb_exception.cpp (1.40),
