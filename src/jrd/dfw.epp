@@ -1975,6 +1975,7 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				else if (SEG.RDB$FIELD_POSITION > idx.idx_count)
 				{
+					fb_utils::exact_name(RFR.RDB$FIELD_NAME);
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_inval_key_posn) <<
 							 /* Msg358: invalid key position */
