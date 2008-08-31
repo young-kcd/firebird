@@ -142,7 +142,7 @@ namespace {
 		{
 			const UCHAR p = spb.getBufferTag();
 			if (p != isc_spb_version1 && p != isc_spb_current_version) {
-				ERR_post(Arg::Gds(isc_bad_spb_form)<<
+				ERR_post(Arg::Gds(isc_bad_spb_form) <<
 						 Arg::Gds(isc_wrospbver));
 			}
 			spb_version = p;
