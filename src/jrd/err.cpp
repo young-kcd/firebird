@@ -335,7 +335,6 @@ void ERR_make_permanent(ISC_STATUS* s)
  *
  **************************************/
 {
-	Firebird::StringsBuffer* sb = 0;
 	Attachment* att = JRD_get_thread_data()->getAttachment();
 	if (att) {
 		Firebird::MutexLockGuard(att->att_mutex);
