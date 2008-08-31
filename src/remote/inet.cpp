@@ -655,7 +655,7 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					 host.c_str(), H_ERRNO);
-			inet_gen_error(port, 
+			inet_gen_error(port,
 						   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
 						   Arg::Gds(isc_net_lookup_err) <<
 						   Arg::Gds(isc_host_unknown));
@@ -718,7 +718,7 @@ rem_port* INET_connect(const TEXT* name,
 			inet_gen_error(port,
                            Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
 						   Arg::Gds(isc_net_lookup_err) <<
-						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) << 
+						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) <<
 															Arg::Str("tcp"));
 			return NULL;
 		}						/* else / not hardwired gds_db translation */
@@ -2749,7 +2749,6 @@ static void inet_error(
 	}
 	else {
 		/* No status value, just format the basic arguments. */
-
 		inet_gen_error(port,
 					   Arg::Gds(isc_network_error) << Arg::Str(port->port_connection->str_data) <<
 					   Arg::Gds(operation));

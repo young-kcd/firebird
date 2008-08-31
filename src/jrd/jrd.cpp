@@ -469,7 +469,7 @@ static void		ExtractDriveLetter(const TEXT*, ULONG*);
 
 static Database*	init(thread_db*, const PathName&, bool);
 static void		prepare(thread_db*, jrd_tra*, USHORT, const UCHAR*);
-static void		release_attachment(thread_db*, Attachment*, ISC_STATUS* = 0);
+static void		release_attachment(thread_db*, Attachment*, ISC_STATUS* = NULL);
 static void		detachLocksFromAttachment(Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		shutdown_database(Database*, const bool);
@@ -2220,11 +2220,11 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 }
 
 
-ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS * user_status,
+ISC_STATUS GDS_GET_SEGMENT(ISC_STATUS* user_status,
 							blb** blob_handle,
-							USHORT * length,
+							USHORT* length,
 							USHORT buffer_length,
-							UCHAR * buffer)
+							UCHAR* buffer)
 {
 /**************************************
  *
@@ -3797,11 +3797,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 				attachment->att_flags & ATT_shutdown)
 			{
 				const PathName& file_name = attachment->att_filename;
-				if (punt) {
+				if (punt)
+				{
 					CCH_unwind(tdbb, false);
 					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 				}
-				else {
+				else
+				{
 					ERR_build_status(tdbb->tdbb_status_vector,
 									 Arg::Gds(isc_shutdown) << Arg::Str(file_name));
 					return true;
@@ -3810,11 +3812,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 			else if (attachment->att_flags & ATT_shutdown &&
 				!(tdbb->tdbb_flags & TDBB_shutdown_manager))
 			{
-				if (punt) {
+				if (punt)
+				{
 					CCH_unwind(tdbb, false);
 					ERR_post(Arg::Gds(isc_att_shutdown));
 				}
-				else {
+				else
+				{
 					ERR_build_status(tdbb->tdbb_status_vector,
 									 Arg::Gds(isc_att_shutdown));
 					return true;
@@ -3833,11 +3837,13 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 					(!transaction || !(transaction->tra_flags & TRA_system)))
 				{
 					attachment->att_flags &= ~ATT_cancel_raise;
-					if (punt) {
+					if (punt)
+					{
 						CCH_unwind(tdbb, false);
 						ERR_post(Arg::Gds(isc_cancelled));
 					}
-					else {
+					else
+					{
 						ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_cancelled));
 						return true;
 					}
@@ -4954,7 +4960,7 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_remote_process(*pool),
 	att_dsql_cache(*pool),
 	att_udf_pointers(*pool),
-	att_strings_buffer(0)
+	att_strings_buffer(NULL)
 {
 	att_mutex.enter();
 }

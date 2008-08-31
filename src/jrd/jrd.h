@@ -96,7 +96,7 @@
 #include "../include/gen/iberror.h"
 
 namespace Firebird {
-class StringsBuffer;
+	class StringsBuffer;
 }
 
 class str;

@@ -509,7 +509,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		count = *p++;
 		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
 			error(arg->sdl_arg_status_vector, 
-				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) << 
+				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) <<
 													 Arg::Num(count));
 			return NULL;
 		}

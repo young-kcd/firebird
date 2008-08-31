@@ -144,9 +144,11 @@ bool PCMET_expression_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				}
 
 				if (IDX.RDB$SEGMENT_COUNT)
+				{
+					/* Msg359: segments not allowed in expression index %s */
 					ERR_post(Arg::Gds(isc_no_meta_update) <<
 							 Arg::Gds(isc_no_segments_err) << Arg::Str(work->dfw_name));
-				/* Msg359: segments not allowed in expression index %s */
+				}
 				if (IDX.RDB$UNIQUE_FLAG)
 					idx.idx_flags |= idx_unique;
 				if (IDX.RDB$INDEX_TYPE == 1)

@@ -39,25 +39,25 @@
 using MsgFormat::SafeArg;
 
 namespace {
-void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
-{
-	using MsgFormat::safe_cell;
-    
-	switch (value.type)
+	void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
 	{
-	case safe_cell::at_int64:
-	case safe_cell::at_uint64:
-		*status++ = isc_arg_number;
-		*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
-		break;
-	case safe_cell::at_str:
-		*status++ = isc_arg_string;
-		*status++ = (ISC_STATUS) (IPTR) (value.st_value.s_string);
-		break;
-	default:
-		break;
+		using MsgFormat::safe_cell;
+
+		switch (value.type)
+		{
+		case safe_cell::at_int64:
+		case safe_cell::at_uint64:
+			*status++ = isc_arg_number;
+			*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
+			break;
+		case safe_cell::at_str:
+			*status++ = isc_arg_string;
+			*status++ = (ISC_STATUS) (IPTR) (value.st_value.s_string);
+			break;
+		default:
+			break;
+		}
 	}
-}
 } // anonymous namespace
 
 void CMD_UTIL_put_svc_status(ISC_STATUS* svc_status,

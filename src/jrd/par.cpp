@@ -696,7 +696,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 
 	if (version != blr_version4 && version != blr_version5)
 	{
-		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << 
+		error(csb, Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) <<
 											  Arg::Num(version));
 	}
 
@@ -1660,8 +1660,7 @@ static jrd_nod* par_message(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	if (offset > MAX_FORMAT_SIZE)
-		error(csb, Arg::Gds(isc_imp_exc) <<
-				   Arg::Gds(isc_blktoobig));
+		error(csb, Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
 
 	format->fmt_length = (USHORT) offset;
 
@@ -1953,12 +1952,12 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					{
 						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 						{
-							warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) << 
+							warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																		Arg::Str(relation->rel_name));
 						}
 						else
 						{
-							error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) << 
+							error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
 																  Arg::Str(relation->rel_name));
 						}
 					}
@@ -2081,8 +2080,10 @@ static void par_procedure_parms(
 			(count != procedure->prc_outputs))
 	{
 	/** They don't match...Hmmm...Its OK if we were dropping the procedure **/
-		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped)) {
-			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) << Arg::Str(procedure->prc_name));
+		if (!(tdbb->tdbb_flags & TDBB_prc_being_dropped))
+		{
+			error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
+					   Arg::Str(procedure->prc_name));
 		}
 		else
 			mismatch = true;
@@ -2176,7 +2177,8 @@ static void par_procedure_parms(
 	else if ((input_flag ? procedure->prc_inputs : procedure->prc_outputs) &&
 			 !mismatch)
 	{
-		error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) << Arg::Str(procedure->prc_name));
+		error(csb, Arg::Gds(input_flag ? isc_prcmismat : isc_prc_out_param_mismatch) <<
+				   Arg::Str(procedure->prc_name));
 	}
 }
 
@@ -2984,8 +2986,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		n = BLR_BYTE;
 		if (n >= csb->csb_rpt.getCount() || !(csb->csb_rpt[n].csb_flags & csb_used))
 			error(csb, Arg::Gds(isc_ctxnotdef));
-		node->nod_arg[e_erase_stream] =
-			(jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
+		node->nod_arg[e_erase_stream] = (jrd_nod*) (IPTR) csb->csb_rpt[n].csb_stream;
 		break;
 
 	case blr_modify:
@@ -3016,9 +3017,8 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		if (BLR_PEEK == (UCHAR) blr_stall)
 			node->nod_arg[e_for_stall] = PAR_parse_node(tdbb, csb, STATEMENT);
 
-		if (BLR_PEEK == (UCHAR) blr_rse ||
-			BLR_PEEK == (UCHAR) blr_singular)
-				node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
+		if (BLR_PEEK == (UCHAR) blr_rse || BLR_PEEK == (UCHAR) blr_singular)
+			node->nod_arg[e_for_re] = PAR_parse_node(tdbb, csb, TYPE_RSE);
 		else
 			node->nod_arg[e_for_re] = par_rse(tdbb, csb, blr_operator);
 		node->nod_arg[e_for_statement] = PAR_parse_node(tdbb, csb, sub_type);

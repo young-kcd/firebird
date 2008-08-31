@@ -571,11 +571,9 @@ bool BackupManager::actualize_alloc(thread_db* tdbb)
 			}
 			last_allocated_page = temp_bdb.bdb_page.getPageNum() + alloc_buffer[0];
 			if (alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 1)
-				// if page is full adjust position for next pointer page
-				last_allocated_page++;
+				last_allocated_page++;	// if page is full adjust position for next pointer page
 			else
-				// We finished reading allocation table
-				break;		
+				break;	// We finished reading allocation table
 		}
 	}
 	catch (const Firebird::Exception& ex) {
@@ -769,8 +767,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	temp_bdb.bdb_page = HEADER_PAGE_NUMBER;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(header);
-	PageSpace* pageSpace = 
-		database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);
 	jrd_file* file = pageSpace->file;
 	while (!PIO_read(file, &temp_bdb, temp_bdb.bdb_buffer, status)) {

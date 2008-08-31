@@ -617,7 +617,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 
 			// ensure string is correctly terminated
 			if (status != isc_arg_cstring)
-				attach_failures_ptr[l-1] = 0;
+				attach_failures_ptr[l - 1] = 0;
 			else
 				vector[-1] = l;
 

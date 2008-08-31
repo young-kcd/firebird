@@ -497,7 +497,7 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 // Verify database file path against DatabaseAccess entry of firebird.conf
 	if (!JRD_verify_database_access(file_name)) {
-		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+		ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
 													 Arg::Str(file_name));
 	}
 
@@ -1285,8 +1285,8 @@ void PAG_header(thread_db* tdbb, bool info)
 		 * file system permission gives only ReadOnly access. Punt out with
 		 * isc_no_priv error (no privileges)
 		 */
-		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("read-write") << 
-										  Arg::Str("database") << 
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("read-write") <<
+										  Arg::Str("database") <<
 										  Arg::Str(attachment->att_filename));
 	}
 
@@ -1372,10 +1372,10 @@ void PAG_header_init(thread_db* tdbb)
 
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-		ERR_post(Arg::Gds(isc_wrong_ods) << Arg::Str(attachment->att_filename) << 
-											Arg::Num(ods_version) << 
-											Arg::Num(header->hdr_ods_minor) << 
-											Arg::Num(ODS_VERSION) << 
+		ERR_post(Arg::Gds(isc_wrong_ods) << Arg::Str(attachment->att_filename) <<
+											Arg::Num(ods_version) <<
+											Arg::Num(header->hdr_ods_minor) <<
+											Arg::Num(ODS_VERSION) <<
 											Arg::Num(ODS_CURRENT));
 	}
 
@@ -1448,8 +1448,7 @@ void PAG_init(thread_db* tdbb)
 		(dbb->dbb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
 	pageSpace->ppFirst = 1;
 /* dbb_ods_version can be 0 when a new database is being created */
-	if ((dbb->dbb_ods_version == 0)
-		|| (dbb->dbb_ods_version >= ODS_VERSION10))
+	if ((dbb->dbb_ods_version == 0) || (dbb->dbb_ods_version >= ODS_VERSION10))
 	{
 		pageMgr.gensPerPage =
 			(dbb->dbb_page_size -
@@ -1631,7 +1630,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 // Verify database file path against DatabaseAccess entry of firebird.conf
 		file_name[file_length] = 0;
 		if (!JRD_verify_database_access(file_name)) {
-			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") << 
+			ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("additional database file") <<
 														 Arg::Str(file_name));
 		}
 
