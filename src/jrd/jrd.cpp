@@ -5705,6 +5705,7 @@ static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
 	if (!JRD_verify_database_access(name)) {
 		ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") << 
 																	 Arg::Str(name));
+		return vdnFail;
 	}
 	return vdnOk;
 }
