@@ -2615,23 +2615,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	const SSHORT sub_type = sub_type_table[blr_operator];
 
-	// ASF: blr_assignment is recognized as STATEMENT and VALUE, but is marked as STATEMENT
-	// in blrtable.cpp.
-	if (expected && (expected != type_table[blr_operator]) &&
-		!(blr_operator == nod_assignment && expected == VALUE))
-	{
-		if (expected_optional)
-		{
-			if (expected_optional != type_table[blr_operator] &&
-				!(blr_operator == nod_assignment && expected_optional == VALUE))
-			{
-				PAR_syntax_error(csb, elements[expected]);
-			}
-		}
-		else
-			PAR_syntax_error(csb, elements[expected]);
-	}
-
 /* If there is a length given in the length table, pre-allocate
    the node and set its count.  This saves an enormous amount of
    repetitive code. */
@@ -3190,7 +3173,6 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			PAR_desc(tdbb, csb, desc, &itemInfo);
 			vec<jrd_nod*>* vector = csb->csb_variables =
 				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
-			(*vector)[n] = node;
 
 			if (itemInfo.isSpecial())
 			{
@@ -3212,13 +3194,10 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 	case blr_variable:
 		{
 			n = BLR_WORD;
-			node->nod_arg[e_var_id] = (jrd_nod*) (IPTR) n;
+			node->nod_arg[e_var_id] = (jrd_nod*)(IPTR) n;
 			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() ||
-				!(node->nod_arg[e_var_variable] = (*vector)[n]))
-			{
+			if (!vector || n >= vector->count())
 				PAR_syntax_error(csb, "variable identifier");
-			}
 		}
 		break;
 
@@ -3364,16 +3343,18 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			n = BLR_WORD;
 			node->nod_arg[e_init_var_id] = (jrd_nod*)(U_IPTR) n;
 			vec<jrd_nod*>* vector = csb->csb_variables;
-			if (!vector || n >= vector->count() ||
-				!(node->nod_arg[e_init_var_variable] = (*vector)[n]))
-			{
+			if (!vector || n >= vector->count())
 				PAR_syntax_error(csb, "variable identifier");
-			}
 		}
 		break;
 
 	case blr_sys_function:
 		node = par_sys_function(tdbb, csb);
+		break;
+
+	case blr_stmt_expr:
+		node->nod_arg[e_stmt_expr_stmt] = PAR_parse_node(tdbb, csb, STATEMENT);
+		node->nod_arg[e_stmt_expr_expr] = PAR_parse_node(tdbb, csb, VALUE);
 		break;
 
 	default:

@@ -241,7 +241,7 @@ static bool pass1_found_aggregate(const dsql_nod*, USHORT, USHORT, bool);
 static bool pass1_found_field(const dsql_nod*, USHORT, USHORT, bool*);
 static bool pass1_found_sub_select(const dsql_nod*);
 static dsql_nod* pass1_group_by_list(CompiledStatement*, dsql_nod*, dsql_nod*);
-static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* value);
+static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod*& expr);
 static dsql_nod* pass1_insert(CompiledStatement*, dsql_nod*, bool);
 static dsql_nod* pass1_join(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_label(CompiledStatement*, dsql_nod*);
@@ -256,7 +256,7 @@ static dsql_nod* pass1_returning(CompiledStatement*, const dsql_nod*);
 static dsql_nod* pass1_rse(CompiledStatement*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_rse_impl(CompiledStatement*, dsql_nod*, dsql_nod*, dsql_nod*, dsql_nod*, USHORT);
 static dsql_nod* pass1_searched_case(CompiledStatement*, dsql_nod*);
-static dsql_nod* pass1_sel_list(CompiledStatement*, dsql_nod*);
+static dsql_nod* pass1_sel_list(CompiledStatement*, dsql_nod*, bool);
 static dsql_nod* pass1_simple_case(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_sort(CompiledStatement*, dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_sys_function(CompiledStatement*, dsql_nod*);
@@ -2374,6 +2374,10 @@ static bool aggregate_found2(const CompiledStatement* statement, const dsql_nod*
 				return aggregate;
 			}
 
+		case nod_hidden_var:
+			return (aggregate_found2(statement, node->nod_arg[e_hidden_var_expr], current_level,
+				deepest_level, ignore_sub_selects));
+
 		default:
 			return false;
 	}
@@ -3251,7 +3255,11 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_derived_table:
 		case nod_plan_expr:
 			return false;
-		}
+
+		case nod_hidden_var:
+			invalid |= invalid_reference(context, node->nod_arg[e_hidden_var_expr],
+				list, inside_own_map, inside_higher_map);
+	}
 
 	return invalid;
 }
@@ -3291,6 +3299,12 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 	if (!node1 || !node2) {
 		return false;
 	}
+
+	if (node1->nod_type == nod_hidden_var)
+		node1 = node1->nod_arg[e_hidden_var_expr];
+
+	if (node2->nod_type == nod_hidden_var)
+		node2 = node2->nod_arg[e_hidden_var_expr];
 
 	if (ignore_map_cast && node1->nod_type == nod_cast)	{
 		// If node2 is also cast and same type continue with both sources.
@@ -3733,6 +3747,7 @@ static dsql_nod* pass1_coalesce( CompiledStatement* statement, dsql_nod* input)
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
 	dsql_nod* node = MAKE_node(nod_coalesce, 2);
+	node->nod_count = 1;	// we do not want to reprocess the second list later
 
 	// Pass list of arguments 2..n on stack and make a list from it
 	DsqlNodStack stack;
@@ -3749,15 +3764,7 @@ static dsql_nod* pass1_coalesce( CompiledStatement* statement, dsql_nod* input)
 		dsql_nod* var = pass1_hidden_variable(statement, *ptr);
 
 		if (var)
-		{
-			dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
-			assign->nod_arg[e_asgn_value] = *ptr;
-			assign->nod_arg[e_asgn_field] = var;
-
-			*ptr = assign;
-
 			stack2.push(var);
-		}
 		else
 			stack2.push(*ptr);
 	}
@@ -5722,6 +5729,11 @@ static bool pass1_found_aggregate(const dsql_nod* node, USHORT check_scope_level
 		case nod_dom_value:
 			return false;
 
+		case nod_hidden_var:
+			found |= pass1_found_aggregate(node->nod_arg[e_hidden_var_expr],
+				check_scope_level, match_type, current_scope_level_equal);
+			break;
+
 		default:
 			fb_assert(false);
 	}
@@ -5953,6 +5965,11 @@ static bool pass1_found_field(const dsql_nod* node, USHORT check_scope_level,
 		case nod_dom_value:
 			return false;
 
+		case nod_hidden_var:
+			found |= pass1_found_field(node->nod_arg[e_hidden_var_expr],
+				check_scope_level, match_type, field);
+			break;
+
 		default:
 			fb_assert(false);
 	}
@@ -6102,6 +6119,11 @@ static bool pass1_found_sub_select(const dsql_nod* node)
 		case nod_field_name:
 			return false;
 
+		case nod_hidden_var:
+			if (pass1_found_sub_select(node->nod_arg[e_hidden_var_expr]))
+				return true;
+			break;
+
 		default:
 			return true;
 	}
@@ -6177,15 +6199,20 @@ static dsql_nod* pass1_group_by_list(CompiledStatement* statement, dsql_nod* inp
 
 
 // Create (if necessary) a hidden variable to store a temporary value.
-static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* value)
+static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod*& expr)
 {
-#if 0
 	// For some node types, it's better to not create temporary value.
-	switch (value->nod_type)
+	switch (expr->nod_type)
 	{
 		case nod_constant:
+		case nod_current_date:
+		case nod_current_role:
+		case nod_current_time:
+		case nod_current_timestamp:
 		case nod_dbkey:
 		case nod_field:
+		case nod_internal_info:
+		case nod_null:
 		case nod_parameter:
 		case nod_user_name:
 		case nod_variable:
@@ -6193,15 +6220,16 @@ static dsql_nod* pass1_hidden_variable(CompiledStatement* statement, dsql_nod* v
 	}
 
 	dsql_nod* var = MAKE_variable(NULL, "", VAR_local, 0, 0, statement->req_hidden_vars_number++);
-	MAKE_desc(statement, &var->nod_desc, value, NULL);
+	MAKE_desc(statement, &var->nod_desc, expr, NULL);
 
-	statement->req_hidden_vars.push(var);
+	dsql_nod* newExpr = MAKE_node(nod_hidden_var, e_hidden_var_count);
+	newExpr->nod_arg[e_hidden_var_expr] = expr;
+	newExpr->nod_arg[e_hidden_var_var] = var;
+	expr = newExpr;
+
+	statement->req_hidden_vars.push(newExpr);
 
 	return var;
-#else
-#pragma FB_COMPILER_MESSAGE("Let the boot build work for now - regressions introduced!")
-	return NULL;
-#endif
 }
 
 
@@ -7800,6 +7828,11 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 
 	thread_db* tdbb = JRD_get_thread_data();
 
+	// Verify if we're processing view fields and reset flag to not pass to
+	// more than required inner nodes.
+	USHORT viewFlags = input->nod_flags | (flags & NOD_SELECT_VIEW_FIELDS);
+	flags &= ~NOD_SELECT_VIEW_FIELDS;
+
 	if (input->nod_type == nod_select_expr)
 	{
 		dsql_nod* node_with = input->nod_arg[e_sel_with_list];
@@ -7811,7 +7844,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 			dsql_nod* ret = 
 				pass1_rse(statement, input->nod_arg[e_sel_query_spec],
 						input->nod_arg[e_sel_order], input->nod_arg[e_sel_rows],
-						update_lock, input->nod_flags);
+						update_lock, viewFlags);
 
 			if (node_with)
 			{
@@ -7837,7 +7870,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
 
-		return pass1_union(statement, input, order, rows, flags);
+		return pass1_union(statement, input, order, rows, viewFlags);
 	}
 
 	fb_assert(input->nod_type == nod_query_spec);
@@ -7929,7 +7962,8 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 	}
 
 	// Pass select list
-	rse->nod_arg[e_rse_items] = pass1_sel_list(statement, selectList);
+	rse->nod_arg[e_rse_items] = pass1_sel_list(statement, selectList,
+		(viewFlags & NOD_SELECT_VIEW_FIELDS));
 	--statement->req_in_select_list;
 
 	// Process ORDER clause, if any
@@ -8022,7 +8056,9 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 		}
 
 		++statement->req_in_select_list;
-		target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(statement, selectList);
+		// ASF: We pass false to viewFields parameter here because these expressions are
+		// generated inside the view body, and not in view fields.
+		target_rse->nod_arg[e_rse_reduced] = pass1_sel_list(statement, selectList, false);
 		--statement->req_in_select_list;
 	}
 
@@ -8205,7 +8241,7 @@ static dsql_nod* pass1_searched_case( CompiledStatement* statement, dsql_nod* in
     @param input
 
  **/
-static dsql_nod* pass1_sel_list( CompiledStatement* statement, dsql_nod* input)
+static dsql_nod* pass1_sel_list(CompiledStatement* statement, dsql_nod* input, bool viewFields)
 {
 	DEV_BLKCHK(statement, dsql_type_req);
 	DEV_BLKCHK(input, dsql_type_nod);
@@ -8215,8 +8251,14 @@ static dsql_nod* pass1_sel_list( CompiledStatement* statement, dsql_nod* input)
 	for (const dsql_nod* const* const end = ptr + input->nod_count;
 		ptr < end; ptr++)
 	{
+		if (viewFields)
+			statement->req_hidden_vars_number = 0;
+
 		DEV_BLKCHK(*ptr, dsql_type_nod);
 		stack.push(pass1_node_psql(statement, *ptr, false));
+
+		if (viewFields)
+			statement->req_hidden_vars_number = 0;
 	}
 	dsql_nod* node = MAKE_list(stack);
 
@@ -8242,22 +8284,14 @@ static dsql_nod* pass1_simple_case( CompiledStatement* statement, dsql_nod* inpu
 	DEV_BLKCHK(input->nod_arg[0], dsql_type_nod);
 
 	dsql_nod* node = MAKE_node(nod_simple_case, 4);
+	node->nod_count = 3;	// we do not want to reprocess last parameter later
 
 	// build case_operand node
 	node->nod_arg[e_simple_case_case_operand] = PASS1_node(statement, input->nod_arg[0]);
 	node->nod_arg[e_simple_case_case_operand2] =
 		pass1_hidden_variable(statement, node->nod_arg[e_simple_case_case_operand]);
 
-	// If it's not a simple expression, create a assignment node for the initial test.
-	if (node->nod_arg[e_simple_case_case_operand2])
-	{
-		dsql_nod* assign = MAKE_node(nod_assign, e_asgn_count);
-		assign->nod_arg[e_asgn_value] = node->nod_arg[e_simple_case_case_operand];
-		assign->nod_arg[e_asgn_field] = node->nod_arg[e_simple_case_case_operand2];
-
-		node->nod_arg[e_simple_case_case_operand] = assign;
-	}
-	else
+	if (!node->nod_arg[e_simple_case_case_operand2])
 		node->nod_arg[e_simple_case_case_operand2] = node->nod_arg[e_simple_case_case_operand];
 
 	dsql_nod* list = input->nod_arg[1];
@@ -9421,10 +9455,10 @@ static dsql_nod* pass1_update_or_insert(CompiledStatement* statement, dsql_nod* 
 
 					if (var)
 					{
-						temp = MAKE_node(nod_assign, e_asgn_count);
-						temp->nod_arg[e_asgn_value] = expr;
-						temp->nod_arg[e_asgn_field] = var;
-						varStack.push(temp);
+						dsql_nod* varAssign = MAKE_node(nod_assign, e_asgn_count);
+						varAssign->nod_arg[e_asgn_value] = expr->nod_arg[e_hidden_var_expr];
+						varAssign->nod_arg[e_asgn_field] = expr->nod_arg[e_hidden_var_var];
+						varStack.push(varAssign);
 
 						assign->nod_arg[e_asgn_value] = expr = var;
 					}
@@ -9997,6 +10031,11 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			remap_field(statement, field->nod_arg[e_derived_table_rse], context, current_level);
 			return field;
 
+		case nod_hidden_var:
+			field->nod_arg[e_hidden_var_expr] = remap_field(statement,
+				field->nod_arg[e_hidden_var_expr], context, current_level);
+			return field;
+
 		default:
 			return field;
 	}
@@ -10405,6 +10444,10 @@ static bool set_parameter_type(CompiledStatement* statement, dsql_nod* in_node,
 				return result;
 			}
 
+		case nod_hidden_var:
+			return set_parameter_type(statement, in_node->nod_arg[e_hidden_var_expr],
+				node, force_varchar);
+
 		default:
 			return false;
 	}
@@ -10521,6 +10564,10 @@ static void set_parameter_name( dsql_nod* par_node, const dsql_nod* fld_node,
 			}
 			return;
 		}
+
+	case nod_hidden_var:
+		set_parameter_name(par_node->nod_arg[e_hidden_var_expr], fld_node, relation);
+		return;
 
 	default:
 		return;
@@ -11757,6 +11804,10 @@ void DSQL_pretty(const dsql_nod* node, int column)
 		reinterpret_cast<Node*>(node->nod_arg[0])->print(verb, subNodes);
 		ptr = subNodes.begin();
 		end = subNodes.end();
+		break;
+
+	case nod_hidden_var:
+		verb = "hidden_var";
 		break;
 
 	default:

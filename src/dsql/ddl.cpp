@@ -1097,10 +1097,7 @@ static void define_computed(CompiledStatement* statement,
 	statement->req_ddl_node = node;
 
 	// Get the table node & set up correct context
-
-	if (statement->req_context_number) {
-		reset_context_stack(statement);
-	}
+	reset_context_stack(statement);
 
 	dsc save_desc;
 	// Save the size of the field if it is specified
@@ -1140,6 +1137,7 @@ static void define_computed(CompiledStatement* statement,
 	// generate the blr expression
 
 	statement->begin_blr(isc_dyn_fld_computed_blr);
+	GEN_hidden_variables(statement, true);
 	GEN_expr(statement, input);
 	statement->end_blr();
 
@@ -1254,10 +1252,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 		   fields to that context but prevent relations referenced in
 		   the trigger actions from referencing the predefined "1" context */
 
-		if (statement->req_context_number)
-		{
-			reset_context_stack(statement);
-		}
+		reset_context_stack(statement);
 
 		// CVC: check_constraint() is the only caller and it always receives
 		// false for the delete_trigger_required flag. Hence, I thought I could
@@ -1275,12 +1270,13 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 
 		// generate the condition for firing the trigger
 
-		statement->append_uchar(blr_if);
-
 		dsql_nod* condition = MAKE_node(nod_not, 1);
 		condition->nod_arg[0] = node->nod_arg[e_cnstr_condition];
+		condition = PASS1_node(statement, condition);
 
-		GEN_expr(statement, PASS1_node(statement, condition));
+		GEN_hidden_variables(statement, false);
+		statement->append_uchar(blr_if);
+		GEN_expr(statement, condition);
 
 		// generate the action statements for the trigger
 
@@ -1423,6 +1419,7 @@ static bool define_default(CompiledStatement* statement, const dsql_nod* node)
 	fb_assert(value);
 
 	statement->begin_blr(isc_dyn_fld_default_value);
+	GEN_hidden_variables(statement, true);
 	GEN_expr(statement, value);
 	statement->end_blr();
 
@@ -1586,6 +1583,7 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 			{
 				// case (1-a) above: there is a col. level default
 				fb_assert(default_node->nod_type == nod_def_default);
+				GEN_hidden_variables(statement, true);
 				GEN_expr(statement, default_node->nod_arg[e_dft_default]);
 				found_default = true;
 				search_for_default = false;
@@ -1821,8 +1819,10 @@ static void define_domain(CompiledStatement* statement)
 					   VALUE keyword in the body of the check constraint.
 					   -- chrisj 1999-08-20 */
 					statement->req_context_number++;
+					node = PASS1_node(statement, node1->nod_arg[e_cnstr_condition]);
 
-					GEN_expr(statement, PASS1_node(statement, node1->nod_arg[e_cnstr_condition]));
+					GEN_hidden_variables(statement, true);
+					GEN_expr(statement, node);
 
 					statement->end_blr();
 				}
@@ -2632,7 +2632,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	statement->req_cursor_number = 0;
 
 	dsql_nod* stmtNode = PASS1_statement(statement, procedure_node->nod_arg[e_prc_body]);
-	GEN_hidden_variables(statement);
+	GEN_hidden_variables(statement, false);
 
 	statement->append_uchar(blr_stall);
 	// put a label before body of procedure,
@@ -2784,7 +2784,7 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 	statement->req_loop_level = 0;
 
 	dsql_nod* stmtNode = PASS1_statement(statement, node->nod_arg[e_exe_blk_body]);
-	GEN_hidden_variables(statement);
+	GEN_hidden_variables(statement, false);
 
 	statement->append_uchar(blr_stall);
 	// Put a label before body of procedure, so that
@@ -3189,9 +3189,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		   fields to that context but prevent relations referenced in
 		   the trigger actions from referencing the predefined "1" context */
 
-		if (statement->req_context_number) {
-			reset_context_stack(statement);
-		}
+		reset_context_stack(statement);
 
 		if (relation_node)
 		{
@@ -3246,7 +3244,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		//		   Hopefully, system triggers are never recompiled.
 		statement->append_uchar(blr_label);
 		statement->append_uchar(0);
-		GEN_hidden_variables(statement);
+		GEN_hidden_variables(statement, false);
 		GEN_statement(statement, actions);
 		statement->req_scope_level--;
 		statement->append_uchar(blr_end);
@@ -3706,15 +3704,20 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	// at 1 (except for computed fields)  -- note that calling PASS1_rse
 	// directly rather than PASS1_statement saves the context stack
 
-	if (statement->req_context_number)
-		reset_context_stack(statement);
+	reset_context_stack(statement);
 	statement->req_context_number++;
 	dsql_nod* select_expr = node->nod_arg[e_view_select];
+	select_expr->nod_flags |= NOD_SELECT_VIEW_FIELDS;
 	dsql_nod* rse = PASS1_rse(statement, select_expr, NULL);
 
 	// store the blr and source string for the view definition
 
 	statement->begin_blr(isc_dyn_view_blr);
+
+	// ASF: Call GEN_hidden_variables could be a optimization for views to not have
+	// blr_dcl_variables inside RSE loops, but this is currently not possible because it will
+	// mix the variables from view fields and view body.
+
 	GEN_expr(statement, rse);
 	statement->end_blr();
 
@@ -5234,7 +5237,6 @@ static void modify_domain( CompiledStatement* statement)
 	statement->append_cstring(isc_dyn_mod_global_fld,
 				domain_name->str_data);
 
-
 	/* Is MOVE_CLEAR enough for all platforms?
 	MOVE_CLEAR (repetition_count, sizeof (repetition_count)); */
 	const USHORT rtop = FB_NELEM(repetition_count);
@@ -5287,7 +5289,11 @@ static void modify_domain( CompiledStatement* statement)
 			   constraint.  -- chrisj 1999-08-20 */
 			statement->req_context_number++;
 
-			GEN_expr(statement, PASS1_node(statement, element->nod_arg[e_cnstr_condition]));
+			{
+				dsql_nod* node = PASS1_node(statement, element->nod_arg[e_cnstr_condition]);
+				GEN_hidden_variables(statement, true);
+				GEN_expr(statement, node);
+			}
 
 			statement->end_blr();
 			if ((string = (dsql_str*) element->nod_arg[e_cnstr_source]) != NULL) {
@@ -6403,11 +6409,16 @@ static void reset_context_stack(CompiledStatement* statement)
  * Function
  *	Get rid of any predefined contexts created
  *	for a view or trigger definition.
+ *	Also reset hidden variables.
  *
  **************************************/
 
 	statement->req_context->clear();
 	statement->req_context_number = 0;
+	statement->req_derived_context_number = 0;
+
+	statement->req_hidden_vars_number = 0;
+	statement->req_hidden_vars.clear();
 }
 
 
@@ -6681,8 +6692,7 @@ static void modify_field(CompiledStatement*	statement,
 		dsql_nod* computedNod = element->nod_arg[e_mod_fld_type_computed];
 		if (computedNod)
 		{
-			if (statement->req_context_number)
-				reset_context_stack(statement);
+			reset_context_stack(statement);
 
 			PASS1_make_context(statement, statement->req_ddl_node->nod_arg[e_alt_name]);
 
@@ -6698,6 +6708,7 @@ static void modify_field(CompiledStatement*	statement,
 			}
 
 			statement->begin_blr(isc_dyn_fld_computed_blr);
+			GEN_hidden_variables(statement, true);
 			GEN_expr(statement, computedNod);
 			statement->end_blr();
 

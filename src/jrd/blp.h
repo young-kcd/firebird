@@ -225,6 +225,7 @@ static const struct
 	{"auto_trans", byte_verb},
 	{"similar", similar},
 	{"exec_stmt", exec_stmt},
+	{"stmt_expr", two},
 	{0, 0}
 };
 

@@ -1390,8 +1390,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags |= DSC_nullable;
 		return;
 
-	case nod_assign:
-		MAKE_desc(statement, desc, node->nod_arg[e_asgn_field], null_replacement);
+	case nod_hidden_var:
+		MAKE_desc(statement, desc, node->nod_arg[e_hidden_var_expr], null_replacement);
 		return;
 
 	default:

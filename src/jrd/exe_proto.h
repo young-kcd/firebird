@@ -34,6 +34,7 @@ void EXE_assignment(Jrd::thread_db*, Jrd::jrd_nod*);
 void EXE_assignment(Jrd::thread_db* tdbb, Jrd::jrd_nod* to, dsc* from_desc, bool from_null,
 	Jrd::jrd_nod* missing_node, Jrd::jrd_nod* missing2_node);
 void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
+Jrd::jrd_nod* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request, Jrd::jrd_nod* in_node);
 Jrd::jrd_req* EXE_find_request(Jrd::thread_db*, Jrd::jrd_req*, bool);
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, UCHAR*, bool = false);
 void EXE_send(Jrd::thread_db*, Jrd::jrd_req*, USHORT, USHORT, const UCHAR*);

@@ -26,7 +26,7 @@
 
 void	GEN_descriptor(Jrd::CompiledStatement* statement, const dsc* desc, bool texttype);
 void	GEN_expr(Jrd::CompiledStatement*, Jrd::dsql_nod*);
-void	GEN_hidden_variables(Jrd::CompiledStatement* statement);
+void	GEN_hidden_variables(Jrd::CompiledStatement* statement, bool inExpression);
 void	GEN_port(Jrd::CompiledStatement*, Jrd::dsql_msg*);
 void	GEN_request(Jrd::CompiledStatement*, Jrd::dsql_nod*);
 void	GEN_return(Jrd::CompiledStatement*, const Jrd::dsql_nod*, bool);

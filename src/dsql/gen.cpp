@@ -102,7 +102,7 @@ const bool NEGATE_VALUE = true;
 const bool USE_VALUE    = false;
 
 
-void GEN_hidden_variables(CompiledStatement* statement)
+void GEN_hidden_variables(CompiledStatement* statement, bool inExpression)
 {
 /**************************************
  *
@@ -114,14 +114,30 @@ void GEN_hidden_variables(CompiledStatement* statement)
  *	Emit BLR for hidden variables.
  *
  **************************************/
-	for (DsqlNodStack::const_iterator i(statement->req_hidden_vars);
-		i.hasData(); ++i)
+	if (statement->req_hidden_vars.isEmpty())
+		return;
+
+	if (inExpression)
 	{
-		const dsql_var* var = ((dsql_var*) i.object()->nod_arg[e_var_variable]);
+		stuff(statement, blr_stmt_expr);
+		if (statement->req_hidden_vars.getCount() > 1)
+			stuff(statement, blr_begin);
+	}
+
+	for (DsqlNodStack::const_iterator i(statement->req_hidden_vars); i.hasData(); ++i)
+	{
+		dsql_nod* varNode = i.object()->nod_arg[1];
+		dsql_var* var = (dsql_var*) varNode->nod_arg[e_var_variable];
 		statement->append_uchar(blr_dcl_variable);
 		statement->append_ushort(var->var_variable_number);
-		GEN_descriptor(statement, &i.object()->nod_desc, true);
+		GEN_descriptor(statement, &varNode->nod_desc, true);
 	}
+
+	if (inExpression && statement->req_hidden_vars.getCount() > 1)
+		stuff(statement, blr_end);
+
+	// Clear it for GEN_expr not regenerate them.
+	statement->req_hidden_vars.clear();
 }
 
 
@@ -560,6 +576,30 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		GEN_expr(statement, node->nod_arg[1]);
 		return;
 
+	case nod_hidden_var:
+		stuff(statement, blr_stmt_expr);
+
+		// If it was not pre-declared, declare it now.
+		if (statement->req_hidden_vars.hasData())
+		{
+			dsql_var* var = (dsql_var*) node->nod_arg[e_hidden_var_var]->nod_arg[e_var_variable];
+
+			stuff(statement, blr_begin);
+			statement->append_uchar(blr_dcl_variable);
+			statement->append_ushort(var->var_variable_number);
+			GEN_descriptor(statement, &node->nod_arg[e_hidden_var_var]->nod_desc, true);
+		}
+
+		stuff(statement, blr_assignment);
+		GEN_expr(statement, node->nod_arg[e_hidden_var_expr]);
+		GEN_expr(statement, node->nod_arg[e_hidden_var_var]);
+
+		if (statement->req_hidden_vars.hasData())
+			stuff(statement, blr_end);
+
+		GEN_expr(statement, node->nod_arg[e_hidden_var_var]);
+		return;
+
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<
@@ -786,7 +826,7 @@ void GEN_request( CompiledStatement* statement, dsql_nod* node)
 	{	
 		stuff(statement, blr_begin);
 
-		GEN_hidden_variables(statement);
+		GEN_hidden_variables(statement, false);
 
 		switch (statement->req_type)
 		{
@@ -1520,7 +1560,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			 * didn't contain an exponent so it's not a valid DOUBLE
 			 * PRECISION literal either, so we have to bounce it.
 			 */
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 104) <<
 					  Arg::Gds(isc_arith_except) <<
 					  Arg::Gds(isc_numeric_out_of_range));
 		}

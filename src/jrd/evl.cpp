@@ -788,6 +788,10 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			return false;
 		return (comparison >= 0 && MOV_compare(desc[0], desc[1]) <= 0);
 
+	case nod_stmt_expr:
+		EXE_looper(tdbb, request, node);
+		return EVL_boolean(tdbb, node->nod_arg[e_stmt_expr_expr]);
+
 	default:
 		BUGCHECK(231);			/* msg 231 EVL_boolean: invalid operation */
 	}
@@ -1085,6 +1089,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
         default:   /* Shut up some compiler warnings */
             break;
+
+	case nod_stmt_expr:
+		EXE_looper(tdbb, request, node);
+		return EVL_expr(tdbb, node->nod_arg[e_stmt_expr_expr]);
 	}
 
 	// Evaluate arguments
@@ -1145,10 +1153,6 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_internal_info:
 		return internal_info(tdbb, values[0], impure);
-
-	case nod_assignment:
-		EXE_assignment(tdbb, node);
-		return EVL_expr(tdbb, node->nod_arg[e_asgn_to]);
 
 	default:
 		BUGCHECK(232);		/* msg 232 EVL_expr: invalid operation */

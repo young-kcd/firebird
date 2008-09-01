@@ -1925,8 +1925,8 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		*desc = *(DSC*) (node->nod_arg + e_domval_desc);
 		return;
 
-	case nod_assignment:
-		CMP_get_desc(tdbb, csb, node->nod_arg[e_asgn_to], desc);
+	case nod_stmt_expr:
+		CMP_get_desc(tdbb, csb, node->nod_arg[e_stmt_expr_expr], desc);
 		return;
 
 	default:
@@ -2058,8 +2058,14 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 		FieldInfo& fieldInfo = csb->csb_map_field_info.current()->second;
 		UCHAR local_map[MAP_LENGTH];
 
+		AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+			(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
 		fieldInfo.defaultValue =
 			copy(tdbb, csb, fieldInfo.defaultValue, local_map, 0, NULL, false);
+
+		csb->csb_remap_variable = (csb->csb_variables ? csb->csb_variables->count() : 0) + 1;
+
 		fieldInfo.validation =
 			copy(tdbb, csb, fieldInfo.validation, local_map, 0, NULL, false);
 
@@ -2673,6 +2679,20 @@ static jrd_nod* copy(thread_db* tdbb,
 		break;
 
 	case nod_variable:
+		if (csb->csb_remap_variable != 0)
+		{
+			node = PAR_make_node(tdbb, e_var_length);
+			node->nod_type = input->nod_type;
+			node->nod_count = input->nod_count;
+	
+			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_var_id];
+			node->nod_arg[e_var_id] = (jrd_nod*)(IPTR) n;
+			node->nod_arg[e_var_variable] = input->nod_arg[e_var_variable];
+			node->nod_arg[e_var_info] = input->nod_arg[e_var_info];
+			return node;
+		}
+		return input;
+
 	case nod_literal:
 		return input;
 
@@ -2716,7 +2736,6 @@ static jrd_nod* copy(thread_db* tdbb,
 				 message, remap_fld);
 		node->nod_arg[e_fun_function] = input->nod_arg[e_fun_function];
 		return (node);
-
 
 	case nod_current_time:
 	case nod_current_timestamp:
@@ -3028,6 +3047,24 @@ static jrd_nod* copy(thread_db* tdbb,
 		node->nod_arg[e_sysfun_function] = input->nod_arg[e_sysfun_function];
 		return node;
 
+	case nod_dcl_variable:
+		if (csb->csb_remap_variable != 0)
+		{
+			node = PAR_make_node(tdbb, e_dcl_length);
+			node->nod_type = input->nod_type;
+			node->nod_count = input->nod_count;
+	
+			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_dcl_id];
+			node->nod_arg[e_dcl_id] = (jrd_nod*)(IPTR) n;
+			*(dsc*) (node->nod_arg + e_dcl_desc) = *(dsc*) (input->nod_arg + e_dcl_desc);
+
+			csb->csb_variables =
+				vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n);
+
+			return node;
+		}
+		break;
+
 	default:
 		break;
 	}
@@ -3272,7 +3309,11 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 		     ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* validation;
-		if (*ptr1 && (validation = (*ptr1)->fld_validation)) {
+		if (*ptr1 && (validation = (*ptr1)->fld_validation))
+		{
+			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3283,7 +3324,11 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 			stack.push(node);
 		}
 
-		if (*ptr1 && (validation = (*ptr1)->fld_not_null)) {
+		if (*ptr1 && (validation = (*ptr1)->fld_not_null))
+		{
+			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
 			jrd_nod* node = PAR_make_node(tdbb, e_val_length);
 			node->nod_type = nod_validate;
 			node->nod_arg[e_val_boolean] =
@@ -3412,6 +3457,29 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		return node;
 
 	case nod_variable:
+	{
+		USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
+		vec<jrd_nod*>* vector = csb->csb_variables;
+		if (!vector || n >= vector->count() ||
+			!(node->nod_arg[e_var_variable] = (*vector)[n]))
+		{
+			PAR_syntax_error(csb, "variable identifier");
+		}
+		break;
+	}
+
+	case nod_init_variable:
+	{
+		USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
+		vec<jrd_nod*>* vector = csb->csb_variables;
+		if (!vector || n >= vector->count() ||
+			!(node->nod_arg[e_var_variable] = (*vector)[n]))
+		{
+			PAR_syntax_error(csb, "variable identifier");
+		}
+		break;
+	}
+
 	case nod_argument:
 		break;
 
@@ -3600,6 +3668,10 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				map[1] = stream + 1;
 				map[2] = stream + 2;
 			}
+
+			AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+				(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
+
 			sub = copy(tdbb, csb, sub, map, 0, NULL, false);
 
 			if (relation->rel_view_rse)
@@ -3867,6 +3939,16 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
 			reinterpret_cast<DmlNode*>(node->nod_arg[0])->pass1(tdbb, csb));
 		return node;
+
+	case nod_dcl_variable:
+	{
+		USHORT n = (USHORT)(IPTR) node->nod_arg[e_dcl_id];
+		vec<jrd_nod*>* vector = csb->csb_variables =
+			vec<jrd_nod*>::newVector(*tdbb->getDefaultPool(), csb->csb_variables, n + 1);
+		fb_assert(!(*vector)[n]);
+		(*vector)[n] = node;
+		break;
+	}
 
 	default:
 		break;
@@ -4545,6 +4627,8 @@ static void pass1_source(thread_db*			tdbb,
 	stack.pop();
 	UCHAR* map = alloc_map(tdbb, csb, stream);
 
+	AutoSetRestore<USHORT> autoRemapVariable(&csb->csb_remap_variable,
+		(csb->csb_variables ? csb->csb_variables->count() : 0) + 1);
 	AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, view);
 	AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 

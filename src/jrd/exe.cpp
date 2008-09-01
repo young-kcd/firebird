@@ -199,7 +199,6 @@ static jrd_nod* execute_statement(thread_db*, jrd_req*, jrd_nod*);
 static jrd_req* execute_triggers(thread_db*, trig_vec**, record_param*, record_param*,
 	enum jrd_req::req_ta, SSHORT);
 static void get_string(thread_db*, jrd_req*, jrd_nod*, Firebird::string&);
-static jrd_nod* looper(thread_db*, jrd_req*, jrd_nod*);
 static void looper_seh(thread_db*, jrd_req*, jrd_nod*);
 static jrd_nod* modify(thread_db*, jrd_nod*, SSHORT);
 static jrd_nod* receive_msg(thread_db*, jrd_nod*);
@@ -1445,7 +1444,7 @@ static void execute_looper(
 	request->req_flags &= ~req_stall;
 	request->req_operation = next_state;
 
-	looper(tdbb, request, request->req_next);
+	EXE_looper(tdbb, request, request->req_next);
 
 /* If any requested modify/delete/insert ops have completed, forget them */
 
@@ -1871,11 +1870,11 @@ static void stuff_stack_trace(const jrd_req* request)
 }
 
 
-static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
+jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 {
 /**************************************
  *
- *	l o o p e r
+ *	E X E _ l o o p e r
  *
  **************************************
  *
@@ -1907,8 +1906,14 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	tdbb->setRequest(request);
 	jrd_tra* old_transaction = tdbb->getTransaction();
 	tdbb->setTransaction(transaction);
-    fb_assert(request->req_caller == NULL);
-	request->req_caller = old_request;
+
+	if (in_node->nod_type != nod_stmt_expr)
+	{
+	    fb_assert(request->req_caller == NULL);
+		request->req_caller = old_request;
+	}
+	else
+		request->req_operation = jrd_req::req_evaluate;
 
 	const SLONG save_point_number = (transaction->tra_save_point) ?
 		transaction->tra_save_point->sav_number : 0;
@@ -1955,21 +1960,17 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 		case nod_dcl_variable:
 			{
-				impure_value* variable = (impure_value*) ((SCHAR *) request + node->nod_impure);
-				variable->vlu_desc = *(DSC *) (node->nod_arg + e_dcl_desc);
+				impure_value* variable = (impure_value*) ((SCHAR*) request + node->nod_impure);
+				variable->vlu_desc = *(DSC*) (node->nod_arg + e_dcl_desc);
 				variable->vlu_desc.dsc_flags = 0;
-				variable->vlu_desc.dsc_address =
-					(UCHAR *) & variable->vlu_misc;
-				if (variable->vlu_desc.dsc_dtype <= dtype_varying
-					&& !variable->vlu_string)
+				variable->vlu_desc.dsc_address = (UCHAR*) &variable->vlu_misc;
+
+				if (variable->vlu_desc.dsc_dtype <= dtype_varying && !variable->vlu_string)
 				{
-					variable->vlu_string =
-						FB_NEW_RPT(*tdbb->getDefaultPool(),
-									  variable->vlu_desc.dsc_length) VaryingString();
-					variable->vlu_string->str_length =
-						variable->vlu_desc.dsc_length;
-					variable->vlu_desc.dsc_address =
-						variable->vlu_string->str_data;
+					variable->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
+						variable->vlu_desc.dsc_length) VaryingString();
+					variable->vlu_string->str_length = variable->vlu_desc.dsc_length;
+					variable->vlu_desc.dsc_address = variable->vlu_string->str_data;
 				}
 
 				request->req_operation = jrd_req::req_return;
@@ -2400,7 +2401,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									const ULONG prev_req_error_handler =
 										request->req_flags & req_error_handler;
 									request->req_flags |= req_error_handler;
-									node = looper(tdbb, request, node);
+									node = EXE_looper(tdbb, request, node);
 									request->req_flags &= ~req_error_handler;
 									request->req_flags |= prev_req_error_handler;
 
@@ -2803,6 +2804,13 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = reinterpret_cast<StmtNode*>(node->nod_arg[0])->execute(tdbb, request);
 			break;
 
+		case nod_stmt_expr:
+			if (request->req_operation == jrd_req::req_evaluate)
+				node = node->nod_arg[e_stmt_expr_stmt];
+			else
+				node = NULL;
+			break;
+
 		default:
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
@@ -2862,7 +2870,7 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	// request unless we are in the middle of processing an
 	// asynchronous message
 
-	if (!node
+	if (in_node->nod_type != nod_stmt_expr && !node
 #ifdef SCROLLABLE_CURSORS
 		&& !(request->req_flags & req_async_processing)
 #endif
@@ -2886,8 +2894,12 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	request->req_next = node;
 	tdbb->setTransaction(old_transaction);
 	tdbb->setRequest(old_request);
-	fb_assert(request->req_caller == old_request);
-	request->req_caller = NULL;
+
+	if (in_node->nod_type != nod_stmt_expr)
+	{
+		fb_assert(request->req_caller == old_request);
+		request->req_caller = NULL;
+	}
 
 	// In the case of a pending error condition (one which did not
 	// result in a exception to the top of looper), we need to
@@ -2934,7 +2946,7 @@ static void looper_seh(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	// of handling signals use this stuff?
 	// (see jrd/ibsetjmp.h for implementation of these macros)
 
-	looper(tdbb, request, request->req_top_node);
+	EXE_looper(tdbb, request, request->req_top_node);
 
 #ifdef WIN_NT
 	END_CHECK_FOR_EXCEPTIONS(NULL);

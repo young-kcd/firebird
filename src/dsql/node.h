@@ -373,7 +373,8 @@ enum nod_t
 	nod_tran_params,
 	nod_named_param,
 	nod_dfl_collate,
-	nod_class_node
+	nod_class_node,
+	nod_hidden_var
 };
 
 /* enumerations of the arguments to a node, offsets
@@ -1004,7 +1005,11 @@ enum node_args {
 	e_user_first,
 	e_user_middle,
 	e_user_last,
-	e_user_count
+	e_user_count,
+
+	e_hidden_var_expr = 0,			// nod_hidden_var
+	e_hidden_var_var,
+	e_hidden_var_count
 };
 
 } // namespace
@@ -1082,6 +1087,7 @@ enum nod_flags_vals {
 	NOD_SELECT_EXPR_SINGLETON	= 1, // nod_select_expr
 	NOD_SELECT_EXPR_VALUE		= 2,
 	NOD_SELECT_EXPR_RECURSIVE	= 4, // recursive member of recursive CTE
+	NOD_SELECT_VIEW_FIELDS		= 8, // view's field list
 
 	NOD_CURSOR_EXPLICIT		= 1, // nod_cursor
 	NOD_CURSOR_FOR			= 2,

@@ -556,6 +556,11 @@ const int e_exec_stmt_extra_tran		= 3;
 const int e_exec_stmt_extra_privs		= 4;
 const int e_exec_stmt_extra_count		= 5;
 
+// nod_stmt_expr
+const int e_stmt_expr_stmt		= 0;
+const int e_stmt_expr_expr		= 1;
+const int e_stmt_expr_length	= 2;
+
 // Request resources
 
 struct Resource
@@ -871,6 +876,7 @@ public:
 	jrd_rel*	csb_view;
 	USHORT		csb_view_stream;
 	bool		csb_validate_expr;
+	USHORT		csb_remap_variable;
 
 	struct csb_repeat
 	{

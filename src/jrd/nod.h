@@ -199,3 +199,5 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_domain_validation, domain_validation, "")
 		  NODE(nod_sys_function, sys_function, "")
 		  NODE(nod_class_node_jrd, class_node_jrd, "class_node_jrd")
+		  NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
+
