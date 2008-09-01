@@ -1,3 +1,54 @@
+2008-09-01 15:17  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.255), dsql/gen.cpp (1.171),
+	dsql/gen_proto.h (1.20), dsql/make.cpp (1.169), dsql/node.h
+	(1.118), dsql/pass1.cpp (1.413), jrd/blp.h (1.36), jrd/blr.h
+	(1.40), jrd/cmp.cpp (1.307), jrd/evl.cpp (1.271), jrd/exe.cpp
+	(1.271), jrd/exe.h (1.126), jrd/exe_proto.h (1.19), jrd/nod.h
+	(1.29), jrd/par.cpp (1.213), misc/blrtable.cpp (1.38):
+
+	This should fix regressions related to fixes of: CORE-501 -
+	Optimization problem with COALESCE CORE-1343 - Bug with a simple
+	case and a subquery CORE-2041 - update or insert with gen_id() with
+	wrong generator value
+
+	And should fix this one (snapshot build bug): CORE-2051 - don't
+	work subquery in COALESCE
+
+2008-09-01 10:56  alexpeshkoff
+
+	* firebird2/src/jrd/jrd.cpp (1.481):
+
+	Restored missing line - thanks to Claudio
+
+2008-08-31 08:33  robocop
+
+	* firebird2/src/jrd/err.cpp (1.82):
+
+	Delete useless line.
+
+2008-08-31 08:32  robocop
+
+	* firebird2/src/jrd/dfw.epp (1.251):
+
+	Trim name.
+
+2008-08-31 08:24  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.232):
+
+	Misc.
+
+2008-08-31 03:10  asfernandes
+
+	* firebird2/src/: jrd/jrd.cpp (1.480), jrd/jrd.h (1.250),
+	jrd/nbak.cpp (1.84), jrd/pag.cpp (1.190), jrd/par.cpp (1.212),
+	jrd/pcmet.epp (1.57), jrd/scl.epp (1.101), jrd/sdl.cpp (1.52),
+	remote/inet.cpp (1.246), remote/remote.cpp (1.65),
+	utilities/common/cmd_util.cpp (1.19):
+
+	Misc
+
 2008-08-30 05:14  asfernandes
 
 	* firebird2/src/jrd/: cmp.cpp (1.306), common.h (1.181), dfw.epp
