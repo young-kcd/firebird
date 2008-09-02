@@ -183,9 +183,6 @@
 			Name="JRD files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\src\jrd\iberr.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\isc.cpp">
 			</File>
 			<File
