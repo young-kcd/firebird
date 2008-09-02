@@ -129,7 +129,7 @@
 				Optimization="3"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINVER=0x400"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINVER=0x500"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
