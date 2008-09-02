@@ -181,6 +181,7 @@ public:
 	vec<jrd_rel*>*	dbb_relations;	// relation vector
 	vec<jrd_prc*>*	dbb_procedures;	// scanned procedures
 	Lock* 		dbb_lock;		// granddaddy lock
+	void*		dbb_btr_page_locks;		// per page locks for BTR
 	jrd_tra*	dbb_sys_trans;	// system transaction
 	jrd_file*	dbb_file;		// files for I/O operations
 	Shadow*		dbb_shadow;		// shadow control block
@@ -283,6 +284,7 @@ public:
 
 	// returns true if primary file is located on raw device
 	bool onRawDevice() const;
+	void destroyBtrLocks();		// defined in btr.cpp
 	
 private:
 	explicit Database(MemoryPool& p)

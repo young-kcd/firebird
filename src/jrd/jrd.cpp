@@ -5998,6 +5998,8 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
 
+	dbb->destroyBtrLocks();
+
 	if (dbb->dbb_lock)
 		LCK_release(tdbb, dbb->dbb_lock);
 

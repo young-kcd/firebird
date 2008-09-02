@@ -42,6 +42,8 @@
 #include "gen/iberror.h"
 #include "../jrd/common.h"
 #include "../jrd/lck.h"
+#include "../jrd/LocksCache.h"
+#include "../jrd/GlobalRWLock.h"
 #include "../jrd/cch.h"
 #include "../jrd/sort.h"
 #include "../jrd/gdsassert.h"
@@ -219,54 +221,83 @@ static void update_selectivity(index_root_page*, USHORT, const SelectivityList&)
 static void checkForLowerKeySkip(bool&, const bool, const IndexNode&, const temporary_key&, 
 								 const index_desc&, const IndexRetrieval*);
 
-class Jrd::BtrPageGCLock : public Lock
+
+typedef LocksCache<CachedLock> BtrPageLocks;
+
+void Database::destroyBtrLocks()
+{
+	BtrPageLocks *locks = reinterpret_cast<BtrPageLocks*> (dbb_btr_page_locks);
+	delete locks;
+	dbb_btr_page_locks = NULL;
+}
+
+
+class Jrd::BtrPageGCLock
 {
 public:
 	explicit BtrPageGCLock(thread_db* tdbb)
 	{
-		Database* dbb = tdbb->tdbb_database;
-		lck_parent = dbb->dbb_lock;
-		lck_dbb = dbb;
-		lck_length = sizeof(SLONG);
-		lck_type = LCK_btr_dont_gc;
-		lck_owner_handle = LCK_get_owner_handle(tdbb, lck_type);
+		m_lock = NULL;
 	}
 
 	~BtrPageGCLock()
 	{
-		// assert in debug build
-		fb_assert(!lck_id);
+		fb_assert(!m_lock);
 
-		// lck_id might be set only if exception occurs
-		if (lck_id) {
-			LCK_release(JRD_get_thread_data(), this);
+		if (m_lock) {
+			enablePageGC(JRD_get_thread_data());
 		}
 	}
 
-	void disablePageGC(thread_db* tdbb, SLONG page)
+	static BtrPageLocks* getLocksCache(thread_db* tdbb)
 	{
-		lck_key.lck_long = page;
-		LCK_lock(tdbb, this, LCK_read, LCK_WAIT);
+		Database *dbb = tdbb->tdbb_database;
+		BtrPageLocks* locks = reinterpret_cast<BtrPageLocks*> (dbb->dbb_btr_page_locks);
+		if (!locks)
+		{
+			locks = FB_NEW (*dbb->dbb_permanent) 
+				BtrPageLocks(tdbb, LCK_btr_dont_gc, sizeof(SLONG), 128);
+			dbb->dbb_btr_page_locks = locks;
+		}
+
+		return locks;
+	}
+
+	void disablePageGC(thread_db* tdbb, const SLONG page)
+	{
+		fb_assert(!m_lock);
+		const UCHAR *key = reinterpret_cast<const UCHAR*> (&page);
+
+		BtrPageLocks* locks = getLocksCache(tdbb);
+		m_lock = locks->get(tdbb, key);
+		m_lock->lock(tdbb, LCK_read, LCK_WAIT);
 	}
 
 	void enablePageGC(thread_db* tdbb)
 	{
-		LCK_release(tdbb, this);
+		fb_assert(m_lock);
+		m_lock->unlock(tdbb, LCK_read);
+		m_lock = NULL;
 	}
 
-	static bool isPageGCAllowed(thread_db* tdbb, SLONG page)
+	static bool isPageGCAllowed(thread_db* tdbb, const SLONG page)
 	{
-		BtrPageGCLock lock(tdbb);
-		lock.lck_key.lck_long = page;
+		const UCHAR *key = reinterpret_cast<const UCHAR*> (&page);
 
-		const bool res = LCK_lock(tdbb, &lock, LCK_write, LCK_NO_WAIT);
+		BtrPageLocks* locks = getLocksCache(tdbb);
+		GlobalRWLock *lock = locks->get(tdbb, key);
+
+		const bool res = lock->lock(tdbb, LCK_write, LCK_NO_WAIT);
 
 		if (res) {
-			LCK_release(tdbb, &lock);
+			lock->unlock(tdbb, LCK_write);
 		}
 
 		return res;
 	}
+
+private:
+	GlobalRWLock *m_lock;
 };
 
 
