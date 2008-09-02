@@ -1058,6 +1058,8 @@ static void create_view_triggers(CompiledStatement* statement, dsql_nod* element
 	dsql_nod* base_and_node = 0;
 	dsql_nod* base_relation = 0;
 	define_update_action(statement, &base_and_node, &base_relation, items);
+	fb_assert(base_and_node);
+	fb_assert(base_relation);
 
 	dsql_nod* rse = MAKE_node(nod_rse, e_rse_count);
 	rse->nod_arg[e_rse_boolean] = base_and_node;
@@ -3467,13 +3469,18 @@ static void define_update_action(CompiledStatement* statement,
 	dsql_nod* select_node = NULL;
 	dsql_nod* select_expr = NULL;
 	dsql_nod* from_list = NULL;
-	if ((ddl_node->nod_type != nod_def_view && ddl_node->nod_type != nod_redef_view) ||
+	if ((ddl_node->nod_type != nod_def_view &&
+		ddl_node->nod_type != nod_redef_view &&
+		ddl_node->nod_type != nod_replace_view &&
+		ddl_node->nod_type != nod_mod_view) ||
 		!(select_node = ddl_node->nod_arg[e_view_select]) ||
 		!(select_expr = select_node->nod_arg[e_sel_query_spec]) ||
 		!(from_list = select_expr->nod_arg[e_qry_from]) ||
 		from_list->nod_count != 1)
 	{
-		return;
+		// The caller seems throwing proper errors for all the above conditions.
+		// But just in case it doesn't, here we have the final attempt to prevent the bad things.
+		fb_assert(false);
 	}
 
 // use the relation referenced in the select statement for rse
