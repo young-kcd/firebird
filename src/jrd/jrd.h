@@ -215,6 +215,7 @@ public:
 	FB_GUID		dbb_guid;				// dbb instance identifier
 	Lock*		dbb_instance_lock;		// dbb instance lock
 	Lock* 		dbb_lock;				// granddaddy lock
+	void*		dbb_btr_page_locks;		// per page locks for BTR
 	jrd_tra*	dbb_sys_trans;			// system transaction
 //	jrd_file*	dbb_file;				// files for I/O operations
 	Shadow*		dbb_shadow;				// shadow control block
@@ -361,6 +362,7 @@ private:
 	// this is anyway called in ~Database(), and in theory should be private
 public:
 	void destroyIntlObjects();			// defined in intl.cpp
+	void destroyBtrLocks();				// defined in btr.cpp
 private:
 
 	// The delete operators are no-oped because the Database memory is allocated from the
