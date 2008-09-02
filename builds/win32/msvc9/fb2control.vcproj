@@ -49,7 +49,7 @@
 				Optimization="3"
 				InlineFunctionExpansion="1"
 				FavorSizeOrSpeed="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINVER=0x400"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;WINVER=0x500"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				BrowseInformation="1"
@@ -209,7 +209,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;WINVER=0x400"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;DEV_BUILD;_USRDLL;WINVER=0x500"
 				RuntimeLibrary="1"
 				BrowseInformation="1"
 				UndefinePreprocessorDefinitions="TRACE"
