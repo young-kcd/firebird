@@ -834,6 +834,7 @@ case "$PLATFORM" in
       SFIO_DIR="$ac_cv_use_sfio"
       SFIO_FLAGS="-DSFIO -I$ac_cv_use_sfio/include"
       SFIO_LDFLAGS="-L$ac_cv_use_sfio/lib"
+      SFIO_EXAMPLES="Y"
     fi
     ;;
 
@@ -879,6 +880,7 @@ dnl ##################### DO NOT ADD ANY TESTS BELOW ###########################
 AC_SUBST(SFIO_DIR)
 AC_SUBST(SFIO_FLAGS)
 AC_SUBST(SFIO_LDFLAGS)
+AC_SUBST(SFIO_EXAMPLES)
 
 dnl The following file defines the version number strings. Specially for install/uninstall routines
 . ./src/misc/writeBuildNum.sh
@@ -1187,14 +1189,14 @@ case "$PLATFORM" in
     ;;
 
   solx86|SOLARIS)
-    AC_CONFIG_FILES([gen/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
-                     gen/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
-                     gen/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
-                     gen/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
-                     gen/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
-		     gen/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
-		     gen/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
-      ],[chmod a+x gen/install/Pre* gen/install/Post* 2>/dev/null])
+    AC_CONFIG_FILES([gen/firebird/install/Pkginfo:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/pkginfo.in
+                     gen/firebird/install/Prototype:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/prototype.in
+                     gen/firebird/install/Preinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/preinstall.in
+                     gen/firebird/install/Postinstall:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postinstall.in
+                     gen/firebird/install/Postremove:builds/install/arch-specific/solaris/${ARCH_TYPE_SUFFIX}/postremove.in
+		     gen/firebird/install/prototypelg:builds/install/arch-specific/solaris/libgcc/prototypelg.in
+		     gen/firebird/install/pkginfolg:builds/install/arch-specific/solaris/libgcc/pkginfolg.in
+      ],[chmod a+x gen/firebird/install/Pre* gen/install/Post* 2>/dev/null])
     ;;
 
   DARWIN)
@@ -1262,6 +1264,13 @@ if test "$STD_ICU" = "false"; then
   AC_CONFIG_FILES(gen/Makefile.extern.icu:${MAKE_SRC_DIR}/Makefile.in.extern.icu)
 fi
 
+case "$PLATFORM" in
+  SOLARIS | solx86 )
+AC_CONFIG_FILES(
+gen/make.platform.solaris.examples:${MAKE_SRC_DIR}/make.platform.solaris.examples
+)
+;;
+esac
 
 
 if test "$PROD_BUILD_FLG" = N; then
