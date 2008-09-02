@@ -2,13 +2,13 @@
 :: FB_ROOT_PATH dos format path of the main directory
 :: FB_DB_PATH unix format path of the main directory
 :: (This is used by gpre and preprocess.bat)
-:: VS_VER VisualStudio version (msvc6|msvc7|msvc8)
+:: VS_VER VisualStudio version (msvc7|msvc8|msvc9)
 :: SERVER_NAME server needed to connect to firebird (could include port)
 ::   Example : localhost/3051
 :: (Note - SERVER_NAME is almost deprecated - it is only used by
 ::   make_examples.bat
 ::
-:: Note for VS8 and 64-bit build environment: The assumption is that a
+:: Note for MSVC8/9 and 64-bit build environment: The assumption is that a
 :: 64-bit host is available and builds are targeted at either the native
 :: 64-bit environment or the 32-bit WOW64 environment. Cross-compiling 64-bit
 :: from a 32-bit host is not currently supported from this set of batch files.
@@ -23,6 +23,10 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 
 ::===============================
 ::Set up the compiler environment
+if DEFINED VS90COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS90COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
 if DEFINED VS80COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS80COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -31,8 +35,8 @@ if DEFINED VS71COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
 ) else (
-@msdev /? >nul 2>nul
-@if errorlevel 9009 (call "C:\Program Files\Microsoft Visual Studio\VC98\Bin\vcvars32.bat") else (echo MSVC6 vcvars.bat has already been executed.)
+@goto :HELP
+)
 )
 )
 @echo.
@@ -60,10 +64,8 @@ if DEFINED VS71COMNTOOLS (
   @for /f "tokens=6" %%b in ("%%a") do ((set MSVC_VERSION=%%b) & (set VS_VER=msvc%%b) & (goto :SET_FB_TARGET_PLATFORM))
 )
 
-@msdev /? >nul 2>nul
-@if not errorlevel 9009 ((set MSVC_VERSION=6) & (set VS_VER=msvc6) & (goto :SET_FB_TARGET_PLATFORM))
-
 @if not defined MSVC_VERSION goto :HELP
+
 
 :SET_FB_TARGET_PLATFORM
 @set FB_TARGET_PLATFORM=Win32
@@ -102,7 +104,7 @@ goto :END
 @echo    A working version of Visual Studio cannot be found
 @echo    on your current path.
 @echo.
-@echo    You need MS Visual Studio 6, 7 or 8 to build Firebird
+@echo    You need MS Visual Studio 7 or newer to build Firebird
 @echo    from these batch files.
 @echo.
 @echo    A properly installed version of Visual Studio will set
