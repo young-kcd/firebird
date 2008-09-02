@@ -137,7 +137,6 @@
 #undef HAVE_SIGACTION
 #undef HAVE_SETITIMER
 #define HAVE_SNPRINTF
-#define vsnprintf _vsnprintf
 #define HAVE_VSNPRINTF
 #define HAVE_SWAB
 #define HAVE__SWAB
@@ -165,6 +164,10 @@
 #undef HAVE_LLRINT
 #undef HAVE_LOCALTIME_R
 #undef HAVE_GMTIME_R
+
+#if defined _MSC_VER && _MSC_VER < 1500
+#define vsnprintf _vsnprintf
+#endif
 
 
 /* Types */
