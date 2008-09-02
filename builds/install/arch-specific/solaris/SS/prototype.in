@@ -261,4 +261,4 @@ f none @prefix@/doc/README.xnet=$SRCDIR/../../doc/README.xnet 0644 firebird fire
 
 # Service
 
-#f none /@prefix@/gds_db-tcp.xml=$SRCDIR/../../builds/install/arch-specific/solaris/gds_db-tcp.xml 0644 firebird firebird
+f none /@prefix@/gds_db-tcp.xml=$SRCDIR/../../builds/install/arch-specific/solaris/SS/gds_db-tcp.xml 0644 firebird firebird

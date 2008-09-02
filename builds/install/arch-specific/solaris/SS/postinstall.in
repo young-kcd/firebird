@@ -51,5 +51,5 @@ fi
 
 svccfg validate @prefix@/gds_db-tcp.xml
 svccfg import @prefix@/gds_db-tcp.xml
-svcadm enable svc:/network/gds_db/tcp:default
+svcadm enable svc:/application/firebird:default
 

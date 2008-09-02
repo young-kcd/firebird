@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in.examples,v 1.8.4.1 2007-03-07 15:04:16 paulbeach Exp $
+#  $Id: Makefile.in.examples,v 1.8.4.2 2008-09-02 13:22:20 paulbeach Exp $
 #
 ROOT=../..
 ObjModuleType=std
@@ -39,7 +39,11 @@ CFLAGS := $(CFLAGS) -I$(ROOT)/gen/firebird/include
 
 
 include     $(ROOT)/gen/make.defaults
+ifdef SFIO_EXAMPLES 
+include     $(ROOT)/gen/make.platform.solaris.examples
+else
 include     $(ROOT)/gen/make.platform
+endif
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 

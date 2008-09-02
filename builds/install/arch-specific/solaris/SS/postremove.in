@@ -22,7 +22,7 @@
 #
 
 # Remove the Firebird Service
-if svcs svc:/network/gds_db/tcp:default > /dev/null 2>&1; then
-	svcadm disable svc:network/gds_db/tcp:default
-	svccfg delete svc:network/gds_db/tcp:default
-
+if svcs svc:/application/firebird:default > /dev/null 2>&1; then
+	svcadm disable svc:/application/firebird:default
+	svccfg delete svc:/application/firebird:default
+fi

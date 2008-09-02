@@ -18,7 +18,7 @@
 #
 # Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
 #  
-# $Id: prefix.solx86gcc,v 1.19.4.3 2008-09-02 13:22:21 paulbeach Exp $
+# $Id: make.platform.solaris.examples,v 1.1.2.1 2008-09-02 13:22:22 paulbeach Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
@@ -27,40 +27,19 @@ WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
 COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
 
 SFIO=@SFIO_DIR@
-SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
-
-ifdef SFIO
-COMM_SOLX_FLAGS+= $(COMM_SOLX_FLAGS) $(SFIO_FLAGS) 
-endif
-
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb -g3 -p $(WARNINGS)
+
 ifdef SFIO
 LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
 STATICLINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
 SO_LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
 endif
 
-OS_ServerFiles=inet_server.cpp
-
-GPRECOMMON_Files= ../jrd/ThreadData.cpp ../jrd/isc_sync.cpp
-GPRECommon_Sources= $(GPRECOMMON_Files)
-
-JRDBOOT_Extra_Files= isc_sync.cpp
-
-GFIX_Other_Sources= jrd/isc_sync.cpp jrd/os/posix/isc_ipc.cpp 
-DROP_Other_Sources= jrd/ThreadData.cpp
-LOCKPRINT_Other_Sources= jrd/ThreadData.cpp
-Server_main_dummy = os/sun/server_main_dummy.cpp
-
 LIB_LINK_OPTIONS:= -G 
 LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE= -Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
-
-Physical_IO_Module=os/posix/unix.cpp

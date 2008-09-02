@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44.4.7 2008-05-08 13:11:03 alexpeshkoff Exp $
+#   $Id: make.defaults,v 1.44.4.8 2008-09-02 13:22:20 paulbeach Exp $
 # 
 
 
@@ -96,6 +96,7 @@ else
 	ArchPrefix=SS
 endif
 
+SFIO_EXAMPLES=@SFIO_EXAMPLES@
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
 
