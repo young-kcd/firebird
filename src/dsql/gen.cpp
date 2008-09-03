@@ -1560,7 +1560,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 			 * didn't contain an exponent so it's not a valid DOUBLE
 			 * PRECISION literal either, so we have to bounce it.
 			 */
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(- 104) <<
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_arith_except) <<
 					  Arg::Gds(isc_numeric_out_of_range));
 		}

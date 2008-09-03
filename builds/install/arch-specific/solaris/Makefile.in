@@ -27,8 +27,6 @@
 # Contributor(s):
 # Paul Beach - Firebird 2.x 
 # 
-# $Id: Makefile.in,v 1.6 2008-09-02 14:17:00 paulbeach Exp $
-# 
 
 ROOT=..
 
