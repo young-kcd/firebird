@@ -62,6 +62,7 @@ void	ERR_punt();
 void	ERR_warning(const Firebird::Arg::StatusVector& v);
 void	ERR_log(int, int, const TEXT*);
 void	ERR_make_permanent(ISC_STATUS* s);
+void	ERR_make_permanent(Firebird::Arg::StatusVector& v);
 void	ERR_append_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 void	ERR_build_status(ISC_STATUS*, const Firebird::Arg::StatusVector& v);
 

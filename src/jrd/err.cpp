@@ -136,7 +136,7 @@ void ERR_duplicate_error(IDX_E	code,
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
 
-	Firebird::MetaName index, constraint;
+	MetaName index, constraint;
 	MET_lookup_index(tdbb, index, relation->rel_name, index_number + 1);
 
 	bool haveConstraint = true;
@@ -260,7 +260,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 }
 
 
-bool ERR_post_warning(const Firebird::Arg::StatusVector& v)
+bool ERR_post_warning(const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -337,19 +337,35 @@ void ERR_make_permanent(ISC_STATUS* s)
 {
 	Attachment* att = JRD_get_thread_data()->getAttachment();
 	if (att) {
-		Firebird::MutexLockGuard(att->att_mutex);
-		if (att->att_strings_buffer != ((Firebird::StringsBuffer*)(~0)))
+		MutexLockGuard(att->att_mutex);
+		if (att->att_strings_buffer != ((StringsBuffer*)(~0)))
 		{
 			if (!att->att_strings_buffer)
 			{
-				att->att_strings_buffer = FB_NEW(*att->att_pool) Firebird::CircularStringsBuffer<MAXPATHLEN * 4>;
+				att->att_strings_buffer = FB_NEW(*att->att_pool) CircularStringsBuffer<MAXPATHLEN * 4>;
 			}
 			att->att_strings_buffer->makePermanentVector(s, s);
 			return;
 		}
 	}
 
-	Firebird::StringsBuffer::makeEnginePermanentVector(s);
+	StringsBuffer::makeEnginePermanentVector(s);
+}
+
+
+void ERR_make_permanent(Arg::StatusVector& v)
+/**************************************
+ *
+ *	E R R _ m a k e _ p e r m a n e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Make strings in vector permanent
+ *
+ **************************************/
+{
+	ERR_make_permanent(const_cast<ISC_STATUS*>(v.value()));
 }
 
 
@@ -483,11 +499,11 @@ void ERR_punt(void)
 		}
 	}
 
-	Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+	status_exception::raise(tdbb->tdbb_status_vector);
 }
 
 
-void ERR_warning(const Firebird::Arg::StatusVector& v)
+void ERR_warning(const Arg::StatusVector& v)
 {
 /**************************************
  *
