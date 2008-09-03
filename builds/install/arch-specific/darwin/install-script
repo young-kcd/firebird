@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.14 2008-03-25 09:08:42 paulbeach Exp $
+# $Id: install-script,v 1.1.2.15 2008-09-03 09:43:38 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -129,12 +129,12 @@ chown -R firebird:firebird "$FB_FW"
 echo "Set the permissions correctly"
 if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
     chmod 777 "$FB_FW/Resources/English.lproj/var"
-    chmod 777 "$FB_FW/Resources/English.lproj/var/security2.fdb"
-    chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
+    chmod 600 "$FB_FW/Resources/English.lproj/var/security2.fdb"
+    chmod 444 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 else
     chmod 777 "$FB_FW/Resources/English.lproj/var"
-    chmod 777 "$FB_FW/Resources/English.lproj/var/security2.fdb"
-    chmod 777 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
+    chmod 660 "$FB_FW/Resources/English.lproj/var/security2.fdb"
+    chmod 444 "$FB_FW/Resources/English.lproj/var/help/help.fdb"
 
     chmod a+s "$FB_FW/Resources/bin/gds_drop"
     chmod a+s "$FB_FW/Resources/bin/fb_lock_mgr"
