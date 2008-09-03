@@ -7830,7 +7830,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 
 	// Verify if we're processing view fields and reset flag to not pass to
 	// more than required inner nodes.
-	USHORT viewFlags = input->nod_flags | (flags & NOD_SELECT_VIEW_FIELDS);
+	const USHORT viewFlags = input->nod_flags | (flags & NOD_SELECT_VIEW_FIELDS);
 	flags &= ~NOD_SELECT_VIEW_FIELDS;
 
 	if (input->nod_type == nod_select_expr)

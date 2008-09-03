@@ -126,8 +126,8 @@ void GEN_hidden_variables(CompiledStatement* statement, bool inExpression)
 
 	for (DsqlNodStack::const_iterator i(statement->req_hidden_vars); i.hasData(); ++i)
 	{
-		dsql_nod* varNode = i.object()->nod_arg[1];
-		dsql_var* var = (dsql_var*) varNode->nod_arg[e_var_variable];
+		const dsql_nod* varNode = i.object()->nod_arg[1];
+		const dsql_var* var = (dsql_var*) varNode->nod_arg[e_var_variable];
 		statement->append_uchar(blr_dcl_variable);
 		statement->append_ushort(var->var_variable_number);
 		GEN_descriptor(statement, &varNode->nod_desc, true);
@@ -582,7 +582,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		// If it was not pre-declared, declare it now.
 		if (statement->req_hidden_vars.hasData())
 		{
-			dsql_var* var = (dsql_var*) node->nod_arg[e_hidden_var_var]->nod_arg[e_var_variable];
+			const dsql_var* var = (dsql_var*) node->nod_arg[e_hidden_var_var]->nod_arg[e_var_variable];
 
 			stuff(statement, blr_begin);
 			statement->append_uchar(blr_dcl_variable);
