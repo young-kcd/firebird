@@ -1,3 +1,24 @@
+2008-09-03 12:07  paulbeach
+
+	* firebird2/builds/install/arch-specific/solaris/SS/prototype.in
+	(1.1.6.5):
+
+	Update permissions for security database
+
+2008-09-03 12:04  paulbeach
+
+	* firebird2/builds/install/arch-specific/hpux/classic/:
+	firebirdCS.psf.in (1.1.2.2), postInstall.sh.in (1.1.2.4):
+
+	Update permissions for security database
+
+2008-09-03 11:41  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.15):
+
+	Update permissions for security database
+
 2008-09-02 15:22  paulbeach
 
 	* firebird2/:
@@ -4295,52 +4316,154 @@
 
 	Make "configure --with-editline" work
 
+2005-05-28 00:33  asfernandes
+
+	* firebird2/extern/icu/source/tools/: gencmn/.cvsignore (1.2),
+	gencmn/Makefile.in (1.2), gencmn/decmn.8.in (1.2), gencmn/decmn.c
+	(1.2), gencmn/decmn.dsp (1.2), gencmn/decmn.vcproj (1.2),
+	gencmn/gencmn.8.in (1.2), gencmn/gencmn.c (1.2), gencmn/gencmn.dsp
+	(1.2), gencmn/gencmn.vcproj (1.2), gencnval/.cvsignore (1.2),
+	gencnval/Makefile.in (1.2), gencnval/gencnval.1.in (1.2),
+	gencnval/gencnval.c (1.2), gencnval/gencnval.dsp (1.2),
+	gencnval/gencnval.vcproj (1.2), gendraft/gendraft.pl (1.2),
+	gennames/.cvsignore (1.2), gennames/Makefile.in (1.2),
+	gennames/gennames.8.in (1.2), gennames/gennames.c (1.2),
+	gennames/gennames.dsp (1.2), gennames/gennames.vcproj (1.2),
+	gennorm/.cvsignore (1.2), gennorm/Makefile.in (1.2),
+	gennorm/gennorm.8.in (1.2), gennorm/gennorm.c (1.2),
+	gennorm/gennorm.dsp (1.2), gennorm/gennorm.h (1.2),
+	gennorm/gennorm.vcproj (1.2), gennorm/store.c (1.2),
+	genpname/.cvsignore (1.2), genpname/Makefile.in (1.2),
+	genpname/SyntheticPropertyAliases.txt (1.2), genpname/data.h (1.2),
+	genpname/genpname.cpp (1.2), genpname/genpname.dsp (1.2),
+	genpname/genpname.vcproj (1.2), genpname/preparse.pl (1.2),
+	genprops/.cvsignore (1.2), genprops/Makefile.in (1.2),
+	genprops/genprops.8.in (1.2), genprops/genprops.c (1.2),
+	genprops/genprops.dsp (1.2), genprops/genprops.h (1.2),
+	genprops/genprops.vcproj (1.2), genprops/props2.c (1.2),
+	genprops/propsvec.c (1.2), genprops/propsvec.h (1.2),
+	genprops/store.c (1.2), genprops/misc/ucdmerge.c (1.2),
+	genprops/misc/ucdstrip.c (1.2), genprops/misc/ucdstrip.pl (1.2),
+	genrb/.cvsignore (1.2), genrb/Makefile.in (1.2), genrb/derb.1.in
+	(1.2), genrb/derb.c (1.2), genrb/derb.dsp (1.2), genrb/derb.vcproj
+	(1.2), genrb/errmsg.c (1.2), genrb/errmsg.h (1.2),
+	genrb/gendtjar.pl (1.2), genrb/genrb.1.in (1.2), genrb/genrb.c
+	(1.2), genrb/genrb.dsp (1.2), genrb/genrb.h (1.2),
+	genrb/genrb.vcproj (1.2), genrb/genrbjar.pl (1.2), genrb/parse.c
+	(1.2), genrb/parse.h (1.2), genrb/prscmnts.cpp (1.2),
+	genrb/prscmnts.h (1.2), genrb/read.c (1.2), genrb/read.h (1.2),
+	genrb/reslist.c (1.2), genrb/reslist.h (1.2), genrb/rle.c (1.2),
+	genrb/rle.h (1.2), genrb/ustr.c (1.2), genrb/ustr.h (1.2),
+	genrb/util.c (1.2), genrb/util.h (1.2), genrb/wrtjava.c (1.2),
+	genrb/wrtxml.c (1.2), genren/Makefile (1.2), genren/README (1.2),
+	genren/genren.pl (1.2), gensprep/.cvsignore (1.2),
+	gensprep/Makefile.in (1.2), gensprep/filterRFC3454.pl (1.2),
+	gensprep/gensprep.8.in (1.2), gensprep/gensprep.c (1.2),
+	gensprep/gensprep.dsp (1.2), gensprep/gensprep.h (1.2),
+	gensprep/gensprep.vcproj (1.2), gensprep/store.c (1.2),
+	gentest/.cvsignore (1.2), gentest/Makefile.in (1.2),
+	gentest/genres32.c (1.2), gentest/gentest.c (1.2),
+	gentest/gentest.dsp (1.2), gentest/gentest.h (1.2),
+	gentest/gentest.vcproj (1.2), genuca/.cvsignore (1.2),
+	genuca/Makefile.in (1.2), genuca/genuca.8.in (1.2),
+	genuca/genuca.cpp (1.2), genuca/genuca.dsp (1.2), genuca/genuca.h
+	(1.2), genuca/genuca.vcproj (1.2), icuswap/.cvsignore (1.2),
+	icuswap/Makefile.in (1.2), icuswap/icuswap.cpp (1.2),
+	icuswap/icuswap.dsp (1.2), icuswap/icuswap.vcproj (1.2),
+	makeconv/.cvsignore (1.2), makeconv/Makefile.in (1.2),
+	makeconv/gencnvex.c (1.2), makeconv/genmbcs.c (1.2),
+	makeconv/genmbcs.h (1.2), makeconv/makeconv.1.in (1.2),
+	makeconv/makeconv.c (1.2), makeconv/makeconv.dsp (1.2),
+	makeconv/makeconv.h (1.2), makeconv/makeconv.vcproj (1.2),
+	makeconv/ucnvstat.c (1.2):
+
+	Merge INTL branch into HEAD
+
 2005-05-28 00:30  asfernandes
 
-	* firebird2/extern/icu/source/test/: perf/perldriver/Dataset.pm
-	(1.2), perf/perldriver/Format.pm (1.2), perf/perldriver/Output.pm
-	(1.2), perf/perldriver/PerfFramework.pm (1.2),
-	perf/ubrkperf/Makefile.in (1.2), perf/ubrkperf/UBrkPerf.pl (1.2),
-	perf/ubrkperf/ubrkperf.cpp (1.2), perf/ubrkperf/ubrkperf.dsp (1.2),
-	perf/ubrkperf/ubrkperf.h (1.2), perf/ubrkperf/ubrkperf20.dsp (1.2),
-	perf/ubrkperf/ubrkperfold.cpp (1.2), perf/ubrkperf/ubrkperfold.dsp
-	(1.2), perf/ustrperf/StringPerf.pl (1.2),
-	perf/ustrperf/stringperf.cpp (1.2), perf/ustrperf/stringperf.h
-	(1.2), perf/ustrperf/stringperf.vcproj (1.2), testdata/.cvsignore
-	(1.2), testdata/CollationTest_NON_IGNORABLE_STUB.txt (1.2),
-	testdata/CollationTest_SHIFTED_STUB.txt (1.2),
-	testdata/DataDrivenCollationTest.txt (1.2), testdata/Makefile.in
-	(1.2), testdata/NormalizationTest-3.2.0.txt (1.2),
-	testdata/NumberFormatTestCases.txt (1.2), testdata/casing.txt
-	(1.2), testdata/conversion.txt (1.2), testdata/default.goo (1.2),
-	testdata/default.txt (1.2), testdata/ibm9027.ucm (1.2),
-	testdata/icuio.txt (1.2), testdata/idna_rules.txt (1.2),
-	testdata/importtest.bin (1.2), testdata/iscii.bin (1.2),
-	testdata/mc.txt (1.2), testdata/nfs4_cis_prep.txt (1.2),
-	testdata/nfs4_cs_prep_ci.txt (1.2), testdata/nfs4_cs_prep_cs.txt
-	(1.2), testdata/nfs4_mixed_prep_p.txt (1.2),
-	testdata/nfs4_mixed_prep_s.txt (1.2), testdata/ra.txt (1.2),
-	testdata/rbbitst.txt (1.2), testdata/re_tests.txt (1.2),
-	testdata/readme.txt (1.2), testdata/regextst.txt (1.2),
-	testdata/riwords.txt (1.2), testdata/root.txt (1.2),
-	testdata/te.txt (1.2), testdata/te_IN.goo (1.2), testdata/te_IN.txt
-	(1.2), testdata/test1.ucm (1.2), testdata/test3.ucm (1.2),
-	testdata/test4.ucm (1.2), testdata/test4x.ucm (1.2),
-	testdata/testaliases.txt (1.2), testdata/testdata.mk (1.2),
-	testdata/testdata_icu26_testtypes.res (1.2),
-	testdata/testdata_icu26e_testtypes.res (1.2),
-	testdata/testempty.txt (1.2), testdata/testtypes.txt (1.2),
-	testdata/translit_rules.txt (1.2), testdata/uni-text.bin (1.2),
-	testmap/.cvsignore (1.2), testmap/Makefile.in (1.2),
-	testmap/testmap.c (1.2), testmap/testmap.dsp (1.2),
-	thaitest/.cvsignore (1.2), thaitest/Makefile.in (1.2),
-	thaitest/space.txt (1.2), thaitest/thaitest.cpp (1.2),
-	thaitest/thaitest.dsp (1.2), threadtest/.cvsignore (1.2),
-	threadtest/Makefile.in (1.2), threadtest/converttest.cpp (1.2),
-	threadtest/stringtest.cpp (1.2), threadtest/threadtest.cpp (1.2),
-	threadtest/threadtest.dsp (1.2), threadtest/threadtest.dsw (1.2),
-	threadtest/threadtest.h (1.2), unalignedtest/Makefile.in (1.2),
-	unalignedtest/readme (1.2), unalignedtest/unaligned.c (1.2):
+	* firebird2/extern/icu/source/: test/perf/perldriver/Dataset.pm
+	(1.2), test/perf/perldriver/Format.pm (1.2),
+	test/perf/perldriver/Output.pm (1.2),
+	test/perf/perldriver/PerfFramework.pm (1.2),
+	test/perf/ubrkperf/Makefile.in (1.2),
+	test/perf/ubrkperf/UBrkPerf.pl (1.2),
+	test/perf/ubrkperf/ubrkperf.cpp (1.2),
+	test/perf/ubrkperf/ubrkperf.dsp (1.2),
+	test/perf/ubrkperf/ubrkperf.h (1.2),
+	test/perf/ubrkperf/ubrkperf20.dsp (1.2),
+	test/perf/ubrkperf/ubrkperfold.cpp (1.2),
+	test/perf/ubrkperf/ubrkperfold.dsp (1.2),
+	test/perf/ustrperf/StringPerf.pl (1.2),
+	test/perf/ustrperf/stringperf.cpp (1.2),
+	test/perf/ustrperf/stringperf.h (1.2),
+	test/perf/ustrperf/stringperf.vcproj (1.2),
+	test/testdata/.cvsignore (1.2),
+	test/testdata/CollationTest_NON_IGNORABLE_STUB.txt (1.2),
+	test/testdata/CollationTest_SHIFTED_STUB.txt (1.2),
+	test/testdata/DataDrivenCollationTest.txt (1.2),
+	test/testdata/Makefile.in (1.2),
+	test/testdata/NormalizationTest-3.2.0.txt (1.2),
+	test/testdata/NumberFormatTestCases.txt (1.2),
+	test/testdata/casing.txt (1.2), test/testdata/conversion.txt (1.2),
+	test/testdata/default.goo (1.2), test/testdata/default.txt (1.2),
+	test/testdata/ibm9027.ucm (1.2), test/testdata/icuio.txt (1.2),
+	test/testdata/idna_rules.txt (1.2), test/testdata/importtest.bin
+	(1.2), test/testdata/iscii.bin (1.2), test/testdata/mc.txt (1.2),
+	test/testdata/nfs4_cis_prep.txt (1.2),
+	test/testdata/nfs4_cs_prep_ci.txt (1.2),
+	test/testdata/nfs4_cs_prep_cs.txt (1.2),
+	test/testdata/nfs4_mixed_prep_p.txt (1.2),
+	test/testdata/nfs4_mixed_prep_s.txt (1.2), test/testdata/ra.txt
+	(1.2), test/testdata/rbbitst.txt (1.2), test/testdata/re_tests.txt
+	(1.2), test/testdata/readme.txt (1.2), test/testdata/regextst.txt
+	(1.2), test/testdata/riwords.txt (1.2), test/testdata/root.txt
+	(1.2), test/testdata/te.txt (1.2), test/testdata/te_IN.goo (1.2),
+	test/testdata/te_IN.txt (1.2), test/testdata/test1.ucm (1.2),
+	test/testdata/test3.ucm (1.2), test/testdata/test4.ucm (1.2),
+	test/testdata/test4x.ucm (1.2), test/testdata/testaliases.txt
+	(1.2), test/testdata/testdata.mk (1.2),
+	test/testdata/testdata_icu26_testtypes.res (1.2),
+	test/testdata/testdata_icu26e_testtypes.res (1.2),
+	test/testdata/testempty.txt (1.2), test/testdata/testtypes.txt
+	(1.2), test/testdata/translit_rules.txt (1.2),
+	test/testdata/uni-text.bin (1.2), test/testmap/.cvsignore (1.2),
+	test/testmap/Makefile.in (1.2), test/testmap/testmap.c (1.2),
+	test/testmap/testmap.dsp (1.2), test/thaitest/.cvsignore (1.2),
+	test/thaitest/Makefile.in (1.2), test/thaitest/space.txt (1.2),
+	test/thaitest/thaitest.cpp (1.2), test/thaitest/thaitest.dsp (1.2),
+	test/threadtest/.cvsignore (1.2), test/threadtest/Makefile.in
+	(1.2), test/threadtest/converttest.cpp (1.2),
+	test/threadtest/stringtest.cpp (1.2),
+	test/threadtest/threadtest.cpp (1.2),
+	test/threadtest/threadtest.dsp (1.2),
+	test/threadtest/threadtest.dsw (1.2), test/threadtest/threadtest.h
+	(1.2), test/unalignedtest/Makefile.in (1.2),
+	test/unalignedtest/readme (1.2), test/unalignedtest/unaligned.c
+	(1.2), test/usetperf/bitset.cpp (1.2), test/usetperf/bitset.h
+	(1.2), test/usetperf/timer.h (1.2), test/usetperf/usetperf.cpp
+	(1.2), test/usetperf/usetperf.dsp (1.2), test/utfperf/utfperf.c
+	(1.2), test/utfperf/utfperf.dsp (1.2), tools/.cvsignore (1.2),
+	tools/Makefile.in (1.2), tools/cpysearch/cpysearch.pl (1.2),
+	tools/cpysearch/readme.txt (1.2), tools/ctestfw/.cvsignore (1.2),
+	tools/ctestfw/Makefile.in (1.2), tools/ctestfw/ctest.c (1.2),
+	tools/ctestfw/ctestfw.dsp (1.2), tools/ctestfw/ctestfw.vcproj
+	(1.2), tools/ctestfw/datamap.cpp (1.2), tools/ctestfw/testdata.cpp
+	(1.2), tools/ctestfw/tstdtmod.cpp (1.2),
+	tools/ctestfw/unicode/ctest.h (1.2),
+	tools/ctestfw/unicode/datamap.h (1.2),
+	tools/ctestfw/unicode/testdata.h (1.2),
+	tools/ctestfw/unicode/testlog.h (1.2),
+	tools/ctestfw/unicode/testtype.h (1.2),
+	tools/ctestfw/unicode/tstdtmod.h (1.2), tools/dumpce/.cvsignore
+	(1.2), tools/dumpce/Makefile.in (1.2), tools/dumpce/dumpce.cpp
+	(1.2), tools/dumpce/dumpce.dsp (1.2), tools/dumpce/dumpce.dsw
+	(1.2), tools/genbrk/.cvsignore (1.2), tools/genbrk/Makefile.in
+	(1.2), tools/genbrk/genbrk.cpp (1.2), tools/genbrk/genbrk.dsp
+	(1.2), tools/genbrk/genbrk.vcproj (1.2), tools/genccode/.cvsignore
+	(1.2), tools/genccode/Makefile.in (1.2),
+	tools/genccode/genccode.8.in (1.2), tools/genccode/genccode.c
+	(1.2), tools/genccode/genccode.dsp (1.2),
+	tools/genccode/genccode.vcproj (1.2):
 
 	Merge INTL branch into HEAD
 
