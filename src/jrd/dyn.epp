@@ -205,12 +205,12 @@ void DYN_error(bool	status_flag,
 
 		local_status << Arg::Gds(isc_random) << Arg::Str(error_buffer) << Arg::SqlState(sqlstate);
 	}
+	ERR_make_permanent(local_status);
 	if (status_flag) {
 		local_status.append(Arg::StatusVector(tdbb->tdbb_status_vector));
 	}
 
 	local_status.copyTo(tdbb->tdbb_status_vector);
-	ERR_make_permanent(tdbb->tdbb_status_vector);
 }
 
 
