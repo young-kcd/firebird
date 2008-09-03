@@ -25,7 +25,7 @@ os_version ?
 #
 fileset
 tag main
-file -u 0666 -g firebird -o firebird firebird/security2.fdb /opt/firebird/security2.fdb
+file -u 0660 -g firebird -o firebird firebird/security2.fdb /opt/firebird/security2.fdb
 file -u 0644 -g firebird -o firebird firebird/misc/firebird.conf /opt/firebird/firebird.conf
 file -u 0644 -g firebird -o firebird ../builds/install/misc/aliases.conf.in /opt/firebird/aliases.conf
 file -u 0644 -g firebird -o firebird firebird/misc/fbintl.conf /opt/firebird/fbintl.conf
