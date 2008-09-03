@@ -4019,9 +4019,9 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	if (trigger->req_flags & req_leave)
 	{
 		trigger->req_flags &= ~req_leave;
-		const TEXT* msg =
-			MET_trigger_msg(tdbb, trigger->req_trg_name, trigger->req_label);
-		if (msg)
+		string msg;
+		MET_trigger_msg(tdbb, msg, trigger->req_trg_name, trigger->req_label);
+		if (msg.hasData())
 		{
 			if (trigger->req_flags & req_sys_trigger)
 			{

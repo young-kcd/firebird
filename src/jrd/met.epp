@@ -4112,7 +4112,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 }
 
 
-const TEXT* MET_trigger_msg(thread_db* tdbb, const Firebird::MetaName& name, USHORT number)
+void MET_trigger_msg(thread_db* tdbb, Firebird::string& msg, const Firebird::MetaName& name, USHORT number)
 {
 /**************************************
  *
@@ -4127,7 +4127,6 @@ const TEXT* MET_trigger_msg(thread_db* tdbb, const Firebird::MetaName& name, USH
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	const TEXT* msg = 0;
 	jrd_req* request = CMP_find_request(tdbb, irq_s_msgs, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
@@ -4143,7 +4142,7 @@ const TEXT* MET_trigger_msg(thread_db* tdbb, const Firebird::MetaName& name, USH
 	if (!REQUEST(irq_s_msgs))
 		REQUEST(irq_s_msgs) = request;
 
-	return msg;
+	msg.rtrim();
 }
 
 

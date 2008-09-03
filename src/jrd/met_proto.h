@@ -116,7 +116,7 @@ bool		MET_procedure_in_use(Jrd::thread_db*, Jrd::jrd_prc*);
 void		MET_remove_procedure(Jrd::thread_db*, int, Jrd::jrd_prc*);
 void		MET_revoke(Jrd::thread_db*, Jrd::jrd_tra*, const TEXT*, const TEXT*, const TEXT*);
 void		MET_scan_relation(Jrd::thread_db*, Jrd::jrd_rel*);
-const TEXT* MET_trigger_msg(Jrd::thread_db*, const Firebird::MetaName&, USHORT);
+void		MET_trigger_msg(Jrd::thread_db*, Firebird::string&, const Firebird::MetaName&, USHORT);
 void		MET_update_shadow(Jrd::thread_db*, Jrd::Shadow*, USHORT);
 void		MET_update_transaction(Jrd::thread_db*, Jrd::jrd_tra*, const bool);
 void		MET_get_domain(Jrd::thread_db*, const Firebird::MetaName&, dsc*, Jrd::FieldInfo*);

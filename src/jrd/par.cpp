@@ -720,7 +720,7 @@ CompilerScratch* PAR_parse(thread_db* tdbb, const UCHAR* blr, USHORT internal_fl
 }
 
 
-SLONG PAR_symbol_to_gdscode(const Firebird::MetaName& name)
+SLONG PAR_symbol_to_gdscode(const Firebird::string& name)
 {
 /**************************************
  *
@@ -902,7 +902,6 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	jrd_nod* dep_node;
 	SLONG code_number;
-	Firebird::MetaName name;
 
 	SET_TDBB(tdbb);
 
@@ -928,27 +927,33 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		break;
 
 	case blr_gds_code:
-		item.xcp_type = xcp_gds_code;
-		par_name(csb, name);
-		name.lower7();
-		code_number = PAR_symbol_to_gdscode(name);
-		if (code_number)
-			item.xcp_code = code_number;
-		else
-			error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+		{
+			string name;
+			item.xcp_type = xcp_gds_code;
+			par_name(csb, name);
+			name.lower();
+			code_number = PAR_symbol_to_gdscode(name);
+			if (code_number)
+				item.xcp_code = code_number;
+			else
+				error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+		}
 		break;
 
 	case blr_exception:
 	case blr_exception_msg:
-		item.xcp_type = xcp_xcp_code;
-		par_name(csb, name);
-		if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-			error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-		dep_node = PAR_make_node(tdbb, e_dep_length);
-		dep_node->nod_type = nod_dependency;
-		dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-		dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-		csb->csb_dependencies.push(dep_node);
+		{
+			MetaName name;
+			item.xcp_type = xcp_xcp_code;
+			par_name(csb, name);
+			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
+				error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
+			dep_node = PAR_make_node(tdbb, e_dep_length);
+			dep_node->nod_type = nod_dependency;
+			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
+			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
+			csb->csb_dependencies.push(dep_node);
+		}
 		break;
 
 	default:
@@ -974,7 +979,6 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
  **************************************/
 	jrd_nod* dep_node;
 	SLONG code_number;
-	Firebird::MetaName name;
 
 	SET_TDBB(tdbb);
 
@@ -994,26 +998,32 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 			break;
 
 		case blr_gds_code:
-			item.xcp_type = xcp_gds_code;
-			par_name(csb, name);
-			name.lower7();
-			code_number = PAR_symbol_to_gdscode(name);
-			if (code_number)
-				item.xcp_code = code_number;
-			else
-				error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+			{
+				string name;
+				item.xcp_type = xcp_gds_code;
+				par_name(csb, name);
+				name.lower();
+				code_number = PAR_symbol_to_gdscode(name);
+				if (code_number)
+					item.xcp_code = code_number;
+				else
+					error(csb, Arg::Gds(isc_codnotdef) << Arg::Str(name));
+			}
 			break;
 
 		case blr_exception:
-			item.xcp_type = xcp_xcp_code;
-			par_name(csb, name);
-			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
-				error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-			dep_node = PAR_make_node(tdbb, e_dep_length);
-			dep_node->nod_type = nod_dependency;
-			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
-			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
-			csb->csb_dependencies.push(dep_node);
+			{
+				MetaName name;
+				item.xcp_type = xcp_xcp_code;
+				par_name(csb, name);
+				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
+					error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
+				dep_node = PAR_make_node(tdbb, e_dep_length);
+				dep_node->nod_type = nod_dependency;
+				dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
+				dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
+				csb->csb_dependencies.push(dep_node);
+			}
 			break;
 
 		case blr_default_code:
