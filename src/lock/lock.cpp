@@ -2848,7 +2848,9 @@ void LockManager::remap_local_owners()
  *  and prepare them for the shared region being remapped.
  *
  **************************************/
-	fb_assert(m_processOffset);
+	if (! m_processOffset)
+		return;
+
 	fb_assert(m_process);
 
 	prc* const process = (prc*) SRQ_ABS_PTR(m_processOffset);
