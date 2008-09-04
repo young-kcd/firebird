@@ -106,6 +106,7 @@ else
 endif
 
 SFIO_EXAMPLES=@SFIO_EXAMPLES@
+
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
 STD_EDITLINE=@STD_EDITLINE@
