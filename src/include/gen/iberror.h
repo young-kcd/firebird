@@ -671,6 +671,7 @@ const ISC_STATUS isc_modnotfound                      = 335544932L;
 const ISC_STATUS isc_nothing_to_cancel                = 335544933L;
 const ISC_STATUS isc_ibutil_not_loaded                = 335544934L;
 const ISC_STATUS isc_circular_computed                = 335544935L;
+const ISC_STATUS isc_psw_db_error                     = 335544936L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -943,7 +944,7 @@ const ISC_STATUS isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 887;
+const ISC_STATUS isc_err_max                          = 888;
 
 #else /* c definitions */
 
@@ -1584,6 +1585,7 @@ const ISC_STATUS isc_err_max                          = 887;
 #define isc_nothing_to_cancel                335544933L
 #define isc_ibutil_not_loaded                335544934L
 #define isc_circular_computed                335544935L
+#define isc_psw_db_error                     335544936L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1856,7 +1858,7 @@ const ISC_STATUS isc_err_max                          = 887;
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          887
+#define isc_err_max                          888
 
 #endif
 

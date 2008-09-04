@@ -34,6 +34,7 @@
 #include "../jrd/enc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/scl.h"
@@ -224,10 +225,12 @@ void SecurityDatabase::fini()
 		if (lookup_req)
 		{
 			isc_release_request(status, &lookup_req);
+			checkStatus("isc_release_request");
 		}
 		if (lookup_db)
 		{
 			isc_detach_database(status, &lookup_db);
+			checkStatus("isc_detach_database");
 		}
 	}
 }
@@ -260,62 +263,50 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	// Attach database and compile request
 
-	if (!prepare())
-	{
-		if (lookup_req)
-		{
-			isc_release_request(status, &lookup_req);
-		}
-		if (lookup_db)
-		{
-			isc_db_handle tmp = lookup_db;
-			lookup_db = 0;
-			isc_detach_database(status, &tmp);
-		}
-		status_exception::raise(Arg::Gds(isc_psw_attach));
-	}
+	prepare();
 
 	// Lookup
 
 	isc_tr_handle lookup_trans = 0;
 
-	if (isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB))
-	{
-		status_exception::raise(Arg::Gds(isc_psw_start_trans));
-	}
+	isc_start_transaction(status, &lookup_trans, 1, &lookup_db, sizeof(TPB), TPB);
+	checkStatus("isc_start_transaction", isc_psw_start_trans);
 
-	if (!isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0))
+	isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0);
+	checkStatus("isc_start_and_send");
+	
+	while (true)
 	{
-		while (true)
+		isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
+		checkStatus("isc_receive");
+
+		if (!user.flag || status[1])
+			break;
+		found = true;
+		if (uid)
+			*uid = user.uid;
+		if (gid)
+			*gid = user.gid;
+		if (pwd) 
 		{
-			isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
-			if (!user.flag || status[1])
-				break;
-			found = true;
-			if (uid)
-				*uid = user.uid;
-			if (gid)
-				*gid = user.gid;
-			if (pwd) 
-			{
-				strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
-				pwd[MAX_PASSWORD_LENGTH] = 0;
-			}
+			strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
+			pwd[MAX_PASSWORD_LENGTH] = 0;
 		}
 	}
 
 	isc_rollback_transaction(status, &lookup_trans);
+	checkStatus("isc_rollback_transaction");
 
 	return found;
 }
 
-bool SecurityDatabase::prepare()
+void SecurityDatabase::prepare()
 {
 	TEXT user_info_name[MAXPATHLEN];
 
 	if (lookup_db)
 	{
-		return true;
+		return;
 	}
 
 	lookup_db = lookup_req = 0;
@@ -333,39 +324,18 @@ bool SecurityDatabase::prepare()
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 
 	isc_attach_database(status, 0, user_info_name, &lookup_db, 
-		dpb.getBufferLength(), 
-		reinterpret_cast<const char*>(dpb.getBuffer()));
-
-	if (status[1])
-	{
-		char buffer[1024];
-		const ISC_STATUS *s = status;
-		if (fb_interpret(buffer, sizeof buffer, &s))
-		{
-			gds__log(buffer);
-			while (fb_interpret(buffer, sizeof buffer, &s))
-				gds__log(buffer);
-		}
-		return false;
-	}
+		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
+	checkStatus("isc_attach_database", isc_psw_attach);
 
 	isc_compile_request(status, &lookup_db, &lookup_req, sizeof(PWD_REQUEST),
-						reinterpret_cast<const char*>(PWD_REQUEST));
-
+		reinterpret_cast<const char*>(PWD_REQUEST));
 	if (status[1])
 	{
-		char buffer[1024];
-		const ISC_STATUS *s = status;
-		if (fb_interpret(buffer, sizeof buffer, &s))
-		{
-			gds__log(buffer);
-			while (fb_interpret(buffer, sizeof buffer, &s))
-				gds__log(buffer);
-		}
-		return false;
+		ISC_STATUS_ARRAY localStatus;
+		// ignore status returned in order to keep first error
+		isc_detach_database(localStatus, &lookup_db);
 	}
-
-	return true;
+	checkStatus("isc_compile_request", isc_psw_attach);
 }
 
 /******************************************************************************
@@ -479,6 +449,28 @@ void SecurityDatabase::verifyUser(string& name,
 
 	*node_id = 0;
 }
+
+void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
+{
+	if (status[1] == 0)
+	{
+		return;
+	}
+
+	string message;
+	message.printf("Error in %s() APi call when working with security database", callName);
+	iscLogStatus(message.c_str(), status);
+
+#ifdef DEV_BUILD
+	// throw original status error
+	status_exception::raise(status);
+#else
+	// showing real problems with security database to users is not good idea
+	// from security POV - therefore some generic message is used
+	Arg::Gds(userError).raise();
+#endif
+}
+
 
 void DelayFailedLogin::raise(int sec)
 {

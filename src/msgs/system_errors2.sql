@@ -616,6 +616,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, 'HY', '018', 0, 613, 'nothing_to_cancel', NULL, NULL)
 (-901, '39', '000', 0, 614, 'ibutil_not_loaded', NULL, NULL)
 (-904, '42', '000', 0, 615, 'circular_computed', NULL, NULL)
+(-902, '28', '000', 0, 616, 'psw_db_error', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

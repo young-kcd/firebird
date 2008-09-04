@@ -29,6 +29,7 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/sha.h"
+#include "gen/iberror.h"
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -102,7 +103,8 @@ private:
 	void fini();
 	void init();
 	bool lookup_user(const TEXT*, int*, int*, TEXT*);
-	bool prepare();
+	void prepare();
+	void checkStatus(const char* callName, ISC_STATUS userError = isc_psw_db_error);
 
 	static SecurityDatabase instance;
 

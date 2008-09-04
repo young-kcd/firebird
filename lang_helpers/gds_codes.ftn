@@ -1282,6 +1282,8 @@ C --
       PARAMETER (GDS__ibutil_not_loaded                = 335544934)
       INTEGER*4 GDS__circular_computed               
       PARAMETER (GDS__circular_computed                = 335544935)
+      INTEGER*4 GDS__psw_db_error                    
+      PARAMETER (GDS__psw_db_error                     = 335544936)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

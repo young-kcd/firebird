@@ -637,6 +637,7 @@ static const struct {
 	{"nothing_to_cancel", 335544933},
 	{"ibutil_not_loaded", 335544934},
 	{"circular_computed", 335544935},
+	{"psw_db_error", 335544936},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

@@ -715,6 +715,7 @@ COMMIT WORK;
 ('nothing_to_cancel', 'FB_CANCEL_OPERATION', 'why.cpp', NULL, 0, 613, NULL, 'nothing to cancel', NULL, NULL)
 ('ibutil_not_loaded', NULL, NULL, NULL, 0, 614, NULL, 'ib_util library has not been loaded to deallocate memory returned by FREE_IT function', NULL, NULL)
 ('circular_computed', NULL, NULL, NULL, 0, 615, NULL, 'Cannot have circular dependencies with computed fields', NULL, NULL)
+('psw_db_error', NULL, NULL, NULL, 0, 616, NULL, 'Security database error', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
