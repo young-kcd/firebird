@@ -582,3 +582,57 @@ LPSECURITY_ATTRIBUTES ISC_get_security_desc()
 	return security_attributes();
 }
 #endif
+
+
+void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
+{
+/**************************************
+ *
+ *	g d s _ $ l o g _ s t a t u s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Log error to error log.
+ *
+ **************************************/
+	fb_assert(status_vector[1] != FB_SUCCESS);
+
+	try
+	{
+		Firebird::string buffer(text ? text : "");
+
+		TEXT temp[BUFFER_LARGE];
+		while (fb_interpret(temp, sizeof(temp), &status_vector))
+		{
+			if (!buffer.empty())
+			{
+				buffer += "\n\t";
+			}
+			buffer += temp;
+		}
+
+		gds__log("%s", buffer.c_str());
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+}
+
+
+void iscLogException(const char* text, const Firebird::Exception& e)
+{
+/**************************************
+ *
+ *      l o g E x c e p t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Add record about an exception to firebird.log
+ *
+ **************************************/
+	ISC_STATUS_ARRAY s;
+	e.stuff_exception(s);
+	iscLogStatus(text, s);
+}
+

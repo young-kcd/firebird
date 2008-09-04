@@ -1292,24 +1292,16 @@ void API_ROUTINE gds__log_status(const TEXT* database,
 
 	try
 	{
-		Firebird::string buffer;
-
 		if (database)
 		{
+			Firebird::string buffer;
 			buffer.printf("Database: %s", database);
+			iscLogStatus(buffer.c_str(), status_vector);
 		}
-
-		TEXT temp[BUFFER_LARGE];
-		while (safe_interpret(temp, sizeof(temp), &status_vector))
+		else
 		{
-			if (!buffer.empty())
-			{
-				buffer += "\n\t";
-			}
-			buffer += temp;
+			iscLogStatus(NULL, status_vector);
 		}
-
-		gds__log(buffer.c_str());
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op

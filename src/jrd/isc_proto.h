@@ -34,6 +34,10 @@ bool	ISC_get_user(Firebird::string*, int*, int*, const TEXT*);
 SLONG	ISC_get_user_group_id(const TEXT*);
 SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 
+// Does not add word "Database" in the beginning like gds__log_status
+void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
+void	iscLogException(const TEXT* text, const Firebird::Exception& e);
+
 #ifdef WIN_NT
 struct _SECURITY_ATTRIBUTES* ISC_get_security_desc(void);
 #endif

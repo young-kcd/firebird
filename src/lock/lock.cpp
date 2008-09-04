@@ -181,6 +181,8 @@ LockManager* LockManager::create(const Firebird::PathName& filename)
 	}
 
 	fb_assert(lockMgr);
+
+	lockMgr->addRef();
 	return lockMgr;
 }
 
@@ -1311,65 +1313,91 @@ void LockManager::blocking_action_thread()
  *	Thread to handle blocking signals.
  *
  **************************************/
-	SRQ_PTR* process_offset_ptr = (SRQ_PTR*) &m_processOffset;
+
+/*
+ * Main thread may be gone releasing our LockManager instance
+ * when AST can't lock appropriate database mutex and therefore does not return.
+ *
+ * This causes multiple errors when entering/releasing mutexes/semaphores.
+ * Catch this errors and log them.
+ *
+ * AP 2008
+ */
+
 	bool atStartup = true;
 
-	while (true)
+	try 
 	{
-		m_localMutex.enter();
+		SRQ_PTR* process_offset_ptr = (SRQ_PTR*) &m_processOffset;
 
-		// See if the main thread has requested us to go away
-		if (!*process_offset_ptr || m_process->prc_process_id != PID)
+		while (true)
 		{
+			m_localMutex.enter();
+
+			// See if the main thread has requested us to go away
+			if (!*process_offset_ptr || m_process->prc_process_id != PID)
+			{
+				if (atStartup)
+				{
+					m_startupSemaphore.release();
+				}
+				break;
+			}
+
+			const SLONG value = ISC_event_clear(&m_process->prc_blocking);
+
+			DEBUG_DELAY;
+
+			Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
+
+			acquire_shmem(DUMMY_OWNER);
+			const prc* const process = (prc*) SRQ_ABS_PTR(*process_offset_ptr);
+
+			srq* lock_srq;
+			SRQ_LOOP(process->prc_owners, lock_srq)
+			{
+				own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_prc_owners));
+				blocking_owners.add(SRQ_REL_PTR(owner));
+			}
+
+			release_mutex();
+
+			while (blocking_owners.getCount() && *process_offset_ptr)
+			{
+				const SRQ_PTR owner_offset = blocking_owners.pop();
+				acquire_shmem(owner_offset);
+				blocking_action(NULL, owner_offset, (SRQ_PTR) NULL);
+				release_shmem(owner_offset);
+			}
+
 			if (atStartup)
 			{
+				atStartup = false;
 				m_startupSemaphore.release();
 			}
-			break;
-		}
 
-		const SLONG value = ISC_event_clear(&m_process->prc_blocking);
+			m_localMutex.leave();
 
-		DEBUG_DELAY;
-
-		Firebird::HalfStaticArray<SRQ_PTR, 4> blocking_owners;
-
-		acquire_shmem(DUMMY_OWNER);
-		const prc* const process = (prc*) SRQ_ABS_PTR(*process_offset_ptr);
-
-		srq* lock_srq;
-		SRQ_LOOP(process->prc_owners, lock_srq)
-		{
-			own* owner = (own*) ((UCHAR *) lock_srq - OFFSET(own*, own_prc_owners));
-			blocking_owners.add(SRQ_REL_PTR(owner));
-		}
-
-		release_mutex();
-
-		while (blocking_owners.getCount() && *process_offset_ptr)
-		{
-			const SRQ_PTR owner_offset = blocking_owners.pop();
-			acquire_shmem(owner_offset);
-			blocking_action(NULL, owner_offset, (SRQ_PTR) NULL);
-			release_shmem(owner_offset);
-		}
-
-		if (atStartup)
-		{
-			atStartup = false;
-			m_startupSemaphore.release();
+			event_t* event_ptr = &m_process->prc_blocking;
+			ISC_event_wait(1, &event_ptr, &value, 0);
 		}
 
 		m_localMutex.leave();
-
-		event_t* event_ptr = &m_process->prc_blocking;
-		ISC_event_wait(1, &event_ptr, &value, 0);
+	}
+	catch(const Firebird::Exception& x) 
+	{ 
+		iscLogException("Error in blocking action thread\n", x);
 	}
 
-	m_localMutex.leave();
-
-	// Wakeup the main thread waiting for our exit
-	m_cleanupSemaphore.release();
+	try
+	{
+		// Wakeup the main thread waiting for our exit
+		m_cleanupSemaphore.release();
+	}
+	catch(const Firebird::Exception& x) 
+	{
+		iscLogException("Error closing blocking action thread\n", x);
+	}
 }
 
 

@@ -65,6 +65,10 @@ namespace Jrd
 		{
 			MemoryPool::deletePool(dbb_pools[i]);
 		}
+
+		dbb_flags |= DBB_destroying;
+		Checkout dcoHolder(this);
+		dbb_lock_mgr->release();
 	}
 
 	void Database::deletePool(MemoryPool* pool)

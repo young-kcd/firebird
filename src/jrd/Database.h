@@ -81,6 +81,48 @@ namespace Jrd
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 
+//
+// bit values for dbb_flags
+//
+const ULONG DBB_damaged				= 0x1L;
+const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
+const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
+#ifdef GARBAGE_THREAD
+const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
+const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
+const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
+#endif
+const ULONG DBB_force_write			= 0x40L;	// Database is forced write
+const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
+const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
+const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
+const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
+const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
+const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
+const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
+const ULONG DBB_security_db			= 0x4000L;	// ISC security database
+const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
+const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
+const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
+const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
+const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
+const ULONG DBB_destroying			= 0x100000L;	// database destructor is called
+
+//
+// dbb_ast_flags
+//
+const UATOM DBB_blocking			= 0x1L;		// Exclusive mode is blocking
+const UATOM DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
+const UATOM DBB_assert_locks		= 0x4L;		// Locks are to be asserted
+const UATOM DBB_shutdown			= 0x8L;		// Database is shutdown
+const UATOM DBB_shut_attach			= 0x10L;	// no new attachments accepted
+const UATOM DBB_shut_tran			= 0x20L;	// no new transactions accepted
+const UATOM DBB_shut_force			= 0x40L;	// forced shutdown in progress
+const UATOM DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
+const UATOM DBB_shutdown_full		= 0x100L;	// Database fully shut down
+const UATOM DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
+const UATOM DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
+
 class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 {
 	class Sync : public Firebird::RefCounted
@@ -152,6 +194,13 @@ public:
 				sync.unlock();
 				sync.release();
 				Firebird::status_exception::raise(Firebird::Arg::Gds(isc_bad_db_handle));
+			}
+
+			if (ast && dbb->dbb_flags & DBB_destroying)
+			{
+				sync.unlock();
+				sync.release();
+				Firebird::LongJump::raise();
 			}
 		}
 
@@ -279,7 +328,7 @@ public:
 	mutable Sync* dbb_sync;				// Database sync primitive
 	Firebird::Reference dbb_sync_ref;	// Database reference to dbb_sync
 
-	Firebird::RefPtr<LockManager> dbb_lock_mgr;
+	LockManager*	dbb_lock_mgr;
 
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
@@ -443,47 +492,6 @@ private:
 	Database(const Database&);			// no impl.
 	const Database& operator =(const Database&) { return *this; }
 };
-
-//
-// bit values for dbb_flags
-//
-const ULONG DBB_damaged				= 0x1L;
-const ULONG DBB_exclusive			= 0x2L;		// Database is accessed in exclusive mode
-const ULONG DBB_bugcheck			= 0x4L;		// Bugcheck has occurred
-#ifdef GARBAGE_THREAD
-const ULONG DBB_garbage_collector	= 0x8L;		// garbage collector thread exists
-const ULONG DBB_gc_active			= 0x10L;	// ... and is actively working.
-const ULONG DBB_gc_pending			= 0x20L;	// garbage collection requested
-#endif
-const ULONG DBB_force_write			= 0x40L;	// Database is forced write
-const ULONG DBB_no_reserve			= 0x80L;	// No reserve space for versions
-const ULONG DBB_DB_SQL_dialect_3	= 0x100L;	// database SQL dialect 3
-const ULONG DBB_read_only			= 0x200L;	// DB is ReadOnly (RO). If not set, DB is RW
-const ULONG DBB_being_opened_read_only	= 0x400L;	// DB is being opened RO. If unset, opened as RW
-const ULONG DBB_not_in_use			= 0x800L;	// Database to be ignored while attaching
-const ULONG DBB_lck_init_done		= 0x1000L;	// LCK_init() called for the database
-const ULONG DBB_sweep_in_progress	= 0x2000L;	// A database sweep operation is in progress
-const ULONG DBB_security_db			= 0x4000L;	// ISC security database
-const ULONG DBB_suspend_bgio		= 0x8000L;	// Suspend I/O by background threads
-const ULONG DBB_being_opened		= 0x10000L;	// database is being attached to
-const ULONG DBB_gc_cooperative		= 0x20000L;	// cooperative garbage collection
-const ULONG DBB_gc_background		= 0x40000L;	// background garbage collection by gc_thread
-const ULONG DBB_no_fs_cache			= 0x80000L;	// Not using file system cache
-
-//
-// dbb_ast_flags
-//
-const UATOM DBB_blocking			= 0x1L;		// Exclusive mode is blocking
-const UATOM DBB_get_shadows			= 0x2L;		// Signal received to check for new shadows
-const UATOM DBB_assert_locks		= 0x4L;		// Locks are to be asserted
-const UATOM DBB_shutdown			= 0x8L;		// Database is shutdown
-const UATOM DBB_shut_attach			= 0x10L;	// no new attachments accepted
-const UATOM DBB_shut_tran			= 0x20L;	// no new transactions accepted
-const UATOM DBB_shut_force			= 0x40L;	// forced shutdown in progress
-const UATOM DBB_shutdown_locks		= 0x80L;	// Database locks release by shutdown
-const UATOM DBB_shutdown_full		= 0x100L;	// Database fully shut down
-const UATOM DBB_shutdown_single		= 0x200L;	// Database is in single-user maintenance mode
-const UATOM DBB_monitor_off			= 0x400L;	// Database has the monitoring lock released
 
 } // namespace Jrd
 
