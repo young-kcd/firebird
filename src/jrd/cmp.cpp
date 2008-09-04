@@ -3458,7 +3458,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_variable:
 	{
-		USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
+		USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
 		vec<jrd_nod*>* vector = csb->csb_variables;
 		if (!vector || n >= vector->count() ||
 			!(node->nod_arg[e_var_variable] = (*vector)[n]))
@@ -3470,7 +3470,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_init_variable:
 	{
-		USHORT n = (USHORT)(IPTR) node->nod_arg[e_var_id];
+		USHORT n = (USHORT)(IPTR) node->nod_arg[e_init_var_id];
 		vec<jrd_nod*>* vector = csb->csb_variables;
 		if (!vector || n >= vector->count() ||
 			!(node->nod_arg[e_var_variable] = (*vector)[n]))
