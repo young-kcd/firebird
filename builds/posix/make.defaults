@@ -26,7 +26,7 @@
 #   Contributor(s):
 # 
 # 
-#   $Id: make.defaults,v 1.44.4.8 2008-09-02 13:22:20 paulbeach Exp $
+#   $Id: make.defaults,v 1.44.4.9 2008-09-04 11:50:16 paulbeach Exp $
 # 
 
 
@@ -97,6 +97,7 @@ else
 endif
 
 SFIO_EXAMPLES=@SFIO_EXAMPLES@
+
 # link with readline libraries - set by configure
 EDITLINE_FLG=@EDITLINE_FLG@
 
