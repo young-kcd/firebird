@@ -1,3 +1,80 @@
+2008-09-05 16:19  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.92):
+
+	Restored correct behavior - avoid duplication of error message
+
+2008-09-05 15:15  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.66):
+
+	Refactored code saving strings in remote.cpp
+
+2008-09-05 14:35  alexpeshkoff
+
+	* firebird2/src/jrd/par.cpp (1.215):
+
+	asserts
+
+2008-09-05 13:46  alexpeshkoff
+
+	* firebird2/src/: dsql/errd.cpp (1.51), jrd/err.cpp (1.84):
+
+	Some asserts
+
+2008-09-05 13:40  alexpeshkoff
+
+	* firebird2/src/: alice/alice.h (1.61), alice/exe.cpp (1.54),
+	burp/burp.cpp (1.148), burp/burp.h (1.93), common/UtilSvc.cpp
+	(1.7), common/UtilSvc.h (1.8), jrd/svc.cpp (1.233), jrd/svc.h
+	(1.62), utilities/gsec/gsec.cpp (1.91):
+
+	Fixed broken by me this week use of status vector in services -
+	thanks to D.Kovalenko
+
+2008-09-05 13:33  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp (1.42),
+	include/fb_exception.h (1.31):
+
+	Do not reallocate string into circular buffer if it is already in
+	it
+
+2008-09-05 12:59  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.17):
+
+	Fix CORE-2065 Add (ln -s) libfbclient.dylib to the default dynamic
+	loader search path /usr/local/lib for Classic
+
+2008-09-05 12:26  robocop
+
+	* firebird2/src/qli/: dtr.cpp (1.54), dtr.h (1.30), err.cpp (1.24),
+	exe.cpp (1.57):
+
+	Get rid of longjmp and setjmp in qli. Due to uninitialized vars, I
+	doubt they were working as expected, anyway.
+
+2008-09-05 11:31  dimitr
+
+	* firebird2/src/: msgs/facilities2.sql (1.46), msgs/messages2.sql
+	(1.57), jrd/drq.h (1.25), jrd/dyn.epp (1.133), jrd/dyn.h (1.38),
+	jrd/dyn_def.epp (1.170), jrd/dyn_mod.epp (1.108),
+	jrd/dyn_ut_proto.h (1.16), jrd/dyn_util.epp (1.53):
+
+	Fixed CORE-1544: RDB$procedures generator overflow.  The fix also
+	solves the same issue with exceptions and generators.
+
+2008-09-05 10:47  robocop
+
+	* firebird2/: builds/win32/msvc9/btyacc.vcproj (1.2),
+	extern/btyacc/main.c (1.5), extern/btyacc/mstring.c (1.3),
+	extern/btyacc/readskel.c (1.3):
+
+	I became tired of the many warnings in btyacc (really ugly code)
+	and decided to solve or hide most of them.
+
 2008-09-04 18:04  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.308):
