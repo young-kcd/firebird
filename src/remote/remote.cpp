@@ -35,6 +35,7 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
+#include "../common/classes/init.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter = 0;
@@ -47,8 +48,8 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
 const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
 
-static TEXT* attach_failures = NULL;
-static TEXT* attach_failures_ptr;
+static Firebird::StringsBuffer* attachFailures = NULL;
+static Firebird::GlobalPtr<Firebird::Mutex> attachFailuresMutex;
 
 static void cleanup_memory(void*);
 
@@ -567,69 +568,19 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
  *	strings to a special buffer.
  *
  **************************************/
-	if (!attach_failures)
+	Firebird::MutexLockGuard guard(attachFailuresMutex);
+
+	if (!attachFailures)
 	{
-		attach_failures =
-			(TEXT*) gds__alloc((SLONG) ATTACH_FAILURE_SPACE);
+		attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
 		/* FREE: freed by exit handler cleanup_memory() */
-		if (!attach_failures)	/* NOMEM: don't bother trying to copy */
+		if (!attachFailures)	/* NOMEM: don't bother trying to copy */
 			return;
-#ifdef DEBUG_GDS_ALLOC
-		/* This buffer is freed by the exit handler - but some of the
-		 * reporting mechanisms will report it anyway, so flag it as
-		 * "known unfreed" to get the reports quiet.
-		 */
-		gds_alloc_flag_unfreed((void*) attach_failures);
-#endif	/* DEBUG_GDS_ALLOC */
-		attach_failures_ptr = attach_failures;
+
 		gds__register_cleanup(cleanup_memory, 0);
 	}
 
-	TEXT* p;
-	USHORT l = 0; // silence non initialized warning
-	while (*vector)
-	{
-		const ISC_STATUS status = *vector++;
-		switch (status)
-		{
-		case isc_arg_cstring:
-			l = (USHORT) *vector++;
-
-		case isc_arg_interpreted:
-		case isc_arg_string:
-		case isc_arg_sql_state:
-			p = (TEXT*) *vector;
-			if (status != isc_arg_cstring)
-				l = strlen(p) + 1;
-
-			// if string too long, truncate it
-			if (l > ATTACH_FAILURE_SPACE / 4)
-				l = ATTACH_FAILURE_SPACE / 4;
-
-			/* If there isn't any more room in the buffer,
-			   start at the beginning again */
-
-			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
-				attach_failures_ptr = attach_failures;
-
-			// copy data
-			memcpy(attach_failures_ptr, p, l);
-
-			// ensure string is correctly terminated
-			if (status != isc_arg_cstring)
-				attach_failures_ptr[l - 1] = 0;
-			else
-				vector[-1] = l;
-
-			*vector++ = (ISC_STATUS) attach_failures_ptr;
-			attach_failures_ptr += l;
-			break;
-
-		default:
-			++vector;
-			break;
-		}
-	}
+	attachFailures->makePermanentVector(vector, vector);
 }
 
 
@@ -646,11 +597,10 @@ static void cleanup_memory( void *block)
  *
  **************************************/
 
-	if (attach_failures)
-		gds__free(attach_failures);
+	delete attachFailures;
+	attachFailures = NULL;
 
 	gds__unregister_cleanup(cleanup_memory, 0);
-	attach_failures = NULL;
 }
 
 
