@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: install-script,v 1.1.2.15 2008-09-03 09:43:38 paulbeach Exp $
+# $Id: install-script,v 1.1.2.16 2008-09-05 10:59:08 paulbeach Exp $
 #
 # Script args:
 # $0: full path to script
@@ -257,6 +257,13 @@ return=`basename $new`
 cp $file "$FB_RES/English.lproj/var/UDF/$return"
 rm $file
 done
+
+#If classic add libfbclient to dynamic loader search path
+echo "Add libfbclient to dynamic loader search path"
+if [ ! -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+ln -s "$FB_FW/Libraries/libfbclient.dylib" /usr/local/lib/libfbclient.dylib
+fi
+
 # Tell inetd/xinetd to reload their configuration files.
 echo "Tell inetd/xinetd to reload configuration files"
 if [ "$HUPNEEDED" = 'y' ]
