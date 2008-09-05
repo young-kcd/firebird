@@ -380,6 +380,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	
 	if (exit_code != FINI_OK)
     {
+		memset(uSvc->getStatus(), 0, sizeof (ISC_STATUS_ARRAY));
         uSvc->stuffStatus(tdsec->tsec_status);
 	}
 
