@@ -770,6 +770,8 @@ static void error(CompilerScratch* csb, const Arg::StatusVector& v)
  *	We've got a blr error other than a syntax error.  Handle it.
  *
  **************************************/
+	fb_assert(v.value()[0] == isc_arg_gds);
+
 /* Don't bother to pass tdbb for error handling */
 	thread_db* tdbb = JRD_get_thread_data();
 
@@ -3445,6 +3447,8 @@ static void warning(CompilerScratch* csb, const Arg::StatusVector& v)
  *	the message.
  *
  **************************************/
+	fb_assert(v.value()[0] == isc_arg_warning);
+
 	thread_db* tdbb = JRD_get_thread_data();
 
 /* Make sure that the [1] position is 0
