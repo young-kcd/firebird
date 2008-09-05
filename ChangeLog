@@ -1,3 +1,11 @@
+2008-09-05 12:59  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/install-script
+	(1.1.2.16):
+
+	Fix CORE-2065 Add (ln -s) libfbclient.dylib to the default dynamic
+	loader search path /usr/local/lib for Classic
+
 2008-09-04 13:47  paulbeach
 
 	* firebird2/builds/posix/make.defaults (1.44.4.9):
