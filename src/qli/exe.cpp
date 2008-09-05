@@ -500,9 +500,6 @@ static DSC *assignment(	qli_nod*		from_node,
  *	goes wrong and there was a prompt, try again.
  *
  **************************************/
-	jmp_buf old_env;
-
-	memcpy(old_env, QLI_env, sizeof(QLI_env));
 	QLI_reprompt = FALSE;
 	QLI_prompt_count = 0;
 
@@ -517,7 +514,6 @@ static DSC *assignment(	qli_nod*		from_node,
 
 	try {
 
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		dsc* from_desc = EVAL_value(from_node);
 
 		if (from_desc->dsc_missing & DSC_initial) {
@@ -540,14 +536,11 @@ static DSC *assignment(	qli_nod*		from_node,
 		}
 
 		QLI_reprompt = FALSE;
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
-
 		return from_desc;
 
 	}
 	catch (const Firebird::Exception&) {
 		if (QLI_abort || !QLI_prompt_count) {
-			memcpy(QLI_env, old_env, sizeof(QLI_env));
 			throw;
 		}
 
@@ -949,17 +942,11 @@ static void execute_output( qli_nod* node)
 
 	// Set up error handling
 
-	jmp_buf old_env;
-	jmp_buf env;
-	memcpy(old_env, QLI_env, sizeof(QLI_env));
-	memcpy(QLI_env, env, sizeof(QLI_env));
-
 	try {
 
 		// Finally, execute the query
 
 		EXEC_execute(node->nod_arg[e_out_statement]);
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		fclose(print->prt_file);
 
 	}
@@ -967,7 +954,6 @@ static void execute_output( qli_nod* node)
 		if (print->prt_file) {
 			fclose(print->prt_file);
 		}
-		memcpy(QLI_env, old_env, sizeof(QLI_env));
 		throw;
 	}
 }

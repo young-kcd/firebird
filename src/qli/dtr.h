@@ -503,9 +503,7 @@ EXTERN bool		QLI_hex_output;
 EXTERN bool		QLI_trusted;
 #endif
 
-EXTERN jmp_buf QLI_env;					// Error return environment 
-
-EXTERN TEXT *QLI_error;
+EXTERN const char* QLI_error;
 EXTERN bool sw_verify;
 EXTERN bool sw_trace;
 EXTERN USHORT sw_buffers;

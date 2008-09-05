@@ -95,7 +95,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  *	Top level routine.  
  *
  **************************************/
-	jmp_buf env;
 
 // Look at options, if any 
 
@@ -243,7 +242,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	{
 		got_started = true;
 		try {
-			memcpy(QLI_env, env, sizeof(QLI_env));
 			PAR_token();
 		}
 		catch (const Firebird::Exception&) {
@@ -252,7 +250,6 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			ERRQ_pending();
 		}
 	}
-	memset(QLI_env, 0, sizeof(QLI_env));
 	QLI_error = NULL;
 
 // Loop until end of file or forced exit 
@@ -319,7 +316,6 @@ static bool process_statement(bool flush_flag)
  *
  **************************************/
 	DBB dbb;
-	jmp_buf env;
 
 // Clear database active flags in preparation for a new statement 
 
@@ -345,8 +341,6 @@ static bool process_statement(bool flush_flag)
 
 	try {
 	
-	memcpy(QLI_env, env, sizeof(QLI_env));
-
 /* Set up the appropriate prompt and get the first significant token.  If
    we don't get one, we're at end of file */
 
