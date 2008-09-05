@@ -146,6 +146,8 @@ void ERRD_error(const char* text)
  **/
 bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 {
+    fb_assert(v.value()[0] == isc_arg_warning);
+
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 	int indx = 0;
 
@@ -193,9 +195,11 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
     @param 
 
  **/
-void ERRD_post(const Firebird::Arg::StatusVector& statusVector)
+void ERRD_post(const Firebird::Arg::StatusVector& v)
 {
-	internal_post(statusVector.value());
+    fb_assert(v.value()[0] == isc_arg_gds);
+
+	internal_post(v.value());
 }
 
 

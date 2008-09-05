@@ -272,6 +272,8 @@ bool ERR_post_warning(const Arg::StatusVector& v)
  *	Post a warning to the current status vector.
  *
  **************************************/
+	fb_assert(v.value()[0] == isc_arg_warning);
+
 	int indx = 0, warning_indx = 0;
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
@@ -316,6 +318,7 @@ void ERR_post_nothrow(const Arg::StatusVector& v)
  *
  **************************************/
 {
+    fb_assert(v.value()[0] == isc_arg_gds);
 	ISC_STATUS_ARRAY vector;
 	v.copyTo(vector);
 	ERR_make_permanent(vector);
