@@ -42,7 +42,7 @@ class MemoryPool;
 class StringsBuffer 
 {
 public:
-	virtual char* alloc(const char* string, size_t& length) = 0;
+	virtual const char* alloc(const char* string, size_t& length) = 0;
 	virtual ~StringsBuffer() {}
 
 	void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* temp);
@@ -56,8 +56,13 @@ public:
 	CircularStringsBuffer() throw() { init(); }
 	explicit CircularStringsBuffer(MemoryPool&) throw() { init(); }
 
-	virtual char* alloc(const char* string, size_t& length)
+	virtual const char* alloc(const char* string, size_t& length)
 	{
+		// if string is already in our buffer - return it
+		// it was already saved in our buffer once
+		if (string >= buffer && string < &buffer[BUFFER_SIZE])
+			return string;
+
 		// if string too long, truncate it
 		if (length > BUFFER_SIZE / 4)
 			length = BUFFER_SIZE / 4;	

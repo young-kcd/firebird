@@ -22,7 +22,7 @@ class InterlockedStringsBuffer : public CircularBuffer
 public:
 	explicit InterlockedStringsBuffer(Firebird::MemoryPool&)
 		: CircularBuffer() { }
-	virtual char* alloc(const char* string, size_t& length) 
+	virtual const char* alloc(const char* string, size_t& length) 
 	{
 		Firebird::MutexLockGuard guard(buffer_lock);
 		return CircularBuffer::alloc(string, length);
