@@ -255,6 +255,13 @@ return=`basename $new`
 cp $file "$FB_RES/English.lproj/var/UDF/$return"
 rm $file
 done
+
+#If classic add libfbclient to dynamic loader search path
+echo "Add libfbclient to dynamic loader search path"
+if [ ! -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
+ln -s "$FB_FW/Libraries/libfbclient.dylib" /usr/local/lib/libfbclient.dylib
+fi
+
 # Tell inetd/xinetd to reload their configuration files.
 echo "Tell inetd/xinetd to reload configuration files"
 if [ "$HUPNEEDED" = 'y' ]
