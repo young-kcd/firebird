@@ -209,7 +209,12 @@ const int drq_m_map			= 158;  // modify os=>db names mapping
 const int drq_l_idx_name	= 159;	// lookup index name
 const int drq_l_collation	= 160;	// lookup character set
 const int drq_m_charset		= 161;	// modify character set
-const int drq_MAX			= 162;
+const int drq_g_nxt_gen_id	= 162;	// generate next generator id
+const int drq_g_nxt_prc_id	= 163;	// generate next procedure id
+const int drq_g_nxt_xcp_id	= 164;	// generate next exception id
+const int drq_l_xcp_name	= 165;	// lookup exception name
+const int drq_l_gen_name	= 166;	// lookup generator name
+const int drq_MAX			= 167;
 
 #endif /* JRD_DRQ_H */
 

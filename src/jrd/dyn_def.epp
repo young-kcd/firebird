@@ -917,46 +917,89 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 		// msg 212: "Zero length identifiers not allowed"
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
-
 	bool b_ending_store = false;
 
 	try {
 
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$EXCEPTIONS
-			strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			X.RDB$MESSAGE.NULL = TRUE;
+	check_unique_name(tdbb, gbl, exception_name, obj_exception);
 
-			UCHAR verb;
-			while ((verb = *(*ptr)++) != isc_dyn_end)
-			{
-				switch (verb)
-				{
-				case isc_dyn_xcp_msg:
-					GET_BYTES(ptr, X.RDB$MESSAGE);
-					X.RDB$MESSAGE.NULL = FALSE;
-					break;
+	jrd_req* request = CMP_find_request(tdbb, drq_s_xcp, DYN_REQUESTS);
 
-				default:
-					DYN_unsupported_verb();
-				}
-			}
+	const UCHAR* message_ptr = NULL;
 
-			b_ending_store = true;
+	UCHAR verb;
+	while ((verb = *(*ptr)++) != isc_dyn_end)
+	{
+		switch (verb)
+		{
+		case isc_dyn_xcp_msg:
+			message_ptr = *ptr;
+			DYN_skip_attribute(ptr);
+			break;
 
-		END_STORE;
-
-		if (!DYN_REQUEST(drq_s_xcp)) {
-			DYN_REQUEST(drq_s_xcp) = request;
+		default:
+			DYN_unsupported_verb();
 		}
+	}
+
+	int faults = 0;
+	const UCHAR* temp_ptr;
+
+	while (true)
+	{
+		try
+		{
+			SINT64 xcp_id =
+				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_xcp_id, "RDB$EXCEPTIONS");
+
+			xcp_id %= (MAX_SSHORT + 1);
+
+			if (!xcp_id)
+				continue;
+
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				X IN RDB$EXCEPTIONS
+
+				X.RDB$EXCEPTION_NUMBER = xcp_id;
+				strcpy(X.RDB$EXCEPTION_NAME, exception_name.c_str());
+
+				X.RDB$SYSTEM_FLAG = 0;
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+				X.RDB$MESSAGE.NULL = TRUE;
+
+				if (message_ptr) {
+					X.RDB$MESSAGE.NULL = FALSE;
+					temp_ptr = message_ptr;
+					GET_BYTES(&temp_ptr, X.RDB$MESSAGE);
+				}
+
+				b_ending_store = true;
+
+			END_STORE;
+
+			break;
+		}
+		catch (const Firebird::status_exception&)
+		{
+			if (b_ending_store)
+				DYN_rundown_request(request, drq_s_xcp);
+
+			if (++faults > MAX_SSHORT)
+				throw;
+
+			b_ending_store = false;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+		}
+	}
+
+	if (!DYN_REQUEST(drq_s_xcp)) {
+		DYN_REQUEST(drq_s_xcp) = request;
+	}
+
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
-			DYN_rundown_request(request, drq_s_trg_msgs);
 			DYN_error_punt(true, 142);
 			// msg 142: "DEFINE EXCEPTION failed"
 		}
@@ -1531,29 +1574,64 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 		/* msg 212: "Zero length identifiers not allowed" */
 	}
 
-	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
-
 	bool b_ending_store = false;
 
 	try {
-		STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-			X IN RDB$GENERATORS
-			X.RDB$SYSTEM_FLAG = 0;
-			X.RDB$SYSTEM_FLAG.NULL = FALSE;
-			strcpy(X.RDB$GENERATOR_NAME, generator_name.c_str());
 
-			b_ending_store = true;
+	check_unique_name(tdbb, gbl, generator_name, obj_generator);
 
-		END_STORE;
+	jrd_req* request = CMP_find_request(tdbb, drq_s_gens, DYN_REQUESTS);
 
-		if (!DYN_REQUEST(drq_s_gens)) {
-			DYN_REQUEST(drq_s_gens) = request;
+	int faults = 0;
+
+	while (true)
+	{
+		try
+		{
+			SINT64 gen_id =
+				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_gen_id, "RDB$GENERATORS");
+
+			gen_id %= (MAX_SSHORT + 1);
+
+			if (!gen_id)
+				continue;
+
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				X IN RDB$GENERATORS
+
+				X.RDB$GENERATOR_ID = gen_id;
+				strcpy(X.RDB$GENERATOR_NAME, generator_name.c_str());
+
+				X.RDB$SYSTEM_FLAG = 0;
+				X.RDB$SYSTEM_FLAG.NULL = FALSE;
+
+				b_ending_store = true;
+
+			END_STORE;
+
+			break;
 		}
+		catch (const Firebird::status_exception&)
+		{
+			if (b_ending_store)
+				DYN_rundown_request(request, drq_s_gens);
+
+			if (++faults > MAX_SSHORT)
+				throw;
+
+			b_ending_store = false;
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+		}
+	}
+
+	if (!DYN_REQUEST(drq_s_gens)) {
+		DYN_REQUEST(drq_s_gens) = request;
+	}
+
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (b_ending_store) {
-			DYN_rundown_request(request, drq_s_gens);
 			DYN_error_punt(true, 8);
 			/* msg 8: "DEFINE GENERATOR failed" */
 		}
@@ -2968,12 +3046,12 @@ void DYN_define_parameter( Global* gbl, const UCHAR** ptr, Firebird::MetaName* p
 
 			case isc_dyn_fld_default_value:
 				default_value_ptr = *ptr;
-				DYN_skip_blr_blob(ptr);
+				DYN_skip_attribute(ptr);
 				break;
 
 			case isc_dyn_fld_default_source:
 				default_source_ptr = *ptr;
-				DYN_skip_blr_blob(ptr);
+				DYN_skip_attribute(ptr);
 				break;
 
 			case isc_dyn_prm_mechanism:
@@ -3191,83 +3269,155 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 	id = drq_l_prc_name;
 	check_unique_name(tdbb, gbl, procedure_name, obj_procedure);
+
 	bool sql_prot = false;
 	prc_t prc_type = prc_legacy;
+	SSHORT sys_flag = 0, inputs = -1, outputs = -1;
+	const UCHAR* blr_ptr = NULL;
+	const UCHAR* description_ptr = NULL;
+	const UCHAR* source_ptr = NULL;
 	const UCHAR* debug_info_ptr = NULL;
+	Firebird::MetaName security_class;
+
+	UCHAR verb;
+	while ((verb = *(*ptr)++) != isc_dyn_end)
+	{
+		switch (verb)
+		{
+		case isc_dyn_system_flag:
+			sys_flag = (SSHORT) DYN_get_number(ptr);
+			break;
+
+		case isc_dyn_prc_blr:
+			blr_ptr = *ptr;
+			DYN_skip_attribute(ptr);
+			break;
+
+		case isc_dyn_description:
+			description_ptr = *ptr;
+			DYN_skip_attribute(ptr);
+			break;
+
+		case isc_dyn_prc_source:
+			source_ptr = *ptr;
+			DYN_skip_attribute(ptr);
+			break;
+
+		case isc_dyn_prc_inputs:
+			inputs = (SSHORT) DYN_get_number(ptr);
+			break;
+
+		case isc_dyn_prc_outputs:
+			outputs = (SSHORT) DYN_get_number(ptr);
+			break;
+
+		case isc_dyn_prc_type:
+			prc_type = (prc_t) DYN_get_number(ptr);
+			break;
+
+		case isc_dyn_security_class:
+			GET_STRING(ptr, security_class);
+			break;
+
+		case isc_dyn_rel_sql_protection:
+			sql_prot = (bool) DYN_get_number(ptr);
+			break;
+
+		case isc_dyn_debug_info:
+			debug_info_ptr = *ptr;
+			DYN_skip_attribute(ptr);
+			break;
+
+		default:
+			--(*ptr);
+			DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
+		}
+	}
 
 	request = CMP_find_request(tdbb, drq_s_prcs, DYN_REQUESTS);
 	id = drq_s_prcs;
 
-	STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		P IN RDB$PROCEDURES
-		strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
-		P.RDB$SYSTEM_FLAG = 0;
-		P.RDB$SYSTEM_FLAG.NULL = FALSE;
-		P.RDB$PROCEDURE_BLR.NULL = TRUE;
-		P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
-		P.RDB$SECURITY_CLASS.NULL = TRUE;
-		P.RDB$DESCRIPTION.NULL = TRUE;
-		P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
-		P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
+	int faults = 0;
+	const UCHAR* temp_ptr;
 
-		UCHAR verb;
-		while ((verb = *(*ptr)++) != isc_dyn_end)
-			switch (verb)
-			{
-			case isc_dyn_system_flag:
-				P.RDB$SYSTEM_FLAG = (SSHORT)DYN_get_number(ptr);
-				P.RDB$SYSTEM_FLAG.NULL = FALSE;
-				break;
+	while (true)
+	{
+		try
+		{
+			SINT64 prc_id =
+				DYN_UTIL_gen_unique_id(tdbb, gbl, drq_g_nxt_prc_id, "RDB$PROCEDURES");
 
-			case isc_dyn_prc_blr:
-				P.RDB$PROCEDURE_BLR.NULL = FALSE;
-				DYN_put_blr_blob(gbl, ptr, &P.RDB$PROCEDURE_BLR);
-				break;
+			prc_id %= (MAX_SSHORT + 1);
 
-			case isc_dyn_description:
-				DYN_put_text_blob(gbl, ptr, &P.RDB$DESCRIPTION);
-				P.RDB$DESCRIPTION.NULL = FALSE;
-				break;
+			if (!prc_id)
+				continue;
 
-			case isc_dyn_prc_source:
-				DYN_put_text_blob(gbl, ptr, &P.RDB$PROCEDURE_SOURCE);
-				P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
-				break;
+			STORE(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				P IN RDB$PROCEDURES
 
-			case isc_dyn_prc_inputs:
-				P.RDB$PROCEDURE_INPUTS = (SSHORT)DYN_get_number(ptr);
-				P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
-				break;
+				P.RDB$PROCEDURE_ID = prc_id;
+				strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
 
-			case isc_dyn_prc_outputs:
-				P.RDB$PROCEDURE_OUTPUTS = (SSHORT)DYN_get_number(ptr);
-				P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
-				break;
+				P.RDB$SYSTEM_FLAG.NULL = TRUE;
+				P.RDB$PROCEDURE_BLR.NULL = TRUE;
+				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
+				P.RDB$SECURITY_CLASS.NULL = TRUE;
+				P.RDB$DESCRIPTION.NULL = TRUE;
+				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
+				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
-			case isc_dyn_prc_type:
-				prc_type = (prc_t) DYN_get_number(ptr);
-				break;
+				if (sys_flag) {
+					P.RDB$SYSTEM_FLAG.NULL = FALSE;
+					P.RDB$SYSTEM_FLAG = sys_flag;
+				}
+		
+				if (blr_ptr) {
+					P.RDB$PROCEDURE_BLR.NULL = FALSE;
+					temp_ptr = blr_ptr;
+					DYN_put_blr_blob(gbl, &temp_ptr, &P.RDB$PROCEDURE_BLR);
+				}
 
-			case isc_dyn_security_class:
-				GET_STRING(ptr, P.RDB$SECURITY_CLASS);
-				P.RDB$SECURITY_CLASS.NULL = FALSE;
-				break;
+				if (source_ptr) {
+					P.RDB$PROCEDURE_SOURCE.NULL = FALSE;
+					temp_ptr = source_ptr;
+					DYN_put_text_blob(gbl, &temp_ptr, &P.RDB$PROCEDURE_SOURCE);
+				}
 
-			case isc_dyn_rel_sql_protection:
-				sql_prot = (bool) DYN_get_number(ptr);
-				break;
+				if (description_ptr) {
+					P.RDB$DESCRIPTION.NULL = FALSE;
+					temp_ptr = description_ptr;
+					DYN_put_text_blob(gbl, &temp_ptr, &P.RDB$DESCRIPTION);
+				}
 
-			case isc_dyn_debug_info:
-				debug_info_ptr = *ptr;
-				DYN_skip_blr_blob(ptr);
-				break;
+				if (inputs >= 0) {
+					P.RDB$PROCEDURE_INPUTS.NULL = FALSE;
+					P.RDB$PROCEDURE_INPUTS = inputs;
+				}
 
-			default:
-				--(*ptr);
-				DYN_execute(gbl, ptr, NULL, NULL, NULL, NULL, &procedure_name);
-			}
+				if (outputs >= 0) {
+					P.RDB$PROCEDURE_OUTPUTS.NULL = FALSE;
+					P.RDB$PROCEDURE_OUTPUTS = outputs;
+				}
 
-	END_STORE;
+				if (security_class.length()) {
+					P.RDB$SECURITY_CLASS.NULL = FALSE;
+					GET_STRING(security_class.c_str(), P.RDB$SECURITY_CLASS);
+				}
+
+			END_STORE;
+
+			break;
+		}
+		catch (const Firebird::status_exception&)
+		{
+			DYN_rundown_request(request, id);
+
+			if (++faults > MAX_SSHORT)
+				throw;
+
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+		}
+	}
 
 	if (!DYN_REQUEST(drq_s_prcs))
 		DYN_REQUEST(drq_s_prcs) = request;
@@ -4334,7 +4484,7 @@ void DYN_define_trigger(Global*						gbl,
 
 			case isc_dyn_debug_info:
 				debug_info_ptr = *ptr;
-				DYN_skip_blr_blob(ptr);
+				DYN_skip_attribute(ptr);
 				break;
 
 			default:
@@ -4659,6 +4809,38 @@ static void check_unique_name(thread_db* tdbb,
 
 			if (!DYN_REQUEST(drq_l_idx_name))
 				DYN_REQUEST(drq_l_idx_name) = request;
+		}
+		else if (object_type == obj_exception)
+		{
+			request = CMP_find_request(tdbb, drq_l_xcp_name, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				EXCP IN RDB$EXCEPTIONS WITH EXCP.RDB$EXCEPTION_NAME EQ object_name.c_str()
+
+				if (!DYN_REQUEST(drq_l_xcp_name))
+					DYN_REQUEST(drq_l_xcp_name) = request;
+
+				error_code = 253;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_xcp_name))
+				DYN_REQUEST(drq_l_xcp_name) = request;
+		}
+		else if (object_type == obj_generator)
+		{
+			request = CMP_find_request(tdbb, drq_l_gen_name, DYN_REQUESTS);
+
+			FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+				EGEN IN RDB$GENERATORS WITH EGEN.RDB$GENERATOR_NAME EQ object_name.c_str()
+
+				if (!DYN_REQUEST(drq_l_gen_name))
+					DYN_REQUEST(drq_l_gen_name) = request;
+
+				error_code = 254;
+			END_FOR;
+
+			if (!DYN_REQUEST(drq_l_gen_name))
+				DYN_REQUEST(drq_l_gen_name) = request;
 		}
 		else
 		{

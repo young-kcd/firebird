@@ -1973,7 +1973,7 @@ void DYN_modify_trigger( Global* gbl, const UCHAR** ptr)
 
 				case isc_dyn_debug_info:
 					debug_info_ptr = *ptr;
-					DYN_skip_blr_blob(ptr);
+					DYN_skip_attribute(ptr);
 					break;
 
 				default:

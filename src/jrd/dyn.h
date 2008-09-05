@@ -104,10 +104,6 @@ USHORT	DYN_put_text_blob(Jrd::Global*, const UCHAR**, Jrd::bid*);
 
 void	DYN_rundown_request(Jrd::jrd_req*, SSHORT);
 USHORT	DYN_skip_attribute(const UCHAR**);
-USHORT	DYN_skip_blr_blob(const UCHAR**);
-
-// This function is not defined anywhere.
-//USHORT	DYN_skip_attribute2(const UCHAR**);
 
 void	DYN_unsupported_verb(void);
 

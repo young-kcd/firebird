@@ -103,11 +103,10 @@ static const UCHAR prot_blr[] = {
 
 
 
-SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
-							  Global*		gbl,
-							  SSHORT	id,
-							  const SCHAR*	generator_name,
-							  jrd_req**		request)
+SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
+							  Global* gbl,
+							  SSHORT id,
+							  const char* generator_name)
 {
 /**************************************
  *
@@ -122,35 +121,43 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	jrd_req* req_handle = CMP_find_request(tdbb, id, DYN_REQUESTS);
+	jrd_req* request = CMP_find_request(tdbb, id, DYN_REQUESTS);
 
-	if (!req_handle)
+	SINT64 value = 0;
+
+	try
 	{
-		/* 32 bytes allocated for size of of a metadata name */
-		const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1
-			+ MAX_SQL_IDENTIFIER_SIZE;
-		UCHAR blr[blr_size];
-		fb_assert(strlen(generator_name) < MAX_SQL_IDENTIFIER_SIZE);
+		if (!request)
+		{
+			const size_t name_length = strlen(generator_name);
+			const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + name_length;
 
-		UCHAR* p = blr;
-		memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
-		p += sizeof(gen_id_blr1);
-		*p++ = strlen(generator_name);
-		memcpy(p, generator_name, p[-1]);
-		p += p[-1];
-		memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
-		p += sizeof(gen_id_blr2);
-		req_handle = CMP_compile2(tdbb, blr, TRUE);
+			Firebird::UCharBuffer blr;
+			UCHAR* p = blr.getBuffer(blr_size);
+
+			memcpy(p, gen_id_blr1, sizeof(gen_id_blr1));
+			p += sizeof(gen_id_blr1);
+			*p++ = name_length;
+			memcpy(p, generator_name, name_length);
+			p += name_length;
+			memcpy(p, gen_id_blr2, sizeof(gen_id_blr2));
+			p += sizeof(gen_id_blr2);
+
+			request = CMP_compile2(tdbb, blr.begin(), TRUE);
+		}
+
+		EXE_start(tdbb, request, dbb->dbb_sys_trans);
+		EXE_receive(tdbb, request, 0, sizeof(value), (UCHAR*) &value);
+		EXE_unwind(tdbb, request);
 	}
-	*request = req_handle;
-	SINT64 value;
-	EXE_start(tdbb, req_handle, dbb->dbb_sys_trans);
-	EXE_receive(tdbb, req_handle, 0, sizeof(value), (UCHAR*)&value);
-	EXE_unwind(tdbb, req_handle);
-	*request = NULL;
+	catch (const Firebird::Exception&)
+	{
+		DYN_rundown_request(request, id);
+		throw;
+	}
 
 	if (!DYN_REQUEST(id)) {
-		DYN_REQUEST(id) = req_handle;
+		DYN_REQUEST(id) = request;
 	}
 
 	return value;
@@ -180,13 +187,11 @@ void DYN_UTIL_generate_constraint_name( thread_db* tdbb, Global* gbl, Firebird::
 	bool found = false;
 	
 	do {
-		id = drq_g_nxt_con;
 		buffer.printf("INTEG_%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_con,
-												"RDB$CONSTRAINT_NAME",
-												&request));
+												"RDB$CONSTRAINT_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_con, DYN_REQUESTS);
 		id = drq_f_nxt_con;
@@ -257,13 +262,11 @@ void DYN_UTIL_generate_field_name( thread_db* tdbb, Global* gbl, Firebird::MetaN
 	bool found = false;
 
 	do {
-		id = drq_g_nxt_fld;
 		buffer.printf("RDB$%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_fld,
-												"RDB$FIELD_NAME",
-												&request));
+												"RDB$FIELD_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_fld, DYN_REQUESTS);
 		id = drq_f_nxt_fld;
@@ -375,13 +378,12 @@ void DYN_UTIL_generate_index_name(thread_db* tdbb, Global* gbl,
 			format = "RDB$FOREIGN%" SQUADFORMAT;
 		else
 			format = "RDB$%" SQUADFORMAT;
-		id = drq_g_nxt_idx;
+
 		buffer.printf(format,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_idx,
-												"RDB$INDEX_NAME",
-												&request));
+												"RDB$INDEX_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_idx, DYN_REQUESTS);
 		id = drq_f_nxt_idx;
@@ -432,13 +434,11 @@ void DYN_UTIL_generate_trigger_name( thread_db* tdbb, Global* gbl, Firebird::Met
 	bool found = false;
 
 	do {
-		id = drq_g_nxt_trg;
 		buffer.printf("CHECK_%" SQUADFORMAT,
 				(SINT64) DYN_UTIL_gen_unique_id(tdbb,
 												gbl,
 												drq_g_nxt_trg,
-												"RDB$TRIGGER_NAME",
-												&request));
+												"RDB$TRIGGER_NAME"));
 
 		request = CMP_find_request(tdbb, drq_f_nxt_trg, DYN_REQUESTS);
 		id = drq_f_nxt_trg;

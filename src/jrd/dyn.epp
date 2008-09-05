@@ -1037,27 +1037,6 @@ USHORT DYN_skip_attribute(const UCHAR** ptr)
 }
 
 
-USHORT DYN_skip_blr_blob(const UCHAR** ptr)
-{
-/**************************************
- *
- *	D Y N _ s k i p _ b l r _ b l o b
- *
- **************************************
- *
- * Functional description
- *	Skip a blr blob.
- *
- **************************************/
-	const UCHAR* p = *ptr;
-	USHORT length = *p++;
-	length |= (*p++) << 8;
-	*ptr = p + length;
-
-	return length;
-}
-
-
 static void grant( Global* gbl, const UCHAR** ptr)
 {
 /**************************************
