@@ -42,6 +42,7 @@
 struct serv_entry; 
 namespace Firebird {
 	class ClumpletReader;
+	class StringsBuffer;
 	namespace Arg {
 		class StatusVector;
 	}
@@ -119,6 +120,8 @@ public:		// utilities interface with service
 	virtual void checkService();
 	// add address path (taken from spb) to dpb if present
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
+	// dup strings in service's circular buffer
+	virtual void makePermanentVector(ISC_STATUS *s);
 
 public:		// external interface with service
 	// Attach - service ctor
@@ -222,6 +225,7 @@ private:
 	Firebird::string	svc_switches;	// Full set of switches
 	Firebird::string	svc_perm_sw;	// Switches, taken from services table and/or passed using spb_command_line
 	Firebird::string	svc_address_path;
+	Firebird::StringsBuffer* svc_strings_buffer;
 };
 
 } //namespace Jrd

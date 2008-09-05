@@ -338,6 +338,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		}
 	}
 
+	uSvc->makePermanentVector(tdsec->tsec_status);
+
 	if (db_handle) {
 		ISC_STATUS_ARRAY loc_status;
 		if (isc_detach_database(loc_status, &db_handle)) {
@@ -375,9 +377,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 		exit_code = FINI_ERROR;
 	}
 
-	if ((exit_code != FINI_OK) && uSvc->isService())
+	
+	if (exit_code != FINI_OK)
     {
-        memcpy(uSvc->getStatus(), tdsec->tsec_status, sizeof (ISC_STATUS_ARRAY));
+        uSvc->stuffStatus(tdsec->tsec_status);
 	}
 
 	return exit_code;

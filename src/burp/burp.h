@@ -812,6 +812,7 @@ public:
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
+		memset(status_vector, 0, sizeof(status_vector));
 
 		// normal code follows
 		exit_code = FINI_ERROR;	// prevent FINI_OK in case of unknown error thrown

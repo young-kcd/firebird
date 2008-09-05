@@ -1901,6 +1901,7 @@ static gbak_action open_files(const TEXT* file1,
 		else {
 			isc_drop_database(status_vector, &tdgbl->db_handle);
 			if (tdgbl->db_handle) {
+				tdgbl->uSvc->makePermanentVector(status_vector);
 				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
 					BURP_print_status(status_vector2);

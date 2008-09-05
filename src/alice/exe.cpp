@@ -99,7 +99,12 @@ int EXE_action(const TEXT* database, const ULONG switches)
 		
 		if (tdgbl->status[2] == isc_arg_warning)
 		{
+			tdgbl->uSvc->makePermanentVector(tdgbl->status);
 			ALICE_print_status(tdgbl->status);
+		}
+		else if (error)
+		{
+			tdgbl->uSvc->makePermanentVector(tdgbl->status);
 		}
 
 		if (handle != 0) 
@@ -169,6 +174,11 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 			error = TDR_reconnect_multiple((handle),
 									   tdgbl->ALICE_data.ua_transaction, database,
 									   switches);
+		}
+
+		if (error)
+		{
+			tdgbl->uSvc->makePermanentVector(tdgbl->status);
 		}
 
 		if (handle)

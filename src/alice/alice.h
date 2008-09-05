@@ -161,6 +161,7 @@ public:
 		status(status_vector)
 	{
 		memset(&ALICE_data, 0, sizeof(user_action));
+		memset(status_vector, 0, sizeof(status_vector));
 	}
 
 	MemoryPool* getDefaultPool()

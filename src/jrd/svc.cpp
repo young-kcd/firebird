@@ -390,6 +390,8 @@ void Service::stuffStatus(const ISC_STATUS* status_vector)
 		}
 
 		svc_status[ISC_STATUS_LENGTH - 1] = 0; // May truncate one element, but it's worse to crash.
+
+		makePermanentVector(svc_status);
 	}
 }
 
@@ -401,6 +403,8 @@ void Service::stuffStatus(const USHORT facility, const USHORT errcode, const Msg
 	}
 
 	CMD_UTIL_put_svc_status(svc_status, facility, errcode, args);
+
+	makePermanentVector(svc_status);
 }
 
 void Service::hidePasswd(ArgvType&, int)
@@ -424,6 +428,17 @@ void Service::getAddressPath(ClumpletWriter& dpb)
 	{
 		dpb.insertString(isc_dpb_address_path, svc_address_path);
 	}
+}
+
+void Service::makePermanentVector(ISC_STATUS *s)
+{
+	MutexLockGuard guard(svc_mutex);
+
+	if (!svc_strings_buffer)
+	{
+		svc_strings_buffer = FB_NEW(*getDefaultMemoryPool()) CircularStringsBuffer<MAXPATHLEN * 4>;
+	}
+	svc_strings_buffer->makePermanentVector(s, s);
 }
 
 void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
@@ -553,7 +568,8 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()), 
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
-	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool())
+	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
+	svc_strings_buffer(0)
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
 
