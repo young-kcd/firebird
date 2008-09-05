@@ -8,6 +8,13 @@
 #include <unistd.h>
 #endif
 
+#if defined(_MSC_VER) && _MSC_VER >= 1500
+// ISO C++ conformant names
+#define unlink _unlink
+#define mktemp _mktemp
+#define strdup _strdup
+#endif
+
 char dflag;
 char lflag;
 char rflag;

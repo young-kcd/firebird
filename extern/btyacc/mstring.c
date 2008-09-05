@@ -2,9 +2,10 @@
 #include "mstring.h"
 #include <stdarg.h>
 
-/* parameters about string length.  START is the starting size and
-** START+TAIL should be a power of two */
-#define START	24
+/* parameters about string length.  START_STR is the starting size and
+** START_STR+TAIL should be a power of two
+Renamed to START_STR because START is defined in defs.h with another value */
+#define START_STR	24
 #define TAIL	8
 
 void msprintf(struct mstring *s, const char *fmt, ...)
@@ -51,8 +52,8 @@ int mputchar(struct mstring *s, int ch)
 struct mstring *msnew(void) {
     struct mstring *n = malloc(sizeof(struct mstring));
 
-    if (n && (n->base = n->ptr = malloc(START)))
-	n->end = n->base + START;
+    if (n && (n->base = n->ptr = malloc(START_STR)))
+	n->end = n->base + START_STR;
     else if (n) {
 	free(n);
 	n = 0; }
