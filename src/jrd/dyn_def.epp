@@ -3358,7 +3358,6 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 				P.RDB$PROCEDURE_ID = prc_id;
 				strcpy(P.RDB$PROCEDURE_NAME, procedure_name.c_str());
 
-				P.RDB$SYSTEM_FLAG.NULL = TRUE;
 				P.RDB$PROCEDURE_BLR.NULL = TRUE;
 				P.RDB$PROCEDURE_SOURCE.NULL = TRUE;
 				P.RDB$SECURITY_CLASS.NULL = TRUE;
@@ -3366,10 +3365,8 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 				P.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 				P.RDB$PROCEDURE_OUTPUTS.NULL = TRUE;
 
-				if (sys_flag) {
-					P.RDB$SYSTEM_FLAG.NULL = FALSE;
-					P.RDB$SYSTEM_FLAG = sys_flag;
-				}
+				P.RDB$SYSTEM_FLAG.NULL = FALSE;
+				P.RDB$SYSTEM_FLAG = sys_flag;
 		
 				if (blr_ptr) {
 					P.RDB$PROCEDURE_BLR.NULL = FALSE;
