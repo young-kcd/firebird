@@ -1,3 +1,39 @@
+2008-09-06 20:45  asfernandes
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.28):
+
+	Do not concatenate variable twice
+
+2008-09-06 20:42  asfernandes
+
+	* firebird2/: builds/install/arch-specific/darwin/install-script
+	(1.18), builds/install/arch-specific/hpux/classic/postInstall.sh.in
+	(1.5), src/common/UtilSvc.cpp (1.8), src/common/UtilSvc.h (1.9),
+	src/jrd/dyn_def.epp (1.172), src/jrd/isc.cpp (1.82),
+	src/jrd/par.cpp (1.216), src/jrd/pwd.cpp (1.74), src/jrd/svc.cpp
+	(1.234), src/jrd/svc.h (1.63), src/msgs/facilities2.sql (1.47),
+	src/remote/remote.cpp (1.67), src/utilities/gsec/gsec.cpp (1.93):
+
+	Misc
+
+2008-09-06 13:44  robocop
+
+	* firebird2/src/alice/exe.cpp (1.55):
+
+	Misc.
+
+2008-09-06 13:39  robocop
+
+	* firebird2/src/jrd/dyn_util.epp (1.54):
+
+	Misc.
+
+2008-09-06 13:38  robocop
+
+	* firebird2/src/jrd/dyn_def.epp (1.171):
+
+	Correction. We want to write rdb$system_flag always.
+
 2008-09-05 16:19  alexpeshkoff
 
 	* firebird2/src/utilities/gsec/gsec.cpp (1.92):
