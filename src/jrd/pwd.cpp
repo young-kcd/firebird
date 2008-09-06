@@ -458,7 +458,7 @@ void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
 	}
 
 	string message;
-	message.printf("Error in %s() APi call when working with security database", callName);
+	message.printf("Error in %s() API call when working with security database", callName);
 	iscLogStatus(message.c_str(), status);
 
 #ifdef DEV_BUILD

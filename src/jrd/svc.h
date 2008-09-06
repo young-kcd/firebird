@@ -121,7 +121,7 @@ public:		// utilities interface with service
 	// add address path (taken from spb) to dpb if present
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb);
 	// dup strings in service's circular buffer
-	virtual void makePermanentVector(ISC_STATUS *s);
+	virtual void makePermanentVector(ISC_STATUS* s);
 
 public:		// external interface with service
 	// Attach - service ctor

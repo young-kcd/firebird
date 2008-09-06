@@ -605,7 +605,7 @@ void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
 		TEXT temp[BUFFER_LARGE];
 		while (fb_interpret(temp, sizeof(temp), &status_vector))
 		{
-			if (!buffer.empty())
+			if (!buffer.isEmpty())
 			{
 				buffer += "\n\t";
 			}

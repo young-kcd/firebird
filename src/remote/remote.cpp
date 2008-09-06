@@ -584,7 +584,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 }
 
 
-static void cleanup_memory( void *block)
+static void cleanup_memory(void* block)
 {
 /**************************************
  *

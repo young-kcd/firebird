@@ -569,7 +569,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_username(getPool()), svc_enc_password(getPool()), 
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
-	svc_strings_buffer(0)
+	svc_strings_buffer(NULL)
 {
 	memset(svc_status_array, 0, sizeof svc_status_array);
 

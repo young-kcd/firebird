@@ -70,7 +70,7 @@ public:
 	virtual ISC_STATUS* getStatus() = 0;
 	virtual void checkService() = 0;
 	virtual void getAddressPath(Firebird::ClumpletWriter& dpb) = 0;
-	virtual void makePermanentVector(ISC_STATUS *s) = 0;
+	virtual void makePermanentVector(ISC_STATUS* s) = 0;
 
 	virtual ~UtilSvc() { }
 

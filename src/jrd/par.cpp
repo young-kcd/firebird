@@ -902,9 +902,6 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
  *	Parse an error conditions list.
  *
  **************************************/
-	jrd_nod* dep_node;
-	SLONG code_number;
-
 	SET_TDBB(tdbb);
 
 /* allocate a node to represent the conditions list */
@@ -934,7 +931,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 			item.xcp_type = xcp_gds_code;
 			par_name(csb, name);
 			name.lower();
-			code_number = PAR_symbol_to_gdscode(name);
+			SLONG code_number = PAR_symbol_to_gdscode(name);
 			if (code_number)
 				item.xcp_code = code_number;
 			else
@@ -950,7 +947,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 			par_name(csb, name);
 			if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 				error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-			dep_node = PAR_make_node(tdbb, e_dep_length);
+			jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
 			dep_node->nod_type = nod_dependency;
 			dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
 			dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;
@@ -959,7 +956,7 @@ static PsqlException* par_condition(thread_db* tdbb, CompilerScratch* csb)
 		break;
 
 	default:
-		fb_assert(FALSE);
+		fb_assert(false);
 		break;
 	}
 
@@ -979,17 +976,16 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
  *	Parse an error conditions list.
  *
  **************************************/
-	jrd_nod* dep_node;
-	SLONG code_number;
-
 	SET_TDBB(tdbb);
 
-/* allocate a node to represent the conditions list */
+	// allocate a node to represent the conditions list
 
 	const USHORT n = BLR_WORD;
 	PsqlException* exception_list = FB_NEW_RPT(*tdbb->getDefaultPool(), n) PsqlException();
 	exception_list->xcp_count = n;
-	for (int i = 0; i < n; i++) {
+
+	for (int i = 0; i < n; i++)
+	{
 		const USHORT code_type = BLR_BYTE;
 		xcp_repeat& item = exception_list->xcp_rpt[i];
 
@@ -1005,7 +1001,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				item.xcp_type = xcp_gds_code;
 				par_name(csb, name);
 				name.lower();
-				code_number = PAR_symbol_to_gdscode(name);
+				SLONG code_number = PAR_symbol_to_gdscode(name);
 				if (code_number)
 					item.xcp_code = code_number;
 				else
@@ -1020,7 +1016,7 @@ static PsqlException* par_conditions(thread_db* tdbb, CompilerScratch* csb)
 				par_name(csb, name);
 				if (!(item.xcp_code = MET_lookup_exception_number(tdbb, name)))
 					error(csb, Arg::Gds(isc_xcpnotdef) << Arg::Str(name));
-				dep_node = PAR_make_node(tdbb, e_dep_length);
+				jrd_nod* dep_node = PAR_make_node(tdbb, e_dep_length);
 				dep_node->nod_type = nod_dependency;
 				dep_node->nod_arg[e_dep_object] = (jrd_nod*)(IPTR) item.xcp_code;
 				dep_node->nod_arg[e_dep_object_type] = (jrd_nod*)(IPTR) obj_exception;

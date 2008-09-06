@@ -943,7 +943,6 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 	}
 
 	int faults = 0;
-	const UCHAR* temp_ptr;
 
 	while (true)
 	{
@@ -969,7 +968,7 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 				if (message_ptr) {
 					X.RDB$MESSAGE.NULL = FALSE;
-					temp_ptr = message_ptr;
+					const UCHAR* temp_ptr = message_ptr;
 					GET_BYTES(&temp_ptr, X.RDB$MESSAGE);
 				}
 
