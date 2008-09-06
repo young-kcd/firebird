@@ -130,6 +130,7 @@ SINT64 DYN_UTIL_gen_unique_id(thread_db* tdbb,
 		if (!request)
 		{
 			const size_t name_length = strlen(generator_name);
+			fb_assert(name_length < MAX_SQL_IDENTIFIER_SIZE);
 			const size_t blr_size = sizeof(gen_id_blr1) + sizeof(gen_id_blr2) + 1 + name_length;
 
 			Firebird::UCharBuffer blr;
