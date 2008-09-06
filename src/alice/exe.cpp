@@ -171,7 +171,7 @@ int EXE_two_phase(const TEXT* database, const ULONG switches)
 		}
 		else if (switches & (sw_commit | sw_rollback | sw_two_phase))
 		{
-			error = TDR_reconnect_multiple((handle),
+			error = TDR_reconnect_multiple(handle,
 									   tdgbl->ALICE_data.ua_transaction, database,
 									   switches);
 		}
