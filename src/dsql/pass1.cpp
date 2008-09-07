@@ -7891,7 +7891,7 @@ static dsql_nod* pass1_rse_impl( CompiledStatement* statement, dsql_nod* input, 
 					  Arg::Gds(isc_token_err) <<
 					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
 
-		return pass1_union(statement, input, order, rows, viewFlags);
+		return pass1_union(statement, input, order, rows, flags);
 	}
 
 	fb_assert(input->nod_type == nod_query_spec);
