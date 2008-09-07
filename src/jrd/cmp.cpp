@@ -133,6 +133,7 @@ static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, 
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
 static jrd_nod* make_defaults(thread_db*, CompilerScratch*, USHORT, jrd_nod*);
 static jrd_nod* make_validation(thread_db*, CompilerScratch*, USHORT);
+static void mark_invariant(thread_db* tdbb, CompilerScratch* csb, USHORT stream);
 static void pass1_erase(thread_db*, CompilerScratch*, jrd_nod*);
 static jrd_nod* pass1_expand_view(thread_db*, CompilerScratch*, USHORT, USHORT, bool);
 static void pass1_modify(thread_db*, CompilerScratch*, jrd_nod*);
@@ -3061,10 +3062,14 @@ static jrd_nod* copy(thread_db* tdbb,
 		return node;
 
 	case nod_dbkey:
+		stream = (USHORT)(IPTR) input->nod_arg[0];
+		if (remap)
+			stream = remap[stream];
+
 		node = PAR_make_node(tdbb, 1);
 		node->nod_type = input->nod_type;
 		node->nod_count = 0;
-		node->nod_arg[0] = input->nod_arg[0];
+		node->nod_arg[0] = (jrd_nod*)(IPTR) stream;
 		return node;
 
 	case nod_sys_function:
@@ -3377,6 +3382,31 @@ static jrd_nod* make_validation(thread_db* tdbb, CompilerScratch* csb, USHORT st
 }
 
 
+// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field
+// is referencing, and mark them as varying - the rule is that if a field
+// from one RecordSelExpr is referenced within the scope of another RecordSelExpr, the first RecordSelExpr
+// can't be invariant. This won't optimize all cases, but it is the simplest
+// operating assumption for now.
+static void mark_invariant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
+{
+	if (csb->csb_current_nodes.getCount())
+	{
+		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1; 
+			 i_node >= csb->csb_current_nodes.begin(); i_node--) 
+		{
+			if ((*i_node)->nod_type == nod_rse)
+			{
+				if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node)))
+					break;
+				reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
+			}
+			else
+				(*i_node)->nod_flags &= ~nod_invariant;
+		}
+	}
+}
+
+
 jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 {
 /**************************************
@@ -3535,27 +3565,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
 
-			// Look at all RecordSelExpr's which are lower in scope than the RecordSelExpr which this field 
-			// is referencing, and mark them as varying - the rule is that if a field 
-			// from one RecordSelExpr is referenced within the scope of another RecordSelExpr, the first RecordSelExpr 
-			// can't be invariant. This won't optimize all cases, but it is the simplest 
-			// operating assumption for now.
-
-			if (csb->csb_current_nodes.getCount()) {
-				for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1; 
-					 i_node >= csb->csb_current_nodes.begin(); i_node--) 
-				{
-					if ((*i_node)->nod_type == nod_rse) {
-						if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node))) {
-							break;
-						}
-						reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
-					}
-					else {
-						(*i_node)->nod_flags &= ~nod_invariant;
-					}
-				}
-			}
+			mark_invariant(tdbb, csb, stream);
 
 			jrd_fld* field;
 			tail = &csb->csb_rpt[stream];
@@ -3814,6 +3824,8 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			const NOD_T type = node->nod_type;
 			stream = (USHORT)(IPTR) node->nod_arg[0];
+
+			mark_invariant(tdbb, csb, stream);
 
 			if (!csb->csb_rpt[stream].csb_map)
 				return node;

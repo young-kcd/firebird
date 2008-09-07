@@ -90,7 +90,7 @@ static void make_placeholder_null(dsc* const desc);
 static void make_parameter_names(dsql_par*, const dsql_nod*);
 
 
-static const char* db_key_name = "DB_KEY";
+static const char* DB_KEY_NAME = "DB_KEY";
 
 
 dsql_nod* MAKE_const_slong(SLONG value)
@@ -1914,7 +1914,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 		context = (dsql_ctx*) item->nod_arg[e_fld_context];
 		break;
 	case nod_dbkey:
-		parameter->par_name = parameter->par_alias = db_key_name;
+		parameter->par_name = parameter->par_alias = DB_KEY_NAME;
 		context = (dsql_ctx*) item->nod_arg[0]->nod_arg[0];
 		break;
 	case nod_alias:
@@ -1927,7 +1927,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
-			parameter->par_name = db_key_name;
+			parameter->par_name = DB_KEY_NAME;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 		}
 		break;
@@ -1945,7 +1945,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			context = (dsql_ctx*) alias->nod_arg[e_fld_context];
 		}
 		else if (alias->nod_type == nod_dbkey) {
-			parameter->par_name = db_key_name;
+			parameter->par_name = DB_KEY_NAME;
 			context = (dsql_ctx*) alias->nod_arg[0]->nod_arg[0];
 		}
 		break;
@@ -2007,6 +2007,9 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				break;
 			case nod_constant:
 				name_alias = "CONSTANT";
+				break;
+			case nod_dbkey:
+				name_alias = DB_KEY_NAME;
 				break;
 			} // switch(map_node->nod_type)
 			break;

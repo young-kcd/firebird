@@ -3073,6 +3073,17 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 			}
 			break;
 
+		case nod_dbkey:
+			if (node->nod_arg[0] && node->nod_arg[0]->nod_type == nod_relation)
+			{
+				const dsql_ctx* lcontext = reinterpret_cast<dsql_ctx*>(
+					node->nod_arg[0]->nod_arg[e_rel_context]);
+
+				if (lcontext && lcontext->ctx_scope_level == context->ctx_scope_level)
+					invalid = true;
+			}
+			break;
+
 		case nod_agg_count:
 		case nod_agg_average:
 		case nod_agg_max:
@@ -3252,7 +3263,6 @@ static bool invalid_reference(const dsql_ctx* context, const dsql_nod* node,
 		case nod_current_role:
 		case nod_internal_info:
 		case nod_dom_value:
-		case nod_dbkey:
 		case nod_derived_table:
 		case nod_plan_expr:
 			return false;
@@ -4200,11 +4210,22 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 	const dsql_str* qualifier = (dsql_str*) input->nod_arg[0];
 	if (!qualifier) {
 		DEV_BLKCHK(qualifier, dsql_type_str);
-		// No qualifier, if only one context then use, else error
 
-		if (statement->req_context->getCount() == 1)
+		DsqlContextStack contexts;
+
+		for (DsqlContextStack::iterator stack(*statement->req_context); stack.hasData(); ++stack)
 		{
-			dsql_ctx* context = statement->req_context->object();
+			dsql_ctx* context = stack.object();
+			if (context->ctx_scope_level != statement->req_scope_level)
+				continue;
+
+			if (context->ctx_relation)
+				contexts.push(context);
+		}
+
+		if (contexts.hasData())
+		{
+			dsql_ctx* context = contexts.object();
 
 			if (!context->ctx_relation)
 			{
@@ -4219,7 +4240,8 @@ static dsql_nod* pass1_dbkey( CompiledStatement* statement, dsql_nod* input)
 			dsql_nod* rel_node = MAKE_node(nod_relation, e_rel_count);
 			rel_node->nod_arg[0] = (dsql_nod*) context;
 			node->nod_arg[0] = rel_node;
-			return node;
+
+			return ambiguity_check(statement, node, MAKE_cstring("RDB$DB_KEY"), contexts);
 		}
 	}
 	else 
@@ -4979,7 +5001,7 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		}
 	}
 
-	// Check for ambiguous columnnames inside this derived table.
+	// Check for ambiguous column names inside this derived table.
 	for (count = 0; count < rse->nod_arg[e_rse_items]->nod_count; count++) {
 		const dsql_nod* select_item1 = rse->nod_arg[e_rse_items]->nod_arg[count];
 		for (int count2 = (count + 1); count2 < rse->nod_arg[e_rse_items]->nod_count; count2++)
@@ -10058,6 +10080,7 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			return field;
 
 		case nod_constant:
+		case nod_dbkey:
 			return post_map(field, context);		
 
 		default:
