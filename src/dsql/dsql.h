@@ -654,7 +654,8 @@ class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
 	explicit dsql_ctx(MemoryPool &p)
-		: ctx_childs_derived_table(p),
+		: ctx_main_derived_contexts(p),
+		  ctx_childs_derived_table(p),
 	      ctx_imp_join(p)
 	{
 	}
@@ -672,6 +673,8 @@ public:
 	USHORT				ctx_recursive;		//!< Secondary context id for recursive UNION (nobody referred to this context)
 	USHORT				ctx_scope_level;	//!< Subquery level within this request
 	USHORT				ctx_flags;			//!< Various flag values
+	USHORT				ctx_in_outer_join;	// req_in_outer_join when context was created
+	DsqlContextStack	ctx_main_derived_contexts;	// contexts used for blr_derived_expr
 	DsqlContextStack	ctx_childs_derived_table;	//!< Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
@@ -690,6 +693,8 @@ public:
 		ctx_recursive = v.ctx_recursive;
 		ctx_scope_level = v.ctx_scope_level;
 		ctx_flags = v.ctx_flags;
+		ctx_in_outer_join = v.ctx_in_outer_join;
+		ctx_main_derived_contexts.assign(v.ctx_main_derived_contexts);
 		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
 		ctx_imp_join.assign(v.ctx_imp_join);
 

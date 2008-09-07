@@ -2005,6 +2005,9 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 			case nod_agg_list:
 				name_alias = "LIST";
 				break;
+			case nod_constant:
+				name_alias = "CONSTANT";
+				break;
 			} // switch(map_node->nod_type)
 			break;
 		} // case nod_map

@@ -141,21 +141,43 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	case nod_rec_version:
 	case nod_dbkey:
-
 		n = (USHORT)(IPTR) node->nod_arg[0];
-		if (allowOnlyCurrentStream) {
-			if (n != stream &&
-				!(csb->csb_rpt[n].csb_flags & csb_sub_stream))
-			{
+		if (allowOnlyCurrentStream)
+		{
+			if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
 				return false;
-			}
 		}
-		else {
-			if (n == stream) {
+		else
+		{
+			if (n == stream)
 				return false;
-			}
 		}
 		return csb->csb_rpt[n].csb_flags & csb_active;
+
+	case nod_derived_expr:
+	{
+		UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+		USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+		bool active = true;
+
+		for (UCHAR i = 0; i < streamCount; ++i)
+		{
+			n = streamList[i];
+			if (allowOnlyCurrentStream)
+			{
+				if (n != stream && !(csb->csb_rpt[n].csb_flags & csb_sub_stream))
+					return false;
+			}
+			else
+			{
+				if (n == stream)
+					return false;
+			}
+
+			active = active && (csb->csb_rpt[n].csb_flags & csb_active);
+		}
+		return active;
+	}
 
 	case nod_min:
 	case nod_max:
@@ -1068,11 +1090,26 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 		case nod_dbkey:
 		{
 			int keyStream = (USHORT)(IPTR) node->nod_arg[0];
-			if (keyStream != stream &&
-				(csb->csb_rpt[keyStream].csb_flags & csb_active))
+			if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
 			{
-				if (!streamList->exist(keyStream)) {
+				if (!streamList->exist(keyStream))
 					streamList->add(keyStream);
+			}
+			return;
+		}
+
+		case nod_derived_expr:
+		{
+			UCHAR derivedStreamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+			USHORT* derivedStreamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+
+			for (UCHAR i = 0; i < derivedStreamCount; ++i)
+			{
+				int keyStream = derivedStreamList[i];
+				if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
+				{
+					if (!streamList->exist(keyStream))
+						streamList->add(keyStream);
 				}
 			}
 			return;

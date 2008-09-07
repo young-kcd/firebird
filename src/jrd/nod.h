@@ -200,4 +200,4 @@ NODE(nod_asn_list, asn_list, "")
 		  NODE(nod_sys_function, sys_function, "")
 		  NODE(nod_class_node_jrd, class_node_jrd, "class_node_jrd")
 		  NODE(nod_stmt_expr, stmt_expr, "stmt_expr")
-
+  		  NODE(nod_derived_expr, derived_expr, "derived_expr")

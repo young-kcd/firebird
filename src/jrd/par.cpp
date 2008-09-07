@@ -3096,6 +3096,20 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 			set_type = false;	// to not change nod->nod_type to nod_field
 		break;
 
+	case blr_derived_expr:
+	{
+		UCHAR streamCount = BLR_BYTE;
+		USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
+		for (UCHAR i = 0; i < streamCount; ++i)
+			streamList[i] = BLR_BYTE;
+
+		node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
+		node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
+		node->nod_arg[e_derived_expr_expr] = PAR_parse_node(tdbb, csb, sub_type);
+		node->nod_count = e_derived_expr_count;
+		break;
+	}
+
 	case blr_gen_id:
 	case blr_set_generator:
 		{

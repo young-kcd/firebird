@@ -373,5 +373,6 @@
 #define blr_exec_stmt_out_params	(unsigned char) 13	// output parameters
 
 #define blr_stmt_expr				(unsigned char) 190
+#define blr_derived_expr			(unsigned char) 191
 
 #endif // JRD_BLR_H

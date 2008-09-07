@@ -171,6 +171,34 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		return;
 
 	case nod_derived_field:
+		// ASF: If we are not referencing a field, we should evaluate the expression based on
+		// a set (ORed) of contexts. If any of them are in a valid position the expression is
+		// evaluated, otherwise a NULL will be returned. This is fix for CORE-1246.
+		if (node->nod_arg[e_derived_field_value]->nod_type != nod_field &&
+			node->nod_arg[e_derived_field_value]->nod_type != nod_dbkey &&
+			node->nod_arg[e_derived_field_value]->nod_type != nod_map)
+		{
+			dsql_ctx* ctx = (dsql_ctx*) node->nod_arg[e_derived_field_context];
+
+			if (ctx->ctx_main_derived_contexts.hasData())
+			{
+				if (ctx->ctx_main_derived_contexts.getCount() > MAX_UCHAR)
+				{
+					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+							  Arg::Gds(isc_imp_exc) <<
+							  Arg::Gds(isc_ctx_too_big));
+				}
+
+				stuff(statement, blr_derived_expr);
+				stuff(statement, ctx->ctx_main_derived_contexts.getCount());
+
+				for (DsqlContextStack::iterator stack(ctx->ctx_main_derived_contexts);
+					 stack.hasData(); ++stack)
+				{
+					stuff(statement, stack.object()->ctx_context);
+				}
+			}
+		}
 		GEN_expr(statement, node->nod_arg[e_derived_field_value]);
 		return;
 

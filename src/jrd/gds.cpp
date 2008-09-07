@@ -278,7 +278,8 @@ const int op_relation	= 20;
 const int op_exec_into	= 21;
 const int op_cursor_stmt	= 22;
 const int op_byte_opt_verb	= 23;
-const int op_exec_stmt	= 24;
+const int op_exec_stmt		= 24;
+const int op_derived_expr	= 25;
 
 static const UCHAR
 	/* generic print formats */
@@ -337,7 +338,8 @@ static const UCHAR
 	trim[] = { op_byte, op_byte_opt_verb, op_verb, 0},
 	modify2[] = { op_byte, op_byte, op_line, op_verb, op_verb, 0},
 	similar[] = { op_line, op_verb, op_verb, op_indent, op_byte_opt_verb, 0},
-	exec_stmt[] = { op_exec_stmt, 0};
+	exec_stmt[] = { op_exec_stmt, 0},
+	derived_expr[] = { op_derived_expr, 0};
 
 
 #include "../jrd/blp.h"
@@ -3393,6 +3395,14 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			blr_print_verb(control, level); 
 			break;
 		}
+
+		case op_derived_expr:
+			n = blr_print_byte(control);
+			for (UCHAR i = 0; i < (UCHAR) n; ++i)
+				blr_print_byte(control);
+			offset = blr_print_line(control, (SSHORT) offset);
+			blr_print_verb(control, level);
+			break;
 
 		case op_cursor_stmt: {
 			blr_operator = blr_print_byte(control);

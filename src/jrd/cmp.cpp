@@ -1929,6 +1929,10 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		CMP_get_desc(tdbb, csb, node->nod_arg[e_stmt_expr_expr], desc);
 		return;
 
+	case nod_derived_expr:
+		CMP_get_desc(tdbb, csb, node->nod_arg[e_derived_expr_expr], desc);
+		return;
+
 	default:
 		fb_assert(false);
 		break;
@@ -2591,7 +2595,7 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 static jrd_nod* copy(thread_db* tdbb,
 					CompilerScratch* csb,
 					jrd_nod* input,
-					UCHAR * remap,
+					UCHAR* remap,
 					USHORT field_id,
 					jrd_nod* message,
 					bool remap_fld)
@@ -2726,6 +2730,32 @@ static jrd_nod* copy(thread_db* tdbb,
 			}
 			return temp_node;
 		}
+
+	case nod_derived_expr:
+	{
+		node = PAR_make_node(tdbb, e_derived_expr_length);
+		node->nod_count = e_derived_expr_count;
+		node->nod_type = input->nod_type;
+		node->nod_arg[e_derived_expr_expr] = copy(tdbb, csb, input->nod_arg[e_derived_expr_expr],
+			remap, field_id, message, remap_fld);
+
+		if (remap)
+		{
+			UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
+			USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
+			USHORT* newStreamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
+
+			for (UCHAR i = 0; i < streamCount; ++i)
+				newStreamList[i] = remap[oldStreamList[i]];
+
+			node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) newStreamList;
+		}
+		else
+			node->nod_arg[e_derived_expr_stream_list] = input->nod_arg[e_derived_expr_stream_list];
+
+		node->nod_arg[e_derived_expr_stream_count] = input->nod_arg[e_derived_expr_stream_count];
+		return node;
+	}
 
 	case nod_function:
 		node = PAR_make_node(tdbb, e_fun_length);

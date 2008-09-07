@@ -418,6 +418,7 @@ dsql_ctx* PASS1_make_context(CompiledStatement* statement, const dsql_nod* relat
 	if (statement->req_in_outer_join) {
 		context->ctx_flags |= CTX_outer_join;
 	}
+	context->ctx_in_outer_join = statement->req_in_outer_join;
 
 	// find the context alias name, if it exists.
 	dsql_str* string;
@@ -4837,18 +4838,38 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 			rse = PASS1_rse(statement, select_expr, NULL);
 		}
 
+		USHORT minOuterJoin = MAX_USHORT;
+
 		// Finish off by cleaning up contexts and put them into req_dt_context
 		// so create view (ddl) can deal with it.
 		// Also add the used contexts into the childs stack.
 		while (temp.hasData() && (temp.object() != baseContext))
 		{
-			statement->req_dt_context.push(temp.object());
+			// Collect contexts that will be used for blr_derived_expr generation.
+			// We want all child contexts with minimum ctx_in_outer_join.
+			dsql_ctx* childCtx = temp.object();
+
+			if (childCtx->ctx_in_outer_join <= minOuterJoin &&
+				(childCtx->ctx_relation || childCtx->ctx_procedure))
+			{
+				if (childCtx->ctx_parent)
+					childCtx = childCtx->ctx_parent;
+
+				if (childCtx->ctx_in_outer_join < minOuterJoin)
+				{
+					minOuterJoin = childCtx->ctx_in_outer_join;
+					context->ctx_main_derived_contexts.clear();
+				}
+
+				context->ctx_main_derived_contexts.push(childCtx);
+			}
+
+			statement->req_dt_context.push(childCtx);
 			context->ctx_childs_derived_table.push(temp.pop());
 		}
+
 		while (temp.hasData())
-		{
 			temp.pop();
-		}
 	}
 	context->ctx_rse = node->nod_arg[e_derived_table_rse] = rse;
 
@@ -6430,7 +6451,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 				PASS1_node(statement, input->nod_arg[e_join_left_rel]);
 			node->nod_arg[e_join_rght_rel] =
 				PASS1_node(statement, input->nod_arg[e_join_rght_rel]);
-		break;
+			break;
 		case nod_join_left:
 			node->nod_arg[e_join_left_rel] =
 				PASS1_node(statement, input->nod_arg[e_join_left_rel]);
@@ -6438,7 +6459,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 			node->nod_arg[e_join_rght_rel] =
 				PASS1_node(statement, input->nod_arg[e_join_rght_rel]);
 			statement->req_in_outer_join--;
-		break;
+			break;
 		case nod_join_right:
 			statement->req_in_outer_join++;
 			node->nod_arg[e_join_left_rel] =
@@ -6446,7 +6467,7 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 			statement->req_in_outer_join--;
 			node->nod_arg[e_join_rght_rel] =
 				PASS1_node(statement, input->nod_arg[e_join_rght_rel]);
-		break;
+			break;
 		case nod_join_full:
 			statement->req_in_outer_join++;
 			node->nod_arg[e_join_left_rel] =
@@ -6454,11 +6475,11 @@ static dsql_nod* pass1_join(CompiledStatement* statement, dsql_nod* input)
 			node->nod_arg[e_join_rght_rel] =
 				PASS1_node(statement, input->nod_arg[e_join_rght_rel]);
 			statement->req_in_outer_join--;
-		break;
+			break;
 
 		default:
 			fb_assert(false);	// join type expected
-		break;
+			break;
 	}
 
 	// Process boolean
@@ -10035,6 +10056,9 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			field->nod_arg[e_hidden_var_expr] = remap_field(statement,
 				field->nod_arg[e_hidden_var_expr], context, current_level);
 			return field;
+
+		case nod_constant:
+			return post_map(field, context);		
 
 		default:
 			return field;
