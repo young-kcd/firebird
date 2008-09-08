@@ -116,13 +116,16 @@ const char* FIREBIRD_USER_NAME		= "firebird";
 static void set_signal(int, void (*)(int));
 static void signal_handler(int);
 
-static int shutdownInetServer(const int, const int, void*);
+static int shutdownInetServer(const int reason, const int, void*);
 static void shutdownInit();
-static void tryStopMainThread();
+static int tryStopMainThread();
 
 static TEXT protocol[128];
 static int INET_SERVER_start = 0;
 static USHORT INET_SERVER_flag = 0;
+
+static bool serverClosing = false;
+
 
 extern "C" {
 
@@ -410,6 +413,8 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 	SRVR_multi_thread(port, INET_SERVER_flag);
 
+	port->disconnect();
+
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
  * due to remote access
@@ -424,6 +429,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	  fclose(file);
 	}
 #endif
+
+	// let shutdown thread continue operation if needed
+	// and get ready for normal at-exit shutdown from us
+	THD_yield();
 
 	exit(FINI_OK);
 }
@@ -471,11 +480,7 @@ static void signal_handler(int)
 }
 
 
-static Firebird::GlobalPtr<Firebird::Semaphore> mainThreadStopSem;
-static bool serverClosing = false;
-
-
-static int shutdownInetServer(const int, const int, void*)
+static int shutdownInetServer(const int reason, const int, void*)
 {
 /****************************************************
  *
@@ -488,6 +493,12 @@ static int shutdownInetServer(const int, const int, void*)
  *	which received SIGTERM, run in separate thread.
  *
  **************************************/
+
+	if (serverClosing)
+	{
+		// Ready to die
+		return FB_SUCCESS;
+	}
 
 	serverClosing = true;
 
@@ -502,10 +513,8 @@ static int shutdownInetServer(const int, const int, void*)
 	need a way to interrupt select in main listener thread in windows
 #endif
 
-	mainThreadStopSem->enter();
-
-	// Ready to die
-	return FB_SUCCESS;
+	// shutdown will be completed in main thread if it's not due to exit() called
+	return reason == fb_shutrsn_exit_called ? FB_SUCCESS : FB_FAILURE;
 }
 
 static void shutdownInit()
@@ -522,7 +531,7 @@ static void shutdownInit()
 	}
 }
 
-static void tryStopMainThread()
+static int tryStopMainThread()
 {
 /****************************************************
  *
@@ -532,15 +541,7 @@ static void tryStopMainThread()
  *
  * Functional description
  *	Called by main thread to test is not shutdown started. 
- *	In that case release semaphore and wait indefinitely.
  *
  **************************************/
-	if (serverClosing)
-	{
-		mainThreadStopSem->release();
-		for (;;)
-		{
-			THD_yield();
-		}
-	}
+	return serverClosing ? 1 : 0;
 }
