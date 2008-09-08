@@ -725,6 +725,8 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 		InstanceControl::registerShutdown(0);
 		exit(0);
 	}
+
+	return 0;
 }
 
 
