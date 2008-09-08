@@ -1,3 +1,71 @@
+2008-09-08 17:19  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.311):
+
+	Misc
+
+2008-09-08 17:16  asfernandes
+
+	* firebird2/src/jrd/svc.cpp (1.236):
+
+	Warning
+
+2008-09-08 16:07  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.235):
+
+	fixed shutdown using fbmgr
+
+2008-09-08 16:06  alexpeshkoff
+
+	* firebird2/src/remote/: inet_proto.h (1.17), inet_server.cpp
+	(1.84):
+
+	make multiclient server shutdown in main thread with normal main
+	port cleanup
+
+2008-09-08 15:59  alexpeshkoff
+
+	* firebird2/src/remote/inet.cpp (1.247):
+
+	Cleanup - put two exit handlers with different tasks into separate
+	functions
+
+2008-09-08 15:26  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.68):
+
+	restored old behavior in OOM conditions - thanks to Claudio
+
+2008-09-07 23:49  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.171), dsql/pass1.cpp (1.417),
+	jrd/cmp.cpp (1.310):
+
+	Fixed: CORE-2067 - GROUP by and RDB$DB_KEY problems CORE-2068 -
+	Comparision with IN and subquery with RDB$DB_KEY returns wrong
+	result CORE-2069 - Incorrect VIEW expansion when RDB$DB_KEY is used
+	in view body
+
+2008-09-07 22:25  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.416):
+
+	Do not mix flags of union and rse. Problem recently introduced:
+	select n from t1 union all select n from t2; Error: multiple rows
+	in singleton select
+
+2008-09-07 21:44  asfernandes
+
+	* firebird2/src/: dsql/dsql.h (1.143), dsql/gen.cpp (1.174),
+	dsql/make.cpp (1.170), dsql/pass1.cpp (1.415), jrd/Optimizer.cpp
+	(1.87), jrd/blp.h (1.37), jrd/blr.h (1.41), jrd/cmp.cpp (1.309),
+	jrd/evl.cpp (1.272), jrd/exe.h (1.127), jrd/gds.cpp (1.265),
+	jrd/nod.h (1.30), jrd/par.cpp (1.217), misc/blrtable.cpp (1.39):
+
+	Fixed CORE-1246 - Incorrect column values with outer joins and
+	derived tables
+
 2008-09-06 20:45  asfernandes
 
 	* firebird2/builds/posix/prefix.solx86gcc (1.28):
