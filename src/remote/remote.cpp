@@ -572,10 +572,15 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 
 	if (!attachFailures)
 	{
-		attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
-		/* FREE: freed by exit handler cleanup_memory() */
-		if (!attachFailures)	/* NOMEM: don't bother trying to copy */
+		try 
+		{
+			attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
+			/* FREE: freed by exit handler cleanup_memory() */
+		}
+		catch (const Firebird::BadAlloc&)	/* NOMEM: don't bother trying to copy */
+		{
 			return;
+		}
 
 		gds__register_cleanup(cleanup_memory, 0);
 	}
