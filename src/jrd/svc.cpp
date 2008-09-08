@@ -718,16 +718,20 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 }
 
 
+static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
+{
+	if (fb_shutdown(10 * 1000 /* 10 seconds */, fb_shutrsn_services) == FB_SUCCESS)
+	{
+		InstanceControl::registerShutdown(0);
+		exit(0);
+	}
+}
+
+
 void Service::detach()
 {
-	if (svc_do_shutdown) 
-	{
-		if (fb_shutdown(10 * 1000 /* 10 seconds */, fb_shutrsn_services) == FB_SUCCESS)
-		{
-			InstanceControl::registerShutdown(0);
-			exit(0);
-		}
-	}
+	// save it cause after call to finish() we can't access class members any more
+	bool localDoShutdown = svc_do_shutdown;
 
 	if (svc_uses_security_database)
 	{
@@ -736,6 +740,12 @@ void Service::detach()
 
 	// Mark service as detached.
 	finish(SVC_detached);
+
+	if (localDoShutdown) 
+	{
+		// run in separate thread to avoid blocking in remote
+		gds__thread_start(svcShutdownThread, 0, 0, 0, 0);
+	}
 }
 
 
