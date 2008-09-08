@@ -256,14 +256,15 @@ static unsigned int procCount = 0;
 #endif // WIN_NT
 
 static void		disconnect(rem_port*);
-static void		exit_handler(void *);
+static void		closePortsExitHandler(void*);
 
 #ifdef NO_FORK
-static int fork(void);
+static int		fork(void);
 #endif
 
 #ifdef WIN_NT
-static int fork(SOCKET, USHORT);
+static void		wsaExitHandler(void*);
+static int		fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
@@ -319,7 +320,7 @@ static int		send_partial(rem_port*, PACKET *);
 static void		unhook_port(rem_port*, rem_port*);
 static int		xdrinet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
 static bool		setNoNagleOption(rem_port*);
-static FPTR_VOID tryStopMainThread = 0;
+static FPTR_INT	tryStopMainThread = 0;
 static int		shut_postproviders(const int, const int, void*);
 
 
@@ -863,7 +864,7 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
 
-		gds__register_cleanup(exit_handler, (void *) port);
+		gds__register_cleanup(closePortsExitHandler, port);
 		return port;
 	}
 
@@ -1200,7 +1201,7 @@ static rem_port* alloc_port( rem_port* parent)
 			}
 			return NULL;
 		}
-		gds__register_cleanup(exit_handler, 0);
+		gds__register_cleanup(wsaExitHandler, 0);
 #endif
 		INET_remote_buffer = Config::getTcpRemoteBufferSize();
 		if (INET_remote_buffer < MAX_DATA_LW ||
@@ -1672,11 +1673,11 @@ static void disconnect( rem_port* port)
 		port->port_async->port_flags |= PORT_disconnect;
 	}
 
+	gds__unregister_cleanup(closePortsExitHandler, port);
+
 	if (port->port_handle) {
 		SOCLOSE((SOCKET) port->port_handle);
 	}
-
-	gds__unregister_cleanup(exit_handler, (void *) port);
 
 	port->release();
 
@@ -1698,11 +1699,11 @@ static void disconnect( rem_port* port)
 }
 
 
-static void exit_handler( void *arg)
+static void closePortsExitHandler(void* arg)
 {
 /**************************************
  *
- *	e x i t _ h a n d l e r
+ *	c l o s e P o r t s E x i t H a n d l e r
  *
  **************************************
  *
@@ -1713,15 +1714,6 @@ static void exit_handler( void *arg)
  **************************************/
 
 	rem_port* main_port = (rem_port*) arg;
-
-#ifdef WIN_NT
-	if (!main_port) 
-	{
-		SleepEx(0, FALSE);	// let select in other thread(s) shutdown gracefully
-		WSACleanup();
-		return;
-	}
-#endif
 
 	for (rem_port* port = main_port; port; port = port->port_next) 
 		if (port->port_state != rem_port::BROKEN)
@@ -1751,6 +1743,23 @@ static int fork(void)
 #endif
 
 #ifdef WIN_NT
+static void wsaExitHandler(void*)
+{
+/**************************************
+ *
+ *	w s a E x i t H a n d l e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	Cleanup WSA.
+ *
+ **************************************/
+	SleepEx(0, FALSE);	// let select in other thread(s) shutdown gracefully
+	WSACleanup();
+}
+
+
 static int fork( SOCKET old_handle, USHORT flag)
 {
 /**************************************
@@ -2360,7 +2369,10 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 			// Before waiting for incoming packet, check for server shutdown 
 			if (tryStopMainThread)
 			{
-				tryStopMainThread();
+				if (tryStopMainThread())
+				{
+					return FALSE;
+				}
 			}
 
 			// Some platforms change the timeout in the select call.
@@ -3429,7 +3441,7 @@ static bool setNoNagleOption(rem_port* port)
 	return true;
 }
 
-void setStopMainThread(FPTR_VOID func)
+void setStopMainThread(FPTR_INT func)
 {
 /**************************************
  *
