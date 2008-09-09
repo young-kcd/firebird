@@ -676,18 +676,18 @@ void DSQL_prepare(thread_db* tdbb,
 
 	dsql_req* request = NULL;
 
+	if (!string) {
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  // CVC: Nothing will be line 1, column 1 for the user.
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
+	}
+
+	if (!length) {
+		length = strlen(string);
+	}
+
 	try {
-
-		if (!string) {
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Unexpected end of command
-					  // CVC: Nothing will be line 1, column 1 for the user.
-					  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
-		}
-
-		if (!length) {
-			length = strlen(string);
-		}
 
 // Figure out which parser version to use 
 /* Since the API to dsql8_prepare is public and can not be changed, there needs to
@@ -1085,21 +1085,21 @@ static void execute_immediate(thread_db* tdbb,
 {
 	SET_TDBB(tdbb);
 
+	if (!string) {
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  // CVC: Nothing will be line 1, column 1 for the user.
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
+	}
+
+	if (!length) {
+		length = strlen(string);
+	}
+
 	dsql_dbb* const database = init(attachment);
 	dsql_req* request = NULL;
 
 	try {
-
-		if (!string) {
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Unexpected end of command
-					  // CVC: Nothing will be line 1, column 1 for the user.
-					  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
-		}
-
-		if (!length) {
-			length = strlen(string);
-		}
 
 // Figure out which parser version to use 
 /* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
@@ -2505,8 +2505,9 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
-	if (!string_length)
+	if (!string_length) {
 		string_length = strlen(string);
+	}
 
 /* Get rid of the trailing ";" if there is one. */
 
