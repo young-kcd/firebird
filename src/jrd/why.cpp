@@ -2639,6 +2639,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 
 	try
 	{
+		if (!string)
+		{
+			Arg::Gds(isc_command_end_err).raise();
+		}
+
 		USHORT in_blr_length, in_msg_type, in_msg_length,
 			out_blr_length, out_msg_type, out_msg_length;
 
@@ -2882,6 +2887,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 
 	try
 	{
+		if (!string)
+		{
+			Arg::Gds(isc_command_end_err).raise();
+		}
+
 		Attachment* dbb = translate<Attachment>(db_handle);
 		status.setPrimaryHandle(dbb);
 
@@ -3451,6 +3461,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 
 	try
 	{
+		if (!string)
+		{
+			Arg::Gds(isc_command_end_err).raise();
+		}
+
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
 

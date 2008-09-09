@@ -33,6 +33,7 @@
 #include "../dsql/utld_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/StatusArg.h"
 
 enum pp_vals {
 	PP_CREATE = 0,
@@ -90,6 +91,9 @@ enum token_vals {
 	SYMBOL = 259
 };
 
+using namespace Firebird;
+
+
 /**
   
  	PREPARSE_execute
@@ -115,14 +119,19 @@ bool PREPARSE_execute(
 		USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings
-	Firebird::ContextPoolHolder context(getDefaultMemoryPool());
+	ContextPoolHolder context(getDefaultMemoryPool());
 
 	try
 	{
+		if (!stmt)
+		{
+			Arg::Gds(isc_command_end_err).raise();
+		}
+
 		if (!stmt_length)
 			stmt_length = strlen(stmt);
 		const char* const stmt_end = stmt + stmt_length;
-		Firebird::string token;
+		string token;
 
 		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
 			token.length() != pp_symbols[PP_CREATE].length ||
@@ -145,9 +154,9 @@ bool PREPARSE_execute(
 			return true;
 		}
 
-		Firebird::PathName file_name(token.ToPathName());
+		PathName file_name(token.ToPathName());
 		*stmt_eaten = false;
-		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+		ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 		dpb.insertByte(isc_dpb_overwrite, 0);
 		dpb.insertInt(isc_dpb_sql_dialect, dialect);
@@ -281,9 +290,9 @@ bool PREPARSE_execute(
 							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()), 
 							0);
 	}
-	catch (const Firebird::Exception& ex)
+	catch (const Exception& ex)
 	{
-		Firebird::stuff_exception(user_status, ex);
+		ex.stuff_exception(user_status);
 		return true;
 	}
 
@@ -305,9 +314,9 @@ bool PREPARSE_execute(
  **/
 static void generate_error(
 						   ISC_STATUS* user_status,
-						   const Firebird::string& token, SSHORT error, SSHORT result)
+						   const string& token, SSHORT error, SSHORT result)
 {
-	Firebird::string err_string;
+	string err_string;
 
 	user_status[0] = isc_arg_gds;
 	user_status[1] = isc_sqlerr;
@@ -356,7 +365,7 @@ static void generate_error(
 static SSHORT get_next_token(
 							 const SCHAR** stmt,
 							 const SCHAR* stmt_end,
-							 Firebird::string& token)
+							 string& token)
 {
 	UCHAR c, char_class = 0;
 
@@ -484,7 +493,7 @@ static SSHORT get_token(ISC_STATUS* status,
 						bool optional,
 						const SCHAR** stmt,
 						const SCHAR* const stmt_end,
-						Firebird::string& token)
+						string& token)
 {
 	const SCHAR* temp_stmt = *stmt;
 	const SSHORT result = get_next_token(&temp_stmt, stmt_end, token);
