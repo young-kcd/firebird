@@ -1,3 +1,42 @@
+2008-09-09 13:26  alexpeshkoff
+
+	* firebird2/src/: dsql/preparse.cpp (1.45), jrd/why.cpp (1.209):
+
+	Fixed CORE-2071: isc_dsql_prepare crashes with statement_text=NULL
+
+2008-09-09 13:11  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.256):
+
+	sligtly better places to check for missing SQL operator
+
+2008-09-09 13:01  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.418):
+
+	Do not change the logic of things that was been working - thanks to
+	Claudio
+
+2008-09-09 11:26  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.255):
+
+	Fixed CORE-1506: Server crash with isc_dsql_execute_immediate and
+	zero length string
+
+2008-09-09 11:05  robocop
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.89), cmp.cpp (1.312),
+	evl.cpp (1.273), par.cpp (1.218):
+
+	Misc.
+
+2008-09-09 10:21  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.88):
+
+	Fixed CORE-2073.
+
 2008-09-08 17:19  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.311):
