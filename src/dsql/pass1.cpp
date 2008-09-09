@@ -4867,10 +4867,13 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 		// Also add the used contexts into the childs stack.
 		while (temp.hasData() && (temp.object() != baseContext))
 		{
-			// Collect contexts that will be used for blr_derived_expr generation.
-			// We want all child contexts with minimum ctx_in_outer_join.
 			dsql_ctx* childCtx = temp.object();
 
+			statement->req_dt_context.push(childCtx);
+			context->ctx_childs_derived_table.push(temp.pop());
+
+			// Collect contexts that will be used for blr_derived_expr generation.
+			// We want all child contexts with minimum ctx_in_outer_join.
 			if (childCtx->ctx_in_outer_join <= minOuterJoin &&
 				(childCtx->ctx_relation || childCtx->ctx_procedure))
 			{
@@ -4885,9 +4888,6 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 
 				context->ctx_main_derived_contexts.push(childCtx);
 			}
-
-			statement->req_dt_context.push(childCtx);
-			context->ctx_childs_derived_table.push(temp.pop());
 		}
 
 		while (temp.hasData())
