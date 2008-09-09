@@ -156,8 +156,8 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 	case nod_derived_expr:
 	{
-		UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-		USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+		const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+		const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 		bool active = true;
 
 		for (UCHAR i = 0; i < streamCount; ++i)
@@ -1089,7 +1089,7 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 		case nod_rec_version:
 		case nod_dbkey:
 		{
-			int keyStream = (USHORT)(IPTR) node->nod_arg[0];
+			const int keyStream = (USHORT)(IPTR) node->nod_arg[0];
 			if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
 			{
 				if (!streamList->exist(keyStream))
@@ -1100,12 +1100,12 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
 
 		case nod_derived_expr:
 		{
-			UCHAR derivedStreamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-			USHORT* derivedStreamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+			const UCHAR derivedStreamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+			const USHORT* derivedStreamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 
 			for (UCHAR i = 0; i < derivedStreamCount; ++i)
 			{
-				int keyStream = derivedStreamList[i];
+				const int keyStream = derivedStreamList[i];
 				if (keyStream != stream && (csb->csb_rpt[keyStream].csb_flags & csb_active))
 				{
 					if (!streamList->exist(keyStream))

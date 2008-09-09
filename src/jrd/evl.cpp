@@ -918,8 +918,8 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_derived_expr:
 	{
-		UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
-		USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
+		const UCHAR streamCount = (UCHAR)(IPTR) node->nod_arg[e_derived_expr_stream_count];
+		const USHORT* streamList = (USHORT*) node->nod_arg[e_derived_expr_stream_list];
 
 		for (UCHAR i = 0; i < streamCount; ++i)
 		{

@@ -268,7 +268,7 @@ inline void triggers_external_access(thread_db* tdbb, ExternalAccessList& list, 
 }
 
 
-static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request) 
+static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd_req* request)
 {
 /**************************************
  *
@@ -281,7 +281,7 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
  *  list of requests it depends on
  *
  **************************************/
-	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++) 
+	for (ExternalAccess *item = request->req_external.begin(); item < request->req_external.end(); item++)
 	{
 		size_t i;
 		if (list.find(*item, i))
@@ -306,11 +306,11 @@ static void build_external_access(thread_db* tdbb, ExternalAccessList& list, jrd
 			case ExternalAccess::exa_insert:
 				vec1 = relation->rel_pre_store;
 				vec2 = relation->rel_post_store;
-				break;				
+				break;
 			case ExternalAccess::exa_update:
 				vec1 = relation->rel_pre_modify;
 				vec2 = relation->rel_post_modify;
-				break;				
+				break;
 			case ExternalAccess::exa_delete:
 				vec1 = relation->rel_pre_erase;
 				vec2 = relation->rel_post_erase;
@@ -345,7 +345,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 	{
 		Trigger& t = (*triggers)[i];
 		t.compile(tdbb);
-		if (!t.request) 
+		if (!t.request)
 		{
 			continue;
 		}
@@ -380,7 +380,7 @@ static void verify_trigger_access(thread_db* tdbb, jrd_rel* owner_relation, trig
 			// a direct access to an object from this trigger
 			const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 			SCL_check_access(sec_class,
-							(access->acc_view_id) ? access->acc_view_id : 
+							(access->acc_view_id) ? access->acc_view_id :
 								(view ? view->rel_id : 0),
 							t.request->req_trg_name, NULL, access->acc_mask,
 							access->acc_type, access->acc_name, access->acc_r_name);
@@ -414,13 +414,13 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 
 			for (const AccessItem* access = prc->prc_request->req_access.begin();
 				 access < prc->prc_request->req_access.end();
-				 access++) 
+				 access++)
 			{
 				const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 				SCL_check_access(sec_class, access->acc_view_id, NULL, prc->prc_name, access->acc_mask,
 								 access->acc_type, access->acc_name, access->acc_r_name);
 			}
-		} 
+		}
 		else {
 			jrd_rel* relation = MET_lookup_relation_id(tdbb, item->exa_rel_id, false);
 			jrd_rel* view = NULL;
@@ -434,11 +434,11 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 			case ExternalAccess::exa_insert:
 				verify_trigger_access(tdbb, relation, relation->rel_pre_store, view);
 				verify_trigger_access(tdbb, relation, relation->rel_post_store, view);
-				break;				
+				break;
 			case ExternalAccess::exa_update:
 				verify_trigger_access(tdbb, relation, relation->rel_pre_modify, view);
 				verify_trigger_access(tdbb, relation, relation->rel_post_modify, view);
-				break;				
+				break;
 			case ExternalAccess::exa_delete:
 				verify_trigger_access(tdbb, relation, relation->rel_pre_erase, view);
 				verify_trigger_access(tdbb, relation, relation->rel_post_erase, view);
@@ -452,24 +452,24 @@ void CMP_verify_access(thread_db* tdbb, jrd_req* request)
 	// Inherit privileges of caller stored procedure or trigger if and only if
 	// this request is called immediately by caller (check for empty req_caller).
 	// Currently (in v2.5) this rule will work for EXECUTE STATEMENT only, as
-	// tra_callback_count incremented only by it. 
-	// When external SP's will be introduced we need to decide if they also can 
+	// tra_callback_count incremented only by it.
+	// When external SP's will be introduced we need to decide if they also can
 	// inherit caller's privileges
 	jrd_tra* transaction = tdbb->getTransaction();
-	const jrd_req* exec_stmt_caller = 
-		(transaction && transaction->tra_callback_count && !request->req_caller) ? 
+	const jrd_req* exec_stmt_caller =
+		(transaction && transaction->tra_callback_count && !request->req_caller) ?
 			transaction->tra_callback_caller : NULL;
 
 	for (const AccessItem* access = request->req_access.begin(); access < request->req_access.end();
-		access++) 
+		access++)
 	{
 		const SecurityClass* sec_class = SCL_get_class(tdbb, access->acc_security_name.c_str());
 
 		Firebird::MetaName trgName(exec_stmt_caller ? exec_stmt_caller->req_trg_name : NULL);
-		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ? 
+		Firebird::MetaName prcName(exec_stmt_caller && exec_stmt_caller->req_procedure ?
 			exec_stmt_caller->req_procedure->prc_name : NULL);
 
-		SCL_check_access(sec_class, access->acc_view_id, trgName, prcName, 
+		SCL_check_access(sec_class, access->acc_view_id, trgName, prcName,
 			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
 	}
 }
@@ -585,7 +585,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
 
-	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool 
+	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool
 	// and will be freed by CMP_release
 	MemoryPool* const new_pool = dbb->createPool();
 
@@ -607,7 +607,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, USHORT internal_flag,
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		if (request)
 			CMP_release(tdbb, request);
 		else
@@ -1077,7 +1077,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 
 			/* 92/05/29 DAVES - don't understand why this is done for ONLY
 			   dtype_text (eg: not dtype_cstring or dtype_varying) Doesn't
-			   appear to hurt. 
+			   appear to hurt.
 
 			   94/04/04 DAVES - NOW I understand it!  QLI will pass floating
 			   point values to the engine as text.  All other numeric constants
@@ -1142,7 +1142,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 						   <date> - <timestamp>
 						   <time> - <time>
 						   <timestamp> - <string>
-						   <string> - <timestamp> 
+						   <string> - <timestamp>
 						   <string> - <string>   */
 
 						if (DTYPE_IS_TEXT(dtype1)) {
@@ -1864,7 +1864,7 @@ void CMP_get_desc(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node, DSC * de
 		{
 			const UserFunction* function = (UserFunction*) node->nod_arg[e_fun_function];
 			// Null value for the function indicates that the function was not
-			// looked up during parsing the blr. This is true if the function 
+			// looked up during parsing the blr. This is true if the function
 			// referenced in the procedure blr was dropped before dropping the
 			// procedure itself. Ignore the case because we are currently trying
 			// to drop the procedure.
@@ -2079,7 +2079,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 		found = csb->csb_map_field_info.getNext();
 	}
-	
+
 	csb->csb_impure = REQ_SIZE + REQ_TAIL * MAX(csb->csb_n_stream, 1);
 	csb->csb_exec_sta.clear();
 
@@ -2096,7 +2096,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 		found = csb->csb_map_field_info.getNext();
 	}
-	
+
 	if (csb->csb_impure > MAX_REQUEST_SIZE) {
 		IBERROR(226);			// msg 226 request size limit exceeded
 	}
@@ -2226,7 +2226,7 @@ jrd_req* CMP_make_request(thread_db* tdbb, CompilerScratch* csb, bool internal_f
 
 	} // try
 	catch (const Firebird::Exception& ex) {
-		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);		
+		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		tdbb->setRequest(old_request);
 		ERR_punt();
 	}
@@ -2267,7 +2267,7 @@ void CMP_post_access(thread_db* tdbb,
 		return;
 
 	SET_TDBB(tdbb);
-	
+
 	AccessItem access(security_name, view_id, name, type_name, mask, r_name);
 
 	size_t i;
@@ -2344,7 +2344,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 
 	if (procedure->prc_int_use_count > 0)
 		procedure->prc_int_use_count--;
-	
+
 	--procedure->prc_use_count;
 
 #ifdef DEBUG_PROCS
@@ -2358,7 +2358,7 @@ void CMP_decrement_prc_use_count(thread_db* tdbb, jrd_prc* procedure)
 #endif
 
 	// Call recursively if and only if the use count is zero AND the procedure
-	// in dbb_procedures is different than this procedure. 
+	// in dbb_procedures is different than this procedure.
 	// The procedure will be different than in dbb_procedures only if it is a
 	// floating copy, i.e. an old copy or a deleted procedure.
 	if ((procedure->prc_use_count == 0) &&
@@ -2412,7 +2412,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 					jrd_rel* relation = resource->rsc_rel;
 					IndexLock* index = CMP_get_index_lock(tdbb, relation,
 													 resource->rsc_id);
-					if (index && index->idl_count) 
+					if (index && index->idl_count)
 					{
 						--index->idl_count;
 						if (!index->idl_count)
@@ -2450,7 +2450,7 @@ void CMP_release(thread_db* tdbb, jrd_req* request)
 				// Once I've seen att_requests == 0x00000014,
 				// so some debugging code added to catch it earlier in dev_builds.
 				// This place is one of two, where att_requests modified.
-				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used 
+				// In another one (jrd.cpp/GDS_COMPILE()), it's value is used
 				// right before pointer assignment. So make some use of pointer here
 				// to try to detect false in it earlier ...
 				if (*next) {
@@ -2689,7 +2689,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node = PAR_make_node(tdbb, e_var_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = input->nod_count;
-	
+
 			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_var_id];
 			node->nod_arg[e_var_id] = (jrd_nod*)(IPTR) n;
 			node->nod_arg[e_var_variable] = input->nod_arg[e_var_variable];
@@ -2742,8 +2742,8 @@ static jrd_nod* copy(thread_db* tdbb,
 
 		if (remap)
 		{
-			UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
-			USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
+			const UCHAR streamCount = (UCHAR)(IPTR) input->nod_arg[e_derived_expr_stream_count];
+			const USHORT* oldStreamList = (USHORT*) input->nod_arg[e_derived_expr_stream_list];
 			USHORT* newStreamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
 
 			for (UCHAR i = 0; i < streamCount; ++i)
@@ -2888,7 +2888,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			stream = (USHORT)(IPTR) input->nod_arg[e_rel_stream];
 
 			// Last entry in the remap contains the the original stream number.
-			// Get that stream number so that the flags can be copied 
+			// Get that stream number so that the flags can be copied
 			// into the newly created child stream.
 
 			const int relative_stream = (stream) ? remap[stream - 1] : stream;
@@ -2905,9 +2905,9 @@ static jrd_nod* copy(thread_db* tdbb,
 			element->csb_view = (jrd_rel*) node->nod_arg[e_rel_view];
 			element->csb_view_stream = remap[0];
 
-		/** If there was a parent stream no., then copy the flags 
+		/** If there was a parent stream no., then copy the flags
 			from that stream to its children streams. (Bug 10164/10166)
-			For e.g. 
+			For e.g.
 			consider a view V1 with 2 streams
 				   stream #1 from table T1
 			   stream #2 from table T2
@@ -2915,8 +2915,8 @@ static jrd_nod* copy(thread_db* tdbb,
 				   stream #1  from table X
 			   stream #2  from view V1
 
-			During pass1 of procedure request, the engine tries to expand 
-			all the views into their base tables. It creates a compilier 
+			During pass1 of procedure request, the engine tries to expand
+			all the views into their base tables. It creates a compilier
 			scratch block which initially looks like this
 				 stream 1  -------- X
 				 stream 2  -------- V1
@@ -2927,8 +2927,8 @@ static jrd_nod* copy(thread_db* tdbb,
 				 stream 3  -------- T1
 			 After T1 stream has been created the flags are copied from
 			 stream #1 because V1's definition said the original stream
-			 number for T1 was 1. However since its being merged with 
-			 the procedure request, stream #1 belongs to a different table. 
+			 number for T1 was 1. However since its being merged with
+			 the procedure request, stream #1 belongs to a different table.
 			 The flags should be copied from stream 2 i.e. V1. We can get
 			 this info from variable remap.
 
@@ -2952,7 +2952,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node = PAR_make_node(tdbb, e_prc_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = input->nod_count;
-			
+
 			// dimitr:	see the appropriate code and comment above (in nod_argument).
 			//			We must copy the message first and only then use the new
 			//			pointer to copy the inputs properly.
@@ -3088,7 +3088,7 @@ static jrd_nod* copy(thread_db* tdbb,
 			node = PAR_make_node(tdbb, e_dcl_length);
 			node->nod_type = input->nod_type;
 			node->nod_count = input->nod_count;
-	
+
 			USHORT n = csb->csb_remap_variable + (USHORT)(IPTR) input->nod_arg[e_dcl_id];
 			node->nod_arg[e_dcl_id] = (jrd_nod*)(IPTR) n;
 			*(dsc*) (node->nod_arg + e_dcl_desc) = *(dsc*) (input->nod_arg + e_dcl_desc);
@@ -3216,7 +3216,7 @@ static void ignore_dbkey(thread_db* tdbb, CompilerScratch* csb, RecordSelExpr* r
 			const jrd_rel* relation = tail->csb_relation;
 			if (relation) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id : 
+								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
 								SCL_read, object_table,
 								relation->rel_name);
@@ -3391,14 +3391,15 @@ static void mark_variant(thread_db* tdbb, CompilerScratch* csb, USHORT stream)
 {
 	if (csb->csb_current_nodes.getCount())
 	{
-		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1; 
-			 i_node >= csb->csb_current_nodes.begin(); i_node--) 
+		for (jrd_node_base **i_node = csb->csb_current_nodes.end() - 1;
+			 i_node >= csb->csb_current_nodes.begin(); i_node--)
 		{
 			if ((*i_node)->nod_type == nod_rse)
 			{
-				if (stream_in_rse(stream, reinterpret_cast<RecordSelExpr*>(*i_node)))
+				RecordSelExpr* rse = reinterpret_cast<RecordSelExpr*>(*i_node);
+				if (stream_in_rse(stream, rse))
 					break;
-				reinterpret_cast<RecordSelExpr*>(*i_node)->nod_flags |= rse_variant;
+				rse->nod_flags |= rse_variant;
 			}
 			else
 				(*i_node)->nod_flags &= ~nod_invariant;
@@ -3421,13 +3422,13 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
  *
  * The csb->csb_validate_expr becomes true if an ancestor of the
  * current node (the one being passed in) in the parse tree has nod_type
- * == nod_validate. "ancestor" does not include the current node 
+ * == nod_validate. "ancestor" does not include the current node
  * being passed in as an argument.
  * If we are in a "validate subtree" (as determined by the
- * csb->csb_validate_expr), we must not post update access to the fields involved 
+ * csb->csb_validate_expr), we must not post update access to the fields involved
  * in the validation clause. (see the call for CMP_post_access in this
  * function.)
- * 
+ *
  **************************************/
 	jrd_nod* sub;
 	jrd_nod** ptr;
@@ -3470,13 +3471,13 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// If there is no top-level RSE present and patterns are not constant,
 		// unmark node as invariant because it may be dependent on data or variables.
 		// See the same for nod_contains and nod_starts below.
-		if ((node->nod_flags & nod_invariant) && 
-			(ptr[1]->nod_type != nod_literal || 
+		if ((node->nod_flags & nod_invariant) &&
+			(ptr[1]->nod_type != nod_literal ||
 			 (node->nod_count == 3 && ptr[2]->nod_type != nod_literal)))
 		{
 			jrd_node_base **ctx_node, **end;
 			for (ctx_node = csb->csb_current_nodes.begin(),
-				 end = csb->csb_current_nodes.end(); 
+				 end = csb->csb_current_nodes.end();
 				ctx_node < end;	ctx_node++)
 			{
 				if ((*ctx_node)->nod_type == nod_rse)
@@ -3505,7 +3506,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		{
 			jrd_node_base **ctx_node, **end;
 			for (ctx_node = csb->csb_current_nodes.begin(),
-				 end = csb->csb_current_nodes.end(); 
+				 end = csb->csb_current_nodes.end();
 				 ctx_node < end; ctx_node++)
 			{
 				if ((*ctx_node)->nod_type == nod_rse)
@@ -3624,7 +3625,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			// posting the required privilege access to the current relation and field
 
 			// If this is in a "validate_subtree" then we must not
-			// post access checks to the table and the fields in the table. 
+			// post access checks to the table and the fields in the table.
 			// If any node of the parse tree is a nod_validate type node,
 			// the nodes in the subtree are involved in a validation
 			// clause only, the subtree is a validate_subtree in our notation.
@@ -3632,12 +3633,12 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			if (tail->csb_flags & csb_modify) {
 				if (!csb->csb_validate_expr) {
 					CMP_post_access(tdbb, csb, relation->rel_security_name,
-									(tail->csb_view) ? tail->csb_view->rel_id : 
+									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
 									SCL_sql_update, object_table,
 									relation->rel_name);
 					CMP_post_access(tdbb, csb, field->fld_security_name,
-									(tail->csb_view) ? tail->csb_view->rel_id : 
+									(tail->csb_view) ? tail->csb_view->rel_id :
 										(view ? view->rel_id : 0),
 									SCL_sql_update, object_column,
 									field->fld_name, relation->rel_name);
@@ -3652,23 +3653,23 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			}
 			else if (tail->csb_flags & csb_store) {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id : 
+								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
 								SCL_sql_insert, object_table,
 								relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id : 
+								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
-								SCL_sql_insert, object_column, 
+								SCL_sql_insert, object_column,
 								field->fld_name, relation->rel_name);
 			}
 			else {
 				CMP_post_access(tdbb, csb, relation->rel_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id : 
+								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
 								SCL_read, object_table, relation->rel_name);
 				CMP_post_access(tdbb, csb, field->fld_security_name,
-								(tail->csb_view) ? tail->csb_view->rel_id : 
+								(tail->csb_view) ? tail->csb_view->rel_id :
 									(view ? view->rel_id : 0),
 								SCL_read, object_column, field->fld_name, relation->rel_name);
 			}
@@ -3678,13 +3679,13 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				if (!relation->rel_view_rse)
 					break;
 
-				ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) << 
+				ERR_post(Arg::Gds(isc_no_field_access) << Arg::Str(field->fld_name) <<
 														  Arg::Str(relation->rel_name));
 				// Msg 364 "cannot access column %s in view %s"
 			}
 
 			// The previous test below is an apparent temporary fix
-			// put in by Root & Harrison in Summer/Fall 1991.  
+			// put in by Root & Harrison in Summer/Fall 1991.
 			// Old Code:
 			// if (tail->csb_flags & (csb_view_update | csb_trigger))
 			//   break;
@@ -3835,7 +3836,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			{
 				size_t stackCount = stack.getCount();
 
-				// If that is a DB_KEY of a view, it's possible (in case of 
+				// If that is a DB_KEY of a view, it's possible (in case of
 				// outer joins) that some sub-stream have a NULL DB_KEY.
 				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
 				// for the concatenation of sub DB_KEYs not result in NULL.
@@ -3975,7 +3976,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_src_info:
 		node->nod_arg[e_src_info_node] = CMP_pass1(tdbb, csb, node->nod_arg[e_src_info_node]);
-		return node;		
+		return node;
 
 	case nod_class_node_jrd:
 		node->nod_arg[0] = reinterpret_cast<jrd_nod*>(
@@ -4396,16 +4397,16 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	DEV_BLKCHK(rse, type_nod);
 	DEV_BLKCHK(view, type_rel);
 
-	// for scoping purposes, maintain a stack of RecordSelExpr's which are 
+	// for scoping purposes, maintain a stack of RecordSelExpr's which are
 	// currently being parsed; if there are none on the stack as
 	// yet, mark the RecordSelExpr as variant to make sure that statement-
 	// level aggregates are not treated as invariants -- bug #6535
 
 	bool top_level_rse = true;
-	for (jrd_node_base **i_node = csb->csb_current_nodes.begin(); 
-		 i_node < csb->csb_current_nodes.end(); i_node++) 
+	for (jrd_node_base **i_node = csb->csb_current_nodes.begin();
+		 i_node < csb->csb_current_nodes.end(); i_node++)
 	{
-		if ((*i_node)->nod_type == nod_rse) 
+		if ((*i_node)->nod_type == nod_rse)
 		{
 			top_level_rse = false;
 			break;
@@ -4447,7 +4448,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 		new_rse->rse_count = count;
 		rse = new_rse;
 
-		// AB: Because we've build an new RecordSelExpr, we must put this one in the stack 
+		// AB: Because we've build an new RecordSelExpr, we must put this one in the stack
 		// of current_rses else could RecordSelExpr's not be flagged an rse_variant.
 		// See SF BUG # [ 523589 ] for an example.
 
@@ -4458,7 +4459,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 
 	arg = rse->rse_relation + count;
 
-	while (stack.hasData()) 
+	while (stack.hasData())
 	{
 		*--arg = stack.pop();
 	}
@@ -4498,7 +4499,7 @@ static RecordSelExpr* pass1_rse(thread_db* tdbb,
 	if (plan) {
 		rse->rse_plan = plan;
 	}
-	
+
 	rse->rse_writelock = writelock;
 
 #ifdef SCROLLABLE_CURSORS
@@ -4547,14 +4548,14 @@ static void pass1_source(thread_db*			tdbb,
 
 	AutoSetRestore<bool> autoValidateExpr(&csb->csb_validate_expr, false);
 
-	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated, 
+	// in the case of an RecordSelExpr, it is possible that a new RecordSelExpr will be generated,
 	// so wait to process the source before we push it on the stack (bug 8039)
 
 	if (source->nod_type == nod_rse)
 	{
-		// The addition of the JOIN syntax for specifying inner joins causes an 
-		// RecordSelExpr tree to be generated, which is undesirable in the simplest case 
-		// where we are just trying to inner join more than 2 streams. If possible, 
+		// The addition of the JOIN syntax for specifying inner joins causes an
+		// RecordSelExpr tree to be generated, which is undesirable in the simplest case
+		// where we are just trying to inner join more than 2 streams. If possible,
 		// try to flatten the tree out before we go any further.
 
 		RecordSelExpr* sub_rse = (RecordSelExpr*) source;
@@ -4626,8 +4627,8 @@ static void pass1_source(thread_db*			tdbb,
 		return;
 	}
 
-	// All the special cases are exhausted, so we must have a view or a base table; 
-	// prepare to check protection of relation when a field in the stream of the 
+	// All the special cases are exhausted, so we must have a view or a base table;
+	// prepare to check protection of relation when a field in the stream of the
 	// relation is accessed.
 
 	jrd_rel* const parent_view = csb->csb_view;
@@ -4651,7 +4652,7 @@ static void pass1_source(thread_db*			tdbb,
 		USHORT key = (USHORT)(IPTR) source->nod_arg[e_rel_context];
 		size_t pos;
 		if (ctx.find(key, pos)) {
-			element->csb_alias = FB_NEW(csb->csb_pool) 
+			element->csb_alias = FB_NEW(csb->csb_pool)
 				Firebird::string(csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
 	}
@@ -4674,9 +4675,9 @@ static void pass1_source(thread_db*			tdbb,
 	AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, view);
 	AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 
-	// We don't expand the view in two cases: 
+	// We don't expand the view in two cases:
 	// 1) If the view has a projection, sort, first/skip or explicit plan.
-	// 2) If it's part of an outer join. 
+	// 2) If it's part of an outer join.
 
 	if (rse->rse_jointype //|| view_rse->rse_jointype ???
 		|| view_rse->rse_sorted || view_rse->rse_projection
@@ -4690,10 +4691,10 @@ static void pass1_source(thread_db*			tdbb,
 		return;
 	}
 
-	// if we have a projection which we can bubble up to the parent rse, set the 
-	// parent rse to our projection temporarily to flag the fact that we have already 
-	// seen one so that lower-level views will not try to map their projection; the 
-	// projection will be copied and correctly mapped later, but we don't have all 
+	// if we have a projection which we can bubble up to the parent rse, set the
+	// parent rse to our projection temporarily to flag the fact that we have already
+	// seen one so that lower-level views will not try to map their projection; the
+	// projection will be copied and correctly mapped later, but we don't have all
 	// the base streams yet
 
 	if (view_rse->rse_projection) {
@@ -4710,7 +4711,7 @@ static void pass1_source(thread_db*			tdbb,
 
 		jrd_nod* node = copy(tdbb, csb, *arg, map, 0, NULL, false);
 
-		// Now go out and process the base table itself. This table might also be a view, 
+		// Now go out and process the base table itself. This table might also be a view,
 		// in which case we will continue the process by recursion.
 
 		pass1_source(tdbb, csb, rse, node, boolean, stack);
@@ -4718,10 +4719,10 @@ static void pass1_source(thread_db*			tdbb,
 
 	// When there is a projection in the view, copy the projection up to the query RecordSelExpr.
 	// In order to make this work properly, we must remap the stream numbers of the fields
-	// in the view to the stream number of the base table. Note that the map at this point 
-	// contains the stream numbers of the referenced relations, since it was added during the call 
-	// to copy() above. After the copy() below, the fields in the projection will reference the 
-	// base table(s) instead of the view's context (see bug #8822), so we are ready to context- 
+	// in the view to the stream number of the base table. Note that the map at this point
+	// contains the stream numbers of the referenced relations, since it was added during the call
+	// to copy() above. After the copy() below, the fields in the projection will reference the
+	// base table(s) instead of the view's context (see bug #8822), so we are ready to context-
 	// recognize them in CMP_pass1() - that is, replace the field nodes with actual field blocks.
 
 	if (view_rse->rse_projection) {
@@ -4729,7 +4730,7 @@ static void pass1_source(thread_db*			tdbb,
 			CMP_pass1(tdbb, csb, copy(tdbb, csb, view_rse->rse_projection, map, 0, NULL, false));
 	}
 
-	// if we encounter a boolean, copy it and retain it by ANDing it in with the 
+	// if we encounter a boolean, copy it and retain it by ANDing it in with the
 	// boolean on the parent view, if any
 
 	if (view_rse->rse_boolean) {
@@ -4865,7 +4866,7 @@ static bool pass1_store(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 //				copy(tdbb, csb, view_node->nod_arg[e_sto_statement],
 //					 NULL, 0, NULL, false);
 
-			// bug 8150: use of blr_store2 against a view with a trigger was causing 
+			// bug 8150: use of blr_store2 against a view with a trigger was causing
 			// the second statement to be executed, which is not desirable
 
 			view_node->nod_arg[e_sto_statement2] = NULL;
@@ -4923,7 +4924,7 @@ static jrd_nod* pass1_update(thread_db* tdbb,
 
 	// unless this is an internal request, check access permission
 
-	CMP_post_access(tdbb, csb, relation->rel_security_name, 
+	CMP_post_access(tdbb, csb, relation->rel_security_name,
 					(view ? view->rel_id : 0),
 					priv, object_table, relation->rel_name);
 
@@ -5122,12 +5123,12 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 		break;
 
 	case nod_src_info:
-		node->nod_arg[e_src_info_node] = 
+		node->nod_arg[e_src_info_node] =
 			CMP_pass2(tdbb, csb, node->nod_arg[e_src_info_node], node);
 		return node;
-		
+
 	case nod_variable:
-		node->nod_arg[e_var_info] = 
+		node->nod_arg[e_var_info] =
 			pass2_validation(tdbb, csb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]));
 		break;
 
@@ -5138,7 +5139,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 
 	case nod_argument:
 		node->nod_arg[e_arg_info] =
-			pass2_validation(tdbb, csb, Item(nod_argument, 
+			pass2_validation(tdbb, csb, Item(nod_argument,
 				(IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
 				(IPTR) node->nod_arg[e_arg_number]));
 		break;
@@ -5510,7 +5511,7 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			fb_assert(aux_rse_node->nod_type == nod_rse);
 			RecordSelExpr* top_rse = static_cast<RecordSelExpr*>(aux_rse_node);
 			if (!top_rse->rse_invariants)
-				top_rse->rse_invariants = 
+				top_rse->rse_invariants =
 					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			top_rse->rse_invariants->add(node->nod_impure);
 		}
@@ -5671,11 +5672,11 @@ static void plan_check(const CompilerScratch* csb, const RecordSelExpr* rse)
  **************************************
  *
  * Functional description
- *	Check that all streams in the RecordSelExpr have 
+ *	Check that all streams in the RecordSelExpr have
  *	a plan specified for them.
  *	If they are not, there are streams
  *	in the RecordSelExpr which were not mentioned
- *	in the plan. 
+ *	in the plan.
  *
  **************************************/
 	DEV_BLKCHK(csb, type_csb);
@@ -5709,10 +5710,10 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
  **************************************
  *
  * Functional description
- *	Go through the streams in the plan, find the 
- *	corresponding streams in the RecordSelExpr and store the 
- *	plan for that stream.   Do it once and only once 
- *	to make sure there is a one-to-one correspondence 
+ *	Go through the streams in the plan, find the
+ *	corresponding streams in the RecordSelExpr and store the
+ *	plan for that stream.   Do it once and only once
+ *	to make sure there is a one-to-one correspondence
  *	between streams in the query and streams in
  *	the plan.
  *
@@ -5743,17 +5744,17 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 	const USHORT stream = (USHORT)(IPTR) plan_relation_node->nod_arg[e_rel_stream];
 	CompilerScratch::csb_repeat* tail = &csb->csb_rpt[stream];
 
-	// if the plan references a view, find the real base relation 
+	// if the plan references a view, find the real base relation
 	// we are interested in by searching the view map */
 	UCHAR* map = 0;
 
 	if (tail->csb_map) {
 		const TEXT* p = plan_alias;
 
-		// if the user has specified an alias, skip past it to find the alias 
+		// if the user has specified an alias, skip past it to find the alias
 		// for the base table (if multiple aliases are specified)
 		if (p && *p &&
-			((tail->csb_relation && !strcmp_space(tail->csb_relation->rel_name.c_str(), p)) || 
+			((tail->csb_relation && !strcmp_space(tail->csb_relation->rel_name.c_str(), p)) ||
 			 (tail->csb_alias && !strcmp_space(tail->csb_alias->c_str(), p))))
 		{
 			while (*p && *p != ' ') {
@@ -5791,7 +5792,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 			view_relation = NULL;
 
 			// if the user didn't specify an alias (or didn't specify one
-			// for this level), check to make sure there is one and only one 
+			// for this level), check to make sure there is one and only one
 			// base relation in the table which matches the plan relation
 
 			if (!*p) {
@@ -5833,7 +5834,7 @@ static void plan_set(CompilerScratch* csb, RecordSelExpr* rse, jrd_nod* plan)
 				// and not an oversight here. It's hard to imagine a csb->csb_rpt with
 				// a NULL relation. See exe.h for CompilerScratch struct and its inner csb_repeat struct.
 
-				if ((tail->csb_alias && !strcmp_space(tail->csb_alias->c_str(), p)) || 
+				if ((tail->csb_alias && !strcmp_space(tail->csb_alias->c_str(), p)) ||
 					(relation && !strcmp_space(relation->rel_name.c_str(), p)))
 				{
 					  break;
@@ -5914,7 +5915,7 @@ static void post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc
 	if (csb->csb_g_flags & (csb_internal | csb_ignore_perm))
 		return;
 
-	const TEXT* prc_sec_name = 
+	const TEXT* prc_sec_name =
 		(procedure->prc_security_name.length() > 0 ?
 		procedure->prc_security_name.c_str() : NULL);
 
@@ -5986,7 +5987,7 @@ static RecordSource* post_rse(thread_db* tdbb, CompilerScratch* csb, RecordSelEx
 }
 
 
-static void post_trigger_access(CompilerScratch* csb, 
+static void post_trigger_access(CompilerScratch* csb,
 								jrd_rel* owner_relation,
 								ExternalAccess::exa_act operation, jrd_rel* view)
 {
@@ -6033,7 +6034,7 @@ static void post_trigger_access(CompilerScratch* csb,
 }
 
 
-static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map, 
+static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 						Format** input_format)
 {
 /**************************************
@@ -6052,7 +6053,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 	DEV_BLKCHK(*input_format, type_fmt);
 
 	SET_TDBB(tdbb);
-	
+
 	Format* format = *input_format;
 	if (!format) {
 		format = *input_format = Format::newFormat(*tdbb->getDefaultPool(), map->nod_count);
@@ -6090,7 +6091,7 @@ static void process_map(thread_db* tdbb, CompilerScratch* csb, jrd_nod* map,
 			desc->dsc_dtype = dtype_varying;
 			desc->dsc_length = MAX(len1, len2) + sizeof(USHORT);
 
-			// pick the max text type, so any transparent casts from ints are 
+			// pick the max text type, so any transparent casts from ints are
 			// not left in ASCII format, but converted to the richer text format
 
 			INTL_ASSIGN_TTYPE(desc,
@@ -6187,7 +6188,7 @@ static bool stream_in_rse(USHORT stream, const RecordSelExpr* rse)
  **************************************
  *
  * Functional description
- *	Return true if stream is contained in 
+ *	Return true if stream is contained in
  *	the specified RecordSelExpr.
  *
  **************************************/

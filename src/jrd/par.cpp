@@ -3098,7 +3098,7 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 
 	case blr_derived_expr:
 	{
-		UCHAR streamCount = BLR_BYTE;
+		const UCHAR streamCount = BLR_BYTE;
 		USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
 		for (UCHAR i = 0; i < streamCount; ++i)
 			streamList[i] = BLR_BYTE;
