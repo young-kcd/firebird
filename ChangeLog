@@ -1,3 +1,16 @@
+2008-09-09 11:27  alexpeshkoff
+
+	* firebird2/src/dsql/dsql.cpp (1.162.4.7):
+
+	Backported fix for CORE-1506: Server crash with
+	isc_dsql_execute_immediate and zero length string
+
+2008-09-09 10:21  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.6):
+
+	Fixed CORE-2073.
+
 2008-09-05 12:59  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/install-script
