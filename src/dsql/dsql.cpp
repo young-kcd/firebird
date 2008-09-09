@@ -663,6 +663,13 @@ static ISC_STATUS dsql8_execute_immediate_common(ISC_STATUS*	user_status,
 
 		try {
 
+			if (!string) {
+				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
+					isc_arg_gds, isc_command_end_err2,
+					// CVC: Nothing will be line 1, column 1 for the user.
+					isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
+					isc_arg_end);	// Unexpected end of command
+			}
 			if (!length) {
 				length = strlen(string);
 			}
@@ -4692,6 +4699,14 @@ static dsql_req* prepare(
 	if (client_dialect > SQL_DIALECT_CURRENT)
 		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 901,
 				  isc_arg_gds, isc_wish_list, isc_arg_end);
+
+	if (!string) {
+		ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 104, 
+			isc_arg_gds, isc_command_end_err2,
+			// CVC: Nothing will be line 1, column 1 for the user.
+			isc_arg_number, (SLONG) 1, isc_arg_number, (SLONG) 1,
+			isc_arg_end);	// Unexpected end of command
+	}
 
 	if (!string_length)
 		string_length = strlen(string);
