@@ -2274,8 +2274,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch,
 			{
 				match = boolean->nod_arg[1];
 				value = boolean->nod_arg[0];
-				// AB: Shouldn't the boolean forward be set to false here?
-				//forward = false;
+				forward = false;
 			}
 			else
 				return false;
