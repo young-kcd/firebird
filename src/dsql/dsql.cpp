@@ -1090,6 +1090,13 @@ static void execute_immediate(thread_db* tdbb,
 
 	try {
 
+		if (!string) {
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Unexpected end of command
+					  // CVC: Nothing will be line 1, column 1 for the user.
+					  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
+		}
+
 		if (!length) {
 			length = strlen(string);
 		}
@@ -2489,6 +2496,13 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_wish_list));
+	}
+
+	if (!string) {
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  // Unexpected end of command
+				  // CVC: Nothing will be line 1, column 1 for the user.
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(1) << Arg::Num(1));
 	}
 
 	if (!string_length)
