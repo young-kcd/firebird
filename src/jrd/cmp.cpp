@@ -3721,6 +3721,33 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				AutoSetRestore<jrd_rel*> autoView(&csb->csb_view, relation);
 				AutoSetRestore<USHORT> autoViewStream(&csb->csb_view_stream, stream);
 
+				// ASF: If the view field don't reference an item of a stream, evaluate it
+				// based on the view dbkey - CORE-1245.
+				if (sub->nod_type != nod_field && sub->nod_type != nod_map &&
+					sub->nod_type != nod_dbkey)
+				{
+					// We can build a nod_derived_expr instead to be more efficient,
+					// but seems not very simple to do it here.
+
+					// build an IF (RDB$DB_KEY IS NULL)
+					jrd_nod* new_node = PAR_make_node(tdbb, 3);
+					new_node->nod_type = nod_value_if;
+					new_node->nod_count = 3;
+
+					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_type = nod_missing;
+					new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
+					new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_dbkey;
+					new_node->nod_arg[0]->nod_arg[0]->nod_count = 0;
+					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = (jrd_nod*)(IPTR) stream;
+
+					new_node->nod_arg[1] = PAR_make_node(tdbb, 0);	// THEN: NULL
+					new_node->nod_arg[1]->nod_type = nod_null;
+					new_node->nod_arg[2] = sub;						// ELSE: sub
+
+					sub = new_node;
+				}
+
 				return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
 			}
 
