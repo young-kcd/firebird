@@ -3061,6 +3061,7 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg91', 'printhelp', 'gsec.cpp', NULL, 18, 91, NULL, '-trusted (use trusted authentication)', NULL, NULL);
 ('GsecMsg92', 'common_main', 'gsec.cpp', NULL, 18, 92, NULL, 'invalid switch specified in interactive mode', NULL, NULL);
 ('GsecMsg93', 'common_main', 'gsec.cpp', NULL, 18, 93, NULL, 'error closing security database', NULL, NULL);
+('GsecMsg94', 'SECURITY_exec_line', 'security.epp', NULL, 18, 94, NULL, 'error releasing request in security database', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in

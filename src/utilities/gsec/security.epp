@@ -331,7 +331,7 @@ SSHORT SECURITY_exec_line(ISC_STATUS* isc_status,
 		{
 			if (! ret)
 			{
-				ret = GsecMsg93;	// error closing security database
+				ret = GsecMsg94;	// error releasing request in security database
 			}
 		}
 	}

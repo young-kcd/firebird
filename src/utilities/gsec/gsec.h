@@ -241,6 +241,7 @@ const USHORT GsecMsg90	= 90;	/* z (interactive only) */
 const USHORT GsecMsg91	= 91;	/* -trusted (use trusted authentication) */
 const USHORT GsecMsg92	= 92;	/* invalid switch specified in interactive mode */
 const USHORT GsecMsg93	= 93;	/* error closing security database */
+const USHORT GsecMsg94	= 94;	/* error releasing request in security database */
 
 #endif /* UTILITIES_GSEC_H */
 
