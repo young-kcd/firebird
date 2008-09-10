@@ -3572,9 +3572,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 			tail = &csb->csb_rpt[stream];
 			jrd_rel* relation = tail->csb_relation;
 			if (!relation ||
-				!(field =
-				  MET_get_field(relation,
-								(USHORT)(IPTR) node->nod_arg[e_fld_id])))
+				!(field = MET_get_field(relation, (USHORT)(IPTR) node->nod_arg[e_fld_id])))
 			{
 				break;
 			}

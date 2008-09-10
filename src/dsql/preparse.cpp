@@ -312,8 +312,7 @@ bool PREPARSE_execute(
     @param result
 
  **/
-static void generate_error(
-						   ISC_STATUS* user_status,
+static void generate_error(ISC_STATUS* user_status,
 						   const string& token, SSHORT error, SSHORT result)
 {
 	string err_string;
@@ -362,8 +361,7 @@ static void generate_error(
     @param token
 
  **/
-static SSHORT get_next_token(
-							 const SCHAR** stmt,
+static SSHORT get_next_token(const SCHAR** stmt,
 							 const SCHAR* stmt_end,
 							 string& token)
 {

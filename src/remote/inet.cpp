@@ -2367,13 +2367,8 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 		for (;;)
 		{
 			// Before waiting for incoming packet, check for server shutdown 
-			if (tryStopMainThread)
-			{
-				if (tryStopMainThread())
-				{
-					return FALSE;
-				}
-			}
+			if (tryStopMainThread && tryStopMainThread())
+				return FALSE;
 
 			// Some platforms change the timeout in the select call.
 			// Reset timeout for each iteration to avoid problems.

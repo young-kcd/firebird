@@ -176,6 +176,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 
 			active = active && (csb->csb_rpt[n].csb_flags & csb_active);
 		}
+
 		return active;
 	}
 
