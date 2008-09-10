@@ -134,7 +134,9 @@ public:
 	USHORT		rse_count;
 	USHORT		rse_jointype;		/* inner, left, full */
 	bool		rse_writelock;
+#ifdef SCROLLABLE_CURSORS
 	RecordSource*	rse_rsb;
+#endif
 	jrd_nod*	rse_first;
 	jrd_nod*	rse_skip;
 	jrd_nod*	rse_boolean;
