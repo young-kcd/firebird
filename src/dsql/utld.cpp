@@ -359,13 +359,14 @@ ISC_STATUS	UTLD_parse_sqlda(
 				USHORT* msg_type,
 				USHORT* msg_length,
 				USHORT dialect,
-				XSQLDA* xsqlda,
+				const XSQLDA* xsqlda,
 				const USHORT clause)
 {
 	USHORT n;
-	XSQLVAR *xvar, xsqlvar;
-	SQLDA* sqlda;
-	SQLVAR* qvar;
+	XSQLVAR xsqlvar;
+	const XSQLVAR* xvar = &xsqlvar;
+	const SQLVAR* qvar;
+	const SQLDA* sqlda = NULL;
 
 	if (!xsqlda)
 		n = 0;
@@ -378,10 +379,9 @@ ISC_STATUS	UTLD_parse_sqlda(
 		}
 		else
 		{
-			sqlda = (SQLDA *) xsqlda;
+			sqlda = reinterpret_cast<const SQLDA *>(xsqlda);
 			n = sqlda->sqld;
 			xsqlda = NULL;
-			xvar = &xsqlvar;
 		}
 
 
@@ -427,11 +427,9 @@ ISC_STATUS	UTLD_parse_sqlda(
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
-				xvar++;
-			else {
-				qvar++;
-				sqlvar_to_xsqlvar(qvar, xvar);
-			}
+				++xvar;
+			else
+				sqlvar_to_xsqlvar(++qvar, &xsqlvar);
 
 			const USHORT dtype = xvar->sqltype & ~1;
 			switch (dtype)
@@ -519,12 +517,10 @@ ISC_STATUS	UTLD_parse_sqlda(
 		for (i = 0; i < n; i++)
 		{
 			if (xsqlda)
-				xvar++;
+				++xvar;
 			else
-			{
-				qvar++;
-				sqlvar_to_xsqlvar(qvar, xvar);
-			}
+				sqlvar_to_xsqlvar(++qvar, &xsqlvar);
+
 			USHORT dtype = xvar->sqltype & ~1;
 			USHORT len = xvar->sqllen;
 			switch (dtype)
@@ -655,12 +651,10 @@ ISC_STATUS	UTLD_parse_sqlda(
 	for (i = 0; i < n; i++)
 	{
 		if (xsqlda)
-			xvar++;
+			++xvar;
 		else
-		{
-			qvar++;
-			sqlvar_to_xsqlvar(qvar, xvar);
-		}
+			sqlvar_to_xsqlvar(++qvar, &xsqlvar);
+
 		USHORT dtype = xvar->sqltype & ~1;
 		USHORT len = xvar->sqllen;
 		switch (dtype)

@@ -925,15 +925,15 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_exec_immed2(ISC_STATUS *user_status,
 									   unsigned short,
 									   const char*,
 									   unsigned short,
-									   XSQLDA *,
-									   XSQLDA *)
+									   const XSQLDA *,
+									   const XSQLDA *)
 {
 	return notImplemented(user_status);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute(ISC_STATUS *user_status,
 	isc_tr_handle *tra_handle, isc_stmt_handle *stmt_handle, unsigned short dialect, 
-	XSQLDA *sqlda)
+	const XSQLDA *sqlda)
 {
 	if (!m_api.isc_dsql_execute)
 		return notImplemented(user_status);
@@ -943,7 +943,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute(ISC_STATUS *user_status,
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute2(ISC_STATUS *user_status,
 	isc_tr_handle *tra_handle, isc_stmt_handle *stmt_handle, unsigned short dialect, 
-	XSQLDA *in_sqlda, XSQLDA *out_sqlda)
+	const XSQLDA *in_sqlda, const XSQLDA *out_sqlda)
 {
 	if (!m_api.isc_dsql_execute2)
 		return notImplemented(user_status);
@@ -958,13 +958,13 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_execute_immediate(ISC_STATUS *user_s
 											 unsigned short,
 											 const char*,
 											 unsigned short,
-											 XSQLDA *)
+											 const XSQLDA *)
 {
 	return notImplemented(user_status);
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_dsql_fetch(ISC_STATUS *user_status,
-	isc_stmt_handle *stmt_handle, unsigned short da_version, XSQLDA *sqlda)
+	isc_stmt_handle *stmt_handle, unsigned short da_version, const XSQLDA *sqlda)
 {
 	if (!m_api.isc_dsql_fetch)
 		return notImplemented(user_status);

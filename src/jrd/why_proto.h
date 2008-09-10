@@ -36,11 +36,11 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS *, FB_API_HANDLE*, USHORT, X
 ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS*, FB_API_HANDLE*,
 												 USHORT, XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
-										USHORT, XSQLDA*);
+										USHORT, const XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_m(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
 											const SCHAR*, USHORT, USHORT, SCHAR*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, USHORT,
-											XSQLDA*, XSQLDA*);
+											const XSQLDA*, const XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS*, FB_API_HANDLE*,
 											  FB_API_HANDLE*, USHORT, const SCHAR*,
 											  USHORT, USHORT, SCHAR*, USHORT,
@@ -49,11 +49,11 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS*, FB_API_HANDLE*,
 ISC_STATUS API_ROUTINE isc_dsql_execute_immediate(ISC_STATUS*, FB_API_HANDLE*,
 													 FB_API_HANDLE*, USHORT,
 													 const SCHAR*, USHORT,
-													 XSQLDA*);
+													 const XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS*, FB_API_HANDLE*,
 											   FB_API_HANDLE*, USHORT,
-											   const SCHAR*, USHORT, XSQLDA*,
-											   XSQLDA*);
+											   const SCHAR*, USHORT, const XSQLDA*,
+											   const XSQLDA*);
 ISC_STATUS API_ROUTINE isc_dsql_execute_immediate_m(ISC_STATUS*,
 													   FB_API_HANDLE*,
 													   FB_API_HANDLE*, USHORT,
@@ -73,7 +73,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS*, FB_API_HANDLE*,
 												 SCHAR*, USHORT, USHORT,
 												 const SCHAR*, USHORT, SCHAR*,
 												 USHORT, USHORT, SCHAR*);
-ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FB_API_HANDLE*, USHORT, XSQLDA*);
+ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS*, FB_API_HANDLE*, USHORT, const XSQLDA*);
 #ifdef SCROLLABLE_CURSORS
 ISC_STATUS API_ROUTINE isc_dsql_fetch2(ISC_STATUS*, FB_API_HANDLE*, USHORT,
 										  XSQLDA*, USHORT, SLONG);

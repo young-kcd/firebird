@@ -2373,7 +2373,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE(ISC_STATUS* user_status,
 										FB_API_HANDLE* tra_handle,
 										FB_API_HANDLE* stmt_handle,
 										USHORT dialect,
-										XSQLDA* sqlda)
+										const XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2395,8 +2395,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 										 FB_API_HANDLE* tra_handle,
 										 FB_API_HANDLE* stmt_handle,
 										 USHORT dialect,
-										 XSQLDA* in_sqlda,
-										 XSQLDA* out_sqlda)
+										 const XSQLDA* in_sqlda,
+										 const XSQLDA* out_sqlda)
 {
 /**************************************
  *
@@ -2571,7 +2571,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED(ISC_STATUS* user_status,
 										   USHORT length,
 										   const SCHAR* string,
 										   USHORT dialect,
-										   XSQLDA* sqlda)
+										   const XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2594,7 +2594,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 											  FB_API_HANDLE* tra_handle,
 											  USHORT length,
 											  const SCHAR* string,
-											  USHORT dialect, XSQLDA* sqlda)
+											  USHORT dialect, 
+											  const XSQLDA* sqlda)
 {
 /**************************************
  *
@@ -2619,8 +2620,8 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 											USHORT length,
 											const SCHAR* string,
 											USHORT dialect,
-											XSQLDA* in_sqlda,
-											XSQLDA* out_sqlda)
+											const XSQLDA* in_sqlda,
+											const XSQLDA* out_sqlda)
 {
 /**************************************
  *
@@ -2943,7 +2944,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 									  FB_API_HANDLE* stmt_handle,
 									  USHORT dialect,
-									  XSQLDA* sqlda)
+									  const XSQLDA* sqlda)
 {
 /**************************************
  *

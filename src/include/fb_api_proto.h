@@ -189,21 +189,21 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_exec_immed2(ISC_STATUS *,
 										   unsigned short,
 										   const char*,
 										   unsigned short,
-										   XSQLDA *,
-										   XSQLDA *);
+										   const XSQLDA *,
+										   const XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_execute(ISC_STATUS *,
 									   isc_tr_handle *,
 									   isc_stmt_handle *,
 									   unsigned short,
-									   XSQLDA *);
+									   const XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_execute2(ISC_STATUS *,
 										isc_tr_handle *,
 										isc_stmt_handle *,
 										unsigned short,
-										XSQLDA *,
-										XSQLDA *);
+										const XSQLDA *,
+										const XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_execute_immediate(ISC_STATUS *,
 												 isc_db_handle *,
@@ -211,12 +211,12 @@ typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_execute_immediate(ISC_STATUS *,
 												 unsigned short,
 												 const char*,
 												 unsigned short,
-												 XSQLDA *);
+												 const XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_fetch(ISC_STATUS *,
 									 isc_stmt_handle *,
 									 unsigned short,
-									 XSQLDA *);
+									 const XSQLDA *);
 
 typedef ISC_STATUS ISC_EXPORT prototype_isc_dsql_finish(isc_db_handle *);
 

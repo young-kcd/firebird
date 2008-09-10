@@ -415,21 +415,21 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed2(ISC_STATUS*,
 										   unsigned short,
 										   const ISC_SCHAR*,
 										   unsigned short,
-										   XSQLDA*,
-										   XSQLDA*);
+										   const XSQLDA*,
+										   const XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute(ISC_STATUS*,
 									   isc_tr_handle*,
 									   isc_stmt_handle*,
 									   unsigned short,
-									   XSQLDA*);
+									   const XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute2(ISC_STATUS*,
 										isc_tr_handle*,
 										isc_stmt_handle*,
 										unsigned short,
-										XSQLDA*,
-										XSQLDA*);
+										const XSQLDA*,
+										const XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate(ISC_STATUS*,
 												 isc_db_handle*,
@@ -437,12 +437,12 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate(ISC_STATUS*,
 												 unsigned short,
 												 const ISC_SCHAR*,
 												 unsigned short,
-												 XSQLDA*);
+												 const XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_fetch(ISC_STATUS *,
 									 isc_stmt_handle *,
 									 unsigned short,
-									 XSQLDA *);
+									 const XSQLDA *);
 
 ISC_STATUS ISC_EXPORT isc_dsql_finish(isc_db_handle *);
 
