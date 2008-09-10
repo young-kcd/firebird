@@ -1839,7 +1839,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			else
 			{
 				// clear status after failed attach
-				user_status[0] = 0;
+				fb_utils::init_status(user_status);
 				allow_overwrite = true;
 			}
 
@@ -4716,11 +4716,14 @@ static void init_database_locks(thread_db* tdbb)
 	dbb->dbb_flags |= DBB_exclusive;
 	if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
 	{
+		// Clean status vector from lock manager error code
+		fb_utils::init_status(tdbb->tdbb_status_vector);
+
 		dbb->dbb_flags &= ~DBB_exclusive;
 
 		while (!LCK_lock(tdbb, lock, LCK_SW, -1))
 		{
-			tdbb->tdbb_status_vector[0] = 0; // Clean status vector from lock manager error code
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
 			SCHAR spare_memory[MIN_PAGE_SIZE * 2];

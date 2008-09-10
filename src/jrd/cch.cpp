@@ -493,7 +493,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag)
 
 	// Clear the status vector, as our callers check the return value
 	// and throw custom exceptions themselves
-	tdbb->tdbb_status_vector[0] = 0;
+	fb_utils::init_status(tdbb->tdbb_status_vector);
 
 /* If we are supposed to wait (presumably patiently),
    but can't get the lock, generate an error */
