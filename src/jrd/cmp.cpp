@@ -3868,8 +3868,9 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 						literal->lit_desc.dsc_dtype = dtype_text;
 						literal->lit_desc.dsc_ttype() = CS_BINARY;
 						literal->lit_desc.dsc_scale = 0;
-						literal->lit_desc.dsc_length = 0;
-						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(literal->lit_data);
+						literal->lit_desc.dsc_length = 8;
+						literal->lit_desc.dsc_address = reinterpret_cast<UCHAR*>(
+							const_cast<char*>("\0\0\0\0\0\0\0\0"));	// safe const_cast
 
 						stack2.push(new_node);
 					}
