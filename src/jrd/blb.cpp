@@ -2815,4 +2815,3 @@ static blb* store_array(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 	return blob;
 }
-
