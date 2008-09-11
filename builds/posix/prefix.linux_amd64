@@ -24,7 +24,8 @@ WARN_FLAGS=-Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-v
 CXXFLAGS:= $(CXXFLAGS) -fno-rtti
 
 PROD_FLAGS=-DNDEBUG $(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
-DEV_FLAGS=-DUSE_VALGRIND $(COMMON_FLAGS) $(WARN_FLAGS)
+#DEV_FLAGS=-DUSE_VALGRIND $(COMMON_FLAGS) $(WARN_FLAGS)
+DEV_FLAGS=$(COMMON_FLAGS) $(WARN_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
 

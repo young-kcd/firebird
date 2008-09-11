@@ -3,8 +3,8 @@ OPTIMIZE_FLAGS=-O3 -fno-omit-frame-pointer -fno-builtin
 WARN_FLAGS=-Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable
 
 PROD_FLAGS=-DNDEBUG $(COMMON_FLAGS) $(OPTIMIZE_FLAGS)
-DEV_FLAGS=-DUSE_VALGRIND -p $(COMMON_FLAGS) $(WARN_FLAGS)
-#DEV_FLAGS=-p $(COMMON_FLAGS) $(WARN_FLAGS)
+#DEV_FLAGS=-DUSE_VALGRIND -p $(COMMON_FLAGS) $(WARN_FLAGS)
+DEV_FLAGS=-p $(COMMON_FLAGS) $(WARN_FLAGS)
 
 OS_ServerFiles=inet_server.cpp
 
