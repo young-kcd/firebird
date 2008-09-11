@@ -269,10 +269,6 @@
 				RelativePath="..\..\..\src\utilities\gsec\call_service.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp"
-				>
-			</File>
 			<Filter
 				Name="epp files"
 				Filter="epp"
@@ -295,10 +291,6 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
-			<File
-				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.h"
 				>

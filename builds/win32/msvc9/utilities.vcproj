@@ -271,10 +271,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\common\cmd_util.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp"
 				>
 			</File>
@@ -312,10 +308,6 @@
 			Name="Header files"
 			Filter="h;hpp;hxx;hm;inl"
 			>
-			<File
-				RelativePath="..\..\..\src\utilities\common\cmd_util_proto.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\utilities\gsec\gsec.h"
 				>
