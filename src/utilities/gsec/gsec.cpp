@@ -61,8 +61,6 @@ const int MAXARGS	= 20;		/* max number of args allowed on command line */
 const int MAXSTUFF	= 1000;		/* longest interactive command line */
 
 static void util_output(const SCHAR*, ...);
-static int util_print(const SCHAR*, ...);
-static int vutil_print(const SCHAR*, va_list);
 
 static void data_print(void*, const internal_user_data*, bool);
 static bool get_line(Firebird::UtilSvc::ArgvType&, TEXT*, size_t);
@@ -73,12 +71,6 @@ static void get_security_error(ISC_STATUS*, int);
 static void insert_error(ISC_STATUS*, ISC_STATUS);
 static void msg_get(USHORT number, TEXT* msg);
 
-inline void gsec_exit(int code, tsec* tdsec)
-{
-	tdsec->tsec_exit_code = code;
-	if (tdsec->tsec_throw)
-		Firebird::LongJump::raise();
-}
 
 inline void envPick(Firebird::UtilSvc* uSvc, TEXT* dest, size_t size, const TEXT* var)
 {
@@ -151,7 +143,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	tdsec->tsec_interactive = !uSvc->isService();
 	internal_user_data* user_data = tdsec->tsec_user_data;
 
-	ISC_STATUS* const status = tdsec->tsec_status;
+	ISC_STATUS_ARRAY status;
 	SSHORT ret = parse_cmd_line(argv, tdsec);
 	Firebird::PathName databaseName;
 	bool databaseNameEntered = user_data->database_name_entered;
@@ -309,6 +301,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				if (ret == 1)
 				{
 					// quit command
+					ret = 0;
 					break;
 				}
 				if (user_data->dba_user_name_entered || 
@@ -329,61 +322,56 @@ int gsec(Firebird::UtilSvc* uSvc)
 					callRemoteServiceManager(status, sHandle, *user_data, data_print, NULL);
 					if (status[1])
 					{
-						GSEC_print(GsecMsg75, user_data->user_name);
 						GSEC_print_status(status);
-						break;
 					}
 				}
 			}
 		}
 	}
 
-	uSvc->makePermanentVector(tdsec->tsec_status);
+	if (ret && status[1])
+	{
+		uSvc->stuffStatus(status);
+	}
 
 	if (db_handle) {
-		ISC_STATUS_ARRAY loc_status;
-		if (isc_detach_database(loc_status, &db_handle)) {
-			GSEC_error_redirect(loc_status, GsecMsg93);
+		if (isc_detach_database(status, &db_handle)) {
+			GSEC_error_redirect(status, GsecMsg93);
 		}
 	}
 	if (sHandle)
 	{
-		ISC_STATUS_ARRAY loc_status;
-		detachRemoteServiceManager(loc_status, sHandle);
-		if (loc_status[1]) {
-			GSEC_print_status(loc_status);
+		ISC_STATUS_ARRAY status;
+		detachRemoteServiceManager(status, sHandle);
+		if (status[1]) {
+			GSEC_print_status(status);
 		}
 	}
-
-	gsec_exit(tdsec->tsec_interactive ? FINI_OK : ret, tdsec);
 	}	// try
 	catch (const Firebird::LongJump&) {
-		/* All calls to gsec_exit(), normal and error exits, wind up here */
+		/* All error exit calls to GSEC_error() wind up here */
 		exit_code = tdsec->tsec_exit_code;
 
-		tdsec->utilSvc->started();
 		tdsec->tsec_throw = false;
 	}
 	catch (const Firebird::Exception& e) {
 		// Real exceptions are coming here
-		ISC_STATUS* const status = tdsec->tsec_status;
+		ISC_STATUS_ARRAY status;
 		e.stuff_exception(status);
 
-		tdsec->utilSvc->started();
 		tdsec->tsec_throw = false;
 
 		GSEC_print_status(status, false);
+		if (uSvc->getStatus())
+		{
+			memset(uSvc->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
+			uSvc->stuffStatus(status);
+		}
 
 		exit_code = FINI_ERROR;
 	}
 
-	
-	if (exit_code != FINI_OK && uSvc->getStatus())
-    {
-		memset(uSvc->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
-        uSvc->stuffStatus(tdsec->tsec_status);
-	}
-
+	tdsec->utilSvc->started();
 	return exit_code;
 }
 
@@ -1128,41 +1116,14 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
 	{
 		const ISC_STATUS* vector = status_vector;
 		tsec* tdsec = tsec::getSpecific();
-		tdsec->utilSvc->stuffStatus(status_vector);
 
 		SCHAR s[1024];
 		while (fb_interpret(s, sizeof(s), &vector)) 
 		{
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
-			int exitCode = util_print("%s%s", s, nl);
-			if (exitOnError && exitCode != 0) 
-			{
-				gsec_exit(exitCode, tsec::getSpecific());
-			}
+			util_output("%s%s", s, nl);
 		}
 	}
-}
-
-static int vutil_print(const SCHAR* format, va_list arglist)
-{
-/**************************************
- *
- *	v u t i l _ p r i n t
- *
- **************************************
- *
- * Functional description
- *	Platform independent output routine.
- *  Varargs function.
- *
- **************************************/
-	tsec* tdsec = tsec::getSpecific();
-
-	Firebird::string buf;
-	buf.vprintf(format, arglist);
-	
-	tdsec->utilSvc->output(buf.c_str());
-	return 0;
 }
 
 static void util_output(const SCHAR* format, ...)
@@ -1180,33 +1141,15 @@ static void util_output(const SCHAR* format, ...)
  **************************************/
 	va_list arglist;
 	va_start(arglist, format);
-	int exit_code = vutil_print(format, arglist);
-	va_end(arglist);
-
-	if (exit_code != 0) 
+	tsec* tdsec = tsec::getSpecific();
+	if (!tdsec->utilSvc->isService())
 	{
-		gsec_exit(exit_code, tsec::getSpecific());
+		Firebird::string buf;
+		buf.vprintf(format, arglist);
+	
+		tdsec->utilSvc->output(buf.c_str());
 	}
-}
-
-static int util_print(const SCHAR* format, ...)
-{
-/**************************************
- *
- *	u t i l _ o u t p u t
- *
- **************************************
- *
- * Functional description
- *	Platform independent output routine.
- *
- **************************************/
-	va_list arglist;
-	va_start(arglist, format);
-	int exit_code = vutil_print(format, arglist);
 	va_end(arglist);
-
-	return exit_code;
 }
 
 void GSEC_error_redirect(const ISC_STATUS* status_vector,
@@ -1265,7 +1208,8 @@ void GSEC_error(USHORT errcode)
 	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);
-	gsec_exit(FINI_ERROR, tdsec);
+	if (tdsec->tsec_throw)
+		Firebird::LongJump::raise();
 }
 
 void GSEC_print(USHORT number,
