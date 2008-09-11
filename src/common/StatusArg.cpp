@@ -46,6 +46,16 @@ void StatusVector::clear() throw()
 	m_status_vector[0] = isc_arg_end;
 }
 
+StatusVector::StatusVector(const ISC_STATUS* s) throw() : Base(0, 0)
+{
+	clear();
+	// special case - empty initialized status vector, no warnings
+	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
+	{
+		append(s, FB_NELEM(m_status_vector) - 1);
+	}
+}
+
 void StatusVector::append(const StatusVector& v) throw()
 {
 	StatusVector newVector;

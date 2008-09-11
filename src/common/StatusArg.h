@@ -59,11 +59,7 @@ protected:
 	}
 
 public:
-	explicit StatusVector(const ISC_STATUS* s) throw() : Base(0, 0)
-	{ 
-		clear();
-		append(s, FB_NELEM(m_status_vector) - 1);
-	}
+	explicit StatusVector(const ISC_STATUS* s) throw();
 
 	StatusVector() throw() : Base(0, 0)
 	{ 
