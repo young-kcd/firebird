@@ -199,10 +199,9 @@ private:
 	static bool ck_space_for_numeric(char*& info, const char* const end);
 
 private:
-	ISC_STATUS_ARRAY svc_status_array;
+	ISC_STATUS_ARRAY svc_status;		// status vector for running service
 	Firebird::string svc_parsed_sw;		// Here point elements of argv
-	SLONG	svc_handle;					// "handle" of process/thread running service
-	ISC_STATUS*	svc_status;				// status vector for svc_handle
+	SLONG	svc_handle;					// "handle" of thread running service
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE + 1];		// output from service

@@ -60,8 +60,6 @@
 #include <io.h>
 #endif
 
-#include "../utilities/common/cmd_util_proto.h"
-
 using MsgFormat::SafeArg;
 
 

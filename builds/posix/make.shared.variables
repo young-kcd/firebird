@@ -153,7 +153,7 @@ SECURITY_ClientFiles_gsec = call_service.cpp
 
 SECURITY_ServerFiles_gsec:= security.cpp gsec.cpp 
 SECURITY_ServerFiles_gstat:= dba.epp ppg.cpp 
-SECURITY_ServerFiles_common:= cmd_util.cpp
+SECURITY_ServerFiles_common:= 
 
 SECURITY_Files_gsec = $(SECURITY_ClientFiles_gsec) $(SECURITY_ServerFiles_gsec)
 SECURITY_Files_gstat = $(SECURITY_ServerFiles_gstat)
@@ -285,7 +285,7 @@ COMMON_Objects = $(FBCLASSES_Objects) \
 #________________________________________________________________________
 #
 
-UTIL_Files = utilities/common/cmd_util.cpp
+UTIL_Files = 
 
 UTIL_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(UTIL_Files))))
 

@@ -28,6 +28,7 @@
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
  *
+ * 2008		Alex Peshkoff - refactored services code for MT safe engine
  */
 
 #include "firebird.h"
@@ -63,8 +64,8 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
-#include "../utilities/common/cmd_util_proto.h"
 #include "../jrd/scl.h"
+#include "../jrd/msg_encode.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -231,6 +232,25 @@ namespace {
 	GlobalPtr<AllServices> allServices;	// protected by svc_mutex
 	volatile bool svcShutdown = false;
 
+	void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
+	{
+		using MsgFormat::safe_cell;
+
+		switch (value.type)
+		{
+		case safe_cell::at_int64:
+		case safe_cell::at_uint64:
+			*status++ = isc_arg_number;
+			*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
+			break;
+		case safe_cell::at_str:
+			*status++ = isc_arg_string;
+			*status++ = (ISC_STATUS) (IPTR) (value.st_value.s_string);
+			break;
+		default:
+			break;
+		}
+	}
 } // anonymous namespace
 
 
@@ -402,7 +422,92 @@ void Service::stuffStatus(const USHORT facility, const USHORT errcode, const Msg
 		return;
 	}
 
-	CMD_UTIL_put_svc_status(svc_status, facility, errcode, args);
+	// Append error codes to the status vector
+
+	ISC_STATUS_ARRAY tmp_status;
+	bool duplicate = false;
+
+	// stuff the status into temp buffer
+	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
+	ISC_STATUS *status = tmp_status;
+	*status++ = isc_arg_gds;
+	*status++ = ENCODE_ISC_MSG(errcode, facility);
+	int tmp_status_len = 3;
+
+	// We preserve the five params of the old code.
+	// Don't want to overflow the status vector.
+	for (unsigned int loop = 0; loop < 5 && loop < args.getCount(); ++loop)
+	{
+		put_status_arg(status, args.getCell(loop));
+		tmp_status_len += 2;
+	}
+
+	*status++ = isc_arg_end;
+
+	if (svc_status[0] != isc_arg_gds ||
+		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 &&
+		 svc_status[2] != isc_arg_warning))
+	{
+		memcpy(svc_status, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
+	}
+	else {
+		int status_len = 0, warning_indx = 0;
+		PARSE_STATUS(svc_status, status_len, warning_indx);
+		if (status_len)
+			--status_len;
+
+		// check for duplicated error code
+		int i;
+		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
+			if (svc_status[i] == isc_arg_end && i == status_len)
+				break;			// end of argument list
+
+			if (i && i == warning_indx)
+				break;			// vector has no more errors
+
+			if (svc_status[i] == tmp_status[1] && i &&
+				svc_status[i - 1] != isc_arg_warning &&
+				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
+				(memcmp(&svc_status[i], &tmp_status[1],
+						sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
+			{
+				// duplicate found
+				duplicate = true;
+				break;
+			}
+		}
+		if (!duplicate) 
+		{
+			// if the status_vector has only warnings then adjust err_status_len
+			int err_status_len = i;
+			if (err_status_len == 2 && warning_indx)
+				err_status_len = 0;
+
+			ISC_STATUS_ARRAY warning_status;
+			int warning_count = 0;
+			if (warning_indx) 
+			{
+				// copy current warning(s) to a temp buffer
+				MOVE_CLEAR(warning_status, sizeof(warning_status));
+				memcpy(warning_status, &svc_status[warning_indx],
+							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
+				PARSE_STATUS(warning_status, warning_count, warning_indx);
+			}
+
+			// add the status into a real buffer right in between last error and first warning
+			if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
+				memcpy(&svc_status[err_status_len], tmp_status,
+							sizeof(ISC_STATUS) * tmp_status_len);
+				// copy current warning(s) to the status_vector
+				if (warning_count
+					&& i + warning_count - 1 < ISC_STATUS_LENGTH)
+				{
+					memcpy(&svc_status[i - 1], warning_status,
+								sizeof(ISC_STATUS) * warning_count);
+				}
+			}
+		}
+	}
 
 	makePermanentVector(svc_status);
 }
@@ -562,8 +667,7 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
 	: svc_parsed_sw(getPool()), 
-	svc_handle(0), svc_status(svc_status_array), 
-	svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
+	svc_handle(0), svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_enc_password(getPool()), 
@@ -571,7 +675,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_strings_buffer(NULL)
 {
-	memset(svc_status_array, 0, sizeof svc_status_array);
+	memset(svc_status, 0, sizeof svc_status);
 
 	{	// scope
 		// Account service block in global array
