@@ -364,7 +364,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		GSEC_print_status(status, false);
 		if (uSvc->getStatus())
 		{
-			memset(uSvc->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
+			fb_utils::init_status(uSvc->getStatus());
 			uSvc->setServiceStatus(status);
 		}
 
