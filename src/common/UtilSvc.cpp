@@ -97,8 +97,8 @@ public:
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
 	virtual void putChar(char, char) { }
-	virtual void stuffStatus(const ISC_STATUS*) { }
-	virtual void stuffStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
+	virtual void setServiceStatus(const ISC_STATUS*) { }
+	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual ISC_STATUS* getStatus() { return 0; }
 	virtual void getAddressPath(ClumpletWriter& dpb) { }
 };

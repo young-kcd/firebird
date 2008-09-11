@@ -64,8 +64,8 @@ public:
     virtual void putLine(char, const char*) = 0;
     virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
-	virtual void stuffStatus(const ISC_STATUS*) = 0;
-	virtual void stuffStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
+	virtual void setServiceStatus(const ISC_STATUS*) = 0;
+	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
 	virtual void hidePasswd(ArgvType&, int) = 0;
 	virtual ISC_STATUS* getStatus() = 0;
 	virtual void checkService() = 0;

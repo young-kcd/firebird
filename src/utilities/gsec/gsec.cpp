@@ -331,7 +331,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 	if (ret && status[1])
 	{
-		uSvc->stuffStatus(status);
+		uSvc->setServiceStatus(status);
 	}
 
 	if (db_handle) {
@@ -365,7 +365,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		if (uSvc->getStatus())
 		{
 			memset(uSvc->getStatus(), 0, sizeof(ISC_STATUS_ARRAY));
-			uSvc->stuffStatus(status);
+			uSvc->setServiceStatus(status);
 		}
 
 		exit_code = FINI_ERROR;
@@ -1204,7 +1204,7 @@ void GSEC_error(USHORT errcode)
 	static const SafeArg dummy;
 
 	tsec* tdsec = tsec::getSpecific();
-	tdsec->utilSvc->stuffStatus(GSEC_MSG_FAC, errcode, dummy);
+	tdsec->utilSvc->setServiceStatus(GSEC_MSG_FAC, errcode, dummy);
 	tdsec->utilSvc->started();
 
 	GSEC_print(errcode);

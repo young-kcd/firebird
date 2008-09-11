@@ -452,7 +452,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	{
 		if (uSvc->isService())
 		{
-			uSvc->stuffStatus(ALICE_MSG_FAC, 20, MsgFormat::SafeArg());
+			uSvc->setServiceStatus(ALICE_MSG_FAC, 20, MsgFormat::SafeArg());
 			uSvc->started();
 		}
 		else
@@ -595,7 +595,7 @@ void ALICE_print_status(const ISC_STATUS* status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
 		AliceGlobals* tdgbl = AliceGlobals::getSpecific();
-		tdgbl->uSvc->stuffStatus(status_vector);
+		tdgbl->uSvc->setServiceStatus(status_vector);
 
 		SCHAR s[1024];
 		if (fb_interpret(s, sizeof(s), &vector))
@@ -623,7 +623,7 @@ void ALICE_error(USHORT	number,
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	TEXT buffer[256];
 
-	tdgbl->uSvc->stuffStatus(ALICE_MSG_FAC, number, arg);
+	tdgbl->uSvc->setServiceStatus(ALICE_MSG_FAC, number, arg);
 
 	fb_msg_format(0, ALICE_MSG_FAC, number, sizeof(buffer), buffer, arg);
 	alice_output("%s\n", buffer);

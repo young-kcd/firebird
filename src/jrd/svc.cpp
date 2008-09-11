@@ -381,7 +381,7 @@ void Service::putChar(char tag, char val)
 	enqueueByte(val);
 }
 
-void Service::stuffStatus(const ISC_STATUS* status_vector)
+void Service::setServiceStatus(const ISC_STATUS* status_vector)
 {
 	if (checkForShutdown())
 	{
@@ -415,7 +415,7 @@ void Service::stuffStatus(const ISC_STATUS* status_vector)
 	}
 }
 
-void Service::stuffStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args)
+void Service::setServiceStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args)
 {
 	if (checkForShutdown())
 	{

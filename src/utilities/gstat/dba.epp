@@ -363,7 +363,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 				if (in_sw_tab->in_sw_msg)
 					dba_print(in_sw_tab->in_sw_msg);
 			}
-			tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 1, SafeArg());
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 1, SafeArg());
 			dba_error(1);	/* msg 1: found unknown switch */
 			break;
 		case IN_SW_DBA_USERNAME:
@@ -443,7 +443,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 		dba_print(5, SafeArg() << GDS_VERSION);	/* msg 5: gstat version %s */
 
 	if (!name) {
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 2, SafeArg());
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 2, SafeArg());
 		dba_error(2);	/* msg 2: please retry, giving a database name */
 	}
 
@@ -488,7 +488,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (!Ods::isSupported(header->hdr_ods_version, header->hdr_ods_minor))
 	{
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 3,
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 3,
 								SafeArg() << ODS_VERSION <<
 								(header->hdr_ods_version & ~ODS_FIREBIRD_FLAG));
 		dba_error(3, SafeArg() << ODS_VERSION <<
@@ -804,7 +804,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 		if (status_vector[1])
 		{
-			tddba->uSvc->stuffStatus(status_vector);
+			tddba->uSvc->setServiceStatus(status_vector);
 			const ISC_STATUS* vector = status_vector;
 			SCHAR s[1024];
 			if (fb_interpret(s, sizeof(s), &vector))
@@ -1318,7 +1318,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if (fil->fil_desc  == INVALID_HANDLE_VALUE)
 	{
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
 		// msg 29: Can't open database file %s
 		db_error(GetLastError());
 	}
@@ -1380,7 +1380,7 @@ static const pag* db_read( SLONG page_number)
 		int lastError = GetLastError();
 		if (lastError != NO_ERROR)
 		{
-			tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 30, SafeArg());
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 			// msg 30: Can't read a database page
 			db_error(lastError);
 		}
@@ -1393,12 +1393,12 @@ static const pag* db_read( SLONG page_number)
 					reinterpret_cast<LPDWORD>(&actual_length),
 					NULL))
 	{
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 30, SafeArg());
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 		// msg 30: Can't read a database page 
 		db_error(GetLastError());
 	}
 	if (actual_length != tddba->page_size) {
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 4, SafeArg());
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
 		dba_error(4);
 		// msg 4: Unexpected end of database file. 
 	}
@@ -1487,7 +1487,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 
 	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
 	{
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
 		// msg 29: Can't open database file %s 
 		db_error(errno);
 	}
@@ -1540,7 +1540,7 @@ static const pag* db_read( SLONG page_number)
 	page_number -= fil->fil_min_page - fil->fil_fudge;
 	const FB_UINT64 offset = ((FB_UINT64) page_number) * ((FB_UINT64) tddba->page_size);
 	if (lseek (fil->fil_desc, offset, 0) == -1) {
-		tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 30, SafeArg());
+		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 		// msg 30: Can't read a database page 
 		db_error(errno);
 	}
@@ -1550,12 +1550,12 @@ static const pag* db_read( SLONG page_number)
 	{
 		const SSHORT l = read(fil->fil_desc, p, length);
 		if (l < 0) {
-			tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 30, SafeArg());
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
 			// msg 30: Can't read a database page 
 			db_error(errno);
 		}
 		if (!l) {
-			tddba->uSvc->stuffStatus(GSTAT_MSG_FAC, 4, SafeArg());
+			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 4, SafeArg());
 			dba_error(4);
 			// msg 4: Unexpected end of database file. 
 		}

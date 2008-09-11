@@ -109,9 +109,9 @@ public:		// utilities interface with service
     virtual void putSLong(char tag, SLONG val);
 	virtual void putChar(char tag, char val);
 	// append status_vector to service's status
-	virtual void stuffStatus(const ISC_STATUS* status_vector);
+	virtual void setServiceStatus(const ISC_STATUS* status_vector);
 	// append error message to service's status
-	virtual void stuffStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args);
+	virtual void setServiceStatus(const USHORT facility, const USHORT errcode, const MsgFormat::SafeArg& args);
 	// no-op for services
 	virtual void hidePasswd(ArgvType&, int);
 	// return service status

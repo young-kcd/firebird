@@ -1162,7 +1162,7 @@ void BURP_error(USHORT errcode,
  **************************************/
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	tdgbl->uSvc->stuffStatus(burp_msg_fac, errcode, arg);
+	tdgbl->uSvc->setServiceStatus(burp_msg_fac, errcode, arg);
 	tdgbl->uSvc->started();
 
 	BURP_msg_partial(256);	// msg 256: gbak: ERROR:
@@ -1364,7 +1364,7 @@ void BURP_print_status(const ISC_STATUS* status_vector, bool flagStuff)
 
 		if (flagStuff) {
 			BurpGlobals* tdgbl = BurpGlobals::getSpecific();
-			tdgbl->uSvc->stuffStatus(vector);
+			tdgbl->uSvc->setServiceStatus(vector);
 		}
 
         SCHAR s[1024];
