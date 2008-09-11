@@ -2213,8 +2213,11 @@ static void map_in_out(	dsql_req*		request,
 
 			if (!request)
 			{
-				desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
-				MOVD_move(&parameter->par_desc, &desc);
+				if (!flag || *flag >= 0)
+				{
+					desc.dsc_address = dsql_msg_buf + (IPTR) desc.dsc_address;
+					MOVD_move(&parameter->par_desc, &desc);
+				}
 			}
 			else if (!flag || *flag >= 0)
 			{
