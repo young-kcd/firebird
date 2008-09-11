@@ -390,27 +390,10 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 
 	if (status_vector != svc_status) 
 	{
-		ISC_STATUS* status = svc_status;
-		int i = 0;
-
-		while (*status && (++i < ISC_STATUS_LENGTH))
-		{
-			status++;
-		}
-
-		if (i == 1)		// We have a vector: isc_arg_gds, isc_arg_end.
-		{
-			i = 0;
-			status = svc_status;
-		}
-
-		for (int j = 0; status_vector[j] && (i < ISC_STATUS_LENGTH); j++, i++)
-		{
-			*status++ = status_vector[j];
-		}
-
-		svc_status[ISC_STATUS_LENGTH - 1] = 0; // May truncate one element, but it's worse to crash.
-
+		Arg::StatusVector svc(svc_status);
+		Arg::StatusVector passed(status_vector);
+		svc.append(passed);
+		svc.copyTo(svc_status);
 		makePermanentVector(svc_status);
 	}
 }
