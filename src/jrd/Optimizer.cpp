@@ -1608,30 +1608,26 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						case segmentScanBetween:
 							scratch.lowerCount++;
 							scratch.upperCount++;
-							selectivity =
-								scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_BETWEEN;
 							break;
 
 						case segmentScanLess:
 							scratch.upperCount++;
-							selectivity =
-								scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_LESS;
 							break;
 
 						case segmentScanGreater:
 							scratch.lowerCount++;
-							selectivity =
-								scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_GREATER;
 							break;
 
 						case segmentScanStarting:
 							scratch.lowerCount++;
 							scratch.upperCount++;
-							selectivity =
-								scratch.idx->idx_rpt[j].idx_selectivity;
+							selectivity = scratch.idx->idx_rpt[j].idx_selectivity;
 							factor = REDUCE_SELECTIVITY_FACTOR_STARTING;
 							break;
 
@@ -1642,24 +1638,21 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// Adjust the compound selectivity using the reduce factor.
 					// It should be better than the previous segment but worse
 					// than a full match.
-					const double diffSelectivity =
-						scratch.selectivity - selectivity;
+					const double diffSelectivity = scratch.selectivity - selectivity;
 					selectivity += (diffSelectivity * factor);
 					fb_assert(selectivity <= scratch.selectivity);
 					scratch.selectivity = selectivity;
 
 					if (segment->scanType != segmentScanNone) {
 						matches.join(segment->matches);
-						scratch.nonFullMatchedSegments =
-							scratch.idx->idx_count - j;
+						scratch.nonFullMatchedSegments = scratch.idx->idx_count - j;
 					}
 					break;
 				}
 			}
 
 			if (scratch.scopeCandidate) {
-				InversionCandidate* invCandidate =
-					FB_NEW(pool) InversionCandidate(pool);
+				InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
 				invCandidate->selectivity = scratch.selectivity;
 				// When selectivty is zero the statement is prepared on an
@@ -1678,10 +1671,8 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				// the index-depth, but this is not possible due lack 
 				// on information at this time.
 				invCandidate->cost = DEFAULT_INDEX_COST + (scratch.selectivity * scratch.cardinality);
-				invCandidate->nonFullMatchedSegments =
-					scratch.nonFullMatchedSegments;
-				invCandidate->matchedSegments = 
-					MAX(scratch.lowerCount, scratch.upperCount);
+				invCandidate->nonFullMatchedSegments = scratch.nonFullMatchedSegments;
+				invCandidate->matchedSegments = MAX(scratch.lowerCount, scratch.upperCount);
 				invCandidate->indexes = 1;
 				invCandidate->scratch = &scratch;
 				invCandidate->matches.join(matches);
@@ -3060,9 +3051,10 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 	if (withRelationship->cost == 0) {
 		return false;
 	}
-	double compareValue = checkRelationship->cost / withRelationship->cost;
+
+	const double compareValue = checkRelationship->cost / withRelationship->cost;
 	if ((compareValue >= 0.98) && (compareValue <= 1.02)) {
-		// cost is nearly the same, now check on cardinality.
+		// cost is nearly the same, now check on cardinality
 		if (checkRelationship->cardinality < withRelationship->cardinality) {
 			return true;
 		}
@@ -3070,6 +3062,7 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 	else if (checkRelationship->cost < withRelationship->cost) {
 		return true;
 	}
+
 	return false;
 }
 
@@ -3085,27 +3078,34 @@ void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
  *  Estimate the cost for the stream.
  *
  **************************************/
-	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
-	double cardinality = csb_tail->csb_cardinality;
-
 	// Create the optimizer retrieval generation class and calculate
-	// which indexes will be used and the total estimated 
-	// selectivity will be returned.
+	// which indexes will be used and the total estimated selectivity will be returned
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
-	// I'm allowed to apply delete to this const object, is this MS extension? Let gcc decide.
+
 	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	double selectivity = candidate->selectivity;
-	if (candidate->indexes) {
-		*cost = candidate->cost;
-	}
-	else {
-		// No indexes are used, this meant for every record a data-page is read.
-		// Thus the number of pages to be read is the same as the number of records.
-		*cost = cardinality;
+	*cost = candidate->cost;
+
+	// Adjust the effective selectivity based on non-indexed conjunctions
+	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		tail < optimizer->opt_conjuncts.end(); tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+			!candidate->matches.exist(node))
+		{
+			const double factor = (node->nod_type == nod_eql) ?
+				REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+				REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			selectivity *= factor;
+		}
 	}
 
-	cardinality *= selectivity;
+	// Calculate cardinality
+	const CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[stream];
+	const double cardinality = csb_tail->csb_cardinality * selectivity;
 
 	if (candidate->unique) {
 		*resulting_cardinality = cardinality;
