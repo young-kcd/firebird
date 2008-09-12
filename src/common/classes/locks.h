@@ -119,7 +119,7 @@ public:
 	void leave()
 	{
 #ifdef DEV_BUILD
-		if ((DWORD)spinlock.OwningThread != GetCurrentThreadId())
+		if ((U_IPTR)spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
 #endif
 		LeaveCriticalSection(&spinlock);
