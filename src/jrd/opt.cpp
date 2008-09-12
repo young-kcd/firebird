@@ -4581,7 +4581,8 @@ static RecordSource* gen_outer(thread_db* tdbb,
 		node = rse->rse_relation[i];
 		if (node->nod_type == nod_union ||
 			node->nod_type == nod_aggregate ||
-			node->nod_type == nod_procedure || node->nod_type == nod_rse)
+			node->nod_type == nod_procedure ||
+			node->nod_type == nod_rse)
 		{
 			river = river_stack.pop();
 			stream_ptr[i]->stream_rsb = river->riv_rsb;
