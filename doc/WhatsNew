@@ -479,6 +479,13 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Unregistered feature
+        Async query cancelation using new API call fb_cancel_operation()
+      See also:
+        /doc/sql.extensions/README.fb_cancel_operation
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Feature CORE-1831
         New GBAK restore switches intended to fix backups with character set bugs
       Syntax:
