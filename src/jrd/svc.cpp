@@ -245,7 +245,7 @@ namespace {
 			break;
 		case safe_cell::at_str:
 			*status++ = isc_arg_string;
-			*status++ = (ISC_STATUS) (IPTR) (value.st_value.s_string);
+			*status++ = (ISC_STATUS) (IPTR) value.st_value.s_string;
 			break;
 		default:
 			break;
@@ -408,7 +408,6 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 	// Append error codes to the status vector
 
 	ISC_STATUS_ARRAY tmp_status;
-	bool duplicate = false;
 
 	// stuff the status into temp buffer
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
@@ -440,6 +439,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 			--status_len;
 
 		// check for duplicated error code
+		bool duplicate = false;
 		int i;
 		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
 			if (svc_status[i] == isc_arg_end && i == status_len)
@@ -478,7 +478,8 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 			}
 
 			// add the status into a real buffer right in between last error and first warning
-			if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH) {
+			i = err_status_len + tmp_status_len;
+			if (i < ISC_STATUS_LENGTH) {
 				memcpy(&svc_status[err_status_len], tmp_status,
 							sizeof(ISC_STATUS) * tmp_status_len);
 				// copy current warning(s) to the status_vector
