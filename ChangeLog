@@ -1,3 +1,78 @@
+2008-09-12 16:36  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.93), Optimizer.h (1.27):
+
+	An attempt to fix CORE-2078. This approach is hopefully a bit more
+	clever than the pre-ODS11 one.	I'll be waiting for the customer's
+	report before backporting into v2.0/v2.1.
+
+2008-09-12 16:12  dimitr
+
+	* firebird2/src/common/classes/locks.h (1.48):
+
+	Fixed the annoying warning in 64-bit builds.
+
+2008-09-12 14:23  dimitr
+
+	* firebird2/src/jrd/opt.cpp (1.322):
+
+	Misc.
+
+2008-09-12 13:31  alexpeshkoff
+
+	* firebird2/doc/WhatsNew (1.158):
+
+	added missing feature
+
+2008-09-12 13:29  robocop
+
+	* firebird2/builds/win32/msvc9/fbguard.vcproj (1.2):
+
+	Linker warning: /OPT:WIN98 is no longer supported;  ignored
+
+2008-09-12 13:25  robocop
+
+	* firebird2/src/jrd/Optimizer.h (1.26):
+
+	Paranoid compiler.
+
+2008-09-12 13:15  dimitr
+
+	* firebird2/src/jrd/Optimizer.h (1.25):
+
+	Misc.
+
+2008-09-12 13:15  robocop
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.30):
+
+	Misc.
+
+2008-09-12 13:05  robocop
+
+	* firebird2/src/jrd/svc.cpp (1.240):
+
+	Misc.
+
+2008-09-12 11:19  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.92), Optimizer.h (1.24):
+
+	Cleanup.
+
+2008-09-12 11:16  paulbeach
+
+	* firebird2/builds/posix/prefix.solx86gcc (1.29):
+
+	Solaris 10 Modifications
+
+2008-09-12 10:46  dimitr
+
+	* firebird2/src/jrd/: opt.cpp (1.321), Optimizer.cpp (1.91),
+	Optimizer.h (1.23):
+
+	Cleanup.
+
 2008-09-11 17:41  asfernandes
 
 	* firebird2/src/jrd/blb.cpp (1.179):
