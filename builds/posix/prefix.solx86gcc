@@ -11,17 +11,14 @@
 # The Original Code was created by Inprise Corporation
 # and its predecessors. Portions created by Inprise Corporation are
 # Copyright (C) Inprise Corporation.
+# Contributor(s): Konstantin Kuznetsov
+#			Neil McCalden
+#			Paul Beach
+# This file can be used to build Firebird on Solaris 10 using gcc
 #
-# All Rights Reserved.
-# Contributor(s): __Konstantin Kuznetsov___________________________________.
-# This file can be used to build FB on Solaris 2.6 x 86 with gcc 3.3.3 and bash
-#
-# Use SOLX86 to identify x86 version of Solaris.  Neil McCalden
-#  
-# $Id: prefix.solx86gcc,v 1.19.4.4 2008-09-12 09:06:13 paulbeach Exp $
+# $Id: prefix.solx86gcc,v 1.19.4.5 2008-09-12 09:19:11 paulbeach Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
-# 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 
 WARNINGS=-Wall -W -Wno-unused -Wno-parentheses -Wno-switch -Wwrite-strings
 COMM_SOLX_FLAGS:=-DSOLARIS -DSOLARIS_MT -DSOLX86 -DBSD_COMP -fno-omit-frame-pointer -fmessage-length=0 -MMD -fPIC
