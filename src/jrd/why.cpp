@@ -603,6 +603,7 @@ namespace
 			{
 				proc2 = ISC_signal(2, Handler2, 0);
 				proc15 = ISC_signal(15, Handler15, 0);
+				gds__register_cleanup(releaseCtrlCHandler, 0);
 			}
 			catch (...)
 			{
@@ -610,11 +611,14 @@ namespace
 			}
 		}
 		
-		static void propagateKill()
+		static void releaseCtrlCHandler(void*)
 		{
 			ISC_signal_cancel(2, Handler2, 0);
 			ISC_signal_cancel(15, Handler15, 0);
-			
+		}
+		
+		static void propagateKill()
+		{
 			// if signal is not processed by someone else, exit now
 			if (!(killed == 2 ? proc2 : proc15))
 			{
