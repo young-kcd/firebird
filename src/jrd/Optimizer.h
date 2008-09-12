@@ -84,8 +84,10 @@ inline int STREAM_INDEX(const jrd_nod* node)
 			return e_prc_stream;
 		case nod_union:
 			return e_uni_stream;
-		default:
+		case nod_aggregate:
 			return e_agg_stream;
+		default:
+			fb_assert(false);
 	}
 }
 
