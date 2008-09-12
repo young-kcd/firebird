@@ -1526,7 +1526,7 @@ InversionCandidate* OptimizerRetrieval::getInversion(RecordSource** rsb)
 	return invCandidate;
 }
 
-bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
+void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversions, 
 		IndexScratchList* fromIndexScratches, USHORT scope) const
 {
 /**************************************
@@ -1695,8 +1695,6 @@ bool OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 			}
 		}
 	}
-
-	return (inversions->getCount() >= 1);
 }
 
 jrd_nod* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
@@ -1906,7 +1904,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
  *
  **************************************/
 
-	if (inversions->getCount() < 1) {
+	if (!inversions->getCount()) {
 		return NULL;
 	}
 

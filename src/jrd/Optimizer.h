@@ -178,7 +178,7 @@ protected:
 	VaryingString* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);
 	RecordSource* generateNavigation();
-	bool getInversionCandidates(InversionCandidateList* inversions, 
+	void getInversionCandidates(InversionCandidateList* inversions, 
 		IndexScratchList* indexScratches, USHORT scope) const;
 	jrd_nod* makeIndexNode(const index_desc* idx) const;
 	jrd_nod* makeIndexScanNode(IndexScratch* indexScratch) const;
