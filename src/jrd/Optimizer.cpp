@@ -3075,7 +3075,7 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 	return false;
 }
 
-bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost, 
+void OptimizerInnerJoin::estimateCost(USHORT stream, double *cost, 
 	double *resulting_cardinality) const
 {
 /**************************************
@@ -3116,11 +3116,8 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 		*resulting_cardinality = MAX(cardinality, MAXIMUM_SELECTIVITY);
 	}
 
-	const bool useIndexRetrieval = (candidate->indexes >= 1);
 	delete candidate;
 	delete optimizerRetrieval;
-
-	return useIndexRetrieval;
 }
 
 int OptimizerInnerJoin::findJoinOrder()

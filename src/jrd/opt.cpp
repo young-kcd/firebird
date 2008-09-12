@@ -2653,8 +2653,7 @@ static void estimate_cost(thread_db* tdbb,
  *	is a function of estimated cardinality of the relation, index
  *	selectivity, and total boolean selectivity.  Since none of
  *	this information is available, the estimates are likely to
- *	be a bit weak.  Return true if the relation is index
- *	retrievable.
+ *	be a bit weak.
  *
  **************************************/
 	DEV_BLKCHK(opt, type_opt);
@@ -2777,9 +2776,6 @@ static void estimate_cost(thread_db* tdbb,
 	}
 
 	csb_tail->csb_flags |= csb_active;
-
-	// AB: Nice that we return a boolean, but do we ever need it?
-	//return (indexes != 0);
 }
 
 

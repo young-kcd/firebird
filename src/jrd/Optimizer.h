@@ -259,7 +259,7 @@ protected:
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;
-	bool estimateCost(USHORT stream, double *cost, 
+	void estimateCost(USHORT stream, double *cost, 
 		double *resulting_cardinality) const;
 	void findBestOrder(int position, InnerJoinStreamInfo* stream, 
 		IndexedRelationships* processList, double cost, double cardinality);
