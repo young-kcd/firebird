@@ -367,8 +367,7 @@ TempFile* TempSpace::setupFile(size_t size)
 		for (size_t j = 0; j < tempFiles.getCount(); j++)
 		{
 			Firebird::PathName dirname, filename;
-			PathUtils::splitLastComponent(dirname, filename,
-										  tempFiles[j]->getName());
+			PathUtils::splitLastComponent(dirname, filename, tempFiles[j]->getName());
 			PathUtils::ensureSeparator(dirname);
 			if (!directory.compare(dirname))
 			{
@@ -425,8 +424,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 	Segment** best = NULL, *space;
 
 	// Search through the available space in the not used segments list
-	for (Segment** ptr = &freeSegments; (space = *ptr);
-		 ptr = &(*ptr)->next)
+	for (Segment** ptr = &freeSegments; (space = *ptr); ptr = &(*ptr)->next)
 	{
 		// If this is smaller than our previous best, use it
 		if (space->size >= size && (!best || (space->size < (*best)->size))) {
