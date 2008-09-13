@@ -149,9 +149,9 @@ class pool_alloc : public TypedHandle<BLOCK_TYPE>
 {
     public:
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, char* file, int line)
+        void* operator new(size_t s, MemoryPool& p, const char* file, int line)
             { return p.calloc(s, file, line); }
-        void* operator new[](size_t s, MemoryPool& p, char* file, int line)
+        void* operator new[](size_t s, MemoryPool& p, const char* file, int line)
             { return p.calloc(s, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p )
@@ -180,7 +180,7 @@ class pool_alloc_rpt : public TypedHandle<BLOCK_TYPE>
     public:
 		typedef RPT blk_repeat_type;
 #ifdef DEBUG_GDS_ALLOC
-        void* operator new(size_t s, MemoryPool& p, int rpt, char* file, int line)
+        void* operator new(size_t s, MemoryPool& p, int rpt, const char* file, int line)
             { return p.calloc(s + sizeof(RPT) * rpt, file, line); }
 #else
         void* operator new(size_t s, MemoryPool& p, int rpt)
