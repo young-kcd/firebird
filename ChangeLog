@@ -1,3 +1,15 @@
+2008-09-13 18:38  asfernandes
+
+	* firebird2/src/include/fb_blk.h (1.18):
+
+	Warnings
+
+2008-09-13 13:09  dimitr
+
+	* firebird2/src/jrd/TempSpace.cpp (1.19):
+
+	Misc.
+
 2008-09-12 16:36  dimitr
 
 	* firebird2/src/jrd/: Optimizer.cpp (1.93), Optimizer.h (1.27):
