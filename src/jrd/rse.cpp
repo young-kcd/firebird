@@ -3417,23 +3417,29 @@ static void restore_record(record_param* rpb)
  *	Restore record to prior state
  *
  **************************************/
-	Record* rec_copy;
 	SaveRecordParam* rpb_copy = rpb->rpb_copy;
-	if (rpb_copy && (rec_copy = rpb_copy->srpb_rpb->rpb_record)) {
-		Record* record = rpb->rpb_record;
-		const USHORT size = rec_copy->rec_length;
-		if (!record || size > record->rec_length)
-			/* msg 284 cannot restore singleton select data */
-			BUGCHECK(284);
-		record->rec_format = rec_copy->rec_format;
-		record->rec_number = rec_copy->rec_number;
-		memcpy(record->rec_data, rec_copy->rec_data, size);
+	if (rpb_copy)
+	{
+		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
+		if (rec_copy)
+		{
+			Record* record = rpb->rpb_record;
+			const USHORT size = rec_copy->rec_length;
+			if (!record || size > record->rec_length)
+				BUGCHECK(284);	// msg 284 cannot restore singleton select data
+			record->rec_format = rec_copy->rec_format;
+			record->rec_number = rec_copy->rec_number;
+			memcpy(record->rec_data, rec_copy->rec_data, size);
 
-		memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-		rpb->rpb_record = record;
+			memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
+			rpb->rpb_record = record;
 
-		delete rec_copy;
+			delete rec_copy;
+		}
+		else
+			memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
 	}
+
 	if (rpb_copy)
 		delete rpb_copy;
 
@@ -3517,19 +3523,23 @@ static void save_record(thread_db* tdbb, record_param* rpb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Record* record = rpb->rpb_record;
-	if (record) {
-		const SLONG size = record->rec_length;
-		SaveRecordParam* rpb_copy = rpb->rpb_copy;
-		if (rpb_copy) {
-			Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
-			if (rec_copy)
-				delete rec_copy;
-		}
-		else
-			rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
+	SaveRecordParam* rpb_copy = rpb->rpb_copy;
+	if (rpb_copy)
+	{
+		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
+		if (rec_copy)
+			delete rec_copy;
+	}
+	else
+		rpb->rpb_copy = rpb_copy = FB_NEW(*tdbb->getDefaultPool()) SaveRecordParam();
 
-		memcpy(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
+	memcpy(rpb_copy->srpb_rpb, rpb, sizeof(record_param));
+
+	Record* record = rpb->rpb_record;
+
+	if (record)
+	{
+		const SLONG size = record->rec_length;
 		Record* rec_copy = FB_NEW_RPT(*tdbb->getDefaultPool(), size) Record(*tdbb->getDefaultPool());
 		rpb_copy->srpb_rpb->rpb_record = rec_copy;
 
@@ -3538,6 +3548,8 @@ static void save_record(thread_db* tdbb, record_param* rpb)
 		rec_copy->rec_number = record->rec_number;
 		memcpy(rec_copy->rec_data, record->rec_data, size);
 	}
+	else
+		rpb_copy->srpb_rpb->rpb_record = NULL;
 }
 
 

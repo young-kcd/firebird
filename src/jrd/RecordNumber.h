@@ -106,6 +106,7 @@ public:
 	inline RecordNumber& operator =(const RecordNumber& from)
 	{ 
 		value = from.value;
+		valid = from.valid;
 		return *this;
 	}
 
