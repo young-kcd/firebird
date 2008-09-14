@@ -3726,26 +3726,26 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				if (sub->nod_type != nod_field && sub->nod_type != nod_map &&
 					sub->nod_type != nod_dbkey)
 				{
-					// We can build a nod_derived_expr instead to be more efficient,
-					// but seems not very simple to do it here.
+					NodeStack stack;
+					expand_view_nodes(tdbb, csb, stream, stack, nod_dbkey);
 
-					// build an IF (RDB$DB_KEY IS NULL)
-					jrd_nod* new_node = PAR_make_node(tdbb, 3);
-					new_node->nod_type = nod_value_if;
-					new_node->nod_count = 3;
+					if (stack.hasData())
+					{
+						jrd_nod* new_node = PAR_make_node(tdbb, e_derived_expr_length);
+						new_node->nod_type = nod_derived_expr;
+						new_node->nod_count = e_derived_expr_count;
+						new_node->nod_arg[e_derived_expr_expr] = sub;
 
-					new_node->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_type = nod_missing;
-					new_node->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 1);
-					new_node->nod_arg[0]->nod_arg[0]->nod_type = nod_dbkey;
-					new_node->nod_arg[0]->nod_arg[0]->nod_count = 0;
-					new_node->nod_arg[0]->nod_arg[0]->nod_arg[0] = (jrd_nod*)(IPTR) stream;
+						USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[stack.getCount()];
 
-					new_node->nod_arg[1] = PAR_make_node(tdbb, 0);	// THEN: NULL
-					new_node->nod_arg[1]->nod_type = nod_null;
-					new_node->nod_arg[2] = sub;						// ELSE: sub
+						new_node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
+						new_node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) stack.getCount();
 
-					sub = new_node;
+						for (NodeStack::iterator i(stack); i.hasData(); ++i)
+							*streamList++ = (USHORT)(IPTR) i.object()->nod_arg[0];
+
+						sub = new_node;
+					}
 				}
 
 				return CMP_pass1(tdbb, csb, sub);	// note: scope of AutoSetRestore
@@ -3857,6 +3857,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 				return node;
 			NodeStack stack;
 			expand_view_nodes(tdbb, csb, stream, stack, type);
+
 			if (stack.hasData())
 			{
 				size_t stackCount = stack.getCount();
