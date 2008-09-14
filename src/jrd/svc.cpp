@@ -411,7 +411,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 
 	// stuff the status into temp buffer
 	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	ISC_STATUS *status = tmp_status;
+	ISC_STATUS* status = tmp_status;
 	*status++ = isc_arg_gds;
 	*status++ = ENCODE_ISC_MSG(errcode, facility);
 	int tmp_status_len = 3;
@@ -432,7 +432,8 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 	{
 		memcpy(svc_status, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 	}
-	else {
+	else
+	{
 		int status_len = 0, warning_indx = 0;
 		PARSE_STATUS(svc_status, status_len, warning_indx);
 		if (status_len)
@@ -441,14 +442,15 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 		// check for duplicated error code
 		bool duplicate = false;
 		int i;
-		for (i = 0; i < ISC_STATUS_LENGTH; i++) {
+		for (i = 0; i < ISC_STATUS_LENGTH; i++)
+		{
 			if (svc_status[i] == isc_arg_end && i == status_len)
 				break;			// end of argument list
 
 			if (i && i == warning_indx)
 				break;			// vector has no more errors
 
-			if (svc_status[i] == tmp_status[1] && i &&
+			if (svc_status[i] == tmp_status[1] && i != 0 &&
 				svc_status[i - 1] != isc_arg_warning &&
 				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 				(memcmp(&svc_status[i], &tmp_status[1],
@@ -459,11 +461,12 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 				break;
 			}
 		}
+
 		if (!duplicate) 
 		{
 			// if the status_vector has only warnings then adjust err_status_len
 			int err_status_len = i;
-			if (err_status_len == 2 && warning_indx)
+			if (err_status_len == 2 && warning_indx != 0)
 				err_status_len = 0;
 
 			ISC_STATUS_ARRAY warning_status;
@@ -479,12 +482,12 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 
 			// add the status into a real buffer right in between last error and first warning
 			i = err_status_len + tmp_status_len;
-			if (i < ISC_STATUS_LENGTH) {
+			if (i < ISC_STATUS_LENGTH)
+			{
 				memcpy(&svc_status[err_status_len], tmp_status,
 							sizeof(ISC_STATUS) * tmp_status_len);
 				// copy current warning(s) to the status_vector
-				if (warning_count
-					&& i + warning_count - 1 < ISC_STATUS_LENGTH)
+				if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 				{
 					memcpy(&svc_status[i - 1], warning_status,
 								sizeof(ISC_STATUS) * warning_count);

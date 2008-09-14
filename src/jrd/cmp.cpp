@@ -3864,7 +3864,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 				// If that is a DB_KEY of a view, it's possible (in case of
 				// outer joins) that some sub-stream have a NULL DB_KEY.
-				// In this case, we build a COALESCE(DB_KEY, _OCTETS ""),
+				// In this case, we build a COALESCE(DB_KEY, _OCTETS x"0000000000000000"),
 				// for the concatenation of sub DB_KEYs not result in NULL.
 				if (type == nod_dbkey && stackCount > 1)
 				{

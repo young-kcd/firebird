@@ -3053,7 +3053,7 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 	}
 
 	const double compareValue = checkRelationship->cost / withRelationship->cost;
-	if ((compareValue >= 0.98) && (compareValue <= 1.02)) {
+	if (compareValue >= 0.98 && compareValue <= 1.02) {
 		// cost is nearly the same, now check on cardinality
 		if (checkRelationship->cardinality < withRelationship->cardinality) {
 			return true;

@@ -250,7 +250,7 @@ ISC_STATUS	UTLD_parse_sql_info(
 
 // Loop over the variables being described.
 
-	SQLVAR* qvar = 0;
+	SQLVAR* qvar = NULL;
 	USHORT last_index = 0;
 	USHORT index = 0;
 
@@ -380,7 +380,7 @@ ISC_STATUS	UTLD_parse_sqlda(
 		}
 		else
 		{
-			sqlda = reinterpret_cast<const SQLDA *>(xsqlda);
+			sqlda = reinterpret_cast<const SQLDA*>(xsqlda);
 			n = sqlda->sqld;
 			xsqlda = NULL;
 		}
