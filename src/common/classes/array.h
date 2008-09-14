@@ -313,6 +313,10 @@ public:
 	// Used as such in GlobalRWLock::blockingAstHandler
 	size_t getCount() const { return count; }
 
+	bool isEmpty() const { return count == 0; }
+
+	bool hasData() const { return count != 0; }
+
 	size_t getCapacity() const { return capacity; }
 
 	void push(const T& item)
@@ -326,6 +330,7 @@ public:
 		memcpy(data + count, items, sizeof(T) * itemsSize);
 		count += itemsSize;
 	}
+
 	T pop()
 	{
 		fb_assert(count > 0);

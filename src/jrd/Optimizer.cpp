@@ -1895,7 +1895,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
  *
  **************************************/
 
-	if (!inversions->getCount()) {
+	if (inversions->isEmpty()) {
 		return NULL;
 	}
 
