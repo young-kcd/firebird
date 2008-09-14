@@ -1,3 +1,16 @@
+2008-09-14 04:58  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.316):
+
+	Fixed problem detected by TCS caused by fix of CORE-1245
+
+2008-09-14 04:56  asfernandes
+
+	* firebird2/src/jrd/: RecordNumber.h (1.12), rse.cpp (1.153):
+
+	Fixed CORE-2081 - RDB$DB_KEY in subselect expression incorrectly
+	returns NULL
+
 2008-09-13 18:38  asfernandes
 
 	* firebird2/src/include/fb_blk.h (1.18):
