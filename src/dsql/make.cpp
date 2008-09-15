@@ -921,8 +921,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			/* The result type is int64 because both operands are
 			   exact numeric: hence we don't need the NUMERIC_SCALE
 			   macro here. */
-			fb_assert(DTYPE_IS_EXACT(desc1.dsc_dtype));
-			fb_assert(DTYPE_IS_EXACT(desc2.dsc_dtype));
+			fb_assert(desc1.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc1.dsc_dtype));
+			fb_assert(desc2.dsc_dtype == dtype_unknown || DTYPE_IS_EXACT(desc2.dsc_dtype));
 
 			desc->dsc_scale = MIN(desc1.dsc_scale, desc2.dsc_scale);
 			node->nod_flags |= NOD_COMP_DIALECT;
