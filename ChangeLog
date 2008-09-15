@@ -1,3 +1,45 @@
+2008-09-15 17:18  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.34.4.2), jrd/grant.epp
+	(1.53.4.1), jrd/grant_proto.h (1.12.12.1), jrd/scl.epp (1.71.4.7),
+	jrd/scl.h (1.13.4.2), jrd/scl_proto.h (1.22.4.2):
+
+	Backported fix for CORE-1957: Long ACLs truncated
+
+2008-09-15 16:25  alexpeshkoff
+
+	* firebird2/src/: common/fb_exception.cpp (1.23.2.2),
+	include/fb_exception.h (1.21.4.2):
+
+	Backported fix for CORE-2055: BOF in fbclient
+
+2008-09-15 15:53  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.43.2.2):
+
+	Backported fix for CORE-2055: BOF in fbclient
+
+2008-09-15 13:46  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.100.4.6):
+
+	Backported fix for CORE-2077: Signal TERM in CS 2.1 for Linux
+
+2008-09-15 13:24  alexpeshkoff
+
+	* firebird2/src/: dsql/dsql.cpp (1.162.4.8), jrd/alt.cpp
+	(1.60.4.2), jrd/alt_proto.h (1.14.4.1), jrd/blb.cpp (1.117.2.6),
+	jrd/btr.cpp (1.162.2.20), jrd/common.h (1.137.2.13), jrd/exe.cpp
+	(1.176.2.5), jrd/execute_statement.cpp (1.14.4.9), jrd/idx.cpp
+	(1.103.4.5), jrd/jrd.cpp (1.237.2.30), jrd/jrd_proto.h (1.40.4.1),
+	jrd/rse.cpp (1.104.2.9), jrd/validation.cpp (1.16.2.4), jrd/vio.cpp
+	(1.151.2.15), jrd/why.cpp (1.100.4.5), jrd/why_proto.h (1.25.4.2),
+	jrd/y_handle.h (1.13.4.1), jrd/os/isc_i_proto.h (1.4.12.3),
+	jrd/os/posix/isc_ipc.cpp (1.17.4.6), remote/server.cpp
+	(1.126.2.12):
+
+	Backported fix for CORE-1439: DB corruption when killing posix CS
+
 2008-09-12 11:16  paulbeach
 
 	* firebird2/builds/posix/prefix.solx86gcc (1.19.4.5):
