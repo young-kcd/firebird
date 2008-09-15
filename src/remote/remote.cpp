@@ -46,8 +46,7 @@ int xdrmem_create(XDR *, SCHAR *, u_int, enum xdr_op);
 const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
 const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
 
-static TEXT* attach_failures = NULL;
-static TEXT* attach_failures_ptr;
+static Firebird::StringsBuffer* attachFailures = NULL;
 
 static void cleanup_memory(void*);
 static SLONG get_parameter(const UCHAR**);
@@ -643,55 +642,22 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
  *	strings to a special buffer.
  *
  **************************************/
-	if (!attach_failures)
+	if (!attachFailures)
 	{
-		attach_failures =
-			(TEXT*) ALLOC_LIB_MEMORY((SLONG) ATTACH_FAILURE_SPACE);
-		/* FREE: freed by exit handler cleanup_memory() */
-		if (!attach_failures)	/* NOMEM: don't bother trying to copy */
+		try 
+		{
+			attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
+			/* FREE: freed by exit handler cleanup_memory() */
+		}
+		catch (const std::bad_alloc&)	/* NOMEM: don't bother trying to copy */
+		{
 			return;
-#ifdef DEBUG_GDS_ALLOC
-		/* This buffer is freed by the exit handler - but some of the
-		 * reporting mechanisms will report it anyway, so flag it as
-		 * "known unfreed" to get the reports quiet.
-		 */
-		gds_alloc_flag_unfreed((void*) attach_failures);
-#endif	/* DEBUG_GDS_ALLOC */
-		attach_failures_ptr = attach_failures;
+		}
+
 		gds__register_cleanup(cleanup_memory, 0);
 	}
 
-	TEXT* p;
-	USHORT l = 0; // silence non initialized warning
-	while (*vector)
-	{
-		const ISC_STATUS status = *vector++;
-		switch (status)
-		{
-		case isc_arg_cstring:
-			l = (USHORT) *vector++;
-
-		case isc_arg_interpreted:
-		case isc_arg_string:
-			p = (TEXT*) *vector;
-			if (status != isc_arg_cstring)
-				l = strlen(p) + 1;
-
-			/* If there isn't any more room in the buffer,
-			   start at the beginning again */
-
-			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
-				attach_failures_ptr = attach_failures;
-			*vector++ = (ISC_STATUS) attach_failures_ptr;
-			memcpy(attach_failures_ptr, p, l);
-			attach_failures_ptr += l;
-			break;
-
-		default:
-			++vector;
-			break;
-		}
-	}
+	attachFailures->makePermanentVector(vector, vector);
 }
 
 
@@ -748,7 +714,7 @@ OBJCT REMOTE_set_object(rem_port* port, BLK object, OBJCT slot)
 }
 
 
-static void cleanup_memory( void *block)
+static void cleanup_memory(void *)
 {
 /**************************************
  *
@@ -761,11 +727,10 @@ static void cleanup_memory( void *block)
  *
  **************************************/
 
-	if (attach_failures)
-		FREE_LIB_MEMORY(attach_failures);
+	delete attachFailures;
+	attachFailures = NULL;
 
 	gds__unregister_cleanup(cleanup_memory, 0);
-	attach_failures = NULL;
 }
 
 
