@@ -4424,7 +4424,6 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 #endif /* DEBUG_PROCS */
 
 
-#ifdef MULTI_THREAD
 bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 {
 /**************************************
@@ -4439,9 +4438,10 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
  *
  **************************************/
 
-/* Force garbage colletion activity to yield the
-   processor in case client threads haven't had
-   an opportunity to enter the scheduling queue. */
+#ifdef MULTI_THREAD
+	// Force garbage collection activity to yield the
+	// processor in case client threads haven't had
+	// an opportunity to enter the scheduling queue.
 
 	if (!(tdbb->tdbb_flags & TDBB_sweeper))
 		SCH_schedule();
@@ -4450,6 +4450,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		THREAD_YIELD();
 		THREAD_ENTER();
 	}
+#endif
 
 	// Test various flags and unwind/throw if required.
 	// But do that only if we're not in the verb cleanup state,
@@ -4533,13 +4534,16 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	}
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
+#ifdef MULTI_THREAD
 		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
-			Config::getPriorityBoost() : 1) * QUANTUM) : 
+			Config::getPriorityBoost() : 1) * QUANTUM) :
+#else
+		(quantum ? quantum : QUANTUM) :
+#endif
 		tdbb->tdbb_quantum;
 
 	return false;
 }
-#endif
 
 
 void JRD_restore_context(void)
@@ -5014,7 +5018,8 @@ static ISC_STATUS error(ISC_STATUS* user_status)
    use count is erroneously left set. */
 
 #if (defined DEV_BUILD && !defined MULTI_THREAD)
-	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db)) {
+	if (dbb && dbb->dbb_use_count && !(dbb->dbb_flags & DBB_security_db))
+	{
 		dbb->dbb_use_count = 0;
 		ISC_STATUS* p = user_status;
 		*p++ = isc_arg_gds;
@@ -6123,6 +6128,129 @@ void JRD_set_cache_default(ULONG* num_ptr)
 }
 
 
+static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** released)
+{
+/**************************************
+ *
+ *	s h u t d o w n _ d b b
+ *
+ **************************************
+ *
+ * Functional description
+ *	rollback every transaction,
+ *	release every attachment,
+ *	and shutdown database.
+ *
+ **************************************/
+	if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
+		!(dbb->dbb_ast_flags & DBB_shutdown &&
+		  dbb->dbb_ast_flags & DBB_shutdown_locks))
+	{
+		Attachment* att_next;
+		for (Attachment* attach = dbb->dbb_attachments; attach; attach = att_next)
+		{
+			att_next = attach->att_next;
+			tdbb->tdbb_database = dbb;
+			tdbb->tdbb_attachment = attach;
+			tdbb->tdbb_request = NULL;
+			tdbb->tdbb_transaction = NULL;
+			tdbb->tdbb_flags |= TDBB_shutdown_manager;
+			Jrd::ContextPoolHolder context(tdbb, 0);
+			++dbb->dbb_use_count;
+
+			// purge_attachment() below can do an ERR_post
+			ISC_STATUS_ARRAY user_status;
+			tdbb->tdbb_status_vector = user_status;
+
+			try 
+			{
+				// purge attachment, rollback any open transactions
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+				V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
+#endif
+				purge_attachment(tdbb, user_status, attach, true);
+#if defined(V4_THREADING) && !defined(SUPERSERVER) 
+				V4_JRD_MUTEX_UNLOCK(databases_mutex);
+#endif
+			}
+			catch (const std::exception& ex) 
+			{
+				if (released)
+				{
+					*released = 0;
+				}
+				return error(user_status, ex);
+			}
+			
+			// attach became invalid pointer
+			// if we have someone, intereted in that fact, inform him
+			if (released)
+			{
+				*released++ = attach;
+			}
+		}
+	}
+	if (released)
+	{
+		*released = 0;
+	}
+	return FB_SUCCESS;
+}
+
+
+static ISC_STATUS shutdown_all()
+{
+/**************************************
+ *
+ *	s h u t d o w n _ a l l
+ *
+ **************************************
+ *
+ * Functional description
+ *	rollback every transaction,
+ *	release every attachment,
+ *	and shutdown every database.
+ *
+ **************************************/
+	THREAD_ENTER();
+	// NOTE!!!
+	// This routine doesn't contain THREAD_EXIT to help ensure
+	// that no threads will get in and try to access the data
+	// structures we released here
+
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	if (initialized) {
+		JRD_SS_MUTEX_LOCK;
+	}
+
+	Database* dbb_next;
+	for (Database* dbb = databases; dbb; dbb = dbb_next)
+	{
+		dbb_next = dbb->dbb_next;
+		
+		ISC_STATUS rc = shutdown_dbb(tdbb, dbb, 0);
+		if (rc != FB_SUCCESS)
+		{
+			if (initialized) 
+			{
+				JRD_SS_MUTEX_UNLOCK;
+			}
+			return rc;
+		}
+	}
+
+	if (initialized) {
+		JRD_SS_MUTEX_UNLOCK;
+    }
+
+	JRD_restore_context();
+
+	return FB_SUCCESS;
+}
+
+
 #ifdef SERVER_SHUTDOWN
 TEXT* JRD_num_attachments(TEXT* const buf, USHORT buf_len, USHORT flag,
 						USHORT* atts, USHORT* dbs)
@@ -6356,92 +6484,9 @@ static void ExtractDriveLetter(const TEXT* file_name, ULONG* drive_mask)
 #endif
 
 
-ISC_STATUS shutdown_all()
-{
-/**************************************
- *
- *	s h u t d o w n _ a l l
- *
- **************************************
- *
- * Functional description
- *	rollback every transaction,
- *	release every attachment,
- *	and shutdown every database.
- *
- **************************************/
-	THREAD_ENTER();
-	// NOTE!!!
-	// This routine doesn't contain THREAD_EXIT to help ensure
-	// that no threads will get in and try to access the data
-	// structures we released here
-
-	thread_db thd_context;
-	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
-
-	if (initialized) {
-		JRD_SS_MUTEX_LOCK;
-	}
-	ISC_STATUS_ARRAY user_status;
-
-	Database* dbb_next;
-	for (Database* dbb = databases; dbb; dbb = dbb_next)
-	{
-		dbb_next = dbb->dbb_next;
-		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use | DBB_security_db)) &&
-			!(dbb->dbb_ast_flags & DBB_shutdown &&
-			  dbb->dbb_ast_flags & DBB_shutdown_locks))
-		{
-			Attachment* att_next;
-			for (Attachment* attach = dbb->dbb_attachments; attach; attach = att_next)
-			{
-				att_next = attach->att_next;
-				tdbb->tdbb_database = dbb;
-				tdbb->tdbb_attachment = attach;
-				tdbb->tdbb_request = NULL;
-				tdbb->tdbb_transaction = NULL;
-				tdbb->tdbb_flags |= TDBB_shutdown_manager;
-				Jrd::ContextPoolHolder context(tdbb, 0);
-
-				++dbb->dbb_use_count;
-
-				/* purge_attachment below can do an ERR_post */
-
-				tdbb->tdbb_status_vector = user_status;
-
-				try {
-					/* purge attachment, rollback any open transactions */
-
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-					V4_JRD_MUTEX_LOCK(dbb->dbb_mutexes + DBB_MUTX_init_fini);
-#endif
-					purge_attachment(tdbb, user_status, attach, true);
-#if defined(V4_THREADING) && !defined(SUPERSERVER) 
-					V4_JRD_MUTEX_UNLOCK(databases_mutex);
-#endif
-				}	// try
-				catch (const std::exception& ex) {
-					if (initialized) {
-						JRD_SS_MUTEX_UNLOCK;
-					}
-					return error(user_status, ex);
-				}
-			}
-		}
-	}
-
-	if (initialized) {
-		JRD_SS_MUTEX_UNLOCK;
-    }
-
-	JRD_restore_context();
-
-	return FB_SUCCESS;
-}
-
-
 #ifdef SUPERSERVER
-static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) {
+static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg) 
+{
 /**************************************
  *
  *	s h u t d o w n _ t h r e a d
@@ -6476,9 +6521,9 @@ void JRD_shutdown_all(bool asyncMode)
  *  asynchronous shutdown.
  *
  **************************************/
-#ifdef SUPERSERVER
 	int flShutdownComplete = 0;
 
+#ifdef SUPERSERVER
 	if (asyncMode)
 	{
 		gds__thread_start(shutdown_thread, &flShutdownComplete, 
@@ -6492,6 +6537,7 @@ void JRD_shutdown_all(bool asyncMode)
 		}
 	}
 	else // sync mode
+#endif // SUPERSERVER
 	{
 		flShutdownComplete = (shutdown_all() == FB_SUCCESS);
 	}
@@ -6500,8 +6546,45 @@ void JRD_shutdown_all(bool asyncMode)
 	{
 		gds__log("Forced server shutdown - not all databases closed");
 	}
-#endif // SUPERSERVER
 }
+
+#else // SERVER_SHUTDOWN
+
+// This conditional compilation, though sitting under not
+// defined SERVER_SHUTDOWN, performs full or partial shutdown 
+// of database. SERVER_SHUTDOWN defined controls some other
+// aspects of operation, therefore was left "as is". 
+// Who wants to invent better naem for it, please do it.
+
+void JRD_process_close()
+{
+	shutdown_all();
+}
+
+void JRD_database_close(Attachment** handle, Attachment** released)
+{
+	THREAD_ENTER();
+	thread_db thd_context;
+	thread_db* tdbb = JRD_MAIN_set_thread_data(thd_context);
+
+	Database* dbb = databases;
+	for (; dbb; dbb = dbb->dbb_next)
+	{
+		for (Attachment* attach = dbb->dbb_attachments; attach; attach = attach->att_next)
+		{
+			if (attach == *handle)
+			{
+				goto found;
+			}
+		}
+	}
+	return;
+	
+found:
+	// got dbb to be closed
+	shutdown_dbb(tdbb, dbb, released);
+}
+
 #endif /* SERVER_SHUTDOWN */
 
 

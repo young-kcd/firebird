@@ -488,10 +488,8 @@ void IDX_create_index(
 				delete record;
 		}
 
-#ifdef SUPERSERVER
 		if (--tdbb->tdbb_quantum < 0)
 			cancel = JRD_reschedule(tdbb, 0, false);
-#endif
 	}
 
 	gc_record->rec_flags &= ~REC_gc_active;

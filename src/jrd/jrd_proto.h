@@ -148,6 +148,9 @@ const USHORT JRD_info_dbnames	= 2;
 
 TEXT*	JRD_num_attachments(TEXT* const, USHORT, USHORT, USHORT*, USHORT*);
 void	JRD_shutdown_all(bool);
+#else /* SERVER_SHUTDOWN */
+void	JRD_process_close();
+void	JRD_database_close(Jrd::Attachment**, Jrd::Attachment**);
 #endif /* SERVER_SHUTDOWN */
 
 void	JRD_set_cache_default(ULONG *);

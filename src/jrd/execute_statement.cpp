@@ -34,7 +34,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
 #include "../jrd/dsc.h"
-#include "../jrd/y_handle.h"
 #include "../jrd/thd.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/mov_proto.h"
@@ -44,6 +43,7 @@
 #include "../jrd/thread_proto.h"
 #define	WHY_NO_API 
 #include "../jrd/why_proto.h"
+#include "../jrd/y_handle.h"
 
 #include "../jrd/align.h"
 #include "../jrd/execute_statement.h"
@@ -53,8 +53,7 @@
 using namespace Jrd;
 using namespace Firebird;
 
-WHY_DBB GetWhyAttachment(ISC_STATUS* status,
-						  Attachment* jrd_attachment_handle);
+YValve::Attachment* GetWhyAttachment(ISC_STATUS*, Attachment*);
 
 static const SSHORT sqlType[] =
  {
@@ -112,19 +111,14 @@ void ExecuteStatement::Open(thread_db* tdbb, jrd_nod* sql, SSHORT nVars, bool Si
 	memcpy(StartOfSqlOperator, SqlText.c_str(), sizeof(StartOfSqlOperator) - 1);
 	StartOfSqlOperator[sizeof(StartOfSqlOperator) - 1] = 0;
 
-	WHY_DBB temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
+	YValve::Attachment* temp_dbb = GetWhyAttachment(tdbb->tdbb_status_vector,
 								  tdbb->tdbb_attachment);
 	if (!temp_dbb)
 		ERR_punt();
 
 	Attachment = temp_dbb->public_handle;
 
-	WHY_TRA temp_tra = WHY_alloc_handle(temp_dbb->implementation, HANDLE_transaction);
-	if (!temp_tra)
-		ERR_post(isc_virmemexh, isc_arg_end);
-	Transaction = temp_tra->public_handle;
-	temp_tra->handle.h_tra = tdbb->tdbb_transaction;
-	temp_tra->parent = temp_dbb;
+	YValve::Transaction* temp_tra = new YValve::Transaction(tdbb->tdbb_transaction, &Transaction, temp_dbb);
 
 	Statement = 0;
 	Sqlda = MakeSqlda(tdbb, nVars ? nVars : 1);
@@ -290,12 +284,9 @@ void ExecuteStatement::Close(thread_db* tdbb)
 	delete[] p;
 	Sqlda = 0;
 	if (Transaction) {
-		THREAD_EXIT();
-		WHY_cleanup_transaction(WHY_translate_handle(Transaction));
-		THREAD_ENTER();
+		delete YValve::translate<YValve::Transaction>(&Transaction);
+		Transaction = 0;
 	}
-	WHY_free_handle(Transaction);
-	Transaction = 0;
 	delete[] Buffer;
 	Buffer = 0;
 }

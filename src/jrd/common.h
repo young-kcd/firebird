@@ -84,9 +84,10 @@
 # endif
 #endif
 
+#define CANCEL_OPERATION
+
 #ifdef SUPERSERVER
 #define GOVERNOR
-#define CANCEL_OPERATION
 #define FB_ARCHITECTURE isc_info_db_class_server_access
 #else
 #define FB_ARCHITECTURE isc_info_db_class_classic_access

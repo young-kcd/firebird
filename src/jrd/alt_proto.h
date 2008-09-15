@@ -66,7 +66,7 @@ ISC_STATUS	API_ROUTINE gds__create_database( ISC_STATUS*, SSHORT, const SCHAR*,
 						  FB_API_HANDLE*, SSHORT, const SCHAR*, SSHORT);
 
 ISC_STATUS	API_ROUTINE gds__database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
-					  	  DatabaseCleanupRoutine*, void * );
+					  	  AttachmentCleanupRoutine*, void * );
 
 ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT, 
 						const SCHAR*, SSHORT, SCHAR*);

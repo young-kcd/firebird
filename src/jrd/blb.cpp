@@ -496,12 +496,8 @@ USHORT BLB_get_segment(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->tdbb_database;
 
-#ifdef SUPERSERVER
-
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-
-#endif
 
 /* If we reached end of file, we're still there */
 

@@ -3859,11 +3859,9 @@ static SLONG fast_load(thread_db* tdbb,
 				pointers[level] = levelPointer;
 			}
 
-#ifdef SUPERSERVER
 			if (--tdbb->tdbb_quantum < 0) {
 				error = JRD_reschedule(tdbb, 0, false);
 			}
-#endif
 		}
 
 		// To finish up, put an end of level marker on the last bucket 
@@ -6414,7 +6412,6 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 			} while (--l);
 		}
 
-#ifdef SUPERSERVER
 		// Until deletion of duplicate nodes becomes efficient, limit
 		// leaf level traversal by rescheduling.
 		if (--tdbb->tdbb_quantum < 0) {
@@ -6423,7 +6420,6 @@ static CONTENTS remove_leaf_node(thread_db* tdbb, index_insertion* insertion, WI
 				ERR_punt();
 			}
 		}
-#endif
 	}
 
 	// If we've needed to search thru a significant number of pages, warn the

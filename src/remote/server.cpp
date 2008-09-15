@@ -4429,6 +4429,15 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	this->send(sendL);
 
+#ifndef SUPERSERVER
+	// In case of CS remote listener we have a single connection system.
+	// If database is shut down, it's no use running fb_inet_server any more.
+	if (exit_code == isc_shutdown)
+	{
+		exit(0);
+	}
+#endif
+
 	return exit_code;
 }
 

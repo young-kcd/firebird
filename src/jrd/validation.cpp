@@ -821,10 +821,8 @@ static FETCH_CODE fetch_page(thread_db* tdbb,
 	Database* dbb = tdbb->tdbb_database;
 	CHECK_DBB(dbb);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 	window->win_page = page_number;
 	window->win_flags = 0;

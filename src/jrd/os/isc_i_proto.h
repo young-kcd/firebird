@@ -34,8 +34,8 @@ int		ISC_kill(SLONG, SLONG, void *);
 #else
 // And that are functions to manage UNIX signals
 int		ISC_kill(SLONG, SLONG);
-void ISC_signal(int, FPTR_VOID_PTR, void *);
-void ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
+bool	ISC_signal(int, FPTR_VOID_PTR, void *);
+void	ISC_signal_cancel(int, FPTR_VOID_PTR, void *);
 #endif
 
 void	ISC_signal_init(void);

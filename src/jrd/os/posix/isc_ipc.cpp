@@ -36,7 +36,7 @@
  *
  */
 
- /* $Id: isc_ipc.cpp,v 1.17.4.5 2008-08-28 06:37:33 alexpeshkoff Exp $ */
+ /* $Id: isc_ipc.cpp,v 1.17.4.6 2008-09-15 11:25:41 alexpeshkoff Exp $ */
 
 #include "firebird.h"
 #include <stdio.h>
@@ -128,7 +128,7 @@ static int volatile relay_pipe = 0;
 
 
 static void cleanup(void* arg);
-static void isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
+static bool isc_signal2(int signal, FPTR_VOID handler, void* arg, ULONG);
 static SLONG overflow_handler(void* arg);
 static SIG que_signal(int signal, FPTR_VOID handler, void* arg, int flags);
 
@@ -242,6 +242,9 @@ int ISC_kill(SLONG pid, SLONG signal_number)
  *	Notify somebody else.
  *
  **************************************/
+	if (! pid)
+		pid = getpid();
+
 	for (;;) {
 		const int status = kill(pid, signal_number);
 
@@ -302,7 +305,7 @@ int ISC_kill(SLONG pid, SLONG signal_number)
 }
 
 
-void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
+bool ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
 {
 /**************************************
  *
@@ -314,11 +317,11 @@ void ISC_signal(int signal_number, FPTR_VOID_PTR handler, void* arg)
  *	Multiplex multiple handers into single signal.
  *
  **************************************/
-	isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
+	return isc_signal2(signal_number, reinterpret_cast<FPTR_VOID>(handler), arg, SIG_user);
 }
 
 
-static void isc_signal2(
+static bool isc_signal2(
 						int signal_number,
 						FPTR_VOID handler, void* arg, ULONG flags)
 {
@@ -334,6 +337,7 @@ static void isc_signal2(
  **************************************/
 
 	SIG sig;
+	bool rc = false;
 
 /* The signal handler needs the process id */
 	if (!process_id)
@@ -377,6 +381,7 @@ static void isc_signal2(
 		{
 			que_signal(signal_number, reinterpret_cast<FPTR_VOID>(oact.sa_handler), 
 				NULL, SIG_client);
+			rc = true;
 		}
 	}
 
@@ -385,6 +390,8 @@ static void isc_signal2(
 	que_signal(signal_number, handler, arg, flags);
 
 	THD_MUTEX_UNLOCK(&sig_mutex);
+
+	return rc;
 }
 
 

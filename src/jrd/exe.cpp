@@ -578,10 +578,8 @@ void EXE_receive(thread_db*		tdbb,
 
 	DEV_BLKCHK(request, type_req);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 	jrd_tra* transaction = request->req_transaction;
 
@@ -722,10 +720,8 @@ void EXE_send(thread_db*		tdbb,
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(request, type_req);
 
-#ifdef SUPERSERVER
 	if (--tdbb->tdbb_quantum < 0)
 		JRD_reschedule(tdbb, 0, true);
-#endif
 
 	if (!(request->req_flags & req_active))
 		ERR_post(isc_req_sync, isc_arg_end);
@@ -1630,15 +1626,11 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 	{
 	try {
 
-#ifdef SUPERSERVER
-
 		if (request->req_operation == jrd_req::req_evaluate &&
 			(--tdbb->tdbb_quantum < 0))
 		{
 			JRD_reschedule(tdbb, 0, true);
 		}
-
-#endif
 
 #if defined(DEBUG_GDS_ALLOC) && FALSE
 		int node_type = node->nod_type;

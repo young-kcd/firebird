@@ -844,66 +844,64 @@ ISC_STATUS callback_execute_immediate( ISC_STATUS* status,
 		requests = 0;
 	}
 
-	// 1. Locate why_db_handle, corresponding to jrd_database_handle 
+	YValve::Attachment* why_db_handle = 0;
+	YValve::Transaction* why_trans_handle = 0;
+	dsql_dbb* database = 0;
+
 	THREAD_EXIT();
 	THD_MUTEX_LOCK (&databases_mutex);
-	dsql_dbb* database;
-	for (database = databases; database; database = database->dbb_next)
+	try 
 	{
-		if (WHY_translate_handle(database->dbb_database_handle)->handle.h_dbb == jrd_attachment_handle)
+		// 1. Locate why_db_handle, corresponding to jrd_database_handle 
+		for (database = databases; database; database = database->dbb_next)
 		{
-			break;
+			if (YValve::translate<YValve::Attachment>(&database->dbb_database_handle)->handle == jrd_attachment_handle)
+			{
+				break;
+			}
 		}
-	}
-	if (! database) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_bad_db_handle;
-		status[2] = isc_arg_end;
-		THD_MUTEX_UNLOCK(&databases_mutex);
-		THREAD_ENTER();
-		return status[1];
-	}
-	WHY_DBB	why_db_handle = WHY_translate_handle(database->dbb_database_handle);
+		if (! database) 
+		{
+			Firebird::status_exception::raise(isc_bad_db_handle, isc_arg_end);
+		}
+		why_db_handle = YValve::translate<YValve::Attachment>(&database->dbb_database_handle);
 
-	/* 2. Create why_trans_handle - it's new, but points to the same jrd
-    	  transaction as original before callback. */
-	WHY_TRA why_trans_handle = WHY_alloc_handle(why_db_handle->implementation, HANDLE_transaction);
-	if (!why_trans_handle) {
-		status[0] = isc_arg_gds;
-		status[1] = isc_virmemexh;
-		status[2] = isc_arg_end;
+		// 2. Create why_trans_handle - it's new, but points to the same jrd
+    	//	  transaction as original before callback.
+		why_trans_handle = new YValve::Transaction(jrd_transaction_handle, 0, why_db_handle);
+	}
+	catch (const std::exception& e)
+	{
 		THD_MUTEX_UNLOCK(&databases_mutex);
 		THREAD_ENTER();
-		return status[1];
+		return Firebird::stuff_exception(status, e);
 	}
-	why_trans_handle->handle.h_tra = jrd_transaction_handle;
-	why_trans_handle->parent = why_db_handle;
-	THD_MUTEX_UNLOCK (&databases_mutex);
-    THREAD_ENTER();
+
 
 	// 3. Call execute... function 
+	THD_MUTEX_UNLOCK (&databases_mutex);
+    THREAD_ENTER();
 	const ISC_STATUS rc = dsql8_execute_immediate_common(status,
 						&database->dbb_database_handle, &why_trans_handle->public_handle,
 						sql_operator.length(), sql_operator.c_str(), 
 						database->dbb_db_SQL_dialect,
 						0, NULL, 0, 0, NULL, 0, NULL, 0, 0, NULL, requests);
-	WHY_cleanup_transaction(why_trans_handle);
-	WHY_free_handle(why_trans_handle->public_handle);
+	delete why_trans_handle;
 	return rc;
 }
 
 
-WHY_DBB	GetWhyAttachment (ISC_STATUS* status,
-						  Jrd::Attachment* jrd_attachment_handle)
+YValve::Attachment*	GetWhyAttachment(ISC_STATUS* status,
+									 Jrd::Attachment* jrd_attachment_handle)
 {
 	THREAD_EXIT();
 	THD_MUTEX_LOCK (&databases_mutex);
 	dsql_dbb* database;
-	WHY_DBB db_handle = 0;
+	YValve::Attachment* db_handle = 0;
 	for (database = databases; database; database = database->dbb_next)
 	{
-		db_handle = WHY_translate_handle(database->dbb_database_handle);
-		if (db_handle->handle.h_dbb == jrd_attachment_handle)
+		db_handle = YValve::translate<YValve::Attachment>(&database->dbb_database_handle);
+		if (db_handle->handle == jrd_attachment_handle)
 		{
 			break;
 		}

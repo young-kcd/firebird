@@ -382,7 +382,7 @@ ISC_STATUS API_ROUTINE gds__create_database(ISC_STATUS* status_vector,
 
 ISC_STATUS API_ROUTINE gds__database_cleanup(ISC_STATUS * status_vector,
 										FB_API_HANDLE* db_handle,
-										DatabaseCleanupRoutine *routine, void* arg)
+										AttachmentCleanupRoutine* routine, void* arg)
 {
 
 	return isc_database_cleanup(status_vector, db_handle, routine, arg);
