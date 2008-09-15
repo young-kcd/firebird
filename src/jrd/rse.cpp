@@ -3420,10 +3420,11 @@ static void restore_record(record_param* rpb)
 	SaveRecordParam* rpb_copy = rpb->rpb_copy;
 	if (rpb_copy)
 	{
+		Record* record = rpb->rpb_record;
 		Record* rec_copy = rpb_copy->srpb_rpb->rpb_record;
+
 		if (rec_copy)
 		{
-			Record* record = rpb->rpb_record;
 			const USHORT size = rec_copy->rec_length;
 			if (!record || size > record->rec_length)
 				BUGCHECK(284);	// msg 284 cannot restore singleton select data
@@ -3431,19 +3432,16 @@ static void restore_record(record_param* rpb)
 			record->rec_number = rec_copy->rec_number;
 			memcpy(record->rec_data, rec_copy->rec_data, size);
 
-			memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-			rpb->rpb_record = record;
-
 			delete rec_copy;
 		}
-		else
-			memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
-	}
 
-	if (rpb_copy)
+		memcpy(rpb, rpb_copy->srpb_rpb, sizeof(record_param));
+
+		rpb->rpb_record = record;
+
 		delete rpb_copy;
-
-	rpb->rpb_copy = NULL;
+		rpb->rpb_copy = NULL;
+	}
 }
 
 
