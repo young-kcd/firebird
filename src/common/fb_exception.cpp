@@ -19,7 +19,7 @@ typedef Firebird::CircularStringsBuffer<ENGINE_FAILURE_SPACE> CircularBuffer;
 
 class InterlockedStringsBuffer : public CircularBuffer {
 public:
-	virtual char* alloc(const char* string, size_t length) 
+	virtual char* alloc(const char* string, size_t& length) 
 	{
 		buffer_lock.enter();
 		char* new_string = CircularBuffer::alloc(string, length);
@@ -89,16 +89,18 @@ void StringsBuffer::makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* tran
 			return;
 		case isc_arg_cstring: 
 			{				
-				const size_t len = *perm++ = *trans++;
+				size_t len = *perm++ = *trans++;
 				const char* temp = reinterpret_cast<char*>(*trans++);
 				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
+				perm[-2] = len;
 			}
 			break;
 		case isc_arg_string:
 		case isc_arg_interpreted:
 			{
 				const char* temp = reinterpret_cast<char*>(*trans++);
-				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, strlen(temp)));
+				size_t len = strlen(temp);
+				*perm++ = (ISC_STATUS)(IPTR) (alloc(temp, len));
 			}
 			break;
 		default:
@@ -319,11 +321,13 @@ ISC_STATUS stuff_exception(ISC_STATUS *status_vector, const std::exception& ex, 
 		"Unexpected C++ exception (class=\"%s\", what()=\"%s\")",
 		ex_type.name(), ex.what());
 	temp[sizeof(temp) - 1] = 0;
+	ISC_STATUS *sv = status_vector;
 	*status_vector++ = isc_arg_gds;
 	*status_vector++ = isc_random;
 	*status_vector++ = isc_arg_string;
-	*status_vector++ = (ISC_STATUS)(IPTR) (sb->alloc(temp, strlen(temp)));
+	*status_vector++ = (ISC_STATUS)(IPTR)temp;
 	*status_vector++ = isc_arg_end;	
+	sb->makePermanentVector(sv, sv);
 	return isc_random;
 }
 
