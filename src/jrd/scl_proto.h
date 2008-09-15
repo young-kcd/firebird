@@ -46,5 +46,10 @@ void SCL_move_priv(UCHAR**, Jrd::SecurityClass::flags_t, UCharBuffer&, ULONG*);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release(Jrd::SecurityClass*);
 
+namespace Jrd {
+typedef Firebird::Array<UCHAR> Acl;
+}
+void SCL_move_priv(Jrd::SecurityClass::flags_t, Jrd::Acl&);
+
 #endif // JRD_SCL_PROTO_H
 
