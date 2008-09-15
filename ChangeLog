@@ -1,3 +1,43 @@
+2008-09-15 17:34  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.173):
+
+	Removed false assertion with statement: select 1 + ? from
+	rdb$database
+
+2008-09-15 17:25  asfernandes
+
+	* firebird2/src/dsql/make.cpp (1.172):
+
+	Misc
+
+2008-09-15 16:44  alexpeshkoff
+
+	* firebird2/src/common/classes/array.h (1.55):
+
+	AST != signal-safety since 2.5
+
+2008-09-15 02:07  asfernandes
+
+	* firebird2/src/jrd/rse.cpp (1.154):
+
+	Improve my last changes
+
+2008-09-15 01:17  asfernandes
+
+	* firebird2/src/: common/classes/locks.h (1.49), dsql/utld.cpp
+	(1.54), jrd/Optimizer.cpp (1.95), jrd/cmp.cpp (1.317), jrd/svc.cpp
+	(1.241):
+
+	Misc
+
+2008-09-15 00:44  asfernandes
+
+	* firebird2/src/: common/classes/array.h (1.54), jrd/Optimizer.cpp
+	(1.94):
+
+	New methods for array classes
+
 2008-09-14 04:58  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.316):
