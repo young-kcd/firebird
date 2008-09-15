@@ -797,16 +797,13 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		   in dtype.  Note:  this is different from the result of
 		   the operation, as <timestamp>-<timestamp> uses
 		   <timestamp> arithmetic, but returns a <double> */
-		if (DTYPE_IS_EXACT(dtype1)
-			&& DTYPE_IS_EXACT(dtype2))
+		if (DTYPE_IS_EXACT(dtype1) && DTYPE_IS_EXACT(dtype2))
 		{
 			dtype = dtype_int64;
 		}
-		else if (DTYPE_IS_NUMERIC(dtype1)
-				 && DTYPE_IS_NUMERIC(dtype2))
+		else if (DTYPE_IS_NUMERIC(dtype1) && DTYPE_IS_NUMERIC(dtype2))
 		{
-			fb_assert(DTYPE_IS_APPROX(dtype1) ||
-				   DTYPE_IS_APPROX(dtype2));
+			fb_assert(DTYPE_IS_APPROX(dtype1) || DTYPE_IS_APPROX(dtype2));
 			dtype = dtype_double;
 		}
 		else {
@@ -832,7 +829,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			if ((DTYPE_IS_DATE(dtype1) || (dtype1 == dtype_unknown)) &&
 				(DTYPE_IS_DATE(dtype2) || (dtype2 == dtype_unknown)))
 			{
-				if (node->nod_type == nod_subtract2) {
+				if (node->nod_type == nod_subtract2)
+				{
 					/* <any date> - <any date> */
 					/* Legal permutations are:
 					   <timestamp> - <timestamp>
@@ -843,32 +841,28 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 					if (dtype1 == dtype2)
 						dtype = dtype1;
-					else if ((dtype1 == dtype_timestamp) &&
-							 (dtype2 == dtype_sql_date))
-					{
-							dtype = dtype_timestamp;
-					}
-					else if ((dtype2 == dtype_timestamp) &&
-							 (dtype1 == dtype_sql_date))
-					{
-							dtype = dtype_timestamp;
-					}
-					else {
+					else if (dtype1 == dtype_timestamp && dtype2 == dtype_sql_date)
+						dtype = dtype_timestamp;
+					else if (dtype2 == dtype_timestamp && dtype1 == dtype_sql_date)
+						dtype = dtype_timestamp;
+					else
 						ERRD_post(Arg::Gds(isc_expression_eval_err));
-					}
 
-					if (dtype == dtype_sql_date) {
+					if (dtype == dtype_sql_date)
+					{
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = 0;
 					}
-					else if (dtype == dtype_sql_time) {
+					else if (dtype == dtype_sql_time)
+					{
 						desc->dsc_dtype = dtype_long;
 						desc->dsc_length = sizeof(SLONG);
 						desc->dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
-					else {
+					else
+					{
 						fb_assert(dtype == dtype_timestamp);
 						desc->dsc_dtype = dtype_int64;
 						desc->dsc_length = sizeof(SINT64);
@@ -876,17 +870,16 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 						desc->dsc_sub_type = dsc_num_type_numeric;
 					}
 				}
-				else if (is_date_and_time(desc1, desc2)) {
+				else if (is_date_and_time(desc1, desc2))
+				{
 					/* <date> + <time> */
 					/* <time> + <date> */
 					desc->dsc_dtype = dtype_timestamp;
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
 				}
-				else {
-					/* <date> + <date> */
-					ERRD_post(Arg::Gds(isc_expression_eval_err));
-				}
+				else
+					ERRD_post(Arg::Gds(isc_expression_eval_err));	// <date> + <date>
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
 			{
@@ -899,7 +892,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				desc->dsc_length = type_lengths[desc->dsc_dtype];
 				desc->dsc_scale = 0;
 			}
-			else {
+			else
+			{
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract2);
 				ERRD_post(Arg::Gds(isc_expression_eval_err));
