@@ -218,8 +218,7 @@ public:
 		count += itemsSize;
 	}
 
-	// NOTE: remove method must be signal safe
-	// This function may be called in AST. The function doesn't wait.
+	// NOTE: This function may be called in AST. The function doesn't wait.
 	T* remove(const size_t index)
 	{
   		fb_assert(index < count);
