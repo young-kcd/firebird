@@ -6524,8 +6524,10 @@ static bool scan(thread_db* tdbb, UCHAR* pointer, RecordBitmap** bitmap, RecordB
  *  return false.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
+
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
 
 	// if the search key is flagged to indicate a multi-segment index
 	// stuff the key to the stuff boundary
