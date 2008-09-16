@@ -1,3 +1,22 @@
+2008-09-16 11:23  robocop
+
+	* firebird2/: builds/posix/prefix.solx86gcc (1.19.4.6),
+	src/utilities/gsec/gsec.cpp (1.53.2.6):
+
+	Misc.
+
+2008-09-16 10:48  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.17):
+
+	Update.
+
+2008-09-16 09:00  alexpeshkoff
+
+	* firebird2/src/utilities/gsec/gsec.cpp (1.53.2.5):
+
+	Backported fix for CORE-1810: Usernames with '.' character
+
 2008-09-15 17:18  alexpeshkoff
 
 	* firebird2/src/: common/classes/array.h (1.34.4.2), jrd/grant.epp
