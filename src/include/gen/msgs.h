@@ -909,6 +909,7 @@ static const struct {
 	{336986116, "Unknown tag (@1) in info_svr_db_info block after isc_svc_query()"},		/* 885, fbsvcmgr_info_err */
 	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 886, fbsvcmgr_query_err */
 	{336986118, "Unknown switch \"@1\""},		/* 887, fbsvcmgr_switch_unknown */
-	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 888, utl_trusted_switch */
+	{336986159, "Wrong value for shutdown mode"},		/* 888, fbsvcmgr_bad_sm */
+	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 889, utl_trusted_switch */
 	{0, NULL}
 };

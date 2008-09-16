@@ -909,6 +909,7 @@ static const struct {
 	{"fbsvcmgr_info_err", 336986116},
 	{"fbsvcmgr_query_err", 336986117},
 	{"fbsvcmgr_switch_unknown", 336986118},
+	{"fbsvcmgr_bad_sm", 336986159},
 	{"utl_trusted_switch", 337051649},
 	{NULL, 0}
 };

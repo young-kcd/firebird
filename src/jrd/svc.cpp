@@ -2314,6 +2314,9 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_prp_shutdown_db:
 			case isc_spb_prp_deny_new_attachments:
 			case isc_spb_prp_deny_new_transactions:
+			case isc_spb_prp_force_shutdown:
+			case isc_spb_prp_attachments_shutdown:
+			case isc_spb_prp_transactions_shutdown:
 			case isc_spb_prp_set_sql_dialect:
 			case isc_spb_rpr_commit_trans:
 			case isc_spb_rpr_rollback_trans:
@@ -2332,6 +2335,20 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					return false;
 				}
 				break;
+			case isc_spb_prp_shutdown_mode:
+			case isc_spb_prp_online_mode:
+				if (get_action_svc_parameter(spb.getClumpTag(), alice_in_sw_table, switches))
+				{
+					unsigned int val = spb.getInt();
+					if (val >= FB_NELEM(alice_mode_sw_table))
+					{
+						return false;
+					}
+					switches += alice_mode_sw_table[val];
+					switches += " ";
+					break;
+				}
+				return false;
 			default:
 				return false;
 			}

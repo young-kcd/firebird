@@ -144,6 +144,19 @@ bool putReserveSpace(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return putSpecTag(av, spb, tag, rsSwitch, isc_fbsvcmgr_bad_rs);
 }
 
+const Switches shutSwitch[] = {
+	{"prp_sm_normal", 0, 0, isc_spb_prp_sm_normal, 0},
+	{"prp_sm_multi", 0, 0, isc_spb_prp_sm_multi, 0},
+	{"prp_sm_single", 0, 0, isc_spb_prp_sm_single, 0},
+	{"prp_sm_full", 0, 0, isc_spb_prp_sm_full, 0},
+	{0, 0, 0, 0, 0}
+};
+
+bool putShutdownMode(char**& av, ClumpletWriter& spb, unsigned int tag)
+{
+	return putSpecTag(av, spb, tag, shutSwitch, isc_fbsvcmgr_bad_sm);
+}
+
 // add numeric (int32) tag to spb
 
 bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
@@ -281,6 +294,11 @@ const Switches propertiesOptions[] = {
 	{"prp_write_mode", putWriteMode, 0, isc_spb_prp_write_mode, 0},
 	{"prp_activate", putOption, 0, isc_spb_prp_activate, 0},
 	{"prp_db_online", putOption, 0, isc_spb_prp_db_online, 0},
+	{"prp_force_shutdown", putNumericArgument, 0, isc_spb_prp_force_shutdown, 0},
+	{"prp_attachments_shutdown", putNumericArgument, 0, isc_spb_prp_attachments_shutdown, 0},
+	{"prp_transactions_shutdown", putNumericArgument, 0, isc_spb_prp_transactions_shutdown, 0},
+	{"prp_shutdown_mode", putShutdownMode, 0, isc_spb_prp_shutdown_mode, 0},
+	{"prp_online_mode", putShutdownMode, 0, isc_spb_prp_online_mode, 0},
 	{0, 0, 0, 0, 0}
 };
 

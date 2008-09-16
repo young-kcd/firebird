@@ -360,13 +360,27 @@
 #define isc_spb_prp_set_sql_dialect		14
 #define isc_spb_prp_activate			0x0100
 #define isc_spb_prp_db_online			0x0200
+#define isc_spb_prp_force_shutdown			41
+#define isc_spb_prp_attachments_shutdown	42
+#define isc_spb_prp_transactions_shutdown	43
+#define isc_spb_prp_shutdown_mode		44
+#define isc_spb_prp_online_mode			45
+
+/********************************************
+ * Parameters for isc_spb_prp_shutdown_mode *
+ *            and isc_spb_prp_onlibe_mode   *
+ ********************************************/
+#define isc_spb_prp_sm_normal		0
+#define isc_spb_prp_sm_multi		1
+#define isc_spb_prp_sm_single		2
+#define isc_spb_prp_sm_full			3
 
 /********************************************
  * Parameters for isc_spb_prp_reserve_space *
  ********************************************/
 
 #define isc_spb_prp_res_use_full	35
-#define isc_spb_prp_res			36
+#define isc_spb_prp_res				36
 
 /******************************************
  * Parameters for isc_spb_prp_write_mode  *

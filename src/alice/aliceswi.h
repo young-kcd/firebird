@@ -46,9 +46,9 @@ const unsigned long sw_two_phase		= 0x00004000UL;
 const unsigned long sw_housekeeping		= 0x00008000UL;
 const unsigned long sw_kill				= 0x00010000UL;	// Byte 2, Bit 0 
 //const unsigned long sw_begin_log		= 0x00020000UL;
-//const unsigned long sw_quit_log			= 0x00040000UL;
+//const unsigned long sw_quit_log		= 0x00040000UL;
 const unsigned long sw_write			= 0x00080000UL;
-const unsigned long sw_no_reserve				= 0x00100000UL;
+const unsigned long sw_no_reserve		= 0x00100000UL;
 const unsigned long sw_user				= 0x00200000UL;
 const unsigned long sw_password			= 0x00400000UL;
 const unsigned long sw_shut				= 0x00800000UL;
@@ -112,7 +112,8 @@ enum alice_switches
 	IN_SW_ALICE_TRUSTED_AUTH		=	44,
 #endif
 	IN_SW_ALICE_TRUSTED_SVC			=	45,
-	IN_SW_ALICE_TRUSTED_ROLE		=	46
+	IN_SW_ALICE_TRUSTED_ROLE		=	46,
+	IN_SW_ALICE_HIDDEN_ONLINE		=	47
 };
 
 static const char* ALICE_SW_ASYNC	= "async";
@@ -126,7 +127,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_ACTIVATE, isc_spb_prp_activate, "activate", sw_activate,
 	0, ~(sw_activate | sw_user | sw_password), FALSE, 25, 0, NULL},
 	// msg 25: \t-activate shadow file for database usage 
-	{IN_SW_ALICE_ATTACH, 0, "attach", sw_attach,
+	{IN_SW_ALICE_ATTACH, isc_spb_prp_attachments_shutdown, "attach", sw_attach,
 	sw_shut, 0, FALSE, 26, 0, NULL},
 	// msg 26: \t-attach\tshutdown new database attachments 
 #ifdef DEV_BUILD
@@ -153,7 +154,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_FULL, isc_spb_rpr_full, "full", sw_full,
 	sw_validate, 0, FALSE, 32, 0, NULL},
 	// msg 32: \t-full\t\tvalidate record fragments (-v) 
-	{IN_SW_ALICE_FORCE, 0, "force", sw_force,
+	{IN_SW_ALICE_FORCE, isc_spb_prp_force_shutdown, "force", sw_force,
 	sw_shut, 0, FALSE, 33, 0, NULL},
 	// msg 33: \t-force\t\tforce database shutdown 
 	{IN_SW_ALICE_HOUSEKEEPING, isc_spb_prp_sweep_interval, "housekeeping",
@@ -211,7 +212,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_SWEEP, isc_spb_rpr_sweep_db, "sweep", sw_sweep,
 	0, ~(sw_sweep | sw_user | sw_password), FALSE, 45, 0, NULL},
 	// msg 45: \t-sweep\t\tforce garbage collection 
-	{IN_SW_ALICE_SHUT, 0, "shut", sw_shut,
+	{IN_SW_ALICE_SHUT, isc_spb_prp_shutdown_mode, "shut", sw_shut,
 	0, ~(sw_shut | sw_attach | sw_cache | sw_force | sw_tran | sw_user | sw_password),
 	FALSE, 46, 0, NULL},
 	// msg 46: \t-shut\t\tshutdown 
@@ -219,7 +220,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	sw_two_phase,
 	0, ~(sw_two_phase | sw_user | sw_password), FALSE, 47, 0, NULL},
 	// msg 47: \t-two_phase\tperform automated two-phase recovery 
-	{IN_SW_ALICE_TRAN, 0, "tran", sw_tran,
+	{IN_SW_ALICE_TRAN, isc_spb_prp_transactions_shutdown, "tran", sw_tran,
 	sw_shut, 0, FALSE, 48, 0, NULL},
 	// msg 48: \t-tran\t\tshutdown transaction startup 
 #ifdef TRUSTED_AUTH
@@ -258,27 +259,34 @@ static const in_sw_tab_t alice_in_sw_table[] =
 /* The next nine 'virtual' switches are hidden from user and are needed
    for services API
  ************************************************************************/
-	{IN_SW_ALICE_HIDDEN_ASYNC, isc_spb_prp_wm_async, "write async", 0, 0, 0,
-	FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_SYNC, isc_spb_prp_wm_sync, "write sync", 0, 0, 0,
-	FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_USEALL, isc_spb_prp_res_use_full, "use full", 0, 0, 0,
-	FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_RESERVE, isc_spb_prp_res, "use reserve", 0, 0, 0,
-	FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_FORCE, isc_spb_prp_shutdown_db, "shut -force", 0, 0, 0,
-	FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_TRAN, isc_spb_prp_deny_new_transactions, "shut -tran",
-	0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_ATTACH, isc_spb_prp_deny_new_attachments,
-	"shut -attach", 0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_RDONLY, isc_spb_prp_am_readonly, "mode read_only", 0,
-	0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_RDWRITE, isc_spb_prp_am_readwrite, "mode read_write",
-	0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_ASYNC, isc_spb_prp_wm_async, "write async", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_SYNC, isc_spb_prp_wm_sync, "write sync", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_USEALL, isc_spb_prp_res_use_full, "use full", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_RESERVE, isc_spb_prp_res, "use reserve", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_FORCE, isc_spb_prp_shutdown_db, "shut -force", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_TRAN, isc_spb_prp_deny_new_transactions, "shut -tran", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_ATTACH, isc_spb_prp_deny_new_attachments, "shut -attach", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_ONLINE, isc_spb_prp_online_mode, "online", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_RDONLY, isc_spb_prp_am_readonly, "mode read_only", 
+		0, 0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_HIDDEN_RDWRITE, isc_spb_prp_am_readwrite, "mode read_write", 
+		0, 0, 0, FALSE, 0, 0, NULL},
 /************************************************************************/
 	{IN_SW_ALICE_0, 0, NULL, 0,
      0, 0, FALSE, 0, 0, NULL}
+};
+
+static const char* alice_mode_sw_table[] =
+{
+	"normal", "multi", "single", "full"
 };
 
 #endif // ALICE_ALICESWI_H

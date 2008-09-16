@@ -1826,5 +1826,7 @@ C --
       PARAMETER (GDS__fbsvcmgr_query_err               = 336986117)
       INTEGER*4 GDS__fbsvcmgr_switch_unknown         
       PARAMETER (GDS__fbsvcmgr_switch_unknown          = 336986118)
+      INTEGER*4 GDS__fbsvcmgr_bad_sm                 
+      PARAMETER (GDS__fbsvcmgr_bad_sm                  = 336986159)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)

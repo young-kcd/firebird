@@ -920,4 +920,5 @@ const
 	gds_fbsvcmgr_info_err                = 336986116;
 	gds_fbsvcmgr_query_err               = 336986117;
 	gds_fbsvcmgr_switch_unknown          = 336986118;
+	gds_fbsvcmgr_bad_sm                  = 336986159;
 	gds_utl_trusted_switch               = 337051649;

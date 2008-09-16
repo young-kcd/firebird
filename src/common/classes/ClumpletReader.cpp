@@ -280,10 +280,15 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_prp_deny_new_transactions:
 			case isc_spb_prp_set_sql_dialect:
 			case isc_spb_options:
+			case isc_spb_prp_force_shutdown:
+			case isc_spb_prp_attachments_shutdown:
+			case isc_spb_prp_transactions_shutdown:
 				return IntSpb;
 			case isc_spb_prp_reserve_space:
 			case isc_spb_prp_write_mode:
 			case isc_spb_prp_access_mode:
+			case isc_spb_prp_shutdown_mode:
+			case isc_spb_prp_online_mode:
 				return ByteSpb;
 			}
 			invalid_structure("unknown parameter for setting database properties");

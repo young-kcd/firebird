@@ -898,6 +898,7 @@ COMMIT WORK;
 (-901, '00', '000', 22, 4, 'fbsvcmgr_info_err', NULL, NULL)
 (-901, '00', '000', 22, 5, 'fbsvcmgr_query_err', NULL, NULL)
 (-901, '00', '000', 22, 6, 'fbsvcmgr_switch_unknown', NULL, NULL)
+(-901, '00', '000', 22, 47, 'fbsvcmgr_bad_sm', NULL, NULL)
 -- UTILITIES
 (-901, '00', '000', 23, 1, 'utl_trusted_switch', NULL, NULL)
 --

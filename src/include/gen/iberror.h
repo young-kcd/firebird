@@ -943,8 +943,9 @@ const ISC_STATUS isc_fbsvcmgr_bad_rs                  = 336986115L;
 const ISC_STATUS isc_fbsvcmgr_info_err                = 336986116L;
 const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
+const ISC_STATUS isc_fbsvcmgr_bad_sm                  = 336986159L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 888;
+const ISC_STATUS isc_err_max                          = 889;
 
 #else /* c definitions */
 
@@ -1857,8 +1858,9 @@ const ISC_STATUS isc_err_max                          = 888;
 #define isc_fbsvcmgr_info_err                336986116L
 #define isc_fbsvcmgr_query_err               336986117L
 #define isc_fbsvcmgr_switch_unknown          336986118L
+#define isc_fbsvcmgr_bad_sm                  336986159L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          888
+#define isc_err_max                          889
 
 #endif
 
