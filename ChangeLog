@@ -1,3 +1,26 @@
+2008-09-16 16:18  alexpeshkoff
+
+	* firebird2/: src/alice/aliceswi.h (1.19),
+	src/common/classes/ClumpletReader.cpp (1.30),
+	src/include/consts_pub.h (1.21), src/include/gen/codetext.h (1.94),
+	src/include/gen/iberror.h (1.98), src/include/gen/msgs.h (1.118),
+	src/include/gen/sql_code.h (1.100), src/include/gen/sql_state.h
+	(1.27), src/jrd/svc.cpp (1.242), src/msgs/facilities2.sql (1.49),
+	src/msgs/messages2.sql (1.59), src/msgs/system_errors2.sql (1.43),
+	src/utilities/fbsvcmgr.cpp (1.10), lang_helpers/gds_codes.ftn
+	(1.85), lang_helpers/gds_codes.pas (1.85):
+
+	Improvement CORE-1107: Services API extension for new (single,
+	full) shutdown modes
+
+2008-09-16 12:27  dimitr
+
+	* firebird2/src/jrd/btr.cpp (1.217):
+
+	This change is intended to make the engine responsible to async
+	requests (shutdown, cancellation, etc) while performing long index
+	scans.
+
 2008-09-15 17:34  asfernandes
 
 	* firebird2/src/dsql/make.cpp (1.173):
