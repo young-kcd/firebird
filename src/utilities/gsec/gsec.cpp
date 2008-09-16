@@ -621,7 +621,6 @@ static bool get_switches(
  **************************************/
 	TEXT msg[MSG_LENGTH];
 	int l;
-	char quote;
 	SSHORT err_msg_no;
 
 /* look at each argument.   it's either a switch or a parameter.
@@ -641,6 +640,7 @@ static bool get_switches(
 		else if (*string != '-') {
 			/* this is not a switch, so it must be a parameter for
 			   the previous switch, if any */
+			char quote;
 
 			switch (last_sw) {
 			case IN_SW_GSEC_ADD:

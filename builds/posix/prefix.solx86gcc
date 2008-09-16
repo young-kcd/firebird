@@ -14,9 +14,10 @@
 # Contributor(s): Konstantin Kuznetsov
 #			Neil McCalden
 #			Paul Beach
+#			Nickolay Samofatov
 # This file can be used to build Firebird on Solaris 10 using gcc
 #
-# $Id: prefix.solx86gcc,v 1.19.4.5 2008-09-12 09:19:11 paulbeach Exp $
+# $Id: prefix.solx86gcc,v 1.19.4.6 2008-09-16 09:23:13 robocop Exp $
 #
 # Start of file prefix.solaris X 86 :	$(VERSION)	$(PLATFORM)
 
