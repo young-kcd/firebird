@@ -269,7 +269,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 		0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_ALICE_HIDDEN_FORCE, isc_spb_prp_shutdown_db, "shut -force", 
 		0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_TRAN, isc_spb_prp_deny_new_transactions, "shut -tran", 
+	{IN_SW_ALICE_HIDDEN_TRAN, isc_spb_prp_deny_new_transactions, "shut -tran",
 		0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_ALICE_HIDDEN_ATTACH, isc_spb_prp_deny_new_attachments, "shut -attach", 
 		0, 0, 0, FALSE, 0, 0, NULL},
@@ -277,7 +277,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 		0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_ALICE_HIDDEN_RDONLY, isc_spb_prp_am_readonly, "mode read_only", 
 		0, 0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_HIDDEN_RDWRITE, isc_spb_prp_am_readwrite, "mode read_write", 
+	{IN_SW_ALICE_HIDDEN_RDWRITE, isc_spb_prp_am_readwrite, "mode read_write",
 		0, 0, 0, FALSE, 0, 0, NULL},
 /************************************************************************/
 	{IN_SW_ALICE_0, 0, NULL, 0,

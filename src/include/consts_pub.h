@@ -368,7 +368,7 @@
 
 /********************************************
  * Parameters for isc_spb_prp_shutdown_mode *
- *            and isc_spb_prp_onlibe_mode   *
+ *            and isc_spb_prp_online_mode   *
  ********************************************/
 #define isc_spb_prp_sm_normal		0
 #define isc_spb_prp_sm_multi		1
