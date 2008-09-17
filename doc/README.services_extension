@@ -1,0 +1,33 @@
+Services API enhancements in Firebird v2.
+-----------------------------------------
+
+1) Services API extension for new shutdown modes.
+(Alex Peshkov, peshkoff@mail.ru, 2008)
+
+New DB shutdown modes can now be set using services. A number of new 
+isc_spb_prp_* constants should be used for it.
+
+isc_spb_prp_shutdown_mode and isc_spb_prp_online_mode are used to perform
+database shutdown/online operation. They have a single byte parameter, 
+setting new shutdown mode: isc_spb_prp_sm_normal, isc_spb_prp_sm_multi,
+isc_spb_prp_sm_single and isc_spb_prp_sm_full. They exactly match gfix's
+shutdown modes. When performing shutdown operation, you must specify
+also type of shutdown: one of isc_spb_prp_force_shutdown, 
+isc_spb_prp_attachments_shutdown or isc_spb_prp_transactions_shutdown. 
+They have single int (4-byte) parameter, specifying timeout for desired
+operation.
+Please note that old-styled parameters are also supported and should be
+used to enter default shutdown (currently 'multy') and online ('normal') 
+modes.
+
+Samples of use of new parameters in fbsvcmgr utility (supposing login and 
+password are set using some other method):
+ Shutdown database to single-user maintenance mode:
+  fbsvcmgr service_mgr action_properties dbname employee prp_shutdown_mode prp_sm_single prp_force_shutdown 0
+ After it enable multi-user maintenance:
+  fbsvcmgr service_mgr action_properties dbname employee prp_online_mode prp_sm_multi
+ After it go to full shutdown mode, disabling new attachments during 60 seconds:
+  fbsvcmgr service_mgr action_properties dbname employee prp_shutdown_mode prp_sm_full prp_attachments_shutdown 60
+ Return to normal state:
+  fbsvcmgr service_mgr action_properties dbname employee prp_online_mode prp_sm_normal
+
