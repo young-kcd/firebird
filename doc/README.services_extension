@@ -17,7 +17,7 @@ isc_spb_prp_attachments_shutdown or isc_spb_prp_transactions_shutdown.
 They have single int (4-byte) parameter, specifying timeout for desired
 operation.
 Please note that old-styled parameters are also supported and should be
-used to enter default shutdown (currently 'multy') and online ('normal') 
+used to enter default shutdown (currently 'multi') and online ('normal') 
 modes.
 
 Samples of use of new parameters in fbsvcmgr utility (supposing login and 
