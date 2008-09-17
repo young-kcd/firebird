@@ -66,6 +66,7 @@
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
 #include "../jrd/scl.h"
+#include "../common/config/config.h"
 
 #ifdef SERVER_SHUTDOWN
 #include "../jrd/jrd_proto.h"
@@ -587,7 +588,15 @@ Service* SVC_attach(USHORT	service_length,
 	}
 	else {
 #ifdef TRUSTED_SERVICES
-		if (options.spb_trusted_login.hasData())
+		static AmCache useTrusted = AM_UNKNOWN;
+		if (useTrusted == AM_UNKNOWN)
+		{
+			Firebird::PathName authMethod(Config::getAuthMethod());
+			useTrusted = (authMethod == AmTrusted || authMethod == AmMixed) ? 
+				AM_ENABLED : AM_DISABLED;
+		}
+
+		if (options.spb_trusted_login.hasData() && (useTrusted == AM_ENABLED))
 		{
 			options.spb_user_name = options.spb_trusted_login;
 		}
