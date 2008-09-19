@@ -1,3 +1,23 @@
+2008-09-17 11:09  robocop
+
+	* firebird2/doc/README.services_extension (1.2):
+
+	Typo.
+
+2008-09-17 08:56  alexpeshkoff
+
+	* firebird2/doc/: README.services_extension (1.1), WhatsNew
+	(1.159):
+
+	Documentation for new SPB parameters
+
+2008-09-17 03:36  asfernandes
+
+	* firebird2/src/: alice/aliceswi.h (1.20), include/consts_pub.h
+	(1.22):
+
+	Misc
+
 2008-09-16 16:18  alexpeshkoff
 
 	* firebird2/: src/alice/aliceswi.h (1.19),
