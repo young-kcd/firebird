@@ -188,11 +188,6 @@ const int NOTASOCKET = EBADF;
 #define FB_SETOPT_FLAGS 0
 #endif
 
-// Solaris does not know what means INADDR_NONE
-#ifndef INADDR_NONE
-#define INADDR_NONE (unsigned long) -1
-#endif
-
 SLONG INET_remote_buffer;
 SLONG INET_max_data;
 static bool first_time = true;
@@ -293,7 +288,7 @@ static int fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
-static in_addr get_host_address(const Firebird::string&);
+static bool get_host_address(const Firebird::string&, in_addr*);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -726,9 +721,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(host);
-
-		if (host_addr.s_addr == INADDR_NONE)
+		if (!get_host_address(host, &host_addr))
 		{
 			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					 host.c_str(), H_ERRNO);
@@ -2009,15 +2002,23 @@ static in_addr get_bind_address()
 	in_addr config_address;
 
 	const char* config_option = Config::getRemoteBindAddress();
-	config_address.s_addr =
-		(config_option) ? inet_addr(config_option) : INADDR_NONE;
-	if (config_address.s_addr == INADDR_NONE) {
+	if (config_option)
+	{
+		if (!inet_aton(config_option, &config_address))
+		{
+			gds__log("Wrong RemoteBindAddress '%s' in firebird.conf - "
+					 "binding to loopback interface", config_option);
+			config_address.s_addr = htonl(INADDR_LOOPBACK);
+		}
+	}
+	else
+	{
 		config_address.s_addr = INADDR_ANY;
 	}
 	return config_address;
 }
 
-static in_addr get_host_address(const Firebird::string& name)
+static bool get_host_address(const Firebird::string& name, in_addr* address)
 {
 /**************************************
  *
@@ -2029,14 +2030,12 @@ static in_addr get_host_address(const Firebird::string& name)
  *	Return host address.
  *
  **************************************/
-	in_addr address;
+	bool rc = true;
 
 	THREAD_EXIT();
 
-	address.s_addr = inet_addr(name.c_str());
-
-	if (address.s_addr == INADDR_NONE) {
-
+	if (!inet_aton(name.c_str(), address)) {
+		rc = false;
 		const hostent* host = gethostbyname(name.c_str());
 
 		/* On Windows NT/9x, gethostbyname can only accomodate
@@ -2057,13 +2056,14 @@ static in_addr get_host_address(const Firebird::string& name)
 		}
 
 		if (host) {
+			rc = true;
 			inet_copy(host->h_addr, (UCHAR*) &address, sizeof(address));
 		}
 	}
 
 	THREAD_ENTER();
 
-	return address;
+	return rc;
 }
 
 //____________________________________________________________
