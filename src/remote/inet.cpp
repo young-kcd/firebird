@@ -268,9 +268,9 @@ static int		fork(SOCKET, USHORT);
 #endif
 
 static in_addr get_bind_address();
-static in_addr get_host_address(const Firebird::string& name,
-								in_addr* const host_addr_arr,
-								const int arr_size);
+static int get_host_address(const char* name,
+							in_addr* const host_addr_arr,
+							const int arr_size);
 
 static void copy_p_cnct_repeat_array(	p_cnct::p_cnct_repeat*			pDest,
 										const p_cnct::p_cnct_repeat*	pSource,
@@ -647,12 +647,17 @@ rem_port* INET_connect(const TEXT* name,
 
 	in_addr host_addr;
 	in_addr host_addr_arr[MAX_HOST_ADDRESS_NUMBER];
+	int hostAddressNumber = 0;
 
 	if (packet) {
 		// client connection
-		host_addr = get_host_address(host, host_addr_arr, MAX_HOST_ADDRESS_NUMBER);
+		hostAddressNumber = get_host_address(host.c_str(), host_addr_arr, MAX_HOST_ADDRESS_NUMBER);
+		if (hostAddressNumber > MAX_HOST_ADDRESS_NUMBER)
+		{
+			hostAddressNumber = MAX_HOST_ADDRESS_NUMBER;
+		}
 
-		if (host_addr.s_addr == INADDR_NONE)
+		if (! hostAddressNumber)
 		{
 			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
 					 host.c_str(), H_ERRNO);
@@ -664,6 +669,7 @@ rem_port* INET_connect(const TEXT* name,
 			disconnect(port);
 			return NULL;
 		}
+		host_addr = host_addr_arr[0];
 	}
 	else {
 		// server connection
@@ -758,11 +764,9 @@ rem_port* INET_connect(const TEXT* name,
 		}
 
 		int inetErrNo = 0;
-		for (int i = 0; i < MAX_HOST_ADDRESS_NUMBER; i++)
+		for (int i = 0; i < hostAddressNumber; i++)
 		{
 			address.sin_addr = host_addr_arr[i];
-			if (address.sin_addr.s_addr == 0L)
-				break; // all addresses tried and failed - get out and print the last error
 
 			// If host has two addresses and the first one failed,
 			// but the second one succeeded - no need to worry
@@ -1808,6 +1812,47 @@ static int fork( SOCKET old_handle, USHORT flag)
 }
 #endif
 
+namespace 
+{
+	in_addr config_address;
+
+	class GetAddress
+	{
+	public:
+		static void init()
+		{
+			const char* config_option = Config::getRemoteBindAddress();
+			if (config_option)
+			{
+				int n = get_host_address(config_option, &config_address, 1);
+				if (n != 1)
+				{
+					// In case when config option is given with error,
+					// bind to loopback interface only
+					config_address.s_addr = htonl(INADDR_LOOPBACK);
+					// log warning
+					if (n == 0)
+					{
+						gds__log("Wrong RemoteBindAddress '%s' in firebird.conf - "
+								 "binding to loopback interface", config_option);
+					}
+					else
+					{
+						gds__log("Host '%s' resolves to multiple inrefaces - "
+								 "binding to loopback interface", config_option);
+					}
+				}
+			}
+			else	// use default to listen all
+			{
+				config_address.s_addr = INADDR_ANY;
+			}
+		}
+
+		static void cleanup() { }
+	};
+}
+
 static in_addr get_bind_address()
 {
 /**************************************
@@ -1820,20 +1865,16 @@ static in_addr get_bind_address()
  *	Return local address to bind sockets to.
  *
  **************************************/
-	in_addr config_address;
+	static Firebird::InitMutex<GetAddress> instance;
 
-	const char* config_option = Config::getRemoteBindAddress();
-	config_address.s_addr =
-		(config_option) ? inet_addr(config_option) : INADDR_NONE;
-	if (config_address.s_addr == INADDR_NONE) {
-		config_address.s_addr = INADDR_ANY;
-	}
+	instance.init();
+
 	return config_address;
 }
 
-static in_addr get_host_address(const Firebird::string& name,
-								in_addr* const host_addr_arr,
-								const int arr_size)
+static int get_host_address(const char* name,
+							in_addr* const host_addr_arr,
+							const int arr_size)
 {
 /**************************************
  *
@@ -1842,53 +1883,51 @@ static in_addr get_host_address(const Firebird::string& name,
  **************************************
  *
  * Functional description
- *  Fills array with addresses up to arr_size (must be at least 2)
- *	Return first address from the list.
+ *  Fills array with addresses up to arr_size (must be at least 1).
+ *	Returns require number of elements in array to be able to store
+ *	all host addresses (may be less, equal or greater than arr_size).
  *
  **************************************/
-
-	host_addr_arr[0].s_addr = inet_addr(name.c_str());
-	host_addr_arr[1].s_addr = 0L;
-
-	if (host_addr_arr[0].s_addr == INADDR_NONE)
+	if (inet_aton(name, &host_addr_arr[0]))
 	{
-		const hostent* host = gethostbyname(name.c_str());
+		return 1;
+	}
 
-		/* On Windows NT/9x, gethostbyname can only accomodate
-		 * 1 call at a time.  In this case it returns the error
-		 * WSAEINPROGRESS. On UNIX systems, this call may not succeed
-		 * because of a temporary error.  In this case, it returns
-		 * h_error set to TRY_AGAIN.  When these errors occur,
-		 * retry the operation a few times.
-		 * NOTE: This still does not guarantee success, but helps.
-		 */
-		if (!host) {
-			if (H_ERRNO == INET_RETRY_ERRNO) {
-				for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
-					if ( (host = gethostbyname(name.c_str())) )
-						break;
-				}
-			}
-		}
+	const hostent* host = gethostbyname(name);
 
-		// We can't work with other types for now. Maybe AF_NETBIOS for MS, too?
-		if (host && host->h_addrtype == AF_INET)
-		{
-			const in_addr* const* list = reinterpret_cast<in_addr**>(host->h_addr_list);
-			for (int i = 0; i < arr_size; ++i)
-			{
-				if (list[i] == NULL)
-				{
-					// Mark the end of the useful entries in host_addr_arr.
-					host_addr_arr[i].s_addr = 0L;
-					break;
-				}
-				host_addr_arr[i] = *list[i];
-			}
+	/* On Windows NT/9x, gethostbyname can only accomodate
+	 * 1 call at a time.  In this case it returns the error
+	 * WSAEINPROGRESS. On UNIX systems, this call may not succeed
+	 * because of a temporary error.  In this case, it returns
+	 * h_error set to TRY_AGAIN.  When these errors occur,
+	 * retry the operation a few times.
+	 * NOTE: This still does not guarantee success, but helps.
+	 */
+	if ((!host) && (H_ERRNO == INET_RETRY_ERRNO)) {
+		for (int retry = 0; retry < INET_RETRY_CALL; retry++) {
+			if ( (host = gethostbyname(name)) )
+				break;
 		}
 	}
 
-	return host_addr_arr[0];
+	// We can't work with other types for now. Maybe AF_NETBIOS for MS, too?
+	if (host && host->h_addrtype == AF_INET)
+	{
+		const in_addr* const* list = reinterpret_cast<in_addr**>(host->h_addr_list);
+		int i = 0;
+		while (list[i] != NULL)
+		{
+			if (i < arr_size)
+			{
+				host_addr_arr[i] = *list[i];
+			}
+			++i;
+		}
+		return i;
+	}
+
+	// give up
+	return 0;
 }
 
 //____________________________________________________________

@@ -528,6 +528,7 @@ if test "$EDITLINE_FLG" = "Y"; then
 fi
 if test "$RT_LIB_CHECK" = "true"; then
 	AC_CHECK_LIB(rt, main)
+	AC_CHECK_LIB(resolv, inet_aton)
 fi
 
 dnl check for INFINITY in math.h
