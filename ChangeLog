@@ -1,3 +1,24 @@
+2008-09-22 16:46  alexpeshkoff
+
+	* firebird2/: configure.in (1.296), src/remote/inet.cpp (1.249):
+
+	1. Fixed CORE-2087: server binds to all interfaces in case of error
+	in firebird.conf.
+
+	2. Fixed CORE-2093: Superserver startup fails on solaris / 64 bit.
+
+	3. Improvement CORE-2094: Make it possible to use hostname when
+	specifying interface to listen on in firebird.conf.
+
+	Almost impossible to separate: came in one week and required
+	modifications in same part of code.
+
+2008-09-22 16:41  alexpeshkoff
+
+	* firebird2/src/jrd/evl.cpp (1.274):
+
+	Misc - same header was repeated twice
+
 2008-09-17 11:09  robocop
 
 	* firebird2/doc/README.services_extension (1.2):
