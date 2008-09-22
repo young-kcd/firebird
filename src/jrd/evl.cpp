@@ -108,7 +108,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/align.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/cvt_proto.h"
 #include "../jrd/misc_func_ids.h"
 #include "../common/config/config.h"
 #include "../jrd/SysFunction.h"
