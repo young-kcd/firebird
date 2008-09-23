@@ -93,7 +93,7 @@ f none @prefix@/misc/upgrade/metadata/metadata_charset_create.sql=$SRCDIR/../../
 f none @prefix@/misc/upgrade/metadata/metadata_charset_drop.sql=$SRCDIR/../../src/misc/upgrade/v2.1/metadata_charset_drop.sql 0644 firebird firebird
 d none @prefix@/misc/upgrade/security 0755 firebird firebird
 f none @prefix@/misc/upgrade/security/security_database.sql=$SRCDIR/../../src/misc/upgrade/v2/security_database.sql 0644 firebird firebird
-f none @prefix@/misc/upgrade/security/security_database,txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 firebird firebird
+f none @prefix@/misc/upgrade/security/security_database.txt=$SRCDIR/../../src/misc/upgrade/v2/security_database.txt 0644 firebird firebird
 
 # examples
 
