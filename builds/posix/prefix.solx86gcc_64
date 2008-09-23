@@ -36,14 +36,19 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
+ifeq ($(ObjModuleType),superserver)
 ifdef SFIO
-COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS)  $(SFIO_FLAGS) $(SFIO_LDFLAGS)
+COMM_SOLX_FLAGS+=$(SFIO_FLAGS)
 endif
-
-COMM_SOLX_FLAGS:= $(COMM_SOLX_FLAGS) 
+endif
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 
 DEV_FLAGS=$(COMM_SOLX_FLAGS) -ggdb $(WARNINGS)
+ifdef SFIO
+LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+STATICLINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+SO_LINK_LIBS+=$(SFIO_LDFLAGS) -lstdio -lsfio
+endif
 
 OS_ServerFiles=inet_server.cpp
 
@@ -64,7 +69,8 @@ LIB_LINK_RPATH:=-R
 LIB_LINK_SONAME:=-h
 LIB_LINK_MAPFILE=-Xlinker -M
 
-EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec fbguard nbackup fb_lock_print
-CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print
+EMBED_UTIL_TARGETS=gstat gds_drop gsec nbackup fb_lock_print fbsvcmgr
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
 
 Physical_IO_Module=os/posix/unix.cpp
+UNDEF_PLATFORM = -Wl,-z,defs
