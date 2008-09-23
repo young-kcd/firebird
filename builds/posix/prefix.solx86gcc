@@ -28,8 +28,10 @@ SFIO=@SFIO_DIR@
 SFIO_FLAGS=@SFIO_FLAGS@
 SFIO_LDFLAGS=@SFIO_LDFLAGS@
 
+ifeq ($(ObjModuleType),superserver)
 ifdef SFIO
 COMM_SOLX_FLAGS+=$(SFIO_FLAGS) 
+endif
 endif
 
 PROD_FLAGS=-DNDEBUG -w $(COMM_SOLX_FLAGS) -O2 -march=pentium 
