@@ -1987,6 +1987,15 @@ static int fork( SOCKET old_handle, USHORT flag)
 }
 #endif
 
+#ifdef WIN_NT
+bool inet_atom(const char* name, in_addr* address)
+{
+	address->s_addr = inet_addr(name);
+	return address->s_addr != INADDR_NONE;
+}
+#endif
+
+
 static in_addr get_bind_address()
 {
 /**************************************
