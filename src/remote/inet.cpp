@@ -427,7 +427,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 		   id other than default specified in /etc/passwd. */
 
 		eff_gid = htonl(eff_gid);
-		user_id.insertBytes(CNCT_group, 
+		user_id.insertBytes(CNCT_group,
 			reinterpret_cast<UCHAR*>(&eff_gid), sizeof(SLONG));
 	}
 
@@ -540,7 +540,7 @@ rem_port* INET_analyze(const Firebird::PathName& file_name,
 /* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
+	temp.printf("%s/P%d", port->port_version->str_data,
 						  port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
@@ -753,8 +753,8 @@ rem_port* INET_connect(const TEXT* name,
 /* If we're a host, just make the connection */
 
     int n;
-    
-	if (packet) 
+
+	if (packet)
 	{
 		if (! setNoNagleOption(port)) {
 			inet_error(port, "setsockopt TCP_NODELAY",
@@ -936,7 +936,7 @@ rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 					SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
-	}	
+	}
 
 	if (! setNoNagleOption(port)) {
 		gds__log("inet server err: setting NODELAY socket option \n");
@@ -969,7 +969,7 @@ rem_port* INET_server(int sock)
 			   (SCHAR *) & optval, sizeof(optval));
 	if (n == -1) {
 		gds__log("inet server err: setting KEEPALIVE socket option \n");
-	}	
+	}
 
 	if (! setNoNagleOption(port)) {
 		gds__log("inet server err: setting NODELAY socket option \n");
@@ -1139,7 +1139,7 @@ static int accept_connection(rem_port* port, const P_CNCT* cnct)
 		if (fb_utils::readenv("ISC_INET_SERVER_HOME", home))
 		{
 			if (chdir(home.c_str())) {
-				gds__log("inet_server: unable to cd to %s errno %d\n", 
+				gds__log("inet_server: unable to cd to %s errno %d\n",
 						 home.c_str(), INET_ERRNO);
 				/* We continue after the error */
 			}
@@ -1166,8 +1166,8 @@ static int accept_connection(rem_port* port, const P_CNCT* cnct)
 		UCHAR* ip = (UCHAR*) &address.sin_addr;
 		addr_str.printf(
 			"%d.%d.%d.%d",
-			static_cast<int>(ip[0]), 
-			static_cast<int>(ip[1]), 
+			static_cast<int>(ip[0]),
+			static_cast<int>(ip[1]),
 			static_cast<int>(ip[2]),
 			static_cast<int>(ip[3]) );
 		port->port_address_str = REMOTE_make_string(addr_str.c_str());
@@ -1191,7 +1191,7 @@ static rem_port* alloc_port( rem_port* parent)
  *
  **************************************/
 
-	if (!INET_initialized) 
+	if (!INET_initialized)
 	{
 #ifdef WIN_NT
 		static WSADATA wsadata;
@@ -1258,7 +1258,7 @@ static rem_port* alloc_port( rem_port* parent)
 					0,
 					XDR_DECODE);
 
-	if (parent && !(parent->port_server_flags & SRVR_thread_per_port)) 
+	if (parent && !(parent->port_server_flags & SRVR_thread_per_port))
 	{
 		Firebird::MutexLockGuard guard(port_mutex);
 		port->linkParent(parent);
@@ -1287,10 +1287,10 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
-	
+
 		SOCKET n = accept(port->port_channel, (struct sockaddr *) &address, &l);
 		const int inetErrNo = INET_ERRNO;
-		
+
 		if (n == INVALID_SOCKET) {
 			inet_error(port, "accept", isc_net_event_connect_err, inetErrNo);
 			SOCLOSE(port->port_channel);
@@ -1597,7 +1597,7 @@ static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
  *	Waits for processes started by standalone classic server (avoid zombies)
  *
  **************************************/
-	while (procCount > 0) 
+	while (procCount > 0)
 	{
 		int rc = wait(0);
 
@@ -1719,7 +1719,7 @@ static void closePortsExitHandler(void* arg)
 
 	rem_port* main_port = (rem_port*) arg;
 
-	for (rem_port* port = main_port; port; port = port->port_next) 
+	for (rem_port* port = main_port; port; port = port->port_next)
 		if (port->port_state != rem_port::BROKEN)
 		{
 			port->port_state = rem_port::BROKEN;
@@ -1795,7 +1795,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 	start_crud.lpDesktop = NULL;
 	start_crud.lpTitle = NULL;
 	start_crud.dwFlags = STARTF_FORCEOFFFEEDBACK;
-	
+
 	PROCESS_INFORMATION pi;
 	if (CreateProcess(NULL, cmdLine.begin(), NULL, NULL, TRUE,
 					  (flag & SRVR_high_priority ?
@@ -1812,7 +1812,7 @@ static int fork( SOCKET old_handle, USHORT flag)
 }
 #endif
 
-namespace 
+namespace
 {
 	in_addr config_address;
 
@@ -1884,14 +1884,21 @@ static int get_host_address(const char* name,
  *
  * Functional description
  *  Fills array with addresses up to arr_size (must be at least 1).
- *	Returns require number of elements in array to be able to store
+ *	Returns required number of elements in array to be able to store
  *	all host addresses (may be less, equal or greater than arr_size).
  *
  **************************************/
+#if defined(WIN_NT)
+ 	// IP v4 only.
+ 	host_addr_arr[0].s_addr = inet_addr(name);
+ 	if (host_addr_arr[0].s_addr != INADDR_NONE)
+ 		return 1;
+#else
 	if (inet_aton(name, &host_addr_arr[0]))
 	{
 		return 1;
 	}
+#endif
 
 	const hostent* host = gethostbyname(name);
 
@@ -2002,9 +2009,9 @@ static int parse_line(
  *	Parse hosts file (.rhosts or hosts.equiv) to determine
  *	if user_name on host_name should be allowed access.
  *
- *  Returns 
+ *  Returns
  *  1 if user_name is allowed
- *  0 if not allowed and 
+ *  0 if not allowed and
  *  -1 if there is not a host_name or a user_name
  *
  * only supporting:
@@ -2061,12 +2068,12 @@ static int parse_line(
 /* if they're in the user group: + they're in, - they're out */
 
 #if (defined UNIX) && !(defined NETBSD)
-	if (entry2[1] == '@') 
+	if (entry2[1] == '@')
 	{
 		if (innetgr(&entry2[2], 0, user_name, 0))
 			return entry2[0] == '+' ? TRUE : FALSE;
 
-		// if they're NOT in the user group AND we're excluding it - they're in 
+		// if they're NOT in the user group AND we're excluding it - they're in
 
 		if (entry2[0] == '-')
 			return TRUE;
@@ -2103,7 +2110,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 	do {
 		if (!xdr_protocol(&main_port->port_receive, packet))
 		{
-			packet->p_operation = main_port->port_flags & PORT_partial_data ? 
+			packet->p_operation = main_port->port_flags & PORT_partial_data ?
 								  op_partial : op_exit;
 			main_port->port_flags &= ~PORT_partial_data;
 
@@ -2146,10 +2153,10 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
  *
  **************************************/
 
-	for (;;) 
+	for (;;)
 	{
 		select_port(main_port, &INET_select, port);
-		if (port == main_port && (port->port_server_flags & SRVR_multi_client)) 
+		if (port == main_port && (port->port_server_flags & SRVR_multi_client))
 		{
 			if (INET_shutting_down)
 			{
@@ -2161,7 +2168,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 					SOCLOSE(s);
 				}
 			}
-			else if (port = select_accept(main_port)) 
+			else if (port = select_accept(main_port))
 			{
 				if (!packet_receive(port, buffer, bufsize, length))
 				{
@@ -2172,9 +2179,9 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 
 			continue;
 		}
-		if (port) 
+		if (port)
 		{
-			if (port->port_dummy_timeout < 0) 
+			if (port->port_dummy_timeout < 0)
 			{
 				port->port_dummy_timeout = port->port_dummy_packet_interval;
 				if (port->port_flags & PORT_async || port->port_protocol < PROTOCOL_VERSION8)
@@ -2262,7 +2269,7 @@ static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
 
 	Firebird::MutexLockGuard guard(port_mutex);
 
-	for (port = main_port; port; port = port->port_next) 
+	for (port = main_port; port; port = port->port_next)
 	{
 #ifdef WIN_NT
 		const SOCKET n = (SOCKET) port->port_handle;
@@ -2271,7 +2278,7 @@ static void select_port(rem_port* main_port, SLCT* selct, RemPortPtr& port)
 		const int n = (int) port->port_handle;
 		if (n < 0 || n >= FD_SETSIZE) {
 			return;
-		}		
+		}
 		const int ok = n < selct->slct_width && FD_ISSET(n, &selct->slct_fdset);
 #endif
 		if (ok)
@@ -2340,21 +2347,21 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 					if (checkPorts)
 					{
-						// select() returned EBADF\WSAENOTSOCK - we have a broken socket 
+						// select() returned EBADF\WSAENOTSOCK - we have a broken socket
 						// in current fdset. Search and return it to caller to close
 						// broken connection correctly
 
 						struct linger lngr;
 						socklen_t optlen = sizeof(lngr);
-						const bool badSocket = 
+						const bool badSocket =
 #ifdef WIN_NT
 							false;
 #else
-							((SOCKET) port->port_handle < 0) || 
+							((SOCKET) port->port_handle < 0) ||
 							((SOCKET) port->port_handle) >= FD_SETSIZE;
 #endif
 
-						if (badSocket || getsockopt((SOCKET) port->port_handle, 
+						if (badSocket || getsockopt((SOCKET) port->port_handle,
 							SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, &optlen) != 0)
 						{
 							if (badSocket || INET_ERRNO == NOTASOCKET)
@@ -2365,7 +2372,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 								// this will lead to receive() which will break bad connection
 								selct->slct_count = selct->slct_width = 0;
 								FD_ZERO(&selct->slct_fdset);
-								if (!badSocket) 
+								if (!badSocket)
 								{
 									FD_SET((SLONG) port->port_handle, &selct->slct_fdset);
 #ifdef WIN_NT
@@ -2405,7 +2412,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 
 		for (;;)
 		{
-			// Before waiting for incoming packet, check for server shutdown 
+			// Before waiting for incoming packet, check for server shutdown
 			if (tryStopMainThread && tryStopMainThread())
 				return FALSE;
 
@@ -2746,7 +2753,7 @@ static void inet_handler(void* port_void)
 	if (n < 0) {
 		return;
 	}
-	
+
 	(*port->port_ast) (port);
 }
 #endif
@@ -2850,7 +2857,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 		xdrs->x_handy -= bytecount;
 		while (bytecount--)
 			*xdrs->x_private++ = *buff++;
-			
+
 		return TRUE;
 	}
 
@@ -2955,7 +2962,7 @@ static rem_port* inet_try_connect(
 							 PACKET* packet,
 							 Rdb* rdb,
 							 const Firebird::PathName& file_name,
-							 const TEXT* node_name, 
+							 const TEXT* node_name,
 							 ISC_STATUS* status_vector,
 							 Firebird::ClumpletReader& dpb)
 {
@@ -3199,7 +3206,7 @@ static int packet_receive(
 #if (defined WIN_NT)
 				slct_count = select(FD_SETSIZE, &slct_fdset, NULL, NULL, time_ptr);
 #else
-				slct_count = select((SOCKET) port->port_handle + 1, &slct_fdset, 
+				slct_count = select((SOCKET) port->port_handle + 1, &slct_fdset,
 					NULL, NULL, time_ptr);
 #endif
 				inetErrNo = INET_ERRNO;
@@ -3457,11 +3464,11 @@ static bool setNoNagleOption(rem_port* port)
  **************************************
  *
  * Functional description
- *      Set TCP_NODELAY, return false 
+ *      Set TCP_NODELAY, return false
  *		in case of unexpected error
  *
  **************************************/
-	if (Config::getTcpNoNagle()) 
+	if (Config::getTcpNoNagle())
 	{
 		int optval = TRUE;
 		int n = setsockopt((SOCKET) port->port_handle, IPPROTO_TCP,
