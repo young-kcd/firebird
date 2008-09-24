@@ -6183,7 +6183,7 @@ static ISC_STATUS shutdown_dbb(thread_db* tdbb, Database* dbb, Attachment** rele
 			}
 			
 			// attach became invalid pointer
-			// if we have someone, intereted in that fact, inform him
+			// if we have someone, interested in that fact, inform him
 			if (released)
 			{
 				*released++ = attach;

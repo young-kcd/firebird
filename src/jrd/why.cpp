@@ -429,7 +429,7 @@ namespace
 			init_status(local_vector);
 		}
 
-		operator ISC_STATUS*() const
+		operator ISC_STATUS*()
 		{
 			return local_vector;
 		}
@@ -467,7 +467,7 @@ namespace
 		bool doExit;
 	};
 
-#ifndef SERVER_SHUTDOWN		// appears this macro has now nothing with shutdown
+#ifndef SERVER_SHUTDOWN		// appears this macro has now nothing to do with shutdown
 
 	int totalAttachmentCount()
 	{
@@ -663,7 +663,7 @@ namespace
 			}
 		}
 		
-		bool fatal()
+		bool fatal() const
 		{
 			return vector[0] == isc_arg_gds && 
 				(vector[1] == isc_shutdown ||
@@ -2172,7 +2172,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 	try 
 	{
 		Firebird::HalfStaticArray<SCHAR, 512> local_buffer;
-		USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
+		const USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
 		SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 		if (!GDS_DSQL_SQL_INFO(	status,
@@ -2220,7 +2220,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 	try 
 	{
 		Firebird::HalfStaticArray<SCHAR, 512> local_buffer;
-		USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
+		const USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
 		SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 		if (!GDS_DSQL_SQL_INFO(	status,
@@ -3267,7 +3267,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		Statement* statement = translate<Statement>(stmt_handle);
 		sqlda_sup& dasup = statement->das;
 
-		USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
+		const USHORT buffer_len = sqlda_buffer_size(sqlda, dialect);
 		Firebird::HalfStaticArray<SCHAR, BUFFER_MEDIUM> localBuffer;
 		SCHAR* buffer = localBuffer.getBuffer(buffer_len);
 		memset(buffer, 0, buffer_len);
