@@ -1,3 +1,28 @@
+2008-09-24 13:27  robocop
+
+	* firebird2/src/remote/inet.cpp (1.252):
+
+	Make inet_aton a function i Windows.
+
+2008-09-24 11:27  robocop
+
+	* firebird2/src/remote/inet.cpp (1.251):
+
+	inet_aton() does not exist in Windows.
+
+2008-09-24 11:24  robocop
+
+	* firebird2/src/jrd/why.cpp (1.211):
+
+	Misc.
+
+2008-09-24 04:02  asfernandes
+
+	* firebird2/: builds/install/arch-specific/solaris/SS/prototype.in
+	(1.7), src/remote/inet.cpp (1.250):
+
+	Misc
+
 2008-09-23 13:05  paulbeach
 
 	* firebird2/builds/: install/arch-specific/solaris/SS/preinstall.in
