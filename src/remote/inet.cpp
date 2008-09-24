@@ -1838,7 +1838,7 @@ namespace
 					}
 					else
 					{
-						gds__log("Host '%s' resolves to multiple inrefaces - "
+						gds__log("Host '%s' resolves to multiple interfaces - "
 								 "binding to loopback interface", config_option);
 					}
 				}

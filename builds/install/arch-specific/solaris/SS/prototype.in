@@ -12,7 +12,7 @@ i prototype=Prototype
 !default 755 firebird firebird
 d none  /usr         ? ? ?
 d none  /usr/lib     ? ? ?
-d none /opt         ? ? ?
+d none /opt          ? ? ?
 
 d none @prefix@ 0755 firebird firebird
 
