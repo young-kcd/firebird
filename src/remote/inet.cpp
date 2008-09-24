@@ -1872,6 +1872,17 @@ static in_addr get_bind_address()
 	return config_address;
 }
 
+
+#ifdef WIN_NT
+// Windows does not have an inet_aton function.
+bool inet_aton(const char* name, in_addr* address)
+{
+	address->s_addr = inet_addr(name);
+	return address->s_addr != INADDR_NONE;
+}
+#endif
+
+
 static int get_host_address(const char* name,
 							in_addr* const host_addr_arr,
 							const int arr_size)
@@ -1888,17 +1899,10 @@ static int get_host_address(const char* name,
  *	all host addresses (may be less, equal or greater than arr_size).
  *
  **************************************/
-#if defined(WIN_NT)
- 	// IP v4 only.
- 	host_addr_arr[0].s_addr = inet_addr(name);
- 	if (host_addr_arr[0].s_addr != INADDR_NONE)
- 		return 1;
-#else
 	if (inet_aton(name, &host_addr_arr[0]))
 	{
 		return 1;
 	}
-#endif
 
 	const hostent* host = gethostbyname(name);
 
@@ -2131,8 +2135,7 @@ static rem_port* receive( rem_port* main_port, PACKET * packet)
 			}
 		}
 #endif
-	}
-	while (packet->p_operation == op_dummy);
+	} while (packet->p_operation == op_dummy);
 
 	return main_port;
 }
