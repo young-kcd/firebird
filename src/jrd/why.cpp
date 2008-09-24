@@ -153,7 +153,7 @@ inline void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code)
 {
 	// this function is called for incoming API handles,
 	// proposed to be created by the call
-	if ((!ptr) || (*ptr)) 
+	if ((!ptr) || (*ptr))
 	{
 		bad_handle(code);
 	}
@@ -243,7 +243,7 @@ namespace
 			MutexLockGuard guard(mutex);
 			for (size_t i = 0; i < calls.getCount(); ++i)
 			{
-				if (calls[i].Routine == r && 
+				if (calls[i].Routine == r &&
 					calls[i].clean_arg == a)
 				{
 					return;
@@ -293,7 +293,7 @@ namespace
 		~BaseHandle();
 
 		// required to put pointers to it into the tree
-		static const FB_API_HANDLE& generate(const void* sender, const BaseHandle* value) 
+		static const FB_API_HANDLE& generate(const void* sender, const BaseHandle* value)
 		{
 			return value->public_handle;
 		}
@@ -331,7 +331,7 @@ namespace
 		{
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
-	
+
 		if (handle && *handle)
 		{
 			BaseHandle* rc = BaseHandle::translate(*handle);
@@ -399,14 +399,14 @@ namespace
 
 	public:
 		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
-			: BaseHandle(hType(), pub, par), 
+			: BaseHandle(hType(), pub, par),
 			  next(0), handle(h)
 		{
 			toParent<Transaction>(parent->transactions, this, parent->mutex);
 		}
 
 		Transaction(FB_API_HANDLE* pub, USHORT a_implementation)
-			: BaseHandle(hType(), pub, 0, a_implementation), 
+			: BaseHandle(hType(), pub, 0, a_implementation),
 			  next(0), handle(0)
 		{
 		}
@@ -443,8 +443,8 @@ namespace
 			toParent<Request>(parent->requests, this, parent->mutex);
 		}
 
-		~Request() 
-		{ 
+		~Request()
+		{
 			fromParent<Request>(parent->requests, this, parent->mutex);
 		}
 	};
@@ -471,8 +471,8 @@ namespace
 			toParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 
-		~Blob() 
-		{ 
+		~Blob()
+		{
 			fromParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 	};
@@ -509,8 +509,8 @@ namespace
 			}
 		}
 
-		~Statement() 
-		{ 
+		~Statement()
+		{
 			fromParent<Statement>(parent->statements, this, parent->mutex);
 		}
 	};
@@ -537,8 +537,8 @@ namespace
 		{
 		}
 
-		~Service() 
-		{ 
+		~Service()
+		{
 			cleanup.call(&public_handle);
 		}
 	};
@@ -604,7 +604,7 @@ namespace
 
 
 	BaseHandle::BaseHandle(UCHAR t, FB_API_HANDLE* pub, Attachment* par, USHORT imp)
-		: type(t), flags(0), implementation(par ? par->implementation : imp), 
+		: type(t), flags(0), implementation(par ? par->implementation : imp),
 		  parent(par), user_handle(0)
 	{
 		fb_assert(par || (imp != USHORT(~0)));
@@ -655,7 +655,7 @@ namespace
 		WriteLockGuard sync(handleMappingLock);
 
 		// Silently ignore bad handles for PROD_BUILD
-		if (handleMapping->locate(public_handle)) 
+		if (handleMapping->locate(public_handle))
 		{
 			handleMapping->fastRemove();
 		}
@@ -669,7 +669,7 @@ namespace
 	}
 
 	Attachment::Attachment(StoredAtt* h, FB_API_HANDLE* pub, USHORT impl)
-		: BaseHandle(hType(), pub, 0, impl), 
+		: BaseHandle(hType(), pub, 0, impl),
 		  transactions(*getDefaultMemoryPool()),
 		  requests(*getDefaultMemoryPool()),
 		  blobs(*getDefaultMemoryPool()),
@@ -712,7 +712,7 @@ inline Transaction* findTransaction(FB_API_HANDLE* public_handle, Attachment *a)
 
 static int get_database_info(ISC_STATUS *, Transaction*, TEXT **);
 static const PTR get_entrypoint(int, int);
-static USHORT sqlda_buffer_size(USHORT, XSQLDA*, USHORT);
+static USHORT sqlda_buffer_size(USHORT, const XSQLDA*, USHORT);
 static ISC_STATUS get_transaction_info(ISC_STATUS *, Transaction*, TEXT **);
 
 static void iterative_sql_info(ISC_STATUS *, FB_API_HANDLE*, SSHORT, const SCHAR *, SSHORT,
@@ -729,11 +729,11 @@ static void subsystem_exit(void) throw();
 static event_t why_event[1];
 static bool why_initialized = false;
 
-/* subsystem_usage is used to count how many active ATTACHMENTs are 
+/* subsystem_usage is used to count how many active ATTACHMENTs are
  * running though the why valve.  For the first active attachment
  * request we reset the Firebird FPE handler.
  * This counter is incremented for each ATTACH DATABASE, ATTACH SERVER,
- * or CREATE DATABASE.  This counter is decremented for each 
+ * or CREATE DATABASE.  This counter is decremented for each
  * DETACH DATABASE, DETACH SERVER, or DROP DATABASE.
  *
  * A client-only API call, isc_reset_fpe() also controls the re-setting of
@@ -765,8 +765,8 @@ static USHORT subsystem_FPE_reset = FPE_RESET_INIT_ONLY;
 #define SUBSYSTEM_USAGE_DECR	/* nothing */
 #endif
 
-/* 
- * Global array to store string from the status vector in 
+/*
+ * Global array to store string from the status vector in
  * save_error_string.
  */
 
@@ -777,7 +777,7 @@ static const TEXT glbunknown[10] = "<unknown>";
 const USHORT PREPARE_BUFFER_SIZE	= 32768;	// size of buffer used in isc_dsql_prepare call
 const USHORT DESCRIBE_BUFFER_SIZE	= 1024;		// size of buffer used in isc_dsql_describe_xxx call
 
-namespace 
+namespace
 {
 	// Status:	Provides correct status vector for operation and init() it.
 	class Status
@@ -789,7 +789,7 @@ namespace
 			fb_utils::init_status(local_vector);
 		}
 
-		operator ISC_STATUS*() const
+		operator ISC_STATUS*()
 		{
 			return local_vector;
 		}
@@ -865,7 +865,7 @@ namespace
 #if !defined (SUPERCLIENT)
 		disableConnections = true;
 #endif
-		shutdownSemaphore->release();		
+		shutdownSemaphore->release();
 	}
 
 	void handlerInt(void*)
@@ -1190,7 +1190,7 @@ static const SCHAR describe_bind_info[] =
 	isc_info_sql_describe_end
 };
 
-static const SCHAR sql_prepare_info2[] = 
+static const SCHAR sql_prepare_info2[] =
 {
 	isc_info_sql_stmt_type,
 
@@ -1250,7 +1250,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
 
@@ -1294,7 +1294,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			ISC_expand_filename(expanded_filename, true);
 		}
 
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE, 
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
 			reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 		setLogin(newDpb);
@@ -1307,7 +1307,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
 			if (!CALL(PROC_ATTACH_DATABASE, n) (ptr, expanded_filename.c_str(),
-												&handle, newDpb.getBufferLength(), 
+												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
 				attachment = new Attachment(handle, public_handle, n);
@@ -1329,7 +1329,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 				return status[1];
 			}
-			if (ptr[1] != isc_unavailable) 
+			if (ptr[1] != isc_unavailable)
 			{
 				ptr = temp;
 			}
@@ -1373,11 +1373,11 @@ ISC_STATUS API_ROUTINE GDS_BLOB_INFO(ISC_STATUS*	user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
-		CALL(PROC_BLOB_INFO, blob->implementation) (status, &blob->handle, 
+		CALL(PROC_BLOB_INFO, blob->implementation) (status, &blob->handle,
 													item_length, items,
 													buffer_length, buffer);
 	}
@@ -1403,9 +1403,9 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
  *	Abort a partially completed blob.
  *
  **************************************/
-	if (!*blob_handle) 
+	if (!*blob_handle)
 	{
-		if (user_status) 
+		if (user_status)
 		{
 			fb_utils::init_status(user_status);
 		}
@@ -1414,7 +1414,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_BLOB(ISC_STATUS * user_status,
 
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
@@ -1450,7 +1450,7 @@ ISC_STATUS API_ROUTINE GDS_CANCEL_EVENTS(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = translate<Attachment>(handle);
 		status.setPrimaryHandle(attachment);
@@ -1483,11 +1483,11 @@ ISC_STATUS API_ROUTINE FB_CANCEL_OPERATION(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = translate<Attachment>(handle);
 		// mutex will be locked here for a really long time
-		MutexLockGuard guard(attachment->enterMutex);	
+		MutexLockGuard guard(attachment->enterMutex);
 		if (attachment->enterCount || option != fb_cancel_raise)
 		{
 			CALL(PROC_CANCEL_OPERATION, attachment->implementation) (status,
@@ -1523,7 +1523,7 @@ ISC_STATUS API_ROUTINE GDS_CLOSE_BLOB(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
@@ -1556,7 +1556,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
 		Transaction* sub;
@@ -1628,7 +1628,7 @@ ISC_STATUS API_ROUTINE GDS_COMMIT_RETAINING(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
@@ -1672,7 +1672,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE(ISC_STATUS* user_status,
 	YEntry status(user_status);
 	Attachment* dbb = NULL;
 	StoredReq* rq = NULL;
-	try 
+	try
 	{
 		dbb = translate<Attachment>(db_handle);
 		status.setPrimaryHandle(dbb);
@@ -1718,7 +1718,7 @@ ISC_STATUS API_ROUTINE GDS_COMPILE2(ISC_STATUS* user_status,
  **************************************/
 	Status status(user_status);
 
-	try 
+	try
 	{
 		if (GDS_COMPILE(status, db_handle, req_handle, blr_length, blr))
 		{
@@ -1811,7 +1811,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		nullCheck(public_handle, isc_bad_db_handle);
 
@@ -1855,7 +1855,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			ISC_expand_filename(expanded_filename, true);
 		}
 
-		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE, 
+		ClumpletWriter newDpb(ClumpletReader::Tagged, MAX_DPB_SIZE,
 				reinterpret_cast<const UCHAR*>(dpb), dpb_length, isc_dpb_version1);
 
 		setLogin(newDpb);
@@ -1868,7 +1868,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		for (n = 0; n < SUBSYSTEMS; n++)
 		{
 			if (!CALL(PROC_CREATE_DATABASE, n) (ptr, expanded_filename.c_str(),
-												&handle, newDpb.getBufferLength(), 
+												&handle, newDpb.getBufferLength(),
 												reinterpret_cast<const char*>(newDpb.getBuffer())))
 			{
 #ifdef WIN_NT
@@ -1930,7 +1930,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = translate<Attachment>(handle);
 		status.setPrimaryHandle(attachment);
@@ -1965,7 +1965,7 @@ ISC_STATUS API_ROUTINE GDS_DATABASE_INFO(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = translate<Attachment>(handle);
 		status.setPrimaryHandle(attachment);
@@ -2003,7 +2003,7 @@ ISC_STATUS API_ROUTINE GDS_DDL(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = translate<Attachment>(db_handle);
 		status.setPrimaryHandle(attachment);
@@ -2045,7 +2045,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 {
 /**************************************
  *
- *	d e t a c h _ o r _ d r o p _ d a t a b a s e 
+ *	d e t a c h _ o r _ d r o p _ d a t a b a s e
  *
  **************************************
  *
@@ -2055,7 +2055,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Attachment* dbb = translate<Attachment>(handle);
 
@@ -2063,7 +2063,7 @@ static ISC_STATUS detach_or_drop_database(ISC_STATUS * user_status, FB_API_HANDL
 			MutexLockGuard guard(dbb->mutex);
 			size_t i;
 
-			if (CALL(proc, dbb->implementation) (status, &dbb->handle) && 
+			if (CALL(proc, dbb->implementation) (status, &dbb->handle) &&
 			    status[1] != specCode)
 			{
 				return status[1];
@@ -2107,7 +2107,7 @@ int API_ROUTINE gds__disable_subsystem(TEXT * subsystem)
 {
 /**************************************
  *
- *	g d s _ $ d i s a b l e _ s u b s y s t e m 
+ *	g d s _ $ d i s a b l e _ s u b s y s t e m
  *
  **************************************
  *
@@ -2167,7 +2167,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOC2(ISC_STATUS * user_status,
  **************************************/
 	Status status(user_status);
 
-	try 
+	try
 	{
 		if (GDS_DSQL_ALLOCATE(status, db_handle, stmt_handle))
 		{
@@ -2204,7 +2204,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_ALLOCATE(ISC_STATUS * user_status,
 	Attachment* dbb = NULL;
 	StoredStm* stmt_handle = NULL;
 
-	try 
+	try
 	{
 		dbb = translate<Attachment>(db_handle);
 		status.setPrimaryHandle(dbb);
@@ -2249,12 +2249,12 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
  **************************************/
 	Status status(user_status);
 
-	try 
+	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 
 		statement->checkPrepared();
-		sqlda_sup::dasup_clause& clause = 
+		sqlda_sup::dasup_clause& clause =
 			statement->das.dasup_clauses[DASUP_CLAUSE_select];
 
 		if (clause.dasup_info_len && clause.dasup_info_buf)
@@ -2271,7 +2271,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS * user_status,
 		else
 		{
 			HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> local_buffer;
-			USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
+			const USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 			if (!GDS_DSQL_SQL_INFO(	status,
@@ -2318,11 +2318,11 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
  **************************************/
 	Status status(user_status);
 
-	try 
+	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 
-		sqlda_sup::dasup_clause& clause = 
+		sqlda_sup::dasup_clause& clause =
 			statement->das.dasup_clauses[DASUP_CLAUSE_bind];
 
 		if (clause.dasup_info_len && clause.dasup_info_buf)
@@ -2339,7 +2339,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS * user_status,
 		else
 		{
 			HalfStaticArray<SCHAR, DESCRIBE_BUFFER_SIZE> local_buffer;
-			USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
+			const USHORT buffer_len = sqlda_buffer_size(DESCRIBE_BUFFER_SIZE, sqlda, dialect);
 			SCHAR *buffer = local_buffer.getBuffer(buffer_len);
 
 			if (!GDS_DSQL_SQL_INFO(	status,
@@ -2410,7 +2410,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
  **************************************/
 	Status status(user_status);
 
-	try 
+	try
 	{
 		USHORT in_blr_length, in_msg_type, in_msg_length,
 			out_blr_length, out_msg_type, out_msg_length;
@@ -2426,7 +2426,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2(ISC_STATUS* user_status,
 		{
 			return status[1];
 		}
-	
+
 		if (UTLD_parse_sqlda
 			(status, dasup, &out_blr_length, &out_msg_type, &out_msg_length,
 			dialect, out_sqlda, DASUP_CLAUSE_select))
@@ -2500,7 +2500,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE2_M(ISC_STATUS* user_status,
 										   USHORT out_blr_length,
 										   SCHAR* out_blr,
 										   USHORT out_msg_type,
-										   USHORT out_msg_length, 
+										   USHORT out_msg_length,
 										   SCHAR* out_msg)
 {
 /**************************************
@@ -2594,7 +2594,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXECUTE_IMMED(ISC_STATUS* user_status,
 											  FB_API_HANDLE* tra_handle,
 											  USHORT length,
 											  const SCHAR* string,
-											  USHORT dialect, 
+											  USHORT dialect,
 											  const XSQLDA* sqlda)
 {
 /**************************************
@@ -2654,7 +2654,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMMED2(ISC_STATUS* user_status,
 		{
 			return status[1];
 		}
-	
+
 		if (UTLD_parse_sqlda
 			(status, &dasup, &out_blr_length, &out_msg_type, &out_msg_length,
 			 dialect, out_sqlda, DASUP_CLAUSE_select))
@@ -2916,7 +2916,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_EXEC_IMM3_M(ISC_STATUS* user_status,
 														  length, string, dialect,
 														  in_blr_length, in_blr,
 														  in_msg_type, in_msg_length, in_msg,
-														  out_blr_length, out_blr, 
+														  out_blr_length, out_blr,
 														  out_msg_type, out_msg_length, out_msg);
 
 		if (!status[1])
@@ -2960,7 +2960,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH(ISC_STATUS* user_status,
 
 	try
 	{
-		if (!sqlda) 
+		if (!sqlda)
 		{
 			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
 		}
@@ -3023,7 +3023,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2(ISC_STATUS* user_status,
 
 	try
 	{
-		if (!sqlda) 
+		if (!sqlda)
 		{
 			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
 		}
@@ -3087,7 +3087,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH_M(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
@@ -3142,7 +3142,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FETCH2_M(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Statement* statement = translate<Statement>(stmt_handle);
 		status.setPrimaryHandle(statement);
@@ -3200,7 +3200,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_FREE(ISC_STATUS * user_status,
 			return status[1];
 		}
 
-		if (option & DSQL_drop) 
+		if (option & DSQL_drop)
 		{
 			release_dsql_support(statement->das);
 			delete statement;
@@ -3291,7 +3291,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_INSERT_M(ISC_STATUS* user_status,
 
 		CALL(PROC_DSQL_INSERT, statement->implementation) (status,
 														   &statement->handle,
-														   blr_length, blr, 
+														   blr_length, blr,
 														   msg_type, msg_length, msg);
 	}
 	catch (const Exception& e)
@@ -3328,7 +3328,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 		Statement* statement = translate<Statement>(stmt_handle);
 		sqlda_sup& dasup = statement->das;
 
-		USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
+		const USHORT buffer_len = sqlda_buffer_size(PREPARE_BUFFER_SIZE, sqlda, dialect);
 		Attachment*	attachment = statement->parent;
 		Array<SCHAR> db_prepare_buffer;
 		SCHAR* const buffer = db_prepare_buffer.getBuffer(buffer_len);
@@ -3389,11 +3389,11 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 					p2[len] = isc_info_end;
 					das_select.dasup_info_buf = p2;
 					das_select.dasup_info_len = len + 1;
-					
+
 					buf_select = das_select.dasup_info_buf;
 					len_select = das_select.dasup_info_len;
 				}
-				else 
+				else
 				{
 					das_select.dasup_info_buf = 0;
 					das_select.dasup_info_len = 0;
@@ -3414,7 +3414,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE(ISC_STATUS* user_status,
 					das_bind.dasup_info_buf = p2;
 					das_bind.dasup_info_len = len + 1;
 				}
-				else 
+				else
 				{
 					das_bind.dasup_info_buf = 0;
 					das_bind.dasup_info_len = 0;
@@ -3485,7 +3485,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_PREPARE_M(ISC_STATUS* user_status,
 
 		CALL(PROC_DSQL_PREPARE, statement->implementation) (status,
 															&handle,
-															&statement->handle, 
+															&statement->handle,
 															length,
 															string, dialect,
 															item_length,
@@ -3562,7 +3562,7 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 		status.setPrimaryHandle(statement);
 
 		if (( (item_length == 1) && (items[0] == isc_info_sql_stmt_type) ||
-			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) && 
+			  (item_length == 2) && (items[0] == isc_info_sql_stmt_type) &&
 		      (items[1] == isc_info_end || items[1] == 0) ) &&
 			(statement->flags & HANDLE_STATEMENT_prepared) &&
 			statement->das.dasup_stmt_type)
@@ -3576,12 +3576,12 @@ ISC_STATUS API_ROUTINE GDS_DSQL_SQL_INFO(ISC_STATUS* user_status,
 				buffer += 4;
 				*buffer = isc_info_end;
 			}
-			else 
+			else
 			{
 				*buffer = isc_info_truncated;
 			}
 		}
-		else 
+		else
 		{
 			CALL(PROC_DSQL_SQL_INFO, statement->implementation) (status,
 																 &statement->handle,
@@ -3602,7 +3602,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT * subsystem)
 {
 /**************************************
  *
- *	g d s _ $ e n a b l e _ s u b s y s t e m 
+ *	g d s _ $ e n a b l e _ s u b s y s t e m
  *
  **************************************
  *
@@ -3635,7 +3635,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 
 	try
 	{
-		if (!why_initialized) 
+		if (!why_initialized)
 		{
 			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, why_event);
 			why_initialized = true;
@@ -3681,17 +3681,17 @@ ISC_STATUS API_ROUTINE GDS_GET_SEGMENT(ISC_STATUS * user_status,
  **************************************/
 	YEntry status(user_status);
 
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
 
-		ISC_STATUS code = 
+		ISC_STATUS code =
 			CALL(PROC_GET_SEGMENT, blob->implementation) (status, &blob->handle,
 														  length,
 														  buffer_length, buffer);
 
-		if (code == isc_segstr_eof || code == isc_segment) 
+		if (code == isc_segstr_eof || code == isc_segment)
 		{
 			return code;
 		}
@@ -3777,7 +3777,7 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_no_recon));
 		}
 
-		while (transaction) 
+		while (transaction)
 		{
 			Transaction* sub = transaction;
 			transaction = sub->next;
@@ -3875,7 +3875,7 @@ ISC_STATUS API_ROUTINE GDS_PREPARE2(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
@@ -3917,7 +3917,7 @@ ISC_STATUS API_ROUTINE GDS_PUT_SEGMENT(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
@@ -4087,7 +4087,7 @@ ISC_STATUS API_ROUTINE GDS_RECEIVE2(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Scroll through the request output stream, 
+ *	Scroll through the request output stream,
  *	then get a record from the host program.
  *
  **************************************/
@@ -4243,7 +4243,7 @@ ISC_STATUS API_ROUTINE GDS_REQUEST_INFO(ISC_STATUS* user_status,
 }
 
 #if defined (SOLARIS) || defined (WIN_NT)
-extern "C" 
+extern "C"
 #endif
 
 SLONG API_ROUTINE isc_reset_fpe(USHORT fpe_status)
@@ -4300,7 +4300,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK_RETAINING(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
@@ -4340,7 +4340,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		Transaction* transaction = translate<Transaction>(tra_handle);
 		status.setPrimaryHandle(transaction);
@@ -4361,7 +4361,7 @@ ISC_STATUS API_ROUTINE GDS_ROLLBACK(ISC_STATUS * user_status,
 			fb_utils::init_status(status);
 		}
 
-		while (transaction) 
+		while (transaction)
 		{
 			Transaction* sub = transaction;
 			transaction = sub->next;
@@ -4395,7 +4395,7 @@ ISC_STATUS API_ROUTINE GDS_SEEK_BLOB(ISC_STATUS * user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		Blob* blob = translate<Blob>(blob_handle);
 		status.setPrimaryHandle(blob);
@@ -4484,18 +4484,18 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 			status_exception::raise(Arg::Gds(isc_att_shutdown));
 		}
 
-		if (!service_name) 
+		if (!service_name)
 		{
 			status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svc_name_missing));
 		}
 
-		if (spb_length > 0 && !spb) 
+		if (spb_length > 0 && !spb)
 		{
 			status_exception::raise(Arg::Gds(isc_bad_spb_form));
 		}
 
 #if !defined (SUPERCLIENT)
-		if (disableConnections) 
+		if (disableConnections)
 		{
 			status_exception::raise(Arg::Gds(isc_shutwarn));
 		}
@@ -4507,11 +4507,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_ATTACH(ISC_STATUS* user_status,
 		svcname.rtrim();
 
 		ISC_STATUS* ptr = status;
-		for (n = 0; n < SUBSYSTEMS; n++) 
+		for (n = 0; n < SUBSYSTEMS; n++)
 		{
 			if (!CALL(PROC_SERVICE_ATTACH, n) (ptr,
 											   svcname.c_str(),
-											   &handle, 
+											   &handle,
 											   spb_length, spb))
 			{
 				service = new Service(handle, public_handle, n);
@@ -4611,7 +4611,7 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
  *	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
- *	network).  This parameter will be implemented at 
+ *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
 	YEntry status(user_status);
@@ -4620,8 +4620,8 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_QUERY(ISC_STATUS* user_status,
 	{
 		Service* service = translate<Service>(handle);
 
-		CALL(PROC_SERVICE_QUERY, service->implementation) (status, 
-														   &service->handle, 
+		CALL(PROC_SERVICE_QUERY, service->implementation) (status,
+														   &service->handle,
 														   0,	/* reserved */
 														   send_item_length,
 														   send_items,
@@ -4653,11 +4653,11 @@ ISC_STATUS API_ROUTINE GDS_SERVICE_START(ISC_STATUS* user_status,
  *
  * Functional description
  *	Starts a service thread
- * 
+ *
  *	NOTE: The parameter RESERVED must not be used
  *	for any purpose as there are networking issues
  *	involved (as with any handle that goes over the
- *	network).  This parameter will be implemented at 
+ *	network).  This parameter will be implemented at
  *	a later date.
  **************************************/
 	YEntry status(user_status);
@@ -4780,7 +4780,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 	Transaction* transaction = 0;
 	Attachment* dbb = 0;
 	StoredTra* handle = 0;
-	
+
 	YEntry status(user_status);
 
 	try
@@ -4836,7 +4836,7 @@ ISC_STATUS API_ROUTINE GDS_START_MULTIPLE(ISC_STATUS* user_status,
 		{
 			*tra_handle = 0;
 		}
-		while (transaction) 
+		while (transaction)
 		{
 			Transaction *sub = transaction;
 			transaction = sub->next;
@@ -4871,7 +4871,7 @@ ISC_STATUS API_ROUTINE_VARARG GDS_START_TRANSACTION(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
-	try 
+	try
 	{
 		HalfStaticArray<TEB, 16> tebs;
 		TEB* teb = tebs.getBuffer(count);
@@ -4960,7 +4960,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS * user_status,
  *
  **************************************/
 	Status status(user_status);
-	try 
+	try
 	{
 		translate<Transaction>(tra_handle)->cleanup.add(routine, arg);
 	}
@@ -5028,7 +5028,7 @@ ISC_STATUS API_ROUTINE GDS_TRANSACTION_INFO(ISC_STATUS* user_status,
 					ptr += 3 + gds__vax_integer(ptr + 1, 2);
 				}
 
-				if (ptr >= end || *ptr != isc_info_end) 
+				if (ptr >= end || *ptr != isc_info_end)
 				{
 					return status[1];
 				}
@@ -5138,11 +5138,11 @@ static void check_status_vector(const ISC_STATUS* status)
 		return;
 	}
 
-/* Vector [2] could either end the vector, or start a warning 
+/* Vector [2] could either end the vector, or start a warning
    in either case the status vector is a success */
-	if ((s[1] == FB_SUCCESS) && 
-		(s[2] != isc_arg_end) && 
-		(s[2] != isc_arg_gds) && 
+	if ((s[1] == FB_SUCCESS) &&
+		(s[2] != isc_arg_end) &&
+		(s[2] != isc_arg_gds) &&
 		(s[2] != isc_arg_warning))
 	{
 		SV_MSG("Bad success vector format");
@@ -5366,7 +5366,7 @@ static int get_database_info(ISC_STATUS * status,
 	size_t len = strlen(q);
 	if (len > 254)
 		len = 254;
-		
+
 	*p++ = (TEXT) len;
 	memcpy(p, q, len);
 	*ptr = p + len;
@@ -5393,7 +5393,7 @@ static const PTR get_entrypoint(int proc, int implementation)
 }
 
 
-static USHORT sqlda_buffer_size(USHORT min_buffer_size, XSQLDA * sqlda,
+static USHORT sqlda_buffer_size(USHORT min_buffer_size, const XSQLDA* sqlda,
 								USHORT dialect)
 {
 /**************************************
@@ -5463,7 +5463,7 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 																	  prepare_tr_info,
 																	  sizeof
 																	  (buffer),
-																	  buffer)) 
+																	  buffer))
 		{
 			return status[1];
 		}
@@ -5472,11 +5472,11 @@ static ISC_STATUS get_transaction_info(ISC_STATUS* user_status,
 		*p++ = TDR_TRANSACTION_ID;
 
 		USHORT length = (USHORT)gds__vax_integer(reinterpret_cast<UCHAR*>(buffer + 1), 2);
-				
+
 		// Prevent information out of sync.
 		if (length > MAX_UCHAR)
 			length = MAX_UCHAR;
-			
+
 		*p++ = length;
 		memcpy(p, q, length);
 		*ptr = p + length;
@@ -5562,7 +5562,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
  **************************************/
 	YEntry status(user_status);
 	StoredBlb* blob_handle = 0;
-	try 
+	try
 	{
 		nullCheck(public_blob_handle, isc_bad_segstr_handle);
 
@@ -5643,7 +5643,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
  **************************************
  *
  * Functional description
- *	Perform the first phase of a two-phase commit 
+ *	Perform the first phase of a two-phase commit
  *	for a multi-database transaction.
  *
  **************************************/
@@ -5665,21 +5665,21 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 	ISC_get_host(host, sizeof(host));
 	const size_t hostlen = strlen(host);
 	length += hostlen + 3; // TDR_version + TDR_host_site + UCHAR(strlen(host))
-	
+
 	TEXT* const description = (length > sizeof(tdr_buffer)) ?
 		(TEXT *) gds__alloc(length) : tdr_buffer;
 
-/* build a transaction description record containing 
+/* build a transaction description record containing
    the host site and database/transaction
    information for the target databases. */
 
 	TEXT* p = description;
-	if (!p) 
+	if (!p)
 	{
 		Firebird::Arg::Gds(isc_virmemexh).copyTo(status);
 		return status[1];
 	}
-	
+
 	*p++ = TDR_VERSION;
 	*p++ = TDR_HOST_SITE;
 	*p++ = UCHAR(hostlen);
@@ -5719,7 +5719,7 @@ static ISC_STATUS prepare(ISC_STATUS* user_status,
 
 inline void why_priv_gds__free_if_set(SCHAR** pMem)
 {
-	if (*pMem) 
+	if (*pMem)
 	{
 		gds__free(*pMem);
 		*pMem = 0;
@@ -5754,14 +5754,14 @@ static void save_error_string(ISC_STATUS * status)
 {
 /**************************************
  *
- *	s a v e _ e r r o r _ s t r i n g  
+ *	s a v e _ e r r o r _ s t r i n g
  *
  **************************************
  *
  * Functional description
  *	This is need because there are cases
- *	where the memory allocated for strings 
- *	in the status vector is freed prior to 
+ *	where the memory allocated for strings
+ *	in the status vector is freed prior to
  *	surfacing them to the user.  This is an
  *	attempt to save off 1 string to surface to
  *  	the user.  Any other strings will be set to
@@ -5783,7 +5783,7 @@ static void save_error_string(ISC_STATUS * status)
 			if (l < len)
 			{
 				status++;		/* Length is unchanged */
-				/* 
+				/*
 				 * This strncpy should really be a memcpy
 				 */
 				strncpy(p, reinterpret_cast<char*>(*status), l);
@@ -5837,12 +5837,12 @@ static bool set_path(const PathName& file_name, PathName& expanded_name)
  **************************************
  *
  * Functional description
- *	Set a prefix to a filename based on 
+ *	Set a prefix to a filename based on
  *	the ISC_PATH user variable.
  *
  **************************************/
 
-	// look for the environment variables to tack 
+	// look for the environment variables to tack
 	// onto the beginning of the database path
 	PathName pathname;
 	if (!fb_utils::readenv("ISC_PATH", pathname))
@@ -5885,7 +5885,7 @@ static void subsystem_enter(void) throw()
  *
  **************************************/
 
-	try 
+	try
 	{
 		++isc_enter_count;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
@@ -6028,9 +6028,9 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 		{
 			typedef int ShutType(unsigned int);
 			PTR entry = get_entrypoint(PROC_SHUTDOWN, n);
-			if (entry != no_entrypoint) 
+			if (entry != no_entrypoint)
 			{
-				// this awful cast will be gone as soon as we will have 
+				// this awful cast will be gone as soon as we will have
 				// pure virtual functions based provider interface
 				if (((ShutType*) entry)(timeout) != FB_SUCCESS)
 				{
@@ -6049,7 +6049,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 	{
 		e.stuff_exception(status);
 		gds__log_status(0, status);
-		return FB_SUCCESS;	// This seems to be a strange logic, but we should better 
+		return FB_SUCCESS;	// This seems to be a strange logic, but we should better
 							// let it exit() when unexpected errors happen
 	}
 
@@ -6057,8 +6057,8 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 }
 
 
-ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status, 
-											FB_SHUTDOWN_CALLBACK callBack, 
+ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
+											FB_SHUTDOWN_CALLBACK callBack,
 											const int mask,
 											void* arg)
 {
@@ -6073,7 +6073,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
  *
  **************************************/
 	YEntry status(user_status);
-	try 
+	try
 	{
 		ShutChain::add(callBack, mask, arg);
 	}
