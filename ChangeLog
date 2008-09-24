@@ -1,3 +1,15 @@
+2008-09-24 11:19  robocop
+
+	* firebird2/src/jrd/: jrd.cpp (1.237.2.31), why.cpp (1.100.4.7):
+
+	Misc.
+
+2008-09-24 11:18  robocop
+
+	* firebird2/src/jrd/grant.epp (1.53.4.2):
+
+	Delete useless vars.
+
 2008-09-16 11:23  robocop
 
 	* firebird2/: builds/posix/prefix.solx86gcc (1.19.4.6),
