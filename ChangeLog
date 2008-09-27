@@ -1,3 +1,28 @@
+2008-09-27 12:03  robocop
+
+	* firebird2/src/msgs/messages2.sql (1.61):
+
+	Correction.
+
+2008-09-27 11:51  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.86),
+	lang_helpers/gds_codes.pas (1.86), src/dsql/gen.cpp (1.175),
+	src/dsql/make.cpp (1.174), src/include/gen/codetext.h (1.95),
+	src/include/gen/iberror.h (1.99), src/include/gen/msgs.h (1.119),
+	src/include/gen/sql_code.h (1.101), src/include/gen/sql_state.h
+	(1.28), src/msgs/facilities2.sql (1.50), src/msgs/messages2.sql
+	(1.60), src/msgs/system_errors2.sql (1.44):
+
+	CORE-1799: improve the almost useless "expression evaluation not
+	supported" error message.  Did the DSQL part for now.
+
+2008-09-27 04:54  asfernandes
+
+	* firebird2/src/remote/inet.cpp (1.253):
+
+	Misc
+
 2008-09-24 13:27  robocop
 
 	* firebird2/src/remote/inet.cpp (1.252):
