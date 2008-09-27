@@ -1720,12 +1720,14 @@ static void closePortsExitHandler(void* arg)
 	rem_port* main_port = (rem_port*) arg;
 
 	for (rem_port* port = main_port; port; port = port->port_next)
+	{
 		if (port->port_state != rem_port::BROKEN)
 		{
 			port->port_state = rem_port::BROKEN;
 			shutdown((int) port->port_handle, 2);
 			SOCLOSE((SOCKET) port->port_handle);
 		}
+	}
 }
 
 #ifdef NO_FORK
@@ -1895,7 +1897,7 @@ static int get_host_address(const char* name,
  *
  * Functional description
  *  Fills array with addresses up to arr_size (must be at least 1).
- *	Returns required number of elements in array to be able to store
+ *	Returns the required number of elements in array to be able to store
  *	all host addresses (may be less, equal or greater than arr_size).
  *
  **************************************/
