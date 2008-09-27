@@ -2603,7 +2603,7 @@ ERROR: Backup incomplete', NULL, NULL);
 -- These add more information to the dumb isc_expression_eval_err
 ('dsql_eval_unknode', 'GEN_expr', 'dsql/gen.c', NULL, 13, 952, NULL, 'Unknown node type @1 in dsql/GEN_expr', NULL, NULL)
 ('dsql_agg_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 953, NULL, 'Argument for @1 in dialect 1 must be string or numeric', NULL, NULL)
-('dsql_agg2_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 954, NULL, 'Argument for @1 in dialect 2 must be numeric', NULL, NULL)
+('dsql_agg2_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 954, NULL, 'Argument for @1 in dialect 3 must be numeric', NULL, NULL)
 ('dsql_nodateortime_pm_string', 'MAKE_desc', 'make.cpp', NULL, 13, 955, NULL, 'Strings cannot be added to or subtracted from DATE or TIME types', NULL, NULL)
 ('dsql_invalid_datetime_subtract', 'MAKE_desc', 'make.cpp', NULL, 13, 956, NULL, 'Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types', NULL, NULL)
 ('dsql_invalid_dateortime_add', 'MAKE_desc', 'make.cpp', NULL, 13, 957, NULL, 'Adding two DATE values or two TIME values is not allowed', NULL, NULL)
