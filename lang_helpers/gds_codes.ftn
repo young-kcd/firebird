@@ -1696,6 +1696,40 @@ C --
       PARAMETER (GDS__dsql_col_more_than_once_view     = 336397238)
       INTEGER*4 GDS__dsql_unsupported_in_auto_trans  
       PARAMETER (GDS__dsql_unsupported_in_auto_trans   = 336397239)
+      INTEGER*4 GDS__dsql_eval_unknode               
+      PARAMETER (GDS__dsql_eval_unknode                = 336397240)
+      INTEGER*4 GDS__dsql_agg_wrongarg               
+      PARAMETER (GDS__dsql_agg_wrongarg                = 336397241)
+      INTEGER*4 GDS__dsql_agg2_wrongarg              
+      PARAMETER (GDS__dsql_agg2_wrongarg               = 336397242)
+      INTEGER*4 GDS__dsql_nodateortime_pm_string     
+      PARAMETER (GDS__dsql_nodateortime_pm_string      = 336397243)
+      INTEGER*4 GDS__dsql_invalid_datetime_subtract  
+      PARAMETER (GDS__dsql_invalid_datetime_subtract   = 336397244)
+      INTEGER*4 GDS__dsql_invalid_dateortime_add     
+      PARAMETER (GDS__dsql_invalid_dateortime_add      = 336397245)
+      INTEGER*4 GDS__dsql_invalid_type_minus_date    
+      PARAMETER (GDS__dsql_invalid_type_minus_date     = 336397246)
+      INTEGER*4 GDS__dsql_nostring_addsub_dial3      
+      PARAMETER (GDS__dsql_nostring_addsub_dial3       = 336397247)
+      INTEGER*4 GDS__dsql_invalid_type_addsub_dial3  
+      PARAMETER (GDS__dsql_invalid_type_addsub_dial3   = 336397248)
+      INTEGER*4 GDS__dsql_invalid_type_multip_dial1  
+      PARAMETER (GDS__dsql_invalid_type_multip_dial1   = 336397249)
+      INTEGER*4 GDS__dsql_nostring_multip_dial3      
+      PARAMETER (GDS__dsql_nostring_multip_dial3       = 336397250)
+      INTEGER*4 GDS__dsql_invalid_type_multip_dial3  
+      PARAMETER (GDS__dsql_invalid_type_multip_dial3   = 336397251)
+      INTEGER*4 GDS__dsql_mustuse_numeric_div_dial1  
+      PARAMETER (GDS__dsql_mustuse_numeric_div_dial1   = 336397252)
+      INTEGER*4 GDS__dsql_nostring_div_dial3         
+      PARAMETER (GDS__dsql_nostring_div_dial3          = 336397253)
+      INTEGER*4 GDS__dsql_invalid_type_div_dial3     
+      PARAMETER (GDS__dsql_invalid_type_div_dial3      = 336397254)
+      INTEGER*4 GDS__dsql_nostring_neg_dial3         
+      PARAMETER (GDS__dsql_nostring_neg_dial3          = 336397255)
+      INTEGER*4 GDS__dsql_invalid_type_neg           
+      PARAMETER (GDS__dsql_invalid_type_neg            = 336397256)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

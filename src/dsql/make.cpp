@@ -24,15 +24,15 @@
  * See case nod_udf in MAKE_desc().
  * 2001.02.23 Claudio Valderrama: Fix SF bug #518350 with substring()
  * and text blobs containing charsets other than ASCII/NONE/BINARY.
- * 2002.07.30 Arno Brinkman: 
+ * 2002.07.30 Arno Brinkman:
  *   COALESCE, CASE support added
- *   procedure MAKE_desc_from_list added 
+ *   procedure MAKE_desc_from_list added
  * 2003.01.25 Dmitry Yemanov: Fixed problem with concatenation which
  *   trashed RDB$FIELD_LENGTH in the system tables. This change may
  *   potentially interfere with the one made by Claudio one year ago.
  * Adriano dos Santos Fernandes
  */
- 
+
 //This MUST be before any other includes
 #ifdef DARWIN
 #define _STLP_CCTYPE
@@ -78,7 +78,7 @@ static inline bool could_be_date(const dsc& d)
 }
 
 
-// One of d1, d2 is time, the other is date 
+// One of d1, d2 is time, the other is date
 static inline bool is_date_and_time(const dsc& d1, const dsc& d2)
 {
 	return ((d1.dsc_dtype == dtype_sql_time) && (d2.dsc_dtype == dtype_sql_date)) ||
@@ -113,11 +113,11 @@ dsql_nod* MAKE_const_slong(SLONG value)
 
 
 /**
-  
+
  	MAKE_constant
-  
+
     @brief	Make a constant node.
- 
+
 
     @param constant
     @param numeric_flag
@@ -150,7 +150,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 		 * a string.  The engine will convert it. Use dtype_double so that
 		 the engine can distinguish it from an actual string.
 		 Note: Due to the size of dsc_scale we are limited to numeric
-		 constants of less than 256 bytes.  
+		 constants of less than 256 bytes.
 		 */
 		node->nod_desc.dsc_dtype = dtype_double;
 		// Scale has no use for double
@@ -189,7 +189,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			// Hex constants coming through this code are guaranteed to be
 			// valid - they start with X and contains only 0-9, A-F.
 			// And, they will fit in a SINT64 without overflow.
-			
+
 			SINT64 value = 0;
 			const char* p = constant->str_data;
 
@@ -272,7 +272,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 	case CONSTANT_TIME:
 	case CONSTANT_TIMESTAMP:
 		{
-			// Setup the constant's descriptor 
+			// Setup the constant's descriptor
 
 			switch (numeric_flag) {
 			case CONSTANT_DATE:
@@ -290,7 +290,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			node->nod_desc.dsc_length = type_lengths[node->nod_desc.dsc_dtype];
 			node->nod_desc.dsc_address = (UCHAR*) node->nod_arg;
 
-			// Set up a descriptor to point to the string 
+			// Set up a descriptor to point to the string
 
 			dsc tmp;
 			tmp.dsc_dtype = dtype_text;
@@ -300,7 +300,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			tmp.dsc_length = static_cast<USHORT>(constant->str_length);
 			tmp.dsc_address = (UCHAR*) constant->str_data;
 
-			// Now invoke the string_to_date/time/timestamp routines 
+			// Now invoke the string_to_date/time/timestamp routines
 
 			CVT_move(&tmp, &node->nod_desc, ERRD_post);
 			break;
@@ -317,7 +317,7 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 			static_cast<USHORT>(constant->str_length);
 		node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 		node->nod_desc.dsc_ttype() = ttype_dynamic;
-		// carry a pointer to the constant to resolve character set in pass1 
+		// carry a pointer to the constant to resolve character set in pass1
 		node->nod_arg[0] = (dsql_nod*) constant;
 		break;
 	}
@@ -327,12 +327,12 @@ dsql_nod* MAKE_constant(dsql_str* constant, dsql_constant_type numeric_flag)
 
 
 /**
-  
+
  	MAKE_str_constant
-  
-    @brief	Make a constant node when the 
+
+    @brief	Make a constant node when the
        character set ID is already known.
- 
+
 
     @param constant
     @param character_set
@@ -353,7 +353,7 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 	node->nod_desc.dsc_length = static_cast<USHORT>(constant->str_length);
 	node->nod_desc.dsc_address = (UCHAR*) constant->str_data;
 	node->nod_desc.dsc_ttype() = character_set;
-// carry a pointer to the constant to resolve character set in pass1 
+// carry a pointer to the constant to resolve character set in pass1
 	node->nod_arg[0] = (dsql_nod*) constant;
 
 	return node;
@@ -361,12 +361,12 @@ dsql_nod* MAKE_str_constant(dsql_str* constant, SSHORT character_set)
 
 
 /**
-  
+
  	MAKE_cstring
-  
+
     @brief	Make a string node for a string whose
  	length is not known, but is null-terminated.
- 
+
 
     @param str
 
@@ -379,9 +379,9 @@ dsql_str* MAKE_cstring(const char* str)
 
 
 /**
-  
+
  	MAKE_desc
-  
+
     @brief	Make a descriptor from input node.
 	This function can modify node->nod_flags to add NOD_COMP_DIALECT
 
@@ -453,7 +453,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("AVG"));
 		}
 		else if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			desc->dsc_dtype = dtype_double;
@@ -466,7 +467,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_flags = DSC_nullable;
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("AVG"));
 		}
 		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
@@ -484,7 +486,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		if (!DTYPE_IS_NUMERIC(desc->dsc_dtype) &&
 			!DTYPE_IS_TEXT(desc->dsc_dtype))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_agg_wrongarg) << Arg::Str("SUM"));
 		}
 		else if (desc->dsc_dtype == dtype_short) {
 			desc->dsc_dtype = dtype_long;
@@ -505,7 +508,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, desc, node->nod_arg[0], null_replacement);
 		dtype = desc->dsc_dtype;
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_agg2_wrongarg) << Arg::Str("SUM"));
 		}
 		else if (DTYPE_IS_EXACT(dtype)) {
 			desc->dsc_dtype = dtype_int64;
@@ -550,7 +554,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
 		desc->dsc_flags = desc1.dsc_flags & DSC_nullable;
 		return;
- 
+
 	case nod_substr:
 		MAKE_desc(statement, &desc1, node->nod_arg[0], null_replacement);
 		MAKE_desc(statement, &desc2, node->nod_arg[1], null_replacement);
@@ -652,19 +656,23 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		switch (dtype) {
 		case dtype_sql_time:
 		case dtype_sql_date:
-			/* Forbid <date/time> +- <string> */
+			// CVC: I don't see how this case can happen since dialect 1 doesn't accept DATE or TIME
+			// Forbid <date/time> +- <string>
 			if (DTYPE_IS_TEXT(desc1.dsc_dtype) ||
 				DTYPE_IS_TEXT(desc2.dsc_dtype))
 			{
-				ERRD_post(Arg::Gds(isc_expression_eval_err));
+				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+							Arg::Gds(isc_dsql_nodateortime_pm_string));
 			}
 
 		case dtype_timestamp:
 
-			/* Allow <timestamp> +- <string> (historical) */
-			if (could_be_date(desc1) && could_be_date(desc2)) {
-				if (node->nod_type == nod_subtract) {
-					/* <any date> - <any date> */
+			// Allow <timestamp> +- <string> (historical)
+			if (could_be_date(desc1) && could_be_date(desc2))
+			{
+				if (node->nod_type == nod_subtract)
+				{
+					// <any date> - <any date>
 
 					/* Legal permutations are:
 					   <timestamp> - <timestamp>
@@ -673,7 +681,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 					   <date> - <timestamp>
 					   <time> - <time>
 					   <timestamp> - <string>
-					   <string> - <timestamp> 
+					   <string> - <timestamp>
 					   <string> - <string>   */
 
 					if (DTYPE_IS_TEXT(desc1.dsc_dtype))
@@ -693,7 +701,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 						dtype = dtype_timestamp;
 					}
 					else {
-						ERRD_post(Arg::Gds(isc_expression_eval_err));
+						ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_dsql_invalid_datetime_subtract));
 					}
 
 					if (dtype == dtype_sql_date) {
@@ -715,15 +724,18 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 					}
 				}
 				else if (is_date_and_time(desc1, desc2)) {
-					/* <date> + <time> */
-					/* <time> + <date> */
+					// <date> + <time>
+					// <time> + <date>
 					desc->dsc_dtype = dtype_timestamp;
 					desc->dsc_length = type_lengths[dtype_timestamp];
 					desc->dsc_scale = 0;
 				}
 				else {
-					/* <date> + <date> */
-					ERRD_post(Arg::Gds(isc_expression_eval_err));
+					// <date> + <date>
+					// <time> + <time>
+					// CVC: Hard to see it, since we are in dialect 1.
+					ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+								Arg::Gds(isc_dsql_invalid_dateortime_add));
 				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add))
@@ -738,9 +750,10 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 				desc->dsc_scale = 0;
 			}
 			else {
-				/* <non-date> - <date> */
+				// <non-date> - <date>
 				fb_assert(node->nod_type == nod_subtract);
-				ERRD_post(Arg::Gds(isc_expression_eval_err));
+				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+							Arg::Gds(isc_dsql_invalid_type_minus_date));
 			}
 			return;
 
@@ -780,7 +793,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype1 = desc1.dsc_dtype;
 		dtype2 = desc2.dsc_dtype;
 
-		// Arrays and blobs can never partipate in addition/subtraction 
+		// Arrays and blobs can never partipate in addition/subtraction
 		if (DTYPE_IS_BLOB(dtype1) || DTYPE_IS_BLOB(dtype2)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
@@ -790,7 +803,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err)
+						<< Arg::Gds(isc_dsql_nostring_addsub_dial3));
 		}
 
 		/* Determine the TYPE of arithmetic to perform, store it
@@ -807,9 +821,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			dtype = dtype_double;
 		}
 		else {
-			// mixed numeric and non-numeric: 
+			// mixed numeric and non-numeric:
 
-			// The MAX(dtype) rule doesn't apply with dtype_int64 
+			// The MAX(dtype) rule doesn't apply with dtype_int64
 
 			if (dtype_int64 == dtype1)
 				dtype1 = dtype_double;
@@ -831,7 +845,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			{
 				if (node->nod_type == nod_subtract2)
 				{
-					/* <any date> - <any date> */
+					// <any date> - <any date>
 					/* Legal permutations are:
 					   <timestamp> - <timestamp>
 					   <timestamp> - <date>
@@ -846,7 +860,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 					else if (dtype2 == dtype_timestamp && dtype1 == dtype_sql_date)
 						dtype = dtype_timestamp;
 					else
-						ERRD_post(Arg::Gds(isc_expression_eval_err));
+						ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+									Arg::Gds(isc_dsql_invalid_datetime_subtract));
 
 					if (dtype == dtype_sql_date)
 					{
@@ -879,7 +894,12 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 					desc->dsc_scale = 0;
 				}
 				else
-					ERRD_post(Arg::Gds(isc_expression_eval_err));	// <date> + <date>
+				{
+					// <date> + <date>
+					// <time> + <time>
+					ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+								Arg::Gds(isc_dsql_invalid_dateortime_add));
+				}
 			}
 			else if (DTYPE_IS_DATE(desc1.dsc_dtype) || (node->nod_type == nod_add2))
 			{
@@ -896,7 +916,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			{
 				/* <non-date> - <date> */
 				fb_assert(node->nod_type == nod_subtract2);
-				ERRD_post(Arg::Gds(isc_expression_eval_err));
+				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+							Arg::Gds(isc_dsql_invalid_type_minus_date));
 			}
 			return;
 
@@ -929,8 +950,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			// a type which cannot participate in an add or subtract 
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			// a type which cannot participate in an add or subtract
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_invalid_type_addsub_dial3));
 		}
 		return;
 
@@ -971,7 +993,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_invalid_type_multip_dial1));
 		}
 		return;
 
@@ -987,14 +1010,15 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			return;
 		}
 
-		// In Dialect 2 or 3, strings can never partipate in multiplication 
+		// In Dialect 2 or 3, strings can never partipate in multiplication
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_nostring_multip_dial3));
 		}
 
-		// Arrays and blobs can never partipate in multiplication 
+		// Arrays and blobs can never partipate in multiplication
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
@@ -1020,7 +1044,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_invalid_type_multip_dial3));
 		}
 		return;
 
@@ -1046,7 +1071,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			return;
 		}
 
-		// Arrays and blobs can never partipate in division 
+		// Arrays and blobs can never partipate in division
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
@@ -1063,7 +1088,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		dtype = MAX(dtype1, dtype2);
 
 		if (!DTYPE_IS_NUMERIC(dtype)) {
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_mustuse_numeric_div_dial1));
 		}
 
 		desc->dsc_dtype = dtype_double;
@@ -1088,10 +1114,11 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc1.dsc_dtype) || DTYPE_IS_TEXT(desc2.dsc_dtype))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_nostring_div_dial3));
 		}
 
-		// Arrays and blobs can never partipate in division 
+		// Arrays and blobs can never partipate in division
 		if (DTYPE_IS_BLOB(desc1.dsc_dtype) || DTYPE_IS_BLOB(desc2.dsc_dtype)) {
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
 					  Arg::Gds(isc_dsql_no_blob_array));
@@ -1114,7 +1141,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			break;
 
 		default:
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_invalid_type_div_dial3));
 		}
 
 		return;
@@ -1133,7 +1161,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(desc->dsc_dtype)) {
 			if (statement->req_client_dialect >= SQL_DIALECT_V6_TRANSITION) {
-				ERRD_post(Arg::Gds(isc_expression_eval_err));
+				ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+							Arg::Gds(isc_dsql_nostring_neg_dial3));
 			}
 			desc->dsc_dtype = dtype_double;
 			desc->dsc_length = sizeof(double);
@@ -1146,7 +1175,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		}
 		// Forbid other not numeric datatypes
 		else if (!DTYPE_IS_NUMERIC(desc->dsc_dtype)) {
-			ERRD_post(Arg::Gds(isc_expression_eval_err));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_invalid_type_neg));
 		}
 		return;
 
@@ -1155,7 +1185,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	case nod_dbkey:
-		// Fix for bug 10072 check that the target is a relation 
+		// Fix for bug 10072 check that the target is a relation
 		context = (dsql_ctx*) node->nod_arg[0]->nod_arg[0];
 		relation = context->ctx_relation;
 		if (relation != 0) {
@@ -1183,8 +1213,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 			the fact that any UDF can return NULL simply returning a NULL
 			pointer. */
 			desc->dsc_flags = DSC_nullable;
-			
-			if (desc->dsc_dtype <= dtype_any_text) {		
+
+			if (desc->dsc_dtype <= dtype_any_text) {
 				desc->dsc_ttype() = userFunc->udf_character_set_id;
 			}
 			else {
@@ -1310,7 +1340,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		switch (*(ULONG *) node->nod_arg[e_extract_part]->nod_desc.dsc_address)
 		{
 			case blr_extract_second:
-				// QUADDATE - maybe this should be DECIMAL(6,4) 
+				// QUADDATE - maybe this should be DECIMAL(6,4)
 				desc->makeLong(ISC_TIME_SECONDS_PRECISION_SCALE);
 				break;
 
@@ -1337,7 +1367,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 	case nod_parameter:
 		/* We don't actually know the datatype of a parameter -
-		   we have to guess it based on the context that the 
+		   we have to guess it based on the context that the
 		   parameter appears in. (This is done is pass1.c::set_parameter_type())
 		   However, a parameter can appear as part of an expression.
 		   As MAKE_desc is used for both determination of parameter
@@ -1353,7 +1383,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		 *  SELECT NULL FROM TABLE1;
 		 * As we don't have a <dtype_null, SQL_NULL> datatype pairing,
 		 * we don't know how to map this NULL to a host-language
-		 * datatype.  Therefore we now describe it as a 
+		 * datatype.  Therefore we now describe it as a
 		 * CHAR(1) CHARACTER SET NONE type.
 		 * No value will ever be sent back, as the value of the select
 		 * will be NULL - this is only for purposes of DESCRIBING
@@ -1376,7 +1406,7 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		MAKE_desc(statement, desc, node->nod_arg[e_via_value_1], null_replacement);
 	/**
 	    Set the descriptor flag as nullable. The
-	    select expression may or may not return 
+	    select expression may or may not return
 	    this row based on the WHERE clause. Setting this
 	    flag warns the client to expect null values.
 	    (bug 10379)
@@ -1389,9 +1419,9 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		return;
 
 	default:
-		fb_assert(false);			// unexpected dsql_nod type 
+		fb_assert(false);			// unexpected dsql_nod type
 
-	case nod_dom_value:		// computed value not used 
+	case nod_dom_value:		// computed value not used
 		/* By the time we get here, any nod_dom_value node should have had
 		   * its descriptor set to the type of the domain being created, or
 		   * to the type of the existing domain to which a CHECK constraint
@@ -1406,11 +1436,11 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 
 
 /**
-  
+
  	MAKE_desc_from_field
-  
+
     @brief	Compute a DSC from a field's description information.
- 
+
 
     @param desc
     @param field
@@ -1439,12 +1469,12 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 
 
 /**
-  
+
  	MAKE_desc_from_list
-  
-    @brief	Make a descriptor from a list of values 
+
+    @brief	Make a descriptor from a list of values
     according to the sql-standard.
- 
+
 
     @param desc
     @param node
@@ -1479,11 +1509,11 @@ void MAKE_desc_from_list(CompiledStatement* statement, dsc* desc, dsql_nod* node
 
 
 /**
-  
+
  	MAKE_field
-  
+
     @brief	Make up a field node.
- 
+
 
     @param context
     @param field
@@ -1556,11 +1586,11 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 
 
 /**
-  
+
  	MAKE_field_name
-  
+
     @brief	Make up a field name node.
- 
+
 
     @param field_name
 
@@ -1574,11 +1604,11 @@ dsql_nod* MAKE_field_name(const char* field_name)
 
 
 /**
-  
+
  	MAKE_list
-  
+
     @brief	Make a list node from a linked list stack of things.
- 
+
 
     @param stack
 
@@ -1599,11 +1629,11 @@ dsql_nod* MAKE_list(DsqlNodStack& stack)
 
 
 /**
-  
+
  	MAKE_node
-  
+
     @brief	Make a node of given type.
- 
+
 
     @param type
     @param count
@@ -1622,12 +1652,12 @@ dsql_nod* MAKE_node(NOD_TYPE type, int count)
 
 
 /**
-  
+
  	MAKE_parameter
-  
+
     @brief	Generate a parameter block for a message.  If requested,
  	set up for a null flag as well.
- 
+
 
     @param message
     @param sqlda_flag
@@ -1643,10 +1673,10 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_badmsgnum));
 	}
-	
+
 	DEV_BLKCHK(message, dsql_type_msg);
-	
-	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index) 
+
+	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index)
 	{
 		// This parameter possibly already here. Look for it
 		for (dsql_par* temp = message->msg_parameters; temp; temp = temp->par_next) {
@@ -1671,7 +1701,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 		make_parameter_names(parameter, node);
 	}
 
-// If the parameter is used declared, set SQLDA index 
+// If the parameter is used declared, set SQLDA index
 	if (sqlda_flag) {
 		if (sqlda_index) {
 			parameter->par_index = sqlda_index;
@@ -1682,8 +1712,8 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 			parameter->par_index = ++message->msg_index;
 		}
 	}
-		
-// If a null handing has been requested, set up a null flag 
+
+// If a null handing has been requested, set up a null flag
 
 	if (null_flag) {
 		dsql_par* null = MAKE_parameter(message, false, false, 0, NULL);
@@ -1697,11 +1727,11 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 }
 
 /**
-  
+
  	MAKE_string
-  
+
     @brief	Generalized routine for making a string block.
- 
+
 
     @param str
     @param length
@@ -1715,11 +1745,11 @@ dsql_str* MAKE_string(const char* str, int length)
 
 
 /**
-  
+
  	MAKE_symbol
-  
+
     @brief	Make a symbol for an object and insert symbol into hash table.
- 
+
 
     @param database
     @param name
@@ -1756,12 +1786,12 @@ dsql_sym* MAKE_symbol(dsql_dbb* database,
 
 
 /**
-  
+
  	MAKE_tagged_string
-  
+
     @brief	Generalized routine for making a string block.
  	Which is tagged with a character set descriptor.
- 
+
 
     @param str_
     @param length
@@ -1782,11 +1812,11 @@ dsql_str* MAKE_tagged_string(const char* strvar, size_t length, const char* char
 
 
 /**
-  
+
  	MAKE_trigger_type
-  
+
     @brief	Make a trigger type
- 
+
 
     @param prefix_node
     @param suffix_node
@@ -1803,11 +1833,11 @@ dsql_nod* MAKE_trigger_type(dsql_nod* prefix_node, dsql_nod* suffix_node)
 
 
 /**
-  
+
  	MAKE_variable
-  
+
     @brief	Make up a field node.
- 
+
 
     @param field
     @param name
@@ -1844,11 +1874,11 @@ dsql_nod* MAKE_variable(dsql_fld* field, const TEXT* name, const dsql_var_type t
 /**
 
 	make_null
-	
+
 	@brief  Prepare a descriptor to signal SQL NULL
-	
+
 	@param desc
-	
+
 **/
 static void make_null(dsc* const desc)
 {
@@ -2015,7 +2045,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				name_alias = variable->var_field->fld_name.c_str();
 			break;
 		}
-	case nod_udf: 
+	case nod_udf:
 		{
 			dsql_udf* userFunc = (dsql_udf*) item->nod_arg[0];
 			name_alias = userFunc->udf_name.c_str();
@@ -2064,7 +2094,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 				node = node->nod_arg[0];
 				++level;
 			}
-				
+
 			switch (node->nod_type)
 			{
 			case nod_constant:
@@ -2175,7 +2205,7 @@ static void make_parameter_names(dsql_par* parameter, const dsql_nod* item)
 	case nod_coalesce:
 		name_alias = "COALESCE";
 		break;
-	} 
+	}
 
 	if (name_alias) {
 		parameter->par_name = parameter->par_alias = name_alias;

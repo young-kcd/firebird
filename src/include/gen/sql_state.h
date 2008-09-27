@@ -843,6 +843,23 @@ static const struct {
 	{336397237, "42000"}, // 949 dsql_cte_not_used 
 	{336397238, "42000"}, // 950 dsql_col_more_than_once_view 
 	{336397239, "HY000"}, // 951 dsql_unsupported_in_auto_trans 
+	{336397240, "42000"}, // 952 dsql_eval_unknode 
+	{336397241, "42000"}, // 953 dsql_agg_wrongarg 
+	{336397242, "42000"}, // 954 dsql_agg2_wrongarg 
+	{336397243, "42000"}, // 955 dsql_nodateortime_pm_string 
+	{336397244, "42000"}, // 956 dsql_invalid_datetime_subtract 
+	{336397245, "42000"}, // 957 dsql_invalid_dateortime_add 
+	{336397246, "42000"}, // 958 dsql_invalid_type_minus_date 
+	{336397247, "42000"}, // 959 dsql_nostring_addsub_dial3 
+	{336397248, "42000"}, // 960 dsql_invalid_type_addsub_dial3 
+	{336397249, "42000"}, // 961 dsql_invalid_type_multip_dial1 
+	{336397250, "42000"}, // 962 dsql_nostring_multip_dial3 
+	{336397251, "42000"}, // 963 dsql_invalid_type_multip_dial3 
+	{336397252, "42000"}, // 964 dsql_mustuse_numeric_div_dial1 
+	{336397253, "42000"}, // 965 dsql_nostring_div_dial3 
+	{336397254, "42000"}, // 966 dsql_invalid_type_div_dial3 
+	{336397255, "42000"}, // 967 dsql_nostring_neg_dial3 
+	{336397256, "42000"}, // 968 dsql_invalid_type_neg 
 	{336723983, "00000"}, //  15 gsec_cant_open_db 
 	{336723984, "00000"}, //  16 gsec_switches_error 
 	{336723985, "00000"}, //  17 gsec_no_op_spec 

@@ -28,7 +28,7 @@
  * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
  * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
- * 2004.01.16 Vlad Horsun: Added support for default parameters and 
+ * 2004.01.16 Vlad Horsun: Added support for default parameters and
  *   EXECUTE BLOCK statement
  * Adriano dos Santos Fernandes
  */
@@ -95,9 +95,9 @@ static void stuff_string(CompiledStatement*, const char*, int);
 static void stuff_string(CompiledStatement* statement, const Firebird::MetaName& name);
 static void stuff_word(CompiledStatement*, USHORT);
 
-// STUFF is defined in dsql.h for use in common with ddl.c 
+// STUFF is defined in dsql.h for use in common with ddl.c
 
-// The following are passed as the third argument to gen_constant 
+// The following are passed as the third argument to gen_constant
 const bool NEGATE_VALUE = true;
 const bool USE_VALUE    = false;
 
@@ -142,11 +142,11 @@ void GEN_hidden_variables(CompiledStatement* statement, bool inExpression)
 
 
 /**
-  
+
  	GEN_expr
-  
+
     @brief	Generate blr for an arbitrary expression.
- 
+
 
     @param statement
     @param node
@@ -230,8 +230,8 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 
 	case nod_dom_value:
 		stuff(statement, blr_fid);
-		stuff(statement, 0);				// Context   
-		stuff_word(statement, 0);			// Field id  
+		stuff(statement, 0);				// Context
+		stuff_word(statement, 0);			// Field id
 		return;
 
 	case nod_field:
@@ -523,7 +523,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 	case nod_lowcase:
 		blr_operator = blr_lowcase;
 		break;
-	case nod_substr:	
+	case nod_substr:
         blr_operator = blr_substring;
         break;
 	case nod_cast:
@@ -533,13 +533,13 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 	case nod_gen_id2:
 		gen_gen_id(statement, node);
 		return;
-    case nod_coalesce: 
+    case nod_coalesce:
 		gen_coalesce(statement, node);
 		return;
-    case nod_simple_case: 
+    case nod_simple_case:
 		gen_simple_case(statement, node);
 		return;
-    case nod_searched_case: 
+    case nod_searched_case:
 		gen_searched_case(statement, node);
 		return;
 
@@ -631,8 +631,9 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 	default:
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 				  Arg::Gds(isc_dsql_internal_err) <<
-				  // expression evaluation not supported 
-				  Arg::Gds(isc_expression_eval_err));
+				  // expression evaluation not supported
+				  Arg::Gds(isc_expression_eval_err) <<
+				  Arg::Gds(isc_dsql_eval_unknode) << Arg::Num(node->nod_type));
 	}
 
 	stuff(statement, blr_operator);
@@ -654,13 +655,13 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 		node->nod_type == nod_multiply2 ||
 		node->nod_type == nod_divide2 ||
 		node->nod_type == nod_agg_total2 ||
-		node->nod_type == nod_agg_average2) 
+		node->nod_type == nod_agg_average2)
 	{
 		dsc desc;
 		MAKE_desc(statement, &desc, node, NULL);
 
 		if ((node->nod_flags & NOD_COMP_DIALECT) &&
-			(statement->req_client_dialect == SQL_DIALECT_V6_TRANSITION)) 
+			(statement->req_client_dialect == SQL_DIALECT_V6_TRANSITION))
 		{
 			const char* s = 0;
 			char message_buf[8];
@@ -696,12 +697,12 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 }
 
 /**
-  
+
  	GEN_port
-  
+
     @brief	Generate a port from a message.  Feel free to rearrange the
  	order of parameters.
- 
+
 
     @param statement
     @param message
@@ -777,11 +778,11 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 				case dtype_int64:
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 							  Arg::Gds(isc_dsql_datatype_err) <<
-							  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(statement->req_client_dialect) << 
+							  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(statement->req_client_dialect) <<
 															Arg::Str(DSC_dtype_tostring(parameter->par_desc.dsc_dtype)));
 					break;
 				default:
-					// No special action for other data types 
+					// No special action for other data types
 					break;
 			}
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
@@ -801,28 +802,28 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 
 	message->msg_length = (USHORT) offset;
 
-	// Allocate buffer for message 
+	// Allocate buffer for message
 	const ULONG new_len = message->msg_length + DOUBLE_ALIGN - 1;
 	dsql_str* buffer = FB_NEW_RPT(*tdbb->getDefaultPool(), new_len) dsql_str;
 	message->msg_buffer = (UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, DOUBLE_ALIGN);
 
-	// Relocate parameter descriptors to point direction into message buffer 
+	// Relocate parameter descriptors to point direction into message buffer
 
 	for (parameter = message->msg_parameters; parameter;
 		 parameter = parameter->par_next)
 	{
-		parameter->par_desc.dsc_address = message->msg_buffer + 
+		parameter->par_desc.dsc_address = message->msg_buffer +
 			(IPTR)parameter->par_desc.dsc_address;
 	}
 }
 
 
 /**
-  
+
  	GEN_request
-  
+
     @brief	Generate complete blr for a statement.
- 		       
+
 
     @param statement
     @param node
@@ -841,17 +842,17 @@ void GEN_request( CompiledStatement* statement, dsql_nod* node)
 		stuff(statement, blr_version4);
 	else
 		stuff(statement, blr_version5);
-		
-	if (statement->req_type == REQ_SAVEPOINT) 
+
+	if (statement->req_type == REQ_SAVEPOINT)
 	{
 		// Do not generate BEGIN..END block around savepoint statement
 		// to avoid breaking of savepoint logic
 		statement->req_send = NULL;
 		statement->req_receive = NULL;
 		GEN_statement(statement, node);
-	} 
-	else 
-	{	
+	}
+	else
+	{
 		stuff(statement, blr_begin);
 
 		GEN_hidden_variables(statement, false);
@@ -884,23 +885,23 @@ void GEN_request( CompiledStatement* statement, dsql_nod* node)
 					GEN_port(statement, message);
 				GEN_statement(statement, node);
 			}
-		}		
+		}
 		stuff(statement, blr_end);
 	}
-	
+
 	stuff(statement, blr_eoc);
 }
 
 
 /**
-  
+
  	GEN_start_transaction
-  
+
     @brief	Generate tpb for set transaction.  Use blr string of statement.
  	If a value is not specified, default is not STUFF'ed, let the
  	engine handle it.
  	Do not allow an option to be specified more than once.
- 
+
 
     @param statement
     @param tran_node
@@ -1023,12 +1024,12 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 				}
 				break;
 			}
-			
+
 		case nod_tra_misc:
 			if (misc_flags & ptr->nod_flags)
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_dup_option));
-						  
+
 			misc_flags |= ptr->nod_flags;
 			if (ptr->nod_flags & NOD_NO_AUTO_UNDO)
 				stuff(statement, isc_tpb_no_auto_undo);
@@ -1037,7 +1038,7 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 			else if (ptr->nod_flags & NOD_RESTART_REQUESTS)
 				stuff(statement, isc_tpb_restart_requests);
 			break;
-			
+
 		case nod_lock_timeout:
 			if (sw_lock_timeout)
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -1062,9 +1063,9 @@ void GEN_start_transaction( CompiledStatement* statement, const dsql_nod* tran_n
 
 
 /**
-  
+
  	GEN_statement
-  
+
     @brief	Generate blr for an arbitrary expression.
 
 
@@ -1195,7 +1196,7 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 		}
 		else
 			stuff(statement, 1); // Singleton
-		for (ptr = temp->nod_arg, end = ptr + temp->nod_count; 
+		for (ptr = temp->nod_arg, end = ptr + temp->nod_count;
 				ptr < end; ptr++)
 		{
 			GEN_expr(statement, *ptr);
@@ -1205,13 +1206,13 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 	case nod_exec_stmt:
 		gen_exec_stmt(statement, node);
 		return;
-	
+
 	case nod_return:
 		if ( (temp = node->nod_arg[e_rtn_procedure]) )
 		{
 			if (temp->nod_type == nod_exec_block)
 				GEN_return(statement, temp->nod_arg[e_exe_blk_outputs], false);
-			else 
+			else
 				GEN_return(statement, temp->nod_arg[e_prc_outputs], false);
 		}
 		return;
@@ -1396,14 +1397,14 @@ void GEN_statement( CompiledStatement* statement, dsql_nod* node)
 
 
 /**
-  
- 	gen_aggregate
-  
-    @brief	Generate blr for a relation reference.
- 
 
-    @param 
-    @param 
+ 	gen_aggregate
+
+    @brief	Generate blr for a relation reference.
+
+
+    @param
+    @param
 
  **/
 static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
@@ -1413,7 +1414,7 @@ static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
 	stuff_context(statement, context);
 	gen_rse(statement, node->nod_arg[e_agg_rse]);
 
-// Handle GROUP BY clause 
+// Handle GROUP BY clause
 
 	stuff(statement, blr_group_by);
 
@@ -1430,18 +1431,18 @@ static void gen_aggregate( CompiledStatement* statement, const dsql_nod* node)
 	else
 		stuff(statement, 0);
 
-// Generate value map 
+// Generate value map
 
 	gen_map(statement, context->ctx_map);
 }
 
 
 /**
-  
+
  gen_cast
-  
+
     @brief      Generate BLR for a data-type cast operation
- 
+
 
     @param statement
     @param node
@@ -1457,9 +1458,9 @@ static void gen_cast( CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  gen_coalesce
-  
+
     @brief      Generate BLR for coalesce function
 
 	Generate the blr values, begin with a cast and then :
@@ -1506,11 +1507,11 @@ static void gen_coalesce( CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_constant
-  
+
     @brief	Generate BLR for a constant.
- 
+
 
     @param statement
     @param desc
@@ -1642,7 +1643,7 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 		break;
 
 	default:
-		// gen_constant: datatype not understood 
+		// gen_constant: datatype not understood
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-103) <<
 				  Arg::Gds(isc_dsql_constant_err));
 	}
@@ -1650,11 +1651,11 @@ static void gen_constant( CompiledStatement* statement, const dsc* desc, bool ne
 
 
 /**
-  
+
  	gen_constant
-  
+
     @brief	Generate BLR for a constant.
- 
+
 
     @param statement
     @param node
@@ -1671,11 +1672,11 @@ static void gen_constant( CompiledStatement* statement, dsql_nod* node, bool neg
 
 
 /**
-  
+
  	GEN_descriptor
-  
+
     @brief	Generate a blr descriptor from an internal descriptor.
- 
+
 
     @param statement
     @param desc
@@ -1691,7 +1692,7 @@ void GEN_descriptor( CompiledStatement* statement, const dsc* desc, bool texttyp
 			stuff_word(statement, desc->dsc_ttype());
 		}
 		else {
-			stuff(statement, blr_text2);	// automatic transliteration 
+			stuff(statement, blr_text2);	// automatic transliteration
 			stuff_word(statement, ttype_dynamic);
 		}
 
@@ -1704,7 +1705,7 @@ void GEN_descriptor( CompiledStatement* statement, const dsc* desc, bool texttyp
 			stuff_word(statement, desc->dsc_ttype());
 		}
 		else {
-			stuff(statement, blr_varying2);	// automatic transliteration 
+			stuff(statement, blr_varying2);	// automatic transliteration
 			stuff_word(statement, ttype_dynamic);
 		}
 		stuff_word(statement, desc->dsc_length - sizeof(USHORT));
@@ -1762,7 +1763,7 @@ void GEN_descriptor( CompiledStatement* statement, const dsc* desc, bool texttyp
 		break;
 
 	default:
-		// don't understand dtype 
+		// don't understand dtype
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_datatype_err));
 	}
@@ -1770,11 +1771,11 @@ void GEN_descriptor( CompiledStatement* statement, const dsc* desc, bool texttyp
 
 
 /**
-  
+
  	gen_error_condition
-  
+
     @brief	Generate blr for an error condtion
- 
+
 
     @param statement
     @param node
@@ -1814,11 +1815,11 @@ static void gen_error_condition( CompiledStatement* statement, const dsql_nod* n
 
 
 /**
-  
+
  	gen_exec_stmt
-  
+
     @brief	Generate blr for the EXECUTE STATEMENT clause
- 
+
 
     @param statement
     @param node
@@ -1826,7 +1827,7 @@ static void gen_error_condition( CompiledStatement* statement, const dsql_nod* n
  **/
 static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 {
-	if (node->nod_arg[e_exec_stmt_proc_block]) 
+	if (node->nod_arg[e_exec_stmt_proc_block])
 	{
 		stuff(statement, blr_label);
 		stuff(statement, (int)(IPTR) node->nod_arg[e_exec_stmt_label]->nod_arg[e_label_number]);
@@ -1855,7 +1856,7 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 
 	// proc block body
 	dsql_nod* temp2 = node->nod_arg[e_exec_stmt_proc_block];
-	if (temp2) 
+	if (temp2)
 	{
 		stuff(statement, blr_exec_stmt_proc_block);
 		GEN_statement(statement, temp2);
@@ -1870,7 +1871,7 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 	temp = node->nod_arg[e_exec_stmt_tran];
 	if (temp)
 	{
-		stuff(statement, blr_exec_stmt_tran_clone); // transaction parameters equal to current transaction 
+		stuff(statement, blr_exec_stmt_tran_clone); // transaction parameters equal to current transaction
 		stuff(statement, (UCHAR)(IPTR) temp->nod_flags);
 	}
 
@@ -1881,16 +1882,16 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 
 	// inputs
 	temp = node->nod_arg[e_exec_stmt_inputs];
-	if (temp) 
+	if (temp)
 	{
 		const dsql_nod* const* ptr = temp->nod_arg;
 		const bool haveNames = ((*ptr)->nod_arg[e_named_param_name] != 0);
 		if (haveNames)
 			stuff(statement, blr_exec_stmt_in_params2);
-		else 
+		else
 			stuff(statement, blr_exec_stmt_in_params);
 
-		for (const dsql_nod* const* end = ptr + temp->nod_count; ptr < end; ptr++) 
+		for (const dsql_nod* const* end = ptr + temp->nod_count; ptr < end; ptr++)
 		{
 			if (haveNames)
 			{
@@ -1903,7 +1904,7 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 
 	// outputs
 	temp = node->nod_arg[e_exec_stmt_outputs];
-	if (temp) 
+	if (temp)
 	{
 		stuff(statement, blr_exec_stmt_out_params);
 		for (size_t i = 0; i < temp->nod_count; ++i) {
@@ -1915,12 +1916,12 @@ static void gen_exec_stmt(CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_field
-  
+
     @brief	Generate blr for a field - field id's
  	are preferred but not for trigger or view blr.
- 
+
 
     @param statement
     @param context
@@ -1940,11 +1941,11 @@ static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 		case dtype_int64:
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 					  Arg::Gds(isc_dsql_datatype_err) <<
-					  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(statement->req_client_dialect) << 
+					  Arg::Gds(isc_sql_dialect_datatype_unsupport) << Arg::Num(statement->req_client_dialect) <<
 					  								Arg::Str(DSC_dtype_tostring(static_cast<UCHAR>(field->fld_dtype))));
 			break;
 		default:
-			// No special action for other data types 
+			// No special action for other data types
 			break;
 		}
 	}
@@ -1976,11 +1977,11 @@ static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 
 
 /**
-  
+
  	gen_for_select
-  
+
     @brief	Generate BLR for a SELECT statement.
- 
+
 
     @param statement
     @param for_select
@@ -1997,7 +1998,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		stuff(statement, (int) (IPTR) for_select->nod_arg[e_flp_label]->nod_arg[e_label_number]);
 	}
 
-	// Generate FOR loop 
+	// Generate FOR loop
 
 	stuff(statement, blr_for);
 
@@ -2010,7 +2011,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 
 	// Build body of FOR loop
 
-	// Handle write locks 
+	// Handle write locks
 	/* CVC: Unused code!
 	dsql_nod* streams = rse->nod_arg[e_rse_streams];
 	dsql_ctx* context = NULL;
@@ -2021,7 +2022,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 			context = (dsql_ctx*) item->nod_arg[e_rel_context];
 	}
 	*/
-	
+
 	dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* list_to = for_select->nod_arg[e_flp_into];
 
@@ -2033,7 +2034,7 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 		dsql_nod** ptr = list->nod_arg;
 		dsql_nod** ptr_to = list_to->nod_arg;
 		for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
-			ptr++, ptr_to++) 
+			ptr++, ptr_to++)
 		{
 			stuff(statement, blr_assignment);
 			GEN_expr(statement, *ptr);
@@ -2048,11 +2049,11 @@ static void gen_for_select( CompiledStatement* statement, const dsql_nod* for_se
 
 
 /**
-  
+
  gen_gen_id
-  
+
     @brief      Generate BLR for gen_id
- 
+
 
     @param statement
     @param node
@@ -2068,12 +2069,12 @@ static void gen_gen_id( CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_join_rse
-  
+
     @brief	Generate a record selection expression
  	with an explicit join type.
- 
+
 
     @param statement
     @param rse
@@ -2109,11 +2110,11 @@ static void gen_join_rse( CompiledStatement* statement, const dsql_nod* rse)
 
 
 /**
-  
+
  	gen_map
-  
+
     @brief	Generate a value map for a record selection expression.
- 
+
 
     @param statement
     @param map
@@ -2145,11 +2146,11 @@ static void gen_optional_expr(CompiledStatement* statement, const UCHAR code, ds
 }
 
 /**
-  
+
  	gen_parameter
-  
+
     @brief	Generate a parameter reference.
- 
+
 
     @param statement
     @param parameter
@@ -2176,11 +2177,11 @@ static void gen_parameter( CompiledStatement* statement, const dsql_par* paramet
 
 
 /**
-  
+
  	gen_plan
-  
+
     @brief	Generate blr for an access plan expression.
- 
+
 
     @param statement
     @param plan_expression
@@ -2188,7 +2189,7 @@ static void gen_parameter( CompiledStatement* statement, const dsql_par* paramet
  **/
 static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_expression)
 {
-// stuff the join type 
+// stuff the join type
 
 	const dsql_nod* list = plan_expression->nod_arg[1];
 	if (list->nod_count > 1) {
@@ -2199,11 +2200,11 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 		stuff(statement, list->nod_count);
 	}
 
-// stuff one or more plan items 
+// stuff one or more plan items
 
 	const dsql_nod* const* ptr = list->nod_arg;
-	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end; 
-		ptr++) 
+	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
+		ptr++)
 	{
 		const dsql_nod* node = *ptr;
 		if (node->nod_type == nod_plan_expr) {
@@ -2211,17 +2212,17 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 			continue;
 		}
 
-		// if we're here, it must be a nod_plan_item 
+		// if we're here, it must be a nod_plan_item
 
 		stuff(statement, blr_retrieve);
 
-		/* stuff the relation--the relation id itself is redundant except 
+		/* stuff the relation--the relation id itself is redundant except
 		   when there is a need to differentiate the base tables of views */
 
 		const dsql_nod* arg = node->nod_arg[0];
 		gen_relation(statement, (dsql_ctx*) arg->nod_arg[e_rel_context]);
 
-		// now stuff the access method for this stream 
+		// now stuff the access method for this stream
 		const dsql_str* index_string;
 
 		arg = node->nod_arg[1];
@@ -2246,7 +2247,7 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 				stuff(statement, arg->nod_count);
 				const dsql_nod* const* ptr2 = arg->nod_arg;
 				for (const dsql_nod* const* const end2 = ptr2 + arg->nod_count;
-					 ptr2 < end2; ptr2++) 
+					 ptr2 < end2; ptr2++)
 				{
 					index_string = (dsql_str*) * ptr2;
 					stuff_cstring(statement, index_string->str_data);
@@ -2265,11 +2266,11 @@ static void gen_plan( CompiledStatement* statement, const dsql_nod* plan_express
 
 
 /**
-  
+
  	gen_relation
-  
+
     @brief	Generate blr for a relation reference.
- 
+
 
     @param statement
     @param context
@@ -2280,7 +2281,7 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
 	const dsql_rel* relation = context->ctx_relation;
 	const dsql_prc* procedure = context->ctx_procedure;
 
-	// if this is a trigger or procedure, don't want relation id used 
+	// if this is a trigger or procedure, don't want relation id used
 	if (relation) {
 		if (DDL_ids(statement)) {
 			if (context->ctx_alias)
@@ -2331,11 +2332,11 @@ static void gen_relation( CompiledStatement* statement, dsql_ctx* context)
 
 
 /**
-  
+
  	gen_return
-  
+
     @brief	Generate blr for a procedure return.
- 
+
 
     @param statement
     @param procedure
@@ -2388,11 +2389,11 @@ void GEN_return( CompiledStatement* statement, const dsql_nod* parameters, bool 
 
 
 /**
-  
+
  	gen_rse
-  
+
     @brief	Generate a record selection expression.
- 
+
 
     @param statement
     @param rse
@@ -2472,7 +2473,7 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 		}
 	}
 
-// if the user specified an access plan to use, add it here 
+// if the user specified an access plan to use, add it here
 
 	if ((node = rse->nod_arg[e_rse_plan]) != NULL) {
 		stuff(statement, blr_plan);
@@ -2480,10 +2481,10 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-/* generate a statement to be executed if the user scrolls 
-   in a direction other than forward; a message is sent outside 
-   the normal send/receive protocol to specify the direction 
-   and offset to scroll; note that we do this only on a SELECT 
+/* generate a statement to be executed if the user scrolls
+   in a direction other than forward; a message is sent outside
+   the normal send/receive protocol to specify the direction
+   and offset to scroll; note that we do this only on a SELECT
    type statement and only when talking to a 4.1 engine or greater */
 
 	if (statement->req_type == REQ_SELECT &&
@@ -2503,11 +2504,11 @@ static void gen_rse( CompiledStatement* statement, const dsql_nod* rse)
 
 
 /**
-  
+
  gen_searched_case
-  
+
     @brief      Generate BLR for CASE function (searched)
- 
+
 
     @param statement
     @param node
@@ -2538,11 +2539,11 @@ static void gen_searched_case( CompiledStatement* statement, const dsql_nod* nod
 
 
 /**
-  
+
  	gen_select
-  
+
     @brief	Generate BLR for a SELECT statement.
- 
+
 
     @param statement
     @param rse
@@ -2555,11 +2556,11 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 	fb_assert(rse->nod_type == nod_rse);
 
-// Set up parameter for things in the select list 
+// Set up parameter for things in the select list
 	const dsql_nod* list = rse->nod_arg[e_rse_items];
 	dsql_nod* const* ptr = list->nod_arg;
 	for (const dsql_nod* const* const end = ptr + list->nod_count; ptr < end;
-		ptr++) 
+		ptr++)
 	{
 		dsql_par* parameter =
 			MAKE_parameter(statement->req_receive, true, true, 0, *ptr);
@@ -2567,7 +2568,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 		MAKE_desc(statement, &parameter->par_desc, *ptr, NULL);
 	}
 
-// Set up parameter to handle EOF 
+// Set up parameter to handle EOF
 
 	dsql_par* parameter_eof =
 		MAKE_parameter(statement->req_receive, false, false, 0, NULL);
@@ -2582,8 +2583,8 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 	if (!rse->nod_arg[e_rse_reduced]) {
 		dsql_nod* const* ptr2 = list->nod_arg;
-		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count; 
-			ptr2 < end2; ptr2++) 
+		for (const dsql_nod* const* const end2 = ptr2 + list->nod_count;
+			ptr2 < end2; ptr2++)
 		{
 			dsql_nod* item = *ptr2;
 			if (item && item->nod_type == nod_relation) {
@@ -2615,11 +2616,11 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	}
 
 #ifdef SCROLLABLE_CURSORS
-/* define the parameters for the scrolling message--offset and direction, 
+/* define the parameters for the scrolling message--offset and direction,
    in that order to make it easier to generate the statement */
 
 	if (statement->req_type == REQ_SELECT &&
-		statement->req_dbb->dbb_base_level >= 5) 
+		statement->req_dbb->dbb_base_level >= 5)
 	{
 		dsql_par* parameter =
 			MAKE_parameter(statement->req_async, false, false, 0, NULL);
@@ -2639,7 +2640,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 	}
 #endif
 
-// Generate definitions for the messages 
+// Generate definitions for the messages
 
 	GEN_port(statement, statement->req_receive);
 	dsql_msg* message = statement->req_send;
@@ -2666,7 +2667,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 	stuff(statement, blr_for);
 	stuff(statement, blr_stall);
-	gen_rse(statement, rse);	
+	gen_rse(statement, rse);
 
 	stuff(statement, blr_send);
 	stuff(statement, message->msg_number);
@@ -2723,11 +2724,11 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
 
 
 /**
-  
+
  gen_simple_case
-  
+
     @brief      Generate BLR for CASE function (simple)
- 
+
 
     @param statement
     @param node
@@ -2735,7 +2736,7 @@ static void gen_select( CompiledStatement* statement, dsql_nod* rse)
  **/
 static void gen_simple_case( CompiledStatement* statement, const dsql_nod* node)
 {
-	// blr_value_if is used for building the case expression 
+	// blr_value_if is used for building the case expression
 
 	stuff(statement, blr_cast);
 	GEN_descriptor(statement, &node->nod_desc, true);
@@ -2755,17 +2756,17 @@ static void gen_simple_case( CompiledStatement* statement, const dsql_nod* node)
 		GEN_expr(statement, *wptr);
 		GEN_expr(statement, *rptr);
 	}
-	// else_result 
-	GEN_expr(statement, node->nod_arg[e_simple_case_results]->nod_arg[count]); 
+	// else_result
+	GEN_expr(statement, node->nod_arg[e_simple_case_results]->nod_arg[count]);
 }
 
 
 /**
-  
+
  	gen_sort
-  
+
     @brief	Generate a sort clause.
- 
+
 
     @param statement
     @param list
@@ -2801,11 +2802,11 @@ static void gen_sort( CompiledStatement* statement, dsql_nod* list)
 
 
 /**
-  
+
  	gen_statement
-  
+
     @brief	Generate BLR for DML statements.
- 
+
 
     @param statement
     @param node
@@ -2976,11 +2977,11 @@ static void gen_statement(CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_sys_function
-  
+
     @brief	Generate a system defined function.
- 
+
 
     @param statement
     @param node
@@ -3008,12 +3009,12 @@ static void gen_sys_function(CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_table_lock
-  
+
     @brief	Generate tpb for table lock.
  	If lock level is specified, it overrrides the transaction lock level.
- 
+
 
     @param statement
     @param tbl_lock
@@ -3037,7 +3038,7 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 	else if (flags & NOD_SHARED)
 		lock_level = isc_tpb_shared;
 
-	const USHORT lock_mode = (flags & NOD_WRITE) ? 
+	const USHORT lock_mode = (flags & NOD_WRITE) ?
 		isc_tpb_lock_write : isc_tpb_lock_read;
 
 	const dsql_nod* const* ptr = tbl_names->nod_arg;
@@ -3049,7 +3050,7 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 
 		stuff(statement, lock_mode);
 
-		// stuff table name 
+		// stuff table name
 		const dsql_str* temp = (dsql_str*) ((*ptr)->nod_arg[e_rln_name]);
 		stuff_cstring(statement, reinterpret_cast<const char*>(temp->str_data));
 
@@ -3059,11 +3060,11 @@ static void gen_table_lock( CompiledStatement* statement, const dsql_nod* tbl_lo
 
 
 /**
-  
+
  	gen_udf
-  
+
     @brief	Generate a user defined function.
- 
+
 
     @param statement
     @param node
@@ -3091,11 +3092,11 @@ static void gen_udf( CompiledStatement* statement, const dsql_nod* node)
 
 
 /**
-  
+
  	gen_union
-  
+
     @brief	Generate a union of substreams.
- 
+
 
     @param statement
     @param union_node
@@ -3115,15 +3116,15 @@ static void gen_union( CompiledStatement* statement, const dsql_nod* union_node)
 	dsql_nod* map_item = items->nod_arg[0];
 	// AB: First item could be a virtual field generated by derived table.
 	if (map_item->nod_type == nod_derived_field) {
-		map_item = map_item->nod_arg[e_alias_value]; 
+		map_item = map_item->nod_arg[e_alias_value];
 	}
 	dsql_ctx* union_context = (dsql_ctx*) map_item->nod_arg[e_map_context];
 	stuff_context(statement, union_context);
-	// secondary context number must be present once in generated blr 
+	// secondary context number must be present once in generated blr
 	union_context->ctx_flags &= ~CTX_recursive;
 
 	dsql_nod* streams = union_node->nod_arg[e_rse_streams];
-	stuff(statement, streams->nod_count);	// number of substreams 
+	stuff(statement, streams->nod_count);	// number of substreams
 
 	dsql_nod** ptr = streams->nod_arg;
 	for (const dsql_nod* const* const end = ptr + streams->nod_count; ptr < end;
@@ -3148,12 +3149,12 @@ static void gen_union( CompiledStatement* statement, const dsql_nod* union_node)
 
 
 /**
-  
+
  	stuff_context
-  
+
     @brief	Write a context number into the BLR buffer.
 			Check for possible overflow.
- 
+
 
     @param statement
     @param context
@@ -3177,11 +3178,11 @@ static void stuff_context(CompiledStatement* statement, const dsql_ctx* context)
 
 
 /**
-  
+
  	stuff_cstring
-  
+
     @brief	Write out a string with one byte of length.
- 
+
 
     @param statement
     @param string
@@ -3194,11 +3195,11 @@ static void stuff_cstring(CompiledStatement* statement, const char* string)
 
 
 /**
-  
+
  	stuff_meta_string
-  
+
     @brief	Write out a string in metadata charset with one byte of length.
- 
+
 
     @param statement
     @param string
@@ -3211,11 +3212,11 @@ static void stuff_meta_string(CompiledStatement* statement, const char* string)
 
 
 /**
-  
+
  	stuff_string
-  
+
     @brief	Write out a string with one byte of length.
- 
+
 
     @param statement
     @param string
@@ -3237,12 +3238,12 @@ static void stuff_string(CompiledStatement* statement, const Firebird::MetaName&
 
 
 /**
-  
+
  	stuff_word
-  
+
     @brief	Cram a word into the blr buffer.  If the buffer is getting
  	ready to overflow, expand it.
- 
+
 
     @param statement
     @param word

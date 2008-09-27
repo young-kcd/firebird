@@ -878,6 +878,23 @@ const ISC_STATUS isc_dsql_unsupp_feature_dialect      = 336397236L;
 const ISC_STATUS isc_dsql_cte_not_used                = 336397237L;
 const ISC_STATUS isc_dsql_col_more_than_once_view     = 336397238L;
 const ISC_STATUS isc_dsql_unsupported_in_auto_trans   = 336397239L;
+const ISC_STATUS isc_dsql_eval_unknode                = 336397240L;
+const ISC_STATUS isc_dsql_agg_wrongarg                = 336397241L;
+const ISC_STATUS isc_dsql_agg2_wrongarg               = 336397242L;
+const ISC_STATUS isc_dsql_nodateortime_pm_string      = 336397243L;
+const ISC_STATUS isc_dsql_invalid_datetime_subtract   = 336397244L;
+const ISC_STATUS isc_dsql_invalid_dateortime_add      = 336397245L;
+const ISC_STATUS isc_dsql_invalid_type_minus_date     = 336397246L;
+const ISC_STATUS isc_dsql_nostring_addsub_dial3       = 336397247L;
+const ISC_STATUS isc_dsql_invalid_type_addsub_dial3   = 336397248L;
+const ISC_STATUS isc_dsql_invalid_type_multip_dial1   = 336397249L;
+const ISC_STATUS isc_dsql_nostring_multip_dial3       = 336397250L;
+const ISC_STATUS isc_dsql_invalid_type_multip_dial3   = 336397251L;
+const ISC_STATUS isc_dsql_mustuse_numeric_div_dial1   = 336397252L;
+const ISC_STATUS isc_dsql_nostring_div_dial3          = 336397253L;
+const ISC_STATUS isc_dsql_invalid_type_div_dial3      = 336397254L;
+const ISC_STATUS isc_dsql_nostring_neg_dial3          = 336397255L;
+const ISC_STATUS isc_dsql_invalid_type_neg            = 336397256L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -945,7 +962,7 @@ const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_STATUS isc_fbsvcmgr_bad_sm                  = 336986159L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 889;
+const ISC_STATUS isc_err_max                          = 906;
 
 #else /* c definitions */
 
@@ -1793,6 +1810,23 @@ const ISC_STATUS isc_err_max                          = 889;
 #define isc_dsql_cte_not_used                336397237L
 #define isc_dsql_col_more_than_once_view     336397238L
 #define isc_dsql_unsupported_in_auto_trans   336397239L
+#define isc_dsql_eval_unknode                336397240L
+#define isc_dsql_agg_wrongarg                336397241L
+#define isc_dsql_agg2_wrongarg               336397242L
+#define isc_dsql_nodateortime_pm_string      336397243L
+#define isc_dsql_invalid_datetime_subtract   336397244L
+#define isc_dsql_invalid_dateortime_add      336397245L
+#define isc_dsql_invalid_type_minus_date     336397246L
+#define isc_dsql_nostring_addsub_dial3       336397247L
+#define isc_dsql_invalid_type_addsub_dial3   336397248L
+#define isc_dsql_invalid_type_multip_dial1   336397249L
+#define isc_dsql_nostring_multip_dial3       336397250L
+#define isc_dsql_invalid_type_multip_dial3   336397251L
+#define isc_dsql_mustuse_numeric_div_dial1   336397252L
+#define isc_dsql_nostring_div_dial3          336397253L
+#define isc_dsql_invalid_type_div_dial3      336397254L
+#define isc_dsql_nostring_neg_dial3          336397255L
+#define isc_dsql_invalid_type_neg            336397256L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -1860,7 +1894,7 @@ const ISC_STATUS isc_err_max                          = 889;
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_fbsvcmgr_bad_sm                  336986159L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          889
+#define isc_err_max                          906
 
 #endif
 

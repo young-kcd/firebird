@@ -37,8 +37,8 @@ the total length of a blob in a call to gds_$database_info.');
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
 problem, check your program logic.  To avoid errors when
-the user enters a database name interactively, 
-add an error handler to the statement that causes this 
+the user enters a database name interactively,
+add an error handler to the statement that causes this
 message to appear.', 'Your program encountered an input or output error.');
 ('lock_conflict', NULL, NULL, NULL, 0, 25, NULL, 'lock conflict on no wait transaction', NULL, NULL);
 ('metadata_corrupt', NULL, NULL, NULL, 0, 26, NULL, 'corrupt system table', NULL, NULL);
@@ -64,7 +64,7 @@ receive this error while using GDML or SQL, please submit
 a bug report.', 'The actual length of a buffer does not correspond to what
 the request language says it should be.');
 ('read_only_field', NULL, NULL, NULL, 0, 39, NULL, 'attempted update of read-only column', 'If the read-only field is in a system relation, change your
-program.  If the field is a COMPUTED field, you have to 
+program.  If the field is a COMPUTED field, you have to
 change the source fields to change its value.  If the field
 takes part in a view, update it in its source relations.', 'Your program tried to change the value of a read-only
 field in a system relation, a COMPUTED field, or a field
@@ -74,28 +74,28 @@ reserved for READ access.');
 ('read_only_trans', NULL, NULL, NULL, 0, 41, NULL, 'attempted update during read-only transaction', 'If you want to update the database, use a READ_WRITE
 transaction.', 'Your program tried to update during a READ_ONLY translation.');
 ('read_only_view', NULL, NULL, NULL, 0, 42, NULL, 'cannot update read-only view @1', 'Views that include a record select, join, or project cannot
-be updated.  If you want to perform updates, you must do so 
+be updated.  If you want to perform updates, you must do so
 through the source relations.  If you are updating join terms,
 make sure that you change them in all relations.  In any case,
- update the source relations in a single transaction so that 
-you make the changes consistently.', 'Your program tried to update a view that contains a 
+ update the source relations in a single transaction so that
+you make the changes consistently.', 'Your program tried to update a view that contains a
 record select, join, or project operation.');
 ('req_no_trans', NULL, NULL, NULL, 0, 43, NULL, 'no transaction for request', 'Check and correct your program logic.  Commit or roll back
 the transaction only after you have completed all operations
 that you want in the transaction.', 'Your program tried to continue a request after the enveloping
 transaction had been committed or rolled back.');
 ('req_sync', NULL, NULL, NULL, 0, 44, NULL, 'request synchronization error', 'For call interface programs, locate and correct the program
-error.  If you received this error while using GDML or SQL, 
+error.  If you received this error while using GDML or SQL,
 please submit a bug report. ', 'Your program issued a send or receive for a message type
 that did not match the logic of the BLR request.');
 ('req_wrong_db', NULL, NULL, NULL, 0, 45, NULL, 'request referenced an unavailable database', 'Change your program so that the required database is
-within the scope of the transaction.', 'Your program referenced a relation from a database that is 
+within the scope of the transaction.', 'Your program referenced a relation from a database that is
 not available within the current transaction.');
 ('segment', NULL, NULL, NULL, 0, 46, NULL, 'segment buffer length shorter than expected', 'Check the segment_buffer_length parameter on the blob calls
 and make sure that it is long enough for handling the
 segments of the blob field you are accessing.  Alternately,
 you could trap for this error and accept truncated values.', 'The length of the segment_buffer on a blob call was shorter
-than the segment returned by the database software.  
+than the segment returned by the database software.
 Therefore, the database software could return only part of
 the segment.');
 ('segstr_eof', NULL, NULL, NULL, 0, 47, NULL, 'attempted retrieval of more segments than exist', 'Change your program so that it tests for this condition
@@ -113,15 +113,15 @@ creating.');
 ('segstr_no_trans', NULL, NULL, NULL, 0, 50, NULL, 'attempted action on BLOB outside transaction', 'Change your program so that you perform whatever data
 manipulation is required in a transaction before you end
 that transaction.', 'Your program reference a blob field after it committed or
-rolled back the transaction that had been processing the 
+rolled back the transaction that had been processing the
 field.');
 ('segstr_no_write', NULL, NULL, NULL, 0, 51, NULL, 'attempted write to read-only BLOB', 'If you are using the call interface, open the blob for
 by calling gds_$create_blob.  If you are using GDML, open
 the blob with the create_blob statement.', 'Your program tried to write to a blob field that
 that had been opened for read access.');
 ('segstr_wrong_db', NULL, NULL, NULL, 0, 52, NULL, 'attempted reference to BLOB in unavailable database', 'Change your program so that the required database is
-available to the current transaction.', 'Your program referenced a blob field from a relation 
-in a database that is not available to the current 
+available to the current transaction.', 'Your program referenced a blob field from a relation
+in a database that is not available to the current
 transaction.');
 ('sys_request', NULL, NULL, NULL, 0, 53, NULL, 'operating system directive @1 failed', 'Check secondary messages for more information.  When you
 isolate the problem, you may want to include an error handler
@@ -224,7 +224,7 @@ on the computer you are using.');
 ('obj_in_use', NULL, NULL, NULL, 0, 133, NULL, 'object @1 is in use', NULL, 'The named relation or index is currently in use and cannot be deleted.');
 ('nofilter', NULL, NULL, NULL, 0, 134, 0, 'filter not found to convert type @1 to type @2', NULL, NULL);
 ('shadow_accessed', NULL, NULL, NULL, 0, 135, NULL, 'cannot attach active shadow file', 'If the original database file is available,
-erase the record(s) in RDB$FILES which 
+erase the record(s) in RDB$FILES which
 defines the shadow.  Otherwise, use the
 GFIX activate switch to convert the shadow
 to an active database.', 'You have attempted to attach a file currently
@@ -2600,6 +2600,25 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_cte_not_used', 'dsql_req::checkUnusedCTEs', 'pass1.cpp', NULL, 13, 949, NULL, 'CTE "@1" is not used in query', NULL, NULL);
 ('dsql_col_more_than_once_view', 'define_view', 'ddl.cpp', NULL, 13, 950, NULL, 'column @1 appears more than once in ALTER VIEW', NULL, NULL);
 ('dsql_unsupported_in_auto_trans', 'PASS1_statement', 'pass1.cpp', NULL, 13, 951, NULL, '@1 is not supported inside IN AUTONOMOUS TRANSACTION block', NULL, NULL);
+-- These add more information to the dumb isc_expression_eval_err
+('dsql_eval_unknode', 'GEN_expr', 'dsql/gen.c', NULL, 13, 952, NULL, 'Unknown node type @1 in dsql/GEN_expr', NULL, NULL)
+('dsql_agg_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 953, NULL, 'Argument for @1 in dialect 1 must be string or numeric', NULL, NULL)
+('dsql_agg2_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 954, NULL, 'Argument for @1 in dialect 2 must be numeric', NULL, NULL)
+('dsql_nodateortime_pm_string', 'MAKE_desc', 'make.cpp', NULL, 13, 955, NULL, 'Strings cannot be added to or subtracted from DATE or TIME types', NULL, NULL)
+('dsql_invalid_datetime_subtract', 'MAKE_desc', 'make.cpp', NULL, 13, 956, NULL, 'Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types', NULL, NULL)
+('dsql_invalid_dateortime_add', 'MAKE_desc', 'make.cpp', NULL, 13, 957, NULL, 'Adding two DATE values or two TIME values is not allowed', NULL, NULL)
+('dsql_invalid_type_minus_date', 'MAKE_desc', 'make.cpp', NULL, 13, 958, NULL, 'DATE value cannot be subtracted from the provided data type', NULL, NULL)
+('dsql_nostring_addsub_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 959, NULL, 'Strings cannot be added or subtracted in dialect 3', NULL, NULL)
+('dsql_invalid_type_addsub_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 960, NULL, 'Invalid data type for addition or subtraction in dialect 3', NULL, NULL)
+('dsql_invalid_type_multip_dial1', 'MAKE_desc', 'make.cpp', NULL, 13, 961, NULL, 'Invalid data type for multiplication in dialect 1', NULL, NULL)
+('dsql_nostring_multip_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 962, NULL, 'Strings cannot be multiplied in dialect 3', NULL, NULL)
+('dsql_invalid_type_multip_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 963, NULL, 'Invalid data type for multiplication in dialect 3', NULL, NULL)
+('dsql_mustuse_numeric_div_dial1', 'MAKE_desc', 'make.cpp', NULL, 13, 964, NULL, 'Division in dialect 1 must be between numeric data types', NULL, NULL)
+('dsql_nostring_div_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 965, NULL, 'Strings cannot be divided in dialect 3', NULL, NULL)
+('dsql_invalid_type_div_dial3', 'MAKE_desc', 'make.cpp', NULL, 13, 966, NULL, 'Invalid data type for division in dialect 3', NULL, NULL)
+('dsql_nostring_neg_dial3',  'MAKE_desc', 'make.cpp', NULL, 13, 967, NULL, 'Strings cannot be negated (applied the minus operator) in dialect 3', NULL, NULL)
+('dsql_invalid_type_neg', 'MAKE_desc', 'make.cpp', NULL, 13, 968, NULL, 'Invalid data type for negation (minus operator)', NULL, NULL)
+-- End of extras for isc_expression_eval_err
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);
