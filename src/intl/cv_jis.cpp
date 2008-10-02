@@ -53,7 +53,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 
 /* See if we're only after a length estimate */
 	if (p_dest_ptr == NULL)
-		return (src_len);
+		return sizeof(USHORT) * src_len;
 
 	Firebird::OutAligner<USHORT> d(p_dest_ptr, dest_len);
 	USHORT* dest_ptr = d;
@@ -74,7 +74,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 			/* Step 2: Convert from ASCII to UNICODE */
 			ch = ch1;
 		}
-		else if (!src_len || !(*src_ptr & 0x80)) {
+		else if (src_len == 1 || !(*src_ptr & 0x80)) {
 			/* We received a multi-byte indicator, but either
 			   there isn't a 2nd byte or the 2nd byte isn't marked */
 			*err_code = CS_BAD_INPUT;
@@ -287,18 +287,20 @@ static void seven2eight(USHORT *p1, USHORT *p2)
 		*p2 += 31;
 	else
 		*p2 += 126;
+
 	if ((*p2 >= 127) && (*p2 < 158))
 		(*p2)++;
+
 	if ((*p1 >= 33) && (*p1 <= 94)) {
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 113;
-		else if (!isodd(*p1))
+		else
 			*p1 = (*p1 / 2) + 112;
 	}
 	else if ((*p1 >= 95) && (*p1 <= 126)) {
 		if (isodd(*p1))
 			*p1 = ((*p1 - 1) / 2) + 177;
-		else if (!isodd(*p1))
+		else
 			*p1 = (*p1 / 2) + 176;
 	}
 }
@@ -547,12 +549,12 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 	return ((eucj_str - start) * sizeof(*eucj_str));
 }
 
-#ifdef NOT_USED_OR_REPLACED
-static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
+
+INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str, ULONG* offending_position)
 {
 /**************************************
  *
- *      K A N J I _ c h e c k _ e u c 
+ *      C V J I S _ c h e c k _ e u c
  *
  **************************************
  *
@@ -560,31 +562,37 @@ static USHORT CVJIS_check_euc(const UCHAR* euc_str, USHORT euc_len)
  *	This is a cousin of the KANJI_check_sjis routine.
  *      Make sure that the euc string does not have any truncated 2 byte
  *      character at the end. * If we have a truncated character then, 
- *          return 1.  
- *          else return(0);
+ *          return false.
+ *          else return true;
  **************************************/
-	while (euc_len--) {
-		if (*euc_str & 0x80) {	/* Is it  EUC */
-			if (euc_len == 0) {	/* truncated kanji */
-				return (1);
+	const UCHAR* start = euc_str;
+
+	while (euc_len--)
+	{
+		if (*euc_str & 0x80)	// Is it EUC
+		{
+			if (euc_len == 0)	// truncated kanji
+			{
+				*offending_position = euc_str - start;
+				return false;
 			}
+
 			euc_str += 2;
 			euc_len -= 1;
 		}
-		else {					/* it is a ASCII */
+		else	// it is a ASCII
 			euc_str++;
-		}
 	}
-	return (0);
+
+	return true;
 }
 
 
-
-static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
+INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str, ULONG* offending_position)
 {
 /**************************************
  *
- *      K A N J I _ c h e c k _ s j i s
+ *      C V J I S _ c h e c k _ s j i s
  *
  **************************************
  *
@@ -595,28 +603,33 @@ static USHORT CVJIS_check_sjis(const UCHAR* sjis_str, USHORT sjis_len)
  *	    return 1. 
  *	    else return(0);
  **************************************/
-	while (sjis_len--) {
-		if (*sjis_str & 0x80) {	/* Is it  SJIS */
+	const UCHAR* start = sjis_str;
+
+	while (sjis_len--)
+	{
+		if (*sjis_str & 0x80)	// Is it  SJIS
+		{
 			const UCHAR c1 = *sjis_str;
-			if (SJIS1(c1)) {	/* It is a KANJI */
-				if (sjis_len == 0) {	/* truncated KANJI */
-					return 1;
+			if (SJIS1(c1))	// It is a KANJI
+			{
+				if (sjis_len == 0)	// truncated KANJI
+				{
+					*offending_position = sjis_str - start;
+					return false;
 				}
 
 				sjis_str += 2;
 				sjis_len -= 1;
 			}
-			else {				/*It is a KANA */
+			else	// It is a KANA
 				sjis_str++;
-			}
 		}
-		else {					/* it is a ASCII */
+		else	// it is a ASCII
 			sjis_str++;
-		}
 	}
-	return (0);
+
+	return true;
 }
-#endif
 
 
 #ifdef NOT_USED_OR_REPLACED
