@@ -846,7 +846,7 @@ static const struct {
 	{336397239, "@1 is not supported inside IN AUTONOMOUS TRANSACTION block"},		/* 822, dsql_unsupported_in_auto_trans */
 	{336397240, "Unknown node type @1 in dsql/GEN_expr"},		/* 823, dsql_eval_unknode */
 	{336397241, "Argument for @1 in dialect 1 must be string or numeric"},		/* 824, dsql_agg_wrongarg */
-	{336397242, "Argument for @1 in dialect 2 must be numeric"},		/* 825, dsql_agg2_wrongarg */
+	{336397242, "Argument for @1 in dialect 3 must be numeric"},		/* 825, dsql_agg2_wrongarg */
 	{336397243, "Strings cannot be added to or subtracted from DATE or TIME types"},		/* 826, dsql_nodateortime_pm_string */
 	{336397244, "Invalid data type for subtraction involving DATE, TIME or TIMESTAMP types"},		/* 827, dsql_invalid_datetime_subtract */
 	{336397245, "Adding two DATE values or two TIME values is not allowed"},		/* 828, dsql_invalid_dateortime_add */
