@@ -672,6 +672,39 @@ const ISC_STATUS isc_nothing_to_cancel                = 335544933L;
 const ISC_STATUS isc_ibutil_not_loaded                = 335544934L;
 const ISC_STATUS isc_circular_computed                = 335544935L;
 const ISC_STATUS isc_psw_db_error                     = 335544936L;
+const ISC_STATUS isc_invalid_type_datetime_op         = 335544937L;
+const ISC_STATUS isc_onlycan_add_timetodate           = 335544938L;
+const ISC_STATUS isc_onlycan_add_datetotime           = 335544939L;
+const ISC_STATUS isc_onlycansub_tstampfromtstamp      = 335544940L;
+const ISC_STATUS isc_onlyoneop_mustbe_tstamp          = 335544941L;
+const ISC_STATUS isc_invalid_extractpart_time         = 335544942L;
+const ISC_STATUS isc_invalid_extractpart_date         = 335544943L;
+const ISC_STATUS isc_invalidarg_extract               = 335544944L;
+const ISC_STATUS isc_sysf_argmustbe_exact             = 335544945L;
+const ISC_STATUS isc_sysf_argmustbe_exact_or_fp       = 335544946L;
+const ISC_STATUS isc_sysf_argviolates_uuidtype        = 335544947L;
+const ISC_STATUS isc_sysf_argviolates_uuidlen         = 335544948L;
+const ISC_STATUS isc_sysf_argviolates_uuidfmt         = 335544949L;
+const ISC_STATUS isc_sysf_argviolates_guidigits       = 335544950L;
+const ISC_STATUS isc_sysf_invalid_addpart_time        = 335544951L;
+const ISC_STATUS isc_sysf_invalid_add_datetime        = 335544952L;
+const ISC_STATUS isc_sysf_invalid_addpart_dtime       = 335544953L;
+const ISC_STATUS isc_sysf_invalid_add_dtime_rc        = 335544954L;
+const ISC_STATUS isc_sysf_invalid_diff_dtime          = 335544955L;
+const ISC_STATUS isc_sysf_invalid_timediff            = 335544956L;
+const ISC_STATUS isc_sysf_invalid_tstamptimediff      = 335544957L;
+const ISC_STATUS isc_sysf_invalid_datetimediff        = 335544958L;
+const ISC_STATUS isc_sysf_invalid_diffpart            = 335544959L;
+const ISC_STATUS isc_sysf_argmustbe_positive          = 335544960L;
+const ISC_STATUS isc_sysf_basemustbe_positive         = 335544961L;
+const ISC_STATUS isc_sysf_argnmustbe_nonneg           = 335544962L;
+const ISC_STATUS isc_sysf_argnmustbe_positive         = 335544963L;
+const ISC_STATUS isc_sysf_invalid_zeropowneg          = 335544964L;
+const ISC_STATUS isc_sysf_invalid_negpowfp            = 335544965L;
+const ISC_STATUS isc_sysf_invalid_scale               = 335544966L;
+const ISC_STATUS isc_sysf_argmustbe_nonneg            = 335544967L;
+const ISC_STATUS isc_sysf_binuuid_mustbe_str          = 335544968L;
+const ISC_STATUS isc_sysf_binuuid_wrongsize           = 335544969L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -962,7 +995,7 @@ const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_STATUS isc_fbsvcmgr_bad_sm                  = 336986159L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 906;
+const ISC_STATUS isc_err_max                          = 939;
 
 #else /* c definitions */
 
@@ -1604,6 +1637,39 @@ const ISC_STATUS isc_err_max                          = 906;
 #define isc_ibutil_not_loaded                335544934L
 #define isc_circular_computed                335544935L
 #define isc_psw_db_error                     335544936L
+#define isc_invalid_type_datetime_op         335544937L
+#define isc_onlycan_add_timetodate           335544938L
+#define isc_onlycan_add_datetotime           335544939L
+#define isc_onlycansub_tstampfromtstamp      335544940L
+#define isc_onlyoneop_mustbe_tstamp          335544941L
+#define isc_invalid_extractpart_time         335544942L
+#define isc_invalid_extractpart_date         335544943L
+#define isc_invalidarg_extract               335544944L
+#define isc_sysf_argmustbe_exact             335544945L
+#define isc_sysf_argmustbe_exact_or_fp       335544946L
+#define isc_sysf_argviolates_uuidtype        335544947L
+#define isc_sysf_argviolates_uuidlen         335544948L
+#define isc_sysf_argviolates_uuidfmt         335544949L
+#define isc_sysf_argviolates_guidigits       335544950L
+#define isc_sysf_invalid_addpart_time        335544951L
+#define isc_sysf_invalid_add_datetime        335544952L
+#define isc_sysf_invalid_addpart_dtime       335544953L
+#define isc_sysf_invalid_add_dtime_rc        335544954L
+#define isc_sysf_invalid_diff_dtime          335544955L
+#define isc_sysf_invalid_timediff            335544956L
+#define isc_sysf_invalid_tstamptimediff      335544957L
+#define isc_sysf_invalid_datetimediff        335544958L
+#define isc_sysf_invalid_diffpart            335544959L
+#define isc_sysf_argmustbe_positive          335544960L
+#define isc_sysf_basemustbe_positive         335544961L
+#define isc_sysf_argnmustbe_nonneg           335544962L
+#define isc_sysf_argnmustbe_positive         335544963L
+#define isc_sysf_invalid_zeropowneg          335544964L
+#define isc_sysf_invalid_negpowfp            335544965L
+#define isc_sysf_invalid_scale               335544966L
+#define isc_sysf_argmustbe_nonneg            335544967L
+#define isc_sysf_binuuid_mustbe_str          335544968L
+#define isc_sysf_binuuid_wrongsize           335544969L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1894,7 +1960,7 @@ const ISC_STATUS isc_err_max                          = 906;
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_fbsvcmgr_bad_sm                  336986159L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          906
+#define isc_err_max                          939
 
 #endif
 

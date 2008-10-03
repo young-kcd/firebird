@@ -327,7 +327,7 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 				RecordNumber rel_dbkey;
 				rel_dbkey.bid_decode(&numbers[id]);
 				// NS: Why the heck we decrement record number here? I have no idea, but retain the algorithm for now.
-				// hvlad: because from the user point of view db_key's begins from 1 
+				// hvlad: because from the user point of view db_key's begins from 1
 				rel_dbkey.decrement();
 				if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
 					RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
@@ -451,7 +451,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 							impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
 							impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
 							impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
-						} 
+						}
 						else {
 							// Indicate we do not know type of expression.
 							// This code will force pattern recompile for the next non-null value
@@ -871,10 +871,10 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 			{
 				if (node->nod_arg[e_arg_info])
 				{
-					EVL_validate(tdbb, 
+					EVL_validate(tdbb,
 						Item(nod_argument, (IPTR) node->nod_arg[e_arg_message]->nod_arg[e_msg_number],
 							(IPTR) node->nod_arg[e_arg_number]),
-						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_arg_info]), 
+						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_arg_info]),
 						&impure->vlu_desc, request->req_flags & req_null);
 				}
 				*impure_flags |= VLU_checked;
@@ -1077,7 +1077,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				if (node->nod_arg[e_var_info])
 				{
 					EVL_validate(tdbb, Item(nod_variable, (IPTR) node->nod_arg[e_var_id]),
-						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_var_info]), 
+						reinterpret_cast<const ItemInfo*>(node->nod_arg[e_var_info]),
 						&impure->vlu_desc, impure->vlu_desc.dsc_flags & DSC_null);
 				}
 				impure2->vlu_flags |= VLU_checked;
@@ -1311,7 +1311,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 						if (default_literal->nod_type == nod_null)
 						{
-							ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(temp_field->fld_name) << 
+							ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(temp_field->fld_name) <<
 																Arg::Str(NULL_STRING_MARK));
 						}
 
@@ -1542,7 +1542,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
 				else
 					vtemp.vlu_desc.dsc_address = NULL;
-					
+
 				desc = EVL_expr(tdbb, from);
 				if (request->req_flags & req_null) {
 					impure->vlu_desc.dsc_address = NULL;
@@ -2075,7 +2075,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 				arg = itemInfo->name.c_str();
 		}
 
-		ERR_post(Arg::Gds(status) << Arg::Str(arg) << 
+		ERR_post(Arg::Gds(status) << Arg::Str(arg) <<
 									 Arg::Str(value));
 	}
 }
@@ -2317,7 +2317,8 @@ static dsc* add_datetime(const dsc* desc, const jrd_nod* node, impure_value* val
 		return add_sql_date(desc, node, value);
 
 	case DTYPE_CANNOT:
-		ERR_post(Arg::Gds(isc_expression_eval_err));
+		ERR_post(Arg::Gds(isc_expression_eval_err) <<
+					Arg::Gds(isc_invalid_type_datetime_op));
 		return NULL;
 	}
 }
@@ -2528,10 +2529,10 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 
 	dsc* result = &value->vlu_desc;
 
-/* Operand 1 is Value -- Operand 2 is desc */
+	// Operand 1 is Value -- Operand 2 is desc
 
 	if (value->vlu_desc.dsc_dtype == dtype_sql_date) {
-		/* DATE + TIME */
+		// DATE + TIME
 		if ((desc->dsc_dtype == dtype_sql_time) &&
 			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
 		{
@@ -2541,10 +2542,11 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 				*(GDS_TIME *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(Arg::Gds(isc_expression_eval_err));
+		ERR_post(Arg::Gds(isc_expression_eval_err) <<
+					Arg::Gds(isc_onlycan_add_timetodate));
 	}
 	else if (desc->dsc_dtype == dtype_sql_date) {
-		/* TIME + DATE */
+		// TIME + DATE
 		if ((value->vlu_desc.dsc_dtype == dtype_sql_time) &&
 			((node->nod_type == nod_add) || (node->nod_type == nod_add2)))
 		{
@@ -2554,7 +2556,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 				*(GDS_DATE *) desc->dsc_address;
 			goto return_result;
 		}
-		ERR_post(Arg::Gds(isc_expression_eval_err));
+		ERR_post(Arg::Gds(isc_expression_eval_err)
+					<< Arg::Gds(isc_onlycan_add_datetotime));
 	}
 
 /* For historical reasons (behavior prior to V6),
@@ -2589,7 +2592,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		if (!((value->vlu_desc.dsc_dtype == dtype_timestamp) ||
 			  DTYPE_IS_TEXT(value->vlu_desc.dsc_dtype)))
 		{
-			ERR_post(Arg::Gds(isc_expression_eval_err));
+			ERR_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_onlycansub_tstampfromtstamp));
 		}
 
 		d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -2679,7 +2683,8 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		// which are errors
 
 		if (op1_is_timestamp == op2_is_timestamp)
-			ERR_post(Arg::Gds(isc_expression_eval_err));
+			ERR_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_onlyoneop_mustbe_tstamp));
 
 		if (op1_is_timestamp) {
 			d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -2848,7 +2853,7 @@ static dsc* binary_value(thread_db* tdbb, const jrd_nod* node, impure_value* imp
 			const double divisor = MOV_get_double(desc2);
 			if (divisor == 0)
 			{
-				ERR_post(Arg::Gds(isc_arith_except) << 
+				ERR_post(Arg::Gds(isc_arith_except) <<
 						 Arg::Gds(isc_exception_float_divide_by_zero));
 			}
 			impure->vlu_misc.vlu_double =
@@ -3315,7 +3320,7 @@ static dsc* eval_statistical(thread_db* tdbb, jrd_nod* node, impure_value* impur
 	SLONG count = 0;
 	ULONG flag = req_null;
 	double d;
-	
+
 	// Handle each variety separately
 
 	switch (node->nod_type)
@@ -3478,7 +3483,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 	impure->vlu_desc.dsc_address =
 		reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_short);
 	impure->vlu_desc.dsc_length = sizeof(SSHORT);
-	
+
 	jrd_req* request = tdbb->getRequest();
 	// CVC: Borland used special signaling for nulls in outer joins.
 	if (!value || (request->req_flags & req_null)) {
@@ -3498,7 +3503,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			extract_part != blr_extract_second &&
 			extract_part != blr_extract_millisecond)
 		{
-			ERR_post(Arg::Gds(isc_expression_eval_err));
+			ERR_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_invalid_extractpart_time));
 		}
 		Firebird::TimeStamp::decode_time(*(GDS_TIME *) value->dsc_address,
 										 &times.tm_hour, &times.tm_min, &times.tm_sec,
@@ -3511,7 +3517,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 			extract_part == blr_extract_second ||
 			extract_part == blr_extract_millisecond)
 		{
-			ERR_post(Arg::Gds(isc_expression_eval_err));
+			ERR_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_invalid_extractpart_date));
 		}
 		Firebird::TimeStamp::decode_date(*(GDS_DATE *) value->dsc_address, &times);
 		break;
@@ -3522,7 +3529,8 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		break;
 
 	default:
-		ERR_post(Arg::Gds(isc_expression_eval_err));
+		ERR_post(Arg::Gds(isc_expression_eval_err) <<
+					Arg::Gds(isc_invalidarg_extract));
 		break;
 	}
 
@@ -3624,7 +3632,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		fb_assert(false);
 		part = 0;
 	}
-	
+
 	*(USHORT *) impure->vlu_desc.dsc_address = part;
 	return &impure->vlu_desc;
 }
@@ -4185,7 +4193,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 		const double d2 = MOV_get_double(desc);
 		if (d2 == 0.0)
 		{
-			ERR_post(Arg::Gds(isc_arith_except) << 
+			ERR_post(Arg::Gds(isc_arith_except) <<
 					 Arg::Gds(isc_exception_float_divide_by_zero));
 		}
 		const double d1 = MOV_get_double(&value->vlu_desc);
@@ -4237,7 +4245,7 @@ static dsc* divide2(const dsc* desc, impure_value* value, const jrd_nod* node)
 	SINT64 i2 = MOV_get_int64(desc, desc->dsc_scale);
 	if (i2 == 0)
 	{
-		ERR_post(Arg::Gds(isc_arith_except) << 
+		ERR_post(Arg::Gds(isc_arith_except) <<
 				 Arg::Gds(isc_exception_integer_divide_by_zero));
 	}
 
@@ -4642,7 +4650,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 
 		return string_function(tdbb, node, l1, p1, l2, p2, type1, computed_invariant);
 	}
-	
+
 	/* Source string is a blob, things get interesting */
 
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
@@ -4683,7 +4691,7 @@ static bool string_boolean(thread_db* tdbb, jrd_nod* node, dsc* desc1,
 	   a positive result is obtained */
 
 	bool ret_val = false;
-	
+
 	switch (node->nod_type)
 	{
 	case nod_like:
@@ -4973,7 +4981,7 @@ static bool string_function(thread_db* tdbb,
 
 			return evaluator->result();
 		}
-		
+
 		if (node->nod_type == nod_like)
 			return obj->like(*tdbb->getDefaultPool(), p1, l1, p2, l2, escape_str, escape_length);
 
@@ -5031,7 +5039,7 @@ static dsc* string_length(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 						ERR_post(Arg::Gds(isc_arith_except) <<
 								 Arg::Gds(isc_numeric_out_of_range));
 					}
-						
+
 					length = l;
 				}
 				break;

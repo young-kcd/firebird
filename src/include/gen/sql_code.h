@@ -637,6 +637,39 @@ static const struct {
 	{335544934, -901}, /* 614 ibutil_not_loaded */
 	{335544935, -904}, /* 615 circular_computed */
 	{335544936, -902}, /* 616 psw_db_error */
+	{335544937, -833}, /* 617 invalid_type_datetime_op */
+	{335544938, -833}, /* 618 onlycan_add_timetodate */
+	{335544939, -833}, /* 619 onlycan_add_datetotime */
+	{335544940, -833}, /* 620 onlycansub_tstampfromtstamp */
+	{335544941, -833}, /* 621 onlyoneop_mustbe_tstamp */
+	{335544942, -833}, /* 622 invalid_extractpart_time */
+	{335544943, -833}, /* 623 invalid_extractpart_date */
+	{335544944, -833}, /* 624 invalidarg_extract */
+	{335544945, -833}, /* 625 sysf_argmustbe_exact */
+	{335544946, -833}, /* 626 sysf_argmustbe_exact_or_fp */
+	{335544947, -833}, /* 627 sysf_argviolates_uuidtype */
+	{335544948, -833}, /* 628 sysf_argviolates_uuidlen */
+	{335544949, -833}, /* 629 sysf_argviolates_uuidfmt */
+	{335544950, -833}, /* 630 sysf_argviolates_guidigits */
+	{335544951, -833}, /* 631 sysf_invalid_addpart_time */
+	{335544952, -833}, /* 632 sysf_invalid_add_datetime */
+	{335544953, -833}, /* 633 sysf_invalid_addpart_dtime */
+	{335544954, -833}, /* 634 sysf_invalid_add_dtime_rc */
+	{335544955, -833}, /* 635 sysf_invalid_diff_dtime */
+	{335544956, -833}, /* 636 sysf_invalid_timediff */
+	{335544957, -833}, /* 637 sysf_invalid_tstamptimediff */
+	{335544958, -833}, /* 638 sysf_invalid_datetimediff */
+	{335544959, -833}, /* 639 sysf_invalid_diffpart */
+	{335544960, -833}, /* 640 sysf_argmustbe_positive */
+	{335544961, -833}, /* 641 sysf_basemustbe_positive */
+	{335544962, -833}, /* 642 sysf_argnmustbe_nonneg */
+	{335544963, -833}, /* 643 sysf_argnmustbe_positive */
+	{335544964, -833}, /* 644 sysf_invalid_zeropowneg */
+	{335544965, -833}, /* 645 sysf_invalid_negpowfp */
+	{335544966, -833}, /* 646 sysf_invalid_scale */
+	{335544967, -833}, /* 647 sysf_argmustbe_nonneg */
+	{335544968, -833}, /* 648 sysf_binuuid_mustbe_str */
+	{335544969, -833}, /* 649 sysf_binuuid_wrongsize */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

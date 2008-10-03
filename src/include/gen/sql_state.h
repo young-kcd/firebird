@@ -637,6 +637,39 @@ static const struct {
 	{335544934, "39000"}, // 614 ibutil_not_loaded 
 	{335544935, "42000"}, // 615 circular_computed 
 	{335544936, "28000"}, // 616 psw_db_error 
+	{335544937, "42000"}, // 617 invalid_type_datetime_op 
+	{335544938, "42000"}, // 618 onlycan_add_timetodate 
+	{335544939, "42000"}, // 619 onlycan_add_datetotime 
+	{335544940, "42000"}, // 620 onlycansub_tstampfromtstamp 
+	{335544941, "42000"}, // 621 onlyoneop_mustbe_tstamp 
+	{335544942, "42000"}, // 622 invalid_extractpart_time 
+	{335544943, "42000"}, // 623 invalid_extractpart_date 
+	{335544944, "42000"}, // 624 invalidarg_extract 
+	{335544945, "42000"}, // 625 sysf_argmustbe_exact 
+	{335544946, "42000"}, // 626 sysf_argmustbe_exact_or_fp 
+	{335544947, "42000"}, // 627 sysf_argviolates_uuidtype 
+	{335544948, "42000"}, // 628 sysf_argviolates_uuidlen 
+	{335544949, "42000"}, // 629 sysf_argviolates_uuidfmt 
+	{335544950, "42000"}, // 630 sysf_argviolates_guidigits 
+	{335544951, "42000"}, // 631 sysf_invalid_addpart_time 
+	{335544952, "42000"}, // 632 sysf_invalid_add_datetime 
+	{335544953, "42000"}, // 633 sysf_invalid_addpart_dtime 
+	{335544954, "42000"}, // 634 sysf_invalid_add_dtime_rc 
+	{335544955, "42000"}, // 635 sysf_invalid_diff_dtime 
+	{335544956, "42000"}, // 636 sysf_invalid_timediff 
+	{335544957, "42000"}, // 637 sysf_invalid_tstamptimediff 
+	{335544958, "42000"}, // 638 sysf_invalid_datetimediff 
+	{335544959, "42000"}, // 639 sysf_invalid_diffpart 
+	{335544960, "42000"}, // 640 sysf_argmustbe_positive 
+	{335544961, "42000"}, // 641 sysf_basemustbe_positive 
+	{335544962, "42000"}, // 642 sysf_argnmustbe_nonneg 
+	{335544963, "42000"}, // 643 sysf_argnmustbe_positive 
+	{335544964, "42000"}, // 644 sysf_invalid_zeropowneg 
+	{335544965, "42000"}, // 645 sysf_invalid_negpowfp 
+	{335544966, "42000"}, // 646 sysf_invalid_scale 
+	{335544967, "42000"}, // 647 sysf_argmustbe_nonneg 
+	{335544968, "42000"}, // 648 sysf_binuuid_mustbe_str 
+	{335544969, "42000"}, // 649 sysf_binuuid_wrongsize 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

@@ -559,9 +559,9 @@ Format:
 Notes:
     1) If <length> is not specified, CHAR_LENGTH( <string2> ) is implied.
     2) The OVERLAY function is equivalent to:
-           SUBSTRING(<string1>, 1 FOR <start> - 1) ||
+           SUBSTRING(<string1> FROM 1 FOR <start> - 1) ||
            <string2> ||
-           SUBSTRING(<string1>, <start> + <length>)
+           SUBSTRING(<string1> FROM <start> + <length>)
 
 
 --
@@ -662,6 +662,7 @@ RIGHT
 -----
 
 Function:
+    RIGHT(string, length)
     Returns the substring of a specified length that appears at the end of a string.
 
 Format:
@@ -678,6 +679,7 @@ ROUND
 -----
 
 Function:
+    ROUND(number, scale)
     Returns a number rounded to the specified scale.
 
 Format:
@@ -807,6 +809,7 @@ TRUNC
 -----
 
 Function:
+    TRUNC(number, scale)
     Returns the integral part (up to the specified scale) of a number.
 
 Format:

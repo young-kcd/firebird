@@ -25,7 +25,7 @@
  *
  *
  */
- 
+
 // minimum win32 version: win95 / winnt4
 #define _WIN32_WINNT 0x0400
 
@@ -47,16 +47,16 @@ void GenerateRandomBytes(void* buffer, size_t size)
 	{
 		if (GetLastError() == NTE_BAD_KEYSET)
 		{
-			// A common cause of this error is that the key container does not exist. 
-			// To create a key container, call CryptAcquireContext 
-			// using the CRYPT_NEWKEYSET flag. 
+			// A common cause of this error is that the key container does not exist.
+			// To create a key container, call CryptAcquireContext
+			// using the CRYPT_NEWKEYSET flag.
 			if (! CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL,
 					CRYPT_VERIFYCONTEXT | CRYPT_NEWKEYSET))
 			{
 				Firebird::system_call_failed::raise("CryptAcquireContext");
 			}
 		}
-		else 
+		else
 		{
 			Firebird::system_call_failed::raise("CryptAcquireContext");
 		}
@@ -69,20 +69,23 @@ void GenerateRandomBytes(void* buffer, size_t size)
 	CryptReleaseContext(hProv, 0);
 }
 
-void GenerateGuid(FB_GUID* guid) {
-	const HRESULT error = CoCreateGuid((GUID*)guid);
+void GenerateGuid(FB_GUID* guid)
+{
+	const HRESULT error = CoCreateGuid((GUID*) guid);
 	if (!SUCCEEDED(error))
 		Firebird::system_call_failed::raise("CoCreateGuid", error);
 }
 
-void GuidToString(char* buffer, const FB_GUID* guid) {
-	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
+void GuidToString(char* buffer, const FB_GUID* guid)
+{
+	sprintf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}",
 		guid->data[0], guid->data[1], guid->data[2], guid->data[3],
 		guid->data[4], guid->data[5], guid->data[6], guid->data[7]);
 }
 
-void StringToGuid(FB_GUID* guid, const char* buffer) {
-	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}", 
+void StringToGuid(FB_GUID* guid, const char* buffer)
+{
+	sscanf(buffer, "{%04hX%04hX-%04hX-%04hX-%04hX-%04hX%04hX%04hX}",
 		&guid->data[0], &guid->data[1], &guid->data[2], &guid->data[3],
 		&guid->data[4], &guid->data[5], &guid->data[6], &guid->data[7]);
 }

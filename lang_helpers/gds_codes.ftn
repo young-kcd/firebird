@@ -1284,6 +1284,72 @@ C --
       PARAMETER (GDS__circular_computed                = 335544935)
       INTEGER*4 GDS__psw_db_error                    
       PARAMETER (GDS__psw_db_error                     = 335544936)
+      INTEGER*4 GDS__invalid_type_datetime_op        
+      PARAMETER (GDS__invalid_type_datetime_op         = 335544937)
+      INTEGER*4 GDS__onlycan_add_timetodate          
+      PARAMETER (GDS__onlycan_add_timetodate           = 335544938)
+      INTEGER*4 GDS__onlycan_add_datetotime          
+      PARAMETER (GDS__onlycan_add_datetotime           = 335544939)
+      INTEGER*4 GDS__onlycansub_tstampfromtstamp     
+      PARAMETER (GDS__onlycansub_tstampfromtstamp      = 335544940)
+      INTEGER*4 GDS__onlyoneop_mustbe_tstamp         
+      PARAMETER (GDS__onlyoneop_mustbe_tstamp          = 335544941)
+      INTEGER*4 GDS__invalid_extractpart_time        
+      PARAMETER (GDS__invalid_extractpart_time         = 335544942)
+      INTEGER*4 GDS__invalid_extractpart_date        
+      PARAMETER (GDS__invalid_extractpart_date         = 335544943)
+      INTEGER*4 GDS__invalidarg_extract              
+      PARAMETER (GDS__invalidarg_extract               = 335544944)
+      INTEGER*4 GDS__sysf_argmustbe_exact            
+      PARAMETER (GDS__sysf_argmustbe_exact             = 335544945)
+      INTEGER*4 GDS__sysf_argmustbe_exact_or_fp      
+      PARAMETER (GDS__sysf_argmustbe_exact_or_fp       = 335544946)
+      INTEGER*4 GDS__sysf_argviolates_uuidtype       
+      PARAMETER (GDS__sysf_argviolates_uuidtype        = 335544947)
+      INTEGER*4 GDS__sysf_argviolates_uuidlen        
+      PARAMETER (GDS__sysf_argviolates_uuidlen         = 335544948)
+      INTEGER*4 GDS__sysf_argviolates_uuidfmt        
+      PARAMETER (GDS__sysf_argviolates_uuidfmt         = 335544949)
+      INTEGER*4 GDS__sysf_argviolates_guidigits      
+      PARAMETER (GDS__sysf_argviolates_guidigits       = 335544950)
+      INTEGER*4 GDS__sysf_invalid_addpart_time       
+      PARAMETER (GDS__sysf_invalid_addpart_time        = 335544951)
+      INTEGER*4 GDS__sysf_invalid_add_datetime       
+      PARAMETER (GDS__sysf_invalid_add_datetime        = 335544952)
+      INTEGER*4 GDS__sysf_invalid_addpart_dtime      
+      PARAMETER (GDS__sysf_invalid_addpart_dtime       = 335544953)
+      INTEGER*4 GDS__sysf_invalid_add_dtime_rc       
+      PARAMETER (GDS__sysf_invalid_add_dtime_rc        = 335544954)
+      INTEGER*4 GDS__sysf_invalid_diff_dtime         
+      PARAMETER (GDS__sysf_invalid_diff_dtime          = 335544955)
+      INTEGER*4 GDS__sysf_invalid_timediff           
+      PARAMETER (GDS__sysf_invalid_timediff            = 335544956)
+      INTEGER*4 GDS__sysf_invalid_tstamptimediff     
+      PARAMETER (GDS__sysf_invalid_tstamptimediff      = 335544957)
+      INTEGER*4 GDS__sysf_invalid_datetimediff       
+      PARAMETER (GDS__sysf_invalid_datetimediff        = 335544958)
+      INTEGER*4 GDS__sysf_invalid_diffpart           
+      PARAMETER (GDS__sysf_invalid_diffpart            = 335544959)
+      INTEGER*4 GDS__sysf_argmustbe_positive         
+      PARAMETER (GDS__sysf_argmustbe_positive          = 335544960)
+      INTEGER*4 GDS__sysf_basemustbe_positive        
+      PARAMETER (GDS__sysf_basemustbe_positive         = 335544961)
+      INTEGER*4 GDS__sysf_argnmustbe_nonneg          
+      PARAMETER (GDS__sysf_argnmustbe_nonneg           = 335544962)
+      INTEGER*4 GDS__sysf_argnmustbe_positive        
+      PARAMETER (GDS__sysf_argnmustbe_positive         = 335544963)
+      INTEGER*4 GDS__sysf_invalid_zeropowneg         
+      PARAMETER (GDS__sysf_invalid_zeropowneg          = 335544964)
+      INTEGER*4 GDS__sysf_invalid_negpowfp           
+      PARAMETER (GDS__sysf_invalid_negpowfp            = 335544965)
+      INTEGER*4 GDS__sysf_invalid_scale              
+      PARAMETER (GDS__sysf_invalid_scale               = 335544966)
+      INTEGER*4 GDS__sysf_argmustbe_nonneg           
+      PARAMETER (GDS__sysf_argmustbe_nonneg            = 335544967)
+      INTEGER*4 GDS__sysf_binuuid_mustbe_str         
+      PARAMETER (GDS__sysf_binuuid_mustbe_str          = 335544968)
+      INTEGER*4 GDS__sysf_binuuid_wrongsize          
+      PARAMETER (GDS__sysf_binuuid_wrongsize           = 335544969)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
