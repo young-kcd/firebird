@@ -803,8 +803,8 @@ void MAKE_desc(CompiledStatement* statement, dsc* desc, dsql_nod* node, dsql_nod
 		// (use a specific cast instead)
 		if (DTYPE_IS_TEXT(dtype1) || DTYPE_IS_TEXT(dtype2))
 		{
-			ERRD_post(Arg::Gds(isc_expression_eval_err)
-						<< Arg::Gds(isc_dsql_nostring_addsub_dial3));
+			ERRD_post(Arg::Gds(isc_expression_eval_err) <<
+						Arg::Gds(isc_dsql_nostring_addsub_dial3));
 		}
 
 		/* Determine the TYPE of arithmetic to perform, store it

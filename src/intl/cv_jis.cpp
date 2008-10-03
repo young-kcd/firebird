@@ -607,7 +607,7 @@ INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str, U
 
 	while (sjis_len--)
 	{
-		if (*sjis_str & 0x80)	// Is it  SJIS
+		if (*sjis_str & 0x80)	// Is it SJIS
 		{
 			const UCHAR c1 = *sjis_str;
 			if (SJIS1(c1))	// It is a KANJI

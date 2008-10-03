@@ -2601,7 +2601,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_col_more_than_once_view', 'define_view', 'ddl.cpp', NULL, 13, 950, NULL, 'column @1 appears more than once in ALTER VIEW', NULL, NULL);
 ('dsql_unsupported_in_auto_trans', 'PASS1_statement', 'pass1.cpp', NULL, 13, 951, NULL, '@1 is not supported inside IN AUTONOMOUS TRANSACTION block', NULL, NULL);
 -- These add more information to the dumb isc_expression_eval_err
-('dsql_eval_unknode', 'GEN_expr', 'dsql/gen.c', NULL, 13, 952, NULL, 'Unknown node type @1 in dsql/GEN_expr', NULL, NULL)
+('dsql_eval_unknode', 'GEN_expr', 'dsql/gen.cpp', NULL, 13, 952, NULL, 'Unknown node type @1 in dsql/GEN_expr', NULL, NULL)
 ('dsql_agg_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 953, NULL, 'Argument for @1 in dialect 1 must be string or numeric', NULL, NULL)
 ('dsql_agg2_wrongarg', 'MAKE_desc', 'make.cpp', NULL, 13, 954, NULL, 'Argument for @1 in dialect 3 must be numeric', NULL, NULL)
 ('dsql_nodateortime_pm_string', 'MAKE_desc', 'make.cpp', NULL, 13, 955, NULL, 'Strings cannot be added to or subtracted from DATE or TIME types', NULL, NULL)

@@ -39,6 +39,7 @@ CHARSET_ENTRY(CS_jis_0208_1990)
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 2;
 	csptr->charset_space_character = (const BYTE*) & space;	/* 0x20 */
+	csptr->charset_fn_well_formed = NULL;
 
 	CV_convert_init(&csptr->charset_to_unicode,
 					CV_wc_to_wc,
