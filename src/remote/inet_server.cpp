@@ -502,9 +502,6 @@ static int shutdownInetServer(const int reason, const int, void*)
 
 	serverClosing = true;
 
-	// shutdown worker threads
-	SRVR_shutdown(0, 0, 0);
-
 	// shutdown main thread - send self-signal to close select() 
 	// in main thread and wait for it to get into safe state
 #ifdef UNIX

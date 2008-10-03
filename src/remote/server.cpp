@@ -36,7 +36,6 @@
 #include "../jrd/gdsassert.h"
 #include "../remote/remote.h"
 #include "../jrd/ThreadStart.h"
-#include "../jrd/isc.h"
 #include "../jrd/license.h"
 #include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
@@ -177,20 +176,25 @@ inline bool bad_service(ISC_STATUS* status_vector, Rdb* rdb)
 class Worker
 {
 public:
-	static const int MAX_THREADS = 128;
+	static const int MAX_THREADS = 127;		// With 128 gdb shows -128. gcc/gdb bug?
 	static const int IDLE_TIMEOUT = 60;
 
 	Worker();
 	~Worker();
 
-	bool wait(int timeout = IDLE_TIMEOUT); // true is success, false if timeout
+	bool wait(int timeout = IDLE_TIMEOUT);	// true is success, false if timeout
 	static bool wakeUp();
-	static void wakeUpAll();
 
 	void setState(const bool active);
+	static void start(USHORT flags);
 
 	static int getCount() 
 	{ return m_cntAll; }
+
+	static bool isShuttingDown()
+	{ return shutting_down; }
+
+	static void shutdown();
 
 private:
 	Worker* m_next;
@@ -203,12 +207,14 @@ private:
 
 	void remove();
 	void insert(const bool active);
+	static void wakeUpAll();
 
 	static Worker* m_activeWorkers;
 	static Worker* m_idleWorkers;
 	static Firebird::GlobalPtr<Firebird::Mutex> m_mutex;
 	static int m_cntAll;
 	static int m_cntIdle;
+	static bool shutting_down;
 };
 
 Worker* Worker::m_activeWorkers = NULL;
@@ -216,13 +222,13 @@ Worker* Worker::m_idleWorkers = NULL;
 Firebird::GlobalPtr<Firebird::Mutex> Worker::m_mutex;
 int Worker::m_cntAll = 0;
 int Worker::m_cntIdle = 0;
+bool Worker::shutting_down = false;
 
 
 static Firebird::GlobalPtr<Firebird::Mutex> request_que_mutex;
 static SERVER_REQ	request_que			= NULL;
 static SERVER_REQ	free_requests		= NULL;
 static SERVER_REQ	active_requests		= NULL;
-static bool			shutting_down		= false;
 
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
 static SRVR			servers;
@@ -500,7 +506,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
-					if (!shutting_down && (main_port->port_server_flags & SRVR_multi_client)) 
+					if ((!Worker::isShuttingDown()) && (main_port->port_server_flags & SRVR_multi_client)) 
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}
@@ -574,14 +580,14 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 							port->port_requests_queued);
 						fflush(stdout);
 #endif
-						if (!shutting_down && !Worker::wakeUp())  {
-							gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0);
-						}
+						Worker::start(flags);
 					}
 					request = 0;
 				}
 				port = 0;
 			}
+
+			Worker::shutdown();
 		}
 		catch (const Firebird::Exception& e)
 		{
@@ -4750,7 +4756,6 @@ void set_server( rem_port* port, USHORT flags)
 	if (!server) 
 	{
 		servers = server = new srvr(servers, port, flags);
-		fb_shutdown_callback(0, SRVR_shutdown, fb_shut_postproviders, 0);
 	}
 
 	port->port_server = server;
@@ -4949,7 +4954,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 	Worker worker;
 	rem_port* port;
 
-	while (!shutting_down)
+	while (!Worker::isShuttingDown())
 	{
 		Firebird::MutexEnsureUnlock reqQueGuard(request_que_mutex);
 		reqQueGuard.enter();
@@ -5131,42 +5136,13 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 			reqQueGuard.leave();
 			worker.setState(false);
 
-			if (shutting_down)
+			if (Worker::isShuttingDown())
 				break;
 
 			if (!worker.wait()) 
 				break;
 		}
 	}
-
-	return 0;
-}
-
-
-int SRVR_shutdown(const int, const int, void*)
-{
-/**************************************
- *
- *	S R V R _ s h u t d o w n
- *
- **************************************
- *
- * Functional description
- *	Shutdown working threads, waiting for work.
- *
- **************************************/
-
-	shutting_down = true;
-
-	while (Worker::getCount()/* || cntServers.value()*/) 
-	{
-		Worker::wakeUpAll();
-		THREAD_SLEEP(100);
-	}
-
-#ifdef DEV_BUILD
-	gds__log("ports left=%d\n", rem_port::portCounter.value());
-#endif
 
 	return 0;
 }
@@ -5354,7 +5330,6 @@ Worker::Worker()
 #endif
 
 	Firebird::MutexLockGuard guard(m_mutex);
-	++m_cntAll;
 	insert(m_active);
 }
 
@@ -5441,4 +5416,43 @@ void Worker::insert(const bool active)
 	}
 	else
 		fb_assert(m_activeWorkers == this);
+}
+
+void Worker::start(USHORT flags)
+{
+	Firebird::MutexLockGuard guard(m_mutex);
+	if (!isShuttingDown() && !wakeUp())
+	{
+		if (gds__thread_start(loopThread, (void*)(IPTR) flags, THREAD_medium, 0, 0) == 0)
+		{
+			++m_cntAll;
+		}
+	}
+}
+
+void Worker::shutdown()
+{
+	Firebird::MutexLockGuard guard(m_mutex);
+	if (shutting_down)
+	{
+		return;
+	}
+
+	shutting_down = true;
+
+	while (getCount()) 
+	{
+		wakeUpAll();
+		m_mutex->leave();	// we need CheckoutGuard here
+		try
+		{
+			THREAD_SLEEP(100);
+		}
+		catch(const Firebird::Exception&)
+		{
+			m_mutex->enter();
+			throw;
+		}
+		m_mutex->enter();
+	}
 }

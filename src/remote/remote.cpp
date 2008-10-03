@@ -28,7 +28,6 @@
 #include "../remote/remote.h"
 #include "../jrd/file_params.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/isc.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/xdr_proto.h"
