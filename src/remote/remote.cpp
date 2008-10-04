@@ -45,7 +45,7 @@ IMPLEMENT_TRACE_ROUTINE(remote_trace, "REMOTE")
 #endif
 
 const SLONG DUMMY_INTERVAL		= 60;	/* seconds */
-const int ATTACH_FAILURE_SPACE	= 2048;	/* bytes */
+const int ATTACH_FAILURE_SPACE	= 16 * 1024;	/* bytes */
 
 static Firebird::StringsBuffer* attachFailures = NULL;
 static Firebird::GlobalPtr<Firebird::Mutex> attachFailuresMutex;
