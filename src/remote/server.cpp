@@ -4952,7 +4952,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 	ISC_enter();				/* Setup floating point exception handler once and for all. */
 
 	Worker worker;
-	rem_port* port;
+	rem_port* port = NULL;
 
 	while (!Worker::isShuttingDown())
 	{
