@@ -233,6 +233,7 @@ static dsql_nod* pass1_cursor_name(CompiledStatement*, const dsql_str*, USHORT, 
 static dsql_nod* pass1_cursor_reference(CompiledStatement*, const dsql_nod*, dsql_nod*);
 static dsql_nod* pass1_dbkey(CompiledStatement*, dsql_nod*);
 static dsql_nod* pass1_delete(CompiledStatement*, dsql_nod*);
+static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context);
 static dsql_nod* pass1_derived_table(CompiledStatement*, dsql_nod*, dsql_str*);
 static dsql_nod* pass1_expand_select_list(CompiledStatement*, dsql_nod*, dsql_nod*);
 static void pass1_expand_select_node(CompiledStatement*, dsql_nod*, DsqlNodStack&, bool);
@@ -4745,6 +4746,24 @@ static dsql_nod* process_returning(CompiledStatement* statement,
 }
 
 
+// Extract relation and procedure context and expand derived child contexts.
+static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
+{
+	if (context->ctx_relation || context->ctx_procedure)
+	{
+		if (context->ctx_parent)
+			context = context->ctx_parent;
+
+		contexts.push(context);
+	}
+	else
+	{
+		for (DsqlContextStack::iterator i(context->ctx_childs_derived_table); i.hasData(); ++i)
+			pass1_expand_contexts(contexts, i.object());
+	}
+}
+
+
 /**
 
  	pass1_derived_table
@@ -4874,19 +4893,21 @@ static dsql_nod* pass1_derived_table(CompiledStatement* statement, dsql_nod* inp
 
 			// Collect contexts that will be used for blr_derived_expr generation.
 			// We want all child contexts with minimum ctx_in_outer_join.
-			if (childCtx->ctx_in_outer_join <= minOuterJoin &&
-				(childCtx->ctx_relation || childCtx->ctx_procedure))
+			if (childCtx->ctx_in_outer_join <= minOuterJoin)
 			{
-				if (childCtx->ctx_parent)
-					childCtx = childCtx->ctx_parent;
+				DsqlContextStack contexts;
+				pass1_expand_contexts(contexts, childCtx);
 
-				if (childCtx->ctx_in_outer_join < minOuterJoin)
+				for (DsqlContextStack::iterator i(contexts); i.hasData(); ++i)
 				{
-					minOuterJoin = childCtx->ctx_in_outer_join;
-					context->ctx_main_derived_contexts.clear();
-				}
+					if (i.object()->ctx_in_outer_join < minOuterJoin)
+					{
+						minOuterJoin = i.object()->ctx_in_outer_join;
+						context->ctx_main_derived_contexts.clear();
+					}
 
-				context->ctx_main_derived_contexts.push(childCtx);
+					context->ctx_main_derived_contexts.push(i.object());
+				}
 			}
 		}
 

@@ -195,6 +195,7 @@ void GEN_expr(CompiledStatement* statement, dsql_nod* node)
 				for (DsqlContextStack::iterator stack(ctx->ctx_main_derived_contexts);
 					 stack.hasData(); ++stack)
 				{
+					fb_assert(stack.object()->ctx_context <= MAX_UCHAR);
 					stuff(statement, stack.object()->ctx_context);
 				}
 			}
