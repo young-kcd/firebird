@@ -54,10 +54,7 @@
 
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
-
-#if !defined(WIN_NT)
 #include "../jrd/ThreadStart.h"
-#endif
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -265,6 +262,15 @@ static int		fork(void);
 #ifdef WIN_NT
 static void		wsaExitHandler(void*);
 static int		fork(SOCKET, USHORT);
+static THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM);
+
+static Firebird::GlobalPtr<Firebird::Mutex> forkMutex;
+static HANDLE forkEvent = INVALID_HANDLE_VALUE;
+static bool forkThreadStarted = false;
+
+typedef Firebird::Array<SOCKET> SocketsArray;
+static SocketsArray *forkSockets;
+
 #endif
 
 static in_addr get_bind_address();
@@ -366,6 +372,7 @@ static XDR::xdr_ops inet_ops =
 
 
 SLONG INET_remote_buffer;
+static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static bool INET_initialized = false;
 static bool INET_shutting_down = false;
 static SLCT INET_select = { 0, 0, 0 };
@@ -774,7 +781,7 @@ rem_port* INET_connect(const TEXT* name,
 			n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
 			inetErrNo = INET_ERRNO;
-
+			
 			if (n != -1 && send_full(port, packet))
 				return port;
 		}
@@ -886,7 +893,7 @@ rem_port* INET_connect(const TEXT* name,
 			return NULL;
 		}
 #ifdef WIN_NT
-		if ((flag & SRVR_debug) || !fork(s, flag))
+		if (flag & SRVR_debug)
 #else
 		if ((flag & SRVR_debug) || !fork())
 #endif
@@ -903,9 +910,37 @@ rem_port* INET_connect(const TEXT* name,
 			gds__thread_start(waitThread, 0, THREAD_medium, 0, 0);
 		}
 #endif
+
+#ifdef WIN_NT
+		Firebird::MutexLockGuard forkGuard(forkMutex);
+		if (!forkThreadStarted)
+		{
+			forkThreadStarted = true;
+			forkEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+			forkSockets = new SocketsArray(*getDefaultMemoryPool());
+
+			gds__thread_start(forkThread, (void*) flag, THREAD_medium, 0, 0);
+		}
+		forkSockets->add(s);
+		SetEvent(forkEvent);
+#else
 		SOCLOSE(s);
+#endif
 	}
+
+#ifdef WIN_NT
+	Firebird::MutexLockGuard forkGuard(forkMutex);
+	if (forkThreadStarted)
+	{
+		SetEvent(forkEvent);
+		CloseHandle(forkEvent);
+
+		delete forkSockets;
+		forkSockets = NULL;
+	}
+#endif
 }
+
 
 rem_port* INET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
@@ -1193,37 +1228,41 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (!INET_initialized)
 	{
-#ifdef WIN_NT
-		static WSADATA wsadata;
-	    const WORD version = MAKEWORD(2, 0);
-		const int wsaError = WSAStartup(version, &wsadata);
-		if (wsaError) {
-			if (parent)
-				inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
-			else {
-				gds__log("INET/alloc_port: WSAStartup failed, error code = %d", wsaError);
-			}
-			return NULL;
-		}
-		gds__register_cleanup(wsaExitHandler, 0);
-#endif
-		INET_remote_buffer = Config::getTcpRemoteBufferSize();
-		if (INET_remote_buffer < MAX_DATA_LW ||
-		    INET_remote_buffer > MAX_DATA_HW)
+		Firebird::MutexLockGuard guard(init_mutex);
+		if (!INET_initialized)
 		{
-			INET_remote_buffer = DEF_MAX_DATA;
-		}
+#ifdef WIN_NT
+			static WSADATA wsadata;
+			const WORD version = MAKEWORD(2, 0);
+			const int wsaError = WSAStartup(version, &wsadata);
+			if (wsaError) {
+				if (parent)
+					inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
+				else {
+					gds__log("INET/alloc_port: WSAStartup failed, error code = %d", wsaError);
+				}
+				return NULL;
+			}
+			gds__register_cleanup(wsaExitHandler, 0);
+#endif
+			INET_remote_buffer = Config::getTcpRemoteBufferSize();
+			if (INET_remote_buffer < MAX_DATA_LW ||
+				INET_remote_buffer > MAX_DATA_HW)
+			{
+				INET_remote_buffer = DEF_MAX_DATA;
+			}
 #ifdef DEBUG
-		gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
+			gds__log(" Info: Remote Buffer Size set to %ld", INET_remote_buffer);
 #endif
 
-		fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders, 0);
+			fb_shutdown_callback(0, shut_postproviders, fb_shut_postproviders, 0);
 
-		INET_initialized = true;
+			INET_initialized = true;
 
-		// This should go AFTER 'INET_initialized = true' to avoid recursion
-		inet_async_receive = alloc_port(0);
-		inet_async_receive->port_flags |= PORT_server;
+			// This should go AFTER 'INET_initialized = true' to avoid recursion
+			inet_async_receive = alloc_port(0);
+			inet_async_receive->port_flags |= PORT_server;
+		}
 	}
 
 	rem_port* port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
@@ -1782,9 +1821,12 @@ static int fork( SOCKET old_handle, USHORT flag)
 	GetModuleFileName(NULL, name, sizeof(name));
 
 	HANDLE new_handle;
-	DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
-					GetCurrentProcess(), &new_handle, 0, TRUE,
-					DUPLICATE_SAME_ACCESS);
+	if (!DuplicateHandle(GetCurrentProcess(), (HANDLE) old_handle,
+			GetCurrentProcess(), &new_handle, 0, TRUE, DUPLICATE_SAME_ACCESS))
+	{
+		gds__log("INET/inet_error: fork/DuplicateHandle errno = %d", GetLastError());
+		return 0;
+	}
 
 	Firebird::string cmdLine;
 	cmdLine.printf("%s -i -h %"SLONGFORMAT, name, (SLONG) new_handle);
@@ -1807,10 +1849,42 @@ static int fork( SOCKET old_handle, USHORT flag)
 	{
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
+		return 1;
 	}
-	CloseHandle(new_handle);
 
-	return 1;
+	gds__log("INET/inet_error: fork/CreateProcess errno = %d", GetLastError());
+	CloseHandle(new_handle);
+	return 0;
+}
+
+
+THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
+{
+	const USHORT flag = (USHORT) arg;
+
+	while (!INET_shutting_down)
+	{
+		if (WaitForSingleObject(forkEvent, INFINITE) != WAIT_OBJECT_0)
+			break;
+
+		while (!INET_shutting_down)
+		{
+			SOCKET s = 0;
+			{
+				Firebird::MutexLockGuard forkGuard(forkMutex);
+				
+				if (!forkSockets || forkSockets->getCount() == 0)
+					break;
+
+				s = (*forkSockets)[0];
+				forkSockets->remove((size_t)0);
+			}
+			fork(s, flag);
+			SOCLOSE(s);
+		}
+	}
+
+	return 0;
 }
 #endif
 
