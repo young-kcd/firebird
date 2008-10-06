@@ -1215,31 +1215,39 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 
 	// validate the UUID
 	if (len != GUID_BODY_SIZE) // 36
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_sysf_argviolates_uuidlen)
-										<< Arg::Num(GUID_BODY_SIZE)
-										<< Arg::Str(function->name));
+									Arg::Gds(isc_sysf_argviolates_uuidlen) <<
+										Arg::Num(GUID_BODY_SIZE) <<
+										Arg::Str(function->name));
+	}
 
 	for (int i = 0; i < GUID_BODY_SIZE; ++i)
 	{
 		if (i == 8 || i == 13 || i == 18 || i == 23)
 		{
 			if (data[i] != '-')
+			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_argviolates_uuidfmt) <<
 												Arg::Str(showInvalidChar(data[i])) <<
 												Arg::Num(i) <<
 												Arg::Str(function->name));
+			}
 		}
 		else
 		{
-			const UCHAR c = data[i], hex = UPPER7(c);
-			if (!(hex >= 'A' && hex <= 'F' || c >= '0' && c <= '9'))
+			const UCHAR c = data[i];
+			const UCHAR hex = UPPER7(c);
+
+			if (!((hex >= 'A' && hex <= 'F') || (c >= '0' && c <= '9')))
+			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_argviolates_guidigits) <<
 												Arg::Str(showInvalidChar(c)) <<
 												Arg::Num(i) <<
 												Arg::Str(function->name));
+			}
 		}
 	}
 
@@ -1314,7 +1322,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	switch (valueDsc->dsc_dtype)
 	{
 		case dtype_sql_time:
-			timestamp.value().timestamp_time = *(GDS_TIME *) valueDsc->dsc_address;
+			timestamp.value().timestamp_time = *(GDS_TIME*) valueDsc->dsc_address;
 
 			if (part != blr_extract_hour &&
 				part != blr_extract_minute &&
@@ -1328,7 +1336,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 
 		case dtype_sql_date:
-			timestamp.value().timestamp_date = *(GDS_DATE *) valueDsc->dsc_address;
+			timestamp.value().timestamp_date = *(GDS_DATE*) valueDsc->dsc_address;
 			/*
 			if (part == blr_extract_hour ||
 				part == blr_extract_minute ||
@@ -1341,7 +1349,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 
 		case dtype_timestamp:
-			timestamp.value() = *(GDS_TIMESTAMP *) valueDsc->dsc_address;
+			timestamp.value() = *(GDS_TIMESTAMP*) valueDsc->dsc_address;
 			break;
 
 		default:
@@ -1881,9 +1889,11 @@ static dsc* evlLn(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_no
 	const double v = MOV_get_double(value);
 
 	if (v <= 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_positive) <<
 										Arg::Str(function->name));
+	}
 
 	impure->vlu_misc.vlu_double = log(v);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -1911,14 +1921,18 @@ static dsc* evlLog(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 	const double v2 = MOV_get_double(value2);
 
 	if (v1 <= 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_basemustbe_positive) <<
 										Arg::Str(function->name));
+	}
 
 	if (v2 <= 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_positive) <<
 										Arg::Str(function->name));
+	}
 
 	impure->vlu_misc.vlu_double = log(v2) / log(v1);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -2047,10 +2061,12 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 		const SLONG auxlen = MOV_get_long(lengthDsc, 0);
 
 		if (auxlen < 0)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_argnmustbe_nonneg) <<
 											Arg::Num(4) <<
 											Arg::Str(function->name));
+		}
 
 		length = auxlen;
 	}
@@ -2058,10 +2074,12 @@ static dsc* evlOverlay(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 	SLONG from = MOV_get_long(fromDsc, 0);
 
 	if (from <= 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argnmustbe_positive) <<
 										Arg::Num(3) <<
 										Arg::Str(function->name));
+	}
 
 	const USHORT resultTextType = DataTypeUtil::getResultTextType(value, placing);
 	CharSet* cs = INTL_charset_lookup(tdbb, resultTextType);
