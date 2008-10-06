@@ -106,6 +106,12 @@
 
 #ifdef AMD64
 #define IMPLEMENTATION  isc_info_db_impl_linux_amd64 /* 66 */
+
+// on buggy kernels ERESTARTNOHAND (==514) may be returned instead of EINTR
+// use value '514' instead of ERESTARTNOHAND cause it's not present in std includes
+// in theory such error codes should never be seen outside kernel
+#define SYSCALL_INTERRUPTED(err) (((err) == EINTR) || ((err) == 514))   /* pjpg 20001102 */
+
 #endif
 
 #ifdef PPC
