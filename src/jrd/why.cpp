@@ -817,7 +817,7 @@ namespace
 		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
 
-	GlobalPtr<SignalSafeSemaphore> shutdownSemaphore;
+	GlobalPtr<SignalSafeSemaphore> shutdownSemaphore, shutdownFini;
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
@@ -852,6 +852,7 @@ namespace
 			}
 		}
 
+		shutdownFini->release();
 		return 0;
 	}
 
@@ -900,7 +901,7 @@ namespace
 			{
 				// must be done to let shutdownThread close
 				shutdownSemaphore->release();
-				THREAD_YIELD();
+				shutdownFini->enter();
 			}
 		}
 	};
