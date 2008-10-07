@@ -5992,6 +5992,8 @@ bool WHY_get_shutdown()
 #endif // !SUPERCLIENT
 
 
+static GlobalPtr<Mutex> singleShutdown;
+
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
 /**************************************
@@ -6004,6 +6006,8 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
  *	Shutdown firebird.
  *
  **************************************/
+	MutexLockGuard guard(singleShutdown);
+
 	YEntry status(NULL);
 	int rc = FB_SUCCESS;
 
