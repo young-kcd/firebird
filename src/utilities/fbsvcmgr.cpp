@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		gserv.cpp
+ *	MODULE:		fbsvcmgr.cpp
  *	DESCRIPTION:	Command line interface with services manager
  *
  *  The contents of this file are subject to the Initial
