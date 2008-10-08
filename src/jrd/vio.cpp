@@ -1070,8 +1070,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 /* Set up prior record point for next version */
 
-	rpb->rpb_prior = (rpb->rpb_b_page
-					  && (rpb->rpb_flags & rpb_delta)) ? record : 0;
+	rpb->rpb_prior = (rpb->rpb_b_page && (rpb->rpb_flags & rpb_delta)) ? record : NULL;
 
 /* Snarf data from record */
 
@@ -3816,8 +3815,7 @@ static void garbage_collect_idx(
 
 	going.push(old_data ? old_data : org_rpb->rpb_record);
 
-	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page,
-						org_rpb->rpb_relation);
+	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, org_rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, org_rpb, going, staying);
 
 	going.pop();
@@ -4558,9 +4556,7 @@ static int prepare_update(	thread_db*		tdbb,
 			if (rpb->rpb_flags & rpb_deleted) {
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				/* get rid of the back records we just created */
-				if (!
-					(transaction->
-					 tra_attachment->att_flags & ATT_no_cleanup))
+				if (!(transaction->tra_attachment->att_flags & ATT_no_cleanup))
 				{
 					if (!DPM_fetch(tdbb, temp, LCK_write)) {
 						BUGCHECK(291);	/* msg 291 cannot find record back version */
