@@ -303,12 +303,12 @@ const ULONG irsb_singular_processed = 256;	// singleton stream already delivered
 const ULONG irsb_last_backwards = 512;		// rsb was last scrolled in the backward direction
 const ULONG irsb_bof = 1024;				// rsb is at beginning of stream
 const ULONG irsb_eof = 2048;				// rsb is at end of stream
-// Obsolete: they belonged to PC_ENGINE.
-//const ULONG irsb_crack = 4096;				// the record at our current position is missing
-//const ULONG irsb_forced_crack = 8192;		// the above-mentioned crack was forced by user
-//const ULONG irsb_refresh = 16384;			// enter records into refresh range
 #endif
-const ULONG irsb_key_changed = 32768;		// key has changed since record last returned from rsb
+const ULONG irsb_key_changed = 4096;		// key has changed since record last returned from rsb
+// The below flag duplicates the one from the disabled SCROLLABLE_CURSORS
+// implementation, but it's used slightly differently (at the top RSB levels).
+// To be renamed if the SCROLLABLE_CURSORS code will ever be enabled.
+const ULONG irsb_eof = 8192;				// rsb is at end of stream
 
 
 // Sort map block

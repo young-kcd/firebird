@@ -266,6 +266,8 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 	request->req_flags &= ~req_fetch_required;
 #endif
 
+	impure->irsb_flags |= irsb_eof;
+
 /* Turn off the flag so that records at a
    lower level will not be counted. */
 
@@ -323,6 +325,8 @@ bool RSE_get_record(thread_db* tdbb, RecordSource* rsb, RSE_GET_MODE mode)
 			request->req_records_selected++;
 			request->req_records_affected.bumpFetched();
 		}
+
+		impure->irsb_flags &= ~irsb_eof;
 		break;
 	}
 

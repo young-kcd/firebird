@@ -2105,6 +2105,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 						if (!(impure->irsb_flags & irsb_open)) {
 							ERR_post(Arg::Gds(isc_cursor_not_open));
 						}
+						if (impure->irsb_flags & irsb_eof) {
+							ERR_post(Arg::Gds(isc_stream_eof));
+						}
 						request->req_records_affected.clear();
 						// perform preliminary navigation, if specified
 						if (node->nod_arg[e_cursor_stmt_seek]) {
