@@ -1,8 +1,202 @@
   **************************
+  * v2.0.5
+  **************************
+
+    * Fixed bug CORE-2108
+        "get_free_slot() failed" error
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-2078
+        Suboptimal join plan if there are selective non-indexed predicates involved
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
+    * Fixed bug CORE-2077
+        Embedded/Classic: signal TERM handling
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-2077
+        Signal TERM in CS 2.1 for Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-2073
+        Expression indexes bug: incorrect result for the inverted boolean
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
+    * Fixed bug CORE-2065
+        Client library is not in default dynamic loader search paths
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+ 
+    * Fixed bug CORE-2055
+        Buffer overflow in fbclient
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-2050
+        Performance regression - too many semop() system calls
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-2049
+        Performance regression - too many sigprocmask() system calls
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-2000
+        Lock manager may report false deadlocks under high load
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1984
+        Lock manager reports false deadlocks if one of deadlock participants waits with permitted timeout
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1983
+        Out of memory condition in OS causes the server crash
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1982
+        Simultaneous backups/restores could interfere each with other using the Services API
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+ 
+    * Fixed bug CORE-1972
+        Non-SYSDBA user can change FW mode of database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1970
+        Lock conversion denied (bugcheck 215) error may occurs
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1958
+        Bugcheck 179 (decompression overran buffer) when attempting to update the same record multiple times
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
+    * Fixed bug CORE-1957
+        Long ACLs truncated
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1930
+        Possible engine crash if procedure was altered to have no outputs and dependent procedures was not recompiled
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1919
+        Memory corruptions in EXECUTE STATEMENT may crash the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+ 
+    * Fixed bug CORE-1909
+        Garbage in firebird.log on linux/amd64
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1887
+        Newly created databases have wrong access rights
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1886
+        Server doesn't start as an application under restricted user accounts on Vista
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1884
+        Random server crashes using stored procedures with expressions as default values of input parameters
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1854
+        Value of CURRENT_USER may be not in upper case when using Unix OS authentication
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1844
+        Valgrind often reports "Conditional jump or move depends on uninitialised value(s)" in check_status_vector()
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1841
+        If some VIEW used derived tables and long table names\aliases, It is possible to overflow RDB$VIEW_RELATIONS.RDB$CONTEXT_NAME
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1840
+        Small memory leak per every DDL execution
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
+    * Fixed bug CORE-1830
+        Possible index corruption with multiply updates of the same record in the same transaction and using of savepoints 
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1826
+        changeRunUser.sh and restoreRootRunUser.sh scripts does not change run user in init.d scripts 
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1817
+        The RelaxedAliasChecking parameter has no effect concerning RDB$DB_KEY
+      Contributor(s):
+        Vlad Horsun <horsun at kdb.dp.ua>
+ 
+    * Fixed bug CORE-1810
+        Problem with usernames containing the '.' character
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1807
+        fbserver is assigned to a non-canonical port after abnormal termination
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1506
+        Server crash with isc_dsql_execute_immediate and zero length string
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1451
+        Using RDB$DB_KEY inside the WHERE clause while selecting from a procedure crashes the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+ 
+    * Fixed bug CORE-1439
+        DB corruption when killing posix CS
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-1357
+        DummyPacketInterval mechanism broken
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+ 
+    * Fixed bug CORE-1313
+        RDB$DB_KEY not supported in derived tables and merge command
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+ 
+    * Improvement CORE-1889
+        Security database has FW mode OFF, making it corrupted under some circumstances
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+  **************************
   * v2.0.4
   **************************
 
-    * Bugfix CORE-1820
+    * Fixed bug CORE-1820
         Setup program doesn't detect a running server
       Contributor(s):
         Paul Reeves <preeves at ibphoenix.com>
