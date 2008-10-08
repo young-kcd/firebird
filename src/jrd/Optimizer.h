@@ -53,6 +53,9 @@ const double REDUCE_SELECTIVITY_FACTOR_LESS = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_GREATER = 0.05;
 const double REDUCE_SELECTIVITY_FACTOR_STARTING = 0.01;
 
+const double REDUCE_SELECTIVITY_FACTOR_EQUALITY = 0.1;
+const double REDUCE_SELECTIVITY_FACTOR_INEQUALITY = 0.5;
+
 const double MAXIMUM_SELECTIVITY = 1.0;
 
 // Default (Minimum) cost (nr. of pages) for an index.

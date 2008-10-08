@@ -3052,22 +3052,31 @@ bool OptimizerInnerJoin::estimateCost(USHORT stream, double *cost,
 	double cardinality = csb_tail->csb_cardinality;
 
 	// Create the optimizer retrieval generation class and calculate
-	// which indexes will be used and the total estimated 
-	// selectivity will be returned.
+	// which indexes will be used and the total estimated selectivity will be returned
 	OptimizerRetrieval* optimizerRetrieval = FB_NEW(pool) 
 		OptimizerRetrieval(pool, optimizer, stream, false, false, NULL);
-	// I'm allowed to apply delete to this const object, is this MS extension? Let gcc decide.
+
 	const InversionCandidate* candidate = optimizerRetrieval->getCost();
 	double selectivity = candidate->selectivity;
-	if (candidate->indexes) {
-		*cost = candidate->cost;
-	}
-	else {
-		// No indexes are used, this meant for every record a data-page is read.
-		// Thus the number of pages to be read is the same as the number of records.
-		*cost = cardinality;
+	*cost = candidate->cost;
+
+	// Adjust the effective selectivity based on non-indexed conjunctions
+	for (const OptimizerBlk::opt_conjunct* tail = optimizer->opt_conjuncts.begin();
+		tail < optimizer->opt_conjuncts.end(); tail++)
+	{
+		jrd_nod* const node = tail->opt_conjunct_node;
+		if (!(tail->opt_conjunct_flags & opt_conjunct_used) &&
+			OPT_computable(optimizer->opt_csb, node, stream, false, true) &&
+			!candidate->matches.exist(node))
+		{
+			const double factor = (node->nod_type == nod_eql) ?
+				REDUCE_SELECTIVITY_FACTOR_EQUALITY :
+				REDUCE_SELECTIVITY_FACTOR_INEQUALITY;
+			selectivity *= factor;
+		}
 	}
 
+	// Calculate the effective cardinality
 	cardinality *= selectivity;
 
 	if (candidate->unique) {

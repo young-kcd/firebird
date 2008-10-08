@@ -269,7 +269,24 @@ public:
 		capacity = this->getStorageSize();
 		data = this->getStorage();
 	}
-
+	// This method only assigns "pos" if the element is found.
+	// Maybe we should modify it to iterate directy with "pos".
+	bool find(const T& item, size_t& pos) const
+	{
+		for (size_t i = 0; i < count; i++) {
+			if (data[i] == item) {
+				pos = i;
+				return true;
+			}
+		}
+		return false;
+	}
+	bool exist(const T& item) const
+	{
+		size_t pos;	// ignored
+		return find(item, pos);
+	}
+	
 protected:
 	size_t count, capacity;
 	T* data;
