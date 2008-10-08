@@ -1205,8 +1205,10 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 		return NULL;
 
 	if (!value->isText())
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argviolates_uuidtype) << Arg::Str(function->name));
+	}
 
 	USHORT ttype;
 	UCHAR* data_temp;
@@ -1587,9 +1589,11 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 		case blr_extract_day:
 		case blr_extract_week:
 			if (value1Dsc->dsc_dtype == dtype_sql_time || value2Dsc->dsc_dtype == dtype_sql_time)
+			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_invalid_timediff) <<
 												Arg::Str(function->name));
+			}
 			break;
 
 		case blr_extract_hour:
@@ -2231,11 +2235,12 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	const SLONG padLenArg = MOV_get_long(padLenDsc, 0);
 	if (padLenArg < 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argnmustbe_nonneg) <<
 										Arg::Num(2) <<
 										Arg::Str(function->name));
-
+	}
 
 	ULONG padLen = static_cast<ULONG>(padLenArg);
 
@@ -2261,14 +2266,14 @@ static dsc* evlPad(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_n
 
 	if (value2 == NULL)
 	{
-		address2 = const_cast<UCHAR*>(cs->getSpace());
+		address2 = cs->getSpace();
 		length2 = cs->getSpaceLength();
 	}
 	else
 	{
-		UCHAR* address2_temp = NULL;
-		length2 = MOV_make_string2(tdbb, value2, ttype, &address2_temp, buffer2, false);
-		address2 = address2_temp;
+		UCHAR* address2Temp = NULL;
+		length2 = MOV_make_string2(tdbb, value2, ttype, &address2Temp, buffer2, false);
+		address2 = address2Temp;
 	}
 
 	ULONG charLength2 = cs->length(length2, address2, true);
@@ -2413,11 +2418,12 @@ static dsc* evlPosition(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 
 		start = MOV_get_long(value3, 0);
 		if (start <= 0)
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_argnmustbe_positive) <<
 											Arg::Num(3) <<
 											Arg::Str(function->name));
-
+		}
 	}
 
 	// make descriptor for return value
@@ -2526,14 +2532,18 @@ static dsc* evlPower(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 	const double v2 = MOV_get_double(value2);
 
 	if (v1 == 0 && v2 < 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_invalid_zeropowneg) <<
 										Arg::Str(function->name));
+	}
 
 	if (v1 < 0 && !(value2->isExact() && value2->dsc_scale == 0))
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_invalid_negpowfp) <<
 										Arg::Str(function->name));
+	}
 
 	impure->vlu_misc.vlu_double = pow(v1, v2);
 
@@ -2876,9 +2886,11 @@ static dsc* evlRound(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 		scale = -MOV_get_long(scaleDsc, 0);
 		if (!(scale >= MIN_SCHAR && scale <= MAX_SCHAR))
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_invalid_scale) <<
 											Arg::Str(function->name));
+		}
 	}
 
 	impure->vlu_misc.vlu_int64 = MOV_get_int64(value, scale);
@@ -2928,9 +2940,11 @@ static dsc* evlSqrt(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 	impure->vlu_misc.vlu_double = MOV_get_double(value);
 
 	if (impure->vlu_misc.vlu_double < 0)
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_argmustbe_nonneg) <<
 										Arg::Str(function->name));
+	}
 
 	impure->vlu_misc.vlu_double = sqrt(impure->vlu_misc.vlu_double);
 	impure->vlu_desc.makeDouble(&impure->vlu_misc.vlu_double);
@@ -2959,9 +2973,11 @@ static dsc* evlTrunc(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd
 
 		resultScale = -MOV_get_long(scaleDsc, 0);
 		if (!(resultScale >= MIN_SCHAR && resultScale <= MAX_SCHAR))
+		{
 			status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 										Arg::Gds(isc_sysf_invalid_scale) <<
 											Arg::Str(function->name));
+		}
 	}
 
 	if (value->isExact())
@@ -3036,19 +3052,23 @@ static dsc* evlUuidToChar(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 		return NULL;
 
 	if (!value->isText())
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_binuuid_mustbe_str) <<
 										Arg::Str(function->name));
+	}
 
 	USHORT ttype;
 	UCHAR* data;
 	const USHORT len = CVT_get_string_ptr(value, &ttype, &data, NULL, 0, ERR_post);
 
 	if (len != sizeof(FB_GUID))
+	{
 		status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 									Arg::Gds(isc_sysf_binuuid_wrongsize) <<
 										Arg::Num(sizeof(FB_GUID)) <<
 										Arg::Str(function->name));
+	}
 
 	char buffer[GUID_BUFF_SIZE];
 	GuidToString(buffer, reinterpret_cast<const FB_GUID*>(data));

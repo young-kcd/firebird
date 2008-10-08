@@ -2683,8 +2683,10 @@ static dsc* add_timestamp(const dsc* desc, const jrd_nod* node, impure_value* va
 		// which are errors
 
 		if (op1_is_timestamp == op2_is_timestamp)
+		{
 			ERR_post(Arg::Gds(isc_expression_eval_err) <<
 						Arg::Gds(isc_onlyoneop_mustbe_tstamp));
+		}
 
 		if (op1_is_timestamp) {
 			d1 = get_timestamp_to_isc_ticks(&value->vlu_desc);
@@ -3557,7 +3559,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE;
 		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-		*(ULONG *) impure->vlu_desc.dsc_address = times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
+		*(ULONG*) impure->vlu_desc.dsc_address = times.tm_sec * ISC_TIME_SECONDS_PRECISION + fractions;
 		return &impure->vlu_desc;
 
 	case blr_extract_millisecond:
@@ -3565,7 +3567,7 @@ static dsc* extract(thread_db* tdbb, jrd_nod* node, impure_value* impure)
 		impure->vlu_desc.dsc_length = sizeof(ULONG);
 		impure->vlu_desc.dsc_scale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
 		impure->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&impure->vlu_misc.vlu_long);
-		(*(ULONG *) impure->vlu_desc.dsc_address) = fractions;
+		(*(ULONG*) impure->vlu_desc.dsc_address) = fractions;
 		return &impure->vlu_desc;
 
 	case blr_extract_week:
