@@ -1878,6 +1878,9 @@ static bool create_index(	thread_db*	tdbb,
 				}
 				if (IDX.RDB$INDEX_ID && IDX.RDB$STATISTICS < 0.0)
 				{
+					// we need to know if this relation is temporary or not
+					MET_scan_relation(tdbb, relation);
+
 					// no need to recalculate statistics for base instance of GTT 
 					RelationPages* relPages = relation->getPages(tdbb, -1, false);
 					const bool isTempInstance = relation->isTemporary() && 
