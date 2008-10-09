@@ -1033,14 +1033,14 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 	}
 #endif
 
-/* If we're not already set up for this format version number, find
-   the format block and set up the record block.  This is a performance
-   optimization. */
+	// If we're not already set up for this format version number, find
+	// the format block and set up the record block.  This is a performance
+	// optimization.
 
 	Record* record = VIO_record(tdbb, rpb, 0, pool);
 	const Format* format = record->rec_format;
 
-/* If the record is a delta version, start with data from prior record. */
+	// If the record is a delta version, start with data from prior record.
 	UCHAR* tail;
 	const UCHAR* tail_end;
 	UCHAR differences[MAX_DIFFERENCES];
@@ -1068,11 +1068,11 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 		tail_end = tail + record->rec_length;
 	}
 
-/* Set up prior record point for next version */
+	// Set up prior record point for next version
 
 	rpb->rpb_prior = (rpb->rpb_b_page && (rpb->rpb_flags & rpb_delta)) ? record : NULL;
 
-/* Snarf data from record */
+	// Snarf data from record
 
 	tail = SQZ_decompress(reinterpret_cast<const char*>(rpb->rpb_address),
 							rpb->rpb_length,
@@ -1096,7 +1096,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
-/* If this is a delta version, apply changes */
+	// If this is a delta version, apply changes
 	USHORT length;
 	if (prior)
 	{
