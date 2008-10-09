@@ -269,7 +269,7 @@ static HANDLE forkEvent = INVALID_HANDLE_VALUE;
 static bool forkThreadStarted = false;
 
 typedef Firebird::Array<SOCKET> SocketsArray;
-static SocketsArray *forkSockets;
+static SocketsArray* forkSockets;
 
 #endif
 
@@ -781,7 +781,7 @@ rem_port* INET_connect(const TEXT* name,
 			n = connect((SOCKET) port->port_handle,
 					(struct sockaddr *) &address, sizeof(address));
 			inetErrNo = INET_ERRNO;
-			
+
 			if (n != -1 && send_full(port, packet))
 				return port;
 		}
@@ -1235,7 +1235,8 @@ static rem_port* alloc_port( rem_port* parent)
 			static WSADATA wsadata;
 			const WORD version = MAKEWORD(2, 0);
 			const int wsaError = WSAStartup(version, &wsadata);
-			if (wsaError) {
+			if (wsaError)
+			{
 				if (parent)
 					inet_error(parent, "WSAStartup", isc_net_init_error, wsaError);
 				else {
@@ -1870,9 +1871,9 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 		while (!INET_shutting_down)
 		{
 			SOCKET s = 0;
-			{
+			{	// scope
 				Firebird::MutexLockGuard forkGuard(forkMutex);
-				
+
 				if (!forkSockets || forkSockets->getCount() == 0)
 					break;
 

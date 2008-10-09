@@ -5448,7 +5448,7 @@ void Worker::shutdown()
 		{
 			THREAD_SLEEP(100);
 		}
-		catch(const Firebird::Exception&)
+		catch (const Firebird::Exception&)
 		{
 			m_mutex->enter();
 			throw;

@@ -2272,7 +2272,8 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
 				break;
 		}
 
-		if (free_slot < global_slots_per_map) {
+		if (free_slot < global_slots_per_map)
+		{
 			xpm->xpm_count++;
 			xpm->xpm_ids[free_slot] = XPM_BUSY;
 			free_map = xpm->xpm_number;
