@@ -2344,55 +2344,63 @@ static XPM get_free_slot(ULONG* map_num, ULONG* slot_num, ULONG* timestamp)
  **************************************/
 
 	XPM xpm = NULL;
-	ULONG i = 0, j = 0;
+	ULONG free_slot = 0, free_map = 0;
 
 	XNET_LOCK();
 
 	// go through list of maps
 
-	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) {
+	for (xpm = global_client_maps; xpm; xpm = xpm->xpm_next) 
+	{
+		// hvlad: MAX xpm_number must be recorded at the head of the list 
+		// (i.e. at global_client_maps) but lets not depends on this implicit 
+		// order and calculate MAX xpm_number always 
+		free_map = MAX(xpm->xpm_number, free_map); 
 
 		// find an available unused comm area
 
-		for (i = 0; i < global_slots_per_map; i++)
-			if (xpm->xpm_ids[i] == XPM_FREE)
+		for (free_slot = 0; free_slot < global_slots_per_map; free_slot++)
+			if (xpm->xpm_ids[free_slot] == XPM_FREE)
 				break;
 
-		if (i < global_slots_per_map) {
+		if (free_slot < global_slots_per_map) {
 			xpm->xpm_count++;
-			xpm->xpm_ids[i] = XPM_BUSY;
-			j = xpm->xpm_number;
+			xpm->xpm_ids[free_slot] = XPM_BUSY;
+			free_map = xpm->xpm_number;
 			break;
 		}
-		j++;
 	}
-
-	XNET_UNLOCK();
 
 	// if the mapped file structure has not yet been initialized,
 	// make one now
 
-	if (!xpm) {
+	if (!xpm) 
+	{
+		free_map++;
 
 		// allocate new map file and first slot
 
-		xpm = make_xpm(j, *timestamp);
+		xpm = make_xpm(free_map, *timestamp);
 
 		// check for errors in creation of mapped file
 
-		if (!xpm) {
+		if (!xpm) 
+		{
+			XNET_UNLOCK();
 			return NULL;
 		}
 
-		i = 0;
+		free_slot = 0;
 		xpm->xpm_ids[0] = XPM_BUSY;
 		xpm->xpm_count++;
 	}
 	else
 		*timestamp = xpm->xpm_timestamp;
 
-	*map_num = j;
-	*slot_num = i;
+	XNET_UNLOCK();
+
+	*map_num = free_map;
+	*slot_num = free_slot;
 
 	return xpm;
 }
