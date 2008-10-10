@@ -2494,7 +2494,10 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 		{
 			// Before waiting for incoming packet, check for server shutdown
 			if (tryStopMainThread && tryStopMainThread())
+			{
+				main_port->port_server_flags &= ~SRVR_multi_client;		// this is not server port any more
 				return FALSE;
+			}
 
 			// Some platforms change the timeout in the select call.
 			// Reset timeout for each iteration to avoid problems.

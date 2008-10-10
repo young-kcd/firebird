@@ -506,7 +506,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
-					if ((!Worker::isShuttingDown()) && (main_port->port_server_flags & SRVR_multi_client)) 
+					if (main_port->port_server_flags & SRVR_multi_client)
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}
@@ -3346,7 +3346,8 @@ static bool process_packet(rem_port* port,
 
 		if (port && port->port_state == rem_port::BROKEN) {
 			if (!port->port_parent) {
-				gds__log("SERVER/process_packet: broken port, server exiting");
+				if (!Worker::isShuttingDown())
+					gds__log("SERVER/process_packet: broken port, server exiting");
 				port->disconnect(sendL, receive);
 				return false;
 			}
