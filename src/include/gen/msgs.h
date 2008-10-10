@@ -645,9 +645,9 @@ static const struct {
 	{335544941, "Only one operand can be of type TIMESTAMP"},		/* 621, onlyoneop_mustbe_tstamp */
 	{335544942, "Only HOUR, MINUTE, SECOND and MILLISECOND can be extracted from TIME values"},		/* 622, invalid_extractpart_time */
 	{335544943, "HOUR, MINUTE, SECOND and MILLISECOND cannot be extracted from DATE values"},		/* 623, invalid_extractpart_date */
-	{335544944, "Invalid argument for extrac() not being of DATE/TIME/TIMESTAMP type"},		/* 624, invalidarg_extract */
+	{335544944, "Invalid argument for EXTRACT() not being of DATE/TIME/TIMESTAMP type"},		/* 624, invalidarg_extract */
 	{335544945, "Arguments for @1 must be integral types or NUMERIC/DECIMAL without scale"},		/* 625, sysf_argmustbe_exact */
-	{335544946, "First argument for @ must be integral type or floating point type"},		/* 626, sysf_argmustbe_exact_or_fp */
+	{335544946, "First argument for @1 must be integral type or floating point type"},		/* 626, sysf_argmustbe_exact_or_fp */
 	{335544947, "Human readable UUID argument for @1 must be of string type"},		/* 627, sysf_argviolates_uuidtype */
 	{335544948, "Human readable UUID argument for @2 must be of exact length @1"},		/* 628, sysf_argviolates_uuidlen */
 	{335544949, "Human readable UUID argument for @3 must have \"-\" at position @2 instead of \"@1\""},		/* 629, sysf_argviolates_uuidfmt */
