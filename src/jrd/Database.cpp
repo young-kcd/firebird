@@ -29,13 +29,11 @@
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
 #include "../jrd/Database.h"
-#include "../jrd/isc.h"
 #include "../jrd/tra.h"
 #include "../jrd/os/pio_proto.h"
 
-// Thread data block / IPC related data blocks
+// Thread data block
 #include "../jrd/ThreadData.h"
-#include "../jrd/isc.h"
 
 // recursive mutexes
 #include "../common/thd.h"

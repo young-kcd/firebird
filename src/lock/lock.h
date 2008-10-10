@@ -102,7 +102,7 @@ const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
-const UCHAR BASE_LHB_VERSION = 17;
+const UCHAR BASE_LHB_VERSION = 18;
 
 #if SIZEOF_VOID_P == 8
 const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
@@ -137,7 +137,7 @@ struct lhb {
 	SLONG lhb_used;					// Bytes of lock table in use
 	USHORT lhb_hash_slots;			// Number of hash slots allocated
 	USHORT lhb_flags;				// Miscellaneous info
-	MTX_T lhb_mutex[1];				// Mutex controlling access
+	mtx lhb_mutex[1];				// Mutex controlling access
 	SRQ_PTR lhb_history;
 	ULONG lhb_scan_interval;		// Deadlock scan interval (secs)
 	ULONG lhb_acquire_spins;

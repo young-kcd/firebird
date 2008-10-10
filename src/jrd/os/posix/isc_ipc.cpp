@@ -42,7 +42,6 @@
 #include "../jrd/gdsassert.h"
 #include "../jrd/common.h"
 #include "gen/iberror.h"
-#include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
 #include "../jrd/os/isc_i_proto.h"

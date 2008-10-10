@@ -74,7 +74,6 @@
 
 // Thread data block / IPC related data blocks
 #include "../jrd/ThreadData.h"
-#include "../jrd/isc.h"
 
 // recursive mutexes
 #include "../common/thd.h"

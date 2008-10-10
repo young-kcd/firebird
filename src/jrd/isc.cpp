@@ -46,7 +46,6 @@
 #include "../jrd/common.h"
 
 #include "gen/iberror.h"
-#include "../jrd/isc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"

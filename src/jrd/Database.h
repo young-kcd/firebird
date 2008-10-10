@@ -55,6 +55,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/PublicHandle.h"
+#include "../common/classes/semaphore.h"
 #include "../jrd/RandomGenerator.h"
 #include "../jrd/os/guid.h"
 #include "../jrd/sbm.h"
@@ -398,17 +399,20 @@ public:
 	SLONG dbb_page_incarnation;			// Cache page incarnation counter
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
-	event_t dbb_writer_event[1];		// Event to wake up cache writer
-	event_t dbb_writer_event_init[1];	// Event for initialization cache writer
-	event_t dbb_writer_event_fini[1];	// Event for finalization cache writer
+	Firebird::Semaphore dbb_writer_sem;	// Wwake up cache writer
+	Firebird::Semaphore dbb_writer_init;// Cache writer initialization
+	Firebird::Semaphore dbb_writer_fini;// Cache writer finalization
 #ifdef SUPERSERVER_V2
-	event_t dbb_reader_event[1];		// Event to wake up cache reader
+	// the code in cch.cpp is not tested for semaphore instead event !!!
+	Firebird::Semaphore dbb_reader_sem;	// Wake up cache reader
+	Firebird::Semaphore dbb_reader_init;// Cache reader initialization
+	Firebird::Semaphore dbb_reader_fini;// Cache reader finalization
 #endif
 
 #ifdef GARBAGE_THREAD
-	event_t dbb_gc_event[1];			// Event to wake up garbage collector
-	event_t dbb_gc_event_init[1];		// Event for initialization garbage collector
-	event_t dbb_gc_event_fini[1];		// Event for finalization garbage collector
+	Firebird::Semaphore dbb_gc_sem;		// Event to wake up garbage collector
+	Firebird::Semaphore dbb_gc_init;	// Event for initialization garbage collector
+	Firebird::Semaphore dbb_gc_fini;	// Event for finalization garbage collector
 #endif
 
 	Firebird::MemoryStats dbb_memory_stats;

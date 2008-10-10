@@ -1547,19 +1547,12 @@ void VIO_fini(thread_db* tdbb)
 
 	if (dbb->dbb_flags & DBB_garbage_collector)
 	{
-		event_t* gc_event_fini = dbb->dbb_gc_event_fini;
-		// Initialize finalization event
-		ISC_event_init(gc_event_fini, 0, 0);
-		const SLONG count = ISC_event_clear(gc_event_fini);
-
 		dbb->dbb_flags &= ~DBB_garbage_collector;
-		ISC_event_post(dbb->dbb_gc_event); // Wake up running thread
+		dbb->dbb_gc_sem.release(); // Wake up running thread
 		{ // scope
 			Database::Checkout dcoHolder(dbb);
-			ISC_event_wait(1, &gc_event_fini, &count, 0);
+			dbb->dbb_gc_fini.enter();
 		}
-		// Cleanup finalization event
-		ISC_event_fini(gc_event_fini);
 	}
 }
 #endif
@@ -2043,11 +2036,6 @@ void VIO_init(thread_db* tdbb)
    then start one up. */
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector)) {
-		event_t* gc_event_init = dbb->dbb_gc_event_init;
-		// Initialize initialization event
-		ISC_event_init(gc_event_init, 0, 0);
-		const SLONG count = ISC_event_clear(gc_event_init);
-
 		if (gds__thread_start
 			(garbage_collector, dbb, THREAD_medium, 0, 0))
 		{
@@ -2055,10 +2043,8 @@ void VIO_init(thread_db* tdbb)
 		}
 		{ // scope
 			Database::Checkout dcoHolder(dbb);
-			ISC_event_wait(1, &gc_event_init, &count, 10 * 1000000);
+			dbb->dbb_gc_init.enter();
 		}
-		// Clean up initialization event
-		ISC_event_fini(gc_event_init);
 	}
 
 /* Database backups and sweeps perform their own garbage collection
@@ -3848,7 +3834,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	CHECK_DBB(dbb);
 	Database::SyncGuard dsGuard(dbb);
 
-	event_t* gc_event = dbb->dbb_gc_event;
 	record_param rpb;
 	MOVE_CLEAR(&rpb, sizeof(record_param));
 	jrd_rel* relation = NULL;
@@ -3870,8 +3855,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	bool found = false, flush = false;
 
 	try {
-		ISC_event_init(gc_event, 0, 0);
-
 /* Pseudo attachment needed for lock owner identification. */
 
 		Attachment* const attachment = Attachment::create(dbb);
@@ -3885,7 +3868,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 /* Notify our creator that we have started */
 		dbb->dbb_flags |= DBB_garbage_collector;
-		ISC_event_post(dbb->dbb_gc_event_init);
+		dbb->dbb_gc_init.release();
 
 	}	// try
 	catch (const Firebird::Exception&) {
@@ -3903,7 +3886,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 		while (dbb->dbb_flags & DBB_garbage_collector) {
 
-			SLONG count = ISC_event_clear(gc_event);
 			dbb->dbb_flags |= DBB_gc_active;
 			found = false;
 			relation = 0;
@@ -3926,10 +3908,9 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				}
 
 				while (dbb->dbb_flags & DBB_suspend_bgio) {
-					count = ISC_event_clear(gc_event);
 					{ // scope
 						Database::Checkout dcoHolder(dbb);
-						ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
+						dbb->dbb_gc_sem.tryEnter(10);
 					}
 					if (!(dbb->dbb_flags & DBB_garbage_collector)) {
 						goto gc_exit;
@@ -4089,15 +4070,11 @@ rel_exit:
 						continue;
 					}
 					dbb->dbb_flags &= ~DBB_gc_active;
-					int timeout = 0;
 					{ // scope
 						Database::Checkout dcoHolder(dbb);
-						timeout = ISC_event_wait(1, &gc_event, &count, 10 * 1000000);
+						dbb->dbb_gc_sem.tryEnter(10);
 					}
 					dbb->dbb_flags |= DBB_gc_active;
-					if (!timeout) {
-						count = ISC_event_clear(gc_event);
-					}
 				}
 			}
 		}
@@ -4132,8 +4109,7 @@ gc_exit:
 
 		dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
 		/* Notify the finalization caller that we're finishing. */
-		ISC_event_post(dbb->dbb_gc_event_fini);	
-		ISC_event_fini(gc_event);
+		dbb->dbb_gc_fini.release();	
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4338,7 +4314,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, SLONG t
 					tdbb->getTransaction()->tra_oldest_active : 
 					dbb->dbb_oldest_snapshot)) )
 	{
-		ISC_event_post(dbb->dbb_gc_event);
+		dbb->dbb_gc_sem.release();
 	}
 }
 #endif

@@ -35,7 +35,6 @@
 #include "../jrd/ThreadStart.h"
 #include "../jrd/event.h"
 #include "../jrd/gdsassert.h"
-#include "../jrd/isc_signal.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_proto.h"
@@ -108,7 +107,7 @@ static PRB EVENT_process;
 static SH_MEM_T EVENT_data;
 
 #if defined(WIN_NT)
-static MTX_T event_mutex;
+static struct mtx event_mutex;
 #endif
 
 
@@ -657,7 +656,7 @@ static SLONG create_process(void)
 	SRQ_INIT(process->prb_sessions);
 	EVENT_process_offset = SRQ_REL_PTR(process);
 
-	ISC_event_init(&process->prb_event, 0, EVENT_SIGNAL);
+	ISC_event_init(&process->prb_event);
 
 #ifdef SOLARIS_MT
 	ISC_STATUS_ARRAY local_status;
@@ -739,17 +738,17 @@ static void delete_process(SLONG process_offset)
 		// CVC: NLM??? is this Novell Netware specific code???
 
 		process->prb_flags |= PRB_exiting;
-		BOOLEAN timeout = FALSE;
+		bool timeout = false;
 		while (process->prb_flags & PRB_exiting && !timeout) {
 			ISC_event_post(&process->prb_event);
 			const SLONG value = ISC_event_clear(&process->prb_event);
 			release();
 #ifdef SOLARIS_MT
-			event_t* events = &EVENT_process->prb_event;
+			event_t* event = &EVENT_process->prb_event;
 #else
-			event_t* events = &process->prb_event;
+			event_t* event = &process->prb_event;
 #endif
-			timeout = ISC_event_wait(1, &events, &value, 5 * 1000000);
+			timeout = ISC_event_wait(event, value, 5 * 1000000) == FB_FAILURE;
 			acquire();
 		}
 		EVENT_process_offset = 0;
@@ -1481,11 +1480,11 @@ static THREAD_ENTRY_DECLARE watcher_thread(THREAD_ENTRY_PARAM)
 		process = (PRB) SRQ_ABS_PTR(EVENT_process_offset);
 		release();
 #ifdef SOLARIS_MT
-		event_t* events = &EVENT_process->prb_event;
+		event_t* event = &EVENT_process->prb_event;
 #else
-		event_t* events = &process->prb_event;
+		event_t* event = &process->prb_event;
 #endif
-		ISC_event_wait(1, &events, &value, 0);
+		ISC_event_wait(event, value, 0);
 	}
 	return 0;
 }

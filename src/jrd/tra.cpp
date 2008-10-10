@@ -3385,7 +3385,7 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 			 (dbb->dbb_flags & DBB_gc_background))
 		{
 			dbb->dbb_flags |= DBB_gc_pending;
-			ISC_event_post(dbb->dbb_gc_event);
+			dbb->dbb_gc_sem.release();
 		}
 #endif
 	}

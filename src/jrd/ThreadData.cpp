@@ -32,7 +32,6 @@
 #include <errno.h>
 #include "../jrd/common.h"
 #include "../jrd/ThreadData.h"
-#include "../jrd/isc.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/gdsassert.h"

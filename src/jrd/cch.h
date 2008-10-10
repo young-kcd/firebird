@@ -26,6 +26,7 @@
 
 #include "../include/fb_blk.h"
 #include "../jrd/os/pio.h"
+#include "../common/classes/semaphore.h"
 #ifdef SUPERSERVER_V2
 #include "../jrd/sbm.h"
 #include "../jrd/pag.h"
@@ -250,11 +251,11 @@ enum LATCH
 class LatchWait : public pool_alloc<type_lwt>
 {
 public:
-	thread_db*		lwt_tdbb;
-	LATCH			lwt_latch;		/* latch type requested */
-	que				lwt_waiters;	/* latch queue */
-	event_t			lwt_event;		/* grant event to wait on */
-	USHORT			lwt_flags;
+	thread_db*			lwt_tdbb;
+	LATCH				lwt_latch;	/* latch type requested */
+	que					lwt_waiters;/* latch queue */
+	Firebird::Semaphore	lwt_sem;	/* grant event to wait on */
+	USHORT				lwt_flags;
 };
 
 const int LWT_pending	= 1;			/* latch request is pending */

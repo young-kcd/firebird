@@ -1186,16 +1186,12 @@ void CCH_fini(thread_db* tdbb)
 	/* Shutdown the dedicated cache reader for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader)) {
-			event_t* event = dbb->dbb_reader_event;
 			bcb->bcb_flags &= ~BCB_cache_reader;
-			ISC_event_post(event);
-			const SLONG count = ISC_event_clear(event);
+			dbb->dbb_reader_sem.release();
 			{ // scope
 				Database::Checkout dcoHolder(dbb);
-				ISC_event_wait(1, &event, &count, 0);
+				dbb->dbb_reader_fini.enter();
 			}
-			// Now dispose off the cache reader associated semaphore
-			ISC_event_fini(event);
 		}
 #endif
 
@@ -1211,19 +1207,12 @@ void CCH_fini(thread_db* tdbb)
 	/* Shutdown the dedicated cache writer for this database. */
 
 		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_writer)) {
-			event_t* event = dbb->dbb_writer_event_fini;
-			// Initialize initialization event
-			ISC_event_init(event, 0, 0);
-			const SLONG count = ISC_event_clear(event);
-
 			bcb->bcb_flags &= ~BCB_cache_writer;
-			ISC_event_post(dbb->dbb_writer_event); // Wake up running thread
+			dbb->dbb_writer_sem.release(); // Wake up running thread
 			{ // scope
 				Database::Checkout dcoHolder(dbb);
-				ISC_event_wait(1, &event, &count, 0);
+				dbb->dbb_writer_fini.enter();
 			}
-			// Cleanup initialization event
-			ISC_event_fini(event);
 		}
 #endif
 
@@ -1246,7 +1235,6 @@ void CCH_fini(thread_db* tdbb)
 				QUE que_inst = bcb->bcb_free_lwt.que_forward;
 				QUE_DELETE(*que_inst);
 				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
-				ISC_event_fini(&lwt->lwt_event);
 			}
 #endif
 		}
@@ -1310,7 +1298,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 		if (!(dbb->dbb_flags & DBB_force_write) && transaction_mask) {
 			dbb->dbb_flush_cycle |= transaction_mask;
 			if (!(bcb->bcb_flags & BCB_writer_active))
-				ISC_event_post(dbb->dbb_writer_event);
+				dbb->dbb_writer_sem.release();
 		}
 		else
 #endif
@@ -1743,9 +1731,6 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	}
 
 #ifdef CACHE_READER
-	event_t* event = dbb->dbb_reader_event;
-	ISC_event_init(event, 0, 0);
-	count = ISC_event_clear(event);
 	if (gds__thread_start(cache_reader, dbb, THREAD_high, 0, 0))
 	{
 		ERR_bugcheck_msg("cannot start thread");
@@ -1753,20 +1738,14 @@ void CCH_init(thread_db* tdbb, ULONG number)
 
 	{ // scope
 		Database::Checkout dcoHolder(dbb);
-		ISC_event_wait(1, &event, &count, 5 * 1000000);
+		dbb->dbb_reader_init.enter();
 	}
 #endif
 
 #ifdef CACHE_WRITER
 	if (!(dbb->dbb_flags & DBB_read_only)) {
-		event_t* event = dbb->dbb_writer_event_init;
-
 		// writer startup in progress
 		bcb->bcb_flags |= BCB_writer_start;
-
-		/* Initialize initialization event */
-		ISC_event_init(event, 0, 0);
-		count = ISC_event_clear(event);
 
 		if (gds__thread_start(cache_writer, dbb,
 			THREAD_high, 0, 0))
@@ -1776,10 +1755,8 @@ void CCH_init(thread_db* tdbb, ULONG number)
 		}
 		{ // scope
 			Database::Checkout dcoHolder(dbb);
-			ISC_event_wait(1, &event, &count, 5 * 1000000);
+			dbb->dbb_writer_init.enter();
 		}
-		/* Clean up initialization event */
-		ISC_event_fini(event);
 	}
 #endif
 }
@@ -2236,7 +2213,7 @@ void CCH_release(thread_db* tdbb, WIN * window, const bool release_tail)
 					if (bcb->bcb_flags & BCB_cache_writer &&
 						!(bcb->bcb_flags & BCB_writer_active))
 					{
-						ISC_event_post(dbb->dbb_writer_event);
+						dbb->dbb_writer_sem.release();
 					}
 				}
 #endif
@@ -4011,16 +3988,14 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
    
-	event_t* reader_event = 0;
 	BufferControl* bcb = 0;
 
 	try {
 
 		LCK_init(tdbb, LCK_OWNER_attachment);
-		reader_event = dbb->dbb_reader_event;
 		bcb = dbb->dbb_bcb;
 		bcb->bcb_flags |= BCB_cache_reader;
-		ISC_event_post(reader_event);	/* Notify our creator that we have started  */
+		dbb->dbb_reader_init.post();	/* Notify our creator that we have started  */
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
@@ -4039,7 +4014,6 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	prefetch_init(&prefetch2, tdbb);
 
 	while (bcb->bcb_flags & BCB_cache_reader) {
-		const SLONG count = ISC_event_clear(reader_event);
 		bcb->bcb_flags |= BCB_reader_active;
 		bool found = false;
 		SLONG starting_page = -1;
@@ -4047,7 +4021,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 
 		if (dbb->dbb_flags & DBB_suspend_bgio) {
 			Database::Checkout dcoHolder(dbb);
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
+			dbb->dbb_reader_sem.tryEnter(10);
 			continue;
 		}
 
@@ -4086,14 +4060,14 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 				if (bcb->bcb_flags & BCB_cache_writer &&
 					!(bcb->bcb_flags & BCB_writer_active))
 				{
-						ISC_event_post(dbb->dbb_writer_event);
+					dbb_writer_sem.release();
 				}
 #endif
 #ifdef GARBAGE_THREAD
 				if (dbb->dbb_flags & DBB_garbage_collector &&
 					!(dbb->dbb_flags & DBB_gc_active))
 				{
-					ISC_event_post(dbb->dbb_gc_event);
+					dbb->dbb_gc_sem.release();
 				}
 #endif
 			}
@@ -4116,7 +4090,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 		else {
 			bcb->bcb_flags &= ~BCB_reader_active;
 			Database::Checkout dcoHolder(dbb);
-			ISC_event_wait(1, &reader_event, &count, 10 * 1000000);
+			dbb->dbb_reader_sem.tryEnter(10);
 		}
 		bcb = dbb->dbb_bcb;
 	}
@@ -4125,7 +4099,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	Attachment::destroy(attachment);	// no need saving warning error strings here
 	tdbb->setAttachment(NULL);
 	bcb->bcb_flags &= ~BCB_cache_reader;
-	ISC_event_post(reader_event);
+	dbb->dbb_reader_fini.post();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4173,24 +4147,21 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 /* This try block is specifically to protect the LCK_init call: if
    LCK_init fails we won't be able to accomplish anything anyway, so
    return, unlike the other try blocks further down the page. */
-	event_t* writer_event = 0;
+	Semaphore& writer_sem = dbb->dbb_writer_sem;
 	BufferControl* bcb = dbb->dbb_bcb;
 
 	try {
-		writer_event = dbb->dbb_writer_event;
-		ISC_event_init(writer_event, 0, 0);
 		LCK_init(tdbb, LCK_OWNER_attachment);
 		bcb->bcb_flags |= BCB_cache_writer;
 		bcb->bcb_flags &= ~BCB_writer_start;
 
 		/* Notify our creator that we have started */
-		ISC_event_post(dbb->dbb_writer_event_init);
+		dbb->dbb_writer_init.release();
 	}
 	catch (const Firebird::Exception& ex) {
 		Firebird::stuff_exception(status_vector, ex);
 		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
 
-		ISC_event_fini(writer_event);
 		bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
 		return (THREAD_ENTRY_RETURN)(-1);
 	}
@@ -4198,14 +4169,13 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	try {
 		while (bcb->bcb_flags & BCB_cache_writer)
 		{
-			const SLONG count = ISC_event_clear(writer_event);
 			bcb->bcb_flags |= BCB_writer_active;
 			SLONG starting_page = -1;
 
 			if (dbb->dbb_flags & DBB_suspend_bgio) {
 				{ //scope
 					Database::Checkout dcoHolder(dbb);
-					ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
+					writer_sem.tryEnter(10);
 				}
 				bcb = dbb->dbb_bcb;
 				continue;
@@ -4240,14 +4210,14 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				if (bcb->bcb_flags & BCB_cache_reader &&
 					!(bcb->bcb_flags & BCB_reader_active))
 				{
-						ISC_event_post(dbb->dbb_reader_event);
+						dbb->dbb_reader_sem.post();
 				}
 #endif
 #ifdef GARBAGE_THREAD
 				if (dbb->dbb_flags & DBB_garbage_collector &&
 					!(dbb->dbb_flags & DBB_gc_active))
 				{
-						ISC_event_post(dbb->dbb_gc_event);
+						dbb->dbb_gc_sem.release();
 				}
 #endif
 			}
@@ -4276,7 +4246,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			else {
 				bcb->bcb_flags &= ~BCB_writer_active;
 				Database::Checkout dcoHolder(dbb);
-				ISC_event_wait(1, &writer_event, &count, 10 * 1000000);
+				writer_sem.tryEnter(10);
 			}
 			bcb = dbb->dbb_bcb;
 		}
@@ -4286,8 +4256,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		tdbb->setAttachment(NULL);
 		bcb->bcb_flags &= ~BCB_cache_writer;
 		/* Notify the finalization caller that we're finishing. */
-		ISC_event_post(dbb->dbb_writer_event_fini);
-		ISC_event_fini(writer_event);
+		dbb->dbb_writer_fini.release();
 
 	}	// try
 	catch (const Firebird::Exception& ex) {
@@ -4998,7 +4967,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				if (bcb->bcb_flags & BCB_cache_writer &&
 					!(bcb->bcb_flags & BCB_writer_active))
 				{
-					ISC_event_post(dbb->dbb_writer_event);
+					dbb->dbb_writer_sem.release();
 				}
 				if (walk) {
 					if (!--walk)
@@ -5303,7 +5272,6 @@ static SSHORT latch_bdb(
 	else {
 		lwt = FB_NEW(*dbb->dbb_bufferpool) LatchWait;
 		QUE_INIT(lwt->lwt_waiters);
-		ISC_event_init(&lwt->lwt_event, 0, 0);
 	}
 
 	lwt->lwt_flags |= LWT_pending;
@@ -5320,23 +5288,17 @@ static SSHORT latch_bdb(
 		QUE_APPEND(bdb->bdb_waiters, lwt->lwt_waiters);
 	}
 
-	event_t* event = &lwt->lwt_event;
-
 	int timeout_occurred = FALSE;
 /* Loop until the latch is granted or until a timeout occurrs. */
-	for (SLONG count = ISC_event_clear(event);
-		 ((lwt->lwt_flags & LWT_pending) && !timeout_occurred);
-		 count = ISC_event_clear(event))
+	while ((lwt->lwt_flags & LWT_pending) && !timeout_occurred)
 	{
 //		LATCH_MUTEX_RELEASE;
 		Database::Checkout dcoHolder(dbb);
 		if (latch_wait == 1) {
-			timeout_occurred =
-				ISC_event_wait(1, &event, &count, 120 * 1000000);
+			timeout_occurred = !(lwt->lwt_sem.tryEnter(120));
 		}
 		else {
-			timeout_occurred =
-				ISC_event_wait(1, &event, &count, -latch_wait * 1000000);
+			lwt->lwt_sem.enter();
 		}
 //		LATCH_MUTEX_ACQUIRE;
 	}
@@ -5767,7 +5729,7 @@ static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
 		/* Get the cache reader working on our behalf too */
 
 		if (!(dbb->dbb_bcb->bcb_flags & BCB_reader_active)) {
-			ISC_event_post(dbb->dbb_reader_event);
+			dbb->dbb_reader_sem.post();
 		}
 
 		const bool async_status =
@@ -6003,7 +5965,7 @@ static void release_bdb(thread_db* tdbb,
 				++bdb->bdb_use_count;
 				bdb->bdb_exclusive = lwt->lwt_tdbb;
 				lwt->lwt_flags &= ~LWT_pending;
-				ISC_event_post(&lwt->lwt_event);
+				lwt->lwt_sem.release();
 //				LATCH_MUTEX_RELEASE;
 				return;
 
@@ -6013,7 +5975,7 @@ static void release_bdb(thread_db* tdbb,
 					++bdb->bdb_use_count;
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
-					ISC_event_post(&lwt->lwt_event);
+					lwt->lwt_sem.release();
 					granted = true;
 				}
 				break;
@@ -6026,7 +5988,7 @@ static void release_bdb(thread_db* tdbb,
 				{
 					bdb->bdb_io = lwt->lwt_tdbb;
 					lwt->lwt_flags &= ~LWT_pending;
-					ISC_event_post(&lwt->lwt_event);
+					lwt->lwt_sem.release();
 					granted = true;
 				}
 				break;
@@ -6042,7 +6004,7 @@ static void release_bdb(thread_db* tdbb,
 				++bdb->bdb_use_count;
 				SharedLatch* latch = allocSharedLatch(lwt->lwt_tdbb, bdb);
 				lwt->lwt_flags &= ~LWT_pending;
-				ISC_event_post(&lwt->lwt_event);
+				lwt->lwt_sem.release();
 				granted = true;
 				break;
 			}

@@ -54,7 +54,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
-#include "../jrd/isc.h"
 #include "../jrd/drq.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"

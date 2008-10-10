@@ -16,7 +16,7 @@ WHY_Sources = why.cpp
 
 JRD_ClientFiles = alt.cpp db_alias.cpp dsc.cpp \
 		enc.cpp gds.cpp isc.cpp isc_file.cpp isc_ipc.cpp \
-		isc_sync.cpp perf.cpp sdl.cpp status.cpp \
+		perf.cpp sdl.cpp status.cpp \
 		ThreadData.cpp ThreadStart.cpp utl.cpp \
         $(WHY_Sources)
 
@@ -33,7 +33,7 @@ JRD_ServerFiles=  blob_filter.cpp cvt.cpp dpm.epp dyn.epp dyn_def.epp \
 		err.cpp event.cpp evl.cpp exe.cpp ext.cpp \
 		execute_statement.cpp filters.cpp flu.cpp functions.cpp \
 		idx.cpp inf.cpp intl.cpp intl_builtin.cpp IntlManager.cpp \
-		IntlUtil.cpp \
+		IntlUtil.cpp isc_sync.cpp \
 		jrd.cpp Database.cpp lck.cpp \
 		mov.cpp nav.cpp opt.cpp Optimizer.cpp pag.cpp par.cpp \
 		ods.cpp plugin_manager.cpp pwd.cpp PreparedStatement.cpp RandomGenerator.cpp \

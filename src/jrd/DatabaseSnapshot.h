@@ -48,7 +48,7 @@ class DatabaseSnapshot
 			size_t used;
 			size_t allocated;
 #ifndef WIN_NT
-			MTX_T mutex;
+			struct mtx mutex;
 #endif
 		};
 
@@ -75,7 +75,7 @@ class DatabaseSnapshot
 
 		SH_MEM_T handle;
 #ifdef WIN_NT
-		MTX_T mutex;
+		struct mtx mutex;
 #endif
 		Header* base;
 	};

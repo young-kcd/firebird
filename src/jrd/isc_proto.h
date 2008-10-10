@@ -24,7 +24,6 @@
 #ifndef JRD_ISC_PROTO_H
 #define JRD_ISC_PROTO_H
 
-#include "../jrd/isc.h"
 #include "../common/classes/fb_string.h"
 
 bool	ISC_check_process_existence(SLONG);

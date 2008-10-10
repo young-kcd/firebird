@@ -144,6 +144,12 @@ static size_t getpagesize(void)
 }
 #endif
 
+#ifdef DEBUG_IPC
+#define IPC_TRACE(x)	{ /*time_t t; time(&t); printf("%s", ctime(&t) ); printf x; fflush (stdout);*/ gds__log x; }
+#else
+#define IPC_TRACE(x)
+#endif
+
 
 /* Windows NT */
 
@@ -159,13 +165,532 @@ using namespace Jrd;
 using namespace Firebird;
 
 static void		error(ISC_STATUS*, const TEXT*, ISC_STATUS);
-static bool		event_blocked(USHORT count, const event_t* const* events, const SLONG* values);
+static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
+
 static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
-static SLONG	find_key(ISC_STATUS *, TEXT *);
 static void		longjmp_sig_handler(int);
+
+#ifndef HAVE_MMAP
+static SLONG	find_key(ISC_STATUS *, TEXT *);
 #endif
+
+#ifdef HAVE_MMAP
+
+namespace {
+
+	// File lock holder 
+	class FileLock
+	{
+	public:
+		enum LockLevel {NONE, SHARED, EXCL};
+		enum DtorMode {CLOSED, OPENED, LOCKED};
+
+		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED) 
+			: status(pStatus), level(NONE), fd(pFd), dtorMode(pMode) { }
+
+		~FileLock() 
+		{
+			switch (dtorMode)
+			{
+			case LOCKED:
+				break;
+			case OPENED:
+				unlock();
+				break;
+			case CLOSED:
+				unlock();
+				close(fd);
+				break;
+			}
+		}
+
+	// unlocking can only put error into log file - we can't throw in dtors
+		void unlock() 
+		{
+			if (level == NONE)
+			{
+				return;
+			}
+			
+#ifdef HAVE_FLOCK
+			if (flock(fd, LOCK_UN))
+#else
+			struct flock lock;
+			lock.l_type = F_UNLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			if (fcntl(fd, F_SETLK, &lock) == -1)
+#endif
+			{
+				ISC_STATUS_ARRAY local;
+				error(local, NAME, errno);
+				iscLogStatus("Unlock error", local);
+			}
+			level = NONE;
+		}
+
+	// Call it to keep file locked & opened after dtor is called
+		void setDtorMode(DtorMode mode) throw()
+		{
+			dtorMode = mode;
+		}
+
+	// Call when using already locked file in ctor
+		void setLevel(LockLevel l)
+		{
+			level = l;
+		}
+
+	// All lock methods return true on success, false on error
+		bool exclusive()
+		{
+			return doLock(false, true);
+		}
+
+		bool tryExclusive()
+		{
+			return doLock(false, false);
+		}
+
+		bool shared()
+		{
+			return doLock(true, true);
+		}
+
+		bool tryShared()
+		{
+			return doLock(true, false);
+		}
+
+	private:
+		ISC_STATUS* const status;
+		LockLevel level;
+		int fd;
+		DtorMode dtorMode;
+		static const char* NAME;
+
+	private:
+		bool doLock(bool shared, bool wait)
+		{
+			LockLevel newLevel = shared ? SHARED : EXCL;
+			if (newLevel == level)
+			{
+				return true;
+			}
+			if (level != NONE)
+			{
+				unlock();
+			}
+#ifdef HAVE_FLOCK
+			if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB))) 
+#else //use FCNTL
+			struct flock lock;
+			lock.l_type = shared ? F_RDLCK : F_WRLCK;
+			lock.l_whence = 0;
+			lock.l_start = 0;
+			lock.l_len = 0;
+			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1) 
+#endif
+			{
+				
+				error(status, NAME, errno);
+				return false;
+			}
+			level = newLevel;
+			return true;
+		}
+	};
+
+	const char* FileLock::NAME = 
+#ifdef HAVE_FLOCK
+		"flock";
+#else //use FCNTL
+		"fcntl";
+#endif
+}
+
+#ifdef USE_SYS5SEMAPHORE
+
+static void		alarm_handler(void* arg);
+static SLONG	create_semaphores(ISC_STATUS *, SLONG, int);
+
+namespace {
+
+	int fdSem = -1;
+	int sharedCount = 0;
+	int fd_init = -1;
+
+	class SemTable
+	{
+	public:
+		// this struct is mapped into shared file
+		const static int N_FILES = 8;
+		const static int N_SETS = 256;
+#ifdef DEV_BUILD
+		const static int SEM_PER_SET = 4;	// force multiple sets allocation
+#else
+		const static int SEM_PER_SET = 31;	// hard limit for some old systems, might set to 32 
+#endif
+		const static unsigned char CURRENT_VERSION = 1;
+		unsigned char version;
+
+	private:
+		int lastSet;
+
+		struct {
+			char name[MAXPATHLEN];
+		} filesTable[N_FILES];
+
+		struct {
+			key_t semKey;
+			int fileNum;
+			SLONG mask;
+
+			int get(int fNum)
+			{
+				if (fileNum == fNum && mask != 0)
+				{
+					for (int bit = 0; bit < SEM_PER_SET; ++bit)
+					{
+						if (mask & (1 << bit))
+						{
+							mask &= ~(1 << bit);
+							return bit;
+						}
+					}
+					// bad bits in mask ?
+					mask = 0;
+				}
+				return -1;
+			}
+
+			int create(int fNum)
+			{
+				fileNum = fNum;
+				mask = 1 << SEM_PER_SET;
+				--mask;
+				mask &= ~1;
+				return 0;
+			}
+
+			void put(int bit)
+			{
+				// fb_assert(!(mask & (1 << bit)));
+				mask |= (1 << bit);
+			}
+		} set[N_SETS];
+	
+	public:
+		void cleanup(int fNum, bool release);
+
+		key_t getKey(int semSet)
+		{
+			fb_assert(semSet >= 0 && semSet < lastSet);
+
+			return set[semSet].semKey;
+		}
+
+		void init()
+		{
+			if (sharedCount)
+			{
+				return;
+			}
+			ftruncate(fdSem, sizeof(*this));
+			for (int i = 0; i < N_SETS; ++i) 
+			{
+				if (set[i].fileNum > 0)
+				{
+					// may be some old data about really active semaphore sets?
+					if (version == CURRENT_VERSION)
+					{
+						int semId = semget(set[i].semKey, SEM_PER_SET, PRIV);
+						if (semId > 0)
+						{
+							semctl(semId, 0, IPC_RMID);
+						}
+					}
+					set[i].fileNum = 0;
+				}
+			}
+
+			for (int i = 0; i < N_FILES; ++i)
+			{
+				filesTable[i].name[0] = 0;
+			}
+
+			version = CURRENT_VERSION;
+			lastSet = 0;
+		}
+
+		bool get(int fileNum, Sys5Semaphore* sem)
+		{
+			// try to locate existing set
+			int n;
+			for(n = 0; n < lastSet; ++n)
+			{
+				int semNum = set[n].get(fileNum);
+				if (semNum >= 0)
+				{
+					sem->semSet = n;
+					sem->semNum = semNum;
+					return true;
+				}
+			}
+
+			// create new set
+			for(n = 0; n < lastSet; ++n)
+			{
+				if (set[n].fileNum <= 0)
+				{
+					break;
+				}
+			}
+			if (n >= N_SETS)
+			{
+				return false;
+			}
+			if (n >= lastSet)
+			{
+				lastSet = n + 1;
+			}
+
+			set[n].semKey = ftok(filesTable[fileNum - 1].name, n);
+			sem->semSet = n;
+			sem->semNum = set[n].create(fileNum);
+			return true;
+		}
+
+		void put(Sys5Semaphore* sem)
+		{
+			fb_assert(sem->semSet >= 0 && sem->semSet < N_SETS);
+
+			set[sem->semSet].put(sem->semNum);
+		}
+
+		int findFileByName(const PathName& name)
+		{
+			// Get a file ID in filesTable.
+			for (int fileId = 0; fileId < N_FILES; ++fileId)
+			{
+				if (name == filesTable[fileId].name)
+				{
+					return fileId + 1;
+				}
+			}
+
+			// not found
+			return 0;
+		}
+
+		int addFileByName(const PathName& name)
+		{
+			int id = findFileByName(name);
+			if (id > 0)
+			{
+				return id;
+			}
+
+			// Get a file ID in filesTable.
+			for (int fileId = 0; fileId < SemTable::N_FILES; ++fileId)
+			{
+				if (filesTable[fileId].name[0] == 0)
+				{
+					name.copyTo(filesTable[fileId].name, sizeof(filesTable[fileId].name));
+					return fileId + 1;
+				}
+			}
+
+			// not found
+			fb_assert(false);
+			return 0;
+		}
+	};
+
+	SemTable *semTable = 0;
+
+	class SharedFile
+	{
+	public:
+		SharedFile(char* pName, UCHAR* address, int length) 
+			: fileNum(semTable->addFileByName(pName)), from(address), to(address + length)
+		{ }
+		SharedFile() : fileNum(0), from(0), to(0)
+		{ }
+
+		int getNum() { return fileNum; }
+
+		static SharedFile* locate(void* s)
+		{
+			int n = getByAddress((UCHAR*)s);
+			return n >= 0 ? &sharedFiles[n] : 0;
+		}
+
+		static void push(const SharedFile& sf)
+		{
+			MutexLockGuard guard(mutex);
+			IPC_TRACE(("+add SF with %p %p\n", sf.from, sf.to));
+			sharedFiles.push(sf);
+		}
+
+		static void pop()
+		{
+			MutexLockGuard guard(mutex);
+			SharedFile sf = sharedFiles.pop();
+			IPC_TRACE(("-pop SF with %p %p\n", sf.from, sf.to));
+		}
+
+		static void remove(void* s)
+		{
+			MutexLockGuard guard(mutex);
+			int n = getByAddress((UCHAR*)s);
+			if (n >= 0) {
+				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n].from, sharedFiles[n].to));
+				sharedFiles.remove(n);
+			}
+			else {
+				IPC_TRACE(("-rem SF Failedp\n"));
+			}
+		}
+
+		static void remap(UCHAR* from, UCHAR* to, int newLength)
+		{
+			MutexLockGuard guard(mutex);
+			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
+			{
+				if (from == sharedFiles[n].from)
+				{
+					sharedFiles[n].from = to;
+					sharedFiles[n].to = to + newLength;
+					return;
+				}
+			}
+		}
+
+		typedef Vector<SharedFile, SemTable::N_FILES> Storage;
+
+	private:
+		int fileNum;
+		UCHAR* from;
+		UCHAR* to;
+		static Storage sharedFiles;
+		static GlobalPtr<Mutex> mutex;
+
+		static int getByAddress(UCHAR* s)
+		{
+			MutexLockGuard guard(mutex);
+			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
+			{
+				if (s >= sharedFiles[n].from && s < sharedFiles[n].to)
+				{
+					return n;
+				}
+			}
+
+			return -1;
+		}
+	};
+	SharedFile::Storage SharedFile::sharedFiles;
+	GlobalPtr<Mutex> SharedFile::mutex;
+
+	int idCache[SemTable::N_SETS];
+	GlobalPtr<Mutex> idCacheMutex;
+
+	void initCache()
+	{
+		MutexLockGuard guard(idCacheMutex);
+		memset(idCache, 0xff, sizeof idCache);
+	}
+
+	void SemTable::cleanup(int fNum, bool release)
+	{
+		fb_assert(fNum > 0 && fNum <= N_FILES);
+
+		filesTable[fNum - 1].name[0] = 0;
+
+		MutexLockGuard guard(idCacheMutex);
+		for(int n = 0; n < lastSet; ++n)
+		{
+			if (set[n].fileNum == fNum)
+			{
+				if (release)
+				{
+					Sys5Semaphore sem;
+					sem.semSet = n;
+					int id = sem.getId();
+					if (id >= 0)
+					{
+						semctl(id, 0, IPC_RMID);
+					}
+				}
+				idCache[n] = -1;
+			}
+		}
+	}
+
+	bool getSem5(Sys5Semaphore* sem)
+	{
+		ISC_STATUS_ARRAY status;
+
+		// Lock init file.
+		FileLock initLock(status, fd_init, FileLock::OPENED);
+		if (!initLock.exclusive())
+			return false;
+
+		// Find out what file does it belong to.
+		SharedFile* sf = SharedFile::locate(sem);
+		if (!sf)
+		{
+			return false;
+		}
+
+		return semTable->get(sf->getNum(), sem);
+	}
+
+	void freeSem5(Sys5Semaphore* sem) 
+	{
+		ISC_STATUS_ARRAY status;
+
+		// Lock init file.
+		FileLock initLock(status, fd_init, FileLock::OPENED);
+		if (!initLock.exclusive())
+		{
+			iscLogStatus("freeSem5 failed to lock init file", status);
+			return;
+		}
+
+		semTable->put(sem);
+	}
+}
+
+int Sys5Semaphore::getId()
+{
+	MutexLockGuard guard(idCacheMutex);
+	fb_assert(semSet >= 0 && semSet < SemTable::N_SETS);
+	int id = idCache[semSet];
+	if (id < 0)
+	{
+		ISC_STATUS_ARRAY status;
+		id = create_semaphores(status, semTable->getKey(semSet), SemTable::SEM_PER_SET);
+		if (id >= 0)
+		{
+			idCache[semSet] = id;
+		}
+		else
+		{
+			iscLogStatus("create_semaphores failed:", status);
+		}
+	}
+	return id;
+}
+#endif //USE_SYS5SEMAPHORE
+
+#endif //HAVE_MMAP
+
+#endif //UNIX
 
 #if defined(WIN_NT)
 static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
@@ -176,28 +701,26 @@ static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 #endif
 
 
-#ifdef SOLARIS_MT
-static bool event_blocked(USHORT count, const event_t* const* events, const SLONG* values)
+static bool event_blocked(const event_t* event, const SLONG value)
 {
 /**************************************
  *
- *	I S C _ e v e n t _ b l o c k e d	( S O L A R I S _ M T )
+ *	e v e n t _ b l o c k e d
  *
  **************************************
  *
  * Functional description
- *	If a wait would block, return TRUE.
+ *	If a wait would block, return true.
  *
  **************************************/
 
-	for (; count > 0; --count, ++events, ++values)
-		if ((*events)->event_count >= *values) {
+	if (event->event_count >= value) {
 #ifdef DEBUG_ISC_SYNC
-			printf("event_blocked: FALSE (eg something to report)\n");
-			fflush(stdout);
+		printf("event_blocked: FALSE (eg something to report)\n");
+		fflush(stdout);
 #endif
-			return false;
-		}
+		return false;
+	}
 
 #ifdef DEBUG_ISC_SYNC
 	printf("event_blocked: TRUE (eg nothing happened yet)\n");
@@ -206,6 +729,7 @@ static bool event_blocked(USHORT count, const event_t* const* events, const SLON
 	return true;
 }
 
+#ifdef SOLARIS_MT
 
 SLONG ISC_event_clear(event_t* event)
 {
@@ -245,14 +769,12 @@ void ISC_event_fini(event_t* event)
  **************************************/
 
 /* Inter-Process event's are destroyed only */
-	if (event->event_semid == -1) {
-		mutex_destroy(event->event_mutex);
-		cond_destroy(event->event_semnum);
-	}
+	mutex_destroy(event->event_mutex);
+	cond_destroy(event->event_cond);
 }
 
 
-int ISC_event_init(event_t* event, int semid, int semnum)
+int ISC_event_init(event_t* event)
 {
 /**************************************
  *
@@ -264,25 +786,12 @@ int ISC_event_init(event_t* event, int semid, int semnum)
  *	Prepare an event object for use.
  *
  **************************************/
-	//SLONG key, n;
-	//union semun arg;
-
 	event->event_count = 0;
 
-	if (!semnum) {
-		/* Prepare an Inter-Thread event block */
-		event->event_semid = -1;
-		mutex_init(event->event_mutex, USYNC_THREAD, NULL);
-		cond_init(event->event_semnum, USYNC_THREAD, NULL);
-	}
-	else {
-		/* Prepare an Inter-Process event block */
-		event->event_semid = semid;
-		mutex_init(event->event_mutex, USYNC_PROCESS, NULL);
-		cond_init(event->event_semnum, USYNC_PROCESS, NULL);
-	}
+	mutex_init(event->event_mutex, USYNC_PROCESS, NULL);
+	cond_init(event->cond, USYNC_PROCESS, NULL);
 
-	return TRUE;
+	return FB_SUCCESS;
 }
 
 
@@ -303,17 +812,18 @@ int ISC_event_post(event_t* event)
 
 	mutex_lock(event->event_mutex);
 	++event->event_count;
-	const int ret = cond_broadcast(event->event_semnum);
+	const int ret = cond_broadcast(event->cond);
 	mutex_unlock(event->event_mutex);
-	if (ret)
+	if (ret) {
 		gds__log("ISC_event_post: cond_broadcast failed with errno = %d", ret);
-	return ret;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
 }
 
 
-int ISC_event_wait(SSHORT	count,
-				   event_t* const*	events,
-				   const SLONG*	values,
+int ISC_event_wait(event_t* 	event,
+				   const SLONG	value,
 				   const SLONG	micro_seconds)
 {
 /**************************************
@@ -330,15 +840,9 @@ int ISC_event_wait(SSHORT	count,
  *
  **************************************/
 
-/* While the API for ISC_event_wait allows for a list of events
-   we never actually make use of it.  This implementation wont
-   support it anyway as Solaris doesn't provide a "wait for one
-   of a series of conditions" function */
-	fb_assert(count == 1);
-
 /* If we're not blocked, the rest is a gross waste of time */
 
-	if (!event_blocked(count, events, values))
+	if (!event_blocked(event, value))
 		return FB_SUCCESS;
 
 /* Set up timers if a timeout period was specified. */
@@ -351,9 +855,9 @@ int ISC_event_wait(SSHORT	count,
 	}
 
 	int ret = FB_SUCCESS;
-	mutex_lock((*events)->event_mutex);
+	mutex_lock(event->event_mutex);
 	for (;;) {
-		if (!event_blocked(count, events, values)) {
+		if (!event_blocked(event, value)) {
 			ret = FB_SUCCESS;
 			break;
 		}
@@ -363,59 +867,376 @@ int ISC_event_wait(SSHORT	count,
 		   call returns. */
 
 		if (micro_seconds > 0)
-			ret =
-				cond_timedwait((*events)->event_semnum,
-							   (*events)->event_mutex, &timer);
+			ret = cond_timedwait(event->event_cond, event->event_mutex, &timer);
 		else
-			ret = cond_wait((*events)->event_semnum, (*events)->event_mutex);
+			ret = cond_wait(event->event_cond, event->event_mutex);
 		if (micro_seconds > 0 && (ret == ETIME)) {
 
 			/* The timer expired - see if the event occured and return
 			   FB_SUCCESS or FB_FAILURE accordingly. */
 
-			if (event_blocked(count, events, values))
-				ret = FB_FAILURE;
-			else
-				ret = FB_SUCCESS;
+			ret = event_blocked(event, value) ? FB_FAILURE : FB_SUCCESS;
 			break;
 		}
 	}
-	mutex_unlock((*events)->event_mutex);
+	mutex_unlock(event->event_mutex);
 	return ret;
 }
 #endif /* SOLARIS_MT */
 
 
 #ifdef USE_POSIX_THREADS
-static bool event_blocked(USHORT count, const event_t* const* events, const SLONG* values)
+
+#ifdef USE_SYS5SEMAPHORE
+
+namespace {
+
+GlobalPtr<Mutex> timerAccess;
+GlobalPtr<Semaphore> timerWakeup, timerFini;
+
+void stopTimers(void*);
+bool stopThread = false;
+
+struct TimerEntry
+{
+	SINT64 fireTime;
+	int semId;
+	USHORT semNum;
+
+	static const SINT64& generate(const void* sender, const TimerEntry& Item) { return Item.fireTime; }
+	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
+
+	static void init()
+	{
+		int rc = gds__thread_start(timeThread, 0, 0, 0, 0);
+		if (rc != 0)
+		{
+			fatal_exception::raiseFmt("Error starting timer thread");
+		}
+		gds__register_cleanup(stopTimers, 0);
+	}
+
+	static void cleanup()
+	{
+		stopThread = true;
+		timerWakeup->release();
+		timerFini->enter();
+	}
+};
+
+typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, SINT64, TimerEntry> TimerQueue;
+GlobalPtr<TimerQueue> timerQueue;
+
+InitMutex<TimerEntry> timerHolder;
+
+SINT64 curTime()
+{
+	struct timeval cur_time;
+	struct timezone tzUnused;
+
+	if (gettimeofday(&cur_time, &tzUnused) != 0)
+	{
+		system_call_failed::raise("gettimeofday");
+	}
+
+	SINT64 timeout = ((SINT64)cur_time.tv_sec) * 1000000 + cur_time.tv_usec;
+	return timeout;
+}
+
+SINT64 addTimer(Sys5Semaphore* sem, int microSeconds)
+{
+	timerHolder.init();
+
+	TimerEntry newTimer;
+	newTimer.fireTime = curTime() + microSeconds;
+	newTimer.semId = sem->getId();
+	newTimer.semNum = sem->semNum;
+
+	MutexLockGuard guard(timerAccess);
+
+	timerQueue->add(newTimer);
+	timerWakeup->release();
+
+	return newTimer.fireTime;
+}
+
+void delTimer(Sys5Semaphore* sem)
+{
+	int id = sem->getId();
+
+	MutexLockGuard guard(timerAccess);
+
+	for (unsigned int i=0; i < timerQueue->getCount(); ++i)
+	{
+		TimerEntry& e(timerQueue->operator[](i));
+		if (e.semNum == sem->semNum && e.semId == id)
+		{
+			timerQueue->remove(i);
+			return;
+		}
+	}
+}
+
+void stopTimers(void*)
+{
+	timerHolder.cleanup();
+}
+
+THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
+{
+	while(!stopThread)
+	{
+		int microSeconds = 0;
+		{
+			MutexLockGuard guard(timerAccess);
+
+			SINT64 cur = curTime();
+			while (timerQueue->getCount() > 0)
+			{
+				TimerEntry& e(timerQueue->operator[](0));
+				if (e.fireTime <= cur)
+				{
+					for (;;) 
+					{
+						union semun arg;
+						arg.val = 0;
+						int ret = semctl(e.semId, e.semNum, SETVAL, arg);
+						if (ret != -1)
+							break;
+						if (!SYSCALL_INTERRUPTED(errno)) 
+						{
+							break;
+						}
+					}
+					timerQueue->remove((size_t)0);
+				}
+				else 
+				{
+					microSeconds = e.fireTime - cur;
+					break;
+				}
+			}
+		}
+
+		if (microSeconds)
+		{
+			timerWakeup->tryEnter(0, microSeconds / 1000);
+		}
+		else
+		{
+			timerWakeup->enter();
+		}
+	}
+
+	timerFini->release();
+}
+
+}
+
+SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
  *
- *	I S C _ e v e n t _ b l o c k e d	( P O S I X _ T H R E A D S )
+ *	I S C _ e v e n t _ c l e a r	( S Y S V )
  *
  **************************************
  *
  * Functional description
- *	If a wait would block, return TRUE.
+ *	Clear an event preparatory to waiting on it.  The order of
+ *	battle for event synchronization is:
+ *
+ *	    1.  Clear event.
+ *	    2.  Test data structure for event already completed
+ *	    3.  Wait on event.timerQueue[0].
+ *
+ **************************************/
+	union semun arg;
+
+	arg.val = 1;
+	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
+	{
+		iscLogStatus("event_clear()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+	}
+
+	return (event->event_count + 1);
+}
+
+
+void ISC_event_fini(event_t* event)
+{
+/**************************************
+ *
+ *	I S C _ e v e n t _ f i n i	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Discard an event object.
+ *
+ **************************************/
+	IPC_TRACE(("ISC_event_fini set=%d num=%d\n", event->semSet, event->semNum));
+	freeSem5(event);
+}
+
+
+int ISC_event_init(event_t* event)
+{
+/**************************************
+ *
+ *	I S C _ e v e n t _ i n i t	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Prepare an event object for use.
  *
  **************************************/
 
-	for (; count > 0; --count, ++events, ++values)
-		if ((*events)->event_count >= *values) {
-#ifdef DEBUG_ISC_SYNC
-			printf("event_blocked: FALSE (eg something to report)\n");
-			fflush(stdout);
-#endif
-			return false;
-		}
+	event->event_count = 0;
+	event->pid = getpid();
 
-#ifdef DEBUG_ISC_SYNC
-	printf("event_blocked: TRUE (eg nothing happened yet)\n");
-	fflush(stdout);
-#endif
-	return true;
+	if (!getSem5(event))
+	{
+		IPC_TRACE(("ISC_event_init failed get sem %p\n", event));
+		return FB_FAILURE;
+	}
+
+	IPC_TRACE(("ISC_event_init set=%d num=%d\n", event->semSet, event->semNum));
+
+	union semun arg;
+	arg.val = 0;
+	if (semctl(event->getId(), event->semNum, SETVAL, arg) < 0)
+	{
+		iscLogStatus("event_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		return FB_FAILURE;
+	}
+
+	return FB_SUCCESS;
 }
 
+
+int ISC_event_post(event_t* event)
+{
+/**************************************
+ *
+ *	I S C _ e v e n t _ p o s t	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post an event to wake somebody else up.
+ *
+ **************************************/
+	union semun arg;
+
+	++event->event_count;
+
+	for (;;) {
+		arg.val = 0;
+		int ret = semctl(event->getId(), event->semNum, SETVAL, arg);
+		if (ret != -1)
+			break;
+		if (!SYSCALL_INTERRUPTED(errno)) {
+			gds__log("ISC_event_post: semctl failed with errno = %d", errno);
+			return FB_FAILURE;
+		}
+	}
+
+	return FB_SUCCESS;
+}
+
+
+int ISC_event_wait(event_t*	event,
+				   SLONG	value,
+				   const SLONG	micro_seconds)
+{
+/**************************************
+ *
+ *	I S C _ e v e n t _ w a i t	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wait on an event.  If timeout limit specified, return
+ *	anyway after the timeout even if no event has
+ *	happened.  If returning due to timeout, return
+ *	FB_FAILURE else return FB_SUCCESS.
+ *
+ **************************************/
+	sigset_t mask, oldmask;
+
+/* If we're not blocked, the rest is a gross waste of time */
+	if (!event_blocked(event, value))
+		return FB_SUCCESS;
+
+/* Set up timers if a timeout period was specified. */
+
+	struct itimerval user_timer;
+	struct sigaction user_handler;
+	struct timeval cur_time;
+	struct timezone tzUnused;
+	SINT64 timeout = 0;
+	if (micro_seconds > 0) 
+	{
+		timeout = addTimer(event, micro_seconds);
+	}
+
+/* Go into wait loop */
+
+	int ret = FB_SUCCESS;
+	for (;;) 
+	{
+		if (!event_blocked(event, value))
+			break;
+
+		struct sembuf sb;
+		sb.sem_op = 0;
+		sb.sem_flg = 0;
+		sb.sem_num = event->semNum;
+
+		int rc = semop(event->getId(), &sb, 1);
+		if (rc == -1 && !SYSCALL_INTERRUPTED(errno))
+		{
+			gds__log("ISC_event_wait: semop failed with errno = %d", errno);
+		}
+
+		if (micro_seconds > 0) 
+		{
+			// distinguish between timeout and actually happened event
+			if (! event_blocked(event, value))
+				break;
+
+			// had timeout expired?
+			if (curTime() >= timeout)	// really expired
+			{
+				ret = FB_FAILURE;
+				break;
+			}
+		}
+	}
+
+/* Cancel the handler.  We only get here if a timeout was specified. */
+	if (micro_seconds > 0) 
+	{
+		delTimer(event);
+	}
+
+	return ret;
+}
+
+#else //not USE_SYS5SEMAPHORE
+
+namespace {
+bool isPthreadError(int rc, const char* function)
+{
+	if (rc == 0)
+		return false;
+	iscLogStatus("Pthread Error", (Arg::Gds(isc_sys_request) << Arg::Str(function) << Arg::Unix(rc)).value());
+	return true;
+}
+}
+#define PTHREAD_ERROR(x) if (isPthreadError((x), #x)) return FB_FAILURE
+#define LOG_PTHREAD_ERROR(x) isPthreadError((x), #x)
 
 SLONG ISC_event_clear(event_t* event)
 {
@@ -434,9 +1255,9 @@ SLONG ISC_event_clear(event_t* event)
  *	    3.  Wait on event.
  *
  **************************************/
-	pthread_mutex_lock(event->event_mutex);
+	LOG_PTHREAD_ERROR(pthread_mutex_lock(event->event_mutex));
 	const SLONG ret = event->event_count + 1;
-	pthread_mutex_unlock(event->event_mutex);
+	LOG_PTHREAD_ERROR(pthread_mutex_unlock(event->event_mutex));
 	return ret;
 }
 
@@ -454,15 +1275,15 @@ void ISC_event_fini(event_t* event)
  *
  **************************************/
 
-/* Inter-Thread event's are destroyed only */
-	if (event->event_semid == -1) {
-		pthread_mutex_destroy(event->event_mutex);
-		pthread_cond_destroy(event->event_semnum);
+	if (event->pid == getpid())
+	{
+		LOG_PTHREAD_ERROR(pthread_mutex_destroy(event->event_mutex));
+		LOG_PTHREAD_ERROR(pthread_cond_destroy(event->event_cond));
 	}
 }
 
 
-int ISC_event_init(event_t* event, int semid, int semnum)
+int ISC_event_init(event_t* event)
 {
 /**************************************
  *
@@ -476,43 +1297,24 @@ int ISC_event_init(event_t* event, int semid, int semnum)
  **************************************/
 	event->event_count = 0;
 
-	if (!semnum) {
-		/* Prepare an Inter-Thread event block */
-		event->event_semid = -1;
+	/* Prepare an Inter-Process event block */
+	pthread_mutexattr_t mattr;
+	pthread_condattr_t cattr;
 
-		/* Default attribute objects initialize sync. primitives
-		   to be used to sync thread within one process only.
-		 */
-#ifdef HP10
-		pthread_mutex_init(event->event_mutex, pthread_mutexattr_default);
-		pthread_cond_init(event->event_semnum, pthread_condattr_default);
-#else
-		pthread_mutex_init(event->event_mutex, NULL);
-		pthread_cond_init(event->event_semnum, NULL);
-#endif /* HP10 */
-	}
-	else {
-		/* Prepare an Inter-Process event block */
-		pthread_mutexattr_t mattr;
-		pthread_condattr_t cattr;
-
-		event->event_semid = semid;
-
-		pthread_mutexattr_init(&mattr);
-		pthread_condattr_init(&cattr);
+	PTHREAD_ERROR(pthread_mutexattr_init(&mattr));
+	PTHREAD_ERROR(pthread_condattr_init(&cattr));
 #ifdef PTHREAD_PROCESS_SHARED
-		pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED);
-		pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED);
+	PTHREAD_ERROR(pthread_mutexattr_setpshared(&mattr, PTHREAD_PROCESS_SHARED));
+	PTHREAD_ERROR(pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_SHARED));
 #else
 #error Your system must support PTHREAD_PROCESS_SHARED to use firebird.
 #endif
-		pthread_mutex_init(event->event_mutex, &mattr);
-		pthread_cond_init(event->event_semnum, &cattr);
-		pthread_mutexattr_destroy(&mattr);
-		pthread_condattr_destroy(&cattr);
-	}
+	PTHREAD_ERROR(pthread_mutex_init(event->event_mutex, &mattr));
+	PTHREAD_ERROR(pthread_cond_init(event->event_cond, &cattr));
+	PTHREAD_ERROR(pthread_mutexattr_destroy(&mattr));
+	PTHREAD_ERROR(pthread_condattr_destroy(&cattr));
 
-	return TRUE;
+	return FB_SUCCESS;
 }
 
 
@@ -528,36 +1330,31 @@ int ISC_event_post(event_t* event)
  *	Post an event to wake somebody else up.
  *
  **************************************/
-	pthread_mutex_lock(event->event_mutex);
+	PTHREAD_ERROR(pthread_mutex_lock(event->event_mutex));
 	++event->event_count;
-	const int ret = pthread_cond_broadcast(event->event_semnum);
-	pthread_mutex_unlock(event->event_mutex);
+	const int ret = pthread_cond_broadcast(event->event_cond);
+	PTHREAD_ERROR(pthread_mutex_unlock(event->event_mutex));
 	if (ret)
 #ifdef HP10
 
 	{
 		fb_assert(ret == -1);
-		gds__log
-			("ISC_event_post: pthread_cond_broadcast failed with errno = %d",
-			 errno);
-		return errno;
+		gds__log ("ISC_event_post: pthread_cond_broadcast failed with errno = %d", errno);
+		return FB_FAILURE;
 	}
-	return 0;
-
 #else
-
-		gds__log
-			("ISC_event_post: pthread_cond_broadcast failed with errno = %d",
-			 ret);
-	return ret;
-
+	{
+		gds__log ("ISC_event_post: pthread_cond_broadcast failed with errno = %d", ret);
+		return FB_FAILURE;
+	}
 #endif /* HP10 */
+
+	return FB_SUCCESS;
 }
 
 
-int ISC_event_wait(SSHORT count,
-				   event_t* const* events,
-				   const SLONG* values,
+int ISC_event_wait(event_t* event,
+				   const SLONG value,
 				   const SLONG micro_seconds)
 {
 /**************************************
@@ -574,15 +1371,9 @@ int ISC_event_wait(SSHORT count,
  *
  **************************************/
 
-/* While the API for ISC_event_wait allows for a list of events
-   we never actually make use of it.  This implementation wont
-   support it anyway as Solaris doesn't provide a "wait for one
-   of a series of conditions" function */
-	fb_assert(count == 1);
-
 /* If we're not blocked, the rest is a gross waste of time */
 
-	if (!event_blocked(count, events, values))
+	if (!event_blocked(event, value))
 		return FB_SUCCESS;
 
 /* Set up timers if a timeout period was specified. */
@@ -595,9 +1386,9 @@ int ISC_event_wait(SSHORT count,
 	}
 
 	int ret = FB_SUCCESS;
-	pthread_mutex_lock((*events)->event_mutex);
+	pthread_mutex_lock(event->event_mutex);
 	for (;;) {
-		if (!event_blocked(count, events, values)) {
+		if (!event_blocked(event, value)) {
 			ret = FB_SUCCESS;
 			break;
 		}
@@ -608,9 +1399,7 @@ int ISC_event_wait(SSHORT count,
 		 */
 		if (micro_seconds > 0)
 		{
-			ret =
-				pthread_cond_timedwait((*events)->event_semnum,
-									   (*events)->event_mutex, &timer);
+			ret = pthread_cond_timedwait(event->event_cond, event->event_mutex, &timer);
 
 #ifdef HP10
 			if ((ret == -1) && (errno == EAGAIN))
@@ -626,7 +1415,7 @@ int ISC_event_wait(SSHORT count,
 				/* The timer expired - see if the event occured and return
 				   FB_SUCCESS or FB_FAILURE accordingly. */
 
-				if (event_blocked(count, events, values))
+				if (event_blocked(event, value))
 					ret = FB_FAILURE;
 				else
 					ret = FB_SUCCESS;
@@ -634,41 +1423,17 @@ int ISC_event_wait(SSHORT count,
 			}
 		}
 		else
-			ret =
-				pthread_cond_wait((*events)->event_semnum,
-								  (*events)->event_mutex);
+			ret = pthread_cond_wait(event->event_cond, event->event_mutex);
 	}
-	pthread_mutex_unlock((*events)->event_mutex);
+	pthread_mutex_unlock(event->event_mutex);
 	return ret;
 }
-#endif /* USE_POSIX_THREADS */
+
+#endif //USE_SYS5SEMAPHORE
+#endif //USE_POSIX_THREADS
 
 
 #ifdef WIN_NT
-static bool event_blocked(USHORT count, const event_t* const* events, const SLONG* values)
-{
-/**************************************
- *
- *	I S C _ e v e n t _ b l o c k e d	( W I N _ N T )
- *
- **************************************
- *
- * Functional description
- *	If a wait would block, return TRUE.
- *
- **************************************/
-
-	for (; count > 0; --count, ++events, ++values)
-	{
-		const event_t* pEvent = *events;
-		if (pEvent->event_count >= *values) {
-			return false;
-		}
-	}
-	return true;
-}
-
-
 SLONG ISC_event_clear(event_t* event)
 {
 /**************************************
@@ -713,7 +1478,7 @@ void ISC_event_fini(event_t* event)
 }
 
 
-int ISC_event_init(event_t* event, int unused, int type)
+int ISC_event_init(event_t* event)
 {
 /**************************************
  *
@@ -726,17 +1491,20 @@ int ISC_event_init(event_t* event, int unused, int type)
  *
  **************************************/
 
-	static int idCounter = 0;
+#ifdef SUPERSERVER
+	event->event_id = 0;
+#else
+	static int idCounter = 0;		// Should it be AtomicCounter? AP-2008
 
-	const int id = type ? ++idCounter : 0;
+	event->event_id = ++idCounter;
+#endif
 
 	event->event_pid = process_id = getpid();
 	event->event_count = 0;
-	event->event_id = id;
 
-	event->event_handle = ISC_make_signal(true, true, process_id, id);
+	event->event_handle = ISC_make_signal(true, true, process_id, event->event_id);
 
-	return (event->event_handle) ? TRUE : FALSE;
+	return (event->event_handle) ? FB_SUCCESS : FB_FAILURE;
 }
 
 
@@ -758,13 +1526,12 @@ int ISC_event_post(event_t* event)
 	if (event->event_pid != process_id)
 		return ISC_kill(event->event_pid, event->event_id, event->event_handle);
 
-	return SetEvent((HANDLE) event->event_handle) ? 0 : -1;
+	return SetEvent((HANDLE) event->event_handle) ? FB_SUCCESS : FB_FAILURE;
 }
 
 
-int ISC_event_wait(SSHORT count,
-				   event_t* const* events,
-				   const SLONG* values,
+int ISC_event_wait(event_t* event,
+				   const SLONG value,
 				   const SLONG micro_seconds)
 {
 /**************************************
@@ -779,34 +1546,28 @@ int ISC_event_wait(SSHORT count,
  **************************************/
 	/* If we're not blocked, the rest is a gross waste of time */
 
-	if (!event_blocked(count, events, values)) {
-		return 0;
+	if (!event_blocked(event, value)) {
+		return FB_SUCCESS;
 	}
 
-#pragma FB_COMPILER_MESSAGE("Warning: B.O. with more than 16 handles")
-
-	HANDLE handles[16];
-	HANDLE* handle_ptr = handles;
-	const event_t* const* ptr = events;
-	for (const event_t* const* const end = events + count; ptr < end;) {
-		*handle_ptr++ = (*ptr++)->event_handle;
-	}
+	HANDLE handles[1];
+	handles[0] = event->event_handle;
 
 	/* Go into wait loop */
 
 	const DWORD timeout = (micro_seconds > 0) ? micro_seconds / 1000 : INFINITE;
 
 	for (;;) {
-		if (!event_blocked(count, events, values)) {
-			return 0;
+		if (!event_blocked(event, value)) {
+			return FB_SUCCESS;
 		}
 
 		const DWORD status =
-			WaitForMultipleObjects((DWORD) count, handles, TRUE, timeout);
+			WaitForMultipleObjects((DWORD) 1, handles, TRUE, timeout);
 
-		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + (DWORD) count)))
+		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + (DWORD) 1)))
 		{
-			return status;
+			return FB_FAILURE;
 		}
 	}
 }
@@ -1114,7 +1875,9 @@ void *ISC_make_signal(
 
 
 #ifdef UNIX
+
 #ifdef HAVE_MMAP
+
 UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
@@ -1143,9 +1906,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	TEXT tmp[MAXPATHLEN];
 	gds__prefix_lock(tmp, INIT_FILE);
-	TEXT init_filename[MAXPATHLEN];	/* to hold the complete filename
-									   of the init file. */
-	sprintf(init_filename, tmp, hostname);	/* already have the hostname! */
+	string init_filename;	/* to hold the complete filename of the init file. */
+	init_filename.printf(tmp, hostname);	/* already have the hostname! */
 
 	const int oldmask = umask(0);
 	bool trunc_flag = true;
@@ -1154,224 +1916,154 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		trunc_flag = false;
 	}
 
-/* Produce shared memory key for file */
-
-	SLONG key;
-	if (!(key = find_key(status_vector, expanded_filename))) {
-		umask(oldmask);
-		return NULL;
-	}
-
 /* open the init lock file */
-	int fd_init;				/* filedecr. for the init file */
-	fd_init = open(init_filename, O_RDWR | O_CREAT, 0666);
+#ifdef USE_SYS5SEMAPHORE
+	if (fd_init < 0)
+#else
+	int
+#endif
+		fd_init = open(init_filename.c_str(), O_RDWR | O_CREAT, 0666);
 	if (fd_init == -1) {
 		error(status_vector, "open", errno);
 		return NULL;
 	}
 
-#ifndef HAVE_FLOCK
-	struct flock lock;
-/* get an exclusive lock on the INIT file with a block */
-	lock.l_type = F_WRLCK;
-	lock.l_whence = 0;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	if (fcntl(fd_init, F_SETLKW, &lock) == -1) {
-		error(status_vector, "fcntl", errno);
-		close(fd_init);
-		return NULL;
-	}
-#else
-/* get an flock exclusive on the INIT file with blocking */
-	if (flock(fd_init, LOCK_EX)) {
-		/* we failed to get an exclusive lock return back */
-		error(status_vector, "flock", errno);
-		close(fd_init);
-		return NULL;
-	}
+/* get an exclusive lock on the INIT file with blocking */
+	FileLock initLock(status_vector, fd_init);
+#ifdef USE_SYS5SEMAPHORE
+	initLock.setDtorMode(FileLock::OPENED);
 #endif
+	if (!initLock.exclusive())
+		return NULL;
+
+// init file is locked - no races possible later in this function
+
+#ifdef USE_SYS5SEMAPHORE
+	if (fdSem < 0)
+	{
+		string semFileName;
+		gds__prefix_lock(tmp, SEM_FILE);
+		semFileName.printf(tmp, hostname);
+		int f = open(semFileName.c_str(), O_RDWR | O_CREAT, 0666);
+		if (f == -1) {
+			error(status_vector, "open", errno);
+			return NULL;
+		}
+		void* sTab = mmap(0, sizeof(SemTable), PROT_READ | PROT_WRITE, MAP_SHARED, f, 0);
+		if ((U_IPTR) sTab == (U_IPTR) -1) {
+			error(status_vector, "mmap", errno);
+			return NULL;
+		}
+
+		fdSem = f;
+		semTable = (SemTable*) sTab;
+		initCache();
+	}
+	fb_assert(semTable);
+
+	FileLock semLock(status_vector, fdSem, FileLock::OPENED);
+
+	if (semLock.tryExclusive())
+	{
+		semTable->init();
+	}
+	if (!semLock.shared())
+		return NULL;
+#endif
+
 /* open the file to be inited */
 	int fd = open(expanded_filename, O_RDWR | O_CREAT, 0666);
 	umask(oldmask);
-
 	if (fd == -1) {
 		error(status_vector, "open", errno);
-#ifdef HAVE_FLOCK
-		/* unlock init file */
-		flock(fd_init, LOCK_UN);
-#else
-		lock.l_type = F_UNLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		fcntl(fd_init, F_SETLK, &lock);
-#endif
-		close(fd_init);
 		return NULL;
 	}
+
+/* create lock in order to have file autoclosed on error */
+	FileLock mainLock(status_vector, fd);
 
 	if (length == 0) {
 		/* Get and use the existing length of the shared segment */
-
 		struct stat file_stat;
 		if (fstat(fd, &file_stat) == -1) {
 			error(status_vector, "fstat", errno);
-			close(fd);
-#ifdef HAVE_FLOCK
-			/* unlock init file */
-			flock(fd_init, LOCK_UN);
-#else
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd_init, F_SETLK, &lock);
-#endif
-			close(fd_init);		/* while we are at it close the init file also */
 			return NULL;
 		}
 		length = file_stat.st_size;
+
+		if (length == 0)
+		{
+			// keep old text of message here -  will be assigned a bit later
+			error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
+			return NULL;
+		}
 	}
 
-
+/* map file to memory */
 	UCHAR* address =
 		(UCHAR *) mmap(0, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
 	if ((U_IPTR) address == (U_IPTR) -1) {
 		error(status_vector, "mmap", errno);
-		close(fd);
-#ifdef HAVE_FLOCK
-		/* unlock init file */
-		flock(fd_init, LOCK_UN);
-#else
-		lock.l_type = F_UNLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		fcntl(fd_init, F_SETLK, &lock);
-#endif
-
-		close(fd_init);
 		return NULL;
 	}
-
-/* Get semaphore for mutex */
 
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
 	shmem_data->sh_mem_handle = fd;
 
-	if (!shmem_data->sh_mem_length_mapped)
+#ifdef USE_SYS5SEMAPHORE
+	// register mapped file
+	// this class is needed to auto-unregister it in case of failure
+	class sfHolder
 	{
-		error(status_vector, "shmem_data->sh_mem_length_mapped is 0", 0);
-		return NULL;
-	}
+	public:
+		sfHolder(const SharedFile& sf) : pop(true) 
+		{
+			SharedFile::push(sf);
+		}
+
+		void materialize() {
+			pop = false;
+		}
+
+		~sfHolder()
+		{
+			if (pop)
+			{
+				SharedFile::pop();
+			}
+		}
+	private:
+		bool pop;
+	};
+	sfHolder holder(SharedFile(expanded_filename, address, length));
+#endif
+
 
 /* Try to get an exclusive lock on the lock file.  This will
-   fail if somebody else has the exclusive lock */
+   fail if somebody else has the exclusive or shared lock */
 
-#ifdef HAVE_FLOCK
-	if (!flock(fd, LOCK_EX | LOCK_NB))
+	if (mainLock.tryExclusive())
 	{
 		if (!init_routine) {
-			/* unlock both files */
-			flock(fd, LOCK_UN);
-			flock(fd_init, LOCK_UN);
-#else
-	lock.l_type = F_WRLCK;
-	lock.l_whence = 0;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	if (fcntl(fd, F_SETLK, &lock) != -1) {
-		if (!init_routine) {
-			/* unlock the file and the init file to release the other process */
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd, F_SETLK, &lock);
-
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd_init, F_SETLK, &lock);
-#endif
 			munmap((char *) address, length);
-			close(fd);
-			close(fd_init);
 			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
 
 		if (trunc_flag)
 			ftruncate(fd, length);
+
 		(*init_routine) (init_arg, shmem_data, true);
-#ifdef HAVE_FLOCK
-		if (flock(fd, LOCK_SH)) {
-			error(status_vector, "flock", errno);
-			flock(fd, LOCK_UN);
-			flock(fd_init, LOCK_UN);
-#else
-		lock.l_type = F_RDLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		if (fcntl(fd, F_SETLK, &lock) == -1)
-		{
-			error(status_vector, "fcntl", errno);
-			/* unlock the file */
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd, F_SETLK, &lock);
 
-			/* unlock the init file to release the other process */
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd_init, F_SETLK, &lock);
-#endif
+		if (!mainLock.tryShared()) {
 			munmap((char *) address, length);
-
-			close(fd_init);
-			close(fd);
 			return NULL;
 		}
 	}
 	else {
-#ifdef HAVE_FLOCK
-		if (flock(fd, LOCK_SH)) {
-			error(status_vector, "flock", errno);
-			flock(fd, LOCK_UN);
-			flock(fd_init, LOCK_UN);
-#else
-		lock.l_type = F_RDLCK;
-		lock.l_whence = 0;
-		lock.l_start = 0;
-		lock.l_len = 0;
-		if (fcntl(fd, F_SETLK, &lock) == -1) {
-			error(status_vector, "fcntl", errno);
-			/* unlock the file */
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd, F_SETLK, &lock);
-
-			/* unlock the init file to release the other process */
-			lock.l_type = F_UNLCK;
-			lock.l_whence = 0;
-			lock.l_start = 0;
-			lock.l_len = 0;
-			fcntl(fd_init, F_SETLK, &lock);
-#endif
+		if (!mainLock.tryShared()) {
 			munmap((char *) address, length);
-			close(fd_init);
-			close(fd);
 			return NULL;
 		}
 
@@ -1379,27 +2071,21 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			(*init_routine) (init_arg, shmem_data, false);
 	}
 
-#ifdef HAVE_FLOCK
-/* unlock the init file to release the other process */
-	flock(fd_init, LOCK_UN);
-#else
-/* unlock the init file to release the other process */
-	lock.l_type = F_UNLCK;
-	lock.l_whence = 0;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	fcntl(fd_init, F_SETLK, &lock);
+/* keep opened the shared file_decriptor */
+	mainLock.setDtorMode(FileLock::LOCKED);
+#ifdef USE_SYS5SEMAPHORE
+	// keep shared lock before last shared memory region unmapped
+	semLock.setDtorMode(FileLock::LOCKED);
+	++sharedCount;
+	// keep registered mapped file permanently
+	holder.materialize();
 #endif
-/* close the init file_decriptor */
-	close(fd_init);
+
 	return address;
 }
-#endif
-#endif
 
+#else // no HAVE_MMAP
 
-#ifdef UNIX
-#ifndef HAVE_MMAP
 UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 					const TEXT* filename,
 					FPTR_INIT_GLOBAL_REGION init_routine,
@@ -1682,7 +2368,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 	return address;
 }
-#endif // !HAVE_MMAP
+#endif // HAVE_MMAP
 
 #endif // UNIX
 
@@ -1997,6 +2683,8 @@ UCHAR *ISC_map_object(ISC_STATUS * status_vector,
 
 /* Return the virtual address of the mapped object. */
 
+	IPC_TRACE(("ISC_map_object in %p to %p %p\n", shmem_data->sh_mem_address, address, address + length));
+
 	return (address + (object_offset - start));
 }
 
@@ -2125,7 +2813,7 @@ void ISC_unmap_object(ISC_STATUS* status_vector,
 
 
 #ifdef SOLARIS_MT
-int ISC_mutex_init(MTX mutex)
+int ISC_mutex_init(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2142,7 +2830,7 @@ int ISC_mutex_init(MTX mutex)
 }
 
 
-int ISC_mutex_lock(MTX mutex)
+int ISC_mutex_lock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2166,7 +2854,7 @@ int ISC_mutex_lock(MTX mutex)
 }
 
 
-int ISC_mutex_lock_cond(MTX mutex)
+int ISC_mutex_lock_cond(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2190,7 +2878,7 @@ int ISC_mutex_lock_cond(MTX mutex)
 }
 
 
-int ISC_mutex_unlock(MTX mutex)
+int ISC_mutex_unlock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2218,7 +2906,128 @@ int ISC_mutex_unlock(MTX mutex)
 
 
 #ifdef USE_POSIX_THREADS
-int ISC_mutex_init(MTX mutex)
+
+#ifdef USE_SYS5SEMAPHORE
+
+int ISC_mutex_init(struct mtx* mutex)
+{
+/**************************************
+ *
+ *	I S C _ m u t e x _ i n i t	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Initialize a mutex.
+ *
+ **************************************/
+	if (!getSem5(mutex))
+	{
+		return FB_FAILURE;
+	}
+
+	union semun arg;
+	arg.val = 1;
+	int state = semctl(mutex->getId(), mutex->semNum, SETVAL, arg);
+	if (state == -1)
+	{
+		iscLogStatus("ISC_mutex_init()", (Arg::Gds(isc_sys_request) << Arg::Str("semctl") << SYS_ERR(errno)).value());
+		return FB_FAILURE;
+	}
+
+	return 0;
+}
+
+
+int ISC_mutex_lock(struct mtx* mutex)
+{
+/**************************************
+ *
+ *	I S C _ m u t e x _ l o c k	( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Sieze a mutex.
+ *
+ **************************************/
+	struct sembuf sop;
+	sop.sem_num = mutex->semNum;
+	sop.sem_op = -1;
+	sop.sem_flg = SEM_UNDO;
+
+	for (;;) {
+		int state = semop(mutex->getId(), &sop, 1);
+		if (state != -1)
+			break;
+		if (!SYSCALL_INTERRUPTED(errno))
+			return errno;
+	}
+
+	return 0;
+}
+
+
+int ISC_mutex_lock_cond(struct mtx* mutex)
+{
+/**************************************
+ *
+ *	I S C _ m u t e x _ l o c k _ c o n d ( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Conditionally sieze a mutex.
+ *
+ **************************************/
+	struct sembuf sop;
+	sop.sem_num = mutex->semNum;
+	sop.sem_op = -1;
+	sop.sem_flg = SEM_UNDO | IPC_NOWAIT;
+
+	for (;;) {
+		int state = semop(mutex->getId(), &sop, 1);
+		if (state != -1)
+			break;
+		if (!SYSCALL_INTERRUPTED(errno))
+			return errno;
+	}
+
+	return 0;
+}
+
+
+int ISC_mutex_unlock(struct mtx* mutex)
+{
+/**************************************
+ *
+ *	I S C _ m u t e x _ u n l o c k ( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Release a mutex.
+ *
+ **************************************/
+	struct sembuf sop;
+	sop.sem_num = mutex->semNum;
+	sop.sem_op = 1;
+	sop.sem_flg = SEM_UNDO;
+
+	for (;;) {
+		int state = semop(mutex->getId(), &sop, 1);
+		if (state != -1)
+			break;
+		if (!SYSCALL_INTERRUPTED(errno))
+			return errno;
+	}
+
+	return 0;
+}
+
+#else // not USE_SYS5SEMAPHORE
+
+int ISC_mutex_init(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2249,7 +3058,7 @@ int ISC_mutex_init(MTX mutex)
 }
 
 
-int ISC_mutex_lock(MTX mutex)
+int ISC_mutex_lock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2276,7 +3085,7 @@ int ISC_mutex_lock(MTX mutex)
 }
 
 
-int ISC_mutex_lock_cond(MTX mutex)
+int ISC_mutex_lock_cond(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2319,7 +3128,7 @@ int ISC_mutex_lock_cond(MTX mutex)
 }
 
 
-int ISC_mutex_unlock(MTX mutex)
+int ISC_mutex_unlock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2344,6 +3153,9 @@ int ISC_mutex_unlock(MTX mutex)
 
 #endif /* HP10 */
 }
+
+#endif //USE_SYS5SEMAPHORE
+
 #endif /* USE_POSIX_THREADS */
 
 
@@ -2637,7 +3449,7 @@ static inline void setFastMutexSpinCount(FAST_MUTEX* lpMutex, ULONG SpinCount)
 }
 
 
-int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
+int ISC_mutex_init(struct mtx* mutex, const TEXT* mutex_name)
 {
 /**************************************
  *
@@ -2658,14 +3470,25 @@ int ISC_mutex_init(MTX mutex, const TEXT* mutex_name)
 }
 
 
+// This function is never called! AP-2008
 void ISC_mutex_fini(struct mtx *mutex)
 {
+/**************************************
+ *
+ *	m u t e x _ f i n i ( W I N _ N T )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a mutex.
+ *
+ **************************************/
 	if (mutex->mtx_fast.lpSharedInfo)
 		deleteFastMutex(&mutex->mtx_fast);
 }
 
 
-int ISC_mutex_lock(MTX mutex)
+int ISC_mutex_lock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2686,7 +3509,7 @@ int ISC_mutex_lock(MTX mutex)
 }
 
 
-int ISC_mutex_lock_cond(MTX mutex)
+int ISC_mutex_lock_cond(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2707,7 +3530,7 @@ int ISC_mutex_lock_cond(MTX mutex)
 }
 
 
-int ISC_mutex_unlock(MTX mutex)
+int ISC_mutex_unlock(struct mtx* mutex)
 {
 /**************************************
  *
@@ -2764,6 +3587,11 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 
 	munmap((char *) shmem_data->sh_mem_address,
 		   shmem_data->sh_mem_length_mapped);
+
+#ifdef USE_SYS5SEMAPHORE
+	SharedFile::remap(shmem_data->sh_mem_address, address, new_length);
+#endif
+	IPC_TRACE(("ISC_remap_file %p to %p %p\n", shmem_data->sh_mem_address, address, address + new_length));
 
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = new_length;
@@ -3044,7 +3872,24 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
  *	Unmap a given file.
  *
  **************************************/
-	union semun arg;
+#ifdef USE_SYS5SEMAPHORE
+	// Lock init file.
+	FileLock initLock(status_vector, fd_init, FileLock::OPENED);
+	if (!initLock.exclusive())
+	{
+		iscLogStatus("ISC_unmap_file failed to lock init file", status_vector);
+	}
+	else
+	{
+		SharedFile* sf = SharedFile::locate(shmem_data->sh_mem_address);
+
+		FileLock lock(status_vector, shmem_data->sh_mem_handle);
+		lock.setLevel(FileLock::SHARED);
+		semTable->cleanup(sf->getNum(), lock.tryExclusive());
+		SharedFile::remove(shmem_data->sh_mem_address);
+	}
+	--sharedCount;
+#endif
 
 	munmap((char *) shmem_data->sh_mem_address,
 		   shmem_data->sh_mem_length_mapped);
@@ -3121,41 +3966,100 @@ static void error(ISC_STATUS* status_vector, const TEXT* string, ISC_STATUS stat
 
 
 #ifdef UNIX
-static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
+
+#ifdef USE_SYS5SEMAPHORE
+
+static SLONG create_semaphores(
+							 ISC_STATUS * status_vector,
+							 SLONG key, int semaphores)
 {
 /**************************************
  *
- *	f i n d _ k e y
+ *	c r e a t e _ s e m a p h o r e s		( U N I X )
  *
  **************************************
  *
  * Functional description
- *	Find the semaphore/shared memory key for a file.
+ *	Create or find a block of semaphores.
  *
  **************************************/
-
-	// Produce shared memory key for file
-
-	key_t key = ftok(filename, FTOK_KEY);
-	if (key == -1) {
-		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV);
-		if (fd == -1) {
-			error(status_vector, "open", errno);
-			return 0L;
+	SLONG semid;
+	while (true)
+	{
+		// Try to open existing semaphore set
+		semid = semget(key, 0, PRIV);
+		if (semid == -1) {
+			if (errno != ENOENT) {
+				error(status_vector, "semget", errno);
+				return -1;
+			}
+		} 
+		else
+		{
+			union semun arg;
+			semid_ds buf;	
+			arg.buf = &buf;
+			// Get number of semaphores in opened set
+			if (semctl(semid, 0, IPC_STAT, arg) == -1) {
+				error(status_vector, "semctl", errno);
+				return -1;
+			}
+			if ((int) buf.sem_nsems >= semaphores)
+				return semid;
+			// Number of semaphores in existing set is too small. Discard it.
+			if (semctl(semid, 0, IPC_RMID) == -1) {
+				error(status_vector, "semctl", errno);
+				return -1;
+			}
 		}
-		close(fd);
-		if ((key = ftok(filename, FTOK_KEY)) == -1) {
-			error(status_vector, "ftok", errno);
-			return 0L;
+		
+		// Try to create new semaphore set
+		semid = semget(key, semaphores, IPC_CREAT | IPC_EXCL | PRIV);
+		if (semid != -1)
+		{
+			// We want to limit access to semaphores, created here
+			// Reasonable access rights to them - exactly like security database has
+			char secDb[MAXPATHLEN];
+			SecurityDatabase::getPath(secDb);
+			struct stat st;
+			if (stat(secDb, &st) == 0)
+			{
+				union semun arg;
+				semid_ds ds;
+				arg.buf = &ds;
+				ds.sem_perm.uid = geteuid() == 0 ? st.st_uid : geteuid();
+				ds.sem_perm.gid = st.st_gid;
+				ds.sem_perm.mode = st.st_mode;
+				semctl(semid, 0, IPC_SET, arg);
+			}
+			return semid;
+		}
+		else
+		{
+			if (errno != EEXIST) {
+				error(status_vector, "semget", errno);
+				return -1;
+			}
 		}
 	}
+}
 
-	return key;
+
+static void alarm_handler(void* arg)
+{
+/**************************************
+ *
+ *	a l a r m _ h a n d l e r	( U N I X )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Handle an alarm clock interrupt.
+ *
+ **************************************/
 }
 #endif
 
-
-#ifdef UNIX
 void longjmp_sig_handler(int sig_num)
 {
 /**************************************

@@ -31,7 +31,6 @@
 #include "../jrd/lck.h"
 #include "../jrd/lck_proto.h"
 #include "../include/fb_types.h"
-#include "../jrd/isc.h"
 #include "os/pio.h"
 
 //#define COS_DEBUG

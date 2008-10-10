@@ -47,7 +47,6 @@
 #include "../jrd/gds_proto.h"
 #include "../jrd/gdsassert.h"
 #include "../jrd/isc_proto.h"
-#include "../jrd/isc_signal.h"
 #include "../jrd/os/isc_i_proto.h"
 #include "../jrd/isc_s_proto.h"
 #include "../jrd/thread_proto.h"
@@ -160,7 +159,6 @@ static const bool compatibility[LCK_max][LCK_max] =
 
 namespace Jrd {
 
-const int LockManager::PID = getpid();
 const char* LockManager::PATTERN = "firebird_db_%d_lock";
 
 Firebird::GlobalPtr<LockManager::DbLockMgrMap> LockManager::g_lmMap;
@@ -187,7 +185,8 @@ LockManager* LockManager::create(const Firebird::PathName& filename)
 }
 
 LockManager::LockManager(int dbId)
-	: m_bugcheck(false),
+	: PID(getpid()),
+	  m_bugcheck(false),
 	  m_header(NULL),
 	  m_process(NULL),
 	  m_processOffset(0),
@@ -299,7 +298,9 @@ bool LockManager::initializeOwner(thread_db* tdbb,
 		return true;
 	}
 
-	return create_owner(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle);
+	bool rc = create_owner(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle);
+	LOCK_TRACE(("LOCK_init done (%ld)\n", *owner_handle));
+	return rc;
 }
 
 
@@ -1379,7 +1380,7 @@ void LockManager::blocking_action_thread()
 			m_localMutex.leave();
 
 			event_t* event_ptr = &m_process->prc_blocking;
-			ISC_event_wait(1, &event_ptr, &value, 0);
+			ISC_event_wait(event_ptr, value, 0);
 		}
 
 		m_localMutex.leave();
@@ -1482,6 +1483,11 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 	}
 
 #ifdef DEV_BUILD
+   /* In the worst case this code makes it possible to attach live process 
+	* and see shared memory data.
+	fprintf(stderr, "Attach to pid=%d\n", getpid());
+	sleep(120);
+	*/
 	// Make a core drop - we want to LOOK at this failure!
 	abort();
 #endif
@@ -1628,7 +1634,7 @@ bool LockManager::create_process(ISC_STATUS* status_vector)
 
 	insert_tail(&m_header->lhb_processes, &process->prc_lhb_processes);
 
-	ISC_event_init(&process->prc_blocking, 0, BLOCKING_SIGNAL);
+	ISC_event_init(&process->prc_blocking);
 
 	m_processOffset = SRQ_REL_PTR(process);
 
@@ -2156,7 +2162,7 @@ void LockManager::init_owner_block(own* owner, UCHAR owner_type, LOCK_OWNER_T ow
 	owner->own_pending_request = 0;
 	owner->own_acquire_time = 0;
 
-	ISC_event_init(&owner->own_wakeup, 0, WAKEUP_SIGNAL);
+	ISC_event_init(&owner->own_wakeup);
 }
 
 
@@ -3148,7 +3154,7 @@ bool LockManager::signal_owner(thread_db* tdbb, own* blocking_owner, SRQ_PTR blo
 
 	DEBUG_DELAY;
 
-	if (!ISC_event_post(&process->prc_blocking))
+	if (ISC_event_post(&process->prc_blocking) == FB_SUCCESS)
 		return true;
 
 	DEBUG_MSG(1, ("signal_owner - direct delivery failed\n"));
@@ -3765,8 +3771,7 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			}
 			{ // scope
 				Database::Checkout dcoHolder(tdbb->getDatabase());
-				ret = ISC_event_wait(1, &event_ptr, &value,
-									 (timeout - current_time) * 1000000);
+				ret = ISC_event_wait(event_ptr, value, (timeout - current_time) * 1000000);
 				--m_waitingOwners;
 			}
 			m_localMutex.enter();
@@ -3849,6 +3854,8 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			request->lrq_flags |= LRQ_rejected;
 			request->lrq_flags &= ~LRQ_pending;
 			lock->lbl_pending_lrq_count--;
+			// and test - may be timeout due to missing process to deliver request
+			probe_processes();
 			release_shmem(owner_offset);
 			break;
 		}

@@ -47,19 +47,21 @@ public:
   		fb_assert(index < count);
   		return data[index];
 	}
+
 	const T& operator[](size_t index) const
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
+
 	T* begin() { return data; }
 	T* end() { return data + count; }
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return Capacity; }
-
 	void clear() { count = 0; }
+
 	void insert(size_t index, const T& item)
 	{
 	  fb_assert(index <= count);
@@ -67,23 +69,27 @@ public:
 	  memmove(data + index + 1, data + index, sizeof(T) * (count++ - index));
 	  data[index] = item;
 	}
+
 	size_t add(const T& item)
 	{
 		fb_assert(count < Capacity);
 		data[count] = item;
   		return ++count;
 	}
+
 	T* remove(size_t index)
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
+
 	void shrink(size_t newCount)
 	{
 		fb_assert(newCount <= count);
 		count = newCount;
 	}
+
 	void join(const Vector<T, Capacity>& L)
 	{
 		fb_assert(count + L.count <= Capacity);
@@ -97,6 +103,18 @@ public:
 		fb_assert(capacityL <= Capacity);
 		count = capacityL;
 		return data;
+	}
+
+	void push(const T& item)
+	{
+		add(item);
+	}
+
+	T pop()
+	{
+		fb_assert(count > 0);
+		count--;
+		return data[count];
 	}
 
 protected:

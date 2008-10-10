@@ -73,7 +73,6 @@
 #include "gen/msg_facs.h"
 #include "../jrd/acl.h"
 #include "../jrd/inf_pub.h"
-#include "../jrd/isc.h"
 #include "../jrd/fil.h"
 #include "../jrd/db_alias.h"
 #include "../jrd/os/path_utils.h"
@@ -695,7 +694,7 @@ static void check_status_vector(const ISC_STATUS*);
 #endif
 
 static void event_ast(void*, USHORT, const UCHAR*);
-static void exit_handler(event_t*);
+static void exit_handler(void*);
 
 static Transaction* find_transaction(Attachment*, Transaction*);
 
@@ -726,7 +725,7 @@ static bool set_path(const PathName&, PathName&);
 static void subsystem_enter(void) throw();
 static void subsystem_exit(void) throw();
 
-static event_t why_event[1];
+GlobalPtr<Semaphore> why_sem;
 static bool why_initialized = false;
 
 /* subsystem_usage is used to count how many active ATTACHMENTs are
@@ -3638,22 +3637,17 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS * user_status,
 	{
 		if (!why_initialized)
 		{
-			gds__register_cleanup((FPTR_VOID_PTR) exit_handler, why_event);
+			gds__register_cleanup(exit_handler, 0);
 			why_initialized = true;
-			ISC_event_init(why_event, 0, 0);
 		}
 
-		const SLONG value = ISC_event_clear(why_event);
 		SLONG id;
-
-		if (GDS_QUE_EVENTS
-			(status, handle, &id, length, events, event_ast, buffer))
+		if (GDS_QUE_EVENTS(status, handle, &id, length, events, event_ast, buffer))
 		{
 			return status[1];
 		}
 
-		event_t* event_ptr = why_event;
-		ISC_event_wait(1, &event_ptr, &value, -1);
+		why_sem->enter();
 	}
 	catch (const Exception& e)
 	{
@@ -5240,18 +5234,6 @@ static void check_status_vector(const ISC_STATUS* status)
 #endif
 
 
-// Make this repetitive block a function.
-// Call all cleanup routines registered with the transaction.
-/*void WHY_cleanup_transaction(Transaction* transaction)
-{
-	for (clean* cln = transaction->cleanup; cln; cln = transaction->cleanup)
-	{
-		transaction->cleanup = cln->clean_next;
-		cln->TransactionRoutine(transaction->public_handle, cln->clean_arg);
-		free_block(cln);
-	}
-}*/
-
 static void event_ast(void* buffer_void,
 					  USHORT length,
 					  const UCHAR* items)
@@ -5267,11 +5249,11 @@ static void event_ast(void* buffer_void,
  *
  **************************************/
 	memcpy(buffer_void, items, length);
-	ISC_event_post(why_event);
+	why_sem->release();
 }
 
 
-static void exit_handler(event_t* why_eventL)
+static void exit_handler(void*)
 {
 /**************************************
  *
@@ -5283,10 +5265,6 @@ static void exit_handler(event_t* why_eventL)
  *	Cleanup shared image.
  *
  **************************************/
-
-#ifdef WIN_NT
-	CloseHandle((void *) why_eventL->event_handle);
-#endif
 
 	why_initialized = false;
 #if !(defined SUPERCLIENT || defined SUPERSERVER)
@@ -6089,3 +6067,4 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* user_status,
 
 	return status[1];
 }
+

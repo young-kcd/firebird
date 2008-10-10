@@ -36,7 +36,7 @@
 
 // Global section header
 
-const int EVENT_VERSION			= 3;
+const int EVENT_VERSION			= 4;
 
 const int EVENT_HASH_SIZE		= 7;
 
@@ -50,7 +50,7 @@ struct evh {
 	srq evh_processes;				// Known processes
 	SRQ_PTR evh_free;				// Free blocks
 	SRQ_PTR evh_current_process;	// Current process, if any
-	MTX_T evh_mutex;				// Mutex controlling access
+	struct mtx evh_mutex;			// Mutex controlling access
 	SLONG evh_request_id;			// Next request id
 	SRQ_PTR evh_hash_table[EVENT_HASH_SIZE];
 };

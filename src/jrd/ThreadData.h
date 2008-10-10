@@ -31,7 +31,6 @@
 #define JRD_THREADDATA_H
 
 #include "firebird.h"
-//#include "../jrd/isc.h"
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/alloc.h"

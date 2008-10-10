@@ -33,52 +33,74 @@
 
 // Firebird platform-specific synchronization data structures
 
-#ifdef UNIX
-#define MTX_STRUCTURE_DEFINED
+#if defined(DARWIN)
+#define USE_SYS5SEMAPHORE
+#endif
+//#define USE_SYS5SEMAPHORE
 
-// This is the only place where COND_STRUCT and MUTEX_STRUCT are used.
-// Therefore it's definitions were moved here from thd.h in order 
-// to avoid circular dependencies in h-files.
-// Alex Peshkov. Tue 08 Jun 2004 02:22:08 PM MSD.
+#ifdef UNIX
 
 #ifdef SOLARIS_MT
 #include <thread.h>
-#define COND_STRUCT cond_t
-#define MUTEX_STRUCT mutex_t
+
+struct mtx {
+	mutex_t mtx_mutex[1];
+};
+
+struct event_t
+{
+	SLONG event_count;
+	mutex_t event_mutex[1];
+	cond_t event_cond[1];
+};
+
 #endif
 
 #ifdef USE_POSIX_THREADS
 #include <pthread.h>
-#define COND_STRUCT pthread_cond_t
-#define MUTEX_STRUCT pthread_mutex_t
-#endif
 
-#ifndef COND_STRUCT
-#define COND_STRUCT SCHAR
-#endif
-#ifndef MUTEX_STRUCT
-#define MUTEX_STRUCT SCHAR
-#endif
+#ifdef USE_SYS5SEMAPHORE
 
-struct mtx {
-	MUTEX_STRUCT mtx_mutex[1];
+struct Sys5Semaphore
+{
+	int semSet;				// index in shared memory table
+	unsigned short semNum;	// number in semset
+	int getId();
 };
-typedef mtx MTX_T;
-typedef mtx* MTX;
+
+struct mtx : public Sys5Semaphore
+{
+};
+
+struct event_t : public Sys5Semaphore
+{
+	SLONG event_count;
+};
+
+#else
+
+struct mtx
+{
+	pthread_mutex_t mtx_mutex[1];
+};
 
 struct event_t
 {
-	SLONG event_semid;
 	SLONG event_count;
-	MUTEX_STRUCT event_mutex[1];
-	COND_STRUCT event_semnum[1];
+	int pid;
+	pthread_mutex_t event_mutex[1];
+	pthread_cond_t event_cond[1];
 };
+
+#endif //USE_SYS5SEMAPHORE
+
+#endif //USE_POSIX_THREADS
 
 #define SH_MEM_STRUCTURE_DEFINED
 struct sh_mem
 {
 	UCHAR *sh_mem_address;
-	SLONG sh_mem_length_mapped;
+	ULONG sh_mem_length_mapped;
 	SLONG sh_mem_handle;
 };
 typedef sh_mem SH_MEM_T;
@@ -87,8 +109,6 @@ typedef sh_mem *SH_MEM;
 
 
 #ifdef WIN_NT
-#define MTX_STRUCTURE_DEFINED
-
 #include <windows.h>
 
 typedef struct _FAST_MUTEX_SHARED_SECTION
@@ -115,9 +135,6 @@ struct mtx
 	FAST_MUTEX mtx_fast;
 };
 
-typedef mtx MTX_T;
-typedef mtx *MTX;
-
 struct event_t
 {
 	SLONG		event_pid;
@@ -130,7 +147,7 @@ struct event_t
 struct sh_mem
 {
 	UCHAR*	sh_mem_address;
-	SLONG	sh_mem_length_mapped;
+	ULONG	sh_mem_length_mapped;
 	void*	sh_mem_handle;
 	void*	sh_mem_object;
 	void*	sh_mem_interest;
@@ -144,26 +161,12 @@ typedef sh_mem *SH_MEM;
 typedef void *THD_T;
 #endif // WIN_NT
 
-
-#ifndef MTX_STRUCTURE_DEFINED
-#define MTX_STRUCTURE_DEFINED
-struct mtx
-{
-	SSHORT	mtx_event_count[3];
-	SCHAR	mtx_use_count;
-	SCHAR	mtx_wait;
-};
-typedef mtx MTX_T;
-typedef mtx *MTX;
-#endif
-#undef MTX_STRUCTURE_DEFINED
-
 #ifndef SH_MEM_STRUCTURE_DEFINED
 #define SH_MEM_STRUCTURE_DEFINED
 struct sh_mem
 {
 	UCHAR*	sh_mem_address;
-	SLONG	sh_mem_length_mapped;
+	ULONG	sh_mem_length_mapped;
 	SLONG	sh_mem_handle;
 };
 typedef sh_mem SH_MEM_T;

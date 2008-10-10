@@ -46,9 +46,9 @@ class LockManager : public Firebird::RefCounted, public Firebird::GlobalStorage
 
 	static Firebird::GlobalPtr<DbLockMgrMap> g_lmMap;
 	static Firebird::GlobalPtr<Firebird::Mutex> g_mapMutex;
-
-	static const int PID;
 	static const char* PATTERN;
+
+	const int PID;
 
 public:
 	static LockManager* create(const Firebird::PathName&);
@@ -158,7 +158,7 @@ private:
 	Firebird::PathName m_lockFile;
 
 #ifdef WIN_NT
-	MTX_T m_shmemMutex;
+	struct mtx m_shmemMutex;
 #endif
 };
 

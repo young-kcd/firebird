@@ -34,10 +34,10 @@
 
 SLONG	ISC_event_clear(event_t *);
 void	ISC_event_fini(event_t *);
-int		ISC_event_init(event_t *, int, int);
+int		ISC_event_init(event_t *);
 
 int		ISC_event_post(event_t *);
-int		ISC_event_wait(SSHORT, event_t* const*, const SLONG*, const SLONG);
+int		ISC_event_wait(event_t*, const SLONG, const SLONG);
 
 #ifdef WIN_NT
 void*	ISC_make_signal(bool, bool, int, int);
