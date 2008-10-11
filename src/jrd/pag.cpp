@@ -2426,8 +2426,9 @@ void PageManager::releaseLocks()
 
 USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 {
+	USHORT result;
 #ifdef SUPERSERVER
-	return TEMP_PAGE_SPACE;
+	result = TEMP_PAGE_SPACE;
 #else
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -2454,8 +2455,14 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		att->att_temp_pg_lock = lock;
 	}
 	
-	return (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
+	result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 #endif
+
+	if (!this->findPageSpace(result)) {
+		PAG_attach_temp_pages(tdbb, result);
+	}
+
+	return result;
 }
 
 ULONG PAG_page_count(Database* database, PageCountCallback* cb)

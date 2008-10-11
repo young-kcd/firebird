@@ -165,7 +165,6 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			newPages->addRef();
 			newPages->rel_instance_id = inst_id;
 			newPages->rel_pg_space_id = dbb->dbb_page_manager.getTempPageSpaceID(tdbb);
-			PAG_attach_temp_pages(tdbb, newPages->rel_pg_space_id);
 			rel_pages_inst->add(newPages);
 
 			// create primary pointer page and index root page
