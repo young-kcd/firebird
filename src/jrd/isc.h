@@ -92,9 +92,9 @@ struct event_t
 	pthread_cond_t event_cond[1];
 };
 
-#endif //USE_SYS5SEMAPHORE
+#endif // USE_SYS5SEMAPHORE
 
-#endif //USE_POSIX_THREADS
+#endif // USE_POSIX_THREADS
 
 #define SH_MEM_STRUCTURE_DEFINED
 struct sh_mem

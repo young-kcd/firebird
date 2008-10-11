@@ -399,7 +399,7 @@ public:
 	SLONG dbb_page_incarnation;			// Cache page incarnation counter
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
-	Firebird::Semaphore dbb_writer_sem;	// Wwake up cache writer
+	Firebird::Semaphore dbb_writer_sem;	// Wake up cache writer
 	Firebird::Semaphore dbb_writer_init;// Cache writer initialization
 	Firebird::Semaphore dbb_writer_fini;// Cache writer finalization
 #ifdef SUPERSERVER_V2

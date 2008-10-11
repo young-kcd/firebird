@@ -1234,7 +1234,7 @@ void CCH_fini(thread_db* tdbb)
 			{
 				QUE que_inst = bcb->bcb_free_lwt.que_forward;
 				QUE_DELETE(*que_inst);
-				LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
+				// LatchWait* lwt = (LatchWait*) BLOCK(que_inst, LatchWait*, lwt_waiters);
 			}
 #endif
 		}

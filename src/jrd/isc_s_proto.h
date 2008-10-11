@@ -32,11 +32,11 @@
 #include "../jrd/isc.h"
 // If that file wouldn't be included, we do a FW declaration of struct event_t here.
 
-SLONG	ISC_event_clear(event_t *);
-void	ISC_event_fini(event_t *);
-int		ISC_event_init(event_t *);
+SLONG	ISC_event_clear(event_t*);
+void	ISC_event_fini(event_t*);
+int		ISC_event_init(event_t*);
 
-int		ISC_event_post(event_t *);
+int		ISC_event_post(event_t*);
 int		ISC_event_wait(event_t*, const SLONG, const SLONG);
 
 #ifdef WIN_NT

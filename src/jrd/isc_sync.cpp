@@ -188,7 +188,8 @@ namespace {
 		enum DtorMode {CLOSED, OPENED, LOCKED};
 
 		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED) 
-			: status(pStatus), level(NONE), fd(pFd), dtorMode(pMode) { }
+			: status(pStatus), level(NONE), fd(pFd), dtorMode(pMode)
+		{ }
 
 		~FileLock() 
 		{
@@ -232,19 +233,19 @@ namespace {
 			level = NONE;
 		}
 
-	// Call it to keep file locked & opened after dtor is called
+		// Call it to keep file locked & opened after dtor is called
 		void setDtorMode(DtorMode mode) throw()
 		{
 			dtorMode = mode;
 		}
 
-	// Call when using already locked file in ctor
+		// Call when using already locked file in ctor
 		void setLevel(LockLevel l)
 		{
 			level = l;
 		}
 
-	// All lock methods return true on success, false on error
+		// All lock methods return true on success, false on error
 		bool exclusive()
 		{
 			return doLock(false, true);
@@ -399,7 +400,9 @@ namespace {
 			{
 				return;
 			}
+
 			ftruncate(fdSem, sizeof(*this));
+
 			for (int i = 0; i < N_SETS; ++i) 
 			{
 				if (set[i].fileNum > 0)
@@ -449,10 +452,12 @@ namespace {
 					break;
 				}
 			}
+
 			if (n >= N_SETS)
 			{
 				return false;
 			}
+
 			if (n >= lastSet)
 			{
 				lastSet = n + 1;
@@ -510,7 +515,7 @@ namespace {
 		}
 	};
 
-	SemTable *semTable = 0;
+	SemTable* semTable = NULL;
 
 	class SharedFile
 	{
@@ -546,7 +551,7 @@ namespace {
 		static void remove(void* s)
 		{
 			MutexLockGuard guard(mutex);
-			int n = getByAddress((UCHAR*)s);
+			int n = getByAddress((UCHAR*) s);
 			if (n >= 0) {
 				IPC_TRACE(("-rem SF with %p %p\n", sharedFiles[n].from, sharedFiles[n].to));
 				sharedFiles.remove(n);
@@ -593,6 +598,7 @@ namespace {
 			return -1;
 		}
 	};
+
 	SharedFile::Storage SharedFile::sharedFiles;
 	GlobalPtr<Mutex> SharedFile::mutex;
 
@@ -670,7 +676,9 @@ int Sys5Semaphore::getId()
 {
 	MutexLockGuard guard(idCacheMutex);
 	fb_assert(semSet >= 0 && semSet < SemTable::N_SETS);
+
 	int id = idCache[semSet];
+
 	if (id < 0)
 	{
 		ISC_STATUS_ARRAY status;
@@ -684,13 +692,14 @@ int Sys5Semaphore::getId()
 			iscLogStatus("create_semaphores failed:", status);
 		}
 	}
+
 	return id;
 }
-#endif //USE_SYS5SEMAPHORE
+#endif // USE_SYS5SEMAPHORE
 
-#endif //HAVE_MMAP
+#endif // HAVE_MMAP
 
-#endif //UNIX
+#endif // UNIX
 
 #if defined(WIN_NT)
 static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
@@ -903,7 +912,7 @@ struct TimerEntry
 	int semId;
 	USHORT semNum;
 
-	static const SINT64& generate(const void* sender, const TimerEntry& Item) { return Item.fireTime; }
+	static const SINT64& generate(const void* sender, const TimerEntry& item) { return item.fireTime; }
 	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
 
 	static void init()
@@ -966,7 +975,7 @@ void delTimer(Sys5Semaphore* sem)
 
 	MutexLockGuard guard(timerAccess);
 
-	for (unsigned int i=0; i < timerQueue->getCount(); ++i)
+	for (unsigned int i = 0; i < timerQueue->getCount(); ++i)
 	{
 		TimerEntry& e(timerQueue->operator[](i));
 		if (e.semNum == sem->semNum && e.semId == id)
@@ -1429,8 +1438,8 @@ int ISC_event_wait(event_t* event,
 	return ret;
 }
 
-#endif //USE_SYS5SEMAPHORE
-#endif //USE_POSIX_THREADS
+#endif // USE_SYS5SEMAPHORE
+#endif // USE_POSIX_THREADS
 
 
 #ifdef WIN_NT
@@ -1562,8 +1571,7 @@ int ISC_event_wait(event_t* event,
 			return FB_SUCCESS;
 		}
 
-		const DWORD status =
-			WaitForMultipleObjects((DWORD) 1, handles, TRUE, timeout);
+		const DWORD status = WaitForMultipleObjects((DWORD) 1, handles, TRUE, timeout);
 
 		if (!((status >= WAIT_OBJECT_0) && (status < WAIT_OBJECT_0 + (DWORD) 1)))
 		{
@@ -3154,9 +3162,9 @@ int ISC_mutex_unlock(struct mtx* mutex)
 #endif /* HP10 */
 }
 
-#endif //USE_SYS5SEMAPHORE
+#endif // USE_SYS5SEMAPHORE
 
-#endif /* USE_POSIX_THREADS */
+#endif // USE_POSIX_THREADS
 
 
 #ifdef WIN_NT
@@ -3627,11 +3635,10 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
  **************************************/
 
 	if (flag)
-		if (SetFilePointer
-			(shmem_data->sh_mem_handle, new_length, NULL,
-			 FILE_BEGIN) == 0xFFFFFFFF
-			|| !SetEndOfFile(shmem_data->sh_mem_handle)
-			|| !FlushViewOfFile(shmem_data->sh_mem_address, 0))
+		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL,
+				FILE_BEGIN) == 0xFFFFFFFF ||
+			!SetEndOfFile(shmem_data->sh_mem_handle) ||
+			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
 			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
