@@ -4803,8 +4803,11 @@ static void store_dependencies(thread_db*	tdbb,
 				( (dep_rel->rel_flags & (REL_temp_tran | REL_temp_conn)) !=
 				  (relation->rel_flags & (REL_temp_tran | REL_temp_conn)) ))
 			{
-				if ( !( (dep_rel->rel_flags & REL_temp_tran) &&
-						(relation->rel_flags & REL_temp_conn) ))
+				if ( !( // master is ON COMMIT PRESERVE, detail is ON COMMIT DELETE
+						(dep_rel->rel_flags & REL_temp_tran) && (relation->rel_flags & REL_temp_conn) ||
+						// computed field of a view 
+						(dependency_type == obj_computed) && (dep_rel->rel_view_rse != NULL) 
+					   ))
 				{
 					Firebird::string sMaster, sChild;
 
