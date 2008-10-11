@@ -73,6 +73,11 @@ public:
 		return result != WAIT_TIMEOUT;
 	}
 
+	void enter()
+	{
+		tryEnter();
+	}
+
 	void release(SLONG count = 1)
 	{
 		if (!ReleaseSemaphore(hSemaphore, count, NULL))
