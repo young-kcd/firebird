@@ -1950,8 +1950,8 @@ static jrd_nod* looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_for:
 			switch (request->req_operation) {
 			case jrd_req::req_evaluate:
-				request->req_records_affected.clear();
 				RSE_open(tdbb, (RecordSource*) node->nod_arg[e_for_rsb]);
+				request->req_records_affected.clear();
 			case jrd_req::req_return:
 				if (node->nod_arg[e_for_stall]) {
 					node = node->nod_arg[e_for_stall];
