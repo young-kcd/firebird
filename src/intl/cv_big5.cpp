@@ -46,7 +46,7 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 	fb_assert(impl->csconvert_datatable != NULL);
 	fb_assert(impl->csconvert_misc != NULL);
 
-    const ULONG src_start = src_len;
+	const ULONG src_start = src_len;
 	*err_code = 0;
 
 	// See if we're only after a length estimate
@@ -97,7 +97,7 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 		}
 
 		*dest_ptr++ = ch;
-		dest_len -= sizeof(USHORT);
+		dest_len -= sizeof(*dest_ptr);
 		src_len -= this_len;
 	}
 	if (src_len && !*err_code) {
@@ -153,6 +153,9 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		const int tmp1 = big5_ch / 256;
 		const int tmp2 = big5_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
+				
+			fb_assert((UCHAR(tmp2)&0x80)==0);
+				
 			*big5_str++ = tmp2;
 			big5_len--;
 			unicode_len -= sizeof(*unicode_str);
@@ -197,6 +200,7 @@ INTL_BOOL CVBIG5_check_big5(charset* cs,
 	while (big5_len--)
 	{
 		const UCHAR c1 = *big5_str;
+
 		if (BIG51(c1))	// Is it  BIG-5
 		{
 			if (big5_len == 0)	/* truncated BIG-5 */

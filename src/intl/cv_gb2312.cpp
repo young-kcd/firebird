@@ -49,7 +49,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 	const ULONG src_start = src_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (p_dest_ptr == NULL)
 		return (src_len * sizeof(USHORT));
 
@@ -89,8 +89,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 
 		/* Convert from GB2312 to UNICODE */
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256]
-			 + (wide % 256)];
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
 		if ((ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
@@ -144,9 +143,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		const USHORT wide = *unicode_str++;
 
 		const USHORT gb_ch = ((const USHORT*) impl->csconvert_datatable)
-				[((const USHORT*) impl->csconvert_misc)
-					[(USHORT)wide / 256]
-				 + (wide % 256)];
+			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
 		if ((gb_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -155,6 +152,9 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		const int tmp1 = gb_ch / 256;
 		const int tmp2 = gb_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
+				
+			fb_assert((UCHAR(tmp2)&0x80)==0);
+				
 			*gb_str++ = tmp2;
 			gb_len--;
 			unicode_len -= sizeof(*unicode_str);
