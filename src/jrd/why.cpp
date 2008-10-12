@@ -385,6 +385,8 @@ namespace
 		Clean<TransactionCleanupRoutine, FB_API_HANDLE> cleanup;
 		Transaction* next;
 		StoredTra* handle;
+		SortedArray<Blob*> blobs;
+		Mutex mutex;	// protects blobs array
 
 		static ISC_STATUS hError()
 		{
@@ -399,7 +401,7 @@ namespace
 	public:
 		Transaction(StoredTra* h, FB_API_HANDLE* pub, Attachment* par)
 			: BaseHandle(hType(), pub, par),
-			  next(0), handle(h)
+			  next(0), handle(h), blobs(getPool())
 		{
 			toParent<Transaction>(parent->transactions, this, parent->mutex);
 		}
@@ -410,14 +412,7 @@ namespace
 		{
 		}
 
-		~Transaction()
-		{
-			cleanup.call(public_handle);
-			if (parent)
-			{
-				fromParent<Transaction>(parent->transactions, this, parent->mutex);
-			}
-		}
+		~Transaction();
 	};
 
 	class Request : public BaseHandle
@@ -452,6 +447,7 @@ namespace
 	{
 	public:
 		StoredBlb* handle;
+		Transaction* tra;
 
 		static ISC_STATUS hError()
 		{
@@ -464,14 +460,16 @@ namespace
 		}
 
 	public:
-		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par)
-			: BaseHandle(hType(), pub, par), handle(h)
+		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par, Transaction *t)
+			: BaseHandle(hType(), pub, par), handle(h), tra(t)
 		{
 			toParent<Blob>(parent->blobs, this, parent->mutex);
+			toParent<Blob>(tra->blobs, this, tra->mutex);
 		}
 
 		~Blob()
 		{
+			fromParent<Blob>(tra->blobs, this, tra->mutex);
 			fromParent<Blob>(parent->blobs, this, parent->mutex);
 		}
 	};
@@ -685,6 +683,22 @@ namespace
 	{
 		cleanup.call(&public_handle);
 		fromParent<Attachment>(attachments(), this, attachmentsMutex);
+	}
+
+	Transaction::~Transaction()
+	{
+		cleanup.call(public_handle);
+
+		size_t i;
+		while ((i = blobs.getCount()))
+		{
+			delete blobs[i - 1];
+		}
+
+		if (parent)
+		{
+			fromParent<Transaction>(parent->transactions, this, parent->mutex);
+		}
 	}
 
 }
@@ -5578,7 +5592,7 @@ static ISC_STATUS open_blob(ISC_STATUS* user_status,
 			return status[1];
 		}
 
-		Blob* blob = new Blob(blob_handle, public_blob_handle, dbb);
+		Blob* blob = new Blob(blob_handle, public_blob_handle, dbb, transaction);
 		blob->flags |= flags;
 	}
 	catch (const Exception& e)
