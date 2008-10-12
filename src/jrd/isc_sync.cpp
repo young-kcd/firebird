@@ -323,6 +323,7 @@ namespace {
 	int fdSem = -1;
 	int sharedCount = 0;
 	int fd_init = -1;
+	GlobalPtr<Mutex> openFdInit;
 
 	class SemTable
 	{
@@ -1102,7 +1103,6 @@ int ISC_event_init(event_t* event)
  **************************************/
 
 	event->event_count = 0;
-	event->pid = getpid();
 
 	if (!getSem5(event))
 	{
@@ -1305,6 +1305,7 @@ int ISC_event_init(event_t* event)
  *
  **************************************/
 	event->event_count = 0;
+	event->pid = getpid();
 
 	/* Prepare an Inter-Process event block */
 	pthread_mutexattr_t mattr;
@@ -1926,6 +1927,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 
 /* open the init lock file */
 #ifdef USE_SYS5SEMAPHORE
+	MutexLockGuard guard(openFdInit);
 	if (fd_init < 0)
 #else
 	int
