@@ -154,7 +154,7 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		const int tmp2 = big5_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 				
-			fb_assert((UCHAR(tmp2)&0x80)==0);
+			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 				
 			*big5_str++ = tmp2;
 			big5_len--;

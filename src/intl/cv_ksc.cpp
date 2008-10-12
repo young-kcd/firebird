@@ -65,7 +65,7 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 	USHORT wide;
 	USHORT this_len;
 	const USHORT* const start = dest_ptr;
-	while ((src_len) && (dest_len > 1)) {
+	while (src_len && (dest_len > 1)) {
 		if (*src_ptr & 0x80) {
 			const UCHAR c1 = *src_ptr++;
 
@@ -88,12 +88,11 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 			}
 		}
 		else {					/* it is ASCII */
-
 			wide = *src_ptr++;
 			this_len = 1;
 		}
 
-		/* Convert from KSC to UNICODE */
+		// Convert from KSC to UNICODE
 		const USHORT ch = ((const USHORT*) impl->csconvert_datatable)
 			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 
@@ -136,7 +135,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 	const ULONG src_start = unicode_len;
 	*err_code = 0;
 
-/* See if we're only after a length estimate */
+	// See if we're only after a length estimate
 	if (ksc_str == NULL)
 		return (unicode_len);
 
@@ -148,7 +147,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 		const USHORT wide = *unicode_str++;
 
 		const USHORT ksc_ch = ((const USHORT*) impl->csconvert_datatable)
-			[((const USHORT*) impl->csconvert_misc)[(USHORT)wide / 256] + (wide % 256)];
+			[((const USHORT*) impl->csconvert_misc)[(USHORT) wide / 256] + (wide % 256)];
 		if ((ksc_ch == CS_CANT_MAP) && !(wide == CS_CANT_MAP)) {
 			*err_code = CS_CONVERT_ERROR;
 			break;
@@ -158,8 +157,8 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 		const int tmp2 = ksc_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 				
-			fb_assert((UCHAR(tmp2)&0x80)==0);
-				
+			fb_assert((UCHAR(tmp2) & 0x80) == 0);
+
 			*ksc_str++ = tmp2;
 			ksc_len--;
 			unicode_len -= sizeof(*unicode_str);

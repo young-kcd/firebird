@@ -153,7 +153,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		const int tmp2 = gb_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
 				
-			fb_assert((UCHAR(tmp2)&0x80)==0);
+			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 				
 			*gb_str++ = tmp2;
 			gb_len--;
