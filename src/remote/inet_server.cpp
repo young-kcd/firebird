@@ -141,7 +141,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
  *	Run the server with apollo mailboxes.
  *
  **************************************/
-	rem_port* port;
+	RemPortPtr port;
 
 // 01 Sept 2003, Nickolay Samofatov
 // In GCC version 3.1-3.3 we need to install special error handler
