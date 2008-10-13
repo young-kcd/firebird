@@ -413,8 +413,6 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 	SRVR_multi_thread(port, INET_SERVER_flag);
 
-	port->disconnect();
-
 #ifdef DEBUG_GDS_ALLOC
 /* In Debug mode - this will report all server-side memory leaks
  * due to remote access

@@ -588,6 +588,16 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			}
 
 			Worker::shutdown();
+
+			// All worker threads are stopped and will never run any more
+			// Disconnect remaining ports gracefully
+			rem_port* run_port = main_port;
+			while (run_port)
+			{
+				rem_port* current_port = run_port;	// important order of operations
+				run_port = run_port->port_next;		// disconnect() can modify linked list of ports
+				current_port->disconnect(NULL, NULL);
+			}
 		}
 		catch (const Firebird::Exception& e)
 		{
