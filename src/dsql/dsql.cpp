@@ -1522,66 +1522,51 @@ static bool get_indices(
  **/
 static USHORT get_plan_info(thread_db* tdbb,
 							dsql_req* request,
-							SSHORT buffer_length, SCHAR** out_buffer)
+							SSHORT buffer_length,
+							SCHAR** out_buffer)
 {
 	if (!request->req_request)	// DDL
 		return 0;
 
-	SCHAR explain_buffer[BUFFER_SMALL];
+	Firebird::HalfStaticArray<SCHAR, BUFFER_LARGE> explain_buffer;
+	explain_buffer.resize(BUFFER_LARGE);
 
-	memset(explain_buffer, 0, sizeof(explain_buffer));
-	SCHAR* explain_ptr = explain_buffer;
 	SCHAR* buffer_ptr = *out_buffer;
 
 	// get the access path info for the underlying request from the engine 
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request, 0, sizeof(explain_info), explain_info,
-			sizeof(explain_buffer), explain_buffer);
+		JRD_request_info(tdbb, request->req_request, 0,
+						 sizeof(explain_info), explain_info,
+						 explain_buffer.getCount(), explain_buffer.begin());
+
+		if (explain_buffer[0] == isc_info_truncated)
+		{
+			explain_buffer.resize(MAX_SSHORT);
+
+			JRD_request_info(tdbb, request->req_request, 0,
+							 sizeof(explain_info), explain_info,
+							 explain_buffer.getCount(), explain_buffer.begin());
+
+			if (explain_buffer[0] == isc_info_truncated)
+			{
+				return 0;
+			}
+		}
 	}
 	catch (Firebird::Exception&)
 	{
 		return 0;
 	}
 
-	if (*explain_buffer == isc_info_truncated) {
-		explain_ptr = (SCHAR *) gds__alloc(BUFFER_XLARGE);
-		// CVC: Added test for memory exhaustion here.
-		// Should we throw an exception or simply return 0 to the caller?
-		if (!explain_ptr) {
-			return 0;
-		}
-
-		try
-		{
-			JRD_request_info(tdbb, request->req_request, 0, sizeof(explain_info), explain_info,
-				BUFFER_XLARGE, explain_ptr);
-		}
-		catch (Firebird::Exception&)
-		{
-			gds__free(explain_ptr);
-			return 0;
-		}
-
-		if (*explain_ptr == isc_info_truncated)
-		{
-			// CVC: Before returning, deallocate the buffer!
-			gds__free(explain_ptr);
-			return 0;
-		}
-	}
-
 	SCHAR* plan;
-	for (int i = 0; i < 2; i++) {
-		const SCHAR* explain = explain_ptr;
+	for (int i = 0; i < 2; i++)
+	{
+		const SCHAR* explain = explain_buffer.begin();
 
 		if (*explain++ != isc_info_access_path)
 		{
-			// CVC: deallocate memory!
-			if (explain_ptr != explain_buffer) {
-				gds__free(explain_ptr);
-			}
 			return 0;
 		}
 
@@ -1596,7 +1581,8 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 		// keep going until we reach the end of the explain info 
 
-		while (explain_length > 0 && buffer_length > 0) {
+		while (explain_length > 0 && buffer_length > 0)
+		{
 			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
 							  &join_count, &level)) 
 			{
@@ -1613,7 +1599,8 @@ static USHORT get_plan_info(thread_db* tdbb,
 				}
 
 				// assume we have run out of room in the buffer, try again with a larger one 
-				char* temp = reinterpret_cast<char*>(gds__alloc(BUFFER_XLARGE));
+				const size_t new_length = MAX_SSHORT;
+				char* const temp = reinterpret_cast<char*>(gds__alloc(new_length));
 				if (!temp) {
 					// NOMEM. Do not attempt one more try
 					i++;
@@ -1621,7 +1608,7 @@ static USHORT get_plan_info(thread_db* tdbb,
 				}
 				else {
 					buffer_ptr = temp;
-					buffer_length = BUFFER_XLARGE;
+					buffer_length = (SSHORT) new_length;
 				}
 				break;
 			}
@@ -1629,10 +1616,6 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 		if (buffer_ptr == *out_buffer)
 			break;
-	}
-
-	if (explain_ptr != explain_buffer) {
-		gds__free(explain_ptr);
 	}
 
 	*out_buffer = buffer_ptr;
@@ -1654,7 +1637,8 @@ static USHORT get_plan_info(thread_db* tdbb,
  **/
 static USHORT get_request_info(thread_db* tdbb,
 							   dsql_req* request,
-							   SSHORT buffer_length, UCHAR* buffer)
+							   SSHORT buffer_length,
+							   UCHAR* buffer)
 {
 	if (!request->req_request)	// DDL
 		return 0;
@@ -1663,8 +1647,9 @@ static USHORT get_request_info(thread_db* tdbb,
 
 	try
 	{
-		JRD_request_info(tdbb, request->req_request, 0, sizeof(record_info),
-			record_info, buffer_length, reinterpret_cast<char*>(buffer));
+		JRD_request_info(tdbb, request->req_request, 0,
+						 sizeof(record_info), record_info,
+						 buffer_length, reinterpret_cast<char*>(buffer));
 	}
 	catch (Firebird::Exception&)
 	{
@@ -1677,7 +1662,8 @@ static USHORT get_request_info(thread_db* tdbb,
 	request->req_selects = request->req_inserts = 0;
 
 	UCHAR p;
-	while ((p = *data++) != isc_info_end) {
+	while ((p = *data++) != isc_info_end)
+	{
 		const USHORT data_length =
 			static_cast<USHORT>(gds__vax_integer(data, 2));
 		data += 2;
