@@ -75,7 +75,7 @@ public:
 
 	void enter()
 	{
-		tryEnter();
+		tryEnter(-1);
 	}
 
 	void release(SLONG count = 1)
