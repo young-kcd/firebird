@@ -103,10 +103,11 @@ namespace Jrd
 			lock->lck_object = this;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
-			dbb_sh_counter_curr = dbb_sh_counter_max = 0;
+			dbb_sh_counter_curr = 1;
+			dbb_sh_counter_max = 0;
 		}
 
-		if (dbb_sh_counter_curr == dbb_sh_counter_max)
+		if (dbb_sh_counter_curr > dbb_sh_counter_max)
 		{
 			LCK_convert(tdbb, dbb_sh_counter_lock, LCK_PW, LCK_WAIT);
 
