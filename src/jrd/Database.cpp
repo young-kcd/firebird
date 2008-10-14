@@ -25,11 +25,16 @@
  */
 
 #include "firebird.h"
+// Definition of block types for data allocation in JRD
+#include "../include/fb_blk.h"
+
 #include "../jrd/ibase.h"
 #include "../jrd/common.h"
 #include "../jrd/ods.h"
+#include "../jrd/lck.h"
 #include "../jrd/Database.h"
 #include "../jrd/tra.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/os/pio_proto.h"
 
 // Thread data block
@@ -37,9 +42,6 @@
 
 // recursive mutexes
 #include "../common/thd.h"
-
-// Definition of block types for data allocation in JRD
-#include "../include/fb_blk.h"
 
 namespace Jrd
 {
@@ -83,4 +85,58 @@ namespace Jrd
 		}
 	}
 
+	SLONG Database::genSharedUniqueNumber(thread_db* tdbb)
+	{
+		const int SHARED_COUNTER_CACHE_SIZE = 16;
+
+		if (!dbb_sh_counter_lock)
+		{
+			Lock* lock = FB_NEW_RPT(*dbb_permanent, sizeof(SLONG)) Lock();
+			dbb_sh_counter_lock = lock;
+			lock->lck_type = LCK_shared_counter;
+			lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+			lock->lck_parent = dbb_lock;
+			lock->lck_length = sizeof(SLONG);
+			lock->lck_key.lck_long = 0;
+			lock->lck_dbb = this;
+			lock->lck_ast = blocking_ast_shared_counter;
+			lock->lck_object = this;
+			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
+
+			dbb_sh_counter_curr = dbb_sh_counter_max = 0;
+		}
+
+		if (dbb_sh_counter_curr == dbb_sh_counter_max)
+		{
+			LCK_convert(tdbb, dbb_sh_counter_lock, LCK_PW, LCK_WAIT);
+
+			dbb_sh_counter_curr = LCK_read_data(tdbb, dbb_sh_counter_lock);
+			dbb_sh_counter_max = dbb_sh_counter_curr + SHARED_COUNTER_CACHE_SIZE - 1;
+			LCK_write_data(tdbb, dbb_sh_counter_lock, dbb_sh_counter_max + 1);
+		}
+
+		return dbb_sh_counter_curr++;
+	}
+
+	int Database::blocking_ast_shared_counter(void* ast_object)
+	{
+		Database* dbb = static_cast<Database*>(ast_object);
+
+		try
+		{
+			Database::SyncGuard dsGuard(dbb, true);
+
+			ThreadContextHolder tdbb;
+			tdbb->setDatabase(dbb);
+			// tdbb->setAttachment(dbb->dbb_sh_counter_lock->lck_attachment);
+
+			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
+
+			LCK_downgrade(tdbb, dbb->dbb_sh_counter_lock);
+		}
+		catch (const Firebird::Exception&)
+		{} // no-op
+
+		return 0;
+	}
 } // namespace

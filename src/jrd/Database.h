@@ -339,6 +339,9 @@ public:
 	FB_GUID		dbb_guid;				// dbb instance identifier
 	Lock*		dbb_instance_lock;		// dbb instance lock
 	Lock* 		dbb_lock;				// granddaddy lock
+	Lock*		dbb_sh_counter_lock;	// lock which holds shared counter value
+	SLONG		dbb_sh_counter_curr;	// current value of shared counter lock
+	SLONG		dbb_sh_counter_max;		// maximum cached value of shared counter lock
 	jrd_tra*	dbb_sys_trans;			// system transaction
 //	jrd_file*	dbb_file;				// files for I/O operations
 	Shadow*		dbb_shadow;				// shadow control block
@@ -484,7 +487,11 @@ public:
 	// this is anyway called in ~Database(), and in theory should be private
 	void destroyIntlObjects();			// defined in intl.cpp
 
+	SLONG genSharedUniqueNumber(thread_db* tdbb);
+
 private:
+
+	static int blocking_ast_shared_counter(void*);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database

@@ -5109,6 +5109,9 @@ static void shutdown_database(Database* dbb, const bool release_pools)
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
 
+	if (dbb->dbb_sh_counter_lock)
+		LCK_release(tdbb, dbb->dbb_sh_counter_lock);
+
 	// temporal measure to avoid unstable state of lock file -
 	// this is anyway called in ~Database()
 	dbb->destroyIntlObjects();
