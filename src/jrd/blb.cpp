@@ -217,7 +217,7 @@ void BLB_close(thread_db* tdbb, Jrd::blb* blob)
 		{
 			blob->blb_temp_size += BLP_SIZE;
 			jrd_tra* transaction = blob->blb_transaction;
-			TempSpace* tempSpace = transaction->getTempSpace();
+			TempSpace* const tempSpace = transaction->getBlobSpace();
 
 			blob->blb_temp_offset = tempSpace->allocateSpace(blob->blb_temp_size);
 			tempSpace->write(blob->blb_temp_offset,
@@ -1310,7 +1310,7 @@ blb* BLB_open2(thread_db* tdbb,
 
 				if (new_blob->blb_temp_size > 0)
 				{
-					transaction->getTempSpace()->read(new_blob->blb_temp_offset,
+					transaction->getBlobSpace()->read(new_blob->blb_temp_offset,
 						blob->getBuffer(), new_blob->blb_temp_size);
 				}
 
@@ -2641,7 +2641,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 
 	if ((blob->blb_flags & BLB_temporary) && blob->blb_temp_size > 0)
 	{
-		blob->blb_transaction->getTempSpace()->releaseSpace(
+		blob->blb_transaction->getBlobSpace()->releaseSpace(
 			blob->blb_temp_offset, blob->blb_temp_size);
 	}
 

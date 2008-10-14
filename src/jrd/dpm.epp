@@ -2010,7 +2010,7 @@ RecordNumber DPM_store_blob(thread_db* tdbb, blb* blob, Record* record)
 		{
 			if (blob->blb_temp_size > 0)
 			{
-				blob->blb_transaction->getTempSpace()->read(
+				blob->blb_transaction->getBlobSpace()->read(
 					blob->blb_temp_offset, buffer.getBuffer(blob->blb_temp_size),
 					blob->blb_temp_size);
 				q = buffer.begin();
