@@ -199,6 +199,7 @@ static void set_nod_value_attributes(dsql_nod*, const dsql_fld*);
 static void clearPermanentField (dsql_rel*, bool);
 static void define_user(CompiledStatement*, UCHAR);
 static void put_grantor(CompiledStatement* statement, const dsql_nod* grantor);
+static void post_607(const Arg::StatusVector& v);
 
 enum trigger_type {
 	PRE_STORE_TRIGGER = 1,
@@ -541,9 +542,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 			if (!fld)
 			{
 				// column @1 does not exist in table/view @2
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) << 
-						  Arg::Gds(isc_dyn_column_does_not_exist) <<
-						  Arg::Str(field->fld_type_of_name) << Arg::Str(field->fld_type_of_table->str_data));
+				post_607(Arg::Gds(isc_dyn_column_does_not_exist) <<
+						 Arg::Str(field->fld_type_of_name) << Arg::Str(field->fld_type_of_table->str_data));
 			}
 		}
 		else
@@ -551,8 +551,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 			if (!METD_get_domain(statement, field, field->fld_type_of_name.c_str()))
 			{
 				// Specified domain or source field does not exist
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
+				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(field->fld_type_of_name));
 			}
 		}
 	}
@@ -1932,9 +1931,7 @@ static void define_field(CompiledStatement* statement,
 		if (!METD_get_domain(statement, field, domain_name->str_data))
 		{
 			// Specified domain or source field does not exist
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
+			post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 		}
 
 		DDL_resolve_intl_type(statement, field,
@@ -3008,9 +3005,7 @@ static void define_shadow(CompiledStatement* statement)
 
 	if (!ptr[e_shadow_number])
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				  Arg::Gds(isc_dsql_command_err) << 
-				  Arg::Gds(isc_dsql_shadow_number_err));
+		post_607(Arg::Gds(isc_dsql_shadow_number_err));
 	}
 
 	statement->append_number(isc_dyn_def_shadow, (SSHORT)(IPTR) (ptr[e_shadow_number]));
@@ -3040,9 +3035,7 @@ static void define_shadow(CompiledStatement* statement)
 			if (!length && !file->fil_start)
 			{
 				// Preceding file did not specify length, so %s must include starting page number
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_dsql_file_length_err) << Arg::Str(file->fil_name->str_data));
+				post_607(Arg::Gds(isc_dsql_file_length_err) << Arg::Str(file->fil_name->str_data));
 			}
 
 			const SLONG start = file->fil_start;
@@ -3303,10 +3296,8 @@ static void define_udf(CompiledStatement* statement)
 			 field->fld_dtype == dtype_blob ||
 			 field->fld_dtype == dtype_timestamp))
 		{
-				// Return mode by value not allowed for this data type
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_return_mode_err));
+			// Return mode by value not allowed for this data type
+			post_607(Arg::Gds(isc_return_mode_err));
 		}
 
 		/* For functions returning a blob, coerce return argument position to
@@ -3319,9 +3310,7 @@ static void define_udf(CompiledStatement* statement)
 			{
 				// External functions can not have more than 10 parameters
 				// Or 9 if the function returns a BLOB
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_extern_func_err));
+				post_607(Arg::Gds(isc_extern_func_err));
 			}
 
 			statement->append_number(isc_dyn_func_return_argument, blob_position);
@@ -3410,9 +3399,7 @@ static void define_udf(CompiledStatement* statement)
 			if (position > MAX_UDF_ARGUMENTS)
 			{
 				// External functions can not have more than 10 parameters
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  Arg::Gds(isc_extern_func_err));
+				post_607(Arg::Gds(isc_extern_func_err));
 			}
 
 			/*field = (dsql_fld*) *ptr; */
@@ -3700,9 +3687,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		view_relation = METD_get_relation(statement, view_name);
 		if (!view_relation)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  Arg::Gds(isc_dsql_view_not_found) << Arg::Str(view_name->str_data));
+			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(view_name->str_data));
 		}
 	}
 
@@ -3840,9 +3825,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 		if (!ptr && !field_string)
 		{
 			// must specify field name for view select expression
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  Arg::Gds(isc_specify_field_err));
+			post_607(Arg::Gds(isc_specify_field_err));
 		}
 
 		// CVC: Small modification here to catch any mismatch between number of
@@ -3932,9 +3915,7 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	if (ptr != end)
 	{
 		// number of fields does not match select list
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				  Arg::Gds(isc_dsql_command_err) <<
-				  Arg::Gds(isc_num_field_err));
+		post_607(Arg::Gds(isc_num_field_err));
 	}
 
 	if (view_relation)	// modifying a view
@@ -3958,46 +3939,36 @@ static void define_view(CompiledStatement* statement, NOD_TYPE op)
 	{
 		if (!updatable)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // Only simple column names permitted for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_col_name_err));
+			// Only simple column names permitted for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_col_name_err));
 		}
 
 		select_expr = select_expr->nod_arg[e_sel_query_spec];
 
 		if (select_expr->nod_type == nod_list)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // Only one table allowed for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_table_view_err));
+			// Only one table allowed for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_table_view_err));
 		}
 
 		if (select_expr->nod_arg[e_qry_from]->nod_count != 1)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // Only one table allowed for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_table_view_err));
+			// Only one table allowed for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_table_view_err));
 		}
 
 		if (!select_expr->nod_arg[e_qry_where])
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // No where clause for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_where_err));
+			// No where clause for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_where_err));
 		}
 
 		if (select_expr->nod_arg[e_qry_distinct] ||
 			select_expr->nod_arg[e_qry_group] ||
 			select_expr->nod_arg[e_qry_having])
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_distinct_err));
+			// DISTINCT, GROUP or HAVING not permitted for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_distinct_err));
 		}
 
 		dsql_nod* relation_node = MAKE_node(nod_relation_name, e_rln_count);
@@ -4296,18 +4267,14 @@ static void delete_relation_view (CompiledStatement* statement,
 		if (!relation && !silent_deletion ||
 			relation && (relation->rel_flags & REL_view))
 		{
-			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					   Arg::Gds(isc_dsql_command_err) <<
-					   Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
+			post_607(Arg::Gds(isc_dsql_table_not_found) << Arg::Str(string->str_data));
 		}
 	}
 	else { /* node->nod_type == nod_del_view, nod_redef_view */
 		if (!relation && !silent_deletion ||
 			relation && !(relation->rel_flags & REL_view))
 		{
-			ERRD_post (Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					   Arg::Gds(isc_dsql_command_err) <<
-					   Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
+			post_607(Arg::Gds(isc_dsql_view_not_found) << Arg::Str(string->str_data));
 		}
 	}
 	if (relation) {
@@ -4469,18 +4436,14 @@ static void foreign_key(CompiledStatement* statement, dsql_nod* element, const c
 		{
 			// "REFERENCES table" without "(column)" requires PRIMARY
 			// KEY on referenced table
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  Arg::Gds(isc_reftable_requires_pk));
+			post_607(Arg::Gds(isc_reftable_requires_pk));
 		}
 	}
 
 	if (columns2 && (columns1->nod_count != columns2->nod_count))
 	{
 		// foreign key field count does not match primary key
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-				  Arg::Gds(isc_dsql_command_err) <<
-				  Arg::Gds(isc_key_field_count_err));
+		post_607(Arg::Gds(isc_key_field_count_err));
 	}
 
 /* define the foreign key index and the triggers that may be needed
@@ -5275,10 +5238,8 @@ static void modify_domain( CompiledStatement* statement)
 			   correct type, length, scale, etc. */
 			if (!METD_get_domain(statement, &local_field, domain_name->str_data))
 			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_dsql_command_err) <<
-						  // Specified domain or source field does not exist
-						  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
+				// Specified domain or source field does not exist
+				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 			}
 			if (element->nod_arg[e_cnstr_condition])
 			{
@@ -6344,10 +6305,8 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 
 		if ((*ptr)->nod_type == nod_select_expr)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					  Arg::Gds(isc_dsql_command_err) <<
-					  // No subqueries permitted for VIEW WITH CHECK OPTION
-					  Arg::Gds(isc_subquery_err));
+			// No subqueries permitted for VIEW WITH CHECK OPTION
+			post_607(Arg::Gds(isc_subquery_err));
 		}
 
 		if ((*ptr)->nod_type == nod_field_name)
@@ -6751,10 +6710,8 @@ static void modify_field(CompiledStatement*	statement,
 				// Get the domain information
 				if (!METD_get_domain(statement, field, domain_name->str_data))
 				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-							  Arg::Gds(isc_dsql_command_err) <<
-							  // Specified domain or source field does not exist
-							  Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
+					// Specified domain or source field does not exist
+					post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 				}
 				DDL_resolve_intl_type(statement, field, NULL);
 			}
@@ -7144,4 +7101,17 @@ void clearPermanentField (dsql_rel* relation, bool perm)
 		relation->rel_fields->fld_sub_type_name = 0;
 		relation->rel_fields->fld_relation = relation;
 	}
+}
+
+//
+// post very often used error - avoid code dup
+//
+
+static void post_607(const Arg::StatusVector& v)
+{
+	Arg::Gds err(isc_sqlerr);
+	err << Arg::Num(-607) << Arg::Gds(isc_dsql_command_err);
+
+	err.append(v);
+	ERRD_post(err);
 }
