@@ -30,6 +30,10 @@
 #include <limits.h>
 #endif
 
+#ifdef SOLARIS
+#include <limits.h>
+#endif
+
 
 static ULONG fam2_str_to_upper(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
 static ULONG fam2_str_to_lower(TEXTTYPE obj, ULONG iLen, const BYTE* pStr, ULONG iOutLen, BYTE *pOutStr);
