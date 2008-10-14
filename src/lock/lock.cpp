@@ -4142,15 +4142,15 @@ static void shutdown_blocking_thread( ISC_STATUS * status_vector)
 		event_t* event_ptr = LOCK_owner->own_wakeup;
 		SLONG value = ISC_event_clear(event_ptr);
 
+		/* Tell the scheduler to allow AST's to run */
+		AST_ENABLE();
+
 		/* wait for AST thread to start (or 5 secs) */
 		startupSemaphore.tryEnter(5);
 
 		/* Wakeup the AST thread - it might be blocking or stalled */
 		ISC_event_post(LOCK_owner->own_blocking);
 		ISC_event_post(LOCK_owner->own_stall);
-
-		/* Tell the scheduler to allow AST's to run */
-		AST_ENABLE();
 
 		/* Wait for the AST thread to finish cleanup or for 10 seconds */
 		ISC_event_wait(1, &event_ptr, &value, 10 * 1000000,
