@@ -90,7 +90,8 @@ typedef Firebird::BePlusTree<BlobIndex, ULONG, MemoryPool, BlobIndex> BlobIndexT
 /* Transaction block */
 
 const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
-const char* const TRA_TEMP_SPACE = "fb_trans_";
+const char* const TRA_BLOB_SPACE = "fb_blob_";
+const char* const TRA_UNDO_SPACE = "fb_undo_";
 
 class jrd_tra : public pool_alloc<type_tra>
 {
@@ -108,14 +109,15 @@ public:
 		tra_memory_stats(parent_stats),
 		tra_blobs_tree(p),
 		tra_blobs(&tra_blobs_tree),
-		tra_deferred_work(0),
+		tra_deferred_work(NULL),
 		tra_resources(*p),
 		tra_context_vars(*p),
 		tra_lock_timeout(DEFAULT_LOCK_TIMEOUT),
 		tra_timestamp(Firebird::TimeStamp::getCurrentTimeStamp()),
 		tra_open_cursors(*p),
 		tra_outer(outer),
-		tra_transactions(*p)
+		tra_transactions(*p),
+		tra_undo_record(NULL)
 	{
 		if (outer)
 		{
@@ -203,7 +205,10 @@ public:
 	//Transaction *tra_ext_two_phase;
 
 private:
-	TempSpace* tra_temp_space;	// temp space storage
+	TempSpace* tra_blob_space;	// temp blob storage
+	TempSpace* tra_undo_space;	// undo log storage
+
+	Record* tra_undo_record;	// temporary record used for the undo purposes
 
 public:
 	SSHORT getLockWait() const
@@ -211,15 +216,39 @@ public:
 		return -tra_lock_timeout;
 	}
 
-	TempSpace* getTempSpace()
+	TempSpace* getBlobSpace()
 	{
 		if (tra_outer)
-			return tra_outer->getTempSpace();
+			return tra_outer->getBlobSpace();
 
-		if (!tra_temp_space)
-			tra_temp_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_TEMP_SPACE);
+		if (!tra_blob_space)
+			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
 
-		return tra_temp_space;
+		return tra_blob_space;
+	}
+
+	TempSpace* getUndoSpace()
+	{
+		if (tra_outer)
+			return tra_outer->getUndoSpace();
+
+		if (!tra_undo_space)
+			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
+
+		return tra_undo_space;
+	}
+
+	Record* getUndoRecord(USHORT length)
+	{
+		if (!tra_undo_record || tra_undo_record->rec_length < length)
+		{
+			delete tra_undo_record;
+			tra_undo_record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+		}
+
+		memset(tra_undo_record, 0, sizeof(Record) + length);
+
+		return tra_undo_record;
 	}
 };
 
@@ -396,18 +425,66 @@ public:
 class UndoItem
 {
 public:
-	SINT64 rec_number;
-	Record* rec_data;
     static const SINT64& generate(const void *sender, const UndoItem& item)
 	{
-		return item.rec_number;
+		return item.number;
     }
+
 	UndoItem() {}
-	UndoItem(SINT64 rec_numberL, Record* rec_dataL)
+
+	UndoItem(RecordNumber recordNumber, UCHAR recordFlags)
+		: number(recordNumber.getValue()),
+		  length(0), format(NULL), offset(0),
+		  flags(recordFlags)
+	{}
+
+	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record, UCHAR recordFlags)
+		: number(recordNumber.getValue()),
+		  length(record->rec_length),
+		  format(record->rec_format),
+		  flags(recordFlags)
 	{
-		this->rec_number = rec_numberL;
-		this->rec_data = rec_dataL;
+		if (length)
+		{
+			offset = transaction->getUndoSpace()->allocateSpace(length);
+			transaction->getUndoSpace()->write(offset, record->rec_data, length);
+		}
 	}
+
+	Record* setupRecord(jrd_tra* transaction, UCHAR newFlags = 0)
+	{
+		flags |= newFlags;
+
+		Record* const record = transaction->getUndoRecord(length);
+		record->rec_number.setValue(number);
+		record->rec_flags = flags;
+		record->rec_length = length;
+		record->rec_format = format;
+
+		if (length)
+		{
+			transaction->getUndoSpace()->read(offset, record->rec_data, length);
+		}
+
+		return record;
+	}
+
+	void release(jrd_tra* transaction)
+	{
+		if (length)
+		{
+			transaction->getUndoSpace()->releaseSpace(offset, length);
+			length = 0;
+			format = NULL;
+		}
+	}
+
+private:
+	SINT64 number;
+	UCHAR flags;
+	USHORT length;
+	offset_t offset;
+	const Format* format;
 };
 
 typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;
@@ -424,4 +501,3 @@ public:
 } //namespace Jrd
 
 #endif // JRD_TRA_H
-

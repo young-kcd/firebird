@@ -3460,9 +3460,12 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 jrd_tra::~jrd_tra()
 {
+	delete tra_undo_record;
+
 	if (!tra_outer)
 	{
-		delete tra_temp_space;
+		delete tra_blob_space;
+		delete tra_undo_space;
 	}
 
 	DFW_delete_deferred(this, -1);

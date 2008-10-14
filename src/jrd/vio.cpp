@@ -3030,7 +3030,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 					verb_count is not zero. */
 
 					RecordBitmap::Accessor accessor(action->vct_records);
-					if (accessor.getFirst()) 
+					if (accessor.getFirst())
 						do {
 							rpb.rpb_number.setValue(accessor.current());
 							if (!DPM_get(tdbb, &rpb, LCK_write)) {
@@ -3051,7 +3051,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								VIO_backout(tdbb, &rpb, transaction);
 							}
 							else {
-								Record* record = action->vct_undo->current().rec_data;
+								Record* const record = action->vct_undo->current().setupRecord(transaction);
 								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 
 								/* Have we done BOTH an update and delete to this record
@@ -3122,7 +3122,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									BUGCHECK(186);	/* msg 186 record disappeared */
 								}
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-								Record* record = action->vct_undo->current().rec_data;
+								Record* const record = action->vct_undo->current().setupRecord(transaction);
 								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 								const bool new_ver = (record->rec_flags & REC_new_version) != 0;
 								if (record->rec_length != 0) {
@@ -3130,8 +3130,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									new_rpb.rpb_record = record;
 									new_rpb.rpb_address = record->rec_data;
 									new_rpb.rpb_length = record->rec_length;
-									verb_post(tdbb, transaction, &rpb, record,
-											  &new_rpb, same_tx, new_ver);
+									verb_post(tdbb, transaction, &rpb, record, &new_rpb, same_tx, new_ver);
 								}
 								else if (same_tx) {
 									verb_post(tdbb, transaction, &rpb, 0, 0, true, new_ver);
@@ -3148,7 +3147,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 			if (action->vct_undo) {
 				if (action->vct_undo->getFirst()) {
 					do {
-						delete action->vct_undo->current().rec_data;
+						action->vct_undo->current().release(transaction);
 					} while (action->vct_undo->getNext());
 				}
 				delete action->vct_undo;
@@ -4332,8 +4331,7 @@ static Record* realloc_record(Record*& record, USHORT fmt_length)
  *	Realloc a record to accomodate longer length format.
  *
  **************************************/
-	Record* new_record = FB_NEW_RPT(record->rec_pool, fmt_length)
-		Record(record->rec_pool);
+	Record* new_record = FB_NEW_RPT(record->rec_pool, fmt_length) Record(record->rec_pool);
 
 	new_record->rec_precedence.takeOwnership(record->rec_precedence);
 	// start copying at rec_format, to not mangle source->rec_precedence
@@ -5083,7 +5081,6 @@ static void verb_post(
  *				false in all other cases.
  *
  **************************************/
-#pragma FB_COMPILER_MESSAGE("Out-of-memory condition in this function corrupts database. And it is likely due to huge amounts of allocations")
 	SET_TDBB(tdbb);
 
 	Jrd::ContextPoolHolder context(tdbb, transaction->tra_pool);
@@ -5116,37 +5113,21 @@ static void verb_post(
 			/* An update-in-place is being posted to this savepoint, and this
 			   savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), old_data->rec_length) Record(*tdbb->getDefaultPool());
-			data->rec_number = rpb->rpb_number;
-			data->rec_length = old_data->rec_length;
-			data->rec_format = old_data->rec_format;
-			if (same_tx) {
-				data->rec_flags |= REC_same_tx;
-			}
-			memcpy(data->rec_data, old_data->rec_data, old_data->rec_length);
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
+			const UCHAR flags = same_tx ? REC_same_tx : 0;
+			action->vct_undo->add(UndoItem(transaction, rpb->rpb_number, old_data, flags));
 		}
 		else if (same_tx) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint hasn't seen this record before. */
 
-			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) Record(*tdbb->getDefaultPool());
-			data->rec_number = rpb->rpb_number;
-			data->rec_length = 0;
-			if (new_ver) {
-				data->rec_flags |= (REC_same_tx | REC_new_version);
-			}
-			else {
-				data->rec_flags |= REC_same_tx;
-			}
-
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
+			const UCHAR flags = REC_same_tx | (new_ver ? REC_new_version : 0);
+			action->vct_undo->add(UndoItem(rpb->rpb_number, flags));
 		}
 	}
 	else if (same_tx) {
@@ -5154,22 +5135,18 @@ static void verb_post(
 		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has already undo for this record. */
-			undo = action->vct_undo->current().rec_data;
-			undo->rec_flags |= REC_same_tx;
+			undo = action->vct_undo->current().setupRecord(transaction, REC_same_tx);
 		}
 		else {
 			/* An insert/update followed by a delete is posted to this savepoint,
 			   and this savepoint has seen this record before but it doesn't have
 			   undo data. */
 
-			Record* data = FB_NEW_RPT(*tdbb->getDefaultPool(), 1) Record(*tdbb->getDefaultPool());
-			data->rec_number = rpb->rpb_number;
-			data->rec_length = 0;
-			data->rec_flags |= (REC_same_tx | REC_new_version);
 			if (!action->vct_undo) {
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
 			}
-			action->vct_undo->add(UndoItem(rpb->rpb_number.getValue(), data));
+			const UCHAR flags = REC_same_tx | REC_new_version;
+			action->vct_undo->add(UndoItem(rpb->rpb_number, flags));
 		}
 		if (old_data) {
 			/* The passed old_data will not be used.  Thus, garbage collect. */
@@ -5185,7 +5162,7 @@ static void verb_post(
 
 		Record* undo = NULL;
 		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
-			undo = action->vct_undo->current().rec_data;
+			undo = action->vct_undo->current().setupRecord(transaction);
 		}
 
 		garbage_collect_idx(tdbb, rpb, new_rpb, old_data, undo);
