@@ -111,7 +111,6 @@ static BufferDesc* alloc_bdb(thread_db*, BufferControl*, UCHAR **);
 #ifndef PAGE_LATCHING
 static int blocking_ast_bdb(void*);
 #endif
-static void cache_bugcheck(int);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
 #endif
@@ -1353,10 +1352,10 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, SLONG tra_number)
 			if (latch == LATCH_exclusive
 				&& latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1)
 			{
-				cache_bugcheck(302);	// msg 302 unexpected page change 
+				BUGCHECK(302);	// msg 302 unexpected page change 
 			}
 			if (latch == LATCH_exclusive && bdb->bdb_use_count > 1)
-				cache_bugcheck(210);	// msg 210 page in use during flush 
+				BUGCHECK(210);	// msg 210 page in use during flush 
 #ifdef SUPERSERVER
 			if (bdb->bdb_flags & BDB_db_dirty) {
 				if (all_flag
@@ -1844,7 +1843,7 @@ void CCH_mark(thread_db* tdbb, WIN * window, USHORT mark_system, USHORT must_wri
    This prevents a write while the page is being modified. */
 
 	if (latch_bdb(tdbb, LATCH_mark, bdb, bdb->bdb_page, 1) == -1) {
-		cache_bugcheck(302);	/* msg 302 unexpected page change */
+		BUGCHECK(302);	/* msg 302 unexpected page change */
 	}
 
 	bdb->bdb_incarnation = ++dbb->dbb_page_incarnation;
@@ -2447,7 +2446,7 @@ void CCH_unwind(thread_db* tdbb, bool punt)
 			continue;
 		}
 		if (bdb->bdb_flags & BDB_marked) {
-			cache_bugcheck(268);	/* msg 268 buffer marked during cache unwind */
+			BUGCHECK(268);	/* msg 268 buffer marked during cache unwind */
 		}
 		bdb->bdb_flags &= ~BDB_writer;
 		while (bdb->bdb_use_count) {
@@ -2473,7 +2472,7 @@ void CCH_unwind(thread_db* tdbb, bool punt)
 		}
 		if (bdb->bdb_exclusive == tdbb) {
 			if (bdb->bdb_flags & BDB_marked) {
-				cache_bugcheck(268);	/* msg 268 buffer marked during cache unwind */
+				BUGCHECK(268);	/* msg 268 buffer marked during cache unwind */
 			}
 			bdb->bdb_flags &= ~(BDB_writer | BDB_faked | BDB_must_write);
 			release_bdb(tdbb, bdb, true, false, false);
@@ -2897,7 +2896,7 @@ static void flushDirty(thread_db* tdbb,
 				const PageNumber page = bdb->bdb_page;
 #ifndef SUPERSERVER
 				if (bdb->bdb_use_count) {
-					cache_bugcheck(210);	// msg 210 page in use during flush 
+					BUGCHECK(210);	// msg 210 page in use during flush 
 				}
 #endif
 				if (!write_buffer(tdbb, bdb, page, false, status, true)) {
@@ -2960,10 +2959,10 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 		else if (release_flag)
 		{
 			if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1) {
-				cache_bugcheck(302);	// msg 302 unexpected page change
+				BUGCHECK(302);	// msg 302 unexpected page change
 			}
 			if (bdb->bdb_use_count > 1) {
-				cache_bugcheck(210);	// msg 210 page in use during flush
+				BUGCHECK(210);	// msg 210 page in use during flush
 			}
 			PAGE_LOCK_RELEASE(bdb->bdb_lock);
 			release_bdb(tdbb, bdb, false, false, false);
@@ -2989,10 +2988,10 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 				if (release_flag)
 				{
 					if (latch_bdb(tdbb, latch, bdb, bdb->bdb_page, 1) == -1) {
-						cache_bugcheck(302);	// msg 302 unexpected page change 
+						BUGCHECK(302);	// msg 302 unexpected page change 
 					}
 					if (bdb->bdb_use_count > 1) {
-						cache_bugcheck(210);	// msg 210 page in use during flush 
+						BUGCHECK(210);	// msg 210 page in use during flush 
 					}
 				}
 				if (bdb->bdb_flags & (BDB_db_dirty | BDB_dirty)) 
@@ -3125,7 +3124,7 @@ static void btc_flush(thread_db* tdbb,
 
 #ifndef SUPERSERVER
 		if (bdb->bdb_use_count)
-			cache_bugcheck(210);	/* msg 210 page in use during flush */
+			BUGCHECK(210);	/* msg 210 page in use during flush */
 #endif
 		/* if any transaction has dirtied this page,
 		   check to see if it could have been this one */
@@ -3549,7 +3548,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			return;
 		}
 		else {
-			cache_bugcheck(211);
+			BUGCHECK(211);
 			/* msg 211 attempt to remove page from dirty page list when not there */
 		}
 	}
@@ -3596,7 +3595,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 			// node not found, bad tree
 			if (!p)
 			{
-				cache_bugcheck(211);
+				BUGCHECK(211);
 			}
 		}
 	}
@@ -3605,7 +3604,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 
 	if (bdb != p)
 	{
-		cache_bugcheck(211);
+		BUGCHECK(211);
 	}
 
 /* delete node */
@@ -3651,7 +3650,7 @@ static void btc_remove_balanced(BufferDesc* bdb)
 		{
 			if (stack[stackp].comp > 0)
 			{
-				cache_bugcheck(211);
+				BUGCHECK(211);
 			}
 
 			if ( (p->bdb_parent = bdb->bdb_parent) )
@@ -3993,7 +3992,7 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 			return;
 		}
 		else {
-			cache_bugcheck(211);
+			BUGCHECK(211);
 			/* msg 211 attempt to remove page from dirty page list when not there */
 		}
 	}
@@ -4040,22 +4039,6 @@ static void btc_remove_unbalanced(BufferDesc* bdb)
 #endif //!BALANCED_DIRTY_PAGE_TREE
 
 #endif // DIRTY_TREE
-
-static void cache_bugcheck(int number)
-{
-/**************************************
- *
- *	c a c h e _ b u g c h e c k
- *
- **************************************
- *
- * Functional description
- *	There has been a bugcheck during a cache operation.  Release
- *	the cache mutex and post the bugcheck.
- *
- **************************************/
-	BUGCHECK(number);
-}
 
 
 #ifdef CACHE_READER
@@ -4469,7 +4452,7 @@ static void check_precedence(thread_db* tdbb, WIN * window, PageNumber page)
 	BufferDesc* low = window->win_bdb;
 
 	if ((low->bdb_flags & BDB_marked) && !(low->bdb_flags & BDB_faked))
-		cache_bugcheck(212);	/* msg 212 CCH_precedence: block marked */
+		BUGCHECK(212);	/* msg 212 CCH_precedence: block marked */
 
 /* If already related, there's nothing more to do. If the precedence
    search was too complex to complete, just write the high page and
@@ -5046,7 +5029,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				   clear though how the bdb_use_count can get < 0 for a bdb
 				   in bcb_empty queue */
 				if (bdb->bdb_use_count < 0) {
-					cache_bugcheck(301);	/* msg 301 Non-zero use_count of a buffer in the empty que_inst */
+					BUGCHECK(301);	/* msg 301 Non-zero use_count of a buffer in the empty que_inst */
 				}
 
 				bdb->bdb_page = page;
@@ -5055,7 +5038,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 				/* The following latch should never fail because the buffer is 'empty'
 				   and the page is not in cache. */
 				if (latch_bdb(tdbb, latch, bdb, page, -100) == -1) {
-					cache_bugcheck(302);	/* msg 302 unexpected page change */
+					BUGCHECK(302);	/* msg 302 unexpected page change */
 				}
 #ifndef PAGE_LATCHING
 				if (page.getPageNum() >= 0) {
@@ -5076,7 +5059,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 			   that since there are no empty buffers this queue cannot be empty */
 
 			if (bcb->bcb_in_use.que_forward == &bcb->bcb_in_use) {
-				cache_bugcheck(213);	/* msg 213 insufficient cache size */
+				BUGCHECK(213);	/* msg 213 insufficient cache size */
 			}
 
 			BufferDesc* oldest = BLOCK(que_inst, BufferDesc*, bdb_in_use);
@@ -5204,7 +5187,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #ifdef SUPERSERVER
 			expand_buffers(tdbb, bcb->bcb_count + 75);
 #else
-			cache_bugcheck(214);	/* msg 214 no cache buffers available for reuse */
+			BUGCHECK(214);	/* msg 214 no cache buffers available for reuse */
 #endif
 		}
 	}
@@ -5289,7 +5272,7 @@ static SSHORT latch_bdb(
 			bdb->bdb_io = tdbb;
 			break;
 		case LATCH_mark:
-			cache_bugcheck(295);	/* inconsistent LATCH_mark call */
+			BUGCHECK(295);	/* inconsistent LATCH_mark call */
 			break;
 		case LATCH_none:
 			break;
@@ -5388,7 +5371,7 @@ static SSHORT latch_bdb(
 
 	case LATCH_mark:
 		if (bdb->bdb_exclusive != tdbb) {
-			cache_bugcheck(295);	/* inconsistent LATCH_mark call */
+			BUGCHECK(295);	/* inconsistent LATCH_mark call */
 		}
 		/* Some Firebird code marks a buffer more than once. */
 		if (bdb->bdb_io && (bdb->bdb_io != tdbb)) {
@@ -6081,7 +6064,7 @@ static void release_bdb(
 /* Releasing a LATCH_mark. */
 	if (rel_mark_latch) {
 		if ((bdb->bdb_io != tdbb) || (bdb->bdb_exclusive != tdbb)) {
-			cache_bugcheck(294);	/* inconsistent LATCH_mark release */
+			BUGCHECK(294);	/* inconsistent LATCH_mark release */
 		}
 		bdb->bdb_io = 0;
 	}
@@ -6092,7 +6075,7 @@ static void release_bdb(
 		   If an actual state changed, then we need to check if waiters
 		   can be granted.  Otherwise, there is nothing further to do. */
 		if (bdb->bdb_io == tdbb) {
-			cache_bugcheck(296);	/* inconsistent latch downgrade call */
+			BUGCHECK(296);	/* inconsistent latch downgrade call */
 		}
 		if (bdb->bdb_exclusive == tdbb) {
 			bdb->bdb_exclusive = 0;
@@ -6141,7 +6124,7 @@ static void release_bdb(
 /* If the exclusive latch is not held, then things have to behave much nicer. */
 	{
 		if (bdb->bdb_flags & BDB_marked) {
-			cache_bugcheck(297);	/* bdb is unexpectedly marked */
+			BUGCHECK(297);	/* bdb is unexpectedly marked */
 		}
 		--bdb->bdb_use_count;
 		if (bdb->bdb_io == tdbb) {
@@ -6151,7 +6134,7 @@ static void release_bdb(
 			for (i = 0; (i < BDB_max_shared) && (bdb->bdb_shared[i] != tdbb);
 				 i++); // null loop body
 			if (i >= BDB_max_shared) {
-				cache_bugcheck(300);	/* can't find shared latch */
+				BUGCHECK(300);	/* can't find shared latch */
 			}
 			bdb->bdb_shared[i] = 0;
 		}
@@ -6195,7 +6178,7 @@ static void release_bdb(
 
 			case LATCH_mark:
 				if (bdb->bdb_exclusive != lwt->lwt_tdbb) {
-					cache_bugcheck(298);	/* missing exclusive latch */
+					BUGCHECK(298);	/* missing exclusive latch */
 				}
 				if (bdb->bdb_io) {
 					break;
@@ -6482,7 +6465,7 @@ static int write_buffer(
 	}
 
 	if ((bdb->bdb_flags & BDB_marked) && !(bdb->bdb_flags & BDB_faked)) {
-		cache_bugcheck(217);	/* msg 217 buffer marked for update */
+		BUGCHECK(217);	/* msg 217 buffer marked for update */
 	}
 
 	if (!(bdb->bdb_flags & BDB_dirty) &&
