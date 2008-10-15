@@ -123,6 +123,7 @@ enum db_info_types
 	isc_info_active_tran_count = 110,
 	isc_info_creation_date = 111,
 	isc_info_db_file_size = 112,
+	fb_info_page_contents = 113,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };

@@ -757,6 +757,33 @@ void INF_database_info(const SCHAR* items,
 			length = INF_convert(tdbb->getAttachment()->att_charset, buffer);
 			break;
 
+		case fb_info_page_contents:
+			if (tdbb->getAttachment()->locksmith())
+			{
+				length = isc_vax_integer(items, 2);
+				items += 2;
+				const SLONG page_num = isc_vax_integer(items, length);
+				items += length;
+
+				win window(PageNumber(DB_PAGE_SPACE, page_num));
+
+				Ods::pag* page = CCH_FETCH_NO_CHECKSUM(tdbb, &window, LCK_WAIT, pag_undefined);
+				info = INF_put_item(item, dbb->dbb_page_size, reinterpret_cast<SCHAR*>(page), info, end);
+				CCH_RELEASE_TAIL(tdbb, &window);
+
+				if (!info) {
+					if (transaction)
+						TRA_commit(tdbb, transaction, false);
+					return;
+				}
+				continue;
+			}
+
+			buffer[0] = item;
+			item = isc_info_error;
+			length = 1 + INF_convert(isc_adm_task_denied, buffer + 1);
+			break;
+
 		default:
 			buffer[0] = item;
 			item = isc_info_error;
