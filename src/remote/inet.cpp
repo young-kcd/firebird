@@ -879,7 +879,8 @@ rem_port* INET_connect(const TEXT* name,
 		return port;
 	}
 
-	while (true) {
+	while (true) 
+	{
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
 				   (struct sockaddr *) &address, &l);
@@ -904,12 +905,6 @@ rem_port* INET_connect(const TEXT* name,
 			port->port_flags |= PORT_server;
 			return port;
 		}
-#ifndef WIN_NT
-		Firebird::MutexLockGuard guard(waitThreadMutex);
-		if (! procCount++) {
-			gds__thread_start(waitThread, 0, THREAD_medium, 0, 0);
-		}
-#endif
 
 #ifdef WIN_NT
 		Firebird::MutexLockGuard forkGuard(forkMutex);
@@ -924,6 +919,11 @@ rem_port* INET_connect(const TEXT* name,
 		forkSockets->add(s);
 		SetEvent(forkEvent);
 #else
+		Firebird::MutexLockGuard guard(waitThreadMutex);
+		if (! procCount++) {
+			gds__thread_start(waitThread, 0, THREAD_medium, 0, 0);
+		}
+
 		SOCLOSE(s);
 #endif
 	}
