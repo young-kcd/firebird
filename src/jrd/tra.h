@@ -229,9 +229,6 @@ public:
 
 	TempSpace* getUndoSpace()
 	{
-		if (tra_outer)
-			return tra_outer->getUndoSpace();
-
 		if (!tra_undo_space)
 			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
 
