@@ -1188,7 +1188,7 @@ static dsc* evlCeil(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_
 static string showInvalidChar(const UCHAR c)
 {
 	string str;
-	str.printf("%c (%X)", c, c);
+	str.printf("%c (ASCII %d)", c, c);
 	return str;
 }
 
@@ -1233,7 +1233,7 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_argviolates_uuidfmt) <<
 												Arg::Str(showInvalidChar(data[i])) <<
-												Arg::Num(i) <<
+												Arg::Num(i + 1) <<
 												Arg::Str(function->name));
 			}
 		}
@@ -1247,7 +1247,7 @@ static dsc* evlCharToUuid(Jrd::thread_db* tdbb, const SysFunction* function, Jrd
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 											Arg::Gds(isc_sysf_argviolates_guidigits) <<
 												Arg::Str(showInvalidChar(c)) <<
-												Arg::Num(i) <<
+												Arg::Num(i + 1) <<
 												Arg::Str(function->name));
 			}
 		}
@@ -1291,7 +1291,7 @@ const char* extractParts[10] =
 
 static const char* getPartName(int n)
 {
-	if (n < 0 || n > FB_NELEM(extractParts))
+	if (n < 0 || n >= FB_NELEM(extractParts))
 		return "Unknown";
 
 	return extractParts[n];
