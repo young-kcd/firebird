@@ -5241,11 +5241,9 @@ static void modify_domain( CompiledStatement* statement)
 				// Specified domain or source field does not exist
 				post_607(Arg::Gds(isc_dsql_domain_not_found) << Arg::Str(domain_name->str_data));
 			}
+
 			if (element->nod_arg[e_cnstr_condition])
-			{
-				set_nod_value_attributes(element->nod_arg[e_cnstr_condition],
-										 &local_field);
-			}
+				set_nod_value_attributes(element->nod_arg[e_cnstr_condition], &local_field);
 
 			/* Increment the context level for this statement, so that
 			   the context number for any RSE generated for a SELECT
@@ -7104,9 +7102,8 @@ void clearPermanentField (dsql_rel* relation, bool perm)
 }
 
 //
-// post very often used error - avoid code dup
+// post very often used error - avoid code duplication
 //
-
 static void post_607(const Arg::StatusVector& v)
 {
 	Arg::Gds err(isc_sqlerr);

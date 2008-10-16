@@ -99,7 +99,7 @@ namespace Jrd
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = 0;
 			lock->lck_dbb = this;
-			lock->lck_ast = blocking_ast_shared_counter;
+			lock->lck_ast = blockingAstSharedCounter;
 			lock->lck_object = this;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
@@ -119,7 +119,7 @@ namespace Jrd
 		return dbb_sh_counter_curr++;
 	}
 
-	int Database::blocking_ast_shared_counter(void* ast_object)
+	int Database::blockingAstSharedCounter(void* ast_object)
 	{
 		Database* dbb = static_cast<Database*>(ast_object);
 

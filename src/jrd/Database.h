@@ -490,8 +490,7 @@ public:
 	SLONG genSharedUniqueNumber(thread_db* tdbb);
 
 private:
-
-	static int blocking_ast_shared_counter(void*);
+	static int blockingAstSharedCounter(void*);
 
 	// The delete operators are no-oped because the Database memory is allocated from the
 	// Database's own permanent pool.  That pool has already been released by the Database

@@ -460,7 +460,7 @@ namespace
 		}
 
 	public:
-		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par, Transaction *t)
+		Blob(StoredBlb* h, FB_API_HANDLE* pub, Attachment* par, Transaction* t)
 			: BaseHandle(hType(), pub, par), handle(h), tra(t)
 		{
 			toParent<Blob>(parent->blobs, this, parent->mutex);

@@ -337,43 +337,35 @@ void INF_database_info(const SCHAR* items,
 			break;
 
 		case isc_info_read_seq_count:
-			length =
-				get_counts(DBB_read_seq_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_read_seq_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_read_idx_count:
-			length =
-				get_counts(DBB_read_idx_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_read_idx_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_update_count:
-			length =
-				get_counts(DBB_update_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_update_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_insert_count:
-			length =
-				get_counts(DBB_insert_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_insert_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_delete_count:
-			length =
-				get_counts(DBB_delete_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_delete_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_backout_count:
-			length =
-				get_counts(DBB_backout_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_backout_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_purge_count:
-			length =
-				get_counts(DBB_purge_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_purge_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_expunge_count:
-			length =
-				get_counts(DBB_expunge_count, buffer, sizeof(buffer));
+			length = get_counts(DBB_expunge_count, buffer, sizeof(buffer));
 			break;
 
 		case isc_info_implementation:
