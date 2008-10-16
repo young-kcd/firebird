@@ -2066,7 +2066,7 @@ static bool get_host_address(const Firebird::string& name, in_addr* address)
 
 		if (host) {
 			rc = true;
-			inet_copy(host->h_addr, (UCHAR*) &address, sizeof(address));
+			inet_copy(host->h_addr, (UCHAR*) address, sizeof(*address));
 		}
 	}
 
