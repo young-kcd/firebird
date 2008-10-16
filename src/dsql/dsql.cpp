@@ -1600,7 +1600,7 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 				// assume we have run out of room in the buffer, try again with a larger one 
 				const size_t new_length = MAX_SSHORT;
-				char* const temp = reinterpret_cast<char*>(gds__alloc(new_length));
+				char* const temp = static_cast<char*>(gds__alloc(new_length));
 				if (!temp) {
 					// NOMEM. Do not attempt one more try
 					i++;
