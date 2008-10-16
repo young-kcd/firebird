@@ -276,7 +276,7 @@ namespace {
 	private:
 		bool doLock(bool shared, bool wait)
 		{
-			LockLevel newLevel = shared ? SHARED : EXCL;
+			const LockLevel newLevel = shared ? SHARED : EXCL;
 			if (newLevel == level)
 			{
 				return true;
@@ -388,7 +388,7 @@ namespace {
 	public:
 		void cleanup(int fNum, bool release);
 
-		key_t getKey(int semSet)
+		key_t getKey(int semSet) const
 		{
 			fb_assert(semSet >= 0 && semSet < lastSet);
 
@@ -436,7 +436,7 @@ namespace {
 			int n;
 			for(n = 0; n < lastSet; ++n)
 			{
-				int semNum = set[n].get(fileNum);
+				const int semNum = set[n].get(fileNum);
 				if (semNum >= 0)
 				{
 					sem->semSet = n;
@@ -477,7 +477,7 @@ namespace {
 			set[sem->semSet].put(sem->semNum);
 		}
 
-		int findFileByName(const PathName& name)
+		int findFileByName(const PathName& name) const
 		{
 			// Get a file ID in filesTable.
 			for (int fileId = 0; fileId < N_FILES; ++fileId)
@@ -521,7 +521,7 @@ namespace {
 	class SharedFile
 	{
 	public:
-		SharedFile(char* pName, UCHAR* address, int length) 
+		SharedFile(const char* pName, UCHAR* address, int length) 
 			: fileNum(semTable->addFileByName(pName)), from(address), to(address + length)
 		{ }
 		SharedFile() : fileNum(0), from(0), to(0)
@@ -531,7 +531,7 @@ namespace {
 
 		static SharedFile* locate(void* s)
 		{
-			int n = getByAddress((UCHAR*)s);
+			int n = getByAddress((UCHAR*) s);
 			return n >= 0 ? &sharedFiles[n] : 0;
 		}
 
@@ -562,7 +562,7 @@ namespace {
 			}
 		}
 
-		static void remap(UCHAR* from, UCHAR* to, int newLength)
+		static void remap(UCHAR* const from, UCHAR* to, int newLength)
 		{
 			MutexLockGuard guard(mutex);
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
@@ -585,7 +585,7 @@ namespace {
 		static Storage sharedFiles;
 		static GlobalPtr<Mutex> mutex;
 
-		static int getByAddress(UCHAR* s)
+		static int getByAddress(UCHAR* const s)
 		{
 			MutexLockGuard guard(mutex);
 			for (unsigned int n = 0; n < sharedFiles.getCount(); ++n)
@@ -949,7 +949,7 @@ SINT64 curTime()
 		system_call_failed::raise("gettimeofday");
 	}
 
-	SINT64 timeout = ((SINT64)cur_time.tv_sec) * 1000000 + cur_time.tv_usec;
+	SINT64 timeout = ((SINT64) cur_time.tv_sec) * 1000000 + cur_time.tv_usec;
 	return timeout;
 }
 
@@ -972,7 +972,7 @@ SINT64 addTimer(Sys5Semaphore* sem, int microSeconds)
 
 void delTimer(Sys5Semaphore* sem)
 {
-	int id = sem->getId();
+	const int id = sem->getId();
 
 	MutexLockGuard guard(timerAccess);
 
@@ -1000,7 +1000,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 		{
 			MutexLockGuard guard(timerAccess);
 
-			SINT64 cur = curTime();
+			const SINT64 cur = curTime();
 			while (timerQueue->getCount() > 0)
 			{
 				TimerEntry& e(timerQueue->operator[](0));
@@ -1018,7 +1018,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 							break;
 						}
 					}
-					timerQueue->remove((size_t)0);
+					timerQueue->remove((size_t) 0);
 				}
 				else 
 				{
@@ -2032,7 +2032,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			SharedFile::push(sf);
 		}
 
-		void materialize() {
+		void materialize()
+		{
 			pop = false;
 		}
 
@@ -3515,7 +3516,7 @@ int ISC_mutex_lock(struct mtx* mutex)
 		enterFastMutex(&mutex->mtx_fast, INFINITE) :
 		WaitForSingleObject(mutex->mtx_fast.hEvent, INFINITE);
 
-    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? 0 : 1;
+    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? FB_SUCCESS : FB_FAILURE;
 }
 
 
@@ -3536,7 +3537,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
 		enterFastMutex(&mutex->mtx_fast, 0) :
 		WaitForSingleObject (mutex->mtx_fast.hEvent, 0L);
 
-    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? 0 : 1;
+    return (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED) ? FB_SUCCESS : FB_FAILURE;
 }
 
 
@@ -4043,12 +4044,10 @@ static SLONG create_semaphores(
 			}
 			return semid;
 		}
-		else
-		{
-			if (errno != EEXIST) {
-				error(status_vector, "semget", errno);
-				return -1;
-			}
+
+		if (errno != EEXIST) {
+			error(status_vector, "semget", errno);
+			return -1;
 		}
 	}
 }
