@@ -117,6 +117,8 @@ public:
 		tra_open_cursors(*p),
 		tra_outer(outer),
 		tra_transactions(*p),
+		tra_blob_space(NULL),
+		tra_undo_space(NULL),
 		tra_undo_record(NULL)
 	{
 		if (outer)
@@ -439,6 +441,7 @@ public:
 		: number(recordNumber.getValue()),
 		  length(record->rec_length),
 		  format(record->rec_format),
+		  offset(0),
 		  flags(recordFlags)
 	{
 		if (length)
