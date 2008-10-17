@@ -889,8 +889,8 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
       (We don't want to blindly keep topping off this buffer if we
        already have more than we can use) */
 
-	if (!length || can_use_more
-		&& (aux->ctlaux_source_blob_status == isc_segment))
+	///if (!length || (can_use_more && (aux->ctlaux_source_blob_status == isc_segment)))
+	if (!length || can_use_more)
 	{
 		// Get a segment, or partial segment, from the source
 		// into the temporary buffer
