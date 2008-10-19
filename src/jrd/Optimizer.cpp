@@ -88,15 +88,25 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 		return false;
 	}
 
-	if (node->nod_type == nod_procedure) {
-		return false;
-	}
-
 	// Recurse thru interesting sub-nodes
 	const jrd_nod* const* ptr = node->nod_arg;
 
-	if (node->nod_type == nod_union) {
-		const jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+	if (node->nod_type == nod_procedure) {
+		const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
+		if (inputs) {
+			fb_assert(inputs->nod_type == nod_asn_list);
+			ptr = inputs->nod_arg;
+			for (const jrd_nod* const* const end = ptr + inputs->nod_count;
+				ptr < end; ptr++)
+			{
+				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
+					return false;
+				}
+			}
+		}
+	}
+	else if (node->nod_type == nod_union) {
+		const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
 		ptr = clauses->nod_arg;
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count;
 			ptr < end; ptr += 2)
@@ -1030,7 +1040,7 @@ jrd_nod* OptimizerRetrieval::composeInversion(jrd_nod* node1, jrd_nod* node2,
 	return OPT_make_binary_node(node_type, node1, node2, false);
 }
 
-void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node, 
+void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node, 
 	SortedStreamList* streamList) const
 {
 /**************************************
@@ -1044,14 +1054,22 @@ void OptimizerRetrieval::findDependentFromStreams(jrd_nod* node,
  **************************************/
 
 	// Recurse thru interesting sub-nodes
-	jrd_nod** ptr = node->nod_arg;
+	const jrd_nod* const* ptr = node->nod_arg;
 
 	if (node->nod_type == nod_procedure) {
-		return;
+		const jrd_nod* const inputs = node->nod_arg[e_prc_inputs];
+		if (inputs) {
+			fb_assert(inputs->nod_type == nod_asn_list);
+			ptr = inputs->nod_arg;
+			for (const jrd_nod* const* const end = ptr + inputs->nod_count; 
+				ptr < end; ptr++)
+			{
+				findDependentFromStreams(*ptr, streamList);
+			}
+		}
 	}
-
-	if (node->nod_type == nod_union) {
-		jrd_nod* clauses = node->nod_arg[e_uni_clauses];
+	else if (node->nod_type == nod_union) {
+		const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
 		ptr = clauses->nod_arg;
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count; 
 			ptr < end; ptr += 2)

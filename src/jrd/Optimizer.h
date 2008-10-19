@@ -180,7 +180,7 @@ public:
 
 protected:
 	jrd_nod* composeInversion(jrd_nod* node1, jrd_nod* node2, NOD_T node_type) const;
-	void findDependentFromStreams(jrd_nod* node, SortedStreamList* streamList) const;
+	void findDependentFromStreams(const jrd_nod* node, SortedStreamList* streamList) const;
 	VaryingString* getAlias();
 	InversionCandidate* generateInversion(RecordSource** rsb);
 	RecordSource* generateNavigation();
