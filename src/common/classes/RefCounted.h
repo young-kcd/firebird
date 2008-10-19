@@ -89,7 +89,7 @@ namespace Firebird
 	class RefPtr
 	{
 	public:
-		RefPtr() : ptr(0)
+		RefPtr() : ptr(NULL)
 		{ }
 
 		explicit RefPtr(T* p) : ptr(p)
@@ -100,7 +100,7 @@ namespace Firebird
 			}
 		}
 
-		RefPtr(RefPtr& r) : ptr(r.ptr)
+		RefPtr(const RefPtr& r) : ptr(r.ptr)
 		{
 			if (ptr)
 			{
@@ -121,7 +121,7 @@ namespace Firebird
 			return assign(p);
 		}
 
-		T* operator=(RefPtr& r)
+		T* operator=(const RefPtr& r)
 		{
 			return assign(r.ptr);
 		}
@@ -189,6 +189,7 @@ namespace Firebird
 
 		T* ptr;
 	};
+
 } // namespace
 
 #endif // COMMON_REF_COUNTED_H

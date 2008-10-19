@@ -38,6 +38,7 @@
 #include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
 
 #if !defined(SUPERCLIENT) && !defined(EMBEDDED)
@@ -571,14 +572,11 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 #endif
 
 	// sync objects
-	Firebird::RefMutex* const port_sync;
-	Firebird::Reference port_sync_reference;
+	Firebird::RefPtr<Firebird::RefMutex> port_sync;
 #ifdef REM_SERVER
-	Firebird::RefMutex* const port_que_sync;
-	Firebird::Reference port_que_reference;
+	Firebird::RefPtr<Firebird::RefMutex> port_que_sync;
 #endif
-	Firebird::RefMutex* const port_write_sync;
-	Firebird::Reference port_write_reference;
+	Firebird::RefPtr<Firebird::RefMutex> port_write_sync;
 
 	// port function pointers (C "emulation" of virtual functions)
 	int				(*port_accept)(rem_port*, const p_cnct*);
@@ -654,13 +652,10 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 public:
 	rem_port(rem_port_t t, size_t rpt) :
 		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_sync_reference(*port_sync),
 #ifdef REM_SERVER
 		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_que_reference(*port_que_sync),
 #endif
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_write_reference(*port_write_sync),
 		port_accept(0), port_disconnect(0), port_receive_packet(0), port_send_packet(0), 
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0), 
 		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic), 
@@ -802,7 +797,7 @@ public:
 	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
 
 #ifdef REM_SERVER
-	bool haveRecvData() const
+	bool haveRecvData()
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync);
 		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));

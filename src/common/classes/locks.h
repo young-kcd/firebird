@@ -30,8 +30,6 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
-#include "fb_atomic.h"
-#include "RefCounted.h"
 #include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
@@ -288,19 +286,6 @@ public:
 #endif //WIN_NT
 
 
-// mutex with reference count
-// This class is useful if mutex can be "deleted" by the
-// code between enter and leave calls
-class RefMutex : public Mutex, public RefCounted
-{
-public:
-	RefMutex() {}
-	explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
-};
-
-
-class RefMutexGuard;	// forward declaration
-
 // RAII holder
 class MutexLockGuard
 {
@@ -323,115 +308,12 @@ public:
 	}
 
 private:
-	// Forbid copy constructor
-	MutexLockGuard(const MutexLockGuard& source);
-
-	// Forbidden to avoid errors
-	MutexLockGuard(const RefMutex*);
-
-	// This constructor should be available only from RefMutexGuard
-	friend class RefMutexGuard;
-	explicit MutexLockGuard(RefMutex& refLock) 
-		: lock(&refLock)
-	{
-		lock->enter();
-	}
+	// Forbid copying
+	MutexLockGuard(const MutexLockGuard&);
+	MutexLockGuard& operator=(const MutexLockGuard&);
 
 	Mutex* lock;
 };
-
-
-class RefMutexGuard : public Reference, public MutexLockGuard
-{
-public:
-	explicit RefMutexGuard(RefMutex& alock) 
-		: Reference(alock), MutexLockGuard(alock)
-	{ }
-
-private:
-	// Forbid copy constructor
-	RefMutexGuard(const RefMutexGuard& source);
-};
-
-
-template <typename T>
-class DefaultRefCounted
-{
-public:
-	static int addRef(T* object)
-	{
-		return object->addRef();
-	}
-
-	static int release(T* object)
-	{
-		return object->release();
-	}
-};
-
-template <typename T>
-class NotRefCounted
-{
-public:
-	static int addRef(T*)
-	{
-		return 0;
-	}
-
-	static int release(T*)
-	{
-		return 0;
-	}
-};
-
-
-template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
-class EnsureUnlock
-{
-public:
-	explicit EnsureUnlock(Mtx& mutex)
-	{
-		m_mutex = &mutex;
-		RefCounted::addRef(m_mutex);
-		m_locked = 0;
-	}
-
-	~EnsureUnlock()
-	{
-		while (m_locked)
-			leave();
-		RefCounted::release(m_mutex);
-	}
-
-	void enter() 
-	{
-		m_mutex->enter();
-		m_locked++;
-	}
-
-	bool tryEnter() 
-	{
-		if (m_mutex->tryEnter())
-		{
-			m_locked++;
-			return true;
-		}
-		return false;
-	}
-
-	void leave() 
-	{
-		m_mutex->leave();
-		m_locked--;
-	}
-
-private:
-	Mtx* m_mutex;
-	int m_locked;
-};
-
-typedef EnsureUnlock<Mutex, NotRefCounted<Mutex> > MutexEnsureUnlock;
-typedef EnsureUnlock<RefMutex> RefMutexEnsureUnlock;
 
 } //namespace Firebird
 

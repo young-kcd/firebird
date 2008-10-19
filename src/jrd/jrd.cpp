@@ -124,6 +124,7 @@
 #include "../jrd/IntlManager.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/ClumpletReader.h"
+#include "../common/classes/RefMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
 
