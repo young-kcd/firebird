@@ -606,8 +606,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_gen_id:
 	case nod_gen_id2:
 		node = MAKE_node(input->nod_type, e_gen_id_count);
-		node->nod_arg[e_gen_id_value] =
-			PASS1_node(statement, input->nod_arg[e_gen_id_value]);
+		node->nod_arg[e_gen_id_value] = PASS1_node(statement, input->nod_arg[e_gen_id_value]);
 		node->nod_arg[e_gen_id_name] = input->nod_arg[e_gen_id_name];
 		return node;
 
@@ -615,8 +614,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 		global_temp_collation_name = (dsql_str*) input->nod_arg[e_coll_target];
 		sub1 = PASS1_node(statement, input->nod_arg[e_coll_source]);
 		global_temp_collation_name = NULL;
-		node =
-			pass1_collate(statement, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
+		node = pass1_collate(statement, sub1, (dsql_str*) input->nod_arg[e_coll_target]);
 		return node;
 
 	case nod_extract:
@@ -670,8 +668,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_strlen:
 		node = MAKE_node(input->nod_type, e_strlen_count);
 		node->nod_arg[e_strlen_type] = input->nod_arg[e_strlen_type];
-		node->nod_arg[e_strlen_value] =
-			PASS1_node(statement, input->nod_arg[e_strlen_value]);
+		node->nod_arg[e_strlen_value] = PASS1_node(statement, input->nod_arg[e_strlen_value]);
 		if (node->nod_arg[e_strlen_value]->nod_desc.dsc_flags & DSC_nullable)
 			node->nod_desc.dsc_flags |= DSC_nullable;
 		return node;
@@ -900,23 +897,23 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 				node = NULL;
 				dsql_nod** ptr = sub2->nod_arg;
 				for (const dsql_nod* const* const end = ptr + sub2->nod_count;
-					 ptr < end && list_item_count < MAX_MEMBER_LIST;
-					 list_item_count++, ptr++)
+					 ptr < end; list_item_count++, ptr++)
 				{
+					if (list_item_count >= MAX_MEMBER_LIST)
+					{
+						ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+								  Arg::Gds(isc_imp_exc) <<
+								  Arg::Gds(isc_dsql_too_many_values) << Arg::Num(MAX_MEMBER_LIST));
+					}
+
 					DEV_BLKCHK(*ptr, dsql_type_nod);
 					dsql_nod* temp = MAKE_node(input->nod_type, 2);
-					temp->nod_arg[0] = input->nod_arg[0];
-					temp->nod_arg[1] = *ptr;
+					temp->nod_arg[0] = PASS1_node(statement, input->nod_arg[0]);
+					temp->nod_arg[1] = PASS1_node(statement, *ptr);
 					node = compose(node, temp, nod_or);
 				}
-				if (list_item_count >= MAX_MEMBER_LIST)
-				{
-					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
-							  Arg::Gds(isc_imp_exc) <<
-							  Arg::Gds(isc_dsql_too_many_values) << Arg::Num(MAX_MEMBER_LIST));
-				}
 
-				return PASS1_node(statement, node);
+				return node;
 			}
 			if (sub2->nod_type == nod_select_expr)
 			{
@@ -1000,13 +997,13 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 			statement->req_in_group_by_clause  || statement->req_in_having_clause ||
 			statement->req_in_order_by_clause))
 		{
-			/* not part of a select list, where clause, group by clause,
-			   having clause, or order by clause */
+			// not part of a select list, where clause, group by clause,
+			// having clause, or order by clause
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_agg_ref_err));
 		}
 		node = MAKE_node(input->nod_type, e_agg_function_count);
-		node->nod_count = input->nod_count;  // Copy count, because this must be exactly the same as input.
+		node->nod_count = input->nod_count;  // copy count, because this must be exactly the same as input
 		node->nod_flags = input->nod_flags;
 		if (input->nod_count) {
 			for (int i = 0; i < input->nod_count; i++) {
@@ -1032,8 +1029,7 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_plan_item:
 		node = MAKE_node(input->nod_type, 2);
 		node->nod_arg[0] = sub1 = MAKE_node(nod_relation, e_rel_count);
-		sub1->nod_arg[e_rel_context] =
-			pass1_alias_list(statement, input->nod_arg[0]);
+		sub1->nod_arg[e_rel_context] = pass1_alias_list(statement, input->nod_arg[0]);
 		node->nod_arg[1] = PASS1_node(statement, input->nod_arg[1]);
 		return node;
 
@@ -5248,7 +5244,7 @@ static void pass1_expand_select_node(CompiledStatement* statement, dsql_nod* nod
     @param list
 
  **/
-static dsql_nod* pass1_field( CompiledStatement* statement, dsql_nod* input,
+static dsql_nod* pass1_field(CompiledStatement* statement, dsql_nod* input,
 							 const bool list, dsql_nod* select_list)
 {
 	DEV_BLKCHK(statement, dsql_type_req);
