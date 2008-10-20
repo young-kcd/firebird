@@ -201,7 +201,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	bool sw_requests = false;
 	bool sw_locks = false;
 	bool sw_history = false;
-	bool sw_nobridge = false;
 	bool sw_owners = true;
 	
 	USHORT sw_interactive;
@@ -227,7 +226,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'c':
-				sw_nobridge = true;
 				sw_consistency = true;
 				break;
 
@@ -261,10 +259,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				--argc;
 				break;
 
-			case 'n':
-				sw_nobridge = true;
-				break;
-
 			case 'i':
 				while (c = *p++)
 					switch (c) {
@@ -293,7 +287,6 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				if (!sw_interactive)
 					sw_interactive =
 						(SW_I_ACQUIRE | SW_I_OPERATION | SW_I_TYPE | SW_I_WAIT);
-				sw_nobridge = true;
 				sw_seconds = sw_intervals = 1;
 				if (argc > 1) {
 					sw_seconds = atoi(*argv++);
@@ -312,12 +305,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 				break;
 
 			case 'w':
-				sw_nobridge = true;
 				sw_waitlist = true;
 				break;
 
 			case 'f':
-				sw_nobridge = true;
 				sw_file = true;
 				if (argc > 1) {
 					lock_file = *argv++;
