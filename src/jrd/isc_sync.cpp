@@ -4083,6 +4083,40 @@ void longjmp_sig_handler(int sig_num)
 
 	siglongjmp(*TLS_GET(sigjmp_ptr), sig_num);
 }
+
+#ifndef HAVE_MMAP
+static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
+{
+/**************************************
+ *
+ *	f i n d _ k e y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find the semaphore/shared memory key for a file.
+ *
+ **************************************/
+	int fd;
+	key_t key;
+
+/* Produce shared memory key for file */
+
+	if ((key = ftok(filename, FTOK_KEY)) == -1) {
+		if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)) == -1) {
+			error(status_vector, "open", errno);
+			return 0L;
+		}
+		close(fd);
+		if ((key = ftok(filename, FTOK_KEY)) == -1) {
+			error(status_vector, "ftok", errno);
+			return 0L;
+		}
+	}
+
+	return key;
+}
+#endif // HAVE_MMAP
 #endif // UNIX
 
 
