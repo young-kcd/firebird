@@ -108,17 +108,16 @@ public:
 		if (cnvt2)
 		{
 			ULONG len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, NULL, 0, NULL, &errCode, &errPos);
-			fb_assert(len % sizeof(USHORT) == 0);
 
 			if (len == INTL_BAD_STR_LENGTH || errCode != 0)
 				Firebird::status_exception::raise(isc_arith_except, isc_arg_end);
+
+			fb_assert(len % sizeof(USHORT) == 0);
 
 			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL> temp;
 
 			len = (*cnvt1->csconvert_fn_convert)(cnvt1, srcLen, src, len,
 				reinterpret_cast<UCHAR*>(temp.getBuffer(len / 2)), &errCode, &errPos);
-			fb_assert(len % sizeof(USHORT) == 0);
-			temp.shrink(len / 2);
 
 			if (len == INTL_BAD_STR_LENGTH)
 			{
@@ -137,6 +136,9 @@ public:
 					isc_arg_gds, isc_transliteration_failed,
 					isc_arg_end);
 			}
+
+			fb_assert(len % sizeof(USHORT) == 0);
+			temp.shrink(len / 2);
 
 			len = (*cnvt2->csconvert_fn_convert)(cnvt2, len, reinterpret_cast<const UCHAR*>(temp.begin()),
 				dstLen, dst, &errCode, &errPos);
