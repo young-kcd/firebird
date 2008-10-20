@@ -891,7 +891,8 @@ dsql_nod* PASS1_node(CompiledStatement* statement, dsql_nod* input)
 	case nod_leq_all:
 		{
 			dsql_nod* sub2 = input->nod_arg[1];
-			if (sub2->nod_type == nod_list) {
+			if (sub2->nod_type == nod_list)
+			{
 				int list_item_count = 0;
 
 				node = NULL;

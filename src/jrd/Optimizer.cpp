@@ -97,7 +97,7 @@ bool OPT_computable(CompilerScratch* csb, const jrd_nod* node, SSHORT stream,
 			fb_assert(inputs->nod_type == nod_asn_list);
 			ptr = inputs->nod_arg;
 			for (const jrd_nod* const* const end = ptr + inputs->nod_count;
-				ptr < end; ptr++)
+				 ptr < end; ptr++)
 			{
 				if (!OPT_computable(csb, *ptr, stream, idx_use, allowOnlyCurrentStream)) {
 					return false;
@@ -1062,7 +1062,7 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 			fb_assert(inputs->nod_type == nod_asn_list);
 			ptr = inputs->nod_arg;
 			for (const jrd_nod* const* const end = ptr + inputs->nod_count; 
-				ptr < end; ptr++)
+				 ptr < end; ptr++)
 			{
 				findDependentFromStreams(*ptr, streamList);
 			}
@@ -1072,14 +1072,14 @@ void OptimizerRetrieval::findDependentFromStreams(const jrd_nod* node,
 		const jrd_nod* const clauses = node->nod_arg[e_uni_clauses];
 		ptr = clauses->nod_arg;
 		for (const jrd_nod* const* const end = ptr + clauses->nod_count; 
-			ptr < end; ptr += 2)
+			 ptr < end; ptr += 2)
 		{
 			findDependentFromStreams(*ptr, streamList);
 		}
 	} 
 	else {
 		for (const jrd_nod* const* const end = ptr + node->nod_count;
-			ptr < end; ptr++) 
+			 ptr < end; ptr++) 
 		{
 			findDependentFromStreams(*ptr, streamList);
 		}

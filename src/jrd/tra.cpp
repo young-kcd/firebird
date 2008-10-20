@@ -2847,8 +2847,10 @@ static void transaction_options(thread_db* tdbb,
 
 			// Cannot set the whole txn to R/O if we already saw a R/W table reservation.
 			if (anylock_write)
+			{
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 						 Arg::Gds(isc_tpb_readtxn_after_writelock));
+			}
 
 			transaction->tra_flags |= TRA_readonly;
 			break;
@@ -2883,9 +2885,10 @@ static void transaction_options(thread_db* tdbb,
 		case isc_tpb_lock_write:
 			// Cannot set a R/W table reservation if the whole txn is R/O.
 			if (read_only.asBool())
+			{
 				ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 						 Arg::Gds(isc_tpb_writelock_after_readtxn));
-
+			}
 			anylock_write = true;
 			// fall into
 		case isc_tpb_lock_read:
