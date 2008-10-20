@@ -44,7 +44,7 @@
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#define FB_API_VER 20
+#define FB_API_VER 25
 #define isc_version4
 
 #define  ISC_TRUE	1
