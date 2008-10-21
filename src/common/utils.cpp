@@ -70,7 +70,7 @@ char* copy_terminate(char* dest, const char* src, size_t bufsize)
  **************************************/
 	if (!bufsize) // Was it a joke?
 		return dest;
-		
+
 	--bufsize;
 	strncpy(dest, src, bufsize);
 	dest[bufsize] = 0;
@@ -295,7 +295,7 @@ int snprintf(char* buffer, size_t count, const char* format...)
 // However, there are several usages through fb_utils::get_passwd(char* arg);
 char* cleanup_passwd(char* arg)
 {
-	if (! arg) 
+	if (! arg)
 	{
 		return arg;
 	}
@@ -304,7 +304,7 @@ char* cleanup_passwd(char* arg)
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
 	{
-		// No clear idea, how will it work if there is no memory 
+		// No clear idea, how will it work if there is no memory
 		// for password, but let others think. As a minimum avoid AV.
 		return arg;
 	}
@@ -319,12 +319,12 @@ char* cleanup_passwd(char* arg)
 static bool validateProductSuite (LPCSTR lpszSuiteToValidate);
 static bool isGlobalKernelPrefix();
 
-// hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for 
-// names of all kernel objects we use. For Win9x we must not add this prefix. 
-// Win NT will accept such names only if Terminal Server is installed. 
+// hvlad: begins from Windows 2000 we can safely add 'Global\' prefix for
+// names of all kernel objects we use. For Win9x we must not add this prefix.
+// Win NT will accept such names only if Terminal Server is installed.
 // Check OS version carefully and add prefix if we can add it
 
-void prefix_kernel_object_name(char* name, size_t bufsize)
+bool prefix_kernel_object_name(char* name, size_t bufsize)
 {
 	static bool bGlobalPrefix = false;
 	static bool bInitDone = false;
@@ -335,8 +335,8 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 		bInitDone = true;
 	}
 
-	// Backwards compatibility feature with Firebird 2.0.3 and earlier. 
-	// If the name already contains some prefix (specified by the user, as was 
+	// Backwards compatibility feature with Firebird 2.0.3 and earlier.
+	// If the name already contains some prefix (specified by the user, as was
 	// recommended in firebird.conf) additional prefix is not added
 	if (bGlobalPrefix && !strchr(name, '\\'))
 	{
@@ -344,14 +344,19 @@ void prefix_kernel_object_name(char* name, size_t bufsize)
 		const size_t len_prefix = strlen(prefix);
 		const size_t len_name = strlen(name) + 1;
 
-		// if name and prefix can't fit in name's buffer than we must 
+		// if name and prefix can't fit in name's buffer than we must
 		// not overwrite end of name because it contains object type
 		const int move_prefix = (len_name + len_prefix > bufsize) ?
 			(bufsize - len_name) : len_prefix;
 
 		memmove(name + move_prefix, name, len_name);
 		memcpy(name, prefix, move_prefix);
+		// CVC: Unfortunately, things like Glob instead of Global\\ do not achieve the objective
+		// of telling the NT kernel the object is global and hence I consider them failures.
+		//return move_prefix > 0; // Soft version of the check
+		return move_prefix == len_prefix; // Strict version of the check.
 	}
+	return true;
 }
 
 
@@ -382,7 +387,7 @@ private:
 };
 
 
-// hvlad: two functions below got from 
+// hvlad: two functions below got from
 // http://msdn2.microsoft.com/en-us/library/aa380797.aspx
 // and slightly adapted for our coding style
 
@@ -390,18 +395,18 @@ private:
 //   Note that the validateProductSuite and isTerminalServices
 //   functions use ANSI versions of the functions to maintain
 //   compatibility with Windows Me/98/95.
-//   ------------------------------------------------------------- 
+//   -------------------------------------------------------------
 
-bool isGlobalKernelPrefix() 
+bool isGlobalKernelPrefix()
 {
-	// The strategy of this function is as follows: use Global\ kernel namespace 
-	// for engine objects if we can. This can be prevented by either lack of OS support 
+	// The strategy of this function is as follows: use Global\ kernel namespace
+	// for engine objects if we can. This can be prevented by either lack of OS support
 	// for the feature (Win9X) or lack of privileges (Vista, Windows 2000/XP restricted accounts)
 
 	const DWORD dwVersion = GetVersion();
 
 	// Is Windows NT running?
-	if (!(dwVersion & 0x80000000)) 
+	if (!(dwVersion & 0x80000000))
 	{
 		if (LOBYTE(LOWORD(dwVersion)) <= 4) // This is Windows NT 4.0 or earlier.
 			return validateProductSuite("Terminal Server");
@@ -410,25 +415,25 @@ bool isGlobalKernelPrefix()
 		// version of Windows from Windows 2000 and up
 		// Check if we have enough privileges to create global handles.
 		// If not fall back to creating local ones.
-		// The API for that is the NT thing, so we have to get addresses of the 
+		// The API for that is the NT thing, so we have to get addresses of the
 		// functions dynamically to avoid troubles on Windows 9X platforms
 
 		DynLibHandle hmodAdvApi(LoadLibrary("advapi32.dll"));
-		
+
 		if (!hmodAdvApi) {
 			gds__log("LoadLibrary failed for advapi32.dll. Error code: %lu", GetLastError());
 			return false;
 		}
-		
+
 		typedef BOOL (WINAPI *PFnOpenProcessToken) (HANDLE, DWORD, PHANDLE);
 		typedef BOOL (WINAPI *PFnLookupPrivilegeValue) (LPCSTR, LPCSTR, PLUID);
 		typedef BOOL (WINAPI *PFnPrivilegeCheck) (HANDLE, PPRIVILEGE_SET, LPBOOL);
 
-		PFnOpenProcessToken pfnOpenProcessToken = 
+		PFnOpenProcessToken pfnOpenProcessToken =
 			(PFnOpenProcessToken) GetProcAddress(hmodAdvApi, "OpenProcessToken");
-		PFnLookupPrivilegeValue pfnLookupPrivilegeValue = 
+		PFnLookupPrivilegeValue pfnLookupPrivilegeValue =
 			(PFnLookupPrivilegeValue) GetProcAddress(hmodAdvApi, "LookupPrivilegeValueA");
-		PFnPrivilegeCheck pfnPrivilegeCheck = 
+		PFnPrivilegeCheck pfnPrivilegeCheck =
 			(PFnPrivilegeCheck) GetProcAddress(hmodAdvApi, "PrivilegeCheck");
 
 		if (!pfnOpenProcessToken || !pfnLookupPrivilegeValue || !pfnPrivilegeCheck) {
@@ -464,7 +469,7 @@ bool isGlobalKernelPrefix()
 
 		CloseHandle(hToken);
 
-		return checkResult; 
+		return checkResult;
 	}
 
 	return false;
@@ -523,7 +528,7 @@ void NTRegQuery::close()
 {
 	if (m_hKey)
 		RegCloseKey(m_hKey);
-		
+
 	m_hKey = NULL;
 }
 
@@ -578,7 +583,7 @@ inline bool NTLocalString::allocated() const
 	return m_string != 0;
 }
 
-		
+
 ////////////////////////////////////////////////////////////
 // validateProductSuite function
 //
@@ -587,7 +592,7 @@ inline bool NTLocalString::allocated() const
 //
 ////////////////////////////////////////////////////////////
 
-bool validateProductSuite (LPCSTR lpszSuiteToValidate) 
+bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 {
 	NTRegQuery query;
 
@@ -610,7 +615,7 @@ bool validateProductSuite (LPCSTR lpszSuiteToValidate)
 		return false;
 
 	query.close();  // explicit but redundant.
-	
+
 	// Search for suite name in array of strings.
 	bool fValidated = false;
 	LPCSTR lpszSuite = lpszProductSuites.c_str();

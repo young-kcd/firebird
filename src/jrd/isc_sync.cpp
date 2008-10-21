@@ -703,7 +703,7 @@ int Sys5Semaphore::getId()
 #endif // UNIX
 
 #if defined(WIN_NT)
-static void make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
+static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 #endif
 
 #if defined FREEBSD || defined NETBSD || defined DARWIN || defined HPUX
@@ -2413,6 +2413,7 @@ UCHAR* ISC_map_file(
 	bool trunc_flag = true;
 	if (length < 0) {
 		length = -length;
+		fb_assert(length > 0); // Was someone so crazy as to pass a bigger value than MAX_SLONG?
 		trunc_flag = false;
 	}
 
@@ -2438,14 +2439,20 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-/* Check if file already exists */
+	// Check if file already exists
 
 	const bool file_exists = (GetLastError() == ERROR_ALREADY_EXISTS);
 
-/* Create an event that can be used to determine if someone has already
-   initialized shared memory. */
+	// Create an event that can be used to determine if someone has already
+	// initialized shared memory.
 
-	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event");
+	if (!make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_event"))
+	{
+		error(status_vector, "make_object_name", GetLastError());
+		CloseHandle(file_handle);
+		return NULL;
+	}
+
 	event_handle = CreateEvent(ISC_get_security_desc(), TRUE, FALSE, expanded_filename);
 	if (!event_handle) {
 		error(status_vector, "CreateEvent", GetLastError());
@@ -2453,7 +2460,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
+	const bool init_flag = (GetLastError() != ERROR_ALREADY_EXISTS);
 
 	if (init_flag && !init_routine) {
 		CloseHandle(event_handle);
@@ -2523,7 +2530,13 @@ UCHAR* ISC_map_file(
 /* Create a file mapping object that will be used to make remapping possible.
    The current length of real mapped file and its name are saved in it. */
 
-	make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_mapping");
+	if (!make_object_name(expanded_filename, sizeof(expanded_filename), filename, "_mapping"))
+	{
+		error(status_vector, "make_object_name", GetLastError());
+		CloseHandle(event_handle);
+		CloseHandle(file_handle);
+		return NULL;
+	}
 
 	HANDLE header_obj = CreateFileMapping ((HANDLE) -1,
 				ISC_get_security_desc(),
@@ -2550,7 +2563,7 @@ UCHAR* ISC_map_file(
 		goto retry;
 	}
 
-	SLONG* header_address = (SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
+	SLONG* const header_address = (SLONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (header_address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -2572,9 +2585,8 @@ UCHAR* ISC_map_file(
 
 /* Create the real file mapping object. */
 
-	TEXT* p;
-	for (p = expanded_filename; *p; p++);
-	sprintf(p, "%"SLONGFORMAT, header_address[1]);
+	TEXT mapping_filename[sizeof(expanded_filename) + 15]; // enough for int32 as text
+	sprintf(mapping_filename, "%s%"SLONGFORMAT, expanded_filename, header_address[1]);
 
 	HANDLE file_obj =
 		CreateFileMapping(file_handle,
@@ -2582,7 +2594,7 @@ UCHAR* ISC_map_file(
 				  PAGE_READWRITE,
 				  0,
 				  length,
-				  expanded_filename);
+				  mapping_filename);
 	if (file_obj == NULL) {
 		error(status_vector, "CreateFileMapping", GetLastError());
 		UnmapViewOfFile(header_address);
@@ -2592,7 +2604,7 @@ UCHAR* ISC_map_file(
 		return NULL;
 	}
 
-	UCHAR* address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
+	UCHAR* const address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
 	if (address == NULL) {
 		error(status_vector, "MapViewOfFile", GetLastError());
@@ -2603,8 +2615,6 @@ UCHAR* ISC_map_file(
 		CloseHandle(file_handle);
 		return NULL;
 	}
-
-	*p = 0;
 
 	shmem_data->sh_mem_address = address;
 	shmem_data->sh_mem_length_mapped = length;
@@ -2628,9 +2638,7 @@ UCHAR* ISC_map_file(
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
 		SetEvent(event_handle);
-		if (SetFilePointer
-			(shmem_data->sh_mem_handle, length, NULL,
-			 FILE_BEGIN) == 0xFFFFFFFF
+		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == 0xFFFFFFFF
 			|| !SetEndOfFile(shmem_data->sh_mem_handle)
 			|| !FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
@@ -3474,10 +3482,12 @@ int ISC_mutex_init(struct mtx* mutex, const TEXT* mutex_name)
  **************************************/
 	char name_buffer[MAXPATHLEN];
 
-	make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex");
+	if (!make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex"))
+	{
+		return FB_FAILURE;
+	}
 
-	return !initializeFastMutex(&mutex->mtx_fast,
-		ISC_get_security_desc(), FALSE, name_buffer);
+	return !initializeFastMutex(&mutex->mtx_fast, ISC_get_security_desc(), FALSE, name_buffer);
 }
 
 
@@ -4121,7 +4131,7 @@ static SLONG find_key(ISC_STATUS* status_vector, const TEXT* filename)
 
 
 #ifdef WIN_NT
-static void make_object_name(
+static bool make_object_name(
 			     TEXT* buffer,
 				 size_t bufsize,
 			     const TEXT* object_name,
@@ -4139,8 +4149,15 @@ static void make_object_name(
  *
  **************************************/
 	char hostname[64];
-	_snprintf(buffer, bufsize, object_name, ISC_get_host(hostname, sizeof(hostname)));
-	buffer[bufsize - 1] = 0;
+	const int rc = snprintf(buffer, bufsize, object_name, ISC_get_host(hostname, sizeof(hostname)));
+	if (rc == bufsize || rc <= 0)
+	{
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return false;
+	}
+
+	char& limit = buffer[bufsize - 1];
+	limit = 0;
 
 	char* p;
 	char c;
@@ -4149,6 +4166,14 @@ static void make_object_name(
 		if (c == '/' || c == '\\' || c == ':')
 			*p = '_';
 	}
+
+	// We either append the full object type or produce failure.
+	if (p >= &limit || p + strlen(object_type) > &limit)
+	{
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return false;
+	}
+
 	strcpy(p, object_type);
 
 	// hvlad: windows file systems use case-insensitive file names
@@ -4158,6 +4183,13 @@ static void make_object_name(
 	// misunderstanding between processes
 	strlwr(buffer);
 
-	fb_utils::prefix_kernel_object_name(buffer, bufsize);
+	// CVC: I'm not convinced that if this call has no space to put the prefix,
+	// we can ignore that fact, hence I changed that signature, too.
+	if (!fb_utils::prefix_kernel_object_name(buffer, bufsize))
+	{
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return false;
+	}
+	return true;
 }
 #endif // WIN_NT

@@ -91,8 +91,8 @@ namespace fb_utils
 	}
 
 #ifdef WIN_NT
-	void prefix_kernel_object_name(char* name, size_t bufsize);
-#endif 
+	bool prefix_kernel_object_name(char* name, size_t bufsize);
+#endif
 
 	Firebird::PathName get_process_name();
 	SLONG genUniqueId();
