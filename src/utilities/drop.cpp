@@ -81,13 +81,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  **************************************
  *
  * Functional description
- *	Drop Lock Table and associated semaphores.	
+ *	Drop Lock Table and associated semaphores.
  *
  **************************************/
 	bool sw_lockmngr = false;
 	bool sw_events = false;
 	bool sw_version = false;
-	bool sw_nobridge = false;
 	bool sw_shutmngr = false;
 
 	orig_argc = argc;
@@ -112,12 +111,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					break;
 
 				case 'S':
-					sw_shutmngr = sw_nobridge = true;
+					sw_shutmngr = true;
 					break;
 
-				case 'N':
-					sw_nobridge = true;
-					break;
+				//case 'N':
+				//	break;
 
 				case 'Z':
 					sw_version = true;
@@ -227,8 +225,8 @@ static void remove_resource(
 		return;
 	}
 
-	SLONG shmid;
-	if ((shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped)) == -1) 
+	SLONG shmid = shm_exclusive(key, shmem_data.sh_mem_length_mapped);
+	if (shmid == -1)
 	{
 		printf("\n***File for %s is currently in use.\n", label);
 		return;
@@ -263,9 +261,7 @@ static void remove_resource(
 
 	const SLONG key = get_key(expanded_filename);
 	if (key == -1) {
-		printf("\n***Unable to get the key value of the %s file.\n",
-				  label);
-		return;
+		printf("\n***Unable to get the key value of the %s file.\n", label);
 	}
 }
 #endif
