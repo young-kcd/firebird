@@ -518,7 +518,7 @@ int API_ROUTINE isc_modify_dpb(SCHAR**	dpb,
 			return FB_FAILURE;		/* NOMEM: not really handled */
 		}
 
-		memcpy(new_dpb, dpb, *dpb_size);
+		memcpy(new_dpb, *dpb, *dpb_size);
 	}
 	else
 		new_dpb = reinterpret_cast<UCHAR*>(*dpb);
