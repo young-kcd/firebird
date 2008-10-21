@@ -173,25 +173,25 @@ static TLS_DECLARE(sigjmp_buf*, sigjmp_ptr);
 static void		longjmp_sig_handler(int);
 
 #ifndef HAVE_MMAP
-static SLONG	find_key(ISC_STATUS *, TEXT *);
+static SLONG	find_key(ISC_STATUS*, const TEXT*);
 #endif
 
 #ifdef HAVE_MMAP
 
 namespace {
 
-	// File lock holder 
+	// File lock holder
 	class FileLock
 	{
 	public:
 		enum LockLevel {NONE, SHARED, EXCL};
 		enum DtorMode {CLOSED, OPENED, LOCKED};
 
-		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED) 
+		FileLock(ISC_STATUS* pStatus, int pFd, DtorMode pMode = CLOSED)
 			: status(pStatus), level(NONE), fd(pFd), dtorMode(pMode)
 		{ }
 
-		~FileLock() 
+		~FileLock()
 		{
 			switch (dtorMode)
 			{
@@ -208,13 +208,13 @@ namespace {
 		}
 
 	// unlocking can only put error into log file - we can't throw in dtors
-		void unlock() 
+		void unlock()
 		{
 			if (level == NONE)
 			{
 				return;
 			}
-			
+
 #ifdef HAVE_FLOCK
 			if (flock(fd, LOCK_UN))
 #else
@@ -286,17 +286,17 @@ namespace {
 				unlock();
 			}
 #ifdef HAVE_FLOCK
-			if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB))) 
+			if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB)))
 #else //use FCNTL
 			struct flock lock;
 			lock.l_type = shared ? F_RDLCK : F_WRLCK;
 			lock.l_whence = 0;
 			lock.l_start = 0;
 			lock.l_len = 0;
-			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1) 
+			if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
 #endif
 			{
-				
+
 				error(status, NAME, errno);
 				return false;
 			}
@@ -305,7 +305,7 @@ namespace {
 		}
 	};
 
-	const char* FileLock::NAME = 
+	const char* FileLock::NAME =
 #ifdef HAVE_FLOCK
 		"flock";
 #else //use FCNTL
@@ -334,7 +334,7 @@ namespace {
 #ifdef DEV_BUILD
 		const static int SEM_PER_SET = 4;	// force multiple sets allocation
 #else
-		const static int SEM_PER_SET = 31;	// hard limit for some old systems, might set to 32 
+		const static int SEM_PER_SET = 31;	// hard limit for some old systems, might set to 32
 #endif
 		const static unsigned char CURRENT_VERSION = 1;
 		unsigned char version;
@@ -384,7 +384,7 @@ namespace {
 				mask |= (1 << bit);
 			}
 		} set[N_SETS];
-	
+
 	public:
 		void cleanup(int fNum, bool release);
 
@@ -404,7 +404,7 @@ namespace {
 
 			ftruncate(fdSem, sizeof(*this));
 
-			for (int i = 0; i < N_SETS; ++i) 
+			for (int i = 0; i < N_SETS; ++i)
 			{
 				if (set[i].fileNum > 0)
 				{
@@ -521,7 +521,7 @@ namespace {
 	class SharedFile
 	{
 	public:
-		SharedFile(const char* pName, UCHAR* address, int length) 
+		SharedFile(const char* pName, UCHAR* address, int length)
 			: fileNum(semTable->addFileByName(pName)), from(address), to(address + length)
 		{ }
 		SharedFile() : fileNum(0), from(0), to(0)
@@ -657,7 +657,7 @@ namespace {
 		return semTable->get(sf->getNum(), sem);
 	}
 
-	void freeSem5(Sys5Semaphore* sem) 
+	void freeSem5(Sys5Semaphore* sem)
 	{
 		ISC_STATUS_ARRAY status;
 
@@ -1006,21 +1006,21 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 				TimerEntry& e(timerQueue->operator[](0));
 				if (e.fireTime <= cur)
 				{
-					for (;;) 
+					for (;;)
 					{
 						union semun arg;
 						arg.val = 0;
 						int ret = semctl(e.semId, e.semNum, SETVAL, arg);
 						if (ret != -1)
 							break;
-						if (!SYSCALL_INTERRUPTED(errno)) 
+						if (!SYSCALL_INTERRUPTED(errno))
 						{
 							break;
 						}
 					}
 					timerQueue->remove((size_t) 0);
 				}
-				else 
+				else
 				{
 					microSeconds = e.fireTime - cur;
 					break;
@@ -1185,7 +1185,7 @@ int ISC_event_wait(event_t*	event,
 	struct timeval cur_time;
 	struct timezone tzUnused;
 	SINT64 timeout = 0;
-	if (micro_seconds > 0) 
+	if (micro_seconds > 0)
 	{
 		timeout = addTimer(event, micro_seconds);
 	}
@@ -1193,7 +1193,7 @@ int ISC_event_wait(event_t*	event,
 /* Go into wait loop */
 
 	int ret = FB_SUCCESS;
-	for (;;) 
+	for (;;)
 	{
 		if (!event_blocked(event, value))
 			break;
@@ -1209,7 +1209,7 @@ int ISC_event_wait(event_t*	event,
 			gds__log("ISC_event_wait: semop failed with errno = %d", errno);
 		}
 
-		if (micro_seconds > 0) 
+		if (micro_seconds > 0)
 		{
 			// distinguish between timeout and actually happened event
 			if (! event_blocked(event, value))
@@ -1225,7 +1225,7 @@ int ISC_event_wait(event_t*	event,
 	}
 
 /* Cancel the handler.  We only get here if a timeout was specified. */
-	if (micro_seconds > 0) 
+	if (micro_seconds > 0)
 	{
 		delTimer(event);
 	}
@@ -1600,7 +1600,7 @@ void ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
  * 08-Mar-2004, Nickolay Samofatov.
  *   This function is dangerous and requires rewrite using signal-safe operations only.
  *   Main problem is that we call a lot of signal-unsafe functions from this signal handler,
- *   examples are gds__alloc, gds__log, etc... sprintf is safe on some BSD platforms, 
+ *   examples are gds__alloc, gds__log, etc... sprintf is safe on some BSD platforms,
  *   but not on Linux. This may result in lock-up during signal handling.
  *
  **************************************/
@@ -1812,7 +1812,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\t\tnot have a description.  Exception number %"XLONGFORMAT".\n"
 				"\tThis exception will cause the Firebird server\n"
 				"\tto terminate abnormally.", err_msg, except_code);
-		break; 
+		break;
 	}
 
 	if (is_critical)
@@ -1833,7 +1833,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		// If exception is getting out of the application Windows displays a message
 		// asking if you want to send report to Microsoft or attach debugger,
 		// application is not terminated until you press some button on resulting window.
-		// This happens even if you run application as non-interactive service on 
+		// This happens even if you run application as non-interactive service on
 		// "server" OS like Windows Server 2003.
 		exit(3);
 	}
@@ -2027,7 +2027,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	class sfHolder
 	{
 	public:
-		sfHolder(const SharedFile& sf) : pop(true) 
+		sfHolder(const SharedFile& sf) : pop(true)
 		{
 			SharedFile::push(sf);
 		}
@@ -2531,7 +2531,7 @@ UCHAR* ISC_map_file(
 				0,
 				2 * sizeof (SLONG),
 				expanded_filename);
-	if (header_obj == NULL) 
+	if (header_obj == NULL)
 	{
 		error(status_vector, "CreateFileMapping", GetLastError());
 		CloseHandle(event_handle);
@@ -3195,7 +3195,7 @@ static inline BOOL switchToThread()
 	}
 
 	BOOL res = FALSE;
-	if (fnSwitchToThread) 
+	if (fnSwitchToThread)
 	{
 #if !defined SUPERSERVER
 		const HANDLE hThread = GetCurrentThread();
@@ -3226,7 +3226,7 @@ static inline void lockSharedSection(volatile FAST_MUTEX_SHARED_SECTION* lpSect,
 {
 	while (InterlockedExchange(FIX_TYPE(&lpSect->lSpinLock), 1) != 0)
 	{
-		ULONG j = SpinCount; 
+		ULONG j = SpinCount;
 		while (j != 0)
 		{
 			if (lpSect->lSpinLock == 0)
@@ -3284,11 +3284,11 @@ static DWORD enterFastMutex(FAST_MUTEX* lpMutex, DWORD dwMilliseconds)
 
 		InterlockedIncrement(FIX_TYPE(&lpSect->lThreadsWaiting));
 		unlockSharedSection(lpSect);
-		
+
 		// TODO actual timeout can be of any length
 		const DWORD dwResult = WaitForSingleObject(lpMutex->hEvent, dwMilliseconds);
 		InterlockedDecrement(FIX_TYPE(&lpSect->lThreadsWaiting));
-		
+
 		if (dwResult != WAIT_OBJECT_0)
 			return dwResult;
 	}
@@ -3331,7 +3331,7 @@ static inline void setupMutex(FAST_MUTEX* lpMutex)
 		lpMutex->lSpinCount = DEFAULT_INTERLOCKED_SPIN_COUNT;
 }
 
-static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAttributes, 
+static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAttributes,
 								BOOL bInitialState, LPCSTR lpName)
 {
 	LPCSTR name = lpName;
@@ -3361,18 +3361,18 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
 
 		lpMutex->hFileMap = CreateFileMapping(
-			INVALID_HANDLE_VALUE, 
-			lpAttributes, 
-			PAGE_READWRITE, 
-			0, 
-			sizeof(FAST_MUTEX_SHARED_SECTION), 
+			INVALID_HANDLE_VALUE,
+			lpAttributes,
+			PAGE_READWRITE,
+			0,
+			sizeof(FAST_MUTEX_SHARED_SECTION),
 			name);
 
 		dwLastError = GetLastError();
 
 		if (lpMutex->hFileMap)
 		{
-			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*) 
+			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*)
 				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
 
 			if (lpMutex->lpSharedInfo)
@@ -3386,7 +3386,7 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 				}
 				else
 				{
-					while (!lpMutex->lpSharedInfo->fInitialized) 
+					while (!lpMutex->lpSharedInfo->fInitialized)
 						switchToThread();
 				}
 
@@ -3420,28 +3420,28 @@ static bool openFastMutex(FAST_MUTEX* lpMutex, DWORD DesiredAccess, LPCSTR lpNam
 		sprintf(sz, FAST_MUTEX_EVT_NAME, lpName);
 		name = sz;
 	}
-	
+
 	lpMutex->hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
-	
+
 	DWORD dwLastError = GetLastError();
-	
+
 	if (lpMutex->hEvent)
 	{
 		if (lpName)
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
-		
+
 		lpMutex->hFileMap = OpenFileMapping(
-			FILE_MAP_ALL_ACCESS, 
-			FALSE, 
+			FILE_MAP_ALL_ACCESS,
+			FALSE,
 			name);
-		
+
 		dwLastError = GetLastError();
-	
+
 		if (lpMutex->hFileMap)
 		{
-			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*) 
+			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*)
 				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
-			
+
 			if (lpMutex->lpSharedInfo)
 				return true;
 
@@ -3476,7 +3476,7 @@ int ISC_mutex_init(struct mtx* mutex, const TEXT* mutex_name)
 
 	make_object_name(name_buffer, sizeof(name_buffer), mutex_name, "_mutex");
 
-	return !initializeFastMutex(&mutex->mtx_fast, 
+	return !initializeFastMutex(&mutex->mtx_fast,
 		ISC_get_security_desc(), FALSE, name_buffer);
 }
 
@@ -3533,7 +3533,7 @@ int ISC_mutex_lock_cond(struct mtx* mutex)
  *
  **************************************/
 
-	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ? 
+	const DWORD status = (mutex->mtx_fast.lpSharedInfo) ?
 		enterFastMutex(&mutex->mtx_fast, 0) :
 		WaitForSingleObject (mutex->mtx_fast.hEvent, 0L);
 
@@ -3564,7 +3564,7 @@ int ISC_mutex_unlock(struct mtx* mutex)
 
 void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 {
-	if (mutex->mtx_fast.lpSharedInfo) 
+	if (mutex->mtx_fast.lpSharedInfo)
 		setFastMutexSpinCount(&mutex->mtx_fast, spins);
 }
 
@@ -3950,7 +3950,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, SH_MEM shmem_data)
 	CloseHandle(shmem_data->sh_mem_interest);
 	UnmapViewOfFile(shmem_data->sh_mem_address);
 	CloseHandle(shmem_data->sh_mem_object);
-	    
+
 	CloseHandle(shmem_data->sh_mem_handle);
 	UnmapViewOfFile(shmem_data->sh_mem_hdr_address);
 	CloseHandle(shmem_data->sh_mem_hdr_object);
@@ -4003,11 +4003,11 @@ static SLONG create_semaphores(
 				error(status_vector, "semget", errno);
 				return -1;
 			}
-		} 
+		}
 		else
 		{
 			union semun arg;
-			semid_ds buf;	
+			semid_ds buf;
 			arg.buf = &buf;
 			// Get number of semaphores in opened set
 			if (semctl(semid, 0, IPC_STAT, arg) == -1) {
@@ -4022,7 +4022,7 @@ static SLONG create_semaphores(
 				return -1;
 			}
 		}
-		
+
 		// Try to create new semaphore set
 		semid = semget(key, semaphores, IPC_CREAT | IPC_EXCL | PRIV);
 		if (semid != -1)
@@ -4085,7 +4085,7 @@ void longjmp_sig_handler(int sig_num)
 }
 
 #ifndef HAVE_MMAP
-static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
+static SLONG find_key(ISC_STATUS* status_vector, const TEXT* filename)
 {
 /**************************************
  *
@@ -4097,13 +4097,13 @@ static SLONG find_key(ISC_STATUS * status_vector, TEXT * filename)
  *	Find the semaphore/shared memory key for a file.
  *
  **************************************/
-	int fd;
-	key_t key;
 
 	// Produce shared memory key for file
 
-	if ((key = ftok(filename, FTOK_KEY)) == -1) {
-		if ((fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV)) == -1) {
+	key_t key = ftok(filename, FTOK_KEY);
+	if (key == -1) {
+		int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, PRIV);
+		if (fd == -1) {
 			error(status_vector, "open", errno);
 			return 0L;
 		}
@@ -4141,7 +4141,7 @@ static void make_object_name(
 	char hostname[64];
 	_snprintf(buffer, bufsize, object_name, ISC_get_host(hostname, sizeof(hostname)));
 	buffer[bufsize - 1] = 0;
-	
+
 	char* p;
 	char c;
 	for (p = buffer; c = *p; p++)
@@ -4152,8 +4152,8 @@ static void make_object_name(
 	strcpy(p, object_type);
 
 	// hvlad: windows file systems use case-insensitive file names
-	// while kernel objects such as events use case-sensitive names. 
-	// Since we use root directory as part of kernel objects names 
+	// while kernel objects such as events use case-sensitive names.
+	// Since we use root directory as part of kernel objects names
 	// we must use lower (or upper) register for object name to avoid
 	// misunderstanding between processes
 	strlwr(buffer);
