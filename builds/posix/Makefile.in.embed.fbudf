@@ -71,7 +71,7 @@ ifeq ($(PLATFORM),win32)
 endif
 ifeq ($(PLATFORM),DARWIN)
 	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) \
--lm -o $@ $^ -lib_util
+-lm -o $@ $^ -L$(LIB) -lib_util
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)fbudf.$(SHRLIB_EXT) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -lm -o $@ $^ -L$(LIB) -lib_util

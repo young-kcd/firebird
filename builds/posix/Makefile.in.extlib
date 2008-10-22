@@ -77,7 +77,7 @@ lib_ib_udf: $(LIBIBUTIL_SO) $(UTIL_Objects) $(UDF)/ib_udf.$(SHRLIB_EXT)
 
 $(UDF)/ib_udf.$(SHRLIB_EXT): $(UDF_Objects)
 ifeq ($(PLATFORM),DARWIN)
-	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -lib_util
+	$(LIB_LINK) $(LIB_BUNDLE_OPTIONS) -o $@ $^ @PTHREAD_CFLAGS@ @PTHREAD_LIBS@ -L$(LIB) -lib_util
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)ib_udf.$(SHRLIB_EXT) \
 $(LIB_LINK_RPATH)$(FirebirdInstallPrefix)/lib -o $@ $^ $(THR_LIBS) -L$(LIB) -lib_util

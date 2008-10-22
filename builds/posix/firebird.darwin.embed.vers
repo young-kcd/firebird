@@ -243,6 +243,7 @@
 	_isc_print_status
 	_isc_sqlcode
 	_isc_sql_interprete
+	_fb_sqlstate
 
 # Event functions
 
@@ -276,6 +277,7 @@
 	_isc_start_multiple
 	_isc_start_transaction
 	_isc_transaction_info
+	_fb_disconnect_transaction
 
 # Other functions
 
@@ -293,6 +295,7 @@
 	_isc_start_request
 	_isc_transact_request
 	_isc_unwind_request
+	_fb_cancel_operation
 
 # Other SQL functions
 
@@ -319,6 +322,11 @@
 	_BLOB_text_dump
 	_BLOB_text_load
 	_Bopen
+
+# Server shutdown support
+
+	_fb_shutdown
+	_fb_shutdown_callback
 
 # Other misc functions
 

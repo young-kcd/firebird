@@ -22,7 +22,13 @@
  */
 
 #include "firebird.h"
+#ifdef DARWIN
+#if defined(i386) || defined(__x86_64__)
+#include <architecture/i386/io.h>
+#else
 #include <io.h>
+#endif
+#endif
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
