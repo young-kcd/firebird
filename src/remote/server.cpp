@@ -375,7 +375,7 @@ static bool link_request(SERVER_REQ queue,
 	
 			// Don't queue a dummy keepalive packet if there is a request on this port
 			if (operation == op_dummy) {
-				free_request(request->req_next);
+				free_request(request);
 				return true;
 			}
 			
