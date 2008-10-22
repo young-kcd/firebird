@@ -395,13 +395,13 @@ static bool link_request(SERVER_REQ queue,
 		if (queue->req_port == port) 
 		{
 		 	P_OP operation = request->req_receive.p_operation;
-	
+
 			// Don't queue a dummy keepalive packet if there is a request on this port
 			if (operation == op_dummy) {
-				free_request(request->req_next);
+				free_request(request);
 				return true;
 			}
-			
+
 			port->port_requests_queued++;
 			append_request_chain(request, &queue->req_chain);
 #ifdef DEBUG_REMOTE_MEMORY
