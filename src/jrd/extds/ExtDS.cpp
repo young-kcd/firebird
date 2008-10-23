@@ -686,16 +686,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 		readySql = &sql2;
 	}
 
-	try 
-	{
-		doPrepare(tdbb, *readySql);
-		m_transaction = NULL;
-	}
-	catch (...)
-	{
-		m_transaction = NULL;
-		throw;
-	}
+	doPrepare(tdbb, *readySql);
 
 	m_sql = sql;
 	m_sql.trim();
