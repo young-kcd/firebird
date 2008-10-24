@@ -298,7 +298,7 @@ bool LockManager::initializeOwner(thread_db* tdbb,
 		return true;
 	}
 
-	bool rc = create_owner(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle);
+	const bool rc = create_owner(tdbb->tdbb_status_vector, owner_id, owner_type, owner_handle);
 	LOCK_TRACE(("LOCK_init done (%ld)\n", *owner_handle));
 	return rc;
 }
@@ -3840,8 +3840,6 @@ USHORT LockManager::wait_for_request(thread_db* tdbb, lrq* request, SSHORT lck_w
 			release_shmem(owner_offset);
 			break;
 		}
-
-		current_time = time(NULL);	// refetch due to wait in acquire_shmem()
 
 		// See if we've waited beyond the lock timeout -
 		// if so we mark our own request as rejected
