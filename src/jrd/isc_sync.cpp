@@ -3606,8 +3606,7 @@ UCHAR *ISC_remap_file(ISC_STATUS * status_vector,
 	if ((U_IPTR) address == (U_IPTR) -1)
 		return NULL;
 
-	munmap((char *) shmem_data->sh_mem_address,
-		   shmem_data->sh_mem_length_mapped);
+	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
 
 #ifdef USE_SYS5SEMAPHORE
 	SharedFile::remap(shmem_data->sh_mem_address, address, new_length);
@@ -3648,6 +3647,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
  **************************************/
 
 	if (flag)
+	{
 		if (SetFilePointer(shmem_data->sh_mem_handle, new_length, NULL,
 				FILE_BEGIN) == 0xFFFFFFFF ||
 			!SetEndOfFile(shmem_data->sh_mem_handle) ||
@@ -3656,6 +3656,7 @@ UCHAR* ISC_remap_file(ISC_STATUS * status_vector,
 			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
 		}
+	}
 
 /* If the remap file exists, remap does not occur correctly.
  * The file number is local to the process and when it is
