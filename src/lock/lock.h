@@ -102,7 +102,7 @@ const UCHAR type_MAX	= type_lpr;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
-const UCHAR BASE_LHB_VERSION = 18;
+const UCHAR BASE_LHB_VERSION = 17;
 
 #if SIZEOF_VOID_P == 8
 const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
