@@ -433,16 +433,16 @@ public:
 
 	UndoItem(RecordNumber recordNumber, UCHAR recordFlags)
 		: number(recordNumber.getValue()),
-		  length(0), format(NULL), offset(0),
-		  flags(recordFlags)
+		  flags(recordFlags),
+		  length(0), offset(0), format(NULL)
 	{}
 
 	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record, UCHAR recordFlags)
 		: number(recordNumber.getValue()),
+		  flags(recordFlags),
 		  length(record->rec_length),
-		  format(record->rec_format),
 		  offset(0),
-		  flags(recordFlags)
+		  format(record->rec_format)
 	{
 		if (length)
 		{
