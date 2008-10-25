@@ -878,7 +878,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		/* Always keep a minimal count of bytes in the input buffer, 
 		 * to prevent the case of truncated characters.
 		 */
-		if (length < 3)
+		if (length < 4)
 			can_use_more = true;
 	}
 
@@ -889,19 +889,20 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
       (We don't want to blindly keep topping off this buffer if we
        already have more than we can use) */
 
+	USHORT bytes_read_from_source = 0;
+
 	///if (!length || (can_use_more && (aux->ctlaux_source_blob_status == isc_segment)))
 	if (!length || can_use_more)
 	{
 		// Get a segment, or partial segment, from the source
 		// into the temporary buffer
 
-		USHORT bytes_read_from_source = 0;
 		status = caller(isc_blob_filter_get_segment,
 						control,
 						(USHORT) MIN((aux->ctlaux_buffer1_len - length), control->ctl_buffer_length),
 						aux->ctlaux_buffer1 + length,
 						&bytes_read_from_source);
-						
+
 		switch (status)
 		{
 		case isc_segment:		/* source has more segment bytes */
@@ -922,7 +923,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		length += bytes_read_from_source;
 	}
 
-/* Now convert from the temporary buffer into the destination buffer */
+	// Now convert from the temporary buffer into the destination buffer.
 
 	try
 	{
@@ -936,41 +937,46 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return isc_transliteration_failed;
 	}
 
-	if (err_position < length) {
-		/* Bad input *might* be due to input buffer truncation in the middle
-		   of a character, so shuffle bytes, add some more data, and try again.
-		   If we already tried that then it's really some bad input */
+	if (err_position == 0 && bytes_read_from_source != 0 && length != 0 && length < 4)
+	{
+		// We don't have sufficient bytes to always transliterate a character.
+		// A bad input on the first character is unrecoverable, so we cache
+		// the bytes for the next read.
+		result_length = 0;
+	}
+	else if (err_position < length)
+	{
+		// Bad input *might* be due to input buffer truncation in the middle
+		// of a character, so shuffle bytes, add some more data, and try again.
+		// If we already tried that then it's really some bad input.
 
 		if (err_position == 0)
 			return isc_transliteration_failed;
 	}
-	
+
 	const USHORT unused_len = (err_position >= length) ? 0 : length - err_position;
 	control->ctl_segment_length = result_length;
-	if (unused_len) {
+	if (unused_len)
 		memcpy(aux->ctlaux_buffer1, aux->ctlaux_buffer1 + err_position, unused_len);
-	}
 	aux->ctlaux_buffer1_unused = unused_len;
 
-/* update local control variables for segment length */
+	// update local control variables for segment length
 
 	if (result_length > control->ctl_max_segment)
 		control->ctl_max_segment = result_length;
 
-/* No need up update ctl_number_segments as this filter doesn't change it */
-/* No need to update ctl_total_length as we calculated an estimate on entry */
+	// No need up update ctl_number_segments as this filter doesn't change it.
+	// No need to update ctl_total_length as we calculated an estimate on entry.
 
-/* see if we still have data we couldn't send to application */
+	// see if we still have data we couldn't send to application
 
 	if (unused_len)
-		return isc_segment;		/* can't fit all data into user buffer */
+		return isc_segment;		// can't fit all data into user buffer
 
-/* We handed back all our data, but did we GET all the data 
- * from the source?
- */
+	// We handed back all our data, but did we GET all the data 
+	// from the source?
 
-	return (aux->ctlaux_source_blob_status == isc_segment) ?
-		isc_segment : FB_SUCCESS;
+	return (aux->ctlaux_source_blob_status == isc_segment) ? isc_segment : FB_SUCCESS;
 }
 
 

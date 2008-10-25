@@ -631,7 +631,7 @@ USHORT BLB_get_segment(thread_db* tdbb,
 		USHORT tmp_len = 0;
 		const ISC_STATUS status =
 			BLF_get_segment(tdbb, &blob->blb_filter, &tmp_len, buffer_length, segment);
-			
+
 		switch (status)
 		{
 			case isc_segstr_eof:
