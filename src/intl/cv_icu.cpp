@@ -84,6 +84,8 @@ static ULONG unicode_to_icu(csconvert* cv,
 							USHORT* errCode,
 							ULONG* errPosition)
 {
+	fb_assert(srcLen % sizeof(UChar) == 0);
+
 	*errCode = 0;
 	*errPosition = 0;
 
@@ -96,19 +98,25 @@ static ULONG unicode_to_icu(csconvert* cv,
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
 
-	ULONG len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
-        Firebird::Aligner<UChar>(src, srcLen), srcLen / sizeof(UChar), &status);
+	Firebird::Aligner<UChar> alignedSource(src, srcLen);
+	const UChar* source = alignedSource;
+	char* target = reinterpret_cast<char*>(dst);
+	ucnv_fromUnicode(conv, &target, target + dstLen, &source,
+		source + srcLen / sizeof(UChar), NULL, TRUE, &status);
+
+	*errPosition = (source - reinterpret_cast<const UChar*>(src)) * sizeof(UChar);
 
 	if (!U_SUCCESS(status))
 	{
-		len = INTL_BAD_STR_LENGTH;
-
 		switch (status)
 		{
 		case U_INVALID_CHAR_FOUND:
 			*errCode = CS_CONVERT_ERROR;
 			break;
 		case U_TRUNCATED_CHAR_FOUND:
+			*errCode = CS_BAD_INPUT;
+			break;
+		case U_BUFFER_OVERFLOW_ERROR:
 			*errCode = CS_TRUNCATION_ERROR;
 			break;
 		default:
@@ -119,7 +127,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 
 	ucnv_close(conv);
 
-	return len;
+	return target - reinterpret_cast<char*>(dst);
 }
 
 
@@ -131,6 +139,8 @@ static ULONG icu_to_unicode(csconvert* cv,
 							USHORT* errCode,
 							ULONG* errPosition)
 {
+	fb_assert(dstLen % sizeof(UChar) == 0);
+
 	*errCode = 0;
 	*errPosition = 0;
 
@@ -143,29 +153,36 @@ static ULONG icu_to_unicode(csconvert* cv,
 	UErrorCode status = U_ZERO_ERROR;
 	UConverter* conv = create_converter(cv, &status);
 
-	ULONG len = ucnv_toUChars(conv, Firebird::OutAligner<UChar>(dst, dstLen), dstLen / sizeof(UChar),
-        reinterpret_cast<const char*>(src), srcLen, &status);
+	const char* source = reinterpret_cast<const char*>(src);
+	Firebird::OutAligner<UChar> alignedTarget(dst, dstLen);
+	UChar* target = alignedTarget;
+	ucnv_toUnicode(conv, &target, target + dstLen / sizeof(UChar), &source,
+		source + srcLen, NULL, TRUE, &status);
+
+	*errPosition = source - reinterpret_cast<const char*>(src);
 
 	if (!U_SUCCESS(status))
 	{
-		len = INTL_BAD_STR_LENGTH;
-
-		if (status == U_INVALID_CHAR_FOUND)
-			*errCode = CS_BAD_INPUT;
-		else if (status == U_TRUNCATED_CHAR_FOUND)
-			*errCode = CS_TRUNCATION_ERROR;
-		else
+		switch (status)
 		{
-			fb_assert(false);
+		case U_INVALID_CHAR_FOUND:
+			*errCode = CS_CONVERT_ERROR;
+			break;
+		case U_TRUNCATED_CHAR_FOUND:
 			*errCode = CS_BAD_INPUT;
+			break;
+		case U_BUFFER_OVERFLOW_ERROR:
+			*errCode = CS_TRUNCATION_ERROR;
+			break;
+		default:
+			fb_assert(false);
+			*errCode = CS_CONVERT_ERROR;
 		}
 	}
-	else
-		len *= sizeof(UChar);
 
 	ucnv_close(conv);
 
-	return len;
+	return (target - reinterpret_cast<UChar*>(dst)) * sizeof(UChar);
 }
 
 
