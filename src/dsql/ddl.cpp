@@ -1969,9 +1969,8 @@ static void define_field(CompiledStatement* statement,
 	{
 		const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
 
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-			Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) << 
-			Arg::Str(relation->rel_name) << Arg::Str(field->fld_name));
+		post_607(Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) << 
+				 Arg::Str(relation->rel_name) << Arg::Str(field->fld_name));
 	}
 
 	if (position != -1)
@@ -3331,9 +3330,8 @@ static void define_udf(CompiledStatement* statement)
 
 		if (!arguments || position > arguments->nod_count || position < 1)
 		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					Arg::Gds(isc_dsql_udf_return_pos_err) << //gds__extern_func_err,
-					Arg::Num(arguments ? arguments->nod_count : 0));
+			post_607(Arg::Gds(isc_dsql_udf_return_pos_err) << //gds__extern_func_err,
+					 Arg::Num(arguments ? arguments->nod_count : 0));
 					// CVC: We should devise new msg "position should be between 1 and #params";
 					// here it is: dsql_udf_return_pos_err
 
@@ -3349,8 +3347,7 @@ static void define_udf(CompiledStatement* statement)
 		{
 			const SSHORT arg_mechanism = (SSHORT) param_node[e_udf_param_type]->getSlong();
 			if (arg_mechanism == FUN_scalar_array)
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-						  Arg::Gds(isc_random) << Arg::Str("BY SCALAR_ARRAY can't be used as a return parameter"));
+				post_607(Arg::Gds(isc_random) << Arg::Str("BY SCALAR_ARRAY can't be used as a return parameter"));
 		}
 
 		statement->append_number(isc_dyn_func_return_argument, position);
