@@ -257,18 +257,6 @@ const
 	return true;
 }
 
-void TempDirectoryList::initTemp() 
-{
-	initialize(true);
-
-	// Iterate through directories to parse them
-	for (size_t i = 0; i < getCount(); i++) {
-		PathName dir = (*this)[i];
-		size_t pos = dir.rfind(" ");
-		(*this)[i] = ParsedPath(dir.substr(0, pos));
-	}
-}
-
 const PathName TempDirectoryList::getConfigString() const
 {
 	const char* value = Config::getTempDirectories();

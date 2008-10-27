@@ -124,19 +124,16 @@ public:
 	explicit TempDirectoryList(MemoryPool& p) 
 		: DirectoryList(p)
 	{
-		initTemp();
+		initialize(true);
 	}
 	TempDirectoryList()
 	{
-		initTemp();
+		initialize(true);
 	}
 
 private:
 	// implementation of the inherited function
 	const PathName getConfigString() const;
-	
-	// load items from DirectoryList
-	void initTemp();
 };
 
 } //namespace Firebird
