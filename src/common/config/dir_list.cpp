@@ -257,11 +257,6 @@ const
 	return true;
 }
 
-void TempDirectoryList::initTemp() 
-{
-	initialize(true);
-}
-
 const PathName TempDirectoryList::getConfigString() const
 {
 	const char* value = Config::getTempDirectories();
