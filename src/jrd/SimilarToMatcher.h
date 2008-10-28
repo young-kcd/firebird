@@ -1138,8 +1138,13 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 	{
 		if (state == 0)
 		{
-			scopes.push(Scope(start, limit));
-			state = 1;
+			if (start >= limit)
+				state = 2;
+			else
+			{
+				scopes.push(Scope(start, limit));
+				state = 1;
+			}
 		}
 
 		Scope* scope;
