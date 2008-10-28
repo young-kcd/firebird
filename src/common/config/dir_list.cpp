@@ -227,10 +227,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 #endif //BOOT_BUILD
 }
 
-bool DirectoryList::expandFileName (
-					PathName& path, 
-					const PathName& name) 
-const 
+bool DirectoryList::expandFileName(PathName& path, const PathName& name) const 
 {
 	fb_assert(mode != NotInitialized);
     for (size_t i = 0; i < getCount(); i++) {
@@ -243,10 +240,7 @@ const
 	return false;
 }
 
-bool DirectoryList::defaultName (
-					PathName& path, 
-					const PathName& name) 
-const
+bool DirectoryList::defaultName(PathName& path, const PathName& name) const
 {
 	fb_assert(mode != NotInitialized);
 	if (! getCount())

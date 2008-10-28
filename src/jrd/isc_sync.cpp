@@ -2638,9 +2638,9 @@ UCHAR* ISC_map_file(
 	if (init_flag) {
 		FlushViewOfFile(address, 0);
 		SetEvent(event_handle);
-		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == 0xFFFFFFFF
-			|| !SetEndOfFile(shmem_data->sh_mem_handle)
-			|| !FlushViewOfFile(shmem_data->sh_mem_address, 0))
+		if (SetFilePointer(shmem_data->sh_mem_handle, length, NULL, FILE_BEGIN) == 0xFFFFFFFF ||
+			!SetEndOfFile(shmem_data->sh_mem_handle) ||
+			!FlushViewOfFile(shmem_data->sh_mem_address, 0))
 		{
 			error(status_vector, "SetFilePointer", GetLastError());
 			return NULL;
