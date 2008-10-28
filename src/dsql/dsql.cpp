@@ -361,17 +361,10 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 // if the cursor isn't open, we've got a problem 
 
-	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_SELECT_UPD ||
-		request->req_type == REQ_SELECT_BLOCK ||
-		request->req_type == REQ_EMBED_SELECT ||
-		request->req_type == REQ_GET_SEGMENT)
-	{
-		if (!(request->req_flags & REQ_cursor_open))
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
-					  Arg::Gds(isc_dsql_cursor_err) <<
-					  Arg::Gds(isc_dsql_cursor_not_open));
-	}
+	if (!(request->req_flags & REQ_cursor_open))
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
+				  Arg::Gds(isc_dsql_cursor_err) <<
+				  Arg::Gds(isc_dsql_cursor_not_open));
 
 #ifdef SCROLLABLE_CURSORS
 
