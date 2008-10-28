@@ -972,17 +972,10 @@ ISC_STATUS GDS_DSQL_FETCH_CPP(	ISC_STATUS*	user_status,
 
 // if the cursor isn't open, we've got a problem 
 
-		if (request->req_type == REQ_SELECT ||
-			request->req_type == REQ_SELECT_UPD ||
-			request->req_type == REQ_SELECT_BLOCK ||
-			request->req_type == REQ_EMBED_SELECT ||
-			request->req_type == REQ_GET_SEGMENT)
-		{
-			if (!(request->req_flags & REQ_cursor_open))
-				ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
-					  isc_arg_gds, isc_dsql_cursor_err,
-					  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
-		}
+		if (!(request->req_flags & REQ_cursor_open))
+			ERRD_post(isc_sqlerr, isc_arg_number, (SLONG) - 504,
+				  isc_arg_gds, isc_dsql_cursor_err,
+				  isc_arg_gds, isc_dsql_cursor_not_open, isc_arg_end);
 
 #ifdef SCROLLABLE_CURSORS
 
