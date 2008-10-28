@@ -182,7 +182,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 
 	ucnv_close(conv);
 
-	return (target - reinterpret_cast<UChar*>(dst)) * sizeof(UChar);
+	return (target - alignedTarget) * sizeof(UChar);
 }
 
 
