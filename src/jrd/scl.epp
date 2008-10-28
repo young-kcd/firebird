@@ -61,6 +61,7 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/thd_proto.h"
 #include "../include/fb_exception.h"
+#include "../include/fb_string.h"
 
 #ifdef VMS
 #define UIC_BASE	8
@@ -74,23 +75,21 @@
 
 #define	BLOB_BUFFER_SIZE	4096	/* used to read in acl blob */
 
-#define CHECK_ACL_BOUND(to, start, length_ptr, check_length)\
-          {\
-          if (((start)->str_data + *length_ptr) < (to + check_length))  {start = GRANT_realloc_acl( start, &to, length_ptr);} \
-          }
-#define CHECK_AND_MOVE(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = from;}
-#define CHECK_MOVE_INCR(to, from, start, length_ptr) {CHECK_ACL_BOUND (to, start, length_ptr, 1); *(to)++ = (from)++;}
+static inline void CHECK_AND_MOVE(Acl& to, UCHAR from) 
+{
+	to.push(from);
+}
 
 
 DATABASE DB = FILENAME "ODS.RDB";
 
-static BOOLEAN check_hex(const TEXT*, USHORT);
-static BOOLEAN check_number(const TEXT*, USHORT);
-static BOOLEAN check_user_group(const TEXT*, USHORT, STR*, ULONG*);
-static BOOLEAN check_string(const TEXT*, const TEXT*);
+static BOOLEAN check_hex(const UCHAR*, USHORT);
+static BOOLEAN check_number(const UCHAR*, USHORT);
+static BOOLEAN check_user_group(const UCHAR*, USHORT);
+static BOOLEAN check_string(const UCHAR*, const TEXT*);
 static SLONG compute_access(TDBB, SCL, JRD_REL, const TEXT*, const TEXT*);
 static TEXT *save_string(TEXT*, TEXT**);
-static SLONG walk_acl(TDBB, const TEXT*, JRD_REL, const TEXT*, const TEXT*, STR*, ULONG*);
+static SLONG walk_acl(TDBB, const Acl&, JRD_REL, const TEXT*, const TEXT*);
 
 typedef struct {
 	USHORT p_names_priv;
@@ -707,7 +706,7 @@ void SCL_init(BOOLEAN	create,
         
         if (!create && sql_role && *sql_role && strcmp (sql_role, "NONE")) {
             BOOLEAN found = FALSE;
-            for (p = login_name, q = name; *p++ = UPPER7 (*q); q++);
+            for (p = login_name, q = name; (*p++ = UPPER7 (*q)); q++);
             
             request = (BLK) CMP_find_request (tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
@@ -799,7 +798,7 @@ void SCL_init(BOOLEAN	create,
 			{
 				*name = strlen(p);
 				strcpy(name + 1, p);
-				if (!check_string(name, REL.RDB$OWNER_NAME))
+				if (!check_string((UCHAR*)name, REL.RDB$OWNER_NAME))
 				{
 					user->usr_flags |= USR_owner;
 				}
@@ -813,9 +812,8 @@ void SCL_init(BOOLEAN	create,
 }
 
 
-void SCL_move_priv(
-				   UCHAR ** acl_ptr,
-				   USHORT mask, STR * start_ptr, ULONG * length_ptr)
+void SCL_move_priv(USHORT mask,
+				   Acl& acl)
 {
 /**************************************
  *
@@ -827,29 +825,23 @@ void SCL_move_priv(
  *	Given a mask of privileges, move privileges types to acl.
  *
  **************************************/
-	UCHAR *p;
 	const P_NAMES *priv;
-
-	p = *acl_ptr;
 
 /* terminate identification criteria, and move privileges */
 
-	CHECK_AND_MOVE(p, ACL_end, *start_ptr, length_ptr);
-	CHECK_AND_MOVE(p, ACL_priv_list, *start_ptr, length_ptr);
+	CHECK_AND_MOVE(acl, ACL_end);
+	CHECK_AND_MOVE(acl, ACL_priv_list);
 
 	for (priv = p_names; priv->p_names_priv; priv++)
 	{
 		if (mask & priv->p_names_priv)
 		{
 			assert(priv->p_names_acl <= MAX_UCHAR);
-			CHECK_AND_MOVE(p, (UCHAR) priv->p_names_acl, *start_ptr,
-						   length_ptr);
+			CHECK_AND_MOVE(acl, (UCHAR) priv->p_names_acl);
 		}
 	}
 
-	CHECK_AND_MOVE(p, 0, *start_ptr, length_ptr);
-
-	*acl_ptr = p;
+	CHECK_AND_MOVE(acl, 0);
 }
 
 
@@ -922,7 +914,7 @@ void SCL_release( SCL s_class)
 }
 
 
-static BOOLEAN check_hex(const TEXT* acl, USHORT number)
+static BOOLEAN check_hex(const UCHAR* acl, USHORT number)
 {
 /**************************************
  *
@@ -959,7 +951,7 @@ static BOOLEAN check_hex(const TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_number(const TEXT* acl, USHORT number)
+static BOOLEAN check_number(const UCHAR* acl, USHORT number)
 {
 /**************************************
  *
@@ -987,10 +979,8 @@ static BOOLEAN check_number(const TEXT* acl, USHORT number)
 }
 
 
-static BOOLEAN check_user_group(const TEXT*	acl,
-								USHORT		number,
-								STR*		start_ptr,
-								ULONG*		length_ptr)
+static BOOLEAN check_user_group(const UCHAR*	acl,
+								USHORT			number)
 {
 /**************************************
  *
@@ -1016,18 +1006,12 @@ static BOOLEAN check_user_group(const TEXT*	acl,
  **************************************/
 	USHORT l;
 	SLONG n;
-	TEXT *user_group_name;
 	TEXT one_char;
-	STR buffer;
 	TDBB tdbb;
 	DBB dbb;
 
 	tdbb = GET_THREAD_DATA;
 	dbb = tdbb->tdbb_database;
-
-	try {
-
-	buffer = FB_NEW_RPT(*dbb->dbb_permanent, *length_ptr) str();
 
 	n = 0;
 	if ( (l = *acl++) )
@@ -1041,32 +1025,23 @@ static BOOLEAN check_user_group(const TEXT*	acl,
 		else
 		{					/* processing group name */
 
-			user_group_name = (TEXT*) buffer->str_data;
+			Firebird::string user_group_name;
 			do {
 				one_char = *acl++;
-				*user_group_name++ = LOWWER(one_char);
+				user_group_name += LOWWER(one_char);
 			} while (--l);
-			*user_group_name = '\0';
-			user_group_name = (TEXT*) buffer->str_data;
 			/*
 			   ** convert unix group name to unix group id
 			 */
-			n = ISC_get_user_group_id(user_group_name);
+			n = ISC_get_user_group_id(const_cast<TEXT*>(user_group_name.c_str()));
 		}
-	}
-
-	delete buffer;
-	}
-	catch (const std::exception&) {
-		delete buffer;
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
 	}
 
 	return (n != number);
 }
 
 
-static BOOLEAN check_string(const TEXT* acl, const TEXT* string)
+static BOOLEAN check_string(const UCHAR* acl, const TEXT* string)
 {
 /**************************************
  *
@@ -1132,29 +1107,13 @@ static SLONG compute_access(TDBB		tdbb,
  *	access permissions.  Return a flag word of recognized privileges.
  *
  **************************************/
-	DBB dbb;
-	BLK request;
-	BLB blob;
-	SLONG privileges;
-	TEXT *acl;
-	TEXT *buffer;
-	volatile STR str_buffer = NULL;
-	SLONG length = BLOB_BUFFER_SIZE, *length_ptr = &length;
-
 	SET_TDBB(tdbb);
-	dbb = tdbb->tdbb_database;
+	DBB dbb = tdbb->tdbb_database;
+	Acl acl(*dbb->dbb_permanent);
 
-	privileges = SCL_scanned;
+	SLONG privileges = SCL_scanned;
 
-	try {
-
-/* Get some space that's not off the stack */
-	str_buffer = FB_NEW_RPT(*dbb->dbb_permanent, BLOB_BUFFER_SIZE) str();
-	str_buffer->str_length = BLOB_BUFFER_SIZE - 1;
-	buffer = (TEXT*) str_buffer->str_data;
-
-
-	request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
+	BLK request = (BLK) CMP_find_request(tdbb, irq_l_security, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request) X IN RDB$SECURITY_CLASSES
 		WITH X.RDB$SECURITY_CLASS EQ s_class->scl_name
@@ -1163,54 +1122,41 @@ static SLONG compute_access(TDBB		tdbb,
 			REQUEST(irq_l_security) = request;
 
 		privileges |= SCL_exists;
-		blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
-		acl = buffer;
+		BLB blob = BLB_open(tdbb, dbb->dbb_sys_trans, &X.RDB$ACL);
+		UCHAR* buffer = acl.getBuffer(ACL_BLOB_BUFFER_SIZE);
+		UCHAR* end = buffer;
+
 		while (TRUE)
 		{
-			acl += BLB_get_segment(tdbb, blob, (UCHAR*)acl,
-								   (USHORT) (length -
-											 ((acl - buffer) *
-											  (sizeof(buffer[0])))));
+			end += BLB_get_segment(tdbb, blob, end, (USHORT) (acl.getCount() - (end - buffer)) );
 			if (blob->blb_flags & BLB_eof)
 				break;
 			/* there was not enough space, realloc point acl to the correct location */
 			if (blob->blb_fragment_size)
 			{
-				ULONG old_offset = (ULONG) (acl - buffer);
-				length += BLOB_BUFFER_SIZE;
-				// TMN: Cast away volatile
-				str::extend(const_cast<str*&>(str_buffer), length);
-				buffer = (TEXT*) str_buffer->str_data;
-				acl = buffer + old_offset;
+				const ptrdiff_t old_offset = end - buffer;
+				buffer = acl.getBuffer(acl.getCount() + ACL_BLOB_BUFFER_SIZE);
+				end = buffer + old_offset;
 			}
 		}
 		BLB_close(tdbb, blob);
-		if (acl != buffer)
+		acl.shrink(end - buffer);
+		if (acl.getCount() > 0)
 		{
 			/*
 			 * TMN: The cast is really a const_cast to
 			 * cast away volatile! Bad, bad, bad!
 			 */
 			privileges |= walk_acl(	tdbb,
-									buffer,
+									acl,
 									view,
 									trg_name,
-									prc_name,
-									(STR*)&str_buffer,
-									(ULONG*)length_ptr);
+									prc_name);
 		}
 	END_FOR;
 
 	if (!REQUEST(irq_l_security))
 		REQUEST(irq_l_security) = request;
-
-
-	delete str_buffer;
-	}
-	catch (const std::exception&) {
-		delete str_buffer;
-		Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
-	}
 
 	return privileges;
 }
@@ -1246,12 +1192,10 @@ static TEXT *save_string(TEXT* string, TEXT** ptr)
 
 
 static SLONG walk_acl(TDBB			tdbb,
-					  const TEXT*	acl,
-					  JRD_REL			view,
+					  const Acl&	p_acl,
+					  JRD_REL		view,
 					  const TEXT*	trg_name,
-					  const TEXT*	prc_name,
-					  STR*			start_ptr,
-					  ULONG*		length_ptr)
+					  const TEXT*	prc_name)
 {
 /**************************************
  *
@@ -1273,6 +1217,7 @@ static SLONG walk_acl(TDBB			tdbb,
 	volatile BLK request;
 	DBB			dbb;
 	TEXT* 	role_name;
+	const UCHAR* acl = p_acl.begin();
 
 	SET_TDBB(tdbb);
 	dbb = tdbb->tdbb_database;
@@ -1330,9 +1275,7 @@ static SLONG walk_acl(TDBB			tdbb,
 
 				case id_group:
 					if (check_user_group(acl,
-										user.usr_group_id,
-										start_ptr,
-										length_ptr))
+										user.usr_group_id))
 					{
 						hit = FALSE;
 					}

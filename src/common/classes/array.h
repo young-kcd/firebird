@@ -149,14 +149,30 @@ public:
 		data[count++] = item;
   		return count;
 	};
+	void add(const T* items, size_t itemsSize)
+	{
+		ensureCapacity(count + itemsSize);
+		memcpy(data + count, items, sizeof(T) * itemsSize);
+		count += itemsSize;
+	}
 	void remove(int index) {
   		fb_assert(index >= 0 && index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+	}
+	void removeRange(int from, int to) {
+  		fb_assert(from <= to);
+  		fb_assert(to <= count);
+  		memmove(data + from, data + to, sizeof(T) * (count - to));
+		count -= (to - from);
 	}
 	void remove(T* itr) {
 		int index = itr - begin();
   		fb_assert(index >= 0 && index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
+	}
+	void remove(T* itrFrom, T* itrTo)
+	{
+		removeRange(itrFrom - begin(), itrTo - begin());
 	}
 	void shrink(int newCount) {
 		fb_assert(newCount <= count);
@@ -174,6 +190,13 @@ public:
 		memcpy(data + count, L.data, sizeof(T) * L.count);
 		count += L.count;
 	}
+	void assign(const Array<T, Storage>& L)
+	{
+		ensureCapacity(L.count);
+		memcpy(data, L.data, sizeof(T) * L.count);
+		count = L.count;
+	}
+
 	int getCount() const { return count; }
 	int getCapacity() const { return capacity; }
 	void push(const T& item) {

@@ -36,7 +36,6 @@ void		SCL_check_relation(struct dsc*, USHORT);
 struct scl*	SCL_get_class(const TEXT*);
 int			SCL_get_mask(const TEXT*, const TEXT*);
 void		SCL_init(BOOLEAN, TEXT*, TEXT*, TEXT*, TEXT*, TEXT*, TDBB, BOOLEAN);
-void		SCL_move_priv(UCHAR**, USHORT, STR*, ULONG*);
 struct scl*	SCL_recompute_class(TDBB, TEXT*);
 void		SCL_release(struct scl*);
 void		SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
@@ -44,5 +43,8 @@ void		SCL_check_index(TDBB, TEXT*, UCHAR, USHORT);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+typedef Firebird::Array<UCHAR> Acl;
+void SCL_move_priv(USHORT, Acl&);
 
 #endif /* _JRD_SCL_PROTO_H_ */

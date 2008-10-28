@@ -29,7 +29,6 @@ extern "C" {
 #endif
 
 extern int GRANT_privileges(TDBB, SSHORT, struct dfw *);
-extern STR GRANT_realloc_acl(STR, UCHAR **, ULONG *);
 
 #ifdef __cplusplus
 } /* extern "C" */
