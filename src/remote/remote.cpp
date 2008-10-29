@@ -688,17 +688,24 @@ void REMOTE_save_status_strings( ISC_STATUS * vector)
 		case gds_arg_string:
 			p = (TEXT *) * vector;
 			if (status != gds_arg_cstring)
-				l = strlen(p) + 1;
+				l = strlen(p);
+
+			++l;	// always reserve room for '\0'
+
+			// Avoid too long strings here
+			if (l > ATTACH_FAILURE_SPACE / 4)
+				l = ATTACH_FAILURE_SPACE / 4;
 
 			/* If there isn't any more room in the buffer,
 			   start at the beginning again */
 
-			if (attach_failures_ptr + l >
-				attach_failures + ATTACH_FAILURE_SPACE) attach_failures_ptr =
-					attach_failures;
+			if (attach_failures_ptr + l > attach_failures + ATTACH_FAILURE_SPACE)
+				attach_failures_ptr = attach_failures;
 			*vector++ = (ISC_STATUS) attach_failures_ptr;
+			--l;	// not copy terminator '\0' - it's missing in gds_arg_cstring
 			while (l--)
 				*attach_failures_ptr++ = *p++;
+			*attach_failures_ptr = '\0';
 			break;
 
 		default:
