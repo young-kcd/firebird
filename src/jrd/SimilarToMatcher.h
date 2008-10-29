@@ -562,8 +562,8 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp
 		if (!ok || s1.length() > 9 || s2.length() > 9)
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
-		int n1 = atoi(s1.c_str());
-		int n2 = s2.isEmpty() ? (comma ? INT_MAX : n1) : atoi(s2.c_str());
+		const int n1 = atoi(s1.c_str());
+		const int n2 = s2.isEmpty() ? (comma ? INT_MAX : n1) : atoi(s2.c_str());
 
 		if (n2 < n1)
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -585,7 +585,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 {
 	*flagp = 0;
 
-	CharType op = *patternPos++;
+	const CharType op = *patternPos++;
 
 	if (op == canonicalChar(TextType::CHAR_UNDERLINE))
 	{
@@ -769,7 +769,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 						originalPatternLen, originalPatternStr,
 						sizeof(c), c, patternPos - patternStart, 1);
 
-					int previousRangeBufferCount = rangeBuffer.getCount();
+					const int previousRangeBufferCount = rangeBuffer.getCount();
 					rangeBuffer.push(len);
 					memcpy(rangeBuffer.getBuffer(rangeBuffer.getCount() + len) +
 						rangeBuffer.getCount() - len, &c, len);
@@ -866,7 +866,7 @@ void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flag
 	{
 		--patternPos;
 
-		SLONG len = notInSet(patternPos, patternEnd - patternPos,
+		const SLONG len = notInSet(patternPos, patternEnd - patternPos,
 			metaCharacters, FB_NELEM(metaCharacters));
 
 		if (len == 0)
@@ -964,7 +964,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 {
 	for (int i = start; i < limit; ++i)
 	{
-		Node* node = &nodes[i];
+		const Node* node = &nodes[i];
 
 		switch (node->op)
 		{
@@ -1049,7 +1049,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 
 				if (notInSet(bufferPos, 1, node->str, node->len) != 0)
 				{
-					const UCHAR* end = node->str2 + node->len2;
+					const UCHAR* const end = node->str2 + node->len2;
 					const UCHAR* p = node->str2;
 
 					while (p < end)
@@ -1076,13 +1076,13 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int s
 					return false;
 				else
 				{
-					const UCHAR* end = node->str4 + node->len4;
+					const UCHAR* const end = node->str4 + node->len4;
 					const UCHAR* p = node->str4;
 
 					while (p < end)
 					{
 						UCHAR c[sizeof(ULONG)];
-						ULONG len = charSet->substring(
+						const ULONG len = charSet->substring(
 							buffer.getCount(), buffer.begin(),
 							sizeof(c), c, bufferPos - bufferStart, 1);
 
@@ -1128,22 +1128,23 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 	//   0    recursing
 	//   1    iteration (for)
 	//   2    returning
+	enum MatchState { msRecursing, msIterating, msReturning };
 
 	int start = 0;
-	int state = 0;
+	MatchState state = msRecursing;
 	int limit = nodes.getCount();
 	bool ret = true;
 
 	do
 	{
-		if (state == 0)
+		if (state == msRecursing)
 		{
 			if (start >= limit)
-				state = 2;
+				state = msReturning;
 			else
 			{
 				scopes.push(Scope(start, limit));
-				state = 1;
+				state = msIterating;
 			}
 		}
 
@@ -1157,11 +1158,11 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 			switch (node->op)
 			{
 				case opRepeat:
-					fb_assert(state == 1 || state == 2);
+					fb_assert(state == msIterating || state == msReturning);
 
-					if (state == 1)
+					if (state == msIterating)
 						scope->j = 0;
-					else if (state == 2)
+					else if (state == msReturning)
 					{
 						if (scope->j < node->len)
 						{
@@ -1180,7 +1181,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 								scope->flag = true;
 								start = scope->i + 1;
 								limit = scope->i + 1 + node->ref;
-								state = 0;
+								state = msRecursing;
 
 								break;
 							}
@@ -1192,7 +1193,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					{
 						start = scope->i + 1;
 						limit = scope->i + 1 + node->ref;
-						state = 0;
+						state = msRecursing;
 					}
 					else if (scope->j < node->len2)
 					{
@@ -1200,27 +1201,27 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 						scope->flag = false;
 						start = scope->i + 1 + node->ref;
 						limit = scope->limit;
-						state = 0;
+						state = msRecursing;
 					}
 					else
 					{
 						scope->i += node->ref;
-						state = 1;
+						state = msIterating;
 					}
 
 					break;
 
 				case opBranch:
-					if (state == 1)
+					if (state == msIterating)
 					{
 						scope->save = bufferPos;
 						start = scope->i + 1;
 						limit = scope->limit;
-						state = 0;
+						state = msRecursing;
 					}
 					else
 					{
-						fb_assert(state == 2);
+						fb_assert(state == msReturning);
 
 						if (!ret)
 						{
@@ -1234,82 +1235,82 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 								node = &nodes[scope->i];
 
 								if (node->ref == 0)
-									state = 1;
+									state = msIterating;
 								else
 								{
 									scope->save = bufferPos;
 									start = scope->i + 1;
 									limit = scope->limit;
-									state = 0;
+									state = msRecursing;
 								}
 							}
 						}
-					}	
+					}
 					break;
 
 				case opStart:
-					fb_assert(state == 1);
+					fb_assert(state == msIterating);
 					if (bufferPos != bufferStart)
 					{
 						ret = false;
-						state = 2;
+						state = msReturning;
 					}
 					break;
-	
+
 				case opEnd:
-					fb_assert(state == 1);
+					fb_assert(state == msIterating);
 					if (bufferPos != bufferEnd)
 					{
 						ret = false;
-						state = 2;
+						state = msReturning;
 					}
 					break;
 
 				case opRef:
-					fb_assert(state == 1 || state == 2);
-					if (state == 1)
+					fb_assert(state == msIterating || state == msReturning);
+					if (state == msIterating)
 					{
 						if (node->ref != 1)
 						{
-							state = 0;
+							state = msRecursing;
 							start = scope->i + node->ref;
 							limit = scope->limit;
 						}
 					}
 					break;
-	
+
 				case opNothing:
 					break;
 
 				case opAny:
-					fb_assert(state == 1);
+					fb_assert(state == msIterating);
 					if (bufferPos >= bufferEnd)
 					{
 						ret = false;
-						state = 2;
+						state = msReturning;
 					}
 					else
 						++bufferPos;
 					break;
 
 				case opAnyOf:
-					fb_assert(state == 1);
+					fb_assert(state == msIterating);
 					if (bufferPos >= bufferEnd)
 					{
 						ret = false;
-						state = 2;
+						state = msReturning;
 					}
 					else
 					{
 						if (notInSet(bufferPos, 1, node->str, node->len) != 0)
 						{
-							const UCHAR* end = node->str2 + node->len2;
+							const UCHAR* const end = node->str2 + node->len2;
 							const UCHAR* p = node->str2;
 
 							while (p < end)
 							{
 								UCHAR c[sizeof(ULONG)];
-								ULONG len = charSet->substring(
+								const ULONG len = charSet->substring(
 									buffer.getCount(), buffer.begin(),
 									sizeof(c), c, bufferPos - bufferStart, 1);
 
@@ -1329,17 +1330,17 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 						if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
 						{
 							ret = false;
-							state = 2;
+							state = msReturning;
 						}
 						else
 						{
-							const UCHAR* end = node->str4 + node->len4;
+							const UCHAR* const end = node->str4 + node->len4;
 							const UCHAR* p = node->str4;
 
 							while (p < end)
 							{
 								UCHAR c[sizeof(ULONG)];
-								ULONG len = charSet->substring(
+								const ULONG len = charSet->substring(
 									buffer.getCount(), buffer.begin(),
 									sizeof(c), c, bufferPos - bufferStart, 1);
 
@@ -1355,22 +1356,22 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 							if (p < end)
 							{
 								ret = false;
-								state = 2;
+								state = msReturning;
 							}
 						}
 					}
 
-					if (state == 1)
+					if (state == msIterating)
 						++bufferPos;
 					break;
 
 				case opExactly:
-					fb_assert(state == 1);
+					fb_assert(state == msIterating);
 					if (node->len > bufferEnd - bufferPos ||
 						memcmp(node->str, bufferPos, node->len) != 0)
 					{
 						ret = false;
-						state = 2;
+						state = msReturning;
 					}
 					else
 						bufferPos += node->len;
@@ -1381,17 +1382,17 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 					return false;
 			}
 
-			if (state == 1)
+			if (state == msIterating)
 			{
 				++scope->i;
 				if (scope->i >= scope->limit)
 				{
 					ret = true;
-					state = 2;
+					state = msReturning;
 				}
 			}
 
-			if (state == 2)
+			if (state == msReturning)
 				scopes.pop();
 		}
 	} while (scopes.getCount() != 0);
@@ -1401,7 +1402,7 @@ bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 #endif
 
 
-// Returns the number of characters up to first one present in set. 
+// Returns the number of characters up to first one present in set.
 template <typename StrConverter, typename CharType>
 SLONG SimilarToMatcher<StrConverter, CharType>::Evaluator::notInSet(
 	const CharType* str, SLONG strLen, const CharType* set, SLONG setLen)
@@ -1418,7 +1419,7 @@ SLONG SimilarToMatcher<StrConverter, CharType>::Evaluator::notInSet(
 	return strLen;
 }
 
-} // namespace Firebird 
+} // namespace Firebird
 
 
 #endif	// JRD_SIMILAR_TO_EVALUATOR_H
