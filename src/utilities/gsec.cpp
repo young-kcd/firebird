@@ -572,6 +572,7 @@ static BOOLEAN get_switches(
 	USHORT in_sw;
 	USHORT last_sw;
 	int l;
+	char quote;
 	SSHORT err_msg_no;
 	USER_DATA user_data;
 
@@ -598,8 +599,17 @@ static BOOLEAN get_switches(
 			case IN_SW_GSEC_DEL:
 			case IN_SW_GSEC_DIS:
 			case IN_SW_GSEC_MOD:
-				for (l = 0; l < 32 && string[l] && string[l] != ' '; l++)
+				quote = ' ';
+				for (l = 0; l < 32 && string[l] && string[l] != quote; )
+				{
+					if (l == 0 && (*string == '\'' || *string == '"'))
+					{
+						quote = *string++;
+						continue;
+					}
 					user_data->user_name[l] = UPPER(string[l]);
+					++l;
+				}
 				if (l == 32) {
 #ifdef SUPERSERVER
 					UTIL_error(GsecMsg76, NULL, NULL, NULL, NULL, NULL);
