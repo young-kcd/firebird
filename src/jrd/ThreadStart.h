@@ -62,4 +62,14 @@ extern "C" {
 	int	API_ROUTINE gds__thread_start(ThreadEntryPoint*, void*, int, int, void*);
 }
 
+#ifdef WIN_NT
+typedef HANDLE ThreadHandle;
+#endif
+#ifdef USE_POSIX_THREADS
+typedef pthread_t ThreadHandle;
+#endif
+
+void THD_detach(ThreadHandle& handle);
+void THD_wait_for_completion(ThreadHandle& handle);
+
 #endif // JRD_THREADSTART_H

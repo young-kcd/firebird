@@ -844,9 +844,11 @@ void Service::detach()
 
 Service::~Service()
 {
-#ifdef WIN_NT
-	CloseHandle((HANDLE) svc_handle);
-#endif
+	if (svc_handle)
+	{
+		THD_detach(svc_handle);
+		svc_handle = 0;
+	}
 	MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
 
@@ -1855,7 +1857,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			svc_flags |= SVC_thd_running;
 		}
 
-		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, (void *) &svc_handle);
+		gds__thread_start(serv->serv_thd, this, THREAD_medium, 0, &svc_handle);
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
@@ -1984,7 +1986,7 @@ void Service::start(ThreadEntryPoint* service_thread)
 		argv[0] = svc_service->serv_name;
 	}
 
-	gds__thread_start(service_thread, this, THREAD_medium, 0, (void*) &svc_handle);
+	gds__thread_start(service_thread, this, THREAD_medium, 0, &svc_handle);
 }
 
 
@@ -2074,11 +2076,11 @@ void Service::finish(USHORT flag)
 		if (svc_flags & SVC_finished)
 		{
 			svc_flags &= ~SVC_thd_running;
-
-#ifdef WIN_NT
-			CloseHandle((HANDLE) svc_handle);
-#endif
-			svc_handle = 0;
+			if (svc_handle) 
+			{
+				THD_detach(svc_handle);
+				svc_handle = 0;
+			}
 		}
 	}
 }

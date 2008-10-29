@@ -200,7 +200,7 @@ private:
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
 	Firebird::string svc_parsed_sw;		// Here point elements of argv
-	SLONG	svc_handle;					// "handle" of thread running service
+	ThreadHandle	svc_handle;			// "handle" of thread running service
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE + 1];		// output from service

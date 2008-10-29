@@ -830,7 +830,7 @@ namespace
 		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
 
-	GlobalPtr<SignalSafeSemaphore> shutdownSemaphore, shutdownFini;
+	GlobalPtr<SignalSafeSemaphore> shutdownSemaphore;
 
 	THREAD_ENTRY_DECLARE shutdownThread(THREAD_ENTRY_PARAM)
 	{
@@ -865,7 +865,6 @@ namespace
 			}
 		}
 
-		shutdownFini->release();
 		return 0;
 	}
 
@@ -899,7 +898,7 @@ namespace
 		{
 			InstanceControl::registerShutdown(atExitShutdown);
 
-			gds__thread_start(shutdownThread, 0, 0, 0, 0);
+			gds__thread_start(shutdownThread, 0, 0, 0, &handle);
 
 			procInt = ISC_signal(SIGINT, handlerInt, 0);
 			procTerm = ISC_signal(SIGTERM, handlerTerm, 0);
@@ -914,9 +913,11 @@ namespace
 			{
 				// must be done to let shutdownThread close
 				shutdownSemaphore->release();
-				shutdownFini->enter();
+				THD_wait_for_completion(handle);
 			}
 		}
+	private:
+		ThreadHandle handle;
 	};
 #endif //UNIX
 

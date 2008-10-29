@@ -177,21 +177,33 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-	pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
+	state = pthread_attr_setscope(&pattr, PTHREAD_SCOPE_SYSTEM);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_attr_setscope", state);
 
-	pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
+	if (!thd_id)
+	{
+		state = pthread_attr_setdetachstate(&pattr, PTHREAD_CREATE_DETACHED);
+		if (state)
+			Firebird::system_call_failed::raise("pthread_attr_setdetachstate", state);
+	}
 	state = pthread_create(&thread, &pattr, THREAD_ENTRYPOINT, THREAD_ARG);
-	pthread_attr_destroy(&pattr);
+	int state2 = pthread_attr_destroy(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_create", state);
+	if (state2)
+		Firebird::system_call_failed::raise("pthread_attr_destroy", state2);
 
 #else
 #if ( defined LINUX || defined FREEBSD )
 
 	if (state = pthread_create(&thread, NULL, THREAD_ENTRYPOINT, THREAD_ARG))
 		Firebird::system_call_failed::raise("pthread_create", state);
-	if (state = pthread_detach(thread))
-		Firebird::system_call_failed::raise("pthread_detach", state);
+	if (!thd_id)
+	{
+		if (state = pthread_detach(thread))
+			Firebird::system_call_failed::raise("pthread_detach", state);
+	}
 
 #else
 	
@@ -224,15 +236,38 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	if (state)
 		Firebird::system_call_failed::raise("pthread_create", state);
 
-	state = pthread_detach(&thread);
-	if (state)
-		Firebird::system_call_failed::raise("pthread_detach", state);
+	if (!thd_id)
+	{
+		state = pthread_detach(&thread);
+		if (state)
+			Firebird::system_call_failed::raise("pthread_detach", state);
+	}
+
 	state = pthread_attr_delete(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_delete", state);
 
 #endif /* linux */
 #endif /* HP10 */
+
+	if (thd_id)
+	{
+		*static_cast<pthread_t*>(thd_id) = thread;
+	}
+}
+
+void THD_detach(ThreadHandle& thread)
+{
+	int state = pthread_detach(thread);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_detach", state);
+}
+
+void THD_wait_for_completion(ThreadHandle& thread)
+{
+	int state = pthread_join(thread, NULL);
+	if (state)
+		Firebird::system_call_failed::raise("pthread_join", state);
 }
 #endif /* USE_POSIX_THREADS */
 
@@ -348,6 +383,16 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	{
 		CloseHandle(handle);
 	}
+}
+
+void THD_detach(ThreadHandle& handle)
+{
+	CloseHandle(handle);
+}
+	
+void THD_wait_for_completion(ThreadHandle& handle)
+{
+	WaitForSingleObject(handle, INFINITE);
 }
 #endif  // WIN_NT
 
