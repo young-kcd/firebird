@@ -70,6 +70,17 @@ dnl MAKEFILE_PREFIX=darwin_ppc64
 dnl CPU_TYPE=ppc64
     ;;
 
+  powerpc-*-aix*)
+    MAKEFILE_PREFIX=aix_powerpc
+    MAKEFILE_POSTFIX=aix
+    PLATFORM=AIX
+    INSTALL_PREFIX=aix
+    AC_DEFINE(AIX, 1, [Define this if OS is AIX])
+    EDITLINE_FLG=N
+    SHRLIB_EXT=so
+dnl ICU_PLATFORM=AIXPPCXLC
+    ;;
+
   amd64-*-freebsd*)
     MAKEFILE_PREFIX=freebsd
     PLATFORM=FREEBSD

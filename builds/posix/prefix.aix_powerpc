@@ -1,0 +1,44 @@
+# The contents of this file are subject to the Interbase Public
+# License Version 1.0 (the "License"); you may not use this file
+# except in compliance with the License. You may obtain a copy
+# of the License at http://www.Inprise.com/IPL.html
+#
+# Software distributed under the License is distributed on an
+# "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+# or implied. See the License for the specific language governing
+# rights and limitations under the License.
+#
+# The Original Code was created by Inprise Corporation
+# and its predecessors. Portions created by Inprise Corporation are
+# Copyright (C) Inprise Corporation.
+#
+# All Rights Reserved.
+# Contributor(s): Bill Oliver
+#
+# Compiler settings for AIX 5.3 (powerpc)
+#
+
+
+# compiler flags for GCC.
+# 2008-10-16 no joy with gcc 4.0.0
+PROD_GCC_FLAGS=-ggdb -O3 -fno-omit-frame-pointer -fsigned-char -DNDEBUG -pipe -MMD -fPIC -fmessage-length=0 -DAIX -DPowerPC -DPPC -mcpu=powerpc
+DEV_GCC_FLAGS=-ggdb -O0 -fsigned-char -DVIO_DEBUG -pipe -MMD -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0 -DAIX -DPowerPC -DPPC
+
+
+# compiler flags for xlC
+PROD_XLC_FLAGS=-O3 -qchars=signed -qstaticinline -DNDEBUG -DAIX -DPowerPC -DPPC
+DEV_XLC_FLAGS=-O0 -qchars=signed -DVIO_DEBUG -DAIX -DPowerPC -DPPC
+
+
+# change lines below to switch between gcc and xlc
+PROD_FLAGS= $(PROD_GCC_FLAGS)
+DEV_FLAGS= $(DEV_GCC_FLAGS)
+
+OS_ServerFiles=inet_server.cpp
+
+EMBED_UTIL_TARGETS=gstat gds_drop gsec fbguard nbackup fb_lock_print fbsvcmgr
+CLIENT_UTIL_TARGETS=gds_drop gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
+
+Physical_IO_Module=os/posix/unix.cpp
+
+UNDEF_PLATFORM=-Wl,-z
