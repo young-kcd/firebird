@@ -48,7 +48,7 @@
 #endif
 
 
-#ifdef SOLARIS_MT
+#if defined SOLARIS || defined AIX
 #include <thread.h>
 #include <signal.h>
 #endif

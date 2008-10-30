@@ -23,7 +23,7 @@
 #ifndef CLASSES_FILE_H
 #define CLASSES_FILE_H
 
-#ifndef SOLARIS
+#if !defined(SOLARIS) && !defined(AIX)
 typedef FB_UINT64 offset_t;
 #endif
 
