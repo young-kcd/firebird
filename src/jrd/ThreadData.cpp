@@ -49,6 +49,10 @@
 
 
 #if defined SOLARIS || defined AIX
+#include <sched.h>
+#endif
+
+#ifdef SOLARIS
 #include <thread.h>
 #include <signal.h>
 #endif
