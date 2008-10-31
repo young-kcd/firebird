@@ -83,6 +83,8 @@ StatusVector& StatusVector::operator=(const StatusVector& v) throw()
 	memcpy(m_status_vector, v.m_status_vector, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
 	m_length = v.m_length;
 	m_warning = v.m_warning;
+
+	return *this;
 }
 
 void StatusVector::append(const StatusVector& v) throw()
