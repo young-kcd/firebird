@@ -46,14 +46,43 @@ void StatusVector::clear() throw()
 	m_status_vector[0] = isc_arg_end;
 }
 
-StatusVector::StatusVector(const ISC_STATUS* s) throw() : Base(0, 0)
+StatusVector::StatusVector(const ISC_STATUS* s)  
+  : Base(0, 0), 
+	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
 {
 	clear();
 	// special case - empty initialized status vector, no warnings
 	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
 	{
-		append(s, FB_NELEM(m_status_vector) - 1);
+		append(s, ISC_STATUS_LENGTH - 1);
 	}
+}
+
+StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS v) 
+  : Base(k, v),
+	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
+{ 
+	clear();
+	operator<<(*(static_cast<Base*>(this)));
+}
+
+StatusVector::StatusVector() 
+  : Base(0, 0),
+	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
+{ 
+	clear();
+}
+
+StatusVector::~StatusVector()
+{
+	delete m_status_vector;
+}
+
+StatusVector& StatusVector::operator=(const StatusVector& v) throw()
+{
+	memcpy(m_status_vector, v.m_status_vector, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
+	m_length = v.m_length;
+	m_warning = v.m_warning;
 }
 
 void StatusVector::append(const StatusVector& v) throw()
@@ -95,7 +124,7 @@ bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
 			break;
 		}
 		i += (from[i] == isc_arg_cstring ? 3 : 2);
-		if (m_length + i > FB_NELEM(m_status_vector) - 1)
+		if (m_length + i > ISC_STATUS_LENGTH - 1)
 		{
 			break;
 		}
@@ -111,7 +140,7 @@ bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
 
 StatusVector& StatusVector::operator<<(const Base& arg) throw()
 {
-	if (m_length < FB_NELEM(m_status_vector) - 2)
+	if (m_length < ISC_STATUS_LENGTH - 2)
 	{
 		m_status_vector[m_length++] = arg.kind;
 		m_status_vector[m_length++] = arg.value;

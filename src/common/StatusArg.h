@@ -52,21 +52,13 @@ protected:
 class StatusVector : public Base
 {
 protected:
-	StatusVector(ISC_STATUS k, ISC_STATUS v) throw() : Base(k, v)
-	{ 
-		clear();
-		operator<<(*(static_cast<Base*>(this)));
-	}
+	StatusVector(ISC_STATUS k, ISC_STATUS v);
 
 public:
-	explicit StatusVector(const ISC_STATUS* s) throw();
+	explicit StatusVector(const ISC_STATUS* s);
+	StatusVector();
 
-	StatusVector() throw() : Base(0, 0)
-	{ 
-		clear();
-	}
-
-	~StatusVector() { }
+	~StatusVector();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 	int length() const throw() { return m_length; }
@@ -87,13 +79,15 @@ public:
 	StatusVector& operator<<(const MetaName& text) throw();
 
 private:
-	ISC_STATUS_ARRAY m_status_vector;
+	ISC_STATUS* const m_status_vector;
 	int m_length, m_warning;
 
 private:
 	bool appendErrors(const StatusVector* v) throw();
 	bool appendWarnings(const StatusVector* v) throw();
 	bool append(const ISC_STATUS* from, const int count) throw();
+
+	StatusVector& operator=(const StatusVector& v) throw();
 };
 
 
