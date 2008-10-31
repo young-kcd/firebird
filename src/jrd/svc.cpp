@@ -849,6 +849,7 @@ Service::~Service()
 		THD_detach(svc_handle);
 		svc_handle = 0;
 	}
+
 	MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
 

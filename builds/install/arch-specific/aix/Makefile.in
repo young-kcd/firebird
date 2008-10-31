@@ -28,8 +28,6 @@
 #
 ROOT=..
 
-
-
 include     $(ROOT)/gen/make.defaults
 include     $(ROOT)/gen/make.platform
 include     $(ROOT)/gen/make.rules

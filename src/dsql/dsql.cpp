@@ -359,12 +359,13 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-// if the cursor isn't open, we've got a problem 
-
+	// if the cursor isn't open, we've got a problem 
 	if (!(request->req_flags & REQ_cursor_open))
+	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 				  Arg::Gds(isc_dsql_cursor_err) <<
 				  Arg::Gds(isc_dsql_cursor_not_open));
+	}
 
 #ifdef SCROLLABLE_CURSORS
 
