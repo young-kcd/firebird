@@ -96,12 +96,12 @@
 #endif /* sun */
 
 #ifdef AIX
-#define FB_PLATFORM	"IA"
-#endif
-
 #ifdef AIX_PPC
 #define FB_PLATFORM	"PA"
+#else
+#define FB_PLATFORM	"IA"
 #endif
+#endif /* aix */
 
 #ifdef WIN_NT
 #ifdef i386
