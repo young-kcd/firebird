@@ -3832,8 +3832,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 
 	case nod_aggregate:
 		fb_assert((int) (IPTR) node->nod_arg[e_agg_stream] <= MAX_STREAMS);
-		csb->csb_rpt[(USHORT)(IPTR) node->nod_arg[e_agg_stream]].csb_flags |=
-			csb_no_dbkey;
+		csb->csb_rpt[(USHORT)(IPTR) node->nod_arg[e_agg_stream]].csb_flags |= csb_no_dbkey;
 		ignore_dbkey(tdbb, csb, (RecordSelExpr*) node->nod_arg[e_agg_rse], view);
 		node->nod_arg[e_agg_rse] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_rse]);
 		node->nod_arg[e_agg_map] = CMP_pass1(tdbb, csb, node->nod_arg[e_agg_map]);
