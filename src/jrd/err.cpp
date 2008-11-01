@@ -513,6 +513,14 @@ void DLL_EXPORT ERR_punt(void)
 		if (Config::getBugcheckAbort()) abort();
 	}
 
+	if (! tdbb->tdbb_status_vector[1]) {
+		tdbb->tdbb_status_vector[0] = isc_arg_gds;
+		tdbb->tdbb_status_vector[1] = isc_random;
+		tdbb->tdbb_status_vector[2] = isc_arg_string;
+		tdbb->tdbb_status_vector[3] = (ISC_STATUS)(IPTR)("Unknown error caught in Jrd, may be out of memory");
+		tdbb->tdbb_status_vector[4] = isc_arg_end;
+	}
+	
 #pragma FB_COMPILER_MESSAGE("FIXME! C functions can not throw! FIXME!")
 
 	Firebird::status_exception::raise(tdbb->tdbb_status_vector[1]);
