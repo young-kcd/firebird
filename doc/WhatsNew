@@ -1,4 +1,225 @@
   ***************************
+  * v2.1.2
+  ***************************
+
+    * Bugfix CORE-2151
+        Temporary directory path with spaces in the middle is wrongly truncated
+        from the rightmost space
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2137
+        Database restore may crash the server when DummyPacketInterval is set
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2118
+        UPDATE OR INSERT with subquery used in the MATCHING part doesn't insert record
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2117
+        Incorrect ROW_COUNT value with indexed retrieval and subquery
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2108
+        Error "get_free_slot() failed" reported
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2098
+        View over global temporary table
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2093
+        Superserver startup fails on Solaris 64-bit
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2087
+        RemoteBindAddress = hostname instead of IP address is silently ignored
+        and server binds to all interfaces (nothing in either firebird.log or syslog)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2084
+        Services API security problem
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2078
+        Suboptimal join plan if there are selective non-indexed predicates involved
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2077
+        Signal TERM in Classic Server 2.1 for Linux
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2073
+        Expression indices bug: incorrect result for the inverted boolean
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2065
+        Client library is not in default dynamic loader search paths
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
+    * Bugfix CORE-2055
+        Buffer overflow in fbclient
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2053
+        Computed expressions may be optimized badly if used
+        inside the RETURNING clause of the INSERT statement
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2050
+        Performance regression: too many semop() system calls
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2049
+        Performance regression: too many sigprocmask() system calls
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2045
+        References to non-existent system fields with blr_field are not resolved to NULL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2039
+        Domain-level CHECK constraints wrongly process NULL values
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2033
+        Unresolved symbol _Unwind_GetIP in the client library
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2031
+        NULL in the first record in a condition on RDB$DB_KEY
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2026
+        Problem with a read-only marked database and Firebird 2.1
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2017
+        I/O statistics for stored procedures is not accounted in monitoring tables
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-2008
+        NOT NULL procedure parameters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-2000
+        Lock manager may report false deadlocks under high load
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1984
+        Lock manager may report false deadlocks if one of deadlock participants
+        waits with permitted timeout
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1983
+        Out of memory condition in OS causes SEGV
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1982
+        Simultaneous backups or restores could interfere each with other using the Services API
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1972
+        Non-SYSDBA user can change FW mode of a database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1970
+        Lock conversion denied (215) error may occur
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1962
+        Incorrect extraction of MILLISECONDs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1958
+        Bugcheck 179 (decompression overran buffer) when attempting to update
+        the same record multiple times
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1957
+        Long ACLs truncated
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1944
+        Monitoring tables contain wrong data on big-endian machines
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1930
+        Possible AV in engine if procedure was altered to have no outputs
+        and dependent procedures was not recompiled
+      Contributor(s):
+        Vlad Horsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-1926
+        MON$DATABASE returns outdated transaction counters
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-1922
+        Trusted authentication doesn't work with the Services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1919
+        Memory corruptions in EXECUTE STATEMENT may crash the server
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1909
+        Garbage in firebird.log on linux/amd64
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1843
+        GBAK with service manager doesn't allow path with space
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-1596
+        Bug in CsConvert::convert
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-1506
+        Server crash with isc_dsql_execute_immediate and zero length string
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
+  ***************************
   * v2.1.1
   ***************************
 
@@ -48,7 +269,7 @@
         SELECT operator does not work in ISQL (big-endian hosts only)
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
-        Paul Beach (pbeach at ibphoenix.com)
+        Paul Beach <pbeach at ibphoenix.com>
 
     * Bugfix CORE-1859
         Arithmetic overflow or division by zero has occurred in MAX function
@@ -1492,7 +1713,7 @@
         Fix problem with QLI where a crash occurs using the following SQL:
         INSERT INTO relationx SELECT * FROM relationy
       Contributor(s):
-        Paul Beach (pbeach at ibphoenix.com)
+        Paul Beach <pbeach at ibphoenix.com>
 
     * More dependencies (unregistered)
         Fixed untracked collation dependencies in PSQL
