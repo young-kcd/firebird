@@ -1,5 +1,5 @@
 ==============================
-Firebird Database Server 2.0.4
+Firebird Database Server 2.0.5
 ==============================
 
   ** IMPORTANTE **
@@ -13,9 +13,9 @@ Firebird Database Server 2.0.4
   ** ********** **
 
 Questo documento contiene istruzioni per
-l'installazione di Firebird 2.0.4 su piattaforma
+l'installazione di Firebird 2.0.5 su piattaforma
 Win32. Questa documentazione si riferisce dunque al
-solo processo di installazione, e non a Firebird 2.0.4
+solo processo di installazione, e non a Firebird 2.0.5
 in generale.
 
 

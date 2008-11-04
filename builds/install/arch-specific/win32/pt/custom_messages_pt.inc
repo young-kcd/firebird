@@ -44,7 +44,7 @@ pt.InstalledProducts='A análise de reinstalação indica que foram encontradas %s 
 pt.InstalledProdCountSingular=versão tem
 pt.InstalledProdCountPlural=versões têm
 
-pt.FbRunning1=Um Servidor Firebird %s anterior já se encontra em execução.
+pt.FbRunning1=Um Servidor %s anterior já se encontra em execução.
 pt.FbRunning2=     Tem que fechar a aplicação ou parar o serviço
 pt.FbRunning3=                 antes de continuar.
 

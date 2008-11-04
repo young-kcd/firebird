@@ -1,4 +1,4 @@
-Firebird Adatbázis Szerver 2.0.4
+Firebird Adatbázis Szerver 2.0.5
 ===================================================
 
   ** FONTOS **
@@ -11,9 +11,9 @@ Firebird Adatbázis Szerver 2.0.4
   ** ****** **
 
 Ez a dokumentum egy telepítési segédlet a Win32
-platformon mûködõ Firebird 2.0.4 telepítéséhez.
+platformon mûködõ Firebird 2.0.5 telepítéséhez.
 A telepítési segédlet elsõsorban a telepítés menetét
-írja le, s nem a Firebird 2.0.4-rõl szól
+írja le, s nem a Firebird 2.0.5-rõl szól
 általánosságban.
 
 

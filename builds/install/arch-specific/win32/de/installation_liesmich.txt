@@ -1,4 +1,4 @@
-Firebird Datenbank Server 2.0.4
+Firebird Datenbank Server 2.0.5
 ==================================================
 
 
@@ -12,9 +12,9 @@ Firebird Datenbank Server 2.0.4
   ** ******* **
 
 Dieses Dokument ist eine Hilfestellung um dieses Paket
-von Firebird 2.0.4 auf einer Win32 Plattform zu installieren.
+von Firebird 2.0.5 auf einer Win32 Plattform zu installieren.
 Diese Hinweise beziehen sich ausschließlich auf das
-Installationspaket, und nicht auf Firebird 2.0.4 allgemein.
+Installationspaket, und nicht auf Firebird 2.0.5 allgemein.
 
 
 Inhalt

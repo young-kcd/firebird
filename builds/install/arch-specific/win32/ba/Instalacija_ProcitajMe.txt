@@ -1,5 +1,5 @@
 ==================================================
-Firebird Database Server 2.0.4
+Firebird Database Server 2.0.5
 ==================================================
 
 ** VAZNO **
@@ -11,8 +11,8 @@ Firebird Database Server 2.0.4
   ** ********* **
 
 Ovaj dokument je vodic za instalaciju ovog paketa
-Firebird-a 2.0.4 za Win32 platformu. Ovaj tekst
-se odnosi na instalacioni paket, a ne na Firebird 2.0.4
+Firebird-a 2.0.5 za Win32 platformu. Ovaj tekst
+se odnosi na instalacioni paket, a ne na Firebird 2.0.5
 u generalnom smislu.
 
 

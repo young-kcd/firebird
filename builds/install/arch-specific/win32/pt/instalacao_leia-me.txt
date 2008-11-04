@@ -1,5 +1,5 @@
 ==================================================
-Servidor SQL Firebird 2.0.4
+Servidor SQL Firebird 2.0.5
 ==================================================
 
   ** IMPORTANTE **
@@ -11,9 +11,9 @@ Servidor SQL Firebird 2.0.4
   ** ********* **
 
 Este documento constitui um guia para instalar o kit do
-Firebird 2.0.4 na plataforma Win32. Estas notas
+Firebird 2.0.5 na plataforma Win32. Estas notas
 referem-se ao próprio kit de instalação, em vez do
-Firebird 2.0.4 em geral.
+Firebird 2.0.5 em geral.
 
 
 Conteúdo

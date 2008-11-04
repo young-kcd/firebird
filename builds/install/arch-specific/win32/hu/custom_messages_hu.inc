@@ -44,7 +44,7 @@ hu.InstalledProducts=Az újratelepítési vizsgálat az mutatja, hogy %s létezõ Fire
 hu.InstalledProdCountSingular=található
 hu.InstalledProdCountPlural=találhatóak
 
-hu.FbRunning1=Egy létezõ Firebird Adatbázisszerver %s már fut.
+hu.FbRunning1=Egy létezõ %s Adatbázisszerver már fut.
 hu.FbRunning2= A folytatás elõtt Önnek be kell zárnia a futó alkalmazást,
 hu.FbRunning3=          vagy le kell állítani szolgáltatást.
 

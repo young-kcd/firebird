@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.4       (Win32 Build)
+Firebird 2.0.5       (Win32 Build)
 ==================================
 
 o Introducción
@@ -17,7 +17,7 @@ o Solicitud de nuevas características
 Introducción
 ============
 
-Bienvenido a Firebird 2.0.4
+Bienvenido a Firebird 2.0.5
 
 
 A quién está destinada esta versión
@@ -50,14 +50,14 @@ Características de esta versión (todas
 las plataformas)
 ======================================
 
-Lea doc/Firebird_v2.0.4.ReleaseNotes.pdf para
+Lea doc/Firebird_v2.0.5.ReleaseNotes.pdf para
 más información.
 
 
 Errores corregidos en esta versión (todas las plataformas)
 ==========================================
 
-Lea doc/Firebird_v2.0.4.ReleaseNotes.pdf para
+Lea doc/Firebird_v2.0.5.ReleaseNotes.pdf para
 más información.
 
 

@@ -44,7 +44,7 @@ de.InstalledProducts=Die Neuinstallations-Analyse ergibt, dass %s existierende F
 de.InstalledProdCountSingular=Version gefunden wurde.
 de.InstalledProdCountPlural=Versionen gefunden wurden.
 
-de.FbRunning1=Ein existierender Firebird %s Server läuft.
+de.FbRunning1=Ein existierender %s Server läuft.
 de.FbRunning2= Sie müssen die Anwendung schließen oder den Dienst
 de.FbRunning3=         beenden, bevor Sie fortfahren können.
 

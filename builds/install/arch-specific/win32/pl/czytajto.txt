@@ -1,5 +1,5 @@
 =================================================
-Firebird 2.0.4       (Wersja Win32)
+Firebird 2.0.5       (Wersja Win32)
 =================================================
 
 o Wprowadzenie
@@ -15,13 +15,13 @@ o Propozycje nowych funkcjonalnoœci
 Wprowadzenie
 ============
 
-Witamy w Firebird 2.0.4
+Witamy w Firebird 2.0.5
 
 
 Docelowi u¿ytkownicy
 ====================
 
-Firebird 2.0.4 przeszed³ intensywne testy i jest przeznaczony
+Firebird 2.0.5 przeszed³ intensywne testy i jest przeznaczony
 do szerokich zastosowañ produkcyjnych. Aczkolwiek zaleca siê,
 aby u¿ytkownicy zachowali nastêpuj¹ce standardowe praktyki
 przed uruchomieniem tego wydania na serwerze produkcyjnym:
@@ -44,13 +44,13 @@ przed uruchomieniem tego wydania na serwerze produkcyjnym:
 Cechy tego wydania (wszystkie platformy)
 ========================================
 
-Zobacz doc/Firebird_v2.0.4.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
+Zobacz doc/Firebird_v2.0.5.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
 
 
 B³êdy poprawione w tym wydaniu (wszystkie platformy)
 ===================================================
 
-Zobacz doc/Firebird_v2.0.4.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
+Zobacz doc/Firebird_v2.0.5.ReleaseNotes.pdf w celu uzyskania dodatkowych informacji.
 
 
 Instalowanie samouruchamiaj¹cego siê programu

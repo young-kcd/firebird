@@ -44,7 +44,7 @@ ba.InstalledProducts='Pre-instalaciona analiza pokazuje da %s postojeæi Firebird
 ba.InstalledProdCountSingular=verzija ima
 ba.InstalledProdCountPlural=verzije imaju
 
-ba.FbRunning1=Postojeæi Firebird %s Server je pokrenut.
+ba.FbRunning1=Postojeæi %s Server je pokrenut.
 ba.FbRunning2= Morate zatvoriti aplikaciju ili zaustaviti 
 ba.FbRunning3=         service prije nastavka.
 
@@ -53,9 +53,10 @@ ba.PreviousInstallGood=   (Instalacija je uspješna.)
 
 ba.IconReadme=Firebird %1 Readme
 ba.IconUninstall=Deinstalacija Firebird-a %1
-ba.ReleaseNotes= release notes. (Potreban je Acrobat Reader.)
+ba.ReleaseNotes= release notes. (Potreban je Acrobat Reader.)       
 ba.InstallationGuide= installation guide. (Potreban je Acrobat Reader.)
 ba.BugFixes= bug fixes. (Potreban je Acrobat Reader.)
+
 ba.Uninstall=Deinstalacija Firebird-a %1
 ba.Winsock2Web1=Winsock 2 nije instaliran.
 ba.Winsock2Web2=Želite li da posjetite Winsock 2 Update Home Page?

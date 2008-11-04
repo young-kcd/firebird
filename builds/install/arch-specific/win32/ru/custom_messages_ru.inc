@@ -44,7 +44,7 @@ ru.InstalledProducts=ѕредварительный анализ показывает, что найдено %s %s Firebi
 ru.InstalledProdCountSingular=установленных версий
 ru.InstalledProdCountPlural=установленных версий
 
-ru.FbRunning1=ќбнаружен запущенный сервер Firebird %s.
+ru.FbRunning1=ќбнаружен запущенный сервер %s.
 ru.FbRunning2=¬ы должны закрыть приложение или остановить
 ru.FbRunning3=службу прежде, чем продолжите.
 

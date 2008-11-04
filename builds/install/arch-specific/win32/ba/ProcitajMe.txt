@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.4       (Win32 Build)
+Firebird 2.0.5       (Win32 Build)
 ==================================
 
 o Uvod
@@ -16,13 +16,13 @@ o Zahtjev novih mogucnosti
 Uvod
 ============
 
-Dobrodosli u Firebird 2.0.4
+Dobrodosli u Firebird 2.0.5
 
 
 Kome je namjenjen?
 ============================
 
-Firebird 2.0.4 je prosao kroz opsezan proces testiranja
+Firebird 2.0.5 je prosao kroz opsezan proces testiranja
 i namjenjen je za siroku upotrebu u produkciji. Svakako,
 korisnicima je preporuceno da prate standardne procedure
 prije deploy-a ovog release-a na produkcioni server. tj:
@@ -44,14 +44,14 @@ prije deploy-a ovog release-a na produkcioni server. tj:
 Odlike ovog release-a (sve platforme)
 ========================================
 
-Pogledajte doc/Firebird_v2.0.4.ReleaseNotes.pdf za vise
+Pogledajte doc/Firebird_v2.0.5.ReleaseNotes.pdf za vise
 informacija.
 
 
 Popravljeni bug-ovi u ovom release-u (all platforms)
 ==========================================
 
-Pogledajte doc/Firebird_v2.0.4.ReleaseNotes.pdf za vise
+Pogledajte doc/Firebird_v2.0.5.ReleaseNotes.pdf za vise
 informacija.
 
 

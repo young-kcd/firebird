@@ -1,6 +1,6 @@
 
 ==================================
-Firebird 2.0.4       (Win32 Build)
+Firebird 2.0.5       (Win32 Build)
 ==================================
 
 
@@ -17,13 +17,13 @@ o Requesting New Features
 Introduction
 ============
 
-Welcome to Firebird 2.0.4
+Welcome to Firebird 2.0
 
 
 Intended Users
 ==============
 
-Firebird 2.0.4 has undergone extensive testing and is
+Firebird 2.0 has undergone extensive testing and is
 intended for widespread production use. However, users
 are recommended to follow standard practices before
 deploying this release on a production server. ie:
@@ -46,14 +46,14 @@ deploying this release on a production server. ie:
 Features in this release (all platforms)
 ========================================
 
-See doc/Firebird_v2.0.4.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.5.ReleaseNotes.pdf for more
 information.
 
 
 Bugs fixed in this release (all platforms)
 ==========================================
 
-See doc/Firebird_v2.0.4.ReleaseNotes.pdf for more
+See doc/Firebird_v2.0.5.ReleaseNotes.pdf for more
 information.
 
 
@@ -77,40 +77,27 @@ Known Issues
 Reporting Bugs
 ==============
 
-o Are you sure you understand how Firebird works?
+Before you report a bug:
 
-  Perhaps you are seeing the correct behaviour and you
-  really have a support question. In this case contact
-  the firebird-support list server.
+ o Check you know how Firebird works.
+   Maybe it is not a bug at all.
 
-  You may subscribe here:
-
-	mailto:firebird-support-subscribe@yahoogroups.com
-
-
-o Still think it is a bug?
-
-  First check the issue tracker here:
+ o Perhaps some has already reported this? Browse
+   existing bug reports here:
 
 	http://tracker.firebirdsql.org/secure/BrowseProject.jspa
 
-Please do not use the issue tracker to get technical
-support. If in doubt subscribe to the support list
-first at
+ o If in doubt why not discuss the problem on the
+   Firebird-devel list? You can subscribe here:
 
-  mailto:firebird-support-subscribe@yahoogroups.com
+	http://lists.sourceforge.net/lists/listinfo/firebird-devel
 
-and ask your question there.
+   and the list is viewable via a newsgroup interface
+   here:
+
+	news://news.atkin.com/
 
 
-Requesting New Features
-=======================
 
-Before submitting feature requests please review the
-existing feature request list. Chances are that someone
-has already thought of it. Existing feature requests
-can be browsed here:
-
-  http://tracker.firebirdsql.org/secure/CreateIssue!default.jspa
-
+From the Firebird team.
 

@@ -1,6 +1,6 @@
 
 ======================================
-Firebird 2.0.4       (Win32 Felépítés)
+Firebird 2.0.5       (Win32 Felépítés)
 ======================================
 
 o Bevezetés
@@ -17,13 +17,13 @@ o Új képességek igénylése
 Bevezetés
 =========
 
-Üdvözöljük a Firebird 2.0.4 világában.
+Üdvözöljük a Firebird 2.0.5 világában.
 
 
 Felhasználás
 ============
 
-A Firebird 2.0.4 alapos tesztelések során
+A Firebird 2.0.5 alapos tesztelések során
 bizonyította, hogy alkalmas kiterjedt üzemi
 - éles - környezetben történõ felhasználásra. Ennek
 ellenére ajánlatos, a már ismert, általánosan
@@ -51,7 +51,7 @@ Ezen verzió szolgáltatásai (minden platformon)
 ==============================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.0.4.ReleaseNotes.pdf
+doc/Firebird_v2.0.5.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -59,7 +59,7 @@ Ebben a verzióban javított hibák (minden platformon)
 ====================================================
 
 További információkért tekintse meg a:
-doc/Firebird_v2.0.4.ReleaseNotes.pdf
+doc/Firebird_v2.0.5.ReleaseNotes.pdf
 dokumentumot.
 
 
@@ -72,8 +72,8 @@ segédletet.  A telepítés befejezése után ezt a
 dokumentumot a:
 .\doc\teklepitesi_segedlet.txt
 helyen találja. További részletes információk a
-"Firebird 2.0.4 - Újdonságok"
-(doc/Firebird_v2.0.4.ReleaseNotes.pdf)
+"Firebird 2.0.5 - Újdonságok"
+(doc/Firebird_v2.0.5.ReleaseNotes.pdf)
 dokumentumban vannak.
 
 Telepítés zip csomagokból
@@ -144,7 +144,7 @@ szerver  számára, amíg az UDF könyvtárak elérési
 állomány megfelelõ  szakaszában. További
 információkért olvassa el a  megjegyzéseket a
 firebird.conf konfigurációs állományban valamint a "
-Firebird 2.0.4 - Újdonságok" dokumentumban.
+Firebird 2.0.5 - Újdonságok" dokumentumban.
 
 
 Az SQL Nyelv dokumentációja
