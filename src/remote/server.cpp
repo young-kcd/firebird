@@ -156,6 +156,7 @@ static REM_MSG	scroll_cache(Rrq::rrq_repeat*, USHORT *, ULONG *);
 static void		server_ast(void*, USHORT, const UCHAR*);
 static void		set_server(rem_port*, USHORT);
 static void		success(ISC_STATUS*);
+static int		shut_server(const int, const int, void*);
 static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM);
 static void		zap_packet(PACKET*, bool);
 
@@ -233,6 +234,7 @@ static SERVER_REQ	active_requests		= NULL;
 static Firebird::GlobalPtr<Firebird::Mutex> servers_mutex;
 static SRVR			servers;
 static Firebird::AtomicCounter cntServers;
+static bool	server_shutdown = false;
 
 
 static const UCHAR request_info[] =
@@ -289,6 +291,9 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 		//
 		// Note: The following is cloned in server other SRVR_main instances.
 		//
+		ISC_STATUS_ARRAY status = {0};
+		main_port->port_status_vector = status;
+
 		rem_port* port = main_port->receive(&receive);
 		if (!port) {
 			break;
@@ -506,7 +511,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
-					if (main_port->port_server_flags & SRVR_multi_client)
+					if (main_port->port_server_flags & SRVR_multi_client && !server_shutdown)
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}
@@ -596,7 +601,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 			{
 				rem_port* current_port = run_port;	// important order of operations
 				run_port = run_port->port_next;		// disconnect() can modify linked list of ports
-				current_port->disconnect(NULL, NULL);
+				if (!(current_port->port_flags & PORT_disconnect))
+					current_port->disconnect(NULL, NULL);
 			}
 		}
 		catch (const Firebird::Exception& e)
@@ -4767,6 +4773,7 @@ void set_server( rem_port* port, USHORT flags)
 	if (!server) 
 	{
 		servers = server = new srvr(servers, port, flags);
+		fb_shutdown_callback(0, shut_server, fb_shut_postproviders, 0);
 	}
 
 	port->port_server = server;
@@ -5466,4 +5473,10 @@ void Worker::shutdown()
 		}
 		m_mutex->enter();
 	}
+}
+
+static int shut_server(const int, const int, void*)
+{
+	server_shutdown = true;
+	return 0;
 }
