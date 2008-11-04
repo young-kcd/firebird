@@ -25,6 +25,8 @@
 
 Function Prototypes
 
+  function IsWin32: boolean;
+  function Is32BitInstallMode: boolean;
   function IsVista: boolean;
   function IsWin2k3: boolean;
   function IsWinXP: boolean;
@@ -36,6 +38,7 @@ Function Prototypes
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
+  function WIVersion: string;
   function ReplaceLine(Filename, StringToFind, NewLine,CommentType: string): boolean;
   procedure DecodeVersion( VerStr: String; var VerInt: array of Integer );
   function CompareVersion( ver1, ver2: String ) : Integer;
@@ -67,22 +70,56 @@ Windows NT versions:
 
 *)
 
-Type TWindowsVersion = record
-    Major: Cardinal;             // Major version number
-    Minor: Cardinal;             // Minor version number
-    Build: Cardinal;             // Build number
-    NTPlatform: Boolean;         // True if an NT-based platform
-  end;
+(*
+Windows Installer versions: (extracted from MSDN)
+Release Version                     Description
+-----------------------------------------------
+v2.0    2.0.2600.0                  Released with Windows XP.
+v2.0    2.0.2600.1                  Released with Windows 2000 Server SP3.
+v2.0    2.0.2600.1183               Released with Windows 2000 Server SP4.
+v2.0    2.0.2600.2                  Released as a redistributable.
+v2.0    2.0.2600.1106               Released with Windows XP SP1.
+v2.0    2.0.3790.0                  Released with Windows Server 2003.
+v3.0    3.0.3790.2180               Released with Windows XP SP2.
+                                    Released as a redistributable.
+v3.1    3.1.4000.1823               Released as a redistributable.
+                                    This version has the same functionality as version 3.1.4000.2435.
+v3.1    3.1.4000.1830               Released with Windows Server 2003 SP1 and
+                                    Windows XP Professional x64 Edition.
+                                    Update this version to version 3.1.4000.2435
+                                    to address the issue discussed in KB898628.
+v3.1    3.1.4000.2435               Released with a fix to address the issue
+                                    discussed in KB898628. This is the latest version
+                                    of Windows Installer 3.1.
+v4.0    4.0.6000.16386              Released with Windows Vista.
+v4.0    4.0.6001.16531 or greater   Released with Windows Vista SP1 and
+                                    Windows Server 2008.
 
-procedure GetWindowsVersionEx(Version: TWindowsVersion);
-var
-  WinVer: Cardinal;
+(NB1 - msi.dll stores the correct version number and is updated
+        automatically by Windows Update. msiexec.exe will be the original shipped version.
+
+ NB2 - Re v3.1 build numbers and KB 898628 - This KB article refers to the
+        fact that initial releases of WI 3.1 would error and STOP if an attempt
+        was made to overwrite a system file in the WFP list. Previous behaviour
+        was to error, log and continue. This behaviour is irrelevant to us because
+        we don't do anything sophisticated with the msi. OTOH, if we used msi
+        for all our installation needs this would be a serious problem.
+
+ NB3 - Our installer will not run msiexec on systems before XP. However, some early XP and W2K3
+       systems do not have v3.0 of the Windows Installer.
+*)
+
+
+function IsWin32: boolean;
+//helper function to simplify logic of x86/win64 checks.
 begin
-	WinVer := GetWindowsVersion;
-	Version.Major := WinVer shr 24;
-	Version.Minor := (WinVer shr 16) and $FF;
-	Version.Build :=  WinVer and $FFFF;
-	Version.NTPlatform := UsingWinNT;
+  result := not IsWin64;
+end;
+
+function Is32BitInstallMode: boolean;
+//helper function to simplify logic of x86/win64 checks.
+begin
+  result := not Is64BitInstallMode;
 end;
 
 function IsVista: boolean;
@@ -194,6 +231,15 @@ function GetSysPath: String;
 begin
   Result := ExpandConstant('{sys}');
 //  Result := '"' + Result +'"';
+end;
+
+function WIVersion: string;
+//Get version of Windows Installer
+var
+  VersionStr: string;
+begin
+  GetVersionNumbersString(GetSysPath + '\msi.dll', VersionStr);
+  result := VersionStr;
 end;
 
 
@@ -336,10 +382,16 @@ begin
 
 end;
 
-function GetRegistryEntry(RegKey, RegEntry: string): String;
+function GetRegistryEntry(RootKey: Integer; RegKey, RegEntry: string): String;
 begin
-  result := '';
-  RegQueryStringValue(HKEY_LOCAL_MACHINE, RegKey, RegEntry, Result);
+  Result := '';
+  //if not win64 and RootKey is HKLM64 then we are on a 32-bit box,
+  //so skip looking in registry
+    if ( (RootKey = HKLM64) AND (isWin32) ) then
+    //do nothing
+      Result := ''
+    else
+      RegQueryStringValue(RootKey, RegKey, RegEntry, Result);
 end;
 
 

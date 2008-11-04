@@ -42,7 +42,8 @@
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
 
-
+    function HasWI30: boolean;
+    function HasNotWI30: boolean;
  *)
 
 
@@ -83,27 +84,44 @@ Const
   BrokenInstall         = 32;   //version or component mismatch found, so mark broken
 
   //Possible product installs
-  IB4Install    = 0;
-  IB5Install    = 1;
-  IB6Install    = 2;
-  IB65Install   = 3;
-  IB7Install    = 4;
-  FB1Install    = 5;
-  FB15RCInstall = 6;
-  FB15Install   = 7;
-  FB2Install    = 8;            //All Fb 1.6 and beyond
-  MaxProdInstalled = FB2Install;
+  IB4Install        = 0;
+  IB5Install        = 1;
+  IB6Install        = 2;
+  IB65Install       = 3;
+  IB70Install       = 4;
+  FB1Install        = 5;
+  FB15RCInstall     = 6;
+  FB15Install       = 7;
+  FB20Install       = 8;
+  IB80Install       = 9;
+  IB81Install       = 10;
+  FB21Install       = 11;
+  FB21_x64_Install  = 12;
+  FB25Install       = 13;
+  FB25_x64_Install  = 14;
+  FB30Install       = 15;
+  FB30_x64_Install  = 16;
 
-  //ProductsInstalled
-  IB4     = $0001;
-  IB5     = $0002;
-  IB6     = $0004;
-  IB65    = $0008;
-  IB7     = $0010;
-  FB1     = $0020;
-  FB15RC  = $0040;
-  FB15    = $0080;
-  FB2     = $0100;
+  MaxProdInstalled = FB30_x64_Install;
+
+//ProductsInstalled
+  IB4       = $00001;
+  IB5       = $00002;
+  IB6       = $00004;
+  IB65      = $00008;
+  IB70      = $00010;
+  FB1       = $00020;
+  FB15RC    = $00040;
+  FB15      = $00080;
+  FB20      = $00100;
+  IB80      = $00200;
+  IB81      = $00400;
+  FB21      = $00800;
+  FB25      = $01000;
+  FB30      = $02000;
+  FB21_x64  = $04000;
+  FB25_x64  = $08000;
+  FB30_x64  = $10000;
 
   //  Likely gds32 version strings for installed versions of Firebird or InterBase are:
   //  [6,0,n,n]     InterBase 6.0
@@ -140,6 +158,7 @@ Type
     InstallType:    Integer;
     ActualVersion:  String;
     FirebirdVersion:String;
+    RootKey:        Integer;
   end;
 
 
@@ -150,6 +169,7 @@ procedure InitExistingInstallRecords;
 var
   product: Integer;
 begin
+
   SetArrayLength(ProductsInstalledArray,MaxProdInstalled + 1);
   for product := 0 to MaxProdInstalled do begin
 
@@ -162,6 +182,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IB4MessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB5Install: begin
@@ -169,6 +190,7 @@ begin
         ProductsInstalledArray[product].RegKey := IB5RegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB6Install: begin
@@ -176,6 +198,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       IB65Install: begin
@@ -183,13 +206,31 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
-      IB7Install: begin
+      IB70Install: begin
         ProductsInstalledArray[product].Description := IBDesc;
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      IB80Install: begin
+        ProductsInstalledArray[product].Description := IBDesc;
+        ProductsInstalledArray[product].RegKey := IBRegKey;
+        ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      IB81Install: begin
+        ProductsInstalledArray[product].Description := IBDesc;
+        ProductsInstalledArray[product].RegKey := IBRegKey;
+        ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB1Install: begin
@@ -197,6 +238,7 @@ begin
         ProductsInstalledArray[product].RegKey := IBRegKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := IBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB15RCInstall: begin
@@ -204,6 +246,7 @@ begin
         ProductsInstalledArray[product].RegKey := FB15RCKey;
         ProductsInstalledArray[product].RegEntry := LegacyRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
       FB15Install: begin
@@ -211,22 +254,72 @@ begin
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
       end;
 
-      FB2Install: begin
+      FB20Install: begin
         ProductsInstalledArray[product].Description := FBDesc;
         ProductsInstalledArray[product].RegKey := FB2RegKey;
         ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
         ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB21Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB21_x64_Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM64;
+      end;
+
+      FB25Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB25_x64_Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM64;
+      end;
+
+      FB30Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (Win32) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM32;
+      end;
+
+      FB30_x64_Install: begin
+        ProductsInstalledArray[product].Description := FBDesc + ' (x64) ';
+        ProductsInstalledArray[product].RegKey := FB2RegKey;
+        ProductsInstalledArray[product].RegEntry := FBRegPathEntry;
+        ProductsInstalledArray[product].MessageFile := FBMessageFile;
+        ProductsInstalledArray[product].RootKey := HKLM64;
       end;
 
     end; //case
 
-    ProductsInstalledArray[product].Path := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
+    ProductsInstalledArray[product].Path := GetRegistryEntry(ProductsInstalledArray[product].RootKey,
+      ProductsInstalledArray[product].RegKey, ProductsInstalledArray[product].RegEntry);
 
     ProductsInstalledArray[product].RegVersion := GetRegistryEntry(
-        ProductsInstalledArray[product].RegKey, 'Version');
+      ProductsInstalledArray[product].RootKey, ProductsInstalledArray[product].RegKey, 'Version');
 
   end;  //for
 end; //function
@@ -386,14 +479,14 @@ begin
             ProductsInstalledArray[product].InstallType := NotInstalled;
         end;
 
-        IB7Install: begin
+        IB70Install: begin
           //If we get here we have ambiguity with other versions of InterBase and Firebird
           if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
             if CompareVersion(ProductsInstalledArray[product].ClientVersion, '7.0.0.0',1) <> 0 then
               ProductsInstalledArray[product].InstallType := NotInstalled
           else
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
-              ProductsInstalled := ProductsInstalled + IB7;
+              ProductsInstalled := ProductsInstalled + IB70;
               ProductsInstalledCount := ProductsInstalledCount + 1;
               end;
             end
@@ -436,14 +529,116 @@ begin
             end;
         end;
 
-        FB2Install: begin
+        FB20Install: begin
           if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.0.0.0',2) <> 0) then
             ProductsInstalledArray[product].InstallType := NotInstalled
           else
             if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
-              ProductsInstalled := ProductsInstalled + FB2;
+              ProductsInstalled := ProductsInstalled + FB20;
               ProductsInstalledCount := ProductsInstalledCount + 1;
             end;
+        end;
+
+        IB80Install: begin
+          //If we get here we have ambiguity with other versions of InterBase and Firebird
+          if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
+            if CompareVersion(ProductsInstalledArray[product].ClientVersion, '8.0.0.0',2) <> 0 then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + IB80;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+              end;
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        IB81Install: begin
+          //If we get here we have ambiguity with other versions of InterBase and Firebird
+          if ( pos('InterBase',ProductsInstalledArray[product].RegVersion) > 0 ) then begin
+            if CompareVersion(ProductsInstalledArray[product].ClientVersion, '8.1.0.0',2) <> 0 then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall) then begin
+              ProductsInstalled := ProductsInstalled + IB81;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+              end;
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        FB21Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.1.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB21;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB21_x64_Install: begin
+          if iswin64 then begin
+            if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.1.0.0',2) <> 0) then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+                ProductsInstalled := ProductsInstalled + FB21_x64;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+              end
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        FB25Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.5.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB25;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB25_x64_Install: begin
+          if iswin64 then begin
+            if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '2.5.0.0',2) <> 0) then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+                ProductsInstalled := ProductsInstalled + FB25_x64;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+              end
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
+        end;
+
+        FB30Install: begin
+          if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '3.0.0.0',2) <> 0) then
+            ProductsInstalledArray[product].InstallType := NotInstalled
+          else
+            if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+              ProductsInstalled := ProductsInstalled + FB30;
+              ProductsInstalledCount := ProductsInstalledCount + 1;
+            end;
+        end;
+
+        FB30_x64_Install: begin
+          if iswin64 then begin
+            if (CompareVersion(ProductsInstalledArray[product].ClientVersion, '3.0.0.0',2) <> 0) then
+              ProductsInstalledArray[product].InstallType := NotInstalled
+            else
+              if ((ProductsInstalledArray[product].InstallType AND ClientInstall) = ClientInstall)  then begin
+                ProductsInstalled := ProductsInstalled + FB30_x64;
+                ProductsInstalledCount := ProductsInstalledCount + 1;
+              end
+            end
+          else
+            ProductsInstalledArray[product].InstallType := NotInstalled;
         end;
 
       end;//case
@@ -497,7 +692,7 @@ procedure SetupSharedFilesArray;
 // - Libraries
 // - License files
 begin
-SetArrayLength(SharedFileArray,29);
+SetArrayLength(SharedFileArray,33);
 
 SharedFileArray[0].Filename := ExpandConstant('{app}')+'\IPLicense.txt';
 SharedFileArray[1].Filename := ExpandConstant('{app}')+'\IDPLicense.txt';
@@ -540,7 +735,10 @@ if UsingWinNT then
 else
   SharedFileArray[28].Filename := ExpandConstant('{sys}')+'\FIREBI~1.CPL';
 
-
+SharedFileArray[29].Filename := ExpandConstant('{app}')+'aliases.conf';
+SharedFileArray[30].Filename := ExpandConstant('{app}')+'firebird.conf';
+SharedFileArray[31].Filename := ExpandConstant('{app}')+'firebird.log';
+SharedFileArray[32].Filename := ExpandConstant('{app}')+'security2.fdb';
 
 end;
 
@@ -645,33 +843,75 @@ begin
     result := true;
 end;
 
-//Detect any 1.5 or 2.0 server running with default ClassName or mutex
-function FirebirdDefaultServerRunning: String;
+
+//Detect server running with default ClassName or mutex
+var
+    RunningServerVerString: String;
+
+function FirebirdDefaultServerRunning: Boolean;
 var
   Handle: Integer;
   mutex_found: boolean;
+  mutexes: String;
 begin
-  result := '';
-  //Look for a running version of Firebird 1.5 or later
-  Handle := FindWindowByClassName('FB_Disabled');
-  if ( Handle = 0 ) then
-    Handle := FindWindowByClassName('FB_Server');
-  if ( Handle = 0 ) then
-    Handle := FindWindowByClassName('FB_Guard');
+  RunningServerVerString := '';
+  Result := false;
 
-  if (Handle > 0) then
-     result := '1.5'
-  else begin
-    mutex_found := CheckForMutexes('FirebirdGuardianMutex,FirebirdServerMutex');
-    if mutex_found then
-      result := '2.0'
-    else begin
-      mutex_found := CheckForMutexes('FirebirdGuardianMutexDefaultInstance,FirebirdServerMutexDefaultInstance');
-      if mutex_found then
-        result := '2.1'
-    end;
+  if FirebirdOneRunning then
+    RunningServerVerString := 'Firebird v1.0 / InterBase';
 
+  //Look for a valid window handle
+  if RunningServerVerString = '' then begin
+    //This is effectivley a test for Firebird running as an application.
+    //This is useful if Firebird is running without the guardian
+    //because prior to v2.0.4 there is no server mutex.
+    Handle := FindWindowByClassName('FB_Disabled');
+    if ( Handle = 0 ) then
+      Handle := FindWindowByClassName('FB_Server');
+    if ( Handle = 0 ) then
+      Handle := FindWindowByClassName('FB_Guard');
+
+    if (Handle > 0) then
+      RunningServerVerString := 'Firebird';
   end;
+
+  //Look for a firebird mutex
+  if RunningServerVerString = '' then begin
+    //General Notes on testing for mutexes:
+    // - Mutexes are case-sensitive.
+    // - Don't escape the slash in Global\, Local\ etc. (We don't currently use Local\)
+    //
+    // v2.0 notes
+    // - v2.0 prior to 2.0.4 does not create a FirebirdServerMutex mutex,
+    //   so server running without guardian is not detected.
+    // - v2.0.4 creates mutexes without the global prefix.
+    // - Later versions (if any) will use the prefix, so we will test for them anyway.
+    mutexes := 'Global\FirebirdGuardianMutex' + ',' +
+               'Global\FirebirdServerMutex' + ',' +
+               'FirebirdGuardianMutex' + ',' +
+               'FirebirdServerMutex';
+    mutex_found := CheckForMutexes(mutexes);
+
+    if mutex_found then
+      RunningServerVerString := 'Firebird';
+  end;
+
+  if RunningServerVerString = '' then begin
+      //v2.1.1 notes
+      // - v2.1.0 creates mutexes without the global prefix.
+      // - v2.1.1 and later should use the correct prefix.
+      mutexes := 'Global\FirebirdGuardianMutexDefaultInstance' + ',' +
+                 'Global\FirebirdServerMutexDefaultInstance' + ',' +
+                 'FirebirdGuardianMutexDefaultInstance' + ',' +
+                 'FirebirdServerMutexDefaultInstance';
+      mutex_found := CheckForMutexes(mutexes);
+
+      if mutex_found then
+        RunningServerVerString := 'Firebird v2.1'
+  end;
+
+  if RunningServerVerString <> '' then
+    Result := True;
 
 end;
 
@@ -680,7 +920,7 @@ function InstallCPLApplet: boolean;
 begin
   result := False;
   if ( (ConfigureFirebird) AND (not NoCPL) ) then
-     result := (ShouldProcessEntry('ServerComponent\SuperServerComponent', 'InstallCPLAppletTask') = srYes) ;
+     result := IsTaskSelected('InstallCPLAppletTask') ;
 end;
 
 
@@ -701,7 +941,7 @@ begin
   if ConfigureFirebird then begin
     //If one of these is false then either the commandline switch was passed
     //or the user unchecked the Copy client as GDS32 box
-    result := ( (not NoLegacyClient) AND (ShouldProcessEntry('ClientComponent', 'CopyFbClientAsGds32Task')= srYes) );
+    result := ( (not NoLegacyClient) AND (IsTaskSelected('CopyFbClientAsGds32Task') ));
   end;
 end;
 
@@ -716,7 +956,8 @@ end;
 function CopyFbClientLib: boolean;
 begin
 //Note that the default for this is the opposite to CopyGds32.
-  result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
+  //result := ( (CopyFbClient) OR (ShouldProcessEntry('ClientComponent', 'CopyFbClientToSysTask')= srYes) );
+    result := ( (not CopyFbClient) AND (IsTaskSelected('CopyFbClientToSysTask') ));
 end;
 
 
@@ -728,4 +969,24 @@ begin
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
 
+function HasWI30: boolean;
+//We need at least Windows Installer 3.0 available if we
+//are installing the msi bundles for the VC8 CRT libraries.
+var
+  VersionStr: String;
+  VerInt: array of Integer;
+begin
+  Result := False;
+  VersionStr := WIVersion;
+  DecodeVersion(VersionStr, VerInt);
+  if (VerInt[0] >= 3) then
+    Result := True;
+
+end;
+
+function HasNotWI30: boolean;
+//Used to check if O/S does NOT have minimum version of Windows Installer
+begin
+  result := NOT HasWI30;
+end;
 

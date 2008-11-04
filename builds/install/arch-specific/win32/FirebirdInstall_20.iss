@@ -19,12 +19,12 @@
 ;     of an existing install directory.
 ;     Simon Carter for the WinSock2 detection.
 ;     Philippe Makowski for internationalization and french translation
+;     Sergey Nikitin for migrating to ISS v5.
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v4.2.7
-;   with Inno Setup Preprocessor v. 1.2.1.295. It is available
-;   as a quick start pack from here:
+;   This script has been designed to work with Inno Setup v5.2.3
+;   It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
 ;
@@ -35,24 +35,6 @@
 ;     running as an application when the uninstaller is run then the
 ;     application will not be stopped and the uninstall will not complete
 ;     cleanly.
-;
-;     InnoSetup does not support script execution as part of uninstallation.
-;     And this feature is not likely to be added in the near future. Here is
-;     the definitive explanation from Jordan Russell, the developer of InnoSetup:
-;
-;       'The uninstaller currently relies on a 100% forward compatible uninstall
-;       log format. When an existing uninstall log is appended to, and the
-;       uninstaller EXE is replaced with a newer version, the previous log contents
-;       are guaranteed to be processed properly. There are no such guarantees of
-;       forward compatibility with the Pascal Scripting feature; some support
-;       functions might be removed at some point, their declarations might change,
-;       etc. For the uninstaller to support Pascal Scripting, it would likely have
-;       to abandon the uninstall-log-appending concept, and instead create multiple
-;       uninstaller EXEs (chained together somehow) and multiple uninstall logs.'
-;
-;     To work around this we will probably need to extend the instsvc/instreg
-;     utilities to support uninstallation of applications.
-;
 ;
 ;   o The uninstaller does not know how to stop multiple instances of a classic
 ;     server. They must be stopped manually.
@@ -114,6 +96,7 @@
 #undef files
 ;We speed up compilation (and hence testing) by not compressing contents.
 #undef compression
+
 #endif
 
 
@@ -133,27 +116,42 @@
 ;------If necessary we can turn off i18n by uncommenting this undefine
 ;#undef  i18n
 
+;----- If we are debugging the script (and not executed from command prompt)
+;----- there is no guarantee that the environment variable exists. However an
+;----- expression such as #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER") will
+;----- 'define' the macro anyway so we need to test for a valid env var before
+;----- we define our macro.
+#if Len(GetEnv("FB_MAJOR_VER")) > 0
 #define FB_MAJOR_VER GetEnv("FB_MAJOR_VER")
+#endif
 #ifdef FB_MAJOR_VER
 #define MajorVer FB_MAJOR_VER
 #endif
 
+#if Len(GetEnv("FB_MINOR_VER")) > 0
 #define FB_MINOR_VER GetEnv("FB_MINOR_VER")
+#endif
 #ifdef FB_MINOR_VER
 #define MinorVer FB_MINOR_VER
 #endif
 
+#if Len(GetEnv("FB_REV_NO")) > 0
 #define FB_REV_NO GetEnv("FB_REV_NO")
+#endif
 #ifdef FB_REV_NO
 #define PointRelease FB_REV_NO
 #endif
 
+#if Len(GetEnv("FB_BUILD_NO")) > 0
 #define FB_BUILD_NO GetEnv("FB_BUILD_NO")
+#endif
 #ifdef FB_BUILD_NO
 #define BuildNumber FB_BUILD_NO
 #endif
 
+#if Len(GetEnv("FBBUILD_PACKAGE_NUMBER")) > 0
 #define FBBUILD_PACKAGE_NUMBER GetEnv("FBBUILD_PACKAGE_NUMBER")
+#endif
 #ifdef FBBUILD_PACKAGE_NUMBER
 #define PackageNumber FBBUILD_PACKAGE_NUMBER
 #endif
@@ -167,16 +165,21 @@
 #endif
 #define MyAppVerName MyAppName + " " + MyAppVerString
 
-
+;---- If we haven't already set PlatformTarget then pick it up from the environment.
+#ifndef PlatformTarget
+#define PlatformTarget GetEnv("FB_TARGET_PLATFORM")
+#endif
+#if PlatformTarget == ""
 #define PlatformTarget "win32"
+#endif
 
 ;This location is relative to SourceDir (declared below)
 #define FilesDir="output"
 #define msvc_version 7
 
-;BaseVer should be used for all v2.n installs.
-;This allows us to upgrade silently from 2.0 to 2.1
-#define BaseVer MajorVer + "_0"
+;BaseVer should be used for all v2.0.n installs.
+;This allows us to upgrade silently from 2.1.m to 2.1.n
+#define BaseVer MajorVer + "_" + MinorVer
 #define AppVer MajorVer + "_" + MinorVer
 #define GroupnameVer MajorVer + "." + MinorVer
 
@@ -246,32 +249,34 @@ Compression=none
 SolidCompression=yes
 #endif
 
+ShowUndisplayableLanguages={#defined iss_debug}
 AllowNoIcons=true
 AlwaysShowComponentsList=true
 PrivilegesRequired=admin
 
-ShowTasksTreeLines=false
-LanguageDetectionMethod=uilanguage
 
 [Languages]
 Name: en; MessagesFile: compiler:Default.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #ifdef i18n
 Name: ba; MessagesFile: compiler:Languages\Bosnian.isl; InfoBeforeFile: {#ScriptsDir}\ba\Instalacija_ProcitajMe.txt; InfoAfterFile: {#ScriptsDir}\ba\ProcitajMe.txt;
+Name: cz; MessagesFile: compiler:Languages\Czech.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 Name: fr; MessagesFile: compiler:Languages\French.isl; InfoBeforeFile: {#ScriptsDir}\fr\installation_lisezmoi.txt; InfoAfterFile: {#ScriptsDir}\fr\lisezmoi.txt;
 Name: de; MessagesFile: compiler:Languages\German.isl; InfoBeforeFile: {#ScriptsDir}\de\installation_liesmich.txt; InfoAfterFile: {#ScriptsDir}\de\liesmich.txt;
 Name: es; MessagesFile: compiler:Languages\Spanish.isl; InfoBeforeFile: {#ScriptsDir}\es\leame_instalacion.txt; InfoAfterFile: {#ScriptsDir}\es\leame.txt;
 Name: hu; MessagesFile: compiler:Languages\Hungarian.isl; InfoBeforeFile: {#ScriptsDir}\hu\telepitesi_segedlet.txt; InfoAfterFile: {#ScriptsDir}\hu\olvass_el.txt;
 Name: it; MessagesFile: compiler:Languages\Italian.isl; InfoBeforeFile: {#ScriptsDir}\it\leggimi_installazione.txt; InfoAfterFile: {#ScriptsDir}\it\leggimi.txt
 Name: pl; MessagesFile: compiler:Languages\Polish.isl; InfoBeforeFile: {#ScriptsDir}\pl\instalacja_czytajto.txt; InfoAfterFile: {#ScriptsDir}\pl\czytajto.txt;
-Name: pt; MessagesFile: compiler:Languages\PortugueseStd.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
+Name: pt; MessagesFile: compiler:Languages\Portuguese.isl; InfoBeforeFile: {#ScriptsDir}\pt\instalacao_leia-me.txt; InfoAfterFile: {#ScriptsDir}\pt\leia-me.txt
 Name: ru; MessagesFile: compiler:Languages\Russian.isl; InfoBeforeFile: {#ScriptsDir}\ru\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\ru\readme.txt;
 Name: si; MessagesFile: compiler:Languages\Slovenian.isl; InfoBeforeFile: {#ScriptsDir}\si\instalacija_precitajMe.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
+Name: sk; MessagesFile: compiler:Languages\Slovak.isl; InfoBeforeFile: {#ScriptsDir}\installation_readme.txt; InfoAfterFile: {#ScriptsDir}\readme.txt;
 #endif
 
 [Messages]
 en.BeveledLabel=English
 #ifdef i18n
 ba.BeveledLabel=Bosanski
+cz.BeveledLabel=?eština
 fr.BeveledLabel=Français
 de.BeveledLabel=Deutsch
 es.BeveledLabel=Español
@@ -281,12 +286,14 @@ pl.BeveledLabel=Polski
 pt.BeveledLabel=Português
 ru.BeveledLabel=Ðóññêèé
 si.BeveledLabel=Slovenski
+sk.BeveledLabel=Sloven?ina
 #endif
 
 [CustomMessages]
 #include "custom_messages.inc"
 #ifdef i18n
 #include "ba\custom_messages_ba.inc"
+#include "cz\custom_messages_cz.inc"
 #include "fr\custom_messages_fr.inc"
 #include "de\custom_messages_de.inc"
 #include "es\custom_messages_es.inc"
@@ -296,6 +303,7 @@ si.BeveledLabel=Slovenski
 #include "pt\custom_messages_pt.inc"
 #include "ru\custom_messages_ru.inc"
 #include "si\custom_messages_si.inc"
+#include "sk\custom_messages_sk.inc"
 #endif
 
 #ifdef iss_debug
@@ -339,7 +347,8 @@ Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Compon
 
 [Run]
 ;Always register Firebird
-Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized
+;Only register Firebird if we are installing AND configuring
+Filename: {app}\bin\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
 
 Filename: {app}\bin\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyFBClientLib;
 Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: CopyGds32
@@ -348,8 +357,8 @@ Filename: {app}\bin\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:
 ;If on NT/Win2k etc and 'Install and start service' requested
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
 Filename: {app}\bin\instsvc.exe; Parameters: "remove "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags|""""} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
-Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: start; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall; Tasks: UseServiceTask; Check: StartEngine
+Filename: {app}\bin\instsvc.exe; Parameters: "install {code:ServiceStartFlags} "; StatusMsg: {cm:instsvcSetup}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized; Tasks: UseServiceTask; Check: ConfigureFirebird;
+Filename: {app}\bin\instsvc.exe; Description: {cm:instsvcStartQuestion}; Parameters: "start" ; StatusMsg: {cm:instsvcStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: runminimized postinstall runascurrentuser; Tasks: UseServiceTask; Check: StartEngine
 
 ;If 'start as application' requested
 Filename: {code:StartApp|{app}\bin\fbserver.exe}; Description: {cm:instappStartQuestion}; Parameters: -a; StatusMsg: {cm:instappStartMsg}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait postinstall; Tasks: UseApplicationTask; Check: StartEngine
@@ -402,6 +411,7 @@ Source: {#ScriptsDir}\readme.txt; DestDir: {app}; Components: DevAdminComponent;
 #ifdef i18n
 ;Translated files
 Source: {#ScriptsDir}\ba\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ba;
+;Source: {#ScriptsDir}\cz\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: cz;
 Source: {#ScriptsDir}\fr\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: fr;
 Source: {#ScriptsDir}\de\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: de;
 Source: {#ScriptsDir}\es\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: es;
@@ -411,6 +421,7 @@ Source: {#ScriptsDir}\pl\*.txt; DestDir: {app}\doc; Components: DevAdminComponen
 Source: {#ScriptsDir}\pt\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: pt;
 Source: {#ScriptsDir}\ru\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: ru;
 Source: {#ScriptsDir}\si\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: si;
+;Source: {#ScriptsDir}\sk\*.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: ignoreversion; Languages: sk;
 #endif
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf.default; Components: ServerComponent; check: FirebirdConfExists;
 Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Components: ServerComponent; Flags: uninsneveruninstall; check: NoFirebirdConfExists
@@ -443,9 +454,9 @@ Source: {#FilesDir}\bin\icuin30.dll; DestDir: {app}\bin; Components: ServerCompo
 Source: {#FilesDir}\bin\icudt30.dll; DestDir: {app}\bin; Components: ServerComponent; Flags: sharedfile ignoreversion
 
 ; Install MS libs locally if Win2K or later, else place in <sys> if NT4 or Win95/98/ME.
-; NOTE: These dll's MUST never be sourced from the local system32 directory.
-; Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% is compiling with Visual Studio.
-; The BuildExecutableInstall.bat will attempt to locate them and place them in output\system32\
+;  NOTE: These dll's MUST never be sourced from the local system32 directory.
+;  Deploy libraries from vcredist if MSVC6 is used. Use %FrameworkSDKDir% if compiling with Visual Studio.
+;  The BuildExecutableInstall.bat will attempt to locate them and place them in {#FilesDir}\system32\
 #if msvc_version == 6
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {app}\bin; Components: ClientComponent;
 Source: {#FilesDir}\bin\msvcrt.dll; DestDir: {sys}; Components: ClientComponent; Flags: sharedfile onlyifdoesntexist uninsneveruninstall;
@@ -496,6 +507,7 @@ Source: {#FilesDir}\examples\udf\*.*; DestDir: {app}\examples\udf; Components: D
 Source: {#FilesDir}\bin\fbclient.pdb; DestDir: {app}\bin; Components: ClientComponent;
 Source: {#FilesDir}\bin\fb_inet_server.pdb; DestDir: {app}\bin; Components: ServerComponent\ClassicServerComponent;
 Source: {#FilesDir}\bin\fbserver.pdb; DestDir: {app}\bin; Components: ServerComponent\SuperServerComponent;
+;Source: {#FilesDir}\bin\fbembed.pdb; DestDir: {app}\bin; Components: ClientComponent;
 #endif
 
 [UninstallRun]
@@ -508,7 +520,7 @@ Filename: {app}\bin\instreg.exe; Parameters: " remove"; StatusMsg: {cm:instreg};
 [UninstallDelete]
 Type: files; Name: {app}\*.lck
 Type: files; Name: {app}\*.evn
-
+Type: dirifempty; Name: {app}
 
 [_ISTool]
 EnableISX=true
@@ -542,6 +554,14 @@ Var
   NoLegacyClient: Boolean;      // pass /nogds32 on command line.
   CopyFbClient: Boolean;     // pass /copyfbclient on command line.
 
+  // Options for scripted uninstall.
+  CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
+                                // user config files - firebird.conf, firebird.log,
+                                // aliases.conf and the security database.
+
+#ifdef setuplogging
+  OkToCopyLog : Boolean;        // Set when installation is complete.
+#endif
 
 #include "FirebirdInstallSupportFunctions.inc"
 
@@ -565,8 +585,7 @@ if ProductsInstalledCount = 0 then
 SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
 for product := 0 to MaxProdInstalled -1 do begin
   if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
-      InstallSummaryArray[i] := Format1(ProductsInstalledArray[product].Description,
-            ProductsInstalledArray[product].ActualVersion);
+      InstallSummaryArray[i] := Format(ProductsInstalledArray[product].Description, [ProductsInstalledArray[product].ActualVersion]);
 
     if (ProductsInstalledArray[product].ServerVersion <> '') then begin
       if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
@@ -597,7 +616,7 @@ for i:=0 to ProductsInstalledCount-1 do
   InstallSummary := InstallSummary + InstallSummaryArray[i] + #13;
 
 //If FB2 is installed
-If ((ProductsInstalled AND FB2) = FB2) then
+If ((ProductsInstalled AND FB20 ) = FB20 ) then
       InstallSummary := InstallSummary
       +#13 + ExpandConstant('{cm:InstallSummarySuffix1}')
       +#13 + ExpandConstant('{cm:InstallSummarySuffix2}')
@@ -607,9 +626,9 @@ If ((ProductsInstalled AND FB2) = FB2) then
 ;
 
 if ProductsInstalledCount = 1 then
-  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}'))
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountSingular}')])
 else
-  StatusDescription := Format2(ExpandConstant('{cm:InstalledProducts}'), IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}'));
+  StatusDescription := Format(ExpandConstant('{cm:InstalledProducts}'), [IntToStr(ProductsInstalledCount), ExpandConstant('{cm:InstalledProdCountPlural}')]);
 
   Result := StatusDescription
     +#13
@@ -637,24 +656,12 @@ begin
   end;
 
 
-  //If Fb2.0 is installed then we can install over it.
-  //unless we find the server running.
+  //If existing install of the same majorver.minorver is
+  //found then we can upgrade it.
   if (ProductsInstalledCount = 1) AND
-    ((ProductsInstalled AND FB2) = FB2) then begin
-      VerString := ( FirebirdDefaultServerRunning );
-      if VerString <> '' then begin
-      result := false;
-      MsgBox( #13+Format1(ExpandConstant('{cm:FbRunning1}'),VerString)
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-      end
-    else begin
+    ((ProductsInstalled AND FB20 ) = FB20 ) then begin
       result := true;
       exit;
-      end
     end
   ;
 
@@ -678,15 +685,9 @@ function InitializeSetup(): Boolean;
 var
   i: Integer;
   CommandLine: String;
-  VerString: String;
 begin
 
   result := true;
-
-  if not CheckWinsock2 then begin
-    result := False;
-    exit;
-  end
 
   CommandLine:=GetCmdTail;
 
@@ -713,6 +714,17 @@ begin
   if pos('COPYFBCLIENT', Uppercase(CommandLine))>0 then
     CopyFbClient := True;
 
+  // Check if a server is running - we cannot continue if it is.
+  if FirebirdDefaultServerRunning then begin
+    result := false;
+    exit;
+  end;
+
+  if not CheckWinsock2 then begin
+    result := False;
+    exit;
+  end
+
   //By default we want to install and confugure,
   //unless subsequent analysis suggests otherwise.
   InstallAndConfigure := Install + Configure;
@@ -722,20 +734,7 @@ begin
   InitExistingInstallRecords;
   AnalyzeEnvironment;
   result := AnalysisAssessment;
-  if result then begin
-    //There is a possibility that all our efforts to detect an
-    //install were in vain and a server _is_ running...
-    VerString := FirebirdDefaultServerRunning;
-    if ( VerString <> '' ) then begin
-      result := false;
-      MsgBox( #13+ExpandConstant('{cm:FbRunning1,VerString}')
-      +#13
-      +#13+ExpandConstant('{cm:FbRunning2}')
-      +#13+ExpandConstant('{cm:FbRunning3}')
-      +#13, mbError, MB_OK);
-      exit;
-    end;
-    end;
+
 end;
 
 
@@ -748,13 +747,28 @@ begin
     // Ask user if they want to visit the Winsock2 update web page.
     if MsgBox(ExpandConstant('{cm:Winsock2Web1}')+#13#13+ExpandConstant('{cm:Winsock2Web2}'), mbInformation, MB_YESNO) = idYes then
       // User wants to visit the web page
-      InstShellExec(sMSWinsock2Update, '', '', SW_SHOWNORMAL, ErrCode);
+      ShellExec('open', sMSWinsock2Update, '', '', SW_SHOWNORMAL, ewNoWait, ErrCode);
+
+  if RunningServerVerString <> '' then
+        MsgBox( #13+Format(ExpandConstant('{cm:FbRunning1}'), [RunningServerVerString])
+      +#13
+      +#13+ExpandConstant('{cm:FbRunning2}')
+      +#13+ExpandConstant('{cm:FbRunning3}')
+      +#13, mbError, MB_OK);
+
+#ifdef setuplogging
+  if OkToCopyLog then
+    FileCopy (ExpandConstant ('{log}'), ExpandConstant ('{app}\InstallationLogFile.log'), FALSE);
+
+  RestartReplace (ExpandConstant ('{log}'), '');
+#endif /* setuplogging */
+
 end;
 
 
-//This function tries to find an existing install of Firebird 1.5
+//This function tries to find an existing install of Firebird 2.n
 //If it succeeds it suggests that directory for the install
-//Otherwise it suggests the default for Fb 1.5
+//Otherwise it suggests the default for Fb 2.n
 function ChooseInstallDir(Default: String): String;
 var
   InterBaseRootDir,
@@ -781,7 +795,7 @@ begin
       InstallRootDir := Default;                                   // but the user has changed the default
 
     if (( InstallRootDir = '') and
-        ( FirebirdVer[0] = 2 ) and ( FirebirdVer[1] = 0 ) ) then   // Firebird 2.0 is installed
+        ( FirebirdVer[0] = {#MajorVer} ) and ( FirebirdVer[1] = {#MinorVer} ) ) then   // Firebird 2.n is installed
       InstallRootDir := FirebirdRootDir;                            // but the user has changed the default
 
     // if we haven't found anything then try the FIREBIRD env var
@@ -813,13 +827,12 @@ begin
   else
     ServerType := ' -superserver ';
 
-
-  if ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') then
     SvcParams := ' -auto '
   else
     SvcParams := ' -demand ';
 
-  if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then
     SvcParams := SvcParams + ServerType + ' -guardian'
   else
     SvcParams := SvcParams + ServerType;
@@ -830,22 +843,22 @@ end;
 function InstallGuardianIcon(): Boolean;
 begin
   result := false;
-  if ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes then
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then
       result := true;
 end;
 
 function InstallServerIcon(): Boolean;
 begin
   result := false;
-  if ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes then
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srNo then
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') then
+    if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask')) then
       result := true;
 end;
 
 function StartApp(Default: String): String;
 begin
-  if ShouldProcessEntry('ServerComponent', 'UseGuardianTask')= srYes then begin
+  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask') then begin
     Result := GetAppPath+'\bin\fbguard.exe';
     if ClassicInstallChosen then
       Result := Result + ' -c';
@@ -863,8 +876,8 @@ function IsNotAutoStartApp: boolean;
 //Support function to help remove unwanted registry entry.
 begin
   result := true;
-  if ( ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
-    ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then
+  if ( IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
+    ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then
   result := false;
 end;
 
@@ -896,7 +909,7 @@ begin
   //we are doing a server install, so the easiest way is to see if a
   //firebird.conf exists. If it doesn't then we don't care.
   if FileExists(GetAppPath+'\firebird.conf') then begin
-    if ShouldProcessEntry('ServerComponent', 'UseGuardianTask') = srNo  then
+    if NOT (IsComponentSelected('ServerComponent') and IsTaskSelected('UseGuardianTask')) then
       ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
   end;
 end;
@@ -920,22 +933,30 @@ begin
 end;
 
 
-procedure CurStepChanged(CurStep: Integer);
+procedure CurStepChanged(CurStep: TSetupStep);
 var
   AppStr: String;
   ReadMeFileStr: String;
 begin
    case CurStep of
-    csCopy: begin
+    ssInstall: begin
               SetupSharedFilesArray;
               GetSharedLibCountBeforeCopy;
       end;
 
-    csFinished: begin
+    ssPostInstall: begin
+      //Manually set the sharedfile count of these files.
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf', false);
+      IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb', false);
+      end;
+
+    ssDone: begin
       //If user has chosen to install an app and run it automatically set up the registry accordingly
       //so that the server or guardian starts evertime they login.
-      if (ShouldProcessEntry('ServerComponent', 'AutoStartTask')= srYes) and
-              ( ShouldProcessEntry('ServerComponent', 'UseApplicationTask')= srYes ) then begin
+      if (IsComponentSelected('ServerComponent') and IsTaskSelected('AutoStartTask') ) and
+              ( IsComponentSelected('ServerComponent') and IsTaskSelected('UseApplicationTask') ) then begin
         AppStr := StartApp('')+' -a';
         RegWriteStringValue (HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Run', 'Firebird', AppStr);
       end;
@@ -954,6 +975,10 @@ begin
           DeleteFile(GetAppPath+'\doc\'+ReadMeFileStr);
       end;
 
+#ifdef setuplogging
+      OkToCopyLog := True;
+#endif
+
     end;
   end;
 end;
@@ -961,7 +986,7 @@ end;
 function StartEngine: boolean;
 begin
   if ConfigureFirebird then
-    result := not FirebirdOneRunning;
+    result := not FirebirdDefaultServerRunning;
 end;
 
 
@@ -991,6 +1016,60 @@ function NoFirebirdConfExists: boolean;
 begin
   Result := not fileexists(GetAppPath+'\firebird.conf');
 end;
+
+function InitializeUninstall(): Boolean;
+var
+  CommandLine: String;
+begin
+  CommandLine:=GetCmdTail;
+  if pos('CLEAN',Uppercase(CommandLine))>0 then
+    CleanUninstall:=True
+  else
+    CleanUninstall:=False;
+
+  //MUST return a result of true, otherwise uninstall will abort!
+  result := true;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+
+  case CurUninstallStep of
+
+//    usAppMutexCheck :
+
+//    usUninstall :
+
+    usPostUninstall : begin
+      // We are manually handling the share count of these files, so we must
+      // a) Decrement shared count of each one and
+      // b) If Decrement reaches 0 (ie, function returns true) then we
+      //    test if CleanUninstall has been passed.
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\firebird.conf');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\firebird.log');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\aliases.conf') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\aliases.conf');
+
+      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security2.fdb') then
+        if CleanUninstall then
+          DeleteFile(GetAppPath+'\security2.fdb');
+
+      end;
+
+//    usDone :
+
+  end;
+
+
+end;
+
 
 begin
 end.

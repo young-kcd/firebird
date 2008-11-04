@@ -118,10 +118,10 @@ if %FBBUILD_ZIP_PACK% EQU 1 (
 
 
 if %FBBUILD_ISX_PACK% EQU 1 (
-  if NOT DEFINED INNO_SETUP_PATH (
-	call :ERROR INNO_SETUP_PATH variable not defined
+  if NOT DEFINED INNO5_SETUP_PATH (
+	call :ERROR INNO5_SETUP_PATH variable not defined
 	@goto :EOF
-  ) else (@echo     o Inno Setup found at %INNO_SETUP_PATH%.)
+  ) else (@echo     o Inno Setup 5 found at %INNO5_SETUP_PATH%.)
 
 if not DEFINED FB_EXTERNAL_DOCS (
  @echo.
@@ -203,16 +203,18 @@ set FBBUILD_FB15_CUR_VER=1.5.5
 :: MSVC7 requires the Framework SDK v1.1 to be installed.
 ::=====================
 @if not exist %FB_OUTPUT_DIR%\system32 (mkdir %FB_OUTPUT_DIR%\system32)
+@if DEFINED MSDevDir (
 @if %MSVC_VERSION% EQU 6 (
   @copy "%MSDevDir%\vcredist\msvcrt.dll" %FB_OUTPUT_DIR%\bin\ > nul
   @copy "%MSDevDir%\vcredist\msvcp%MSVC_VERSION%0.dll" %FB_OUTPUT_DIR%\bin\ > nul
+  )
 ) else (
   @if %MSVC_VERSION% EQU 7 (
     @copy "%FrameworkSDKDir%\bin\msvcp%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
     @copy "%FrameworkSDKDir%\bin\msvcr%MSVC_VERSION%?.dll" %FB_OUTPUT_DIR%\bin\ > nul
   )
 )
-
+)
 @if %ERRORLEVEL% GEQ 1 ( (call :ERROR Copying MSVC runtime library failed with error %ERRORLEVEL% ) & (goto :EOF))
 ::grab some missing bits'n'pieces from different parts of the source tree
 ::=========================================================================
@@ -616,14 +618,14 @@ endlocal
 ::=======
 :: Now let's go and build the installable .exe
 ::
-:: Note - define INNO_SETUP_PATH with double quotes if it is installed into a path string using spaces.
-:: eg set INNO_SETUP_PATH="C:\Program Files\Inno Setup 4"
+:: Note - define INNO5_SETUP_PATH with double quotes if it is installed into a path string using spaces.
+:: eg set INNO5_SETUP_PATH="C:\Program Files\Inno Setup 5"
 ::
 ::=================================================
 if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @Echo Now let's compile the InnoSetup scripts
 @Echo.
-"%INNO_SETUP_PATH%"\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
+%INNO5_SETUP_PATH%\iscc %FB_ROOT_PATH%\builds\install\arch-specific\win32\FirebirdInstall_%FBBUILD_FILE_ID%.iss
 @echo.
 
 @echo   End of ISX_PACK
@@ -647,7 +649,7 @@ if %FBBUILD_ISX_PACK% NEQ 1 goto :EOF
 @echo              (These files roughly double the size of the package.)
 @echo.
 @echo       ISX    Create installable binary from InnoSetup Extensions compiler.
-@echo              (You need to set the INNO_SETUP_PATH environment variable.)
+@echo              (You need to set the INNO5_SETUP_PATH environment variable.)
 @echo.
 @echo       ZIP    Create Zip package.
 @echo              (SEVENZIP is currently used and the SEVENZIP env var must be set.)
