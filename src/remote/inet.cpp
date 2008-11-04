@@ -901,7 +901,7 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			SOCLOSE((SOCKET) port->port_handle);
 			port->port_handle = (HANDLE) s;
-			port->port_server_flags |= SRVR_server;
+			port->port_server_flags |= SRVR_server | SRVR_debug;
 			port->port_flags |= PORT_server;
 			return port;
 		}
@@ -2526,6 +2526,7 @@ static int select_wait( rem_port* main_port, SLCT * selct)
 				   they can be used in select_port() */
 				if (selct->slct_count == 0)
 				{
+					Firebird::MutexLockGuard guard(port_mutex);
 					for (rem_port* port = main_port; port; port = port->port_next)
 					{
 #ifdef WIN_NT
@@ -2715,7 +2716,9 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 #ifdef REM_SERVER
 	const rem_port* port = (rem_port*) xdrs->x_public;
-	if (port->port_flags & PORT_server) {
+	if ((port->port_flags & PORT_server) && 
+		!(port->port_server_flags & SRVR_debug)) 
+	{
 		return REMOTE_getbytes(xdrs, buff, count);
 	}
 #endif
