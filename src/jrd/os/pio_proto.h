@@ -29,10 +29,12 @@
 namespace Jrd {
 	class jrd_file;
 	class Database;
-	class Jrd::BufferDesc;
+	class BufferDesc;
 }
 
-struct Ods::pag;
+namespace Ods {
+	struct pag;
+}
 
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLONG);
 void	PIO_close(Jrd::jrd_file*);

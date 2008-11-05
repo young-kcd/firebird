@@ -30,10 +30,11 @@
 #include "../../common/utils_proto.h"
 
 
-namespace Jrd {
-class Jrd::jrd_nod;
-class Jrd::jrd_tra;
-class Jrd::thread_db;
+namespace Jrd
+{
+	class jrd_nod;
+	class jrd_tra;
+	class thread_db;
 }
 
 namespace EDS {

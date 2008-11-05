@@ -24,8 +24,10 @@
 #ifndef JRD_FUN_PROTO_H
 #define JRD_FUN_PROTO_H
 
-class Jrd::CompilerScratch;
-
+namespace Jrd
+{
+	class CompilerScratch;
+}
 
 class IbUtil
 {
