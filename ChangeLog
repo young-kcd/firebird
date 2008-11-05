@@ -1,3 +1,29 @@
+2008-11-01 14:06  alexpeshkoff
+
+	* firebird2/src/jrd/err.cpp (1.19.2.2):
+
+	do not ignore non-JRD errors inside engine
+
+2008-10-29 09:52  alexpeshkoff
+
+	* firebird2/src/remote/remote.cpp (1.15.2.2):
+
+	Backported fix for CORE-2055: BOF in fbclient
+
+2008-10-29 09:11  alexpeshkoff
+
+	* firebird2/src/utilities/gsec.cpp (1.16.2.4):
+
+	Backported fix for CORE-1810: Usernames with '.' character
+
+2008-10-28 16:22  alexpeshkoff
+
+	* firebird2/src/: common/classes/array.h (1.3.2.5), jrd/grant.epp
+	(1.15.2.2), jrd/grant_proto.h (1.1.1.1.4.1), jrd/scl.epp
+	(1.21.2.7), jrd/scl.h (1.4.4.1), jrd/scl_proto.h (1.4.2.3):
+
+	Backported fix for CORE-1957: Long ACLs truncated
+
 2008-07-09 13:09  alexpeshkoff
 
 	* firebird2/src/remote/protocol.cpp (1.26.2.3):
