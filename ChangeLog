@@ -1,3 +1,100 @@
+2008-11-04 14:52  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/i18n_readme.txt
+	(1.2.6.3):
+
+	Bring guidelines for i18n of installer up to date.
+
+2008-11-04 14:51  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/:
+	BuildExecutableInstall.bat (1.15.2.15),
+	FirebirdInstallEnvironmentChecks.inc (1.4.4.7),
+	FirebirdInstallSupportFunctions.inc (1.2.4.2),
+	FirebirdInstall_20.iss (1.12.2.14), installation_scripted.txt
+	(1.1.6.5):
+
+	Backport improved product detection code from 2.1 Upgrade install
+	script to InnoSetup 5.2.3 to take   a) advantage of improved vista
+	support   b) make ongoing maintenance eaisier.
+
+2008-11-04 14:49  paul_reeves
+
+	* firebird2/builds/install/arch-specific/win32/: Readme.txt
+	(1.9.2.11), custom_messages.inc (1.2.4.6), installation_readme.txt
+	(1.9.2.13), ba/Instalacija_ProcitajMe.txt (1.4.4.7),
+	ba/ProcitajMe.txt (1.2.4.7), ba/custom_messages_ba.inc (1.2.4.4),
+	de/custom_messages_de.inc (1.2.6.4), de/installation_liesmich.txt
+	(1.3.4.7), de/liesmich.txt (1.3.4.7), es/custom_messages_es.inc
+	(1.1.6.4), es/leame.txt (1.1.6.8), es/leame_instalacion.txt
+	(1.1.6.7), fr/custom_messages_fr.inc (1.2.6.5),
+	fr/installation_lisezmoi.txt (1.1.6.7), fr/lisezmoi.txt (1.1.6.8),
+	hu/custom_messages_hu.inc (1.2.6.6), hu/olvass_el.txt (1.1.6.8),
+	hu/telepitesi_segedlet.txt (1.1.6.8), it/custom_messages_it.inc
+	(1.1.2.4), it/leggimi.txt (1.1.2.9), it/leggimi_installazione.txt
+	(1.1.2.7), pl/custom_messages_pl.inc (1.1.6.4), pl/czytajto.txt
+	(1.2.4.9), pl/instalacja_czytajto.txt (1.3.4.9),
+	pt/custom_messages_pt.inc (1.3.2.4), pt/instalacao_leia-me.txt
+	(1.3.2.8), pt/leia-me.txt (1.2.2.7), ru/Readme.txt (1.1.2.7),
+	ru/custom_messages_ru.inc (1.1.2.5), ru/installation_readme.txt
+	(1.1.2.7), si/custom_messages_si.inc (1.2.6.3),
+	cz/custom_messages_cz.inc (1.1.2.1), sk/custom_messages_sk.inc
+	(1.1.2.1):
+
+	Add czech and slovak i18n for windows installer update version
+	strings to 2.0.5
+
+2008-10-22 17:39  dimitr
+
+	* firebird2/src/remote/server.cpp (1.126.2.13):
+
+	Fixed CORE-2137: Database restore may crash the server when
+	DummyPacketInterval is set.
+
+2008-10-14 13:14  alexpeshkoff
+
+	* firebird2/src/intl/lc_iso8859_1.cpp (1.15.4.4):
+
+	Fix for Solaris-SPARC build suggested by Tsutomu Hayashi
+
+2008-10-14 13:04  alexpeshkoff
+
+	* firebird2/src/lock/lock.cpp (1.114.4.7):
+
+	Fix races in Solaris - tested by Tsutomu Hayashi
+
+2008-10-12 12:19  alexpeshkoff
+
+	* firebird2/autogen.sh (1.12.4.1):
+
+	misc
+
+2008-10-09 16:44  dimitr
+
+	* firebird2/src/jrd/isc_version.h (1.8.4.18):
+
+	Update.
+
+2008-10-09 16:12  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.70.4.9):
+
+	Backport fix for bug CORE-2108 : "get_free_slot() failed" error
+
+2008-10-08 14:59  dimitr
+
+	* firebird2/doc/WhatsNew (1.95.2.41):
+
+	Update.
+
+2008-10-08 13:47  dimitr
+
+	* firebird2/src/: jrd/Optimizer.cpp (1.56.4.7), jrd/Optimizer.h
+	(1.16.4.2), common/classes/array.h (1.34.4.3):
+
+	Backported CORE-2078: Suboptimal join plan if there are selective
+	non-indexed predicates involved.
+
 2008-09-24 11:19  robocop
 
 	* firebird2/src/jrd/: jrd.cpp (1.237.2.31), why.cpp (1.100.4.7):
