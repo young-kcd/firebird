@@ -432,12 +432,12 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_response_event) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		XPM xpm = make_xpm(current_process_id, 0);
 		if (!xpm) {
-			Firebird::system_call_failed::raise("CreateFileMapping");
+			Firebird::LongJump::raise();
 		}
 
 		port = get_server_port(client_pid, xpm, current_process_id, 0, 0, status_vector);
@@ -447,7 +447,6 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 		if (xnet_response_event) {
 			CloseHandle(xnet_response_event);
 		}
-
 	}
 	catch (const Firebird::Exception&) {
 		xnet_log_error("Unable to initialize child process");
@@ -494,32 +493,32 @@ static bool connect_init()
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MUTEX);
 		xnet_connect_mutex = OpenMutex(MUTEX_ALL_ACCESS, TRUE, name_buffer);
 		if (!xnet_connect_mutex) {
-			Firebird::system_call_failed::raise("OpenMutex");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_EVENT);
 		xnet_connect_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_connect_event) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
 		xnet_response_event = OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xnet_response_event) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
 		xnet_connect_map_h = OpenFileMapping(FILE_MAP_WRITE, TRUE, name_buffer);
 		if (!xnet_connect_map_h) {
-			Firebird::system_call_failed::raise("OpenFileMapping");
+			Firebird::LongJump::raise();
 		}
 
 		xnet_connect_map =
 			MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0, 0,
 						  XNET_CONNECT_RESPONZE_SIZE);
 		if (!xnet_connect_map) {
-			Firebird::system_call_failed::raise("MapViewOfFile");
+			Firebird::LongJump::raise();
 		}
 
 		return true;
@@ -711,7 +710,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
@@ -719,7 +718,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
@@ -727,7 +726,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_event_recv_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
@@ -735,7 +734,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet, t_event_ast ast)
 		xcc->xcc_event_recv_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		// send and receive events channels
@@ -838,7 +837,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_recv_channel_filled ||
 			(xcc->xcc_event_recv_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_EVNT_CHAN_EMPTED,
@@ -848,7 +847,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_recv_channel_empted ||
 			(xcc->xcc_event_recv_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_FILLED,
@@ -858,7 +857,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_send_channel_filled ||
 			(xcc->xcc_event_send_channel_filled && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_EVNT_CHAN_EMPTED,
@@ -868,7 +867,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		if (!xcc->xcc_event_send_channel_empted ||
 			(xcc->xcc_event_send_channel_empted && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		// send and receive events channels
@@ -1137,13 +1136,13 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 							map_num, timestamp);
 				file_handle = OpenFileMapping(FILE_MAP_WRITE, FALSE, name_buffer);
 				if (!file_handle) {
-					Firebird::system_call_failed::raise("OpenFileMapping");
+					Firebird::LongJump::raise();
 				}
 
 				mapped_address = MapViewOfFile(file_handle, FILE_MAP_WRITE, 0L, 0L,
 											XPS_MAPPED_SIZE(global_slots_per_map, global_pages_per_slot));
 				if (!mapped_address) {
-					Firebird::system_call_failed::raise("MapViewOfFile");
+					Firebird::LongJump::raise();
 				}
 
 				xpm = new struct xpm;
@@ -1186,7 +1185,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 
 		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, xps->xps_server_proc_id);
 		if (!xcc->xcc_proc_h) {
-			Firebird::system_call_failed::raise("OpenProcess");
+			Firebird::LongJump::raise();
 		}
 
 		xpm->xpm_count++;
@@ -1196,7 +1195,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xcc->xcc_event_send_channel_filled =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
@@ -1204,7 +1203,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xcc->xcc_event_send_channel_empted =
 			OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
@@ -1212,7 +1211,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xcc->xcc_event_recv_channel_filled =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
@@ -1220,7 +1219,7 @@ static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 		xcc->xcc_event_recv_channel_empted =
 				OpenEvent(EVENT_ALL_ACCESS, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
-			Firebird::system_call_failed::raise("OpenEvent");
+			Firebird::LongJump::raise();
 		}
 
 		// added this here from the server side as this part is called by the client 
@@ -1344,14 +1343,12 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 
 				try {
 
-				rem_port* port =
-					get_server_port(client_pid, xpm, map_num, slot_num,
-								    timestamp, status_vector);
+					rem_port* port =
+						get_server_port(client_pid, xpm, map_num, slot_num, timestamp, status_vector);
 
-				SetEvent(xnet_response_event);
+					SetEvent(xnet_response_event);
 
-				return port;
-
+					return port;
 				}
 				catch (const Firebird::Exception&) {
 					xnet_log_error("Failed to allocate server port for communication");
@@ -2182,12 +2179,13 @@ static bool server_init(USHORT flag)
 	xnet_response_event = 0;
 
 	try {
+
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MUTEX);
 		xnet_connect_mutex =
 			CreateMutex(ISC_get_security_desc(), FALSE, name_buffer);
 		if (!xnet_connect_mutex || (xnet_connect_mutex && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateMutex");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_EVENT);
@@ -2195,7 +2193,7 @@ static bool server_init(USHORT flag)
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xnet_connect_event || (xnet_connect_event && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_RESPONSE_EVENT);
@@ -2203,7 +2201,7 @@ static bool server_init(USHORT flag)
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xnet_response_event || (xnet_response_event && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_obj_name(name_buffer, sizeof(name_buffer), XNET_CONNECT_MAP);
@@ -2215,13 +2213,13 @@ static bool server_init(USHORT flag)
 											   name_buffer);
 		if (!xnet_connect_map_h || (xnet_connect_map_h && ERRNO == ERROR_ALREADY_EXISTS))
 		{
-			Firebird::system_call_failed::raise("CreateFileMapping");
+			Firebird::LongJump::raise();
 		}
 
 		xnet_connect_map = MapViewOfFile(xnet_connect_map_h, FILE_MAP_WRITE, 0L, 0L,
 										 XNET_CONNECT_RESPONZE_SIZE);
 		if (!xnet_connect_map) {
-			Firebird::system_call_failed::raise("MapViewOfFile");
+			Firebird::LongJump::raise();
 		}
 	}
 	catch (const Firebird::Exception&) {
@@ -2355,8 +2353,9 @@ static bool fork(ULONG client_pid, USHORT flag, ULONG* forked_pid)
 		CloseHandle(pi.hThread);
 		CloseHandle(pi.hProcess);
 	}
-	else
+	else {
 		xnet_log_error("CreateProcess() failed");
+	}
 
 	return cp_result;
 }
@@ -2387,6 +2386,7 @@ static rem_port* get_server_port(ULONG client_pid,
 	XCC xcc = new struct xcc;
 
 	try {
+
 		UCHAR* p = (UCHAR*) xpm->xpm_address + XPS_SLOT_OFFSET(global_pages_per_slot, slot_num);
 		memset(p, 0, XPS_MAPPED_PER_CLI(global_pages_per_slot));
 		xcc->xcc_next = NULL;
@@ -2400,7 +2400,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 		xcc->xcc_proc_h = OpenProcess(SYNCHRONIZE, 0, client_pid);
 		if (!xcc->xcc_proc_h) {
-			Firebird::system_call_failed::raise("OpenProcess");
+			Firebird::LongJump::raise();
 		}
 
 		xcc->xcc_map_num = map_num;
@@ -2418,7 +2418,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_recv_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_filled) {
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_C2S_DATA_CHAN_EMPTED,
@@ -2426,7 +2426,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_recv_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_recv_channel_empted) {
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_FILLED,
@@ -2434,7 +2434,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_send_channel_filled =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_filled) {
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		make_event_name(name_buffer, sizeof(name_buffer), XNET_E_S2C_DATA_CHAN_EMPTED,
@@ -2442,7 +2442,7 @@ static rem_port* get_server_port(ULONG client_pid,
 		xcc->xcc_event_send_channel_empted =
 			CreateEvent(ISC_get_security_desc(), FALSE, FALSE, name_buffer);
 		if (!xcc->xcc_event_send_channel_empted) {
-			Firebird::system_call_failed::raise("CreateEvent");
+			Firebird::LongJump::raise();
 		}
 
 		// set up the channel structures
@@ -2491,7 +2491,6 @@ static rem_port* get_server_port(ULONG client_pid,
 		port->port_status_vector = status_vector;
 
 		gds__register_cleanup((FPTR_VOID_PTR) exit_handler, port);
-
 	}
 	catch (const Firebird::Exception&) {
 		if (xcc) {
