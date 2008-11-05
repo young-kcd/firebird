@@ -950,13 +950,13 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			LPHELPINFO lphi = (LPHELPINFO) lParam;
 			if (lphi->iContextType == HELPINFO_WINDOW)	// must be for a control
 				WinHelp((HWND) lphi->hItemHandle, GUARDIAN_HELP_FILE,
-						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
+						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
 			return TRUE;
 		}
 
 	case WM_CONTEXTMENU:
 		WinHelp((HWND) wParam, GUARDIAN_HELP_FILE, HELP_CONTEXTMENU,
-				(DWORD) (LPVOID) aMenuHelpIDs);
+				(ULONG_PTR) aMenuHelpIDs);
 		return TRUE;
 		break;
 	case WM_NOTIFY:
