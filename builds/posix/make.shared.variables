@@ -94,17 +94,19 @@ LOCK_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(LOCK_Sources)))
 #
 # remote
 
-REMOTE_ClientFiles =  inet.cpp interface.cpp merge.cpp \
+REMOTE_CommonFiles =  inet.cpp merge.cpp \
             parser.cpp protocol.cpp remote.cpp xdr.cpp
 
-INTERFACE_Files=	$(REMOTE_ClientFiles)
+REMOTE_ClientFiles =  interface.cpp 
+
+INTERFACE_Files=	$(REMOTE_ClientFiles) $(REMOTE_CommonFiles)
 
 
 INTERFACE_Sources = $(addprefix remote/, $(INTERFACE_Files))
 INTERFACE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(INTERFACE_Sources))))
 
 ifeq ($(PLATFORM),win32)
-REMOTE_ClientFiles += os/win32/wnet.cpp xnet.cpp
+REMOTE_CommonFiles += os/win32/wnet.cpp xnet.cpp
 INTERFACE_Objects += $(OBJ)/auth/trusted/AuthSspi.o
 endif
 

@@ -61,8 +61,6 @@ DSQL_ClientSources = $(addprefix dsql/, $(DSQL_ClientFiles))
 DSQL_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(DSQL_ClientSources))))
 
 
-#REMOTE_ClientSources = $(addprefix remote/, $(REMOTE_ClientFiles))
-#REMOTE_ClientObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_ClientSources))))
 REMOTE_ClientObjects = $(INTERFACE_Objects)
 
 

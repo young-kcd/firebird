@@ -45,8 +45,12 @@ SERVER_Files = $(OS_ServerFiles) server.cpp server_stub.cpp
 SERVER_Other_sources = common/cvt.cpp 
 SERVER_Sources = $(addprefix remote/, $(SERVER_Files)) $(addprefix jrd/, $(SERVER_JrdFiles)) $(SERVER_Other_sources)
 
+REMOTE_CommonSources = $(addprefix remote/, $(REMOTE_CommonFiles))
+REMOTE_CommonObjects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(REMOTE_CommonSources))))
+
+
 SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(SERVER_Sources)))) \
-$(INTERFACE_Objects) $(COMMON_Objects) $(CLUMPLETS_Objects) \
+$(REMOTE_CommonObjects) $(COMMON_Objects) $(CLUMPLETS_Objects) \
 $(CONFIG_Objects) $(VULCAN_Objects) $(FBCONFIG_Objects) \
 $(OS_SPECIFIC_Objects)
 
