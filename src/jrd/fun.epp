@@ -286,9 +286,9 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	SET_TDBB(tdbb);
 
 	// Start by constructing argument list
-	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + DOUBLE_ALIGN);
+	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + FB_DOUBLE_ALIGN);
 	MOVE_CLEAR(temp_ptr, temp.getCount());
-	temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_ptr, DOUBLE_ALIGN);
+	temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_ptr, FB_DOUBLE_ALIGN);
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
@@ -383,7 +383,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 		temp_desc = tail->fun_desc;
 		temp_desc.dsc_address = temp_ptr;
 		// CVC: There's a theoretical possibility of overflowing "length" here.
-		USHORT length = FB_ALIGN(temp_desc.dsc_length, DOUBLE_ALIGN);
+		USHORT length = FB_ALIGN(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
 
 		// If we've got a null argument, just pass zeros (got any better ideas?)
 
@@ -752,7 +752,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool Sh
 			if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 				++args;
 
-			USHORT l = FB_ALIGN(tail->fun_desc.dsc_length, DOUBLE_ALIGN);
+			USHORT l = FB_ALIGN(tail->fun_desc.dsc_length, FB_DOUBLE_ALIGN);
 
 			if (tail->fun_desc.dsc_dtype == dtype_blob)
 				l = sizeof(udf_blob);

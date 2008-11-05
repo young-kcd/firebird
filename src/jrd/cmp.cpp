@@ -2015,7 +2015,7 @@ SLONG CMP_impure(CompilerScratch* csb, USHORT size)
 		return 0;
 	}
 
-	const SLONG offset = FB_ALIGN(csb->csb_impure, ALIGNMENT);
+	const SLONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
 	csb->csb_impure = offset + size;
 
 	return offset;

@@ -1719,14 +1719,14 @@ static bool get_procedure(thread_db*			tdbb,
 	const Format* msg_format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 	if (!impure->irsb_message)
 	{
-		const SLONG size = msg_format->fmt_length + ALIGNMENT;
+		const SLONG size = msg_format->fmt_length + FB_ALIGNMENT;
 		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
 		impure->irsb_message->str_length = size;
 	}
 	UCHAR* om =
 		(UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data,
-						   ALIGNMENT);
-	USHORT oml = impure->irsb_message->str_length - ALIGNMENT;
+						   FB_ALIGNMENT);
+	USHORT oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	Record* record;
 	if (!rpb->rpb_record) {
@@ -2802,7 +2802,7 @@ static void open_merge(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		merge_file* mfb = &tail->irsb_mrg_file;
 		mfb->mfb_equal_records = 0;
 		mfb->mfb_current_block = 0;
-		mfb->mfb_record_size = ROUNDUP(map->smb_length, ALIGNMENT);
+		mfb->mfb_record_size = ROUNDUP(map->smb_length, FB_ALIGNMENT);
 		mfb->mfb_block_size = MAX(mfb->mfb_record_size, MERGE_BLOCK_SIZE);
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)

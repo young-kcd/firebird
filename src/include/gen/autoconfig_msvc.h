@@ -186,13 +186,13 @@
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 4
 /* alignment of long */
-#define ALIGNMENT 4
+#define FB_ALIGNMENT 4
 #elif defined(_M_AMD64)
 #define AMD64
 /* sizeof(void *) */
 #define SIZEOF_VOID_P 8
 /* alignment of long */
-#define ALIGNMENT 8
+#define FB_ALIGNMENT 8
 #else
 #error unknown target platform
 #endif
@@ -201,7 +201,7 @@
 #define SIZEOF_LONG 4
 
 /* alignment of double */
-#define DOUBLE_ALIGN 8
+#define FB_DOUBLE_ALIGN 8
 
 /* Is union semun defined? */
 #undef HAVE_SEMUN

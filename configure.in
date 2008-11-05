@@ -701,7 +701,7 @@ AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h>
 
 
 dnl EKU: try to determine the alignment of long and double
-dnl      replaces ALIGNMENT and DOUBLE_ALIGN in src/jrd/common.h
+dnl      replaces FB_ALIGNMENT and FB_DOUBLE_ALIGN in src/jrd/common.h
 AC_MSG_CHECKING(alignment of long)
 AC_TRY_RUN([main () {
   struct s {
@@ -711,7 +711,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_alignment=$ac_status, ac_cv_c_alignment=$ac_status)
 AC_MSG_RESULT($ac_cv_c_alignment)
-AC_DEFINE_UNQUOTED(ALIGNMENT, $ac_cv_c_alignment, [Alignment of long])
+AC_DEFINE_UNQUOTED(FB_ALIGNMENT, $ac_cv_c_alignment, [Alignment of long])
 
 AC_MSG_CHECKING(alignment of double)
 AC_TRY_RUN([main () {
@@ -722,7 +722,7 @@ AC_TRY_RUN([main () {
   exit((int)&((struct s*)0)->b);
 }], ac_cv_c_double_align=$ac_status, ac_cv_c_double_align=$ac_status)
 AC_MSG_RESULT($ac_cv_c_double_align)
-AC_DEFINE_UNQUOTED(DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
+AC_DEFINE_UNQUOTED(FB_DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
 
 dnl EKU: don't know how to convert this into an autoconf test:
 dnl      #define FB_ALIGN(n,b) ...

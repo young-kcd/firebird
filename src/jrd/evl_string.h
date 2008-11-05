@@ -87,7 +87,7 @@ public:
 	void* alloc(SLONG count)
 	{
 		void* result;
-		const SLONG localCount = ROUNDUP(count, ALIGNMENT);
+		const SLONG localCount = ROUNDUP(count, FB_ALIGNMENT);
 		if (allocated + localCount <= STATIC_PATTERN_BUFFER)
 		{
 			result = allocBuffer + allocated;

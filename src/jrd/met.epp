@@ -796,7 +796,7 @@ ULONG MET_align(Database* dbb, const dsc* desc, ULONG value)
 		break;
 	}
 
-	alignment = MIN(alignment, dbb->dbb_ods_version >= ODS_VERSION11 ? FORMAT_ALIGNMENT : ALIGNMENT);
+	alignment = MIN(alignment, dbb->dbb_ods_version >= ODS_VERSION11 ? FORMAT_ALIGNMENT : FB_ALIGNMENT);
 
 	return FB_ALIGN(value, alignment);
 }

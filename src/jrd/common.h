@@ -165,8 +165,8 @@
 //#define XLONGFORMAT "lX"
 //#define xLONGFORMAT "lx"
 
-//#define ALIGNMENT       4
-//#define DOUBLE_ALIGN    4
+//#define FB_ALIGNMENT       4
+//#define FB_DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
 #ifdef __ppc__ 
@@ -204,8 +204,8 @@
 //#endif
 //
 
-//#define ALIGNMENT     4
-//#define DOUBLE_ALIGN  4
+//#define FB_ALIGNMENT     4
+//#define FB_DOUBLE_ALIGN  4
 
 #define UNIX
 #define IEEE
@@ -230,8 +230,8 @@
 #ifdef NETBSD
 
 #if defined(__i386__)
-//#define ALIGNMENT     4
-//#define DOUBLE_ALIGN  4
+//#define FB_ALIGNMENT     4
+//#define FB_DOUBLE_ALIGN  4
 
 #define IEEE
 #define I386
@@ -307,8 +307,8 @@
 #define IEEE
 
 #ifdef sparc
-//#define ALIGNMENT       4
-//#define DOUBLE_ALIGN    8
+//#define FB_ALIGNMENT       4
+//#define FB_DOUBLE_ALIGN    8
 
 #define IMPLEMENTATION  isc_info_db_impl_isc_sun4 /* 30 */
 #define RISC_ALIGNMENT
@@ -336,8 +336,8 @@
 #define UNIX
 //#define CURSES_KEYPAD
 
-//#define ALIGNMENT       8
-//#define DOUBLE_ALIGN    8
+//#define FB_ALIGNMENT       8
+//#define FB_DOUBLE_ALIGN    8
 #define IMPLEMENTATION  isc_info_db_impl_isc_hp_ux /* 31 */
 
 #define IEEE
@@ -369,7 +369,7 @@
 //#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
-//*#define ALIGNMENT       4
+//*#define FB_ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
@@ -378,7 +378,7 @@
 //#define KILLER_SIGNALS
 #define UNIX
 //#define CURSES_KEYPAD
-//#define ALIGNMENT       4
+//#define FB_ALIGNMENT       4
 #define IMPLEMENTATION  isc_info_db_impl_isc_rt_aix /* 35 */
 #define IEEE
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
@@ -523,14 +523,14 @@ typedef unsigned __int64 FB_UINT64;
 #ifdef I386
 /* Using internal alignment optimal for 386 processor and above
  */
-//#define ALIGNMENT       4
-//#define DOUBLE_ALIGN    8
+//#define FB_ALIGNMENT       4
+//#define FB_DOUBLE_ALIGN    8
 #endif
 #endif
 
-#ifndef ALIGNMENT
-//#define ALIGNMENT       2
-#error must define ALIGNMENT for your system
+#ifndef FB_ALIGNMENT
+//#define FB_ALIGNMENT       2
+#error must define FB_ALIGNMENT for your system
 #endif
 
 #ifndef SHIFTLONG
@@ -539,9 +539,9 @@ typedef unsigned __int64 FB_UINT64;
 #define BITS_PER_LONG   32
 #endif
 
-#ifndef DOUBLE_ALIGN
-//#define DOUBLE_ALIGN    4
-#error must define DOUBLE_ALIGN for your system
+#ifndef FB_DOUBLE_ALIGN
+//#define FB_DOUBLE_ALIGN    4
+#error must define FB_DOUBLE_ALIGN for your system
 #endif
 
 

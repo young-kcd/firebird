@@ -763,7 +763,7 @@ USHORT OPT_nav_rsb_size(RecordSource* rsb, USHORT key_length, USHORT size)
 #else
 	size += sizeof(struct irsb_nav) + 2 * key_length;
 #endif
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 /* make room for an idx structure to describe the index
    that was used to generate this rsb */
 	if (rsb->rsb_type == rsb_navigate)

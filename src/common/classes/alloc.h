@@ -79,7 +79,7 @@ namespace Firebird {
 const int MAX_TREE_DEPTH = 4;
 
 // Alignment for all memory blocks. Sizes of memory blocks in headers are measured in this units
-const size_t ALLOC_ALIGNMENT = ALIGNMENT;
+const size_t ALLOC_ALIGNMENT = FB_ALIGNMENT;
 
 static inline size_t MEM_ALIGN(size_t value)
 {

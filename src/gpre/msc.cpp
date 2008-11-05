@@ -89,7 +89,7 @@ act* MSC_action( gpre_req* request, enum act_t type)
 
 UCHAR* MSC_alloc(int size)
 {
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 
 	if (!space || size > space->spc_remaining) {
 		const int n = MAX(size, 4096);
@@ -120,7 +120,7 @@ UCHAR* MSC_alloc(int size)
 
 UCHAR* MSC_alloc_permanent(int size)
 {
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 
 	if (!permanent_space || size > permanent_space->spc_remaining) {
 		const int n = MAX(size, 4096);

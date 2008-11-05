@@ -1115,7 +1115,7 @@ UCHAR* LockManager::alloc(SSHORT size, ISC_STATUS* status_vector)
  *	Allocate a block of given size.
  *
  **************************************/
-	size = FB_ALIGN(size, ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
 	const ULONG block = m_header->lhb_used;
 	m_header->lhb_used += size;
@@ -2244,7 +2244,7 @@ void LockManager::initialize(SH_MEM shmem_data, bool initialize)
 		sizeof(lhb) +
 		(m_header->lhb_hash_slots * sizeof(m_header->lhb_hash[0]));
 	m_header->lhb_length = shmem_data->sh_mem_length_mapped;
-	m_header->lhb_used = FB_ALIGN(length, ALIGNMENT);
+	m_header->lhb_used = FB_ALIGN(length, FB_ALIGNMENT);
 
 	shb* secondary_header = (shb*) alloc(sizeof(shb), NULL);
 	if (!secondary_header)

@@ -1534,8 +1534,8 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	if (!out_message) {
 		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
-		out_msg = temp_buffer.getBuffer(out_msg_length + DOUBLE_ALIGN - 1);
-		out_msg = (UCHAR*) FB_ALIGN((U_IPTR) out_msg, DOUBLE_ALIGN);
+		out_msg = temp_buffer.getBuffer(out_msg_length + FB_DOUBLE_ALIGN - 1);
+		out_msg = (UCHAR*) FB_ALIGN((U_IPTR) out_msg, FB_DOUBLE_ALIGN);
 	}
 
 
