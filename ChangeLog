@@ -1,3 +1,748 @@
+2008-11-05 02:08  asfernandes
+
+	* firebird2/src/: dsql/dsql.h (1.144), jrd/dyn_proto.h (1.13),
+	jrd/fun_proto.h (1.17), jrd/grant_proto.h (1.15), jrd/extds/ExtDS.h
+	(1.12), jrd/os/pio_proto.h (1.32):
+
+	Remove warnings by gcc 4.3.2
+
+2008-11-04 15:22  hvlad
+
+	* firebird2/src/remote/server.cpp (1.223):
+
+	Fixed AV in CS worker process (there was double deallocation of
+	port).	Avoid wrong error message in firebird.log when listener is
+	shutted down.
+
+2008-11-04 15:20  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.258):
+
+	Fixed brocken -d mode of CS.  Fixed AV in CS worker process (there
+	was double deallocation of port).  Add missed mutex control when
+	port's list accessed.
+
+2008-11-01 14:01  dimitr
+
+	* firebird2/src/jrd/cmp.cpp (1.318):
+
+	Misc.
+
+2008-11-01 13:59  dimitr
+
+	* firebird2/builds/win32/: msvc8/fb_inet_server.vcproj (1.14),
+	msvc8/fbserver.vcproj (1.15), msvc9/fb_inet_server.vcproj (1.2),
+	msvc9/fbserver.vcproj (1.2):
+
+	Double the stack size for x64. Our clever runtime recursion limits
+	were not tuned for 64-bit pointers.
+
+2008-11-01 13:19  alexpeshkoff
+
+	* firebird2/src/jrd/license.h (1.42):
+
+	AIX port
+
+2008-10-31 13:01  dimitr
+
+	* firebird2/src/common/StatusArg.cpp (1.13):
+
+	Fixed the build.
+
+2008-10-31 12:14  alexpeshkoff
+
+	* firebird2/src/common/: StatusArg.cpp (1.12), StatusArg.h (1.10):
+
+	Avoid too deep stacks
+
+2008-10-31 01:02  asfernandes
+
+	* firebird2/: builds/install/arch-specific/aix/Makefile.in (1.2),
+	src/dsql/dsql.cpp (1.261), src/jrd/svc.cpp (1.244):
+
+	Misc
+
+2008-10-30 10:43  alexpeshkoff
+
+	* firebird2/src/jrd/ThreadData.cpp (1.12):
+
+	correction
+
+2008-10-30 10:33  alexpeshkoff
+
+	* firebird2/src/: common/classes/File.h (1.8), jrd/ThreadData.cpp
+	(1.11):
+
+	SAS changes - AIX port started
+
+2008-10-30 10:14  alexpeshkoff
+
+	* firebird2/: configure.in (1.297),
+	builds/install/arch-specific/aix/Makefile.in (1.1),
+	builds/posix/prefix.aix_powerpc (1.1):
+
+	SAS changes - AIX port started
+
+2008-10-29 18:05  alexpeshkoff
+
+	* firebird2/src/jrd/: ThreadStart.cpp (1.8), ThreadStart.h (1.4),
+	svc.cpp (1.243), svc.h (1.67), why.cpp (1.217):
+
+	Fixed CORE-2158: AV in client/embedded library when unloading it
+
+2008-10-29 06:14  robocop
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.15):
+
+	Misc.
+
+2008-10-28 15:17  asfernandes
+
+	* firebird2/src/jrd/SimilarToMatcher.h (1.14):
+
+	Fixed CORE-2153 - SIMILAR TO predicate hangs with "|" option
+
+2008-10-28 11:50  hvlad
+
+	* firebird2/src/dsql/dsql.cpp (1.260):
+
+	Fixed bug CORE-2154 : "request synchronization error" when calling
+	isc_dsql_sql_info with isc_info_sql_records parameter after last
+	record fetched with "execute procedure"
+
+	Real reason is than engine alllows to fetch from statement with no
+	cursor open. Currently it is forbidden.
+
+2008-10-28 01:19  asfernandes
+
+	* firebird2/src/intl/cv_icu.cpp (1.6):
+
+	Correction for RISC architectures
+
+2008-10-28 01:16  asfernandes
+
+	* firebird2/src/: common/config/dir_list.cpp (1.36),
+	jrd/isc_sync.cpp (1.158):
+
+	Misc
+
+2008-10-27 16:10  alexpeshkoff
+
+	* firebird2/src/dsql/ddl.cpp (1.259):
+
+	make status vector have same structure for most uses of SQLERR -607
+
+2008-10-27 10:03  hvlad
+
+	* firebird2/src/common/config/: dir_list.cpp (1.35), dir_list.h
+	(1.21):
+
+	Remove unused method
+
+2008-10-25 22:36  asfernandes
+
+	* firebird2/src/intl/cv_icu.cpp (1.5):
+
+	Fixed CORE-2123 - Problem with get a CHAR UNICODE_FSS in CP943C
+	connection charset
+
+2008-10-25 11:54  hvlad
+
+	* firebird2/src/common/config/dir_list.cpp (1.34):
+
+	Fixed bug CORE-2151 : Temp directory with space in the middle
+	wrongly truncated from the rightmost space
+
+2008-10-25 05:44  asfernandes
+
+	* firebird2/src/jrd/: blb.cpp (1.181), filters.cpp (1.64):
+
+	Fixed CORE-2122 - Translation of large text BLOB between
+	UNICODE_FSS (UTF8) and other charsets
+
+2008-10-25 04:20  asfernandes
+
+	* firebird2/src/jrd/tra.h (1.92):
+
+	Warnings
+
+2008-10-24 08:22  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.157):
+
+	Misc.
+
+2008-10-24 08:17  dimitr
+
+	* firebird2/: src/lock/config_params (1.2),
+	src/lock/lock_header_mmap (1.2), src/lock/lock_header_shmem (1.2),
+	builds/mac_os_x/CS/CS.pbproj/project.pbxproj (1.15):
+
+	Cleanup.
+
+2008-10-24 06:49  dimitr
+
+	* firebird2/src/lock/lock.cpp (1.169):
+
+	Misc.
+
+2008-10-24 06:47  dimitr
+
+	* firebird2/src/lock/lock.h (1.48):
+
+	It wasn't really necessary to bump the lock table version number
+	the last time.
+
+2008-10-23 11:13  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.18):
+
+	Fixed bug CORE-2138 : If stored procedure with execute statement
+	with external database fails at runtime, external database remains
+	attached.
+
+	Removed some paranoid code ;)
+
+2008-10-22 17:42  dimitr
+
+	* firebird2/src/remote/server.cpp (1.222):
+
+	Fixed CORE-2137: Database restore may crash the server when
+	DummyPacketInterval is set.
+
+2008-10-22 15:14  paulbeach
+
+	* firebird2/: builds/posix/Makefile.in.embed.fbudf (1.10),
+	builds/posix/Makefile.in.extlib (1.30),
+	builds/posix/firebird.darwin.embed.vers (1.3),
+	builds/posix/prefix.darwin_i386 (1.11), src/isql/InputDevices.cpp
+	(1.3):
+
+	Modifications to enable a build on Darwin
+
+2008-10-21 21:32  roman-simakov
+
+	* firebird2/src/jrd/utl.cpp (1.122):
+
+	Fixed mistake
+
+2008-10-21 12:37  hvlad
+
+	* firebird2/src/lock/lock_proto.h (1.24):
+
+	Fixed accidentally brocken POSIX build
+
+2008-10-21 08:20  robocop
+
+	* firebird2/src/utilities/drop.cpp (1.38):
+
+	Follow Dmitry's cleanup.
+
+2008-10-21 08:17  robocop
+
+	* firebird2/src/: common/utils.cpp (1.48), common/utils_proto.h
+	(1.26), jrd/isc_sync.cpp (1.156):
+
+	Close some of my favorite B.O.'s since FB1. To be reviewed by Vlad.
+
+2008-10-21 06:25  robocop
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.98), isc_sync.cpp (1.155):
+
+	Misc.
+
+2008-10-21 01:46  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.421), jrd/CsConvert.h (1.16),
+	jrd/Optimizer.cpp (1.97), jrd/isc_sync.cpp (1.154), jrd/tra.cpp
+	(1.185):
+
+	Misc
+
+2008-10-20 16:30  dimitr
+
+	* firebird2/src/jrd/isc_sync.cpp (1.153):
+
+	An attempt to fix non-HAVE_MMAP builds. To be refactored by Alex
+	later.
+
+2008-10-20 15:19  asfernandes
+
+	* firebird2/src/jrd/CsConvert.h (1.15):
+
+	Patch by Dmitry Kovalenko for CORE-1596
+
+2008-10-20 13:12  dimitr
+
+	* firebird2/src/lock/print.cpp (1.73):
+
+	Cleanup.
+
+2008-10-20 12:43  dimitr
+
+	* firebird2/src/dsql/pass1.cpp (1.420):
+
+	1) Let's avoid a deep recursion for the IN (<list>) predicate. At
+	least on the parser side.  2) Fixed the IN elements limit to be
+	1500 (as documented) instead of 1499.
+
+2008-10-20 06:32  dimitr
+
+	* firebird2/src/jrd/ibase.h (1.138):
+
+	Update.
+
+2008-10-19 14:05  dimitr
+
+	* firebird2/src/jrd/: Optimizer.cpp (1.96), Optimizer.h (1.28):
+
+	Fixed CORE-2132: Indexed retrieval cannot be chosen if a stored
+	procedure is used inside the comparison predicate.
+
+2008-10-19 13:39  dimitr
+
+	* firebird2/src/: jrd/jrd.cpp (1.486), remote/remote.h (1.80):
+
+	Uncouple Mutex and RefMutex. This resolves the circular dependency:
+	"AtomicCounter->Mutex->RefCounted->AtomicCounter" and thus enables
+	all non-x86 POSIX builds.
+
+2008-10-19 13:35  dimitr
+
+	* firebird2/src/common/classes/: RefCounted.h (1.15), RefMutex.h
+	(1.1), locks.h (1.50):
+
+	Uncouple Mutex and RefMutex. This resolves the circular dependency:
+	"AtomicCounter->Mutex->RefCounted->AtomicCounter" and thus enables
+	all non-x86 POSIX builds.
+
+2008-10-17 21:49  asfernandes
+
+	* firebird2/src/jrd/filters.cpp (1.63):
+
+	Fixed CORE-2122 - Translation of large text BLOB between
+	UNICODE_FSS (UTF8) and other charsets
+
+2008-10-16 13:30  robocop
+
+	* firebird2/src/jrd/tra.cpp (1.184):
+
+	Straighten some multi-line statements that can fit in less than 100
+	columns.
+
+2008-10-16 12:15  robocop
+
+	* firebird2/src/jrd/SysFunction.cpp (1.58):
+
+	Fixed inconsistencies noticed by Adriano.
+
+2008-10-16 12:14  robocop
+
+	* firebird2/src/jrd/tra.h (1.91):
+
+	Misc.
+
+2008-10-16 10:52  robocop
+
+	* firebird2/src/jrd/isc_sync.cpp (1.152):
+
+	Misc.
+
+2008-10-16 10:52  robocop
+
+	* firebird2/src/remote/inet.cpp (1.257):
+
+	Simplify the #ifdef.
+
+2008-10-16 10:51  robocop
+
+	* firebird2/src/dsql/dsql.cpp (1.259):
+
+	Correction.
+
+2008-10-16 07:36  dimitr
+
+	* firebird2/src/jrd/: tra.cpp (1.183), tra.h (1.90):
+
+	Undo log shouldn't depend on the outer transaction.
+
+2008-10-16 04:31  asfernandes
+
+	* firebird2/src/: dsql/ddl.cpp (1.258), jrd/Database.cpp (1.11),
+	jrd/Database.h (1.30), jrd/inf.cpp (1.88), jrd/why.cpp (1.216):
+
+	Misc
+
+2008-10-15 12:04  hvlad
+
+	* firebird2/src/jrd/: inf.cpp (1.87), inf_pub.h (1.27):
+
+	Implement new feature CORE-2054 : Ability to query contents
+	database file pages via ISC API interface in order to get low-level
+	information for debug and deep analysis purposes
+
+2008-10-14 16:07  alexpeshkoff
+
+	* firebird2/src/dsql/ddl.cpp (1.257):
+
+	Avoid code duplication as suggested by Claudio
+
+2008-10-14 15:15  hvlad
+
+	* firebird2/src/jrd/: lck.cpp (1.89), lck.h (1.44):
+
+	Fixed bug CORE-2018 : Only one client can access a readonly
+	database Missed parts, sorry
+
+2008-10-14 15:09  dimitr
+
+	* firebird2/src/jrd/cch.cpp (1.213):
+
+	Let's not hide the line number of a particular bugcheck call behind
+	a dummy function.
+
+2008-10-14 12:32  dimitr
+
+	* firebird2/src/jrd/: tra.cpp (1.182), tra.h (1.89), vio.cpp
+	(1.229):
+
+	Splitted the undo log into two parts: in-memory one for initial
+	undo items (but they're much more dense now) and on-disk (cached up
+	to TempSpaceLimit) one for full record versions (used in
+	update-in-place).  This dramatically reduces the memory usage for
+	bulk updates, thus solving CORE-1575 (serious memory bug on
+	multiple update a table in a single transaction) and CORE-1477
+	(Avoiding excessive memory consumption by undo-log after series of
+	updates) and predicting out-of-memory conditions that could often
+	lead to record-level corruptions.
+
+2008-10-14 12:07  dimitr
+
+	* firebird2/src/jrd/: blb.cpp (1.180), dpm.epp (1.80):
+
+	Splitted the undo log into two parts: in-memory one for initial
+	undo items (but they're much more dense now) and on-disk (cached up
+	to TempSpaceLimit) one for full record versions (used in
+	update-in-place).  This dramatically reduces the memory usage for
+	bulk updates, thus solving CORE-1575 (serious memory bug on
+	multiple update a table in a single transaction) and CORE-1477
+	(Avoiding excessive memory consumption by undo-log after series of
+	updates) and predicting out-of-memory conditions that could often
+	lead to record-level corruptions.
+
+2008-10-14 12:05  roman-simakov
+
+	* firebird2/src/jrd/jrd.cpp (1.485):
+
+	Fixed authentication bug with sysdba login written in lowercase
+	letters.
+
+2008-10-14 11:51  hvlad
+
+	* firebird2/src/jrd/Database.cpp (1.10):
+
+	Correction
+
+2008-10-14 11:10  hvlad
+
+	* firebird2/src/jrd/: Database.cpp (1.9), Database.h (1.29),
+	jrd.cpp (1.484), pag.cpp (1.191), shut.cpp (1.58), tra.cpp (1.181):
+
+	Fixed bug CORE-2018 : Only one client can access a readonly
+	database
+
+2008-10-13 21:21  dimitr
+
+	* firebird2/src/common/classes/semaphore.h (1.58):
+
+	Fixed the Windows build.
+
+2008-10-13 18:04  alexpeshkoff
+
+	* firebird2/src/remote/: inet_server.cpp (1.87), server.cpp
+	(1.221):
+
+	Disconnect all ports after shutdown of working threads
+
+2008-10-13 14:19  alexpeshkoff
+
+	* firebird2/src/remote/inet_server.cpp (1.86):
+
+	Need to keep reference count here too
+
+2008-10-13 09:21  dimitr
+
+	* firebird2/src/: jrd/inf.cpp (1.86), jrd/inf_proto.h (1.11),
+	dsql/dsql.cpp (1.258):
+
+	Fixed CORE-2115: Query plan is missing for the long query.  Some
+	cleanup and misc code refactoring.
+
+2008-10-12 19:23  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.215):
+
+	Fixed CORE-2121: AV in client library when working with BLOBs
+
+2008-10-12 17:57  asfernandes
+
+	* firebird2/src/intl/: cv_big5.cpp (1.17), cv_gb2312.cpp (1.15),
+	cv_ksc.cpp (1.18):
+
+	Misc
+
+2008-10-12 17:03  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.151):
+
+	Added mutex for init-file open in MT world.  Fixed pid
+	initialization in event.
+
+2008-10-12 16:30  alexpeshkoff
+
+	* firebird2/src/intl/: cv_big5.cpp (1.16), cv_gb2312.cpp (1.14),
+	cv_ksc.cpp (1.17):
+
+	Style and asserts - patch by Dmitry Kovalenko
+
+2008-10-11 17:46  asfernandes
+
+	* firebird2/src/jrd/exe.cpp (1.274):
+
+	Fixed CORE-2117 - Incorrect ROW_COUNT value with indexed retrieval
+	and subquery
+
+2008-10-11 12:10  hvlad
+
+	* firebird2/src/common/classes/semaphore.h (1.57):
+
+	Missed method (in WIN_NT implementation)
+
+2008-10-11 04:42  asfernandes
+
+	* firebird2/src/jrd/: Database.h (1.28), cch.cpp (1.212), isc.h
+	(1.37), isc_s_proto.h (1.22), isc_sync.cpp (1.150):
+
+	Misc
+
+2008-10-10 17:58  alexpeshkoff
+
+	* firebird2/: builds/posix/make.shared.variables (1.101),
+	src/common/classes/vector.h (1.20), src/jrd/Database.cpp (1.8),
+	src/jrd/Database.h (1.27), src/jrd/DatabaseSnapshot.h (1.19),
+	src/jrd/GlobalRWLock.h (1.21), src/jrd/ThreadData.cpp (1.10),
+	src/jrd/ThreadData.h (1.5), src/jrd/ThreadStart.cpp (1.7),
+	src/jrd/cch.cpp (1.211), src/jrd/cch.h (1.42), src/jrd/event.cpp
+	(1.76), src/jrd/event.h (1.23), src/jrd/file_params.h (1.31),
+	src/jrd/isc.cpp (1.83), src/jrd/isc.h (1.36), src/jrd/isc_proto.h
+	(1.25), src/jrd/isc_s_proto.h (1.21), src/jrd/isc_signal.h (1.8),
+	src/jrd/isc_sync.cpp (1.149), src/jrd/jrd.cpp (1.483),
+	src/jrd/jrd.h (1.251), src/jrd/svc.h (1.66), src/jrd/tra.cpp
+	(1.180), src/jrd/vio.cpp (1.228), src/jrd/why.cpp (1.214),
+	src/jrd/os/posix/isc_ipc.cpp (1.32), src/lock/lock.cpp (1.168),
+	src/lock/lock.h (1.47), src/lock/lock_proto.h (1.23):
+
+	1. Cleanup - use Firebird::Semaphore instead of local events,
+	removed code related with local events from isc_sync.cpp.
+
+	2. Cleanup - removed unused parameter 'number of events' from
+	ISC_event_wait() and two unused parameters from ISC_event_init().
+
+	3. Added SYSV-semaphore based implementation of IPC to
+	isc_sync.cpp.  This should fix CORE-2102: Firebird 2.5 does not
+	build on MacOS (Darwin).
+
+	4. Fixed use of posic CS without (x)inetd (i.e. fb_inet_server -s).
+
+	5. Fixed (to be reviewed by Dmitry) recovery after some process
+	death in lock manager.
+
+2008-10-10 17:50  alexpeshkoff
+
+	* firebird2/src/remote/: inet.cpp (1.256), server.cpp (1.220):
+
+	Avoid annoying messages in firebird.log
+
+2008-10-10 17:46  alexpeshkoff
+
+	* firebird2/src/include/gen/msgs.h (1.122):
+
+	misc
+
+2008-10-09 22:07  hvlad
+
+	* firebird2/src/jrd/met.epp (1.264):
+
+	Fixed bug CORE-2098 : View over global temporary table
+
+2008-10-09 20:40  hvlad
+
+	* firebird2/src/jrd/dfw.epp (1.252):
+
+	Fix for bug CORE-2114 : Fix for CORE-1838 was incomplete
+
+2008-10-09 03:05  asfernandes
+
+	* firebird2/src/jrd/vio.cpp (1.227):
+
+	Misc
+
+2008-10-09 02:59  asfernandes
+
+	* firebird2/src/remote/: inet.cpp (1.255), remote.cpp (1.71),
+	server.cpp (1.219), xnet.cpp (1.116):
+
+	Misc
+
+2008-10-09 02:46  asfernandes
+
+	* firebird2/src/msgs/messages2.sql (1.64):
+
+	Corrections
+
+2008-10-08 13:59  dimitr
+
+	* firebird2/src/jrd/: exe.cpp (1.273), rse.cpp (1.155), rse.h
+	(1.56):
+
+	Fixed CORE-2101: Bugcheck 249 when attempting to fetch outside the
+	end-of-stream mark for the open PSQL cursor.
+
+2008-10-08 13:58  dimitr
+
+	* firebird2/src/jrd/vio.cpp (1.226):
+
+	Misc.
+
+2008-10-08 04:24  asfernandes
+
+	* firebird2/src/jrd/: SysFunction.cpp (1.57), evl.cpp (1.276):
+
+	Misc
+
+2008-10-07 12:07  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.213):
+
+	Avoid races when closing shutdown thread
+
+2008-10-07 10:00  alexpeshkoff
+
+	* firebird2/src/jrd/why.cpp (1.212):
+
+	Avoid running too parallel fb_shutdown() API calls
+
+2008-10-07 09:41  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.11):
+
+	misc
+
+2008-10-06 18:57  alexpeshkoff
+
+	* firebird2/src/jrd/common.h (1.182):
+
+	We have to add this cause a lot of kernels have that bug
+
+2008-10-06 03:19  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.56):
+
+	Misc
+
+2008-10-04 21:41  hvlad
+
+	* firebird2/src/remote/xnet.cpp (1.115):
+
+	Fixed bug CORE-2108 : "get_free_slot() failed" error
+
+2008-10-04 19:46  hvlad
+
+	* firebird2/src/remote/server.cpp (1.218):
+
+	Initialize local variable
+
+2008-10-04 19:45  hvlad
+
+	* firebird2/src/remote/remote.cpp (1.70):
+
+	Enlarge space reserved for strings in errors returned after
+	attachment failure. It allow to report errors correctly for
+	application which made a lot of simultaneous (failed) connections.
+
+2008-10-04 19:14  hvlad
+
+	* firebird2/src/remote/inet.cpp (1.254):
+
+	Fixed bug CORE-2107 : Failed to establish TCP\IP connection with
+	Windows Classic Server under high load
+
+2008-10-04 04:48  asfernandes
+
+	* firebird2/src/dsql/: gen.cpp (1.176), pass1.cpp (1.419):
+
+	Fixed another case for CORE-1246 - Incorrect column values with
+	outer joins and derived tables:
+
+	select t2.n   from rdb$database t1   left join (     select 11 n
+	   from (	  select 0 a	       from rdb$database       ) x1
+	  ) t2	   on 1 = 0 ;
+
+	was returning 11.
+
+2008-10-03 18:22  alexpeshkoff
+
+	* firebird2/src/remote/: inet_server.cpp (1.85), remote.cpp (1.69),
+	serve_proto.h (1.16), server.cpp (1.217):
+
+	1. Never shutdown worker threads from fb_shutdown()'s callback -
+	instead do it at the end of main server loop.
+
+	2. Fixed races when worker thread(s) remained running after exit
+	from main().
+
+	3. Added better protection by mutex to counter of worker threads.
+	Avoid possible races when worker thread starts.
+
+2008-10-03 07:41  robocop
+
+	* firebird2/: doc/sql.extensions/README.builtin_functions.txt
+	(1.21), lang_helpers/gds_codes.ftn (1.87),
+	lang_helpers/gds_codes.pas (1.87), src/include/gen/codetext.h
+	(1.96), src/include/gen/iberror.h (1.100), src/include/gen/msgs.h
+	(1.121), src/include/gen/sql_code.h (1.102),
+	src/include/gen/sql_state.h (1.29), src/jrd/SysFunction.cpp (1.55),
+	src/jrd/evl.cpp (1.275), src/jrd/os/guid.h (1.10),
+	src/jrd/os/posix/guid.cpp (1.13), src/jrd/os/win32/guid.cpp (1.15),
+	src/msgs/facilities2.sql (1.51), src/msgs/messages2.sql (1.63),
+	src/msgs/system_errors2.sql (1.45):
+
+	CORE-1799: improve the almost useless "expression evaluation not
+	supported" error message.  Did the JRD side except par.cpp because
+	this part is covered by DSQL (only ESQL programs won't get the
+	improved messages).
+
+2008-10-03 02:45  asfernandes
+
+	* firebird2/src/: dsql/make.cpp (1.175), intl/cs_jis.cpp (1.7),
+	intl/cv_jis.cpp (1.21), msgs/messages2.sql (1.62):
+
+	Misc
+
+2008-10-02 17:48  asfernandes
+
+	* firebird2/src/intl/: cs_jis.cpp (1.6), cv_jis.cpp (1.20),
+	cv_jis.h (1.7):
+
+	Fixed CORE-2095 - BUG at CVJIS_eucj_to_unicode Improvement
+	CORE-2103 - Implement well formed check for SJIS and EUCJ
+
+2008-10-02 16:03  alexpeshkoff
+
+	* firebird2/src/include/gen/msgs.h (1.120):
+
+	looks like file was not committed after message's change
+
 2008-09-27 12:03  robocop
 
 	* firebird2/src/msgs/messages2.sql (1.61):
