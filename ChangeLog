@@ -1,3 +1,40 @@
+2008-11-05 17:48  roman-simakov
+
+	* firebird2/src/: iscguard/iscguard.cpp (1.60),
+	remote/os/win32/ibconfig.cpp (1.24), remote/os/win32/property.cpp
+	(1.21):
+
+	Fixed server crash by right mouse button clicking at server
+	properties page on Windows x64
+
+2008-11-05 12:26  alexpeshkoff
+
+	* firebird2/: configure.in (1.298), src/burp/misc.cpp (1.20),
+	src/common/classes/alloc.h (1.79), src/dsql/dsql.cpp (1.262),
+	src/dsql/gen.cpp (1.177), src/gpre/msc.cpp (1.25),
+	src/include/gen/autoconfig_msvc.h (1.110), src/jrd/Optimizer.cpp
+	(1.99), src/jrd/align.h (1.8), src/jrd/blb.cpp (1.182),
+	src/jrd/cmp.cpp (1.319), src/jrd/common.h (1.183),
+	src/jrd/evl_string.h (1.29), src/jrd/exe.cpp (1.275),
+	src/jrd/fun.epp (1.106), src/jrd/met.epp (1.265), src/jrd/rse.cpp
+	(1.156), src/jrd/sort.cpp (1.113), src/lock/lock.cpp (1.170),
+	src/misc/align.cpp (1.14), src/qli/all.cpp (1.33):
+
+	AIX port - use FB_ prefix for alignment constants
+
+2008-11-05 12:24  dimitr
+
+	* firebird2/src/remote/xnet.cpp (1.117):
+
+	Let's don't use system_call_failed() for local exception handling.
+
+2008-11-05 10:02  alexpeshkoff
+
+	* firebird2/builds/posix/: Makefile.in.libfbclient (1.41),
+	Makefile.in.smp_server (1.4), make.shared.variables (1.102):
+
+	Avoid unneeded module in fb_smp_server
+
 2008-11-05 02:08  asfernandes
 
 	* firebird2/src/: dsql/dsql.h (1.144), jrd/dyn_proto.h (1.13),
