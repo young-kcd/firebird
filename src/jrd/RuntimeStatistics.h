@@ -74,17 +74,23 @@ public:
 		++values[index];
 	}
 
+	bool operator==(const RuntimeStatistics& other) const;
+	bool operator!=(const RuntimeStatistics& other) const;
+
+	RuntimeStatistics& operator+=(const RuntimeStatistics& other);
+	RuntimeStatistics& operator-=(const RuntimeStatistics& other);
+
+	RuntimeStatistics operator+(const RuntimeStatistics& other) const;
+	RuntimeStatistics operator-(const RuntimeStatistics& other) const;
+
 	static RuntimeStatistics* getDummy()
 	{
 		return &dummy;
 	}
 
 private:
-	// copying is prohibited
-	RuntimeStatistics(const RuntimeStatistics&);
-	RuntimeStatistics& operator= (const RuntimeStatistics&);
-
 	SINT64 values[TOTAL_ITEMS];
+
 	// This dummy RuntimeStatistics is used instead of missing elements in tdbb,
 	// helping us avoid conditional checks in time-critical places of code.
 	// Values of it contain actually garbage - don't be surprised when debugging.

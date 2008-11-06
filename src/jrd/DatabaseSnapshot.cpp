@@ -838,6 +838,24 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 				putTransaction(transaction, *writer, dbb->generateId());
 			}
 
+			// Call stack information
+
+			for (transaction = attachment->att_transactions;
+				transaction; transaction = transaction->tra_next)
+			{
+				for (request = transaction->tra_requests; request;
+					request = request->req_caller)
+				{
+					request->adjustCallerStats();
+
+					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
+						request->req_caller)
+					{
+						putCall(request, *writer, dbb->generateId());
+					}
+				}
+			}
+
 			// Request information
 
 			for (request = attachment->att_requests;
@@ -846,22 +864,6 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 				if (!(request->req_flags & (req_internal | req_sys_trigger)))
 				{
 					putRequest(request, *writer, dbb->generateId());
-				}
-			}
-
-			// Call stack information
-
-			for (transaction = attachment->att_transactions;
-				transaction; transaction = transaction->tra_next)
-			{
-				for (request = transaction->tra_requests;
-					request; request = request->req_tra_next)
-				{
-					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
-						request->req_caller)
-					{
-						putCall(request, *writer, dbb->generateId());
-					}
 				}
 			}
 		}
@@ -1159,8 +1161,7 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 		writer.insertInt(f_mon_call_caller_id, 0);
 	}
 	else {
-		writer.insertInt(f_mon_call_caller_id,
-						 request->req_caller->req_id);
+		writer.insertInt(f_mon_call_caller_id, request->req_caller->req_id);
 	}
 	// object name/type
 	if (request->req_procedure) {

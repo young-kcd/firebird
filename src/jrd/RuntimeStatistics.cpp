@@ -25,6 +25,7 @@
 #include "../jrd/RuntimeStatistics.h"
 
 using namespace Firebird;
+
 namespace Jrd {
 
 RuntimeStatistics RuntimeStatistics::dummy;
@@ -34,4 +35,40 @@ void RuntimeStatistics::reset()
 	memset(values, 0, sizeof values);
 }
 
+bool RuntimeStatistics::operator==(const RuntimeStatistics& other) const
+{
+	return !memcmp(values, other.values, sizeof(values));
 }
+
+bool RuntimeStatistics::operator!=(const RuntimeStatistics& other) const
+{
+	return !(*this == other);
+}
+
+RuntimeStatistics& RuntimeStatistics::operator+=(const RuntimeStatistics& other)
+{
+	for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+		values[i] += other.values[i];
+
+	return *this;
+}
+
+RuntimeStatistics& RuntimeStatistics::operator-=(const RuntimeStatistics& other)
+{
+	for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+		values[i] -= other.values[i];
+
+	return *this;
+}
+
+RuntimeStatistics RuntimeStatistics::operator+(const RuntimeStatistics& other) const
+{
+	return RuntimeStatistics(*this) += other;
+}
+
+RuntimeStatistics RuntimeStatistics::operator-(const RuntimeStatistics& other) const
+{
+	return RuntimeStatistics(*this) -= other;
+}
+
+} // namespace
