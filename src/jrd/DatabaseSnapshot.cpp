@@ -801,6 +801,7 @@ const char* DatabaseSnapshot::checkNull(int rid, int fid, const char* source, si
 		switch (fid)
 		{
 		case f_mon_call_caller_id:
+			return (*(SINT64*) source) ? source : NULL;
 		case f_mon_call_type:
 		case f_mon_call_src_line:
 		case f_mon_call_src_column:
@@ -1187,10 +1188,10 @@ void DatabaseSnapshot::putCall(const jrd_req* request,
 	writer.insertBigInt(f_mon_call_stmt_id, getGlobalId(statement->req_id));
 	// caller id
 	if (statement == request->req_caller) {
-		writer.insertInt(f_mon_call_caller_id, 0);
+		writer.insertBigInt(f_mon_call_caller_id, 0);
 	}
 	else {
-		writer.insertInt(f_mon_call_caller_id, request->req_caller->req_id);
+		writer.insertBigInt(f_mon_call_caller_id, getGlobalId(request->req_caller->req_id));
 	}
 	// object name/type
 	if (request->req_procedure) {
