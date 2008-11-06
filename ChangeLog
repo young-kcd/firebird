@@ -1,3 +1,35 @@
+2008-11-06 18:08  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.69):
+
+	Fixed CORE-2171: Column MON$CALLER_ID of table MON$CALL_STACK
+	reports invalid ID.
+
+2008-11-06 17:04  dimitr
+
+	* firebird2/src/jrd/: DatabaseSnapshot.cpp (1.68),
+	RuntimeStatistics.cpp (1.6), RuntimeStatistics.h (1.11), exe.cpp
+	(1.276), req.h (1.82):
+
+	Fixed CORE-2017: I/O statistics for stored procedures is not
+	accounted in monitoring tables.  This patch adds lazy statistics
+	increments to the whole request call stack.
+
+2008-11-06 01:52  asfernandes
+
+	* firebird2/: Makefile.am (1.1), autogen.sh (1.15), configure.in
+	(1.299), builds/make.new/config/install-sh (1.2):
+
+	Patch from Marius Popa to build on Ubuntu 8.10
+
+2008-11-06 01:23  asfernandes
+
+	* firebird2/src/: dsql/dsql.cpp (1.263), dsql/gen.cpp (1.178),
+	jrd/fun.epp (1.107), jrd/rse.cpp (1.157), jrd/sort.cpp (1.114),
+	remote/server.cpp (1.224):
+
+	Misc
+
 2008-11-05 17:48  roman-simakov
 
 	* firebird2/src/: iscguard/iscguard.cpp (1.60),
