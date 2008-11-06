@@ -242,6 +242,7 @@ public:
 	ULONG		req_records_updated;	/* count of records updated by request */
 	ULONG		req_records_deleted;	/* count of records deleted by request */
 	RuntimeStatistics	req_stats;
+	RuntimeStatistics	req_base_stats;
 	AffectedRows req_records_affected;	/* records affected by the last statement */
 
 	USHORT req_view_flags;			/* special flags for virtual ops on views */
@@ -295,6 +296,15 @@ public:
 	StatusXcp req_last_xcp;			/* last known exception */
 
 	record_param req_rpb[1];		/* record parameter blocks */
+
+	void adjustCallerStats()
+	{
+		if (req_caller)
+		{
+			req_caller->req_stats += req_stats - req_base_stats;
+		}
+		req_base_stats = req_stats;
+	}
 };
 
 // Size of request without rpb items at the tail. Used to calculate impure area size

@@ -862,7 +862,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 						   attachment->att_attachment_id, true);
 
 			jrd_tra* transaction = NULL;
-			const jrd_req* request = NULL;
+			jrd_req* request = NULL;
 
 			// Transaction information
 
@@ -874,6 +874,23 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 							   transaction->tra_number, false);
 			}
 
+			// Call stack information
+
+			for (transaction = attachment->att_transactions;
+				transaction; transaction = transaction->tra_next)
+			{
+				for (request = transaction->tra_requests; request; request = request->req_caller)
+				{
+					request->adjustCallerStats();
+
+					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
+						request->req_caller)
+					{
+						putCall(request, *writer, fb_utils::genUniqueId());
+					}
+				}
+			}
+
 			// Request information
 
 			for (request = attachment->att_requests;
@@ -882,22 +899,6 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 				if (!(request->req_flags & (req_internal | req_sys_trigger)))
 				{
 					putRequest(request, *writer, fb_utils::genUniqueId());
-				}
-			}
-
-			// Call stack information
-
-			for (transaction = attachment->att_transactions;
-				transaction; transaction = transaction->tra_next)
-			{
-				for (request = transaction->tra_requests;
-					request; request = request->req_tra_next)
-				{
-					if (!(request->req_flags & (req_internal | req_sys_trigger)) &&
-						request->req_caller)
-					{
-						putCall(request, *writer, fb_utils::genUniqueId());
-					}
 				}
 			}
 		}

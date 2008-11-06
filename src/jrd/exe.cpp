@@ -685,6 +685,7 @@ jrd_req* EXE_find_request(thread_db* tdbb, jrd_req* request, bool validate)
 
 	clone->req_attachment = attachment;
 	clone->req_stats.reset();
+	clone->req_base_stats.reset();
 	clone->req_flags |= req_in_use;
 
 	return clone;
@@ -2818,10 +2819,14 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			BUGCHECK(168);		/* msg 168 looper: action not yet implemented */
 		}
 
+		request->adjustCallerStats();
+
 	}	// try
 	catch (const Firebird::Exception& ex) {
 
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+
+		request->adjustCallerStats();
 
 		// Skip this handling for errors coming from the nested looper calls,
 		// as they're already handled properly. The only need is to undo
