@@ -511,7 +511,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 				const bool ok = main_port->select_multi(buffer, bufSize, &dataSize, port);
 				if (!port)
 				{
-					if (main_port->port_server_flags & SRVR_multi_client && !server_shutdown)
+					if ((main_port->port_server_flags & SRVR_multi_client) && !server_shutdown)
 					{
 						gds__log("SRVR_multi_thread/RECEIVE: error on main_port, shutting down");
 					}

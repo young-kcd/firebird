@@ -687,8 +687,7 @@ sort_context* SORT_init(thread_db* tdbb,
 	scb->scb_pool = pool;
 	scb->scb_status_vector = status_vector;
 	//scb->scb_length = record_length;
-	scb->scb_longs =
-		ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
+	scb->scb_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
 	scb->scb_dup_callback = call_back;
 	scb->scb_dup_callback_arg = user_arg;
 	scb->scb_keys = keys;

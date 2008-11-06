@@ -806,7 +806,7 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 	// Allocate buffer for message
 	const ULONG new_len = message->msg_length + FB_DOUBLE_ALIGN - 1;
 	dsql_str* buffer = FB_NEW_RPT(*tdbb->getDefaultPool(), new_len) dsql_str;
-	message->msg_buffer = (UCHAR *) FB_ALIGN((U_IPTR) buffer->str_data, FB_DOUBLE_ALIGN);
+	message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) buffer->str_data, FB_DOUBLE_ALIGN);
 
 	// Relocate parameter descriptors to point direction into message buffer
 

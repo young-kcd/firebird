@@ -288,7 +288,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	// Start by constructing argument list
 	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + FB_DOUBLE_ALIGN);
 	MOVE_CLEAR(temp_ptr, temp.getCount());
-	temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_ptr, FB_DOUBLE_ALIGN);
+	temp_ptr = (UCHAR*) FB_ALIGN((U_IPTR) temp_ptr, FB_DOUBLE_ALIGN);
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;

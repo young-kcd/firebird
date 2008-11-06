@@ -1723,9 +1723,7 @@ static bool get_procedure(thread_db*			tdbb,
 		impure->irsb_message = FB_NEW_RPT(*tdbb->getDefaultPool(), size) VaryingString();
 		impure->irsb_message->str_length = size;
 	}
-	UCHAR* om =
-		(UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data,
-						   FB_ALIGNMENT);
+	UCHAR* om = (UCHAR *) FB_ALIGN((U_IPTR) impure->irsb_message->str_data, FB_ALIGNMENT);
 	USHORT oml = impure->irsb_message->str_length - FB_ALIGNMENT;
 
 	Record* record;

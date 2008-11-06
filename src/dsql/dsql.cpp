@@ -1291,7 +1291,7 @@ static void execute_request(thread_db* tdbb,
 			message = &temp_msg;
 			message->msg_number = 1;
 			message->msg_length = 2;
-			message->msg_buffer = (UCHAR*)FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
+			message->msg_buffer = (UCHAR*) FB_ALIGN((U_IPTR) temp_buffer, FB_DOUBLE_ALIGN);
 		}
 
 		JRD_receive(tdbb, request->req_request, message->msg_number, message->msg_length,
