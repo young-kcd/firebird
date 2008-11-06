@@ -235,7 +235,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 			{
 				WinHelp(static_cast<HWND>(lphi->hItemHandle),
 						"IBSERVER.HLP",
-						HELP_WM_HELP, (DWORD) (LPVOID) aMenuHelpIDs);
+						HELP_WM_HELP, (ULONG_PTR) aMenuHelpIDs);
 			}
 		}
 		return TRUE;
@@ -243,7 +243,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 		{
 			WinHelp((HWND) wParam,
 					"IBSERVER.HLP",
-					HELP_CONTEXTMENU, (DWORD) (LPVOID) aMenuHelpIDs);
+					HELP_CONTEXTMENU, (ULONG_PTR) aMenuHelpIDs);
 		}
 		return TRUE;
 	case WM_COMMAND:
