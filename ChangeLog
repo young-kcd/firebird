@@ -1,3 +1,22 @@
+2008-11-07 15:31  asfernandes
+
+	* firebird2/src/jrd/SysFunction.cpp (1.59):
+
+	Fixed CORE-2174 - DATEADD and DATEDIFF causes an assert in
+	TimeStamp::decode()
+
+2008-11-07 10:29  hvlad
+
+	* firebird2/src/msgs/: facilities2.sql (1.52), history2.sql (1.11),
+	messages2.sql (1.65):
+
+	Temporary fix for CORE-2140 :  Error messages after parameters
+	substitution contains '\n' characters instead of line break
+
+	Using hardcoded (in messages2.sql) line breaks seems to me to be
+	not fully correct as it depends on host OS where file was last
+	edited.
+
 2008-11-06 18:08  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.69):
