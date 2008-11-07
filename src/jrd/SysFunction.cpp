@@ -1339,6 +1339,7 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		case dtype_sql_date:
 			timestamp.value().timestamp_date = *(GDS_DATE*) valueDsc->dsc_address;
+			timestamp.value().timestamp_time = 0;
 			/*
 			if (part == blr_extract_hour ||
 				part == blr_extract_minute ||
@@ -1361,9 +1362,6 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 			break;
 	}
 
-	tm times;
-	timestamp.decode(&times);
-
 	const SLONG quantity = MOV_get_long(quantityDsc, 0);
 
 	switch (part)
@@ -1372,6 +1370,8 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		case blr_extract_year:
 			{
+				tm times;
+				timestamp.decode(&times);
 				times.tm_year += quantity;
 				timestamp.encode(&times);
 
@@ -1385,6 +1385,9 @@ static dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::j
 
 		case blr_extract_month:
 			{
+				tm times;
+				timestamp.decode(&times);
+
 				int md[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 				const int y = quantity / 12;
@@ -1517,10 +1520,12 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	{
 		case dtype_sql_time:
 			timestamp1.value().timestamp_time = *(GDS_TIME *) value1Dsc->dsc_address;
+			timestamp1.value().timestamp_date = 0;
 			break;
 
 		case dtype_sql_date:
 			timestamp1.value().timestamp_date = *(GDS_DATE *) value1Dsc->dsc_address;
+			timestamp1.value().timestamp_time = 0;
 			break;
 
 		case dtype_timestamp:
@@ -1540,10 +1545,12 @@ static dsc* evlDateDiff(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::
 	{
 		case dtype_sql_time:
 			timestamp2.value().timestamp_time = *(GDS_TIME *) value2Dsc->dsc_address;
+			timestamp2.value().timestamp_date = 0;
 			break;
 
 		case dtype_sql_date:
 			timestamp2.value().timestamp_date = *(GDS_DATE *) value2Dsc->dsc_address;
+			timestamp2.value().timestamp_time = 0;
 			break;
 
 		case dtype_timestamp:
