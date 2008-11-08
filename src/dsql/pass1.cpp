@@ -9975,7 +9975,6 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			current_level--;
 			return field;
 
-		case nod_coalesce:
 		case nod_simple_case:
 		case nod_searched_case:
 			{
@@ -9985,6 +9984,16 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 				{
 					*ptr = remap_field(statement, *ptr, context, current_level);
 				}
+				return field;
+			}
+
+		case nod_coalesce:
+			{
+				// ASF: We have deliberately change nod_count to 1, to not process the second list.
+				// But we should remap its fields. CORE-2176
+				dsql_nod** ptr = field->nod_arg;
+				for (const dsql_nod* const* const end = ptr + 2; ptr < end; ptr++)
+					*ptr = remap_field(statement, *ptr, context, current_level);
 				return field;
 			}
 

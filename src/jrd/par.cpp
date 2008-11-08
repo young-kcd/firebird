@@ -3101,7 +3101,10 @@ jrd_nod* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb, USHORT expected,
 		const UCHAR streamCount = BLR_BYTE;
 		USHORT* streamList = FB_NEW(*tdbb->getDefaultPool()) USHORT[streamCount];
 		for (UCHAR i = 0; i < streamCount; ++i)
+		{
 			streamList[i] = BLR_BYTE;
+			streamList[i] = csb->csb_rpt[streamList[i]].csb_stream;
+		}
 
 		node->nod_arg[e_derived_expr_stream_list] = (jrd_nod*) streamList;
 		node->nod_arg[e_derived_expr_stream_count] = (jrd_nod*)(IPTR) streamCount;
