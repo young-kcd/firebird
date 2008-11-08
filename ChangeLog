@@ -1,3 +1,29 @@
+2008-11-08 19:05  asfernandes
+
+	* firebird2/src/dsql/pass1.cpp (1.423):
+
+	Misc
+
+2008-11-08 18:59  asfernandes
+
+	* firebird2/src/: dsql/pass1.cpp (1.422), jrd/par.cpp (1.219):
+
+	Fixed CORE-2176 - Unexpected (wrong) results with COALESCE and
+	GROUP BY
+
+2008-11-08 08:17  robocop
+
+	* firebird2/src/: include/gen/msgs.h (1.124), msgs/messages2.sql
+	(1.66):
+
+	It turns out that the backlash was needed, too.
+
+2008-11-08 08:01  robocop
+
+	* firebird2/src/include/gen/msgs.h (1.123):
+
+	Generate file again after Vlad's changes.
+
 2008-11-07 15:31  asfernandes
 
 	* firebird2/src/jrd/SysFunction.cpp (1.59):
