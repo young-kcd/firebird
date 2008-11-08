@@ -622,14 +622,14 @@ static const struct {
 	{335544918, "Attachment handle is busy"},		/* 598, att_handle_busy */
 	{335544919, "Bad written UDF detected: pointer returned in FREE_IT function was not allocated by ib_util_malloc"},		/* 599, bad_udf_freeit */
 	{335544920, "External Data Source provider '@1' not found"},		/* 600, eds_provider_not_found */
-	{335544921, "Execute statement error at @1 :
+	{335544921, "Execute statement error at @1 :\
 @2Data source : @3"},		/* 601, eds_connection */
 	{335544922, "Execute statement preprocess SQL error"},		/* 602, eds_preprocess */
 	{335544923, "Statement expected"},		/* 603, eds_stmt_expected */
 	{335544924, "Parameter name expected"},		/* 604, eds_prm_name_expected */
 	{335544925, "Unclosed comment found near '@1'"},		/* 605, eds_unclosed_comment */
-	{335544926, "Execute statement error at @1 :
-@2Statement : @3
+	{335544926, "Execute statement error at @1 :\
+@2Statement : @3\
 Data source : @4"},		/* 606, eds_statement */
 	{335544927, "Input parameters mismatch"},		/* 607, eds_input_prm_mismatch */
 	{335544928, "Output parameters mismatch"},		/* 608, eds_output_prm_mismatch */
