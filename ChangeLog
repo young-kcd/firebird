@@ -1,3 +1,15 @@
+2008-11-09 19:52  asfernandes
+
+	* firebird2/src/jrd/evl.cpp (1.277):
+
+	Fixed CORE-1943 - GROUP BY RAND() returns infinite rows
+
+2008-11-09 18:00  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.320), opt.cpp (1.323):
+
+	Fixed the others two problems of CORE-2176
+
 2008-11-08 19:05  asfernandes
 
 	* firebird2/src/dsql/pass1.cpp (1.423):
