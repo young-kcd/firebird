@@ -1523,44 +1523,52 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		}
 	}
 
-/* Loop thru records until either a value change or EOF */
+	// Loop thru records until either a value change or EOF
 
-	while (state != 2) {
+	bool first = true;
+
+	while (state != 2)
+	{
 		state = 1;
 
-		/* in the case of a group by, look for a change in value of any of
-		   the columns; if we find one, stop aggregating and return what we have */
-
-		if (group)
+		if (first)
+			first = false;
+		else
 		{
-			for (ptr = group->nod_arg, end = ptr + group->nod_count;
-				 ptr < end; ptr++)
-			{
-				jrd_nod* from = *ptr;
-				impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
-				if (impure->vlu_desc.dsc_address)
-					EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
-				else
-					vtemp.vlu_desc.dsc_address = NULL;
+			// In the case of a group by, look for a change in value of any of
+			// the columns; if we find one, stop aggregating and return what we have.
 
-				desc = EVL_expr(tdbb, from);
-				if (request->req_flags & req_null) {
-					impure->vlu_desc.dsc_address = NULL;
-					if (vtemp.vlu_desc.dsc_address)
-						goto break_out;
-				}
-				else {
-					EVL_make_value(tdbb, desc, impure);
-					if (!vtemp.vlu_desc.dsc_address
-						|| MOV_compare(&vtemp.vlu_desc, desc))
-					{
-						goto break_out;
+			if (group)
+			{
+				for (ptr = group->nod_arg, end = ptr + group->nod_count;
+					 ptr < end; ptr++)
+				{
+					jrd_nod* from = *ptr;
+					impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
+					if (impure->vlu_desc.dsc_address)
+						EVL_make_value(tdbb, &impure->vlu_desc, &vtemp);
+					else
+						vtemp.vlu_desc.dsc_address = NULL;
+
+					desc = EVL_expr(tdbb, from);
+					if (request->req_flags & req_null) {
+						impure->vlu_desc.dsc_address = NULL;
+						if (vtemp.vlu_desc.dsc_address)
+							goto break_out;
+					}
+					else {
+						EVL_make_value(tdbb, desc, impure);
+						if (!vtemp.vlu_desc.dsc_address
+							|| MOV_compare(&vtemp.vlu_desc, desc))
+						{
+							goto break_out;
+						}
 					}
 				}
 			}
 		}
 
-		/* go through and compute all the aggregates on this record */
+		// go through and compute all the aggregates on this record
 
 		for (ptr = map->nod_arg, end = ptr + map->nod_count; ptr < end; ptr++)
 		{
