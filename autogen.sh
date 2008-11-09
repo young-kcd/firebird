@@ -67,15 +67,15 @@ fi
 
 # For Ubuntu 8.10 - Intrepid Ibex
 if [ ! -d m4 ]; then
- mkdir m4
+  mkdir m4
 fi
 
 # Generate configure from configure.in
 echo "Running libtoolize ..."
 LIBTOOL_M4=`$LIBTOOLIZE --copy --force --dry-run|grep 'You should add the contents of'|sed "s,^[^/]*\(/[^']*\).*$,\1,"`
 if test "x$LIBTOOL_M4" != "x"; then
- rm -f aclocal.m4
- cp $LIBTOOL_M4 aclocal.m4
+  rm -f aclocal.m4
+  cp $LIBTOOL_M4 aclocal.m4
 fi
 $LIBTOOLIZE --copy --force || exit 1
 

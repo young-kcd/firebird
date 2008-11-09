@@ -9988,7 +9988,7 @@ static dsql_nod* remap_field(CompiledStatement* statement, dsql_nod* field,
 			}
 
 		case nod_coalesce:
-			// ASF: We have deliberately change nod_count to 1, to not process the second list.
+			// ASF: We had deliberately changed nod_count to 1, to not process the second list.
 			// But we should remap its fields. CORE-2176
 			field->nod_arg[0] = remap_field(statement, field->nod_arg[0], context, current_level);
 			field->nod_arg[1] = remap_field(statement, field->nod_arg[1], context, current_level);

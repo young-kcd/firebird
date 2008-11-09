@@ -2859,7 +2859,6 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_gtr:
 		case nod_lss:
 		case nod_leq:
-
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
@@ -3053,7 +3052,6 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_gtr:
 		case nod_lss:
 		case nod_leq:
-
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
@@ -6006,7 +6004,6 @@ static void get_expression_streams(const jrd_nod* node,
 		case nod_gtr:
 		case nod_lss:
 		case nod_leq:
-
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.

@@ -894,8 +894,7 @@ ClumpletReader* DatabaseSnapshot::dumpData(thread_db* tdbb, bool broadcast)
 
 			// Request information
 
-			for (request = attachment->att_requests;
-				request; request = request->req_request)
+			for (request = attachment->att_requests; request; request = request->req_request)
 			{
 				if (!(request->req_flags & (req_internal | req_sys_trigger)))
 				{
