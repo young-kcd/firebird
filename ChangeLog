@@ -1,3 +1,10 @@
+2008-11-09 23:42  asfernandes
+
+	* firebird2/: autogen.sh (1.16), src/dsql/pass1.cpp (1.424),
+	src/jrd/DatabaseSnapshot.cpp (1.70), src/jrd/opt.cpp (1.324):
+
+	Misc
+
 2008-11-09 19:52  asfernandes
 
 	* firebird2/src/jrd/evl.cpp (1.277):
