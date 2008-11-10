@@ -1,3 +1,10 @@
+2008-11-10 11:14  alexpeshkoff
+
+	* firebird2/src/jrd/execute_statement.cpp (1.14.4.10):
+
+	Backported fix for CORE-2173: Server crash after ubnormal
+	disconnect with open ExecuteStatement
+
 2008-11-04 14:52  paul_reeves
 
 	* firebird2/builds/install/arch-specific/win32/i18n_readme.txt
