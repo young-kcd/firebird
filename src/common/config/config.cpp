@@ -63,7 +63,11 @@ const ConfigImpl::ConfigEntry ConfigImpl::entries[] =
 #else // non-win32 CS
 	{TYPE_INTEGER,		"TempCacheLimit",			(ConfigValue) 0},			// bytes
 #endif
+#ifdef BOOT_BUILD
+	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) true},
+#else
 	{TYPE_BOOLEAN,		"RemoteFileOpenAbility",	(ConfigValue) false},
+#endif
 	{TYPE_INTEGER,		"GuardianOption",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"CpuAffinityMask",			(ConfigValue) 1},
 	{TYPE_INTEGER,		"TcpRemoteBufferSize",		(ConfigValue) 8192},		// bytes
