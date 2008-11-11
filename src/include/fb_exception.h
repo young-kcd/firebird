@@ -38,7 +38,7 @@ namespace Firebird {
 
 class StringsBuffer {
 public:
-	virtual char* alloc(const char* string, size_t length) = 0;
+	virtual char* alloc(const char* string, size_t& length) = 0;
 	virtual ~StringsBuffer() {}
 
 	void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* temp);
@@ -52,11 +52,15 @@ public:
 		memset(buffer, 0, BUFFER_SIZE); 
 		buffer_ptr = buffer;
 	}
-	virtual char* alloc(const char* string, size_t length) {
-		// fb_assert(length + 1 < BUFFER_SIZE);
+	virtual char* alloc(const char* string, size_t& length) {
+		// truncate too long strings
+		if (length > BUFFER_SIZE / 4)
+			length = BUFFER_SIZE / 4;
+
 		// If there isn't any more room in the buffer, start at the beginning again
 		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
 			buffer_ptr = buffer;
+
 		char* new_string = buffer_ptr;
 		memcpy(new_string, string, length);
 		new_string[length] = 0;
