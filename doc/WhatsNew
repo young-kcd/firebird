@@ -12,6 +12,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-2157
+        fbclient does not have the libpthread dependency
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-2151
         Temporary directory path with spaces in the middle is wrongly truncated
         from the rightmost space
