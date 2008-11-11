@@ -1,3 +1,16 @@
+2008-11-11 18:37  dimitr
+
+	* firebird2/src/dsql/parse.y (1.294):
+
+	Fixed CORE-2182: It's impossible to drop an existing UDF which name
+	overlaps with a new built-in function name.
+
+2008-11-11 17:59  alexpeshkoff
+
+	* firebird2/src/common/config/config.cpp (1.91):
+
+	Make it possible to build firebird on NFS drive
+
 2008-11-09 23:42  asfernandes
 
 	* firebird2/: autogen.sh (1.16), src/dsql/pass1.cpp (1.424),
