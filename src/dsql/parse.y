@@ -4688,9 +4688,9 @@ trim_specification	: BOTH
 			{ $$ = MAKE_const_slong (blr_trim_leading); }
 		;
 		
-udf		: symbol_UDF_name '(' value_list ')'
+udf		: symbol_UDF_call_name '(' value_list ')'
 			{ $$ = make_node (nod_udf, 2, $1, $3); }
-		| symbol_UDF_name '(' ')'
+		| symbol_UDF_call_name '(' ')'
 			{ $$ = make_node (nod_udf, 1, $1); }
 		;
 
@@ -4822,7 +4822,10 @@ null_value	: KW_NULL
 
 /* Performs special mapping of keywords into symbols */
 
-symbol_UDF_name	: SYMBOL
+symbol_UDF_call_name	: SYMBOL
+	;
+
+symbol_UDF_name	: valid_symbol_name
 	;
 
 symbol_blob_subtype_name	: valid_symbol_name
