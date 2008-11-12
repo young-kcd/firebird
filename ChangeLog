@@ -1,3 +1,23 @@
+2008-11-12 15:32  alexpeshkoff
+
+	* firebird2/src/jrd/: err.cpp (1.85), jrd.cpp (1.487), jrd.h
+	(1.252):
+
+	Fixed CORE-2179: Deadlock when trying to shutdown server with
+	opened ExecuteStatement
+
+2008-11-12 15:14  alexpeshkoff
+
+	* firebird2/src/jrd/shut.cpp (1.59):
+
+	Cleanup
+
+2008-11-12 11:24  paulbeach
+
+	* firebird2/builds/posix/postfix.darwin (1.14):
+
+	Add the smp_server to the installation
+
 2008-11-11 18:37  dimitr
 
 	* firebird2/src/dsql/parse.y (1.294):
