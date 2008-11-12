@@ -297,7 +297,7 @@ void ExecuteStatement::Close(thread_db* tdbb)
 		Statement = 0;
 	}
 
-	// if transaction is already missing, it's pool is also deleted,
+	// if transaction is already missing, its pool is also deleted,
 	// i.e. impossible and no use deleting something from it
 	if (tdbb->getTransaction()) {
 		char* p = reinterpret_cast<char*>(Sqlda);
