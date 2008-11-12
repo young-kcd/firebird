@@ -108,13 +108,7 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 		}
 					
 		dbb->dbb_shutdown_delay = 0; // not tested anywhere
-		/* CVC: We never set it, so how could we need to unset ATT_shutdown_modify?
-		for (Attachment* attachment = dbb->dbb_attachments; attachment;
-			 attachment = attachment->att_next)
-		{
-			 attachment->att_flags &= ~ATT_shutdown_notify;
-		}
-		*/
+
 		return false;
 	}
 
