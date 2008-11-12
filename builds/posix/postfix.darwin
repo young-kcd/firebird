@@ -87,6 +87,7 @@ darwin_finish_cs_framework:
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fbsvcmgr $(FB_FW)/Resources/bin
+	cp ../gen/firebird/bin/fb_smp_server $(FB_FW)/Resources/bin
 	cp ../src/extlib/ib_udf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../src/extlib/fbudf/fbudf.sql $(FB_FW)/Resources/English.lproj/var/UDF
 	cp ../builds/install/arch-specific/darwin/FrameworkInfo.plist \
