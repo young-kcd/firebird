@@ -340,7 +340,7 @@ void ERR_make_permanent(ISC_STATUS* s)
 {
 	Attachment* att = JRD_get_thread_data()->getAttachment();
 	if (att) {
-		MutexLockGuard(att->att_mutex);
+		MutexLockGuard(att->att_strings_mutex);
 		if (att->att_strings_buffer != ((StringsBuffer*)(~0)))
 		{
 			if (!att->att_strings_buffer)

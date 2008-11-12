@@ -329,6 +329,7 @@ public:
 	Firebird::Mutex att_mutex;				// attachment mutex
 
 	Firebird::StringsBuffer* att_strings_buffer;	// per attachment circular strings buffer
+	Firebird::Mutex att_strings_mutex;				// mutex for this buffer access
 
 	bool locksmith() const;
 
@@ -345,7 +346,7 @@ private:
 
 const ULONG ATT_no_cleanup			= 1;	// Don't expunge, purge, or garbage collect
 const ULONG ATT_shutdown			= 2;	// attachment has been shutdown
-//const ULONG ATT_shutdown_notify		= 4;	// attachment has notified client of shutdown
+const ULONG ATT_purge_error			= 4;	// trouble happened in purge attachment, att_mutex remains locked
 const ULONG ATT_shutdown_manager	= 8;	// attachment requesting shutdown
 const ULONG ATT_lck_init_done		= 16;	// LCK_init() called for the attachment
 const ULONG ATT_exclusive			= 32;	// attachment wants exclusive database access

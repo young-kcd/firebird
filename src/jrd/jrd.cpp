@@ -500,14 +500,14 @@ static void cancel_attachments()
 				// deleted while waiting for lock.
 				while (true)
 				{
-					if (att->att_mutex.tryEnter()) 
+					if (att->att_mutex.tryEnter() || (att->att_flags & ATT_purge_error)) 
 					{
 						lockedAtt = att;
 						break;
 					}
 						
 					{
-						const bool cancel_disable = (att->att_flags & fb_cancel_disable);
+						const bool cancel_disable = (att->att_flags & ATT_cancel_disable);
 						Database::Checkout dcoHolder(dbb);
 						if (!cancel_disable)
 						{
@@ -5240,8 +5240,9 @@ static bool shutdown_dbb(thread_db* tdbb, Database* dbb)
 				// purge attachment, rollback any open transactions
 				purge_attachment(tdbb, temp_status, attach, true);
 			}
-			catch (const Exception&)
+			catch (const Exception& ex)
 			{
+				iscLogException("error while shutting down attachment", ex);
 				return false;
 			}
 		}
@@ -5575,26 +5576,34 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 		catch (const Exception&)
 		{
-			attachment->att_flags |= ATT_shutdown;
+			attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
 			throw;
 		}
 	}
 
-	EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
-
-	const ULONG att_flags = attachment->att_flags;
-	attachment->att_flags |= ATT_shutdown;
-
-	if (!(dbb->dbb_flags & DBB_bugcheck))
+	try
 	{
-		// Check for any pending transactions
-		unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
-		if (count)
-		{
-			ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
-		}
+		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
 
-		SORT_shutdown(attachment);
+		const ULONG att_flags = attachment->att_flags;
+		attachment->att_flags |= ATT_shutdown;
+
+		if (!(dbb->dbb_flags & DBB_bugcheck))
+		{
+			// Check for any pending transactions
+			unsigned int count = purge_transactions(tdbb, attachment, force_flag, att_flags);
+			if (count)
+			{
+				ERR_post(Arg::Gds(isc_open_trans) << Arg::Num(count));
+			}
+
+			SORT_shutdown(attachment);
+		}
+	}
+	catch (const Exception&)
+	{
+		attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
+		throw;
 	}
 
 	// Unlink attachment from database
