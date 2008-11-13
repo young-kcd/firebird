@@ -1,3 +1,9 @@
+2008-11-13 10:42  alexpeshkoff
+
+	* firebird2/src/jrd/ini.epp (1.104):
+
+	AIX port
+
 2008-11-12 15:32  alexpeshkoff
 
 	* firebird2/src/jrd/: err.cpp (1.85), jrd.cpp (1.487), jrd.h
