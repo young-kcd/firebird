@@ -61,7 +61,7 @@ using namespace Jrd;
 DATABASE DB = FILENAME "ODS.RDB";
 
 #define PAD(string, field) jrd_vtof ((char*)(string), field, sizeof (field))
-const int MAX_ACL_SIZE		= 4096;
+const int FB_MAX_ACL_SIZE	= 4096;
 const char* DEFAULT_CLASS	= "SQL$DEFAULT";
 
 static void add_index_set(Database*, bool, USHORT, USHORT);
@@ -473,7 +473,7 @@ void INI_format(const TEXT* owner, const TEXT* charset)
 ======================================================================
 */
 
-	UCHAR buffer[MAX_ACL_SIZE];
+	UCHAR buffer[FB_MAX_ACL_SIZE];
 	UCHAR* acl = buffer;
 	*acl++ = ACL_version;
 	*acl++ = ACL_id_list;
