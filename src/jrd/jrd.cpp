@@ -682,7 +682,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// Process database parameter block
 		options.get(dpb, dpb_length, invalid_client_SQL_dialect);
 
-		// Ccheck for correct credentials supplied
+		// Check for correct credentials supplied
 		getUserInfo(userId, options);
 	}
 	catch (const DelayFailedLogin& ex)
@@ -948,8 +948,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 				// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
 				// It means that client SQL dialect was not set by user
 				// and takes DB SQL dialect as client SQL dialect
-				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original)
-					>= ODS_10_0)
+				if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_10_0)
 				{
 					if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
 						// DB created in IB V6.0 by client SQL dialect 3
