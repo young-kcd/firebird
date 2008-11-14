@@ -93,6 +93,7 @@ static bool grantor_can_grant(Global*, const TEXT*, const TEXT*, const MetaName&
 static bool grantor_can_grant_role(thread_db*, Global*, const MetaName&, const MetaName&);
 static const char* privilege_name(char symbol);
 static void	revoke_permission(Global*, const UCHAR**);
+static void revoke_all(Global*, const UCHAR**);
 static void store_privilege(Global*, const MetaName&, const MetaName&, const MetaName&,
 	const TEXT*, SSHORT, SSHORT, int, const MetaName&);
 static void	set_field_class_name(Global*, const MetaName&, const MetaName&);
@@ -375,6 +376,10 @@ void DYN_execute(Global* gbl,
 
 	case isc_dyn_revoke:
 		revoke_permission(gbl, ptr);
+		break;
+
+	case isc_dyn_revoke_all:
+		revoke_all(gbl, ptr);
 		break;
 
 /***
@@ -2036,6 +2041,123 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			ERR_punt();
 			/* store_priviledge error already handled, just bail out */
 		}
+	}
+}
+
+
+static void revoke_all(Global* gbl, const UCHAR** ptr)
+{
+/**************************************
+ *
+ *	r e v o k e _ a l l
+ *
+ **************************************
+ *
+ * Functional description
+ *	Revoke all privileges on all objects from user/role.
+ *
+ **************************************/
+	UCHAR verb;
+	MetaName user, dummy_name;
+	SSHORT user_type = -1;
+
+	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
+
+	while ((verb = *(*ptr)++) != isc_dyn_end) {
+		switch (verb) {
+
+		case isc_dyn_grant_user:
+			GET_STRING(ptr, user);
+			/* This test may become obsolete as we now allow explicit ROLE keyword. */
+			if (DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				user_type = obj_sql_role;
+				if (user == NULL_ROLE) {
+					DYN_error_punt(false, 195, user.c_str());
+					// msg 195: keyword NONE could not be used as SQL role name.
+				}
+			}
+			else {
+				user_type = obj_user;
+				user.upper7();
+			}
+			break;
+
+		case isc_dyn_grant_user_explicit:
+		    GET_STRING(ptr, user);
+	        user_type = obj_user;
+			user.upper7();
+			break;
+
+		case isc_dyn_grant_role:
+			GET_STRING(ptr, user);
+			user_type = obj_sql_role;
+			if (!DYN_is_it_sql_role(gbl, user, dummy_name, tdbb)) {
+				DYN_error_punt(false, 188, user.c_str());
+			/* msg 188: Role doesn't exist. */
+			}
+			if (user == NULL_ROLE) {
+				DYN_error_punt(false, 195, user.c_str());
+			/* msg 195: keyword NONE could not be used as SQL role name. */
+			}
+		    break;
+
+		default:
+			DYN_unsupported_verb();
+		}
+	}
+
+	const UserId* revoking_user = tdbb->getAttachment()->att_user;
+	MetaName revoking_as_user_name(revoking_user->usr_user_name);
+	revoking_as_user_name.upper7();
+
+	bool grant_erased = false;
+	bool bad_grantor = false;
+
+	jrd_req* request = CMP_find_request(tdbb, drq_e_grant3, DYN_REQUESTS);
+
+	try {
+		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
+			PRIV IN RDB$USER_PRIVILEGES WITH
+				PRIV.RDB$USER = user.c_str() AND
+				PRIV.RDB$USER_TYPE = user_type
+	
+				if (!DYN_REQUEST(drq_e_grant1))
+					DYN_REQUEST(drq_e_grant1) = request;
+
+				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
+				{
+					ERASE PRIV;
+					grant_erased = true;
+				}
+				else
+				{
+					bad_grantor = true;
+				}
+		END_FOR;
+		if (!DYN_REQUEST(drq_e_grant3)) {
+			DYN_REQUEST(drq_e_grant3) = request;
+		}
+
+		if (!grant_erased)
+		{
+			const char* all = "ALL";
+			if (bad_grantor)
+			{
+				DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() << 
+					all << all << user.c_str());
+				// msg 246: @1 is not grantor of @2 on @3 to @4.
+			}
+		
+			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << all << all << user);
+			// msg 247: Warning: @1 on @2 is not granted to @3.
+		}
+	}
+	catch (const Exception& ex) {
+		ex.stuff_exception(tdbb->tdbb_status_vector);
+		DYN_rundown_request(request, -1);
+		DYN_error_punt(true, 255);
+		/* msg 255: "ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL" */
 	}
 }
 

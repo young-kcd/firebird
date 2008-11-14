@@ -537,6 +537,7 @@
 #define isc_dyn_delete_shadow             35
 #define isc_dyn_grant                     30
 #define isc_dyn_revoke                    31
+#define isc_dyn_revoke_all                246
 #define isc_dyn_def_primary_key           37
 #define isc_dyn_def_foreign_key           38
 #define isc_dyn_def_unique                40
@@ -579,7 +580,7 @@
 
 #define isc_dyn_rel_name                  50
 #define isc_dyn_fld_name                  51
-#define isc_dyn_new_fld_name		  215
+#define isc_dyn_new_fld_name              215
 #define isc_dyn_idx_name                  52
 #define isc_dyn_description               53
 #define isc_dyn_security_class            54
@@ -861,9 +862,7 @@
 /****************************/
 /* Last $dyn value assigned */
 /****************************/
-// 245 is used in GRANTED BY
-
-#define isc_dyn_last_dyn_value            246
+#define isc_dyn_last_dyn_value            247
 
 /******************************************/
 /* Array slice description language (SDL) */

@@ -2125,6 +2125,7 @@ COMMIT WORK;
 ('dyn_locksmith_use_granted', 'grant/revoke', 'dyn.epp', NULL, 8, 252, NULL, 'Only @1 or database owner can use GRANTED BY clause', NULL, NULL);
 ('dyn_dup_exception', 'DYN_define_exception', 'dyn_def.epp', NULL, 8, 253, NULL, 'Exception @1 already exists', NULL, NULL);
 ('dyn_dup_generator', 'DYN_define_generator', 'dyn_def.epp', NULL, 8, 254, NULL, 'Generator @1 already exists', NULL, NULL);
+(NULL, 'revoke_all', 'dyn.epp', NULL, 8, 255, NULL, 'ERASE RDB$USER_PRIVILEGES failed in REVOKE ALL ON ALL', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

@@ -200,6 +200,7 @@ static void clearPermanentField (dsql_rel*, bool);
 static void define_user(CompiledStatement*, UCHAR);
 static void put_grantor(CompiledStatement* statement, const dsql_nod* grantor);
 static void post_607(const Arg::StatusVector& v);
+static void put_user_grant(CompiledStatement* statement, const dsql_nod* user);
 
 enum trigger_type {
 	PRE_STORE_TRIGGER = 1,
@@ -4712,6 +4713,23 @@ static void grant_revoke(CompiledStatement* statement)
 	SSHORT option = 0; // no grant/admin option
 	dsql_nod* ddl_node = statement->req_ddl_node;
 	dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
+	dsql_nod* table = ddl_node->nod_arg[e_grant_table];
+
+	if ((ddl_node->nod_type == nod_revoke) && (!privs) && (!table))	// ALL ON ALL
+	{
+		statement->append_uchar(isc_dyn_begin);
+		dsql_nod* users = ddl_node->nod_arg[e_grant_users];
+		uend = users->nod_arg + users->nod_count;
+		for (uptr = users->nod_arg; uptr < uend; ++uptr)
+		{
+			statement->append_uchar(isc_dyn_revoke_all);
+			put_user_grant(statement, *uptr);
+			statement->append_uchar(isc_dyn_end);
+		}
+		statement->append_uchar(isc_dyn_end);
+
+		return;
+	}
 
 	bool process_grant_role = false;
 	if (privs->nod_arg[0] != NULL) {
@@ -4724,7 +4742,6 @@ static void grant_revoke(CompiledStatement* statement)
 
 	if (!process_grant_role)
 	{
-		dsql_nod* table = ddl_node->nod_arg[e_grant_table];
 		dsql_nod* users = ddl_node->nod_arg[e_grant_users];
 		if (ddl_node->nod_arg[e_grant_grant]) {
 			option = 1; // with grant option
@@ -5332,6 +5349,59 @@ static void modify_index( CompiledStatement* statement)
 }
 
 
+static void put_user_grant(CompiledStatement* statement, const dsql_nod* user)
+{
+/**************************************
+ *
+ *	p u t _ u s e r _ g r a n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Stuff a user/role/obj option in grant/revoke
+ *
+ **************************************/
+	const dsql_str* name = (dsql_str*) user->nod_arg[0];
+
+	switch (user->nod_type) {
+	case nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group
+		statement->append_cstring(isc_dyn_grant_user_group, name->str_data);
+		break;
+
+	case nod_user_name:
+		if (user->nod_count == 2) {
+		   statement->append_cstring(isc_dyn_grant_user_explicit, name->str_data);
+		}
+		else {
+			statement->append_cstring(isc_dyn_grant_user, name->str_data);
+		}
+		break;
+
+	case nod_proc_obj:
+		statement->append_cstring(isc_dyn_grant_proc, name->str_data);
+		break;
+
+	case nod_trig_obj:
+		statement->append_cstring(isc_dyn_grant_trig, name->str_data);
+		break;
+
+	case nod_view_obj:
+		statement->append_cstring(isc_dyn_grant_view, name->str_data);
+		break;
+
+	case nod_role_name:
+		statement->append_cstring(isc_dyn_grant_role, name->str_data);
+		break;
+
+	default:
+		/* CVC: Here we should complain: DYN doesn't check parameters
+		   and it will write trash in rdb$user_privileges. We probably
+		   should complain in most cases when "name" is blank, too. */
+		break;
+	}
+}
+
+
 static void modify_privilege(CompiledStatement* statement,
 							 NOD_TYPE type,
 							 SSHORT option,
@@ -5383,44 +5453,8 @@ static void modify_privilege(CompiledStatement* statement,
 	else {
 		statement->append_cstring(isc_dyn_rel_name, name->str_data);
 	}
-	name = (dsql_str*) user->nod_arg[0];
 
-	switch (user->nod_type) {
-	case nod_user_group:		// GRANT priv ON tbl TO GROUP unix_group
-		statement->append_cstring(isc_dyn_grant_user_group, name->str_data);
-		break;
-
-	case nod_user_name:
-		if (user->nod_count == 2) {
-		   statement->append_cstring(isc_dyn_grant_user_explicit, name->str_data);
-		}
-		else {
-			statement->append_cstring(isc_dyn_grant_user, name->str_data);
-		}
-		break;
-
-	case nod_proc_obj:
-		statement->append_cstring(isc_dyn_grant_proc, name->str_data);
-		break;
-
-	case nod_trig_obj:
-		statement->append_cstring(isc_dyn_grant_trig, name->str_data);
-		break;
-
-	case nod_view_obj:
-		statement->append_cstring(isc_dyn_grant_view, name->str_data);
-		break;
-
-	case nod_role_name:
-		statement->append_cstring(isc_dyn_grant_role, name->str_data);
-		break;
-
-	default:
-		/* CVC: Here we should complain: DYN doesn't check parameters
-		   and it will write trash in rdb$user_privileges. We probably
-		   should complain in most cases when "name" is blank, too. */
-		break;
-	}
+	put_user_grant(statement, user);
 
 	if (field_name) {
 		statement->append_cstring(isc_dyn_fld_name, field_name->str_data);

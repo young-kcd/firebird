@@ -716,6 +716,9 @@ revoke	: REVOKE rev_grant_option privileges ON table_noise simple_table_name
 		| REVOKE rev_admin_option role_name_list FROM role_grantee_list granted_by
 			{ $$ = make_node (nod_revoke, (int) e_grant_count,
 					make_list($3), make_list($5), NULL, $2, $6); }
+		| REVOKE ALL ON ALL FROM non_role_grantee_list
+			{ $$ = make_node (nod_revoke, (int) e_grant_count,
+					NULL, NULL, make_list($6), NULL, NULL); }
 		; 
 
 rev_grant_option : GRANT OPTION FOR

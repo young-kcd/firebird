@@ -214,7 +214,8 @@ const int drq_g_nxt_prc_id	= 163;	// generate next procedure id
 const int drq_g_nxt_xcp_id	= 164;	// generate next exception id
 const int drq_l_xcp_name	= 165;	// lookup exception name
 const int drq_l_gen_name	= 166;	// lookup generator name
-const int drq_MAX			= 167;
+const int drq_e_grant3		= 167;	// revoke all on all
+const int drq_MAX			= 168;
 
 #endif /* JRD_DRQ_H */
 
