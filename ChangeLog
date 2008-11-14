@@ -1,3 +1,24 @@
+2008-11-14 15:15  asfernandes
+
+	* firebird2/src/jrd/jrd.cpp (1.488):
+
+	Misc
+
+2008-11-14 11:19  alexpeshkoff
+
+	* firebird2/src/jrd/dyn.epp (1.135):
+
+	DBA should be able to revoke really everything
+
+2008-11-14 11:00  alexpeshkoff
+
+	* firebird2/src/: dsql/ddl.cpp (1.260), dsql/parse.y (1.295),
+	include/consts_pub.h (1.23), jrd/drq.h (1.26), jrd/dyn.epp (1.134),
+	msgs/facilities2.sql (1.53), msgs/messages2.sql (1.67):
+
+	Implemented feature CORE-2113: Remove all privileges of a user or
+	role. Readme will be ready soon.
+
 2008-11-13 10:42  alexpeshkoff
 
 	* firebird2/src/jrd/ini.epp (1.104):
