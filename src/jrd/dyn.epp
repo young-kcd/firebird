@@ -2125,7 +2125,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 				if (!DYN_REQUEST(drq_e_grant1))
 					DYN_REQUEST(drq_e_grant1) = request;
 
-				if (revoking_as_user_name == PRIV.RDB$GRANTOR)
+				if (revoking_user->locksmith() || revoking_as_user_name == PRIV.RDB$GRANTOR)
 				{
 					ERASE PRIV;
 					grant_erased = true;
