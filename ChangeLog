@@ -1,3 +1,15 @@
+2008-11-15 10:31  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.71):
+
+	Misc.
+
+2008-11-15 10:30  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.158):
+
+	Correction for one of my recent commits.
+
 2008-11-14 15:15  asfernandes
 
 	* firebird2/src/jrd/jrd.cpp (1.488):
