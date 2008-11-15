@@ -200,8 +200,7 @@ void DatabaseSnapshot::SharedMemory::garbageCollect(thread_db* tdbb, bool self)
 	// Temporary lock used to check existence of the given dbb instance
 	AutoPtr<Lock> temp_lock(FB_NEW_RPT(*tdbb->getDefaultPool(), sizeof(FB_GUID)) Lock());
 	temp_lock->lck_type = LCK_instance;
-	temp_lock->lck_owner_handle =
-		LCK_get_owner_handle(tdbb, temp_lock->lck_type);
+	temp_lock->lck_owner_handle = LCK_get_owner_handle(tdbb, temp_lock->lck_type);
 	temp_lock->lck_length = sizeof(FB_GUID);
 	temp_lock->lck_dbb = dbb;
 
@@ -351,8 +350,7 @@ DatabaseSnapshot* DatabaseSnapshot::create(thread_db* tdbb)
 		// Create a database snapshot and store it
 		// in the transaction block
 		MemoryPool& pool = *transaction->tra_pool;
-		transaction->tra_db_snapshot =
-			FB_NEW(pool) DatabaseSnapshot(tdbb, pool);
+		transaction->tra_db_snapshot = FB_NEW(pool) DatabaseSnapshot(tdbb, pool);
 	}
 
 	return transaction->tra_db_snapshot;
