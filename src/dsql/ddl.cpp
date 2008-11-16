@@ -174,13 +174,13 @@ static void modify_privilege(CompiledStatement* statement, NOD_TYPE type, SSHORT
 							 const UCHAR* privs, const dsql_nod* table,
 							 const dsql_nod* user, const dsql_nod* grantor,
 							 const dsql_str* field_name);
-static SCHAR modify_privileges(CompiledStatement*, NOD_TYPE, SSHORT, const dsql_nod*,
+static char modify_privileges(CompiledStatement*, NOD_TYPE, SSHORT, const dsql_nod*,
 	const dsql_nod*, const dsql_nod*, const dsql_nod*);
 static void modify_relation(CompiledStatement*);
 static void modify_udf(CompiledStatement*);
 static void modify_map(CompiledStatement*);
 static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev);
-static void process_role_nm_list(CompiledStatement*, SSHORT, dsql_nod*, dsql_nod*, NOD_TYPE, const dsql_nod*);
+static void process_role_nm_list(CompiledStatement*, SSHORT, const dsql_nod*, const dsql_nod*, NOD_TYPE, const dsql_nod*);
 static void put_descriptor(CompiledStatement*, const dsc*);
 static void put_dtype(CompiledStatement*, const dsql_fld*, bool);
 static void put_field(CompiledStatement*, dsql_fld*, bool);
@@ -578,8 +578,8 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 								"RDB$FIELD_SUB_TYPE",
 								&blob_sub_type))
 			{
-				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) << 
-						  Arg::Gds(isc_dsql_datatype_err) << 
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
+						  Arg::Gds(isc_dsql_datatype_err) <<
 						  Arg::Gds(isc_dsql_blob_type_unknown) << Arg::Str(((dsql_str*) field->fld_sub_type_name)->str_data));
 			}
 			field->fld_sub_type = blob_sub_type;
@@ -1736,7 +1736,7 @@ static void define_domain(CompiledStatement* statement)
 
 	if (fb_utils::implicit_domain(field->fld_name.c_str()))
 	{
-		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) << 
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
 				  Arg::Gds(isc_dsql_implicit_domain_name) << Arg::Str(field->fld_name));
 	}
 
@@ -1970,7 +1970,7 @@ static void define_field(CompiledStatement* statement,
 	{
 		const char* typeName = (field->fld_dtype == dtype_blob ? "BLOB" : "ARRAY");
 
-		post_607(Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) << 
+		post_607(Arg::Gds(isc_dsql_type_not_supp_ext_tab) << Arg::Str(typeName) <<
 				 Arg::Str(relation->rel_name) << Arg::Str(field->fld_name));
 	}
 
@@ -2232,7 +2232,7 @@ static void define_collation(CompiledStatement* statement)
 			{
 				// Specified collation not found
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-204) <<
-						  Arg::Gds(isc_collation_not_found) << Arg::Str(((dsql_str*)coll_from->nod_arg[0])->str_data) << 
+						  Arg::Gds(isc_collation_not_found) << Arg::Str(((dsql_str*)coll_from->nod_arg[0])->str_data) <<
 						  									   Arg::Str(resolved_charset->intlsym_name));
 			}
 
@@ -3084,7 +3084,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		{
 			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 			{
-				ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+				ERRD_post(Arg::Gds(isc_dsql_command_err) <<
 						  Arg::Gds(isc_dsql_incompatible_trigger_type));
 			}
 
@@ -3099,7 +3099,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 		{
 			if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DB)
 			{
-				ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+				ERRD_post(Arg::Gds(isc_dsql_command_err) <<
 						  Arg::Gds(isc_dsql_incompatible_trigger_type));
 			}
 		}
@@ -3125,7 +3125,7 @@ static void define_trigger(CompiledStatement* statement, NOD_TYPE op)
 			{
 				if (type_node && (type_node->getSlong() & TRIGGER_TYPE_MASK) != TRIGGER_TYPE_DML)
 				{
-					ERRD_post(Arg::Gds(isc_dsql_command_err) << 
+					ERRD_post(Arg::Gds(isc_dsql_command_err) <<
 							  Arg::Gds(isc_dsql_incompatible_trigger_type));
 				}
 
@@ -4707,18 +4707,18 @@ static void grant_revoke(CompiledStatement* statement)
  *
  **************************************/
 
-	dsql_nod** uptr;
-	dsql_nod** uend;
+	const dsql_nod* const* uptr;
+	const dsql_nod* const* uend;
 
 	SSHORT option = 0; // no grant/admin option
 	dsql_nod* ddl_node = statement->req_ddl_node;
-	dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
-	dsql_nod* table = ddl_node->nod_arg[e_grant_table];
+	const dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
+	const dsql_nod* table = ddl_node->nod_arg[e_grant_table];
 
 	if ((ddl_node->nod_type == nod_revoke) && (!privs) && (!table))	// ALL ON ALL
 	{
 		statement->append_uchar(isc_dyn_begin);
-		dsql_nod* users = ddl_node->nod_arg[e_grant_users];
+		const dsql_nod* users = ddl_node->nod_arg[e_grant_users];
 		uend = users->nod_arg + users->nod_count;
 		for (uptr = users->nod_arg; uptr < uend; ++uptr)
 		{
@@ -4742,7 +4742,7 @@ static void grant_revoke(CompiledStatement* statement)
 
 	if (!process_grant_role)
 	{
-		dsql_nod* users = ddl_node->nod_arg[e_grant_users];
+		const dsql_nod* users = ddl_node->nod_arg[e_grant_users];
 		if (ddl_node->nod_arg[e_grant_grant]) {
 			option = 1; // with grant option
 		}
@@ -4756,14 +4756,14 @@ static void grant_revoke(CompiledStatement* statement)
 	}
 	else
 	{
-		dsql_nod* role_list = ddl_node->nod_arg[0];
-		dsql_nod* users = ddl_node->nod_arg[1];
+		const dsql_nod* role_list = ddl_node->nod_arg[0];
+		const dsql_nod* users = ddl_node->nod_arg[1];
 		if (ddl_node->nod_arg[3]) {
 			option = 2; // with admin option
 		}
 
-		dsql_nod** role_end = role_list->nod_arg + role_list->nod_count;
-		for (dsql_nod** role_ptr = role_list->nod_arg; role_ptr < role_end; ++role_ptr)
+		const dsql_nod* const* role_end = role_list->nod_arg + role_list->nod_count;
+		for (const dsql_nod* const* role_ptr = role_list->nod_arg; role_ptr < role_end; ++role_ptr)
 		{
 			uend = users->nod_arg + users->nod_count;
 			for (uptr = users->nod_arg; uptr < uend; ++uptr)
@@ -5472,7 +5472,7 @@ static void modify_privilege(CompiledStatement* statement,
 
 
 
-static SCHAR modify_privileges(CompiledStatement* statement,
+static char modify_privileges(CompiledStatement* statement,
 							   NOD_TYPE type,
 							   SSHORT option,
 							   const dsql_nod* privs,
@@ -5487,18 +5487,19 @@ static SCHAR modify_privileges(CompiledStatement* statement,
  **************************************
  *
  * Functional description
- *     Return a SCHAR indicating the privilege to be modified
+ *     Return a char indicating the privilege to be modified
  *
  **************************************/
 
-	SCHAR  privileges[10];
+	char privileges[10];
 	const char* p = 0;
 	char* q;
 	const dsql_nod* fields;
 	const dsql_nod* const* ptr;
 	const dsql_nod* const* end;
 
-	switch (privs->nod_type) {
+	switch (privs->nod_type)
+	{
 	case nod_all:
 		p = "A";
 		break;
@@ -5534,8 +5535,7 @@ static SCHAR modify_privileges(CompiledStatement* statement,
 
 	case nod_list:
 		p = q = privileges;
-		for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr < end;
-			 ptr++)
+		for (ptr = privs->nod_arg, end = ptr + privs->nod_count; ptr < end; ptr++)
 		{
 			*q = modify_privileges(statement, type, option, *ptr, table, user, grantor);
 			if (*q) {
@@ -5725,7 +5725,7 @@ static void modify_udf(CompiledStatement* statement)
 	if (!node->nod_arg[e_mod_udf_entry_pt] && !node->nod_arg[e_mod_udf_module])
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
 													Arg::Num(node->nod_column + obj_name->str_length));
 																		   // + strlen("FUNCTION")
 
@@ -5785,7 +5785,7 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  // Unexpected end of command
-						  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+						  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
 															Arg::Num(node->nod_column));
 			}
 
@@ -5818,7 +5818,7 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 				  // Unexpected end of command
-				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) << 
+				  Arg::Gds(isc_command_end_err2) << Arg::Num(node->nod_line) <<
 													Arg::Num(node->nod_column));
 	}
 
@@ -5853,8 +5853,8 @@ static dsql_par* parameter_reverse_order(dsql_par* parameter, dsql_par* prev)
 
 static void process_role_nm_list(CompiledStatement* statement,
 								 SSHORT option,
-								 dsql_nod* user_ptr,
-								 dsql_nod* role_ptr,
+								 const dsql_nod* user_ptr,
+								 const dsql_nod* role_ptr,
 								 NOD_TYPE type,
 								 const dsql_nod* grantor)
 {
