@@ -127,6 +127,7 @@ public:
 		for (bool found = modules().getFirst(); found; found = modules().getNext())
 			delete modules().current()->second;
 	}
+
 	InitInstance<GenericMap<Pair<Left<string, ICU*> > > > modules;
 	RWLock lock;
 };

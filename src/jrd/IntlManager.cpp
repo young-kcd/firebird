@@ -42,10 +42,32 @@
 #include "../config/ScanDir.h"
 #include "../config/AdminException.h"
 
+using namespace Firebird;
+
+
+namespace 
+{
+	class ModulesMap : public GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >
+	{
+	public:
+		ModulesMap(MemoryPool& p)
+			: GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >(p)
+		{
+		}
+
+		~ModulesMap()
+		{
+			// unload modules
+			for (bool found = getFirst(); found; found = getNext())
+			{
+				ModuleLoader::Module* module = current()->second;
+				delete module;
+			}
+		}
+	};
+}
 
 namespace Jrd {
-
-using namespace Firebird;
 
 
 struct ExternalInfo
@@ -74,8 +96,8 @@ struct ExternalInfo
 };
 
 
-static Firebird::InitInstance<GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > > > modules;
-static Firebird::InitInstance<GenericMap<Pair<Full<string, ExternalInfo> > > > charSetCollations;
+static GlobalPtr<ModulesMap> modules;
+static GlobalPtr<GenericMap<Pair<Full<string, ExternalInfo> > > > charSetCollations;
 
 
 const IntlManager::CharSetDefinition IntlManager::defaultCharSets[] =
@@ -147,8 +169,8 @@ const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] =
 	{"SQL_TEXT", CS_UNICODE_FSS},
 	{"UTF-8", CS_UTF8},
 #ifdef FB_NEW_INTL_ALLOW_NOT_READY
-    {"UTF-16", CS_UTF16},
-    {"UTF-32", CS_UTF32},
+	{"UTF-16", CS_UTF16},
+	{"UTF-32", CS_UTF32},
 #endif	// FB_NEW_INTL_NOT_READY
 	{"SJIS", CS_SJIS},
 	{"EUCJ", CS_EUCJ},
@@ -211,6 +233,7 @@ const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] =
 	{"WIN_1255", CS_WIN1255},
 	{"WIN_1256", CS_WIN1256},
 	{"WIN_1257", CS_WIN1257},
+	{"WIN_1258", CS_WIN1258},
 	{"KSC5601", CS_KSC5601},
 	{"DOS_949", CS_KSC5601},
 	{"WIN_949", CS_KSC5601},
@@ -432,7 +455,7 @@ bool IntlManager::initialize()
 						filename = objModule->getValue("filename", "");
 						configInfo = getConfigInfo(objModule);
 
-						if (!modules().exist(filename))
+						if (!modules->exist(filename))
 						{
 							ModuleLoader::Module* mod =
 								ModuleLoader::loadModule(filename);
@@ -464,7 +487,7 @@ bool IntlManager::initialize()
 									ok = false;
 								}
 								else
-									modules().put(filename, mod);
+									modules->put(filename, mod);
 							}
 							else
 							{
@@ -517,7 +540,7 @@ bool IntlManager::initialize()
 #endif
 
 	for (ObjectsArray<string>::const_iterator name(conflicts.begin()); name != conflicts.end(); ++name)
-		charSetCollations().remove(*name);
+		charSetCollations->remove(*name);
 
 	return ok;
 }
@@ -526,7 +549,7 @@ bool IntlManager::initialize()
 bool IntlManager::collationInstalled(const Firebird::string& collationName,
 	const Firebird::string& charSetName)
 {
-	return charSetCollations().exist(charSetName + ":" + collationName);
+	return charSetCollations->exist(charSetName + ":" + collationName);
 }
 
 
@@ -534,7 +557,7 @@ bool IntlManager::lookupCharSet(const Firebird::string& charSetName, charset* cs
 {
 	ExternalInfo externalInfo;
 
-	if (charSetCollations().get(charSetName + ":" + charSetName, externalInfo))
+	if (charSetCollations->get(charSetName + ":" + charSetName, externalInfo))
 	{
 		pfn_INTL_lookup_charset lookupFunction = NULL;
 
@@ -544,7 +567,7 @@ bool IntlManager::lookupCharSet(const Firebird::string& charSetName, charset* cs
 		{
 			ModuleLoader::Module* module;
 			
-			if (modules().get(externalInfo.moduleName, module) && module)
+			if (modules->get(externalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(CHARSET_ENTRYPOINT), lookupFunction);
 		}
 
@@ -568,8 +591,8 @@ bool IntlManager::lookupCollation(const Firebird::string& collationName,
 	ExternalInfo charSetExternalInfo;
 	ExternalInfo collationExternalInfo;
 
-	if (charSetCollations().get(charSetName + ":" + charSetName, charSetExternalInfo) &&
-		charSetCollations().get(charSetName + ":" + collationName, collationExternalInfo))
+	if (charSetCollations->get(charSetName + ":" + charSetName, charSetExternalInfo) &&
+		charSetCollations->get(charSetName + ":" + collationName, collationExternalInfo))
 	{
 		pfn_INTL_lookup_texttype lookupFunction = NULL;
 
@@ -579,7 +602,7 @@ bool IntlManager::lookupCollation(const Firebird::string& collationName,
 		{
 			ModuleLoader::Module* module;
 			
-			if (modules().get(collationExternalInfo.moduleName, module) && module)
+			if (modules->get(collationExternalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(TEXTTYPE_ENTRYPOINT), lookupFunction);
 		}
 
@@ -605,8 +628,8 @@ bool IntlManager::setupCollationAttributes(
 
 	newSpecificAttributes = specificAttributes;
 
-	if (charSetCollations().get(charSetName + ":" + charSetName, charSetExternalInfo) &&
-		charSetCollations().get(charSetName + ":" + collationName, collationExternalInfo))
+	if (charSetCollations->get(charSetName + ":" + charSetName, charSetExternalInfo) &&
+		charSetCollations->get(charSetName + ":" + collationName, collationExternalInfo))
 	{
 		pfn_INTL_setup_attributes attributesFunction = NULL;
 
@@ -616,7 +639,7 @@ bool IntlManager::setupCollationAttributes(
 		{
 			ModuleLoader::Module* module;
 			
-			if (modules().get(collationExternalInfo.moduleName, module) && module)
+			if (modules->get(collationExternalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(INTL_SETUP_ATTRIBUTES_ENTRYPOINT), attributesFunction);
 		}
 
@@ -695,7 +718,7 @@ bool IntlManager::registerCharSetCollation(const Firebird::string& name, const F
 {
 	ExternalInfo conflict;
 
-	if (charSetCollations().get(name, conflict))
+	if (charSetCollations->get(name, conflict))
 	{
 		gds__log((string("INTL plugin conflict: ") + name + " defined in " +
 			(conflict.moduleName.isEmpty() ? "<builtin>" : conflict.moduleName.c_str()) +
@@ -703,7 +726,7 @@ bool IntlManager::registerCharSetCollation(const Firebird::string& name, const F
 		return false;
 	}
 
-	charSetCollations().put(name, ExternalInfo(filename, externalName, configInfo));
+	charSetCollations->put(name, ExternalInfo(filename, externalName, configInfo));
 	return true;
 }
 
