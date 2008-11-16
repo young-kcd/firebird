@@ -1,3 +1,18 @@
+2008-11-16 14:36  asfernandes
+
+	* firebird2/src/jrd/: IntlManager.cpp (1.29), unicode_util.cpp
+	(1.40):
+
+	Fixed: CORE-2185 - Alias WIN_1258 for WIN1258 CORE-2186 -
+	fbintl.dll never get unloaded in Firebird 2.X Embedded after invoke
+	isc_dsql_execute_immediate for CREATE DATABASE
+
+2008-11-16 09:36  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.261), misc/codes.epp (1.28):
+
+	Misc.
+
 2008-11-15 10:31  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.71):
