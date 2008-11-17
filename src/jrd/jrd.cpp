@@ -5580,9 +5580,13 @@ static void purge_attachment(thread_db*		tdbb,
 		}
 	}
 
+	const bool wasShuttingDown = engineShuttingDown;
 	try
 	{
+		// allow to free resources used by dynamic statements
+		engineShuttingDown = false;
 		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
+		engineShuttingDown = wasShuttingDown;
 
 		const ULONG att_flags = attachment->att_flags;
 		attachment->att_flags |= ATT_shutdown;
@@ -5601,6 +5605,7 @@ static void purge_attachment(thread_db*		tdbb,
 	}
 	catch (const Exception&)
 	{
+		engineShuttingDown = wasShuttingDown;
 		attachment->att_flags |= (ATT_shutdown | ATT_purge_error);
 		throw;
 	}

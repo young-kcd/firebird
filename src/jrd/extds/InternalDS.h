@@ -66,8 +66,6 @@ public:
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd);
 
-	virtual void detach(Jrd::thread_db *tdbb);
-
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 
 	virtual bool isConnected() const { return (m_attachment != 0); }
@@ -84,6 +82,7 @@ public:
 protected:
 	virtual Transaction* doCreateTransaction();
 	virtual Statement* doCreateStatement();
+	virtual void doDetach(Jrd::thread_db *tdbb);
 
 	Jrd::Attachment* m_attachment;
 	bool m_isCurrent;

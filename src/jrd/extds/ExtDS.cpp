@@ -369,6 +369,18 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 		m_provider.releaseConnection(JRD_get_thread_data(), *this);
 }
 
+void Connection::clearTransactions(Jrd::thread_db *tdbb)
+{
+	Transaction **tran_ptr = m_transactions.begin();
+	Transaction **end = m_transactions.end();
+
+	while (m_transactions.getCount())
+	{
+		Transaction *tran = m_transactions[0];
+		tran->rollback(tdbb, false);
+	}
+}
+
 void Connection::clearStatements(thread_db *tdbb)
 {
 	Statement **stmt_ptr = m_statements.begin();
@@ -387,6 +399,19 @@ void Connection::clearStatements(thread_db *tdbb)
 	fb_assert(!m_used_stmts);
 	m_freeStatements = NULL;
 	m_free_stmts = m_used_stmts = 0;
+}
+
+void Connection::detach(thread_db *tdbb)
+{
+	const bool was_deleting = m_deleting;
+	m_deleting = true;
+
+	clearStatements(tdbb);
+	clearTransactions(tdbb);
+
+	m_deleting = was_deleting;
+
+	doDetach(tdbb);
 }
 
 Transaction* Connection::findTransaction(thread_db *tdbb, TraScope traScope) const
@@ -494,11 +519,13 @@ void Transaction::start(thread_db *tdbb, TraScope traScope, TraModes traMode,
 	{
 	case traCommon :
 		this->m_nextTran = tran->tra_ext_common;
+		this->m_jrdTran = tran;
 		tran->tra_ext_common = this;
 		break;
 
 	case traTwoPhase :
 		// join transaction 
+		// this->m_jrdTran = tran;
 		// tran->tra_ext_two_phase = ext_tran;
 		break;
 	}
@@ -523,7 +550,9 @@ void Transaction::commit(thread_db *tdbb, bool retain)
 		m_connection.raise(status, tdbb, "transaction commit");
 	}
 
-	if (!retain) {
+	if (!retain) 
+	{
+		detachFromJrdTran();
 		m_connection.deleteTransaction(this);
 	}
 }
@@ -533,7 +562,9 @@ void Transaction::rollback(thread_db *tdbb, bool retain)
 	ISC_STATUS_ARRAY status = {0};
 	doRollback(status, tdbb, retain);
 
-	if (!retain) {
+	if (!retain) 
+	{
+		detachFromJrdTran();
 		m_connection.deleteTransaction(this);
 	}
 
@@ -581,15 +612,35 @@ Transaction* Transaction::getTransaction(thread_db *tdbb, Connection *conn, TraS
 	return ext_tran;
 }
 
+void Transaction::detachFromJrdTran()
+{
+	if (m_scope != traCommon)
+		return;
+	
+	fb_assert(m_jrdTran);
+	if (!m_jrdTran)
+		return;
+
+	Transaction **tran_ptr = &m_jrdTran->tra_ext_common;
+	for (; *tran_ptr; tran_ptr = &(*tran_ptr)->m_nextTran)
+	{
+		if (*tran_ptr == this)
+		{
+			*tran_ptr = this->m_nextTran;
+			this->m_nextTran = NULL;
+			return;
+		}
+	}
+
+	fb_assert(false);
+}
+
 void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 		bool commit, bool retain, bool force)
 {
-	Transaction** ext_tran = &transaction->tra_ext_common;
-	Transaction* tran = *ext_tran;
-
-	while (tran)
+	while (transaction->tra_ext_common)
 	{
-		Transaction* next = tran->m_nextTran;
+		Transaction* tran = transaction->tra_ext_common;
 		try 
 		{
 			if (commit)
@@ -604,11 +655,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 
 			// ignore rollback error
 			fb_utils::init_status(tdbb->tdbb_status_vector);
-		}
-
-		tran = next;
-		if (!retain) {
-			*ext_tran = tran;
+			tran->detachFromJrdTran();
 		}
 	}
 }

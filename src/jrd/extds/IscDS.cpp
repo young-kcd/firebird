@@ -154,10 +154,8 @@ void IscConnection::attach(thread_db *tdbb, const string &dbName, const string &
 	}
 }
 
-void IscConnection::detach(thread_db *tdbb)
+void IscConnection::doDetach(thread_db *tdbb)
 {
-	clearStatements(tdbb);
-
 	ISC_STATUS_ARRAY status = {0};
 	if (m_handle)
 	{

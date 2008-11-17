@@ -149,7 +149,7 @@ public:
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) = 0;
-	virtual void detach(Jrd::thread_db *tdbb) = 0;
+	virtual void detach(Jrd::thread_db *tdbb);
 
 	int getSqlDialect() const { return m_sqlDialect; }
 
@@ -198,7 +198,11 @@ protected:
 
 	virtual Transaction* doCreateTransaction() = 0;
 	virtual Statement* doCreateStatement() = 0;
+
+	void clearTransactions(Jrd::thread_db *tdbb);
 	void clearStatements(Jrd::thread_db *tdbb);
+
+	virtual void doDetach(Jrd::thread_db *tdbb) = 0;
 
 	// Protection against simultaneous ISC API calls for the same connection 
 	Firebird::Mutex m_mutex;
@@ -253,6 +257,7 @@ public:
 protected:
 	virtual void generateTPB(Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const;
+	void detachFromJrdTran();
 
 	virtual void doStart(ISC_STATUS* status, Jrd::thread_db *tdbb, Firebird::ClumpletWriter &tpb) = 0;
 	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db *tdbb, int info_len, const char* info) = 0;
@@ -263,6 +268,7 @@ protected:
 	Connection &m_connection; 
 	TraScope m_scope;
 	Transaction *m_nextTran;		// next common transaction 
+	Jrd::jrd_tra *m_jrdTran;		// parent JRD transaction
 };
 
 

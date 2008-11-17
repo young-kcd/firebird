@@ -508,7 +508,6 @@ public:
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd);
-	virtual void detach(Jrd::thread_db *tdbb);
 
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 
@@ -519,6 +518,7 @@ public:
 protected:
 	virtual Transaction* doCreateTransaction();
 	virtual Statement* doCreateStatement();
+	virtual void doDetach(Jrd::thread_db *tdbb);
 
 	IscProvider& m_iscProvider;
 	FB_API_HANDLE m_handle;

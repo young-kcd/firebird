@@ -146,11 +146,10 @@ void InternalConnection::attach(thread_db *tdbb, const Firebird::string &dbName,
 					SQL_DIALECT_V6 : SQL_DIALECT_V5;
 }
 
-void InternalConnection::detach(thread_db *tdbb)
+void InternalConnection::doDetach(thread_db *tdbb)
 {
-	clearStatements(tdbb);
-
 	fb_assert(m_attachment);
+
 	if (m_isCurrent)
 	{
 		m_attachment = 0;
@@ -170,9 +169,10 @@ void InternalConnection::detach(thread_db *tdbb)
 		}
 
 		if (status[1]) {
-			raise(status, tdbb, "dettach");
+			raise(status, tdbb, "detach");
 		}
 	}
+
 	fb_assert(!m_attachment)
 }
 
