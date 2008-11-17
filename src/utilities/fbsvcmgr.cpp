@@ -260,6 +260,7 @@ const Switches backupOptions[] = {
 	{"bkp_old_descriptions", putOption, 0, isc_spb_bkp_old_descriptions, 0},
 	{"bkp_non_transportable", putOption, 0, isc_spb_bkp_non_transportable, 0},
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
+	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -278,6 +279,7 @@ const Switches restoreOptions[] = {
 	{"res_replace", putOption, 0, isc_spb_res_replace, 0},
 	{"res_create", putOption, 0, isc_spb_res_create, 0},
 	{"res_use_all_space", putOption, 0, isc_spb_res_use_all_space, 0},
+	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
 	{0, 0, 0, 0, 0}
 };
 

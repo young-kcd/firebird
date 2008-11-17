@@ -343,7 +343,8 @@
 #define isc_spb_bkp_old_descriptions     0x10
 #define isc_spb_bkp_non_transportable    0x20
 #define isc_spb_bkp_convert              0x40
-#define isc_spb_bkp_expand		 0x80
+#define isc_spb_bkp_expand				 0x80
+#define isc_spb_bkp_no_triggers			 0x8000
 
 /********************************************
  * Parameters for isc_action_svc_properties *
