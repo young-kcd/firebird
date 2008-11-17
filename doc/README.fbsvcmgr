@@ -76,4 +76,7 @@ equivalent of -database switch of gsec utility. Notice - in gsec this switch is 
 specify remote server you want to administer. In fbsvcmgr name of server is already given in services 
 manager name (first parameter), therefore this parameter in most cases is not needed.
 
+6. Items added in firebird 2.5:
+- bkp_no_triggers - specify it to avoid executing database-wide triggers.
+
 				Author: Alex Peshkov, <peshkoff at mail.ru>
