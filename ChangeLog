@@ -1,3 +1,28 @@
+2008-11-17 17:34  alexpeshkoff
+
+	* firebird2/doc/README.fbsvcmgr (1.3):
+
+	Implemented CORE-2197: added support for -nodbtriggers switch in
+	gbak into services API
+
+2008-11-17 17:29  alexpeshkoff
+
+	* firebird2/src/: burp/burpswi.h (1.23), include/consts_pub.h
+	(1.24), utilities/fbsvcmgr.cpp (1.12):
+
+	Implemented CORE-2197: added support for -nodbtriggers switch in
+	gbak into services API
+
+2008-11-17 13:30  hvlad
+
+	* firebird2/src/jrd/: jrd.cpp (1.489), extds/ExtDS.cpp (1.19),
+	extds/ExtDS.h (1.13), extds/InternalDS.cpp (1.12),
+	extds/InternalDS.h (1.8), extds/IscDS.cpp (1.14), extds/IscDS.h
+	(1.11):
+
+	Fixed bug CORE-2183 : Error in ExtDS when server shutdown started
+	with opened Execute Statement
+
 2008-11-16 14:36  asfernandes
 
 	* firebird2/src/jrd/: IntlManager.cpp (1.29), unicode_util.cpp
