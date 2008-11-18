@@ -1,3 +1,21 @@
+2008-11-18 11:54  paulbeach
+
+	* firebird2/builds/posix/prefix.darwin_i386 (1.12):
+
+	Darwin issues
+
+2008-11-18 10:53  dimitr
+
+	* firebird2/src/jrd/ods.h (1.46):
+
+	Misc.
+
+2008-11-18 10:29  hvlad
+
+	* firebird2/src/jrd/extds/ExtDS.cpp (1.20):
+
+	Corrections. Thanks to Claudio
+
 2008-11-17 17:34  alexpeshkoff
 
 	* firebird2/doc/README.fbsvcmgr (1.3):
