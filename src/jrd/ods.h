@@ -60,7 +60,7 @@ const USHORT ODS_VERSION8	= 8;		/* new btree structure to support pc semantics *
 const USHORT ODS_VERSION9	= 9;		/* btree leaf pages are always propogated up */
 const USHORT ODS_VERSION10	= 10;		/* V6.0 features. SQL delimited idetifier,
 									SQLDATE, and 64-bit exact numeric type */
-const USHORT ODS_VERSION11	= 11;		/* Firebird 2.0 features */
+const USHORT ODS_VERSION11	= 11;		/* Firebird 2.x features */
 
 /* ODS minor version -- minor versions ARE compatible, but may be
    increasingly functional.  Add new minor versions, but leave previous
@@ -103,7 +103,7 @@ const USHORT ODS_CURRENT10		= 1;
 
 const USHORT ODS_CURRENT11_0	= 0;		/* Firebird 2.0 features */
 const USHORT ODS_CURRENT11_1	= 1;		/* Firebird 2.1 features */
-const USHORT ODS_CURRENT11_2	= 2;		/* Firebird 2.? features */
+const USHORT ODS_CURRENT11_2	= 2;		/* Firebird 2.5 features */
 const USHORT ODS_CURRENT11		= 2;
 
 /* useful ODS macros. These are currently used to flag the version of the
