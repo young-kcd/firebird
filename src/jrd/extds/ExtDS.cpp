@@ -371,9 +371,6 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 
 void Connection::clearTransactions(Jrd::thread_db *tdbb)
 {
-	Transaction **tran_ptr = m_transactions.begin();
-	Transaction **end = m_transactions.end();
-
 	while (m_transactions.getCount())
 	{
 		Transaction *tran = m_transactions[0];
@@ -406,10 +403,15 @@ void Connection::detach(thread_db *tdbb)
 	const bool was_deleting = m_deleting;
 	m_deleting = true;
 
-	clearStatements(tdbb);
-	clearTransactions(tdbb);
-
-	m_deleting = was_deleting;
+	try {
+		clearStatements(tdbb);
+		clearTransactions(tdbb);
+		m_deleting = was_deleting;
+	} 
+	catch(...) {
+		m_deleting = was_deleting;
+		throw;
+	}
 
 	doDetach(tdbb);
 }
