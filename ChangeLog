@@ -1,3 +1,21 @@
+2008-11-19 09:07  alexpeshkoff
+
+	* firebird2/src/utilities/fbsvcmgr.cpp (1.13):
+
+	Restore always runs without DB triggers - thanks to Adriano
+
+2008-11-19 05:25  robocop
+
+	* firebird2/src/: dsql/ddl.cpp (1.263), jrd/IntlManager.cpp (1.30):
+
+	Misc.
+
+2008-11-19 02:04  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.262):
+
+	Misc
+
 2008-11-18 11:54  paulbeach
 
 	* firebird2/builds/posix/prefix.darwin_i386 (1.12):
