@@ -4715,7 +4715,7 @@ static void grant_revoke(CompiledStatement* statement)
 	const dsql_nod* privs = ddl_node->nod_arg[e_grant_privs];
 	const dsql_nod* table = ddl_node->nod_arg[e_grant_table];
 
-	if ((ddl_node->nod_type == nod_revoke) && (!privs) && (!table))	// ALL ON ALL
+	if ((ddl_node->nod_type == nod_revoke) && !privs && !table)	// ALL ON ALL
 	{
 		statement->append_uchar(isc_dyn_begin);
 		const dsql_nod* users = ddl_node->nod_arg[e_grant_users];
