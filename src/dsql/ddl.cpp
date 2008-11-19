@@ -186,7 +186,7 @@ static void put_dtype(CompiledStatement*, const dsql_fld*, bool);
 static void put_field(CompiledStatement*, dsql_fld*, bool);
 static void put_local_variable(CompiledStatement*, dsql_var*, dsql_nod*, const dsql_str*);
 static void put_local_variables(CompiledStatement*, dsql_nod*, SSHORT);
-static void put_msg_field(CompiledStatement*, dsql_fld*);
+static void put_msg_field(CompiledStatement*, const dsql_fld*);
 static dsql_nod* replace_field_names(dsql_nod*, dsql_nod*, dsql_nod*, bool, const char*);
 static void reset_context_stack(CompiledStatement*);
 static void save_field(CompiledStatement*, const SCHAR*);
@@ -752,9 +752,7 @@ void DDL_resolve_intl_type2(CompiledStatement* statement,
 
 
 
-static void assign_field_length (
-	dsql_fld* field,
-	USHORT  bytes_per_char)
+static void assign_field_length(dsql_fld* field, USHORT bytes_per_char)
 {
 /**************************************
  *
@@ -774,8 +772,7 @@ static void assign_field_length (
 
 	if (field->fld_character_length)
 	{
-		ULONG field_length = (ULONG) bytes_per_char *
-			field->fld_character_length;
+		ULONG field_length = (ULONG) bytes_per_char * field->fld_character_length;
 
 		if (field->fld_dtype == dtype_varying) {
 			field_length += sizeof(USHORT);
@@ -809,7 +806,8 @@ static bool is_array_or_blob(CompiledStatement* statement, const dsql_nod* node)
  *
  **************************************/
 
-	switch (node->nod_type) {
+	switch (node->nod_type)
+	{
 	case nod_agg_count:
 	//case nod_count:
 	case nod_gen_id:
@@ -975,21 +973,18 @@ static void check_constraint(CompiledStatement* statement,
 
 	// create the INSERT trigger
 
-	element->nod_arg[e_cnstr_type] =
-		MAKE_const_slong(PRE_STORE_TRIGGER);
+	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_STORE_TRIGGER);
 	define_constraint_trigger(statement, element);
 
 	// create the UPDATE trigger
 
-	element->nod_arg[e_cnstr_type] =
-		MAKE_const_slong(PRE_MODIFY_TRIGGER);
+	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_MODIFY_TRIGGER);
 	define_constraint_trigger(statement, element);
 
 	// create the DELETE trigger, if required
 	if (delete_trigger_required)
 	{
-		element->nod_arg[e_cnstr_type] =
-			MAKE_const_slong(PRE_ERASE_TRIGGER);
+		element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_ERASE_TRIGGER);
 		define_constraint_trigger(statement, element);
 	}
 
@@ -1052,8 +1047,7 @@ static void create_view_triggers(CompiledStatement* statement, dsql_nod* element
 
 	// create the UPDATE trigger
 
-	element->nod_arg[e_cnstr_type] =
-		MAKE_const_slong(PRE_MODIFY_TRIGGER);
+	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_MODIFY_TRIGGER);
 
 	dsql_nod* base_and_node = 0;
 	dsql_nod* base_relation = 0;
@@ -1070,8 +1064,7 @@ static void create_view_triggers(CompiledStatement* statement, dsql_nod* element
 
 	// create the INSERT trigger
 
-	element->nod_arg[e_cnstr_type] =
-		MAKE_const_slong(PRE_STORE_TRIGGER);
+	element->nod_arg[e_cnstr_type] = MAKE_const_slong(PRE_STORE_TRIGGER);
 	define_view_trigger(statement, element, NULL, items);
 
 	statement->append_uchar(isc_dyn_end);	// For triggers definition
@@ -1284,8 +1277,7 @@ static void define_constraint_trigger(CompiledStatement* statement, dsql_nod* no
 
 		dsql_nod* actions = node->nod_arg[e_cnstr_actions];
 		dsql_nod** ptr = actions->nod_arg;
-		for (const dsql_nod* const* const end = ptr + actions->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + actions->nod_count; ptr < end; ptr++)
 		{
 			GEN_statement(statement, PASS1_statement(statement, *ptr));
 		}
@@ -1339,8 +1331,7 @@ statement->append_number(isc_dyn_rel_sql_protection, 1);
 
 	if (elements) {
 		const dsql_nod* const* ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
 		{
 			const dsql_nod* element = *ptr;
 
@@ -1362,20 +1353,19 @@ statement->append_number(isc_dyn_rel_sql_protection, 1);
 	if (elements)
 	{
 		const dsql_nod* const* ptr = elements->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elements->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ptr++)
 		{
 			const dsql_nod* element = *ptr;
 
-			switch (element->nod_type) {
+			switch (element->nod_type)
+			{
 			case nod_difference_file:
 				statement->append_cstring(isc_dyn_def_difference,
 					((dsql_str*)element->nod_arg[0])->str_data);
 				break;
 			case nod_file_desc:
 				file = (dsql_fil*) element->nod_arg[0];
-				statement->append_cstring(isc_dyn_def_file,
-							file->fil_name->str_data);
+				statement->append_cstring(isc_dyn_def_file, file->fil_name->str_data);
 
 				start = MAX(start, file->fil_start);
 				statement->append_file_start(start);
@@ -1516,9 +1506,6 @@ static void define_set_default_trg(	CompiledStatement*    statement,
  *      referential integrity) along with its blr
  *
  *****************************************************/
-
-	UCHAR default_val[BLOB_BUFFER_SIZE];
-
 	if (element->nod_type != nod_foreign) {
 		return;
 	}
@@ -1529,6 +1516,8 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 												for_rel_name,
 												for_columns);
 
+
+	UCHAR default_val[BLOB_BUFFER_SIZE];
 	USHORT num_fields = 0;
 	const dsql_nod* const* for_key_flds = for_columns->nod_arg;
 	const dsql_nod* ddl_node = statement->req_ddl_node;
@@ -1564,8 +1553,7 @@ static void define_set_default_trg(	CompiledStatement*    statement,
 
 		const dsql_nod* elem = ddl_node->nod_arg[e_drl_elements];
 		const dsql_nod* const* ptr = elem->nod_arg;
-		for (const dsql_nod* const* const end = ptr + elem->nod_count;
-			ptr < end; ++ptr)
+		for (const dsql_nod* const* const end = ptr + elem->nod_count; ptr < end; ++ptr)
 		{
 			elem = *ptr;
 			if (elem->nod_type != nod_def_field) {
@@ -1685,7 +1673,7 @@ static void define_dimensions( CompiledStatement* statement, const dsql_fld* fie
  *
  **************************************/
 
-	dsql_nod* elements = field->fld_ranges;
+	const dsql_nod* elements = field->fld_ranges;
 	const USHORT dims = elements->nod_count / 2;
 
 	if (dims > MAX_ARRAY_DIMENSIONS)
@@ -1697,8 +1685,7 @@ static void define_dimensions( CompiledStatement* statement, const dsql_fld* fie
 
 	SSHORT position = 0;
 	const dsql_nod* const* ptr = elements->nod_arg;
-	for (const dsql_nod* const* const end = ptr + elements->nod_count;
-		ptr < end; ++ptr, ++position)
+	for (const dsql_nod* const* const end = ptr + elements->nod_count; ptr < end; ++ptr, ++position)
 	{
 		statement->append_number(isc_dyn_def_dimension, position);
 		const dsql_nod* element = *ptr++;
@@ -1766,7 +1753,7 @@ static void define_domain(CompiledStatement* statement)
 	node = element->nod_arg[e_dom_constraint];
 	if (node)
 	{
-		dsql_nod** ptr     = node->nod_arg;
+		dsql_nod** ptr = node->nod_arg;
 		const dsql_nod* const* const end_ptr = ptr + node->nod_count;
 		for (; ptr < end_ptr; ++ptr)
 		{
@@ -1799,7 +1786,7 @@ static void define_domain(CompiledStatement* statement)
 					if (string)
 					{
 						fb_assert(string->str_length <= MAX_USHORT);
-						statement->append_string(	isc_dyn_fld_validation_source,
+						statement->append_string(isc_dyn_fld_validation_source,
 												string->str_data,
 												string->str_length);
 					}
@@ -2066,15 +2053,15 @@ static void define_field(CompiledStatement* statement,
 
 						statement->append_string(isc_dyn_fld_name, field->fld_name);
 						statement->append_uchar(isc_dyn_end);
-						break;
 					}
+					break;
 				case nod_foreign:
 					{
 						const char* constraint_name = string ? string->str_data : 0;
 						statement->append_cstring(isc_dyn_rel_constraint, constraint_name);
 						foreign_key(statement, node1, constraint_name);
-						break;
 					}
+					break;
 				case nod_def_constraint:
 					statement->append_cstring(isc_dyn_rel_constraint,
 									string ? string->str_data : 0);
@@ -2251,8 +2238,7 @@ static void define_collation(CompiledStatement* statement)
 
 	if (coll_attributes) {
 		const dsql_nod* const* ptr = coll_attributes->nod_arg;
-		for (const dsql_nod* const* const end = ptr + coll_attributes->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + coll_attributes->nod_count; ptr < end; ptr++)
 		{
 			const dsql_nod* attribute = *ptr;
 
@@ -2384,28 +2370,24 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 
 	case nod_def_procedure:
 	case nod_redef_procedure:
-		statement->append_cstring(isc_dyn_def_procedure,
-					procedure_name->str_data);
+		statement->append_cstring(isc_dyn_def_procedure, procedure_name->str_data);
 		statement->append_number(isc_dyn_rel_sql_protection, 1);
 		break;
 
 	default: // op == nod_mod_procedure
 		{
-			statement->append_cstring(isc_dyn_mod_procedure,
-						procedure_name->str_data);
+			statement->append_cstring(isc_dyn_mod_procedure, procedure_name->str_data);
 			const dsql_prc* procedure = METD_get_procedure(statement, procedure_name);
 			if (procedure)
 			{
 				const dsql_fld* field;
-				for (field = procedure->prc_inputs; field;
-					 field = field->fld_next)
+				for (field = procedure->prc_inputs; field; field = field->fld_next)
 				{
 					statement->append_string(isc_dyn_delete_parameter,
 								field->fld_name);
 					statement->append_uchar(isc_dyn_end);
 				}
-				for (field = procedure->prc_outputs; field;
-					 field = field->fld_next)
+				for (field = procedure->prc_outputs; field; field = field->fld_next)
 				{
 					statement->append_string(isc_dyn_delete_parameter,
 								field->fld_name);
@@ -2424,7 +2406,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 		ULONG j = find_start_of_body(source);
 		if (j < source->str_length)
 		{
-			statement->append_string(	isc_dyn_prc_source,
+			statement->append_string(isc_dyn_prc_source,
 									source->str_data + j,
 									source->str_length - j);
 		}
@@ -2446,8 +2428,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	{
 		SSHORT position = 0;
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
@@ -2503,8 +2484,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	{
 		SSHORT position = 0;
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			ptr < end; ++ptr)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ++ptr)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_fld* field = (dsql_fld*) parameter->nod_arg[e_dfl_field];
@@ -2545,12 +2525,11 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 		statement->append_ushort(2 * inputs);
 		parameters = procedure_node->nod_arg[e_prc_inputs];
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			dsql_fld* field = variable->var_field;
+			const dsql_nod* parameter = *ptr;
+			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
+			const dsql_fld* field = variable->var_field;
 			put_msg_field(statement, field);
 		}
 	}
@@ -2561,12 +2540,11 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	{
 		parameters = procedure_node->nod_arg[e_prc_outputs];
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
-			dsql_nod* parameter = *ptr;
-			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
-			dsql_fld* field = variable->var_field;
+			const dsql_nod* parameter = *ptr;
+			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
+			const dsql_fld* field = variable->var_field;
 			put_msg_field(statement, field);
 		}
 	}
@@ -2587,8 +2565,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	{
 		parameters = procedure_node->nod_arg[e_prc_inputs];
 		const dsql_nod* const* ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			const dsql_nod* parameter = *ptr;
 			const dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
@@ -2612,8 +2589,7 @@ static void define_procedure(CompiledStatement* statement, NOD_TYPE op)
 	{
 		parameters = procedure_node->nod_arg[e_prc_outputs];
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
@@ -2767,8 +2743,7 @@ void DDL_gen_block(CompiledStatement* statement, dsql_nod* node)
 	{
 		parameters = node->nod_arg[e_exe_blk_outputs];
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			 ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
 			dsql_var* variable = (dsql_var*) parameter->nod_arg[e_var_variable];
@@ -5231,8 +5206,7 @@ static void modify_domain( CompiledStatement* statement)
 
 	dsql_nod* ops = ddl_node->nod_arg[e_alt_dom_ops];
 	dsql_nod** ptr = ops->nod_arg;
-	for (const dsql_nod* const* const end = ptr + ops->nod_count;
-		ptr < end; ptr++)
+	for (const dsql_nod* const* const end = ptr + ops->nod_count; ptr < end; ptr++)
 	{
 		dsql_nod* element = *ptr;
 		switch (element->nod_type)
@@ -5963,8 +5937,7 @@ static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool 
 #ifdef DEV_BUILD
 // Check if the field describes a known datatype
 
-	if (field->fld_dtype > FB_NELEM(blr_dtypes) ||
-		!blr_dtypes[field->fld_dtype])
+	if (field->fld_dtype > FB_NELEM(blr_dtypes) || !blr_dtypes[field->fld_dtype])
 	{
 		SCHAR buffer[100];
 
@@ -6053,8 +6026,7 @@ static void put_dtype(CompiledStatement* statement, const dsql_fld* field, bool 
 
 	default:
 		statement->append_uchar(blr_dtypes[field->fld_dtype]);
-		if (DTYPE_IS_EXACT(field->fld_dtype) ||
-			(dtype_quad == field->fld_dtype))
+		if (DTYPE_IS_EXACT(field->fld_dtype) || (dtype_quad == field->fld_dtype))
 		{
 			statement->append_uchar(field->fld_scale);
 		}
@@ -6110,14 +6082,11 @@ static void put_field( CompiledStatement* statement, dsql_fld* field, bool udf_f
 			if (!field->fld_seg_length) {
 				field->fld_seg_length = DEFAULT_BLOB_SEGMENT_SIZE;
 			}
-			statement->append_number(isc_dyn_fld_segment_length,
-					   field->fld_seg_length);
+			statement->append_number(isc_dyn_fld_segment_length, field->fld_seg_length);
 		}
 		if (field->fld_sub_type == isc_blob_text) {
-			statement->append_number(isc_dyn_fld_character_set,
-				field->fld_character_set_id);
-			statement->append_number(isc_dyn_fld_collation,
-				field->fld_collation_id);
+			statement->append_number(isc_dyn_fld_character_set, field->fld_character_set_id);
+			statement->append_number(isc_dyn_fld_collation, field->fld_collation_id);
 		}
 	}
 	else if (field->fld_dtype <= dtype_any_text)
@@ -6175,10 +6144,10 @@ static void put_local_variable( CompiledStatement* statement, dsql_var* variable
 	statement->append_ushort(variable->var_variable_number);
 	DDL_resolve_intl_type(statement, field, collation_name);
 
-	const USHORT dtype = field->fld_dtype;
+	//const USHORT dtype = field->fld_dtype;
 
 	put_dtype(statement, field, true);
-	field->fld_dtype = dtype;
+	//field->fld_dtype = dtype;
 
 	// Check for a default value, borrowed from define_domain
 	dsql_nod* node = (host_param) ? host_param->nod_arg[e_dfl_default] : 0;
@@ -6208,8 +6177,7 @@ static void put_local_variable( CompiledStatement* statement, dsql_var* variable
 		statement->append_ushort(variable->var_variable_number);
 	}
 
-	statement->put_debug_variable(variable->var_variable_number,
-		variable->var_name);
+	statement->put_debug_variable(variable->var_variable_number, variable->var_name);
 
 	++statement->req_hidden_vars_number;
 }
@@ -6232,8 +6200,7 @@ static void put_local_variables(CompiledStatement* statement, dsql_nod* paramete
 	if (parameters)
 	{
 		dsql_nod** ptr = parameters->nod_arg;
-		for (const dsql_nod* const* const end = ptr + parameters->nod_count;
-			ptr < end; ptr++)
+		for (const dsql_nod* const* const end = ptr + parameters->nod_count; ptr < end; ptr++)
 		{
 			dsql_nod* parameter = *ptr;
 
@@ -6280,7 +6247,7 @@ static void put_local_variables(CompiledStatement* statement, dsql_nod* paramete
 }
 
 
-static void put_msg_field( CompiledStatement* statement, dsql_fld* field)
+static void put_msg_field( CompiledStatement* statement, const dsql_fld* field)
 {
 /**************************************
  *
@@ -6293,10 +6260,10 @@ static void put_msg_field( CompiledStatement* statement, dsql_fld* field)
  *
  **************************************/
 
-	const USHORT dtype = field->fld_dtype;
+	//const USHORT dtype = field->fld_dtype;
 
 	put_dtype(statement, field, true);
-	field->fld_dtype = dtype;
+	//field->fld_dtype = dtype;
 
 	// add slot for null flag (parameter2)
 	statement->append_uchar(blr_short);
@@ -6356,8 +6323,8 @@ static dsql_nod* replace_field_names(dsql_nod*		input,
 				if (replace_fields) {
 					replace_name = (dsql_str*) (*replace)->nod_arg[e_fln_name];
 				}
-				dsql_nod* field_node = *search;
-				dsql_fld* field = (dsql_fld*) field_node->nod_arg[e_fld_field];
+				const dsql_nod* field_node = *search;
+				const dsql_fld* field = (dsql_fld*) field_node->nod_arg[e_fld_field];
 
 				if (field->fld_name == field_name->str_data)
 				{
@@ -6502,7 +6469,7 @@ static void set_statistics( CompiledStatement* statement)
  *	Alter an index/.. statistics
  *
  **************************************/
-	dsql_nod* ddl_node = statement->req_ddl_node;
+	const dsql_nod* ddl_node = statement->req_ddl_node;
 	const dsql_str* index_name = (dsql_str*) ddl_node->nod_arg[e_stat_name];
 	statement->append_cstring(isc_dyn_mod_idx, index_name->str_data);
 	statement->append_uchar(isc_dyn_idx_statistic);
@@ -6732,7 +6699,7 @@ static void modify_field(CompiledStatement*	statement,
 			dsql_nod* domain_node = element->nod_arg[e_mod_fld_type_dom_name];
 			if (domain_node)
 			{
-				dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
+				const dsql_nod* node1 = domain_node->nod_arg[e_dom_name];
 				const dsql_str* domain_name = (dsql_str*) node1->nod_arg[e_fln_name];
 				statement->append_cstring(isc_dyn_fld_source, domain_name->str_data);
 
@@ -6814,8 +6781,7 @@ static void set_nod_value_attributes( dsql_nod* node, const dsql_fld* field)
 				fb_assert(field->fld_scale <= MAX_SCHAR);
 				child->nod_desc.dsc_scale = (SCHAR) field->fld_scale;
 			}
-			else if ((nod_constant != child->nod_type) &&
-					 (child->nod_count > 0))
+			else if ((nod_constant != child->nod_type) && (child->nod_count > 0))
 			{
 				/* A nod_constant can have nod_arg entries which are not really
 				   pointers to other nodes, but rather integer values, so

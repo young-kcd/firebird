@@ -50,7 +50,7 @@ namespace
 	class ModulesMap : public GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >
 	{
 	public:
-		ModulesMap(MemoryPool& p)
+		explicit ModulesMap(MemoryPool& p)
 			: GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >(p)
 		{
 		}
