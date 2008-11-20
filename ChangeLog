@@ -1,3 +1,42 @@
+2008-11-20 18:29  alexpeshkoff
+
+	* firebird2/: configure.in (1.300),
+	builds/posix/Makefile.in.client.util (1.57),
+	builds/posix/Makefile.in.embed.util (1.42),
+	builds/posix/make.shared.variables (1.103),
+	src/common/classes/ClumpletReader.cpp (1.31),
+	src/include/consts_pub.h (1.25), src/include/gen/codetext.h (1.97),
+	src/include/gen/iberror.h (1.101), src/include/gen/msgs.h (1.125),
+	src/include/gen/sql_code.h (1.103), src/include/gen/sql_state.h
+	(1.30), src/msgs/facilities2.sql (1.54), src/msgs/messages2.sql
+	(1.68), src/msgs/system_errors2.sql (1.46),
+	src/utilities/fbsvcmgr.cpp (1.14), src/utilities/nbackup.cpp
+	(1.69), lang_helpers/gds_codes.ftn (1.88),
+	lang_helpers/gds_codes.pas (1.88):
+
+	Implemented CORE-1758: nBackup support in Services API.
+
+2008-11-20 18:23  alexpeshkoff
+
+	* firebird2/src/jrd/: constants.h (1.56), svc.cpp (1.245), svc.h
+	(1.68):
+
+	cleanup
+
+2008-11-20 18:16  asfernandes
+
+	* firebird2/src/jrd/dyn_mod.epp (1.109):
+
+	Fixed CORE-2202 - RDB$VIEW_RELATIONS is not cleaned when altering a
+	view
+
+2008-11-20 13:12  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.159):
+
+	Fixed CORE-2200: Extremely slow executing a cross join of 3 tables
+	in Firebird 2.x.
+
 2008-11-19 09:07  alexpeshkoff
 
 	* firebird2/src/utilities/fbsvcmgr.cpp (1.13):
