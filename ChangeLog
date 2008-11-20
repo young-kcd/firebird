@@ -1,3 +1,10 @@
+2008-11-20 13:16  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.104.2.10):
+
+	Fixed CORE-2200: Extremely slow executing a cross join of 3 tables
+	in Firebird 2.x.
+
 2008-11-10 11:14  alexpeshkoff
 
 	* firebird2/src/jrd/execute_statement.cpp (1.14.4.10):
