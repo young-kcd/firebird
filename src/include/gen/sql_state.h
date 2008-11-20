@@ -670,6 +670,7 @@ static const struct {
 	{335544967, "42000"}, // 647 sysf_argmustbe_nonneg 
 	{335544968, "42000"}, // 648 sysf_binuuid_mustbe_str 
 	{335544969, "42000"}, // 649 sysf_binuuid_wrongsize 
+	{335544970, "HY000"}, // 650 missing_required_spb 
 	{335740929, "00000"}, //   1 gfix_db_name 
 	{335740930, "00000"}, //   2 gfix_invalid_sw 
 	{335740932, "00000"}, //   4 gfix_incmp_sw 

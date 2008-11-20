@@ -309,6 +309,19 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		case isc_action_svc_get_ib_log:
 			invalid_structure("unknown parameter for getting log");
 			break;
+		case isc_action_svc_nbak:
+		case isc_action_svc_nrest:
+			switch (tag) 
+			{
+			case isc_spb_nbk_file:
+			case isc_spb_dbname:
+				return StringSpb;
+			case isc_spb_nbk_level:
+			case isc_spb_options:
+				return IntSpb;
+			}
+			invalid_structure("unknown parameter for nbackup");
+			break;
 		}
 		invalid_structure("wrong spb state");
 		break;

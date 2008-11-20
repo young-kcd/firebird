@@ -140,12 +140,19 @@ ALICE_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(ALICE_Sources)
 
 #________________________________________________________________________
 #
-# alice
+# burp
 
 BURP_Files=burp.cpp backup.epp restore.epp mvol.cpp misc.cpp canonical.cpp
 BURP_Sources = $(addprefix burp/, $(BURP_Files))
 BURP_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(BURP_Sources))))
 
+#________________________________________________________________________
+#
+# nbackup
+
+NBACKUP_SERVER_Files= nbackup.cpp
+NBACKUP_SERVER_Sources = $(addprefix utilities/, $(NBACKUP_SERVER_Files))
+NBACKUP_SERVER_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(NBACKUP_SERVER_Sources))))
 
 #________________________________________________________________________
 #
@@ -306,6 +313,7 @@ LIBFBEMBED_Objects =$(OS_SPECIFIC_Objects) \
                 $(FBCONFIG_Objects) \
                 $(BURP_Objects) \
                 $(ALICE_Objects) \
+				$(NBACKUP_SERVER_Objects) \
 				$(UTIL_Objects)
 
 # Objects differences for server (super) and embedded (classic) libraries 

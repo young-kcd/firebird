@@ -1350,6 +1350,8 @@ C --
       PARAMETER (GDS__sysf_binuuid_mustbe_str          = 335544968)
       INTEGER*4 GDS__sysf_binuuid_wrongsize          
       PARAMETER (GDS__sysf_binuuid_wrongsize           = 335544969)
+      INTEGER*4 GDS__missing_required_spb            
+      PARAMETER (GDS__missing_required_spb             = 335544970)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

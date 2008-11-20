@@ -939,6 +939,7 @@ mkdir -p temp/boot/utilities/gstat
 mkdir -p temp/boot/utilities/guard
 mkdir -p temp/boot/utilities/ibmgr
 mkdir -p temp/boot/utilities/install
+mkdir -p temp/boot/utilities/nbackup
 mkdir -p temp/boot/utilities/rebuild
 mkdir -p temp/boot/vulcan
 
@@ -976,6 +977,7 @@ mkdir -p temp/std/utilities/gstat
 mkdir -p temp/std/utilities/guard
 mkdir -p temp/std/utilities/ibmgr
 mkdir -p temp/std/utilities/install
+mkdir -p temp/std/utilities/nbackup
 mkdir -p temp/std/utilities/rebuild
 mkdir -p temp/std/vulcan
 
@@ -1013,6 +1015,7 @@ mkdir -p temp/superclient/utilities/gstat
 mkdir -p temp/superclient/utilities/guard
 mkdir -p temp/superclient/utilities/ibmgr
 mkdir -p temp/superclient/utilities/install
+mkdir -p temp/superclient/utilities/nbackup
 mkdir -p temp/superclient/utilities/rebuild
 mkdir -p temp/superclient/vulcan
 
@@ -1050,6 +1053,7 @@ mkdir -p temp/superserver/utilities/gstat
 mkdir -p temp/superserver/utilities/guard
 mkdir -p temp/superserver/utilities/ibmgr
 mkdir -p temp/superserver/utilities/install
+mkdir -p temp/superserver/utilities/nbackup
 mkdir -p temp/superserver/utilities/rebuild
 mkdir -p temp/superserver/vulcan
 

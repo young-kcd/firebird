@@ -670,6 +670,7 @@ static const struct {
 	{335544967, -833}, /* 647 sysf_argmustbe_nonneg */
 	{335544968, -833}, /* 648 sysf_binuuid_mustbe_str */
 	{335544969, -833}, /* 649 sysf_binuuid_wrongsize */
+	{335544970, -902}, /* 650 missing_required_spb */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

@@ -682,6 +682,7 @@ const
 	gds_sysf_argmustbe_nonneg            = 335544967;
 	gds_sysf_binuuid_mustbe_str          = 335544968;
 	gds_sysf_binuuid_wrongsize           = 335544969;
+	gds_missing_required_spb             = 335544970;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

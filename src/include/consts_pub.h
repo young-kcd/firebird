@@ -281,6 +281,8 @@
 #define isc_action_svc_db_stats	      11	/* Retrieves database statistics */
 #define isc_action_svc_get_ib_log     12	/* Retrieves the InterBase log file from the server */
 #define isc_action_svc_get_fb_log     12	/* Retrieves the Firebird log file from the server */
+#define isc_action_svc_nbak           20	/* Incremental nbackup */
+#define isc_action_svc_nrest          21	/* Incremental database restore */
 
 /*****************************
  * Service information items *
@@ -478,6 +480,13 @@
 
 /* Not available in Firebird 1.5 */
 
+/***************************************
+ * Parameters for isc_action_svc_nbak  *
+ ***************************************/
+
+#define isc_spb_nbk_level			5
+#define isc_spb_nbk_file			6
+#define isc_spb_nbk_no_triggers		0x01
 
 /**********************************************/
 /* Dynamic Data Definition Language operators */

@@ -349,6 +349,20 @@ const Switches addmodOptions[] = {
 	{0, 0, 0, 0, 0}
 };
 
+const Switches nbackOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
+	{"nbk_level", putNumericArgument, 0, isc_spb_nbk_level, 0},
+	{"nbk_no_triggers", putOption, 0, isc_spb_nbk_no_triggers, 0},
+	{0, 0, 0, 0, 0}
+};
+
+const Switches nrestOptions[] = {
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"nbk_file", putStringArgument, 0, isc_spb_nbk_file, 0},
+	{0, 0, 0, 0, 0}
+};
+
 const Switches actionSwitch[] = {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_line},
 	{"action_restore", putSingleTag, restoreOptions, isc_action_svc_restore, isc_info_svc_line},
@@ -360,6 +374,8 @@ const Switches actionSwitch[] = {
 	{"action_add_user", putSingleTag, addmodOptions, isc_action_svc_add_user, 0},
 	{"action_delete_user", putSingleTag, dispdelOptions, isc_action_svc_delete_user, 0},
 	{"action_modify_user", putSingleTag, addmodOptions, isc_action_svc_modify_user, 0},
+	{"action_nbak", putSingleTag, nbackOptions, isc_action_svc_nbak, 0},
+	{"action_nrest", putSingleTag, nrestOptions, isc_action_svc_nrest, 0},
 	{0, 0, 0, 0, 0}
 };
 
