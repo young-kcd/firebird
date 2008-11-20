@@ -2158,6 +2158,18 @@ void DYN_modify_view( Global* gbl, const UCHAR** ptr)
 				REL.RDB$VIEW_BLR.NULL = TRUE;
 				REL.RDB$VIEW_SOURCE.NULL = TRUE;
 				REL.RDB$SECURITY_CLASS.NULL = TRUE;
+
+				jrd_req* request2 = NULL;
+
+				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
+					VR IN RDB$VIEW_RELATIONS
+					WITH VR.RDB$VIEW_NAME EQ view_name.c_str()
+				{
+					ERASE VR;
+				}
+				END_FOR;
+
+				CMP_release(tdbb, request2);
 			}
 
 			UCHAR verb;
