@@ -85,7 +85,7 @@ static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
 static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_record(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
+static bool fetch_record(thread_db*, RecordSource*, USHORT, bool, RSE_GET_MODE);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *,
@@ -94,7 +94,7 @@ static UCHAR *get_sort(thread_db*, RecordSource*, RSE_GET_MODE);
 static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static void unget_sort(thread_db*, RecordSource*, UCHAR *);
 #else
-static bool fetch_record(thread_db*, RecordSource*, SSHORT);
+static bool fetch_record(thread_db*, RecordSource*, USHORT, bool);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *);
@@ -706,7 +706,7 @@ static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
 }
 
 
-static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
+static bool fetch_record(thread_db* tdbb, RecordSource* rsb, USHORT n, bool first_record
 #ifdef SCROLLABLE_CURSORS
 							, RSE_GET_MODE mode
 #endif
@@ -728,6 +728,8 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
  **************************************/
 	SET_TDBB(tdbb);
 
+	fb_assert(rsb->rsb_type == rsb_cross);
+
 	RecordSource* sub_rsb = rsb->rsb_arg[n];
 
 	if (get_record(tdbb, sub_rsb, NULL
@@ -741,14 +743,23 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
 		return true;
 	}
 
-/* we have exhausted this stream, so close it; if there is
-   another candidate record from the n-1 streams to the left,
-   then reopen the stream and start again from the beginning */
+	// We're attemtping to fetch the first record from this stream.
+	// In this case, no record means an empty stream, so it makes no sense
+	// to continue as the cross join cannot return any rows anyway.
+
+	if (first_record)
+	{
+		return false;
+	}
+
+	// We have exhausted this stream, so close it; if there is
+	// another candidate record from the n-1 streams to the left,
+	// then reopen the stream and start again from the beginning.
 
 	while (true)
 	{
 		RSE_close(tdbb, sub_rsb);
-		if (n == 0 || !fetch_record(tdbb, rsb, n - 1
+		if (n == 0 || !fetch_record(tdbb, rsb, n - 1, false
 #ifdef SCROLLABLE_CURSORS
 									, mode
 #endif
@@ -794,6 +805,8 @@ static bool fetch_left(thread_db* tdbb, RecordSource* rsb, IRSB impure, RSE_GET_
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	fb_assert(rsb->rsb_type == rsb_left_cross);
 
 /* loop through the outer join in either the forward or the backward direction;
    the various modes indicate what state of the join we are in */
@@ -2335,11 +2348,9 @@ static bool get_record(thread_db*	tdbb,
 
 	case rsb_cross:
 		if (impure->irsb_flags & irsb_first) {
-			SSHORT i;
-
-			for (i = 0; i < (SSHORT) rsb->rsb_count; i++) {
+			for (USHORT i = 0; i < rsb->rsb_count; i++) {
 				RSE_open(tdbb, rsb->rsb_arg[i]);
-				if (!fetch_record(tdbb, rsb, i
+				if (!fetch_record(tdbb, rsb, i, true
 #ifdef SCROLLABLE_CURSORS
 								  , mode
 #endif
@@ -2357,7 +2368,7 @@ static bool get_record(thread_db*	tdbb,
 		   each of the leftmost records in the join */
 
 		if (rsb->rsb_flags & rsb_project) {
-			if (!fetch_record(tdbb, rsb, 0
+			if (!fetch_record(tdbb, rsb, 0, false
 #ifdef SCROLLABLE_CURSORS
 							  , mode
 #endif
@@ -2373,7 +2384,7 @@ static bool get_record(thread_db*	tdbb,
 		else if (rsb->rsb_count == 0)
 			return false;
 
-		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1
+		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1, false
 #ifdef SCROLLABLE_CURSORS
 							   , mode
 #endif
