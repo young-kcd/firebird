@@ -71,7 +71,7 @@ const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in *
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
 const USHORT isc_action_min				= 1;
-const USHORT isc_action_max				= 14;
+const USHORT isc_action_max				= 22;
 
 /* Range definitions for service actions.  Any action outside of
    this range is not supported */
@@ -149,6 +149,9 @@ private:
 	// Service must have private destructor, called from finish
 	// when both (server and client) threads are finished
 	~Service();
+	// Detach self from global services list
+	void	removeFromAllServices();
+	// The only service, implemented internally
 	void	readFbLog();
 	// Create argv, argc and svc_parsed_sw
 	void	parseSwitches();

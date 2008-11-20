@@ -59,6 +59,7 @@
 #include "../jrd/enc_proto.h"
 #include "../utilities/gsec/gsecswi.h"
 #include "../utilities/gstat/dbaswi.h"
+#include "../utilities/nbackup/nbkswi.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -117,6 +118,7 @@ const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
+const char* const SPB_DBNAME = "isc_spb_dbname";
 
 namespace {
 
@@ -565,14 +567,17 @@ void test_cmd(USHORT, SCHAR *, TEXT **);
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
 THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
+#include "../utilities/nbackup/nbk_proto.h"
 
 #define MAIN_GBAK		BURP_main
 #define MAIN_GFIX		ALICE_main
 #define MAIN_GSTAT		main_gstat
+#define MAIN_NBAK		NBACKUP_main
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
 #define MAIN_GSTAT		NULL
+#define MAIN_NBAK		NULL
 #endif
 
 #if !defined(EMBEDDED) && !defined(BOOT_BUILD)
@@ -626,6 +631,8 @@ static const serv_entry services[] =
 	{ isc_action_svc_lock_stats, "Lock Stats", NULL, TEST_THREAD },
 	{ isc_action_svc_db_stats, "Database Stats", NULL, MAIN_GSTAT },
 	{ isc_action_svc_get_fb_log, "Get Log File", NULL, Service::readFbLog },
+	{ isc_action_svc_nbak, "Incremental Backup Database", NULL, MAIN_NBAK },
+	{ isc_action_svc_nrest, "Incremental Restore Database", NULL, MAIN_NBAK },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
@@ -671,140 +678,150 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		allServices->add(this);
 	}
 
-	// If the service name begins with a slash, ignore it.
-	if (*service_name == '/' || *service_name == '\\') {
-		service_name++;
-	}
-
-	// Find the service by looking for an exact match.
-	const string svcname(service_name);
-	const serv_entry* serv;
-	for (serv = services; serv->serv_name; serv++) {
-		if (svcname == serv->serv_name)
-			break;
-	}
-
-	if (!serv->serv_name) {
-		status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
-	}
-
-	// Process the service parameter block.
-	ClumpletReader spb(ClumpletReader::SpbAttach, spb_data, spb_length);
-	Options options(spb);
-
-	// Perhaps checkout the user in the security database.
-	SecurityDatabase::InitHolder siHolder;
-	USHORT user_flag;
-	if (!strcmp(serv->serv_name, "anonymous")) {
-		user_flag = SVC_user_none;
-	}
-	else {
-		// If we have embedded service connection, let's check for unix OS auth
-		if ((!options.spb_trusted_login.hasData()) && 
-			(!options.spb_remote) && 
-			(!options.spb_user_name.hasData())) 
-		{
-			if (ISC_get_user(&options.spb_trusted_login, NULL, NULL, NULL)) {
-				options.spb_trusted_login = SYSDBA_USER_NAME;
-			}
+	// Since this moment we should remove this service from allServices in case of error thrown
+	try
+	{
+		// If the service name begins with a slash, ignore it.
+		if (*service_name == '/' || *service_name == '\\') {
+			service_name++;
 		}
 
-		if (options.spb_trusted_login.hasData()) {
-			options.spb_user_name = options.spb_trusted_login;
+		// Find the service by looking for an exact match.
+		const string svcname(service_name);
+		const serv_entry* serv;
+		for (serv = services; serv->serv_name; serv++) {
+			if (svcname == serv->serv_name)
+				break;
+		}
+
+		if (!serv->serv_name) {
+			status_exception::raise(Arg::Gds(isc_service_att_err) << 
+									Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
+		}
+
+		// Process the service parameter block.
+		ClumpletReader spb(ClumpletReader::SpbAttach, spb_data, spb_length);
+		Options options(spb);
+
+		// Perhaps checkout the user in the security database.
+		SecurityDatabase::InitHolder siHolder;
+		USHORT user_flag;
+		if (!strcmp(serv->serv_name, "anonymous")) {
+			user_flag = SVC_user_none;
 		}
 		else {
-			// If we have embedded service connection, let's check for environment
-			if (!options.spb_remote) {
-				if (!options.spb_user_name.hasData()) {
-					fb_utils::readenv(ISC_USER, options.spb_user_name);
-				}
-				if (!options.spb_password.hasData()) {
-					fb_utils::readenv(ISC_PASSWORD, options.spb_password);
+			// If we have embedded service connection, let's check for unix OS auth
+			if ((!options.spb_trusted_login.hasData()) && 
+				(!options.spb_remote) && 
+				(!options.spb_user_name.hasData())) 
+			{
+				if (ISC_get_user(&options.spb_trusted_login, NULL, NULL, NULL)) {
+					options.spb_trusted_login = SYSDBA_USER_NAME;
 				}
 			}
+
+			if (options.spb_trusted_login.hasData()) {
+				options.spb_user_name = options.spb_trusted_login;
+			}
+			else {
+				// If we have embedded service connection, let's check for environment
+				if (!options.spb_remote) {
+					if (!options.spb_user_name.hasData()) {
+						fb_utils::readenv(ISC_USER, options.spb_user_name);
+					}
+					if (!options.spb_password.hasData()) {
+						fb_utils::readenv(ISC_PASSWORD, options.spb_password);
+					}
+				}
 				
-			if (!options.spb_user_name.hasData()) {
-				// user name and password are required while
-				// attaching to the services manager
-				status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
+				if (!options.spb_user_name.hasData()) {
+					// user name and password are required while
+					// attaching to the services manager
+					status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svcnouser));
+				}
+
+				string name; // unused after retrieved
+				int id, group, node_id;
+
+				const string remote = options.spb_network_protocol +
+							(options.spb_network_protocol.isEmpty() || 
+							 options.spb_remote_address.isEmpty() ? "" : "/") +
+										  options.spb_remote_address;
+
+				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
+						                     options.spb_password.nullStr(), 
+											 options.spb_password_enc.nullStr(),
+											 &id, &group, &node_id, remote);
+				svc_uses_security_database = true;
 			}
 
-			string name; // unused after retrieved
-			int id, group, node_id;
+			if (options.spb_user_name.length() > USERNAME_LENGTH) {
+				status_exception::raise(Arg::Gds(isc_long_login) <<
+					Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
+			}
 
-			const string remote = options.spb_network_protocol +
-						(options.spb_network_protocol.isEmpty() || 
-						 options.spb_remote_address.isEmpty() ? "" : "/") +
-									  options.spb_remote_address;
-
-			SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
-					                     options.spb_password.nullStr(), 
-										 options.spb_password_enc.nullStr(),
-										 &id, &group, &node_id, remote);
-			svc_uses_security_database = true;
+			// Check that the validated user has the authority to access this service
+			string uName(options.spb_user_name);
+			uName.upper();
+			if ((uName != SYSDBA_USER_NAME) && !options.spb_trusted_role) {
+				user_flag = SVC_user_any;
+			}
+			else {
+				user_flag = SVC_user_dba | SVC_user_any;
+			}
 		}
 
-		if (options.spb_user_name.length() > USERNAME_LENGTH) {
-			status_exception::raise(Arg::Gds(isc_long_login) <<
-				Arg::Num(options.spb_user_name.length()) << Arg::Num(USERNAME_LENGTH));
-		}
-
-		// Check that the validated user has the authority to access this service
-		string uName(options.spb_user_name);
-		uName.upper();
-		if ((uName != SYSDBA_USER_NAME) && !options.spb_trusted_role) {
-			user_flag = SVC_user_any;
-		}
-		else {
-			user_flag = SVC_user_dba | SVC_user_any;
-		}
-	}
-
-	// move service switches in
-	string switches;
-	if (serv->serv_std_switches)
-		switches = serv->serv_std_switches;
-	if (options.spb_command_line.hasData() && serv->serv_std_switches)
-		switches += ' ';
-	switches += options.spb_command_line;
+		// move service switches in
+		string switches;
+		if (serv->serv_std_switches)
+			switches = serv->serv_std_switches;
+		if (options.spb_command_line.hasData() && serv->serv_std_switches)
+			switches += ' ';
+		switches += options.spb_command_line;
 	
-	svc_flags = switches.hasData() ? SVC_cmd_line : 0;
-	svc_perm_sw = switches;
-	svc_user_flag = user_flag;
-	svc_service = serv;
-	svc_spb_version = options.spb_version;
-	svc_username = options.spb_user_name;
-	svc_trusted_login = options.spb_trusted_login;
-	svc_trusted_role = options.spb_trusted_role;
-	svc_address_path = options.spb_address_path;
+		svc_flags = switches.hasData() ? SVC_cmd_line : 0;
+		svc_perm_sw = switches;
+		svc_user_flag = user_flag;
+		svc_service = serv;
+		svc_spb_version = options.spb_version;
+		svc_username = options.spb_user_name;
+		svc_trusted_login = options.spb_trusted_login;
+		svc_trusted_role = options.spb_trusted_role;
+		svc_address_path = options.spb_address_path;
 
-	// The password will be issued to the service threads on NT since
-	// there is no OS authentication.  If the password is not yet
-	// encrypted, then encrypt it before saving it (since there is no
-	// decrypt function).
-	if (options.spb_password_enc.hasData()) 
-	{
-		svc_enc_password = options.spb_password_enc;
-	}
-	else if (options.spb_password.hasData()) 
-	{
-		svc_enc_password.resize(MAX_PASSWORD_LENGTH + 2);
-		ENC_crypt(svc_enc_password.begin(), svc_enc_password.length(), 
-				  options.spb_password.c_str(), PASSWORD_SALT);
-		svc_enc_password.recalculate_length();
-		svc_enc_password.erase(0, 2);
-	}
+		// The password will be issued to the service threads on NT since
+		// there is no OS authentication.  If the password is not yet
+		// encrypted, then encrypt it before saving it (since there is no
+		// decrypt function).
+		if (options.spb_password_enc.hasData()) 
+		{
+			svc_enc_password = options.spb_password_enc;
+		}
+		else if (options.spb_password.hasData()) 
+		{
+			svc_enc_password.resize(MAX_PASSWORD_LENGTH + 2);
+			ENC_crypt(svc_enc_password.begin(), svc_enc_password.length(), 
+					  options.spb_password.c_str(), PASSWORD_SALT);
+			svc_enc_password.recalculate_length();
+			svc_enc_password.erase(0, 2);
+		}
 
-	// If an executable is defined for the service, try to fork a new thread.
-	// Only do this if we are working with a version 1 service
-	if (serv->serv_thd && options.spb_version == isc_spb_version1)
-	{
-		start(serv->serv_thd);
-	}
+		// If an executable is defined for the service, try to fork a new thread.
+		// Only do this if we are working with a version 1 service
+		if (serv->serv_thd && options.spb_version == isc_spb_version1)
+		{
+			start(serv->serv_thd);
+		}
 
-	if (svc_uses_security_database)
+		if (svc_uses_security_database)
+		{
+			siHolder.clear();
+		}
+	}
+	catch (const Exception&)
 	{
-		siHolder.clear();
+		removeFromAllServices();
+		throw;
 	}
 }
 
@@ -850,6 +867,12 @@ Service::~Service()
 		svc_handle = 0;
 	}
 
+	removeFromAllServices();
+}
+
+
+void Service::removeFromAllServices()
+{
 	MutexLockGuard guard(svc_mutex);
 	AllServices& all(allServices);
 
@@ -1794,6 +1817,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
  */
 	if (svc_id == isc_action_svc_backup ||
 		svc_id == isc_action_svc_restore ||
+		svc_id == isc_action_svc_nbak ||
+		svc_id == isc_action_svc_nrest ||
 		svc_id == isc_action_svc_repair ||
 		svc_id == isc_action_svc_add_user ||
 		svc_id == isc_action_svc_delete_user ||
@@ -1807,25 +1832,30 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		{
 			if (svc_trusted_login.hasData()) 
 			{
-				svc_switches += " -";
-				svc_switches += TRUSTED_USER_SWITCH;
-				svc_switches += ' ';
-				svc_switches += svc_username;
+				string auth = "-";
+				auth += TRUSTED_USER_SWITCH;
+				auth += ' ';
+				auth += svc_username;
+				auth += ' ';
 				if (svc_trusted_role)
 				{
-					svc_switches += " -";
+					auth += "-";
 					svc_switches += TRUSTED_ROLE_SWITCH;
+					auth += ' ';
 				}
+				svc_switches = auth + svc_switches;
 			}
 			else
 			{
 				// No need repeating user validation in service worker thread
 				if (svc_username.hasData())
 				{
-					svc_switches += " -";
-					svc_switches += TRUSTED_USER_SWITCH;
-					svc_switches += ' ';
-					svc_switches += svc_username;
+					string auth = "-";
+					auth += TRUSTED_USER_SWITCH;
+					auth += ' ';
+					auth += svc_username;
+					auth += ' ';
+					svc_switches = auth + svc_switches;
 				}
 			}
 		}
@@ -2127,12 +2157,51 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 	string burp_database, burp_backup;
 	int burp_options = 0;
+
+	string nbk_database, nbk_file;
+	int nbk_level = -1;
+
 	bool found = false;
 
 	do 
 	{
 		switch (svc_action) 
 		{
+		case isc_action_svc_nbak:
+		case isc_action_svc_nrest:
+			found = true;
+
+			switch (spb.getClumpTag()) 
+			{
+			case isc_spb_dbname:
+				if (nbk_database.hasData())
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_DBNAME)).raise();
+				}
+				get_action_svc_string(spb, nbk_database);
+				break;
+
+			case isc_spb_nbk_level:
+				nbk_level = spb.getInt();
+				break;
+
+			case isc_spb_nbk_file:
+				if (nbk_file.hasData() && svc_action != isc_action_svc_nrest)
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("isc_spb_nbk_file")).raise();
+				}
+				get_action_svc_string(spb, nbk_file);
+				break;
+
+			case isc_spb_options:
+				if (!get_action_svc_bitmask(spb, nbackup_in_sw_table, switches))
+				{
+					return false;
+				}
+				break;
+			}
+			break;
+
 		case isc_action_svc_delete_user:
 		case isc_action_svc_display_user:
 			if (!found)
@@ -2363,7 +2432,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		spb.moveNext();
 	} while (! spb.isEof());
 
-	// postfixes for burp
+	// postfixes for burp & nbackup
 	switch (svc_action)
 	{
 	case isc_action_svc_backup:
@@ -2377,6 +2446,34 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			switches += "-CREATE_DATABASE ";
 		}
 		switches += (burp_backup + burp_database);
+		break;
+
+	case isc_action_svc_nbak:
+	case isc_action_svc_nrest:
+		if (nbk_database.isEmpty())
+		{
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str(SPB_DBNAME)).raise();
+		}
+		if (nbk_file.isEmpty())
+		{
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_file")).raise();
+		}
+		if (!get_action_svc_parameter(svc_action, nbackup_action_in_sw_table, switches))
+		{
+			return false;
+		}
+		if (svc_action == isc_action_svc_nbak)
+		{
+			if (nbk_level < 0)
+			{
+				(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_nbk_level")).raise();
+			}
+			string temp;
+			temp.printf("%d ", nbk_level);
+			switches += temp;
+		}
+		switches += nbk_database;
+		switches += nbk_file;
 		break;
 	}
 

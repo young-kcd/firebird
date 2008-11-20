@@ -264,11 +264,6 @@ const int DB_TRIGGER_MAX			= 5;
 // is specified by the client application
 #define USERNAME_SWITCH "USER"
 #define PASSWORD_SWITCH "PASSWORD"
-#ifdef SERVICE_THREAD
-#define SERVICE_THD_PARAM "-svc_thd"
-#else
-#define SERVICE_THD_PARAM "-svc"
-#endif
 #define TRUSTED_USER_SWITCH "TRUSTED_SVC"
 #define TRUSTED_ROLE_SWITCH "TRUSTED_ROLE"
 
