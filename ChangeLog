@@ -1,3 +1,10 @@
+2008-11-21 19:43  dimitr
+
+	* firebird2/src/jrd/rse.cpp (1.104.2.11):
+
+	Rolled back my yesterday's fix as totally wrong. Solution is to be
+	re-considered.
+
 2008-11-20 13:16  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.104.2.10):
