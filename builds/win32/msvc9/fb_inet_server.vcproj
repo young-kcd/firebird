@@ -342,6 +342,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\utilities\nbackup.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\utilities\nbackup\nbkMain.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
 				>
 			</File>
