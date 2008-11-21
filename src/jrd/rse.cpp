@@ -86,7 +86,7 @@ static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
 static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
 #ifdef SCROLLABLE_CURSORS
-static bool fetch_record(thread_db*, RecordSource*, SSHORT, bool, RSE_GET_MODE);
+static bool fetch_record(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT, RSE_GET_MODE);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *,
@@ -95,7 +95,7 @@ static UCHAR *get_sort(thread_db*, RecordSource*, RSE_GET_MODE);
 static void resynch_merge(thread_db*, RecordSource*, irsb_mrg*, RSE_GET_MODE);
 static void unget_sort(thread_db*, RecordSource*, UCHAR *);
 #else
-static bool fetch_record(thread_db*, RecordSource*, SSHORT, bool);
+static bool fetch_record(thread_db*, RecordSource*, SSHORT);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*);
 static bool get_merge_fetch(thread_db*, RecordSource*, SSHORT);
 static SLONG get_merge_record(thread_db*, RecordSource*, irsb_mrg::irsb_mrg_repeat *);
@@ -686,7 +686,7 @@ static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
 }
 
 
-static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n, bool first_record
+static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n
 #ifdef SCROLLABLE_CURSORS
 							, RSE_GET_MODE mode
 #endif
@@ -721,15 +721,6 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n, bool firs
 		return true;
 	}
 
-	// We're attemtping to fetch the first record from this stream.
-	// In this case, no record means an empty stream, so it makes no sense
-	// to continue as the cross join cannot return any rows anyway.
-
-	if (first_record)
-	{
-		return false;
-	}
-
 	// We have exhausted this stream, so close it; if there is
 	// another candidate record from the n-1 streams to the left,
 	// then reopen the stream and start again from the beginning.
@@ -737,7 +728,7 @@ static bool fetch_record(thread_db* tdbb, RecordSource* rsb, SSHORT n, bool firs
 	while (true)
 	{
 		RSE_close(tdbb, sub_rsb);
-		if (n == 0 || !fetch_record(tdbb, rsb, n - 1, false
+		if (n == 0 || !fetch_record(tdbb, rsb, n - 1
 #ifdef SCROLLABLE_CURSORS
 									, mode
 #endif
@@ -2296,7 +2287,7 @@ static bool get_record(thread_db*	tdbb,
 
 			for (i = 0; i < (SSHORT) rsb->rsb_count; i++) {
 				RSE_open(tdbb, rsb->rsb_arg[i]);
-				if (!fetch_record(tdbb, rsb, i, true
+				if (!fetch_record(tdbb, rsb, i
 #ifdef SCROLLABLE_CURSORS
 								  , mode
 #endif
@@ -2312,7 +2303,7 @@ static bool get_record(thread_db*	tdbb,
 		   each of the leftmost records in the join */
 
 		if (rsb->rsb_flags & rsb_project) {
-			if (!fetch_record(tdbb, rsb, 0, false
+			if (!fetch_record(tdbb, rsb, 0
 #ifdef SCROLLABLE_CURSORS
 							  , mode
 #endif
@@ -2320,7 +2311,7 @@ static bool get_record(thread_db*	tdbb,
 				return false;
 		}
 
-		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1, false
+		else if (!fetch_record(tdbb, rsb, rsb->rsb_count - 1
 #ifdef SCROLLABLE_CURSORS
 							   , mode
 #endif
