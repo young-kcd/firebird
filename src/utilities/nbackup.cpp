@@ -1093,7 +1093,6 @@ void nbackup(UtilSvc* uSvc)
 	bool run_db_triggers = true;
 	NBackup::BackupFiles backup_files;
 	int level;
-	int filecount;
 	bool print_size = false;
 	string trustedUser;
 	bool trustedRole;
