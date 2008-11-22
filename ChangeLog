@@ -1,3 +1,28 @@
+2008-11-22 18:54  asfernandes
+
+	* firebird2/src/misc/intl.sql (1.6):
+
+	Do not register character sets with id=127 (as per comment in
+	CORE-1927)
+
+2008-11-22 15:26  asfernandes
+
+	* firebird2/src/dsql/ddl.cpp (1.264):
+
+	Misc
+
+2008-11-22 14:40  asfernandes
+
+	* firebird2/builds/win32/msvc8/nbackup.vcproj (1.6):
+
+	Fix nbackup build (msvc8)
+
+2008-11-22 08:51  robocop
+
+	* firebird2/src/utilities/nbackup.cpp (1.71):
+
+	Misc.
+
 2008-11-21 19:38  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.160):
