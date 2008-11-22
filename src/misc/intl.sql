@@ -35,7 +35,11 @@ begin
 		into :temp_id do
 	begin
 		if (temp_id = id) then
+		begin
 			id = id - 1;
+			if (id = 127) then
+				id = 126;
+		end
 		else
 			break;
 	end
