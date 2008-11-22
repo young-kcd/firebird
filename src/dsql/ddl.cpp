@@ -1506,6 +1506,7 @@ static void define_set_default_trg(	CompiledStatement*    statement,
  *      referential integrity) along with its blr
  *
  *****************************************************/
+
 	if (element->nod_type != nod_foreign) {
 		return;
 	}
