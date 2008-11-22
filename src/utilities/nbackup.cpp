@@ -249,7 +249,7 @@ private:
 	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
-	void pr_error(const ISC_STATUS* status, const char* operation);
+	void pr_error(const ISC_STATUS* status, const char* operation) const;
 
 	void internal_lock_database();
 	void get_database_size();
@@ -463,7 +463,7 @@ void NBackup::fixup_database()
  *    Print the status, the SQLCODE, and exit.
  *    Also, indicate which operation the error occured on.
  */
-void NBackup::pr_error (const ISC_STATUS* status, const char* operation)
+void NBackup::pr_error (const ISC_STATUS* status, const char* operation) const
 {
 	if (uSvc->isService())
     	status_exception::raise(status);
@@ -895,7 +895,7 @@ void NBackup::restore_database(const BackupFiles& files)
 {
 	// We set this flag when database file is in inconsistent state
 	bool delete_database = false; 
-	int filecount = files.getCount();
+	const int filecount = files.getCount();
 #ifndef WIN_NT
 	create_database();
 	delete_database = true;
@@ -928,7 +928,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						delete[] page_buffer;
 						return;
 					}
-					// Never reach this posint when run as service
+					// Never reaches this point when run as service
 					try {
 #ifdef WIN_NT
 						if (curLevel)
@@ -1080,7 +1080,7 @@ enum NbOperation {nbNone, nbLock, nbUnlock, nbFixup, nbBackup, nbRestore};
 void nbackup(UtilSvc* uSvc)
 {
 	UtilSvc::ArgvType& argv = uSvc->argv;
-	const int argc = uSvc->argv.getCount();
+	const int argc = argv.getCount();
 
 #if defined DEV_BUILD && !defined WIN_NT
 	if (!uSvc->isService())
@@ -1106,7 +1106,7 @@ void nbackup(UtilSvc* uSvc)
 
 		if (uSvc->isService())
 		{
-			PathName sw = &argv[itr][1];
+			const PathName sw = &argv[itr][1];
 			if (sw == TRUSTED_USER_SWITCH)
 			{
 				if (++itr >= argc)
