@@ -2868,8 +2868,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, UCHAR*	
 		innerStream[i]->stream = streams[i + 1];
 	}
 
-	// Cardinalities are calculated in OPT_compile()
-	//calculateCardinalities();
+	calculateCardinalities();
 	calculateStreamInfo();
 }
 
@@ -2910,11 +2909,13 @@ void OptimizerInnerJoin::calculateCardinalities()
 	for (int i = 0; i < innerStreams.getCount(); i++) {		
 		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
 		fb_assert(csb_tail);
-		jrd_rel* relation = csb_tail->csb_relation;
-		fb_assert(relation);
-		const Format* format = CMP_format(tdbb, csb, (USHORT)innerStreams[i]->stream);
-		fb_assert(format);
-		csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
+		if (!csb_tail->csb_cardinality) {
+			jrd_rel* relation = csb_tail->csb_relation;
+			fb_assert(relation);
+			const Format* format = CMP_format(tdbb, csb, (USHORT)innerStreams[i]->stream);
+			fb_assert(format);
+			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
+		}
 	}
 
 }
