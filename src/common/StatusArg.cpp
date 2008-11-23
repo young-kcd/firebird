@@ -31,6 +31,7 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
+#include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
 
@@ -38,84 +39,67 @@ namespace Firebird {
 
 namespace Arg {
 
+Base::Base(ISC_STATUS k, ISC_STATUS c) : 
+	implementation(FB_NEW(*getDefaultMemoryPool()) ImplBase(k, c)) { }
 
-void StatusVector::clear() throw()
+StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : Base::ImplBase(0, 0)
+{
+	clear();
+	// special case - empty initialized status vector, no warnings
+	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
+	{
+		append(s, FB_NELEM(m_status_vector) - 1);
+	}
+}
+
+StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) : 
+	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
+{ 
+	operator<<(*(static_cast<Base*>(this)));
+}
+
+StatusVector::StatusVector(const ISC_STATUS* s) : 
+	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s)) { }
+
+StatusVector::StatusVector() : 
+	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(0, 0)) { }
+
+void StatusVector::ImplStatusVector::clear() throw()
 {
 	m_length = 0;
 	m_warning = 0;
 	m_status_vector[0] = isc_arg_end;
 }
 
-StatusVector::StatusVector(const ISC_STATUS* s)  
-  : Base(0, 0), 
-	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
+void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 {
-	clear();
-	// special case - empty initialized status vector, no warnings
-	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
-	{
-		append(s, ISC_STATUS_LENGTH - 1);
-	}
-}
-
-StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS v) 
-  : Base(k, v),
-	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
-{ 
-	clear();
-	operator<<(*(static_cast<Base*>(this)));
-}
-
-StatusVector::StatusVector() 
-  : Base(0, 0),
-	m_status_vector(FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[ISC_STATUS_LENGTH])
-{ 
-	clear();
-}
-
-StatusVector::~StatusVector()
-{
-	delete m_status_vector;
-}
-
-StatusVector& StatusVector::operator=(const StatusVector& v) throw()
-{
-	memcpy(m_status_vector, v.m_status_vector, sizeof(ISC_STATUS) * ISC_STATUS_LENGTH);
-	m_length = v.m_length;
-	m_warning = v.m_warning;
-
-	return *this;
-}
-
-void StatusVector::append(const StatusVector& v) throw()
-{
-	StatusVector newVector;
+	ImplStatusVector newVector(getKind(), getCode());
 
 	if (newVector.appendErrors(this))
 	{
-		if (newVector.appendErrors(&v))
+		if (newVector.appendErrors(v.implementation))
 		{
 			if (newVector.appendWarnings(this))
-				newVector.appendWarnings(&v);
+				newVector.appendWarnings(v.implementation);
 		}
 	}
 	
 	*this = newVector;
 }
 
-bool StatusVector::appendErrors(const StatusVector* v) throw()
+bool StatusVector::ImplStatusVector::appendErrors(const ImplBase* const v) throw()
 {
-	return append(v->m_status_vector, v->m_warning ? v->m_warning : v->m_length);
+	return append(v->value(), v->firstWarning() ? v->firstWarning() : v->length());
 }	
 
-bool StatusVector::appendWarnings(const StatusVector* v) throw()
+bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) throw()
 {
-	if (! v->m_warning)
+	if (! v->firstWarning())
 		return true;
-	return append(v->m_status_vector + v->m_warning, v->m_length - v->m_warning);
+	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
 }	
 
-bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
+bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
 	int copied = 0;
 
@@ -126,7 +110,7 @@ bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
 			break;
 		}
 		i += (from[i] == isc_arg_cstring ? 3 : 2);
-		if (m_length + i > ISC_STATUS_LENGTH - 1)
+		if (m_length + i > FB_NELEM(m_status_vector) - 1)
 		{
 			break;
 		}
@@ -140,42 +124,37 @@ bool StatusVector::append(const ISC_STATUS* from, const int count) throw()
 	return copied == count;
 }
 
-StatusVector& StatusVector::operator<<(const Base& arg) throw()
+void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()
 {
-	if (m_length < ISC_STATUS_LENGTH - 2)
+	if (m_length < FB_NELEM(m_status_vector) - 2)
 	{
-		m_status_vector[m_length++] = arg.kind;
-		m_status_vector[m_length++] = arg.value;
+		m_status_vector[m_length++] = arg.getKind();
+		m_status_vector[m_length++] = arg.getCode();
 		m_status_vector[m_length] = isc_arg_end;
 	}
-	return *this;
 }
 
-StatusVector& StatusVector::operator<<(const Warning& arg) throw()
+void StatusVector::ImplStatusVector::shiftLeft(const Warning& arg) throw()
 {
 	const int cur = m_warning ? 0 : m_length;
-	operator<<(*static_cast<const Base*>(&arg));
+	shiftLeft(*static_cast<const Base*>(&arg));
 	if (cur && m_status_vector[cur] == isc_arg_warning)
 		m_warning = cur;
-	return *this;
 }
 
-StatusVector& StatusVector::operator<<(const char* text) throw()
+void StatusVector::ImplStatusVector::shiftLeft(const char* text) throw()
 {
-	operator<<(Str(text));
-	return *this;
+	shiftLeft(Str(text));
 }
 
-StatusVector& StatusVector::operator<<(const AbstractString& text) throw()
+void StatusVector::ImplStatusVector::shiftLeft(const AbstractString& text) throw()
 {
-	operator<<(Str(text));
-	return *this;
+	shiftLeft(Str(text));
 }
 
-StatusVector& StatusVector::operator<<(const MetaName& text) throw()
+void StatusVector::ImplStatusVector::shiftLeft(const MetaName& text) throw()
 {
-	operator<<(Str(text));
-	return *this;
+	shiftLeft(Str(text));
 }
 
 void StatusVector::raise() const
@@ -188,7 +167,7 @@ void StatusVector::raise() const
 		Str("Attempt to raise empty exception"));
 }
 
-ISC_STATUS StatusVector::copyTo(ISC_STATUS* dest) const throw()
+ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw()
 {
 	if (hasData())
 	{

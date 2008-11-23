@@ -29,7 +29,6 @@
 #ifndef FB_STATUS_ARG
 #define FB_STATUS_ARG
 
-
 namespace Firebird {
 
 class AbstractString;
@@ -39,55 +38,110 @@ namespace Arg {
 
 // forward
 class Warning;
+class StatusVector;
 
 class Base
 {
-public:
-	ISC_STATUS kind, value;
-
 protected:
-	Base(ISC_STATUS k, ISC_STATUS v) throw() : kind(k), value(v) { }
+	class ImplBase
+	{
+	private:
+		ISC_STATUS kind, code;
+
+	public:
+		ISC_STATUS getKind() const throw() { return kind; }
+		ISC_STATUS getCode() const throw() { return code; }
+
+		virtual const ISC_STATUS* value() const throw() { return NULL; }
+		virtual int length() const throw() { return 0; }
+		virtual int firstWarning() const throw() { return 0; }
+		virtual bool hasData() const throw() { return false; }
+		virtual void clear() throw() { }
+		virtual void append(const StatusVector& v) throw() { }
+		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return 0; }
+
+		virtual void shiftLeft(const Base& arg) throw() { }
+		virtual void shiftLeft(const Warning& arg) throw() { }
+		virtual void shiftLeft(const char* text) throw() { }
+		virtual void shiftLeft(const AbstractString& text) throw() { }
+		virtual void shiftLeft(const MetaName& text) throw() { }
+
+		ImplBase(ISC_STATUS k, ISC_STATUS c) throw() : kind(k), code(c) { }
+		virtual ~ImplBase() { }
+	};
+
+	Base(ISC_STATUS k, ISC_STATUS c);// : implementation(new ImplBase(k, c)) { }
+	Base(ImplBase* i) throw() : implementation(i) { }
+	~Base() { delete implementation; }
+
+	ImplBase* const implementation;
+
+public:
+	ISC_STATUS getKind() const throw() { return implementation->getKind(); }
+	ISC_STATUS getCode() const throw() { return implementation->getCode(); }
 };
 
 class StatusVector : public Base
 {
 protected:
+	class ImplStatusVector : public ImplBase
+	{
+	private:
+		ISC_STATUS_ARRAY m_status_vector;
+		int m_length, m_warning;
+
+		bool appendErrors(const ImplBase* const v) throw();
+		bool appendWarnings(const ImplBase* const v) throw();
+		bool append(const ISC_STATUS* const from, const int count) throw();
+
+	public:
+		virtual const ISC_STATUS* value() const throw() { return m_status_vector; }
+		virtual int length() const throw() { return m_length; }
+		virtual int firstWarning() const throw() { return m_warning; }
+		virtual bool hasData() const throw() { return m_length > 0; }
+		virtual void clear() throw();
+		virtual void append(const StatusVector& v) throw();
+		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
+		virtual void shiftLeft(const Base& arg) throw();
+		virtual void shiftLeft(const Warning& arg) throw();
+		virtual void shiftLeft(const char* text) throw();
+		virtual void shiftLeft(const AbstractString& text) throw();
+		virtual void shiftLeft(const MetaName& text) throw();
+
+		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c) 
+		{ 
+			clear();
+		}
+
+		ImplStatusVector(const ISC_STATUS* s) throw();
+	};
+
 	StatusVector(ISC_STATUS k, ISC_STATUS v);
 
 public:
 	explicit StatusVector(const ISC_STATUS* s);
 	StatusVector();
+	~StatusVector() { }
 
-	~StatusVector();
+	const ISC_STATUS* value() const throw() { return implementation->value(); }
+	int length() const throw() { return implementation->length(); }
+	bool hasData() const throw() { return implementation->hasData(); }
 
-	const ISC_STATUS* value() const throw() { return m_status_vector; }
-	int length() const throw() { return m_length; }
-	bool hasData() const throw() { return m_length > 0; }
-
-	void clear() throw();
-	void append(const StatusVector& v) throw();
+	void clear() throw() { implementation->clear(); }
+	void append(const StatusVector& v) throw() { implementation->append(v); }
 	void raise() const;
-	ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
+	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
 
 	// generic argument insert
-	StatusVector& operator<<(const Base& arg) throw();
+	StatusVector& operator<<(const Base& arg) throw() { implementation->shiftLeft(arg); return *this; }
 	// warning special case - to setup first warning location
-	StatusVector& operator<<(const Warning& arg) throw();
+	StatusVector& operator<<(const Warning& arg) throw() { implementation->shiftLeft(arg); return *this; }
 	// Str special case - make the code simpler & better readable
-	StatusVector& operator<<(const char* text) throw();
-	StatusVector& operator<<(const AbstractString& text) throw();
-	StatusVector& operator<<(const MetaName& text) throw();
+	StatusVector& operator<<(const char* text) throw() { implementation->shiftLeft(text); return *this; }
+	StatusVector& operator<<(const AbstractString& text) throw() { implementation->shiftLeft(text); return *this; }
+	StatusVector& operator<<(const MetaName& text) throw() { implementation->shiftLeft(text); return *this; }
 
 private:
-	ISC_STATUS* const m_status_vector;
-	int m_length, m_warning;
-
-private:
-	bool appendErrors(const StatusVector* v) throw();
-	bool appendWarnings(const StatusVector* v) throw();
-	bool append(const ISC_STATUS* from, const int count) throw();
-
-	StatusVector& operator=(const StatusVector& v) throw();
 };
 
 
