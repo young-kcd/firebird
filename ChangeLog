@@ -1,3 +1,46 @@
+2008-11-23 17:29  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.321):
+
+	Fixed CORE-1137 - Server hangs with 100% CPU usage on NOT IN
+	predicate
+
+2008-11-23 15:34  alexpeshkoff
+
+	* firebird2/src/common/: StatusArg.cpp (1.14), StatusArg.h (1.11):
+
+	An attempt to save some space on stack in VC builds.
+
+	It was detected by Dmitry, that VC has rather non-standard rules
+	when allocating stack variables. I can provide omitted here
+	details, but the result was about 13K on stack per each
+	PASS1_node() invocation (gcc consumed only 1.25K for it). With
+	allocation of status array from the pool problem became much less
+	dangerous, but stack consumption is still rather big in VC. This
+	version of classes makes on-stack memory, used by each instance of
+	the class, as small as possible - sizeof(void*). Therefore please
+	don't blame me for 'strange' internals of Arg classes.
+
+2008-11-23 15:04  alexpeshkoff
+
+	* firebird2/src/jrd/svc.cpp (1.246):
+
+	more checks - thanks to Claudio
+
+2008-11-23 13:52  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.101):
+
+	Misc.
+
+2008-11-23 13:48  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.100):
+
+	A better solution for CORE-2200 (Extremely slow executing a cross
+	join of 3 tables in Firebird 2.X).  This time an optimizer level
+	one.
+
 2008-11-22 18:54  asfernandes
 
 	* firebird2/src/misc/intl.sql (1.6):
