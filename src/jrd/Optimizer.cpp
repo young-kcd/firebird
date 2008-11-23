@@ -3120,8 +3120,13 @@ int OptimizerInnerJoin::findJoinOrder()
 		if (!innerStreams[i]->used) {
 			remainingStreams++;
 			if (innerStreams[i]->independent()) {
-				optimizer->opt_streams[0].opt_best_stream = innerStreams[i]->stream;
-				optimizer->opt_best_count = 1;
+				if (!optimizer->opt_best_count ||
+					innerStreams[i]->baseCost < optimizer->opt_best_cost)
+				{
+					optimizer->opt_streams[0].opt_best_stream = innerStreams[i]->stream;
+					optimizer->opt_best_count = 1;
+					optimizer->opt_best_cost = innerStreams[i]->baseCost;
+				}
 			}
 		}
 	}
