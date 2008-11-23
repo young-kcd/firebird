@@ -118,7 +118,6 @@ const int GET_EOF		= 2;
 const int GET_BINARY	= 4;
 
 const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
-const char* const SPB_DBNAME = "isc_spb_dbname";
 
 namespace {
 
@@ -2176,19 +2175,23 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_dbname:
 				if (nbk_database.hasData())
 				{
-					(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_DBNAME)).raise();
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_dbname")).raise();
 				}
 				get_action_svc_string(spb, nbk_database);
 				break;
 
 			case isc_spb_nbk_level:
+				if (nbk_level >= 0)
+				{
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_level")).raise();
+				}
 				nbk_level = spb.getInt();
 				break;
 
 			case isc_spb_nbk_file:
 				if (nbk_file.hasData() && svc_action != isc_action_svc_nrest)
 				{
-					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("isc_spb_nbk_file")).raise();
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_nbk_file")).raise();
 				}
 				get_action_svc_string(spb, nbk_file);
 				break;
@@ -2452,7 +2455,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	case isc_action_svc_nrest:
 		if (nbk_database.isEmpty())
 		{
-			(Arg::Gds(isc_missing_required_spb) << Arg::Str(SPB_DBNAME)).raise();
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_dbname")).raise();
 		}
 		if (nbk_file.isEmpty())
 		{
