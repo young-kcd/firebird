@@ -2620,7 +2620,7 @@ static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd
 	}
 
 	RecordSelExpr* innerRse = (RecordSelExpr*) outerRse->rse_relation[0];	// user rse
-	// If the rse is different than we expected, do nothing. Do nothing alse if it uses FIRST or
+	// If the rse is different than we expected, do nothing. Do nothing also if it uses FIRST or
 	// SKIP, as we can't inject booleans there without changing the behavior.
 	if (!innerRse || innerRse->nod_type != nod_rse || innerRse->rse_first || innerRse->rse_skip)
 		return NULL;
