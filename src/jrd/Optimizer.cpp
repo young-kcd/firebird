@@ -2966,7 +2966,6 @@ void OptimizerInnerJoin::calculateCardinalities()
 			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
 		}
 	}
-
 }
 
 void OptimizerInnerJoin::calculateStreamInfo()
