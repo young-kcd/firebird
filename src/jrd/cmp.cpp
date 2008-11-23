@@ -128,6 +128,7 @@ using namespace Firebird;
 
 static UCHAR* alloc_map(thread_db*, CompilerScratch*, USHORT);
 static jrd_nod* catenate_nodes(thread_db*, NodeStack&);
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node);
 static jrd_nod* copy(thread_db*, CompilerScratch*, jrd_nod*, UCHAR *, USHORT, jrd_nod*, bool);
 static void expand_view_nodes(thread_db*, CompilerScratch*, USHORT, NodeStack&, NOD_T);
 static void ignore_dbkey(thread_db*, CompilerScratch*, RecordSelExpr*, const jrd_rel*);
@@ -2593,6 +2594,84 @@ static jrd_nod* catenate_nodes(thread_db* tdbb, NodeStack& stack)
 }
 
 
+// Try to convert nodes of expression:
+//   select ... from <t1>
+//     where <x> not in (select <y> from <t2>)
+//   (and its variants that uses the same BLR: {NOT (a = ANY b)} and {a <> ALL b})
+// to:
+//   select ... from <t1> 
+//     where not (x is null or exists (select <y> from <t2> where <y> = <x> or <y> is null))
+// Because the second form can use indexes.
+// Returns NULL when not converted, and a new node to be processed when converted.
+static jrd_nod* convertNeqAllToNotAny(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
+{
+	SET_TDBB(tdbb);
+
+	DEV_BLKCHK(csb, type_csb);
+	DEV_BLKCHK(node, type_nod);
+
+	fb_assert(node->nod_type == nod_ansi_all);
+
+	RecordSelExpr* outerRse = (RecordSelExpr*) node->nod_arg[e_any_rse];	// nod_ansi_all rse
+	if (!outerRse || outerRse->nod_type != nod_rse || outerRse->rse_count != 1 ||
+		!outerRse->rse_boolean || outerRse->rse_boolean->nod_type != nod_neq)
+	{
+		return NULL;
+	}
+
+	RecordSelExpr* innerRse = (RecordSelExpr*) outerRse->rse_relation[0];	// user rse
+	// If the rse is different than we expected, do nothing. Do nothing alse if it uses FIRST or
+	// SKIP, as we can't inject booleans there without changing the behavior.
+	if (!innerRse || innerRse->nod_type != nod_rse || innerRse->rse_first || innerRse->rse_skip)
+		return NULL;
+
+	jrd_nod* newNode = PAR_make_node(tdbb, 1);
+	newNode->nod_type = nod_not;
+	newNode->nod_count = 1;
+
+	newNode->nod_arg[0] = PAR_make_node(tdbb, 2);
+	newNode->nod_arg[0]->nod_type = nod_or;
+	newNode->nod_arg[0]->nod_count = 2;
+
+	newNode->nod_arg[0]->nod_arg[0] = PAR_make_node(tdbb, 2);
+	newNode->nod_arg[0]->nod_arg[0]->nod_type = nod_missing;
+	newNode->nod_arg[0]->nod_arg[0]->nod_count = 1;
+	newNode->nod_arg[0]->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[0];
+
+	newNode->nod_arg[0]->nod_arg[1] = PAR_make_node(tdbb, e_any_length);
+	newNode->nod_arg[0]->nod_arg[1]->nod_type = nod_any;
+	newNode->nod_arg[0]->nod_arg[1]->nod_count = 1;
+	newNode->nod_arg[0]->nod_arg[1]->nod_arg[e_any_rse] = (jrd_nod*) innerRse;
+
+	jrd_nod* boolean = PAR_make_node(tdbb, 2);
+	boolean->nod_type = nod_or;
+	boolean->nod_count = 2;
+
+	boolean->nod_arg[0] = PAR_make_node(tdbb, 1);
+	boolean->nod_arg[0]->nod_type = nod_missing;
+	boolean->nod_arg[0]->nod_count = 1;
+	boolean->nod_arg[0]->nod_arg[0] = outerRse->rse_boolean->nod_arg[1];
+
+	boolean->nod_arg[1] = outerRse->rse_boolean;
+	boolean->nod_arg[1]->nod_type = nod_eql;
+
+	// If there was a boolean on the stream, append (AND) the new one
+	if (innerRse->rse_boolean)
+	{
+		jrd_nod* temp = PAR_make_node(tdbb, 2);
+		temp->nod_type = nod_and;
+		temp->nod_count = 2;
+		temp->nod_arg[0] = innerRse->rse_boolean;
+		temp->nod_arg[1] = boolean;
+		boolean = temp;
+	}
+
+	innerRse->rse_boolean = boolean;
+
+	return newNode;
+}
+
+
 static jrd_nod* copy(thread_db* tdbb,
 					CompilerScratch* csb,
 					jrd_nod* input,
@@ -3971,8 +4050,15 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		break;
 
 	case nod_ansi_all:
+	{
+		jrd_nod* newNode = convertNeqAllToNotAny(tdbb, csb, node);
+		if (newNode)
+			return CMP_pass1(tdbb, csb, newNode);
+
 		node->nod_flags |= nod_deoptimize;
 		// fall into
+	}
+
 	case nod_ansi_any:
 		if (node->nod_flags & nod_deoptimize)
 		{
