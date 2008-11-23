@@ -1,3 +1,25 @@
+2008-11-23 13:52  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.10):
+
+	Misc.
+
+2008-11-23 13:48  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.9):
+
+	A better solution for CORE-2200 (Extremely slow executing a cross
+	join of 3 tables in Firebird 2.X).  This time an optimizer level
+	one.
+
+2008-11-23 13:43  dimitr
+
+	* firebird2/src/jrd/Optimizer.cpp (1.56.4.8):
+
+	A better solution for CORE-2200 (Extremely slow executing a cross
+	join of 3 tables in Firebird 2.X).  This time an optimizer level
+	one.
+
 2008-11-21 19:43  dimitr
 
 	* firebird2/src/jrd/rse.cpp (1.104.2.11):
