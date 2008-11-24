@@ -26,6 +26,7 @@
 
 RunUser=firebird
 RunGroup=firebird
+serverMode=classic
 
 checkInstallUser
 checkIfServerRunning
@@ -56,6 +57,6 @@ fixFilePermissions
 
 # Get inetd to reread new init files, start service.
 resetInetdServer
-startService
+startService $serverMode
 
 echo "Completed."

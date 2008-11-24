@@ -26,109 +26,38 @@
 # init defaults
 DefaultLibrary=libfbembed
 
+
 #------------------------------------------------------------------------
-#  fixFilePermissions
-#  Change the permissions to restrict access to server programs to 
-#  firebird group only.  This is MUCH better from a saftey point of 
-#  view than installing as root user, even if it requires a little 
-#  more work.
+#  For security reasons most files in firebird installation are
+#  root-owned and world-readable(executable) only (including firebird).
 
+#  For some files RunUser and RunGroup (firebird)
+#  must have write access - lock and log for example.
 
-fixFilePermissions() {
-	cd $FBRootDir
-	chown -R $RunUser:$RunGroup $FBRootDir
+MakeFileFirebirdWritable() {
+    FileName=$1
+    chown $RunUser:$RunGroup $FileName
 
-    # Turn other access off.
-    chmod -R o= $FBRootDir
-
-    # Now fix up the mess.
-
-    # fix up directories 
-    for i in `find $FBRootDir -print`
-    do
-        FileName=$i
-        if [ -d $FileName ]
-        then
-            chmod o=rx $FileName
-        fi
-    done
-
-    # set up the defaults for bin
-    cd $FBBin
-    for i in `ls`
-      do
-         chmod ug=rx,o=  $i
-    done
-
-    # User can run these programs, they need to talk to server though.
-    # and they cannot actually create a database.
-    chmod a=rx isql 
-    chmod a=rx qli
-    
-	# set up libraries
-	cd $FBRootDir
-	cd lib
-	chmod a=rx lib*
-
-	# set up include files
-	cd $FBRootDir
-	cd include
-	chmod a=r *
-
-    # Fix lock files
-    cd $FBRootDir
-    for i in isc_init1 isc_lock1 isc_event1 isc_monitor1
-    do
-        FileName=$i.`hostname`
-		touch $FileName
-		chown $RunUser:$RunGroup $FileName
-        chmod ug=rw,o= $FileName
-    done
-
-    # Create log
-    touch firebird.log
-
-    # Fix the rest
-    chmod ug=rw,o= firebird.log
-	chmod a=r aliases.conf
-	chmod a=r firebird.conf
-    chmod a=r firebird.msg
-    chmod a=r help/help.fdb
-    chmod ug=rw,o= $SecurityDatabase
-	
 	if [ "$RunUser" = "root" ]
-	# In that case we must open databases to the world...
+	# In that case we must open databases, locks , etc. to the world...
 	# That's a pity, but required if root RunUser choosen.
 	then
-    	chmod a=rw $SecurityDatabase
+    	chmod a=rw $FileName
+	else
+		# This is good secure setting
+	    chmod ug=rw,o= $FileName
 	fi
+}
 
-	# fix up examples' permissions
-    cd examples
 
-    # set a default of read all files in examples
-    for i in `find . -name '*' -type f -print`
-    do
-         chmod a=r $i
-    done
+#------------------------------------------------------------------------
+#  fixArcSpecificPermissions
+#  Change the permissions specific for CS
 
-    # set a default of read&search all dirs in examples
-    for i in `find . -name '*' -type d -print`
-    do
-         chmod a=rx $i
-    done
-
-    # make examples db's writable by group
-    for i in `find . -name '*.fdb' -print`
-    do
-		chown $RunUser:$RunUser $i
-        chmod ug=rw,o= $i
-    done
-
-	# fix up doc permissions
-	fixDocPermissions
-
+fixArcSpecificPermissions() {
+    # Fix the rest
 	cd $FBRootDir
+    chmod a=r help/help.fdb
 }
 
 

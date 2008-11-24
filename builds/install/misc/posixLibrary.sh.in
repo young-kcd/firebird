@@ -190,13 +190,18 @@ removeInetdServiceEntry() {
 
 checkIfServerRunning() {
 
+	checkString=`ps -eaf | egrep "\b(fbserver|fbguard|fb_smp_server)\b" |grep -v grep`
+    if [ ! -z "$checkString" ]
+	then
+		serverMode=super
+	fi
+
     stopSuperServerIfRunning
 
 
 # Check is server is being actively used.
 
     checkString=`ps -eaf | egrep "\b(fb_smp_server)\b" |grep -v grep`
-
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird SuperClassic server seems to be running."
@@ -205,7 +210,6 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -eaf | egrep "\b(fbserver|fbguard)\b" |grep -v grep`
-
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Super server seems to be running."
@@ -214,7 +218,6 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -eaf | egrep "\b(fb_inet_server|gds_pipe)\b" |grep -v grep`
-
     if [ ! -z "$checkString" ]
     then
         echo "An instance of the Firebird Classic server seems to be running."
@@ -226,7 +229,6 @@ checkIfServerRunning() {
 # The following check for running interbase or firebird 1.0 servers.
 
     checkString=`ps -eaf | egrep "\b(ibserver|ibguard)\b" |grep -v grep`
-
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Super server seems to be running." 
@@ -236,7 +238,6 @@ checkIfServerRunning() {
     fi
 
     checkString=`ps -eaf | egrep "\b(gds_inet_server|gds_pipe)\b" |grep -v grep`
-
     if [ ! -z "$checkString" ] 
     then
         echo "An instance of the Firebird/InterBase Classic server seems to be running." 
@@ -246,7 +247,7 @@ checkIfServerRunning() {
     fi
 
 	removeInetdServiceEntry
-	
+
 }
 
 
@@ -500,20 +501,6 @@ removeLinksForBackCompatibility() {
 
 
 #------------------------------------------------------------------------
-#  For security reasons most files in firebird installation are
-#  root-owned and world-readable(executable) only (including firebird).
-
-#  For some files RunUser (firebird) must have write access - 
-#  lock and log for examples.
-
-MakeFileFirebirdWritable() {
-    FileName=$1
-    chown $RunUser:$RunUser $FileName
-    chmod 0644 $FileName
-}
-
-
-#------------------------------------------------------------------------
 #  Set correct permissions for $FbRoot/doc tree 
 
 fixDocPermissions() {
@@ -731,3 +718,80 @@ removeEmptyDirs() {
 
       done
 }
+
+
+#------------------------------------------------------------------------
+#  fixFilePermissions
+#  Change the permissions to restrict access to server programs to 
+#  firebird group only.  This is MUCH better from a saftey point of 
+#  view than installing as root user, even if it requires a little 
+#  more work.
+
+fixFilePermissions() {
+    cd $FBRootDir
+
+    # For security reasons initially force all root:root non-writable
+    chown -R root:root $FBRootDir
+    chmod -R uga-w $FBRootDir
+
+    # Prepare bin
+    cd $FBBin
+
+    # Everyone may execute clients
+    chmod a=rx *
+
+    # Shell scripts changing security attributes are for root only
+    chmod u=rx,go= *.sh
+    
+    # Lock files
+    cd $FBRootDir
+    for i in init1 lock1 event1 guard1 monitor1 sem1
+    do
+        FileName=isc_$i.`hostname`
+        touch $FileName
+        MakeFileFirebirdWritable $FileName
+    done
+
+	# Log file
+    touch firebird.log
+    MakeFileFirebirdWritable firebird.log
+    
+    # Security database
+    MakeFileFirebirdWritable $SecurityDatabase
+
+	# set up libraries - everyone may use them
+	cd $FBRootDir/lib
+	chmod a=rx lib*
+
+	# set up include files - everyone may use them
+	cd $FBRootDir/include
+	chmod a=r *
+
+	# fix up examples' permissions
+    cd $FBRootDir/examples
+    # set a default of read all files in examples
+    for i in `find . -name '*' -type f -print`
+    do
+         chmod a=r $i
+    done
+    # set a default of read&search all dirs in examples
+    for i in `find . -name '*' -type d -print`
+    do
+         chmod a=rx $i
+    done
+    # make examples DB(s) writable
+    for i in `find . -name '*.fdb' -print`
+    do
+		MakeFileFirebirdWritable $i
+    done
+
+	# fix up doc permissions
+	cd $FBRootDir
+	fixDocPermissions
+
+	# Architecture (CS/SS) specific permissions
+	cd $FBRootDir
+	fixArcSpecificPermissions
+	cd $FBRootDir
+}
+
