@@ -5699,6 +5699,8 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			break;
 		}
 	}
+
+	return true;
 }
 
 bool get_sql_roles(BurpGlobals* tdgbl)
