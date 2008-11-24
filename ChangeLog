@@ -1,3 +1,41 @@
+2008-11-24 18:22  alexpeshkoff
+
+	* firebird2/src/: burp/burp.cpp (1.150), burp/burpswi.h (1.24),
+	msgs/facilities2.sql (1.55), msgs/messages2.sql (1.69):
+
+	This is the first attempt to fix CORE-1667 (Reading password from
+	file/stdin).  Please take a look at it and comment, before adding
+	support to other utilities.  Main problems seen: - Name of a switch
+	(now -@PASSWORD, may be -PASSFILE is better?) - How to provide
+	support for stdin?
+
+2008-11-24 18:05  alexpeshkoff
+
+	* firebird2/src/burp/restore.epp (1.147):
+
+	fixed missing return value from bool function
+
+2008-11-24 18:03  alexpeshkoff
+
+	* firebird2/src/: burp/burp.h (1.94), remote/protocol.h (1.46):
+
+	fixed gcc warning
+
+2008-11-24 14:09  alexpeshkoff
+
+	* firebird2/builds/install/misc/: changeRunUser.sh.in (1.5),
+	classicLibrary.sh.in (1.12), posixLibrary.sh.in (1.16),
+	restoreRootRunUser.sh.in (1.4), superLibrary.sh.in (1.7):
+
+	Fixed CORE-2195: Linux CS install requires access rights review.
+	Also fixed some bugs in superclassic mode.
+
+2008-11-23 22:54  asfernandes
+
+	* firebird2/src/: common/StatusArg.cpp (1.15), jrd/cmp.cpp (1.322):
+
+	Misc
+
 2008-11-23 17:29  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.321):
