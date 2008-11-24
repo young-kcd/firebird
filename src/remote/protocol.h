@@ -84,7 +84,7 @@ const USHORT PROTOCOL_VERSION10	= 10;
 // For unsigned protocol version this does not break version's compare.
 
 const USHORT FB_PROTOCOL_FLAG = 0x8000;
-const USHORT FB_PROTOCOL_MASK = ~FB_PROTOCOL_FLAG;
+const USHORT FB_PROTOCOL_MASK = static_cast<USHORT>(~FB_PROTOCOL_FLAG);
 
 // Protocol 11 has support for user authentication related 
 // operations (op_update_account_info, op_authenticate_user and 

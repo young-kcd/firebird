@@ -770,7 +770,7 @@ typedef act* ACT;
 
 const size_t ACT_LEN = sizeof(act);
 
-const ULONG MAX_LENGTH = -1UL; // Keep in sync with burp_fil.fil_length
+const ULONG MAX_LENGTH = ~0;	// Keep in sync with burp_fil.fil_length
 
 // This structure has been cloned from spit.cpp
 
