@@ -2449,6 +2449,9 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 303, NULL, '	@1FIX_FSS_M(ETADATA)   fix malformed UNICODE_FSS metadata', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 304, NULL, 'Character set parameter missing', NULL, NULL);
 (NULL, 'restore', 'restore.epp', NULL, 12, 305, NULL, 'Character set @1 not found', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 306, NULL, '        @1@@(PASSWORD)          read password from file', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 307, NULL, 'too many passwords provided', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 308, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

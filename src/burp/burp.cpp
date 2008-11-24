@@ -648,7 +648,43 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// password parameter missing 
 			}
 			uSvc->hidePasswd(argv, itr);
+			if (tdgbl->gbl_sw_password)
+			{
+				BURP_error(307, true);
+				// too many passwords provided
+			}
 			tdgbl->gbl_sw_password = argv[itr];
+		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_PASSFILE) 
+		{
+			if (++itr >= argc)
+			{
+				BURP_error(189, true);
+				// password parameter missing 
+			}
+			if (tdgbl->gbl_sw_password)
+			{
+				BURP_error(307, true);
+				// too many passwords provided
+			}
+			FILE *passfile = fopen(argv[itr], "rt");
+			if (!passfile)
+			{
+				BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
+				// error @2 opening password file @1
+			}
+			try
+			{
+				Firebird::string pwd;
+				pwd.LoadFromFile(passfile);
+				tdgbl->gbl_sw_password = strdup(pwd.c_str());
+			}
+			catch (Firebird::Exception&)
+			{
+				fclose(passfile);
+				throw;
+			}
+			fclose(passfile);
 		}
 		else if (in_sw_tab->in_sw == IN_SW_BURP_USER) 
 		{
@@ -885,6 +921,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case (IN_SW_BURP_PASS):
+		case (IN_SW_BURP_PASSFILE):
 			dpb.insertString(tdgbl->uSvc->isService() ?
 							 isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
