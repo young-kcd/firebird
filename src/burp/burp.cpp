@@ -667,7 +667,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(307, true);
 				// too many passwords provided
 			}
-			FILE *passfile = fopen(argv[itr], "rt");
+			Firebird::PathName fName(argv[itr]);
+			FILE *passfile = (fName == "stdin") ? stdin : fopen(argv[itr], "rt");
 			if (!passfile)
 			{
 				BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
@@ -675,13 +676,21 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			try
 			{
+				if (isatty(fileno(passfile)))
+				{
+					fprintf(stderr, "Enter password: ");
+					fflush(stderr);
+				}
 				Firebird::string pwd;
 				pwd.LoadFromFile(passfile);
 				tdgbl->gbl_sw_password = strdup(pwd.c_str());
 			}
 			catch (Firebird::Exception&)
 			{
-				fclose(passfile);
+				if (passfile != stdin)
+				{
+					fclose(passfile);
+				}
 				throw;
 			}
 			fclose(passfile);
