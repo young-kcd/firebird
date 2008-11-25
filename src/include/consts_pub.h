@@ -963,8 +963,9 @@
 /* Masks for fb_shutdown_callback  */
 /***********************************/
 
-#define fb_shut_preproviders			  1
-#define fb_shut_postproviders			  2
+#define fb_shut_confirmation			  1
+#define fb_shut_preproviders			  2
+#define fb_shut_postproviders			  4
 
 /****************************************/
 /* Shutdown reasons, used by engine     */

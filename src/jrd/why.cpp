@@ -6012,10 +6012,16 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 
 	try
 	{
+		// Ask clients about shutdown confirmation
+		if (ShutChain::run(fb_shut_confirmation, reason) != FB_SUCCESS)
+		{
+			return FB_FAILURE;	// Do not perform former shutdown
+		}
+
 		// Shutdown clients before providers
 		if (ShutChain::run(fb_shut_preproviders, reason) != FB_SUCCESS)
 		{
-			return FB_FAILURE;	// Do not perform former shutdown
+			rc = FB_FAILURE;
 		}
 
 		// shutdown yValve

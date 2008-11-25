@@ -294,7 +294,7 @@ static void enable_signals(void)
 #ifdef SIGQUIT
 	signal(SIGQUIT, SIG_IGN);
 #endif
-	fb_shutdown_callback(0, async_quit, fb_shut_preproviders, 0);
+	fb_shutdown_callback(0, async_quit, fb_shut_confirmation, 0);
 #ifdef SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 #endif
