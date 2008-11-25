@@ -1,3 +1,16 @@
+2008-11-25 15:27  alexpeshkoff
+
+	* firebird2/src/burp/burp.cpp (1.151):
+
+	added support to enter password from terminal
+
+2008-11-25 11:16  hvlad
+
+	* firebird2/src/: include/consts_pub.h (1.26), isql/isql.epp
+	(1.250), jrd/why.cpp (1.218), qli/dtr.cpp (1.55):
+
+	Added phase of preliminary confirmation for fb_shutdown process
+
 2008-11-24 18:22  alexpeshkoff
 
 	* firebird2/src/: burp/burp.cpp (1.150), burp/burpswi.h (1.24),
