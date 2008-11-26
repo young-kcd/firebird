@@ -39,7 +39,7 @@ MakeFileFirebirdWritable() {
     chown $RunUser:$RunGroup $FileName
 
 	if [ "$RunUser" = "root" ]
-	# In that case we must open databases, locks , etc. to the world...
+	# In that case we must open databases, locks, etc. to the world...
 	# That's a pity, but required if root RunUser choosen.
 	then
     	chmod a=rw $FileName

@@ -668,7 +668,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// too many passwords provided
 			}
 			Firebird::PathName fName(argv[itr]);
-			FILE *passfile = (fName == "stdin") ? stdin : fopen(argv[itr], "rt");
+			FILE* passfile = (fName == "stdin") ? stdin : fopen(argv[itr], "rt");
 			if (!passfile)
 			{
 				BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
