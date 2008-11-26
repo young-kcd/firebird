@@ -1,3 +1,10 @@
+2008-11-26 01:45  asfernandes
+
+	* firebird2/: builds/install/misc/classicLibrary.sh.in (1.13),
+	src/burp/burp.cpp (1.152):
+
+	Misc
+
 2008-11-25 15:27  alexpeshkoff
 
 	* firebird2/src/burp/burp.cpp (1.151):
