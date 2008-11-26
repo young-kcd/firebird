@@ -2,6 +2,11 @@
   * v2.1.2
   ***************************
 
+    * Bugfix CORE-2182
+        It's impossible to drop an existing UDF which name overlaps with a new built-in function name
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-2173
         Server crashes after abnormal disconnect with open ExecuteStatement
       Contributor(s):
@@ -232,6 +237,11 @@
         Server crash with isc_dsql_execute_immediate and zero length string
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-2200
+        Extremely slow executing a cross join of 3 tables in Firebird 2.x
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
 
   ***************************
