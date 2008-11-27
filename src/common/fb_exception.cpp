@@ -303,20 +303,46 @@ ISC_STATUS LongJump::stuff_exception(ISC_STATUS* const status_vector, StringsBuf
 	return status_vector[1];
 }
 
+
+/********************************* system_error ****************************/
+
+system_error::system_error(const char* syscall, int error_code) : 
+	status_exception(0, false), errorCode(error_code)
+{
+	Arg::Gds temp(isc_sys_request);
+	temp << Arg::Str(dupStringTemp2(syscall));
+	temp << SYS_ERR(errorCode);
+	set_status(temp.value(), false);
+}
+
+void system_error::raise(const char* syscall, int error_code)
+{
+	throw system_error(syscall, error_code);
+}
+
+void system_error::raise(const char* syscall)
+{
+	throw system_error(syscall, getSystemError());
+}
+
+int system_error::getSystemError()
+{
+#ifdef WIN_NT
+	return GetLastError();
+#else
+	return errno;
+#endif
+}
+
 /********************************* system_call_failed ****************************/
 
-system_call_failed::system_call_failed(const char* v_syscall, int v_error_code) : 
-	status_exception(0, false), errorCode(v_error_code)
+system_call_failed::system_call_failed(const char* syscall, int error_code) : 
+	system_error(syscall, error_code)
 {
-#ifdef DEV_BUILD
+#ifdef DEV_BUILD_ccc
 	// raised failed system call exception in DEV_BUILD in 99.99% means 
 	// problems with the code - let's create memory dump now
 	abort();
-#else
-	Arg::Gds temp(isc_sys_request);
-	temp << Arg::Str(dupStringTemp2(v_syscall));
-	temp << SYS_ERR(errorCode);
-	set_status(temp.value(), false);
 #endif
 }
 
@@ -327,12 +353,7 @@ void system_call_failed::raise(const char* syscall, int error_code)
 
 void system_call_failed::raise(const char* syscall)
 {
-#ifdef WIN_NT
-	int error_code = GetLastError();
-#else
-	int error_code = errno;
-#endif
-	throw system_call_failed(syscall, error_code);
+	throw system_call_failed(syscall, getSystemError());
 }
 
 /********************************* fatal_exception ********************************/

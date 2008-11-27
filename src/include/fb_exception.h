@@ -159,12 +159,13 @@ private:
 	void release_vector() throw();
 };
 
-class system_call_failed : public status_exception
+// use this class if exception can be handled 
+class system_error : public status_exception
 {
 private:
 	int errorCode;
 public:
-	system_call_failed(const char* v_syscall, int v_error_code);
+	system_error(const char* syscall, int error_code);
 
 	static void raise(const char* syscall, int error_code);
 	static void raise(const char* syscall);
@@ -173,6 +174,19 @@ public:
 	{
 		return errorCode;
 	}
+
+	static int getSystemError();
+};
+
+// use this class if exception can't be handled 
+// it will call abort() in DEV_BUILD to create core dump
+class system_call_failed : public system_error
+{
+public:
+	system_call_failed(const char* syscall, int error_code);
+
+	static void raise(const char* syscall, int error_code);
+	static void raise(const char* syscall);
 };
 
 // Moved what() here due to gpre. Didn't want to use macros for gpre_static.
