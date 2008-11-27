@@ -213,7 +213,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	ISC_enter();
 
 	int nReturnValue = 0;
-	ISC_STATUS_ARRAY status_vector;
+	ISC_STATUS_ARRAY status_vector = {0};
 
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
@@ -237,6 +237,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		if (port) {
 			service_connection(port);
 		}
+		else if (status_vector[1])
+			gds__log_status(0, status_vector);
 
 		fb_shutdown(0, fb_shutrsn_no_connection);
 	}
@@ -321,6 +323,7 @@ static THREAD_ENTRY_DECLARE inet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
+		fb_utils::init_status(status_vector);
 		rem_port* port = INET_connect(protocol_inet, NULL, status_vector, server_flag, 0);
 
 		if (!port) {
@@ -355,9 +358,11 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
+		fb_utils::init_status(status_vector);
 		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
 
-		if (!port) {
+		if (!port) 
+		{
 			if (status_vector[1] != isc_io_error ||
 				status_vector[6] != isc_arg_win32 ||
 				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
@@ -388,13 +393,26 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 	ISC_STATUS_ARRAY status_vector;
 	while (true)
 	{
+		fb_utils::init_status(status_vector);
 		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
 
-		if (!port) {
-			gds__log_status(0, status_vector);
-			break;
+		if (!port) 
+		{
+			const ISC_STATUS err = status_vector[1];
+			if (err) 
+			{
+				if (err == isc_net_server_shutdown)
+					break;
+				gds__log_status(0, status_vector);
+			}
 		}
-		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
+		else {
+			if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+			{
+				gds__log("XNET: can't start worker thread, connection terminated");
+				port->disconnect(NULL, NULL);
+			}
+		}
 	}
 
 	return 0;
