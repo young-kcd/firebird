@@ -176,6 +176,16 @@ void InternalConnection::doDetach(thread_db *tdbb)
 	fb_assert(!m_attachment)
 }
 
+bool InternalConnection::cancelExecution(thread_db *tdbb)
+{
+	if (m_isCurrent)
+		return true;
+
+	ISC_STATUS_ARRAY status = {0};
+	jrd8_cancel_operation(status, &m_attachment, fb_cancel_raise);
+	return (status[1] == 0);
+}
+
 // this internal connection instance is available for the current execution context if it
 // a) is current conenction and current thread's attachment is equal to
 //	  this attachment, or
@@ -453,7 +463,9 @@ void InternalStatement::doClose(thread_db *tdbb, bool drop)
 		jrd8_free_statement(status, &m_request, drop ? DSQL_drop : DSQL_close);
 		m_allocated = (m_request != 0);
 	}
-	if (status[1]) {
+	if (status[1]) 
+	{
+		m_allocated = m_request = 0;
 		raise(status, tdbb, "jrd8_free_statement");
 	}
 }

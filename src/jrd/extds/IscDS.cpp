@@ -167,9 +167,33 @@ void IscConnection::doDetach(thread_db *tdbb)
 		m_handle = h;
 	}
 
-	if (status[1]) {
+	if (status[1]) 
+	{
+		 if (status[1] == isc_att_shutdown || status[1] == isc_network_error || 
+			 status[1] == isc_net_read_err || status[1] == isc_net_write_err)
+		 {
+			m_handle = 0;
+			return;
+		 }
+
 		raise(status, tdbb, "detach");
 	}
+}
+
+bool IscConnection::cancelExecution(thread_db *tdbb)
+{
+	ISC_STATUS_ARRAY status = {0};
+	if (m_handle) 
+	{
+		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);
+
+		if (m_handle && status[1] == isc_wish_list)
+		{
+			fb_utils::init_status(status);
+			m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_abort);
+		}
+	}
+	return (status[1] == 0);
 }
 
 // this ISC connection instance is available for the current execution context if it
@@ -455,7 +479,10 @@ void IscStatement::doClose(thread_db *tdbb, bool drop)
 		m_iscProvider.isc_dsql_free_statement(status, &m_handle, drop ? DSQL_drop : DSQL_close);
 		m_allocated = (m_handle != 0);
 	}
-	if (status[1]) {
+	if (status[1]) 
+	{
+		// we can do nothing else with this statement after this point
+		m_allocated = m_handle = 0;
 		raise(status, tdbb, "isc_dsql_free_statement");
 	}
 }
@@ -1362,6 +1389,16 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_service_start(ISC_STATUS *user_status,
 	return notImplemented(user_status);
 }
 
+ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(ISC_STATUS *user_status,
+										isc_db_handle *db_handle,
+										USHORT option)
+{
+	if (m_api.fb_cancel_operation)
+		return m_api.fb_cancel_operation(user_status, db_handle, option);
+	else
+		return notImplemented(user_status);
+}
+
 void IscProvider::loadAPI()
 {
 	ISC_STATUS_ARRAY status;
@@ -1453,6 +1490,7 @@ static FirebirdApiPointers isc_callbacks =
 	PROTO(isc_service_detach),
 	PROTO(isc_service_query),
 	PROTO(isc_service_start),
+	PROTO(fb_cancel_operation)
 };
 
 

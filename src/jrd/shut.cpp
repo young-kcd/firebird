@@ -37,6 +37,7 @@
 #include "../jrd/shut_proto.h"
 #include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/extds/ExtDS.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -110,6 +111,15 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 		dbb->dbb_shutdown_delay = 0; // not tested anywhere
 
 		return false;
+	}
+
+	// hvlad: i don't know if we need to check for isc_dpb_shut_cache
+	if (flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction | isc_dpb_shut_force))
+	{
+		Attachment* att = dbb->dbb_attachments;
+		for (; att; att = att->att_next) {
+			att->cancelExternalConnection(tdbb);
+		}
 	}
 
 	if ((flag & isc_dpb_shut_force) && !delay)

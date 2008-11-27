@@ -1425,6 +1425,7 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status,
 			if (!(attachment->att_flags & ATT_cancel_disable))
 			{
 				attachment->att_flags |= ATT_cancel_raise;
+				attachment->cancelExternalConnection(tdbb);
 			}
 			break;
 
@@ -4962,7 +4963,8 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	att_remote_process(*pool),
 	att_dsql_cache(*pool),
 	att_udf_pointers(*pool),
-	att_strings_buffer(NULL)
+	att_strings_buffer(NULL),
+	att_ext_connection(NULL)
 {
 	att_mutex.enter();
 }
@@ -4989,6 +4991,13 @@ PreparedStatement* Attachment::prepareStatement(thread_db* tdbb, MemoryPool& poo
 	jrd_tra* transaction, const string& text)
 {
 	return FB_NEW(pool) PreparedStatement(tdbb, pool, this, transaction, text);
+}
+
+void Attachment::cancelExternalConnection(thread_db* tdbb)
+{
+	if (att_ext_connection) {
+		att_ext_connection->cancelExecution(tdbb);
+	}
 }
 
 

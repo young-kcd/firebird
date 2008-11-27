@@ -66,6 +66,8 @@ public:
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd);
 
+	virtual bool cancelExecution(Jrd::thread_db *tdbb);
+
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 
 	virtual bool isConnected() const { return (m_attachment != 0); }

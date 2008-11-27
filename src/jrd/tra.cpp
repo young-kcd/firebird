@@ -1869,7 +1869,8 @@ static int blocking_ast_transaction(void* ast_object)
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		tdbb->setAttachment(transaction->tra_cancel_lock->lck_attachment);
+		Attachment *att = transaction->tra_cancel_lock->lck_attachment;
+		tdbb->setAttachment(att);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);
 
@@ -1877,6 +1878,8 @@ static int blocking_ast_transaction(void* ast_object)
 			LCK_release(tdbb, transaction->tra_cancel_lock);
 
 		transaction->tra_flags |= TRA_cancel_request;
+
+		att->cancelExternalConnection(tdbb);
 	}
 	catch (const Firebird::Exception&)
 	{} // no-op

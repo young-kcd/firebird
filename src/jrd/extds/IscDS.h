@@ -478,6 +478,10 @@ public:
 										isc_resv_handle *,
 										unsigned short,
 										const char*);
+
+	virtual ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS *,
+											isc_db_handle *,
+											USHORT);
 };
 
 
@@ -508,6 +512,8 @@ public:
 
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd);
+
+	virtual bool cancelExecution(Jrd::thread_db *tdbb);
 
 	virtual bool isAvailable(Jrd::thread_db *tdbb, TraScope traScope) const;
 

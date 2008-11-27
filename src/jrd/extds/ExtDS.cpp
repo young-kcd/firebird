@@ -42,6 +42,8 @@
 #include "../intl_proto.h"
 #include "../mov_proto.h"
 
+#include "../jrd/ibase.h"
+
 using namespace Jrd;
 using namespace Firebird;
 
@@ -55,6 +57,7 @@ Provider* Manager::m_providers = NULL;
 Manager::Manager(MemoryPool &pool) :
 	PermanentStorage(pool)
 {
+	fb_shutdown_callback(0, shutdown, fb_shut_preproviders, 0);
 }
 
 Manager::~Manager()
@@ -135,6 +138,16 @@ void Manager::jrdAttachmentEnd(thread_db *tdbb, Jrd::Attachment* att)
 	}
 }
 
+int Manager::shutdown(const int reason, const int mask, void* arg)
+{
+	thread_db *tdbb = JRD_get_thread_data();
+	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
+		prv->cancelConnections(tdbb);
+	}
+	return 0;
+}
+
+
 // Provider
 
 Provider::Provider(const char* prvName) :
@@ -185,8 +198,6 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 // I have not implemented way to delete long idle connections.
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
-	conn.detach(tdbb);
-
 	size_t pos;
 	if (m_connections.find(&conn, pos))
 	{
@@ -212,6 +223,15 @@ void Provider::clearConnections(thread_db *tdbb)
 	m_connections.clear();
 }
 
+void Provider::cancelConnections(thread_db *tdbb)
+{
+	Connection **ptr = m_connections.begin();
+	Connection **end = m_connections.end();
+
+	for (; ptr < end; ptr++) {
+		(*ptr)->cancelExecution(tdbb);
+	}
+}
 
 // Connection 
 
@@ -232,10 +252,12 @@ Connection::Connection(Provider &prov) :
 
 void Connection::deleteConnection(thread_db *tdbb, Connection *conn)
 {
+	conn->m_deleting = true;
+	conn->clearStatements(tdbb);
+
 	fb_assert(conn->m_used_stmts == 0);
 	fb_assert(conn->m_transactions.getCount() == 0);
 
-	conn->m_deleting = true;
 	if (conn->isConnected()) 
 		conn->detach(tdbb);
 
@@ -344,7 +366,7 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 {
 	fb_assert(stmt && !stmt->isActive());
 
-	if (m_free_stmts < MAX_CACHED_STMTS)
+	if (stmt->isAllocated() && m_free_stmts < MAX_CACHED_STMTS)
 	{
 		stmt->m_nextFree = m_freeStatements;
 		m_freeStatements = stmt;
@@ -366,7 +388,7 @@ void Connection::releaseStatement(Jrd::thread_db *tdbb, Statement *stmt)
 	m_used_stmts--;
 
 	if (!m_used_stmts && m_transactions.getCount() == 0 && !m_deleting)
-		m_provider.releaseConnection(JRD_get_thread_data(), *this);
+		m_provider.releaseConnection(tdbb, *this);
 }
 
 void Connection::clearTransactions(Jrd::thread_db *tdbb)
@@ -564,6 +586,7 @@ void Transaction::rollback(thread_db *tdbb, bool retain)
 	ISC_STATUS_ARRAY status = {0};
 	doRollback(status, tdbb, retain);
 
+	Connection &conn = m_connection;
 	if (!retain) 
 	{
 		detachFromJrdTran();
@@ -571,7 +594,7 @@ void Transaction::rollback(thread_db *tdbb, bool retain)
 	}
 
 	if (status[1]) {
-		m_connection.raise(status, tdbb, "transaction rollback");
+		conn.raise(status, tdbb, "transaction rollback");
 	}
 }
 
@@ -797,10 +820,26 @@ bool Statement::fetch(thread_db *tdbb, int out_count, jrd_nod **out_params)
 
 void Statement::close(thread_db *tdbb)
 {
+	// we must stuff exception if and only if this is the first time it occurs
+	// once we stuff exception we must punt
+
+	const bool wasError = m_error;
+	bool doPunt = false;
+
 	if (isAllocated() && m_active)
 	{
 		fb_assert(isAllocated() && m_stmt_selectable);
-		doClose(tdbb, false);
+		try {
+			doClose(tdbb, false);
+		}
+		catch (const Exception& ex) 
+		{
+			if (!doPunt && !wasError) 
+			{
+				doPunt = true;
+				stuff_exception(tdbb->tdbb_status_vector, ex);
+			}
+		}
 		m_active = false;
 	}
 
@@ -808,35 +847,57 @@ void Statement::close(thread_db *tdbb)
 		unBindFromRequest();
 	}
 
-	bool commitFailed = false;
 	if (m_transaction && m_transaction->getScope() == traAutonomous) 
 	{
+		bool commitFailed = false;
 		if (!m_error) {
 			try {
 				m_transaction->commit(tdbb, false);
 			}
-			catch (const Exception& ex) {
+			catch (const Exception& ex) 
+			{
 				commitFailed = true;
-				stuff_exception(tdbb->tdbb_status_vector, ex);
+				if (!doPunt && !wasError) 
+				{
+					doPunt = true;
+					stuff_exception(tdbb->tdbb_status_vector, ex);
+				}
 			}
 		}
 
-		if (m_error || commitFailed)
-			m_transaction->rollback(tdbb, false);
+		if (m_error || commitFailed) {
+			try {
+				m_transaction->rollback(tdbb, false);
+			}
+			catch (const Exception& ex) 
+			{
+				if (!doPunt && !wasError)
+				{
+					doPunt = true;
+					stuff_exception(tdbb->tdbb_status_vector, ex);
+				}
+			}
+		}
 	}
-	m_connection.releaseStatement(tdbb, this);
+
 	m_error = false;
 	m_transaction = NULL;
+	m_connection.releaseStatement(tdbb, this);
 
-	if (commitFailed) {
+	if (doPunt) {
 		ERR_punt();
 	}
 }
 
 void Statement::deallocate(thread_db *tdbb)
 {
-	if (isAllocated())  {
-		doClose(tdbb, true);
+	if (isAllocated()) {
+		try {
+			doClose(tdbb, true);
+		}
+		catch(const Exception&) {
+			// ignore
+		}
 	}
 	fb_assert(!isAllocated());
 }
@@ -1394,11 +1455,19 @@ void EngineCallbackGuard::init(thread_db *tdbb, Connection &conn)
 	m_tdbb = tdbb;
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
 
-	if (m_tdbb->getTransaction()) {
-		m_tdbb->getTransaction()->tra_callback_count++;
-	}
+	if (m_tdbb)
+	{
+		if (m_tdbb->getTransaction()) {
+			m_tdbb->getTransaction()->tra_callback_count++;
+		}
 
-	m_tdbb->getDatabase()->dbb_sync->unlock();
+		if (m_tdbb->getAttachment()) {
+			fb_assert(!m_tdbb->getAttachment()->att_ext_connection);
+			m_tdbb->getAttachment()->att_ext_connection = &conn;
+		}
+
+		m_tdbb->getDatabase()->dbb_sync->unlock();
+	}
 
 	if (m_mutex) {
 		m_mutex->enter();
@@ -1411,10 +1480,17 @@ EngineCallbackGuard::~EngineCallbackGuard()
 		m_mutex->leave();
 	}
 
-	m_tdbb->getDatabase()->dbb_sync->lock();
+	if (m_tdbb)
+	{
+		m_tdbb->getDatabase()->dbb_sync->lock();
 
-	if (m_tdbb->getTransaction()) {
-		m_tdbb->getTransaction()->tra_callback_count--;
+		if (m_tdbb->getTransaction()) {
+			m_tdbb->getTransaction()->tra_callback_count--;
+		}
+
+		if (m_tdbb->getAttachment()) {
+			m_tdbb->getAttachment()->att_ext_connection = NULL;
+		}
 	}
 }
 

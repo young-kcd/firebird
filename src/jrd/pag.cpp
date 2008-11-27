@@ -98,6 +98,7 @@
 #include "../jrd/thread_proto.h"
 #include "../jrd/isc_f_proto.h"
 #include "../jrd/TempSpace.h"
+#include "../jrd/extds/ExtDS.h"
 
 using namespace Jrd;
 using namespace Ods;
@@ -2023,6 +2024,7 @@ static int blocking_ast_attachment(void* ast_object)
 		Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 		attachment->att_flags |= ATT_shutdown;
+		attachment->cancelExternalConnection(tdbb);
 
 		LCK_release(tdbb, attachment->att_id_lock);
 	}

@@ -103,6 +103,10 @@ struct dsc;
 struct thread;
 struct mod;
 
+namespace EDS {
+	class Connection;
+}
+
 namespace Jrd {
 
 const int QUANTUM			= 100;	// Default quantum
@@ -331,10 +335,14 @@ public:
 	Firebird::StringsBuffer* att_strings_buffer;	// per attachment circular strings buffer
 	Firebird::Mutex att_strings_mutex;				// mutex for this buffer access
 
+	EDS::Connection* att_ext_connection; // external connection executed by this attachment
+
 	bool locksmith() const;
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, Firebird::MemoryPool& pool,
 		jrd_tra* transaction, const Firebird::string& text);
+
+	void cancelExternalConnection(thread_db* tdbb);
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
@@ -584,9 +592,9 @@ struct win {
 	SSHORT win_scans;
 	USHORT win_flags;
 //	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
-	explicit win(const PageNumber& wp) : win_page(wp), win_flags(0) {}
+	explicit win(const PageNumber& wp) : win_page(wp), win_flags(0), win_bdb(NULL) {}
 	win(const USHORT pageSpaceID, const SLONG pageNum) : 
-		win_page(pageSpaceID, pageNum), win_flags(0) {}
+		win_page(pageSpaceID, pageNum), win_flags(0), win_bdb(NULL) {}
 };
 
 typedef win WIN;

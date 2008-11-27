@@ -71,6 +71,8 @@ public:
 	static void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
 
 private:
+	static int shutdown(const int reason, const int mask, void* arg);
+
 	static Firebird::GlobalPtr<Manager> manager;
 	static Provider* m_providers;
 };
@@ -96,6 +98,9 @@ public:
 
 	// Notify provider when some jrd attachment is about to be released
 	virtual void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att) = 0;
+
+	// cancel execution of every connection
+	void cancelConnections(Jrd::thread_db *tdbb);
 
 	const Firebird::string& getName() const { return m_name; }
 
@@ -150,6 +155,8 @@ public:
 	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
 		const Firebird::string &user, const Firebird::string &pwd) = 0;
 	virtual void detach(Jrd::thread_db *tdbb);
+
+	virtual bool cancelExecution(Jrd::thread_db *tdbb) = 0;
 
 	int getSqlDialect() const { return m_sqlDialect; }
 
