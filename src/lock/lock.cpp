@@ -250,6 +250,8 @@ LockManager::~LockManager()
 		release_mutex();
 	}
 
+	ISC_mutex_fini(MUTEX);
+
 	if (m_header)
 	{
 		ISC_unmap_file(local_status, &m_shmem);

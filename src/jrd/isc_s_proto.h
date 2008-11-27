@@ -55,6 +55,7 @@ int		ISC_mutex_init(struct mtx*);
 int		ISC_mutex_lock(struct mtx *);
 int		ISC_mutex_lock_cond(struct mtx *);
 int		ISC_mutex_unlock(struct mtx *);
+void	ISC_mutex_fini(struct mtx *);
 
 #if defined HAVE_MMAP || defined WIN_NT
 UCHAR*	ISC_map_object(ISC_STATUS *, SH_MEM, SLONG, SLONG);
