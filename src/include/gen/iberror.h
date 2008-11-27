@@ -706,6 +706,7 @@ const ISC_STATUS isc_sysf_argmustbe_nonneg            = 335544967L;
 const ISC_STATUS isc_sysf_binuuid_mustbe_str          = 335544968L;
 const ISC_STATUS isc_sysf_binuuid_wrongsize           = 335544969L;
 const ISC_STATUS isc_missing_required_spb             = 335544970L;
+const ISC_STATUS isc_net_server_shutdown              = 335544971L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -996,7 +997,7 @@ const ISC_STATUS isc_fbsvcmgr_query_err               = 336986117L;
 const ISC_STATUS isc_fbsvcmgr_switch_unknown          = 336986118L;
 const ISC_STATUS isc_fbsvcmgr_bad_sm                  = 336986159L;
 const ISC_STATUS isc_utl_trusted_switch               = 337051649L;
-const ISC_STATUS isc_err_max                          = 940;
+const ISC_STATUS isc_err_max                          = 941;
 
 #else /* c definitions */
 
@@ -1672,6 +1673,7 @@ const ISC_STATUS isc_err_max                          = 940;
 #define isc_sysf_binuuid_mustbe_str          335544968L
 #define isc_sysf_binuuid_wrongsize           335544969L
 #define isc_missing_required_spb             335544970L
+#define isc_net_server_shutdown              335544971L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -1962,7 +1964,7 @@ const ISC_STATUS isc_err_max                          = 940;
 #define isc_fbsvcmgr_switch_unknown          336986118L
 #define isc_fbsvcmgr_bad_sm                  336986159L
 #define isc_utl_trusted_switch               337051649L
-#define isc_err_max                          940
+#define isc_err_max                          941
 
 #endif
 

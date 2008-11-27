@@ -672,6 +672,7 @@ static const struct {
 	{"sysf_binuuid_mustbe_str", 335544968},
 	{"sysf_binuuid_wrongsize", 335544969},
 	{"missing_required_spb", 335544970},
+	{"net_server_shutdown", 335544971},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
