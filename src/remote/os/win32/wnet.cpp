@@ -63,6 +63,7 @@ static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
 static void		disconnect(rem_port*);
+static void		force_close(rem_port*);
 static void		exit_handler(void*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
@@ -553,6 +554,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
+	port->port_force_close = force_close;
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
@@ -761,6 +763,28 @@ static void disconnect(rem_port* port)
 	}
 	gds__unregister_cleanup(exit_handler, port);
 	port->release();
+}
+
+
+static void force_close(rem_port* port)
+{
+/**************************************
+ *
+ *	f o r c e _ c l o s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Forcebly close remote connection.
+ *
+ **************************************/
+
+	if (port->port_handle) 
+	{
+		// hvlad: it hungs. It seems we need to use overlapped IO to make it work
+		//CloseHandle(port->port_handle);
+		//port->port_handle = 0;
+	}
 }
 
 

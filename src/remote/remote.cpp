@@ -620,6 +620,11 @@ void rem_port::disconnect()
 	(*this->port_disconnect)(this);
 }
 
+void rem_port::force_close()
+{
+	(*this->port_force_close)(this);
+}
+
 rem_port* rem_port::receive(PACKET* pckt)
 {
 	return (*this->port_receive_packet)(this, pckt);

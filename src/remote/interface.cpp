@@ -7026,6 +7026,17 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 	CHECK_HANDLE(rdb, type_rdb, isc_bad_db_handle);
 	rem_port* port = rdb->rdb_port;
 
+	if (kind == fb_cancel_abort)
+	{
+		rdb->rdb_port->force_close();
+
+		user_status[0] = isc_arg_gds;
+		user_status[1] = FB_SUCCESS;
+		user_status[2] = isc_arg_end;
+
+		return user_status[1];
+	}
+
 	if (port->port_protocol < PROTOCOL_VERSION12)
 	{
 		user_status[0] = isc_arg_gds;

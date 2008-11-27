@@ -253,6 +253,7 @@ static unsigned int procCount = 0;
 #endif // WIN_NT
 
 static void		disconnect(rem_port*);
+static void		force_close(rem_port*);
 static void		closePortsExitHandler(void*);
 
 #ifdef NO_FORK
@@ -1279,6 +1280,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
+	port->port_force_close = force_close;
 	port->port_receive_packet = receive;
 	port->port_select_multi = select_multi;
 	port->port_send_packet = send_full;
@@ -1740,6 +1742,41 @@ static void disconnect( rem_port* port)
 #endif
 
 	return;
+}
+
+
+static void force_close(rem_port* port)
+{
+/**************************************
+ *
+ *	f o r c e _ c l o s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Forcebly close remote connection.
+ *
+ **************************************/
+
+#if defined WIN_NT
+	SOCKET handle = (SOCKET) port->port_handle;
+	port->port_handle = 0;
+
+	if (handle && handle != INVALID_SOCKET) 
+	{
+		shutdown(handle, 2);
+		SOCLOSE(handle);
+	}
+#else
+	int handle = (int) port->port_handle;
+	port->port_handle = 0;
+
+	if (handle) 
+	{
+		shutdown(handle, 2);
+		SOCLOSE(handle);
+	}
+#endif
 }
 
 

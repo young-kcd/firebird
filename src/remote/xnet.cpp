@@ -64,6 +64,7 @@ static void cleanup_port(rem_port*);
 static rem_port* connect_client(PACKET*, ISC_STATUS*);
 static rem_port* connect_server(ISC_STATUS*, USHORT);
 static void disconnect(rem_port*);
+static void force_close(rem_port*);
 static void exit_handler(rem_port*);
 static int shut_main_port(const int, const int, void* arg);
 
@@ -662,6 +663,7 @@ static rem_port* alloc_port(rem_port* parent,
 
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
+	port->port_force_close = force_close;
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
@@ -1479,6 +1481,40 @@ static void disconnect(rem_port* port)
 	gds__unregister_cleanup((FPTR_VOID_PTR)(exit_handler), port);
 		
 	cleanup_port(port);
+}
+
+
+static void force_close(rem_port* port)
+{
+/**************************************
+ *
+ *	f o r c e _ c l o s e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Forcebly close remote connection.
+ *
+ **************************************/
+
+	XCC xcc = (XCC) port->port_xcc;
+
+	if (xcc->xcc_event_send_channel_filled) {
+		CloseHandle(xcc->xcc_event_send_channel_filled);
+		xcc->xcc_event_send_channel_filled = 0;
+	}
+	if (xcc->xcc_event_send_channel_empted) {
+		CloseHandle(xcc->xcc_event_send_channel_empted);
+		xcc->xcc_event_send_channel_empted = 0;
+	}
+	if (xcc->xcc_event_recv_channel_filled) {
+		CloseHandle(xcc->xcc_event_recv_channel_filled);
+		xcc->xcc_event_recv_channel_filled = 0;
+	}
+	if (xcc->xcc_event_recv_channel_empted) {
+		CloseHandle(xcc->xcc_event_recv_channel_empted);
+		xcc->xcc_event_recv_channel_empted = 0;
+	}
 }
 
 

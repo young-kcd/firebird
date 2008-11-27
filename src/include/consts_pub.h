@@ -987,6 +987,7 @@
 #define fb_cancel_disable				  1
 #define fb_cancel_enable				  2
 #define fb_cancel_raise					  3
+#define fb_cancel_abort					  4
 
 /********************************************/
 /* Debug information items					*/

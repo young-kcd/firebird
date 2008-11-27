@@ -581,6 +581,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	// port function pointers (C "emulation" of virtual functions)
 	int				(*port_accept)(rem_port*, const p_cnct*);
 	void			(*port_disconnect)(rem_port*);
+	void			(*port_force_close)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
@@ -656,7 +657,7 @@ public:
 		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 #endif
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_accept(0), port_disconnect(0), port_receive_packet(0), port_send_packet(0), 
+		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0), 
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0), 
 		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic), 
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
@@ -789,6 +790,7 @@ public:
 	/* TMN: ugly, but at least a start */
 	int		accept(p_cnct* cnct);
 	void	disconnect();
+	void	force_close();
 	rem_port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
