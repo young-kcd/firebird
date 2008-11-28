@@ -5443,7 +5443,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		const USHORT stream = stream_stack.pop();
 		const Format* format = CMP_format(tdbb, csb, stream);
 		const dsc* desc = &format->fmt_desc[id];
-		if (id >= format->fmt_count || desc->dsc_length == 0)
+		if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
 			IBERROR(157);		/* msg 157 cannot sort on a field that does not exist */
 		if (desc->dsc_dtype >= dtype_aligned)
 			map_length =
