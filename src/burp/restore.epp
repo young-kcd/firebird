@@ -3029,7 +3029,8 @@ burp_fld* get_field(BurpGlobals*	tdgbl,
 
 			case att_field_security_class:
 				GET_TEXT(X.RDB$SECURITY_CLASS);
-				X.RDB$SECURITY_CLASS.NULL = FALSE;
+				if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
+					X.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
 			case att_field_query_name:
@@ -4816,7 +4817,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
+					if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
+						X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
 				case att_procedure_owner_name:
@@ -4926,7 +4928,8 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_security_class:
 					GET_TEXT(X.RDB$SECURITY_CLASS);
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
+					if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
+						X.RDB$SECURITY_CLASS.NULL = FALSE;
 					break;
 
 				case att_procedure_owner_name:
@@ -5323,8 +5326,9 @@ bool get_relation(BurpGlobals* tdgbl)
 			break;
 
 		case att_relation_security_class:
-			sec_class_null = false;
 			GET_TEXT(sec_class);
+			if (strncmp(sec_class, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
+				sec_class_null = false;
 			break;
 
 		case att_relation_view_blr:
