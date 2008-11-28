@@ -19,7 +19,7 @@
 #
 # compile flags for GCC compiler
 
-PROD_FLAGS= -pipe -fPIC -O3 -MMD -DNDEBUG -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -march=2.0
+PROD_FLAGS= -pipe -fPIC -O3 -MMD -DNDEBUG -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_REENTRANT -march=2.0
 DEV_FLAGS= -ggdb -pipe -fPIC -MMD -DHP11 -DHPUX -D_HPUX_SOURCE -D_XOPEN_SOURCE_EXTENDED -D_REENTRANT -march=2.0 
 #Extra modules needed on this platform during bootstrap
 JRDBOOT_Extra_Files=isc_sync.cpp thd.cpp
