@@ -2958,6 +2958,22 @@ int ISC_mutex_init(struct mtx* mutex)
 }
 
 
+void ISC_mutex_fini(struct mtx *mutex)
+{
+/**************************************
+ *
+ *	m u t e x _ f i n i ( S Y S V )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a mutex.
+ *
+ **************************************/
+	// no-op for SystemV semaphores
+}
+
+
 int ISC_mutex_lock(struct mtx* mutex)
 {
 /**************************************
