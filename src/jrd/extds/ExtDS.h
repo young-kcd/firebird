@@ -71,10 +71,13 @@ public:
 	static void jrdAttachmentEnd(Jrd::thread_db *tdbb, Jrd::Attachment* att);
 
 private:
+	static void init();
 	static int shutdown(const int reason, const int mask, void* arg);
 
 	static Firebird::GlobalPtr<Manager> manager;
+	static Firebird::Mutex m_mutex;
 	static Provider* m_providers;
+	static bool m_initialized;
 };
 
 

@@ -52,12 +52,13 @@ namespace EDS {
 // Manager
 
 GlobalPtr<Manager> Manager::manager;
+Mutex Manager::m_mutex;
 Provider* Manager::m_providers = NULL;
+bool Manager::m_initialized = false;
 
 Manager::Manager(MemoryPool &pool) :
 	PermanentStorage(pool)
 {
-	fb_shutdown_callback(0, shutdown, fb_shut_preproviders, 0);
 }
 
 Manager::~Manager()
@@ -68,6 +69,11 @@ Manager::~Manager()
 		m_providers = m_providers->m_next;
 		delete to_delete;
 	}
+}
+
+void Manager::init()
+{
+	fb_shutdown_callback(0, shutdown, fb_shut_preproviders, 0);
 }
 
 void Manager::addProvider(Provider* provider)
@@ -99,6 +105,16 @@ Provider* Manager::getProvider(const string &prvName)
 Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource, 
 	const string &user, const string &pwd, TraScope tra_scope)
 {
+	if (!m_initialized)
+	{
+		MutexLockGuard guard(m_mutex);
+		if (!m_initialized)
+		{
+			init();
+			m_initialized = true;
+		}
+	}
+
 	// dataSource : registered data source name 
 	// or connection string : provider::database
 	string prvName, dbName;
@@ -167,6 +183,8 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db *tdbb, const string &dbName, 
 	const string &user, const string &pwd, TraScope tra_scope)
 {
+	MutexLockGuard guard(m_mutex);
+
 	Connection **conn_ptr = m_connections.begin();
 	Connection **end = m_connections.end();
 
@@ -198,6 +216,8 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 // I have not implemented way to delete long idle connections.
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
+	MutexLockGuard guard(m_mutex);
+
 	size_t pos;
 	if (m_connections.find(&conn, pos))
 	{
@@ -211,6 +231,8 @@ void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPoo
 
 void Provider::clearConnections(thread_db *tdbb)
 {
+	MutexLockGuard guard(m_mutex);
+
 	Connection **ptr = m_connections.begin();
 	Connection **end = m_connections.end();
 
@@ -225,6 +247,8 @@ void Provider::clearConnections(thread_db *tdbb)
 
 void Provider::cancelConnections(thread_db *tdbb)
 {
+	MutexLockGuard guard(m_mutex);
+
 	Connection **ptr = m_connections.begin();
 	Connection **end = m_connections.end();
 
