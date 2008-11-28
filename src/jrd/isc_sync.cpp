@@ -3077,6 +3077,22 @@ int ISC_mutex_init(struct mtx* mutex)
 }
 
 
+void ISC_mutex_fini(struct mtx *mutex)
+{
+/**************************************
+ *
+ *	m u t e x _ f i n i ( P O S I X _ T H R E A D S )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a mutex.
+ *
+ **************************************/
+	// no-op for posix threads
+}
+
+
 int ISC_mutex_lock(struct mtx* mutex)
 {
 /**************************************
@@ -3491,7 +3507,6 @@ int ISC_mutex_init(struct mtx* mutex, const TEXT* mutex_name)
 }
 
 
-// This function is never called! AP-2008
 void ISC_mutex_fini(struct mtx *mutex)
 {
 /**************************************
