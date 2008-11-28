@@ -1,3 +1,117 @@
+2008-11-28 19:49  alexpeshkoff
+
+	* firebird2/src/: common/cvt.cpp (1.6), common/classes/SafeArg.cpp
+	(1.8), include/fb_types.h (1.57), jrd/common.h (1.184), jrd/cvt.cpp
+	(1.100), jrd/jrd.h (1.254), msgs/build_file.epp (1.33),
+	qli/compile.cpp (1.29), qli/meta.epp (1.72):
+
+	fixed some gcc warning
+
+2008-11-28 15:59  asfernandes
+
+	* firebird2/src/jrd/opt.cpp (1.325):
+
+	Fixed CORE-2215 - GROUP BY concatenation with empty string
+
+2008-11-28 15:20  asfernandes
+
+	* firebird2/src/burp/restore.epp (1.148):
+
+	Fixed CORE-2214 - Incorrect restore of security classes
+
+2008-11-28 12:46  hvlad
+
+	* firebird2/src/jrd/extds/: ExtDS.cpp (1.22), ExtDS.h (1.15):
+
+	Move EDS:Manager initialization from constructor into later time to
+	ensure engine was initialized properly. Add some syncronization
+	around connections list.
+
+2008-11-28 12:28  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.160):
+
+	In case of System V semaphores mutex_fini() no-op too
+
+2008-11-28 12:01  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.159):
+
+	fixed posix build
+
+2008-11-28 10:44  paulbeach
+
+	* firebird2/builds/posix/prefix.hpux (1.8):
+
+	Small mod for HPUX
+
+2008-11-28 00:06  hvlad
+
+	* firebird2/src/: include/fb_api_proto.h (1.6), jrd/jrd.cpp
+	(1.490), jrd/jrd.h (1.253), jrd/pag.cpp (1.192), jrd/shut.cpp
+	(1.60), jrd/tra.cpp (1.186), jrd/extds/ExtDS.cpp (1.21),
+	jrd/extds/ExtDS.h (1.14), jrd/extds/InternalDS.cpp (1.13),
+	jrd/extds/InternalDS.h (1.9), jrd/extds/IscDS.cpp (1.15),
+	jrd/extds/IscDS.h (1.12):
+
+	Few fixes to correctly close brocken external connection.
+
+	Ability to stop execution of external query when : - engine is
+	shutted down - database is shutted down - local statement is
+	cancelled - local connection is cancelled
+
+2008-11-27 23:59  hvlad
+
+	* firebird2/src/: include/consts_pub.h (1.27), remote/inet.cpp
+	(1.259), remote/interface.cpp (1.196), remote/remote.cpp (1.72),
+	remote/remote.h (1.81), remote/xnet.cpp (1.119),
+	remote/os/win32/wnet.cpp (1.59):
+
+	Implement new option (fb_cancel_abort) for fb_cancel_operation().
+	It allows forcebly close client port and allow application to
+	shutdown even it wait of execution finish of some long running
+	query. Use carefull ! Not implemented for WNET, work in progress.
+
+2008-11-27 23:48  hvlad
+
+	* firebird2/src/remote/: xnet.cpp (1.118), os/win32/srvr_w32.cpp
+	(1.58):
+
+	Fixed few bugs for XNET under high load. Improve XNET connections
+	error diagnostics. Don't stop processing XNET incoming connections
+	if one of them failed at initial stage (at XNET_conect).
+
+2008-11-27 22:09  hvlad
+
+	* firebird2/src/include/gen/: codetext.h (1.98), iberror.h (1.102),
+	msgs.h (1.126), sql_code.h (1.104), sql_state.h (1.31):
+
+	Regenerated headers after new error message added
+
+2008-11-27 22:08  hvlad
+
+	* firebird2/src/msgs/: facilities2.sql (1.56), messages2.sql
+	(1.70), system_errors2.sql (1.47):
+
+	New error message
+
+2008-11-27 21:20  hvlad
+
+	* firebird2/src/: jrd/isc_s_proto.h (1.23), lock/lock.cpp (1.171):
+
+	Release lock manager's mutex in its destructor
+
+2008-11-27 21:16  hvlad
+
+	* firebird2/src/: common/fb_exception.cpp (1.43),
+	include/fb_exception.h (1.32):
+
+	Split class system_call_failed into two exception classes :
+	system_error and system_call_failed. system_error is an wrapper for
+	OS errors and system_call_failed inherits from system_error and
+	calls abort() when exception raised. system_error intended for the
+	cases where failure of OS call is expected and can be handled.
+
 2008-11-26 01:45  asfernandes
 
 	* firebird2/: builds/install/misc/classicLibrary.sh.in (1.13),
