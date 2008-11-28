@@ -1,3 +1,9 @@
+2008-11-28 10:44  paulbeach
+
+	* firebird2/builds/posix/prefix.hpux (1.1.4.5):
+
+	Small mod for HPUX
+
 2008-11-23 13:52  dimitr
 
 	* firebird2/src/jrd/Optimizer.cpp (1.56.4.10):
