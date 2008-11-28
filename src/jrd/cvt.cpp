@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <limits.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"
@@ -288,7 +287,7 @@ UCHAR CVT_get_numeric(const UCHAR* string,
 	}
 
 	if ((sign == -1) && (-value == LONG_MIN_int64)) {
-		*(SLONG *) ptr = LONG_MIN;
+		*(SLONG *) ptr = SLONG_MIN;
 		return dtype_long;
 	}
 

@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <limits.h>
 #include "gen/iberror.h"
 
 #include "../jrd/gdsassert.h"
@@ -152,11 +151,11 @@ class DummyException {};
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
-static const SQUAD quad_min_int = { 0, LONG_MIN };
-static const SQUAD quad_max_int = { -1, LONG_MAX };
+static const SQUAD quad_min_int = { 0, SLONG_MIN };
+static const SQUAD quad_max_int = { -1, SLONG_MAX };
 #else
-static const SQUAD quad_min_int = { LONG_MIN, 0 };
-static const SQUAD quad_max_int = { LONG_MAX, -1 };
+static const SQUAD quad_min_int = { SLONG_MIN, 0 };
+static const SQUAD quad_max_int = { SLONG_MAX, -1 };
 #endif
 #endif
 
@@ -935,7 +934,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 		if (d < (double) LONG_MIN_real) {
 			if (d > (double) LONG_MIN_real - 1.)
-				return LONG_MIN;
+				return SLONG_MIN;
 			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		}
 		if (d > (double) LONG_MAX_real) {

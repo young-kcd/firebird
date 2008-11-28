@@ -592,9 +592,9 @@ struct win {
 	SSHORT win_scans;
 	USHORT win_flags;
 //	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
-	explicit win(const PageNumber& wp) : win_page(wp), win_flags(0), win_bdb(NULL) {}
+	explicit win(const PageNumber& wp) : win_page(wp), win_bdb(NULL), win_flags(0) {}
 	win(const USHORT pageSpaceID, const SLONG pageNum) : 
-		win_page(pageSpaceID, pageNum), win_flags(0), win_bdb(NULL) {}
+		win_page(pageSpaceID, pageNum), win_bdb(NULL), win_flags(0) {}
 };
 
 typedef win WIN;

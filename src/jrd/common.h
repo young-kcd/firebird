@@ -854,9 +854,9 @@ struct in_sw_tab_t
 	int in_sw;
 	int in_spb_sw;
 	const TEXT* in_sw_name;
-	ULONG in_sw_value;			/* alice specific field */
-	ULONG in_sw_requires;		/* alice specific field */
-	ULONG in_sw_incompatibilities;	/* alice specific field */
+	SINT64 in_sw_value;			/* alice specific field */
+	SINT64 in_sw_requires;		/* alice specific field */
+	SINT64 in_sw_incompatibilities;	/* alice specific field */
 	bool in_sw_state;
 	USHORT in_sw_msg;
 	USHORT in_sw_min_length;

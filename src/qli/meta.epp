@@ -421,7 +421,7 @@ void MET_define_sql_relation( qli_rel* relation)
 	END_ERROR;
 
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
@@ -601,7 +601,7 @@ void MET_delete_field( DBB database, NAM name)
 		FLD IN DB.RDB$FIELDS WITH FLD.RDB$FIELD_NAME EQ name->nam_string
 
 		qli_rlb* rlb = NULL;
-		rlb = CHECK_RLB(rlb);
+		CHECK_RLB(rlb);
 		STUFF(isc_dyn_version_1);
 		STUFF(isc_dyn_delete_dimensions);
 		STUFF_STRING(FLD.RDB$FIELD_NAME);
@@ -694,7 +694,7 @@ void MET_delete_relation( qli_rel* relation)
 
 	qli_symbol* symbol = relation->rel_symbol;
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_delete_rel);
 	STUFF_STRING(symbol->sym_string);
@@ -1518,7 +1518,7 @@ void MET_sql_alter_table( qli_rel* relation, qli_fld* fields)
 		ERRQ_print_error(414, symbol->sym_string);	// Msg237 Relation %s is lost
 
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
@@ -1566,7 +1566,7 @@ void MET_sql_cr_view( qli_syntax* node)
 	qli_symbol* symbol = relation->rel_symbol;
 
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
 
@@ -1756,7 +1756,7 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
  *	Add a SQL field to a relation via dyn.
  *
  **************************************/
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 	DBB database = relation->rel_database;
 	const qli_symbol* relation_name = relation->rel_symbol;
 	const qli_symbol* field_name = field->fld_name;
@@ -1810,7 +1810,7 @@ static void add_sql_field( qli_rel* relation, qli_fld* field, USHORT position,
 		STUFF_WORD(position);
 	}
 
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 
 	if (field->fld_flags & FLD_not_null) {
 		STUFF(isc_dyn_fld_validation_blr);
@@ -2113,7 +2113,7 @@ static void clone_fields( qli_rel* target, qli_rel* source)
 		clone_global_fields(target, source);
 
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
@@ -2340,7 +2340,7 @@ static void clone_global_fields( qli_rel* target, qli_rel* source)
 			continue;
 
 		if (first_field) {
-			rlb = CHECK_RLB(rlb);
+			CHECK_RLB(rlb);
 			STUFF(isc_dyn_version_1);
 			STUFF(isc_dyn_begin);
 			first_field = false;
@@ -3515,7 +3515,7 @@ static void sql_grant_revoke( qli_syntax* node, USHORT type)
 	const TEXT* relation_name = relation->rel_symbol->sym_string;
 
 	qli_rlb* rlb = NULL;
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 
 	STUFF(isc_dyn_version_1);
 	STUFF(isc_dyn_begin);
@@ -3593,7 +3593,7 @@ static void stuff_priv(
  *	Stuff a privilege for grant/revoke.
  *
  **************************************/
-	rlb = CHECK_RLB(rlb);
+	CHECK_RLB(rlb);
 	STUFF(type);
 
 // Stuff privileges first

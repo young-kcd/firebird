@@ -402,7 +402,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 		leaf_node = leaf;
 	}
 
-	leaf_node->msgrec_code = -1UL;
+	leaf_node->msgrec_code = ~0;
 	leaf_node->msgrec_length = 0;
 	leaf_node->msgrec_flags = 0;
 	n = (SCHAR *) leaf_node - (SCHAR *) leaf;
@@ -414,7 +414,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 
 	for (msgnod** ptr = nodes, **ptr2 = buckets; *ptr; ptr++, ptr2++) {
 		msgnod* node = *ptr;
-		node->msgnod_code = -1UL;
+		node->msgnod_code = ~0;
 		node->msgnod_seek = position;
 		n = (SCHAR *) (node + 1) - (SCHAR *) * ptr2;
 		position = write_bucket(*ptr2, n);

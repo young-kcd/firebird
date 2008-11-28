@@ -866,7 +866,7 @@ static qli_nod* compile_function( qli_nod* node, qli_req* old_request,
 
 	qli_nod* list = node->nod_arg[e_fun_args];
 
-	qli_nod** ptr = ptr = list->nod_arg;
+	qli_nod** ptr = list->nod_arg;
 	for (const qli_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
 		compile_expression(*ptr, request, true);
 

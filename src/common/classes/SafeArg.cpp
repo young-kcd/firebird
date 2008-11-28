@@ -310,7 +310,7 @@ void SafeArg::dump(const TEXT* target[], size_t v_size) const
 // is returned.
 const safe_cell& SafeArg::getCell(size_t index) const
 {
-	static safe_cell aux_cell = {safe_cell::at_none, 0};
+	static safe_cell aux_cell = {safe_cell::at_none, {0}};
 	
 	if (index < m_count)
 		return m_arguments[index];

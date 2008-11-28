@@ -32,13 +32,19 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
+#include <limits.h>
+
 #if SIZEOF_LONG == 8
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
+	const SLONG SLONG_MIN = INT_MIN;
+	const SLONG SLONG_MAX = INT_MAX;
 #elif SIZEOF_LONG == 4
 	typedef long SLONG;
 	typedef unsigned long ULONG;
+	const SLONG SLONG_MIN = LONG_MIN;
+	const SLONG SLONG_MAX = LONG_MAX;
 #else
 #error compile_time_failure: SIZEOF_LONG not specified
 #endif
