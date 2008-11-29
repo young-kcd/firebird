@@ -3363,7 +3363,37 @@ static jrd_nod* make_defaults(thread_db* tdbb, CompilerScratch* csb, USHORT stre
 	     ptr1 < end; ++ptr1, ++field_id)
 	{
 		jrd_nod* value;
-		if (*ptr1 && (value = (*ptr1)->fld_default_value)) {
+		if (*ptr1 && (value = (*ptr1)->fld_default_value))
+		{
+			fb_assert(statement->nod_type == nod_list);
+			if (statement->nod_type == nod_list)
+			{
+				bool inList = false;
+
+				for (unsigned i = 0; i < statement->nod_count; ++i)
+				{
+					jrd_nod* assign = statement->nod_arg[i];
+
+					fb_assert(assign->nod_type == nod_assignment);
+					if (assign->nod_type == nod_assignment)
+					{
+						jrd_nod* to = assign->nod_arg[e_asgn_to];
+
+						fb_assert(to->nod_type == nod_field);
+						if (to->nod_type == nod_field &&
+							(USHORT)(IPTR) to->nod_arg[e_fld_stream] == stream &&
+							(USHORT)(IPTR) to->nod_arg[e_fld_id] == field_id)
+						{
+							inList = true;
+							break;
+						}
+					}
+				}
+
+				if (inList)
+					continue;
+			}
+
 			jrd_nod* node = PAR_make_node(tdbb, e_asgn_length);
 			node->nod_type = nod_assignment;
 			node->nod_arg[e_asgn_from] =
@@ -3880,8 +3910,7 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 	case nod_store:
 		if (pass1_store(tdbb, csb, node))
 		{
-			stream =
-				(USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
+			stream = (USHORT)(IPTR) node->nod_arg[e_sto_relation]->nod_arg[e_rel_stream];
 			node->nod_arg[e_sto_statement] =
 				make_defaults(tdbb, csb, stream, node->nod_arg[e_sto_statement]);
 		}
