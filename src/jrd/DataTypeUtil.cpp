@@ -217,15 +217,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		// Is this a text type?
 		if (DTYPE_IS_TEXT(arg->dsc_dtype) ||
 			(arg->dsc_dtype == dtype_blob && arg->dsc_sub_type == isc_blob_text))
-		{ 
-			const USHORT cnvlength = TEXT_LEN(arg);
-			if (cnvlength > maxtextlength) {
-				maxtextlength = cnvlength;
-			}
-			if (arg->dsc_dtype == dtype_varying) {
-				any_varying = true;
-			}
-
+		{
 			// Pick first characterset-collate from args-list  
 			// 
 			// Is there an better way to determine the         
@@ -233,27 +225,44 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			// Maybe first according SQL-standard which has an order 
 			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
 			//
-			// At least give any first charset other then ASCII/NONE precedence
-			if (!any_text) {
+			// At least give any first charset other than ASCII/NONE precedence
+
+			USHORT oldttype = ttype;
+
+			if (!any_text)
 				ttype = arg->getTextType();
-			}
-			else {
-				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
+			else
+			{
+				if (ttype == ttype_none || ttype == ttype_ascii)
 					ttype = arg->getTextType();
-				}
 			}
+
 			any_text = true;
-		}
-		else {
-			// Get max needed-length for not text types suchs as int64,timestamp etc..
-			const USHORT cnvlength = DSC_convert_to_text_length(arg->dsc_dtype);
-			if (cnvlength > maxtextlength) {
+
+			maxtextlength = convertLength(maxtextlength, oldttype, ttype);
+
+			const USHORT cnvlength = arg->getStringLength();
+
+			if (cnvlength > maxtextlength)
 				maxtextlength = cnvlength;
-			}
+
+			if (arg->dsc_dtype == dtype_varying)
+				any_varying = true;
+		}
+		else
+		{
+			// Get max needed-length for not text types suchs as int64,timestamp etc..
+			USHORT cnvlength = DSC_convert_to_text_length(arg->dsc_dtype);
+			cnvlength = convertLength(cnvlength, arg->getCharSet(), ttype);
+
+			if (cnvlength > maxtextlength)
+				maxtextlength = cnvlength;
+
 			all_text = false;
 		}
 
-		if (DTYPE_IS_DATE(arg->dsc_dtype)) {
+		if (DTYPE_IS_DATE(arg->dsc_dtype))
+		{
 			any_datetime = true;
 			switch (arg->dsc_dtype)
 			{
@@ -271,7 +280,8 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 				break;
 			}
 		}
-		else {
+		else
+		{
 			all_date = false;
 			all_time = false;
 			all_timestamp = false;
@@ -356,13 +366,16 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			if (any_varying || (any_text && (any_numeric || any_datetime)))
 			{
 				result->dsc_dtype = dtype_varying;
-				maxtextlength += sizeof(USHORT);
+				result->dsc_length = sizeof(USHORT);
 			}
 			else
+			{
 				result->dsc_dtype = dtype_text;
+				result->dsc_length = 0;
+			}
 
 			result->dsc_ttype() = ttype;  // same as dsc_subtype
-			result->dsc_length = maxtextlength;
+			result->dsc_length += maxtextlength;
 			result->dsc_scale = 0;
 		}
 		return;
