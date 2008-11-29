@@ -1,3 +1,16 @@
+2008-11-29 20:30  asfernandes
+
+	* firebird2/src/jrd/cmp.cpp (1.323):
+
+	Fixed CORE-1842 - DEFAULT values are unnecessary evaluated.
+
+2008-11-29 19:47  asfernandes
+
+	* firebird2/src/jrd/: DataTypeUtil.cpp (1.18), DataTypeUtil.h
+	(1.11):
+
+	Fixed CORE-2019 – UTF-8 conversion error (string truncation).
+
 2008-11-28 19:49  alexpeshkoff
 
 	* firebird2/src/: common/cvt.cpp (1.6), common/classes/SafeArg.cpp
