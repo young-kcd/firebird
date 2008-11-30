@@ -5456,8 +5456,11 @@ jrd_nod* CMP_pass2(thread_db* tdbb, CompilerScratch* csb, jrd_nod* const node, j
 			// SMB_SET uses ULONG, not USHORT
 			const ULONG id = (ULONG)(IPTR) node->nod_arg[e_fld_id];
 			SBM_SET(tdbb->getDefaultPool(), &csb->csb_rpt[stream].csb_fields, id);
+			if (csb->csb_rpt[stream].csb_relation || csb->csb_rpt[stream].csb_procedure)
+				node->nod_arg[e_fld_format] = (jrd_nod*) CMP_format(tdbb, csb, stream);
+			csb->csb_impure += sizeof(impure_value_ex);
+			break;
 		}
-		// FALL INTO
 
 	case nod_argument:
 	case nod_variable:

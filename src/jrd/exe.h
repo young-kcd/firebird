@@ -305,8 +305,9 @@ const int e_msg_length			= 4;
 
 const int e_fld_stream		= 0;
 const int e_fld_id			= 1;
-const int e_fld_default_value	= 2;	// hold column default value info if any, (Literal*)
-const int e_fld_length		= 3;
+const int e_fld_format		= 2;		// relation or procedure latest format when compiling
+const int e_fld_default_value	= 3;	// hold column default value info if any, (Literal*)
+const int e_fld_length		= 4;
 
 const int e_sto_statement	= 0;
 const int e_sto_statement2	= 1;

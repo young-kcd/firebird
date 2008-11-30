@@ -894,18 +894,52 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_field:
 		{
-			Record* record = request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
-			jrd_rel* relation = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation;
-			/* In order to "map a null to a default" value (in EVL_field()),
-			 * the relation block is referenced.
-			 * Reference: Bug 10116, 10424
-			 */
-			if (!EVL_field(relation,
-							record,
-							(USHORT)(IPTR) node->nod_arg[e_fld_id],
-							&impure->vlu_desc))
-			{
+			USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+			record_param& rpb = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]];
+			Record* record = rpb.rpb_record;
+			jrd_rel* relation = rpb.rpb_relation;
+			// In order to "map a null to a default" value (in EVL_field()),
+			// the relation block is referenced.
+			// Reference: Bug 10116, 10424
+
+			if (!EVL_field(relation, record, id, &impure->vlu_desc))
 				request->req_flags |= req_null;
+			else
+			{
+				Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
+
+				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
+				if (compileFormat &&
+					record->rec_format->fmt_version != compileFormat->fmt_version &&
+					!DSC_EQUIV(&impure->vlu_desc, &compileFormat->fmt_desc[id], true))
+				{
+					dsc desc = impure->vlu_desc;
+					impure->vlu_desc = compileFormat->fmt_desc[id];
+
+					if (impure->vlu_desc.isText())
+					{
+						// Allocate a string block of sufficient size.
+						VaryingString* string = impure->vlu_string;
+						if (string && string->str_length < impure->vlu_desc.dsc_length)
+						{
+							delete string;
+							string = NULL;
+						}
+
+						if (!string)
+						{
+							string = impure->vlu_string = FB_NEW_RPT(*tdbb->getDefaultPool(),
+								impure->vlu_desc.dsc_length) VaryingString();
+							string->str_length = impure->vlu_desc.dsc_length;
+						}
+
+						impure->vlu_desc.dsc_address = string->str_data;
+					}
+					else
+						impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc;
+
+					MOV_move(tdbb, &desc, &impure->vlu_desc);
+				}
 			}
 
 			if (!relation || !(relation->rel_flags & REL_system))
