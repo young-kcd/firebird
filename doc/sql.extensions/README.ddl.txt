@@ -327,3 +327,26 @@ Example:
 create database 'test.fdb'
     default character set win1252 collation win_ptbr;
 
+
+12) REVOKE ALL ON ALL
+(Alex Peshkoff)
+
+Function:
+
+When user is removed from security database (or any other authentication source),
+it's useful to revoke his access to any object in database. 
+
+Syntax:
+
+REVOKE ALL ON ALL FROM [USER] username
+REVOKE ALL ON ALL FROM [ROLE] rolename
+
+Example:
+
+# gsec -del guest
+# isql employee
+fbs bin # ./isql employee
+Database:  employee
+SQL> REVOKE ALL ON ALL FROM USER guest;
+SQL>
+
