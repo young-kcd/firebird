@@ -619,10 +619,12 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	ISC_STATUS*		port_status_vector;
 	HANDLE			port_handle;		/* handle for connection (from by OS) */
 	int				port_channel;		/* handle for connection (from by OS) */
-	HANDLE			port_event;			// event associated with port, Windows only
 	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 	Rdb*			port_context;
 	t_event_ast		port_ast;			/* AST for events */
+#ifdef WIN_NT
+	HANDLE			port_event;			// event associated with port, Windows only
+#endif
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
@@ -666,7 +668,10 @@ public:
 		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0), 
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0), 
 		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0), 
-		port_event(INVALID_HANDLE_VALUE), port_context(0), port_ast(0),
+		port_context(0), port_ast(0),
+#ifdef WIN_NT
+		port_event(INVALID_HANDLE_VALUE), 
+#endif
 #ifdef DEBUG_XDR_MEMORY
 		port_packet_vector(0), 
 #endif
