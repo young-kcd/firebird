@@ -7037,7 +7037,8 @@ ISC_STATUS FB_CANCEL_OPERATION(ISC_STATUS* user_status, Rdb** db_handle, USHORT 
 		return user_status[1];
 	}
 
-	if (port->port_protocol < PROTOCOL_VERSION12)
+	if (port->port_protocol < PROTOCOL_VERSION12 ||
+		port->port_type != rem_port::INET)
 	{
 		user_status[0] = isc_arg_gds;
 		user_status[1] = isc_wish_list;
