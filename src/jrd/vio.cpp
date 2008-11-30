@@ -1707,9 +1707,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 /* Allocate a garbage collect record block if all are active. */
 	record_param rpb;
 	rpb.rpb_record = 0;
-	Record* record =
-		VIO_record(tdbb, &rpb, MET_current(tdbb, relation),
-				   dbb->dbb_permanent);
+	Record* record = VIO_record(tdbb, &rpb, MET_current(tdbb, relation), dbb->dbb_permanent);
 	record->rec_flags |= REC_gc_active;
 
 /* Insert the new record block into the last slot of the vector. */
@@ -2473,8 +2471,7 @@ bool VIO_next_record(thread_db* tdbb,
 }
 
 
-Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, 
-				   MemoryPool *pool)
+Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, MemoryPool* pool)
 {
 /**************************************
  *
@@ -2491,7 +2488,8 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 	CHECK_DBB(dbb);
 
 #ifdef VIO_DEBUG
-	if (debug_flag > DEBUG_TRACE) {
+	if (debug_flag > DEBUG_TRACE)
+	{
 		printf("VIO_record (record_param %"QUADFORMAT"d, format %d, pool %p)\n",
 				  rpb->rpb_number.getValue(), format ? format->fmt_version : 0,
 				  (void*) pool);
@@ -2500,30 +2498,27 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format,
 
 /* If format wasn't given, look one up */
 
-	if (!format) {
+	if (!format)
 		format = MET_format(tdbb, rpb->rpb_relation, rpb->rpb_format_number);
-	}
 
 	Record* record = rpb->rpb_record;
-	if (!record) {
-		if (!pool) {
+	if (!record)
+	{
+		if (!pool)
 			pool = dbb->dbb_permanent;
-		}
+
 		record = rpb->rpb_record = FB_NEW_RPT(*pool, format->fmt_length) Record(*pool);
 	}
-	else if (record->rec_length < format->fmt_length) {
+	else if (record->rec_length < format->fmt_length)
+	{
 		Record* const old = record;
-		if (record->rec_flags & REC_gc_active) {
-			record =
-				replace_gc_record(rpb->rpb_relation, &rpb->rpb_record,
-								  format->fmt_length);
-		}
+		if (record->rec_flags & REC_gc_active)
+			record = replace_gc_record(rpb->rpb_relation, &rpb->rpb_record, format->fmt_length);
 		else
 			record = realloc_record(rpb->rpb_record, format->fmt_length);
 
-		if (rpb->rpb_prior == old) {
+		if (rpb->rpb_prior == old)
 			rpb->rpb_prior = record;
-		}
 	}
 
 	record->rec_format = format;

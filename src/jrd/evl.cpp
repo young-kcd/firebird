@@ -235,10 +235,8 @@ dsc* EVL_assign_to(thread_db* tdbb, jrd_nod* node)
 		return &impure->vlu_desc;
 
 	case nod_field:
-		record =
-			request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
-		if (!EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id],
-					   &impure->vlu_desc))
+		record = request->req_rpb[(int) (IPTR) node->nod_arg[e_fld_stream]].rpb_record;
+		if (!EVL_field(0, record, (USHORT)(IPTR) node->nod_arg[e_fld_id], &impure->vlu_desc))
 		{
 			// The below condition means that EVL_field() returned
 			// a read-only dummy value which cannot be assigned to.
@@ -365,7 +363,7 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
  *      Evaluate a boolean.
  *
  **************************************/
-	dsc*   desc[2];
+	dsc* desc[2];
 	bool value;
 	SSHORT comparison;
 	impure_value*    impure;
@@ -412,7 +410,8 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			force_equal |= request->req_flags & req_same_tx_upd;
 
 			// Currently only nod_like, nod_contains, nod_starts and nod_similar may be marked invariant
-			if (node->nod_flags & nod_invariant) {
+			if (node->nod_flags & nod_invariant)
+			{
 				impure = reinterpret_cast<impure_value*>((SCHAR *)request + node->nod_impure);
 
 				// Check that data type of operand is still the same.
@@ -430,29 +429,35 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 					impure->vlu_flags &= ~VLU_computed;
 				}
 
-				if (impure->vlu_flags & VLU_computed) {
+				if (impure->vlu_flags & VLU_computed)
+				{
 					if (impure->vlu_flags & VLU_null)
 						request->req_flags |= req_null;
 					else
 						computed_invariant = true;
 				}
-				else {
+				else
+				{
 					desc[1] = EVL_expr(tdbb, *ptr++);
-					if (request->req_flags & req_null) {
+					if (request->req_flags & req_null)
+					{
 						impure->vlu_flags |= VLU_computed;
 						impure->vlu_flags |= VLU_null;
 					}
-					else {
+					else
+					{
 						impure->vlu_flags &= ~VLU_null;
 
 						// Search object depends on operand data type.
 						// Thus save data type which we use to compute invariant
-						if (desc[0]) {
+						if (desc[0])
+						{
 							impure->vlu_desc.dsc_dtype = desc[0]->dsc_dtype;
 							impure->vlu_desc.dsc_sub_type = desc[0]->dsc_sub_type;
 							impure->vlu_desc.dsc_scale = desc[0]->dsc_scale;
 						}
-						else {
+						else
+						{
 							// Indicate we do not know type of expression.
 							// This code will force pattern recompile for the next non-null value
 							impure->vlu_desc.dsc_dtype = 0;
@@ -495,18 +500,16 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 
 			force_equal |= request->req_flags & req_same_tx_upd;
 
-			if (node->nod_flags & nod_comparison) {
+			if (node->nod_flags & nod_comparison)
 				comparison = MOV_compare(desc[0], desc[1]);
-			}
 
 			/* If we are checking equality of record_version
 			 * and same transaction updated the record,
 			 * force equality.
 			 */
 
-			if ((rec_version->nod_type == nod_rec_version) && (force_equal)) {
+			if (rec_version->nod_type == nod_rec_version && force_equal)
 				comparison = 0;
-			}
 
 			request->req_flags &= ~(req_null | req_same_tx_upd);
 		}
@@ -891,8 +894,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_field:
 		{
-			Record* record =
-				request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
+			Record* record = request->req_rpb[(int) (IPTR)node->nod_arg[e_fld_stream]].rpb_record;
 			jrd_rel* relation = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]].rpb_relation;
 			/* In order to "map a null to a default" value (in EVL_field()),
 			 * the relation block is referenced.
@@ -1214,7 +1216,7 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 */
 	if (!format || id >= format->fmt_count || !desc->dsc_dtype)
 	{
-	/* Map a non-existent field to a default value, if available.
+		/* Map a non-existent field to a default value, if available.
 		 * This enables automatic format upgrade for data rows.
 		 * Handle Outer Joins and such specially!
 		 * Reference: Bug 10424, 10116
@@ -1558,8 +1560,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 					}
 					else {
 						EVL_make_value(tdbb, desc, impure);
-						if (!vtemp.vlu_desc.dsc_address
-							|| MOV_compare(&vtemp.vlu_desc, desc))
+						if (!vtemp.vlu_desc.dsc_address || MOV_compare(&vtemp.vlu_desc, desc))
 						{
 							goto break_out;
 						}
@@ -1608,8 +1609,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						// when this reasoning has been validated, please.
 						break;
 					}
-					const SLONG result =
-						MOV_compare(desc, reinterpret_cast<dsc*>(impure));
+					const SLONG result = MOV_compare(desc, reinterpret_cast<dsc*>(impure));
 
 					if ((result > 0 &&
 					     (from->nod_type == nod_agg_max ||
@@ -1771,8 +1771,7 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 		jrd_nod* from = (*ptr)->nod_arg[e_asgn_from];
 		jrd_nod* field = (*ptr)->nod_arg[e_asgn_to];
 		const USHORT id = (USHORT)(IPTR) field->nod_arg[e_fld_id];
-		Record* record =
-			request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
+		Record* record = request->req_rpb[(int) (IPTR) field->nod_arg[e_fld_stream]].rpb_record;
 		impure_value_ex* impure = (impure_value_ex*) ((SCHAR *) request + from->nod_impure);
 
 		switch (from->nod_type)

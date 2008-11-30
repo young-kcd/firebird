@@ -507,8 +507,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 	if (to->nod_type == nod_field)
 	{
 		const SSHORT id = (USHORT)(IPTR) to->nod_arg[e_fld_id];
-		Record* record =
-			request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
+		Record* record = request->req_rpb[(int) (IPTR) to->nod_arg[e_fld_stream]].rpb_record;
 		if (null) {
 			SET_NULL(record, id);
 		}
@@ -3147,9 +3146,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 
 	const Format* org_format;
 	Record* org_record = org_rpb->rpb_record;
-	if (!org_record) {
-		org_record =
-			VIO_record(tdbb, org_rpb, new_format, tdbb->getDefaultPool());
+	if (!org_record)
+	{
+		org_record = VIO_record(tdbb, org_rpb, new_format, tdbb->getDefaultPool());
 		org_format = org_record->rec_format;
 		org_rpb->rpb_address = org_record->rec_data;
 		org_rpb->rpb_length = org_format->fmt_length;
