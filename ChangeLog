@@ -1,3 +1,68 @@
+2008-11-30 19:55  asfernandes
+
+	* firebird2/src/jrd/: cmp.cpp (1.324), evl.cpp (1.279), exe.h
+	(1.129):
+
+	Fixed CORE-1432 - Collation not propagated between record formats
+
+2008-11-30 18:45  alexpeshkoff
+
+	* firebird2/doc/sql.extensions/README.ddl.txt (1.13):
+
+	added readme for CORE-2113
+
+2008-11-30 18:34  alexpeshkoff
+
+	* firebird2/doc/README.read_password_from_file (1.1):
+
+	Readme for CORE-1667
+
+2008-11-30 18:11  alexpeshkoff
+
+	* firebird2/: src/alice/alice.cpp (1.109), src/alice/aliceswi.h
+	(1.21), src/burp/burp.cpp (1.153), src/burp/burpswi.h (1.25),
+	src/common/StatusArg.cpp (1.16), src/common/StatusArg.h (1.12),
+	src/common/utils.cpp (1.49), src/common/utils_proto.h (1.27),
+	src/dudley/ddl.cpp (1.42), src/gpre/gpre.cpp (1.90),
+	src/gpre/gpreswi.h (1.19), src/include/gen/codetext.h (1.99),
+	src/include/gen/iberror.h (1.103), src/include/gen/msgs.h (1.127),
+	src/include/gen/sql_code.h (1.105), src/include/gen/sql_state.h
+	(1.32), src/isql/isql.epp (1.251), src/isql/isql.h (1.67),
+	src/msgs/facilities2.sql (1.57), src/msgs/messages2.sql (1.71),
+	src/msgs/system_errors2.sql (1.48), src/qli/dtr.cpp (1.56),
+	src/utilities/fbsvcmgr.cpp (1.15), src/utilities/nbackup.cpp
+	(1.72), src/utilities/gsec/gsec.cpp (1.98),
+	src/utilities/gsec/gsec.h (1.34), src/utilities/gsec/gsecswi.h
+	(1.10), src/utilities/gstat/dba.epp (1.102),
+	src/utilities/gstat/dbaswi.h (1.12), lang_helpers/gds_codes.ftn
+	(1.89), lang_helpers/gds_codes.pas (1.89):
+
+	Implemented CORE-1667: Reading password from file/stdin
+
+2008-11-30 12:47  hvlad
+
+	* firebird2/src/remote/: remote.h (1.82), server.cpp (1.225),
+	os/win32/srvr_w32.cpp (1.59), os/win32/wnet.cpp (1.60):
+
+	Make WNET use overlapped (non-blocking) IO. It allows to break
+	blocked IO operations and implement force_close() call correctly.
+	Also don't write in firebird.log "FileRead end-of-file" error on
+	clean disconnect and don't write more than one OS error on the same
+	port.
+
+2008-11-30 12:41  hvlad
+
+	* firebird2/src/remote/interface.cpp (1.197):
+
+	FB_CANCEL_OPERATION supports only by TCP\IP transport currently
+
+2008-11-30 03:23  asfernandes
+
+	* firebird2/src/jrd/: evl.cpp (1.278), exe.cpp (1.277), vio.cpp
+	(1.230):
+
+	Misc
+
 2008-11-29 20:30  asfernandes
 
 	* firebird2/src/jrd/cmp.cpp (1.323):
