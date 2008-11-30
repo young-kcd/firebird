@@ -1667,6 +1667,8 @@ void rem_port::drop_database(P_RLSE* release, PACKET* sendL)
 		return;
 	}
 
+	port_flags |= PORT_detached;
+
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
 
@@ -1770,6 +1772,8 @@ ISC_STATUS rem_port::end_database(P_RLSE * release, PACKET* sendL)
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector, false);
+
+	port_flags |= PORT_detached;
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -4685,6 +4689,10 @@ ISC_STATUS rem_port::service_end(P_RLSE * release, PACKET* sendL)
 	}
 
 	isc_service_detach(status_vector, &rdb->rdb_handle);
+
+	if (status_vector[1] == 0) {
+		port_flags |= PORT_detached;
+	}
 
 	return this->send_response(sendL, 0, 0, status_vector, false);
 }

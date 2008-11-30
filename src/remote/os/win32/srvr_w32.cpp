@@ -363,15 +363,19 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 
 		if (!port) 
 		{
-			if (status_vector[1] != isc_io_error ||
-				status_vector[6] != isc_arg_win32 ||
-				status_vector[7] != ERROR_CALL_NOT_IMPLEMENTED)
+			const ISC_STATUS err = status_vector[1];
+			if (err) 
 			{
+				if (err == isc_net_server_shutdown)
+					break;
 				gds__log_status(0, status_vector);
 			}
-			break;
 		}
-		gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0);
+		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+		{
+			gds__log("WNET: can't start worker thread, connection terminated");
+			port->disconnect(NULL, NULL);
+		}
 	}
 
 	return 0;
@@ -406,12 +410,10 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 				gds__log_status(0, status_vector);
 			}
 		}
-		else {
-			if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
-			{
-				gds__log("XNET: can't start worker thread, connection terminated");
-				port->disconnect(NULL, NULL);
-			}
+		else if (gds__thread_start(process_connection_thread, port, THREAD_medium, 0, 0))
+		{
+			gds__log("XNET: can't start worker thread, connection terminated");
+			port->disconnect(NULL, NULL);
 		}
 	}
 

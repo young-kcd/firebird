@@ -56,15 +56,16 @@ const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
 Firebird::AtomicCounter event_counter;
-
+static bool wnet_shutdown = false;
 
 static int		accept_connection(rem_port*, const P_CNCT*);
 static rem_port*		alloc_port(rem_port*);
 static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
+static bool		connect_client(rem_port*);
 static void		disconnect(rem_port*);
-static void		force_close(rem_port*);
 static void		exit_handler(void*);
+static void		force_close(rem_port*);
 static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*		receive(rem_port*, PACKET *);
 static int		send_full(rem_port*, PACKET *);
@@ -89,6 +90,7 @@ static void		packet_print(const TEXT*, const UCHAR*, const int);
 static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
 static int		packet_send(rem_port*, const SCHAR*, SSHORT);
 static void		wnet_make_file_name(TEXT *, DWORD);
+
 
 static xdr_t::xdr_ops wnet_ops =
 {
@@ -337,7 +339,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		while (true) {
 			port->port_handle = CreateFile(port->port_connection->str_data,
 										   GENERIC_WRITE | GENERIC_READ,
-										   0, NULL, OPEN_EXISTING, 0, NULL);
+										   0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 			if (port->port_handle != INVALID_HANDLE_VALUE) {
 				break;
 			}
@@ -357,36 +359,34 @@ rem_port* WNET_connect(const TEXT*		name,
 
 	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
 
-	while (true)
+	while (!wnet_shutdown)
 	{
 		port->port_handle =
 			CreateNamedPipe(port->port_connection->str_data,
-							PIPE_ACCESS_DUPLEX,
+							PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 							PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
 							PIPE_UNLIMITED_INSTANCES,
 							MAX_DATA,
 							MAX_DATA,
 							0,
 							security_attr);
-		if (port->port_handle == INVALID_HANDLE_VALUE ||
-			GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
+		if (port->port_handle == INVALID_HANDLE_VALUE)
 		{
-			// TMN: The check for GetLastError() is redundant.
-			// This code should NEVER be called if not running on NT,
-			// since Win9x does not support the server side of named pipes!
-			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err,
-					   ERRNO);
+			const DWORD dwError = GetLastError();
+			if (dwError == ERROR_CALL_NOT_IMPLEMENTED) 
+			{
+				disconnect(port);
+				wnet_shutdown = true;
+				break;
+			}
+
+			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err, dwError);
 			disconnect(port);
 			return NULL;
 		}
 
-		if (!ConnectNamedPipe(port->port_handle, 0) &&
-			GetLastError() != ERROR_PIPE_CONNECTED)
-		{
-			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, ERRNO);
-			disconnect(port);
+		if (!connect_client(port))
 			return NULL;
-		}
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
@@ -426,6 +426,14 @@ rem_port* WNET_connect(const TEXT*		name,
 		}
 		CloseHandle(port->port_handle);
 	}
+
+	if (wnet_shutdown)
+	{
+		Arg::Gds temp(isc_net_server_shutdown);
+		temp << Arg::Str("WNET");
+		temp.copyTo(status_vector);
+	}
+	return NULL;
 }
 
 
@@ -562,6 +570,8 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_request = aux_request;
 	port->port_buff_size = BUFFER_SIZE;
 
+	port->port_event = CreateEvent(NULL, TRUE, TRUE, NULL);
+
 	xdrwnet_create(&port->port_send, port,
 				   &port->port_buffer[BUFFER_SIZE], BUFFER_SIZE, XDR_ENCODE);
 
@@ -597,14 +607,8 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 /* If this is a server, we're got an auxiliary connection.  Accept it */
 
 	if (port->port_server_flags) {
-		if (!ConnectNamedPipe(port->port_handle, 0) &&
-			GetLastError() != ERROR_PIPE_CONNECTED)
-		{
-			wnet_error(port, "ConnectNamedPipe", isc_net_event_connect_err,
-					   ERRNO);
-			disconnect(port);
+		if (!connect_client(port))
 			return NULL;
-		}
 
 		port->port_flags |= PORT_async;
 		return port;
@@ -636,7 +640,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 	while (true) {
 		new_port->port_handle =
 			CreateFile(new_port->port_connection->str_data, GENERIC_READ, 0,
-					   NULL, OPEN_EXISTING, 0, NULL);
+					   NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 		if (new_port->port_handle != INVALID_HANDLE_VALUE)
 			break;
 		const ISC_STATUS status = GetLastError();
@@ -684,7 +688,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
-						PIPE_ACCESS_DUPLEX,
+						PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
 						PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
 						PIPE_UNLIMITED_INSTANCES,
 						MAX_DATA,
@@ -704,6 +708,45 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
 
 	return new_port;
+}
+
+
+static bool connect_client(rem_port *port)
+{
+/**************************************
+ *
+ *	c o n n e c t _ c l i e n t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Wait for new client connected.
+ *
+ **************************************/
+
+	OVERLAPPED ovrl = {0};
+	ovrl.hEvent = port->port_event;
+	if (!ConnectNamedPipe(port->port_handle, &ovrl))
+	{
+		DWORD err = GetLastError();
+		switch (err)
+		{
+		case ERROR_PIPE_CONNECTED:
+		break;
+
+		case ERROR_IO_PENDING:
+			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0)
+				break;
+			else
+				err = GetLastError(); // fall thru
+
+		default:
+			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, err);
+			disconnect(port);
+			return false;
+		}
+	}
+	return true;
 }
 
 
@@ -757,7 +800,13 @@ static void disconnect(rem_port* port)
 		FlushFileBuffers(port->port_handle);
 		DisconnectNamedPipe(port->port_handle);
 	}
-	if (port->port_handle) {
+	if (port->port_event != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(port->port_event);
+		port->port_event = INVALID_HANDLE_VALUE;
+	}
+	if (port->port_handle) 
+	{
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
@@ -779,11 +828,13 @@ static void force_close(rem_port* port)
  *
  **************************************/
 
-	if (port->port_handle) 
+	if (port->port_event != INVALID_HANDLE_VALUE) 
 	{
-		// hvlad: it hungs. It seems we need to use overlapped IO to make it work
-		//CloseHandle(port->port_handle);
-		//port->port_handle = 0;
+		port->port_state = rem_port::BROKEN;
+
+		SetEvent(port->port_event);
+		CloseHandle(port->port_handle);
+		port->port_handle = 0;
 	}
 }
 
@@ -1007,18 +1058,18 @@ static int wnet_error(
 	if (p != NULL)
 		*p = '\0';
 
-	if (status) {
-		wnet_gen_error(port, Arg::Gds(isc_network_error) << Arg::Str(node_name) <<
-					   Arg::Gds(operation) << SYS_ERR(status));
-		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
+	Arg::Gds temp(isc_network_error);
+	temp << Arg::Str(node_name) << Arg::Gds(operation);
+	if (status)
+	{
+		temp << SYS_ERR(status);
+
+		if (port->port_state != rem_port::BROKEN) {
 			gds__log("WNET/wnet_error: %s errno = %d", function, status);
 		}
 	}
-	else {
-		wnet_gen_error(port, Arg::Gds(isc_network_error) << Arg::Str(node_name) <<
-					   Arg::Gds(operation));
-	}
 
+	wnet_gen_error(port, temp);
 	return 0;
 }
 
@@ -1404,13 +1455,28 @@ static int packet_receive(
  *
  **************************************/
 	DWORD n = 0;
+	OVERLAPPED ovrl = {0};
+	ovrl.hEvent = port->port_event;
 
-	const USHORT status = ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
+	BOOL status = ReadFile(port->port_handle, buffer, buffer_length, &n, &ovrl);
+	DWORD dwError = GetLastError();
 
-	if (!status && GetLastError() != ERROR_BROKEN_PIPE)
-		return wnet_error(port, "ReadFile", isc_net_read_err, ERRNO);
+	if (!status && dwError == ERROR_IO_PENDING) 
+	{
+		status = GetOverlappedResult(port->port_handle, &ovrl, &n, TRUE);
+		dwError = GetLastError();
+	}
+	if (!status && dwError != ERROR_BROKEN_PIPE) {
+		return wnet_error(port, "ReadFile", isc_net_read_err, dwError);
+	}
+	
 	if (!n)
-		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, ERRNO);
+	{
+		if (port->port_flags & PORT_detached)
+			return FALSE;
+		else
+			return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
+	}
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("receive", buffer, n);
@@ -1436,14 +1502,22 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
  **************************************/
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
+	OVERLAPPED ovrl = {0};
+	ovrl.hEvent = port->port_event;
 
 	DWORD n;
-	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
+	BOOL status = WriteFile(port->port_handle, data, length, &n, &ovrl);
+	DWORD dwError = GetLastError();
 
+	if (!status && dwError == ERROR_IO_PENDING) 
+	{
+		status = GetOverlappedResult(port->port_handle, &ovrl, &n, TRUE);
+		dwError = GetLastError();
+	}
 	if (!status)
-		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);
+		return wnet_error(port, "WriteFile", isc_net_write_err, dwError);
 	if (n != length)
-		return wnet_error(port, "WriteFile truncated", isc_net_write_err, ERRNO);
+		return wnet_error(port, "WriteFile truncated", isc_net_write_err, dwError);
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("send", reinterpret_cast<const UCHAR*>(buffer), buffer_length);
