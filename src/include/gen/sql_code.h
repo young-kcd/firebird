@@ -961,6 +961,9 @@ static const struct {
 	{336986117, -901}, /*   5 fbsvcmgr_query_err */
 	{336986118, -901}, /*   6 fbsvcmgr_switch_unknown */
 	{336986159, -901}, /*  47 fbsvcmgr_bad_sm */
+	{336986160, -901}, /*  48 fbsvcmgr_fp_open */
+	{336986161, -901}, /*  49 fbsvcmgr_fp_read */
+	{336986162, -901}, /*  50 fbsvcmgr_fp_empty */
 	{337051649, -901}, /*   1 utl_trusted_switch */
 	{0, 0}
 };

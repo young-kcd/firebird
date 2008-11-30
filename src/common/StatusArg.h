@@ -197,6 +197,12 @@ public:
 	explicit SqlState(const AbstractString& text) throw();
 };
 
+class OsError : public Base
+{
+public:
+	OsError() throw();
+};
+
 } // namespace Arg
 
 } // namespace Firebird

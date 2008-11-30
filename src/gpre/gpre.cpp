@@ -1907,6 +1907,21 @@ static bool get_switches(int			argc,
 			gpreGlob.default_password = fb_utils::get_passwd(*++argv);
 			break;
 
+		case IN_SW_GPRE_FETCH_PASS:
+			if (!arg_is_string(
+					--argc,
+					argv,
+					"Command line syntax: -fetch_password requires password file name:\n "))
+			{
+				return false;
+			}
+			if (fb_utils::fetchPassword(*++argv, gpreGlob.default_password) != 
+						fb_utils::FETCH_PASS_OK)
+			{
+				fprintf(stderr, "--fetch_password : error loading password from file\n ");
+			}
+			break;
+
 #ifdef TRUSTED_AUTH
 		case IN_SW_GPRE_TRUSTED:
 			gpreGlob.trusted_auth = true;

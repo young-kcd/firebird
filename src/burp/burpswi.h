@@ -91,7 +91,7 @@ const int IN_SW_BURP_TRUSTED_ROLE	= 42;      // use trusted role on attach
 const int IN_SW_BURP_FIX_FSS_DATA		= 43;      // fix unicode_fss data
 const int IN_SW_BURP_FIX_FSS_METADATA	= 44;      // fix unicode_fss metadata
 
-const int IN_SW_BURP_PASSFILE     = 45;      // read default password to use on attach from file
+const int IN_SW_BURP_FETCHPASS		= 45;      // fetch default password to use on attach from file
 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 
@@ -116,6 +116,8 @@ static const in_sw_tab_t reference_burp_in_sw_table [] =
     {IN_SW_BURP_F,    0,				"FILE_NAMES",	    0, 0, 0, FALSE, 0, 0, NULL},
     {IN_SW_BURP_FA,   isc_spb_bkp_factor,	"FACTOR",	    0, 0, 0, FALSE, 181, 0, NULL},
                 /* msg 181; %sFACTOR  blocking factor */
+    {IN_SW_BURP_FETCHPASS, 0,			"FETCH_PASSWORD",	0, 0, 0, FALSE, 306, 0, NULL},
+                // msg 306: @1FE(TCH_PASSWORD)     fetch password from file
 	{IN_SW_BURP_FIX_FSS_DATA,    0,		"FIX_FSS_DATA",	    0, 0, 0, FALSE, 302, 0, NULL},
                 // msg 302: @1FIX_FSS_DATA         fix malformed UNICODE_FSS data
 	{IN_SW_BURP_FIX_FSS_METADATA,    0,	"FIX_FSS_METADATA",	    0, 0, 0, FALSE, 303, 0, NULL},
@@ -149,8 +151,6 @@ static const in_sw_tab_t reference_burp_in_sw_table [] =
                 // msg 101: %sPAGE_SIZE override default page size 
     {IN_SW_BURP_PASS, 0,				"PASSWORD",	    0, 0, 0, FALSE, 190, 0, NULL},
                 // msg 190: %sPA(SSWORD) Firebird password
-    {IN_SW_BURP_PASSFILE, 0,			"@PASSWORD",	0, 0, 0, FALSE, 306, 0, NULL},
-                // msg 306: %s@(PASSWORD) Read firebird password from file
     {IN_SW_BURP_RECREATE, 0,	"RECREATE_DATABASE", 0, 0, 0, FALSE, 284, 0, NULL},
                 // msg 284: %sR(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file 
     {IN_SW_BURP_R,    isc_spb_res_replace,	"REPLACE_DATABASE", 0, 0, 0, FALSE, 112, 0, NULL},

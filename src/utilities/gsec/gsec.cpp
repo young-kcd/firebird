@@ -589,6 +589,22 @@ static bool get_switches(
 				fb_utils::copy_terminate(user_data->dba_password, argv[argc], sizeof(user_data->dba_password));
 				user_data->dba_password_entered = true;
 				break;
+			case IN_SW_GSEC_FETCH_PASSWORD:
+			{
+				const char* passwd = 0;
+				switch(fb_utils::fetchPassword(argv[argc], passwd))
+				{
+				case fb_utils::FETCH_PASS_OK:
+					break;
+				default:
+					GSEC_diag(GsecMsg96);
+					// error fetching password from file
+					return false;
+				}
+				fb_utils::copy_terminate(user_data->dba_password, passwd, sizeof(user_data->dba_password));
+				user_data->dba_password_entered = true;
+				break;
+			}
 			case IN_SW_GSEC_SQL_ROLE_NAME:
 				fb_utils::copy_terminate(user_data->sql_role_name, string, sizeof(user_data->sql_role_name));
 				user_data->sql_role_name_entered = true;
@@ -701,6 +717,7 @@ static bool get_switches(
 			case IN_SW_GSEC_DATABASE:
 			case IN_SW_GSEC_DBA_USER_NAME:
 			case IN_SW_GSEC_DBA_PASSWORD:
+			case IN_SW_GSEC_FETCH_PASSWORD:
 			case IN_SW_GSEC_SQL_ROLE_NAME:
 				err_msg_no = 0;
 				switch (in_sw) {
@@ -798,6 +815,7 @@ static bool get_switches(
 					user_data->trusted_role = true;
 					break;
 				case IN_SW_GSEC_DBA_PASSWORD:
+				case IN_SW_GSEC_FETCH_PASSWORD:
 					if (user_data->dba_password_specified) {
 						err_msg_no = GsecMsg80;
 						break;
@@ -929,6 +947,10 @@ static void printhelp(void)
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg85);
 /* -password <database administrator password> */
+
+	util_output("%s", "     ");
+	GSEC_print(GsecMsg95);
+/* -fetcg_password <fetch database administrator password from file> */
 
 	util_output("%s", "     ");
 	GSEC_print(GsecMsg86);

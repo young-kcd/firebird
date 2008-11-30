@@ -1724,6 +1724,7 @@ for user @4 does not exist', NULL, NULL);
 (NULL, 'DDL_yes_no', 'ddl.c', NULL, 2, 344, NULL, 'Please respond with YES or NO.', NULL, NULL);
 -- Do not change the arguments of the previous GDEF messages.
 -- Write the new GDEF messages here.
+(NULL, 'main', 'ddl.cpp', NULL, 2, 345, NULL, 'Error fetching password from file', NULL, NULL);
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);
@@ -1845,6 +1846,10 @@ COMMIT WORK;
 -- Do not change the arguments of the previous GFIX messages.
 -- Write the new GFIX messages here.
 ('gfix_opt_trusted', 'ALICE_gfix', 'alice.cpp', NULL, 3, 115, NULL, '	-trusted	use trusted authentication', NULL, NULL);
+(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 116, NULL, 'could not open password file @1, errno @2', NULL, NULL);
+(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 117, NULL, 'could not read password file @1, errno @2', NULL, NULL);
+(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 118, NULL, 'empty password file @1', NULL, NULL);
+(NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 119, NULL, '	-fetch_password fetch_password from file', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
@@ -2450,9 +2455,11 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 303, NULL, '	@1FIX_FSS_M(ETADATA)   fix malformed UNICODE_FSS metadata', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 304, NULL, 'Character set parameter missing', NULL, NULL);
 (NULL, 'restore', 'restore.epp', NULL, 12, 305, NULL, 'Character set @1 not found', NULL, NULL);
-(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 306, NULL, '        @1@@(PASSWORD)          read password from file', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 306, NULL, '        @1FE(TCH_PASSWORD)     fetch password from file', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 307, NULL, 'too many passwords provided', NULL, NULL);
 (NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 308, NULL, 'could not open password file @1, errno @2', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 309, NULL, 'could not read password file @1, errno @2', NULL, NULL);
+(NULL, 'BURP_gbak', 'burp.cpp', NULL, 12, 310, NULL, 'empty password file @1', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -3030,6 +3037,10 @@ Fetches = !f', NULL, NULL);
 ('USERS_IN_DB', 'SHOW_metadata', 'show.epp', NULL, 17, 158, NULL, 'Users in the database', NULL, NULL);
 ('OUTPUT_TRUNCATED', 'SHOW_metadata', 'show.epp', NULL, 17, 159, NULL, 'Output was truncated', NULL, NULL);
 ('VALID_OPTIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 160, NULL, 'Valid options are:', NULL, NULL);
+('USAGE_FETCH', 'ISQL_main', 'isql.epp', NULL, 17, 161, NULL, '	-fe(tch_password)       fetch password from file', NULL, NULL);
+('PASS_FILE_OPEN', 'ISQL_main', 'isql.epp', NULL, 17, 162, NULL, 'could not open password file @1, errno @2', NULL, NULL);
+('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
+('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
@@ -3127,6 +3138,8 @@ Fetches = !f', NULL, NULL);
 ('GsecMsg92', 'common_main', 'gsec.cpp', NULL, 18, 92, NULL, 'invalid switch specified in interactive mode', NULL, NULL);
 ('GsecMsg93', 'common_main', 'gsec.cpp', NULL, 18, 93, NULL, 'error closing security database', NULL, NULL);
 ('GsecMsg94', 'SECURITY_exec_line', 'security.epp', NULL, 18, 94, NULL, 'error releasing request in security database', NULL, NULL);
+('GsecMsg95', 'printhelp', 'gsec.cpp', NULL, 18, 95, NULL, '-fe(tch_password) fetch password from file', NULL, NULL);
+('GsecMsg96', 'get_switches', 'gsec.cpp', NULL, 18, 96, NULL, 'error fetching password from file', NULL, NULL);
 -- LICENSE
 ('license_no_file', 'NODE_license', 'jrd/node.c', NULL, 19, 0, NULL, 'The license file does not exist or could not be opened for read', NULL, NULL);
 ('stop_stop_1', 'not_licensed', 'jrd/node.c', 'This message has 20 leading space characters (2 tab chars and 4 '' '') in
@@ -3313,6 +3326,7 @@ Analyzing database pages ...', NULL, NULL);
 -- Do not change the arguments of the previous GSTAT messages.
 -- Write the new GSTAT messages here.
 (NULL, 'main', 'dba.epp', NULL, 21, 36, NULL, '    -tr     use trusted authentication', NULL, NULL);
+(NULL, 'main', 'dba.epp', NULL, 21, 37, NULL, '    -fetch  fetch password from file', NULL, NULL);
 -- FBSVCMGR
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
 ('fbsvcmgr_bad_wm', 'putWriteMode', 'fbsvcmgr.cpp', NULL, 22, 2, NULL, 'Wrong value for write mode', NULL, NULL);
@@ -3361,6 +3375,9 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 45, NULL, 'Automated recovery would rollback this transaction', NULL, NULL);
 (NULL, 'printInfo', 'fbsvcmgr.cpp', NULL, 22, 46, NULL, 'No idea should it be commited or rolled back', NULL, NULL);
 ('fbsvcmgr_bad_sm', 'putShutdownMode', 'fbsvcmgr.cpp', NULL, 22, 47, NULL, 'Wrong value for shutdown mode', NULL, NULL);
+('fbsvcmgr_fp_open', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 48, NULL, 'could not open file @1', NULL, NULL);
+('fbsvcmgr_fp_read', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 49, NULL, 'could not read file @1', NULL, NULL);
+('fbsvcmgr_fp_empty', 'putFileArgument', 'fbsvcmgr.cpp', NULL, 22, 50, NULL, 'empty file @1', NULL, NULL);
 -- UTL (messages common for many utilities)
 -- All messages use the new format.
 ('utl_trusted_switch', 'checkService', 'UtilSvc.cpp', NULL, 23, 1, NULL, 'Switches trusted_svc and trusted_role are not supported from command line', NULL, NULL);

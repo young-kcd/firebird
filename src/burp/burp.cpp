@@ -655,7 +655,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->gbl_sw_password = argv[itr];
 		}
-		else if (in_sw_tab->in_sw == IN_SW_BURP_PASSFILE) 
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FETCHPASS) 
 		{
 			if (++itr >= argc)
 			{
@@ -667,33 +667,23 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(307, true);
 				// too many passwords provided
 			}
-			Firebird::PathName fName(argv[itr]);
-			FILE* passfile = (fName == "stdin") ? stdin : fopen(argv[itr], "rt");
-			if (!passfile)
+			switch(fb_utils::fetchPassword(argv[itr], tdgbl->gbl_sw_password))
 			{
+			case fb_utils::FETCH_PASS_OK:
+				break;
+			case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
 				BURP_error(308, true, MsgFormat::SafeArg() << argv[itr] << errno);
 				// error @2 opening password file @1
+				break;
+			case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+				BURP_error(309, true, MsgFormat::SafeArg() << argv[itr] << errno);
+				// error @2 reading password file @1
+				break;
+			case fb_utils::FETCH_PASS_FILE_EMPTY:
+				BURP_error(310, true, MsgFormat::SafeArg() << argv[itr]);
+				// password file @1 is empty
+				break;
 			}
-			try
-			{
-				if (isatty(fileno(passfile)))
-				{
-					fprintf(stderr, "Enter password: ");
-					fflush(stderr);
-				}
-				Firebird::string pwd;
-				pwd.LoadFromFile(passfile);
-				tdgbl->gbl_sw_password = strdup(pwd.c_str());
-			}
-			catch (Firebird::Exception&)
-			{
-				if (passfile != stdin)
-				{
-					fclose(passfile);
-				}
-				throw;
-			}
-			fclose(passfile);
 		}
 		else if (in_sw_tab->in_sw == IN_SW_BURP_USER) 
 		{
@@ -930,7 +920,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			break;
 
 		case (IN_SW_BURP_PASS):
-		case (IN_SW_BURP_PASSFILE):
+		case (IN_SW_BURP_FETCHPASS):
 			dpb.insertString(tdgbl->uSvc->isService() ?
 							 isc_dpb_password_enc : isc_dpb_password,
 							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));

@@ -89,6 +89,35 @@ bool putStringArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	return true;
 }
 
+// add string tag from file (fetch password)
+
+bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
+{
+	if (! *av)
+		return false;
+
+	const char* s = 0;
+	switch(fb_utils::fetchPassword(*av, s))
+	{
+	case fb_utils::FETCH_PASS_OK:
+		break;
+	case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
+		(Arg::Gds(isc_fbsvcmgr_fp_open) << *av << Arg::OsError()).raise();
+		break;
+	case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+		(Arg::Gds(isc_fbsvcmgr_fp_read) << *av << Arg::OsError()).raise();
+		break;
+	case fb_utils::FETCH_PASS_FILE_EMPTY:
+		(Arg::Gds(isc_fbsvcmgr_fp_empty) << *av).raise();
+		break;
+	}
+
+	spb.insertString(tag, s, strlen(s));
+	++av;
+
+	return true;
+}
+
 // add some special format tags to spb
 
 bool putSpecTag(char**& av, ClumpletWriter& spb, unsigned int tag,
@@ -231,6 +260,7 @@ const Switches attSwitch[] = {
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
 	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
 	{"password", putStringArgument, 0, isc_spb_password, 0},
+	{"fetch_password", putFileArgument, 0, isc_spb_password, 0},
 	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},
 	{0, 0, 0, 0, 0}
 };

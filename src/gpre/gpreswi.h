@@ -126,6 +126,8 @@ enum gpre_cmd_switch
 	 */
 	IN_SW_GPRE_TRUSTED,
 #endif
+	IN_SW_GPRE_FETCH_PASS, /* fetch password to use from file */
+
 	/* As mentioned above: This should always be one larger than the largest 
 	   switch value.
 	   FSG 14.Nov.2000
@@ -166,6 +168,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_FORTRAN
 	{IN_SW_GPRE_F		, 0, "FORTRAN"		, 0, 0, 0, FALSE, 0, 0, "\t\textended FORTRAN program"},
 #endif
+	{IN_SW_GPRE_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 0, "\tfetch password from file"},
 	{IN_SW_GPRE_G		, 0, "GDS"			, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_GXX		, 0, "GDS_CXX"			, 0, 0, 0, FALSE, 0, 0, NULL},
 	{IN_SW_GPRE_I		, 0, "IDENTIFIERS"	, 0, 0, 0, FALSE, 0, 0, NULL},

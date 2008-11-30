@@ -28,39 +28,44 @@
 
 // switch definitions 
 
-const unsigned long sw_list				= 0x00000001UL;	// Byte 0, Bit 0 
-const unsigned long sw_prompt			= 0x00000002UL;
-const unsigned long sw_commit			= 0x00000004UL;
-const unsigned long sw_rollback			= 0x00000008UL;
-const unsigned long sw_sweep			= 0x00000010UL;
-const unsigned long sw_validate			= 0x00000020UL;
-const unsigned long sw_no_update		= 0x00000040UL;
-const unsigned long sw_full				= 0x00000080UL;
-const unsigned long sw_mend				= 0x00000100UL;	// Byte 1, Bit 0 
-const unsigned long sw_all				= 0x00000200UL;
-const unsigned long sw_enable			= 0x00000400UL;
-const unsigned long sw_disable			= 0x00000800UL;
-const unsigned long sw_ignore			= 0x00001000UL;
-const unsigned long sw_activate			= 0x00002000UL;
-const unsigned long sw_two_phase		= 0x00004000UL;
-const unsigned long sw_housekeeping		= 0x00008000UL;
-const unsigned long sw_kill				= 0x00010000UL;	// Byte 2, Bit 0 
-//const unsigned long sw_begin_log		= 0x00020000UL;
-//const unsigned long sw_quit_log		= 0x00040000UL;
-const unsigned long sw_write			= 0x00080000UL;
-const unsigned long sw_no_reserve		= 0x00100000UL;
-const unsigned long sw_user				= 0x00200000UL;
-const unsigned long sw_password			= 0x00400000UL;
-const unsigned long sw_shut				= 0x00800000UL;
-const unsigned long sw_online			= 0x01000000UL;	// Byte 3, Bit 0 
-const unsigned long sw_cache			= 0x02000000UL;
-const unsigned long sw_attach			= 0x04000000UL;
-const unsigned long sw_force			= 0x08000000UL;
-const unsigned long sw_tran				= 0x10000000UL;
-const unsigned long sw_buffers			= 0x20000000UL;
-const unsigned long sw_mode				= 0x40000000UL;
-const unsigned long sw_set_db_dialect	= 0x80000000UL;
-const unsigned long sw_z				= 0x0UL;
+const SINT64 sw_list			= 0x00000001L;	// Byte 0, Bit 0 
+const SINT64 sw_prompt			= 0x00000002L;
+const SINT64 sw_commit			= 0x00000004L;
+const SINT64 sw_rollback		= 0x00000008L;
+const SINT64 sw_sweep			= 0x00000010L;
+const SINT64 sw_validate		= 0x00000020L;
+const SINT64 sw_no_update		= 0x00000040L;
+const SINT64 sw_full			= 0x00000080L;
+const SINT64 sw_mend			= 0x00000100L;	// Byte 1, Bit 0 
+const SINT64 sw_all				= 0x00000200L;
+const SINT64 sw_enable			= 0x00000400L;
+const SINT64 sw_disable			= 0x00000800L;
+const SINT64 sw_ignore			= 0x00001000L;
+const SINT64 sw_activate		= 0x00002000L;
+const SINT64 sw_two_phase		= 0x00004000L;
+const SINT64 sw_housekeeping	= 0x00008000L;
+const SINT64 sw_kill			= 0x00010000L;	// Byte 2, Bit 0 
+//const SINT64 sw_begin_log		= 0x00020000L;
+//const SINT64 sw_quit_log		= 0x00040000L;
+const SINT64 sw_write			= 0x00080000L;
+const SINT64 sw_no_reserve		= 0x00100000L;
+const SINT64 sw_user			= 0x00200000L;
+const SINT64 sw_password		= 0x00400000L;
+const SINT64 sw_shut			= 0x00800000L;
+const SINT64 sw_online			= 0x01000000L;	// Byte 3, Bit 0 
+const SINT64 sw_cache			= 0x02000000L;
+const SINT64 sw_attach			= 0x04000000L;
+const SINT64 sw_force			= 0x08000000L;
+const SINT64 sw_tran			= 0x10000000L;
+const SINT64 sw_buffers			= 0x20000000L;
+const SINT64 sw_mode			= 0x40000000L;
+const SINT64 sw_set_db_dialect	= 0x80000000L;
+const SINT64 sw_trusted_auth	= 0x0000000100000000L;
+const SINT64 sw_trusted_svc		= 0x0000000200000000L;
+const SINT64 sw_trusted_role	= 0x0000000400000000L;
+const SINT64 sw_fetch_password	= 0x0000000800000000L;
+
+const SINT64 sw_z				= 0x0UL;
 
 enum alice_switches
 {
@@ -113,7 +118,8 @@ enum alice_switches
 #endif
 	IN_SW_ALICE_TRUSTED_SVC			=	45,
 	IN_SW_ALICE_TRUSTED_ROLE		=	46,
-	IN_SW_ALICE_HIDDEN_ONLINE		=	47
+	IN_SW_ALICE_HIDDEN_ONLINE		=	47,
+	IN_SW_ALICE_FETCH_PASSWORD		=	48
 };
 
 static const char* ALICE_SW_ASYNC	= "async";
@@ -151,6 +157,8 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	0, 0, FALSE, 31, 0, NULL},
 	// msg 31: \t-disable\tdisable WAL 
 #endif
+	{IN_SW_ALICE_FETCH_PASSWORD, 0, "fetch_password", sw_fetch_password,
+	0, sw_password, FALSE, 119, 0, NULL},
 	{IN_SW_ALICE_FULL, isc_spb_rpr_full, "full", sw_full,
 	sw_validate, 0, FALSE, 32, 0, NULL},
 	// msg 32: \t-full\t\tvalidate record fragments (-v) 
@@ -186,7 +194,7 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	sw_list, 0, FALSE, 41, 0, NULL},
 	// msg 41: \t-prompt\t\tprompt for commit/rollback (-l) 
 	{IN_SW_ALICE_PASSWORD, 0, "password", sw_password,
-	0, 0, FALSE, 42, 0, NULL},
+	0, (sw_trusted_auth | sw_trusted_svc | sw_trusted_role | sw_fetch_password), FALSE, 42, 0, NULL},
 	// msg 42: \t-password\tdefault password 
 #ifdef DEV_BUILD
 /*
@@ -224,20 +232,20 @@ static const in_sw_tab_t alice_in_sw_table[] =
 	sw_shut, 0, FALSE, 48, 0, NULL},
 	// msg 48: \t-tran\t\tshutdown transaction startup 
 #ifdef TRUSTED_AUTH
-	{IN_SW_ALICE_TRUSTED_AUTH, 0, "trusted", 0, 
-	0, 0, FALSE, 115, 0, NULL},
+	{IN_SW_ALICE_TRUSTED_AUTH, 0, "trusted", sw_trusted_auth, 
+	0, (sw_user | sw_password), FALSE, 115, 0, NULL},
 	// msg 115: 	-trusted	use trusted authentication
 #endif
 	// We should better use #defines here, but alice wants lower case
-	{IN_SW_ALICE_TRUSTED_SVC, 0, /*TRUSTED_USER_SWITCH*/ "trusted_svc", 0, 
-	0, 0, FALSE, 0, 0, NULL},
-	{IN_SW_ALICE_TRUSTED_ROLE, 0, /*TRUSTED_ROLE_SWITCH*/ "trusted_role", 0, 
-	0, 0, FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_TRUSTED_SVC, 0, /*TRUSTED_USER_SWITCH*/ "trusted_svc", sw_trusted_svc, 
+	0, (sw_user | sw_password), FALSE, 0, 0, NULL},
+	{IN_SW_ALICE_TRUSTED_ROLE, 0, /*TRUSTED_ROLE_SWITCH*/ "trusted_role", sw_trusted_role, 
+	sw_trusted_svc, (sw_user | sw_password), FALSE, 0, 0, NULL},
 	{IN_SW_ALICE_NO_RESERVE, 0, "use", sw_no_reserve,
 	0, ~(sw_no_reserve | sw_user | sw_password), FALSE, 49, 0, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions 
 	{IN_SW_ALICE_USER, 0, "user", sw_user,
-	0, 0, FALSE, 50, 0, NULL},
+	0, (sw_trusted_auth | sw_trusted_svc | sw_trusted_role), FALSE, 50, 0, NULL},
 	// msg 50: \t-user\t\tdefault user name 
 	{IN_SW_ALICE_VALIDATE, isc_spb_rpr_validate_db, "validate", sw_validate,
 	0, ~(sw_validate | sw_user | sw_password), FALSE, 51, 0, NULL},

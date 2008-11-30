@@ -1352,6 +1352,8 @@ C --
       PARAMETER (GDS__sysf_binuuid_wrongsize           = 335544969)
       INTEGER*4 GDS__missing_required_spb            
       PARAMETER (GDS__missing_required_spb             = 335544970)
+      INTEGER*4 GDS__net_server_shutdown             
+      PARAMETER (GDS__net_server_shutdown              = 335544971)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1930,5 +1932,11 @@ C --
       PARAMETER (GDS__fbsvcmgr_switch_unknown          = 336986118)
       INTEGER*4 GDS__fbsvcmgr_bad_sm                 
       PARAMETER (GDS__fbsvcmgr_bad_sm                  = 336986159)
+      INTEGER*4 GDS__fbsvcmgr_fp_open                
+      PARAMETER (GDS__fbsvcmgr_fp_open                 = 336986160)
+      INTEGER*4 GDS__fbsvcmgr_fp_read                
+      PARAMETER (GDS__fbsvcmgr_fp_read                 = 336986161)
+      INTEGER*4 GDS__fbsvcmgr_fp_empty               
+      PARAMETER (GDS__fbsvcmgr_fp_empty                = 336986162)
       INTEGER*4 GDS__utl_trusted_switch              
       PARAMETER (GDS__utl_trusted_switch               = 337051649)

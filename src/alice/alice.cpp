@@ -202,7 +202,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		if (*table->in_sw_name == 'x') {
 			tdgbl->ALICE_data.ua_debug++;
 		}
-		if (strcmp(table->in_sw_name, "trusted_svc") == 0) {
+        if (table->in_sw_value & sw_trusted_svc) {
 			uSvc->checkService();
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
@@ -210,13 +210,13 @@ int alice(Firebird::UtilSvc* uSvc)
 			tdgbl->ALICE_data.ua_tr_user = *argv++;
 			continue;
 		}
-		if (strcmp(table->in_sw_name, "trusted_role") == 0) {
+        if (table->in_sw_value & sw_trusted_role) {
 			uSvc->checkService();
 			tdgbl->ALICE_data.ua_tr_role = true;
 			continue;
 		}
 #ifdef TRUSTED_AUTH
-		if (strcmp(table->in_sw_name, "trusted") == 0) {
+        if (table->in_sw_value & sw_trusted_auth) {
 			tdgbl->ALICE_data.ua_trusted = true;
 			continue;
 		}
@@ -380,6 +380,30 @@ int alice(Firebird::UtilSvc* uSvc)
 			tdgbl->ALICE_data.ua_password = *argv++;
 		}
 
+		if (table->in_sw_value & sw_fetch_password) {
+			if (--argc <= 0) {
+				ALICE_error(14);	// msg 14: password required
+			}
+			switch(fb_utils::fetchPassword(*argv, tdgbl->ALICE_data.ua_password))
+			{
+			case fb_utils::FETCH_PASS_OK:
+				break;
+			case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
+				ALICE_error(116, MsgFormat::SafeArg() << *argv << errno);
+				// error @2 opening password file @1
+				break;
+			case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+				ALICE_error(117, MsgFormat::SafeArg() << *argv << errno);
+				// error @2 reading password file @1
+				break;
+			case fb_utils::FETCH_PASS_FILE_EMPTY:
+				ALICE_error(118, MsgFormat::SafeArg() << *argv);
+				// password file @1 is empty
+				break;
+			}
+			++argv;
+		}
+
 		if (table->in_sw_value & sw_disable) {
 			if (--argc <= 0) {
 				ALICE_error(15);	// msg 15: subsystem name
@@ -439,7 +463,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		ALICE_exit(FINI_OK, tdgbl);
 	}
 
-	if (!switches || !(switches & ~(sw_user | sw_password))) 
+	if (!switches || !(switches & ~(sw_user | sw_password | sw_fetch_password | 
+									sw_trusted_auth | sw_trusted_svc | sw_trusted_role))) 
 	{
 		if (!uSvc->isService())
 		{

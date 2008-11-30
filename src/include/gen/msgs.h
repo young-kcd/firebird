@@ -965,6 +965,9 @@ Data source : @4"},		/* 606, eds_statement */
 	{336986117, "Unknown tag (@1) in isc_svc_query() results"},		/* 938, fbsvcmgr_query_err */
 	{336986118, "Unknown switch \"@1\""},		/* 939, fbsvcmgr_switch_unknown */
 	{336986159, "Wrong value for shutdown mode"},		/* 940, fbsvcmgr_bad_sm */
-	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 941, utl_trusted_switch */
+	{336986160, "could not open file @1"},		/* 941, fbsvcmgr_fp_open */
+	{336986161, "could not read file @1"},		/* 942, fbsvcmgr_fp_read */
+	{336986162, "empty file @1"},		/* 943, fbsvcmgr_fp_empty */
+	{337051649, "Switches trusted_svc and trusted_role are not supported from command line"},		/* 944, utl_trusted_switch */
 	{0, NULL}
 };

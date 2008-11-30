@@ -106,6 +106,14 @@ namespace fb_utils
 		status[2] = isc_arg_end;
 	}
 
+	enum FetchPassResult {
+		FETCH_PASS_OK,
+		FETCH_PASS_FILE_OPEN_ERROR, 
+		FETCH_PASS_FILE_READ_ERROR,
+		FETCH_PASS_FILE_EMPTY
+	};
+	FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password);
+
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

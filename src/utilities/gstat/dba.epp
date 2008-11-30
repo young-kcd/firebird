@@ -299,11 +299,11 @@ int gstat(Firebird::UtilSvc* uSvc)
 	isc_db_handle db_handle = 0;
 	UCHAR buf[256];
 
-	UCHAR pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
+	TEXT pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
 
-	UCHAR tr_buff[128], *tr_user = tr_buff;
+	TEXT tr_buff[128], *tr_user = tr_buff;
 	MOVE_CLEAR(tr_buff, sizeof(tr_buff));
 	bool trusted_role = false;
 
@@ -368,19 +368,29 @@ int gstat(Firebird::UtilSvc* uSvc)
 			break;
 		case IN_SW_DBA_USERNAME:
 			if (argv < end)
-				fb_utils::copy_terminate((char*) username, *argv++, sizeof(user_buff));
+				fb_utils::copy_terminate(username, *argv++, sizeof(user_buff));
 			break;
 		case IN_SW_DBA_PASSWORD:
 			if (argv < end)
 			{
 				uSvc->hidePasswd(uSvc->argv, argv - uSvc->argv.begin());
-				fb_utils::copy_terminate((char*) password, *argv++, sizeof(pass_buff));
+				fb_utils::copy_terminate(password, *argv++, sizeof(pass_buff));
+			}
+			break;
+		case IN_SW_DBA_FETCH_PASS:
+			if (argv < end)
+			{
+				const char* passwd = 0;
+				if (fb_utils::fetchPassword(*argv++, passwd) == fb_utils::FETCH_PASS_OK)
+				{
+					fb_utils::copy_terminate(password, passwd, sizeof(pass_buff));
+				}
 			}
 			break;
 		case IN_SW_DBA_TRUSTEDUSER:
 			uSvc->checkService();
 			if (argv < end)
-				fb_utils::copy_terminate((char*) tr_user, *argv++, sizeof(tr_buff));
+				fb_utils::copy_terminate(tr_user, *argv++, sizeof(tr_buff));
 			break;
 		case IN_SW_DBA_TRUSTEDROLE:
 			uSvc->checkService();
@@ -570,17 +580,17 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	if (*username) 
 	{
-		dpb.insertBytes(isc_dpb_user_name, username, strlen((char*) username));
+		dpb.insertString(isc_dpb_user_name, username, strlen(username));
 	}
 	if (*password) 
 	{
-		dpb.insertBytes(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							password, strlen((char*) password));
+		dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							password, strlen(password));
 	}
 	if (*tr_user) 
 	{
 		uSvc->checkService();
-		dpb.insertBytes(isc_dpb_trusted_auth, tr_user, strlen((char*) tr_user));
+		dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
 		if (trusted_role)
 		{
 			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));

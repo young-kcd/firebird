@@ -35,6 +35,12 @@
 #include "fb_exception.h"
 #include "gen/iberror.h"
 
+#ifdef WIN_NT
+#include <windows.h>
+#else
+#include <errno.h>
+#endif
+
 namespace Firebird {
 
 namespace Arg {
@@ -223,7 +229,12 @@ SqlState::SqlState(const char* text) throw() :
 SqlState::SqlState(const AbstractString& text) throw() : 
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text.c_str()) { }
 
-
+OsError::OsError() throw() : 
+#ifdef WIN_NT
+	Base(isc_arg_win32, GetLastError()) { }
+#else
+	Base(isc_arg_unix, errno) { }
+#endif
 } // namespace Arg
 
 } // namespace Firebird

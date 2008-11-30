@@ -683,6 +683,7 @@ const
 	gds_sysf_binuuid_mustbe_str          = 335544968;
 	gds_sysf_binuuid_wrongsize           = 335544969;
 	gds_missing_required_spb             = 335544970;
+	gds_net_server_shutdown              = 335544971;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -972,4 +973,7 @@ const
 	gds_fbsvcmgr_query_err               = 336986117;
 	gds_fbsvcmgr_switch_unknown          = 336986118;
 	gds_fbsvcmgr_bad_sm                  = 336986159;
+	gds_fbsvcmgr_fp_open                 = 336986160;
+	gds_fbsvcmgr_fp_read                 = 336986161;
+	gds_fbsvcmgr_fp_empty                = 336986162;
 	gds_utl_trusted_switch               = 337051649;

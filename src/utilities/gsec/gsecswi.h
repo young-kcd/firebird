@@ -58,6 +58,7 @@ const int IN_SW_GSEC_DBA_TRUST_ROLE	= 23;	/* use trusted role for auth */
 #ifdef TRUSTED_AUTH
 const int IN_SW_GSEC_TRUSTED_AUTH	= 24;	/* Use trusted authentication */
 #endif
+const int IN_SW_GSEC_FETCH_PASSWORD	= 25;   /* Fetch Password (Database Admin.) */
 
 
 static const struct in_sw_tab_t gsec_in_sw_table [] =
@@ -80,6 +81,7 @@ static const struct in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_DATABASE,	isc_spb_dbname,	"DATABASE",	0, 0, 0, FALSE,	0,	2, NULL},	/* specify database to use */
     {IN_SW_GSEC_DBA_USER_NAME,	0,			"USER",		0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. User name */
     {IN_SW_GSEC_DBA_PASSWORD, 	0,			"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
+    {IN_SW_GSEC_FETCH_PASSWORD,	0,			"FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 2, NULL},	/* Fetch Database Admin. Password */
     {IN_SW_GSEC_SQL_ROLE_NAME,	isc_spb_sql_role_name,		"ROLE",		0, 0, 0, FALSE,	0,	2, NULL},	/* SQL Role to assume */
 	{IN_SW_GSEC_DBA_TRUST_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, FALSE,	0,	
 											sizeof(TRUSTED_USER_SWITCH) - 1, NULL},		/* Database Admin. Trusted User name */

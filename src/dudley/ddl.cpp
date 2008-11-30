@@ -80,11 +80,11 @@ enum in_sw_values
 	IN_SW_GDEF_ADA = 14,	// source is ada
 	IN_SW_GDEF_CXX,			// source is C++
 	IN_SW_GDEF_USER = 17,	// user name for PC security
-	IN_SW_GDEF_PASSWORD		// password for PC security
+	IN_SW_GDEF_PASSWORD,	// password for PC security
 #ifdef TRUSTED_AUTH
-	,
-	IN_SW_GDEF_TRUSTED		// trusted auth
+	IN_SW_GDEF_TRUSTED,		// trusted auth
 #endif
+	IN_SW_GDEF_FETCH_PASS,	// fetch password from file
 };
 
 static const in_sw_tab_t gdef_in_sw_table[] =
@@ -108,6 +108,8 @@ static const in_sw_tab_t gdef_in_sw_table[] =
 		"\t\tuser name to use in attaching database" },
 	{ IN_SW_GDEF_PASSWORD, 0, "PASSWORD", 0, 0, 0, FALSE, 0, 0,
 		"\t\tpassword to use with user name" },
+	{ IN_SW_GDEF_FETCH_PASS, 0, "FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 0,
+		"\t\tfetch password from file" },
 #ifdef TRUSTED_AUTH
 	{ IN_SW_GDEF_TRUSTED, 0, "TRUSTED", 0, 0, 0, FALSE, 0, 0,
 		"\t\tuse trusted authentication" },
@@ -286,6 +288,17 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		case IN_SW_GDEF_PASSWORD:
 			if (argc > 1) {
 				dudleyGlob.DDL_default_password = fb_utils::get_passwd(*++argv);
+				argc--;
+			}
+
+		case IN_SW_GDEF_FETCH_PASS:
+			if (argc > 1) {
+				if (fb_utils::fetchPassword(*++argv, dudleyGlob.DDL_default_password) 
+								!= fb_utils::FETCH_PASS_OK)
+				{
+					DDL_msg_put(345);	/* msg 4: gdef: Error fetching passwird from file */
+					DDL_exit(FINI_ERROR);
+				}
 				argc--;
 			}
 			break;

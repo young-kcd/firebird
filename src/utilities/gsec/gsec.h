@@ -238,6 +238,8 @@ const USHORT GsecMsg91	= 91;	/* -trusted (use trusted authentication) */
 const USHORT GsecMsg92	= 92;	/* invalid switch specified in interactive mode */
 const USHORT GsecMsg93	= 93;	/* error closing security database */
 const USHORT GsecMsg94	= 94;	/* error releasing request in security database */
+const USHORT GsecMsg95	= 95;	/* -fe(tch_password) fetch password from file */
+const USHORT GsecMsg96	= 96;	/* error fetching password from file */
 
 #endif /* UTILITIES_GSEC_H */
 

@@ -170,6 +170,7 @@ enum switch_id {
 	SWITCH_DATABASE,
 	SWITCH_ECHO,
 	SWITCH_EXTRACT,
+	SWITCH_FETCHPASS,
 	SWITCH_INPUT,
 	SWITCH_MERGE,
 	SWITCH_MERGE2,
@@ -215,6 +216,7 @@ const switch_info switches[] =
 	{ SWITCH_CACHE,        "cache",          1, SWARG_INTEGER, 111 },
 	{ SWITCH_CHARSET,      "charset",        2, SWARG_STRING,  122 },
 	{ SWITCH_DATABASE,     "database",       1, SWARG_STRING,  123 },
+	{ SWITCH_FETCHPASS,	   "fetch_password", 1, SWARG_STRING,  161 },
 	{ SWITCH_ECHO,         "echo",           1, SWARG_NONE,    124 },
 	{ SWITCH_EXTRACT,      "extract",        2, SWARG_NONE,    125 },
 	{ SWITCH_INPUT,        "input",          1, SWARG_STRING,  126 },
@@ -6833,6 +6835,38 @@ static processing_state parse_arg(int argc,
 					// make sure swarg_str is really a pointer to argv, not something else !!
 					global_psw = true;
 					break;
+
+				case SWITCH_FETCHPASS:
+				{
+					const char* pass = 0;
+					fb_utils::FetchPassResult rez = fb_utils::fetchPassword(swarg_str, pass);
+					if (rez == fb_utils::FETCH_PASS_OK)
+					{
+						fb_utils::copy_terminate(Password, pass, sizeof(Password));
+						global_psw = true;
+					}
+					else
+					{
+						switch (rez)
+						{
+						case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
+							ISQL_msg_get(PASS_FILE_OPEN, errbuf, SafeArg() << swarg_str << errno);
+							// error @2 opening password file @1
+							break;
+						case fb_utils::FETCH_PASS_FILE_READ_ERROR:
+							ISQL_msg_get(PASS_FILE_READ, errbuf, SafeArg() << swarg_str << errno);
+							// error @2 reading password file @1
+							break;
+						case fb_utils::FETCH_PASS_FILE_EMPTY:
+							ISQL_msg_get(EMPTY_PASS, errbuf, SafeArg() << swarg_str);
+							// password file @1 is empty
+							break;
+						}
+						STDERROUT(errbuf);
+						ret = ps_ERR;
+					}
+					break;
+				}
 
 				case SWITCH_USER:
 					fb_utils::copy_terminate(isqlGlob.User, swarg_str, sizeof(isqlGlob.User));

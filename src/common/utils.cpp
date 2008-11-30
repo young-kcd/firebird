@@ -36,6 +36,7 @@
 #undef __need_size_t
 #endif
 #include <stdarg.h>
+#include <stdio.h>
 
 #include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
@@ -681,6 +682,47 @@ void getCwd(Firebird::PathName& pn)
 	getwd(buffer);
 #endif
 	pn.recalculate_length();
+}
+
+namespace {
+	class FileClose
+	{
+	public:
+		static void clear(FILE *f)
+		{
+			if (f && f != stdin) {
+				fclose(f);
+			}
+		}
+	};
+} // namespace
+
+// fetch password from file
+FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password)
+{
+	Firebird::AutoPtr<FILE, FileClose> file((name == "stdin") ? stdin : fopen(name.c_str(), "rt"));
+	if (!file)
+	{
+		return FETCH_PASS_FILE_OPEN_ERROR;
+	}
+
+	if (isatty(fileno(file)))
+	{
+		fprintf(stderr, "Enter password: ");
+		fflush(stderr);
+	}
+
+	Firebird::string pwd;
+	if (! pwd.LoadFromFile(file))
+	{
+		return ferror(file) ? FETCH_PASS_FILE_READ_ERROR : FETCH_PASS_FILE_EMPTY;
+	}
+
+	// this is planned leak of a few bytes of memory in utilities
+	char* pass = FB_NEW(*getDefaultMemoryPool()) char[pwd.length() + 1];
+	pwd.copyTo(pass, pwd.length() + 1);
+	password = pass;
+	return FETCH_PASS_OK;
 }
 
 } // namespace fb_utils

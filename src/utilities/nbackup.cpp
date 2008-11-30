@@ -98,6 +98,7 @@ void usage(UtilSvc* uSvc, const char* message, ...)
 		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
 		"  -U <user>                             User name\n"
 		"  -P <password>                         Password\n"
+		"  -FE <file>                            FEtch password from file\n"
 		"  -T                                    Do not run database triggers\n"
 		"  -S                                    Print database size in pages after lock\n"
 		"Notes:\n"
@@ -1095,7 +1096,7 @@ void nbackup(UtilSvc* uSvc)
 	int level;
 	bool print_size = false;
 	string trustedUser;
-	bool trustedRole;
+	bool trustedRole = false;
 
 	// Read global command line parameters
 	for (int itr = 1; itr < argc; ++itr) {
@@ -1137,11 +1138,40 @@ void nbackup(UtilSvc* uSvc)
 			uSvc->hidePasswd(argv, itr);
 			break;
 
+		case 'E':
+			if (++itr >= argc)
+				missing_parameter_for_switch(uSvc, argv[itr - 1]);
+
+			password = argv[itr];
+			uSvc->hidePasswd(argv, itr);
+			break;
+
 		case 'T':
 			run_db_triggers = false;
 			break;
 
 		case 'F':
+			if (UPPER(argv[itr][2]) == 'E')
+			{
+				if (uSvc->isService())
+				{
+					usage(uSvc, "Fetch password can't be used in service mode");
+					break;
+				}
+
+				if (++itr >= argc)
+					missing_parameter_for_switch(uSvc, argv[itr - 1]);
+
+				const char* passwd = 0;
+				if (fb_utils::fetchPassword(argv[itr], passwd) != fb_utils::FETCH_PASS_OK)
+				{
+					usage(uSvc, "Error working with password file");
+					break;
+				}
+				password = passwd;
+				break;
+			}
+
 			if (op != nbNone) 
 				singleAction(uSvc);
 

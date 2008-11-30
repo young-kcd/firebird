@@ -249,6 +249,10 @@ const int NO_CONNECTED_USERS		= 157;   	// There are no connected users
 const int USERS_IN_DB				= 158;      // Users in the database
 const int OUTPUT_TRUNCATED			= 159;      // Output was truncated
 const int VALID_OPTIONS             = 160;      // Valid options are:
+const int USAGE_FETCH				= 161;		// -fe(tch_password)       fetch password from file
+const int PASS_FILE_OPEN			= 162;		// could not open password file @1, errno @2
+const int PASS_FILE_READ			= 163;		// could not read password file @1, errno @2
+const int EMPTY_PASS				= 164;		// empty password file @1
 
 // Initialize types
 
