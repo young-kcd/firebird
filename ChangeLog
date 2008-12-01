@@ -1,3 +1,88 @@
+2008-12-01 16:46  alexpeshkoff
+
+	* firebird2/src/: isql/isql.h (1.68), msgs/messages2.sql (1.72):
+
+	CORE-1667 - fixed message text
+
+2008-12-01 16:40  alexpeshkoff
+
+	* firebird2/: configure.in (1.301), src/common/utils.cpp (1.52):
+
+	CORE-1667 - turn echo off
+
+2008-12-01 15:52  paulbeach
+
+	* firebird2/src/: common/classes/semaphore.h (1.59),
+	utilities/drop.cpp (1.39):
+
+	Small mods for HPUX to support 2.0.5
+
+2008-12-01 14:05  alexpeshkoff
+
+	* firebird2/builds/install/misc/posixLibrary.sh.in (1.17):
+
+	Fixed CORE-2195:Linux CS install requires access rights review -
+	make conf files root-writable
+
+2008-12-01 13:37  alexpeshkoff
+
+	* firebird2/src/jrd/isc_sync.cpp (1.161):
+
+	Frontported fix for CORE-2221: Attach to any DB fails after
+	modification of access rights of security2.fdb
+
+2008-12-01 10:52  robocop
+
+	* firebird2/src/alice/aliceswi.h (1.22):
+
+	Misc and praying that all compilers accept hex contants being
+	int64.
+
+2008-12-01 10:51  robocop
+
+	* firebird2/src/qli/dtr.cpp (1.57):
+
+	Misc.
+
+2008-12-01 10:21  robocop
+
+	* firebird2/src/: burp/burp.cpp (1.154), burp/spit.cpp (1.35),
+	common/StatusArg.h (1.13), jrd/DataTypeUtil.cpp (1.19), jrd/cmp.cpp
+	(1.325), jrd/evl.cpp (1.280), jrd/fun.epp (1.108), jrd/shut.cpp
+	(1.61), jrd/extds/InternalDS.cpp (1.14), jrd/extds/IscDS.cpp
+	(1.16), remote/interface.cpp (1.198), remote/xnet.cpp (1.120),
+	remote/os/win32/srvr_w32.cpp (1.60), remote/os/win32/wnet.cpp
+	(1.61):
+
+	Misc.
+
+2008-12-01 10:20  robocop
+
+	* firebird2/src/common/utils.cpp (1.51):
+
+	Make it compilable on Windows again.
+
+2008-12-01 08:28  hvlad
+
+	* firebird2/src/common/fb_exception.cpp (1.44):
+
+	Misc
+
+2008-12-01 02:26  asfernandes
+
+	* firebird2/: doc/README.read_password_from_file (1.2),
+	src/burp/burpswi.h (1.26), src/common/utils.cpp (1.50),
+	src/dudley/ddl.cpp (1.43), src/gpre/gpre.cpp (1.91),
+	src/include/fb_exception.h (1.33), src/isql/isql.epp (1.252):
+
+	Misc
+
+2008-11-30 21:09  asfernandes
+
+	* firebird2/src/remote/remote.h (1.83):
+
+	Fix Linux build
+
 2008-11-30 19:55  asfernandes
 
 	* firebird2/src/jrd/: cmp.cpp (1.324), evl.cpp (1.279), exe.h
