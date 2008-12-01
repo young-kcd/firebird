@@ -734,6 +734,10 @@ fixFilePermissions() {
     chown -R root:root $FBRootDir
     chmod -R uga-w $FBRootDir
 
+	# Set up configuration files - make them root-writable
+    cd $FBRootDir
+	chmod u+w *.conf
+
     # Prepare bin
     cd $FBBin
 
