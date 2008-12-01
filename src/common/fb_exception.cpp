@@ -339,7 +339,7 @@ int system_error::getSystemError()
 system_call_failed::system_call_failed(const char* syscall, int error_code) : 
 	system_error(syscall, error_code)
 {
-#ifdef DEV_BUILD_ccc
+#ifdef DEV_BUILD
 	// raised failed system call exception in DEV_BUILD in 99.99% means 
 	// problems with the code - let's create memory dump now
 	abort();
