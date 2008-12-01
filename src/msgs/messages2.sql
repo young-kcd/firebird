@@ -3037,7 +3037,7 @@ Fetches = !f', NULL, NULL);
 ('USERS_IN_DB', 'SHOW_metadata', 'show.epp', NULL, 17, 158, NULL, 'Users in the database', NULL, NULL);
 ('OUTPUT_TRUNCATED', 'SHOW_metadata', 'show.epp', NULL, 17, 159, NULL, 'Output was truncated', NULL, NULL);
 ('VALID_OPTIONS', 'SHOW_metadata', 'show.epp', NULL, 17, 160, NULL, 'Valid options are:', NULL, NULL);
-('USAGE_FETCH', 'ISQL_main', 'isql.epp', NULL, 17, 161, NULL, '	-fe(tch_password)       fetch password from file', NULL, NULL);
+('USAGE_FETCH', 'ISQL_main', 'isql.epp', NULL, 17, 161, NULL, '	-f(etch_password)       fetch password from file', NULL, NULL);
 ('PASS_FILE_OPEN', 'ISQL_main', 'isql.epp', NULL, 17, 162, NULL, 'could not open password file @1, errno @2', NULL, NULL);
 ('PASS_FILE_READ', 'ISQL_main', 'isql.epp', NULL, 17, 163, NULL, 'could not read password file @1, errno @2', NULL, NULL);
 ('EMPTY_PASS', 'ISQL_main', 'isql.epp', NULL, 17, 164, NULL, 'empty password file @1', NULL, NULL);
