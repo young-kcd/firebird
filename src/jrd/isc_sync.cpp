@@ -4006,7 +4006,7 @@ static SLONG open_semaphores(
  *
  **************************************/
 	// Open semaphore set
-	SLONG semid = semget(key, 0, PRIV);
+	SLONG semid = semget(key, 0, 0);
 	if (semid == -1) {
 		error(status_vector, "semget", errno);
 		return -1;
@@ -4050,7 +4050,7 @@ static SLONG create_semaphores(
 	while (true)
 	{
 		// Try to open existing semaphore set
-		semid = semget(key, 0, PRIV);
+		semid = semget(key, 0, 0);
 		if (semid == -1) {
 			if (errno != ENOENT) {
 				error(status_vector, "semget", errno);
