@@ -28,44 +28,44 @@
 
 // switch definitions 
 
-const SINT64 sw_list			= 0x00000001L;	// Byte 0, Bit 0 
-const SINT64 sw_prompt			= 0x00000002L;
-const SINT64 sw_commit			= 0x00000004L;
-const SINT64 sw_rollback		= 0x00000008L;
-const SINT64 sw_sweep			= 0x00000010L;
-const SINT64 sw_validate		= 0x00000020L;
-const SINT64 sw_no_update		= 0x00000040L;
-const SINT64 sw_full			= 0x00000080L;
-const SINT64 sw_mend			= 0x00000100L;	// Byte 1, Bit 0 
-const SINT64 sw_all				= 0x00000200L;
-const SINT64 sw_enable			= 0x00000400L;
-const SINT64 sw_disable			= 0x00000800L;
-const SINT64 sw_ignore			= 0x00001000L;
-const SINT64 sw_activate		= 0x00002000L;
-const SINT64 sw_two_phase		= 0x00004000L;
-const SINT64 sw_housekeeping	= 0x00008000L;
-const SINT64 sw_kill			= 0x00010000L;	// Byte 2, Bit 0 
-//const SINT64 sw_begin_log		= 0x00020000L;
-//const SINT64 sw_quit_log		= 0x00040000L;
-const SINT64 sw_write			= 0x00080000L;
-const SINT64 sw_no_reserve		= 0x00100000L;
-const SINT64 sw_user			= 0x00200000L;
-const SINT64 sw_password		= 0x00400000L;
-const SINT64 sw_shut			= 0x00800000L;
-const SINT64 sw_online			= 0x01000000L;	// Byte 3, Bit 0 
-const SINT64 sw_cache			= 0x02000000L;
-const SINT64 sw_attach			= 0x04000000L;
-const SINT64 sw_force			= 0x08000000L;
-const SINT64 sw_tran			= 0x10000000L;
-const SINT64 sw_buffers			= 0x20000000L;
-const SINT64 sw_mode			= 0x40000000L;
-const SINT64 sw_set_db_dialect	= 0x80000000L;
-const SINT64 sw_trusted_auth	= 0x0000000100000000L;
+const SINT64 sw_list			= 0x0000000000000001L;	// Byte 0, Bit 0 
+const SINT64 sw_prompt			= 0x0000000000000002L;
+const SINT64 sw_commit			= 0x0000000000000004L;
+const SINT64 sw_rollback		= 0x0000000000000008L;
+const SINT64 sw_sweep			= 0x0000000000000010L;
+const SINT64 sw_validate		= 0x0000000000000020L;
+const SINT64 sw_no_update		= 0x0000000000000040L;
+const SINT64 sw_full			= 0x0000000000000080L;
+const SINT64 sw_mend			= 0x0000000000000100L;	// Byte 1, Bit 0 
+const SINT64 sw_all				= 0x0000000000000200L;
+const SINT64 sw_enable			= 0x0000000000000400L;
+const SINT64 sw_disable			= 0x0000000000000800L;
+const SINT64 sw_ignore			= 0x0000000000001000L;
+const SINT64 sw_activate		= 0x0000000000002000L;
+const SINT64 sw_two_phase		= 0x0000000000004000L;
+const SINT64 sw_housekeeping	= 0x0000000000008000L;
+const SINT64 sw_kill			= 0x0000000000010000L;	// Byte 2, Bit 0 
+//const SINT64 sw_begin_log		= 0x0000000000020000L;
+//const SINT64 sw_quit_log		= 0x0000000000040000L;
+const SINT64 sw_write			= 0x0000000000080000L;
+const SINT64 sw_no_reserve		= 0x0000000000100000L;
+const SINT64 sw_user			= 0x0000000000200000L;
+const SINT64 sw_password		= 0x0000000000400000L;
+const SINT64 sw_shut			= 0x0000000000800000L;
+const SINT64 sw_online			= 0x0000000001000000L;	// Byte 3, Bit 0 
+const SINT64 sw_cache			= 0x0000000002000000L;
+const SINT64 sw_attach			= 0x0000000004000000L;
+const SINT64 sw_force			= 0x0000000008000000L;
+const SINT64 sw_tran			= 0x0000000010000000L;
+const SINT64 sw_buffers			= 0x0000000020000000L;
+const SINT64 sw_mode			= 0x0000000040000000L;
+const SINT64 sw_set_db_dialect	= 0x0000000080000000L;
+const SINT64 sw_trusted_auth	= 0x0000000100000000L;	// Byte 4, Bit 0
 const SINT64 sw_trusted_svc		= 0x0000000200000000L;
 const SINT64 sw_trusted_role	= 0x0000000400000000L;
 const SINT64 sw_fetch_password	= 0x0000000800000000L;
 
-const SINT64 sw_z				= 0x0UL;
+const SINT64 sw_z				= 0x0L;
 
 enum alice_switches
 {
