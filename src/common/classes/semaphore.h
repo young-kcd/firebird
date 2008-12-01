@@ -132,7 +132,12 @@ private:
 		}
 #else
 		sem = sem_open(semName, O_CREAT | O_EXCL, 0700, 0);
-#if defined(DARWIN) && !defined(DARWIN64)
+
+#ifdef HPUX
+#define SEM_FAILED ((sem_t*) (-1))
+#endif
+
+#if defined(DARWIN) && !defined(DARWIN64) || defined(HPUX)
 		if (sem == (sem_t*) SEM_FAILED) {
 #else
 		if (sem == SEM_FAILED) {
