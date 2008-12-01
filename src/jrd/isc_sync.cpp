@@ -411,7 +411,7 @@ namespace {
 					// may be some old data about really active semaphore sets?
 					if (version == CURRENT_VERSION)
 					{
-						int semId = semget(set[i].semKey, SEM_PER_SET, PRIV);
+						int semId = semget(set[i].semKey, SEM_PER_SET, 0);
 						if (semId > 0)
 						{
 							semctl(semId, 0, IPC_RMID);
@@ -4039,7 +4039,7 @@ static SLONG create_semaphores(
 	while (true)
 	{
 		// Try to open existing semaphore set
-		semid = semget(key, 0, PRIV);
+		semid = semget(key, 0, 0);
 		if (semid == -1) {
 			if (errno != ENOENT) {
 				error(status_vector, "semget", errno);
