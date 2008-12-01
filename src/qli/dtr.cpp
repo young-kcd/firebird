@@ -164,15 +164,15 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			case 'F':		// fetch password
-			{
-				if (argv >= arg_end || **argv == '-')
-					break;
-				const char* pwd = 0;
-				if (fb_utils::fetchPassword(*argv++, pwd) != fb_utils::FETCH_PASS_OK)
-					break;
-				fb_utils::copy_terminate(QLI_default_password, pwd, sizeof(QLI_default_password));
+				{
+					if (argv >= arg_end || **argv == '-')
+						break;
+					const char* pwd = 0;
+					if (fb_utils::fetchPassword(*argv++, pwd) != fb_utils::FETCH_PASS_OK)
+						break;
+					fb_utils::copy_terminate(QLI_default_password, pwd, sizeof(QLI_default_password));
+				}
 				break;
-			}
 
 			case 'I':
 				if (argv >= arg_end || **argv == '-')
