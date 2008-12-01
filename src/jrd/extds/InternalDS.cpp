@@ -181,7 +181,7 @@ bool InternalConnection::cancelExecution(thread_db *tdbb)
 	if (m_isCurrent)
 		return true;
 
-	ISC_STATUS_ARRAY status = {0};
+	ISC_STATUS_ARRAY status = {0, 0, 0};
 	jrd8_cancel_operation(status, &m_attachment, fb_cancel_raise);
 	return (status[1] == 0);
 }

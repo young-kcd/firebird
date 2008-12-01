@@ -296,13 +296,13 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
 	UCharStack array_stack;
-	
+
 	jrd_req* request = tdbb->getRequest();
 	// CVC: restoring the null flag seems like a Borland hack to try to
 	// patch a bug with null handling. There's no evident reason to restore it
 	// because EVL_expr() resets it every time it's called.	Kept it for now.
 	const bool null_flag	= ((request->req_flags & req_null) == req_null);
-	
+
 	fun_repeat*	return_ptr = function->fun_rpt + function->fun_return_arg;
 	jrd_nod** ptr = node->nod_arg;
 
@@ -352,7 +352,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 			// CVC: The return param we build for the UDF is not null!!!
 			// This closes SF Bug #544132.
 			request->req_flags &= ~req_null;
-		}	
+		}
 		else
 		{
 			input = EVL_expr(tdbb, *ptr++);
@@ -441,7 +441,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 						// is always passed as a LONG.  See v3.2 release notes
 						// Passing by value is not supported in SQL due to
 						// these problems, but can still occur in GDML.
-						// 1994-September-28 David Schnepper 
+						// 1994-September-28 David Schnepper
 
 						*arg_ptr++ = (UDF_ARG)(IPTR) s;
 						continue;
@@ -473,7 +473,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 				lp = (SLONG *) temp_ptr;
 				*lp = l;
 				break;
-			
+
 			case dtype_sql_date:
 				l = MOV_get_sql_date(input);
 				if (tail->fun_mechanism == FUN_value)
@@ -511,7 +511,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 						// is always passed as a DOUBLE.  See v3.2 release notes
 						// Passing by value is not supported in SQL due to
 						// these problems, but can still occur in GDML.
-						// 1994-September-28 David Schnepper 
+						// 1994-September-28 David Schnepper
 
 						double* dp = (double *) arg_ptr;
 						*dp++ = (double) f;
@@ -643,7 +643,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	// that should be deallocated by the engine?
 	// Did the udf send an ill-formed descriptor back?
 	UdfError udfError = UeNone;
-	
+
 	invoke(tdbb, function, return_ptr, value, args, return_blob_struct,
 		result_was_null, udfError);
 
@@ -660,7 +660,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 		status_exception::raise(Arg::Gds(isc_bad_udf_freeit));
 		break;
 	}
-		
+
 	if (result_was_null)
 	{
 		request->req_flags |= req_null;
@@ -668,7 +668,7 @@ void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure
 	}
 	else
 		request->req_flags &= ~req_null;
-		
+
 	while (array_stack.hasData())
 	{
 		delete[] array_stack.pop();
@@ -710,7 +710,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool Sh
 	UserFunction* function = NULL;
 	if (dbb->dbb_functions.get(name, function))
 		return function;
-	
+
 	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
 	UserFunction* prior = NULL;
 
@@ -733,7 +733,7 @@ UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name, bool Sh
 		FOR(REQUEST_HANDLE request_arg)
 			Y IN RDB$FUNCTION_ARGUMENTS
 			WITH Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME
-			SORTED BY Y.RDB$ARGUMENT_POSITION 
+			SORTED BY Y.RDB$ARGUMENT_POSITION
 
 			if (!REQUEST(irq_l_args))
 				REQUEST(irq_l_args) = request_arg;
@@ -838,8 +838,7 @@ UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* f
 			jrd_nod** ptr;
 			const fun_repeat* tail;
 
-			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end;
-				 ptr++, tail++)
+			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end; ptr++, tail++)
 			{
 				CMP_get_desc(tdbb, csb, *ptr, &arg);
 				if (tail->fun_mechanism == FUN_descriptor)
@@ -877,7 +876,7 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  **************************************
  *
  * Functional description
- *	lseek a blob segement.  Return the offset 
+ *	lseek a blob segement.  Return the offset
  *
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
@@ -897,7 +896,7 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  **************************************
  *
  * Functional description
- *	Put segment into a blob.  Return nothing 
+ *	Put segment into a blob.  Return nothing
  *
  **************************************/
 	// As this is a call-back from a UDF, must reacquire the engine mutex
@@ -970,9 +969,8 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 						tdbb->getRequest()->req_transaction,
 						(bid*)value->dsc_address,
 						array_desc);
-						
-	UCHAR* data =
-		FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
+
+	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
 	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
 	const USHORT dimensions = array_desc->iad_dimensions;
 
@@ -988,7 +986,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
 		to.dsc_address = temp;
 		from.dsc_address = data;
-		
+
 		// This loop may call ERR_post indirectly.
 		try
 		{
@@ -1004,7 +1002,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 			delete[] temp;
 			throw;
 		}
-		
+
 		delete[] data;
 		data = temp;
 	}
@@ -1025,7 +1023,7 @@ static SLONG get_scalar_array(fun_repeat*	arg,
 		tail2->sad_lower = tail1->iad_lower;
 	}
 
-	return sizeof(scalar_array_desc) + 
+	return sizeof(scalar_array_desc) +
 		(dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
@@ -1065,20 +1063,19 @@ static void invoke(thread_db* tdbb,
 	else if (return_ptr->fun_mechanism == FUN_value)
 	{
 		result_is_null = false;
-		
+
 		switch (value->vlu_desc.dsc_dtype)
 		{
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			value->vlu_misc.vlu_long =
-				CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_short:
 			// For (apparent) portability reasons, SHORT by value
 			// must always be returned as a LONG.  See v3.2 release notes
-			// 1994-September-28 David Schnepper 
+			// 1994-September-28 David Schnepper
 
 			value->vlu_misc.vlu_short = (SSHORT)
 				CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
@@ -1087,20 +1084,18 @@ static void invoke(thread_db* tdbb,
 		case dtype_real:
 			// For (apparent) portability reasons, FLOAT by value
 			// must always be returned as a DOUBLE.  See v3.2 release notes
-			// 1994-September-28 David Schnepper 
+			// 1994-September-28 David Schnepper
 
 			value->vlu_misc.vlu_float = (float)
 				CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
-			value->vlu_misc.vlu_int64 =
-				CALL_UDF<SINT64>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_double:
-			value->vlu_misc.vlu_double =
-				CALL_UDF<double>(dbb, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_double = CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_timestamp:
@@ -1112,7 +1107,7 @@ static void invoke(thread_db* tdbb,
 	else
 	{
 		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
-		
+
 		if (temp_ptr != NULL)
 		{
 			// CVC: Allow processing of return by descriptor.
@@ -1130,7 +1125,7 @@ static void invoke(thread_db* tdbb,
 				if (!temp_ptr || (return_dsc->dsc_flags & DSC_null))
 					result_is_null = true;
 			}
-			
+
 			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
 
 			if (result_is_null)
@@ -1144,7 +1139,7 @@ static void invoke(thread_db* tdbb,
 			else
 			{
 				DSC temp_desc;
-				
+
 				switch (value->vlu_desc.dsc_dtype)
 				{
 				case dtype_sql_date:
@@ -1212,7 +1207,7 @@ static void invoke(thread_db* tdbb,
 					break;
 				}
 			}
-			
+
 			// Check if this is function has the FREE_IT set, if set and
 			// return_value is not null, then free the return value.
 			if (must_free)

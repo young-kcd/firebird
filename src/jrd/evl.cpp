@@ -894,7 +894,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 
 	case nod_field:
 		{
-			USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
+			const USHORT id = (USHORT)(IPTR) node->nod_arg[e_fld_id];
 			record_param& rpb = request->req_rpb[(USHORT)(IPTR) node->nod_arg[e_fld_stream]];
 			Record* record = rpb.rpb_record;
 			jrd_rel* relation = rpb.rpb_relation;
@@ -906,7 +906,7 @@ dsc* EVL_expr(thread_db* tdbb, jrd_nod* const node)
 				request->req_flags |= req_null;
 			else
 			{
-				Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
+				const Format* compileFormat = (Format*) node->nod_arg[e_fld_format];
 
 				// ASF: CORE-1432 - If the the record is not on the latest format, upgrade it.
 				if (compileFormat &&

@@ -71,7 +71,7 @@ protected:
 	};
 
 	Base(ISC_STATUS k, ISC_STATUS c);// : implementation(new ImplBase(k, c)) { }
-	Base(ImplBase* i) throw() : implementation(i) { }
+	explicit Base(ImplBase* i) throw() : implementation(i) { }
 	~Base() { delete implementation; }
 
 	ImplBase* const implementation;
@@ -113,7 +113,7 @@ protected:
 			clear();
 		}
 
-		ImplStatusVector(const ISC_STATUS* s) throw();
+		explicit ImplStatusVector(const ISC_STATUS* s) throw();
 	};
 
 	StatusVector(ISC_STATUS k, ISC_STATUS v);

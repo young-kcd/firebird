@@ -732,13 +732,12 @@ static bool connect_client(rem_port *port)
 		switch (err)
 		{
 		case ERROR_PIPE_CONNECTED:
-		break;
+			break;
 
 		case ERROR_IO_PENDING:
 			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0)
 				break;
-			else
-				err = GetLastError(); // fall thru
+			err = GetLastError(); // fall thru
 
 		default:
 			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, err);
@@ -824,7 +823,7 @@ static void force_close(rem_port* port)
  **************************************
  *
  * Functional description
- *	Forcebly close remote connection.
+ *	Forcibly close remote connection.
  *
  **************************************/
 
@@ -833,6 +832,7 @@ static void force_close(rem_port* port)
 		port->port_state = rem_port::BROKEN;
 
 		SetEvent(port->port_event);
+		fb_assert(port->port_handle);
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
 	}
@@ -1474,8 +1474,8 @@ static int packet_receive(
 	{
 		if (port->port_flags & PORT_detached)
 			return FALSE;
-		else
-			return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
+
+		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
 	}
 
 #if defined(DEBUG) && defined(WNET_trace)

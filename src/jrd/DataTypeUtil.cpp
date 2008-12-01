@@ -227,7 +227,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			//
 			// At least give any first charset other than ASCII/NONE precedence
 
-			USHORT oldttype = ttype;
+			const USHORT oldttype = ttype;
 
 			if (!any_text)
 				ttype = arg->getTextType();

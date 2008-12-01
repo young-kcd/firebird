@@ -182,7 +182,7 @@ void IscConnection::doDetach(thread_db *tdbb)
 
 bool IscConnection::cancelExecution(thread_db *tdbb)
 {
-	ISC_STATUS_ARRAY status = {0};
+	ISC_STATUS_ARRAY status = {0, 0, 0};
 	if (m_handle) 
 	{
 		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);

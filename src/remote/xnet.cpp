@@ -171,7 +171,7 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 
 static int xnet_error(rem_port*, ISC_STATUS, int);
 
-static void xnet_log_error(const char* err_msg, ISC_STATUS* status = 0)
+static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = 0)
 { 
 	if (status && status[1])
 	{
@@ -1010,8 +1010,8 @@ static void cleanup_mapping(XPM xpm)
 		CloseHandle(xpm->xpm_handle);
 
 		// find xpm in chain and release
-		XPM *pxpm = &global_client_maps;
-		for (; *pxpm; pxpm = &(*pxpm)->xpm_next)
+
+		for (XPM* pxpm = &global_client_maps; *pxpm; pxpm = &(*pxpm)->xpm_next)
 			if (*pxpm == xpm) 
 			{
 				*pxpm = xpm->xpm_next;
@@ -1045,6 +1045,7 @@ static void cleanup_port(rem_port* port)
 	port->release();
 }
 
+
 static void raise_lostconn_or_syserror(const char* msg)
 {
 	if (ERRNO == ERROR_FILE_NOT_FOUND)
@@ -1052,6 +1053,7 @@ static void raise_lostconn_or_syserror(const char* msg)
 	else
 		Firebird::system_error::raise(msg);
 }
+
 
 static rem_port* connect_client(PACKET* packet, ISC_STATUS* status_vector)
 {
@@ -1493,7 +1495,7 @@ static void force_close(rem_port* port)
  **************************************
  *
  * Functional description
- *	Forcebly close remote connection.
+ *	Forcibly close remote connection.
  *
  **************************************/
 

@@ -213,7 +213,8 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 	ISC_enter();
 
 	int nReturnValue = 0;
-	ISC_STATUS_ARRAY status_vector = {0};
+	ISC_STATUS_ARRAY status_vector;
+	fb_utils::init_status(status_vector);
 
 	if (connection_handle != INVALID_HANDLE_VALUE)
 	{
