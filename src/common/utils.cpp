@@ -46,6 +46,7 @@
 
 #ifdef WIN_NT
 #include <direct.h>
+#include <io.h> // isatty()
 #endif
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
