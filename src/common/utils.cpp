@@ -51,6 +51,9 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
 
 namespace fb_utils
 {
@@ -686,31 +689,69 @@ void getCwd(Firebird::PathName& pn)
 }
 
 namespace {
-	class FileClose
+	class InputFile
 	{
 	public:
-		static void clear(FILE* f)
+		InputFile(const Firebird::PathName& name)
+		  : flagEcho(false)
 		{
+			if (name == "stdin") {
+				f = stdin;
+			}
+			else {
+				f = fopen(name.c_str(), "rt");
+			}
+			if (isatty(fileno(f))) {
+#ifdef HAVE_TERMIOS_H
+				flagEcho = tcgetattr(fileno(f), &oldState) == 0;
+				if (flagEcho)
+				{
+					flagEcho = oldState.c_lflag & ECHO;
+				}
+				if (flagEcho)
+				{
+					struct termios newState(oldState);
+					newState.c_lflag &= ~ECHO;
+					tcsetattr(fileno(f), TCSANOW, &newState);
+				}
+				fprintf(stderr, "Enter password: ");
+				fflush(stderr);
+#endif		
+			}
+		}
+		~InputFile()
+		{
+#ifdef HAVE_TERMIOS_H
+			if (flagEcho) {
+				fprintf(stderr, "\n");
+				fflush(stderr);
+				tcsetattr(fileno(f), TCSANOW, &oldState);
+			}
+#endif		
 			if (f && f != stdin) {
 				fclose(f);
 			}
 		}
+
+		operator FILE*() { return f;}
+		bool operator!() { return !f; }
+
+	private:
+		FILE* f;
+#ifdef HAVE_TERMIOS_H
+		struct termios oldState;
+#endif
+		bool flagEcho;
 	};
 } // namespace
 
 // fetch password from file
 FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& password)
 {
-	Firebird::AutoPtr<FILE, FileClose> file((name == "stdin") ? stdin : fopen(name.c_str(), "rt"));
+	InputFile file(name);
 	if (!file)
 	{
 		return FETCH_PASS_FILE_OPEN_ERROR;
-	}
-
-	if (isatty(fileno(file)))
-	{
-		fprintf(stderr, "Enter password: ");
-		fflush(stderr);
 	}
 
 	Firebird::string pwd;
