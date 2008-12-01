@@ -6838,7 +6838,7 @@ static processing_state parse_arg(int argc,
 
 				case SWITCH_FETCHPASS:
 				{
-					const char* pass = 0;
+					const char* pass = NULL;
 					fb_utils::FetchPassResult rez = fb_utils::fetchPassword(swarg_str, pass);
 					if (rez == fb_utils::FETCH_PASS_OK)
 					{

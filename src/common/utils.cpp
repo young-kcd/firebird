@@ -688,7 +688,7 @@ namespace {
 	class FileClose
 	{
 	public:
-		static void clear(FILE *f)
+		static void clear(FILE* f)
 		{
 			if (f && f != stdin) {
 				fclose(f);

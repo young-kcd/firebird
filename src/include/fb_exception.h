@@ -159,7 +159,7 @@ private:
 	void release_vector() throw();
 };
 
-// use this class if exception can be handled 
+// use this class if exception can be handled
 class system_error : public status_exception
 {
 private:

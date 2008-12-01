@@ -91,7 +91,7 @@ const int IN_SW_BURP_TRUSTED_ROLE	= 42;      // use trusted role on attach
 const int IN_SW_BURP_FIX_FSS_DATA		= 43;      // fix unicode_fss data
 const int IN_SW_BURP_FIX_FSS_METADATA	= 44;      // fix unicode_fss metadata
 
-const int IN_SW_BURP_FETCHPASS		= 45;      // fetch default password to use on attach from file
+const int IN_SW_BURP_FETCHPASS		= 45;      // fetch default password from file to use on attach
 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX 

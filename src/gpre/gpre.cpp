@@ -1915,10 +1915,9 @@ static bool get_switches(int			argc,
 			{
 				return false;
 			}
-			if (fb_utils::fetchPassword(*++argv, gpreGlob.default_password) != 
-						fb_utils::FETCH_PASS_OK)
+			if (fb_utils::fetchPassword(*++argv, gpreGlob.default_password) != fb_utils::FETCH_PASS_OK)
 			{
-				fprintf(stderr, "--fetch_password : error loading password from file\n ");
+				fprintf(stderr, "-fetch_password: error loading password from file\n ");
 			}
 			break;
 

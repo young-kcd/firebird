@@ -84,7 +84,7 @@ enum in_sw_values
 #ifdef TRUSTED_AUTH
 	IN_SW_GDEF_TRUSTED,		// trusted auth
 #endif
-	IN_SW_GDEF_FETCH_PASS,	// fetch password from file
+	IN_SW_GDEF_FETCH_PASS	// fetch password from file
 };
 
 static const in_sw_tab_t gdef_in_sw_table[] =
@@ -293,10 +293,9 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 
 		case IN_SW_GDEF_FETCH_PASS:
 			if (argc > 1) {
-				if (fb_utils::fetchPassword(*++argv, dudleyGlob.DDL_default_password) 
-								!= fb_utils::FETCH_PASS_OK)
+				if (fb_utils::fetchPassword(*++argv, dudleyGlob.DDL_default_password) != fb_utils::FETCH_PASS_OK)
 				{
-					DDL_msg_put(345);	/* msg 4: gdef: Error fetching passwird from file */
+					DDL_msg_put(345);	// msg 4: gdef: Error fetching password from file
 					DDL_exit(FINI_ERROR);
 				}
 				argc--;
