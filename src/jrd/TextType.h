@@ -122,6 +122,9 @@ protected:
 
 private:
 	TTYPE_ID type;
+#ifdef RISC_ALIGNMENT
+	ULONG dummyAlign;
+#endif
 	UCHAR sqlMatchAnyCanonic[sizeof(ULONG)];
 	UCHAR sqlMatchOneCanonic[sizeof(ULONG)];
 	UCHAR gdmlMatchOneCanonic[sizeof(ULONG)];
