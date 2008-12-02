@@ -701,7 +701,9 @@ namespace {
 			else {
 				f = fopen(name.c_str(), "rt");
 			}
-			if (isatty(fileno(f))) {
+			if (f && isatty(fileno(f))) {
+				fprintf(stderr, "Enter password: ");
+				fflush(stderr);
 #ifdef HAVE_TERMIOS_H
 				flagEcho = tcgetattr(fileno(f), &oldState) == 0;
 				if (flagEcho)
@@ -714,20 +716,30 @@ namespace {
 					newState.c_lflag &= ~ECHO;
 					tcsetattr(fileno(f), TCSANOW, &newState);
 				}
-				fprintf(stderr, "Enter password: ");
-				fflush(stderr);
+#elif defined(WIN_NT)
+				HANDLE handle = (HANDLE) _get_osfhandle(fileno(f));
+				DWORD dwMode;
+				flagEcho = GetConsoleMode(handle, &dwMode) && (dwMode & ENABLE_ECHO_INPUT);
+				if (flagEcho)
+					SetConsoleMode(handle, dwMode & ~ENABLE_ECHO_INPUT);
 #endif		
 			}
 		}
 		~InputFile()
 		{
-#ifdef HAVE_TERMIOS_H
-			if (flagEcho) {
+			if (flagEcho)
+			{
 				fprintf(stderr, "\n");
 				fflush(stderr);
+#ifdef HAVE_TERMIOS_H
 				tcsetattr(fileno(f), TCSANOW, &oldState);
-			}
+#elif defined(WIN_NT)
+				HANDLE handle = (HANDLE) _get_osfhandle(fileno(f));
+				DWORD dwMode;
+				if (GetConsoleMode(handle, &dwMode))
+					SetConsoleMode(handle, dwMode | ENABLE_ECHO_INPUT);
 #endif		
+			}
 			if (f && f != stdin) {
 				fclose(f);
 			}
