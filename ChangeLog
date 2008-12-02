@@ -1,3 +1,34 @@
+2008-12-02 16:14  hvlad
+
+	* firebird2/src/jrd/filters.cpp (1.65):
+
+	Fixed bug CORE-2222 : AV in engine when storing text blob with
+	transliteration blob filter
+
+2008-12-02 14:51  alexpeshkoff
+
+	* firebird2/src/alice/aliceswi.h (1.23):
+
+	fixed MacOSx build
+
+2008-12-02 08:09  robocop
+
+	* firebird2/src/: alice/alice.cpp (1.110),
+	auth/trusted/AuthSspi.cpp (1.14), burp/burp.cpp (1.155),
+	dsql/ddl.cpp (1.265), isql/isql.epp (1.253), jrd/isc.cpp (1.84),
+	jrd/isc_sync.cpp (1.162), jrd/lck.cpp (1.90), jrd/extds/IscDS.cpp
+	(1.17), remote/inet.cpp (1.260), remote/server.cpp (1.226),
+	utilities/fbsvcmgr.cpp (1.16), utilities/gsec/gsec.cpp (1.99):
+
+	Style.
+
+2008-12-02 01:04  asfernandes
+
+	* firebird2/src/common/utils.cpp (1.53):
+
+	CORE-1667 - Reading password from file/stdin: - Fixed crash when
+	non existent file is passed - Implement password hiding for Windows
+
 2008-12-01 16:46  alexpeshkoff
 
 	* firebird2/src/: isql/isql.h (1.68), msgs/messages2.sql (1.72):
