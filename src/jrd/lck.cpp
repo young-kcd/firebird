@@ -164,13 +164,13 @@ inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 }
 
 #ifdef DEV_BUILD
-/* Valid locks are not NULL, 
-	of the right memory block type, 
+/* Valid locks are not NULL,
+	of the right memory block type,
 	are attached to a dbb.
-   	If we have the dbb in non-exclusive mode, 
+   	If we have the dbb in non-exclusive mode,
 	    then we must have a physical lock of at least the same level
 	    as the logical lock.
-   	If we don't have a lock ID, 
+   	If we don't have a lock ID,
 	    then we better not have a physical lock at any level.
 
 JMB: As part of the c++ conversion I removed the check for Lock block type.
@@ -194,7 +194,7 @@ inline bool checkLock(const Lock* l)
    attachment.  When that occurs we fb_assert all our internal locks, but
    while we are in the process of asserting DBB_assert_locks is set, but
    we haven't gotten physical locks yet.
- 
+
 			         (!(l->lck_dbb->dbb_ast_flags & DBB_assert_locks) \
 				    || (l->lck_physical >= l->lck_logical)) && \
 */
@@ -438,7 +438,7 @@ SLONG LCK_get_owner_handle_by_type(thread_db* tdbb, lck_owner_t lck_owner_type)
  *********************************************************/
 	SET_TDBB(tdbb);
 
-	switch(lck_owner_type)
+	switch (lck_owner_type)
 	{
 		case LCK_OWNER_database:
 			return *LCK_OWNER_HANDLE_DBB(tdbb);
@@ -697,7 +697,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
  **************************************
  *
  * Functional description
- *	Re-post an ast when the original 
+ *	Re-post an ast when the original
  *	deliver resulted in blockage.
  *
  **************************************/
@@ -790,7 +790,7 @@ static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
 		lock1->lck_compatible == lock2->lck_compatible)
 	{
 		/* check for a second level of compatibility as well:
-		   if a second level was specified, the locks must 
+		   if a second level was specified, the locks must
 		   also be compatible at the second level */
 
 		if (!lock1->lck_compatible2 ||
@@ -854,8 +854,8 @@ static int external_ast(void* lock_void)
  **************************************
  *
  * Functional description
- *	Deliver blocking asts to all locks identical to 
- *	the passed lock.  This routine is called when 
+ *	Deliver blocking asts to all locks identical to
+ *	the passed lock.  This routine is called when
  *	we are blocking a lock from another process.
  *
  **************************************/
@@ -891,7 +891,7 @@ static USHORT hash_func(const UCHAR* value, USHORT length)
  *
  **************************************/
 
-/* Hash the value, preserving its distribution 
+/* Hash the value, preserving its distribution
    as much as possible */
 
 	ULONG hash_value = 0;
@@ -942,9 +942,9 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
  **************************************
  *
  * Functional description
- *	Return the first matching identical 
+ *	Return the first matching identical
  *	lock to the passed lock.  To minimize
- *	code for searching through the hash 
+ *	code for searching through the hash
  *	table, return hash_slot or prior lock
  *	if requested.
  *
@@ -960,7 +960,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 
 	const USHORT hash_value =
 		hash_func((UCHAR *) & lock->lck_key, lock->lck_length);
-		
+
 	if (hash_slot)
 		*hash_slot = hash_value;
 
@@ -969,7 +969,7 @@ static Lock* hash_get_lock(Lock* lock, USHORT* hash_slot, Lock*** prior)
 	Lock* match = (*att->att_compatibility_table)[hash_value];
 	if (!match)
 		return NULL;
-		
+
 	if (prior)
 		*prior = & (*att->att_compatibility_table)[hash_value];
 
@@ -1007,7 +1007,7 @@ static void hash_insert_lock(Lock* lock)
  **************************************
  *
  * Functional description
- *	Insert the provided lock into the 
+ *	Insert the provided lock into the
  *	compatibility lock table.
  *
  **************************************/
@@ -1045,7 +1045,7 @@ static bool hash_remove_lock(Lock* lock, Lock** match)
  * Functional description
  *	Remove the passed lock from the hash table.
  *	Return true if this is the last such identical
- *	lock removed.   Also return the first matching 
+ *	lock removed.   Also return the first matching
  *	locking found.
  *
  **************************************/
@@ -1104,12 +1104,12 @@ static void internal_ast(Lock* lock)
  **************************************
  *
  * Functional description
- *	Deliver blocking asts to all locks identical to 
+ *	Deliver blocking asts to all locks identical to
  *	the passed lock.  This routine is called to downgrade
  *	all other locks in the same process which do not have
- *	the lck_compatible field set.  
- *	Note that if this field were set, the internal lock manager 
- *	should not be able to generate a lock request which blocks 
+ *	the lck_compatible field set.
+ *	Note that if this field were set, the internal lock manager
+ *	should not be able to generate a lock request which blocks
  *	on our own process.
  *
  **************************************/
@@ -1154,10 +1154,10 @@ static bool internal_compatible(Lock* match, const Lock* lock, USHORT level)
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	Lock* next;
-	
-/* first check if there are any locks which are 
+
+/* first check if there are any locks which are
    incompatible which do not have blocking asts;
-   if so, there is no chance of getting a compatible 
+   if so, there is no chance of getting a compatible
    lock */
 
 	for (next = match; next; next = next->lck_identical)
@@ -1191,8 +1191,8 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
  **************************************
  *
  * Functional description
- *	Dequeue a lock.  If there are identical 
- *	compatible locks, check to see whether 
+ *	Dequeue a lock.  If there are identical
+ *	compatible locks, check to see whether
  *	the lock needs to be downgraded.
  *
  **************************************/
@@ -1227,7 +1227,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 {
 /**************************************
  *
- *	i n t e r n a l _ d o w n g r a d e 
+ *	i n t e r n a l _ d o w n g r a d e
  *
  **************************************
  *
@@ -1244,14 +1244,14 @@ static USHORT internal_downgrade(thread_db* tdbb, Lock* first)
 	fb_assert(first->lck_compatible);
 
 	Lock* lock;
-	
+
 /* find the highest required lock level */
 
 	USHORT level = LCK_none;
 	for (lock = first; lock; lock = lock->lck_identical)
 		level = MAX(level, lock->lck_logical);
 
-/* if we can convert to that level, set all identical 
+/* if we can convert to that level, set all identical
    locks as having that level */
 
 	if (level < first->lck_physical)
@@ -1294,7 +1294,7 @@ static bool internal_enqueue(
  *	lock to the real lock manager.
  *	NOTE: This routine handles both enqueueing
  *	and converting existing locks, since the convert
- *	will find itself in the hash table and convert 
+ *	will find itself in the hash table and convert
  *	itself upward.
  *
  **************************************/
@@ -1314,7 +1314,7 @@ static bool internal_enqueue(
 		   there are no blocking asts defined, give up */
 
 		if (!internal_compatible(match, lock, level)) {
-			/* for now return a lock conflict; it would be better if we were to 
+			/* for now return a lock conflict; it would be better if we were to
 			   do a wait on the other lock by setting some flag bit or some such */
 
 			Arg::Gds(isc_lock_conflict).copyTo(status);
@@ -1326,7 +1326,7 @@ static bool internal_enqueue(
 		   through and enqueue a new one */
 
 		if ( (match = hash_get_lock(lock, 0, 0)) ) {
-			/* if a conversion is necessary, update all identical 
+			/* if a conversion is necessary, update all identical
 			   locks to reflect the new physical lock level */
 
 			if (level > match->lck_physical)
@@ -1351,7 +1351,7 @@ static bool internal_enqueue(
 			lock->lck_logical = level;
 			lock->lck_physical = match->lck_physical;
 
-			/* When converting a lock (from the callers point of view), 
+			/* When converting a lock (from the callers point of view),
 			   then no new lock needs to be inserted. */
 
 			if (!convert_flg)
@@ -1430,7 +1430,7 @@ static void set_lock_attachment(Lock* lock, Attachment* attachment)
 		lock->lck_next = NULL;
 		lock->lck_prior = NULL;
 	}
-	
+
 
 	// Enlist in new attachment
 	if (attachment) {

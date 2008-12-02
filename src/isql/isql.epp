@@ -6839,7 +6839,7 @@ static processing_state parse_arg(int argc,
 				case SWITCH_FETCHPASS:
 				{
 					const char* pass = NULL;
-					fb_utils::FetchPassResult rez = fb_utils::fetchPassword(swarg_str, pass);
+					const fb_utils::FetchPassResult rez = fb_utils::fetchPassword(swarg_str, pass);
 					if (rez == fb_utils::FETCH_PASS_OK)
 					{
 						fb_utils::copy_terminate(Password, pass, sizeof(Password));
@@ -6851,15 +6851,15 @@ static processing_state parse_arg(int argc,
 						{
 						case fb_utils::FETCH_PASS_FILE_OPEN_ERROR:
 							ISQL_msg_get(PASS_FILE_OPEN, errbuf, SafeArg() << swarg_str << errno);
-							// error @2 opening password file @1
+							// could not open password file @1, errno @2
 							break;
 						case fb_utils::FETCH_PASS_FILE_READ_ERROR:
 							ISQL_msg_get(PASS_FILE_READ, errbuf, SafeArg() << swarg_str << errno);
-							// error @2 reading password file @1
+							// could not read password file @1, errno @2
 							break;
 						case fb_utils::FETCH_PASS_FILE_EMPTY:
 							ISQL_msg_get(EMPTY_PASS, errbuf, SafeArg() << swarg_str);
-							// password file @1 is empty
+							// empty password file @1
 							break;
 						}
 						STDERROUT(errbuf);

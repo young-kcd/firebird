@@ -880,7 +880,7 @@ rem_port* INET_connect(const TEXT* name,
 		return port;
 	}
 
-	while (true) 
+	while (true)
 	{
 		socklen_t l = sizeof(address);
 		SOCKET s = accept((SOCKET) port->port_handle,
@@ -1525,7 +1525,7 @@ static int check_host(
 		return 0;
 
 	// If source address is in the loopback net - trust it
-	if((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
+	if ((ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
 		return 1;
 
 	const struct hostent* host = gethostbyaddr((SCHAR*) &address.sin_addr,
@@ -1542,6 +1542,7 @@ static int check_host(
 	TEXT user[BUFFER_TINY], rhosts[MAXPATHLEN];
 	if (passwd) {
 		strcpy(user, passwd->pw_name);
+		fb_assert(strlen(passwd->pw_dir) + strlen("/.rhosts") < MAXPATHLEN);
 		strcpy(rhosts, passwd->pw_dir);
 		strcat(rhosts, "/.rhosts");
 		result = parse_hosts(rhosts, host_name, user);
@@ -1602,8 +1603,7 @@ static bool check_proxy(rem_port* port,
 			*p++ = c;
 		}
 		*p = 0;
-		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user)
-			>= 3)
+		if (sscanf(line, " %[^:]:%s%s", source_host, source_user, target_user) >= 3)
 		{
 			if ((!strcmp(source_host, host_name) || !strcmp(source_host, "*"))
 				&& (!strcmp(source_user, user_name.c_str())
@@ -1762,7 +1762,7 @@ static void force_close(rem_port* port)
 	SOCKET handle = (SOCKET) port->port_handle;
 	port->port_handle = 0;
 
-	if (handle && handle != INVALID_SOCKET) 
+	if (handle && handle != INVALID_SOCKET)
 	{
 		shutdown(handle, 2);
 		SOCLOSE(handle);
@@ -1771,7 +1771,7 @@ static void force_close(rem_port* port)
 	int handle = (int) port->port_handle;
 	port->port_handle = 0;
 
-	if (handle) 
+	if (handle)
 	{
 		shutdown(handle, 2);
 		SOCLOSE(handle);
@@ -2753,8 +2753,7 @@ static bool_t inet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
  **************************************/
 #ifdef REM_SERVER
 	const rem_port* port = (rem_port*) xdrs->x_public;
-	if ((port->port_flags & PORT_server) && 
-		!(port->port_server_flags & SRVR_debug)) 
+	if ((port->port_flags & PORT_server) && !(port->port_server_flags & SRVR_debug))
 	{
 		return REMOTE_getbytes(xdrs, buff, count);
 	}

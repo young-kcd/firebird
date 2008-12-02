@@ -198,7 +198,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 			else
 			{
 				argv[itr++] = 0;
-				switch(inSw->in_sw)
+				switch (inSw->in_sw)
 				{
 				case IN_SW_BURP_USER:			// default user name
 					usr = argv[itr];
@@ -655,7 +655,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->gbl_sw_password = argv[itr];
 		}
-		else if (in_sw_tab->in_sw == IN_SW_BURP_FETCHPASS) 
+		else if (in_sw_tab->in_sw == IN_SW_BURP_FETCHPASS)
 		{
 			if (++itr >= argc)
 			{
@@ -667,7 +667,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				BURP_error(307, true);
 				// too many passwords provided
 			}
-			switch(fb_utils::fetchPassword(argv[itr], tdgbl->gbl_sw_password))
+			switch (fb_utils::fetchPassword(argv[itr], tdgbl->gbl_sw_password))
 			{
 			case fb_utils::FETCH_PASS_OK:
 				break;

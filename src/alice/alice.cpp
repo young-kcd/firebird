@@ -148,7 +148,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	const char** argv = uSvc->argv.begin();
 	int argc = uSvc->argv.getCount();
 	++argv;
-	
+
 	// tested outside the loop
 	const in_sw_tab_t* table = alice_in_sw_table;
 
@@ -156,7 +156,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	{
 		if ((*argv)[0] != '-')
 		{
-			if (database) 
+			if (database)
 			{
 				ALICE_error(1, SafeArg() << database);
 				// msg 1: "data base file name (%s) already given",
@@ -384,7 +384,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(14);	// msg 14: password required
 			}
-			switch(fb_utils::fetchPassword(*argv, tdgbl->ALICE_data.ua_password))
+			switch (fb_utils::fetchPassword(*argv, tdgbl->ALICE_data.ua_password))
 			{
 			case fb_utils::FETCH_PASS_OK:
 				break;
@@ -463,8 +463,8 @@ int alice(Firebird::UtilSvc* uSvc)
 		ALICE_exit(FINI_OK, tdgbl);
 	}
 
-	if (!switches || !(switches & ~(sw_user | sw_password | sw_fetch_password | 
-									sw_trusted_auth | sw_trusted_svc | sw_trusted_role))) 
+	if (!switches || !(switches & ~(sw_user | sw_password | sw_fetch_password |
+									sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
 	{
 		if (!uSvc->isService())
 		{
@@ -473,7 +473,7 @@ int alice(Firebird::UtilSvc* uSvc)
 		error = true;
 	}
 
-	if (error) 
+	if (error)
 	{
 		if (uSvc->isService())
 		{

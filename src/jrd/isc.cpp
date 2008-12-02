@@ -85,7 +85,7 @@ public:
 
 		// NULL pOldACL means all privileges. If we assign pNewACL in this case
 		// we'll lost all privileges except assigned SYNCHRONIZE
-		if (pOldACL) 
+		if (pOldACL)
 		{
 			SID_IDENTIFIER_AUTHORITY sidAuth = SECURITY_WORLD_SID_AUTHORITY;
 			PSID pSID = NULL;
@@ -314,7 +314,7 @@ const TEXT* ISC_get_host(Firebird::string& host)
 }
 
 #ifdef UNIX
-bool ISC_get_user(Firebird::string*	name, 
+bool ISC_get_user(Firebird::string*	name,
 				  int*	id,
 				  int*	group,
 				  const TEXT*	user_string)
@@ -379,7 +379,7 @@ bool ISC_get_user(Firebird::string*	name,
 
 
 #ifdef WIN_NT
-bool ISC_get_user(Firebird::string*	name, 
+bool ISC_get_user(Firebird::string*	name,
 				  int*	id,
 				  int*	group,
 				  const TEXT*	user_string)
@@ -434,9 +434,9 @@ inline void setPrefixIfNotEmpty(const Firebird::PathName& prefix, SSHORT arg_typ
  *      Helper for ISC_set_prefix
  *
  **************************************/
-	if (prefix.hasData()) 
+	if (prefix.hasData())
 	{
-		// ignore here return value of gds__get_prefix(): 
+		// ignore here return value of gds__get_prefix():
 		// it will never fail with our good arguments
 		gds__get_prefix(arg_type, prefix.c_str());
 	}
@@ -446,7 +446,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 {
 /**************************************
  *
- *      i s c _ s e t _ p r e f i x   
+ *      i s c _ s e t _ p r e f i x
  *
  **************************************
  *
@@ -455,12 +455,12 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
  *
  **************************************/
 
-	/* 
+	/*
 	 * We can't call gds__get_prefix() at once when switch is found.
-	 * gds__get_prefix() invokes gdsPrefixInit(), which in turn causes 
+	 * gds__get_prefix() invokes gdsPrefixInit(), which in turn causes
 	 * config file to be loaded. And in case when -el or -em is given
 	 * before -e, this leads to use of wrong firebird.conf.
-	 * To avoid it accumulate values for switches locally, 
+	 * To avoid it accumulate values for switches locally,
 	 * and finally when called with sw==0, use them in correct order.
 	 */
 	static struct ESwitches
@@ -472,7 +472,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 		{
 		}
 	}* eSw = 0;
-	
+
 	if (! sw)
 	{
 		if (eSw)
@@ -487,7 +487,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 
 		return 0;
 	}
-	
+
 	if ((!path) || (path[0] <= ' '))
 	{
 		return -1;
@@ -498,7 +498,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 		eSw = FB_NEW(*getDefaultMemoryPool()) ESwitches(*getDefaultMemoryPool());
 	}
 
-	switch(UPPER(*sw))
+	switch (UPPER(*sw))
 	{
 	case '\0':
 		eSw->prefix = path;

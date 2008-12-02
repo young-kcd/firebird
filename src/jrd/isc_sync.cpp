@@ -434,7 +434,7 @@ namespace {
 		{
 			// try to locate existing set
 			int n;
-			for(n = 0; n < lastSet; ++n)
+			for (n = 0; n < lastSet; ++n)
 			{
 				const int semNum = set[n].get(fileNum);
 				if (semNum >= 0)
@@ -446,7 +446,7 @@ namespace {
 			}
 
 			// create new set
-			for(n = 0; n < lastSet; ++n)
+			for (n = 0; n < lastSet; ++n)
 			{
 				if (set[n].fileNum <= 0)
 				{
@@ -619,7 +619,7 @@ namespace {
 		filesTable[fNum - 1].name[0] = 0;
 
 		MutexLockGuard guard(idCacheMutex);
-		for(int n = 0; n < lastSet; ++n)
+		for (int n = 0; n < lastSet; ++n)
 		{
 			if (set[n].fileNum == fNum)
 			{
@@ -994,7 +994,7 @@ void stopTimers(void*)
 
 THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 {
-	while(!stopThread)
+	while (!stopThread)
 	{
 		int microSeconds = 0;
 		{

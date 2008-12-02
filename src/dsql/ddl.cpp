@@ -2844,7 +2844,7 @@ static void define_relation(CompiledStatement* statement)
 	}
 	statement->append_number(isc_dyn_rel_sql_protection, 1);
 
-	switch(ddl_node->nod_flags)
+	switch (ddl_node->nod_flags)
 	{
 		case NOD_GLOBAL_TEMP_TABLE_PRESERVE_ROWS:
 			statement->append_number(isc_dyn_rel_temporary,
@@ -5769,7 +5769,7 @@ static void define_user(CompiledStatement* statement, UCHAR op)
 
 		++argCount;
 
-		switch(i)
+		switch (i)
 		{
 		case e_user_name:
 			statement->append_cstring(op, ds->str_data);

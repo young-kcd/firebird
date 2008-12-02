@@ -97,7 +97,7 @@ bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 		return false;
 
 	const char* s = 0;
-	switch(fb_utils::fetchPassword(*av, s))
+	switch (fb_utils::fetchPassword(*av, s))
 	{
 	case fb_utils::FETCH_PASS_OK:
 		break;
@@ -220,9 +220,9 @@ bool putSingleTag(char**&, ClumpletWriter& spb, unsigned int tag)
 // populate spb with tags according to user-defined command line switches
 // and programmer-defined set of Switches array
 
-bool populateSpbFromSwitches(char**& av, 
-		ClumpletWriter& spb, 
-		const Switches* sw, 
+bool populateSpbFromSwitches(char**& av,
+		ClumpletWriter& spb,
+		const Switches* sw,
 		ClumpletWriter* infoSpb)
 {
 	if (! *av)
@@ -264,7 +264,7 @@ const Switches attSwitch[] = {
 	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},
 	{0, 0, 0, 0, 0}
 };
-	
+
 const Switches infSwitch[] = {
 	{"info_server_version", putSingleTag, 0, isc_info_svc_server_version, 0},
 	{"info_implementation", putSingleTag, 0, isc_info_svc_implementation, 0},
@@ -539,7 +539,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 17);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
+					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
 											Arg::Num(static_cast<unsigned char>(p[-1])));
 				}
 			}
@@ -555,7 +555,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printString(p, 36);
 					break;
 				case isc_spb_tra_state:
-					switch(*p++)
+					switch (*p++)
 					{
 					case isc_spb_tra_state_limbo:
 			            printMessage(38);
@@ -570,7 +570,7 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(41);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
+						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
 												Arg::Num(static_cast<unsigned char>(p[-1])));
 					}
 					break;
@@ -581,7 +581,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printString(p, 43);
 					break;
 				case isc_spb_tra_advise:
-					switch(*p++)
+					switch (*p++)
 					{
 					case isc_spb_tra_advise_commit:
 			            printMessage(44);
@@ -593,7 +593,7 @@ bool printInfo(const char* p, UserPrint& up)
 			            printMessage(46);
 						break;
 					default:
-						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
+						status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
 												Arg::Num(static_cast<unsigned char>(p[-1])));
 					}
 					break;
@@ -607,7 +607,7 @@ bool printInfo(const char* p, UserPrint& up)
 					printNumeric(p, 37);
 					break;
 				default:
-					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) << 
+					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
 											Arg::Num(static_cast<unsigned char>(p[-1])));
 				}
 			}
@@ -645,7 +645,7 @@ bool printInfo(const char* p, UserPrint& up)
 			return false;
 
 		default:
-			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) << 
+			status_exception::raise(Arg::Gds(isc_fbsvcmgr_query_err) <<
 									Arg::Num(static_cast<unsigned char>(p[-1])));
 		}
 	}
@@ -683,7 +683,7 @@ int main(int ac, char **av)
 		if (name)
 		{
 			av++;
-		}	
+		}
 
 		ClumpletWriter spbAtt(ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
 		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
@@ -707,20 +707,20 @@ int main(int ac, char **av)
 		}
 
 		isc_svc_handle svc_handle = 0;
-		if (isc_service_attach(status, 
-					0, name, &svc_handle, 
-					static_cast<USHORT>(spbAtt.getBufferLength()), 
+		if (isc_service_attach(status,
+					0, name, &svc_handle,
+					static_cast<USHORT>(spbAtt.getBufferLength()),
 					reinterpret_cast<const char*>(spbAtt.getBuffer())))
 		{
 			isc_print_status(status);
 			return 1;
 		}
-	
+
 		if (spbStart.getBufferLength() > 0)
 		{
 			if (isc_service_start(status,
 					&svc_handle, 0,
-					static_cast<USHORT>(spbStart.getBufferLength()), 
+					static_cast<USHORT>(spbStart.getBufferLength()),
 					reinterpret_cast<const char*>(spbStart.getBuffer())))
 			{
 				isc_print_status(status);
@@ -737,7 +737,7 @@ int main(int ac, char **av)
 			{
 				if (isc_service_query(status,
 						&svc_handle, 0, 0, 0,
-						static_cast<USHORT>(spbItems.getBufferLength()), 
+						static_cast<USHORT>(spbItems.getBufferLength()),
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
 				{
@@ -745,7 +745,7 @@ int main(int ac, char **av)
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while(printInfo(results, up));
+			} while (printInfo(results, up));
 		}
 
 		isc_service_detach(status, &svc_handle);
