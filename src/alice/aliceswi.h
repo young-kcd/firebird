@@ -60,10 +60,10 @@ const SINT64 sw_tran			= 0x0000000010000000L;
 const SINT64 sw_buffers			= 0x0000000020000000L;
 const SINT64 sw_mode			= 0x0000000040000000L;
 const SINT64 sw_set_db_dialect	= 0x0000000080000000L;
-const SINT64 sw_trusted_auth	= 0x0000000100000000L;	// Byte 4, Bit 0
-const SINT64 sw_trusted_svc		= 0x0000000200000000L;
-const SINT64 sw_trusted_role	= 0x0000000400000000L;
-const SINT64 sw_fetch_password	= 0x0000000800000000L;
+const SINT64 sw_trusted_auth	= QUADCONST(0x0000000100000000);	// Byte 4, Bit 0
+const SINT64 sw_trusted_svc		= QUADCONST(0x0000000200000000);
+const SINT64 sw_trusted_role	= QUADCONST(0x0000000400000000);
+const SINT64 sw_fetch_password	= QUADCONST(0x0000000800000000);
 
 const SINT64 sw_z				= 0x0L;
 
