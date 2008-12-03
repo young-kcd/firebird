@@ -1,3 +1,19 @@
+2008-12-03 15:32  paulbeach
+
+	* firebird2/builds/install/arch-specific/darwin/aliases.conf.in
+	(1.1.4.1):
+
+	file aliases.conf.in was added on branch B2_0_Release on 2008-12-03
+	14:33:54 +0000
+
+2008-12-03 15:32  paulbeach
+
+	* firebird2/builds/: install/arch-specific/darwin/aliases.conf.in
+	(1.1), posix/postfix.darwin (1.1.4.9),
+	install/arch-specific/darwin/aliases.conf.in (1.1.4.2):
+
+	Fix @prefix@ issue for aliases.conf - Reported by Adriano
+
 2008-12-01 15:41  paulbeach
 
 	* firebird2/src/: common/classes/semaphore.h (1.24.2.17),
