@@ -143,7 +143,7 @@ static bool xnet_shutdown = false;
 static Firebird::GlobalPtr<Firebird::Mutex> xnet_mutex;
 static ULONG xnet_next_free_map_num = 0;
 
-static bool connect_init(ISC_STATUS *status);
+static bool connect_init(ISC_STATUS* status);
 static void connect_fini();
 static void release_all();
 
@@ -171,7 +171,7 @@ inline void make_event_name(char* buffer, size_t size, const char* format, ULONG
 
 static int xnet_error(rem_port*, ISC_STATUS, int);
 
-static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = 0)
+static void xnet_log_error(const char* err_msg, const ISC_STATUS* status = NULL)
 { 
 	if (status && status[1])
 	{
@@ -486,7 +486,7 @@ rem_port* XNET_reconnect(ULONG client_pid, ISC_STATUS* status_vector)
 }
 
 
-static bool connect_init(ISC_STATUS *status)
+static bool connect_init(ISC_STATUS* status)
 {
 /**************************************
  *
@@ -1012,11 +1012,13 @@ static void cleanup_mapping(XPM xpm)
 		// find xpm in chain and release
 
 		for (XPM* pxpm = &global_client_maps; *pxpm; pxpm = &(*pxpm)->xpm_next)
+		{
 			if (*pxpm == xpm) 
 			{
 				*pxpm = xpm->xpm_next;
 				break;
 			}
+		}
 
 		delete xpm;
 	}
@@ -1394,9 +1396,8 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				presponse->slot_num = slot_num;
 				presponse->timestamp = timestamp;
 
-				rem_port* port =
-					get_server_port(client_pid, xpm, map_num, slot_num,
-								    timestamp, status_vector);
+				rem_port* port = get_server_port(client_pid, xpm, map_num, slot_num,
+					timestamp, status_vector);
 
 				SetEvent(xnet_response_event);
 
@@ -1407,7 +1408,7 @@ static rem_port* connect_server(ISC_STATUS* status_vector, USHORT flag)
 				stuff_exception(status_vector, ex);
 				xnet_log_error("Failed to allocate server port for communication", status_vector);
 				fb_utils::init_status(status_vector);
-				
+
 				if (xpm)
 					cleanup_mapping(xpm);
 
@@ -2191,7 +2192,7 @@ static bool make_map(ULONG map_number,
 		if (!(*map_address)) 
 			Firebird::system_error::raise(ERR_STR("MapViewOfFile"));
 	}
-	catch(const Firebird::Exception&)
+	catch (const Firebird::Exception&)
 	{
 		if (*map_handle)
 			CloseHandle(*map_handle);

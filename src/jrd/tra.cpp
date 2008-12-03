@@ -1869,7 +1869,7 @@ static int blocking_ast_transaction(void* ast_object)
 
 		ThreadContextHolder tdbb;
 		tdbb->setDatabase(dbb);
-		Attachment *att = transaction->tra_cancel_lock->lck_attachment;
+		Attachment* att = transaction->tra_cancel_lock->lck_attachment;
 		tdbb->setAttachment(att);
 
 		Jrd::ContextPoolHolder context(tdbb, 0);

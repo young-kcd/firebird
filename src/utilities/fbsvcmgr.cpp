@@ -96,7 +96,7 @@ bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	if (! *av)
 		return false;
 
-	const char* s = 0;
+	const char* s = NULL;
 	switch (fb_utils::fetchPassword(*av, s))
 	{
 	case fb_utils::FETCH_PASS_OK:

@@ -1758,7 +1758,7 @@ static void force_close(rem_port* port)
  *
  **************************************/
 
-#if defined WIN_NT
+#ifdef WIN_NT
 	SOCKET handle = (SOCKET) port->port_handle;
 	port->port_handle = 0;
 

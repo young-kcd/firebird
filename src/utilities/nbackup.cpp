@@ -98,7 +98,7 @@ void usage(UtilSvc* uSvc, const char* message, ...)
 		"  -R <database> [<file0> [<file1>...]]  Restore incremental backup\n"
 		"  -U <user>                             User name\n"
 		"  -P <password>                         Password\n"
-		"  -FE <file>                            FEtch password from file\n"
+		"  -FE <file>                            Fetch password from file\n"
 		"  -T                                    Do not run database triggers\n"
 		"  -S                                    Print database size in pages after lock\n"
 		"Notes:\n"
@@ -1162,7 +1162,7 @@ void nbackup(UtilSvc* uSvc)
 				if (++itr >= argc)
 					missing_parameter_for_switch(uSvc, argv[itr - 1]);
 
-				const char* passwd = 0;
+				const char* passwd = NULL;
 				if (fb_utils::fetchPassword(argv[itr], passwd) != fb_utils::FETCH_PASS_OK)
 				{
 					usage(uSvc, "Error working with password file");

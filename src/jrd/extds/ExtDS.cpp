@@ -856,9 +856,9 @@ void Statement::close(thread_db *tdbb)
 		try {
 			doClose(tdbb, false);
 		}
-		catch (const Exception& ex) 
+		catch (const Exception& ex)
 		{
-			if (!doPunt && !wasError) 
+			if (!doPunt && !wasError)
 			{
 				doPunt = true;
 				stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -919,7 +919,7 @@ void Statement::deallocate(thread_db *tdbb)
 		try {
 			doClose(tdbb, true);
 		}
-		catch(const Exception&) {
+		catch (const Exception&) {
 			// ignore
 		}
 	}

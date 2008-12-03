@@ -591,7 +591,7 @@ static bool get_switches(
 				break;
 			case IN_SW_GSEC_FETCH_PASSWORD:
 				{
-					const char* passwd = 0;
+					const char* passwd = NULL;
 					switch (fb_utils::fetchPassword(argv[argc], passwd))
 					{
 					case fb_utils::FETCH_PASS_OK:
