@@ -1138,14 +1138,6 @@ void nbackup(UtilSvc* uSvc)
 			uSvc->hidePasswd(argv, itr);
 			break;
 
-		case 'E':
-			if (++itr >= argc)
-				missing_parameter_for_switch(uSvc, argv[itr - 1]);
-
-			password = argv[itr];
-			uSvc->hidePasswd(argv, itr);
-			break;
-
 		case 'T':
 			run_db_triggers = false;
 			break;
