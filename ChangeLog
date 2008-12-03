@@ -1,3 +1,39 @@
+2008-12-03 16:50  alexpeshkoff
+
+	* firebird2/builds/posix/: prefix.aix_powerpc (1.2),
+	prefix.linux_powerpc (1.6):
+
+	do not define VIO_DEBUG permanently
+
+2008-12-03 16:17  alexpeshkoff
+
+	* firebird2/src/jrd/pag.cpp (1.193):
+
+	1. AIX port 2. Misc VIO_DEBUG fixes.
+
+2008-12-03 15:32  paulbeach
+
+	* firebird2/builds/: posix/postfix.darwin (1.15),
+	install/arch-specific/darwin/aliases.conf.in (1.1):
+
+	Fix @prefix@ issue for aliases.conf - Reported by Adriano
+
+2008-12-03 08:43  alexpeshkoff
+
+	* firebird2/src/utilities/nbackup.cpp (1.74):
+
+	Removed accidentially pasted lines - thanks to Adriano
+
+2008-12-03 02:05  asfernandes
+
+	* firebird2/src/: jrd/tra.cpp (1.187), jrd/extds/ExtDS.cpp (1.23),
+	qli/dtr.cpp (1.58), remote/inet.cpp (1.261), remote/xnet.cpp
+	(1.121), utilities/fbsvcmgr.cpp (1.17), utilities/nbackup.cpp
+	(1.73), utilities/gsec/gsec.cpp (1.100), utilities/gstat/dba.epp
+	(1.103):
+
+	Misc
+
 2008-12-02 16:14  hvlad
 
 	* firebird2/src/jrd/filters.cpp (1.65):
