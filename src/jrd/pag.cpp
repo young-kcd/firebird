@@ -274,10 +274,6 @@ const SSHORT CLASS		= CLASS_SOLARIS_AMD64;
 const SSHORT CLASS		= CLASS_HPUX_PA;
 #endif
 
-#ifdef AIX
-const SSHORT CLASS		= CLASS_AIX_PPC;
-#endif
-
 #ifdef AIX_PPC
 const SSHORT CLASS		= CLASS_AIX_PPC;
 #endif
@@ -901,7 +897,7 @@ PAG PAG_allocate(WIN * window)
 #ifdef VIO_DEBUG
 		if (debug_flag > DEBUG_WRITES_INFO)
 			printf("\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
-					  window->win_page);
+					  window->win_page.getPageNum());
 #endif
 		return new_page;
 	}
@@ -1728,7 +1724,7 @@ void PAG_release_page(const PageNumber& number, const PageNumber& prior_page)
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES_INFO)
-		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number.getPageNumber());
+		printf("\tPAG_release_page:  about to release page %"SLONGFORMAT"\n", number.getPageNum());
 #endif
 
 	PageManager& pageMgr = dbb->dbb_page_manager;
