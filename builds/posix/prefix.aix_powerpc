@@ -22,12 +22,12 @@
 # compiler flags for GCC.
 # 2008-10-16 no joy with gcc 4.0.0
 PROD_GCC_FLAGS=-ggdb -O3 -fno-omit-frame-pointer -fsigned-char -DNDEBUG -pipe -MMD -fPIC -fmessage-length=0 -DAIX -DPowerPC -DPPC -mcpu=powerpc
-DEV_GCC_FLAGS=-ggdb -O0 -fsigned-char -DVIO_DEBUG -pipe -MMD -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0 -DAIX -DPowerPC -DPPC
+DEV_GCC_FLAGS=-ggdb -O0 -fsigned-char -pipe -MMD -fPIC -Wall -Wno-switch -Wno-parentheses -Wno-unknown-pragmas -Wno-unused-variable -fmessage-length=0 -DAIX -DPowerPC -DPPC
 
 
 # compiler flags for xlC
 PROD_XLC_FLAGS=-O3 -qchars=signed -qstaticinline -DNDEBUG -DAIX -DPowerPC -DPPC
-DEV_XLC_FLAGS=-O0 -qchars=signed -DVIO_DEBUG -DAIX -DPowerPC -DPPC
+DEV_XLC_FLAGS=-O0 -qchars=signed -DAIX -DPowerPC -DPPC
 
 
 # change lines below to switch between gcc and xlc
