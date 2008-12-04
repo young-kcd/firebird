@@ -10,8 +10,8 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vladyslav Khorsun for the 
- *  Firebird Open Source RDBMS project and based on execute_statement 
+ *  The Original Code was created by Vladyslav Khorsun for the
+ *  Firebird Open Source RDBMS project and based on execute_statement
  *	module by Alexander Peshkoff.
  *
  *  Copyright (c) 2007 Vladyslav Khorsun <hvlad@users.sourceforge.net>
@@ -98,11 +98,11 @@ Provider* Manager::getProvider(const string &prvName)
 	}
 
 	// External Data Source provider ''@1'' not found
-	ERR_post(Arg::Gds(isc_eds_provider_not_found) << Arg::Str(prvName)); 
-	return NULL; 
+	ERR_post(Arg::Gds(isc_eds_provider_not_found) << Arg::Str(prvName));
+	return NULL;
 }
 
-Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource, 
+Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 	const string &user, const string &pwd, TraScope tra_scope)
 {
 	if (!m_initialized)
@@ -115,16 +115,16 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 		}
 	}
 
-	// dataSource : registered data source name 
+	// dataSource : registered data source name
 	// or connection string : provider::database
 	string prvName, dbName;
 
-	if (dataSource.isEmpty()) 
+	if (dataSource.isEmpty())
 	{
 		prvName = INTERNAL_PROVIDER_NAME;
 		dbName = tdbb->getDatabase()->dbb_database_name.c_str();
 	}
-	else 
+	else
 	{
 		size_t pos = dataSource.find("::");
 		if (pos != string::npos)
@@ -132,9 +132,9 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 			prvName = dataSource.substr(0, pos);
 			dbName = dataSource.substr(pos + 2);
 		}
-		else 
+		else
 		{
-			// search dataSource at registered data sources and get connection 
+			// search dataSource at registered data sources and get connection
 			// string, user and password from this info if found
 
 			// if not found - treat dataSource as Firebird's connection string
@@ -142,7 +142,7 @@ Connection* Manager::getConnection(thread_db *tdbb, const string &dataSource,
 			dbName = dataSource;
 		}
 	}
-	
+
 	Provider* prv = getProvider(prvName);
 	return prv->getConnection(tdbb, dbName, user, pwd, tra_scope);
 }
@@ -180,7 +180,7 @@ Provider::~Provider()
 	clearConnections(tdbb);
 }
 
-Connection* Provider::getConnection(thread_db *tdbb, const string &dbName, 
+Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 	const string &user, const string &pwd, TraScope tra_scope)
 {
 	MutexLockGuard guard(m_mutex);
@@ -212,7 +212,7 @@ Connection* Provider::getConnection(thread_db *tdbb, const string &dbName,
 	return conn;
 }
 
-// hvlad: in current implementation I didn't return connections in pool as 
+// hvlad: in current implementation I didn't return connections in pool as
 // I have not implemented way to delete long idle connections.
 void Provider::releaseConnection(thread_db *tdbb, Connection& conn, bool /*inPool*/)
 {
@@ -257,7 +257,7 @@ void Provider::cancelConnections(thread_db *tdbb)
 	}
 }
 
-// Connection 
+// Connection
 
 Connection::Connection(Provider &prov) :
 	PermanentStorage(prov.getPool()),
@@ -282,7 +282,7 @@ void Connection::deleteConnection(thread_db *tdbb, Connection *conn)
 	fb_assert(conn->m_used_stmts == 0);
 	fb_assert(conn->m_transactions.getCount() == 0);
 
-	if (conn->isConnected()) 
+	if (conn->isConnected())
 		conn->detach(tdbb);
 
 	delete conn;
@@ -299,7 +299,7 @@ void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
 
 	Firebird::string &attUser = tdbb->getAttachment()->att_user->usr_user_name;
 
-	if ((m_provider.getFlags() & prvTrustedAuth) && 
+	if ((m_provider.getFlags() & prvTrustedAuth) &&
 		(user.isEmpty() || user == attUser) && pwd.isEmpty())
 	{
 		dpb.insertString(isc_dpb_trusted_auth, attUser);
@@ -320,7 +320,7 @@ void Connection::generateDPB(thread_db *tdbb, ClumpletWriter &dpb,
 	}
 }
 
-bool Connection::isSameDatabase(thread_db *tdbb, const string &dbName, 
+bool Connection::isSameDatabase(thread_db *tdbb, const string &dbName,
 	const string &user, const string &pwd) const
 {
 	if (m_dbName != dbName)
@@ -371,7 +371,7 @@ Statement* Connection::createStatement(const string &sql)
 			return stmt;
 		}
 	}
-	
+
 	if (m_freeStatements)
 	{
 		Statement *stmt = m_freeStatements;
@@ -453,8 +453,8 @@ void Connection::detach(thread_db *tdbb)
 		clearStatements(tdbb);
 		clearTransactions(tdbb);
 		m_deleting = was_deleting;
-	} 
-	catch(...) {
+	}
+	catch (...) {
 		m_deleting = was_deleting;
 		throw;
 	}
@@ -471,7 +471,7 @@ Transaction* Connection::findTransaction(thread_db *tdbb, TraScope traScope) con
 	{
 	case traCommon :
 		ext_tran = tran->tra_ext_common;
-		while (ext_tran) 
+		while (ext_tran)
 		{
 			if (ext_tran->getConnection() == this)
 				break;
@@ -496,13 +496,13 @@ void Connection::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere)
 	m_provider.getRemoteError(status, rem_err);
 
 	// Execute statement error at @1 :\n@2Data source : @3
-	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) << 
-											 Arg::Str(rem_err) << 
+	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) <<
+											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
 }
 
 
-// Transaction 
+// Transaction
 
 Transaction::Transaction(Connection &conn) :
 	PermanentStorage(conn.getProvider()->getPool()),
@@ -517,25 +517,25 @@ Transaction::~Transaction()
 {
 }
 
-void Transaction::generateTPB(thread_db *tdbb, ClumpletWriter &tpb, 
+void Transaction::generateTPB(thread_db *tdbb, ClumpletWriter &tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
 {
 	switch (traMode)
 	{
-	case traReadCommited: 
+	case traReadCommited:
 		tpb.insertTag(isc_tpb_read_committed);
 		break;
-	
-	case traReadCommitedRecVersions: 
+
+	case traReadCommitedRecVersions:
 		tpb.insertTag(isc_tpb_read_committed);
 		tpb.insertTag(isc_tpb_rec_version);
 		break;
-	
-	case traConcurrency: 
+
+	case traConcurrency:
 		tpb.insertTag(isc_tpb_concurrency);
 		break;
-	
-	case traConsistency: 
+
+	case traConsistency:
 		tpb.insertTag(isc_tpb_consistency);
 		break;
 	}
@@ -547,7 +547,7 @@ void Transaction::generateTPB(thread_db *tdbb, ClumpletWriter &tpb,
 		tpb.insertInt(isc_tpb_lock_timeout, lockTimeout);
 }
 
-void Transaction::start(thread_db *tdbb, TraScope traScope, TraModes traMode, 
+void Transaction::start(thread_db *tdbb, TraScope traScope, TraModes traMode,
 	bool readOnly, bool wait, int lockTimeout)
 {
 	m_scope = traScope;
@@ -572,7 +572,7 @@ void Transaction::start(thread_db *tdbb, TraScope traScope, TraModes traMode,
 		break;
 
 	case traTwoPhase :
-		// join transaction 
+		// join transaction
 		// this->m_jrdTran = tran;
 		// tran->tra_ext_two_phase = ext_tran;
 		break;
@@ -598,7 +598,7 @@ void Transaction::commit(thread_db *tdbb, bool retain)
 		m_connection.raise(status, tdbb, "transaction commit");
 	}
 
-	if (!retain) 
+	if (!retain)
 	{
 		detachFromJrdTran();
 		m_connection.deleteTransaction(this);
@@ -611,7 +611,7 @@ void Transaction::rollback(thread_db *tdbb, bool retain)
 	doRollback(status, tdbb, retain);
 
 	Connection &conn = m_connection;
-	if (!retain) 
+	if (!retain)
 	{
 		detachFromJrdTran();
 		m_connection.deleteTransaction(this);
@@ -643,12 +643,12 @@ Transaction* Transaction::getTransaction(thread_db *tdbb, Connection *conn, TraS
 		}
 
 		try {
-			ext_tran->start(tdbb, 
-				tra_scope, 
-				traMode, 
-				tran->tra_flags & TRA_readonly, 
+			ext_tran->start(tdbb,
+				tra_scope,
+				traMode,
+				tran->tra_flags & TRA_readonly,
 				tran->getLockWait() == DEFAULT_LOCK_TIMEOUT,
-				tran->getLockWait() 
+				tran->getLockWait()
 			);
 		}
 		catch (const Exception&)
@@ -665,7 +665,7 @@ void Transaction::detachFromJrdTran()
 {
 	if (m_scope != traCommon)
 		return;
-	
+
 	fb_assert(m_jrdTran);
 	if (!m_jrdTran)
 		return;
@@ -690,7 +690,7 @@ void Transaction::jrdTransactionEnd(thread_db *tdbb, jrd_tra* transaction,
 	while (transaction->tra_ext_common)
 	{
 		Transaction* tran = transaction->tra_ext_common;
-		try 
+		try
 		{
 			if (commit)
 				tran->commit(tdbb, retain);
@@ -742,7 +742,7 @@ Statement::Statement(Connection &conn) :
 
 Statement::~Statement()
 {
-	clearNames(); 
+	clearNames();
 }
 
 void Statement::deleteStatement(Jrd::thread_db *tdbb, Statement *stmt)
@@ -756,7 +756,7 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 	fb_assert(!m_active);
 
 	// already prepared the same non-empty statement
-	if (isAllocated() && (m_sql == sql) && (m_sql != "") && 
+	if (isAllocated() && (m_sql == sql) && (m_sql != "") &&
 		m_preparedByReq == (m_callerPrivileges ? tdbb->getRequest() : NULL))
 	{
 		return;
@@ -789,29 +789,29 @@ void Statement::prepare(thread_db *tdbb, Transaction *tran, const string& sql, b
 	m_preparedByReq = m_callerPrivileges ? tdbb->getRequest() : NULL;
 }
 
-void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count, 
+void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
 	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
 	fb_assert(!m_active);
-	
+
 	m_transaction = tran;
 	setInParams(tdbb, in_count, in_names, in_params);
 	doExecute(tdbb);
 	getOutParams(tdbb, out_count, out_params);
 }
 
-void Statement::open(thread_db* tdbb, Transaction* tran, int in_count, 
+void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
 	const string* const* in_names, jrd_nod** in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
 	fb_assert(!m_active);
-	
+
 	m_singleton = singleton;
 	m_transaction = tran;
-	
+
 	setInParams(tdbb, in_count, in_names, in_params);
 	doOpen(tdbb);
 	m_active = true;
@@ -822,13 +822,13 @@ bool Statement::fetch(thread_db *tdbb, int out_count, jrd_nod **out_params)
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
 	fb_assert(m_active);
-	
+
 	if (!doFetch(tdbb))
 		return false;
 
 	getOutParams(tdbb, out_count, out_params);
 
-	if (m_singleton) 
+	if (m_singleton)
 	{
 		if (doFetch(tdbb))
 		{
@@ -871,17 +871,17 @@ void Statement::close(thread_db *tdbb)
 		unBindFromRequest();
 	}
 
-	if (m_transaction && m_transaction->getScope() == traAutonomous) 
+	if (m_transaction && m_transaction->getScope() == traAutonomous)
 	{
 		bool commitFailed = false;
 		if (!m_error) {
 			try {
 				m_transaction->commit(tdbb, false);
 			}
-			catch (const Exception& ex) 
+			catch (const Exception& ex)
 			{
 				commitFailed = true;
-				if (!doPunt && !wasError) 
+				if (!doPunt && !wasError)
 				{
 					doPunt = true;
 					stuff_exception(tdbb->tdbb_status_vector, ex);
@@ -893,7 +893,7 @@ void Statement::close(thread_db *tdbb)
 			try {
 				m_transaction->rollback(tdbb, false);
 			}
-			catch (const Exception& ex) 
+			catch (const Exception& ex)
 			{
 				if (!doPunt && !wasError)
 				{
@@ -937,7 +937,7 @@ static TokenType getToken(const char **begin, const char *end)
 	char c = *p++;
 	switch (c)
 	{
-	case ':': 
+	case ':':
 	case '?':
 		ret = ttParamMark;
 	break;
@@ -952,9 +952,9 @@ static TokenType getToken(const char **begin, const char *end)
 			}
 		}
 		break;
-	
+
 	case '/':
-		if (p < end && *p == '*') 
+		if (p < end && *p == '*')
 		{
 			ret = ttBrokenComment;
 			p++;
@@ -1005,10 +1005,10 @@ static TokenType getToken(const char **begin, const char *end)
 				*p++;
 			ret = ttWhite;
 		}
-		else 
+		else
 		{
 			c = *p;
-			while (p < end && !( classes(c) & (CHR_DIGIT | CHR_IDENT | CHR_WHITE) ) && 
+			while (p < end && !( classes(c) & (CHR_DIGIT | CHR_IDENT | CHR_WHITE) ) &&
 				c != '/' && c != '-' && c != ':' && c != '?' && c != '\'' && c != '"')
 			{
 				c = *p++;
@@ -1029,7 +1029,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	TokenType tok = getToken(&p, end);
 
 	const char* i = start;
-	while (p < end && (tok == ttComment || tok == ttWhite)) 
+	while (p < end && (tok == ttComment || tok == ttWhite))
 	{
 		i = p;
 		tok = getToken(&p, end);
@@ -1050,7 +1050,7 @@ void Statement::preprocess(const string& sql, string& ret)
 	{
 		const char *i2 = p;
 		tok = getToken(&p, end);
-		while (p < end && (tok == ttComment || tok == ttWhite)) 
+		while (p < end && (tok == ttComment || tok == ttWhite))
 		{
 			i2 = p;
 			tok = getToken(&p, end);
@@ -1068,7 +1068,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		passAsIs = false;
 	}
 	else {
-		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" || 
+		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" ||
 			ident == "MERGE" || ident == "SELECT" || ident == "WITH");
 	}
 
@@ -1130,7 +1130,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				}
 			}
 			// fall thru
-		
+
 		case ttWhite:
 		case ttComment:
 		case ttString:
@@ -1149,7 +1149,7 @@ void Statement::preprocess(const string& sql, string& ret)
 			break;
 
 
-		case ttNone: 
+		case ttNone:
 			// Execute statement preprocess SQL error
 			ERR_post(Arg::Gds(isc_eds_preprocess));
 			break;
@@ -1185,7 +1185,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 					break;
 			}
 
-			if (num == count) 
+			if (num == count)
 			{
 				// Input parameter ''@1'' have no value set
 				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
@@ -1204,7 +1204,7 @@ void Statement::setInParams(thread_db* tdbb, int count, const string* const* nam
 
 void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
-	if (count != getInputs()) 
+	if (count != getInputs())
 	{
 		m_error = true;
 		// Input parameters mismatch
@@ -1232,23 +1232,23 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 		const bool srcNull = !src || src->isNull();
 		*((SSHORT*) null.dsc_address) = (srcNull ? -1 : 0);
 
-		if (srcNull) 
+		if (srcNull)
 		{
 			dst.setNull();
 			memset(dst.dsc_address, 0, dst.dsc_length);
 		}
-		else if (dst.isBlob()) 
+		else if (dst.isBlob())
 		{
 			dsc srcBlob;
 			srcBlob.clear();
 			ISC_QUAD srcBlobID;
 
-			if (src->isBlob()) 
+			if (src->isBlob())
 			{
 				srcBlob.makeBlob(src->getBlobSubType(), src->getTextType(), &srcBlobID);
 				memmove(srcBlob.dsc_address, src->dsc_address, src->dsc_length);
-			} 
-			else 
+			}
+			else
 			{
 				srcBlob.makeBlob(dst.getBlobSubType(), dst.getTextType(), &srcBlobID);
 				MOV_move(tdbb, src, &srcBlob);
@@ -1262,7 +1262,7 @@ void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* n
 }
 
 
-// m_outDescs -> jrd_nod 
+// m_outDescs -> jrd_nod
 void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 {
 	if (count != getOutputs())
@@ -1280,7 +1280,7 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 	{
 /*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);
-		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0) 
+		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
 			m_error = true;
 			status_exception::raise(
@@ -1296,13 +1296,13 @@ void Statement::getOutParams(thread_db *tdbb, int count, jrd_nod **params)
 		bid localBlobID;
 
 		const bool srcNull = (*(SSHORT*) null.dsc_address) == -1;
-		if (src.isBlob() && !srcNull) 
+		if (src.isBlob() && !srcNull)
 		{
 			localDsc = src;
 			localDsc.dsc_address = (UCHAR*) &localBlobID;
 			getExtBlob(tdbb, src, localDsc);
 			local = &localDsc;
-		} 
+		}
 
 		// and assign to the target
 		EXE_assignment(tdbb, *jrdVar, local, srcNull, NULL, NULL);
@@ -1331,10 +1331,10 @@ void Statement::getExtBlob(thread_db *tdbb, const dsc &src, dsc &dst)
 		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
 		char* buff = buffer.getBuffer(bufSize);
 
-		while (true) 
+		while (true)
 		{
 			const USHORT length = extBlob->read(tdbb, buff, bufSize);
-			if (!length) 
+			if (!length)
 				break;
 
 			BLB_put_segment(tdbb, destBlob, reinterpret_cast<const UCHAR*>(buff), length);
@@ -1361,7 +1361,7 @@ void Statement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
 	try
 	{
 		extBlob->create(tdbb, *m_transaction, dst, NULL);
-		
+
 		jrd_req* request = tdbb->getRequest();
 		bid *srcBid = (bid*) src.dsc_address;
 
@@ -1373,7 +1373,7 @@ void Statement::putExtBlob(thread_db *tdbb, dsc &src, dsc &dst)
 		const int bufSize = srcBlob->blb_max_segment;
 		char* buff = buffer.getBuffer(bufSize);
 
-		while (true) 
+		while (true)
 		{
 			USHORT length = BLB_get_segment(tdbb, srcBlob, reinterpret_cast<UCHAR*>(buff), srcBlob->blb_max_segment);
 			if (srcBlob->blb_flags & BLB_eof) {
@@ -1410,7 +1410,7 @@ void Statement::clearNames()
 }
 
 
-void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere, 
+void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;
@@ -1427,9 +1427,9 @@ void Statement::raise(ISC_STATUS* status, thread_db *tdbb, const char* sWhere,
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) << 
-											Arg::Str(rem_err) << 
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) << 
+	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+											Arg::Str(rem_err) <<
+											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
@@ -1439,7 +1439,7 @@ void Statement::bindToRequest(jrd_req* request, Statement** impure)
 	fb_assert(!m_prevInReq);
 	fb_assert(!m_nextInReq);
 
-	if (request->req_ext_stmt) 
+	if (request->req_ext_stmt)
 	{
 		this->m_nextInReq = request->req_ext_stmt;
 		request->req_ext_stmt->m_prevInReq = this;

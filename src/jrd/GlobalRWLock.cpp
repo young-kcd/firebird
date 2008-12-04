@@ -60,14 +60,14 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 	catch (const Firebird::Exception&)
 	{} // no-op
 
-	return 0;	
+	return 0;
 }
 
-GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
+GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 						   size_t lockLen, const UCHAR* lockStr, lck_owner_t physical_lock_owner,
 						   lck_owner_t default_logical_lock_owner, bool lock_caching)
-	: PermanentStorage(p), internal_blocking(0), external_blocking(false), 
-	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner), 
+	: PermanentStorage(p), internal_blocking(0), external_blocking(false),
+	  physicalLockOwner(physical_lock_owner), defaultLogicalLockOwner(default_logical_lock_owner),
 	  lockCaching(lock_caching), dbb(tdbb->getDatabase()), readers(p)
 {
 	SET_TDBB(tdbb);
@@ -82,7 +82,7 @@ GlobalRWLock::GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 	cached_lock->lck_object = this;
 	cached_lock->lck_ast = lockCaching ? blocking_ast_cached_lock : NULL;
 	memcpy(&cached_lock->lck_key, lockStr, lockLen);
-	
+
 	writer.owner_handle = 0;
 	writer.entry_count = 0;
 }
@@ -105,17 +105,17 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		COS_TRACE(("lock type=%i, level=%i, readerscount=%i, owner=%i", cached_lock->lck_type, level, readers.getCount(), owner_handle));
 		// Check if this is a recursion case
 		size_t n = size_t(-1);
-		if (level == LCK_read) 
+		if (level == LCK_read)
 		{
-			if (readers.find(owner_handle, n)) 
+			if (readers.find(owner_handle, n))
 			{
 				readers[n].entry_count++;
 				return true;
 			}
-		} 
-		else 
+		}
+		else
 		{
-			if (writer.owner_handle == owner_handle) 
+			if (writer.owner_handle == owner_handle)
 			{
 				writer.entry_count++;
 				return true;
@@ -128,10 +128,10 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		// We own the lock and all present requests are compatible with us
 		// In case of any congestion we force all requests through the lock
 		// manager to ensure lock ordering.
-		if (cached_lock->lck_physical >= level && all_compatible && 
-			!internal_blocking && !external_blocking) 
+		if (cached_lock->lck_physical >= level && all_compatible &&
+			!internal_blocking && !external_blocking)
 		{
-			if (level == LCK_read) 
+			if (level == LCK_read)
 			{
 				ObjectOwnerData ownerData;
 				ownerData.owner_handle = owner_handle;
@@ -161,7 +161,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	}
 
 	// There is some congestion. Need to use the lock manager.
-	// Request new lock at the new level. Several concurrent lock requests may 
+	// Request new lock at the new level. Several concurrent lock requests may
 	// wait here in the same process in parallel.
 	Lock* newLock = FB_NEW_RPT(getPool(), cached_lock->lck_length) Lock;
 	newLock->lck_type = cached_lock->lck_type;
@@ -175,7 +175,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 	memcpy(&newLock->lck_key, &cached_lock->lck_key, cached_lock->lck_length);
 
 	COS_TRACE(("request new lock, type=%i, level=%i", cached_lock->lck_type, level));
-	if (!LCK_lock(tdbb, newLock, level, wait)) 
+	if (!LCK_lock(tdbb, newLock, level, wait))
 	{
 		COS_TRACE(("Can't get a lock"));
 		delete newLock;
@@ -193,13 +193,13 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 		internal_blocking--;
 
 		// Here old lock is not protecting shared object. We must refresh state by fetch.
-		if (newLock->lck_physical >= LCK_read) 
+		if (newLock->lck_physical >= LCK_read)
 		{
-			try 
+			try
 			{
 				fetch(tdbb);
 			}
-			catch(const Firebird::Exception&) 
+			catch (const Firebird::Exception&)
 			{
 				LCK_release(tdbb, newLock);
 				delete newLock;
@@ -207,7 +207,7 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 			}
 		}
 
-		if (level == LCK_read) 
+		if (level == LCK_read)
 		{
 			ObjectOwnerData ownerData;
 			ownerData.entry_count++;
@@ -222,20 +222,20 @@ bool GlobalRWLock::lock(thread_db* tdbb, const locklevel_t level, SSHORT wait, S
 
 		// Replace cached lock with the new lock if needed
 		COS_TRACE(("Replace lock, type=%i", cached_lock->lck_type));
-		if (newLock->lck_physical > cached_lock->lck_physical) 
+		if (newLock->lck_physical > cached_lock->lck_physical)
 		{
 			LCK_release(tdbb, cached_lock);
 			Lock* const old_lock = cached_lock;
 			cached_lock = newLock;
 			delete old_lock;
-			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner))) 
+			if (!LCK_set_owner_handle(tdbb, cached_lock, LCK_get_owner_handle_by_type(tdbb, physicalLockOwner)))
 			{
 				COS_TRACE(("Error: set owner handle for captured lock, type=%i", cached_lock->lck_type));
 				LCK_release(tdbb, cached_lock);
 				return false;
 			}
 		}
-		else 
+		else
 		{
 			LCK_release(tdbb, newLock);
 			delete newLock;
@@ -268,12 +268,12 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 		if (readers[n].entry_count == 0)
 			readers.remove(n);
 	}
-	else 
+	else
 	{
 		fb_assert(writer.owner_handle == owner_handle);
 		fb_assert(writer.entry_count > 0);
 		fb_assert(cached_lock->lck_physical == LCK_write);
-		
+
 		writer.entry_count--;
 
 		if (!writer.entry_count)
@@ -297,7 +297,7 @@ void GlobalRWLock::unlock(thread_db* tdbb, const locklevel_t level, SLONG owner_
 			LCK_release(tdbb, cached_lock);
 			invalidate(tdbb, false);
 			external_blocking = false;
-		} 
+		}
 		else if (external_blocking)
 		{
 			LCK_downgrade(tdbb, cached_lock);
@@ -336,7 +336,7 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 void GlobalRWLock::setLockData(thread_db* tdbb, SLONG lck_data)
 {
 	LCK_write_data(tdbb, cached_lock, lck_data);
-} 
+}
 
 void GlobalRWLock::changeLockOwner(thread_db* tdbb, locklevel_t level, SLONG old_owner_handle, SLONG new_owner_handle)
 {

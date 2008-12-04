@@ -1350,7 +1350,7 @@ ISC_STATUS API_ROUTINE GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			}
 		}
 	}
-	catch(const Exception& e)
+	catch (const Exception& e)
 	{
 		if (handle)
 		{
@@ -1910,7 +1910,7 @@ ISC_STATUS API_ROUTINE GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 				ptr = temp;
 		}
 	}
-	catch(const Exception& e)
+	catch (const Exception& e)
 	{
   		e.stuff_exception(status);
 		if (handle)
@@ -5905,7 +5905,7 @@ static void subsystem_enter(void) throw()
 		}
 #endif /* DEBUG_FPE_HANDLING */
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		// ToDo: show full exception message here
 		gds__log("Unexpected exception in subsystem_enter()");
@@ -5938,7 +5938,7 @@ static void subsystem_exit(void) throw()
 #endif
 		--isc_enter_count;
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		// ToDo: show full exception message here
 		gds__log("Unexpected exception in subsystem_exit()");

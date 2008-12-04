@@ -447,7 +447,7 @@ void DYN_execute(Global* gbl,
 		case isc_dyn_mod_filter:
 			DYN_modify_filter(gbl, ptr);
 			break;
-			
+
 		case isc_dyn_delete_filter:
 			DYN_delete_filter(gbl, ptr);
 			break;
@@ -463,7 +463,7 @@ void DYN_execute(Global* gbl,
 		case isc_dyn_mod_function:
 			DYN_modify_function(gbl, ptr);
 			break;
-			
+
 		case isc_dyn_delete_function:
 			DYN_delete_function(gbl, ptr);
 			break;
@@ -612,7 +612,7 @@ void DYN_execute(Global* gbl,
 		case isc_dyn_delete_dimensions:
 			DYN_delete_dimensions(gbl, ptr, relation_name, field_name);
 			break;
-			
+
 		case isc_dyn_mod_charset:
 			DYN_modify_charset(gbl, ptr);
 			break;
@@ -676,7 +676,7 @@ USHORT DYN_get_string(const TEXT** ptr, TEXT* field, size_t size, bool translite
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	
+
 	HalfStaticArray<TEXT, MAX_SQL_IDENTIFIER_LEN> temp;
 	USHORT l = length;
 
@@ -724,7 +724,7 @@ USHORT DYN_get_string(const TEXT** ptr, MetaName& field, size_t, bool transliter
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	
+
 	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159);
@@ -765,7 +765,7 @@ USHORT DYN_get_string(const TEXT** ptr, string& field, size_t, bool transliterat
 	const TEXT* p = *ptr;
 	USHORT length = (UCHAR) *p++;
 	length |= ((USHORT) ((UCHAR) (*p++))) << 8;
-	
+
 	if (length > MAX_SQL_IDENTIFIER_LEN)
 	{
 		DYN_error_punt(false, 159);
@@ -799,7 +799,7 @@ USHORT DYN_get_string(const TEXT** ptr, PathName& field, size_t, bool transliter
  **************************************
  *
  * Functional description
- *	Pick up a file name, move to a target. Return length 
+ *	Pick up a file name, move to a target. Return length
  *	of string.
  *
  **************************************/
@@ -841,7 +841,7 @@ USHORT DYN_get_string(const TEXT** ptr, UCharBuffer& array, size_t, bool transli
  **************************************
  *
  * Functional description
- *	Pick up a string, move to a target. Return length 
+ *	Pick up a string, move to a target. Return length
  *	of string.
  *
  **************************************/
@@ -937,7 +937,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		*ptr = p;
 		return length;
 	}
-	
+
 	// make the code die at some place if DYN_error_punt doesn't jump far away.
 	const UCHAR* end = NULL;
 
@@ -945,7 +945,7 @@ USHORT DYN_put_text_blob(Global* gbl, const UCHAR** ptr, bid* blob_id)
 		UCharBuffer bpb;
 
 		Database* dbb = tdbb->getDatabase();
-		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1) 
+		if (ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original) >= ODS_11_1)
 		{
 			bpb.resize(15);
 
@@ -1176,7 +1176,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			break;
 
 		case isc_dyn_grant_grantor:
-			if (! tdbb->getAttachment()->locksmith()) 
+			if (! tdbb->getAttachment()->locksmith())
 			{
 				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
 			}
@@ -1302,8 +1302,8 @@ static void grant( Global* gbl, const UCHAR** ptr)
 			   his own view.  If the grantor is not the owner of the view, then the
 			   base table/view grant privilege checks were made when the grantor
 			   got its grant privilege on the view and no further checks are
-			   necessary. 
-			   As long as only locksmith can use GRANTED BY, no need specially checking 
+			   necessary.
+			   As long as only locksmith can use GRANTED BY, no need specially checking
 			   for privileges of current user. AP-2008 */
 
 			if (!obj_type)
@@ -1316,7 +1316,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 										field,
 										true))
 				{
-					// grantor_can_grant has moved the error string already. 
+					// grantor_can_grant has moved the error string already.
 					// just punt back to the setjump
 					// ERR_punt();
 					goto do_punt;
@@ -1351,7 +1351,7 @@ static void grant( Global* gbl, const UCHAR** ptr)
 		case drq_s_grant:
 		case drq_gcg1:
 			ERR_punt();
-			// store_priviledge || grantor_can_grant error already handled, 
+			// store_priviledge || grantor_can_grant error already handled,
 			// just bail out
 			break;
 		case drq_get_role_nm:
@@ -1429,7 +1429,7 @@ static bool grantor_can_grant(Global* gbl,
 	{
 		err_num = 183;
 		bool field_exists = false;
-		
+
 		/* SELECT RDB$RELATION_FIELDS failed in grant */
 		request = CMP_find_request(tdbb, drq_gcg5, DYN_REQUESTS);
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
@@ -1581,7 +1581,7 @@ static bool grantor_can_grant(Global* gbl,
 	}
 
 /* If the grantor is not the owner of the relation, then we don't need to
-   check the base table(s)/view(s) because that check was performed when 
+   check the base table(s)/view(s) because that check was performed when
    the grantor was given its privileges. */
 
 	if (!grantor_is_owner) {
@@ -1605,7 +1605,7 @@ static bool grantor_can_grant(Global* gbl,
 			if (!DYN_REQUEST(drq_gcg3)) {
 				DYN_REQUEST(drq_gcg3) = request;
 			}
-		
+
 		if (field_name.length())
 		{
 			if (field_name == G_FLD.RDB$FIELD_NAME)
@@ -1712,12 +1712,12 @@ static bool grantor_can_grant_role(thread_db* tdbb,
 
 	END_FOR;
 
-	if (!DYN_REQUEST(drq_get_role_au)) 
+	if (!DYN_REQUEST(drq_get_role_au))
 	{
 		DYN_REQUEST(drq_get_role_au) = request;
 	}
 
-	if (!grantable) 
+	if (!grantable)
 	{
 		/****************************************************
 		**
@@ -1771,7 +1771,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
  * Functional description
  *	Revoke some privileges.
  *
- *	Note: According to SQL II, section 11.37, pg 280, 
+ *	Note: According to SQL II, section 11.37, pg 280,
  *	general rules 8 & 9,
  *	if the specified priviledge for the specified user
  *	does not exist, it is not an exception error condition
@@ -1900,7 +1900,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 			break;
 
 		case isc_dyn_grant_grantor:
-			if (! tdbb->getAttachment()->locksmith()) 
+			if (! tdbb->getAttachment()->locksmith())
 			{
 				DYN_error_punt(false, 252, SYSDBA_USER_NAME);
 			}
@@ -1986,7 +1986,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 		}
 
 		if (options && grant_erased) {
-			/* Add the privilege without the grant option 
+			/* Add the privilege without the grant option
 			 * There is a modify trigger on the rdb$user_privileges
 			 * which disallows the table from being updated.  It would
 			 * have to be changed such that only the grant_option
@@ -2001,18 +2001,18 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 
 			id = old_id;
 		}
-		
+
 		if (bad_grantor && !grant_erased)
 		{
-			DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() << 
+			DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() <<
 				privilege_name(temp[0]) << object.c_str() << user.c_str());
 			// msg 246: @1 is not grantor of @2 on @3 to @4.
 		}
-		
+
 		if (!grant_erased)
 		{
-			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << Arg::Str(privilege_name(temp[0])) << 
-																		Arg::Str(object) << 
+			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << Arg::Str(privilege_name(temp[0])) <<
+																		Arg::Str(object) <<
 																		Arg::Str(user));
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
@@ -2022,7 +2022,7 @@ static void revoke_permission(Global* gbl, const UCHAR** ptr)
 	catch (const Exception& ex) {
 		stuff_exception(tdbb->tdbb_status_vector, ex);
 		/* we need to rundown as we have to set the env.
-		   But in case the error is from store_priveledge we have already 
+		   But in case the error is from store_priveledge we have already
 		   unwound the request so passing that as null */
 		DYN_rundown_request(((id == drq_s_grant) ? NULL : request),
 							-1);
@@ -2121,7 +2121,7 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			PRIV IN RDB$USER_PRIVILEGES WITH
 				PRIV.RDB$USER = user.c_str() AND
 				PRIV.RDB$USER_TYPE = user_type
-	
+
 				if (!DYN_REQUEST(drq_e_grant1))
 					DYN_REQUEST(drq_e_grant1) = request;
 
@@ -2144,11 +2144,11 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 			const char* all = "ALL";
 			if (bad_grantor)
 			{
-				DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() << 
+				DYN_error_punt(false, 246, SafeArg() << revoking_as_user_name.c_str() <<
 					all << all << user.c_str());
 				// msg 246: @1 is not grantor of @2 on @3 to @4.
 			}
-		
+
 			ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) << all << all << user);
 			// msg 247: Warning: @1 on @2 is not granted to @3.
 		}
@@ -2162,8 +2162,8 @@ static void revoke_all(Global* gbl, const UCHAR** ptr)
 }
 
 
-static void set_field_class_name(Global* gbl, 
-								 const MetaName& relation, 
+static void set_field_class_name(Global* gbl,
+								 const MetaName& relation,
 								 const MetaName& field)
 {
 /**************************************
@@ -2182,11 +2182,11 @@ static void set_field_class_name(Global* gbl,
 
 	jrd_req* request = CMP_find_request(tdbb, drq_s_f_class, DYN_REQUESTS);
 	jrd_req* request2 = NULL;
-	
+
 	bool unique = false;
 
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE gbl->gbl_transaction)
-		RFR IN RDB$RELATION_FIELDS 
+		RFR IN RDB$RELATION_FIELDS
 		WITH RFR.RDB$FIELD_NAME = field.c_str() AND
 			RFR.RDB$RELATION_NAME = relation.c_str() AND
 		RFR.RDB$SECURITY_CLASS MISSING
@@ -2195,13 +2195,13 @@ static void set_field_class_name(Global* gbl,
 			while (!unique)
 		    {
 				sprintf(RFR.RDB$SECURITY_CLASS, "%s%" SQUADFORMAT, "SQL$GRANT",
-				DPM_gen_id(tdbb, 
+				DPM_gen_id(tdbb,
 					MET_lookup_generator(tdbb, "RDB$SECURITY_CLASS"), false, (SINT64) 1));
 
 				unique = true;
 				request2 = CMP_find_request(tdbb, drq_s_u_class, DYN_REQUESTS);
 				FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE gbl->gbl_transaction)
-					RFR1 IN RDB$RELATION_FIELDS 
+					RFR1 IN RDB$RELATION_FIELDS
 					WITH RFR1.RDB$SECURITY_CLASS = RFR.RDB$SECURITY_CLASS
 					unique = false;
 				END_FOR;
@@ -2209,7 +2209,7 @@ static void set_field_class_name(Global* gbl,
 
 			RFR.RDB$SECURITY_CLASS.NULL = FALSE;
 		END_MODIFY;
-    
+
 	END_FOR;
 
 	if (!DYN_REQUEST(drq_s_f_class))
@@ -2301,7 +2301,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 	Database::Checkout dcoHolder(dbb);
 
 	ISC_STATUS_ARRAY status;
-	try 
+	try
 	{
 		DeferredWork* work = DFW_post_work(tra, dfw_user_management, NULL, 0);
 		UserManagement* sec = reinterpret_cast<UserManagement*>(work->dfw_args);
@@ -2405,7 +2405,7 @@ static void dyn_user(Global* gbl, const UCHAR** ptr)
 			status_exception::raise(Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC)));
 		}
 	}
-	catch(const Exception& e)
+	catch (const Exception& e)
 	{
 		e.stuff_exception(status);
 		memmove(&status[2], &status[0], sizeof(status) - 2 * sizeof(status[0]));

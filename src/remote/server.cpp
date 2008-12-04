@@ -401,7 +401,7 @@ static bool link_request(rem_port* port, SERVER_REQ request)
  *
  **************************************/
 	const P_OP operation = request->req_receive.p_operation;
-	SERVER_REQ queue;;
+	SERVER_REQ queue;
 
 	{	// request_que_mutex scope
 		Firebird::MutexLockGuard queGuard(request_que_mutex);
@@ -578,8 +578,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 						REMOTE_TRACE(("Enqueue request %p", request));
 						request = 0;
 #ifdef DEBUG_REMOTE_MEMORY
-						printf
-							("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
+						printf("SRVR_multi_thread    APPEND_PENDING     request_queued %d\n",
 							port->port_requests_queued);
 						fflush(stdout);
 #endif
@@ -952,7 +951,7 @@ static void attach_database(rem_port* port,
 	const USHORT l = attach->p_atch_file.cstr_length;
 
 	const UCHAR* dpb = attach->p_atch_dpb.cstr_address;
-	USHORT dl = attach->p_atch_dpb.cstr_length;
+	const USHORT dl = attach->p_atch_dpb.cstr_length;
 
 	Firebird::ClumpletWriter dpb_buffer(Firebird::ClumpletReader::Tagged, MAX_SSHORT);
 
@@ -997,7 +996,7 @@ static void attach_database(rem_port* port,
 				}
 			}
 		}
-		catch(const Firebird::status_exception& e)
+		catch (const Firebird::status_exception& e)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			Firebird::stuff_exception(status_vector, e);
@@ -1057,8 +1056,7 @@ static void attach_database2(rem_port* port,
 	rem_str* string = port->port_user_name;
 	if (string) {
 		dpb_buffer.setCurOffset(dpb_buffer.getBufferLength());
-		dpb_buffer.insertString(isc_dpb_sys_user_name,
-			string->str_data, string->str_length);
+		dpb_buffer.insertString(isc_dpb_sys_user_name, string->str_data, string->str_length);
 	}
 
 	// Now insert additional clumplets into dpb
@@ -1267,8 +1265,7 @@ static void cancel_operation( rem_port* port, USHORT kind)
  *
  **************************************/
 	Rdb* rdb;
-	if ((port->port_flags & (PORT_async | PORT_disconnect)) ||
-		!(rdb = port->port_context))
+	if ((port->port_flags & (PORT_async | PORT_disconnect)) || !(rdb = port->port_context))
 	{
 		return;
 	}
@@ -1589,8 +1586,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (this->port_connection)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n",
-				  this->port_connection);
+		printf("disconnect(server)        free string      %x\n", this->port_connection);
 #endif
 		delete this->port_connection;
 		this->port_connection = NULL;
@@ -1598,8 +1594,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (this->port_version)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n",
-				  this->port_version);
+		printf("disconnect(server)        free string      %x\n", this->port_version);
 #endif
 		delete this->port_version;
 		this->port_version = NULL;
@@ -1607,8 +1602,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (this->port_passwd)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n",
-				  this->port_passwd);
+		printf("disconnect(server)        free string      %x\n", this->port_passwd);
 #endif
 		delete this->port_passwd;
 		this->port_passwd = NULL;
@@ -1616,8 +1610,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (this->port_user_name)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n",
-				  this->port_user_name);
+		printf("disconnect(server)        free string      %x\n", this->port_user_name);
 #endif
 		delete this->port_user_name;
 		this->port_user_name = NULL;
@@ -1625,8 +1618,7 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 	if (this->port_host)
 	{
 #ifdef DEBUG_REMOTE_MEMORY
-		printf("disconnect(server)        free string      %x\n",
-				  this->port_host);
+		printf("disconnect(server)        free string      %x\n", this->port_host);
 #endif
 		delete this->port_host;
 		this->port_host = NULL;
@@ -1834,9 +1826,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 
 	getHandle(statement, free_stmt->p_sqlfree_statement);
 
-	GDS_DSQL_FREE(status_vector,
-				  &statement->rsr_handle,
-				  free_stmt->p_sqlfree_option);
+	GDS_DSQL_FREE(status_vector, &statement->rsr_handle, free_stmt->p_sqlfree_option);
 
 	if (status_vector[1])
 		return this->send_response(sendL, 0, 0, status_vector, true);
@@ -2005,8 +1995,7 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 						   &handle,
 						   exnow->p_sqlst_SQL_str.cstr_length,
 						   reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
-						   (USHORT) ((exnow->p_sqlst_SQL_dialect * 10) +
-									 parser_version),
+						   (USHORT) ((exnow->p_sqlst_SQL_dialect * 10) + parser_version),
 						   in_blr_length,
 						   reinterpret_cast<char*>(in_blr),
 						   in_msg_type,
@@ -2020,12 +2009,10 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 
 	if (op == op_exec_immediate2)
 	{
-		this->port_statement->rsr_format =
-			this->port_statement->rsr_select_format;
+		this->port_statement->rsr_format = this->port_statement->rsr_select_format;
 
 		sendL->p_operation = op_sql_response;
-		sendL->p_sqldata.p_sqldata_messages = (status_vector[1]
-											  || !out_msg) ? 0 : 1;
+		sendL->p_sqldata.p_sqldata_messages = (status_vector[1] || !out_msg) ? 0 : 1;
 		this->send_partial(sendL);
 	}
 
@@ -2093,8 +2080,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		out_msg_type = sqldata->p_sqldata_out_message_number;
 		if (this->port_statement->rsr_select_format)
 		{
-			out_msg_length =
-				this->port_statement->rsr_select_format->fmt_length;
+			out_msg_length = this->port_statement->rsr_select_format->fmt_length;
 			out_msg = this->port_statement->rsr_message->msg_buffer;
 		}
 	}
@@ -2126,12 +2112,10 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (op == op_execute2)
 	{
-		this->port_statement->rsr_format =
-			this->port_statement->rsr_select_format;
+		this->port_statement->rsr_format = this->port_statement->rsr_select_format;
 
 		sendL->p_operation = op_sql_response;
-		sendL->p_sqldata.p_sqldata_messages = (status_vector[1]
-											  || !out_msg) ? 0 : 1;
+		sendL->p_sqldata.p_sqldata_messages = (status_vector[1] || !out_msg) ? 0 : 1;
 		this->send_partial(sendL);
 	}
 
@@ -2189,9 +2173,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	else {
 		msg_length = 0;
 	}
-	USHORT count = ((this->port_flags & PORT_rpc) ||
-			statement->rsr_flags.test(Rsr::NO_BATCH)) ? 1 :
-			sqldata->p_sqldata_messages;
+	USHORT count = ((this->port_flags & PORT_rpc) || statement->rsr_flags.test(Rsr::NO_BATCH)) ?
+						1 : sqldata->p_sqldata_messages;
 	USHORT count2 = statement->rsr_flags.test(Rsr::NO_BATCH) ? 0 : count;
 
 	// On first fetch, clear the end-of-stream flag & reset the message buffers
@@ -2236,8 +2219,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 
 		/* Have we exhausted the cache & have a pending error? */
-		if (statement->rsr_flags.test(Rsr::STREAM_ERR)
-			&& !statement->rsr_msgs_waiting)
+		if (statement->rsr_flags.test(Rsr::STREAM_ERR) && !statement->rsr_msgs_waiting)
 		{
 			fb_assert(statement->rsr_status);
 			statement->rsr_flags.clear(Rsr::STREAM_ERR);
@@ -2419,13 +2401,11 @@ ISC_STATUS rem_port::fetch_blob(P_SQLDATA * sqldata, PACKET* sendL)
 					   msg_length,
 					   reinterpret_cast<char*>(message->msg_buffer.operator UCHAR*()));
 
-	if (!status_vector[1] ||
-		status_vector[1] != isc_segment || status_vector[1] != isc_segstr_eof)
+	if (!status_vector[1] || status_vector[1] != isc_segment || status_vector[1] != isc_segstr_eof)
 	{
 		message->msg_address = message->msg_buffer;
 		response->p_sqldata_status = s;
-		response->p_sqldata_messages =
-			(status_vector[1] == isc_segstr_eof) ? 0 : 1;
+		response->p_sqldata_messages = (status_vector[1] == isc_segstr_eof) ? 0 : 1;
 		this->send_partial(sendL);
 		message->msg_address = NULL;
 	}
@@ -2460,7 +2440,8 @@ static bool get_next_msg_no(Rrq* request,
 		return false;
 
 	bool result = false;
-	for (const UCHAR* info = info_buffer; *info != isc_info_end;) {
+	for (const UCHAR* info = info_buffer; *info != isc_info_end;)
+	{
 		const USHORT l = (USHORT) gds__vax_integer(info + 1, 2);
 		const USHORT n = (USHORT) gds__vax_integer(info + 3, l);
 
@@ -3004,8 +2985,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	// stuff isc_info_length in front of info items buffer
 	*info = isc_info_length;
-	memmove(info + 1, prepareL->p_sqlst_items.cstr_address,
-		prepareL->p_sqlst_items.cstr_length);
+	memmove(info + 1, prepareL->p_sqlst_items.cstr_address, prepareL->p_sqlst_items.cstr_length);
 
 	FB_API_HANDLE handle = (transaction) ? transaction->rtr_handle : 0;
 
@@ -3038,8 +3018,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 					 &statement->rsr_handle,
 					 prepareL->p_sqlst_SQL_str.cstr_length,
 					 reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
-					 (USHORT) ((prepareL->p_sqlst_SQL_dialect * 10) +
-							   parser_version),
+					 (USHORT) ((prepareL->p_sqlst_SQL_dialect * 10) + parser_version),
 					 prepareL->p_sqlst_items.cstr_length + 1,
 					 reinterpret_cast<const char*> (info),
 					 prepareL->p_sqlst_buffer_length,
@@ -3082,8 +3061,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 
 	sendL->p_resp.p_resp_data.cstr_address = buffer + skip_len;
 
-	const ISC_STATUS status =
-		this->send_response(sendL, state, response_len, status_vector, false);
+	const ISC_STATUS status = this->send_response(sendL, state, response_len, status_vector, false);
 
 	return status;
 }
@@ -3174,8 +3152,7 @@ static bool process_packet(rem_port* port,
 				if (!server)
 					break;
 
-				if ((server->srvr_flags & SRVR_multi_client) &&
-					port != server->srvr_parent_port)
+				if ((server->srvr_flags & SRVR_multi_client) && port != server->srvr_parent_port)
 				{
 
 					port->disconnect(sendL, receive);
@@ -3183,8 +3160,7 @@ static bool process_packet(rem_port* port,
 					break;
 				}
 
-				if ((server->srvr_flags & SRVR_multi_client) &&
-					port == server->srvr_parent_port)
+				if ((server->srvr_flags & SRVR_multi_client) && port == server->srvr_parent_port)
 				{
 					gds__log("SERVER/process_packet: Multi-client server shutdown");
 				}
@@ -3435,7 +3411,7 @@ static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
 			return;
 		}
 	}
-	catch(const Firebird::status_exception& e)
+	catch (const Firebird::status_exception& e)
 	{
 		// ISC_STATUS_ARRAY status_vector; It exists in the outer scope.
 		Firebird::stuff_exception(status_vector, e);
@@ -3498,8 +3474,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 	ISC_STATUS_ARRAY status_vector;
 
 	if (op == op_put_segment) {
-		isc_put_segment(status_vector, &blob->rbl_handle, length,
-						reinterpret_cast<const char*>(p));
+		isc_put_segment(status_vector, &blob->rbl_handle, length, reinterpret_cast<const char*>(p));
 		return this->send_response(sendL, 0, 0, status_vector, false);
 	}
 
@@ -3510,8 +3485,7 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 	while (p < end) {
 		length = *p++;
 		length += *p++ << 8;
-		isc_put_segment(status_vector, &blob->rbl_handle, length,
-						reinterpret_cast<const char*>(p));
+		isc_put_segment(status_vector, &blob->rbl_handle, length, reinterpret_cast<const char*>(p));
 
 		if (status_vector[1])
 			return this->send_response(sendL, 0, 0, status_vector, false);
@@ -3769,11 +3743,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 			if (requestL->rrq_status_vector[1]) {
 				const ISC_STATUS res =
-					this->send_response(sendL, 0, 0,
-								  requestL->rrq_status_vector,
-								  false);
-				memset(requestL->rrq_status_vector, 0,
-					   sizeof(requestL->rrq_status_vector));
+					this->send_response(sendL, 0, 0, requestL->rrq_status_vector, false);
+				memset(requestL->rrq_status_vector, 0, sizeof(requestL->rrq_status_vector));
 				return res;
 			}
 
@@ -3796,16 +3767,12 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 			switch (direction) {
 			case blr_forward:
 				tail->rrq_flags &= ~Rrq::BACKWARD;
-				tail->rrq_absolute +=
-					(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ?
-						-offset : offset;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
 				break;
 
 			case blr_backward:
 				tail->rrq_flags |= Rrq::BACKWARD;
-				tail->rrq_absolute +=
-					(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ?
-						offset : -offset;
+				tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
 				break;
 
 			case blr_bof_forward:
@@ -3877,10 +3844,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	while (message->msg_address && message->msg_next != tail->rrq_xdr)
 		message = message->msg_next;
 
-	for (;
-		 count2
-		 && check_request(requestL, data->p_data_incarnation, msg_number);
-		 --count2)
+	for (; count2 && check_request(requestL, data->p_data_incarnation, msg_number); --count2)
 	{
 		if (message->msg_address) {
 			if (!prior)
@@ -3936,13 +3900,11 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 		switch (direction)
 		{
 		case blr_forward:
-			tail->rrq_absolute +=
-				(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? -offset : offset;
 			break;
 
 		case blr_backward:
-			tail->rrq_absolute +=
-				(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
+			tail->rrq_absolute += (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD) ? offset : -offset;
 			break;
 		}
 
@@ -4173,11 +4135,8 @@ static REM_MSG scroll_cache(
 /* if we are scrolling from BOF and the cache was started from EOF (or vice
    versa), the cache is unusable. */
 
-	if (
-		(*direction == blr_bof_forward
-		 && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD))
-		|| (*direction == blr_eof_backward
-			&& !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
+	if ((*direction == blr_bof_forward && (tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)) ||
+		(*direction == blr_eof_backward && !(tail->rrq_flags & Rrq::ABSOLUTE_BACKWARD)))
 	{
 		return dump_cache(tail);
 	}
@@ -4337,8 +4296,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 		case isc_arg_warning:
 		case isc_arg_gds:
 			// When talking with older (pre 6.0) clients, do not send warnings
-			if (*status_vector == isc_arg_warning &&
-				this->port_protocol < PROTOCOL_VERSION10)
+			if (*status_vector == isc_arg_warning && this->port_protocol < PROTOCOL_VERSION10)
 			{
 				sw = false;
 				continue;
@@ -4498,8 +4456,7 @@ static void server_ast(void* event_void, USHORT length, const UCHAR* items)
 
 static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 {
-	const char* service_name = reinterpret_cast<const char*>
-		(attach->p_atch_file.cstr_address);
+	const char* service_name = reinterpret_cast<const char*>(attach->p_atch_file.cstr_address);
 	const USHORT service_length = attach->p_atch_file.cstr_length;
 
 	Firebird::ClumpletWriter spb(Firebird::ClumpletReader::SpbAttach, MAX_DPB_SIZE,
@@ -4516,8 +4473,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 		{
 			// extract trusted authentication data from spb
 			AuthSspi::DataHolder data;
-			memcpy(data.getBuffer(spb.getClumpLength()),
-				spb.getBytes(), spb.getClumpLength());
+			memcpy(data.getBuffer(spb.getClumpLength()), spb.getBytes(), spb.getClumpLength());
 			spb.deleteClumplet();
 
 			// remove extra trusted auth if present (security measure)
@@ -4541,7 +4497,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 				}
 			}
 		}
-		catch(const Firebird::status_exception& e)
+		catch (const Firebird::status_exception& e)
 		{
 			ISC_STATUS_ARRAY status_vector;
 			Firebird::stuff_exception(status_vector, e);
@@ -4622,8 +4578,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	const rem_str* string = port_user_name;
 	if (string) {
 		spb.setCurOffset(spb.getBufferLength());
-		spb.insertString(isc_spb_sys_user_name,
-			string->str_data, string->str_length);
+		spb.insertString(isc_spb_sys_user_name, string->str_data, string->str_length);
 	}
 
     // Now insert additional clumplets into spb
@@ -4855,7 +4810,6 @@ ISC_STATUS rem_port::start_and_send(P_OP	operation,
 	const rem_fmt* format = requestL->rrq_rpt[number].rrq_format;
 	REMOTE_reset_request(requestL, message);
 
-
 	isc_start_and_send(status_vector, &requestL->rrq_handle,
 					   &transaction->rtr_handle, number,
 					   format->fmt_length, message->msg_address,
@@ -5029,8 +4983,7 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM)
 						}
 						else
 						{
-							for (port = parent_port->port_clients; port;
-								 port = port->port_next)
+							for (port = parent_port->port_clients; port; port = port->port_next)
 							{
 								if (port == request->req_port)
 								{
@@ -5263,8 +5216,7 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
 	UCHAR* in_msg = (procedure->rpr_in_msg) ? procedure->rpr_in_msg->msg_address : NULL;
 	const USHORT in_msg_length =
 		(procedure->rpr_in_format) ? procedure->rpr_in_format->fmt_length : 0;
-	UCHAR* out_msg =
-		(procedure->rpr_out_msg) ? procedure->rpr_out_msg->msg_address : NULL;
+	UCHAR* out_msg = (procedure->rpr_out_msg) ? procedure->rpr_out_msg->msg_address : NULL;
 	const USHORT out_msg_length =
 		(procedure->rpr_out_format) ? procedure->rpr_out_format->fmt_length : 0;
 
@@ -5310,8 +5262,7 @@ static void zap_packet(PACKET* packet,
 #ifdef DEBUG_XDR_MEMORY
 		/* Don't trash debug xdr memory allocation table of recycled packets. */
 
-		memset(&packet->p_operation, 0,
-			   sizeof(PACKET) - OFFSET(PACKET*, p_operation));
+		memset(&packet->p_operation, 0, sizeof(PACKET) - OFFSET(PACKET*, p_operation));
 #else
 		memset(packet, 0, sizeof(PACKET));
 #endif
