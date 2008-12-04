@@ -1,3 +1,23 @@
+2008-12-04 11:44  dimitr
+
+	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.72):
+
+	Better diagnostics in firebird.log.
+
+2008-12-04 10:29  alexpeshkoff
+
+	* firebird2/src/config/ScanDir.cpp (1.11):
+
+	misc
+
+2008-12-04 10:29  robocop
+
+	* firebird2/src/: jrd/GlobalRWLock.cpp (1.24), jrd/dyn.epp (1.136),
+	jrd/vio.cpp (1.231), jrd/why.cpp (1.219), jrd/extds/ExtDS.cpp
+	(1.24), lock/lock.cpp (1.172), remote/server.cpp (1.227):
+
+	Style (and let lines grow up to 100 columns).
+
 2008-12-03 16:50  alexpeshkoff
 
 	* firebird2/builds/posix/: prefix.aix_powerpc (1.2),
