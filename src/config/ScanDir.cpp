@@ -88,7 +88,7 @@ bool ScanDir::next()
 	if (!dir)
 		return false;
 
-	while (data = readdir (dir))
+	while ((data = readdir (dir)))
 	{
 		if (match (pattern.c_str(), data->d_name))
 			return true;
