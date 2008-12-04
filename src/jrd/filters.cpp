@@ -799,67 +799,73 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		Firebird::HalfStaticArray<BYTE, BUFFER_MEDIUM> buffer;
 		BYTE* p;
 
-		if (aux->ctlaux_buffer1_unused != 0)
+		while (len || aux->ctlaux_buffer1_unused)
 		{
-			p = buffer.getBuffer(aux->ctlaux_buffer1_unused + len);
-			memcpy(p, aux->ctlaux_buffer1, aux->ctlaux_buffer1_unused);
-			memcpy(p + aux->ctlaux_buffer1_unused, control->ctl_buffer, len);
-			len += aux->ctlaux_buffer1_unused;
+			if (aux->ctlaux_buffer1_unused != 0)
+			{
+				p = buffer.getBuffer(aux->ctlaux_buffer1_unused + len);
+				memcpy(p, aux->ctlaux_buffer1, aux->ctlaux_buffer1_unused);
+				memcpy(p + aux->ctlaux_buffer1_unused, control->ctl_buffer, len);
+				len += aux->ctlaux_buffer1_unused;
+			}
+			else
+				p = control->ctl_buffer;
+	
+			/* Now convert from the input buffer into the temporary buffer */
+	
+			/* How much space do we need to convert? */
+			const ULONG cvt_len = aux->ctlaux_obj1.convertLength(len);
+			result_length = MIN(MAX_USHORT, cvt_len);
+	
+			/* Allocate a new buffer if we don't have enough */
+			if (result_length > aux->ctlaux_buffer1_len) {
+				gds__free(aux->ctlaux_buffer1);
+				aux->ctlaux_buffer1_len = result_length;
+				aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
+				/* FREE: above & isc_blob_filter_close in this routine */
+				if (!aux->ctlaux_buffer1)	/* NOMEM: */
+					return isc_virmemexh;
+			}
+	
+			/* convert the text */
+	
+			try
+			{
+				err_position = len;
+				result_length = aux->ctlaux_obj1.convert(len, p,
+					aux->ctlaux_buffer1_len, aux->ctlaux_buffer1, &err_position);
+			}
+			catch (const Firebird::status_exception&)
+			{
+				return isc_transliteration_failed;
+			}
+	
+			if (len > 0 && err_position == 0)
+				return isc_transliteration_failed;
+	
+			/* hand the text off to the next stage of the filter */
+	
+			status = caller(isc_blob_filter_put_segment, control, result_length,
+							aux->ctlaux_buffer1, NULL);
+	
+			if (status)
+				return status;
+	
+			aux->ctlaux_buffer1_unused = len - err_position;
+	
+			if (aux->ctlaux_buffer1_unused != 0)
+				memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
+	
+			/* update local control variables for segment length */
+	
+			if (result_length > control->ctl_max_segment)
+				control->ctl_max_segment = result_length;
+	
+			control->ctl_total_length += result_length;
+			control->ctl_number_segments++;
+
+			len = 0;
 		}
-		else
-			p = control->ctl_buffer;
-
-		/* Now convert from the input buffer into the temporary buffer */
-
-		/* How much space do we need to convert? */
-		result_length = aux->ctlaux_obj1.convertLength(len);
-
-		/* Allocate a new buffer if we don't have enough */
-		if (result_length > aux->ctlaux_buffer1_len) {
-			gds__free(aux->ctlaux_buffer1);
-			aux->ctlaux_buffer1_len = result_length;
-			aux->ctlaux_buffer1 = (BYTE *) gds__alloc((SLONG) result_length);
-			/* FREE: above & isc_blob_filter_close in this routine */
-			if (!aux->ctlaux_buffer1)	/* NOMEM: */
-				return isc_virmemexh;
-		}
-
-		/* convert the text */
-
-		try
-		{
-			err_position = len;
-			result_length = aux->ctlaux_obj1.convert(len, p,
-				aux->ctlaux_buffer1_len, aux->ctlaux_buffer1, &err_position);
-		}
-		catch (const Firebird::status_exception&)
-		{
-			return isc_transliteration_failed;
-		}
-
-		if (len > 0 && err_position == 0)
-			return isc_transliteration_failed;
-
-		/* hand the text off to the next stage of the filter */
-
-		status = caller(isc_blob_filter_put_segment, control, result_length,
-						aux->ctlaux_buffer1, NULL);
-
-		if (status)
-			return status;
-
-		aux->ctlaux_buffer1_unused = len - err_position;
-
-		if (aux->ctlaux_buffer1_unused != 0)
-			memmove(aux->ctlaux_buffer1, p + err_position, aux->ctlaux_buffer1_unused);
-
-		/* update local control variables for segment length */
-
-		if (result_length > control->ctl_max_segment)
-			control->ctl_max_segment = result_length;
-
-		control->ctl_total_length += result_length;
-		control->ctl_number_segments++;
 
 		return FB_SUCCESS;
 	}
