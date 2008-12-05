@@ -1029,5 +1029,9 @@ enum burp_messages_vals {
 	msgVerbose_restore_collation	= 216
 };
 
+
+// BLOB buffer
+typedef Firebird::HalfStaticArray<UCHAR, 1024> BlobBuffer;
+
 #endif // BURP_BURP_H 
 

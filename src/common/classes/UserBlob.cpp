@@ -223,7 +223,7 @@ bool UserBlob::putData(size_t len, const void* buffer, size_t& real_len)
 	return true;
 }
 
-bool UserBlob::getInfo(size_t items_size, const UCHAR* blr_items,
+bool UserBlob::getInfo(size_t items_size, const UCHAR* items,
 						size_t info_size, UCHAR* blob_info) const
 {
 	if (!m_blob || m_direction != dir_read)
@@ -235,7 +235,7 @@ bool UserBlob::getInfo(size_t items_size, const UCHAR* blr_items,
 	// That the API declares the second param as non const is a bug.
 	FB_API_HANDLE blob = m_blob;
 	return !isc_blob_info(m_status, &blob,
-							in_len, reinterpret_cast<const char*>(blr_items),
+							in_len, reinterpret_cast<const char*>(items),
 							out_len, reinterpret_cast<char*>(blob_info));
 }
 

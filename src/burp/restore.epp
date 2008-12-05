@@ -1231,7 +1231,7 @@ bool get_acl(BurpGlobals*	tdgbl,
  *
  **************************************/
 
-	static const SCHAR blr_items[] = {isc_info_blob_max_segment,
+	static const UCHAR blr_items[] = {isc_info_blob_max_segment,
 					 isc_info_blob_total_length,
 					 isc_info_blob_num_segments};
 
@@ -1240,20 +1240,19 @@ bool get_acl(BurpGlobals*	tdgbl,
 	if (!blob_id->gds_quad_high && !blob_id->gds_quad_low)
 		return false;
 
-	ISC_STATUS_ARRAY status_vector;
 	// Open the blob and get it's vital statistics 
 
-	FB_API_HANDLE blob = 0;
+	ISC_STATUS_ARRAY status_vector;
+	UserBlob blob(status_vector);
 
-	if (isc_open_blob (status_vector, &DB,  &gds_trans, &blob, blob_id))
+	if (! blob.open(DB, gds_trans, *blob_id))
 	{
 		// msg 24 isc_open_blob failed 
 		BURP_error_redirect (status_vector, 24);
 	}
 
 	UCHAR blob_info[32];
-	if (isc_blob_info (status_vector,  &blob, sizeof(blr_items),
-				   blr_items, sizeof(blob_info), (SCHAR*) blob_info))
+	if (!blob.getInfo(sizeof(blr_items), blr_items, sizeof(blob_info), blob_info))
 	{
 		// msg 20 isc_blob_info failed 
 		BURP_error_redirect (status_vector, 20);
@@ -1297,18 +1296,22 @@ bool get_acl(BurpGlobals*	tdgbl,
 			// msg 79 don't understand blob info item %ld  
 			BURP_print (79, SafeArg() << int(item));
 			// CVC: do you return, without closing the blob, dear function???
-			if (isc_close_blob (status_vector,  &blob))
+			if (!blob.close())
+			{
 				BURP_error_redirect (status_vector, 23);
 				// msg 23 isc_close_blob failed
+			}
 			return false;
 		}
 	}
 
 	if (!length)
 	{
-		if (isc_close_blob (status_vector,  &blob))
+		if (!blob.close())
+		{
 			BURP_error_redirect (status_vector, 23);
 			// msg 23 isc_close_blob failed 
+		}
 		return false;
 	}
 
@@ -1321,23 +1324,20 @@ bool get_acl(BurpGlobals*	tdgbl,
 	** Allocate a buffer large enough for the largest segment and start
 	** grinding.
 	*/
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!max_segment || max_segment <= sizeof(static_buffer))
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (max_segment);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length);
 
-	USHORT return_length = 0;
-	isc_get_segment (status_vector, &blob, &return_length, max_segment,
-			(SCHAR*) buffer);
-	// CVC: we don't check the result of the function. We don't check the
-	// return_length's value either.
-
-	if (isc_close_blob (status_vector, &blob))
+	size_t return_length = 0;
+	if (!blob.getData(length, buffer, return_length))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
+		// msg 22 gds_$get_segment failed
+		BURP_error_redirect (status_vector, 22);
+	}
+	// protect ourself
+	length = return_length;
+
+	if (!blob.close())
+	{
 		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23);
 	}
@@ -1348,7 +1348,8 @@ bool get_acl(BurpGlobals*	tdgbl,
 	const UCHAR* c_1 = (UCHAR*) owner_nm;
 	const UCHAR owner_nm_len = strlen(owner_nm);
 
-	UCHAR* new_buffer = BURP_alloc (length - id_person_len + owner_nm_len);
+	BlobBuffer new_static_buffer;
+	UCHAR* new_buffer = new_static_buffer.getBuffer(length - id_person_len + owner_nm_len);
 
 	from = buffer;
 	UCHAR* to = new_buffer;
@@ -1357,7 +1358,7 @@ bool get_acl(BurpGlobals*	tdgbl,
 	*to++ = *from++; // copy id_person 
 	*to++ = owner_nm_len;
 	
-	USHORT new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
+	size_t new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
 	// from = buffer + id_person_len + 4; redundant, see 2nd loop below.
 	for (SLONG cnt = 0; cnt < owner_nm_len; cnt++)
 	{
@@ -1372,44 +1373,23 @@ bool get_acl(BurpGlobals*	tdgbl,
 		new_len++;
 	}
 
-	isc_blob_handle	blob_handle = 0;
-	if (isc_create_blob2 (status_vector, &DB, &gds_trans,
-						  &blob_handle, new_blob_id, 0, NULL))
+	if (!blob.create(DB, gds_trans, *new_blob_id))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 37 isc_create_blob failed 
 		BURP_error_redirect (status_vector, 37);
 	}
 
-	if (isc_put_segment (status_vector, &blob_handle, new_len,
-		reinterpret_cast<const SCHAR*>(new_buffer)))
+	if (!blob.putData(new_len, new_buffer))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 38 isc_put_segment failed 
 		BURP_error_redirect (status_vector, 38);
 	}
 
-	if (isc_close_blob (status_vector, &blob_handle))
+	if (!blob.close())
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23);
 	}
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
-
-	if (new_buffer != NULL)
-		BURP_free (new_buffer);
 
 	return true;
 }
@@ -1996,12 +1976,8 @@ void get_blob(BurpGlobals* tdgbl,
 	}
 
 	// Allocate blob buffer if static buffer is too short
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!max_segment || max_segment <= sizeof(static_buffer))
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (max_segment);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(max_segment);
 
 	// Eat up blob segments 
 
@@ -2023,9 +1999,6 @@ void get_blob(BurpGlobals* tdgbl,
 	if (!blob.close())
 		BURP_error_redirect (status_vector, 23);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 
@@ -2044,10 +2017,8 @@ void get_blr_blob(BurpGlobals*	tdgbl,
  *	shiney, new blob.
  *
  **************************************/
-	ISC_STATUS_ARRAY	status_vector;
-	UCHAR		*buffer, static_buffer[1024];
 
-	ULONG length = (ULONG) get_numeric(tdgbl);
+	size_t length = get_numeric(tdgbl);
 
 	// Create new blob 
 
@@ -2057,6 +2028,7 @@ void get_blr_blob(BurpGlobals*	tdgbl,
 	else
 		local_trans = gds_trans;
 
+	ISC_STATUS_ARRAY	status_vector;
 	UserBlob blob(status_vector);
 	if (!blob.create(DB, local_trans, blob_id))
 	{
@@ -2064,16 +2036,8 @@ void get_blr_blob(BurpGlobals*	tdgbl,
 		// msg 37 isc_create_blob failed 
 	}
 
-	// Allocate blob buffer if static buffer is too short 
-
-	/* 03 Jun 2003. Nickolay Samofatov. Workaround bug of GCC 3.2.X #11068.
-	Original code was:
-	if (!length || length + 1 <= (USHORT)(sizeof(static_buffer)) )
-	*/
-	if (length + 1 <= sizeof(static_buffer) )
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (length + 1);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length + 1);
 
 	if (length)
 	{
@@ -2085,7 +2049,7 @@ void get_blr_blob(BurpGlobals*	tdgbl,
 		}
 	}
 
-	if (!blob.putSegment(length, buffer))
+	if (!blob.putData(length, buffer))
 	{
 		BURP_error_redirect (status_vector, 38);
 		// msg 38 isc_put_segment failed 
@@ -2094,9 +2058,6 @@ void get_blr_blob(BurpGlobals*	tdgbl,
 	if (!blob.close())
 		BURP_error_redirect (status_vector, 23);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 bool get_character_set(BurpGlobals* tdgbl)
@@ -4579,7 +4540,7 @@ void get_misc_blob(BurpGlobals* tdgbl,
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	const USHORT length = (USHORT) get_numeric(tdgbl);
+	size_t length = get_numeric(tdgbl);
 
 	// Create new blob
 
@@ -4597,19 +4558,15 @@ void get_misc_blob(BurpGlobals* tdgbl,
 	}
 
 	// Allocate blob buffer if static buffer is too short 
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (length);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length);
 
 	if (length)
 	{
 		get_block(tdgbl, buffer, length);
 	}
 
-	if (!blob.putSegment(length, buffer))
+	if (!blob.putData(length, buffer))
 	{
 		BURP_error_redirect (status_vector, 38);
 		// msg 38 isc_put_segment failed 
@@ -4618,9 +4575,6 @@ void get_misc_blob(BurpGlobals* tdgbl,
 	if (!blob.close())
 		BURP_error_redirect (status_vector, 23);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 SLONG get_numeric(BurpGlobals* tdgbl)
@@ -5921,12 +5875,8 @@ void get_source_blob(BurpGlobals*	tdgbl,
 	}
 
 	// Allocate blob buffer if static buffer is too short 
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (length);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length);
 
 	while (length)
 	{
@@ -5947,9 +5897,6 @@ void get_source_blob(BurpGlobals*	tdgbl,
 	if (!blob.close())
 		BURP_error_redirect (status_vector, 23);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 USHORT get_text(BurpGlobals* 	tdgbl,
