@@ -745,7 +745,7 @@ namespace {
 			}
 		}
 
-		operator FILE*() { return f;}
+		operator FILE*() { return f; }
 		bool operator!() { return !f; }
 
 	private:

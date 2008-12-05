@@ -137,7 +137,7 @@ private:
 #define SEM_FAILED ((sem_t*) (-1))
 #endif
 
-#if defined(DARWIN) && !defined(DARWIN64) || defined(HPUX)
+#if (defined(DARWIN) && !defined(DARWIN64)) || defined(HPUX)
 		if (sem == (sem_t*) SEM_FAILED) {
 #else
 		if (sem == SEM_FAILED) {
