@@ -148,6 +148,11 @@ void	store_blr_gen_id (const TEXT*, SINT64, const ISC_QUAD*);
 void	update_global_field();
 void	update_view_dbkey_lengths();
 void	general_on_error();
+bool	blobPutData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, 
+					const UCHAR* buffer);
+bool	blobGetData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, 
+					UCHAR* buffer, size_t* real_len);
+
 #ifdef DEBUG
 UCHAR	debug_on = 0;   // able to turn this on in the debugger 
 #endif
@@ -1245,23 +1250,20 @@ bool get_acl (const TEXT	*owner_nm,
 	** Allocate a buffer large enough for the largest segment and start
 	** grinding.
 	*/
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!max_segment || max_segment <= sizeof(static_buffer))
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (max_segment);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length);
 
-	USHORT return_length = 0;
-	isc_get_segment (status_vector, &blob, &return_length, max_segment,
-			(SCHAR*) buffer);
-	// CVC: we don't check the result of the function. We don't check the
-	// return_length's value either.
+	size_t return_length = 0;
+	if (!blobGetData(status_vector, &blob, length, buffer, &return_length))
+	{
+		// msg 22 gds_$get_segment failed
+		BURP_error_redirect (status_vector, 22, NULL, NULL);
+	}
+	// protect ourself
+	length = return_length;
 
 	if (isc_close_blob (status_vector, &blob))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
 		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23, NULL, NULL);
 	}
@@ -1272,7 +1274,8 @@ bool get_acl (const TEXT	*owner_nm,
 	const UCHAR* c_1 = (UCHAR*) owner_nm;
 	const UCHAR owner_nm_len = strlen(owner_nm);
 
-	UCHAR* new_buffer = BURP_alloc (length - id_person_len + owner_nm_len);
+	BlobBuffer new_static_buffer;
+	UCHAR* new_buffer = new_static_buffer.getBuffer(length - id_person_len + owner_nm_len);
 
 	from = buffer;
 	UCHAR* to = new_buffer;
@@ -1281,7 +1284,7 @@ bool get_acl (const TEXT	*owner_nm,
 	*to++ = *from++; // copy id_person 
 	*to++ = owner_nm_len;
 	
-	USHORT new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
+	size_t new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
 	// from = buffer + id_person_len + 4; redundant, see 2nd loop below.
 	for (SLONG cnt = 0; cnt < owner_nm_len; cnt++)
 	{
@@ -1300,40 +1303,21 @@ bool get_acl (const TEXT	*owner_nm,
 	if (isc_create_blob2 (status_vector, &DB, &gds_trans,
 						  &blob_handle, new_blob_id, 0, NULL))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 37 isc_create_blob failed 
 		BURP_error_redirect (status_vector, 37, 0, 0);
 	}
 
-	if (isc_put_segment (status_vector, &blob_handle, new_len,
-		reinterpret_cast<const SCHAR*>(new_buffer)))
+	if (!blobPutData(status_vector, &blob_handle, new_len, new_buffer))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 38 isc_put_segment failed 
 		BURP_error_redirect (status_vector, 38, 0, 0);
 	}
 
 	if (isc_close_blob (status_vector, &blob_handle))
 	{
-		if (buffer != static_buffer)
-			BURP_free (buffer);
-		if (new_buffer != NULL)
-			BURP_free (new_buffer);
 		// msg 23 isc_close_blob failed 
 		BURP_error_redirect (status_vector, 23, 0, 0);
 	}
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
-
-	if (new_buffer != NULL)
-		BURP_free (new_buffer);
 
 	return true;
 }
@@ -1922,12 +1906,8 @@ void get_blob (const burp_fld* fields,
 	}
 
 	// Allocate blob buffer if static buffer is too short
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!max_segment || max_segment <= sizeof(static_buffer))
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (max_segment);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(max_segment);
 
 	// Eat up blob segments 
 
@@ -1950,9 +1930,6 @@ void get_blob (const burp_fld* fields,
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 
@@ -1971,11 +1948,10 @@ void get_blr_blob (ISC_QUAD	*blob_id,
  *
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
-	UCHAR		*buffer, static_buffer[1024], *p;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	ULONG length = (ULONG)get_numeric();
+	size_t length = get_numeric();
 
 	// Create new blob 
 
@@ -1992,20 +1968,12 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 		// msg 37 isc_create_blob failed 
 	}
 
-	// Allocate blob buffer if static buffer is too short 
-
-	/* 03 Jun 2003. Nickolay Samofatov. Workaround bug of GCC 3.2.X #11068.
-	Original code was:
-	if (!length || length + 1 <= (USHORT)(sizeof(static_buffer)) )
-	*/
-	if (length + 1 <= sizeof(static_buffer) )
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (length + 1);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length + 1);
 
 	if (length)
 	{
-		p = get_block(tdgbl, buffer, length);
+		UCHAR* p = get_block(tdgbl, buffer, length);
 		// Make sure it has an eoc 
 		if (p[-1] != blr_eoc) {
 			p[0] = blr_eoc;
@@ -2013,8 +1981,7 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 		}
 	}
 
-	if (isc_put_segment (status_vector, &blob, length,
-		reinterpret_cast<const SCHAR*>(buffer)))
+	if (!blobPutData (status_vector, &blob, length, buffer))
 	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
 		// msg 38 isc_put_segment failed 
@@ -2023,9 +1990,6 @@ void get_blr_blob (ISC_QUAD	*blob_id,
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 bool get_character_set()
@@ -4423,8 +4387,7 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 		get_block(tdgbl, buffer, length);
 	}
 
-	if (isc_put_segment (status_vector, &blob, length,
-		reinterpret_cast<const SCHAR*>(buffer)))
+	if (!blobPutData(status_vector, &blob, length, buffer))
 	{
 		BURP_error_redirect (status_vector, 38, 0, 0);
 		// msg 38 isc_put_segment failed 
@@ -4433,9 +4396,6 @@ void get_misc_blob (ISC_QUAD	*blob_id,
 	if (isc_close_blob (status_vector, &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 SLONG get_numeric()
@@ -5428,12 +5388,8 @@ void get_source_blob (
 	}
 
 	// Allocate blob buffer if static buffer is too short 
-	UCHAR static_buffer[1024];
-	UCHAR* buffer;
-	if (!length || length <= (USHORT)(sizeof(static_buffer)) )
-		buffer = static_buffer;
-	else
-		buffer = BURP_alloc (length);
+	BlobBuffer static_buffer;
+	UCHAR* buffer = static_buffer.getBuffer(length);
 
 	while (length)
 	{
@@ -5455,9 +5411,6 @@ void get_source_blob (
 	if (isc_close_blob (status_vector,  &blob))
 		BURP_error_redirect (status_vector, 23, 0, 0);
 		// msg 23 isc_close_blob failed 
-
-	if (buffer != static_buffer)
-		BURP_free (buffer);
 }
 
 USHORT get_text (
@@ -7216,6 +7169,79 @@ void update_view_dbkey_lengths()
 	END_ERROR;
 
 	MISC_release_request_silent(req_handle2);
+}
+
+const size_t SEGMENT_LIMIT = MAX_USHORT;
+
+bool blobPutData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, const UCHAR* buffer)
+{
+/**************************************
+ *
+ *	b l o b P u t D a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	Put buffer into blob using as big segments as possible
+ *
+ **************************************/
+	if (!blob || !*blob)
+		return false;
+
+	if (len > 0 && !buffer)
+		return false;
+
+	const char* buf2 = reinterpret_cast<const char*>(buffer);
+	while (len)
+	{
+		USHORT ilen = static_cast<USHORT>(len > SEGMENT_LIMIT ? SEGMENT_LIMIT : len);
+		if (isc_put_segment(status_vector, blob, ilen, buf2))
+			return false;
+
+		len -= ilen;
+		buf2 += ilen;
+	}
+	return true;
+}
+
+bool blobGetData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, UCHAR* buffer, 
+					size_t* real_len)
+{
+/**************************************
+ *
+ *	b l o b G e t D a t a
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get blob data into buffer
+ *
+ **************************************/
+	if (!blob || !*blob)
+		return false;
+
+	if (!len || !buffer)
+		return false;
+
+	bool rc = false;
+	real_len = 0;
+	char* buf2 = reinterpret_cast<char*>(buffer);
+	while (len)
+	{
+		USHORT olen = 0;
+		USHORT ilen = static_cast<USHORT>(len > SEGMENT_LIMIT ? SEGMENT_LIMIT : len);
+		if (!isc_get_segment(status_vector, blob, &olen, ilen, buf2)
+			|| status_vector[1] == isc_segment)
+		{
+			len -= olen;
+			buf2 += olen;
+			real_len += olen;
+			rc = true;
+		}
+		else
+			break;
+	}
+	return rc;
 }
 
 

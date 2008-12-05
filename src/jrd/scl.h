@@ -26,7 +26,7 @@
 
 namespace Jrd {
 
-const size_t ACL_BLOB_BUFFER_SIZE = 4096; /* used to read/write acl blob */
+const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; /* used to read/write acl blob */
 
 /* Security class definition */
 

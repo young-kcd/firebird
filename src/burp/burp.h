@@ -36,6 +36,7 @@
 #include "../burp/misc_proto.h"
 #include "../jrd/gds_proto.h"
 #include "../jrd/thd.h"
+#include "../common/classes/array.h"
 	
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -997,6 +998,10 @@ enum burp_messages_vals {
 	msgErr_restore_collation		= 215,
 	msgVerbose_restore_collation	= 216
 };
+
+
+// BLOB buffer
+typedef Firebird::HalfStaticArray<UCHAR, 1024> BlobBuffer;
 
 #endif // BURP_BURP_H 
 
