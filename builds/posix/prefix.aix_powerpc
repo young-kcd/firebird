@@ -18,6 +18,8 @@
 # Compiler settings for AIX 5.3 (powerpc)
 #
 
+# non-firebird libraries have .a extension
+SHRLIB_FOREIGN_EXT=	.a
 
 # compiler flags for GCC.
 # 2008-10-16 no joy with gcc 4.0.0
