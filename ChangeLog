@@ -1,3 +1,283 @@
+2008-12-05 16:06  alexpeshkoff
+
+	* firebird2/src/: burp/burp.h (1.96), burp/restore.epp (1.149),
+	common/classes/UserBlob.cpp (1.8), common/classes/UserBlob.h (1.6),
+	jrd/scl.h (1.25):
+
+	Fixed CORE-2223: Multiple bugs in gbak when working with ACLs
+
+2008-12-05 15:21  alexpeshkoff
+
+	* firebird2/src/jrd/Relation.cpp (1.16):
+
+	misc
+
+2008-12-05 14:53  alexpeshkoff
+
+	* firebird2/builds/posix/: make.defaults (1.71), prefix.aix_powerpc
+	(1.3):
+
+	AIX port
+
+2008-12-05 11:22  robocop
+
+	* firebird2/: lang_helpers/gds_codes.ftn (1.90),
+	lang_helpers/gds_codes.pas (1.90), src/misc/codes.epp (1.29):
+
+	It's nonsense to clean the generated files by hand if the generator
+	program is not fixed (codes.epp was producing text that didn't
+	match 100% the manual cleanup of the include/gen/*.h files).
+
+2008-12-05 02:19  asfernandes
+
+	* firebird2/src/: alice/exe.cpp (1.56), alice/tdr.cpp (1.58),
+	burp/canonical.cpp (1.40), burp/misc.cpp (1.21), burp/mvol.cpp
+	(1.53), common/StatusArg.cpp (1.17), common/StatusHolder.cpp (1.6),
+	common/UtilSvc.cpp (1.10), common/cvt.cpp (1.7),
+	common/fb_exception.cpp (1.45), common/thd.cpp (1.2),
+	common/utils.cpp (1.55), common/classes/BaseStream.cpp (1.3),
+	common/classes/ClumpletReader.cpp (1.32),
+	common/classes/ClumpletWriter.cpp (1.28),
+	common/classes/MetaName.cpp (1.9), common/classes/MsgPrint.cpp
+	(1.7), common/classes/SafeArg.cpp (1.9),
+	common/classes/TempFile.cpp (1.15), common/classes/alloc.cpp
+	(1.115), common/classes/class_perf.cpp (1.18),
+	common/classes/class_test.cpp (1.28), common/classes/fb_string.cpp
+	(1.41), common/classes/locks.cpp (1.18),
+	common/classes/semaphore.cpp (1.3), common/classes/string_test.cpp
+	(1.5), common/classes/timestamp.cpp (1.21),
+	common/config/config.cpp (1.92), common/config/config_file.cpp
+	(1.32), common/config/dir_list.cpp (1.37),
+	config/AdminException.cpp (1.11), config/ArgsException.cpp (1.7),
+	config/Configuration.cpp (1.7), config/FileName.cpp (1.6),
+	config/InputStream.cpp (1.5), config/Stream.cpp (1.9),
+	config/StreamSegment.cpp (1.5), dsql/StmtNodes.cpp (1.6),
+	dsql/dsql.cpp (1.264), dsql/errd.cpp (1.52), dsql/hsh.cpp (1.43),
+	dsql/keywords.cpp (1.76), dsql/movd.cpp (1.23), dsql/pass1.cpp
+	(1.425), dsql/preparse.cpp (1.47), dsql/user_dsql.cpp (1.57),
+	dudley/ddl.cpp (1.44), dudley/expand.cpp (1.32),
+	dudley/generate.cpp (1.23), dudley/hsh.cpp (1.21), dudley/parse.cpp
+	(1.54), dudley/trn.cpp (1.41), extlib/ib_udf.cpp (1.12),
+	extlib/fbudf/fbudf.cpp (1.33), gpre/ada.cpp (1.54), gpre/c_cxx.cpp
+	(1.72), gpre/cmd.cpp (1.45), gpre/cme.cpp (1.48), gpre/cmp.cpp
+	(1.39), gpre/cob.cpp (1.68), gpre/dyntable.cpp (1.11), gpre/exp.cpp
+	(1.43), gpre/fbrmclib.cpp (1.7), gpre/ftn.cpp (1.65), gpre/gpre.cpp
+	(1.92), gpre/gpre_meta_boot.cpp (1.53), gpre/hsh.cpp (1.25),
+	gpre/int_cxx.cpp (1.42), gpre/jrdmet.cpp (1.23), gpre/movg.cpp
+	(1.13), gpre/msc.cpp (1.26), gpre/par.cpp (1.71), gpre/pas.cpp
+	(1.56), gpre/pat.cpp (1.30), gpre/pretty.cpp (1.35), gpre/rmc.cpp
+	(1.10), gpre/sqe.cpp (1.54), gpre/sql.cpp (1.72), intl/cv_big5.cpp
+	(1.18), intl/cv_gb2312.cpp (1.16), intl/cv_jis.cpp (1.22),
+	intl/cv_ksc.cpp (1.19), intl/cv_unicode_fss.cpp (1.13),
+	intl/kanji.cpp (1.11), intl/lc_ascii.cpp (1.26), intl/lc_big5.cpp
+	(1.15), intl/lc_gb2312.cpp (1.9), intl/lc_narrow.cpp (1.37),
+	intl/ld.cpp (1.38), intl/utils/maptest.cpp (1.6), isql/ColList.cpp
+	(1.3), isql/Extender.cpp (1.4), isql/OptionsBase.cpp (1.3),
+	isql/isql_win.cpp (1.19), jrd/Collation.cpp (1.13),
+	jrd/DataTypeUtil.cpp (1.20), jrd/DatabaseSnapshot.cpp (1.73),
+	jrd/DebugInterface.cpp (1.10), jrd/IntlManager.cpp (1.31),
+	jrd/IntlUtil.cpp (1.21), jrd/PreparedStatement.cpp (1.12),
+	jrd/Relation.cpp (1.15), jrd/TempSpace.cpp (1.20), jrd/TextType.cpp
+	(1.9), jrd/ThreadStart.cpp (1.9), jrd/UserManagement.cpp (1.5),
+	jrd/all.cpp (1.54), jrd/alt.cpp (1.76), jrd/blb.cpp (1.183),
+	jrd/blob_filter.cpp (1.41), jrd/btn.cpp (1.27), jrd/btr.cpp
+	(1.218), jrd/builtin.cpp (1.12), jrd/cch.cpp (1.214), jrd/cvt.cpp
+	(1.101), jrd/cvt2.cpp (1.63), jrd/db_alias.cpp (1.21), jrd/dbg.cpp
+	(1.38), jrd/dbt.cpp (1.40), jrd/divorce.cpp (1.13), jrd/dmp.cpp
+	(1.38), jrd/dsc.cpp (1.33), jrd/enc.cpp (1.27), jrd/err.cpp (1.86),
+	jrd/event.cpp (1.77), jrd/evl_string_test.cpp (1.11), jrd/exe.cpp
+	(1.278), jrd/execute_statement.cpp (1.42), jrd/ext.cpp (1.83),
+	jrd/filters.cpp (1.66), jrd/flu.cpp (1.67), jrd/functions.cpp
+	(1.36), jrd/gds.cpp (1.266), jrd/idx.cpp (1.144), jrd/inf.cpp
+	(1.89), jrd/intl.cpp (1.113), jrd/intl_builtin.cpp (1.43),
+	jrd/isc_file.cpp (1.120), jrd/jrd.cpp (1.491), jrd/mov.cpp (1.38),
+	jrd/nav.cpp (1.73), jrd/nbak.cpp (1.85), jrd/ods.cpp (1.2),
+	jrd/opt.cpp (1.326), jrd/pag.cpp (1.194), jrd/par.cpp (1.220),
+	jrd/plugin_manager.cpp (1.25), jrd/pwd.cpp (1.75), jrd/qatest.cpp
+	(1.25), jrd/rpb_chain.cpp (1.13), jrd/rse.cpp (1.161), jrd/sdl.cpp
+	(1.53), jrd/sdw.cpp (1.83), jrd/sha.cpp (1.9), jrd/shut.cpp (1.62),
+	jrd/sort.cpp (1.115), jrd/sqz.cpp (1.29), jrd/status.cpp (1.18),
+	jrd/svc.cpp (1.247), jrd/tpc.cpp (1.36), jrd/unicode_util.cpp
+	(1.41), jrd/validation.cpp (1.41), jrd/extds/InternalDS.cpp (1.15),
+	jrd/os/darwin/mod_loader.cpp (1.11), jrd/os/posix/config_root.cpp
+	(1.17), jrd/os/posix/fbsyslog.cpp (1.9), jrd/os/posix/isc_ipc.cpp
+	(1.33), jrd/os/posix/mod_loader.cpp (1.9),
+	jrd/os/posix/path_utils.cpp (1.15), jrd/os/posix/unix.cpp (1.109),
+	jrd/os/vms/extvms.cpp (1.31), jrd/os/vms/vmsevent.cpp (1.20),
+	jrd/os/vms/vmslock.cpp (1.13), jrd/os/win32/fbsyslog.cpp (1.13),
+	jrd/os/win32/isc_ipc.cpp (1.22), jrd/os/win32/mod_loader.cpp
+	(1.11), jrd/os/win32/path_utils.cpp (1.17),
+	jrd/os/win32/thd_priority.cpp (1.36), jrd/os/win32/winnt.cpp
+	(1.77), lock/driver.cpp (1.22), lock/print.cpp (1.74),
+	misc/blrtable.cpp (1.40), misc/makeHeader.cpp (1.7),
+	misc/memtest.cpp (1.6), qli/all.cpp (1.34), qli/command.cpp (1.28),
+	qli/compile.cpp (1.30), qli/dtr.cpp (1.59), qli/eval.cpp (1.50),
+	qli/exe.cpp (1.58), qli/expand.cpp (1.38), qli/format.cpp (1.37),
+	qli/gener.cpp (1.42), qli/hsh.cpp (1.20), qli/lex.cpp (1.42),
+	qli/mov.cpp (1.44), qli/parse.cpp (1.44), qli/picstr.cpp (1.31),
+	qli/report.cpp (1.20), remote/inet_server.cpp (1.88),
+	remote/protocol.cpp (1.73), remote/remote.cpp (1.73),
+	remote/xdr.cpp (1.43), remote/xnet.cpp (1.122),
+	remote/os/win32/chop.cpp (1.8), remote/os/win32/ibconfig.cpp
+	(1.25), remote/os/win32/property.cpp (1.22),
+	remote/os/win32/srvr_w32.cpp (1.61), remote/os/win32/window.cpp
+	(1.35), remote/os/win32/wnet.cpp (1.62), utilities/analyse.cpp
+	(1.16), utilities/create_db.cpp (1.11), utilities/nbackup.cpp
+	(1.75), utilities/print_event.cpp (1.10),
+	utilities/fbcpl/ctrlpan.cpp (1.3), utilities/fbcpl/fbpanel.cpp
+	(1.6), utilities/gsec/call_service.cpp (1.19),
+	utilities/gsec/gsec.cpp (1.101), utilities/gstat/ppg.cpp (1.33),
+	utilities/guard/guard.cpp (1.22), utilities/guard/util.cpp (1.17),
+	utilities/ibmgr/ibmgr.cpp (1.31), utilities/ibmgr/srvrmgr.cpp
+	(1.35), utilities/install/install.cpp (1.13),
+	utilities/install/install_client.cpp (1.11),
+	utilities/install/install_reg.cpp (1.15),
+	utilities/install/install_svc.cpp (1.39),
+	utilities/install/services.cpp (1.25),
+	utilities/rebuild/rebuild.cpp (1.26), vulcan/PathName.cpp (1.8),
+	vulcan/RefObject.cpp (1.4):
+
+	Remove trailing spaces (.cpp files)
+
+2008-12-05 02:02  asfernandes
+
+	* firebird2/src/intl/ld.h (1.27):
+
+	Misc
+
+2008-12-05 01:55  asfernandes
+
+	* firebird2/src/: alice/alice.h (1.62), alice/aliceswi.h (1.24),
+	auth/trusted/AuthSspi.h (1.11), burp/backu_proto.h (1.8),
+	burp/burp.h (1.95), burp/burp_proto.h (1.24), burp/burpswi.h
+	(1.27), burp/canon_proto.h (1.10), burp/mvol_proto.h (1.12),
+	burp/spit.h (1.11), burp/std_desc.h (1.10), common/StatusArg.h
+	(1.14), common/StatusHolder.h (1.3), common/UtilSvc.h (1.11),
+	common/utils_proto.h (1.28), common/classes/Aligner.h (1.4),
+	common/classes/ClumpletReader.h (1.22),
+	common/classes/ClumpletWriter.h (1.14), common/classes/GenericMap.h
+	(1.19), common/classes/MetaName.h (1.9), common/classes/MsgPrint.h
+	(1.3), common/classes/RefCounted.h (1.16),
+	common/classes/RefMutex.h (1.2), common/classes/SafeArg.h (1.6),
+	common/classes/TriState.h (1.5), common/classes/alloc.h (1.80),
+	common/classes/array.h (1.56), common/classes/auto.h (1.20),
+	common/classes/fb_atomic.h (1.13), common/classes/fb_pair.h (1.16),
+	common/classes/fb_string.h (1.17), common/classes/fb_tls.h (1.19),
+	common/classes/init.h (1.14), common/classes/locks.h (1.51),
+	common/classes/objects_array.h (1.24), common/classes/rwlock.h
+	(1.37), common/classes/semaphore.h (1.61),
+	common/classes/sparse_bitmap.h (1.24), common/classes/stack.h
+	(1.24), common/classes/timestamp.h (1.18), common/classes/tree.h
+	(1.74), common/config/config.h (1.51), common/config/config_file.h
+	(1.16), common/config/config_impl.h (1.19),
+	common/config/dir_list.h (1.22), config/ConfObj.h (1.7),
+	config/ConfObject.h (1.8), config/ConfigFile.h (1.9),
+	config/Element.h (1.8), config/FileName.h (1.6), config/InputFile.h
+	(1.9), config/InputStream.h (1.8), config/Lex.h (1.10),
+	config/Stream.h (1.8), config/StreamSegment.h (1.7), dsql/Parser.h
+	(1.8), dsql/array_proto.h (1.16), dsql/ddl_proto.h (1.17),
+	dsql/dsql.h (1.145), dsql/dsql_proto.h (1.21), dsql/errd_proto.h
+	(1.15), dsql/make_proto.h (1.33), dsql/node.h (1.119), dsql/sqlda.h
+	(1.12), dsql/sym.h (1.15), dsql/user__proto.h (1.13),
+	extlib/fbudf/fbudf.h (1.12), gpre/cdbtable.h (1.3), gpre/gpreswi.h
+	(1.20), gpre/hsh.h (1.12), gpre/pat.h (1.10),
+	include/fb_api_proto.h (1.7), include/fb_exception.h (1.34),
+	include/firebird.h (1.48), include/memory_routines.h (1.12),
+	include/gen/autoconfig_msvc.h (1.111), include/gen/codetext.h
+	(1.100), include/gen/iberror.h (1.104), include/gen/ids.h (1.36),
+	include/gen/msg_facs.h (1.17), include/gen/msgs.h (1.128),
+	include/gen/sql_code.h (1.106), include/gen/sql_state.h (1.33),
+	intl/charsets.h (1.14), intl/country_codes.h (1.4), intl/cv_ksc.h
+	(1.10), intl/cv_narrow.h (1.8), intl/lc_big5.h (1.8),
+	intl/lc_narrow.h (1.13), intl/ld.h (1.26), intl/charsets/cs_437.h
+	(1.6), intl/charsets/cs_737.h (1.5), intl/charsets/cs_775.h (1.5),
+	intl/charsets/cs_850.h (1.6), intl/charsets/cs_852.h (1.6),
+	intl/charsets/cs_857.h (1.6), intl/charsets/cs_858.h (1.5),
+	intl/charsets/cs_860.h (1.6), intl/charsets/cs_861.h (1.6),
+	intl/charsets/cs_862.h (1.5), intl/charsets/cs_863.h (1.6),
+	intl/charsets/cs_864.h (1.5), intl/charsets/cs_865.h (1.6),
+	intl/charsets/cs_866.h (1.5), intl/charsets/cs_869.h (1.5),
+	intl/charsets/cs_big5.h (1.5), intl/charsets/cs_cyrl.h (1.5),
+	intl/charsets/cs_gb2312.h (1.7), intl/charsets/cs_iso8859_1.h
+	(1.5), intl/charsets/cs_iso8859_13.h (1.5),
+	intl/charsets/cs_iso8859_2.h (1.5), intl/charsets/cs_iso8859_3.h
+	(1.5), intl/charsets/cs_iso8859_4.h (1.5),
+	intl/charsets/cs_iso8859_5.h (1.5), intl/charsets/cs_iso8859_6.h
+	(1.5), intl/charsets/cs_iso8859_7.h (1.5),
+	intl/charsets/cs_iso8859_8.h (1.5), intl/charsets/cs_iso8859_9.h
+	(1.5), intl/charsets/cs_jis_0208_1990.h (1.5),
+	intl/charsets/cs_koi8r.h (1.2), intl/charsets/cs_koi8u.h (1.2),
+	intl/charsets/cs_ksc5601.h (1.5), intl/charsets/cs_next.h (1.5),
+	intl/charsets/cs_sjis.h (1.5), intl/charsets/cs_w1250.h (1.6),
+	intl/charsets/cs_w1251.h (1.6), intl/charsets/cs_w1252.h (1.6),
+	intl/charsets/cs_w1253.h (1.6), intl/charsets/cs_w1254.h (1.6),
+	intl/charsets/cs_w1255.h (1.5), intl/charsets/cs_w1256.h (1.5),
+	intl/charsets/cs_w1257.h (1.5), intl/charsets/cs_w1258.h (1.2),
+	intl/collations/bl88591da0.h (1.6), intl/collations/bl88591es0.h
+	(1.6), intl/collations/bl88591no0.h (1.6),
+	intl/collations/blNEXTes0.h (1.6), intl/collations/db437es1.h
+	(1.6), intl/collations/db850es0.h (1.6), intl/collations/db852cz0.h
+	(1.6), intl/collations/pd852hundc.h (1.6),
+	intl/collations/pw1250czech.h (1.6), intl/collations/pw1250hun.h
+	(1.6), intl/collations/pw1250hundc.h (1.6),
+	intl/collations/pw1252span.h (1.6), isql/ColList.h (1.3),
+	isql/Extender.h (1.2), isql/InputDevices.h (1.4), isql/isql.h
+	(1.69), isql/isql_proto.h (1.25), isql/isql_win.h (1.7),
+	isql/isqlw_proto.h (1.4), jrd/DataTypeUtil.h (1.12), jrd/Database.h
+	(1.31), jrd/DebugInterface.h (1.8), jrd/GlobalRWLock.h (1.22),
+	jrd/RecordNumber.h (1.13), jrd/Relation.h (1.8), jrd/TempSpace.h
+	(1.12), jrd/TextType.h (1.5), jrd/ThreadData.h (1.6), jrd/acl.h
+	(1.6), jrd/align.h (1.9), jrd/alt_proto.h (1.18), jrd/blob_filter.h
+	(1.17), jrd/blp.h (1.38), jrd/blr.h (1.42), jrd/btn.h (1.20),
+	jrd/btr.h (1.48), jrd/cch.h (1.43), jrd/common.h (1.185),
+	jrd/constants.h (1.57), jrd/dflt.h (1.7), jrd/drq.h (1.27),
+	jrd/dsc.h (1.41), jrd/dsc2.h (1.12), jrd/dyn.h (1.39), jrd/entry.h
+	(1.34), jrd/evl_string.h (1.30), jrd/exe.h (1.130), jrd/ext.h
+	(1.15), jrd/flu.h (1.15), jrd/gds_proto.h (1.49), jrd/gdsassert.h
+	(1.19), jrd/ibase.h (1.139), jrd/idx.h (1.19), jrd/inf_pub.h
+	(1.28), jrd/intl.h (1.19), jrd/intlobj_new.h (1.20),
+	jrd/isc_f_proto.h (1.25), jrd/jrd.h (1.255), jrd/jrd_proto.h
+	(1.73), jrd/jrd_pwd.h (1.34), jrd/lck.h (1.45), jrd/license.h
+	(1.43), jrd/met.h (1.14), jrd/msg_encode.h (1.5), jrd/nav_proto.h
+	(1.18), jrd/nbak.h (1.34), jrd/nod.h (1.31), jrd/ntrace.h (1.4),
+	jrd/ods.h (1.47), jrd/opt_proto.h (1.15), jrd/pag.h (1.21),
+	jrd/perf_proto.h (1.7), jrd/plugin_manager.h (1.22),
+	jrd/relations.h (1.26), jrd/req.h (1.83), jrd/rpb_chain.h (1.14),
+	jrd/rse.h (1.57), jrd/sbm.h (1.11), jrd/scl.h (1.24),
+	jrd/scroll_cursors.h (1.8), jrd/sdw.h (1.11), jrd/sha.h (1.3),
+	jrd/sort.h (1.38), jrd/svc.h (1.69), jrd/tra.h (1.93), jrd/trig.h
+	(1.25), jrd/unicode_util.h (1.16), jrd/val.h (1.40),
+	jrd/why_proto.h (1.53), jrd/extds/ExtDS.h (1.16),
+	jrd/extds/InternalDS.h (1.10), jrd/extds/IscDS.h (1.13),
+	jrd/os/config_root.h (1.20), jrd/os/mod_loader.h (1.8),
+	jrd/os/path_utils.h (1.14), jrd/os/pio.h (1.25), jrd/os/pio_proto.h
+	(1.33), jrd/os/thd_priority.h (1.28), lock/lock.h (1.49), qli/blk.h
+	(1.15), qli/compile.h (1.9), qli/dtr.h (1.31), qli/err_proto.h
+	(1.9), qli/exe.h (1.25), qli/format.h (1.13), qli/parse.h (1.11),
+	qli/proc_ddl.h (1.2), qli/procddl1.h (1.2), qli/procddl2.h (1.2),
+	qli/procddl3.h (1.2), qli/procddl4.h (1.4), qli/report.h (1.9),
+	remote/inter_proto.h (1.23), remote/protocol.h (1.47),
+	remote/remote.h (1.84), remote/serve_proto.h (1.17),
+	remote/xdr_proto.h (1.15), utilities/fbcpl/ctrlpan.h (1.4),
+	utilities/fbcpl/fbdialog.h (1.7), utilities/fbcpl/fbpanel.h (1.5),
+	utilities/fbcpl/resource.h (1.3), utilities/gsec/call_service.h
+	(1.4), utilities/gsec/gsec.h (1.35), utilities/gsec/gsecswi.h
+	(1.11), utilities/gsec/secur_proto.h (1.9),
+	utilities/guard/util_proto.h (1.7), utilities/ibmgr/ibmgr.h (1.16),
+	utilities/ibmgr/ibmgrswi.h (1.7), utilities/ibmgr/srvrmgr_proto.h
+	(1.5), utilities/install/install_proto.h (1.3),
+	utilities/rebuild/rebuild.h (1.5), vulcan/PathName.h (1.8),
+	vulcan/RefObject.h (1.7):
+
+	Remove trailing spaces (.h files)
+
+2008-12-05 01:17  asfernandes
+
+	* firebird2/src/common/: utils.cpp (1.54), classes/semaphore.h
+	(1.60):
+
+	Misc
+
 2008-12-04 11:44  dimitr
 
 	* firebird2/src/jrd/DatabaseSnapshot.cpp (1.72):
