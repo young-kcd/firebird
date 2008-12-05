@@ -28,6 +28,7 @@
 #include "../jrd/idx_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
+#include "../jrd/vio_debug.h"
 
 using namespace Jrd;
 
@@ -211,8 +212,8 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 				printf("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
 					newPages->rel_instance_id,
 					newPages->rel_index_root,
-					idx_id,
-					idx.idx_root,
+					idx->idx_id,
+					idx->idx_root,
 					newPages);
 			}
 #endif
