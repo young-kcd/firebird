@@ -1,3 +1,11 @@
+2008-12-05 19:13  alexpeshkoff
+
+	* firebird2/src/: burp/burp.h (1.72.4.3), burp/restore.epp
+	(1.101.4.3), jrd/scl.h (1.13.4.3):
+
+	Backported fix for CORE-2223: Multiple bugs in gbak when working
+	with ACLs
+
 2008-12-03 15:32  paulbeach
 
 	* firebird2/builds/install/arch-specific/darwin/aliases.conf.in
