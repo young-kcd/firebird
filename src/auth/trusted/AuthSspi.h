@@ -48,7 +48,7 @@ public:
 	AuthSspi();
 	~AuthSspi();
 
-	// true when has non-empty security context, 
+	// true when has non-empty security context,
 	// ready to be sent to the other side
 	bool isActive() const
 	{
@@ -57,7 +57,7 @@ public:
 
 	// prepare security context to be sent to the server (used by client)
 	bool request(DataHolder& data);
-	
+
 	// accept security context from the client (used by server)
 	bool accept(DataHolder& data);
 

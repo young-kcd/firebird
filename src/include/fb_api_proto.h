@@ -369,7 +369,7 @@ typedef ISC_STATUS ISC_EXPORT_VARARG prototype_isc_start_transaction(ISC_STATUS 
 typedef ISC_STATUS ISC_EXPORT_VARARG prototype_isc_reconnect_transaction(ISC_STATUS *,
                                                    isc_db_handle *,
                                                    isc_tr_handle *,
-                                                   short, 
+                                                   short,
                                                    const char*);
 
 typedef ISC_LONG ISC_EXPORT prototype_isc_sqlcode(const ISC_STATUS*);

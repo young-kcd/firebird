@@ -124,12 +124,12 @@ const UCHAR PIOB_pending	= 4;	/* Asynchronous I/O not yet completed */
 
 static const int ZERO_BUF_SIZE = 1024 * 128;
 
-class HugeStaticBuffer 
+class HugeStaticBuffer
 {
 public:
 	explicit HugeStaticBuffer(MemoryPool& p)
-		: zeroArray(p), 
-		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE)) 
+		: zeroArray(p),
+		  zeroBuff(zeroArray.getBuffer(ZERO_BUF_SIZE))
 	{
 		memset(zeroBuff, 0, ZERO_BUF_SIZE);
 	}

@@ -94,7 +94,7 @@ public:
 	}
 
 	Lock*	lck_parent;
-	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks 
+	Lock*	lck_next;		/* lck_next and lck_prior form a doubly linked list of locks
 							   bound to attachment */
 	Lock*	lck_prior;
 	Lock*	lck_collision;	/* collisions in compatibility table */

@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Backup and Restore program  
+ *	PROGRAM:	JRD Backup and Restore program
  *	MODULE:		burp_proto.h
  *	DESCRIPTION:	Prototype header file for burp.cpp
  *

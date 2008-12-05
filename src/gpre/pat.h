@@ -24,8 +24,8 @@
 #ifndef GPRE_PAT_H
 #define GPRE_PAT_H
 
-/* 
-Substitution codes: 
+/*
+Substitution codes:
 
     RH	Request handle
     RL	Request level

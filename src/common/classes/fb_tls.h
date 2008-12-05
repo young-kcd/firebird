@@ -25,7 +25,7 @@
  *
  *
  */
- 
+
 #ifndef CLASSES_FB_TLS_H
 #define CLASSES_FB_TLS_H
 
@@ -73,7 +73,7 @@ public:
 			system_call_failed::raise("TlsFree");
 	}
 private:
-	DWORD key;	
+	DWORD key;
 };
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
@@ -83,9 +83,9 @@ private:
 // 14-Jul-2004 Nickolay Samofatov.
 //
 // Unfortunately, compiler-assisted TLS doesn't work with dynamic link libraries
-// loaded via LoadLibrary - it intermittently crashes and these crashes are 
+// loaded via LoadLibrary - it intermittently crashes and these crashes are
 // documented by MS. We may still use it for server binaries, but it requires
-// some changes in build environment. Let's defer this till later point and 
+// some changes in build environment. Let's defer this till later point and
 // think of reliable mean to prevent linking of DLL with code below (if enabled).
 //
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
@@ -126,7 +126,7 @@ public:
 			system_call_failed::raise("pthread_key_delete");
 	}
 private:
-	pthread_key_t key;	
+	pthread_key_t key;
 };
 #else //SOLARIS_MT
 #include <thread.h>
@@ -174,7 +174,7 @@ public:
 		/* Do nothing if no pthread_key_delete */
 	}
 private:
-	thread_key_t key;	
+	thread_key_t key;
 };
 
 

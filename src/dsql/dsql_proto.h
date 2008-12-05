@@ -60,7 +60,7 @@ ISC_STATUS DSQL_fetch(Jrd::thread_db*,
 					  Jrd::dsql_req*,
 					  USHORT, const UCHAR*,
 					  USHORT, USHORT, UCHAR*);
-#endif // SCROLLABLE_CURSORS 
+#endif // SCROLLABLE_CURSORS
 void DSQL_free_statement(Jrd::thread_db*,
 						 Jrd::dsql_req*,
 						 USHORT);

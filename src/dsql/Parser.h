@@ -66,12 +66,12 @@ private:
 		dsql_fil* g_file;
 		YYSTYPE g_field_name;
 		int dsql_debug;
-	
+
 		// Actual lexer state begins from here
 
 		// hvlad: if at some day 16 levels of nesting would be not enough
-		// then someone must add LexerState constructor and pass memory 
-		// pool into Stack's constructor or change Capacity value in template 
+		// then someone must add LexerState constructor and pass memory
+		// pool into Stack's constructor or change Capacity value in template
 		// instantiation below
 		Firebird::Stack<const TEXT*> beginnings;
 		const TEXT* ptr;

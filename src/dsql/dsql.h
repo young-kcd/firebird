@@ -26,7 +26,7 @@
  *   collisions between dropping and redefining the udf concurrently.
  *   This closes SF Bug# 409769.
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
- * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
  * Adriano dos Santos Fernandes
  */
@@ -115,10 +115,10 @@ public:
 //! Database Block
 typedef Firebird::SortedArray
 	<
-		dsql_intlsym*, 
-		Firebird::EmptyStorage<dsql_intlsym*>, 
+		dsql_intlsym*,
+		Firebird::EmptyStorage<dsql_intlsym*>,
 		SSHORT,
-		dsql_intlsym, 
+		dsql_intlsym,
 		Firebird::DefaultComparator<SSHORT>
 	> IntlSymArray;
 
@@ -141,8 +141,8 @@ public:
 	USHORT			dbb_minor_version;	// minor ODS version number
 	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
-	explicit dsql_dbb(MemoryPool& p) : 
-		dbb_pool(p), dbb_charsets_by_id(p, 16) 
+	explicit dsql_dbb(MemoryPool& p) :
+		dbb_pool(p), dbb_charsets_by_id(p, 16)
 	{}
 
 	~dsql_dbb();
@@ -183,7 +183,7 @@ public:
 enum rel_flags_vals {
 	REL_new_relation	= 1, //!< relation exists in sys tables, not committed yet
 	REL_dropped			= 2, //!< relation has been dropped
-	REL_view			= 4, //!< relation is a view 
+	REL_view			= 4, //!< relation is a view
 	REL_external		= 8, //!< relation is an external table
 	REL_creating		= 16 //!< we are creating the bare relation in memory
 };
@@ -366,7 +366,7 @@ enum REQ_TYPE
 	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
 	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL, REQ_EMBED_SELECT,
 	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
-	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT, 
+	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT,
 	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
 };
 
@@ -418,7 +418,7 @@ protected:
 	{
 	}
 
-	// To avoid posix warning about missing public destructor declare 
+	// To avoid posix warning about missing public destructor declare
 	// MemoryPool as friend class. In fact IT releases request memory!
 	friend class Firebird::MemoryPool;
 };
@@ -501,13 +501,13 @@ public:
 	void clearCTEs();
 	void checkUnusedCTEs() const;
 
-	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via 
-	// CTE name or via alias. We need to substitute this aliases when processing CTE 
-	// member to resolve field names. Therefore we store all aliases in order of 
-	// occurence and later use it in backward order (since our parser is right-to-left). 
-	// We also need to repeat this process if main select expression contains union with 
+	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via
+	// CTE name or via alias. We need to substitute this aliases when processing CTE
+	// member to resolve field names. Therefore we store all aliases in order of
+	// occurence and later use it in backward order (since our parser is right-to-left).
+	// We also need to repeat this process if main select expression contains union with
 	// recursive CTE
-	void addCTEAlias(const dsql_str* alias) 
+	void addCTEAlias(const dsql_str* alias)
 	{
 		req_cte_aliases.add(alias);
 	}
@@ -530,7 +530,7 @@ public:
 		psql = value;
 	}
 
-	dsql_nod* req_blk_node;		//!< exec_block node 
+	dsql_nod* req_blk_node;		//!< exec_block node
 	dsql_rel* req_relation;	//!< relation created by this request (for DDL)
 	dsql_prc* req_procedure;	//!< procedure created by this request (for DDL)
 	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
@@ -759,8 +759,8 @@ public:
 };
 
 /*! \var unsigned DSQL_debug
-    \brief Debug level 
-    
+    \brief Debug level
+
     0       No output
     1       Display output tree in PASS1_statment
     2       Display input tree in PASS1_statment

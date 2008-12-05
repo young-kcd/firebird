@@ -82,7 +82,7 @@ struct safe_cell
 		at_str,
 		at_ptr
 	};
-	
+
 	struct safe_str
 	{
 		const char* s_string;

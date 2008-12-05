@@ -62,7 +62,7 @@ public:
 
 	typedef Firebird::Array<SegmentInMemory> Segments;
 
-	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, 
+	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize,
 		Segments& segments);
 
 	bool validate(offset_t& freeSize) const;
@@ -79,7 +79,7 @@ private:
 		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
 
 		virtual char* inMemory(offset_t offset, size_t size) const = 0;
-		virtual bool sameFile(const TempFile* file) const = 0; 
+		virtual bool sameFile(const TempFile* file) const = 0;
 
 		Block *prev;
 		Block *next;
@@ -102,7 +102,7 @@ private:
 
 			return NULL;
 		}
-		
+
 		bool sameFile(const TempFile* file) const
 		{
 			return false;
@@ -151,7 +151,7 @@ private:
 	{
 	public:
 		Segment(Segment* _next, offset_t _position, offset_t _size) :
-			next(_next), position(_position), size(_size) 
+			next(_next), position(_position), size(_size)
 		{}
 
 		Segment* next;

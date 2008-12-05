@@ -52,7 +52,7 @@
 #define blr_varying		(unsigned char)37
 #define blr_varying2		(unsigned char)38	/* added in 3.2 JPN */
 #define blr_blob		(unsigned short)261
-#define blr_cstring		(unsigned char)40     	
+#define blr_cstring		(unsigned char)40
 #define blr_cstring2    	(unsigned char)41	/* added in 3.2 JPN */
 #define blr_blob_id     	(unsigned char)45	/* added from gds.h */
 #define blr_sql_date		(unsigned char)12
@@ -262,7 +262,7 @@
 #define blr_record_version	(unsigned char)154	/* get tid of record */
 #define blr_stall		(unsigned char)155	/* fake server stall */
 
-//#define blr_seek_no_warn	(unsigned char)156	
+//#define blr_seek_no_warn	(unsigned char)156
 //#define blr_find_dbkey_version	(unsigned char)157   /* find dbkey with record version */
 #define blr_ansi_all		(unsigned char)158   /* required for NULL handling */
 

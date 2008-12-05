@@ -29,8 +29,8 @@
 
 /* BLOb Subtype definitions */
 
-/* Subtypes < 0  are user defined 
- * Subtype  0    means "untyped" 
+/* Subtypes < 0  are user defined
+ * Subtype  0    means "untyped"
  * Subtypes > 0  are Firebird defined
  */
 
@@ -72,11 +72,11 @@ const char* const NULL_ROLE = "NONE";
 const char* const ADMIN_ROLE = "RDB$ADMIN";
 
 // User name assigned to any user granted USR_locksmith rights.
-// If this name is changed, modify also the trigger in 
+// If this name is changed, modify also the trigger in
 // jrd/grant.gdl (which turns into jrd/trig.h.
 const char* const SYSDBA_USER_NAME = "SYSDBA";
 
-// This temporary set of flags is needed to implement minimum form of 
+// This temporary set of flags is needed to implement minimum form of
 // ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
 // Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
 const SSHORT ROLE_FLAG_MAY_TRUST	= 2;
@@ -145,7 +145,7 @@ const int PRETTY_BUFFER_SIZE = 1024;
 const int MAX_INDEX_SEGMENTS = 16;
 
 // Maximum index key length
-// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp 
+// AB: If the maximum key-size will change, don't forget dyn.h and dba.epp
 // which cannot use these defines.
 const ULONG MAX_KEY			= 4096;		// Maximum page size possible divide by 4 (16384 / 4)
 const int MAX_KEY_PRE_ODS11	= 255;		// Max key-size before ODS11

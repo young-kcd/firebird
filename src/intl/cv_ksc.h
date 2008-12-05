@@ -23,7 +23,7 @@
 
 /*
 *	KSC-5601 -> unicode
-*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting 
+*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting
 *	KSC-5601 to EUC is not needed.
 */
 

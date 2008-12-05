@@ -43,7 +43,7 @@ typedef Firebird::SparseBitmap<ULONG> PageBitmap;
 typedef Firebird::SparseBitmap<ULONG> UInt32Bitmap;
 
 // Please do not try to turn these macros to inline routines simply.
-// They are used in very performance-sensitive places and we don't want 
+// They are used in very performance-sensitive places and we don't want
 // pool thread-specific pool pointer be expanded unless necessary.
 //
 // Only if you kill thread-specific pool usage (which is certainly incorrect now)

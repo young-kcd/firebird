@@ -79,7 +79,7 @@ inline const char* Extender::getBuffer() const
 {
 	return m_buf;
 }
-	
+
 // It uses the current insertion point to calculate an offset from the base address.
 // This is in turn the number of effective bytes in use from the whole allocation.
 inline size_t Extender::getUsed() const

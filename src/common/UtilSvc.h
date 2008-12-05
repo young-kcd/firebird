@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird utilities interface
  *	MODULE:			UtilSvc.h
- *	DESCRIPTION:	Interface making it possible to use same code 
+ *	DESCRIPTION:	Interface making it possible to use same code
  *					as both utility or service
  *
  *  The contents of this file are subject to the Initial

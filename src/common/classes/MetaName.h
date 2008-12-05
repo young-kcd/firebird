@@ -25,7 +25,7 @@
  *
  *
  */
- 
+
 #ifndef METANAME_H
 #define METANAME_H
 
@@ -39,16 +39,16 @@ class MetaName
 private:
 	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
-	
+
 	void init()
 	{
 		memset(data, 0, MAX_SQL_IDENTIFIER_SIZE);
 	}
 	MetaName& set(const MetaName& m)
 	{
-		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE); 
+		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE);
 		count = m.count;
-		return *this; 
+		return *this;
 	}
 
 public:
@@ -62,7 +62,7 @@ public:
 	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
 	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
-	
+
 	MetaName& assign(const char* s, size_t l);
 	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
@@ -102,7 +102,7 @@ class LoopMetaName : public Firebird::MetaName
 	bool flag;
 	char* target;
 public:
-	LoopMetaName(char* s) : Firebird::MetaName(s), 
+	LoopMetaName(char* s) : Firebird::MetaName(s),
 		flag(true), target(s) { }
 	~LoopMetaName() { strcpy(target, c_str()); }
 	operator bool() const { return flag; }

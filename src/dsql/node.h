@@ -448,7 +448,7 @@ enum node_args {
 	e_exec_stmt_tran,
 	e_exec_stmt_privs,
 	e_exec_stmt_count,
-	
+
 	e_exec_stmt_inputs_sql = 0,	// nod_exec_stmt_inputs
 	e_exec_stmt_inputs_params,
 	e_exec_stmt_inputs_count,
@@ -607,7 +607,7 @@ enum node_args {
 	e_era_rse,
 	e_era_return,
 	e_era_count,
-	
+
 	e_asgn_value = 0,       // nod_assign
 	e_asgn_field,
 	e_asgn_count,
@@ -998,10 +998,10 @@ enum node_args {
 	e_mod_role_count,
 
 	e_del_user_name = 0,			// nod_del_user
-	e_del_user_count, 
-	
+	e_del_user_count,
+
 	e_user_name = 0, 				// nod_add(mod)_user
-	e_user_passwd, 
+	e_user_passwd,
 	e_user_first,
 	e_user_middle,
 	e_user_last,
@@ -1068,7 +1068,7 @@ enum nod_flags_vals {
 	NOD_PROTECTED			= 2,
 	NOD_READ				= 4,
 	NOD_WRITE				= 8,
-	
+
 	NOD_NO_AUTO_UNDO        = 1, // nod_tra_misc
 	NOD_IGNORE_LIMBO        = 2,
 	NOD_RESTART_REQUESTS    = 4,

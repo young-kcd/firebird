@@ -86,15 +86,15 @@ const USHORT PROTOCOL_VERSION10	= 10;
 const USHORT FB_PROTOCOL_FLAG = 0x8000;
 const USHORT FB_PROTOCOL_MASK = static_cast<USHORT>(~FB_PROTOCOL_FLAG);
 
-// Protocol 11 has support for user authentication related 
-// operations (op_update_account_info, op_authenticate_user and 
+// Protocol 11 has support for user authentication related
+// operations (op_update_account_info, op_authenticate_user and
 // op_trusted_auth). When specific operation is not supported,
 // we say "sorry".
 
 const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 
-// Protocol 12 has support for asynchronous call op_cancel. 
-// Currently implemented asynchronously only for TCP/IP 
+// Protocol 12 has support for asynchronous call op_cancel.
+// Currently implemented asynchronously only for TCP/IP
 // on superserver and superclassic.
 
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
@@ -292,14 +292,14 @@ enum P_OP
 	op_rollback_retaining	= 86,
 
 	// Two following opcode are used in vulcan.
-	// No plans to implement them completely for a while, but to 
+	// No plans to implement them completely for a while, but to
 	// support protocol 11, where they are used, have them here.
 	op_update_account_info	= 87,
 	op_authenticate_user	= 88,
 
 	op_partial				= 89,	// packet is not complete - delay processing
 	op_trusted_auth			= 90,
-	
+
 	op_cancel				= 91,
 
 	op_max
@@ -579,7 +579,7 @@ typedef struct p_slr
     UCHAR* p_slr_sdl;			/* *** not transfered *** */
     USHORT	p_slr_sdl_length;	/* *** not transfered *** */
 } P_SLR;
- 
+
 /* DSQL structure definitions */
 
 typedef struct p_sqlst

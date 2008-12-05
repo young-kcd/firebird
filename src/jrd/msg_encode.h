@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Access Method
- *	MODULE:		msg_encode.h	
+ *	MODULE:		msg_encode.h
  *	DESCRIPTION:	Message encoding definition file
  *
  * The contents of this file are subject to the Interbase Public

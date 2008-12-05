@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		canon_proto.h		
+ *	MODULE:		canon_proto.h
  *	DESCRIPTION:	Prototype Header file for canonical.cpp
  *
  * The contents of this file are subject to the Interbase Public

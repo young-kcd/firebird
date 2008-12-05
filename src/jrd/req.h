@@ -58,7 +58,7 @@ class thread_db;
 
 struct record_param
 {
-	record_param() : 
+	record_param() :
 		rpb_relation(0),
 		rpb_window(DB_PAGE_SPACE, -1)
 		{}
@@ -122,7 +122,7 @@ const USHORT RPB_s_no_data	= 0x4;		// nobody is going to access the data
 #define CLEAR_NULL(record, id)	record->rec_data [id >> 3] &= ~(1 << (id & 7))
 #define TEST_NULL(record, id)	record->rec_data [id >> 3] &   (1 << (id & 7))
 
-const int MAX_DIFFERENCES	= 1024;	/* Max length of generated Differences string 
+const int MAX_DIFFERENCES	= 1024;	/* Max length of generated Differences string
 									   between two records */
 
 /* Store allocation policy types.  Parameter to DPM_store() */
@@ -211,7 +211,7 @@ public:
 	Firebird::MemoryStats req_memory_stats;
 	vec<jrd_req*>*	req_sub_requests;	// vector of sub-requests
 
-	// Transaction pointer and doubly linked list pointers for requests in this 
+	// Transaction pointer and doubly linked list pointers for requests in this
 	// transaction. Maintained by TRA_attach_request/TRA_detach_request.
 	jrd_tra*	req_transaction;
 	jrd_req*	req_tra_next;
@@ -310,9 +310,9 @@ public:
 // Size of request without rpb items at the tail. Used to calculate impure area size
 //
 // 24-Mar-2004, Nickolay Samofatov.
-// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to 
+// Note it may be not accurate on 64-bit RISC targets with 32-bit pointers due to
 // alignment quirks, but from quick glance on code it looks like it should not be
-// causing problems. Good fix for this kludgy behavior is to use some C++ means 
+// causing problems. Good fix for this kludgy behavior is to use some C++ means
 // to manage impure area and array of record parameter blocks
 const size_t REQ_SIZE = sizeof(jrd_req) - sizeof(jrd_req::blk_repeat_type);
 

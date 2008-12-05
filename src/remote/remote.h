@@ -106,8 +106,8 @@ public:
 
 public:
 	Rdb() :
-		rdb_id(0), rdb_flags(0), rdb_handle(0), 
-		rdb_port(0), rdb_transactions(0), rdb_requests(0), 
+		rdb_id(0), rdb_flags(0), rdb_handle(0),
+		rdb_port(0), rdb_transactions(0), rdb_requests(0),
 		rdb_events(0), rdb_sql_requests(0), rdb_status_vector(0)
 	{
 	}
@@ -127,7 +127,7 @@ struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
 
 public:
 	Rtr() :
-		rtr_rdb(0), rtr_next(0), rtr_blobs(0), 
+		rtr_rdb(0), rtr_next(0), rtr_blobs(0),
 		rtr_handle(0), rtr_id(0), rtr_limbo(0)
 	{ }
 
@@ -163,10 +163,10 @@ public:
 
 public:
 	Rbl() :
-		rbl_data(getPool()), rbl_rdb(0), rbl_rtr(0), rbl_next(0), 
-		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_handle(0), 
-		rbl_offset(0), rbl_id(0), rbl_flags(0), 
-		rbl_buffer_length(BLOB_LENGTH), rbl_length(0), rbl_fragment_length(0), 
+		rbl_data(getPool()), rbl_rdb(0), rbl_rtr(0), rbl_next(0),
+		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_handle(0),
+		rbl_offset(0), rbl_id(0), rbl_flags(0),
+		rbl_buffer_length(BLOB_LENGTH), rbl_length(0), rbl_fragment_length(0),
 		rbl_source_interp(0), rbl_target_interp(0)
 	{ }
 
@@ -188,8 +188,8 @@ struct Rvnt : public Firebird::GlobalStorage
 
 public:
 	Rvnt() :
-		rvnt_next(0), rvnt_rdb(0), rvnt_ast(0), 
-		rvnt_arg(0), rvnt_id(0), rvnt_rid(0), 
+		rvnt_next(0), rvnt_rdb(0), rvnt_ast(0),
+		rvnt_arg(0), rvnt_id(0), rvnt_rid(0),
 		rvnt_port(0), rvnt_items(0), rvnt_length(0)
 	{ }
 };
@@ -217,14 +217,14 @@ struct rem_fmt : public Firebird::GlobalStorage
 
 public:
 	explicit rem_fmt(size_t rpt) :
-		fmt_length(0), fmt_net_length(0), fmt_count(0), 
+		fmt_length(0), fmt_net_length(0), fmt_count(0),
 		fmt_version(0), fmt_desc(getPool(), rpt)
 	{
 		fmt_desc.grow(rpt);
 	}
 };
 
-/* Windows declares a msg structure, so rename the structure 
+/* Windows declares a msg structure, so rename the structure
    to avoid overlap problems. */
 
 typedef struct Message : public Firebird::GlobalStorage
@@ -242,7 +242,7 @@ public:
 	explicit Message(size_t rpt) :
 		msg_next(0),
 #ifdef SCROLLABLE_CURSORS
-		msg_prior(0), msg_absolute(0), 
+		msg_prior(0), msg_absolute(0),
 #endif
 		msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
 	{
@@ -264,7 +264,7 @@ struct Rpr : public Firebird::GlobalStorage
 
 public:
 	Rpr() :
-		rpr_rdb(0), rpr_rtr(0), rpr_handle(0), 
+		rpr_rdb(0), rpr_rtr(0), rpr_handle(0),
 		rpr_in_msg(0), rpr_out_msg(0), rpr_in_format(0), rpr_out_format(0)
 	{ }
 };
@@ -302,7 +302,7 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 public:
 #ifdef SCROLLABLE_CURSORS
 	enum {
-		BACKWARD = 1,			/* the cache was created in the backward direction */ 
+		BACKWARD = 1,			/* the cache was created in the backward direction */
 		ABSOLUTE_BACKWARD = 2,	/* rrq_absolute is measured from the end of the stream */
 		LAST_BACKWARD = 4		/* last time, the next level up asked for us to scroll in the backward direction */
 	};
@@ -310,10 +310,10 @@ public:
 
 public:
 	explicit Rrq(size_t rpt) :
-		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0), 
-		rrq_handle(0), rrq_id(0), rrq_max_msg(0), rrq_level(0), 
-		rrq_rpt(getPool(), rpt) 
-	{ 
+		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
+		rrq_handle(0), rrq_id(0), rrq_max_msg(0), rrq_level(0),
+		rrq_rpt(getPool(), rpt)
+	{
 		memset(rrq_status_vector, 0, sizeof rrq_status_vector);
 		rrq_rpt.grow(rpt);
 	}
@@ -409,8 +409,8 @@ public:
 public:
 	Rsr() :
 		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_handle(0),
-		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0), 
-		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0), 
+		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0),
+		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0)
 		{ }
@@ -439,7 +439,7 @@ private:
 
 public:
 	RemoteObject() { ptr.rdb = 0; }
-	
+
 	template <typename R>
 	R* get(R* r)
 	{
@@ -661,26 +661,26 @@ public:
 		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
 #endif
 		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0), 
-		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0), 
-		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic), 
+		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
+		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
+		port_type(t), port_state(PENDING), 	port_client_arch(arch_generic),
 		port_clients(0), port_next(0), port_parent(0), port_async(0), port_async_receive(0),
-		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0), 
-		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0), 
-		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0), 
+		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
+		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
+		port_dummy_timeout(0), port_status_vector(0), port_handle(0), port_channel(0),
 		port_context(0), port_ast(0),
 #ifdef WIN_NT
-		port_event(INVALID_HANDLE_VALUE), 
+		port_event(INVALID_HANDLE_VALUE),
 #endif
 #ifdef DEBUG_XDR_MEMORY
-		port_packet_vector(0), 
+		port_packet_vector(0),
 #endif
-		port_objects(getPool()), port_version(0), port_host(0), 
-		port_connection(0), port_user_name(0), port_passwd(0), port_protocol_str(0), 
-		port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0), 
-		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0), 
+		port_objects(getPool()), port_version(0), port_host(0),
+		port_connection(0), port_user_name(0), port_passwd(0), port_protocol_str(0),
+		port_address_str(0), port_rpr(0), port_statement(0), port_receive_rmtque(0),
+		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
 #ifdef REM_SERVER
-		port_queue(getPool()), port_qoffset(0), 
+		port_queue(getPool()), port_qoffset(0),
 #endif
 #ifdef TRUSTED_AUTH
 		port_trusted_auth(0),
@@ -778,7 +778,7 @@ public:
 				break;
 			}
 		}
-		
+
 		port_last_object_id = setHandle(object, static_cast<OBJCT>(i));
 		return port_last_object_id;
 	}
@@ -816,7 +816,7 @@ public:
 	{
 		Firebird::RefMutexGuard queGuard(*port_que_sync);
 		port_queue.clear();
-		port_qoffset = 0; 
+		port_qoffset = 0;
 		port_receive.x_private = port_receive.x_base;
 	}
 
@@ -828,7 +828,7 @@ public:
 		size_t save_qoffset;
 
 		RecvQueState(const rem_port* port)
-		{ 
+		{
 			save_handy = port->port_receive.x_handy;
 			save_private = port->port_receive.x_private - port->port_receive.x_base;
 			save_qoffset = port->port_qoffset;

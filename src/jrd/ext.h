@@ -48,7 +48,7 @@ public:
 	//USHORT	ext_record_length;	// Record length
 #ifdef VMS
 	USHORT	ext_file_type;		/* File type */
-	
+
 	USHORT	ext_index_count;	/* Number of indices */
 	UCHAR*	ext_indices;		/* Index descriptions */
 	UCHAR	ext_dbkey[8];		/* DBKEY */

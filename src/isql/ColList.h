@@ -52,7 +52,7 @@ public:
 	const item* find(const char* name) const;
 	bool find(const char* name, int* out_len) const;
 	size_t count() const;
-	
+
 private:
 	size_t m_count;
 	item* m_head;

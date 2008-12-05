@@ -2,7 +2,7 @@
  *	PROGRAM:	string class definition
  *	MODULE:		fb_string.h
  *	DESCRIPTION:	Provides almost that same functionality,
- *			that STL::basic_string<char> does, 
+ *			that STL::basic_string<char> does,
  *			but behaves MemoryPools friendly.
  *
  *  The contents of this file are subject to the Initial
@@ -55,13 +55,13 @@ namespace Firebird
 		typedef const_pointer const_iterator;
 		static const size_type npos;
 		enum {INLINE_BUFFER_SIZE = 32, INIT_RESERVE = 16/*, KEEP_SIZE = 512*/};
-		
+
 	protected:
 		typedef USHORT internal_size_type; // 16 bits!
 		char_type inlineBuffer[INLINE_BUFFER_SIZE];
 		char_type* stringBuffer;
 		internal_size_type stringLength, bufferSize;
-		
+
 	private:
 		inline void checkPos(size_type pos) const
 		{
@@ -69,7 +69,7 @@ namespace Firebird
 				fatal_exception::raise("Firebird::string - pos out of range");
 			}
 		}
-		
+
 		static inline void checkLength(size_type len)
 		{
 			if (len > max_length()) {
@@ -112,15 +112,15 @@ namespace Firebird
 		}
 
 		// Make sure our buffer is large enough to store at least <length> characters in it
-		// (not including null terminator). Resulting buffer is not initialized. 
+		// (not including null terminator). Resulting buffer is not initialized.
 		// Use it in constructors only when stringBuffer is not assigned yet.
 		void initialize(const size_type len)
 		{
 			if (len < INLINE_BUFFER_SIZE) {
 				stringBuffer = inlineBuffer;
 				bufferSize = INLINE_BUFFER_SIZE;
-			} 
-			else {				
+			}
+			else {
 				stringBuffer = NULL; // Be safe in case of exception
 				checkLength(len);
 
@@ -152,7 +152,7 @@ namespace Firebird
 
 		AbstractString(const AbstractString& v);
 
-		inline AbstractString() : 
+		inline AbstractString() :
 			stringBuffer(inlineBuffer), stringLength(0), bufferSize(INLINE_BUFFER_SIZE)
 		{
 			stringBuffer[0] = 0;
@@ -166,7 +166,7 @@ namespace Firebird
 			stringBuffer[0] = 0;
 		}
 
-		inline AbstractString(MemoryPool& p, const AbstractString& v) 
+		inline AbstractString(MemoryPool& p, const AbstractString& v)
 			: AutoStorage(p)
 		{
 			initialize(v.length());
@@ -449,7 +449,7 @@ namespace Firebird
 	{
 		typedef StringBase<Comparator> StringType;
 	protected:
-		inline StringBase<Comparator>(const_pointer p1, size_type n1, 
+		inline StringBase<Comparator>(const_pointer p1, size_type n1,
 						  const_pointer p2, size_type n2) :
 			   AbstractString(p1, n1, p2, n2) {}
 	private:

@@ -53,13 +53,13 @@ ISC_STATUS	REM_ddl(ISC_STATUS* user_status, struct Rdb** db_handle, struct Rtr**
 	USHORT blr_length, const UCHAR* blr);
 ISC_STATUS	REM_detach_database(ISC_STATUS* user_status, struct Rdb** handle);
 ISC_STATUS	REM_drop_database(ISC_STATUS* user_status, struct Rdb** handle);
-ISC_STATUS	REM_allocate_statement(ISC_STATUS* user_status, struct Rdb ** db_handle, 
+ISC_STATUS	REM_allocate_statement(ISC_STATUS* user_status, struct Rdb ** db_handle,
 	struct Rsr** stmt_handle);
 ISC_STATUS	REM_execute(ISC_STATUS* user_status, struct Rtr** rtr_handle,
 	struct Rsr** stmt_handle, USHORT blr_length, const UCHAR* blr,
 	USHORT msg_type, USHORT msg_length, UCHAR* msg);
 ISC_STATUS	REM_execute2(ISC_STATUS* user_status, struct Rtr** rtr_handle,
-	struct Rsr** stmt_handle, USHORT in_blr_length, const UCHAR* in_blr, 
+	struct Rsr** stmt_handle, USHORT in_blr_length, const UCHAR* in_blr,
 	USHORT in_msg_type, USHORT in_msg_length, UCHAR* in_msg,
 	USHORT out_blr_length, UCHAR* out_blr,
 	USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg);

@@ -58,13 +58,13 @@ namespace Jrd
 			}
 
 /*			explicit InternalModule(MemoryPool& p)
-				: useCount(0), handle(0), 
+				: useCount(0), handle(0),
 				originalName(p), loadName(p) { } */
-			InternalModule(MemoryPool& p, 
+			InternalModule(MemoryPool& p,
 						   ModuleLoader::Module* h,
-						   const Firebird::PathName& on, 
+						   const Firebird::PathName& on,
 						   const Firebird::PathName& ln)
-				: useCount(0), handle(h), 
+				: useCount(0), handle(h),
 				originalName(p, on), loadName(p, ln) { }
 
 			~InternalModule()
@@ -112,7 +112,7 @@ namespace Jrd
 		static Module lookupModule(const char*, bool);
 
 		static InternalModule* scanModule(const Firebird::PathName& name);
-			
+
 	public:
 		typedef Firebird::Array<InternalModule*> LoadedModules;
 

@@ -153,7 +153,7 @@ ISC_STATUS jrd8_fetch(ISC_STATUS*,
 					  Jrd::dsql_req**,
 					  USHORT, const SCHAR*,
 					  USHORT, USHORT, SCHAR*);
-#endif // SCROLLABLE_CURSORS 
+#endif // SCROLLABLE_CURSORS
 ISC_STATUS jrd8_free_statement(ISC_STATUS*,
 							   Jrd::dsql_req**,
 							   USHORT);

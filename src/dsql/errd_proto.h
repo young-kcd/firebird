@@ -34,5 +34,5 @@ void ERRD_post(const Firebird::Arg::StatusVector& v);
 bool ERRD_post_warning(const Firebird::Arg::StatusVector& v);
 void ERRD_punt(const ISC_STATUS* = 0);
 
-#endif // DSQL_ERRD_PROTO_H 
+#endif // DSQL_ERRD_PROTO_H
 

@@ -70,7 +70,7 @@ public:
 };
 
 // Thread entry point definitions might much better look in ThreadStart.h,
-// but due to need to have them in utilities declarations, and no need in 
+// but due to need to have them in utilities declarations, and no need in
 // gds__thread_start() there, placed here. AP 2007.
 
 #if defined(WIN_NT)

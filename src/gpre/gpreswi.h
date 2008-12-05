@@ -48,7 +48,7 @@
 #include "../jrd/common.h"
 
 
-/* 
+/*
  * Switch handling constants.  Note that IN_SW_COUNT must always be
  * one larger than the largest switch value
  */
@@ -89,7 +89,7 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_SQLDIALECT,	/* SQL dialect passed */
 
 	/* Added this to let gpre dump the lines that it is parsing to stderr
-	   FSG 14.Nov.2000 
+	   FSG 14.Nov.2000
 	*/
 	IN_SW_GPRE_VERBOSE,
 
@@ -110,7 +110,7 @@ enum gpre_cmd_switch
 	IN_SW_GPRE_RMCOBOL,
 
 	/*
-	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to 
+	 * Added to allow specification of a Cobol date format, other than ISC_QUAD, to be used to
 	 * deliver dates to Cobol programs
 	 */
 	IN_SW_GPRE_DATE_FMT,
@@ -122,13 +122,13 @@ enum gpre_cmd_switch
 	IN_SW_NO_QLI,
 #ifdef TRUSTED_AUTH
 	/*
-	 * Added to allow trusted authentication even with ISC_USER set in environment 
+	 * Added to allow trusted authentication even with ISC_USER set in environment
 	 */
 	IN_SW_GPRE_TRUSTED,
 #endif
 	IN_SW_GPRE_FETCH_PASS, /* fetch password to use from file */
 
-	/* As mentioned above: This should always be one larger than the largest 
+	/* As mentioned above: This should always be one larger than the largest
 	   switch value.
 	   FSG 14.Nov.2000
 	*/
@@ -162,7 +162,7 @@ static const in_sw_tab_t gpre_in_sw_table[] =
 	{IN_SW_GPRE_CXX		, 0, "CXX"			, 0, 0, 0, FALSE, 0, 0, "\t\textended C++ program"},
 	{IN_SW_GPRE_CPLUSPLUS, 0, "CPLUSPLUS"	, 0, 0, 0, FALSE, 0, 0, "\textended C++ program"},
 	{IN_SW_GPRE_D		, 0, "DATABASE"		, 0, 0, 0, FALSE, 0, 0, "\tdatabase declaration requires database name"},
-     
+
 	{IN_SW_GPRE_D_FLOAT	, 0, "D_FLOAT"		, 0, 0, 0, FALSE, 0, 0, "\t\tgenerate blr_d_float for doubles"},
 	{IN_SW_GPRE_E		, 0, "EITHER_CASE"	, 0, 0, 0, FALSE, 0, 0, "\taccept upper or lower case DML in C"},
 #ifdef GPRE_FORTRAN

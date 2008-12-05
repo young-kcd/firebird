@@ -68,7 +68,7 @@ namespace
 USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen);
 USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar,
 	USHORT iOutLen, BYTE *pOutChar, USHORT partial);
-SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
+SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
 	INTL_BOOL* error_flag);
 ULONG LC_NARROW_canonical(texttype* obj, ULONG srcLen, const UCHAR* src, ULONG dstLen, UCHAR* dst);
 void LC_NARROW_destroy(texttype* obj);

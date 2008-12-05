@@ -39,7 +39,7 @@ namespace Jrd {
 #ifdef SCROLLABLE_CURSORS
 exp_index_buf* NAV_expand_index(Jrd::win*, Jrd::irsb_nav*);
 #endif
-bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*, 
+bool NAV_get_record(Jrd::thread_db* tdbb, Jrd::RecordSource*, Jrd::irsb_nav*,
 					Jrd::record_param*, Jrd::rse_get_mode);
 
 #endif // JRD_NAV_PROTO_H

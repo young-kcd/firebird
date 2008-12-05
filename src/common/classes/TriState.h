@@ -110,7 +110,7 @@ inline bool TriState::toggle()
 {
 	if (!m_init)
 		return false;
-		
+
 	m_val = !m_val;
 	return true;
 }

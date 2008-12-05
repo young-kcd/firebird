@@ -69,7 +69,7 @@ public:
 	}
 
 private:
-	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection 
+	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection
 		(LPCRITICAL_SECTION lpCriticalSection);
 
 	static BOOL WINAPI notImpl(LPCRITICAL_SECTION)
@@ -122,7 +122,7 @@ public:
 #endif
 		LeaveCriticalSection(&spinlock);
 	}
-	
+
 public:
 	static void initMutexes() { }
 };
@@ -188,7 +188,7 @@ public:
 		if (mutex_unlock(&mlock))
 			system_call_failed::raise("mutex_unlock");
 	}
-	
+
 public:
 	static void initMutexes() { }
 };
@@ -242,7 +242,7 @@ public:
 		if (rc)
 			system_call_failed::raise("pthread_mutex_unlock", rc);
 	}
-	
+
 public:
 	static void initMutexes();
 };
@@ -290,14 +290,14 @@ public:
 class MutexLockGuard
 {
 public:
-	explicit MutexLockGuard(Mutex &alock) 
+	explicit MutexLockGuard(Mutex &alock)
 		: lock(&alock)
 	{
 		lock->enter();
 	}
 
-	~MutexLockGuard() 
-	{ 
+	~MutexLockGuard()
+	{
 		try {
 			lock->leave();
 		}

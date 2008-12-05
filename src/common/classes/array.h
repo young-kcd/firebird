@@ -23,7 +23,7 @@
  * Contributor(s): ______________________________________.
  * Adriano dos Santos Fernandes
  */
- 
+
 #ifndef CLASSES_ARRAY_H
 #define CLASSES_ARRAY_H
 
@@ -70,16 +70,16 @@ template <typename T, typename Storage = EmptyStorage<T> >
 class Array : protected Storage
 {
 public:
-	explicit Array(MemoryPool& p) 
+	explicit Array(MemoryPool& p)
 		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage()) { }
 
-	Array(MemoryPool& p, const size_t InitialCapacity) 
+	Array(MemoryPool& p, const size_t InitialCapacity)
 		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
 		ensureCapacity(InitialCapacity);
 	}
 
-	Array() : count(0), 
+	Array() : count(0),
 		capacity(this->getStorageSize()), data(this->getStorage()) { }
 	explicit Array(const size_t InitialCapacity)
 		: count(0), capacity(this->getStorageSize()), data(this->getStorage())
@@ -130,7 +130,7 @@ public:
 	typedef T* iterator;
 	typedef const T* const_iterator;
 
-	Array<T, Storage>& operator =(const Array<T, Storage>& source) 
+	Array<T, Storage>& operator =(const Array<T, Storage>& source)
 	{
 		copyFrom(source);
 		return *this;
@@ -346,7 +346,7 @@ public:
 	}
 
 	// clear array and release dinamically allocated memory
-	void free() 
+	void free()
 	{
 		clear();
 		freeData();
@@ -372,7 +372,7 @@ public:
 		size_t pos;	// ignored
 		return find(item, pos);
 	}
-	
+
 	// Member function only for some debugging tests. Hope nobody is bothered.
 	void swapElems()
 	{
@@ -412,9 +412,9 @@ protected:
 
 // Dynamic sorted array of simple objects
 template <typename Value,
-	typename Storage = EmptyStorage<Value>, 
-	typename Key = Value, 
-	typename KeyOfValue = DefaultKeyValue<Value>, 
+	typename Storage = EmptyStorage<Value>,
+	typename Key = Value,
+	typename KeyOfValue = DefaultKeyValue<Value>,
 	typename Cmp = DefaultComparator<Key> >
 class SortedArray : public Array<Value, Storage>
 {
@@ -462,10 +462,10 @@ class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> >
 {
 public:
 	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> > (p) {}
-	HalfStaticArray(MemoryPool& p, size_t InitialCapacity) : 
+	HalfStaticArray(MemoryPool& p, size_t InitialCapacity) :
 		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
 	HalfStaticArray() : Array<T, InlineStorage<T, InlineCapacity> > () {}
-	explicit HalfStaticArray(size_t InitialCapacity) : 
+	explicit HalfStaticArray(size_t InitialCapacity) :
 		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
 };
 

@@ -81,7 +81,7 @@ private:
 
 public:
 	explicit ConfigRoot(MemoryPool& p) : PermanentStorage(p),
-		root_dir(getPool()), config_file(getPool()) 
+		root_dir(getPool()), config_file(getPool())
 	{
 		GetRoot();
 		config_file = root_dir + string(CONFIG_FILE);
@@ -112,7 +112,7 @@ protected:
 	{
 		return config_file.c_str();
 	}
-	
+
 private:
 	static bool initialized;
 	static Firebird::InitInstance<string> install_dir;

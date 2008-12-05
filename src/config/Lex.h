@@ -63,7 +63,7 @@ public:
 		//IP_ADDRESS,
 		TT_NONE
 	};
-	
+
 	Lex(const char* punctuation, const LEX_flags debugFlags);
 	virtual ~Lex();
 

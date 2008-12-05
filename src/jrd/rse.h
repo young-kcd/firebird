@@ -164,9 +164,9 @@ public:
 	static void open(thread_db*, RecordSource*, irsb_recurse*);
 	static bool get(thread_db*, RecordSource*, irsb_recurse*);
 	static void close(thread_db*, RecordSource*, irsb_recurse*);
-	
-	enum mode { 
-		root, 
+
+	enum mode {
+		root,
 		recurse
 	};
 
@@ -264,7 +264,7 @@ const ULONG irsb_sim_active = 128;		// remote simulated stream request is active
 */
 
 // impure area format for navigational rsb type,
-// which holds information used to get back to 
+// which holds information used to get back to
 // the current location within an index
 
 struct irsb_nav
@@ -348,7 +348,7 @@ const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and g
 
 
 // Blocks used to compute optimal join order:
-// indexed relationships block (IRL) holds 
+// indexed relationships block (IRL) holds
 // information about potential join orders
 
 class IndexedRelationship : public pool_alloc<type_irl>
@@ -377,7 +377,7 @@ const int MAX_STREAMS	= 255;
 // hardcoded in several places such as TEST_DEP_ARRAYS macro
 const int OPT_STREAM_BITS	= 8;
 
-// Number of streams, conjuncts, indices that will be statically allocated 
+// Number of streams, conjuncts, indices that will be statically allocated
 // in various arrays. Larger numbers will have to be allocated dynamically
 const int OPT_STATIC_ITEMS = 16;
 
@@ -397,7 +397,7 @@ public:
 	//USHORT opt_g_flags;						// global flags
 	// 01 Oct 2003. Nickolay Samofatov: this static array takes as much as 256 bytes.
 	// This is nothing compared to original Firebird 1.5 OptimizerBlk structure size of ~180k
-	// All other arrays had been converted to dynamic to preserve memory 
+	// All other arrays had been converted to dynamic to preserve memory
 	// and improve performance
 	struct opt_segment
 	{

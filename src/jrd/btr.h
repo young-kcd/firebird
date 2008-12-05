@@ -157,14 +157,14 @@ struct temporary_key
 	USHORT key_length;
 	UCHAR key_data[MAX_KEY + 1];
 	UCHAR key_flags;
-	USHORT key_null_segment;	// index of first encountered null segment. 
-		// Evaluated in BTR_key only and used in IDX_create_index for better 
+	USHORT key_null_segment;	// index of first encountered null segment.
+		// Evaluated in BTR_key only and used in IDX_create_index for better
 		// error diagnostics
 
  /* AB: I don't see the use of multiplying with 2 anymore. */
-	//UCHAR key_data[MAX_KEY * 2];	
-		// This needs to be on a SHORT boundary. 
-		// This is because key_data is complemented as 
+	//UCHAR key_data[MAX_KEY * 2];
+		// This needs to be on a SHORT boundary.
+		// This is because key_data is complemented as
 		// (SSHORT *) if value is negative.
 		//  See compress() (JRD/btr.cpp) for more details
 };
@@ -172,9 +172,9 @@ struct temporary_key
 
 /* Index Sort Record -- fix part of sort record for index fast load */
 
-// hvlad: index_sort_record structure is stored in sort scratch file so we 
-// don't want to grow sort file with padding added by compiler to please 
-// alignment rules. 
+// hvlad: index_sort_record structure is stored in sort scratch file so we
+// don't want to grow sort file with padding added by compiler to please
+// alignment rules.
 // #pragma pack is supported at least by MSVC and GCC. Don't know about
 // other compilers, sorry
 

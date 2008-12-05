@@ -78,7 +78,7 @@ namespace Jrd
 	class TxPageCache;
 	class BackupManager;
 	class vcl;
- 
+
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 
 

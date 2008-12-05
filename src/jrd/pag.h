@@ -38,26 +38,26 @@
 #include "../common/classes/array.h"
 
 namespace Jrd {
- 
+
 /* Page control block -- used by PAG to keep track of critical
    constants */
 /**
 class PageControl : public pool_alloc<type_pgc>
 {
     public:
-	SLONG pgc_high_water;		// Lowest PIP with space 
-	SLONG pgc_ppp;				// Pages per pip 
-	SLONG pgc_pip;				// First pointer page 
-	ULONG pgc_bytes;			// Number of bytes of bit in PIP 
-	ULONG pgc_tpt;				// Transactions per TIP 
-	ULONG pgc_gpg;				// Generators per generator page 
+	SLONG pgc_high_water;		// Lowest PIP with space
+	SLONG pgc_ppp;				// Pages per pip
+	SLONG pgc_pip;				// First pointer page
+	ULONG pgc_bytes;			// Number of bytes of bit in PIP
+	ULONG pgc_tpt;				// Transactions per TIP
+	ULONG pgc_gpg;				// Generators per generator page
 };
 **/
 
 // page spaces below TEMP_PAGE_SPACE is regular database pages
 // TEMP_PAGE_SPACE and page spaces above TEMP_PAGE_SPACE is temporary pages
 const USHORT DB_PAGE_SPACE		= 1;
-const USHORT TEMP_PAGE_SPACE	= 256;	
+const USHORT TEMP_PAGE_SPACE	= 256;
 
 class jrd_file;
 class Database;
@@ -66,7 +66,7 @@ class thread_db;
 class PageSpace : public pool_alloc<type_PageSpace>
 {
 public:
-	PageSpace(USHORT aPageSpaceID) 
+	PageSpace(USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
@@ -78,8 +78,8 @@ public:
 	~PageSpace();
 
 	USHORT pageSpaceID;
-	SLONG pipHighWater;		// Lowest PIP with space 
-	SLONG ppFirst;			// First pointer page 
+	SLONG pipHighWater;		// Lowest PIP with space
+	SLONG ppFirst;			// First pointer page
 
 	jrd_file*	file;
 
@@ -111,7 +111,7 @@ private:
 class PageManager : public pool_alloc<type_PageManager>
 {
 public:
-	PageManager(Firebird::MemoryPool& aPool) : 
+	PageManager(Firebird::MemoryPool& aPool) :
 		pageSpaces(aPool),
 		pool(aPool)
 	{
@@ -119,7 +119,7 @@ public:
 		bytesBitPIP = 0;
 		transPerTIP = 0;
 		gensPerPage = 0;
-		
+
 		dbPageSpace = addPageSpace(DB_PAGE_SPACE);
 		// addPageSpace(TEMP_PAGE_SPACE);
 	}
@@ -143,15 +143,15 @@ public:
 	void closeAll();
 	void releaseLocks();
 
-	SLONG pagesPerPIP;			// Pages per pip 
-	ULONG bytesBitPIP;			// Number of bytes of bit in PIP 
-	SLONG transPerTIP;			// Transactions per TIP 
-	ULONG gensPerPage;			// Generators per generator page 
+	SLONG pagesPerPIP;			// Pages per pip
+	ULONG bytesBitPIP;			// Number of bytes of bit in PIP
+	SLONG transPerTIP;			// Transactions per TIP
+	ULONG gensPerPage;			// Generators per generator page
 	PageSpace* dbPageSpace;		// database page space
 
 private:
 	typedef Firebird::SortedArray<
-		PageSpace*, Firebird::EmptyStorage<PageSpace*>, 
+		PageSpace*, Firebird::EmptyStorage<PageSpace*>,
 		USHORT, PageSpace> PageSpaceArray;
 
 	PageSpaceArray pageSpaces;
@@ -186,13 +186,13 @@ public:
 	inline SLONG getPageSpaceID() const
 	{
 		return pageSpaceID;
-	} 
+	}
 
 	inline SLONG setPageSpaceID(const USHORT aPageSpaceID)
 	{
 		pageSpaceID = aPageSpaceID;
 		return pageSpaceID;
-	} 
+	}
 
 	inline bool isTemporary() const
 	{
@@ -228,7 +228,7 @@ public:
 
 	inline bool operator==(const PageNumber& other) const
 	{
-		return (pageNum == other.pageNum) && 
+		return (pageNum == other.pageNum) &&
 			(pageSpaceID == other.pageSpaceID);
 	}
 

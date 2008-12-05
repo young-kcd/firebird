@@ -32,7 +32,7 @@ void	ERRQ_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ERRQ_error(USHORT, const char* str);
 void	ERRQ_error_format(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ERRQ_exit (int);
-void	ERRQ_msg_format(USHORT, USHORT, TEXT*, 
+void	ERRQ_msg_format(USHORT, USHORT, TEXT*,
 						const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 int		ERRQ_msg_get(USHORT, TEXT*, size_t s_size);
 void	ERRQ_msg_partial (USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());

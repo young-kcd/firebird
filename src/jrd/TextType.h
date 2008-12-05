@@ -86,12 +86,12 @@ public:
 	}
 
 	BYTE getCanonicalWidth() const
-	{ 
+	{
 		return tt->texttype_canonical_width;
 	}
 
 	USHORT getFlags() const
-	{ 
+	{
 		return tt->texttype_flags;
 	}
 

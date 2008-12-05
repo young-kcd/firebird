@@ -147,7 +147,7 @@ class PreparedStatement;
 class Trigger {
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
-	bid			dbg_blob_id;					// RDB$DEBUG_INFO 
+	bid			dbg_blob_id;					// RDB$DEBUG_INFO
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
@@ -158,7 +158,7 @@ public:
 	void compile(thread_db*);				// Ensure that trigger is compiled
 	void release(thread_db*);				// Try to free trigger request
 
-	explicit Trigger(MemoryPool& p) : blr(p), name(p) 
+	explicit Trigger(MemoryPool& p) : blr(p), name(p)
 	{ dbg_blob_id.clear(); }
 };
 
@@ -425,12 +425,12 @@ const USHORT PRC_scanned			= 1;	// Field expressions scanned
 const USHORT PRC_system				= 2;	// Set in met.epp, never tested.
 const USHORT PRC_obsolete			= 4;	// Procedure known gonzo
 const USHORT PRC_being_scanned		= 8;	// New procedure needs dependencies during scan
-//const USHORT PRC_blocking			= 16;	// Blocking someone from dropping procedure 
+//const USHORT PRC_blocking			= 16;	// Blocking someone from dropping procedure
 const USHORT PRC_create				= 32;	// Newly created. Set in met.epp, never tested or disabled.
 const USHORT PRC_being_altered		= 64;	// Procedure is getting altered
 									// This flag is used to make sure that MET_remove_procedure
 									// does not delete and remove procedure block from cache
-									// so dfw.epp:modify_procedure() can flip procedure body without 
+									// so dfw.epp:modify_procedure() can flip procedure body without
 									// invalidating procedure pointers from other parts of metadata cache
 const USHORT PRC_check_existence	= 128;	// Existence lock released
 
@@ -593,7 +593,7 @@ struct win {
 	USHORT win_flags;
 //	explicit win(SLONG wp) : win_page(wp), win_flags(0) {}
 	explicit win(const PageNumber& wp) : win_page(wp), win_bdb(NULL), win_flags(0) {}
-	win(const USHORT pageSpaceID, const SLONG pageNum) : 
+	win(const USHORT pageSpaceID, const SLONG pageNum) :
 		win_page(pageSpaceID, pageNum), win_bdb(NULL), win_flags(0) {}
 };
 
@@ -659,7 +659,7 @@ public:
 
 	SLONG		tdbb_temp_attid;	// current temporary table scope
 	SLONG		tdbb_temp_traid;	// current temporary table scope
-	
+
 	que			tdbb_latches;		// shared latches held by thread
 
 	MemoryPool* getDefaultPool()
@@ -876,12 +876,12 @@ public:
 /* Define JRD_get_thread_data off the platform specific version.
  * If we're in DEV mode, also do consistancy checks on the
  * retrieved memory structure.  This was originally done to
- * track down cases of no "PUT_THREAD_DATA" on the NLM. 
+ * track down cases of no "PUT_THREAD_DATA" on the NLM.
  *
  * This allows for NULL thread data (which might be an error by itself)
- * If there is thread data, 
+ * If there is thread data,
  * AND it is tagged as being a thread_db.
- * AND it has a non-NULL database field, 
+ * AND it has a non-NULL database field,
  * THEN we validate that the structure there is a database block.
  * Otherwise, we return what we got.
  * We can't always validate the database field, as during initialization
@@ -949,7 +949,7 @@ inline void SET_DBB(Jrd::Database* &dbb) {
 extern int debug;
 
 namespace Jrd {
-	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> 
+	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool>
 		ContextPoolHolder;
 }
 

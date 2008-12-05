@@ -24,7 +24,7 @@
  *  Contributor(s): ______________________________________.
  *
  */
- 
+
 #ifndef JRD_OS_MOD_LOADER_H
 #define JRD_OS_MOD_LOADER_H
 
@@ -36,7 +36,7 @@
 	functions to determine if the file at a given path is a loadable module,
 	to load that module, and to modify the filename in a way that is
 	appropiate to the host computer.
-	
+
 	All implementations of this interface are expected to provide definitions
 	for the 3 static functions in the ModuleLoader class, and provide a
 	subclass of ModuleLoader::Loader that implements findSymbol.
@@ -79,16 +79,16 @@ public:
 		/// assignment of Modules isn't supported so the assignment operator is private
 		const Module& operator=(const Module&);		// no impl
 	};
-	
+
 	/** loadModule is given as a string the path to the module to load.  It
 		attempts to load the module.  If successful it returns the ModuleLoader::Module
-		object that represents the loaded module in memory and can be used to 
+		object that represents the loaded module in memory and can be used to
 		perform symbol lookups on the module.  If unsuccessful it returns NULL.
 		It is the callers responsibility to delete the returned module object
 		when it is no longer needed.
 	**/
 	static Module* loadModule(const Firebird::PathName&);
-	
+
 	/** doctorModuleExtention modifies the given path name to add the platform
 		specific module extention.  This allows the user to provide the root name
 		of the file, and the code to append the correct extention regardless of the
@@ -96,7 +96,7 @@ public:
 		to load the module without the extention.
 	**/
 	static void doctorModuleExtention(Firebird::PathName&);
-	
+
 	/** isLoadableModule checks the given file to see if it is a loadable
 		module.  This function is required because different operating
 		systems require different checks.

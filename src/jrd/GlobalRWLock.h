@@ -89,7 +89,7 @@ struct ObjectOwnerData
 class GlobalRWLock : public Firebird::PermanentStorage
 {
 public:
-	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType, 
+	GlobalRWLock(thread_db* tdbb, MemoryPool& p, locktype_t lckType,
 					   size_t lockLen, const UCHAR* lockStr,
 					   lck_owner_t physical_lock_owner = LCK_OWNER_database,
 					   lck_owner_t default_logical_lock_owner = LCK_OWNER_attachment,
@@ -97,7 +97,7 @@ public:
 
 	virtual ~GlobalRWLock();
 
-	// As usual, 
+	// As usual,
 	// wait = 0 - try to lock a thing instantly (doesn't send ASTs)
 	// wait < 0 - timeout in seconds (doesn't deadlock)
 	// wait > 0 - infinite wait (may deadlock)
@@ -155,14 +155,14 @@ private:
 	Firebird::Mutex lockMutex;	// Protects status of logical lock, counters and blocking flag
 	lck_owner_t		physicalLockOwner;	// Holds cached lock
 	lck_owner_t		defaultLogicalLockOwner;	// Requests new lock to replace cached
-	
-	// true - unlock keep cached lock and release by AST. 
+
+	// true - unlock keep cached lock and release by AST.
 	// false - unlock releases cached lock if possible
 	bool	lockCaching;
 
 	Database* dbb;
 
-	Firebird::SortedArray<ObjectOwnerData, Firebird::EmptyStorage<ObjectOwnerData>, 
+	Firebird::SortedArray<ObjectOwnerData, Firebird::EmptyStorage<ObjectOwnerData>,
 		SLONG, ObjectOwnerData, Firebird::DefaultComparator<SLONG> > readers;
 	ObjectOwnerData writer;
 

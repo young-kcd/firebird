@@ -125,7 +125,7 @@ const USHORT ODS_11_2		= ENCODE_ODS(ODS_VERSION11, 2);
 
 const USHORT ODS_FIREBIRD_FLAG = 0x8000;
 
-/* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and 
+/* Decode ODS version to Major and Minor parts. The 4 LSB's are minor and
    the next 11 bits are major version number. The highest significant bit
    is the Firebird database flag. */
 inline USHORT DECODE_ODS_MAJOR(USHORT ods_version) {
@@ -264,7 +264,7 @@ struct IndexJumpNode
 	UCHAR* nodePointer;	// pointer to where this node can be read from the page
 	USHORT prefix;		// length of prefix against previous jump node
 	USHORT length;		// length of data in jump node (together with prefix this is prefix for pointing node)
-	USHORT offset;		// offset to node in page  
+	USHORT offset;		// offset to node in page
 	UCHAR* data;		// Data can be read from here
 };
 
@@ -431,7 +431,7 @@ struct sfd {
 	UCHAR sfd_index;			// Sequence of secondary file
 	UCHAR sfd_file[1];			// Given file name
 };
-typedef sfd SFD; 
+typedef sfd SFD;
 */
 
 /* Page Inventory Page */
@@ -633,7 +633,7 @@ inline int IAD_LEN(int count)
 {
 	if (!count)
 		count = 1;
-	return sizeof (InternalArrayDesc) + 
+	return sizeof (InternalArrayDesc) +
 		(count - 1) * sizeof (InternalArrayDesc::iad_repeat);
 }
 */

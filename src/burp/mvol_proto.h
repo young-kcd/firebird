@@ -1,6 +1,6 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
- *	MODULE:		mvol_proto.h		
+ *	MODULE:		mvol_proto.h
  *	DESCRIPTION:	Prototype Header file for mvol.cpp
  *
  * The contents of this file are subject to the Interbase Public

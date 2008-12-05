@@ -54,7 +54,7 @@ struct charset;
 
 /* Returned value of INTL_BAD_KEY_LENGTH means that proposed key is too long */
 typedef USHORT (*pfn_INTL_keylength) (
-	texttype* tt, 
+	texttype* tt,
 	USHORT len
 );
 
@@ -64,47 +64,47 @@ typedef USHORT (*pfn_INTL_keylength) (
 #define INTL_KEY_PARTIAL 1 /* Starting portion of sort key for equality class */
 #define INTL_KEY_UNIQUE  2 /* Full key for the equality class of the string */
 
-/* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during 
-  key construction. When partial key is requested returned string should 
-  complement collated comparison. 
+/* Returned value of INTL_BAD_KEY_LENGTH means that key error happened during
+  key construction. When partial key is requested returned string should
+  complement collated comparison.
 */
 typedef USHORT (*pfn_INTL_str2key) (
-	texttype* tt, 
-	USHORT srcLen, 
-	const UCHAR* src, 
-	USHORT dstLen, 
-	UCHAR* dst, 
+	texttype* tt,
+	USHORT srcLen,
+	const UCHAR* src,
+	USHORT dstLen,
+	UCHAR* dst,
 	USHORT key_type
 );
 
-/* Collate two potentially long strings. According to SQL 2003 standard 
-  collation is a process by which two strings are determined to be in exactly 
-  one of the relationships of less than, greater than, or equal to one another.  
+/* Collate two potentially long strings. According to SQL 2003 standard
+  collation is a process by which two strings are determined to be in exactly
+  one of the relationships of less than, greater than, or equal to one another.
 */
 typedef SSHORT (*pfn_INTL_compare) (
-	texttype* tt, 
-	ULONG len1, 
-	const UCHAR* str1, 
-	ULONG len2, 
+	texttype* tt,
+	ULONG len1,
+	const UCHAR* str1,
+	ULONG len2,
 	const UCHAR* str2,
 	INTL_BOOL* error_flag
 );
 
 /* Returns resulting string length in bytes or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_str2case) (
-	texttype* tt, 
-	ULONG srcLen, 
-	const UCHAR* src, 
-	ULONG dstLen, 
+	texttype* tt,
+	ULONG srcLen,
+	const UCHAR* src,
+	ULONG dstLen,
 	UCHAR* dst
 );
 
-/* 
+/*
   Places exactly texttype_canonical_width number of bytes into dst for each character from src.
   Returns INTL_BAD_STR_LENGTH in case of error or number of characters processed if successful.
  */
 typedef ULONG (*pfn_INTL_canonical) (
-	texttype* t, 
+	texttype* t,
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
@@ -129,8 +129,8 @@ typedef void (*pfn_INTL_tt_destroy) (
                                       case- or accent- insensitive */
 
 #define TEXTTYPE_UNSORTED_UNIQUE 4 /* Unique keys may not be used for ordered access,
-                                      such as for multi-level collation having weights 
-                                      (char, case, accent) which is case-insensitive, 
+                                      such as for multi-level collation having weights
+                                      (char, case, accent) which is case-insensitive,
                                       but accent-sensitive */
 
 
@@ -139,7 +139,7 @@ struct texttype {
 	USHORT texttype_version;	/* version ID of object */
 	void* texttype_impl;		/* collation object implemented in driver */
 
-    /* Used only for debugging purposes. Should contain string in form 
+    /* Used only for debugging purposes. Should contain string in form
       <charset>.<collation>. For example "WIN1251.PXW_CYRL"
     */
 	const ASCII* texttype_name;
@@ -176,7 +176,7 @@ struct texttype {
 	         Driver must handle this situation appropriately. */
 	pfn_INTL_str2case	texttype_fn_str_to_lower;	/* Convert string to lowercase */
 
-	/* If not set for fixed width charset string itself is used as canonical 
+	/* If not set for fixed width charset string itself is used as canonical
        representation. If not set for MBCS charset string converted to UTF-32
        is used as canonical representation */
 	pfn_INTL_canonical	texttype_fn_canonical;	/* convert string to canonical representation for equality */
@@ -193,13 +193,13 @@ struct texttype {
 
 /* Returns resulting string length or INTL_BAD_STR_LENGTH in case of error */
 typedef ULONG (*pfn_INTL_convert) (
-	csconvert* cv, 
+	csconvert* cv,
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
 	UCHAR* dst,
 	USHORT* error_code,
-	ULONG* offending_source_character	
+	ULONG* offending_source_character
 );
 
 /* Releases resources associated with conversion */
@@ -214,10 +214,10 @@ struct csconvert {
 	USHORT csconvert_version;
 	void* csconvert_impl;
 
-    /* Used only for debugging purposes. Should contain string in form 
+    /* Used only for debugging purposes. Should contain string in form
       <source_charset>-><destination_charset>. For example "WIN1251->DOS866"
     */
-	const ASCII* csconvert_name; 
+	const ASCII* csconvert_name;
 
 	/* Conversion routine. Must be present. */
 	pfn_INTL_convert csconvert_fn_convert;
@@ -243,15 +243,15 @@ struct csconvert {
 
 /* Returns whether string is well-formed or not */
 typedef INTL_BOOL (*pfn_INTL_well_formed) (
-	charset* cs, 
+	charset* cs,
 	ULONG len,
 	const UCHAR* str,
-	ULONG* offending_position	
+	ULONG* offending_position
 );
 
 /* Extracts a portion from a string. Returns INTL_BAD_STR_LENGTH in case of problems. */
 typedef ULONG (*pfn_INTL_substring) (
-	charset* cs, 
+	charset* cs,
 	ULONG srcLen,
 	const UCHAR* src,
 	ULONG dstLen,
@@ -262,7 +262,7 @@ typedef ULONG (*pfn_INTL_substring) (
 
 /* Measures the length of string in characters. Returns INTL_BAD_STR_LENGTH in case of problems. */
 typedef ULONG (*pfn_INTL_length) (
-	charset* cs, 
+	charset* cs,
 	ULONG srcLen,
 	const UCHAR* src
 );
@@ -304,7 +304,7 @@ struct charset
 	/* If not set Unicode representation is used to measure string length. */
 	pfn_INTL_length		charset_fn_length;	/* get length of string in characters */
 
-	/* May be omitted for fixed-width character sets. 
+	/* May be omitted for fixed-width character sets.
 	   If not present for MBCS charset string operation is performed by the engine
        via intermediate translation of string to Unicode */
 	pfn_INTL_substring	charset_fn_substring;	/* get a portion of string */
@@ -334,7 +334,7 @@ struct charset
 
 /* typedef for texttype lookup entry-point */
 typedef INTL_BOOL (*pfn_INTL_lookup_texttype) (
-	texttype* tt, 
+	texttype* tt,
 	const ASCII* texttype_name,
 	const ASCII* charset_name,
 	USHORT attributes,
@@ -346,7 +346,7 @@ typedef INTL_BOOL (*pfn_INTL_lookup_texttype) (
 
 /* typedef for charset lookup entry-point */
 typedef INTL_BOOL (*pfn_INTL_lookup_charset) (
-	charset* cs, 
+	charset* cs,
 	const ASCII* name,
 	const ASCII* config_info
 );

@@ -30,7 +30,7 @@
 const USHORT GSEC_MSG_FAC	= 18;
 const int MSG_LENGTH		= 128;
 //#define QUERY_LENGTH	256
- 
+
 /* structure to hold information from the command line, including the
    operation to perform and any parameters entered (sizes are determined
    by the size of the fields in the USERS relation in USERINFO.GDB) */
@@ -99,7 +99,7 @@ struct internal_user_data {
 #endif
 
 	// force NULLs in this ugly structure to avoid foolish bugs
-	internal_user_data() 
+	internal_user_data()
 	{
 		memset(this, 0, sizeof *this);
 	}
@@ -113,10 +113,10 @@ namespace Firebird
 class tsec : public ThreadData
 {
 public:
-	explicit tsec(Firebird::UtilSvc* uf) 
-		: ThreadData(ThreadData::tddSEC), utilSvc(uf), 
-		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false), 
-		tsec_interactive(false), tsec_sw_version(false) 
+	explicit tsec(Firebird::UtilSvc* uf)
+		: ThreadData(ThreadData::tddSEC), utilSvc(uf),
+		tsec_user_data(0), tsec_exit_code(0), tsec_throw(false),
+		tsec_interactive(false), tsec_sw_version(false)
 	{
 	}
 
@@ -126,16 +126,16 @@ public:
 	bool				tsec_throw;
 	bool				tsec_interactive;
 	bool				tsec_sw_version;
-	
-	static inline tsec* getSpecific() 
+
+	static inline tsec* getSpecific()
 	{
 		return (tsec*) ThreadData::getSpecific();
 	}
-	static inline void putSpecific(tsec* tdsec) 
+	static inline void putSpecific(tsec* tdsec)
 	{
 		tdsec->ThreadData::putSpecific();
 	}
-	static inline void restoreSpecific() 
+	static inline void restoreSpecific()
 	{
 		ThreadData::restoreSpecific();
 	}
@@ -156,13 +156,13 @@ const USHORT GsecMsg9	= 9;	/* GID          user's group ID */
 const USHORT GsecMsg10	= 10;	/* PROJ         user's project name */
 const USHORT GsecMsg11	= 11;	/* ORG          user's organization name */
 const USHORT GsecMsg12	= 12;	/* FNAME        user's first name */
-const USHORT GsecMsg13	= 13;	/* MNAME        user's middle name/initial */   
+const USHORT GsecMsg13	= 13;	/* MNAME        user's middle name/initial */
 const USHORT GsecMsg14	= 14;	/* LNAME        user's last name */
 const USHORT GsecMsg15	= 15;	/* gsec - unable to open database */
 const USHORT GsecMsg16	= 16;	/* gsec - error in switch specifications */
 const USHORT GsecMsg17	= 17;	/* gsec - no operation specified */
 const USHORT GsecMsg18	= 18;	/* gsec - no user name specified */
-const USHORT GsecMsg19	= 19;	/* gsec - add record error */ 
+const USHORT GsecMsg19	= 19;	/* gsec - add record error */
 const USHORT GsecMsg20	= 20;	/* gsec - modify record error */
 const USHORT GsecMsg21	= 21;	/* gsec - find/modify record error */
 const USHORT GsecMsg22	= 22;	/* gsec - record not found for user: */

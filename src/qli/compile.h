@@ -24,40 +24,40 @@
 #ifndef QLI_COMPILE_H
 #define QLI_COMPILE_H
 
-// Name nodes -- used to hold names between parse and compilation 
+// Name nodes -- used to hold names between parse and compilation
 
 typedef struct nam {
     blk			nam_header;
-    qli_symbol*	nam_symbol;		// Symbol pointer, if any 
-    USHORT		nam_length;		// Length of name 
-    TEXT		nam_string[1];	// Actual name string 
+    qli_symbol*	nam_symbol;		// Symbol pointer, if any
+    USHORT		nam_length;		// Length of name
+    TEXT		nam_string[1];	// Actual name string
 } *NAM;
 
-// Qualified procedure node -- used to hold qualified procedure names 
+// Qualified procedure node -- used to hold qualified procedure names
 
 typedef struct qpr {
     blk  qpr_header;
-    dbb* qpr_database;		// database block 
-    nam* qpr_name;			// name block 	
+    dbb* qpr_database;		// database block
+    nam* qpr_name;			// name block
 } *QPR;
 
-// Qualified function node -- used to hold qualified function names 
+// Qualified function node -- used to hold qualified function names
 
 typedef struct qfn {
     blk  qfn_header;
-    dbb* qfn_database;		// database block 
-    nam* qfn_name;			// name block 	
+    dbb* qfn_database;		// database block
+    nam* qfn_name;			// name block
 } *QFN;
 
-// Qualified filter node -- used to hold qualified filter names 
+// Qualified filter node -- used to hold qualified filter names
 
 typedef struct qfl {
     blk  qfl_header;
-    dbb* qfl_database;		// database block 
-    nam* qfl_name;			// name block 	
+    dbb* qfl_database;		// database block
+    nam* qfl_name;			// name block
 } *QFL;
 
-// SHOW options 
+// SHOW options
 
 enum show_t {
     show_all,
@@ -106,7 +106,7 @@ enum set_t {
     set_continuation,
     set_user,
     set_password,
-    set_euc_justify,			// JPN specific option 
+    set_euc_justify,			// JPN specific option
     set_count,
     set_charset
 #ifdef DEV_BUILD
@@ -115,31 +115,31 @@ enum set_t {
 #endif
 };
 
-// Position assignments for syntax tree nodes 
+// Position assignments for syntax tree nodes
 
-const int s_rel_relation	= 0;	// Actual relation block 
-const int s_rel_context		= 1;	// Symbol block for context, if any 
+const int s_rel_relation	= 0;	// Actual relation block
+const int s_rel_context		= 1;	// Symbol block for context, if any
 const int s_rel_count		= 2;
 
-const int s_prt_list		= 0;	// Print list 
-const int s_prt_rse			= 1;	// Rse, if any 
-const int s_prt_output		= 2;	// Output file, if any 
-const int s_prt_distinct	= 3;	// Simple flag indicating distinct 
-const int s_prt_order		= 4;	// SQL order clause 
+const int s_prt_list		= 0;	// Print list
+const int s_prt_rse			= 1;	// Rse, if any
+const int s_prt_output		= 2;	// Output file, if any
+const int s_prt_distinct	= 3;	// Simple flag indicating distinct
+const int s_prt_order		= 4;	// SQL order clause
 const int s_prt_form		= 5;
 const int s_prt_count		= 6;
 
-const int s_rse_first		= 0;	// FIRST clause, if any 
-const int s_rse_boolean		= 1;	// Boolean clause, if any 
-const int s_rse_sort		= 2;	// Sort clause, if any 
-const int s_rse_reduced		= 3;	// Reduced clause, if any 
+const int s_rse_first		= 0;	// FIRST clause, if any
+const int s_rse_boolean		= 1;	// Boolean clause, if any
+const int s_rse_sort		= 2;	// Sort clause, if any
+const int s_rse_reduced		= 3;	// Reduced clause, if any
 const int s_rse_group_by	= 4;
 const int s_rse_having		= 5;
-const int s_rse_outer		= 6;	// Outer context value (implicit ANY) 
-const int s_rse_inner		= 7;	// Inner context value 
-const int s_rse_op			= 8;	// Comparison operator 
-const int s_rse_join_type	= 9;	// Join type 
-const int s_rse_all_flag	= 10;	// Explicit "ALL" flag 
+const int s_rse_outer		= 6;	// Outer context value (implicit ANY)
+const int s_rse_inner		= 7;	// Inner context value
+const int s_rse_op			= 8;	// Comparison operator
+const int s_rse_join_type	= 9;	// Join type
+const int s_rse_all_flag	= 10;	// Explicit "ALL" flag
 const int s_rse_list		= 11;
 #ifdef PC_ENGINE
 const int s_rse_index		= 12;
@@ -152,9 +152,9 @@ const int s_for_rse			= 0;
 const int s_for_statement	= 1;
 const int s_for_count		= 2;
 
-const int s_itm_value		= 0;	// Value of print item 
-const int s_itm_edit_string	= 1;	// Edit string, if any 
-const int s_itm_header		= 2;	// Query header, if any 
+const int s_itm_value		= 0;	// Value of print item
+const int s_itm_edit_string	= 1;	// Edit string, if any
+const int s_itm_header		= 2;	// Query header, if any
 const int s_itm_count		= 3;
 
 const int s_sto_relation	= 0;
@@ -169,9 +169,9 @@ const int s_asn_from		= 0;
 const int s_asn_to			= 1;
 const int s_asn_count		= 2;
 
-const int s_mod_list		= 0;	// Field list 
-const int s_mod_statement	= 1;	// Sub-statement 
-const int s_mod_rse			= 2;	// Record selection expression 
+const int s_mod_list		= 0;	// Field list
+const int s_mod_statement	= 1;	// Sub-statement
+const int s_mod_rse			= 2;	// Record selection expression
 const int s_mod_form		= 3;
 const int s_mod_count		= 4;
 
@@ -202,11 +202,11 @@ const int s_fmt_edit		= 1;
 const int s_fmt_count		= 2;
 
 const int s_dfi_name		= 0;
-const int s_dfi_relation	= 1;	// Define index 
+const int s_dfi_relation	= 1;	// Define index
 const int s_dfi_fields		= 2;
 const int s_dfi_count		= 3;
 
-const int s_mfi_name		= 0;	// Modify an index 
+const int s_mfi_name		= 0;	// Modify an index
 const int s_mfi_database	= 1;
 const int s_mfi_count		= 2;
 
@@ -228,7 +228,7 @@ const int s_fun_args		= 0;
 const int s_fun_function	= 1;
 const int s_fun_count		= 2;
 
-const int s_idx_field		= 0;	// array subscript 
+const int s_idx_field		= 0;	// array subscript
 const int s_idx_subs		= 1;
 const int s_idx_count		= 2;
 
@@ -242,7 +242,7 @@ const int s_grant_users		= 2;
 const int s_grant_privileges	= 3;
 const int s_grant_count		= 4;
 
-//  some flags for index definitions 
+//  some flags for index definitions
 
 const USHORT s_dfi_flag_unique		= 1;
 const USHORT s_dfi_flag_inactive	= 2;

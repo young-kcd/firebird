@@ -67,7 +67,7 @@ public:
 public:
 	explicit BlobControl(MemoryPool& p)
 		: ctl_exception_message(p) { }
-	BlobControl() 
+	BlobControl()
 		: ctl_exception_message() { }
 };
 
@@ -89,7 +89,7 @@ class BlobFilter : public pool_alloc<type_blf>
 
 // BRS 29-Apr-2004
 // replace those constants with public defined ones isc_blob_filter_
-// 
+//
 // const int ACTION_open			= 0;
 // const int ACTION_get_segment	= 1;
 // const int ACTION_close			= 2;

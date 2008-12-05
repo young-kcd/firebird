@@ -28,7 +28,7 @@
 #ifndef JRD_ALIGN_H
 #define JRD_ALIGN_H
 
-/* 
+/*
 Maximum alignments for corresponding data types are defined in dsc.h
 */
 

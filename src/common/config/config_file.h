@@ -52,13 +52,13 @@ class ConfigFile : public Firebird::AutoStorage
 
 	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
 
-    typedef Firebird::SortedObjectsArray <Parameter, 
+    typedef Firebird::SortedObjectsArray <Parameter,
 		Firebird::InlineStorage<Parameter *, 100>,
 		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
 
 public:
-	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
-		: AutoStorage(p), isLoadedFlg(false), 
+	ConfigFile(MemoryPool& p, bool ExceptionOnError)
+		: AutoStorage(p), isLoadedFlg(false),
 		  fExceptionOnError(ExceptionOnError), parsingAliases(false),
 		  parameters(getPool()) {}
 	ConfigFile(bool ExceptionOnError, bool useForAliases)

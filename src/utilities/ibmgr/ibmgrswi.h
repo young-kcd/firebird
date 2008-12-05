@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	
+ *	PROGRAM:
  *	MODULE:		ibmgrswi.h
  *	DESCRIPTION:	ibmgr switches
  *
@@ -48,7 +48,7 @@ const int IN_SW_IBMGR_Z			= 16;	/* version */
 const int IN_SW_IBMGR_PRINT		= 17;	/* Print Stats */
 const int IN_SW_IBMGR_POOL		= 18;	/* Print pool */
 
-/* I have added this to let the user decide whether startup errors should 
+/* I have added this to let the user decide whether startup errors should
    stop ibguard from restating the server.
    FSG 10.Nov.2000
 */

@@ -33,7 +33,7 @@
 #include "../common/classes/array.h"
 
 // This setting of maximum dpb size doesn't mean, that we
-// can't process larger DBPs! This is just recommended limit 
+// can't process larger DBPs! This is just recommended limit
 // cause it's hard to imagine sensefull DPB of even this size.
 const size_t MAX_DPB_SIZE = 1024;
 
@@ -89,7 +89,7 @@ private:
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
-	
+
 	void initNewBuffer(UCHAR tag);
 	static void toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value);
 };

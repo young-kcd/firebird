@@ -16,7 +16,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-/** Added Jan 23 2003 Blas Rodriguez Somoza 
+/** Added Jan 23 2003 Blas Rodriguez Somoza
 CS_737, CS_775, CS_858, CS_862, CS_864, CS_866, CS_869
 */
 #ifndef INTL_CHARSETS_H

@@ -44,7 +44,7 @@ public:
 	}
 
 	virtual void initialize()
-	{ 
+	{
 		if (!m_api_loaded)
 			loadAPI();
 	}
@@ -413,7 +413,7 @@ public:
 	virtual ISC_STATUS ISC_EXPORT_VARARG isc_reconnect_transaction(ISC_STATUS *,
                                                    isc_db_handle *,
                                                    isc_tr_handle *,
-                                                   short, 
+                                                   short,
                                                    const char*);
 
 	virtual ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
@@ -485,7 +485,7 @@ public:
 };
 
 
-class FBProvider : public IscProvider 
+class FBProvider : public IscProvider
 {
 public:
 	explicit FBProvider(const char* prvName) :
@@ -510,7 +510,7 @@ protected:
 public:
 	FB_API_HANDLE& getAPIHandle() { return m_handle; }
 
-	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
+	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
 		const Firebird::string &user, const Firebird::string &pwd);
 
 	virtual bool cancelExecution(Jrd::thread_db *tdbb);
@@ -577,7 +577,7 @@ protected:
 	virtual bool doFetch(Jrd::thread_db *tdbb);
 	virtual void doClose(Jrd::thread_db *tdbb, bool drop);
 
-	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names, 
+	virtual void doSetInParams(Jrd::thread_db *tdbb, int count, const Firebird::string *const *names,
 		Jrd::jrd_nod **params);
 
 	IscTransaction *getIscTransaction() { return (IscTransaction*) m_transaction; }
@@ -599,9 +599,9 @@ public:
 	~IscBlob();
 
 public:
-	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc, 
+	virtual void open(Jrd::thread_db *tdbb, Transaction &tran, const dsc &desc,
 		const Firebird::UCharBuffer* bpb);
-	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc, 
+	virtual void create(Jrd::thread_db *tdbb, Transaction &tran, dsc &desc,
 		const Firebird::UCharBuffer* bpb);
 	virtual USHORT read(Jrd::thread_db *tdbb, char *buff, USHORT len);
 	virtual void write(Jrd::thread_db *tdbb, const char* buff, USHORT len);

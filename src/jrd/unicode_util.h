@@ -64,7 +64,7 @@ public:
 							   INTL_BOOL* error_flag);
 
 	static ULONG utf16Length(ULONG len, const USHORT* str);
-	static ULONG utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
+	static ULONG utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
 								ULONG startPos, ULONG length);
 	static INTL_BOOL utf8WellFormed(ULONG len, const UCHAR* str, ULONG* offending_position);
 	static INTL_BOOL utf16WellFormed(ULONG len, const USHORT* str, ULONG* offending_position);
@@ -105,7 +105,7 @@ public:
 		int contractionsCount;
 		bool numericSort;
 	};
-	
+
 	friend class Utf16Collation;
 };
 

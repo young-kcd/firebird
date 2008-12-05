@@ -34,7 +34,7 @@
 	This class is a public interface for our generic configuration manager
 	and allows to access all configuration values by its getXXX() member
 	functions. Each of these functions corresponds to one and only one key
-	and has one input argument - default value, which is used when the 
+	and has one input argument - default value, which is used when the
 	requested key is missing or the configuration file is not found. Supported
 	value datatypes are "const char*", "int" and "bool". Usual default values for
 	these datatypes are empty string, zero and false respectively. There are
@@ -124,7 +124,7 @@ public:
 	 Interface to support command line root specification.
 	*
 	 This ugly solution was required to make it possible to specify root
-	 in command line to load firebird.conf from that root, though in other 
+	 in command line to load firebird.conf from that root, though in other
 	 cases firebird.conf may be also used to specify root.
 	*/
 	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
@@ -331,7 +331,7 @@ public:
 	static bool getOldColumnNaming();
 
 	/*
-		Use native, trusted or mixed authentication 
+		Use native, trusted or mixed authentication
 	*/
 	static const char *getAuthMethod();
 

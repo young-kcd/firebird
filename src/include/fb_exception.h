@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird exceptions classes
  *	MODULE:			fb_exception.h
- *	DESCRIPTION:	Firebird's exception classes 
+ *	DESCRIPTION:	Firebird's exception classes
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -39,7 +39,7 @@ namespace Firebird {
 
 class MemoryPool;
 
-class StringsBuffer 
+class StringsBuffer
 {
 public:
 	virtual const char* alloc(const char* string, size_t& length) = 0;
@@ -50,7 +50,7 @@ public:
 };
 
 template <size_t BUFFER_SIZE>
-class CircularStringsBuffer : public StringsBuffer 
+class CircularStringsBuffer : public StringsBuffer
 {
 public:
 	CircularStringsBuffer() throw() { init(); }
@@ -65,7 +65,7 @@ public:
 
 		// if string too long, truncate it
 		if (length > BUFFER_SIZE / 4)
-			length = BUFFER_SIZE / 4;	
+			length = BUFFER_SIZE / 4;
 
 		// If there isn't any more room in the buffer, start at the beginning again
 		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
@@ -74,7 +74,7 @@ public:
 		char* new_string = buffer_ptr;
 		memcpy(new_string, string, length);
 		new_string[length] = 0;
-		buffer_ptr += length + 1;	
+		buffer_ptr += length + 1;
 
 		return new_string;
 	}
@@ -83,7 +83,7 @@ private:
 	void init() throw()
 	{
 		// This is to ensure we have zero at the end of buffer in case of buffer overflow
-		memset(buffer, 0, BUFFER_SIZE); 
+		memset(buffer, 0, BUFFER_SIZE);
 		buffer_ptr = buffer;
 	}
 
@@ -125,7 +125,7 @@ public:
 class status_exception : public Exception
 {
 public:
-	// This version of constructor receives status vector pointing to permanent or 
+	// This version of constructor receives status vector pointing to permanent or
 	// temp strings, depending upon second parameter.
 	status_exception(const ISC_STATUS *status_vector, bool permanent) throw();
 	virtual ~status_exception() throw();
@@ -135,24 +135,24 @@ public:
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
 
-	// Returns true if strings contained in status vector are located in magical 
-	// permanent circular buffer. False means that exception object owns strings 
+	// Returns true if strings contained in status vector are located in magical
+	// permanent circular buffer. False means that exception object owns strings
 	// and is about to deallocate them in its destructor
 	bool strings_permanent() const throw() { return m_strings_permanent; }
 
 	// Takes permanent strings
 	static void raise(const ISC_STATUS *status_vector);
-	
+
 	// Takes transient strings
 	static void raise(const Arg::StatusVector& statusVector);
-	
+
 protected:
-	// Create exception with undefined status vector, this constructor allows 
+	// Create exception with undefined status vector, this constructor allows
 	// derived classes create empty exception ...
 	status_exception() throw();
 	// .. and adjust it later using somehow created status vector.
 	void set_status(const ISC_STATUS *new_vector, bool permanent) throw();
-	
+
 private:
 	ISC_STATUS_ARRAY m_status_vector;
 	bool m_strings_permanent;
@@ -169,7 +169,7 @@ public:
 
 	static void raise(const char* syscall, int error_code);
 	static void raise(const char* syscall);
-	
+
 	int getErrorCode() const
 	{
 		return errorCode;
@@ -178,7 +178,7 @@ public:
 	static int getSystemError();
 };
 
-// use this class if exception can't be handled 
+// use this class if exception can't be handled
 // it will call abort() in DEV_BUILD to create core dump
 class system_call_failed : public system_error
 {

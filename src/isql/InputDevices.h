@@ -61,7 +61,7 @@ public:
 		char indev_fn[MAXPATHLEN];
 		void operator=(const void*); // prevent surprises.
 	};
-	
+
 	InputDevices();
 	explicit InputDevices(Firebird::MemoryPool&);
 	~InputDevices();

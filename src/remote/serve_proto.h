@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Remote server  
+ *	PROGRAM:	JRD Remote server
  *	MODULE:		serve_proto.h
  *	DESCRIPTION:	Prototype Header file for server.cpp
  *

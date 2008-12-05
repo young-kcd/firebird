@@ -58,8 +58,8 @@ public:
 		fmt_desc.resize(fmt_count);
 	}
 	static Format* newFormat(MemoryPool& p, int len = 0)
-	{ 
-		return FB_NEW(p) Format(p, len); 
+	{
+		return FB_NEW(p) Format(p, len);
 	}
 
 	USHORT fmt_length;

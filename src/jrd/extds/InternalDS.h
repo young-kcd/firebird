@@ -54,7 +54,7 @@ class InternalConnection : public Connection
 protected:
 	friend class InternalProvider;
 
-	explicit InternalConnection(InternalProvider &prov) : 
+	explicit InternalConnection(InternalProvider &prov) :
 	  Connection(prov),
 	  m_attachment(0),
 	  m_isCurrent(false)
@@ -63,7 +63,7 @@ protected:
 	virtual ~InternalConnection();
 
 public:
-	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
+	virtual void attach(Jrd::thread_db *tdbb, const Firebird::string &dbName,
 		const Firebird::string &user, const Firebird::string &pwd);
 
 	virtual bool cancelExecution(Jrd::thread_db *tdbb);
@@ -72,7 +72,7 @@ public:
 
 	virtual bool isConnected() const { return (m_attachment != 0); }
 
-	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName, 
+	virtual bool isSameDatabase(Jrd::thread_db *tdbb, const Firebird::string &dbName,
 		const Firebird::string &user, const Firebird::string &pwd) const;
 
 	bool isCurrent() const { return m_isCurrent; }

@@ -42,14 +42,14 @@ class ParsedPath : public ObjectsArray<PathName>
 public:
 	explicit ParsedPath(MemoryPool& p) : ObjectsArray<PathName>(p) { }
 	ParsedPath(MemoryPool& p, const PathName& path)
-		: ObjectsArray<PathName>(p) 
-	{ 
+		: ObjectsArray<PathName>(p)
+	{
 		parse(path);
 	}
 	ParsedPath() : ObjectsArray<PathName>() { }
 	explicit ParsedPath(const PathName& path)
-		: ObjectsArray<PathName>() 
-	{ 
+		: ObjectsArray<PathName>()
+	{
 		parse(path);
 	}
 	// Take new path inside
@@ -69,20 +69,20 @@ public:
 	PathName subPath(size_t n) const;
 };
 
-	
+
 class DirectoryList : public ObjectsArray<ParsedPath>
 {
 private:
 	typedef ObjectsArray<ParsedPath> inherited;
 	// ListMode must be changed together with ListKeys in dir_list.cpp
-	enum ListMode {NotInitialized = -1, 
+	enum ListMode {NotInitialized = -1,
 		None = 0, Restrict = 1, Full = 2, SimpleList = 3};
 	ListMode mode;
-	// Check, whether Value begins with Key, 
+	// Check, whether Value begins with Key,
 	// followed by any character from Next.
 	// If Next is empty, Value shoult exactly match Key.
 	// If Key found, sets Mode to KeyMode and returns true.
-	bool keyword(const ListMode keyMode, PathName& value, 
+	bool keyword(const ListMode keyMode, PathName& value,
 		PathName key, PathName next);
 protected:
 	// Clear allocated memory and reinitialize
@@ -91,18 +91,18 @@ protected:
 		((inherited*) this)->clear();
 		mode = NotInitialized;
 	}
-	// Used for various configuration parameters - 
+	// Used for various configuration parameters -
 	// returns parameter PathName from Config Manager.
 	virtual const PathName getConfigString(void) const = 0;
 	// Initialize loads data from Config Manager.
-	// With simple mutex add-on may be easily used to 
+	// With simple mutex add-on may be easily used to
 	// load them dynamically. Now called locally
 	// when IsPathInList() invoked first time.
 	void initialize(bool simple_mode = false);
 public:
-	explicit DirectoryList(MemoryPool& p) 
+	explicit DirectoryList(MemoryPool& p)
 		: ObjectsArray<ParsedPath>(p), mode(NotInitialized) { }
-	DirectoryList() 
+	DirectoryList()
 		: ObjectsArray<ParsedPath>(), mode(NotInitialized) { }
 	virtual ~DirectoryList() {clear();}
 
@@ -110,7 +110,7 @@ public:
 	bool isPathInList(const PathName& path) const;
 
 	// Search for file Name in all directories of DirectoryList.
-	// If found, return full path to it in Path. 
+	// If found, return full path to it in Path.
 	// Otherwise Path = Name.
 	bool expandFileName(PathName& path, const PathName& name) const;
 
@@ -121,7 +121,7 @@ public:
 
 class TempDirectoryList : public DirectoryList {
 public:
-	explicit TempDirectoryList(MemoryPool& p) 
+	explicit TempDirectoryList(MemoryPool& p)
 		: DirectoryList(p)
 	{
 		initialize(true);

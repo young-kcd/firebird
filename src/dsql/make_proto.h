@@ -45,7 +45,7 @@ namespace Jrd {
 		CONSTANT_TIMESTAMP	= 5, // stored as a QUAD
 		CONSTANT_SINT64		= 6  // stored as a SINT64
 	};
-	
+
 	// Parameters to MAKE_variable
 	enum dsql_var_type
 	{

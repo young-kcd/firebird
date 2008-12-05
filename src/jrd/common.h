@@ -81,7 +81,7 @@
 
 
 /*****************************************************
-* Linux platforms 
+* Linux platforms
 *****************************************************/
 #ifdef LINUX
 #define QUADFORMAT "ll"
@@ -149,7 +149,7 @@
 
 
 /*****************************************************
-* Darwin Platforms 
+* Darwin Platforms
 *****************************************************/
 #ifdef DARWIN
 // EKU: obsolete, replaced by _FILE_OFFSET_BITS
@@ -169,7 +169,7 @@
 //#define FB_DOUBLE_ALIGN    4
 //#define BSD_UNIX
 #define UNIX
-#ifdef __ppc__ 
+#ifdef __ppc__
 #define powerpc
 #define IMPLEMENTATION isc_info_db_impl_darwin_ppc /* 63 */
 #endif
@@ -194,7 +194,7 @@
 
 
 /*****************************************************
-* FreeBSD for Intel platforms 
+* FreeBSD for Intel platforms
 *****************************************************/
 #ifdef FREEBSD
 
@@ -225,7 +225,7 @@
 #endif /* FREEBSD */
 
 /*****************************************************
-* NetBSD 
+* NetBSD
 *****************************************************/
 #ifdef NETBSD
 
@@ -253,7 +253,7 @@
 
 
 /*****************************************************
- * SUN platforms--the 386i is obsolete 
+ * SUN platforms--the 386i is obsolete
 *****************************************************/
 
 #ifdef sun
@@ -277,11 +277,11 @@
  *  Hey, we're not running on PDP-11's any more: would it kill you
  *  to use a short instead of a char to hold the fileno?  :-(
  */
- 
+
 /* Why we (solarises) need to rewrite old BSD stdio
-   so many times I suggest stdIO from 
-   http://www.research.att.com/sw/tools/sfio/ 
-*/       
+   so many times I suggest stdIO from
+   http://www.research.att.com/sw/tools/sfio/
+*/
 /* 	Need to use full sfio not just stdio emulation to fix
 	file descriptor number limit. nmcc Dec2002
 */
@@ -327,7 +327,7 @@
 
 
 /*****************************************************
-* HP/UX platforms 
+* HP/UX platforms
 *****************************************************/
 
 #ifdef HPUX
@@ -360,7 +360,7 @@
 
 
 /*****************************************************
-* IBM AIX RS/6000 and IBM AIX PowerPC 
+* IBM AIX RS/6000 and IBM AIX PowerPC
 *****************************************************/
 
 #ifdef _AIX						/* IBM AIX */
@@ -393,7 +393,7 @@
 
 
 /*****************************************************
-* Windows NT 
+* Windows NT
 *****************************************************/
 
 #ifdef WIN_NT
@@ -458,7 +458,7 @@ typedef unsigned __int64 FB_UINT64;
 
 
 /*****************************************************
-* SCO 
+* SCO
 *****************************************************/
 #ifdef SCO_EV
 
@@ -809,7 +809,7 @@ void GDS_breakpoint(int);
 #define CONST64(a) (a##LL)
 #endif
 
-// 30 Dec 2002. Nickolay Samofatov 
+// 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms
 // The simpliest way to check it is to issue from correct client:
 // declare external function abs2 double precision

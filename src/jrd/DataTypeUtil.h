@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	
+ *	PROGRAM:
  *	MODULE:		DataTypeUtil.h
  *	DESCRIPTION:	Data Type Utility functions
  *

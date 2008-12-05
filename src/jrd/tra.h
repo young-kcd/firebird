@@ -61,7 +61,7 @@ class Attachment;
 class DeferredWork;
 class dsql_opn;
 
-// Blobs active in transaction identified by bli_temp_id. Please keep this 
+// Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
 struct BlobIndex
 {
@@ -79,9 +79,9 @@ struct BlobIndex
     }
 	// Empty default constructor to make it behave like POD structure
 	BlobIndex() {}
-	BlobIndex(ULONG temp_id, blb* blob_object) : 
-		bli_temp_id(temp_id), bli_materialized(false), bli_request(NULL), 
-		bli_blob_object(blob_object) 
+	BlobIndex(ULONG temp_id, blb* blob_object) :
+		bli_temp_id(temp_id), bli_materialized(false), bli_request(NULL),
+		bli_blob_object(blob_object)
 	{ }
 };
 
@@ -257,7 +257,7 @@ const SLONG TRA_system_transaction = 0;
 // Flag definitions for tra_flags.
 
 const ULONG TRA_system			= 1L;		/* system transaction */
-//const ULONG TRA_update			= 2L;		// update is permitted 
+//const ULONG TRA_update			= 2L;		// update is permitted
 const ULONG TRA_prepared		= 4L;		/* transaction is in limbo */
 const ULONG TRA_reconnected		= 8L;		/* reconnect in progress */
 //const ULONG TRA_reserving		= 16L;		// relations explicityly locked
@@ -369,10 +369,10 @@ enum dfw_t {
 	dfw_create_procedure,
 	dfw_modify_procedure,
 	dfw_delete_procedure,
-	dfw_delete_prm, 
+	dfw_delete_prm,
 	dfw_create_collation,
 	dfw_delete_collation,
-	dfw_delete_exception, 
+	dfw_delete_exception,
 	//dfw_unlink_file,
 	dfw_delete_generator,
 	dfw_modify_generator,
@@ -408,7 +408,7 @@ public:
 
 public:
 	DeferredWork(MemoryPool& p, enum dfw_t t, USHORT id, SLONG sn, const char* string, USHORT length)
-	  : dfw_type(t), dfw_next(NULL), dfw_lock(NULL), dfw_args(NULL), 
+	  : dfw_type(t), dfw_next(NULL), dfw_lock(NULL), dfw_args(NULL),
 		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p)
 	{
 		if (string)

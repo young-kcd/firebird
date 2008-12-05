@@ -59,7 +59,7 @@ class SparseBitmap : public AutoStorage
 {
 public:
 	// Default constructor, stack placement
-	SparseBitmap() : 
+	SparseBitmap() :
 		singular(false), singular_value(0), tree(&getPool()), defaultAccessor(this)
 	{ }
 
@@ -70,7 +70,7 @@ public:
 
 	// Default accessor methods
 	bool locate(T key) { return defaultAccessor.locate(locEqual, key); }
-	
+
 	bool locate(LocType lt, T key) { return defaultAccessor.locate(lt, key); }
 
 	bool getFirst() { return defaultAccessor.getFirst(); }
@@ -100,7 +100,7 @@ public:
 			bucket.start_value = singular_value & ~(T) (BUNCH_BITS - 1);
 			bucket.bits = BUNCH_ONE << (singular_value - bucket.start_value);
 			tree.add(bucket);
-		} 
+		}
 		else {
 			if (tree.isEmpty()) {
 				singular = true;
@@ -115,7 +115,7 @@ public:
 		Bucket bucket;
 		bucket.start_value = val_aligned;
 		bucket.bits = bit_mask;
-		if (tree.isPositioned(val_aligned) || !tree.add(bucket)) 
+		if (tree.isPositioned(val_aligned) || !tree.add(bucket))
 		{
 			fb_assert(tree.isPositioned(val_aligned));
 			tree.current().bits |= bit_mask;
@@ -189,7 +189,7 @@ public:
 		tree.clear();
 	}
 
- 	// Compute the union of two bitmaps. 
+ 	// Compute the union of two bitmaps.
 	// Note: this method uses one of the bitmaps to return result
 	static SparseBitmap** bit_or(SparseBitmap** bitmap1, SparseBitmap** bitmap2);
 
@@ -233,14 +233,14 @@ public:
 	class Accessor
 	{
 	public:
-		Accessor(SparseBitmap* _bitmap) : 
+		Accessor(SparseBitmap* _bitmap) :
 			bitmap(_bitmap), treeAccessor(_bitmap ? &_bitmap->tree : NULL), bit_mask(BUNCH_ONE), current_value(0) {}
-	
+
 		bool locate(T key)
 		{
 			return locate(locEqual, key);
 		}
-	
+
 		// Position accessor on item having LocType relationship with given key
 		// If method returns false position of accessor is not defined.
 		bool locate(LocType lt, T key)
@@ -258,7 +258,7 @@ public:
 				current_value = bitmap->singular_value;
 
 				switch (lt) {
-				case locEqual: 
+				case locEqual:
 					return current_value == key;
 				case locGreatEqual:
 					return current_value >= key;
@@ -306,7 +306,7 @@ public:
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					} 
+					}
 					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE;
@@ -345,7 +345,7 @@ public:
 					if (treeAccessor.current().start_value == key_aligned) {
 						current_value = key;
 						bit_mask = BUNCH_ONE << (key - key_aligned);
-					} 
+					}
 					else {
 						current_value = treeAccessor.current().start_value;
 						bit_mask = BUNCH_ONE << (BUNCH_BITS - 1);
@@ -383,7 +383,7 @@ public:
 			return false;
 		}
 
-		// If method returns false it means list is empty and 
+		// If method returns false it means list is empty and
 		// position of accessor is not defined.
 		bool getFirst()
 		{
@@ -414,7 +414,7 @@ public:
 			return false;
 		}
 
-		// If method returns false it means list is empty and 
+		// If method returns false it means list is empty and
 		// position of accessor is not defined.
 		bool getLast()
 		{
@@ -444,7 +444,7 @@ public:
 			fb_assert(false);
 		}
 
-		// Accessor position must be establised via successful call to getFirst(), 
+		// Accessor position must be establised via successful call to getFirst(),
 		// getLast() or locate() before you can call this method
 		bool getNext()
 		{
@@ -490,11 +490,11 @@ public:
 			} while (try_mask);
 
 			// Bucket must contain one bit at least
-			fb_assert(false); 
+			fb_assert(false);
 			return false; // Absence of this statement makes GCC 3.4 generate wrong code here
 		}
 
-		// Accessor position must be establised via successful call to getFirst(), 
+		// Accessor position must be establised via successful call to getFirst(),
 		// getLast() or locate() before you can call this method
 		bool getPrev()
 		{
@@ -559,10 +559,10 @@ private:
 template <typename T, typename InternalTypes>
 SparseBitmap<T, InternalTypes>**
 SparseBitmap<T, InternalTypes>::bit_or(
-	SparseBitmap<T, InternalTypes>** bitmap1, 
+	SparseBitmap<T, InternalTypes>** bitmap1,
 	SparseBitmap<T, InternalTypes>** bitmap2
-) 
-{	
+)
+{
 	SparseBitmap *map1, *map2;
 
 	// Handle the case when one or the other of the bitmaps is NULL
@@ -590,13 +590,13 @@ SparseBitmap<T, InternalTypes>::bit_or(
 	}
 
 	SparseBitmap *source, *dest, **result;
-	
+
 	// If second bitmap seems larger then use it as a target
 	if (map2->tree.seemsBiggerThan(map1->tree)) {
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	} 
+	}
 	else {
 		dest = map1;
 		source = map2;
@@ -615,7 +615,7 @@ SparseBitmap<T, InternalTypes>::bit_or(
 	if (!destFound) {
 		return result;
 	}
-		
+
 	T destValue = dest->tree.current().start_value;
 	T sourceValue = source->tree.current().start_value;
 
@@ -656,7 +656,7 @@ SparseBitmap<T, InternalTypes>::bit_or(
 					break;
 				}
 			}
-		} 
+		}
 		else {
 			// Add remaining buckets to destination tree and get out
 			do {
@@ -665,17 +665,17 @@ SparseBitmap<T, InternalTypes>::bit_or(
 
 			break;
 		}
-	} 
+	}
 
 	return result;
 }
 
 template <typename T, typename InternalTypes>
-SparseBitmap<T, InternalTypes>** 
+SparseBitmap<T, InternalTypes>**
 SparseBitmap<T, InternalTypes>::bit_and(
-	SparseBitmap<T, InternalTypes>** bitmap1, 
+	SparseBitmap<T, InternalTypes>** bitmap1,
 	SparseBitmap<T, InternalTypes>** bitmap2
-) 
+)
 {
 	SparseBitmap *map1, *map2;
 
@@ -710,7 +710,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 		dest = map2;
 		source = map1;
 		result = bitmap2;
-	} 
+	}
 	else {
 		dest = map1;
 		source = map2;
@@ -722,7 +722,7 @@ SparseBitmap<T, InternalTypes>::bit_and(
 	// Destination bitmap is empty. We have nothing to do thus return.
 	if (!destFound)
 		return result;
-		
+
 	bool sourceFound = source->tree.getFirst();
 
 	// Both source and destination are empty. Return destination FWIW.
@@ -764,10 +764,10 @@ SparseBitmap<T, InternalTypes>::bit_and(
 			// if (sourceValue > destValue)
 			if ((destFound = dest->tree.fastRemove()))
 				destValue = dest->tree.current().start_value;
-		} 
+		}
 		else {
 			// Trim out remaining values from destination list and get out
-			while (dest->tree.fastRemove()) 
+			while (dest->tree.fastRemove())
 			{ }
 			break;
 		}

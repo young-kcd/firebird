@@ -39,7 +39,7 @@ struct irsb_sort;
 struct merge_control;
 
 /* SORTP is used throughout sort.c as a pointer into arrays of
-   longwords(32 bits).   For 16 bit Windows, this must be a huge pointer. 
+   longwords(32 bits).   For 16 bit Windows, this must be a huge pointer.
 
    Use this definition whenever doing pointer arithmetic, as
    Firebird variables (eg. scb->scb_longs) are in 32 - bit longwords. */
@@ -85,7 +85,7 @@ struct sort_record
 
 /*  sort_record_data  is here to explain the sort record.
     To get to the data part of a record add scb->scb_key_length to a pointer
-    pointing to the start of the sort_record_key. 
+    pointing to the start of the sort_record_key.
 
     ULONG       sort_record_data [1];
                                    Data values, not part of key,

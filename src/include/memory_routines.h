@@ -22,10 +22,10 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
- 
- 
- 
- 
+
+
+
+
 
 #ifndef MEMORY_ROUTINES_H
 #define MEMORY_ROUTINES_H
@@ -39,7 +39,7 @@ inline void copy_toptr(void* to, const T from)
 #else
          *((T*) to) = from;
 #endif
-} 
+}
 
 template <typename T>
 inline void copy_fromptr(T& to, const void* from)
@@ -49,7 +49,7 @@ inline void copy_fromptr(T& to, const void* from)
 #else
          to = *(T*) from;
 #endif
-} 
+}
 
 
 

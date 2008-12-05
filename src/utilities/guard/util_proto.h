@@ -31,11 +31,11 @@
 
 pid_t	UTIL_start_process(const char* process, const char* process2, char** argv, const char* prog_name);
 int 	UTIL_wait_for_child(pid_t child_pid,
-			const volatile sig_atomic_t& shutting_down); 
+			const volatile sig_atomic_t& shutting_down);
 int 	UTIL_shutdown_child(pid_t child_pid,
 			unsigned timeout_term, unsigned timeout_kill);
 int 	UTIL_ex_lock(const char* file);
-void	UTIL_ex_unlock(int fd_file); 
+void	UTIL_ex_unlock(int fd_file);
 int 	UTIL_set_handler(int sig, void (*handler) (int), bool restart);
 
 #endif // UTIL_PROTO_H

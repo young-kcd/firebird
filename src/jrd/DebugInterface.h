@@ -37,14 +37,14 @@ public:
 	USHORT mbs_src_line;
 	USHORT mbs_src_col;
 
-	static const USHORT generate(const void*, const MapBlrToSrcItem& Item) 
+	static const USHORT generate(const void*, const MapBlrToSrcItem& Item)
 	{ return Item.mbs_offset; }
 };
 
 typedef Firebird::SortedArray<
-	MapBlrToSrcItem, 
-	Firebird::EmptyStorage<MapBlrToSrcItem>, 
-	USHORT, 
+	MapBlrToSrcItem,
+	Firebird::EmptyStorage<MapBlrToSrcItem>,
+	USHORT,
 	MapBlrToSrcItem> MapBlrToSrc;
 
 typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;
@@ -102,7 +102,7 @@ struct DbgInfo
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
 };
 
-} // namespace Firebird 
+} // namespace Firebird
 
 void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
 void DBG_parse_debug_info(USHORT, const UCHAR*, Firebird::DbgInfo&);

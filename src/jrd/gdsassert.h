@@ -48,18 +48,18 @@
 
 #else	// DEV_BUILD
 
-#define fb_assert(ex)				// nothing 
-#define fb_assert_continue(ex)		// nothing 
+#define fb_assert(ex)				// nothing
+#define fb_assert_continue(ex)		// nothing
 
-#endif // DEV_BUILD 
+#endif // DEV_BUILD
 
 namespace DtorException {
 	inline void devHalt()
 	{
 		// If any guard's dtor is executed during exception processing,
-		// (remember - this guards live on the stack), exception 
+		// (remember - this guards live on the stack), exception
 		// in leave() causes std::terminate() to be called, therefore
-		// losing original exception information. Not good for us. 
+		// losing original exception information. Not good for us.
 		// Therefore ignore in release and abort in debug.
 #ifdef DEV_BUILD
 		abort();
@@ -67,5 +67,5 @@ namespace DtorException {
 	}
 }
 
-#endif // JRD_GDSASSERT_H 
+#endif // JRD_GDSASSERT_H
 

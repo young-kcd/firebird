@@ -60,7 +60,7 @@
   *   the plugin's register function.  This parameter is a Plugin pointer which allows
   *   the subsystem to access the plugin's symbols.
   *
-  * The exact semantics of the function the plugin needs to call varies by 
+  * The exact semantics of the function the plugin needs to call varies by
   *    subsystem.  Please refer to the subsystem documentation for details.
   **/
 
@@ -74,7 +74,7 @@ public:
 	static Firebird::InitInstance<PluginManager> enginePluginManager;
 
 	class iterator;
-	
+
 private:
 	/** PluginManager::Module is an internal class that encapsulates
 	  *  the reference counter, module array, module
@@ -108,7 +108,7 @@ private:
 		///  the symbol's location in the current address space.  If the symbol can't
 		///  be found it returns 0.
 		virtual void *lookupSymbol(const Firebird::string&) = 0;
-		
+
 	private:
 		friend class PluginManager;
 		friend class iterator;
@@ -116,7 +116,7 @@ private:
 		Firebird::PathName module_name;
 		Module **prev;
 		Module *next;
-		
+
 		/// unload_module is used called by the destructor when the module
 		/// represented by this module object needs to be physically unloaded
 		/// from memory.
@@ -126,8 +126,8 @@ private:
 public:
 	friend class Plugin;
 	friend class iterator;
-	
-	explicit PluginManager(MemoryPool& p) : Firebird::PermanentStorage(p), 
+
+	explicit PluginManager(MemoryPool& p) : Firebird::PermanentStorage(p),
 		moduleList(0), searchPaths(getPool()), ignoreModules(getPool()) {}
 	~PluginManager();
 
@@ -165,7 +165,7 @@ public:
 			return module ? module->lookupSymbol(sym) : 0;
 		}
 		operator bool() const { return module != 0; }
-		
+
 	private:
 		friend class iterator;
 		Plugin(Module *mod) : module(mod)
@@ -173,10 +173,10 @@ public:
 			if (module)
 				module->acquire();
 		}
-		
+
 		Module *module;
 	};
-	
+
 	/** The iterator class allows external code to iterate through all the plugins
 	  *  a plugin manager knows about.  The iterator behaves like a traditional STL
 	  *  iterator.
@@ -201,13 +201,13 @@ public:
 			return *this;
 		}
 		iterator(const iterator& other) : curr(other.curr) {}
-			
+
 	private:
 		Module *curr;
-		
+
 		iterator(Module *start = 0) : curr(start) {}
 	};
-	
+
 	/// Searches for the plugin with the given name using the
 	///  preset search criteria.
 	Plugin findPlugin(const Firebird::PathName&);
@@ -243,36 +243,36 @@ private:
 	Firebird::ObjectsArray<Path> searchPaths;
 	typedef Firebird::ObjectsArray<Path>::iterator spIterator;
 	Firebird::ObjectsArray<Firebird::PathName> ignoreModules;
-	
+
 	Module *loadPluginModule(const Firebird::PathName& name);
 	Module *loadBuiltinModule(const Firebird::PathName& name);
 
 	class BuiltinModule : public Module
 	{
 	public:
-		BuiltinModule(MemoryPool& p, const Firebird::PathName& nameL) 
+		BuiltinModule(MemoryPool& p, const Firebird::PathName& nameL)
 			: Module(p, nameL), symbols(p) {}
-		
+
 	private:
 		typedef Firebird::Pair<Firebird::Left<Firebird::string, void*> > PMSymbol;
 		typedef Firebird::FirstKey<PMSymbol> PMSymbolKey;
-		typedef Firebird::SortedArray<PMSymbol, 
-			Firebird::EmptyStorage<PMSymbol>, 
+		typedef Firebird::SortedArray<PMSymbol,
+			Firebird::EmptyStorage<PMSymbol>,
 			Firebird::string, PMSymbolKey> PMSymbols;
 		PMSymbols symbols;
-		
+
 		void *lookupSymbol(const Firebird::string&);
 	};
-	
+
 	class PluginModule : public Module
 	{
 	public:
 		PluginModule(MemoryPool& p, const Firebird::PathName &nameL, ModuleLoader::Module *mod)
 			: Module(p, nameL), module(mod) {}
-			
+
 	private:
 		ModuleLoader::Module *module;
-		
+
 		void unload_module();
 		void *lookupSymbol(const Firebird::string&);
 	};

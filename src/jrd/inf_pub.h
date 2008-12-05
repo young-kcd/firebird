@@ -105,12 +105,12 @@ enum db_info_types
 	isc_info_tpage_errors = 60,
 
 	isc_info_set_page_buffers = 61,
-	isc_info_db_sql_dialect = 62,   
+	isc_info_db_sql_dialect = 62,
 	isc_info_db_read_only = 63,
 	isc_info_db_size_in_pages = 64,
 
 	/* Values 65 -100 unused to avoid conflict with InterBase */
-	
+
 	frb_info_att_charset = 101,
 	isc_info_db_class = 102,
 	isc_info_firebird_version = 103,
@@ -151,7 +151,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
 	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
-	
+
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
 	isc_info_db_impl_isc_vms_orcl = 33,
@@ -177,7 +177,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_epson = 51,
 	isc_info_db_impl_alpha_osf = 52,
 	isc_info_db_impl_alpha_vms = 53,
-	isc_info_db_impl_netware_386 = 54, 
+	isc_info_db_impl_netware_386 = 54,
 	isc_info_db_impl_win_only = 55,
 	isc_info_db_impl_ncr_3000 = 56,
 	isc_info_db_impl_winnt_ppc = 57,
@@ -192,7 +192,7 @@ enum  info_db_implementations
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
-	
+
 	isc_info_db_impl_freebsd_amd64 = 67,
 
 	isc_info_db_impl_winnt_amd64 = 68,

@@ -98,11 +98,11 @@ public:
 	que			bcb_empty;			/* Que of empty buffers */
 #ifdef DIRTY_TREE
 	BufferDesc*	bcb_btree;			/* root of dirty page btree */
-#endif 
+#endif
 #ifdef DIRTY_LIST
 	que			bcb_dirty;			// que of dirty buffers
-	SLONG		bcb_dirty_count;	// count of pages in dirty page btree 
-#endif 
+	SLONG		bcb_dirty_count;	// count of pages in dirty page btree
+#endif
 	Precedence*	bcb_free;			/* Free precedence blocks */
 	que			bcb_free_lwt;		/* Free latch wait blocks */
 	que			bcb_free_slt;		// Free shared latch blocks
@@ -110,7 +110,7 @@ public:
 	SSHORT		bcb_free_minimum;	/* Threshold to activate cache writer */
 	ULONG		bcb_count;			/* Number of buffers allocated */
 	ULONG		bcb_checkpoint;		/* Count of buffers to checkpoint */
-	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk 
+	ULONG		bcb_writeable_mark;	// mark value used in precedence graph walk
 #ifdef SUPERSERVER_V2
 	PageBitmap*	bcb_prefetch;		/* Bitmap of pages to prefetch */
 #endif
@@ -144,7 +144,7 @@ public:
 	que			bdb_in_use;				/* queue of buffers in use */
 #ifdef DIRTY_LIST
 	que			bdb_dirty;				// dirty pages LRU queue
-#endif 
+#endif
 	Ods::pag*	bdb_buffer;				/* Actual buffer */
 	exp_index_buf*	bdb_expanded_buffer;	/* expanded index buffer */
 	PageNumber	bdb_page;				/* Database page number in buffer */
@@ -168,7 +168,7 @@ public:
 	SSHORT		bdb_scan_count;			/* concurrent sequential scans */
 	ULONG       bdb_difference_page;    // Number of page in difference file, NBAK
 	SLONG		bdb_backup_lock_owner;	// Logical owner of database_lock for buffer
-	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk 
+	ULONG		bdb_writeable_mark;		// mark value used in precedence graph walk
 	que			bdb_shared;				// shared latches queue
 };
 
@@ -216,17 +216,17 @@ const int PRE_cleared	= 1;
    An exclusive latch is needed to modify a page.  Before
    marking a page an 'io-prevention' latch is needed: a mark latch.
    To look at a buffer, a shared latch is needed.  To write a page,
-   an io latch is needed.  
+   an io latch is needed.
 
-   Exclusive and shared latches interact.  Io and mark latches 
+   Exclusive and shared latches interact.  Io and mark latches
    interact.
 
    An mark latch is implemented as an io latch.
-   
+
    Latches are granted in the order in which they are
    queued with one notable exception -- if buffer write
    is in-progress then shared latches are granted ahead
-   of any pending exclusive latches. 
+   of any pending exclusive latches.
 
 	      shared	 io	exclusive   mark
 -------------------------------------------------

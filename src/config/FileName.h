@@ -8,7 +8,7 @@ class FileName : public Firebird::GlobalStorage
 public:
 	explicit FileName(const Firebird::PathName& name);
 	~FileName();
-	
+
 	Firebird::PathName	pathName;
 	Firebird::PathName	directory;
 	Firebird::PathName	root;

@@ -143,7 +143,7 @@ static const struct ini_idx_t indices[] = {
 	 * Per Deej, this is only necessary to prevent someone creating
 	 * a shadow file of the same name as the database file.
 	 * Once large indices are implemented this should be reactivated.
-	 * 
+	 *
 	 *	INDEX (XX, no_ODS, rel_files, idx_unique, 1)
 	 *		SEGMENT (f_file_name, idx_string)
 	 *  }},
@@ -186,9 +186,9 @@ static const struct ini_idx_t indices[] = {
 	}},
 
 	/* Last index in ODS 8.0 is RDB$INDEX_26 */
-	
+
 	/* New indices added as part of ODS 8.1
-	 * These are now indices on all system tables that previously 
+	 * These are now indices on all system tables that previously
 	 * did not have one, except for RDB$PAGES & RDB$LOG_FILES
 	 * An index on rel_pages would help DROP TABLE, but not any other
 	 * operation.
@@ -248,9 +248,9 @@ static const struct ini_idx_t indices[] = {
 	}},
 
 	/* Last index in ODS 9.0 is RDB$INDEX_39 */
-	
+
 	/* New indices added as part of ODS 9.1
-	 * These are now indices on all system tables that previously 
+	 * These are now indices on all system tables that previously
 	 * did not have one.
 	 */
 
@@ -262,7 +262,7 @@ static const struct ini_idx_t indices[] = {
 	/* Last index in both ODS 9.1 and ODS 10.0 is RDB$INDEX_40 */
 
 	/* New indices added as part of ODS 10.1
-	 * These are now indices on all system tables that previously 
+	 * These are now indices on all system tables that previously
 	 * did not have one.
 	 */
 
@@ -283,7 +283,7 @@ static const struct ini_idx_t indices[] = {
 	/* Last index in ODS 10.1 is RDB$INDEX_43 */
 
 	/* New indices added as part of ODS 11.0
-	 * These are now indices on all system tables that previously 
+	 * These are now indices on all system tables that previously
 	 * did not have one.
 	 */
 
@@ -300,7 +300,7 @@ static const struct ini_idx_t indices[] = {
 	/* Last index in both ODS 11.0 and ODS 11.1 is RDB$INDEX_45 */
 
 	/* New indices added as part of ODS 11.2
-	 * These are now indices on all system tables that previously 
+	 * These are now indices on all system tables that previously
 	 * did not have one.
 	 */
 

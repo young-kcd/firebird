@@ -43,7 +43,7 @@ public:
 		delete ptr;
 	}
 };
-	
+
 template <typename What>
 class ArrayDelete
 {
@@ -53,7 +53,7 @@ public:
 		delete[] ptr;
 	}
 };
-	
+
 template <typename Where, typename Clear = SimpleDelete<Where> >
 class AutoPtr
 {

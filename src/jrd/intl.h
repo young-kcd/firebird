@@ -61,7 +61,7 @@
 #define ttype_sort_key			ttype_binary
 #define	ttype_metadata			ttype_unicode_fss
 
-/* Note: 
+/* Note:
  * changing the value of ttype_metadata is an ODS System Metadata change
  * changing the value of CS_METADATA    is an ODS System Metadata change
  */
@@ -130,11 +130,11 @@ inline USHORT INTL_TEXT_TYPE(const dsc& desc)
  */
 
 /* There must be a 1-1 mapping between index types and International text
- * subtypes - 
+ * subtypes -
  * Index-to-subtype: to compute a KEY from a Text string we must know both
  *	the TEXT format and the COLLATE routine to use (eg: the subtype info).
  * 	We need the text-format as the datavalue for key creation may not
- * 	match that needed for the index. 
+ * 	match that needed for the index.
  * Subtype-to-index: When creating indices, they are assigned an
  *	Index type, which is derived from the datatype of the target.
  *

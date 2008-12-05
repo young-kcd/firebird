@@ -279,7 +279,7 @@ struct his {
 };
 
 // his_operation definitions
-// should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation 
+// should be UCHAR according to his_operation but is USHORT in lock.cpp:post_operation
 const UCHAR his_enq			= 1;
 const UCHAR his_deq			= 2;
 const UCHAR his_convert		= 3;

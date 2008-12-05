@@ -59,9 +59,9 @@ bool	ISQL_is_domain(const TEXT*);
 #endif
 int		ISQL_main(int, char**);
 void	ISQL_make_upper(TEXT*);
-void	ISQL_msg_get(USHORT number, TEXT* msg, 
+void	ISQL_msg_get(USHORT number, TEXT* msg,
 					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
-void	ISQL_msg_get(USHORT number, USHORT size, TEXT* msg, 
+void	ISQL_msg_get(USHORT number, USHORT size, TEXT* msg,
 					 const MsgFormat::SafeArg& args = MsgFormat::SafeArg());
 void	ISQL_print_validation(FILE*, ISC_QUAD*, bool, FB_API_HANDLE);
 void	ISQL_printf(FILE*, const char*);

@@ -20,10 +20,10 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
- 
+
 #ifndef SRVRMGR_PROTO_H
 #define SRVRMGR_PROTO_H
- 
+
 void 	SRVRMGR_cleanup (ibmgr_data_t*);
 USHORT	SRVRMGR_exec_line (ibmgr_data_t*);
 void 	SRVRMGR_msg_get (USHORT, TEXT*);

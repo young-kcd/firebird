@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2004.01.16 Vlad Horsun: added support for default parameters and 
+ * 2004.01.16 Vlad Horsun: added support for default parameters and
  *   EXECUTE BLOCK statement
  */
 

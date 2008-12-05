@@ -48,7 +48,7 @@ const int STATIC_PATTERN_BUFFER		= 256;
 namespace Firebird {
 
 template <typename CharType>
-static void preKmp(const CharType *x, int m, SLONG kmpNext[]) 
+static void preKmp(const CharType *x, int m, SLONG kmpNext[])
 {
 	SLONG i = 0;
 	SLONG j = kmpNext[0] = -1;
@@ -91,7 +91,7 @@ public:
 		if (allocated + localCount <= STATIC_PATTERN_BUFFER)
 		{
 			result = allocBuffer + allocated;
-			allocated += localCount; 
+			allocated += localCount;
 		}
 		else
 		{
@@ -135,15 +135,15 @@ public:
 		return offset >= pattern_len && result;
 	}
 
-	bool processNextChunk(const CharType* data, SLONG data_len) 
+	bool processNextChunk(const CharType* data, SLONG data_len)
 	{
 		// Should work fine when called with data_len equal to zero
 		if (!result || offset >= pattern_len)
 			return false;
 
-		const SLONG comp_length = 
+		const SLONG comp_length =
 			data_len < pattern_len - offset ? data_len : pattern_len - offset;
-		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0) 
+		if (memcmp(data, pattern_str + offset, sizeof(CharType) * comp_length) != 0)
 		{
 			result = false;
 			return false;
@@ -186,7 +186,7 @@ public:
 	}
 
 	bool processNextChunk(const CharType* data, SLONG data_len)
-	{		
+	{
 		// Should work fine when called with data_len equal to zero
 		if (result)
 			return false;
@@ -236,8 +236,8 @@ template <typename CharType>
 class LikeEvaluator : private StaticAllocator
 {
 public:
-	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str, 
-		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any, 
+	LikeEvaluator(MemoryPool& _pool, const CharType* _pattern_str,
+		SLONG pattern_len, CharType escape_char, bool use_escape, CharType sql_match_any,
 		CharType sql_match_one);
 
 	void reset()
@@ -293,7 +293,7 @@ private:
 
 template <typename CharType>
 LikeEvaluator<CharType>::LikeEvaluator(
-	MemoryPool& _pool, const CharType* _pattern_str, SLONG pattern_len, 
+	MemoryPool& _pool, const CharType* _pattern_str, SLONG pattern_len,
 	CharType escape_char, bool use_escape, CharType sql_match_any, CharType sql_match_one)
 : StaticAllocator(_pool), patternItems(_pool), branches(_pool), match_type(MATCH_NONE)
 {
@@ -371,7 +371,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 			}
 			continue;
 		}
-		// anything else			
+		// anything else
 		switch (item->type) {
 		case piSkipFixed:
 		case piSkipMore:
@@ -399,21 +399,21 @@ LikeEvaluator<CharType>::LikeEvaluator(
 		switch (itemL->type) {
 		case piEscapedString: {
 			const CharType *curPos = itemL->str.data;
-			itemL->str.data = 
+			itemL->str.data =
 				static_cast<CharType*>(alloc(itemL->str.length * sizeof(CharType)));
 			for (SLONG j = 0; j < itemL->str.length; j++) {
-				if (use_escape && *curPos == escape_char) 
+				if (use_escape && *curPos == escape_char)
 					curPos++;
 				itemL->str.data[j] = *curPos++;
 			}
-			itemL->type = piSearch;			
+			itemL->type = piSearch;
 			// Note: fall into
 			}
 		case piSearch:
 			if (directMatch)
 				itemL->type = piDirectMatch;
 			else {
-				itemL->str.kmpNext = 
+				itemL->str.kmpNext =
 					static_cast<SLONG*>(alloc((itemL->str.length + 1) * sizeof(SLONG)));
 				preKmp<CharType>(itemL->str.data, itemL->str.length, itemL->str.kmpNext);
 				directMatch = true;
@@ -468,12 +468,12 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 	if (branches.getCount() == 0)
 		return false;
 
-	SLONG data_pos = 0;	
+	SLONG data_pos = 0;
 	SLONG finishCandidate = -1;
 	while (data_pos < data_len) {
 
 		size_t branch_number = 0;
-		while (branch_number < branches.getCount()) 
+		while (branch_number < branches.getCount())
 		{
 			BranchItem *current_branch = &branches[branch_number];
 			PatternItem *current_pattern = current_branch->pattern;
@@ -488,7 +488,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 				}
 				// Note: fall into
 			case piSkipFixed:
-				current_branch->offset++;				
+				current_branch->offset++;
 				if (current_branch->offset >= current_pattern->str.length) {
 					// Switch to next subpattern or finish matching
 					if (current_pattern->match_any) {
@@ -523,7 +523,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 				break;
 			case piSearch:
 				// Knuth-Morris-Pratt search algorithm
-				while (current_branch->offset >= 0 && 
+				while (current_branch->offset >= 0 &&
 					   current_pattern->str.data[current_branch->offset] != data[data_pos])
 				{
 			    	current_branch->offset = current_pattern->str.kmpNext[current_branch->offset];

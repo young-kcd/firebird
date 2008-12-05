@@ -59,7 +59,7 @@ using namespace NAMESPACE;
 #endif
 //#if defined(SOLX86)
 // this pragmas is used only with gcc 2.95!
-//#define __PRAGMA_REDEFINE_EXTNAME 
+//#define __PRAGMA_REDEFINE_EXTNAME
 //#define __EXTENSIONS__
 //
 //#endif
@@ -87,7 +87,7 @@ using namespace NAMESPACE;
 #endif
 
 #if defined(WIN_NT) && defined(SUPERSERVER)
-// Comment this definition to build without priority scheduler 
+// Comment this definition to build without priority scheduler
 //	OR:
 // Uncomment this definition to build with priority scheduler
 #define THREAD_PSCHED

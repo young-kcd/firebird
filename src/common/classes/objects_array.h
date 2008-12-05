@@ -27,7 +27,7 @@
 
 #ifndef CLASSES_OBJECTS_ARRAY_H
 #define CLASSES_OBJECTS_ARRAY_H
- 
+
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 
@@ -40,7 +40,7 @@ namespace Firebird
 		typedef A inherited;
 	public:
 		class const_iterator; // fwd decl.
-		
+
 		class iterator
 		{
 			friend class ObjectsArray<T, A>;
@@ -278,25 +278,25 @@ namespace Firebird
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
 		void clear()
-		{ 
+		{
 			for (size_t i = 0; i < getCount(); i++) {
 				delete getPointer(i);
 			}
-			inherited::clear(); 
+			inherited::clear();
 		}
-		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L) 
+		ObjectsArray<T, A>& operator =(const ObjectsArray<T, A>& L)
 		{
-			while (this->count > L.count) 
+			while (this->count > L.count)
 			{
 				delete inherited::pop();
 			}
-			for (size_t i = 0; i < L.count; i++) 
+			for (size_t i = 0; i < L.count; i++)
 			{
 				if (i < this->count)
 				{
 					(*this)[i] = L[i];
 				}
-				else 
+				else
 				{
 					add(L[i]);
 				}
@@ -326,29 +326,29 @@ namespace Firebird
 
 	// Dynamic sorted array of simple objects
 	template <typename ObjectValue,
-		typename ObjectStorage = InlineStorage<ObjectValue*, 32>, 
-		typename ObjectKey = ObjectValue, 
-		typename ObjectKeyOfValue = DefaultKeyValue<ObjectValue*>, 
+		typename ObjectStorage = InlineStorage<ObjectValue*, 32>,
+		typename ObjectKey = ObjectValue,
+		typename ObjectKeyOfValue = DefaultKeyValue<ObjectValue*>,
 		typename ObjectCmp = ObjectComparator<const ObjectKey*> >
-	class SortedObjectsArray : public ObjectsArray<ObjectValue, 
-			SortedArray <ObjectValue*, ObjectStorage, const ObjectKey*, 
+	class SortedObjectsArray : public ObjectsArray<ObjectValue,
+			SortedArray <ObjectValue*, ObjectStorage, const ObjectKey*,
 			ObjectKeyOfValue, ObjectCmp> >
 	{
 	private:
-		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+		typedef ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp> > inherited;
 
 	public:
-		explicit SortedObjectsArray(MemoryPool& p) : 
-			ObjectsArray <ObjectValue, SortedArray<ObjectValue*, 
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+		explicit SortedObjectsArray(MemoryPool& p) :
+			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp> >(p) { }
 		bool find(const ObjectKey& item, size_t& pos) const
 		{
 			const ObjectKey* const pItem = &item;
-			return static_cast<const SortedArray<ObjectValue*, 
-				ObjectStorage, const ObjectKey*, ObjectKeyOfValue, 
+			return static_cast<const SortedArray<ObjectValue*,
+				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
 		bool exist(const ObjectKey& item) const

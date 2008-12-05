@@ -230,7 +230,7 @@ struct impure_value
 
 	void make_long(const SLONG val, const signed char scale = 0);
 	void make_int64(const SINT64 val, const signed char scale = 0);
-	
+
 };
 
 // Do not use these methods where dsc_sub_type is not explicitly set to zero.
@@ -591,7 +591,7 @@ struct Resource
 
 	static bool greaterThan(const Resource& i1, const Resource& i2)
 	{
-		// A few places of the engine depend on fact that rsc_type 
+		// A few places of the engine depend on fact that rsc_type
 		// is the first field in ResourceList ordering
 		if (i1.rsc_type != i2.rsc_type)
 			return i1.rsc_type > i2.rsc_type;
@@ -607,7 +607,7 @@ struct Resource
 		rsc_type(type), rsc_id(id), rsc_rel(rel), rsc_prc(prc), rsc_coll(coll) { }
 };
 
-typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>, 
+typedef Firebird::SortedArray<Resource, Firebird::EmptyStorage<Resource>,
 	Resource, Firebird::DefaultKeyValue<Resource>, Resource> ResourceList;
 
 // Access items
@@ -628,7 +628,7 @@ struct AccessItem
 
 		// Relations and procedures should be sorted before
 		// columns, hence such a tricky inverted condition
-		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0) 
+		if ((v = -strcmp(i1.acc_type, i2.acc_type)) != 0)
 			return v > 0;
 
 		if ((v = i1.acc_security_name.compare(i2.acc_security_name)) != 0)
@@ -649,15 +649,15 @@ struct AccessItem
 		return false; // Equal
 	}
 
-	AccessItem(const Firebird::MetaName& security_name, SLONG view_id, 
-		const Firebird::MetaName& name, const TEXT* type, 
+	AccessItem(const Firebird::MetaName& security_name, SLONG view_id,
+		const Firebird::MetaName& name, const TEXT* type,
 		SecurityClass::flags_t mask, const Firebird::MetaName& relName)
-	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name), 
+	: acc_security_name(security_name), acc_view_id(view_id), acc_name(name),
 		acc_r_name(relName), acc_type(type), acc_mask(mask)
 	{}
 };
 
-typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>, 
+typedef Firebird::SortedArray<AccessItem, Firebird::EmptyStorage<AccessItem>,
 	AccessItem, Firebird::DefaultKeyValue<AccessItem>, AccessItem> AccessItemList;
 
 // Triggers and procedures the request accesses
@@ -676,7 +676,7 @@ struct ExternalAccess
 	USHORT exa_view_id;
 
 	// Procedure
-	ExternalAccess(USHORT prc_id) : 
+	ExternalAccess(USHORT prc_id) :
 		exa_action(exa_procedure), exa_prc_id(prc_id), exa_rel_id(0), exa_view_id(0)
 	{ }
 
@@ -699,7 +699,7 @@ struct ExternalAccess
 	}
 };
 
-typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>, 
+typedef Firebird::SortedArray<ExternalAccess, Firebird::EmptyStorage<ExternalAccess>,
 	ExternalAccess, Firebird::DefaultKeyValue<ExternalAccess>, ExternalAccess> ExternalAccessList;
 
 // The three structs below are used for domains DEFAULT and constraints in PSQL
@@ -993,7 +993,7 @@ public:
 	SLONG as_sqlcode() const;
 };
 
-// must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE 
+// must correspond to the size of RDB$EXCEPTIONS.RDB$MESSAGE
 // minus size of vary::vary_length (USHORT) since RDB$MESSAGE
 // declared as varchar
 const int XCP_MESSAGE_LENGTH	= 1023 - sizeof(USHORT);

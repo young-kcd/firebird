@@ -24,7 +24,7 @@
 #ifndef DSQL_SQLDA_H
 #define DSQL_SQLDA_H
 
-// SQLDA dialects 
+// SQLDA dialects
 
 const USHORT DIALECT_sqlda	= 0;
 const USHORT DIALECT_xsqlda	= 1;
@@ -50,7 +50,7 @@ struct SQLDA
 
 #define SQLDA_LENGTH(n)		(sizeof (SQLDA) + (n - 1) * sizeof (SQLVAR))
 
-// Structure to support conversion of SQLDA's to messages 
+// Structure to support conversion of SQLDA's to messages
 
 struct sqlda_sup
 {
@@ -66,8 +66,8 @@ struct sqlda_sup
 		USHORT	dasup_info_len;
 	} dasup_clauses[2];
 
-	USHORT	dasup_dialect;		// Dialect associated with statement 
-	USHORT	dasup_stmt_type;	// Type of statement 
+	USHORT	dasup_dialect;		// Dialect associated with statement
+	USHORT	dasup_stmt_type;	// Type of statement
 
 };
 

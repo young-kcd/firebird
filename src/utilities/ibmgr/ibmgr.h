@@ -37,7 +37,7 @@ static const char* SERVER_GUARDIAN	= "bin/fbguard";
 const USHORT MSG_FAC	= 18;
 const int MSG_LEN		= 128;
 
- 
+
 /* Basic operation definitions
 */
 const USHORT OP_NONE		= 0;
@@ -98,7 +98,7 @@ struct ibmgr_data_t {
 
 };
 
-	
+
 // Messages tag definitions
 
 const USHORT MSG_PROMPT		= 1;	// "FBMGR> "  (the prompt)
@@ -134,7 +134,7 @@ const USHORT MSG_NOPERM		= 33;	// no permissions to perform operation
 const USHORT MSG_PRPOOLFAIL	= 34;	// Failed to print pool info
 const USHORT MSG_PRPOOLOK	= 35;	// Print pool successfull
 const USHORT MSG_FLNMTOOLONG	= 36;	// File name too long
- 
+
 
 #endif // UTILITIES_IBMGR_H
 

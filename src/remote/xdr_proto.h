@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Remote Server 
+ *	PROGRAM:	JRD Remote Server
  *	MODULE:		xdr_proto.h
  *	DESCRIPTION:	Prototype Header file for xdr.cpp
  *

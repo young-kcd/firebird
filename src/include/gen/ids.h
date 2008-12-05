@@ -29,13 +29,13 @@
 	const USHORT  f_pag_id = 1;
 	const USHORT  f_pag_seq = 2;
 	const USHORT  f_pag_type = 3;
- 
+
 
 	const USHORT  f_dat_desc = 0;
 	const USHORT  f_dat_id = 1;
 	const USHORT  f_dat_class = 2;
 	const USHORT  f_dat_charset = 3;
- 
+
 
 	const USHORT  f_fld_name = 0;
 	const USHORT  f_fld_qname = 1;
@@ -65,13 +65,13 @@
 	const USHORT  f_fld_coll_id = 25;
 	const USHORT  f_fld_charset_id = 26;
 	const USHORT  f_fld_precision = 27;
- 
+
 
 	const USHORT  f_seg_name = 0;
 	const USHORT  f_seg_field = 1;
 	const USHORT  f_seg_position = 2;
 	const USHORT  f_seg_statistics = 3;
- 
+
 
 	const USHORT  f_idx_name = 0;
 	const USHORT  f_idx_relation = 1;
@@ -86,7 +86,7 @@
 	const USHORT  f_idx_exp_blr = 10;
 	const USHORT  f_idx_exp_source = 11;
 	const USHORT  f_idx_statistics = 12;
- 
+
 
 	const USHORT  f_rfr_fname = 0;
 	const USHORT  f_rfr_rname = 1;
@@ -107,7 +107,7 @@
 	const USHORT  f_rfr_null_flag = 16;
 	const USHORT  f_rfr_dsource = 17;
 	const USHORT  f_rfr_coll_id = 18;
- 
+
 
 	const USHORT  f_rel_blr = 0;
 	const USHORT  f_rel_source = 1;
@@ -126,13 +126,13 @@
 	const USHORT  f_rel_def_class = 14;
 	const USHORT  f_rel_flags = 15;
 	const USHORT  f_rel_type = 16;
- 
+
 
 	const USHORT  f_vrl_vname = 0;
 	const USHORT  f_vrl_rname = 1;
 	const USHORT  f_vrl_context = 2;
 	const USHORT  f_vrl_cname = 3;
- 
+
 
 	const USHORT  f_fmt_rid = 0;
 	const USHORT  f_fmt_format = 1;
@@ -142,7 +142,7 @@
 	const USHORT  f_cls_class = 0;
 	const USHORT  f_cls_acl = 1;
 	const USHORT  f_cls_desc = 2;
- 
+
 
 	const USHORT  f_file_name = 0;
 	const USHORT  f_file_seq = 1;
@@ -150,14 +150,14 @@
 	const USHORT  f_file_length = 3;
 	const USHORT  f_file_flags = 4;
 	const USHORT  f_file_shad_num = 5;
- 
+
 
 	const USHORT  f_typ_field = 0;
 	const USHORT  f_typ_type = 1;
 	const USHORT  f_typ_name = 2;
 	const USHORT  f_typ_desc = 3;
 	const USHORT  f_typ_sys_flag = 4;
- 
+
 
 	const USHORT  f_trg_name = 0;
 	const USHORT  f_trg_rname = 1;
@@ -171,14 +171,14 @@
 	const USHORT  f_trg_flags = 9;
 	const USHORT  f_trg_valid_blr = 10;
 	const USHORT  f_trg_debug_info = 11;
- 
+
 
 	const USHORT  f_dpd_name = 0;
 	const USHORT  f_dpd_o_name = 1;
 	const USHORT  f_dpd_f_name = 2;
 	const USHORT  f_dpd_type = 3;
 	const USHORT  f_dpd_o_type = 4;
- 
+
 
 	const USHORT  f_fun_name = 0;
 	const USHORT  f_fun_type = 1;
@@ -188,7 +188,7 @@
 	const USHORT  f_fun_entry = 5;
 	const USHORT  f_fun_ret_arg = 6;
 	const USHORT  f_fun_sys_flag = 7;
- 
+
 
 	const USHORT  f_arg_fun_name = 0;
 	const USHORT  f_arg_pos = 1;
@@ -200,7 +200,7 @@
 	const USHORT  f_arg_charset_id = 7;
 	const USHORT  f_arg_precision = 8;
 	const USHORT  f_arg_char_length = 9;
- 
+
 
 	const USHORT  f_flt_name = 0;
 	const USHORT  f_flt_desc = 1;
@@ -209,12 +209,12 @@
 	const USHORT  f_flt_input = 4;
 	const USHORT  f_flt_output = 5;
 	const USHORT  f_flt_sys_flag = 6;
- 
+
 
 	const USHORT  f_msg_trigger = 0;
 	const USHORT  f_msg_number = 1;
 	const USHORT  f_msg_msg = 2;
- 
+
 
 	const USHORT  f_prv_user = 0;
 	const USHORT  f_prv_grantor = 1;
@@ -224,25 +224,25 @@
 	const USHORT  f_prv_fname = 5;
 	const USHORT  f_prv_u_type = 6;
 	const USHORT  f_prv_o_type = 7;
- 
+
 
 	const USHORT  f_trn_id = 0;
 	const USHORT  f_trn_state = 1;
 	const USHORT  f_trn_time = 2;
 	const USHORT  f_trn_desc = 3;
- 
+
 
 	const USHORT  f_gen_name = 0;
 	const USHORT  f_gen_id = 1;
 	const USHORT  f_gen_sys_flag = 2;
 	const USHORT  f_gen_desc = 3;
- 
+
 
 	const USHORT  f_dims_fname = 0;
 	const USHORT  f_dims_dim = 1;
 	const USHORT  f_dims_lower = 2;
 	const USHORT  f_dims_upper = 3;
- 
+
 
 	const USHORT  f_rcon_cname = 0;
 	const USHORT  f_rcon_ctype = 1;
@@ -250,14 +250,14 @@
 	const USHORT  f_rcon_dfr = 3;
 	const USHORT  f_rcon_idfr = 4;
 	const USHORT  f_rcon_iname = 5;
- 
+
 
 	const USHORT  f_refc_cname = 0;
 	const USHORT  f_refc_uq = 1;
 	const USHORT  f_refc_match = 2;
 	const USHORT  f_refc_upd_rul = 3;
 	const USHORT  f_refc_del_rul = 4;
- 
+
 
 	const USHORT  f_ccon_cname = 0;
 	const USHORT  f_ccon_tname = 1;
@@ -269,7 +269,7 @@
 	const USHORT  f_log_partitions = 3;
 	const USHORT  f_log_p_offset = 4;
 	const USHORT  f_log_flags = 5;
- 
+
 
 	const USHORT  f_prc_name = 0;
 	const USHORT  f_prc_id = 1;
@@ -285,7 +285,7 @@
 	const USHORT  f_prc_type = 11;
 	const USHORT  f_prc_valid_blr = 12;
 	const USHORT  f_prc_debug_info = 13;
- 
+
 
 	const USHORT  f_prm_name = 0;
 	const USHORT  f_prm_procedure = 1;
@@ -301,7 +301,7 @@
 	const USHORT  f_prm_mech = 11;
 	const USHORT  f_prm_fname = 12;
 	const USHORT  f_prm_rname = 13;
- 
+
 
 	const USHORT  f_cs_cs_name = 0;
 	const USHORT  f_cs_form_of_use = 1;
@@ -312,7 +312,7 @@
 	const USHORT  f_cs_desc = 6;
 	const USHORT  f_cs_fun_name = 7;
 	const USHORT  f_cs_bytes_char = 8;
- 
+
 
 	const USHORT  f_coll_name = 0;
 	const USHORT  f_coll_id = 1;
@@ -323,14 +323,14 @@
 	const USHORT  f_coll_fun_name = 6;
 	const USHORT  f_coll_base_collation_name = 7;
 	const USHORT  f_coll_specific_attr = 8;
- 
+
 
 	const USHORT  f_xcp_name = 0;
 	const USHORT  f_xcp_number = 1;
 	const USHORT  f_xcp_msg = 2;
 	const USHORT  f_xcp_desc = 3;
 	const USHORT  f_xcp_sys_flag = 4;
- 
+
 
 	const USHORT  f_rol_name = 0;
 	const USHORT  f_rol_owner = 1;

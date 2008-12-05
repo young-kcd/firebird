@@ -44,7 +44,7 @@
 namespace Firebird {
 
 // Wrapper class for ISC_TIMESTAMP supposed to implement date/time conversions
-// and arithmetic. Small and not platform-specific methods are implemented 
+// and arithmetic. Small and not platform-specific methods are implemented
 // inline. Usage of this class normally should involve zero overhead.
 //
 // Note: default "shallow-copy" constructor and assignment operators
@@ -155,7 +155,7 @@ public:
 	static inline bool isLeapYear(const int year)
 	{
 		return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
-	}    
+	}
 
 private:
 	ISC_TIMESTAMP mValue;

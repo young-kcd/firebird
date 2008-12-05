@@ -22,9 +22,9 @@
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- * 
+ *
  */
- 
+
 #ifndef CLASSES_FB_ATOMIC_H
 #define CLASSES_FB_ATOMIC_H
 
@@ -40,32 +40,32 @@ class AtomicCounter
 {
 public:
 	typedef LONG counter_type;
-	
+
 	AtomicCounter(counter_type val = 0) : counter(val) {}
 	~AtomicCounter() {}
-			
+
 	counter_type exchangeAdd(counter_type val) {
 		return InterlockedExchangeAdd(&counter, val);
 	}
-	
+
 	counter_type operator +=(counter_type val) {
 		return exchangeAdd(val) + val;
 	}
-	
+
 	counter_type operator -=(counter_type val) {
 		return exchangeAdd(-val) - val;
 	}
-	
+
 	counter_type operator ++() {
 		return InterlockedIncrement(&counter);
 	}
-	
+
 	counter_type operator --() {
 		return InterlockedDecrement(&counter);
 	}
-	
+
 	counter_type value() const { return counter; }
-	
+
 private:
 # if defined(MINGW)
 	counter_type counter;
@@ -85,10 +85,10 @@ class AtomicCounter
 {
 public:
 	typedef int counter_type;
-	
+
 	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-			
+
 	counter_type exchangeAdd(counter_type value) {
 		register counter_type result;
 		__asm __volatile (
@@ -97,25 +97,25 @@ public:
 			 : "0" (value), "m" (counter));
 		return result;
 	}
-	
+
 	counter_type operator +=(counter_type value) {
 		return exchangeAdd(value) + value;
 	}
-	
+
 	counter_type operator -=(counter_type value) {
 		return exchangeAdd(-value) - value;
 	}
-	
+
 	counter_type operator ++() {
 		return exchangeAdd(1) + 1;
 	}
-	
+
 	counter_type operator --() {
 		return exchangeAdd(-1) - 1;
 	}
-	
+
 	counter_type value() const { return counter; }
-	
+
 private:
 	volatile counter_type counter;
 };
@@ -137,48 +137,48 @@ class AtomicCounter
 {
 public:
 	typedef int counter_type;
-	
+
 	AtomicCounter(counter_type value = 0) : counter(value) {}
 	~AtomicCounter() {}
-			
+
 	counter_type exchangeAdd(counter_type value) {
 		lock.enter();
 		counter_type temp = counter;
 		counter += value;
 		lock.leave();
-		return temp;		
+		return temp;
 	}
-	
+
 	counter_type operator +=(counter_type value) {
 		lock.enter();
 		counter_type temp = counter += value;
 		lock.leave();
 		return temp;
 	}
-	
+
 	counter_type operator -=(counter_type value) {
 		lock.enter();
 		counter_type temp = counter -= value;
 		lock.leave();
 		return temp;
 	}
-	
+
 	counter_type operator ++() {
 		lock.enter();
 		counter_type temp = counter++;
 		lock.leave();
 		return temp;
 	}
-	
+
 	counter_type operator --() {
 		lock.enter();
 		counter_type temp = counter--;
 		lock.leave();
 		return temp;
 	}
-	
+
 	counter_type value() const { return counter; }
-	
+
 private:
 	volatile counter_type counter;
 	Mutex lock;

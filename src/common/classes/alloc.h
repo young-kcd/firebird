@@ -25,7 +25,7 @@
  *  All Rights Reserved.
  *
  *  Contributor(s):
- * 
+ *
  *		Alex Peshkoff <peshkoff@mail.ru>
  *				added PermanentStorage and AutoStorage classes.
  *
@@ -60,7 +60,7 @@
 // Size of Valgrind red zone applied before and after memory block allocated for user
 #define VALGRIND_REDZONE 8
 
-// When memory block is deallocated by user from the pool it must pass queue of this 
+// When memory block is deallocated by user from the pool it must pass queue of this
 // length before it is actually deallocated and access protection from it removed.
 #define DELAYED_FREE_COUNT 1024
 
@@ -73,8 +73,8 @@
 namespace Firebird {
 
 // Maximum number of B+ tree pages kept spare for tree allocation
-// Since we store only unique fragment lengths in our tree there 
-// shouldn't be more than 16K elements in it. This is why MAX_TREE_DEPTH 
+// Since we store only unique fragment lengths in our tree there
+// shouldn't be more than 16K elements in it. This is why MAX_TREE_DEPTH
 // equal to 4 is more than enough
 const int MAX_TREE_DEPTH = 4;
 
@@ -109,7 +109,7 @@ struct MemoryBlock
 		struct
 		{
 		  // Length and offset are measured in bytes thus memory extent size is limited to 64k
-		  // Larger extents are not needed now, but this may be icreased later via using allocation units 
+		  // Larger extents are not needed now, but this may be icreased later via using allocation units
 		  USHORT mbk_length; // Actual block size: header not included, redirection list is included if applicable
 		  USHORT mbk_prev_length;
 		} mbk_small;
@@ -144,7 +144,7 @@ const SSHORT TYPE_EXTENT = -2;
 const SSHORT TYPE_LEAFPAGE = -3;
 const SSHORT TYPE_TREEPAGE = -4;
 
-// We store BlkInfo structures instead of BlkHeader pointers to get benefits from 
+// We store BlkInfo structures instead of BlkHeader pointers to get benefits from
 // processor cache-hit optimizations
 struct BlockInfo
 {
@@ -201,7 +201,7 @@ private:
 	size_t mst_max_usage;
 	size_t mst_max_mapped;
 
-	friend class MemoryPool;	
+	friend class MemoryPool;
 };
 
 
@@ -230,12 +230,12 @@ private:
 		}
 	};
 	typedef BePlusTree<BlockInfo, size_t, InternalAllocator, BlockInfo> FreeBlocksTree;
-	
-	// We keep most of our structures uninitialized as long we redirect 
+
+	// We keep most of our structures uninitialized as long we redirect
 	// our allocations to parent pool
 	bool parent_redirect;
 
-	// B+ tree ordered by length 
+	// B+ tree ordered by length
 	FreeBlocksTree freeBlocks;
 
 	MemoryExtent *extents; // Linked list of all memory extents
@@ -245,10 +245,10 @@ private:
 	bool needSpare;
 	PendingFreeBlock *pendingFree;
 
-    // Synchronization of this object is a little bit tricky. Allocations 
-	// redirected to parent pool are not protected with our mutex and not 
+    // Synchronization of this object is a little bit tricky. Allocations
+	// redirected to parent pool are not protected with our mutex and not
 	// accounted locally, i.e. redirect_amount and parent_redirected linked list
-	// are synchronized with parent pool mutex only. All other pool members are 
+	// are synchronized with parent pool mutex only. All other pool members are
 	// synchronized with this mutex.
 	Mutex lock;
 
@@ -263,7 +263,7 @@ private:
 							// It is protected by parent pool mutex along with redirect list
 	// Statistics group for the pool
 	MemoryStats *stats;
-	
+
 #ifdef USE_VALGRIND
 	// Circular FIFO buffer of read/write protected blocks pending free operation
 	void* delayedFree[DELAYED_FREE_COUNT];
@@ -276,17 +276,17 @@ private:
 	static void* external_alloc(size_t &size);
 
 	static void external_free(void* blk, size_t &size, bool pool_destroying);
-	
+
 	void* tree_alloc(size_t size);
 
 	void tree_free(void* block);
 
 	void updateSpare();
-	
+
 	inline void addFreeBlock(MemoryBlock* blk);
-		
+
 	void removeFreeBlock(MemoryBlock* blk);
-	
+
 	void free_blk_extent(MemoryBlock* blk);
 
 	// Allocates small block from this pool. Pool must be locked during call
@@ -298,11 +298,11 @@ private:
 
 	// Deallocates small block from this pool. Pool must be locked during this call
 	void internal_deallocate(void* block);
-	
+
 	// Forbid copy constructor, should never be called
 	MemoryPool(const MemoryPool& pool) : freeBlocks((InternalAllocator*)this) { }
-	
-	// Used by pools to track memory usage. 
+
+	// Used by pools to track memory usage.
 
 	// These 2 methods are thread-safe due to usage of atomic counters only
 	inline void increment_usage(size_t size);
@@ -335,7 +335,7 @@ public:
 	// Get context pool for current thread of execution
 	static MemoryPool* getContextPool();
 
-	// Set statistics group for pool. Usage counters will be decremented from 
+	// Set statistics group for pool. Usage counters will be decremented from
 	// previously set group and added to new
 	void setStatsGroup(MemoryStats& stats);
 
@@ -362,26 +362,26 @@ public:
 		, const char* file = NULL, int line = 0
 #endif
 	);
-	
+
 	void deallocate(void* block);
-	
+
 	// Check pool for internal consistent. When enabled, call is very expensive
 	bool verify_pool(bool fast_checks_only = false);
 
 	// Print out pool contents. This is debugging routine
 	void print_contents(FILE*, bool = false, const char* filter_path = 0);
-	
+
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, bool = false,
 		const char* filter_path = 0);
-	
+
 	// Deallocate memory block. Pool is derived from block header
 	static void globalFree(void* block)
 	{
 	    if (block)
 		  ((MemoryBlock*)((char*)block - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool->deallocate(block);
 	}
-	
+
 	// Allocate zero-initialized block of memory
 	void* calloc(size_t size
 #ifdef DEBUG_GDS_ALLOC
@@ -394,23 +394,23 @@ public:
 #endif
 		);
 		memset(result, 0, size);
-		return result;	
+		return result;
 	}
 
 	// Initialize and finalize global memory pool
 	static void init();
 	static void cleanup();
-	
+
 	/// Returns the pool the memory was allocated from.
 	//static MemoryPool* blk_pool(const void* mem) {
 	//	return ((MemoryBlock*)((char *)mem - MEM_ALIGN(sizeof(MemoryBlock))))->mbk_pool;
 	//}
-	
+
 	friend class InternalAllocator;
 };
 
 // Class intended to manage execution context pool stack
-// Declare instance of this class when you need to set new context pool and it 
+// Declare instance of this class when you need to set new context pool and it
 // will be restored automatically as soon holder variable gets out of scope
 class ContextPoolHolder
 {
@@ -424,7 +424,7 @@ public:
 		MemoryPool::setContextPool(savedPool);
 	}
 private:
-	MemoryPool* savedPool;	
+	MemoryPool* savedPool;
 };
 
 // template enabling common use of old and new pools control code
@@ -434,14 +434,14 @@ class SubsystemContextPoolHolder
 : public ContextPoolHolder
 {
 public:
-	SubsystemContextPoolHolder <SubsystemThreadData, SubsystemPool> 
+	SubsystemContextPoolHolder <SubsystemThreadData, SubsystemPool>
 	(
-		SubsystemThreadData* subThreadData, 
+		SubsystemThreadData* subThreadData,
 		SubsystemPool* newPool
-	) 
-		: ContextPoolHolder(newPool), 
+	)
+		: ContextPoolHolder(newPool),
 		savedThreadData(subThreadData),
-		savedPool(savedThreadData->getDefaultPool()) 
+		savedPool(savedThreadData->getDefaultPool())
 	{
 		savedThreadData->setDefaultPool(newPool);
 	}
@@ -478,11 +478,11 @@ inline void* operator new[](size_t s) THROW_BAD_ALLOC
 	);
 }
 
-inline void* operator new(size_t, void* ptr) throw() 
+inline void* operator new(size_t, void* ptr) throw()
 {
 	return ptr;
 }
-inline void* operator new[](size_t, void* ptr) throw() 
+inline void* operator new[](size_t, void* ptr) throw()
 {
 	return ptr;
 }
@@ -538,15 +538,15 @@ namespace Firebird
 			getDefaultMemoryPool()->deallocate(mem);
 		}
 
-		MemoryPool& getPool() const 
-		{ 
+		MemoryPool& getPool() const
+		{
 			return *getDefaultMemoryPool();
 		}
 	};
-	
+
 
 	// Permanent storage is used as base class for all objects,
-	// performing memory allocation in methods other than 
+	// performing memory allocation in methods other than
 	// constructors of this objects. Permanent means that pool,
 	// which will be later used for such allocations, must
 	// be explicitly passed in all constructors of such object.

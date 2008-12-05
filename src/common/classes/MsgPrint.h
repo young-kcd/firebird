@@ -89,9 +89,9 @@ int MsgPrint(const char* format, const SafeArg& arg);
 int MsgPrint(const char* format);
 
 // D. Print to a string, without buffer overrun.
-int MsgPrint(char* plainstring, unsigned int s_size, 
+int MsgPrint(char* plainstring, unsigned int s_size,
 			 const char* format, const SafeArg& arg);
-			 
+
 // E. Prints a formatted string into stderr and flushed the buffer.
 int MsgPrintErr(const char* format, const SafeArg& arg);
 } // namespace

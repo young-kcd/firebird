@@ -71,14 +71,14 @@ public:
     const UCHAR* dyn_computed_val;
     bool dyn_drop_computed;
 public:
-	explicit dyn_fld(MemoryPool& p) 
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+	explicit dyn_fld(MemoryPool& p)
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
 		dyn_collation(0), dyn_charset(0), dyn_fld_source(p), dyn_rel_name(p),
 		dyn_fld_name(p), dyn_charbytelen(0),
 		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
 		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false) { }
 	dyn_fld()
-		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0), 
+		: dyn_null_flag(false), dyn_dtype(0), dyn_precision(0), dyn_charlen(0),
 		dyn_collation(0), dyn_charset(0), dyn_charbytelen(0),
 		dyn_default_src(0), dyn_default_val(0), dyn_drop_default(false),
 		dyn_computed_src(0), dyn_computed_val(0), dyn_drop_computed(false) { }

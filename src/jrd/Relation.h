@@ -26,25 +26,25 @@
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 
-namespace Jrd 
+namespace Jrd
 {
 
-// view context block to cache view aliases 
+// view context block to cache view aliases
 
 class ViewContext
 {
 public:
-	explicit ViewContext(MemoryPool& p, const TEXT* context_name, 
-						 const TEXT* relation_name, USHORT context) : 
+	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
+						 const TEXT* relation_name, USHORT context) :
 		vcx_context_name(p, context_name, strlen(context_name)),
 		vcx_relation_name(relation_name),
 		vcx_context(context)
-	{		
+	{
 	}
 
-	static const USHORT generate(const void*, const ViewContext* vc) 
-	{ 
-		return vc->vcx_context; 
+	static const USHORT generate(const void*, const ViewContext* vc)
+	{
+		return vc->vcx_context;
 	}
 
 	const Firebird::string	vcx_context_name;
@@ -52,7 +52,7 @@ public:
 	const USHORT	vcx_context;
 };
 
-typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>, 
+typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>,
 		USHORT, ViewContext> ViewContexts;
 
 #ifdef GARBAGE_THREAD
@@ -68,18 +68,18 @@ private:
 
 		TranGarbage(PageBitmap *aBm, SLONG aTran) : tran(aTran), bm(aBm) {}
 
-		static inline const SLONG generate(void const*, const TranGarbage& Item) 
+		static inline const SLONG generate(void const*, const TranGarbage& Item)
 		{
 			return Item.tran;
 		}
 	};
 
 	typedef	Firebird::SortedArray<
-				TranGarbage, 
-				Firebird::EmptyStorage<TranGarbage>, 
-				SLONG, 
+				TranGarbage,
+				Firebird::EmptyStorage<TranGarbage>,
+				SLONG,
 				TranGarbage> TranGarbageArray;
-	
+
 	TranGarbageArray array;
 
 public:
@@ -90,7 +90,7 @@ public:
 	void clear();
 
 	void getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm);
-	
+
 	SLONG minTranID() const
 	{
 		return (array.getCount() > 0) ? array[0].tran : MAX_SLONG;
@@ -102,15 +102,15 @@ public:
 class RelationPages
 {
 public:
-	vcl*	rel_pages;			// vector of pointer page numbers 
+	vcl*	rel_pages;			// vector of pointer page numbers
 	SLONG	rel_instance_id;	// 0 or att_attachment_id or tra_number
-	SLONG	rel_index_root;		// index root page number 
-	SLONG	rel_data_pages;		// count of relation data pages 
-	USHORT	rel_slot_space;		// lowest pointer page with slot space 
-	USHORT	rel_data_space;		// lowest pointer page with data page space 
+	SLONG	rel_index_root;		// index root page number
+	SLONG	rel_data_pages;		// count of relation data pages
+	USHORT	rel_slot_space;		// lowest pointer page with slot space
+	USHORT	rel_data_space;		// lowest pointer page with data page space
 	USHORT	rel_pg_space_id;
 
-	RelationPages() 
+	RelationPages()
 	{
 		rel_pages = 0;
 		rel_index_root = rel_data_pages = rel_instance_id = 0;
@@ -120,7 +120,7 @@ public:
 		useCount = 0;
 	}
 
-	inline SLONG addRef() 
+	inline SLONG addRef()
 	{
 		return useCount++;
 	}
@@ -133,7 +133,7 @@ public:
 	}
 
 private:
-	RelationPages*	rel_next_free; 
+	RelationPages*	rel_next_free;
 	SLONG	useCount;
 
 friend class jrd_rel;
@@ -141,7 +141,7 @@ friend class jrd_rel;
 
 
 // Primary dependencies from all foreign references to relation's
-// primary/unique keys 
+// primary/unique keys
 
 struct prim
 {
@@ -151,7 +151,7 @@ struct prim
 };
 
 
-// Foreign references to other relations' primary/unique keys 
+// Foreign references to other relations' primary/unique keys
 
 struct frgn
 {
@@ -163,48 +163,48 @@ struct frgn
 
 // Relation block; one is created for each relation referenced
 // in the database, though it is not really filled out until
-// the relation is scanned 
+// the relation is scanned
 
 class jrd_rel : public pool_alloc<type_rel>
 {
 public:
 	USHORT			rel_id;
 	USHORT			rel_flags;
-	USHORT			rel_current_fmt;	// Current format number 
-	Format*			rel_current_format;	// Current record format 
-	Firebird::MetaName	rel_name;		// ascii relation name 
-	vec<Format*>*	rel_formats;		// Known record formats 
-	Firebird::MetaName	rel_owner_name;	// ascii owner 
-	vec<jrd_fld*>*	rel_fields;			// vector of field blocks 
+	USHORT			rel_current_fmt;	// Current format number
+	Format*			rel_current_format;	// Current record format
+	Firebird::MetaName	rel_name;		// ascii relation name
+	vec<Format*>*	rel_formats;		// Known record formats
+	Firebird::MetaName	rel_owner_name;	// ascii owner
+	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
-	RecordSelExpr*	rel_view_rse;		// view record select expression 
-	ViewContexts	rel_view_contexts;	// sorted array of view contexts 
+	RecordSelExpr*	rel_view_rse;		// view record select expression
+	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
-	Firebird::MetaName	rel_security_name;	// security class name for relation 
-	ExternalFile* 	rel_file;			// external file name 
+	Firebird::MetaName	rel_security_name;	// security class name for relation
+	ExternalFile* 	rel_file;			// external file name
 
-	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection 
+	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection
 #ifdef GARBAGE_THREAD
-	PageBitmap*		rel_gc_bitmap;		// garbage collect bitmap of data page sequences 
-	RelationGarbage*	rel_garbage;	// deferred gc bitmap's by tran numbers 
+	PageBitmap*		rel_gc_bitmap;		// garbage collect bitmap of data page sequences
+	RelationGarbage*	rel_garbage;	// deferred gc bitmap's by tran numbers
 #endif
 
-	USHORT		rel_use_count;		// requests compiled with relation 
-	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active 
-	SSHORT		rel_scan_count;		// concurrent sequential scan count 
+	USHORT		rel_use_count;		// requests compiled with relation
+	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active
+	SSHORT		rel_scan_count;		// concurrent sequential scan count
 
-	Lock*		rel_existence_lock;	// existence lock, if any 
-	Lock*		rel_partners_lock;	// partners lock 
-	IndexLock*	rel_index_locks;	// index existence locks 
-	IndexBlock*	rel_index_blocks;	// index blocks for caching index info 
-	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger 
-	trig_vec*	rel_post_erase;		// Post-operation erase trigger 
-	trig_vec*	rel_pre_modify;		// Pre-operation modify trigger 
-	trig_vec*	rel_post_modify;	// Post-operation modify trigger 
-	trig_vec*	rel_pre_store;		// Pre-operation store trigger 
-	trig_vec*	rel_post_store;		// Post-operation store trigger 
-	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key 
-	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys 
+	Lock*		rel_existence_lock;	// existence lock, if any
+	Lock*		rel_partners_lock;	// partners lock
+	IndexLock*	rel_index_locks;	// index existence locks
+	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
+	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger
+	trig_vec*	rel_post_erase;		// Post-operation erase trigger
+	trig_vec*	rel_pre_modify;		// Pre-operation modify trigger
+	trig_vec*	rel_post_modify;	// Post-operation modify trigger
+	trig_vec*	rel_pre_store;		// Pre-operation store trigger
+	trig_vec*	rel_post_store;		// Post-operation store trigger
+	prim		rel_primary_dpnds;	// foreign dependencies on this relation's primary key
+	frgn		rel_foreign_refs;	// foreign references to other relations' primary keys
 
 	bool isSystem() const;
 	bool isTemporary() const;
@@ -235,7 +235,7 @@ public:
 			spt_tdbb = tdbb;
 			spt_relation = relation;
 		}
-		
+
 		~RelPagesSnapshot() { clear(); }
 
 		void clear();
@@ -250,9 +250,9 @@ public:
 
 private:
 	typedef Firebird::SortedArray<
-				RelationPages*, 
-				Firebird::EmptyStorage<RelationPages*>, 
-				SLONG, 
+				RelationPages*,
+				Firebird::EmptyStorage<RelationPages*>,
+				SLONG,
 				RelationPages>
 			RelationPagesInstances;
 
@@ -263,7 +263,7 @@ private:
 	RelationPages*	getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages);
 
 public:
-	explicit jrd_rel(MemoryPool& p) 
+	explicit jrd_rel(MemoryPool& p)
 		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p) { }
 
 	bool hasTriggers() const;
@@ -271,21 +271,21 @@ public:
 
 // rel_flags
 
-const USHORT REL_scanned				= 0x0001;	// Field expressions scanned (or being scanned) 
+const USHORT REL_scanned				= 0x0001;	// Field expressions scanned (or being scanned)
 const USHORT REL_system					= 0x0002;
-const USHORT REL_deleted				= 0x0004;	// Relation known gonzo 
-const USHORT REL_get_dependencies		= 0x0008;	// New relation needs dependencies during scan 
-const USHORT REL_force_scan				= 0x0010;	// system relation has been updated since ODS change, force a scan 
-const USHORT REL_check_existence		= 0x0020;	// Existence lock released pending drop of relation 
-const USHORT REL_blocking				= 0x0040;	// Blocking someone from dropping relation 
-const USHORT REL_sys_triggers			= 0x0080;	// The relation has system triggers to compile 
-const USHORT REL_sql_relation			= 0x0100;	// Relation defined as sql table 
-const USHORT REL_check_partners			= 0x0200;	// Rescan primary dependencies and foreign references 
-const USHORT REL_being_scanned			= 0x0400;	// relation scan in progress 
-const USHORT REL_sys_trigs_being_loaded	= 0x0800;	// System triggers being loaded 
-const USHORT REL_deleting				= 0x1000;	// relation delete in progress 
-const USHORT REL_temp_tran				= 0x2000;	// relation is a GTT delete rows 
-const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows 
+const USHORT REL_deleted				= 0x0004;	// Relation known gonzo
+const USHORT REL_get_dependencies		= 0x0008;	// New relation needs dependencies during scan
+const USHORT REL_force_scan				= 0x0010;	// system relation has been updated since ODS change, force a scan
+const USHORT REL_check_existence		= 0x0020;	// Existence lock released pending drop of relation
+const USHORT REL_blocking				= 0x0040;	// Blocking someone from dropping relation
+const USHORT REL_sys_triggers			= 0x0080;	// The relation has system triggers to compile
+const USHORT REL_sql_relation			= 0x0100;	// Relation defined as sql table
+const USHORT REL_check_partners			= 0x0200;	// Rescan primary dependencies and foreign references
+const USHORT REL_being_scanned			= 0x0400;	// relation scan in progress
+const USHORT REL_sys_trigs_being_loaded	= 0x0800;	// System triggers being loaded
+const USHORT REL_deleting				= 0x1000;	// relation delete in progress
+const USHORT REL_temp_tran				= 0x2000;	// relation is a GTT delete rows
+const USHORT REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const USHORT REL_virtual				= 0x8000;	// relation is virtual
 
 
@@ -306,29 +306,29 @@ inline bool jrd_rel::isVirtual() const
 
 inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocPages)
 {
-	if (!isTemporary()) 
+	if (!isTemporary())
 		return &rel_pages_base;
 
 	return getPagesInternal(tdbb, tran, allocPages);
 }
 
-// Field block, one for each field in a scanned relation 
+// Field block, one for each field in a scanned relation
 
 class jrd_fld : public pool_alloc<type_fld>
 {
 public:
-	jrd_nod*	fld_validation;		// validation clause, if any 
-	jrd_nod*	fld_not_null;		// if field cannot be NULL 
-	jrd_nod*	fld_missing_value;	// missing value, if any 
-	jrd_nod*	fld_computation;	// computation for virtual field 
-	jrd_nod*	fld_source;			// source for view fields 
-	jrd_nod*	fld_default_value;	// default value, if any 
-	ArrayField*	fld_array;			// array description, if array 
-	Firebird::MetaName	fld_name;	// Field name 
-	Firebird::MetaName	fld_security_name;	// security class name for field 
+	jrd_nod*	fld_validation;		// validation clause, if any
+	jrd_nod*	fld_not_null;		// if field cannot be NULL
+	jrd_nod*	fld_missing_value;	// missing value, if any
+	jrd_nod*	fld_computation;	// computation for virtual field
+	jrd_nod*	fld_source;			// source for view fields
+	jrd_nod*	fld_default_value;	// default value, if any
+	ArrayField*	fld_array;			// array description, if array
+	Firebird::MetaName	fld_name;	// Field name
+	Firebird::MetaName	fld_security_name;	// security class name for field
 
 public:
-	explicit jrd_fld(MemoryPool& p) 
+	explicit jrd_fld(MemoryPool& p)
 		: fld_name(p), fld_security_name(p) { }
 };
 

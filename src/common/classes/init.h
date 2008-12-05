@@ -74,7 +74,7 @@ private:
 		instance = 0;
 	}
 public:
-	GlobalPtr() 
+	GlobalPtr()
 		: InstanceControl()
 	{
 		instance = FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
@@ -103,9 +103,9 @@ class InitMutex : private StaticMutex
 private:
 	volatile bool flag;
 public:
-	InitMutex() 
+	InitMutex()
 		: flag(false) { }
-	void init() 
+	void init()
 	{
 		if (!flag) {
 			MutexLockGuard guard(*mutex);
@@ -114,8 +114,8 @@ public:
 				flag = true;
 			}
 		}
-	} 
-	void cleanup() 
+	}
+	void cleanup()
 	{
 		if (flag) {
 			MutexLockGuard guard(*mutex);
@@ -124,23 +124,23 @@ public:
 				flag = false;
 			}
 		}
-	} 
+	}
 };
 
 // InitInstance - initialize pointer to class once and only once,
 // DefaultInit uses default memory pool for it.
 
 template <typename T>
-class DefaultInit 
+class DefaultInit
 {
 public:
-	static T* init() 
+	static T* init()
 	{
 		return FB_NEW(*getDefaultMemoryPool()) T(*getDefaultMemoryPool());
 	}
 };
 
-template <typename T, 
+template <typename T,
 	typename I = DefaultInit<T> >
 class InitInstance : private StaticMutex
 {
@@ -148,9 +148,9 @@ private:
 	T* instance;
 	volatile bool flag;
 public:
-	InitInstance() 
+	InitInstance()
 		: flag(false) { }
-	T& operator()() 
+	T& operator()()
 	{
 		if (!flag) {
 			MutexLockGuard guard(*mutex);

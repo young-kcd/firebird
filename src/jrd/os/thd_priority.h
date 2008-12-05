@@ -59,7 +59,7 @@ class ThreadPriorityScheduler
 #ifdef THREAD_PSCHED
 
 private:
-	typedef Firebird::SortedArray<ThreadPriorityScheduler*, 
+	typedef Firebird::SortedArray<ThreadPriorityScheduler*,
 		Firebird::InlineStorage<ThreadPriorityScheduler*, 16> > TpsPointers;
 	enum OperationMode {Running, Stopping, ShutdownComplete};
 
@@ -74,13 +74,13 @@ private:
 	void* arg;						// arg to pass to it
 	ThreadPriorityScheduler* next;		// next thread in list
 	HANDLE handle;			// thread handle for SetPriority
-	// use separate bytes for flags in order to guarantee there 
+	// use separate bytes for flags in order to guarantee there
 	// modification independence by different threads without
 	// affecting each other
 	bool inside;			// executing between ENTER and EXIT
 	bool gonein;			// pass through ENTER since last scheduling
 	UCHAR flags;			// flags that can't be modified concurrently
-	
+
 	// Scheduler Thread
 	static unsigned int __stdcall schedulerMain(LPVOID);
 
@@ -117,13 +117,13 @@ public:
 		initialized.init();
 	}
 	static void Cleanup(void*);
-	
+
 	// Goes to low priority zone
 	static void enter();
-	
+
 	// Goes from low priority zone
 	static void exit();
-	
+
 	// Check whether current thread has high priority
 	static bool boosted()
 	{
@@ -136,7 +136,7 @@ public:
 	{
 		UCHAR flags = 0;
 // priority scheduling is done for threads with initially normal priority
-		if (active && (p == THREAD_PRIORITY_NORMAL))	
+		if (active && (p == THREAD_PRIORITY_NORMAL))
 		{
 			flags = THPS_PSCHED | THPS_BOOSTED;
 			p = highPriority;

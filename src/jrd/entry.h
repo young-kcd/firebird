@@ -21,7 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
-/* 
+/*
     Order of battle in ENTRY macro:
 	current local access method entrypoint
 	remote entrypoint

@@ -2,7 +2,7 @@
  *	PROGRAM:	Common class definition
  *	MODULE:		fb_pair.h
  *	DESCRIPTION:	Provides almost that same functionality,
- *			that STL::pair does, but behaves 
+ *			that STL::pair does, but behaves
  *			MemoryPools friendly.
  *
  *  The contents of this file are subject to the Initial
@@ -28,7 +28,7 @@
 
 #ifndef CLASSES_FB_PAIR_H
 #define CLASSES_FB_PAIR_H
- 
+
 #include "../common/classes/alloc.h"
 
 namespace Firebird
@@ -37,14 +37,14 @@ namespace Firebird
 // Non MemoryPool'ed pair - left and right object in such pair hasn't MemoryPool'ed
 // constructor (typically POD or builtin type).
 
-template<typename parLeft, typename parRight> 
+template<typename parLeft, typename parRight>
 	struct NonPooled {
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit NonPooled(MemoryPool& p) : first(), second() { }
-		explicit NonPooled(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit NonPooled(MemoryPool& p, const parLeft& v1, const parRight& v2)
 			: first(v1), second(v2) { }
-		explicit NonPooled(MemoryPool& p, const NonPooled& lp) 
+		explicit NonPooled(MemoryPool& p, const NonPooled& lp)
 			: first(lp.first), second(lp.second) { }
 		parLeft first;
 		parRight second;
@@ -53,14 +53,14 @@ template<typename parLeft, typename parRight>
 // Right pair - right object in such pair has MemoryPool'ed constructor,
 //	left one - doesn't (typically POD or builtin type)
 
-template<typename parLeft, typename parRight> 
+template<typename parLeft, typename parRight>
 	struct Right {
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Right(MemoryPool& p) : first(), second(p) { }
-		explicit Right(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit Right(MemoryPool& p, const parLeft& v1, const parRight& v2)
 			: first(v1), second(p, v2) { }
-		explicit Right(MemoryPool& p, const Right& lp) 
+		explicit Right(MemoryPool& p, const Right& lp)
 			: first(lp.first), second(p, lp.second) { }
 		parLeft first;
 		parRight second;
@@ -69,14 +69,14 @@ template<typename parLeft, typename parRight>
 // Left pair - left object in such pair has MemoryPool'ed constructor,
 //	right one - doesn't (typically POD or builtin type)
 
-template<typename parLeft, typename parRight> 
+template<typename parLeft, typename parRight>
 	struct Left {
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Left(MemoryPool& p) : first(p), second() { }
-		explicit Left(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit Left(MemoryPool& p, const parLeft& v1, const parRight& v2)
 			: first(p, v1), second(v2) { }
-		explicit Left(MemoryPool& p, const Left& lp) 
+		explicit Left(MemoryPool& p, const Left& lp)
 			: first(p, lp.first), second(lp.second) { }
 		parLeft first;
 		parRight second;
@@ -84,14 +84,14 @@ template<typename parLeft, typename parRight>
 
 // Full pair - both objects in such pair have MemoryPool'ed constructors.
 
-template<typename parLeft, typename parRight> 
+template<typename parLeft, typename parRight>
 	struct Full {
 		typedef parLeft first_type;
 		typedef parRight second_type;
 		explicit Full(MemoryPool& p) : first(p), second(p) { }
-		explicit Full(MemoryPool& p, const parLeft& v1, const parRight& v2) 
+		explicit Full(MemoryPool& p, const parLeft& v1, const parRight& v2)
 			: first(p, v1), second(p, v2) { }
-		explicit Full(MemoryPool& p, const Full& lp) 
+		explicit Full(MemoryPool& p, const Full& lp)
 			: first(p, lp.first), second(p, lp.second) { }
 		parLeft first;
 		parRight second;
@@ -99,79 +99,79 @@ template<typename parLeft, typename parRight>
 
 // Pair - template providing full bool op-s set
 
-template<typename BasePair> 
+template<typename BasePair>
 	struct Pair : public BasePair {
 		typedef typename Pair::first_type Pair_first_type;
 		typedef typename Pair::second_type Pair_second_type;
 		explicit Pair(MemoryPool& p) : BasePair(p) { }
-		explicit Pair(MemoryPool& p, const Pair_first_type& v1, 
+		explicit Pair(MemoryPool& p, const Pair_first_type& v1,
 			const Pair_second_type& v2) : BasePair(p, v1, v2) { }
-		explicit Pair(MemoryPool& p, const Pair& lp) 
+		explicit Pair(MemoryPool& p, const Pair& lp)
 			: BasePair(p, lp) { }
 		Pair() : BasePair(AutoStorage::getAutoMemoryPool()) { }
-		Pair(const Pair_first_type& v1, const Pair_second_type& v2) 
+		Pair(const Pair_first_type& v1, const Pair_second_type& v2)
 			: BasePair(AutoStorage::getAutoMemoryPool(), v1, v2) { }
-		Pair(const Pair& lp) 
+		Pair(const Pair& lp)
 			: BasePair(AutoStorage::getAutoMemoryPool(), lp) { }
 		bool operator==(const Pair& v) const
 		{
-			return this->first == v.first && this->second == v.second; 
+			return this->first == v.first && this->second == v.second;
 		}
 		bool operator<(const Pair& v) const
 		{
-			return this->first < v.first || (!(this->first < v.first) && this->second < v.second); 
+			return this->first < v.first || (!(this->first < v.first) && this->second < v.second);
 		}
 		bool operator!=(const Pair& v) const
 		{
-			return ! (*this == v); 
+			return ! (*this == v);
 		}
 		bool operator>(const Pair& v) const
 		{
-			return v < *this; 
+			return v < *this;
 		}
 		bool operator<=(const Pair& v) const
 		{
-			return ! (v < *this); 
+			return ! (v < *this);
 		}
 		bool operator>=(const Pair& v) const
 		{
-			return ! (*this < v); 
+			return ! (*this < v);
 		}
 	};
 
 template <typename P>
-	class FirstKey 
+	class FirstKey
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type& 
-			generate(const void* sender, const P& Item) 
-		{ 
-			return Item.first; 
+		static const Pair_first_type&
+			generate(const void* sender, const P& Item)
+		{
+			return Item.first;
 		}
 	};
 
 template <typename P>
-	class FirstPointerKey 
+	class FirstPointerKey
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type* 
-			generate(const void* sender, const P* Item) 
-		{ 
-			return &Item->first; 
+		static const Pair_first_type*
+			generate(const void* sender, const P* Item)
+		{
+			return &Item->first;
 		}
 	};
 
 template <typename P>
-	class FirstObjectKey 
+	class FirstObjectKey
 	{
 	public:
 		typedef typename P::first_type Pair_first_type;
-		static const Pair_first_type& 
-			generate(const void* sender, const P* Item) 
-		{ 
-			return Item->first; 
+		static const Pair_first_type&
+			generate(const void* sender, const P* Item)
+		{
+			return Item->first;
 		}
 	};
 } // namespace Firebird

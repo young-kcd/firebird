@@ -43,7 +43,7 @@ class Stream : public Firebird::GlobalStorage
 {
 public:
 	enum { FIXED_SEGMENT_SIZE = 1024 };
-	
+
 	struct Segment
     {
 		int		length;

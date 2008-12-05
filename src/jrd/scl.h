@@ -45,15 +45,15 @@ public:
 	const Firebird::MetaName scl_name;
 
 	static const Firebird::MetaName& generate(const void*, const SecurityClass* item)
-	{ 
+	{
 		return item->scl_name;
 	}
 };
 
 typedef Firebird::BePlusTree<
-	SecurityClass*, 
-	Firebird::MetaName, 
-	Firebird::MemoryPool, 
+	SecurityClass*,
+	Firebird::MetaName,
+	Firebird::MemoryPool,
 	SecurityClass
 > SecurityClassList;
 
@@ -101,17 +101,17 @@ public:
 		return usr_flags & (USR_locksmith | USR_owner | USR_dba);
 	}
 
-	UserId() :	usr_user_id(0), usr_group_id(0), 
+	UserId() :	usr_user_id(0), usr_group_id(0),
 				usr_node_id(0), usr_flags(0) { }
 
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
-		: usr_user_name(p, ui.usr_user_name), 
+		: usr_user_name(p, ui.usr_user_name),
 		  usr_sql_role_name(p, ui.usr_sql_role_name),
-		  usr_project_name(p, ui.usr_project_name), 
+		  usr_project_name(p, ui.usr_project_name),
 		  usr_org_name(p, ui.usr_org_name),
-		  usr_user_id(ui.usr_user_id), 
-		  usr_group_id(ui.usr_group_id), 
-		  usr_node_id(ui.usr_node_id), 
+		  usr_user_id(ui.usr_user_id),
+		  usr_group_id(ui.usr_group_id),
+		  usr_node_id(ui.usr_node_id),
 		  usr_flags(ui.usr_flags) { }
 
 	UserId& operator=(const UserId& ui)
@@ -129,13 +129,13 @@ public:
 	}
 
 	UserId(const UserId& ui)
-		: usr_user_name(ui.usr_user_name), 
+		: usr_user_name(ui.usr_user_name),
 		  usr_sql_role_name(ui.usr_sql_role_name),
-		  usr_project_name(ui.usr_project_name), 
+		  usr_project_name(ui.usr_project_name),
 		  usr_org_name(ui.usr_org_name),
-		  usr_user_id(ui.usr_user_id), 
-		  usr_group_id(ui.usr_group_id), 
-		  usr_node_id(ui.usr_node_id), 
+		  usr_user_id(ui.usr_user_id),
+		  usr_group_id(ui.usr_group_id),
+		  usr_node_id(ui.usr_node_id),
 		  usr_flags(ui.usr_flags) { }
 };
 

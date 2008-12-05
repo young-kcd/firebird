@@ -47,7 +47,7 @@ class Semaphore
 private:
 	HANDLE hSemaphore;
 	void init()
-	{ 
+	{
 		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
 		if (hSemaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
@@ -61,7 +61,7 @@ public:
 	{
 		if (hSemaphore && !CloseHandle(hSemaphore))
 			system_call_failed::raise("CloseHandle");
-	}	
+	}
 
 	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
@@ -150,7 +150,7 @@ private:
 #endif
 #endif
 	}
-	
+
 public:
 	SignalSafeSemaphore() { init(); }
 	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
@@ -171,7 +171,7 @@ public:
 		}
 #endif
 	}
-	
+
 	void enter()
 	{
 		do {
@@ -180,7 +180,7 @@ public:
 		} while (errno == EINTR);
 		system_call_failed::raise("semaphore.h: enter: sem_wait()");
 	}
-	
+
 	void release(SLONG count = 1)
 	{
 		for (int i = 0; i < count; i++)
@@ -193,7 +193,7 @@ public:
 	}
 
 #ifdef HAVE_SEM_TIMEDWAIT
-	// In case when sem_timedwait() is implemented by host OS, 
+	// In case when sem_timedwait() is implemented by host OS,
 	// class SignalSafeSemaphore may have this function:
 	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
@@ -203,10 +203,10 @@ public:
 		{
 			// Instant try
 			do {
-				if (sem_trywait(sem) != -1) 
+				if (sem_trywait(sem) != -1)
 					return true;
 			} while (errno == EINTR);
-			if (errno == EAGAIN) 
+			if (errno == EAGAIN)
 				return false;
 			system_call_failed::raise("sem_trywait");
 		}
@@ -226,9 +226,9 @@ public:
 		int errcode = 0;
 		do {
 			int rc = sem_timedwait(sem, &timeout);
-			if (rc == 0) 
+			if (rc == 0)
 				return true;
-			// fix for CORE-988, also please see 
+			// fix for CORE-988, also please see
 			// http://carcino.gen.nz/tech/linux/glibc_sem_timedwait_errors.php
 			errcode = rc > 0 ? rc : errno;
 		} while (errcode == EINTR);
@@ -242,7 +242,7 @@ public:
 };
 
 #ifdef HAVE_SEM_TIMEDWAIT
-// In case when sem_timedwait() is implemented by host OS, 
+// In case when sem_timedwait() is implemented by host OS,
 // SignalSafeSemaphore and Semaphore are just the same
 typedef SignalSafeSemaphore Semaphore;
 #endif // HAVE_SEM_TIMEDWAIT
@@ -391,7 +391,7 @@ private:
 			system_call_failed::raise("pthread_cond_init", err);
 		}
 	}
-	
+
 public:
 	Semaphore() { init(); }
 	explicit Semaphore(MemoryPool&) { init(); }
@@ -409,7 +409,7 @@ public:
 			//system_call_failed::raise("pthread_cond_destroy", err);
 		}
 	}
-	
+
 	bool tryEnter(const int seconds = 0, int milliseconds = 0)
 	{
 		bool rt = false;
@@ -431,7 +431,7 @@ public:
 					}
 					else
 						rt = true;
-				} while (err == EINTR);	
+				} while (err == EINTR);
 			    if (err == ETIMEDOUT)
 					rt = false;
 
@@ -455,7 +455,7 @@ public:
 					if (err != 0) {
 						rt = false;
 					}
-					else 
+					else
 						rt = true;
 				} while (err == EINTR);
 				if (err == ETIMEDOUT)
@@ -485,7 +485,7 @@ public:
 				}
 				else
 					rt = true;
-			} while (err == EINTR);		
+			} while (err == EINTR);
 			if (err == ETIMEDOUT)
 				rt = false;
 
@@ -499,7 +499,7 @@ public:
 
 		return false; //compiler silencer
 	}
-	
+
 	void enter()
 	{
 		int err = 0;
@@ -512,17 +512,17 @@ public:
 				   break;
 				}
 			} while (err == EINTR);
-			
+
 			pthread_mutex_unlock(&mu);
 		}
-		else 
+		else
 			system_call_failed::raise("pthread_mutex_lock", err2);
 	}
-	
+
 	void release(SLONG count = 1)
 	{
 		int err = 0;
-		for (int i = 0; i < count; i++) 
+		for (int i = 0; i < count; i++)
 		{
 			err = pthread_mutex_lock(&mu) ;
 			if (err == 0) {
@@ -532,12 +532,12 @@ public:
 				}
 
 				pthread_mutex_unlock(&mu);
-			} 
+			}
 			else {
 				//gds__log("Error on semaphore.h: release");
 				system_call_failed::raise("pthread_mutex_lock", err);
 			}
-		}	
+		}
 	}
 };
 

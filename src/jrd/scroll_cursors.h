@@ -23,13 +23,13 @@
 #ifndef JRD_SCROLL_CURSORS_H
 #define JRD_SCROLL_CURSORS_H
 
-/* ALL THE FOLLOWING DEFINITIONS HAVE BEEN TAKEN OUT OF JRD/IBASE.H 
-   WHEN SCROLLABLE_CURSORS ARE TOTALLY IMPLEMENTED, THE FOLLOWING 
+/* ALL THE FOLLOWING DEFINITIONS HAVE BEEN TAKEN OUT OF JRD/IBASE.H
+   WHEN SCROLLABLE_CURSORS ARE TOTALLY IMPLEMENTED, THE FOLLOWING
    DEFINITIONS NEED TO BE PUT IN THE PROPER INCLUDE FILE.
 
    This was done so that IB 5.0 customers do not see any functions
    they are not supposed to see.
-   As per Engg. team's decision on 23-Sep-1997 
+   As per Engg. team's decision on 23-Sep-1997
 */
 
 #ifdef SCROLLABLE_CURSORS
@@ -69,7 +69,7 @@ ISC_STATUS ISC_EXPORT isc_receive2(ISC_STATUS *,
 #endif
 
 /****** Add the following commented lines in the #else part of..
-#else                                    __cplusplus || __STDC__ 
+#else                                    __cplusplus || __STDC__
 ISC_STATUS  ISC_EXPORT isc_receive2();
 ******/
 

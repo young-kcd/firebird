@@ -126,12 +126,12 @@ namespace Firebird
 			return assign(r.ptr);
 		}
 
-		operator T*() 
+		operator T*()
 		{
 			return ptr;
 		}
 
-		T* operator->() 
+		T* operator->()
 		{
 			return ptr;
 		}
@@ -149,22 +149,22 @@ namespace Firebird
 		operator bool() const
 		{
 			return ptr ? true : false;
-		}			
+		}
 
 		bool operator !() const
 		{
 			return !ptr;
-		}			
+		}
 
 		bool operator ==(const RefPtr& r) const
 		{
 			return ptr == r.ptr;
-		}			
+		}
 
 		bool operator !=(const RefPtr& r) const
 		{
 			return ptr != r.ptr;
-		}			
+		}
 
 	private:
 		T* assign(T* const p)

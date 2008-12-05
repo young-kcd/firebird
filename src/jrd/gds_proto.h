@@ -108,7 +108,7 @@ USHORT	API_ROUTINE gds__parse_bpb2(USHORT, const UCHAR*, SSHORT*, SSHORT*,
 SLONG API_ROUTINE gds__ftof(const SCHAR*, const USHORT length1, SCHAR*,
 							   const USHORT length2);
 int		API_ROUTINE gds__print_blr(const UCHAR*,
-							FPTR_PRINT_CALLBACK, 
+							FPTR_PRINT_CALLBACK,
 							void*, SSHORT);
 void	API_ROUTINE gds__put_error(const TEXT*);
 void	API_ROUTINE gds__qtoq(const void*, void*);
@@ -127,7 +127,7 @@ void	API_ROUTINE isc_print_sqlerror(SSHORT, const ISC_STATUS*);
 void	API_ROUTINE isc_sql_interprete(SSHORT, TEXT*, SSHORT);
 SINT64	API_ROUTINE isc_portable_integer(const UCHAR*, SSHORT);
 
-// 14-June-2004. Nickolay Samofatov. The routines below are not part of the 
+// 14-June-2004. Nickolay Samofatov. The routines below are not part of the
 // API and are not exported. Maybe use another prefix like GDS_ for them?
 void	gds__cleanup(void);
 void	gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler);

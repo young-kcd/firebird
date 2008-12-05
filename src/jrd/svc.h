@@ -38,7 +38,7 @@
 #include "../common/UtilSvc.h"
 
 // forward decl.
-struct serv_entry; 
+struct serv_entry;
 namespace Firebird {
 	class ClumpletReader;
 	class StringsBuffer;
@@ -62,8 +62,8 @@ const ULONG REMOTE_HOP_SUPPORT			= 0x4L;	/* Server can connect to other server *
 //const ULONG NO_DB_STATS_SUPPORT			= 0x10L;	// Does not support statistics
 // Really the 16 bit LIBS here?
 //const ULONG LOCAL_ENGINE_SUPPORT		= 0x20L;	// The local 16 bit engine
-//const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	// Can not configure sync writes 
-//const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	// Can not shutdown/restart databases 
+//const ULONG NO_FORCED_WRITE_SUPPORT		= 0x40L;	// Can not configure sync writes
+//const ULONG NO_SHUTDOWN_SUPPORT			= 0x80L;	// Can not shutdown/restart databases
 const ULONG NO_SERVER_SHUTDOWN_SUPPORT	= 0x100L;	/* Can not shutdown server */
 const ULONG SERVER_CONFIG_SUPPORT		= 0x200L;	/* Can configure server */
 const ULONG QUOTED_FILENAME_SUPPORT		= 0x400L;	/* Can pass quoted filenames in */
@@ -166,7 +166,7 @@ private:
 	// start service thread
 	void	start(ThreadEntryPoint* service_thread);
 	// Set the flag (either SVC_finished for the main service thread or SVC_detached for the client thread).
-	// If both main thread and client thread are completed that is main thread is finished and 
+	// If both main thread and client thread are completed that is main thread is finished and
 	// client is detached then free memory used by service.
 	void	finish(USHORT flag);
 	// Throws shutdown exception if global flag is set for it
@@ -186,7 +186,7 @@ private:
 	static bool			process_switches(Firebird::ClumpletReader& spb, Firebird::string& switches);
 	// Get bitmask from within spb buffer, find corresponding switches within specified table,
 	// add them to the command line
-	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, const in_sw_tab_t* table, 
+	static bool get_action_svc_bitmask(const Firebird::ClumpletReader& spb, const in_sw_tab_t* table,
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
 	static void get_action_svc_string(const Firebird::ClumpletReader& spb, Firebird::string& sw);
@@ -195,7 +195,7 @@ private:
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
 	// add it to the command line
 	static bool get_action_svc_parameter(UCHAR tag, const in_sw_tab_t* table, Firebird::string&);
-	// Create 'SYSDBA needed' error in status vector 
+	// Create 'SYSDBA needed' error in status vector
 	static void need_admin_privs(Firebird::Arg::StatusVector& status, const char* message);
 	// Does info buffer have enough space for SLONG?
 	static bool ck_space_for_numeric(char*& info, const char* const end);

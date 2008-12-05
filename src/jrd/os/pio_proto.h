@@ -53,7 +53,7 @@ Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&,
 bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2
-bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG, 
+bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG,
 				   struct Jrd::phys_io_blk*, ISC_STATUS*);
 bool	PIO_status(Jrd::Database*, struct Jrd::phys_io_blk*, ISC_STATUS*);
 #endif

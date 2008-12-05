@@ -31,13 +31,13 @@ extern "C" {
 //
 // gds_ functions using isc_ functions (OK)
 //
-ISC_STATUS	API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE_VARARG gds__start_transaction(ISC_STATUS*, FB_API_HANDLE*,
 							  SSHORT, ...);
 
 ISC_STATUS	API_ROUTINE gds__attach_database( ISC_STATUS*, SSHORT, const SCHAR*,
 						  FB_API_HANDLE*, SSHORT, const SCHAR*);
 
-ISC_STATUS	API_ROUTINE gds__blob_info( ISC_STATUS*, FB_API_HANDLE*, SSHORT, 
+ISC_STATUS	API_ROUTINE gds__blob_info( ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 					    const SCHAR*, SSHORT, SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__cancel_blob(ISC_STATUS*, FB_API_HANDLE*);
@@ -56,7 +56,7 @@ ISC_STATUS	API_ROUTINE gds__compile_request( ISC_STATUS*, FB_API_HANDLE*, FB_API
 ISC_STATUS	API_ROUTINE gds__compile_request2( ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 						   SSHORT, const SCHAR*);
 
-ISC_STATUS	API_ROUTINE gds__create_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__create_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 					     FB_API_HANDLE*, GDS_QUAD*);
 
 ISC_STATUS	API_ROUTINE gds__create_blob2(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
@@ -68,7 +68,7 @@ ISC_STATUS	API_ROUTINE gds__create_database( ISC_STATUS*, SSHORT, const SCHAR*,
 ISC_STATUS	API_ROUTINE gds__database_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 					  	  AttachmentCleanupRoutine*, void * );
 
-ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT, 
+ISC_STATUS	API_ROUTINE gds__database_info(ISC_STATUS*, FB_API_HANDLE*, SSHORT,
 						const SCHAR*, SSHORT, SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__detach_database(ISC_STATUS*, FB_API_HANDLE*);
@@ -81,10 +81,10 @@ int			API_ROUTINE gds__get_client_major_version();
 
 int			API_ROUTINE gds__get_client_minor_version();
 
-ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__event_wait(ISC_STATUS*, FB_API_HANDLE*,
 					    SSHORT, const UCHAR*, UCHAR*);
 
-ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__get_segment(ISC_STATUS*, FB_API_HANDLE*,
 					     USHORT*, USHORT, SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__get_slice(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*, GDS_QUAD*,
@@ -94,73 +94,73 @@ ISC_STATUS	API_ROUTINE gds__get_slice(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE
 ISC_STATUS	API_ROUTINE gds__open_blob(ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
 					   FB_API_HANDLE*, GDS_QUAD*);
 
-ISC_STATUS	API_ROUTINE gds__open_blob2(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__open_blob2(ISC_STATUS*, FB_API_HANDLE*,
 					    FB_API_HANDLE*, FB_API_HANDLE*,
 					    GDS_QUAD*, SSHORT, const SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__prepare_transaction(ISC_STATUS*, FB_API_HANDLE*);
 
-ISC_STATUS	API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__prepare_transaction2(ISC_STATUS*, FB_API_HANDLE*,
 						      SSHORT, const SCHAR*);
 
-ISC_STATUS	API_ROUTINE gds__put_segment(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__put_segment(ISC_STATUS*, FB_API_HANDLE*,
 					     USHORT, const SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__put_slice( ISC_STATUS*, FB_API_HANDLE*, FB_API_HANDLE*,
-					    GDS_QUAD*, SSHORT, const SCHAR*, 
+					    GDS_QUAD*, SSHORT, const SCHAR*,
 					    SSHORT, const SLONG*, SLONG, void*);
 
-ISC_STATUS	API_ROUTINE gds__que_events(	ISC_STATUS*, FB_API_HANDLE*, SLONG*, 
+ISC_STATUS	API_ROUTINE gds__que_events(	ISC_STATUS*, FB_API_HANDLE*, SLONG*,
 						SSHORT, const UCHAR*,
 						FPTR_EVENT_CALLBACK, void*);
 
-ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__receive(ISC_STATUS*, FB_API_HANDLE*,
 					SSHORT, SSHORT,	void*, SSHORT);
 
-ISC_STATUS	API_ROUTINE gds__reconnect_transaction(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__reconnect_transaction(ISC_STATUS*, FB_API_HANDLE*,
 							FB_API_HANDLE*,	SSHORT, const SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__release_request(ISC_STATUS*, FB_API_HANDLE*);
 
-ISC_STATUS	API_ROUTINE gds__request_info(ISC_STATUS*, FB_API_HANDLE*, 
-						SSHORT, SSHORT,	const SCHAR*, 
+ISC_STATUS	API_ROUTINE gds__request_info(ISC_STATUS*, FB_API_HANDLE*,
+						SSHORT, SSHORT,	const SCHAR*,
 						SSHORT, SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__rollback_transaction(ISC_STATUS*, FB_API_HANDLE*);
 
-ISC_STATUS	API_ROUTINE gds__seek_blob(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__seek_blob(ISC_STATUS*, FB_API_HANDLE*,
 					   SSHORT, SLONG, SLONG*);
 
 ISC_STATUS	API_ROUTINE gds__send(	ISC_STATUS*, FB_API_HANDLE*,
 					SSHORT, SSHORT, const void*,
 					SSHORT);
 
-ISC_STATUS	API_ROUTINE gds__start_and_send(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__start_and_send(ISC_STATUS*, FB_API_HANDLE*,
 						FB_API_HANDLE*, SSHORT, SSHORT,
 						const void*, SSHORT);
 
 
-ISC_STATUS	API_ROUTINE gds__start_multiple(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__start_multiple(ISC_STATUS*, FB_API_HANDLE*,
 						SSHORT, void*);
 
-ISC_STATUS	API_ROUTINE gds__start_request( ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__start_request( ISC_STATUS*, FB_API_HANDLE*,
 						FB_API_HANDLE*, SSHORT);
 
 
-ISC_STATUS	API_ROUTINE gds__transaction_info(ISC_STATUS*, FB_API_HANDLE*, 
-						  SSHORT, const SCHAR*, 
+ISC_STATUS	API_ROUTINE gds__transaction_info(ISC_STATUS*, FB_API_HANDLE*,
+						  SSHORT, const SCHAR*,
 						  SSHORT, SCHAR*);
 
 ISC_STATUS	API_ROUTINE gds__unwind_request(ISC_STATUS*, FB_API_HANDLE*, SSHORT);
 
-ISC_STATUS	API_ROUTINE gds__ddl(ISC_STATUS*, FB_API_HANDLE*, 
+ISC_STATUS	API_ROUTINE gds__ddl(ISC_STATUS*, FB_API_HANDLE*,
 					FB_API_HANDLE*, SSHORT, const SCHAR*);
 
 void		API_ROUTINE gds__decode_date(const GDS_QUAD*, void*);
 
 void		API_ROUTINE gds__encode_date(const void*, GDS_QUAD*);
 
-int		API_ROUTINE gds__version(FB_API_HANDLE*, 
+int		API_ROUTINE gds__version(FB_API_HANDLE*,
 					 FPTR_VERSION_CALLBACK, void*);
 
 void		API_ROUTINE gds__set_debug(int);

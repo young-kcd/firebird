@@ -83,9 +83,9 @@ static const struct in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_DBA_PASSWORD, 	0,			"PASSWORD",	0, 0, 0, FALSE,	0,	2, NULL},	/* Database Admin. Password */
     {IN_SW_GSEC_FETCH_PASSWORD,	0,			"FETCH_PASSWORD", 0, 0, 0, FALSE, 0, 2, NULL},	/* Fetch Database Admin. Password */
     {IN_SW_GSEC_SQL_ROLE_NAME,	isc_spb_sql_role_name,		"ROLE",		0, 0, 0, FALSE,	0,	2, NULL},	/* SQL Role to assume */
-	{IN_SW_GSEC_DBA_TRUST_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, FALSE,	0,	
+	{IN_SW_GSEC_DBA_TRUST_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, FALSE,	0,
 											sizeof(TRUSTED_USER_SWITCH) - 1, NULL},		/* Database Admin. Trusted User name */
-	{IN_SW_GSEC_DBA_TRUST_ROLE,	0,			TRUSTED_ROLE_SWITCH,	0, 0, 0, FALSE,	0,	
+	{IN_SW_GSEC_DBA_TRUST_ROLE,	0,			TRUSTED_ROLE_SWITCH,	0, 0, 0, FALSE,	0,
 											sizeof(TRUSTED_ROLE_SWITCH) - 1, NULL},		/* Use trusted role for auth */
 #ifdef TRUSTED_AUTH
 	{IN_SW_GSEC_TRUSTED_AUTH,	0,			"TRUSTED",	0, 0, 0, FALSE,	0,	1, NULL},	/* Database Admin. Trusted User name */

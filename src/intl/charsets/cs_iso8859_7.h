@@ -1,5 +1,5 @@
 /* -------------------------------------------
-     This file was created with csUtility.java 
+     This file was created with csUtility.java
 
     Unicode mapping table generated from java mapping and UnicodeData.txt
 

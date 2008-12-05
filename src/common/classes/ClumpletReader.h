@@ -75,7 +75,7 @@ public:
 
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
-	size_t getBufferLength() const 
+	size_t getBufferLength() const
 	{
 		size_t rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
@@ -87,14 +87,14 @@ public:
 	}
 	size_t getCurOffset() const { return cur_offset; }
 	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
-	
+
 #ifdef DEBUG_CLUMPLETS
 	// Sometimes it's really useful to have it in case of errors
 	void dump() const;
 #endif
 
 	// it is not exact comparison as clumplets may have same tags
-	// but in different order 
+	// but in different order
 	bool simpleCompare(const ClumpletReader &other) const
 	{
 		const size_t len = getBufferLength();
@@ -116,7 +116,7 @@ protected:
 	virtual const UCHAR* getBuffer() const { return static_buffer; }
 	virtual const UCHAR* getBufferEnd() const { return static_buffer_end; }
 
-	// These functions are called when error condition is detected by this class. 
+	// These functions are called when error condition is detected by this class.
 	// They may throw exceptions. If they don't reader tries to do something
 	// sensible, certainly not overwrite memory or read past the end of buffer
 

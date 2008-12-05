@@ -62,7 +62,7 @@ struct user_action
 	bool ua_tr_role;
 #ifdef TRUSTED_AUTH
 	bool ua_trusted;
-#endif 
+#endif
 	bool ua_no_reserve;
 	bool ua_force;
 	bool ua_read_only;
@@ -80,7 +80,7 @@ struct user_action
 
 
 
-//  String block: used to store a string of constant length. 
+//  String block: used to store a string of constant length.
 
 class alice_str : public pool_alloc_rpt<UCHAR, alice_type_str>
 {
@@ -89,24 +89,24 @@ public:
 	UCHAR str_data[2];
 };
 
-//  Transaction block: used to store info about a multidatabase transaction. 
+//  Transaction block: used to store info about a multidatabase transaction.
 
 struct tdr : public pool_alloc<alice_type_tdr>
 {
-	tdr* tdr_next;				// next subtransaction 
-	SLONG tdr_id;				// database-specific transaction id 
-	alice_str* tdr_fullpath;			// full (possibly) remote pathname 
-	const TEXT* tdr_filename;	// filename within full pathname 
-	alice_str* tdr_host_site;			// host for transaction 
-	alice_str* tdr_remote_site;		// site for remote transaction 
-	FB_API_HANDLE tdr_handle;			// reconnected transaction handle 
-	FB_API_HANDLE tdr_db_handle;		// reattached database handle 
-	USHORT tdr_db_caps;			// capabilities of database 
-	USHORT tdr_state;			// see flags below 
+	tdr* tdr_next;				// next subtransaction
+	SLONG tdr_id;				// database-specific transaction id
+	alice_str* tdr_fullpath;			// full (possibly) remote pathname
+	const TEXT* tdr_filename;	// filename within full pathname
+	alice_str* tdr_host_site;			// host for transaction
+	alice_str* tdr_remote_site;		// site for remote transaction
+	FB_API_HANDLE tdr_handle;			// reconnected transaction handle
+	FB_API_HANDLE tdr_db_handle;		// reattached database handle
+	USHORT tdr_db_caps;			// capabilities of database
+	USHORT tdr_state;			// see flags below
 };
 
 typedef tdr* TDR;
-// Transaction Description Record 
+// Transaction Description Record
 
 const int TDR_VERSION		= 1;
 enum tdr_vals {
@@ -117,25 +117,25 @@ enum tdr_vals {
 	TDR_PROTOCOL		= 5
 };
 
-// flags for tdr_db_caps 
+// flags for tdr_db_caps
 
 enum tdr_db_caps_vals {
 	CAP_none			= 0,
 	CAP_transactions	= 1
 };
-// db has a RDB$TRANSACTIONS relation 
+// db has a RDB$TRANSACTIONS relation
 
-// flags for tdr_state 
+// flags for tdr_state
 enum tdr_state_vals {
-	TRA_none		= 0,		// transaction description record is missing 
-	TRA_limbo		= 1,		// has been prepared 
-	TRA_commit		= 2,		// has committed 
-	TRA_rollback	= 3,		// has rolled back 
-	TRA_unknown		= 4 		// database couldn't be reattached, state is unknown 
+	TRA_none		= 0,		// transaction description record is missing
+	TRA_limbo		= 1,		// has been prepared
+	TRA_commit		= 2,		// has committed
+	TRA_rollback	= 3,		// has rolled back
+	TRA_unknown		= 4 		// database couldn't be reattached, state is unknown
 };
 
 
-// Global data 
+// Global data
 
 class AliceGlobals : public ThreadData
 {
@@ -149,8 +149,8 @@ private:
 	}
 
 public:
-	AliceGlobals(Firebird::UtilSvc* us) 
-		: ThreadData(ThreadData::tddALICE), 
+	AliceGlobals(Firebird::UtilSvc* us)
+		: ThreadData(ThreadData::tddALICE),
 		ALICE_default_pool(0),
 		exit_code(FINI_ERROR),	// prevent FINI_OK in case of unknown error thrown
 								// would be set to FINI_OK (==0) in ALICE_exit
@@ -168,7 +168,7 @@ public:
 	{
 		return ALICE_default_pool;
 	}
-	
+
 	user_action		ALICE_data;
 	ISC_STATUS_ARRAY	status_vector;
 	int				exit_code;
@@ -194,7 +194,7 @@ public:
 	}
 };
 
-typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool> 
+typedef Firebird::SubsystemContextPoolHolder <AliceGlobals, MemoryPool>
 	AliceContextPoolHolder;
 
 #endif	// ALICE_ALICE_H

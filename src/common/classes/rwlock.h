@@ -58,12 +58,12 @@ private:
 	HANDLE writers_event, readers_semaphore;
 
 	void init()
-	{ 
+	{
 		lock = 0;
 		blockedReaders = 0;
 		blockedWriters = 0;
-		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/, 
-			INT_MAX, NULL); 
+		readers_semaphore = CreateSemaphore(NULL, 0 /*initial count*/,
+			INT_MAX, NULL);
 		if (readers_semaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 		writers_event = CreateEvent(NULL, FALSE/*auto-reset*/, FALSE, NULL);
@@ -80,7 +80,7 @@ public:
 	~RWLock()
 	{
 		if (readers_semaphore && !CloseHandle(readers_semaphore))
-			system_call_failed::raise("CloseHandle");		
+			system_call_failed::raise("CloseHandle");
 		if (writers_event && !CloseHandle(writers_event))
 			system_call_failed::raise("CloseHandle");
 	}
@@ -111,7 +111,7 @@ public:
 			return false;
 		if (++lock > 0)
 			return true;
-		// We stepped on writer's toes. Fix our mistake 
+		// We stepped on writer's toes. Fix our mistake
 		if (--lock == 0)
 			unblockWaiting();
 		return false;
@@ -193,7 +193,7 @@ private:
 	RWLock(const RWLock& source);
 
 	void init()
-	{ 
+	{
 		if (rwlock_init(&lock, USYNC_PROCESS, NULL))
 		{
 			system_call_failed::raise("rwlock_init");
@@ -210,7 +210,7 @@ public:
 	}
 	void beginRead()
 	{
-		if (rw_rdlock(&lock))	
+		if (rw_rdlock(&lock))
 			system_call_failed::raise("rw_rdlock");
 	}
 	bool tryBeginRead()
@@ -224,7 +224,7 @@ public:
 	}
 	void endRead()
 	{
-		if (rw_unlock(&lock))	
+		if (rw_unlock(&lock))
 			system_call_failed::raise("rw_unlock");
 	}
 	bool tryBeginWrite()
@@ -238,12 +238,12 @@ public:
 	}
 	void beginWrite()
 	{
-		if (rw_wrlock(&lock))	
+		if (rw_wrlock(&lock))
 			system_call_failed::raise("rw_wrlock");
 	}
 	void endWrite()
 	{
-		if (rw_unlock(&lock))	
+		if (rw_unlock(&lock))
 			system_call_failed::raise("rw_unlock");
 	}
 };
@@ -271,7 +271,7 @@ private:
 	RWLock(const RWLock& source);
 
 	void init()
-	{ 
+	{
 #if defined(LINUX) && !defined(USE_VALGRIND)
 		pthread_rwlockattr_t attr;
 		if (pthread_rwlockattr_init(&attr))
@@ -298,7 +298,7 @@ public:
 	}
 	void beginRead()
 	{
-		if (pthread_rwlock_rdlock(&lock))	
+		if (pthread_rwlock_rdlock(&lock))
 			system_call_failed::raise("pthread_rwlock_rdlock");
 	}
 	bool tryBeginRead()
@@ -312,7 +312,7 @@ public:
 	}
 	void endRead()
 	{
-		if (pthread_rwlock_unlock(&lock))	
+		if (pthread_rwlock_unlock(&lock))
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 	bool tryBeginWrite()
@@ -326,12 +326,12 @@ public:
 	}
 	void beginWrite()
 	{
-		if (pthread_rwlock_wrlock(&lock))	
+		if (pthread_rwlock_wrlock(&lock))
 			system_call_failed::raise("pthread_rwlock_wrlock");
 	}
 	void endWrite()
 	{
-		if (pthread_rwlock_unlock(&lock))	
+		if (pthread_rwlock_unlock(&lock))
 			system_call_failed::raise("pthread_rwlock_unlock");
 	}
 };

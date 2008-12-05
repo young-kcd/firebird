@@ -1,5 +1,5 @@
 /* 93-Jan-05
- * CC_<country> ===> CountryCode_<country> 
+ * CC_<country> ===> CountryCode_<country>
  * Assigned codes are related to telephone system country dialling codes
  * but not exact, for instance FRENCHCAN == CANADA has a unique
  * ID, but shares a dialling code with US.  Former parts of YUGOSLAVIA

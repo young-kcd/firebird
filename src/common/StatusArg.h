@@ -108,8 +108,8 @@ protected:
 		virtual void shiftLeft(const AbstractString& text) throw();
 		virtual void shiftLeft(const MetaName& text) throw();
 
-		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c) 
-		{ 
+		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c)
+		{
 			clear();
 		}
 

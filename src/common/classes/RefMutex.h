@@ -69,7 +69,7 @@ namespace Firebird
 	class RefMutexGuard : public Reference
 	{
 	public:
-		explicit RefMutexGuard(RefMutex& alock) 
+		explicit RefMutexGuard(RefMutex& alock)
 			: Reference(alock), lock(&alock)
 		{
 			lock->enter();
@@ -137,13 +137,13 @@ namespace Firebird
 			RefCounted::release(m_mutex);
 		}
 
-		void enter() 
+		void enter()
 		{
 			m_mutex->enter();
 			m_locked++;
 		}
 
-		bool tryEnter() 
+		bool tryEnter()
 		{
 			if (m_mutex->tryEnter())
 			{
@@ -153,7 +153,7 @@ namespace Firebird
 			return false;
 		}
 
-		void leave() 
+		void leave()
 		{
 			m_mutex->leave();
 			m_locked--;

@@ -28,7 +28,7 @@
 
 namespace Jrd {
 
-// possible symbol types 
+// possible symbol types
 
 enum sym_type {
 	SYM_statement,
@@ -47,20 +47,20 @@ enum sym_type {
 
 typedef sym_type SYM_TYPE;
 
-// symbol block 
+// symbol block
 
 class dsql_sym : public pool_alloc_rpt<UCHAR, dsql_type_sym> {
 public:
-	void *sym_dbb;				// generic DB structure handle 
-	const TEXT *sym_string;			// address of asciz string 
-	USHORT sym_length;			// length of string (exc. term.) 
-	SYM_TYPE sym_type;			// symbol type 
-	USHORT sym_keyword;			// keyword number, if keyword 
-	USHORT sym_version;			// dialect version the symbol was introduced 
-	void *sym_object;			// general pointer to object 
-	dsql_sym* sym_collision;	// collision pointer 
-	dsql_sym* sym_homonym;		// homonym pointer 
-	TEXT sym_name[2];			// space for name, if necessary 
+	void *sym_dbb;				// generic DB structure handle
+	const TEXT *sym_string;			// address of asciz string
+	USHORT sym_length;			// length of string (exc. term.)
+	SYM_TYPE sym_type;			// symbol type
+	USHORT sym_keyword;			// keyword number, if keyword
+	USHORT sym_version;			// dialect version the symbol was introduced
+	void *sym_object;			// general pointer to object
+	dsql_sym* sym_collision;	// collision pointer
+	dsql_sym* sym_homonym;		// homonym pointer
+	TEXT sym_name[2];			// space for name, if necessary
 };
 typedef dsql_sym *DSQL_SYM;
 
