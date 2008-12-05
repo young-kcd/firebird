@@ -40,14 +40,16 @@ public:
 				USHORT bpb_len, const UCHAR* bpb);
 	bool close(bool force_internal_SV = false);
 	bool getSegment(size_t len, void* buffer, size_t& real_len);
+	bool getData(size_t len, void* buffer, size_t& real_len);
 	bool getData(size_t len, void* buffer, size_t& real_len, bool use_sep, const UCHAR separator);
 	bool putSegment(size_t len, const void* buffer);
 	bool putSegment(size_t len, const void* buffer, size_t& real_len);
+	bool putData(size_t len, const void* buffer);
 	bool putData(size_t len, const void* buffer, size_t& real_len);
 	bool isOpen() const;
 	ISC_STATUS getCode() const;
 //	FB_API_HANDLE& getHandle();
-	bool getInfo(size_t items_size, const UCHAR* blr_items, size_t info_size, UCHAR* blob_info) const;
+	bool getInfo(size_t items_size, const UCHAR* items, size_t info_size, UCHAR* blob_info) const;
 	static bool blobIsNull(const ISC_QUAD& blobid);
 private:
 	enum b_direction
@@ -95,12 +97,21 @@ inline bool UserBlob::blobIsNull(const ISC_QUAD& blobid)
 	return blobid.gds_quad_high == 0 && blobid.gds_quad_low == 0;
 }
 
+inline bool UserBlob::putData(size_t len, const void* buffer)
+{
+	size_t dummy;
+	return putData(len, buffer, dummy);
+}
+
+inline bool UserBlob::getData(size_t len, void* buffer, size_t& real_len)
+{
+	return getData(len, buffer, real_len, false, '\0');
+}
 
 bool getBlobSize(	const UserBlob& b,
 					SLONG* size,
 					SLONG* seg_count,
 					SLONG* max_seg);
-
 
 #endif // FB_USER_BLOB_H
 
