@@ -210,10 +210,10 @@ int ISC_kill(SLONG pid, SLONG signal_number)
    send to him.  */
 
 	int pipes[2];
-	
+
 	if (!relay_pipe) {
 		TEXT process[MAXPATHLEN], arg[10];
-		
+
 		gds__prefix(process, GDS_RELAY);
 		if (access(process, X_OK) != 0) {
 			// we don't have relay, therefore simply give meaningful diagnostic
@@ -315,7 +315,7 @@ static bool isc_signal2(
 		sigaddset(&act.sa_mask, signal_number);
 		sigaction(signal_number, &act, &oact);
 		old_sig_w_siginfo = oact.sa_flags & SA_SIGINFO;
-		
+
 		if (oact.sa_sigaction != signal_action &&
 			oact.sa_handler != SIG_DFL &&
 			oact.sa_handler != SIG_HOLD &&
@@ -360,7 +360,7 @@ void ISC_signal_cancel(
 	for (ptr = &signals; sig = *ptr;) {
 		if (sig->sig_signal == signal_number &&
 			(handler == NULL ||
-			 (sig->sig_routine.user == handler && sig->sig_arg == arg))) 
+			 (sig->sig_routine.user == handler && sig->sig_arg == arg)))
 		{
 			*ptr = sig->sig_next;
 			gds__free(sig);
@@ -446,8 +446,8 @@ static SLONG overflow_handler(void* arg)
 }
 
 static SIG que_signal(int signal_number,
-					  FPTR_VOID handler, 
-					  void* arg, 
+					  FPTR_VOID handler,
+					  void* arg,
 					  int flags,
 					  bool sig_w_siginfo)
 {
@@ -518,7 +518,7 @@ static void CLIB_ROUTINE signal_action(int number, siginfo_t *siginfo, void *con
 					(*sig->sig_routine.client1)(number);
 				}
 			}
-			else if (sig->sig_flags & SIG_informs) 
+			else if (sig->sig_flags & SIG_informs)
 			{
 				/* Routine will tell us whether to chain the signal to other handlers */
 				if ((*sig->sig_routine.informs)(sig->sig_arg) == SIG_informs_stop)

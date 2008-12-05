@@ -178,7 +178,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 				case 'C':
 					sw_arch = ARCH_CS;
 					break;
-				
+
 				case 'M':
 					sw_arch = ARCH_SCS;
 					break;
@@ -245,7 +245,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		full_username[sizeof(full_username) - 1] = '\0';
 
 		CharToOem(full_username, oem_username);
-		
+
 		username = full_username;
 
 		if (password == 0)
@@ -253,12 +253,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			printf("Enter %s user password : ", oem_username);
 			p = keyb_password;
 			const TEXT* const pass_end = p + sizeof(keyb_password) - 1;	// keep room for '\0'
-			
+
 			while (p < pass_end && (*p++ = getch()) != '\r')
 				putch('*'); // Win32 only
-			
+
 			*(p - 1) = '\0';	// Cuts at '\r'
-			
+
 			printf("\n");
 			OemToChar(keyb_password, keyb_password);
 			password = keyb_password;
@@ -560,7 +560,7 @@ static USHORT svc_query_ex(SC_HANDLE manager)
  **********************************************
  *
  * Functional description
- *	Report (print) the status and configuration 
+ *	Report (print) the status and configuration
  *  of all installed Firebird services.
  *  If none are installed return FB_FAILURE
  *  so as to allow a call to svc_query for the
@@ -575,9 +575,9 @@ static USHORT svc_query_ex(SC_HANDLE manager)
 	DWORD pcbBytesNeeded = 0;
 	USHORT rc = FB_FAILURE;
 
-	EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, NULL, 0, 
+	EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, NULL, 0,
 		&pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
-		
+
     if ( GetLastError() == ERROR_MORE_DATA )
 	{
 		const DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
@@ -597,15 +597,15 @@ static USHORT svc_query_ex(SC_HANDLE manager)
 				serverServiceName = service_data[i].lpServiceName;
 				if ( serverServiceName.substr(0, 8) == "Firebird" )
 				{
-					svc_query(service_data[i].lpServiceName, 
+					svc_query(service_data[i].lpServiceName,
 						service_data[i].lpDisplayName, manager);
 
 					firebirdServicesInstalled = true;
 				}
 			}
-			
+
 			delete[] service_data;
-			
+
 			if ( firebirdServicesInstalled )
 				rc = FB_SUCCESS;
 			else

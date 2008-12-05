@@ -120,7 +120,7 @@ namespace {
 		explicit FailedLogin(const string& l)
 			: login(l), failCount(1), lastAttempt(time(0)) {}
 
-		FailedLogin(MemoryPool& p, const FailedLogin& fl) 
+		FailedLogin(MemoryPool& p, const FailedLogin& fl)
 			: login(p, fl.login), failCount(fl.failCount), lastAttempt(fl.lastAttempt) {}
 
 		static const string* generate(const void* sender, const FailedLogin* f)
@@ -133,17 +133,17 @@ namespace {
 	const int MAX_FAILED_ATTEMPTS = 4;
 	const int FAILURE_DELAY = 8; // seconds
 
-	class FailedLogins : private SortedObjectsArray<FailedLogin, 
-		InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
-		const string, FailedLogin> 
+	class FailedLogins : private SortedObjectsArray<FailedLogin,
+		InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
+		const string, FailedLogin>
 	{
 	private:
 		// as long as we have voluntary threads scheduler,
 		// this mutex should be entered AFTER that scheduler entered!
 		Mutex fullAccess;
 
-		typedef SortedObjectsArray<FailedLogin, 
-			InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>, 
+		typedef SortedObjectsArray<FailedLogin,
+			InlineStorage<FailedLogin*, MAX_CONCURRENT_FAILURES>,
 			const string, FailedLogin> inherited;
 
 	public:
@@ -274,7 +274,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 
 	isc_start_and_send(status, &lookup_req, &lookup_trans, 0, sizeof(uname), uname, 0);
 	checkStatus("isc_start_and_send");
-	
+
 	while (true)
 	{
 		isc_receive(status, &lookup_req, 1, sizeof(user), &user, 0);
@@ -287,7 +287,7 @@ bool SecurityDatabase::lookup_user(const TEXT* user_name, int* uid, int* gid, TE
 			*uid = user.uid;
 		if (gid)
 			*gid = user.gid;
-		if (pwd) 
+		if (pwd)
 		{
 			strncpy(pwd, user.password, MAX_PASSWORD_LENGTH);
 			pwd[MAX_PASSWORD_LENGTH] = 0;
@@ -323,7 +323,7 @@ void SecurityDatabase::prepare()
 	// Attach as SYSDBA
 	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
 
-	isc_attach_database(status, 0, user_info_name, &lookup_db, 
+	isc_attach_database(status, 0, user_info_name, &lookup_db,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer()));
 	checkStatus("isc_attach_database", isc_psw_attach);
 
@@ -359,7 +359,7 @@ void SecurityDatabase::verifyUser(string& name,
 								  const TEXT* password_enc,
 								  int* uid,
 								  int* gid,
-								  int* node_id, 
+								  int* node_id,
 								  const string& remoteId)
 {
 	if (user_name)
@@ -384,7 +384,7 @@ void SecurityDatabase::verifyUser(string& name,
 		// We use PathName for string comparison using platform filename comparison
 		// rules (case-sensitive or case-insensitive).
 		const PathName authMethod(Config::getAuthMethod());
-		useNative = (authMethod == AmNative || authMethod == AmMixed) ? 
+		useNative = (authMethod == AmNative || authMethod == AmMixed) ?
 			AM_ENABLED : AM_DISABLED;
 	}
 	if (useNative == AM_DISABLED)
@@ -404,7 +404,7 @@ void SecurityDatabase::verifyUser(string& name,
 	storedHash.rtrim();
 
 	// Punt if the user has specified neither a raw nor an encrypted password,
-	// or if the user has specified both a raw and an encrypted password, 
+	// or if the user has specified both a raw and an encrypted password,
 	// or if the user name specified was not in the password database
 	// (or if there was no password database - it's still not found)
 
@@ -416,7 +416,7 @@ void SecurityDatabase::verifyUser(string& name,
 	}
 
 	TEXT pwt[MAX_PASSWORD_LENGTH + 2];
-	if (password) 
+	if (password)
 	{
 		ENC_crypt(pwt, sizeof pwt, password, PASSWORD_SALT);
 		password_enc = pwt + 2;
@@ -435,7 +435,7 @@ void SecurityDatabase::verifyUser(string& name,
 			newHash.erase(0, 2);
 			legacyHash = newHash == storedHash;
 		}
-		if (! legacyHash) 
+		if (! legacyHash)
 		{
 			usernameFailedLogins().loginFail(name);
 			remoteFailedLogins().loginFail(remoteId);

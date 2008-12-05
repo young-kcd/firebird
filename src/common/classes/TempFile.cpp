@@ -52,7 +52,7 @@
 // Const definitions
 
 static const char* ENV_VAR = "FIREBIRD_TMP";
-static const char* DEFAULT_PATH = 
+static const char* DEFAULT_PATH =
 #if defined(UNIX)
 	"/tmp/";
 #elif defined(WIN_NT)
@@ -234,7 +234,7 @@ void TempFile::seek(const offset_t offset)
 {
 	if (position == offset)
 		return;
-		
+
 #if defined(WIN_NT)
 	LARGE_INTEGER liOffset;
 	liOffset.QuadPart = offset;

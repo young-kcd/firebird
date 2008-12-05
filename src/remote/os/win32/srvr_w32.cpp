@@ -224,7 +224,7 @@ int WINAPI WinMain(HINSTANCE	hThisInst,
 		{
 			port = INET_reconnect(connection_handle, status_vector);
 
-			if (port) 
+			if (port)
 			{
 				SRVR_multi_thread(port, server_flag);
 				port = NULL;
@@ -362,10 +362,10 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		fb_utils::init_status(status_vector);
 		rem_port* port = WNET_connect(protocol_wnet, NULL, status_vector, server_flag);
 
-		if (!port) 
+		if (!port)
 		{
 			const ISC_STATUS err = status_vector[1];
-			if (err) 
+			if (err)
 			{
 				if (err == isc_net_server_shutdown)
 					break;
@@ -401,10 +401,10 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		fb_utils::init_status(status_vector);
 		rem_port* port = XNET_connect(NULL, NULL, status_vector, server_flag);
 
-		if (!port) 
+		if (!port)
 		{
 			const ISC_STATUS err = status_vector[1];
-			if (err) 
+			if (err)
 			{
 				if (err == isc_net_server_shutdown)
 					break;

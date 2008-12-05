@@ -29,8 +29,8 @@
  * 02-Nov-2001 Mike Nordell: Synch with FB1 changes.
  *
  * 20-Nov-2001 Ann Harrison: Make page count work on db with forced write
- * 
- * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works 
+ *
+ * 21-Nov-2001 Ann Harrison: Allow read sharing so gstat works
  */
 
 #include "firebird.h"
@@ -60,7 +60,7 @@ class FileExtendLockGuard
 {
 public:
 	FileExtendLockGuard(Firebird::RWLock* lock, bool exclusive) :
-	  m_lock(lock), m_exclusive(exclusive) 
+	  m_lock(lock), m_exclusive(exclusive)
 	{
 		if (m_exclusive) {
 			fb_assert(m_lock);
@@ -228,7 +228,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 
 	if (desc == INVALID_HANDLE_VALUE)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (create)") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (create)") <<
 										   Arg::Str(string) <<
 				 Arg::Gds(isc_io_create_err) << Arg::Windows(GetLastError()));
 	}
@@ -258,7 +258,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name,
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length, 
+	return ISC_expand_filename(file_name, file_length,
 				expanded_name, len_expanded, false);
 }
 
@@ -272,15 +272,15 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
  **************************************
  *
  * Functional description
- *	Extend file by extPages pages of pageSize size. 
+ *	Extend file by extPages pages of pageSize size.
  *
  **************************************/
- 
+
 	// hvlad: prevent other reading\writing threads from changing file pointer.
 	// As we open file without FILE_FLAG_OVERLAPPED, ReadFile\WriteFile calls
 	// will change file pointer we set here and file truncation instead of file
 	// extension will occurs.
-	// It solved issue CORE-1468 (database file corruption when file extension 
+	// It solved issue CORE-1468 (database file corruption when file extension
 	// and read\write activity performed simultaneously)
 
 	// if file have no extend lock it is better to not extend file than corrupt it
@@ -294,7 +294,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
 		const ULONG filePages = PIO_get_number_of_pages(file, pageSize);
-		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ? MAX_ULONG : 
+		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ? MAX_ULONG :
 									file->fil_max_page - file->fil_min_page + 1;
 		if (filePages < fileMaxPages)
 		{
@@ -302,7 +302,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 
 			HANDLE hFile = file->fil_desc;
 
-			LARGE_INTEGER newSize; 
+			LARGE_INTEGER newSize;
 			newSize.QuadPart = (ULONGLONG) (filePages + extendBy) * pageSize;
 
 			const DWORD ret = SetFilePointer(hFile, newSize.LowPart, &newSize.HighPart, FILE_BEGIN);
@@ -373,11 +373,11 @@ void PIO_force_write(jrd_file* file, const bool forceWrite, const bool notUseFSC
 
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (force write)") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (force write)") <<
 											   Arg::Str(file->fil_string) <<
 					 Arg::Gds(isc_io_access_err) << Arg::Windows(GetLastError()));
 		}
-		
+
 		if (forceWrite) {
 			file->fil_flags |= FIL_force_write;
 		}
@@ -405,7 +405,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
  * Functional description
  *	Read the page header.  This assumes that the file has not been
  *	repositioned since the file was originally mapped.
- *  The detail of Win32 implementation is that it doesn't assume 
+ *  The detail of Win32 implementation is that it doesn't assume
  *  this fact as seeks to first byte of file initially, but external
  *  callers should not rely on this behavior
  *
@@ -467,7 +467,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 static Firebird::InitInstance<HugeStaticBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -493,7 +493,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 
 	OVERLAPPED overlapped;
 	OVERLAPPED* overlapped_ptr;
-	jrd_file* file = 
+	jrd_file* file =
 		seek_file(main_file, &bdb, status_vector, &overlapped, &overlapped_ptr);
 
 	if (!file)
@@ -573,7 +573,7 @@ jrd_file* PIO_open(Database* dbb,
 
 		if (desc == INVALID_HANDLE_VALUE)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("CreateFile (open)") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Windows(GetLastError()));
 		}
@@ -851,7 +851,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 	else
 	{
 		DWORD actual_length;
-		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr) 
+		if (!WriteFile(desc, page, size, &actual_length, overlapped_ptr)
 			|| actual_length != size )
 		{
 #ifdef SUPERSERVER_V2
@@ -1127,13 +1127,13 @@ static bool nt_error(TEXT*	string,
 
 	if (status_vector)
 	{
-		ERR_build_status(status_vector, Arg::Gds(isc_io_error) << Arg::Str(string) << 
+		ERR_build_status(status_vector, Arg::Gds(isc_io_error) << Arg::Str(string) <<
 																  Arg::Str(file->fil_string) <<
 										Arg::Gds(operation) << Arg::Windows(GetLastError()));
 		return false;
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << 
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) <<
 									   Arg::Str(file->fil_string) <<
 			 Arg::Gds(operation) << Arg::Windows(GetLastError()));
 

@@ -145,7 +145,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 
 // 01 Sept 2003, Nickolay Samofatov
 // In GCC version 3.1-3.3 we need to install special error handler
-// in order to get meaningful terminate() error message on stderr. 
+// in order to get meaningful terminate() error message on stderr.
 // In GCC 3.4 or later this is the default.
 //#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
 //    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
@@ -224,7 +224,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 				case '?':
 					printf("Firebird TCP/IP server options are:\n");
 					printf("  -d           : debug on\n");
-                   
+
 #ifndef SUPERSERVER
                     // These options are not applicable to super server
 					printf("  -m           : multiclient - on\n");
@@ -240,10 +240,10 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 					printf("  -h|? : print this help\n");
                     printf("\n");
                     printf("  (The following -e options used to be -h options)\n");
-					printf("  -e <firebird_root_dir>   : set firebird_root path\n");            
-					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");            
-					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");            
-					printf("  -z   : print version\n");            
+					printf("  -e <firebird_root_dir>   : set firebird_root path\n");
+					printf("  -el <firebird_lock_dir>  : set runtime firebird_lock dir\n");
+					printf("  -em <firebird_msg_dir>   : set firebird_msg dir path\n");
+					printf("  -z   : print version\n");
 
 					exit(FINI_OK);
 				case 'Z':
@@ -383,7 +383,7 @@ int CLIB_ROUTINE server_main( int argc, char** argv)
 	}
 
 /* Server tries to attach to security2.fdb to make sure everything is OK
-   This code fixes bug# 8429 + all other bug of that kind - from 
+   This code fixes bug# 8429 + all other bug of that kind - from
    now on the server exits if it cannot attach to the database
    (wrong or no license, not enough memory, etc.
 */
@@ -487,7 +487,7 @@ static int shutdownInetServer(const int reason, const int, void*)
  ****************************************************
  *
  * Functional description
- *	In order to avoid blocking of the thread, 
+ *	In order to avoid blocking of the thread,
  *	which received SIGTERM, run in separate thread.
  *
  **************************************/
@@ -500,7 +500,7 @@ static int shutdownInetServer(const int reason, const int, void*)
 
 	serverClosing = true;
 
-	// shutdown main thread - send self-signal to close select() 
+	// shutdown main thread - send self-signal to close select()
 	// in main thread and wait for it to get into safe state
 #ifdef UNIX
 	kill(getpid(), SIGUSR1);
@@ -518,7 +518,7 @@ static void shutdownInit()
 
 	ISC_STATUS_ARRAY status;
 	fb_shutdown_callback(status, shutdownInetServer, fb_shut_postproviders, 0);
-	if (status[0] == 1 && status[1] > 0) 
+	if (status[0] == 1 && status[1] > 0)
 	{
 		gds__log_status("Error in shutdownInit()", status);
 		isc_print_status(status);
@@ -535,7 +535,7 @@ static int tryStopMainThread()
  ****************************************************
  *
  * Functional description
- *	Called by main thread to test is not shutdown started. 
+ *	Called by main thread to test is not shutdown started.
  *
  **************************************/
 	return serverClosing ? 1 : 0;

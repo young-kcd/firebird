@@ -186,7 +186,7 @@ int DBG_analyze(int pool_id)
 
 	if (!dbb || !dbb->dbb_pools.getCount())
 		return TRUE;
-	
+
 	Database::pool_vec_type* vector = &dbb->dbb_pools;
 
 	for (p = blocks, end = p + (int) type_MAX; p < end; p++) {
@@ -816,7 +816,7 @@ int DBG_pretty(const jrd_nod* node, int column)
 	case nod_relation:
 		relation = (jrd_rel*) node->nod_arg[e_rel_relation];
 		fprintf(dbg_file, ", stream: %d, %s (%X)\n",
-				   node->nod_arg[e_rel_stream], 
+				   node->nod_arg[e_rel_stream],
 				   relation->rel_name.c_str(), relation);
 		return TRUE;
 
@@ -1116,7 +1116,7 @@ static void prt_dsc(DSC * desc, int column)
 {
 /**************************************
  *
- *	p r t _ d s c 
+ *	p r t _ d s c
  *
  **************************************
  *

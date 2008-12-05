@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Client/Server Common Code
  *	MODULE:			locks.cpp
- *	DESCRIPTION:	Win32 Mutex support compatible with 
+ *	DESCRIPTION:	Win32 Mutex support compatible with
  *					old OS versions (like Windows 95)
  *
  *  The contents of this file are subject to the Initial
@@ -46,7 +46,7 @@ TryEnterCS::TryEnterCS()
 {
 	HMODULE kernel32 = GetModuleHandle("kernel32.dll");
 	if (kernel32) {
-		m_funct = (tTryEnterCriticalSection*) 
+		m_funct = (tTryEnterCriticalSection*)
 			GetProcAddress(kernel32, "TryEnterCriticalSection");
 	}
 }
@@ -68,7 +68,7 @@ void Spinlock::init()
 			SetCriticalSectionSpinCount = MISS_SPIN_COUNT;
 			return;
 		}
-		SetCriticalSectionSpinCount = 
+		SetCriticalSectionSpinCount =
 			(tSetCriticalSectionSpinCount *) GetProcAddress(
 					kernel32, "SetCriticalSectionSpinCount");
 		if (!SetCriticalSectionSpinCount) {

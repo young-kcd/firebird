@@ -225,12 +225,12 @@ qli_tok* LEX_edit_string(void)
 		return NULL;
 	}
 
-	while (!(classes(c) & (CHR_white | CHR_eol))) 
+	while (!(classes(c) & (CHR_white | CHR_eol)))
 	{
 		*p++ = c;
 		if (classes(c) & CHR_quote)
 		{
-			for (;;) 
+			for (;;)
 			{
 				const SSHORT d = nextchar(false);
 				if (d == '\n') {
@@ -307,10 +307,10 @@ qli_tok* LEX_filename(void)
 	for (;;) {
 		c = nextchar(true);
 		char char_class = classes(c);
-		if (c == '"' && c != save) 
+		if (c == '"' && c != save)
 		{
 			*p++ = c;
-			for (;;) 
+			for (;;)
 			{
 				c = nextchar(true);
 				char_class = classes(c);

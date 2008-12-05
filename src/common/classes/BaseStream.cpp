@@ -92,9 +92,9 @@ int StringStream::write(const void* str, unsigned int n)
 	}
 	else
 		m_current_pos += avail;
-		
+
 	m_current_pos[0] = 0;
-	
+
 	return avail;
 }
 

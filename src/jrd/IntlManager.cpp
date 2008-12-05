@@ -45,7 +45,7 @@
 using namespace Firebird;
 
 
-namespace 
+namespace
 {
 	class ModulesMap : public GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >
 	{
@@ -243,7 +243,7 @@ const IntlManager::CharSetAliasDefinition IntlManager::defaultCharSetAliases[] =
 	{"GB2312", CS_GB2312},
 	{"DOS_936", CS_GB2312},
 	{"WIN_936", CS_GB2312},
-	{NULL, 0}	
+	{NULL, 0}
 };
 
 const IntlManager::CollationDefinition IntlManager::defaultCollations[] =
@@ -566,7 +566,7 @@ bool IntlManager::lookupCharSet(const Firebird::string& charSetName, charset* cs
 		else
 		{
 			ModuleLoader::Module* module;
-			
+
 			if (modules->get(externalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(CHARSET_ENTRYPOINT), lookupFunction);
 		}
@@ -601,7 +601,7 @@ bool IntlManager::lookupCollation(const Firebird::string& collationName,
 		else
 		{
 			ModuleLoader::Module* module;
-			
+
 			if (modules->get(collationExternalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(TEXTTYPE_ENTRYPOINT), lookupFunction);
 		}
@@ -638,7 +638,7 @@ bool IntlManager::setupCollationAttributes(
 		else
 		{
 			ModuleLoader::Module* module;
-			
+
 			if (modules->get(collationExternalInfo.moduleName, module) && module)
 				module->findSymbol(STRINGIZE(INTL_SETUP_ATTRIBUTES_ENTRYPOINT), attributesFunction);
 		}

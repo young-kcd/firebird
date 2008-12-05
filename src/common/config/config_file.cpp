@@ -179,7 +179,7 @@ string ConfigFile::parseValueFrom(string inputLine, string::size_type initialPos
 	{
 		return inputLine.substr(startPos + 1, inputLine.length() - startPos - 2);
 	}
-	
+
 	return inputLine.substr(startPos);
 }
 

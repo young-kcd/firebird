@@ -84,7 +84,7 @@ int API_ROUTINE gds__thread_start(ThreadEntryPoint* entrypoint,
 }
 
 
-namespace 
+namespace
 {
 
 #ifdef THREAD_PSCHED
@@ -147,14 +147,14 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #endif //THREAD_PSCHED
 
-} // anonymous namespace 
+} // anonymous namespace
 
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
 void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg, 
-						int priority_arg, 
+						void* arg,
+						int priority_arg,
 						void* thd_id)
 {
 /**************************************
@@ -206,7 +206,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	}
 
 #else
-	
+
 	state = pthread_attr_create(&pattr);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_create", state);
@@ -275,8 +275,8 @@ void THD_wait_for_completion(ThreadHandle& thread)
 #ifdef SOLARIS_MT
 #define START_THREAD
 void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg, 
-						int priority_arg, 
+						void* arg,
+						int priority_arg,
 						void* thd_id)
 {
 /**************************************
@@ -311,8 +311,8 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 #ifdef WIN_NT
 #define START_THREAD
 void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg, 
-						int priority_arg, 
+						void* arg,
+						int priority_arg,
 						void* thd_id)
 {
 /**************************************
@@ -354,7 +354,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 #ifdef THREAD_PSCHED
 	ThreadPriorityScheduler::Init();
 
-	ThreadPriorityScheduler* tps = FB_NEW(*getDefaultMemoryPool()) 
+	ThreadPriorityScheduler* tps = FB_NEW(*getDefaultMemoryPool())
 		ThreadPriorityScheduler(routine, arg, ThreadPriorityScheduler::adjustPriority(priority));
 #endif // THREAD_PSCHED
 
@@ -389,7 +389,7 @@ void THD_detach(ThreadHandle& handle)
 {
 	CloseHandle(handle);
 }
-	
+
 void THD_wait_for_completion(ThreadHandle& handle)
 {
 	WaitForSingleObject(handle, INFINITE);
@@ -399,8 +399,8 @@ void THD_wait_for_completion(ThreadHandle& handle)
 
 #ifndef START_THREAD
 void ThreadStart::start(ThreadEntryPoint* routine,
-						void* arg, 
-						int priority_arg, 
+						void* arg,
+						int priority_arg,
 						void* thd_id)
 {
 /**************************************

@@ -69,7 +69,7 @@ struct VERB {
 	const SCHAR* sub_type;
 };
 
-static const VERB verbs[] = 
+static const VERB verbs[] =
 {
 	PAIR(nod_assignment, blr_assignment, e_asgn_length, 2, STATEMENT, VALUE),
 	PAIR(nod_erase, blr_erase, e_erase_length, 0, STATEMENT, OTHER),

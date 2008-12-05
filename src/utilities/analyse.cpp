@@ -100,7 +100,7 @@ void main( int argc, char **argv)
 	bool detail = true;
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end; argv++) 
+	for (end = argv + argc, ++argv; argv < end; argv++)
 	{
 		const char* s = *argv;
 		if (*s++ == '-')
@@ -146,7 +146,7 @@ void main( int argc, char **argv)
 			n = get_long();
 			if (n < MAX_PAGES)
 				++read_counts[n];
-				
+
 			if (detail && (page = db_read(n)))
 				analyse(n, "Read", page, ++sequence);
 			reads++;
@@ -156,7 +156,7 @@ void main( int argc, char **argv)
 			n = get_long();
 			if (n < MAX_PAGES)
 				++write_counts[n];
-			
+
 			if (detail && (page = db_read(n)))
 				analyse(n, "Write", page, ++sequence);
 			writes++;

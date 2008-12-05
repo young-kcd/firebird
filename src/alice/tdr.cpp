@@ -195,19 +195,19 @@ bool TDR_attach_database(ISC_STATUS* status_vector,
 	dpb.insertTag(isc_dpb_gfix_attach);
 	tdgbl->uSvc->getAddressPath(dpb);
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertString(isc_dpb_user_name, 
+		dpb.insertString(isc_dpb_user_name,
 						tdgbl->ALICE_data.ua_user,
 						strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password) {
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc :
 							isc_dpb_password,
-						tdgbl->ALICE_data.ua_password, 
+						tdgbl->ALICE_data.ua_password,
 						strlen(tdgbl->ALICE_data.ua_password));
 	}
 	if (tdgbl->ALICE_data.ua_tr_user) {
 		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth, 
+		dpb.insertString(isc_dpb_trusted_auth,
 						tdgbl->ALICE_data.ua_tr_user,
 						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
 	}
@@ -323,7 +323,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 				ALICE_print(71, SafeArg() << id);
 				// msg 71: Transaction %d is in limbo.
 			}
-			if (trans = MET_get_transaction(status_vector, handle, id)) 
+			if (trans = MET_get_transaction(status_vector, handle, id))
 			{
 				tdgbl->uSvc->putSLong(isc_spb_multi_tra_id, id);
 				reattach_databases(trans);
@@ -331,7 +331,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const ULONG switches
 				TDR_shutdown_databases(trans);
 				print_description(trans);
 			}
-			else 
+			else
 			{
 				tdgbl->uSvc->putSLong(isc_spb_single_tra_id, id);
 			}
@@ -770,7 +770,7 @@ static void reattach_database(TDR trans)
 		ALICE_exit(FINI_ERROR, tdgbl);
 	}
 
-	for (;;) 
+	for (;;)
 	{
 		ALICE_print(88);	// msg 88: Enter a valid path:
 		char* p = buffer;

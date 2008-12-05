@@ -48,7 +48,7 @@ UCHAR *MISC_alloc_burp(ULONG size)
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// Add some header space to store a list of blocks allocated for this gbak 
+// Add some header space to store a list of blocks allocated for this gbak
 	size += ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT);
 
 	UCHAR* block = (UCHAR*)gds__alloc(size);
@@ -57,14 +57,14 @@ UCHAR *MISC_alloc_burp(ULONG size)
 		/* NOMEM: message & abort FREE: all items freed at gbak exit */
 	{
 		BURP_error(238, true);
-		// msg 238: System memory exhaused 
+		// msg 238: System memory exhaused
 		return NULL;
 	}
 
 	memset(block, 0, size);
 
 /* FREE: We keep a linked list of all gbak memory allocations, which
- *       are then freed when gbak exits.  This is important for 
+ *       are then freed when gbak exits.  This is important for
  *       NETWARE in particular.
  */
 	*((UCHAR **) block) = tdgbl->head_of_mem_list;
@@ -89,26 +89,26 @@ void MISC_free_burp( void *free)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (free != NULL) {
-		// Point at the head of the allocated block 
+		// Point at the head of the allocated block
 		UCHAR **block =
 			(UCHAR **) ((UCHAR *) free - ROUNDUP(sizeof(UCHAR *), FB_ALIGNMENT));
 
-		// Scan for this block in the list of blocks 
+		// Scan for this block in the list of blocks
 		for (UCHAR **ptr = &tdgbl->head_of_mem_list; *ptr; ptr = (UCHAR **) *ptr)
 		{
 			if (*ptr == (UCHAR *) block) {
-				// Found it - remove it from the list 
+				// Found it - remove it from the list
 				*ptr = *block;
 
-				// and free it 
+				// and free it
 				gds__free((SLONG *) block);
 				return;
 			}
 		}
 
-		// We should always find the block in the list 
+		// We should always find the block in the list
 		BURP_error(238, true);
-		// msg 238: System memory exhausted 
+		// msg 238: System memory exhausted
 		// (too lazy to add a better message)
 	}
 }

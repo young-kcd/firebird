@@ -148,7 +148,7 @@ ISC_STATUS filter_acl(USHORT action, BlobControl* control)
 	USHORT length;
 	const ISC_STATUS status =
 		caller(isc_blob_filter_get_segment, control, (USHORT) l, temp, &length);
-		
+
 	TEXT line[BUFFER_SMALL];
 
 	if (!status) {
@@ -209,7 +209,7 @@ ISC_STATUS filter_blr(USHORT action, BlobControl* control)
  **************************************
  *
  * Functional description
- *	Get next segment from a blr blob. 
+ *	Get next segment from a blr blob.
  *	Doctor up Rdb BLR blobs that omit
  *	the BLR eoc so the pretty printer
  *	doesn't complain.
@@ -278,8 +278,8 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
     char buffer[256];
 
     sprintf(buffer, "%5d: type=%d (%s) length=%d sub_type=%d flags=0x%X",
-		desc.dsc_offset, 
-		desc.dsc_dtype, 
+		desc.dsc_offset,
+		desc.dsc_dtype,
 		desc.dsc_dtype >= DTYPE_TYPE_MAX ? "unknown" : dtypes[desc.dsc_dtype],
 		desc.dsc_length,
 		desc.dsc_sub_type,
@@ -624,7 +624,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
  **************************************
  *
  * Functional description
- *	Get next segment from a text blob.  
+ *	Get next segment from a text blob.
  *	Convert the text from one character set to another.
  *
  *	The usage of the variable ctl_data slots:
@@ -648,7 +648,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	const USHORT EXP_SCALE		= 128;		/* to keep expansion non-floating */
 
 	ctlaux* aux = (ctlaux*) control->ctl_data[0];
-	
+
 	BlobControl* source;
 	ISC_STATUS status;
 	ULONG err_position;
@@ -881,7 +881,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		else
 			can_use_more = true;
 
-		/* Always keep a minimal count of bytes in the input buffer, 
+		/* Always keep a minimal count of bytes in the input buffer,
 		 * to prevent the case of truncated characters.
 		 */
 		if (length < 4)
@@ -979,7 +979,7 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 	if (unused_len)
 		return isc_segment;		// can't fit all data into user buffer
 
-	// We handed back all our data, but did we GET all the data 
+	// We handed back all our data, but did we GET all the data
 	// from the source?
 
 	return (aux->ctlaux_source_blob_status == isc_segment) ? isc_segment : FB_SUCCESS;

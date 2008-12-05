@@ -95,10 +95,10 @@ int PreparedStatement::getResultCount() const
 void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>& values,
 	Firebird::UCharBuffer& blr, Firebird::UCharBuffer& msg)
 {
-	// Parameters in dsqlMsg->msg_parameters almost always linked in descending 
-	// order by par_index. The only known exception is EXECUTE BLOCK statement. 
-	// To generate correct BLR we must walk params in ascending par_index order. 
-	// So store all params in array in an ascending par_index order despite of 
+	// Parameters in dsqlMsg->msg_parameters almost always linked in descending
+	// order by par_index. The only known exception is EXECUTE BLOCK statement.
+	// To generate correct BLR we must walk params in ascending par_index order.
+	// So store all params in array in an ascending par_index order despite of
 	// order in linked list.
 
 	Firebird::HalfStaticArray<const dsql_par*, 16> params;
@@ -120,7 +120,7 @@ void PreparedStatement::parseDsqlMessage(dsql_msg* dsqlMsg, Firebird::Array<dsc>
 	size_t msgLength = 0;
 	int paramCount = params.getCount();
 	int i = 0;
-	
+
 	for (; i < paramCount; i++)
 	{
 		const dsql_par* par = params[i];

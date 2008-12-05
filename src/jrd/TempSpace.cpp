@@ -95,7 +95,7 @@ TempSpace::FileBlock::FileBlock(TempFile* f, Block* tail, size_t length)
 	: Block(tail, length), file(f)
 {
 	fb_assert(file);
-	
+
 	// FileBlock is created after file was extended by length (look at
 	// TempSpace::extend) so this FileBlock is already inside the file
 	seek = file->getSize() - length;
@@ -433,7 +433,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 	}
 
 	// If we didn't find any space, allocate it at the end of the file
-	if (!best) 
+	if (!best)
 	{
 		extend(size);
 		return getSize() - size;
@@ -444,7 +444,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 
 	// If the hunk was an exact fit, remove the segment from the
 	// list and splice it into the not used segments list
-	if (space->size == size) 
+	if (space->size == size)
 	{
 		*best = space->next;
 		space->next = notUsedSegments;
@@ -461,7 +461,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 //
 // TempSpace::releaseSpace
 //
-// Return previously allocated segment back into not used segments list and 
+// Return previously allocated segment back into not used segments list and
 // join it with adjacent segments if found
 //
 
@@ -524,7 +524,7 @@ char* TempSpace::inMemory(offset_t begin, size_t size) const
 //
 // TempSpace::findMemory
 //
-// Return contiguous chunk of memory and adjust starting offset 
+// Return contiguous chunk of memory and adjust starting offset
 // of search range if found
 //
 
@@ -537,7 +537,7 @@ char* TempSpace::findMemory(offset_t& begin, offset_t end, size_t size) const
 	while (block && (begin + size <= end))
 	{
 		char* mem = block->inMemory(local_offset, size);
-		if (mem) 
+		if (mem)
 		{
 			return mem;
 		}
@@ -579,16 +579,16 @@ bool TempSpace::validate(offset_t& free) const
 //
 // TempSpace::allocateBatch
 //
-// Allocate up to 'count' contiguous chunks of memory available in free 
+// Allocate up to 'count' contiguous chunks of memory available in free
 // segments if any. Adjust size of chunks between minSize and maxSize
-// accordingly to available free space (assuming all of the free space 
+// accordingly to available free space (assuming all of the free space
 // is in memory blocks). Algorithm is very simple and can be improved in future
-// 
+//
 
 size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Segments& segments)
 {
 	// adjust passed chunk size to amount of free memory we have and number
-	// of runs still not allocated. 
+	// of runs still not allocated.
 	offset_t freeMem = 0;
 	Segment* freeSpace = freeSegments;
 	for (; freeSpace; freeSpace = freeSpace->next)
@@ -597,7 +597,7 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 	freeMem = MIN(freeMem / count, maxSize);
 	freeMem = MAX(freeMem, minSize);
 	freeMem = MIN(freeMem, minBlockSize);
-	
+
 	Segment** prevSpace = &freeSegments;
 	freeSpace = freeSegments;
 	offset_t freeSeek = freeSpace ? freeSpace->position : 0;
@@ -665,13 +665,13 @@ size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Se
 // TempSpace::getSegment
 //
 // Return not used Segment instance or allocate new one
-// 
+//
 
 TempSpace::Segment* TempSpace::getSegment(offset_t position, size_t size)
 {
 	Segment* result = notUsedSegments;
 
-	if (result) 
+	if (result)
 	{
 		notUsedSegments = result->next;
 
@@ -679,7 +679,7 @@ TempSpace::Segment* TempSpace::getSegment(offset_t position, size_t size)
 		result->position = position;
 		result->size = size;
 	}
-	else 
+	else
 	{
 		result = (Segment*) FB_NEW(pool) Segment(NULL, position, size);
 	}
@@ -690,8 +690,8 @@ TempSpace::Segment* TempSpace::getSegment(offset_t position, size_t size)
 //
 // TempSpace::joinSegment
 //
-// Extend existing segment and join it with adjacent segment 
-// 
+// Extend existing segment and join it with adjacent segment
+//
 
 void TempSpace::joinSegment(Segment* seg, offset_t position, size_t size)
 {

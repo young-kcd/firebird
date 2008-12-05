@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird utilities interface
  *	MODULE:			UtilSvc.cpp
- *	DESCRIPTION:	Interface making it possible to use same code 
+ *	DESCRIPTION:	Interface making it possible to use same code
  *					as both utility or service
  *
  *  The contents of this file are subject to the Initial
@@ -49,7 +49,7 @@ public:
 		}
 	}
 
-    virtual void printf(const SCHAR* format, ...) 
+    virtual void printf(const SCHAR* format, ...)
 	{
 		va_list arglist;
 		va_start(arglist, format);
@@ -90,7 +90,7 @@ public:
 	{
 		StringsBuffer::makeEnginePermanentVector(s);
 	}
-	
+
 	// do nothing for non-service
 	virtual void finish() { }
 	virtual void started() { }

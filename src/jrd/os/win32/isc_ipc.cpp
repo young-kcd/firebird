@@ -87,7 +87,7 @@ static void (*system_overflow_handler)(int);
 static void cleanup(void *);
 static void overflow_handler(int, int);
 
-// Not thread-safe 
+// Not thread-safe
 
 ULONG isc_enter_count = 0;
 
@@ -102,7 +102,7 @@ void ISC_enter(void)
  * Functional description
  *	Enter ISC world from caller.
  *
- **************************************/  
+ **************************************/
 /* Setup overflow handler - with chaining to any user handler */
 	void (*temp)(int) = signal(SIGFPE,
 		reinterpret_cast<void(*)(int)>(overflow_handler));

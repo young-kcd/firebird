@@ -2,7 +2,7 @@
  *	PROGRAM:	JRD Command Oriented Query Language
  *	MODULE:		dtr.cpp
  *	DESCRIPTION:	Top level driving module
- *                         
+ *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy
@@ -58,7 +58,7 @@
 using MsgFormat::SafeArg;
 
 
-const char* STARTUP_FILE	= "HOME";	// Assume its Unix 
+const char* STARTUP_FILE	= "HOME";	// Assume its Unix
 
 
 extern TEXT *QLI_prompt;
@@ -77,8 +77,8 @@ struct answer_t {
 static bool yes_no_loaded = false;
 static answer_t answer_table[] =
 {
-	{ "NO", false },					// NO   
-	{ "YES", true },					// YES  
+	{ "NO", false },					// NO
+	{ "YES", true },					// YES
 	{ "", false }
 };
 
@@ -92,16 +92,16 @@ int  CLIB_ROUTINE main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.  
+ *	Top level routine.
  *
  **************************************/
 
-// Look at options, if any 
+// Look at options, if any
 
 	Firebird::PathName startup_file = STARTUP_FILE;
 
 #ifdef UNIX
-// If a Unix system, get home directory from environment 
+// If a Unix system, get home directory from environment
 	SCHAR home_directory[MAXPATHLEN];
 	if (!fb_utils::readenv("HOME", startup_file))
 		startup_file = ".qli_startup";
@@ -117,7 +117,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	sw_buffers = 0;
 	strcpy(QLI_prompt_string, "QLI> ");
 	strcpy(QLI_cont_string, "CON> ");
-// Let's define the default number of columns on a machine by machine basis 
+// Let's define the default number of columns on a machine by machine basis
 	QLI_columns = 80;
 #ifdef TRUSTED_AUTH
 	QLI_trusted = false;
@@ -151,7 +151,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			switch (UPPER(c)) {
 			case 'A':
 				if (argv >= arg_end) {
-					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name  
+					ERRQ_msg_put(23);	// Msg23 Please retry, supplying an application script file name
 					exit(FINI_ERROR);
 				}
 
@@ -217,7 +217,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				isc_set_debug(debug_value);
 				break;
 
-				/* This switch's name is arbitrary; since it is an internal 
+				/* This switch's name is arbitrary; since it is an internal
 				   mechanism it can be changed at will */
 
 			case 'Y':
@@ -229,8 +229,8 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 				break;
 
 			default:
-				ERRQ_msg_put(469, SafeArg() << c);	
-				// Msg469 qli: ignoring unknown switch %c 
+				ERRQ_msg_put(469, SafeArg() << c);
+				// Msg469 qli: ignoring unknown switch %c
 				break;
 			}
 	}
@@ -238,7 +238,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	enable_signals();
 
 	if (banner_flag)
-		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter 
+		ERRQ_msg_put(24);	// Msg24 Welcome to QLI Query Language Interpreter
 
 	if (version_flag)
 		ERRQ_msg_put(25, SafeArg() << GDS_VERSION);	// Msg25 qli version %s
@@ -256,14 +256,14 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 			PAR_token();
 		}
 		catch (const Firebird::Exception&) {
-			// try again 
+			// try again
 			got_started = false;
 			ERRQ_pending();
 		}
 	}
 	QLI_error = NULL;
 
-// Loop until end of file or forced exit 
+// Loop until end of file or forced exit
 
 	while (QLI_line) {
 		plb* temp = QLI_default_pool = ALLQ_pool();
@@ -276,7 +276,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 	LEX_fini();
 	ALLQ_fini();
 #ifdef DEBUG_GDS_ALLOC
-/* Report any memory leaks noticed.  
+/* Report any memory leaks noticed.
  * We don't particularly care about QLI specific memory leaks, so all
  * QLI allocations have been marked as "don't report".  However, much
  * of the test-base uses QLI so having a report when QLI finishes
@@ -328,14 +328,14 @@ static bool process_statement(bool flush_flag)
  **************************************/
 	DBB dbb;
 
-// Clear database active flags in preparation for a new statement 
+// Clear database active flags in preparation for a new statement
 
 	QLI_abort = false;
 
 	for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 		dbb->dbb_flags &= ~DBB_active;
 
-// If the last statement wrote out anything to the terminal, skip a line 
+// If the last statement wrote out anything to the terminal, skip a line
 
 	if (QLI_skip_line) {
 		printf("\n");
@@ -348,10 +348,10 @@ static bool process_statement(bool flush_flag)
 
 	enable_signals();
 
-// Enable error unwinding and enable the unwinding environment 
+// Enable error unwinding and enable the unwinding environment
 
 	try {
-	
+
 /* Set up the appropriate prompt and get the first significant token.  If
    we don't get one, we're at end of file */
 
@@ -360,7 +360,7 @@ static bool process_statement(bool flush_flag)
 /* This needs to be done after setting QLI_prompt to prevent
  * and infinite loop in LEX/next_line.
  */
-// If there was a prior syntax error, flush the token stream 
+// If there was a prior syntax error, flush the token stream
 
 	if (flush_flag)
 		LEX_flush();
@@ -391,14 +391,14 @@ static bool process_statement(bool flush_flag)
 
 	EXEC_poll_abort();
 
-// If the statement was EXIT, force end of file on command input 
+// If the statement was EXIT, force end of file on command input
 
 	if (syntax_tree->syn_type == nod_exit) {
 		QLI_line = NULL;
 		return false;
 	}
 
-// If the statement was quit, ask the user if he want to rollback 
+// If the statement was quit, ask the user if he want to rollback
 
 	if (syntax_tree->syn_type == nod_quit) {
 		QLI_line = NULL;
@@ -422,13 +422,13 @@ static bool process_statement(bool flush_flag)
 	if (!expanded_tree)
 		return false;
 
-// Compile the statement 
+// Compile the statement
 
 	qli_nod* execution_tree = CMPQ_compile(expanded_tree);
 	if (!execution_tree)
 		return false;
 
-// Generate any BLR needed to support the request 
+// Generate any BLR needed to support the request
 
 	if (!GEN_generate(execution_tree))
 		return false;
@@ -440,14 +440,14 @@ static bool process_statement(bool flush_flag)
 					dbb->dbb_statistics =
 						(int *) gds__alloc((SLONG) sizeof(PERF));
 #ifdef DEBUG_GDS_ALLOC
-					// We don't care about QLI specific memory leaks for V4.0 
-					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care 
+					// We don't care about QLI specific memory leaks for V4.0
+					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
 #endif
 				}
 				perf_get_info(&dbb->dbb_handle, (perf *)dbb->dbb_statistics);
 			}
 
-// Execute the request, for better or worse 
+// Execute the request, for better or worse
 
 	EXEC_top(execution_tree);
 
@@ -461,20 +461,20 @@ static bool process_statement(bool flush_flag)
 			if (dbb->dbb_flags & DBB_active)
 			{
 				ERRQ_msg_get(505, report, sizeof(report));
-				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n" 
+				// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n"
 				size_t used_len = strlen(report);
 				ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
-				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b" 
+				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
 				perf_get_info(&dbb->dbb_handle, &statistics);
 				perf_format((perf*) dbb->dbb_statistics, &statistics,
 							report, buffer, 0);
-				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s  
+				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s
 				QLI_skip_line = true;
 			}
 		}
 	}
 
-// Release resources associated with the request 
+// Release resources associated with the request
 
 	GEN_release();
 
@@ -510,48 +510,48 @@ static void CLIB_ROUTINE signal_arith_excp(USHORT sig, USHORT code, USHORT scp)
 	switch (code) {
 #ifdef FPE_INOVF_TRAP
 	case FPE_INTOVF_TRAP:
-		msg_number = 14;		// Msg14 integer overflow 
+		msg_number = 14;		// Msg14 integer overflow
 		break;
 #endif
 
 #ifdef FPE_INTDIV_TRAP
 	case FPE_INTDIV_TRAP:
-		msg_number = 15;		// Msg15 integer division by zero 
+		msg_number = 15;		// Msg15 integer division by zero
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_TRAP
 	case FPE_FLTOVF_TRAP:
-		msg_number = 16;		// Msg16 floating overflow trap 
+		msg_number = 16;		// Msg16 floating overflow trap
 		break;
 #endif
 
 #ifdef FPE_FLTDIV_TRAP
 	case FPE_FLTDIV_TRAP:
-		msg_number = 17;		// Msg17 floating division by zero 
+		msg_number = 17;		// Msg17 floating division by zero
 		break;
 #endif
 
 #ifdef FPE_FLTUND_TRAP
 	case FPE_FLTUND_TRAP:
-		msg_number = 18;		// Msg18 floating underflow trap 
+		msg_number = 18;		// Msg18 floating underflow trap
 		break;
 #endif
 
 #ifdef FPE_FLTOVF_FAULT
 	case FPE_FLTOVF_FAULT:
-		msg_number = 19;		// Msg19 floating overflow fault 
+		msg_number = 19;		// Msg19 floating overflow fault
 		break;
 #endif
 
 #ifdef FPE_FLTUND_FAULT
 	case FPE_FLTUND_FAULT:
-		msg_number = 20;		// Msg20 floating underflow fault 
+		msg_number = 20;		// Msg20 floating underflow fault
 		break;
 #endif
 
 	default:
-		msg_number = 21;		// Msg21 arithmetic exception 
+		msg_number = 21;		// Msg21 arithmetic exception
 	}
 #else
 	msg_number = 21;
@@ -606,7 +606,7 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 		yes_no_loaded = true;
 		// Msg498 NO
 		if (!ERRQ_msg_get(498, answer_table[0].answer, sizeof(answer_table[0].answer)))
-			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails 
+			strcpy(answer_table[0].answer, "NO");	// default if msg_get fails
 
 		// Msg497 YES
 		if (!ERRQ_msg_get(497, answer_table[1].answer, sizeof(answer_table[1].answer)))

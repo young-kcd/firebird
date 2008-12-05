@@ -69,7 +69,7 @@ void EXP_actions(void)
  *	Expand the output of the parser.
  *	Look for field references and put
  *	them in appropriate context.
- *   
+ *
  **************************************/
 	ACT action;
 
@@ -398,11 +398,11 @@ static DUDLEY_FLD field_context( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_C
  *
  * Functional description
  *	Lookup a field reference, guessing the
- *	context.  Since by now all field references 
+ *	context.  Since by now all field references
  *	ought to be entered in the hash table, this is
  *	pretty easy.  We may be looking up a global
  *	field reference, in which case the context
- *	relation will be null. 
+ *	relation will be null.
  *
  *
  **************************************/
@@ -468,7 +468,7 @@ static DUDLEY_FLD field_search( DUDLEY_NOD node, dudley_lls* contexts, DUDLEY_CT
  *	iteratively.  The context indicated is
  *	the current context.  Get to there, then
  *	work backward.
- * 
+ *
  **************************************/
 	DUDLEY_FLD field;
 	DUDLEY_CTX context, old_context;
@@ -562,7 +562,7 @@ static DUDLEY_FLD lookup_field( DUDLEY_FLD old_field)
  *	Lookup a field reference, from a modify or
  *	delete field statement, and make sure we
  *	found the thing originally.
- *	context.  Since by now all field references 
+ *	context.  Since by now all field references
  *	ought to be entered in the hash table, this is
  *	pretty easy.
  *
@@ -650,7 +650,7 @@ static DUDLEY_TRG lookup_trigger( DUDLEY_TRG trigger)
 {
 /**************************************
  *
- *	l o o k u p _ t r i g g e r 
+ *	l o o k u p _ t r i g g e r
  *
  **************************************
  *
@@ -886,7 +886,7 @@ static void resolve_rse( DUDLEY_NOD rse, dudley_lls** stack)
  **************************************
  *
  * Functional description
- *	Resolve record selection expression, augmenting 
+ *	Resolve record selection expression, augmenting
  *	context stack.  At the same time, put a context
  *	node in front of every context and build a list
  *	out of the whole thing;

@@ -108,7 +108,7 @@ int LOCK_deq(PTR lock_id)
 {
 /**************************************
  *
- *	L O C K _ d e q 
+ *	L O C K _ d e q
  *
  **************************************
  *
@@ -360,4 +360,4 @@ static SLONG write_data(SLONG lock_id, SLONG data) {
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 	return 0;
 }
-			   
+

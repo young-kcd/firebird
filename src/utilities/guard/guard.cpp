@@ -131,7 +131,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	Firebird::string user_name;		/* holds the user name */
 	ISC_get_user(&user_name, NULL, NULL, NULL);
 
-	if (user_name != INTERBASE_USER && 
+	if (user_name != INTERBASE_USER &&
 		user_name != "root" &&
 		user_name != FIREBIRD_USER &&
 		user_name != INTERBASE_USER_SHORT)
@@ -214,7 +214,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			UTIL_ex_unlock(fd_guard);
 			exit(-4);
 		}
-		
+
 		if (pidfilename) {
 			FILE *pf = fopen(pidfilename, "w");
 			if (pf)
@@ -290,7 +290,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		else {
 			/* Normal shutdown - don't restart the server */
 			gds__log("%s: %s normal shutdown.\n",
-					prog_name, process_name); 
+					prog_name, process_name);
 			done = true;
 		}
 	} while (!done);

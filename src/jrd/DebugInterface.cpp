@@ -54,7 +54,7 @@ void DBG_parse_debug_info(USHORT length, const UCHAR* data, Firebird::DbgInfo& d
 		bad_format = true;
 	}
 
-	while (!bad_format && (data < end)) 
+	while (!bad_format && (data < end))
 	{
 		switch (*data++)
 		{

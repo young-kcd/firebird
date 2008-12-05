@@ -283,7 +283,7 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_nmonths ||
 		picture->pic_years ||
 		picture->pic_hours ||
-		picture->pic_julians) 
+		picture->pic_julians)
 	{
 		picture->pic_type = pic_date;
 	}
@@ -448,9 +448,9 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 		break;
 
 	case dtype_int64:
-        /* replace 16 with 20 later 
+        /* replace 16 with 20 later
 		   (as soon as I have sorted out the rounding issues)
-		   FSG*/ 
+		   FSG*/
 		if (!scale)
 			return "-(16)9";
 		if (scale < 0 && scale > -16)
@@ -800,7 +800,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		*out++ = ' ';
 
 	bool is_signed = false;
-	
+
 	for (;;) {
 		const TEXT e = generate(picture);
 		TEXT c = e;

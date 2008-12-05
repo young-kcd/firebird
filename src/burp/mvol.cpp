@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	JRD Backup and Restore Program
  *	MODULE:		multivol.cpp
- *	DESCRIPTION:	
+ *	DESCRIPTION:
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -84,7 +84,7 @@ static inline void put(BurpGlobals* tdgbl, UCHAR c)
 }
 
 #ifdef DEBUG
-static UCHAR debug_on = 0;		// able to turn this on in debug mode 
+static UCHAR debug_on = 0;		// able to turn this on in debug mode
 #endif
 
 const int burp_msg_fac = 12;
@@ -253,7 +253,7 @@ void MVOL_init_write(const char*		database_name, // unused?
 		if (tdgbl->action->act_action == ACT_backup_split)
 		{
 			BURP_error(269, true, tdgbl->action->act_file->fil_name.c_str());
-			// msg 269 can't write a header record to file %s 
+			// msg 269 can't write a header record to file %s
 		}
 		tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, false);
 	}
@@ -299,12 +299,12 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 			if (cnt)
 			{
 				BURP_error_redirect(0, 220);
-				// msg 220 Unexpected I/O error while reading from backup file 
+				// msg 220 Unexpected I/O error while reading from backup file
 			}
 			else
 			{
 				BURP_error_redirect(0, 50);
-				// msg 50 unexpected end of file on backup file 
+				// msg 50 unexpected end of file on backup file
 			}
 		}
 	}
@@ -349,10 +349,10 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 		{
 			if (cnt)
 				BURP_error_redirect(NULL, 220);
-				// msg 220 Unexpected I/O error while reading from backup file 
+				// msg 220 Unexpected I/O error while reading from backup file
 			else
 				BURP_error_redirect(NULL, 50);
-				// msg 50 unexpected end of file on backup file 
+				// msg 50 unexpected end of file on backup file
 		}
 	}
 
@@ -364,7 +364,7 @@ int MVOL_read(int* cnt, UCHAR** ptr)
 
 	return *(tdgbl->mvol_io_ptr);
 }
-#endif // !WIN_NT 
+#endif // !WIN_NT
 
 
 //____________________________________________________________
@@ -380,23 +380,23 @@ UCHAR* MVOL_read_block(BurpGlobals* tdgbl, UCHAR* ptr, ULONG count)
 
 	while (count)
 	{
-		// If buffer empty, reload it 
+		// If buffer empty, reload it
 		if (tdgbl->io_cnt <= 0)
 		{
 			*ptr++ = MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 
-			// One byte was "read" by MVOL_read 
+			// One byte was "read" by MVOL_read
 			count--;
 		}
 
 		const ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
 
-		// Copy data from the IO buffer 
+		// Copy data from the IO buffer
 
 		memcpy(ptr, tdgbl->io_ptr, n);
 		ptr += n;
 
-		// Skip ahead in current buffer 
+		// Skip ahead in current buffer
 
 		count -= n;
 		tdgbl->io_cnt -= n;
@@ -420,18 +420,18 @@ void MVOL_skip_block( BurpGlobals* tdgbl, ULONG count)
 
 	while (count)
 	{
-		// If buffer empty, reload it 
+		// If buffer empty, reload it
 		if (tdgbl->io_cnt <= 0)
 		{
 			MVOL_read(&tdgbl->io_cnt, &tdgbl->io_ptr);
 
-			// One byte was "read" by MVOL_read 
+			// One byte was "read" by MVOL_read
 			count--;
 		}
 
 		const ULONG n = MIN(count, (ULONG) tdgbl->io_cnt);
 
-		// Skip ahead in current buffer 
+		// Skip ahead in current buffer
 
 		count -= n;
 		tdgbl->io_cnt -= n;
@@ -462,11 +462,11 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 	}
 	else
 	{
-		// it's a tape device 
+		// it's a tape device
 		// Note: we *want* to open the tape in Read-only mode or in
-		// write-only mode, but it turns out that on NT SetTapePosition 
-		// will fail (thereby not rewinding the tape) if the tape is 
-		// opened write-only, so we will make sure that we always have 
+		// write-only mode, but it turns out that on NT SetTapePosition
+		// will fail (thereby not rewinding the tape) if the tape is
+		// opened write-only, so we will make sure that we always have
 		// read access. So much for standards!
 		// Ain't Windows wonderful???
 		//
@@ -482,16 +482,16 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 		{
 			// emulate UNIX rewinding the tape on open:
 			// This MUST be done since Windows does NOT have anything
-			// like mt to allow the user to do tape management. The 
+			// like mt to allow the user to do tape management. The
 			// implication here is that we will be able to write ONLY
 			// one (1) database per tape. This is bad if the user wishes to
 			// backup several small databases.
 			// Note: We are intentionally NOT trapping for errors during
 			// rewind, since if we can not rewind, we are either a non-rewind
 			// device (then it is user controlled) or we have a problem with
-			// the physical media.  In the latter case I would rather wait for 
-			// the write to fail so that we can loop and prompt the user for 
-			// a different file/device. 
+			// the physical media.  In the latter case I would rather wait for
+			// the write to fail so that we can loop and prompt the user for
+			// a different file/device.
 			//
 			SetTapePosition(handle, TAPE_REWIND, 0, 0, 0, FALSE);
 			if (GetTapeParameters(handle, GET_TAPE_MEDIA_INFORMATION, &size,
@@ -503,7 +503,7 @@ DESC MVOL_open(const char* name, ULONG mode, ULONG create)
 	}
 	return handle;
 }
-#endif // WIN_NT 
+#endif // WIN_NT
 
 
 //____________________________________________________________
@@ -558,7 +558,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 			(tdgbl->action->act_action == ACT_backup_split &&
 			 (tdgbl->action->act_file->fil_length < left) ?
 			 tdgbl->action->act_file->fil_length : left);
-			 
+
 		DWORD err = 0;
 		// Assumes DWORD <==> ULONG
 		if (!WriteFile(tdgbl->file_desc, ptr, nBytesToWrite,
@@ -566,7 +566,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 		{
 			err = GetLastError();
 		}
-#endif // !WIN_NT 
+#endif // !WIN_NT
 		tdgbl->mvol_io_buffer = tdgbl->mvol_io_data;
 		if (cnt > 0)
 		{
@@ -588,7 +588,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 				errno == EFBIG)
 #else
 				err == ERROR_DISK_FULL || err == ERROR_HANDLE_DISK_FULL)
-#endif // !WIN_NT 
+#endif // !WIN_NT
 			{
 				if (tdgbl->action->act_action == ACT_backup_split)
 				{
@@ -604,7 +604,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 							if (file->fil_fd == tdgbl->file_desc)
 								file->fil_fd = INVALID_HANDLE_VALUE;
 						}
-						
+
 						tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
 						BURP_print(272, SafeArg() <<
 									tdgbl->action->act_file->fil_name.c_str() <<
@@ -621,7 +621,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 					else
 					{
 						BURP_error(270, true);
-						// msg 270 free disk space exhausted 
+						// msg 270 free disk space exhausted
 					}
 					cnt = 0;
 					continue;
@@ -639,7 +639,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 
 				if (left != size_to_write)
 				{
-					// Wrote some, move remainder up in buffer. 
+					// Wrote some, move remainder up in buffer.
 
 					// NOTE: We should NOT use memcpy here.  We're moving overlapped
 					// data and memcpy does not guanantee the order the data
@@ -652,7 +652,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 					full_buffer = true;
 				else
 					full_buffer = false;
-				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE, 
+				tdgbl->file_desc = next_volume(tdgbl->file_desc, MODE_WRITE,
 											   full_buffer);
 				if (full_buffer)
 				{
@@ -670,7 +670,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 			else if (!SYSCALL_INTERRUPTED(errno))
 			{
 				BURP_error_redirect(0, 221);
-				// msg 221 Unexpected I/O error while writing to backup file 
+				// msg 221 Unexpected I/O error while writing to backup file
 			}
 		}
 		if (left < cnt) {	// this is impossible, but...
@@ -755,7 +755,7 @@ static void bad_attribute(int attribute, USHORT type)
 	static const SafeArg dummy;
 	fb_msg_format(NULL, burp_msg_fac, type, sizeof(name), name, dummy);
 	BURP_print(80, SafeArg() << name << attribute);
-	// msg 80  don't recognize %s attribute %ld -- continuing 
+	// msg 80  don't recognize %s attribute %ld -- continuing
 	for (int l = get(tdgbl); l; --l)
 		get(tdgbl);
 }
@@ -832,7 +832,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 	if (handle != INVALID_HANDLE_VALUE)
 #else
 	if (handle > -1)
-#endif // WIN_NT 
+#endif // WIN_NT
 	{
 		close_platf(handle);
 	}
@@ -858,20 +858,20 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 
 	tdgbl->mvol_empty_file = TRUE;
 
-// Loop until we have opened a file successfully 
+// Loop until we have opened a file successfully
 
 	SCHAR new_file[MAX_FILE_NAME_SIZE];
 	DESC new_desc = INVALID_HANDLE_VALUE;
 	for (;;)
 	{
-		// We aim to keep our descriptors clean 
+		// We aim to keep our descriptors clean
 
 		if (new_desc != INVALID_HANDLE_VALUE) {
 			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
 
-		// Get file name to try 
+		// Get file name to try
 
 		prompt_for_name(new_file, sizeof(new_file));
 
@@ -881,20 +881,20 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 #else
 		new_desc = open(new_file, mode, open_mask);
 		if (new_desc < 0)
-#endif // WIN_NT 
+#endif // WIN_NT
 		{
 			BURP_print(222, new_file);
-			// msg 222 \n\nCould not open file name \"%s\"\n 
+			// msg 222 \n\nCould not open file name \"%s\"\n
 			continue;
 		}
 
-		// If the file is to be writable, probe it, and make sure it is... 
+		// If the file is to be writable, probe it, and make sure it is...
 
 #ifdef WIN_NT
 		if (mode == MODE_WRITE)
 #else
 		if ((O_WRONLY == (mode & O_WRONLY)) || (O_RDWR == (mode & O_RDWR)))
-#endif // WIN_NT 
+#endif // WIN_NT
 		{
 			if (!write_header(new_desc, 0L, full_buffer))
 			{
@@ -905,13 +905,13 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			else
 			{
 				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
-				// Starting with volume #vol_count, new_file 
+				// Starting with volume #vol_count, new_file
 				BURP_verbose(75, new_file);	// msg 75  creating file %s
 			}
 		}
 		else
 		{
-			// File is open for read only.  Read the header. 
+			// File is open for read only.  Read the header.
 
 			ULONG temp_buffer_size;
 			USHORT format;
@@ -923,7 +923,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 			else
 			{
 				BURP_msg_put(261, SafeArg() << tdgbl->mvol_volume_count << new_file);
-				// Starting with volume #vol_count, new_file 
+				// Starting with volume #vol_count, new_file
 				BURP_verbose(100, new_file);	// msg 100  opened file %s
 			}
 		}
@@ -961,11 +961,11 @@ static void prompt_for_name(SCHAR* name, int length)
 		term_in = stdin;
 	}
 
-// Loop until we have a file name to try 
+// Loop until we have a file name to try
 
 	for (;;)
 	{
-		// If there was an old file name, use that prompt 
+		// If there was an old file name, use that prompt
 
 		if (strlen(tdgbl->mvol_old_file) > 0)
 		{
@@ -973,14 +973,14 @@ static void prompt_for_name(SCHAR* name, int length)
 						 tdgbl->mvol_old_file);
 			fprintf(term_out, msg);
 			BURP_msg_get(226, msg);
-			// \tPress return to reopen that file, or type a new\n\tname 
+			// \tPress return to reopen that file, or type a new\n\tname
 			// followed by return to open a different file.\n
 			fprintf(term_out, msg);
 		}
-		else	// First volume 
+		else	// First volume
 		{
 			BURP_msg_get(227, msg);
-			// Type a file name to open and hit return 
+			// Type a file name to open and hit return
 			fprintf(term_out, msg);
 		}
 		BURP_msg_get(228, msg);	// "  Name: "
@@ -1005,11 +1005,11 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-			else				// reprompt 
+			else				// reprompt
 				continue;
 		}
 
-		// OK, its a file name, strip the carriage return 
+		// OK, its a file name, strip the carriage return
 
 		SCHAR* name_ptr = name;
 		while (*name_ptr && *name_ptr != '\n')
@@ -1089,12 +1089,12 @@ static bool read_header(DESC	handle,
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-// Headers are a version number, and a volume number 
+// Headers are a version number, and a volume number
 
 // CVC: Nobody does an explicit check for the read operation, assuming
 // that GET_ATTRIBUTE() != rec_burp will provide an implicit test.
 #ifndef WIN_NT
-	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer, 
+	tdgbl->mvol_io_cnt = read(handle, tdgbl->mvol_io_buffer,
 							  tdgbl->mvol_actual_buffer_size);
 #else
 	ReadFile(handle, tdgbl->mvol_io_buffer, tdgbl->mvol_actual_buffer_size,
@@ -1105,7 +1105,7 @@ static bool read_header(DESC	handle,
 	int attribute = get(tdgbl);
 	if (attribute != rec_burp)
 		BURP_error_redirect(0, 45);
-		// msg 45 expected backup description record 
+		// msg 45 expected backup description record
 
 	int l, maxlen;
 	int temp;
@@ -1294,7 +1294,7 @@ static bool write_header(DESC   handle,
 #else
 		ULONG bytes_written = write(handle, tdgbl->mvol_io_header,
 							  tdgbl->mvol_io_buffer_size);
-#endif // WIN_NT 
+#endif // WIN_NT
 
 		if (bytes_written != tdgbl->mvol_io_buffer_size)
 		{
@@ -1349,7 +1349,7 @@ bool MVOL_split_hdr_write(void)
 #else
 	ULONG bytes_written =
 		write(tdgbl->action->act_file->fil_fd, buffer, HDR_SPLIT_SIZE);
-#endif // WIN_NT 
+#endif // WIN_NT
 
 	if (bytes_written != HDR_SPLIT_SIZE) {
 		return false;

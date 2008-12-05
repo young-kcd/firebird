@@ -107,7 +107,7 @@ double CVT_date_to_double(const dsc* desc)
  *
  * Functional description
  *    Convert a date to double precision for
- *    date arithmetic routines.  
+ *    date arithmetic routines.
  *
  **************************************/
 	SLONG temp[2], *date;
@@ -206,7 +206,7 @@ UCHAR CVT_get_numeric(const UCHAR* string,
  *      dtype_int64, or dtype_long depending on the conversion performed.
  *      The binary value (long, int64, or double) is stored at the
  *      address given by ptr.
- *              
+ *
  *
  **************************************/
 	dsc desc;
@@ -477,6 +477,6 @@ static void isVersion4(bool& v4)
 
 namespace Jrd
 {
-	Callbacks toEngine = {transliterate, getChid, ERR_post, getToCharset, 
+	Callbacks toEngine = {transliterate, getChid, ERR_post, getToCharset,
 						  validateData, validateLength, getCurDate, isVersion4};
 }

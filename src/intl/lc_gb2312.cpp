@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	InterBase International support
  *	MODULE:		lc_gb2312.cpp
- *	DESCRIPTION:	Language Drivers in the GB2312 family.  
+ *	DESCRIPTION:	Language Drivers in the GB2312 family.
  *
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file

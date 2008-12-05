@@ -43,7 +43,7 @@ void RelationGarbage::clear()
 		item->bm = NULL;
 	}
 
-	array.clear(); 
+	array.clear();
 }
 
 void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid)
@@ -90,7 +90,7 @@ void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
 			break;
 
 		PageBitmap* bm_tran = garbage.bm;
-		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran); 
+		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
 		if (*bm_or == garbage.bm) {
 			bm_tran = *sbm;
 			*sbm = garbage.bm;
@@ -112,7 +112,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 	Database* dbb = tdbb->getDatabase();
 	SLONG inst_id;
-	if (rel_flags & REL_temp_tran) 
+	if (rel_flags & REL_temp_tran)
 	{
 		if (tran > 0)
 			inst_id = tran;
@@ -123,7 +123,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 		else // called without transaction, maybe from OPT or CMP ?
 			return &rel_pages_base;
 	}
-	else 
+	else
 	{
 		if (tdbb->tdbb_temp_attid)
 			inst_id = tdbb->tdbb_temp_attid;
@@ -131,7 +131,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			inst_id = PAG_attachment_id(tdbb);
 	}
 
-	if (!rel_pages_inst) 
+	if (!rel_pages_inst)
 	{
 		MemoryPool& pool = *dbb->dbb_permanent;
 		rel_pages_inst = FB_NEW(pool) RelationPagesInstances(pool);
@@ -144,18 +144,18 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 			return 0;
 
 		RelationPages* newPages = rel_pages_free;
-		if (!newPages) 
+		if (!newPages)
 		{
 			const size_t BULK_ALLOC = 8;
 
-			RelationPages* allocatedPages = newPages = 
+			RelationPages* allocatedPages = newPages =
 				FB_NEW(*dbb->dbb_permanent) RelationPages[BULK_ALLOC];
 
 			rel_pages_free = ++allocatedPages;
 			for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocatedPages++)
 				allocatedPages->rel_next_free = allocatedPages + 1;
 		}
-		else 
+		else
 		{
 			rel_pages_free = newPages->rel_next_free;
 			newPages->rel_next_free = 0;
@@ -202,7 +202,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool alloc
 
 			idx->idx_root = 0;
 			SelectivityList selectivity(*pool);
-			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, 
+			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL,
 				tdbb->getTransaction(), selectivity);
 
 #ifdef VIO_DEBUG
@@ -237,7 +237,7 @@ bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 		return false;
 
 	fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
-	
+
 	fb_assert(pages->useCount > 0);
 
 	if (--pages->useCount)
@@ -293,7 +293,7 @@ void jrd_rel::cleanUp()
 		delete rel_pages_inst;
 }
 
-	
+
 void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmentOnly)
 {
 	if (rel_pages_inst)
@@ -302,23 +302,23 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 		{
 			RelationPages* relPages = (*rel_pages_inst)[i];
 
-			if (!attachmentOnly) 
+			if (!attachmentOnly)
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
 			}
-			else if ((rel_flags & REL_temp_conn) && 
-					 (PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)) 
+			else if ((rel_flags & REL_temp_conn) &&
+					 (PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id))
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
 			}
-			else if (rel_flags & REL_temp_tran) 
+			else if (rel_flags & REL_temp_tran)
 			{
 				const jrd_tra* tran = snapshot.spt_tdbb->getAttachment()->att_transactions;
 				for (; tran; tran = tran->tra_next)
 				{
-					if (tran->tra_number == relPages->rel_instance_id) 
+					if (tran->tra_number == relPages->rel_instance_id)
 					{
 						snapshot.add(relPages);
 						relPages->addRef();
@@ -362,7 +362,7 @@ bool jrd_rel::hasTriggers() const
 		rel_pre_store,
 		rel_post_store
 	};
-	
+
 	for (int i = 0; i < 6; ++i)
 	{
 		if (trigs[i] && trigs[i]->getCount())
@@ -371,7 +371,7 @@ bool jrd_rel::hasTriggers() const
 	return false;
 }
 
-void RelationPages::free(RelationPages*& nextFree) 
+void RelationPages::free(RelationPages*& nextFree)
 {
 	rel_next_free = nextFree;
 	nextFree = this;

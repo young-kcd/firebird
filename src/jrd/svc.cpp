@@ -137,7 +137,7 @@ namespace {
 		bool spb_remote;
 
 		// Parse service parameter block picking up options and things.
-		Options(ClumpletReader& spb) : 
+		Options(ClumpletReader& spb) :
 			spb_version(0),
 			spb_trusted_role(false),
 			spb_remote(false)
@@ -151,7 +151,7 @@ namespace {
 
 			for (spb.rewind(); !(spb.isEof()); spb.moveNext())
 			{
-				switch (spb.getClumpTag()) 
+				switch (spb.getClumpTag())
 				{
 				case isc_spb_sys_user_name:
 					spb.getString(spb_sys_user_name);
@@ -185,22 +185,22 @@ namespace {
 					spb.getString(spb_address_path);
 					spb_remote = true;
 					{
-						ClumpletReader address_stack(ClumpletReader::UnTagged, 
+						ClumpletReader address_stack(ClumpletReader::UnTagged,
 							spb.getBytes(), spb.getClumpLength());
-						while (!address_stack.isEof()) 
+						while (!address_stack.isEof())
 						{
-							if (address_stack.getClumpTag() != isc_dpb_address) 
+							if (address_stack.getClumpTag() != isc_dpb_address)
 							{
 								address_stack.moveNext();
 								continue;
 							}
 
-							ClumpletReader address(ClumpletReader::UnTagged, 
+							ClumpletReader address(ClumpletReader::UnTagged,
 								address_stack.getBytes(), address_stack.getClumpLength());
 
-							while (!address.isEof()) 
+							while (!address.isEof())
 							{
-								switch (address.getClumpTag()) 
+								switch (address.getClumpTag())
 								{
 								case isc_dpb_addr_protocol:
 									address.getString(spb_network_protocol);
@@ -290,7 +290,7 @@ void Service::parseSwitches()
 				--i;
 			}
 			break;
-				
+
 		case ' ':
 			if (!inStr)
 			{
@@ -302,10 +302,10 @@ void Service::parseSwitches()
 
 	argv.push(svc_parsed_sw.c_str());
 
-	for (const char* p = svc_parsed_sw.begin(); 
+	for (const char* p = svc_parsed_sw.begin();
 		p < svc_parsed_sw.end(); ++p)
 	{
-		if (!*p) 
+		if (!*p)
 		{
 			argv.push(p + 1);
 		}
@@ -315,7 +315,7 @@ void Service::parseSwitches()
 void Service::printf(const SCHAR* format, ...)
 {
 	// Ensure that service is not detached.
-	if (svc_flags & SVC_detached) 
+	if (svc_flags & SVC_detached)
 	{
 		return;
 	}
@@ -328,7 +328,7 @@ void Service::printf(const SCHAR* format, ...)
 
 	const char* const end = buf.end();
 
-	for (const char* p = buf.begin(); p < end && !(svc_flags & SVC_detached); ++p) 
+	for (const char* p = buf.begin(); p < end && !(svc_flags & SVC_detached); ++p)
 	{
 		enqueueByte(*p);
 	}
@@ -341,7 +341,7 @@ bool Service::isService()
 
 void Service::started()
 {
-	if (!(svc_flags & SVC_evnt_fired)) 
+	if (!(svc_flags & SVC_evnt_fired))
 	{
 		MutexLockGuard guard(svc_mutex);
 		svc_flags |= SVC_evnt_fired;
@@ -375,7 +375,7 @@ void Service::putSLong(char tag, SLONG val)
 	enqueueByte(val >> 16);
 	enqueueByte(val >> 24);
 }
-	
+
 void Service::putChar(char tag, char val)
 {
 	enqueueByte(tag);
@@ -389,7 +389,7 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 		return;
 	}
 
-	if (status_vector != svc_status) 
+	if (status_vector != svc_status)
 	{
 		Arg::StatusVector svc(svc_status);
 		Arg::StatusVector passed(status_vector);
@@ -463,7 +463,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 			}
 		}
 
-		if (!duplicate) 
+		if (!duplicate)
 		{
 			// if the status_vector has only warnings then adjust err_status_len
 			int err_status_len = i;
@@ -472,7 +472,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 
 			ISC_STATUS_ARRAY warning_status;
 			int warning_count = 0;
-			if (warning_indx) 
+			if (warning_indx)
 			{
 				// copy current warning(s) to a temp buffer
 				MOVE_CLEAR(warning_status, sizeof(warning_status));
@@ -659,11 +659,11 @@ const ULONG SERVER_CAPABILITIES_FLAG	= REMOTE_HOP_SUPPORT | NO_SERVER_SHUTDOWN_S
 
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data)
-	: svc_parsed_sw(getPool()), 
-	svc_handle(0), svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE), 
+	: svc_parsed_sw(getPool()),
+	svc_handle(0), svc_stdout_head(1), svc_stdout_tail(SVC_STDOUT_BUFFER_SIZE),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
-	svc_username(getPool()), svc_enc_password(getPool()), 
+	svc_username(getPool()), svc_enc_password(getPool()),
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_strings_buffer(NULL)
@@ -694,7 +694,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 
 		if (!serv->serv_name) {
-			status_exception::raise(Arg::Gds(isc_service_att_err) << 
+			status_exception::raise(Arg::Gds(isc_service_att_err) <<
 									Arg::Gds(isc_svcnotdef) << Arg::Str(svcname));
 		}
 
@@ -710,9 +710,9 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 		else {
 			// If we have embedded service connection, let's check for unix OS auth
-			if ((!options.spb_trusted_login.hasData()) && 
-				(!options.spb_remote) && 
-				(!options.spb_user_name.hasData())) 
+			if ((!options.spb_trusted_login.hasData()) &&
+				(!options.spb_remote) &&
+				(!options.spb_user_name.hasData()))
 			{
 				if (ISC_get_user(&options.spb_trusted_login, NULL, NULL, NULL)) {
 					options.spb_trusted_login = SYSDBA_USER_NAME;
@@ -732,7 +732,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 						fb_utils::readenv(ISC_PASSWORD, options.spb_password);
 					}
 				}
-				
+
 				if (!options.spb_user_name.hasData()) {
 					// user name and password are required while
 					// attaching to the services manager
@@ -743,12 +743,12 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 				int id, group, node_id;
 
 				const string remote = options.spb_network_protocol +
-							(options.spb_network_protocol.isEmpty() || 
+							(options.spb_network_protocol.isEmpty() ||
 							 options.spb_remote_address.isEmpty() ? "" : "/") +
 										  options.spb_remote_address;
 
 				SecurityDatabase::verifyUser(name, options.spb_user_name.nullStr(),
-						                     options.spb_password.nullStr(), 
+						                     options.spb_password.nullStr(),
 											 options.spb_password_enc.nullStr(),
 											 &id, &group, &node_id, remote);
 				svc_uses_security_database = true;
@@ -777,7 +777,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		if (options.spb_command_line.hasData() && serv->serv_std_switches)
 			switches += ' ';
 		switches += options.spb_command_line;
-	
+
 		svc_flags = switches.hasData() ? SVC_cmd_line : 0;
 		svc_perm_sw = switches;
 		svc_user_flag = user_flag;
@@ -792,14 +792,14 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		// there is no OS authentication.  If the password is not yet
 		// encrypted, then encrypt it before saving it (since there is no
 		// decrypt function).
-		if (options.spb_password_enc.hasData()) 
+		if (options.spb_password_enc.hasData())
 		{
 			svc_enc_password = options.spb_password_enc;
 		}
-		else if (options.spb_password.hasData()) 
+		else if (options.spb_password.hasData())
 		{
 			svc_enc_password.resize(MAX_PASSWORD_LENGTH + 2);
-			ENC_crypt(svc_enc_password.begin(), svc_enc_password.length(), 
+			ENC_crypt(svc_enc_password.begin(), svc_enc_password.length(),
 					  options.spb_password.c_str(), PASSWORD_SALT);
 			svc_enc_password.recalculate_length();
 			svc_enc_password.erase(0, 2);
@@ -850,7 +850,7 @@ void Service::detach()
 	// Mark service as detached.
 	finish(SVC_detached);
 
-	if (localDoShutdown) 
+	if (localDoShutdown)
 	{
 		// run in separate thread to avoid blocking in remote
 		gds__thread_start(svcShutdownThread, 0, 0, 0, 0);
@@ -1115,7 +1115,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 		case isc_info_svc_get_env_msg:
 			if (svc_user_flag & SVC_user_dba)
 			{
-				switch (item) 
+				switch (item)
 				{
 				case isc_info_svc_get_env:
 					gds__prefix(buffer, "");
@@ -1131,7 +1131,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
 				info = INF_put_item(item, strlen(buffer), buffer, info, end);
-				if (!info) 
+				if (!info)
 				{
 					return 0;
 				}
@@ -1286,8 +1286,8 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 				(info =
 				 INF_put_item(item, length,
 							  reinterpret_cast<const char*>
-								  (svc_resp_ptr), 
-							  info, end))) 
+								  (svc_resp_ptr),
+							  info, end)))
 			{
 				return 0;
 			}
@@ -1827,9 +1827,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_properties)
 	{
 		/* add the username and password to the end of svc_switches if needed */
-		if (svc_switches.hasData()) 
+		if (svc_switches.hasData())
 		{
-			if (svc_trusted_login.hasData()) 
+			if (svc_trusted_login.hasData())
 			{
 				string auth = "-";
 				auth += TRUSTED_USER_SWITCH;
@@ -1862,7 +1862,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	// All services except for get_ib_log require switches
 	spb.rewind();
-	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log) 
+	if ((!svc_switches.hasData()) && svc_id != isc_action_svc_get_fb_log)
 	{
 		status_exception::raise(Arg::Gds(isc_bad_spb_form));
 	}
@@ -1891,13 +1891,13 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
-		while (!(svc_flags & SVC_detached)) 
+		while (!(svc_flags & SVC_detached))
 		{
-			// The semaphore will be released once the particular service 
+			// The semaphore will be released once the particular service
 			// has reached a point in which it can start to return
 			// information to the client.  This will allow isc_service_start
 			// to include in its status vector information about the service's
-			// ability to start. 
+			// ability to start.
 			// This is needed since gds__thread_start will almost always succeed.
 			if (svcStart.tryEnter(60))
 			{
@@ -2106,7 +2106,7 @@ void Service::finish(USHORT flag)
 		if (svc_flags & SVC_finished)
 		{
 			svc_flags &= ~SVC_thd_running;
-			if (svc_handle) 
+			if (svc_handle)
 			{
 				THD_detach(svc_handle);
 				svc_handle = 0;
@@ -2162,15 +2162,15 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 
 	bool found = false;
 
-	do 
+	do
 	{
-		switch (svc_action) 
+		switch (svc_action)
 		{
 		case isc_action_svc_nbak:
 		case isc_action_svc_nrest:
 			found = true;
 
-			switch (spb.getClumpTag()) 
+			switch (spb.getClumpTag())
 			{
 			case isc_spb_dbname:
 				if (nbk_database.hasData())
@@ -2231,7 +2231,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				found = true;
 			}
 
-			switch (spb.getClumpTag()) 
+			switch (spb.getClumpTag())
 			{
 			case isc_spb_sql_role_name:
 			case isc_spb_dbname:
@@ -2243,7 +2243,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
-				
+
 			default:
 				return false;
 			}
@@ -2265,7 +2265,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				found = true;
 			}
 
-			switch (spb.getClumpTag()) 
+			switch (spb.getClumpTag())
 			{
 			case isc_spb_sec_userid:
 			case isc_spb_sec_groupid:
@@ -2431,7 +2431,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		default:
 			return false;
 		}
-		
+
 		spb.moveNext();
 	} while (! spb.isEof());
 
@@ -2491,16 +2491,16 @@ bool Service::get_action_svc_bitmask(const ClumpletReader& spb,
 {
 	const int opt = spb.getInt();
 	ISC_ULONG mask = 1;
-	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count--; mask <<= 1) 
+	for (int count = (sizeof(ISC_ULONG) * 8) - 1; count--; mask <<= 1)
 	{
-		if (opt & mask) 
+		if (opt & mask)
 		{
 			const TEXT* s_ptr = find_switch((opt & mask), table);
 			if (!s_ptr)
 			{
 				return false;
 			}
-			
+
 			switches += '-';
 			switches += s_ptr;
 			switches += ' ';
@@ -2529,7 +2529,7 @@ void Service::get_action_svc_data(const ClumpletReader& spb,
 }
 
 
-bool Service::get_action_svc_parameter(UCHAR action, 
+bool Service::get_action_svc_parameter(UCHAR action,
 									   const in_sw_tab_t* table,
 									   string& switches)
 {

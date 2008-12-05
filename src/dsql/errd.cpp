@@ -19,7 +19,7 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * 
+ *
  * 27 Nov 2001  Ann W. Harrison - preserve string arguments in
  *              ERRD_post_warning
  *
@@ -42,7 +42,7 @@
 #include "../dsql/utld_proto.h"
 
 // This is the only one place in dsql code, where we need both
-// dsql.h and err_proto.h. 
+// dsql.h and err_proto.h.
 // To avoid warnings, undefine some macro's here
 //#undef BUGCHECK
 //#undef IBERROR
@@ -65,11 +65,11 @@ static void internal_post(const ISC_STATUS* status_vector);
 
 #ifdef DEV_BUILD
 /**
-  
+
  	ERRD_assert_msg
-  
+
     @brief	Generate an assertion failure with a message
- 
+
 
     @param msg
     @param file
@@ -86,15 +86,15 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
-#endif // DEV_BUILD 
+#endif // DEV_BUILD
 
 
 /**
-  
+
  	ERRD_bugcheck
-  
+
     @brief	Somebody has screwed up.  Bugcheck.
- 
+
 
     @param text
 
@@ -108,16 +108,16 @@ void ERRD_bugcheck(const char* text)
 
 
 /**
-  
+
  	ERRD_error
-  
+
     @brief	This routine should only be used by fatal
  	error messages, those that cannot use the
  	normal error routines because something
  	is very badly wrong.  ERRD_post() should
   	be used by most error messages, especially
  	so that strings will be handled.
- 
+
 
     @param code
     @param text
@@ -134,14 +134,14 @@ void ERRD_error(const char* text)
 
 
 /**
-  
+
  ERRD_post_warning
-  
+
     @brief      Post a warning to the current status vector.
- 
+
 
     @param status
-    @param 
+    @param
 
  **/
 bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
@@ -155,7 +155,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 		 status_vector[2] != isc_arg_warning))
 	{
-		// this is a blank status vector 
+		// this is a blank status vector
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = 0;
 		status_vector[2] = isc_arg_end;
@@ -163,7 +163,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 	}
 	else
 	{
-		// find end of a status vector 
+		// find end of a status vector
 		int warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx) {
@@ -178,21 +178,21 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 		return true;
 	}
 
-	// not enough free space 
+	// not enough free space
 	return false;
 }
 
 
 /**
-  
+
  	ERRD_post
-  
+
     @brief	Post an error, copying any potentially
  	transient data before we punt.
- 
+
 
     @param statusVector
-    @param 
+    @param
 
  **/
 void ERRD_post(const Firebird::Arg::StatusVector& v)
@@ -204,22 +204,22 @@ void ERRD_post(const Firebird::Arg::StatusVector& v)
 
 
 /**
-  
+
  	internal_post
-  
+
     @brief	Post an error, copying any potentially
  	transient data before we punt.
- 
+
 
     @param tmp_status
-    @param 
+    @param
 
  **/
 static void internal_post(const ISC_STATUS* tmp_status)
 {
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
-// calculate length of the status 
+// calculate length of the status
 	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
@@ -228,7 +228,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 		 status_vector[2] != isc_arg_warning))
 	{
-		// this is a blank status vector 
+		// this is a blank status vector
 		status_vector[0] = isc_arg_gds;
 		status_vector[1] = isc_dsql_error;
 		status_vector[2] = isc_arg_end;
@@ -244,11 +244,11 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len) {
-			break;				// end of argument list 
+			break;				// end of argument list
 		}
 
 		if (i && i == warning_indx) {
-			break;				// vector has no more errors 
+			break;				// vector has no more errors
 		}
 
 		if (status_vector[i] == tmp_status[1] && i &&
@@ -257,7 +257,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 			(memcmp(&status_vector[i], &tmp_status[1],
 					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
-			// duplicate found 
+			// duplicate found
 			ERRD_punt();
 		}
 	}
@@ -272,7 +272,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	ISC_STATUS_ARRAY warning_status;
 
 	if (warning_indx) {
-		// copy current warning(s) to a temp buffer 
+		// copy current warning(s) to a temp buffer
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		memcpy(warning_status, &status_vector[warning_indx],
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
@@ -287,7 +287,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	{
 		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		ERR_make_permanent(&status_vector[err_status_len]);
-		// copy current warning(s) to the status_vector 
+		// copy current warning(s) to the status_vector
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
 		{
 			memcpy(&status_vector[i - 1], warning_status,
@@ -299,12 +299,12 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 
 /**
-  
+
  	ERRD_punt
-  
+
     @brief	Error stuff has been copied to
  	status vector.  Now punt.
- 
+
 
 
  **/
@@ -317,11 +317,11 @@ void ERRD_punt(const ISC_STATUS* local)
 		UTLD_copy_status(local, tdbb->tdbb_status_vector);
 	}
 
-// Save any strings in a permanent location 
+// Save any strings in a permanent location
 
 	UTLD_save_status_strings(tdbb->tdbb_status_vector);
 
-// Give up whatever we were doing and return to the user. 
+// Give up whatever we were doing and return to the user.
 
 	status_exception::raise(tdbb->tdbb_status_vector);
 }

@@ -118,12 +118,12 @@ void ThreadPriorityScheduler::init()
 	gds__register_cleanup(Cleanup, 0);
 }
 
-void ThreadPriorityScheduler::Cleanup(void*) 
+void ThreadPriorityScheduler::Cleanup(void*)
 {
 	initialized.cleanup();
 }
 
-void ThreadPriorityScheduler::cleanup() 
+void ThreadPriorityScheduler::cleanup()
 {
 	Firebird::MutexLockGuard guard(mutex);
 	opMode = Stopping;
@@ -163,7 +163,7 @@ void ThreadPriorityScheduler::run() {
 	routine(arg);
 }
 
-void ThreadPriorityScheduler::detach() 
+void ThreadPriorityScheduler::detach()
 {
 	if (active)
 	{
@@ -171,7 +171,7 @@ void ThreadPriorityScheduler::detach()
 		TLS_SET(currentScheduler, 0);
 		if (opMode == ShutdownComplete)
 		{
-			for (ThreadPriorityScheduler** pt = &chain; *pt; pt = &(*pt)->next) 
+			for (ThreadPriorityScheduler** pt = &chain; *pt; pt = &(*pt)->next)
 			{
 				if (*pt == this)
 				{
@@ -198,9 +198,9 @@ void ThreadPriorityScheduler::detach()
 	}
 }
 
-unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID) 
+unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 {
-	for (;;) 
+	for (;;)
 	{
 		if (opMode == Stopping)
 		{
@@ -216,24 +216,24 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 		Sleep(Config::getPrioritySwitchDelay());
 		// We needn't lock mutex, because we don't modify
 		// next here, and new thps object may be added
-		// only in the beginning of the chain - even if it 
+		// only in the beginning of the chain - even if it
 		// happens, we safely ignore it here.
 		// To be sure that nothing is deleted from chain,
 		// toDetach member is added to this class.
-		for (ThreadPriorityScheduler *t = chain; t; t = t->next) 
+		for (ThreadPriorityScheduler *t = chain; t; t = t->next)
 		{
 			const UCHAR p_flags = t->flags;
-			if (p_flags & THPS_PSCHED) 
+			if (p_flags & THPS_PSCHED)
 			{
 				const bool gonein = t->gonein;
 				t->gonein = false;
 				t->flags &= ~(THPS_UP | THPS_LOW); // clean them
 #pragma FB_COMPILER_MESSAGE("Fix! May have problems with long running UDFs.")
-				if ((! gonein) && (! (p_flags & THPS_BOOSTED))) 
+				if ((! gonein) && (! (p_flags & THPS_BOOSTED)))
 				{
-					if (p_flags & THPS_UP) 
+					if (p_flags & THPS_UP)
 					{
-				// 1.	thread exited single thread zone and didn't 
+				// 1.	thread exited single thread zone and didn't
 				//		return into it since this &last cycle:
 				//			increase priority
 						if (! SetThreadPriority(t->handle, highPriority))
@@ -253,9 +253,9 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 					t->flags |= THPS_UP;
 					continue;
 				}
-				if ((gonein || t->inside) && (p_flags & THPS_BOOSTED)) 
+				if ((gonein || t->inside) && (p_flags & THPS_BOOSTED))
 				{
-					if (p_flags & THPS_LOW) 
+					if (p_flags & THPS_LOW)
 					{
 				// 3.	thread entered single thread zone
 				//		last cycle and didn't leave it completely
@@ -279,7 +279,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 			}
 		}
 
-		if (toDetach->getCount() > 0) 
+		if (toDetach->getCount() > 0)
 		{
 			Firebird::MutexLockGuard guard(mutex);
 			doDetach();
@@ -291,7 +291,7 @@ unsigned int __stdcall ThreadPriorityScheduler::schedulerMain(LPVOID)
 // *** mutex MUST be locked before doDetach ***
 void ThreadPriorityScheduler::doDetach()
 {
-	for (ThreadPriorityScheduler ** pt = &chain; *pt; pt = &(*pt)->next) 
+	for (ThreadPriorityScheduler ** pt = &chain; *pt; pt = &(*pt)->next)
 	{
 start_label:
 		size_t pos;

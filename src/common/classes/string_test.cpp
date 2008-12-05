@@ -2,7 +2,7 @@ char lbl[] = "0123456789";
 
 //#define CHECK_FATAL_RANGE_EXCEPTION
 //Don't modify 3 lines upper from this - they are used in file read test
-//If you plan to check range exception, you may uncomment it - 
+//If you plan to check range exception, you may uncomment it -
 //anyway file test should not happen
 
 /*
@@ -184,7 +184,7 @@ void test(void) {
 }
 {
 	string a, b, c;
-	
+
 	a = "uuu";
 	b = lbl;
 	c = a + b;
@@ -254,19 +254,19 @@ void test(void) {
 {
 	string a, b;
 	b = lbl;
-	
+
 	a.assign(3, 'u');
 	validate(a, "uuu");
 
 	a.assign(lbl);
 	validate(a, lbl);
-	
+
 	a.assign(lbl, 2);
 	validate(a, "01");
-	
+
 	a.assign(b, 3, 3);
 	validate(a, "345");
-	
+
 	a.assign(b);
 	validate(a, lbl);
 
@@ -287,15 +287,15 @@ void test(void) {
 	a = lbl;
 	a.insert(3, lbl);
 	validate(a, "01201234567893456789");
-	
+
 	a = lbl;
 	a.insert(4, lbl, 2);
 	validate(a, "012301456789");
-	
+
 	a = lbl;
 	a.insert(5, b, 3, 3);
 	validate(a, "0123434556789");
-	
+
 	a = lbl;
 	a.insert(5, b);
 	validate(a, "01234012345678956789");
@@ -313,8 +313,8 @@ void test(void) {
 	a = lbl;
 	x = a.begin();
 	x += 2;
-	string::iterator f = b.begin(); 
-	string::iterator t = b.end(); 
+	string::iterator f = b.begin();
+	string::iterator t = b.end();
 	f++; t--;
 	a.insert(x, f, t);
 	validate(a, "011234567823456789");
@@ -368,27 +368,27 @@ void test(void) {
 	a = lbl;
 	a.replace(3, 3, lbl);
 	validate(a, "01201234567896789");
-	
+
 	a = lbl;
 	f0 = a.begin() + 3;
 	t0 = f0 + 3;
 	a.replace(f0, t0, lbl);
 	validate(a, "01201234567896789");
-	
+
 	a = lbl;
 	a.replace(4, 4, lbl, 2);
 	validate(a, "01230189");
-	
+
 	a = lbl;
 	f0 = a.begin() + 4;
 	t0 = f0 + 4;
 	a.replace(f0, t0, lbl, 2);
 	validate(a, "01230189");
-	
+
 	a = lbl;
 	a.replace(5, 10, b, 3, 3);
 	validate(a, "01234345");
-	
+
 	a = lbl;
 	f0 = a.begin() + 5;
 	t0 = f0 + 10;
@@ -396,7 +396,7 @@ void test(void) {
 	t = f + 3;
 	a.replace(f0, t0, f, t);
 	validate(a, "01234345");
-	
+
 	a = lbl;
 	a.replace(5, 0, b);
 	validate(a, "01234012345678956789");
@@ -406,7 +406,7 @@ void test(void) {
 	t0 = f0;
 	a.replace(f0, t0, b);
 	validate(a, "01234012345678956789");
-	
+
 	a = lbl;
 	a.replace(2, 1, "Something reaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaally long");
 	validate(a, "01Something reaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaally long3456789");
@@ -428,7 +428,7 @@ void test(void) {
 
 //	a.swap(b);
 //	validate(b, "3456789");
-//	validate(a, lbl); 
+//	validate(a, lbl);
 }
 
 #ifdef DEV_BUILD
@@ -441,7 +441,7 @@ void test(void) {
 	string a = "012345uuu345678";
 					//	 9
 	string b = "345";
-	
+
 	check(a.find(b), 3);
 	check(a.find("45"), 4);
 	check(a.find('5'), 5);
@@ -561,7 +561,7 @@ void test(void) {
 
 	check(c.compare(d), 1);
 	check(c.compare(e), 1);
-	
+
 	check(a.compare(1, 10, b), 1);
 	check(a.compare(1, 10, b, 1, 10), 0);
 	check(a.compare(lbl), 0);
@@ -570,7 +570,7 @@ void test(void) {
 #ifdef FULL_FIRE
 {
 	string a = "  011100   ", b;
-	
+
 	b = a;
 	b.ltrim();
 	validate(b, "011100   ");
@@ -631,7 +631,7 @@ void start() {
 
 void report() {
 	clock_t d = clock();
-	printf("Test of %d iterations with %s took %d milliseconds.\n", 
+	printf("Test of %d iterations with %s took %d milliseconds.\n",
 		TEST_ITEMS, NAME, (int)(d-t)*1000/CLOCKS_PER_SEC);
 }
 

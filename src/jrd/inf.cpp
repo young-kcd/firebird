@@ -30,8 +30,8 @@
  * 2001.11.28 Ann Harrison - the dbb has to be refreshed before reporting
  *      oldest_transaction, oldest_active, oldest_snapshot and next_transaction.
  *
- * 2001.11.29 Paul Reeves - Added refresh of dbb to ensure forced_writes 
- *      reports correctly when called immediately after a create database 
+ * 2001.11.29 Paul Reeves - Added refresh of dbb to ensure forced_writes
+ *      reports correctly when called immediately after a create database
  *      operation.
  */
 
@@ -106,7 +106,7 @@ void INF_blob_info(const blb* blob,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 	SCHAR* start_info;
-	
+
 	if (*items == isc_info_length) {
 		start_info = info;
 		items++;
@@ -440,7 +440,7 @@ void INF_database_info(const SCHAR* items,
 		case isc_info_creation_date:
 			{
 				const ISC_TIMESTAMP ts = dbb->dbb_creation_date.value();
-				length = INF_convert(ts.timestamp_date, p); 
+				length = INF_convert(ts.timestamp_date, p);
 				p += length;
 				length += INF_convert(ts.timestamp_time, p);
 			}
@@ -505,7 +505,7 @@ void INF_database_info(const SCHAR* items,
 			{ // scope
 				SLONG cnt = 0;
 				for (id = transaction->tra_oldest_active;
-					id < transaction->tra_number; id++) 
+					id < transaction->tra_number; id++)
 				{
 					if (TRA_snapshot_state(tdbb, transaction, id) == tra_active) {
 						cnt++;
@@ -543,7 +543,7 @@ void INF_database_info(const SCHAR* items,
 			{
 				if (att->att_flags & ATT_shutdown)
 					continue;
-                
+
                 const UserId* user = att->att_user;
 				if (user) {
 					const char* user_name = user->usr_user_name.hasData() ?
@@ -857,7 +857,7 @@ void INF_request_info(const jrd_req* request,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 	SCHAR* start_info;
-	
+
 	if (*items == isc_info_length) {
 		start_info = info;
 		items++;
@@ -1011,7 +1011,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 	const SCHAR* const end_items = items + item_length;
 	const SCHAR* const end = info + output_length;
 	SCHAR* start_info;
-	
+
 	if (*items == isc_info_length) {
 		start_info = info;
 		items++;
@@ -1042,7 +1042,7 @@ void INF_transaction_info(const jrd_tra* transaction,
 
 		case isc_info_tra_oldest_active:
 			length = INF_convert(
-				transaction->tra_lock ? transaction->tra_lock->lck_data : 0, 
+				transaction->tra_lock ? transaction->tra_lock->lck_data : 0,
 				buffer);
 			break;
 

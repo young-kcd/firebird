@@ -595,7 +595,7 @@ static qli_nod* compile_expression( qli_nod* node, qli_req* request, bool intern
 	case nod_substr:
 	case nod_user_name:
 		if (!internal_flag && request && request->req_receive &&
-			computable(node, request)) 
+			computable(node, request))
 		{
 			compile_expression(node, request, true);
 			return make_reference(node, request->req_receive);
@@ -725,7 +725,7 @@ static qli_nod* compile_field( qli_nod* node, qli_req* request, bool internal_fl
 	if (internal_flag) {
 		if (computable(node, request))
 			return node;
-		
+
 		qli_par* parm = make_parameter(request->req_send, node);
 		node->nod_export = parm;
 		parm->par_desc = node->nod_desc;
@@ -1101,7 +1101,7 @@ static qli_nod* compile_prompt( qli_nod* node)
 			prompt_length = 8;
 			break;
 
-		
+
 		case dtype_long:
 		case dtype_real:
 			prompt_length = 15;
@@ -1385,7 +1385,7 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
 		return node;
 
 	default:
-		ERRQ_bugcheck(360);			// Msg360 not yet implemented (compile_statement) 
+		ERRQ_bugcheck(360);			// Msg360 not yet implemented (compile_statement)
 		return NULL;
 	}
 }
@@ -2012,7 +2012,7 @@ static qli_nod* make_reference( qli_nod* node, qli_msg* message)
 		ERRQ_bugcheck(363);			// Msg363 missing message
 
 	qli_par* parm;
-	
+
 	// Look for an existing field reference
 
 	for (parm = message->msg_parameters; parm; parm = parm->par_next)

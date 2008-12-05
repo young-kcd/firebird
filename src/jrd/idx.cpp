@@ -136,7 +136,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 				(index_root_page*) CCH_FETCH(tdbb, &referenced_window, LCK_read, pag_root);
 			index_desc referenced_idx;
 			if (!BTR_description(tdbb, referenced_relation, referenced_root,
-								 &referenced_idx, index_id)) 
+								 &referenced_idx, index_id))
 			{
 				BUGCHECK(173);	/* msg 173 referenced index description not found */
 			}
@@ -148,7 +148,7 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 				const jrd_fld* referenced_field =
 					MET_get_field(referenced_relation, idx_desc->idx_field);
 				CMP_post_access(tdbb, csb,
-								referenced_relation->rel_security_name, 
+								referenced_relation->rel_security_name,
 									(view ? view->rel_id : 0),
 								SCL_sql_references, "TABLE",
 								referenced_relation->rel_name);
@@ -174,7 +174,7 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
  * Functional description
  *	Check if both indices of foreign key constraint
  *	has compatible data types in appropriate segments.
- *	Called when detail index is created after idx_itype 
+ *	Called when detail index is created after idx_itype
  *	was assigned
  *
  **********************************************/
@@ -183,14 +183,14 @@ bool IDX_check_master_types (thread_db* tdbb, index_desc& idx, jrd_rel* partner_
 
 	index_desc partner_idx;
 
-	// get the index root page for the partner relation 
+	// get the index root page for the partner relation
 	WIN window(get_root_page(tdbb, partner_relation));
 	index_root_page* root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 
-	// get the description of the partner index 
+	// get the description of the partner index
 	if (!BTR_description(tdbb, partner_relation, root, &partner_idx, idx.idx_primary_index))
 		BUGCHECK(175);			/* msg 175 partner index description not found */
-	
+
 	CCH_RELEASE(tdbb, &window);
 
 	// make sure partner index have the same segment count as our
@@ -261,13 +261,13 @@ void IDX_create_index(
 	const bool isDescending = (idx->idx_flags & idx_descending);
 	const bool isPrimary = (idx->idx_flags & idx_primary);
 
-	// hvlad: in ODS11 empty string and NULL values can have the same binary 
-	// representation in index keys. BTR can distinguish it by the key_length 
-	// but SORT module currently don't take it into account. Therefore add to 
-	// the index key one byte prefix with 0 for NULL value and 1 for not-NULL 
+	// hvlad: in ODS11 empty string and NULL values can have the same binary
+	// representation in index keys. BTR can distinguish it by the key_length
+	// but SORT module currently don't take it into account. Therefore add to
+	// the index key one byte prefix with 0 for NULL value and 1 for not-NULL
 	// value to produce right sorting.
 	// BTR\fast_load will remove this one byte prefix from the index key.
-	// Note that this is necessary only for single-segment ascending indexes 
+	// Note that this is necessary only for single-segment ascending indexes
 	// and only for ODS11 and higher.
 
 	const int nullIndLen = isODS11 && !isDescending && (idx->idx_count == 1) ? 1 : 0;
@@ -372,14 +372,14 @@ void IDX_create_index(
 			secondary.rpb_line = secondary.rpb_b_line;
 		}
 
-		while (stack.hasData()) 
+		while (stack.hasData())
 		{
 			Record* record = stack.pop();
 
 			/* If foreign key index is being defined, make sure foreign
 			   key definition will not be violated */
 
-			if (idx->idx_flags & idx_foreign) 
+			if (idx->idx_flags & idx_foreign)
 			{
 				idx_null_state null_state;
 				/* find out if there is a null segment by faking uniqueness --
@@ -389,7 +389,7 @@ void IDX_create_index(
 					idx->idx_flags |= idx_unique;
 					result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 					idx->idx_flags &= ~idx_unique;
-				} 
+				}
 				else {
 					result = BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				}
@@ -410,14 +410,14 @@ void IDX_create_index(
 				BTR_key(tdbb, relation, record, idx, &key, &null_state, false);
 				key_is_null = (null_state == idx_nulls_all);
 
-				if (isPrimary && null_state != idx_nulls_none) 
+				if (isPrimary && null_state != idx_nulls_none)
 				{
 					fb_assert(key.key_null_segment < idx->idx_count);
 
 					const USHORT bad_id = idx->idx_rpt[key.key_null_segment].idx_field;
 					const jrd_fld *bad_fld = MET_get_field(relation, bad_id);
 
-					ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(bad_fld->fld_name) << 
+					ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(bad_fld->fld_name) <<
 														Arg::Str(NULL_STRING_MARK));
 				}
 			}
@@ -628,7 +628,7 @@ void IDX_delete_indices(thread_db* tdbb, jrd_rel* relation, RelationPages* relPa
 	const bool is_temp = (relation->rel_flags & REL_temp_conn) &&
 		(relPages->rel_instance_id != 0);
 
-	for (i = 0; i < root->irt_count; i++) 
+	for (i = 0; i < root->irt_count; i++)
 	{
 		const bool tree_exists = BTR_delete_index(tdbb, &window, i);
 		root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_root);
@@ -661,7 +661,7 @@ IDX_E IDX_erase(thread_db* tdbb,
  *
  * Functional description
  *	Check the various indices prior to an ERASE operation.
- *	If one is a primary key, check its partner for 
+ *	If one is a primary key, check its partner for
  *	a duplicate record.
  *
  **************************************/
@@ -689,8 +689,8 @@ IDX_E IDX_erase(thread_db* tdbb,
 }
 
 
-void IDX_garbage_collect(thread_db*			tdbb, 
-						 record_param*		rpb, 
+void IDX_garbage_collect(thread_db*			tdbb,
+						 record_param*		rpb,
 						 RecordStack& going,
 						 RecordStack& staying)
 {
@@ -730,7 +730,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 
 				/* Cancel index if there are duplicates in the remaining records */
 
-				
+
 				RecordStack::iterator stack2(stack1);
 				for (++stack2; stack2.hasData(); ++stack2)
 				{
@@ -743,7 +743,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				}
 				if (stack2.hasData())
 					continue;
-				
+
 
 				/* Make sure the index doesn't exist in any record remaining */
 
@@ -879,7 +879,7 @@ IDX_E IDX_modify_check_constraints(thread_db* tdbb,
    could be established by primary key/foreign key or unique key/foreign key */
 
 	while (BTR_next_index
-		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window)) 
+		   (tdbb, org_rpb->rpb_relation, transaction, &idx, &window))
 	{
 		if (!(idx.idx_flags & (idx_primary | idx_unique))
 			|| !MET_lookup_partner(tdbb, org_rpb->rpb_relation, &idx, 0))
@@ -971,12 +971,12 @@ IDX_E IDX_store(thread_db* tdbb,
 	WIN window(relPages->rel_pg_space_id, -1);
 
 	while (BTR_next_index
-		   (tdbb, rpb->rpb_relation, transaction, &idx, &window)) 
+		   (tdbb, rpb->rpb_relation, transaction, &idx, &window))
 	{
 		*bad_index = idx.idx_id;
 		*bad_relation = rpb->rpb_relation;
 		if ( (error_code =
-			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, 0, false)) ) 
+			BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, &idx, &key, 0, false)) )
 		{
 			CCH_RELEASE(tdbb, &window);
 			break;
@@ -1040,7 +1040,7 @@ static IDX_E check_duplicates(
 		if (rpb.rpb_number != insertion->iib_number
 			&& VIO_get_current(tdbb, &old_rpb, &rpb, insertion->iib_transaction,
 							   tdbb->getDefaultPool(),
-							   is_fk, 
+							   is_fk,
 							   has_old_values) )
 		{
 			// dimitr: we shouldn't ignore status exceptions which take place
@@ -1075,18 +1075,18 @@ static IDX_E check_duplicates(
 				break;
 			}
 
-			/* check the values of the fields in the record being inserted with the 
-			   record retrieved -- for unique indexes the insertion index and the 
+			/* check the values of the fields in the record being inserted with the
+			   record retrieved -- for unique indexes the insertion index and the
 			   record index are the same, but for foreign keys they are different */
-			
+
 			if (record_idx->idx_flags & idx_expressn)
 			{
 				bool flag_idx;
 				const dsc* desc_idx = BTR_eval_expression(tdbb, record_idx, record, flag_idx);
-				
-				/*	hvlad: BTR_eval_expression call EVL_expr which returns impure->vlu_desc. 
-					Since record_idx and insertion_idx are the same indexes second call to 
-					BTR_eval_expression will overwrite value from first call. So we must 
+
+				/*	hvlad: BTR_eval_expression call EVL_expr which returns impure->vlu_desc.
+					Since record_idx and insertion_idx are the same indexes second call to
+					BTR_eval_expression will overwrite value from first call. So we must
 					save first result into another dsc
 				*/
 
@@ -1097,10 +1097,10 @@ static IDX_E check_duplicates(
 				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 
 				bool flag_rec = false;
-				const dsc* desc_rec = has_cur_values ? 
+				const dsc* desc_rec = has_cur_values ?
 					BTR_eval_expression(tdbb, insertion_idx, rpb.rpb_record, flag_rec) : NULL;
 
-				const bool equal_cur = has_cur_values && flag_rec && flag_idx && 
+				const bool equal_cur = has_cur_values && flag_rec && flag_idx &&
 					(MOV_compare(desc_rec, &desc1) == 0);
 
 				if (!is_fk && equal_cur) {
@@ -1112,7 +1112,7 @@ static IDX_E check_duplicates(
 				{
 					desc_rec = BTR_eval_expression(tdbb, insertion_idx, old_rpb.rpb_record, flag_rec);
 
-					const bool equal_old = flag_rec && flag_idx && 
+					const bool equal_old = flag_rec && flag_idx &&
 						(MOV_compare(desc_rec, &desc1) == 0);
 
 					if (is_fk) {
@@ -1133,7 +1133,7 @@ static IDX_E check_duplicates(
 			{
 				bool all_nulls = true;
 				USHORT i;
-				for (i = 0; i < insertion_idx->idx_count; i++) 
+				for (i = 0; i < insertion_idx->idx_count; i++)
 				{
 					bool flag_cur = false;
 					USHORT field_id = record_idx->idx_rpt[i].idx_field;
@@ -1142,14 +1142,14 @@ static IDX_E check_duplicates(
 					if (has_cur_values)
 					{
 						field_id = insertion_idx->idx_rpt[i].idx_field;
-						/* In order to "map a null to a default" value (in EVL_field()), 
-						* the relation block is referenced. 
-						* Reference: Bug 10116, 10424 
+						/* In order to "map a null to a default" value (in EVL_field()),
+						* the relation block is referenced.
+						* Reference: Bug 10116, 10424
 						*/
 						flag_cur = EVL_field(relation_1, rpb.rpb_record, field_id, &desc1);
 					}
 
-					const bool not_equal_cur = !has_cur_values || 
+					const bool not_equal_cur = !has_cur_values ||
 						has_cur_values && ( (flag_cur != flag_idx) || (MOV_compare(&desc1, &desc2) != 0) );
 
 					if ((is_fk || !has_old_values) && not_equal_cur)
@@ -1213,7 +1213,7 @@ static IDX_E check_foreign_key(
  *
  * Functional description
  *	The passed index participates in a foreign key.
- *	Check the passed record to see if a corresponding 
+ *	Check the passed record to see if a corresponding
  *	record appears in the partner index.
  *
  **************************************/
@@ -1250,7 +1250,7 @@ static IDX_E check_foreign_key(
 
 			index_id = (*idx->idx_foreign_indexes)[index_number];
 
-			if ((relation->rel_flags & REL_temp_conn) && 
+			if ((relation->rel_flags & REL_temp_conn) &&
 				(partner_relation->rel_flags & REL_temp_tran))
 			{
 				jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, partner_relation);
@@ -1260,7 +1260,7 @@ static IDX_E check_foreign_key(
 				{
 					RelationPages* partnerPages = pagesSnapshot[i];
 					tdbb->tdbb_temp_traid = partnerPages->rel_instance_id;
-					if ( (result = check_partner_index(tdbb, relation, record, 
+					if ( (result = check_partner_index(tdbb, relation, record,
 								transaction, idx, partner_relation, index_id)) )
 					{
 						break;
@@ -1271,9 +1271,9 @@ static IDX_E check_foreign_key(
 				if (result)
 					break;
 			}
-			else 
+			else
 			{
-				if ( (result = check_partner_index(tdbb, relation, record, 
+				if ( (result = check_partner_index(tdbb, relation, record,
 							transaction, idx, partner_relation, index_id)) )
 				{
 					break;
@@ -1313,7 +1313,7 @@ static IDX_E check_partner_index(
  *
  * Functional description
  *	The passed index participates in a foreign key.
- *	Check the passed record to see if a corresponding 
+ *	Check the passed record to see if a corresponding
  *	record appears in the partner index.
  *
  **************************************/
@@ -1357,9 +1357,9 @@ static IDX_E check_partner_index(
 		segment = idx->idx_count;
 
 /* get the key in the original index */
-	// AB: Fake the index to be an unique index, because the INTL makes 
+	// AB: Fake the index to be an unique index, because the INTL makes
 	// different keys depending on unique index or not.
-	// The key build should be exactly the same as stored in the 
+	// The key build should be exactly the same as stored in the
 	// unique index, because a comparison is done on both keys.
 	index_desc tmpIndex = *idx;
 	// ASF: Was incorrect to verify broken foreign keys.
@@ -1373,7 +1373,7 @@ static IDX_E check_partner_index(
 /* now check for current duplicates */
 
 	if (result == idx_e_ok) {
-		/* fill out a retrieval block for the purpose of 
+		/* fill out a retrieval block for the purpose of
 		   generating a bitmap of duplicate records  */
 
 		IndexRetrieval retrieval;
@@ -1392,7 +1392,7 @@ static IDX_E check_partner_index(
 		if (partner_idx.idx_flags & idx_descending) {
 			retrieval.irb_generic |= irb_descending;
 		}
-		if ((idx->idx_flags & idx_descending) != 
+		if ((idx->idx_flags & idx_descending) !=
 						(partner_idx.idx_flags & idx_descending))
 		{
 			BTR_complement_key(&key);
@@ -1492,7 +1492,7 @@ static int index_block_flush(void* ast_object)
  * Functional description
  *	An exclusive lock has been requested on the
  *	index block.  The information in the cached
- *	index block is no longer valid, so clear it 
+ *	index block is no longer valid, so clear it
  *	out and release the lock.
  *
  **************************************/
@@ -1535,8 +1535,8 @@ static IDX_E insert_key(
  **************************************
  *
  * Functional description
- *	Insert a key in the index.  
- *	If this is a unique index, check for active duplicates.  
+ *	Insert a key in the index.
+ *	If this is a unique index, check for active duplicates.
  *	If this is a foreign key, check for duplicates in the
  *	primary key index.
  *
@@ -1562,8 +1562,8 @@ static IDX_E insert_key(
 		return result;
 	}
 
-/* if we are dealing with a foreign key index, 
-   check for an insert into the corresponding 
+/* if we are dealing with a foreign key index,
+   check for an insert into the corresponding
    primary key index */
 	if (idx->idx_flags & idx_foreign) {
 		/* find out if there is a null segment by faking uniqueness --
@@ -1587,9 +1587,9 @@ static IDX_E insert_key(
 }
 
 
-void IDX_modify_flag_uk_modified(thread_db* tdbb, 
-								 record_param* org_rpb, 
-								 record_param* new_rpb, 
+void IDX_modify_flag_uk_modified(thread_db* tdbb,
+								 record_param* org_rpb,
+								 record_param* new_rpb,
 								 jrd_tra* transaction)
 {
 /**************************************
@@ -1599,9 +1599,9 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
  **************************************
  *
  * Functional description
- *	Set record flag if key field value was changed by this update or 
- *  if this is second update of this record in the same transaction and 
- *  flag is already set by one of the previous update.  
+ *	Set record flag if key field value was changed by this update or
+ *  if this is second update of this record in the same transaction and
+ *  flag is already set by one of the previous update.
  *
  **************************************/
 
@@ -1611,7 +1611,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 		(org_rpb->rpb_transaction_nr == new_rpb->rpb_transaction_nr))
 	{
 		new_rpb->rpb_flags |= rpb_uk_modified;
-		return;	
+		return;
 	}
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
@@ -1638,7 +1638,7 @@ void IDX_modify_flag_uk_modified(thread_db* tdbb,
 
 			if (flag_org != flag_new || MOV_compare(&desc1, &desc2) != 0)
 			{
-				new_rpb->rpb_flags |= rpb_uk_modified;	
+				new_rpb->rpb_flags |= rpb_uk_modified;
 				CCH_RELEASE(tdbb, &window);
 				return;
 			}
@@ -1698,7 +1698,7 @@ static void signal_index_deletion(thread_db* tdbb, jrd_rel* relation, USHORT id)
  **************************************
  *
  * Functional description
- *	On delete of an index, force all 
+ *	On delete of an index, force all
  *	processes to get rid of index info.
  *
  **************************************/

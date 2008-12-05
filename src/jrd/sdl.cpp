@@ -106,9 +106,9 @@ const int op_scalar		= 12;
 /*
    The structure for a loop is:
 
-	<upper_bound> <increment> <initial_value> 
-	<loop> <iterate> <variable> <exit_address> 
-	[body] 
+	<upper_bound> <increment> <initial_value>
+	<loop> <iterate> <variable> <exit_address>
+	[body]
 	<goto> <iterate_address>
 	[exit]
 */
@@ -149,11 +149,11 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
  *
  * Functional description
  *	Collapse a multi-dimension array reference into a vector
- *	reference. 
+ *	reference.
  *
  **************************************/
 	if (dimensions != desc->iad_dimensions) {
-		error(status_vector, Arg::Gds(isc_invalid_dimension) << Arg::Num(desc->iad_dimensions) << 
+		error(status_vector, Arg::Gds(isc_invalid_dimension) << Arg::Num(desc->iad_dimensions) <<
 																Arg::Num(dimensions));
 		return -1;
 	}
@@ -342,7 +342,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
  **************************************
  *
  * Functional description
- *	Walk a slice.  
+ *	Walk a slice.
  *
  **************************************/
 	DSC junk;
@@ -363,7 +363,7 @@ int	SDL_walk(ISC_STATUS* status_vector,
 		case isc_sdl_struct:
 			for (n = *p++; n; --n) {
 				offset = p - sdl - 1;
-				if (!(p = sdl_desc(p, &junk))) 
+				if (!(p = sdl_desc(p, &junk)))
 					return error(status_vector, Arg::Gds(isc_invalid_sdl) << Arg::Num(offset));
 			}
 			break;
@@ -508,7 +508,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 		op = *p++;
 		count = *p++;
 		if (arg && count != arg->sdl_arg_desc->iad_dimensions) {
-			error(arg->sdl_arg_status_vector, 
+			error(arg->sdl_arg_status_vector,
 				  Arg::Gds(isc_invalid_dimension) << Arg::Num(arg->sdl_arg_desc->iad_dimensions) <<
 													 Arg::Num(count));
 			return NULL;
@@ -591,7 +591,7 @@ static bool execute(sdl_arg* arg)
 	dsc element_desc;
 
 	Ods::InternalArrayDesc* array_desc = arg->sdl_arg_desc;
-	const Ods::InternalArrayDesc::iad_repeat* const range_end = 
+	const Ods::InternalArrayDesc::iad_repeat* const range_end =
 		array_desc->iad_rpt + array_desc->iad_dimensions;
 	SLONG* variables = arg->sdl_arg_variables;
 	const IPTR* next = arg->sdl_arg_compiled;
@@ -723,7 +723,7 @@ static bool execute(sdl_arg* arg)
 }
 
 
-static const UCHAR* get_range(const UCHAR* sdl, array_range* arg, 
+static const UCHAR* get_range(const UCHAR* sdl, array_range* arg,
 							  SLONG* min, SLONG* max)
 {
 /**************************************

@@ -105,7 +105,7 @@ USHORT SRVRMGR_exec_line(ibmgr_data_t* data)
 
 /* If reattach is true and we currently attached, then we
    will detach from service. This is potentially dangerous
-   situation, because if shutdown is true (server shutdown 
+   situation, because if shutdown is true (server shutdown
    was initiated) server will be shutdowned.
    I do not check the shutdown flag here because reattach
    could be true only if shutdown has not been initiated.
@@ -203,7 +203,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 */
 
 	const char* rs = 0;
-	
+
 	switch (number) {
 	case MSG_PROMPT:
 		rs = "FBMGR>";
@@ -298,7 +298,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 	default:
 		rs = "can not get an error message";
 	}
-	
+
 	strcpy(msg, rs);
 }
 
@@ -477,7 +477,7 @@ static bool start_server( ibmgr_data_t* data)
 */
 	TEXT path[MAXPATHLEN];
 	gds__prefix(path, SERVER_GUARDIAN);
-	
+
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]
 	// that may not be accepted by execv().
@@ -557,11 +557,11 @@ static bool start_server( ibmgr_data_t* data)
 					|| WIFSIGNALED(exit_status)))
 		{
 			printf("Guardian process %ld terminated with code %ld\n",
-				pid, WEXITSTATUS(exit_status)); 
+				pid, WEXITSTATUS(exit_status));
 			break;
 		}
 
-#else		 
+#else
 
 
 		if (ret_value == pid) {

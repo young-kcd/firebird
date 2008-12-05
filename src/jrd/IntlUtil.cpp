@@ -144,7 +144,7 @@ bool IntlUtil::parseSpecificAttributes(
 		while (p < end)
 		{
 			uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
-				
+
 			if (uSize == 2 &&
 					 ((*(USHORT*)uc >= 'A' && *(USHORT*)uc <= 'Z') ||
 					  (*(USHORT*)uc >= 'a' && *(USHORT*)uc <= 'z') ||
@@ -478,7 +478,7 @@ ULONG IntlUtil::toLower(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	// convert to lowercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> lower_str;
 	srcLen = UnicodeUtil::utf16LowerCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
-		utf16_length, Firebird::OutAligner<USHORT>(lower_str.getBuffer(utf16_length), utf16_length), 
+		utf16_length, Firebird::OutAligner<USHORT>(lower_str.getBuffer(utf16_length), utf16_length),
 		exceptions);
 
 	// convert to original character set
@@ -504,7 +504,7 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 	// convert to uppercase
 	Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> upper_str;
 	srcLen = UnicodeUtil::utf16UpperCase(srcLen, Firebird::Aligner<USHORT>(utf16_ptr, srcLen),
-		utf16_length, Firebird::OutAligner<USHORT>(upper_str.getBuffer(utf16_length), utf16_length), 
+		utf16_length, Firebird::OutAligner<USHORT>(upper_str.getBuffer(utf16_length), utf16_length),
 		exceptions);
 
 	// convert to original character set
@@ -580,7 +580,7 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 			{
 				*(USHORT*)uc = '\\';
 				UCHAR bytes[sizeof(ULONG)];
-				
+
 				ULONG bytesSize = cs->getConvFromUnicode().convert(
 					sizeof(USHORT), uc, sizeof(bytes), bytes);
 

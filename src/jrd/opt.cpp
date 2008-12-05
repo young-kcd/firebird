@@ -581,7 +581,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 			if (relation && !relation->rel_file && !relation->isVirtual())
 			{
 				csb->csb_rpt[stream].csb_indices =
-					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx, 
+					BTR_all(tdbb, relation, &csb->csb_rpt[stream].csb_idx,
 							relation->getPages(tdbb));
 				sort_indices_by_selectivity(&csb->csb_rpt[stream]);
 				mark_indices(&csb->csb_rpt[stream], relation->rel_id);
@@ -590,7 +590,7 @@ RecordSource* OPT_compile(thread_db*		tdbb,
 				csb->csb_rpt[stream].csb_indices = 0;
 
 			const Format* format = CMP_format(tdbb, csb, stream);
-			csb->csb_rpt[stream].csb_cardinality = 
+			csb->csb_rpt[stream].csb_cardinality =
 				OPT_getRelationCardinality(tdbb, relation, format);
 		}
 	}
@@ -1166,18 +1166,18 @@ jrd_nod* OPT_make_index(thread_db* tdbb, OptimizerBlk* opt, jrd_rel* relation,
 	}
 
 	bool includeLower = true, includeUpper = true;
-	for (tail = opt->opt_segments; (tail->opt_lower || tail->opt_upper) && 
+	for (tail = opt->opt_segments; (tail->opt_lower || tail->opt_upper) &&
 									tail->opt_match && (tail < end); tail++)
 	{
 		switch (tail->opt_match->nod_type)
 		{
-			case nod_gtr: 
+			case nod_gtr:
 				if (retrieval->irb_generic & irb_descending)
 					includeUpper = false;
 				else
 					includeLower = false;
 				break;
-			
+
 			case nod_lss:
 				if (retrieval->irb_generic & irb_descending)
 					includeLower = false;
@@ -2074,8 +2074,8 @@ static SLONG decompose(thread_db*		tdbb,
 			boolean_node->nod_arg[1] = or_stack.pop();
 			while (or_stack.hasData())
 			{
-				boolean_node->nod_arg[1] =	
-					OPT_make_binary_node(nod_and, boolean_node->nod_arg[1], or_stack.pop(), true);				
+				boolean_node->nod_arg[1] =
+					OPT_make_binary_node(nod_and, boolean_node->nod_arg[1], or_stack.pop(), true);
 			}
 		}
 	}
@@ -3538,7 +3538,7 @@ static void find_rsbs(RecordSource* rsb, StreamStack* stream_list, RsbStack* rsb
 
 	switch (rsb->rsb_type) {
 		case rsb_union:
-		case rsb_recurse: 
+		case rsb_recurse:
 		case rsb_aggregate:
 		case rsb_procedure:
 			if (rsb_list) {
@@ -3980,7 +3980,7 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 
 			if (asb_intl)
 			{
-				const USHORT key_length = ROUNDUP(INTL_key_length(tdbb, 
+				const USHORT key_length = ROUNDUP(INTL_key_length(tdbb,
 					INTL_TEXT_TO_INDEX(desc->getTextType()), desc->getStringLength()), sizeof(SINT64));
 
 				sort_key->skd_dtype = SKD_bytes;
@@ -5289,7 +5289,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	for (ptr = &streams[1]; ptr <= end_ptr; ptr++) {
 		UInt32Bitmap::Accessor accessor(csb->csb_rpt[*ptr].csb_fields);
 
-		if (accessor.getFirst()) 
+		if (accessor.getFirst())
 			do {
 				const ULONG id = accessor.current();
 				items++;
@@ -5802,14 +5802,14 @@ static RecordSource* gen_union(thread_db* tdbb,
 	const USHORT count = clauses->nod_count;
 	const bool recurse = (union_node->nod_flags & nod_recurse);
 	CompilerScratch* csb = opt->opt_csb;
-	RecordSource* rsb = 
+	RecordSource* rsb =
 		FB_NEW_RPT(*tdbb->getDefaultPool(), count + nstreams + 1 + (recurse ? 2 : 0)) RecordSource();
 	if (recurse)
 	{
 		rsb->rsb_type   = rsb_recurse;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb_recurse));
 	}
-	else 
+	else
 	{
 		rsb->rsb_type   = rsb_union;
 		rsb->rsb_impure = CMP_impure(csb, sizeof(struct irsb));
@@ -7253,7 +7253,7 @@ static jrd_nod* optimize_like(thread_db* tdbb, CompilerScratch* csb, jrd_nod* li
 	matchTextType->canonical(first_len, p, sizeof(first_canonic), first_canonic);
 
 	const BYTE canWidth = matchTextType->getCanonicalWidth();
-	
+
 	// If the first character is a wildcard char, forget it.
 	if ((!escape_node ||
 		 (memcmp(first_canonic, escape_canonic, canWidth) != 0)) &&

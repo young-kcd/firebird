@@ -64,7 +64,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	char exe_name[MAX_PATH];
 	int len = strlen(directory);
 	const char last_char = len ? directory[len - 1] : '\\';
-	const char* exe_format = 
+	const char* exe_format =
 		(last_char == '\\' || last_char == '/') ? "%s%s.exe" : "%s\\%s.exe";
 
 	len = snprintf(exe_name, sizeof(exe_name), exe_format, directory, executable);
@@ -76,7 +76,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 	const char* path_format = (strchr(exe_name, ' ') ? "\"%s\"" : "%s");
 	sprintf(path_name, path_format, exe_name);
 
-	if (switches) 
+	if (switches)
 	{
 		len = sizeof(path_name) - strlen(path_name) - 1;
 		if (len < strlen(switches) + 1) {
@@ -117,7 +117,7 @@ USHORT SERVICES_install(SC_HANDLE manager,
 		return (*err_handler) (errnum, "CreateService", NULL);
 	}
 
-	// Now enter the description string and failure actions into the service 
+	// Now enter the description string and failure actions into the service
 	// config, if this is available on the current platform.
 	HMODULE advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (advapi32 != 0)
@@ -206,7 +206,7 @@ USHORT SERVICES_remove(SC_HANDLE manager,
 			if (GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST)
 				break;
 		}
-		else		
+		else
 			CloseServiceHandle(service);
 
 		Sleep(100);	// A small nap is always good for health :)
@@ -235,7 +235,7 @@ USHORT SERVICES_start(SC_HANDLE manager,
 	const SC_HANDLE service = OpenService(manager,
 	                                      service_name,
 	                                      SERVICE_START | SERVICE_QUERY_STATUS);
-	
+
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 
@@ -301,7 +301,7 @@ USHORT SERVICES_stop(SC_HANDLE manager,
 	const SC_HANDLE service = OpenService(manager,
 	                                      service_name,
 	                                      SERVICE_STOP | SERVICE_QUERY_STATUS);
-	
+
 	if (service == NULL)
 		return (*err_handler) (GetLastError(), "OpenService", NULL);
 

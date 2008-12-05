@@ -100,7 +100,7 @@ public:
 		const char* id,
 		UTransDirection dir,
 		const UChar* rules,         /* may be Null */
-		int32_t rulesLength,        /* -1 if null-terminated */ 
+		int32_t rulesLength,        /* -1 if null-terminated */
 		UParseError* parseError,    /* may be Null */
 		UErrorCode* status);
 	void (U_EXPORT2 *utransTransUChars)(
@@ -196,7 +196,7 @@ USHORT UnicodeUtil::utf16ToKey(USHORT srcLen, const USHORT* src, USHORT dstLen, 
 	UConverter* conv = ucnv_open("BOCU-1", &status);
 	fb_assert(U_SUCCESS(status));
 
-	const int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen, 
+	const int32_t len = ucnv_fromUChars(conv, reinterpret_cast<char*>(dst), dstLen,
 		// safe cast - alignment not changed
 		reinterpret_cast<const UChar*>(src), srcLen / sizeof(*src), &status);
 	fb_assert(U_SUCCESS(status));
@@ -590,9 +590,9 @@ SSHORT UnicodeUtil::utf16Compare(ULONG len1, const USHORT* str1, ULONG len2, con
 	*error_flag = false;
 
 	// safe casts - alignment not changed
-	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1), 
+	int32_t cmp = u_strCompare(reinterpret_cast<const UChar*>(str1), len1 / sizeof(*str1),
 		reinterpret_cast<const UChar*>(str2), len2 / sizeof(*str2), true);
-	
+
 	return (cmp < 0 ? -1 : (cmp > 0 ? 1 : 0));
 }
 
@@ -605,7 +605,7 @@ ULONG UnicodeUtil::utf16Length(ULONG len, const USHORT* str)
 }
 
 
-ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst, 
+ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen, USHORT* dst,
 								  ULONG startPos, ULONG length)
 {
 	fb_assert(srcLen % sizeof(*src) == 0);
@@ -1203,7 +1203,7 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 
 	return (SSHORT)icu->ucolStrColl(compareCollator,
 		// safe casts - alignment not changed
-		reinterpret_cast<const UChar*>(str1), len1, 
+		reinterpret_cast<const UChar*>(str1), len1,
 		reinterpret_cast<const UChar*>(str2), len2);
 }
 

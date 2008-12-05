@@ -119,7 +119,7 @@ inline void err_post_if_database_is_readonly(const Database* dbb)
 // Class definitions (obsolete platforms are commented out)
 // Class constant name consists of OS platform and CPU architecture.
 //
-// For ports created before Firebird 2.0 release 64-bit and 32-bit 
+// For ports created before Firebird 2.0 release 64-bit and 32-bit
 // sub-architectures of the same CPU should use different classes.
 // For 64-bit ports first created after or as a part of Firebird 2.0
 // release CPU architecture may be the same for both variants.
@@ -171,21 +171,21 @@ static const int CLASS_MAX = CLASS_DARWIN_PPC64;
 //  2) alignment (32-bit or 64-bit), matters for record formats
 //  3) pointer size (32-bit or 64-bit), also matters for record formats
 //
-// For ODS11 pointers are not stored in database and alignment is always 64-bit. 
+// For ODS11 pointers are not stored in database and alignment is always 64-bit.
 // So the only thing which normally matters for ODS11 is endiannes, but if
 // endianness is wrong we are going to notice it during ODS version check,
 // before architecture compatibility is tested. But we distinguish them here too,
 // for consistency.
 
-enum ArchitectureType { 
+enum ArchitectureType {
 	archUnknown, // Unknown architecture, allow opening database only if CLASS matches exactly
 	archIntel86, // Little-endian platform with 32-bit pointers and 32-bit alignment (ODS10)
 	archLittleEndian, // Any little-endian platform with standard layout of data
 	archBigEndian     // Any big-endian platform with standard layout of data
 };
 
-// Note that Sparc, HP and PowerPC disk structures should be compatible in theory, 
-// but in practice alignment on these platforms varies and actually depends on the 
+// Note that Sparc, HP and PowerPC disk structures should be compatible in theory,
+// but in practice alignment on these platforms varies and actually depends on the
 // compiler used to produce the build. Yes, some 32-bit RISC builds use 64-bit alignment.
 // This is why we declare all such builds "Unknown" for ODS10.
 
@@ -389,7 +389,7 @@ void PAG_add_clump(
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
 	while (mode != CLUMP_ADD) {
-		const bool found = 
+		const bool found =
 			find_type(page_num, &window, &page, LCK_write, type,
 						  &entry_p, &clump_end);
 
@@ -415,7 +415,7 @@ void PAG_add_clump(
 					CCH_MARK_MUST_WRITE(tdbb, &window);
 				else
 					CCH_MARK(tdbb, &window);
-					
+
 				memcpy(entry_p, entry, len);
 			}
 			CCH_RELEASE(tdbb, &window);
@@ -511,8 +511,8 @@ USHORT PAG_add_file(const TEXT* file_name, SLONG start)
 
 	if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 	{
-		PIO_force_write(next, 
-			dbb->dbb_flags & DBB_force_write, 
+		PIO_force_write(next,
+			dbb->dbb_flags & DBB_force_write,
 			dbb->dbb_flags & DBB_no_fs_cache);
 	}
 
@@ -758,13 +758,13 @@ PAG PAG_allocate(WIN * window)
 	// CVC: Not sure of the initial value. Notice bytes and bit are used after the loop.
 	UCHAR* bytes = 0;
 	UCHAR bit = 0;
-	
+
 	pag* new_page = 0; // NULL before the search for a new page.
 
-	// Starting from ODS 11.1 we store in pip_header.reserved number of pages 
+	// Starting from ODS 11.1 we store in pip_header.reserved number of pages
 	// allocated from this pointer page. There is intention to create dedicated
 	// field at page_inv_page for this purpose in ODS 12.
-	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 && 
+	const bool isODS11_x = (dbb->dbb_ods_version == ODS_VERSION11 &&
 							dbb->dbb_minor_version >= 1);
 
 /* Find an allocation page with something on it */
@@ -775,7 +775,7 @@ PAG PAG_allocate(WIN * window)
 	for (sequence = pageSpace->pipHighWater;; sequence++) {
 		pip_window.win_page = (sequence == 0) ?
 			pageSpace->ppFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1;
-		page_inv_page* pip_page = 
+		page_inv_page* pip_page =
 			(page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 
 		pipMin = MAX_SLONG;
@@ -790,7 +790,7 @@ PAG PAG_allocate(WIN * window)
 					if (bit & *bytes) {
 						relative_bit = ((bytes - pip_page->pip_bits) << 3) + i;
 						pipMin = MIN(pipMin, relative_bit);
-						
+
 						const SLONG pageNum = relative_bit + sequence * pageMgr.pagesPerPIP;
 						window->win_page = pageNum;
 						new_page = CCH_fake(tdbb, window, 0);	/* don't wait on latch */
@@ -805,13 +805,13 @@ PAG PAG_allocate(WIN * window)
 									fb_assert(relative_bit == pip_page->pip_header.reserved);
 
 									USHORT init_pages = 1;
-									if (!(dbb->dbb_flags & DBB_no_reserve)) 
+									if (!(dbb->dbb_flags & DBB_no_reserve))
 									{
 										const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
 										init_pages = sequence ? 64 : MIN(pip_page->pip_header.reserved / 16, 64);
 
 										// don't touch pages belongs to the next PIP
-										init_pages = 
+										init_pages =
 											MIN(init_pages, pageMgr.pagesPerPIP - pip_page->pip_header.reserved);
 
 										if (init_pages < minExtendPages)
@@ -821,7 +821,7 @@ PAG PAG_allocate(WIN * window)
 									}
 
 									ISC_STATUS_ARRAY status;
-									const ULONG start = 
+									const ULONG start =
 										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
 
 									init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
@@ -829,37 +829,37 @@ PAG PAG_allocate(WIN * window)
 									if (init_pages) {
 										pip_page->pip_header.reserved += init_pages;
 									}
-									else 
+									else
 									{
-										// PIO_init_data returns zero - perhaps it is not supported, no space 
-										// left on disk or IO error occured. Try to write one page and handle 
+										// PIO_init_data returns zero - perhaps it is not supported, no space
+										// left on disk or IO error occured. Try to write one page and handle
 										// IO errors if any
 										CCH_must_write(window);
 										try {
 											CCH_RELEASE(tdbb, window);
 											pip_page->pip_header.reserved = relative_bit + 1;
 										}
-										catch (Firebird::status_exception) 
+										catch (Firebird::status_exception)
 										{
 											// forget about this page as if we never tried to fake it
 											CCH_forget_page(tdbb, window);
-	
-											// normally all page buffers now released by CCH_unwind 
-											// only exception is when TDBB_no_cache_unwind flag is set 
+
+											// normally all page buffers now released by CCH_unwind
+											// only exception is when TDBB_no_cache_unwind flag is set
 											if (tdbb->tdbb_flags & TDBB_no_cache_unwind)
 												CCH_RELEASE(tdbb, &pip_window);
-	
+
 											throw;
 										}
-	
+
 										new_page = CCH_fake(tdbb, window, 1);
 									}
 									fb_assert(new_page);
 								}
 
-								if (!(dbb->dbb_flags & DBB_no_reserve)) 
+								if (!(dbb->dbb_flags & DBB_no_reserve))
 								{
-									const ULONG initialized = 
+									const ULONG initialized =
 										sequence * pageMgr.pagesPerPIP + pip_page->pip_header.reserved;
 
 									// At this point we ensure database has at least "initialized" pages
@@ -1004,7 +1004,7 @@ int PAG_delete_clump_entry(SLONG page_num, USHORT type)
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
 	if (!find_type
-		(page_num, &window, &page, LCK_write, type, &entry_p, &clump_end)) 
+		(page_num, &window, &page, LCK_write, type, &entry_p, &clump_end))
 	{
 		CCH_RELEASE(tdbb, &window);
 		return FALSE;
@@ -1242,7 +1242,7 @@ void PAG_header(thread_db* tdbb, bool info)
 	RelationPages* relPages = relation->getBasePages();
 	if (!relPages->rel_pages) {
 		// 21-Dec-2003 Nickolay Samofatov
-		// No need to re-set first page for RDB$PAGES relation since 
+		// No need to re-set first page for RDB$PAGES relation since
 		// current code cannot change its location after database creation.
 		// Currently, this change only affects isc_database_info call,
 		// the only call which may call PAG_header multiple times.
@@ -1276,7 +1276,7 @@ void PAG_header(thread_db* tdbb, bool info)
 
 /* If hdr_read_only is not set... */
 	if (!(header->hdr_flags & hdr_read_only)
-		&& (dbb->dbb_flags & DBB_being_opened_read_only)) 
+		&& (dbb->dbb_flags & DBB_being_opened_read_only))
 	{
 		/* Looks like the Header page says, it is NOT ReadOnly!! But the database
 		 * file system permission gives only ReadOnly access. Punt out with
@@ -1291,14 +1291,14 @@ void PAG_header(thread_db* tdbb, bool info)
 
 	if ((header->hdr_flags & hdr_force_write) || !useFSCache)
 	{
-		dbb->dbb_flags |= 
-			(header->hdr_flags & hdr_force_write ? DBB_force_write : 0) | 
+		dbb->dbb_flags |=
+			(header->hdr_flags & hdr_force_write ? DBB_force_write : 0) |
 			(useFSCache ? 0 : DBB_no_fs_cache);
 
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		for (jrd_file* file = pageSpace->file; file; file = file->fil_next) {
-			PIO_force_write(file, 
-				(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only), 
+			PIO_force_write(file,
+				(dbb->dbb_flags & DBB_force_write) && !(header->hdr_flags & hdr_read_only),
 				dbb->dbb_flags & DBB_no_fs_cache);
 		}
 	}
@@ -1391,7 +1391,7 @@ void PAG_header_init(thread_db* tdbb)
 	// is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 
 	if (header->hdr_implementation != CLASS &&
-		ods_version < ODS_VERSION11 ?  
+		ods_version < ODS_VERSION11 ?
 		  (header->hdr_implementation < 0 || header->hdr_implementation > CLASS_MAX10 ||
 		   archMatrix10[header->hdr_implementation] == archUnknown ||
 		   archMatrix10[header->hdr_implementation] != archMatrix10[CLASS])
@@ -1405,7 +1405,7 @@ void PAG_header_init(thread_db* tdbb)
 	}
 
 	if (header->hdr_page_size < MIN_PAGE_SIZE ||
-		header->hdr_page_size > MAX_PAGE_SIZE) 
+		header->hdr_page_size > MAX_PAGE_SIZE)
 	{
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
 	}
@@ -1417,7 +1417,7 @@ void PAG_header_init(thread_db* tdbb)
 	dbb->dbb_page_size = header->hdr_page_size;
 	dbb->dbb_page_buffers = header->hdr_page_buffers;
 }
-	
+
 
 void PAG_init(thread_db* tdbb)
 {
@@ -1474,11 +1474,11 @@ void PAG_init(thread_db* tdbb)
 	// Artifically reduce density of records to test high bits of record number
 	// dbb->dbb_max_records = 32000;
 
-/* Optimize record numbers for new 64-bit sparse bitmap implementation 
+/* Optimize record numbers for new 64-bit sparse bitmap implementation
    We need to measure if it is beneficial from performance point of view.
    Price is slightly reduced density of record numbers, but for
    ODS11 it doesn't matter because record numbers are 40-bit.
-   Benefit is ~1.5 times smaller sparse bitmaps on average and 
+   Benefit is ~1.5 times smaller sparse bitmaps on average and
    faster bitmap iteration. */
 //	if (dbb->dbb_ods_version >= ODS_VERSION11)
 //		dbb->dbb_max_records = FB_ALIGN(dbb->dbb_max_records, 64);
@@ -1636,8 +1636,8 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 		file = file->fil_next;
 		if (dbb->dbb_flags & (DBB_force_write | DBB_no_fs_cache))
 		{
-			PIO_force_write(file, 
-				dbb->dbb_flags & DBB_force_write, 
+			PIO_force_write(file,
+				dbb->dbb_flags & DBB_force_write,
 				dbb->dbb_flags & DBB_no_fs_cache);
 		}
 		file->fil_min_page = last_page + 1;
@@ -1737,7 +1737,7 @@ void PAG_release_page(const PageNumber& number, const PageNumber& prior_page)
 	WIN pip_window(number.getPageSpaceID(), (sequence == 0) ?
 		pageSpace->ppFirst : sequence * pageMgr.pagesPerPIP - 1);
 
-	page_inv_page* pages = 
+	page_inv_page* pages =
 		(page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 	CCH_precedence(tdbb, &pip_window, prior_page);
 	CCH_MARK(tdbb, &pip_window);
@@ -2267,7 +2267,7 @@ ULONG PageSpace::actAlloc(const USHORT pageSize)
  *
  **************************************/
 
-	// Traverse the linked list of files and add up the 
+	// Traverse the linked list of files and add up the
 	// number of pages in each file
 	ULONG tot_pages = 0;
 	for (const jrd_file* f = file; f != NULL; f = f->fil_next) {
@@ -2296,7 +2296,7 @@ ULONG PageSpace::maxAlloc(const USHORT pageSize)
 		f = f->fil_next;
 	}
 
-	const ULONG nPages = f->fil_min_page - f->fil_fudge + 
+	const ULONG nPages = f->fil_min_page - f->fil_fudge +
 		PIO_get_number_of_pages(f, pageSize);
 
 	if (maxPageNumber < nPages)
@@ -2316,11 +2316,11 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 /**************************************
  *
  * Functional description
- *	Extend database file(s) up to at least pageNum pages. Number of pages to 
+ *	Extend database file(s) up to at least pageNum pages. Number of pages to
  *	extend can't be less than hardcoded value MIN_EXTEND_BYTES and more than
  *	configured value "DatabaseGrowthIncrement" (both values in bytes).
- *	
- *	If "DatabaseGrowthIncrement" is less than MIN_EXTEND_BYTES then don't 
+ *
+ *	If "DatabaseGrowthIncrement" is less than MIN_EXTEND_BYTES then don't
  *	extend file(s)
  *
  **************************************/
@@ -2343,28 +2343,28 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 
 		while (true)
 		{
-			try 
+			try
 			{
 				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
 				break;
 			}
-			catch (Firebird::status_exception) 
+			catch (Firebird::status_exception)
 			{
-				if (extPages > reqPages) 
+				if (extPages > reqPages)
 				{
 					extPages = MAX(reqPages, extPages / 2);
 					fb_utils::init_status(tdbb->tdbb_status_vector);
 				}
-				else 
+				else
 				{
-					gds__log("Error extending file \"%s\" by %lu page(s).\nCurrently allocated %lu pages, requested page number %lu", 
+					gds__log("Error extending file \"%s\" by %lu page(s).\nCurrently allocated %lu pages, requested page number %lu",
 						file->fil_string, extPages, maxPageNumber, pageNum);
 					return false;
 				}
 			}
 		}
 
-		maxPageNumber = 0; 
+		maxPageNumber = 0;
 	}
 	return true;
 }
@@ -2453,7 +2453,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 
 		att->att_temp_pg_lock = lock;
 	}
-	
+
 	result = (USHORT) att->att_temp_pg_lock->lck_key.lck_long;
 #endif
 
@@ -2498,7 +2498,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 	{
 		cb->newPage(pageNo, &pip->pip_header);
 		fb_assert(pip->pip_header.pag_type == pag_pages);
-		if (pip->pip_header.reserved == pagesPerPip) 
+		if (pip->pip_header.reserved == pagesPerPip)
 		{
 			// this is not last page, continue search
 			continue;

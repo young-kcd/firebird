@@ -138,7 +138,7 @@ static const TOK tokens[] =
 	{CURRENT_USER, "CURRENT_USER", 2, false},
 	{CURSOR, "CURSOR", 1, false},
 	{DATABASE, "DATABASE", 1, false},
-	{DATA, "DATA", 2, true}, 
+	{DATA, "DATA", 2, true},
 	{DATE, "DATE", 1, false},
 	{DATEADD, "DATEADD", 2, false},
 	{DATEDIFF, "DATEDIFF", 2, false},

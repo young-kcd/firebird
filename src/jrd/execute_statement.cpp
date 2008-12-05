@@ -70,7 +70,7 @@ void ExecuteStatement::execute(Jrd::thread_db* tdbb, jrd_req* request, DSC* desc
 		AutoPtr<PreparedStatement> stmt(attachment->prepareStatement(
 			tdbb, *tdbb->getDefaultPool(), transaction, sqlStatementText));
 
-		// Other requests appear to be incorrect in this context 
+		// Other requests appear to be incorrect in this context
 		const long requests =
 			(1 << REQ_INSERT) | (1 << REQ_DELETE) | (1 << REQ_UPDATE) |
 			(1 << REQ_DDL) | (1 << REQ_SET_GENERATOR) | (1 << REQ_EXEC_PROCEDURE) |

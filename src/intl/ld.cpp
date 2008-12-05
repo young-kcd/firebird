@@ -528,7 +528,7 @@ INTL_BOOL FB_DLL_EXPORT LD_lookup_texttype(texttype* tt, const ASCII* texttype_n
 					{
 						if (LD_lookup_charset(&cs, charset_name, configInfo))
 							break;
-						
+
 						return false;
 					}
 				}
@@ -563,7 +563,7 @@ ULONG FB_DLL_EXPORT LD_setup_attributes(
 {
 	Firebird::string specificAttributes((const char*) src, srcLen);
 	Firebird::string newSpecificAttributes = specificAttributes;
-	
+
 	if (!LCICU_setup_attributes(textTypeName, charSetName, configInfo,
 			specificAttributes, newSpecificAttributes))
 	{

@@ -62,7 +62,7 @@ StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : 
 
 StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
-{ 
+{
 	operator<<(*(static_cast<Base*>(this)));
 }
 
@@ -71,7 +71,7 @@ StatusVector::StatusVector(const ISC_STATUS* s) :
 {
 }
 
-StatusVector::StatusVector() : 
+StatusVector::StatusVector() :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(0, 0))
 {
 }
@@ -95,21 +95,21 @@ void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 				newVector.appendWarnings(v.implementation);
 		}
 	}
-	
+
 	*this = newVector;
 }
 
 bool StatusVector::ImplStatusVector::appendErrors(const ImplBase* const v) throw()
 {
 	return append(v->value(), v->firstWarning() ? v->firstWarning() : v->length());
-}	
+}
 
 bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) throw()
 {
 	if (! v->firstWarning())
 		return true;
 	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
-}	
+}
 
 bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
@@ -193,43 +193,43 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 	return dest[1];
 }
 
-Gds::Gds(ISC_STATUS s) throw() : 
+Gds::Gds(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_gds, s) { }
 
-Num::Num(ISC_STATUS s) throw() : 
+Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
 
-Interpreted::Interpreted(const char* text) throw() : 
+Interpreted::Interpreted(const char* text) throw() :
 	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) text) { }
 
-Interpreted::Interpreted(const AbstractString& text) throw() : 
+Interpreted::Interpreted(const AbstractString& text) throw() :
 	StatusVector(isc_arg_interpreted, (ISC_STATUS)(IPTR) text.c_str()) { }
 
-Unix::Unix(ISC_STATUS s) throw() : 
+Unix::Unix(ISC_STATUS s) throw() :
 	Base(isc_arg_unix, s) { }
 
-Windows::Windows(ISC_STATUS s) throw() : 
+Windows::Windows(ISC_STATUS s) throw() :
 	Base(isc_arg_win32, s) { }
 
-Warning::Warning(ISC_STATUS s) throw() : 
+Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
-Str::Str(const char* text) throw() : 
+Str::Str(const char* text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
-Str::Str(const AbstractString& text) throw() : 
+Str::Str(const AbstractString& text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
 
-Str::Str(const MetaName& text) throw() : 
+Str::Str(const MetaName& text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text.c_str()) { }
 
-SqlState::SqlState(const char* text) throw() : 
+SqlState::SqlState(const char* text) throw() :
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text) { }
 
-SqlState::SqlState(const AbstractString& text) throw() : 
+SqlState::SqlState(const AbstractString& text) throw() :
 	Base(isc_arg_sql_state, (ISC_STATUS)(IPTR) text.c_str()) { }
 
-OsError::OsError() throw() : 
+OsError::OsError() throw() :
 #ifdef WIN_NT
 	Base(isc_arg_win32, GetLastError()) { }
 #else

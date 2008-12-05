@@ -29,7 +29,7 @@
 
 /*
 *	KSC-5601 -> unicode
-*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting 
+*	% KSC-5601 is same to EUC cs1(codeset 1). Then converting
 *	KSC-5601 to EUC is not needed.
 */
 
@@ -156,7 +156,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 		const int tmp1 = ksc_ch / 256;
 		const int tmp2 = ksc_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
-				
+
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
 
 			*ksc_str++ = tmp2;

@@ -123,12 +123,12 @@ void THD_yield(void)
  *
  **************************************/
 #ifdef USE_POSIX_THREADS
-/* use sched_yield() instead of pthread_yield(). Because pthread_yield() 
-   is not part of the (final) POSIX 1003.1c standard. Several drafts of 
-   the standard contained pthread_yield(), but then the POSIX guys 
-   discovered it was redundant with sched_yield() and dropped it. 
-   So, just use sched_yield() instead. POSIX systems on which  
-   sched_yield() is available define _POSIX_PRIORITY_SCHEDULING 
+/* use sched_yield() instead of pthread_yield(). Because pthread_yield()
+   is not part of the (final) POSIX 1003.1c standard. Several drafts of
+   the standard contained pthread_yield(), but then the POSIX guys
+   discovered it was redundant with sched_yield() and dropped it.
+   So, just use sched_yield() instead. POSIX systems on which
+   sched_yield() is available define _POSIX_PRIORITY_SCHEDULING
    in <unistd.h>.  Darwin defined _POSIX_THREAD_PRIORITY_SCHEDULING
    instead of _POSIX_PRIORITY_SCHEDULING.
 */

@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 
-void ProcessFile(FILE *in, bool stripFirstComment) 
+void ProcessFile(FILE *in, bool stripFirstComment)
 {
 	char s[256];
 	bool striping = false;

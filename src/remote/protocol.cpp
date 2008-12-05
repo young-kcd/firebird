@@ -315,7 +315,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 				{
 					tail = &dummy;
 				}
-		
+
 				MAP(xdr_short,
 					reinterpret_cast<SSHORT&>(tail->p_cnct_version));
 				MAP(xdr_enum,
@@ -331,7 +331,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			{
 				connect->p_cnct_count = CNCT_VERSIONS;
 			}
-		
+
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 			return P_TRUE(xdrs, p);
 		}
@@ -555,13 +555,13 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			MAP(xdr_short,
 				reinterpret_cast<SSHORT&>(event->p_event_database));
 			MAP(xdr_cstring_const, event->p_event_items);
-			
+
 			// Nickolay Samofatov: these values are parsed, but are ignored by the client.
 			// Values are useful only for debugging, anyway since upper words of pointers
 			// are trimmed for 64-bit clients
 			MAP(xdr_long, reinterpret_cast<SLONG&>(event->p_event_ast));
 			MAP(xdr_long, event->p_event_arg);
-			
+
 			MAP(xdr_long, event->p_event_rid);
 			DEBUG_PRINTSIZE(xdrs, p->p_operation);
 			return P_TRUE(xdrs, p);
@@ -597,14 +597,14 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		slice_response = &p->p_slr;
 		if (slice_response->p_slr_sdl) {
 			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice_response->p_slr_sdl_length,
-						   slice_response->p_slr_sdl)) 
+						   slice_response->p_slr_sdl))
 			{
 				return P_FALSE(xdrs, p);
 			}
 		}
 		else
 			if (!xdr_slice(xdrs, &slice->p_slc_slice, slice->p_slc_sdl.cstr_length,
-						   slice->p_slc_sdl.cstr_address)) 
+						   slice->p_slc_sdl.cstr_address))
 			{
 				return P_FALSE(xdrs, p);
 			}
@@ -616,7 +616,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 		MAP(xdr_long,
 			reinterpret_cast<SLONG&>(slice_response->p_slr_length));
 		if (!xdr_slice (xdrs, &slice_response->p_slr_slice, slice_response->p_slr_sdl_length,
-			 slice_response->p_slr_sdl)) 
+			 slice_response->p_slr_sdl))
 		{
 			return P_FALSE(xdrs, p);
 		}
@@ -785,7 +785,7 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 
 			return P_TRUE(xdrs, p);
 		}
-			
+
 	case op_authenticate_user:
 		{
 			p_authenticate *stuff = &p->p_authenticate_user;
@@ -901,7 +901,7 @@ static bool alloc_cstring(XDR* xdrs,
 		return true;
 
 	if (cstring->cstr_length > cstring->cstr_allocated &&
-		cstring->cstr_allocated) 
+		cstring->cstr_allocated)
 	{
 		free_cstring(xdrs, cstring);
 	}
@@ -1001,7 +1001,7 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 			!(*xdrs->x_ops->x_putbytes) (xdrs,
 										 reinterpret_cast<
 										 const SCHAR*>(cstring->cstr_address),
-										 cstring->cstr_length)) 
+										 cstring->cstr_length))
 		{
 			return FALSE;
 		}
@@ -1015,7 +1015,7 @@ static bool_t xdr_cstring( XDR* xdrs, CSTRING* cstring)
 			return FALSE;
 		if (!(*xdrs->x_ops->x_getbytes)
 			(xdrs, reinterpret_cast<SCHAR*>(cstring->cstr_address),
-			 cstring->cstr_length)) 
+			 cstring->cstr_length))
 		{
 			return FALSE;
 		}
@@ -1657,7 +1657,7 @@ static bool_t xdr_status_vector(
 
 	SLONG vec;
 	XDR temp_xdrs;
-	
+
 	while (true) {
 		if (xdrs->x_op == XDR_ENCODE)
 			vec = (SLONG) * vector++;
@@ -1665,7 +1665,7 @@ static bool_t xdr_status_vector(
 			return FALSE;
 		if (xdrs->x_op == XDR_DECODE)
 			*vector++ = (ISC_STATUS) vec;
-			
+
 		switch ((USHORT) vec)
 		{
 		case isc_arg_end:
@@ -1750,7 +1750,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	procedure->rpr_out_msg = NULL;
 	delete procedure->rpr_out_format;
 	procedure->rpr_out_format = NULL;
-	
+
 	REM_MSG message = PARSE_messages(blr->cstr_address, blr->cstr_length);
 	if (message != (REM_MSG) -1) {
 		while (message) {

@@ -1,28 +1,28 @@
 /*
  * tab=4
  *____________________________________________________________
- *  
+ *
  *		PROGRAM:	C preprocessor
  *		MODULE:		gpre_meta_boot.cpp
  *		DESCRIPTION:	Meta data interface to system
- *  
+ *
  *  The contents of this file are subject to the Interbase Public
  *  License Version 1.0 (the "License"); you may not use this file
  *  except in compliance with the License. You may obtain a copy
  *  of the License at http://www.Inprise.com/IPL.html
- *  
+ *
  *  Software distributed under the License is distributed on an
  *  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
  *  or implied. See the License for the specific language governing
  *  rights and limitations under the License.
- *  
+ *
  *  The Original Code was created by Inprise Corporation
  *  and its predecessors. Portions created by Inprise Corporation are
  *  Copyright (C) Inprise Corporation.
- *  
+ *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
- *  
+ *
  *
  *____________________________________________________________
  *
@@ -63,10 +63,10 @@ static int upcase(const TEXT*, TEXT* const);
 #endif
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a field by name in a context.
  *		If found, return field block.  If not, return NULL.
- */  
+ */
 
 gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 {
@@ -102,16 +102,16 @@ gpre_fld* MET_context_field( gpre_ctx* context, const char* string)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Initialize meta data access to database.  If the
  *		database can't be opened, return FALSE.
- */  
+ */
 
 bool MET_database(DBB db,
 				  bool print_version)
 {
-	/* 
-	   ** Each info item requested will return 
+	/*
+	   ** Each info item requested will return
 	   **
 	   **     1 byte for the info item tag
 	   **     2 bytes for the length of the information that follows
@@ -127,10 +127,10 @@ bool MET_database(DBB db,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a domain by name.
  *		Initialize the size of the field.
- */  
+ */
 
 bool MET_domain_lookup(gpre_req* request,
 					   gpre_fld* field,
@@ -172,9 +172,9 @@ bool MET_domain_lookup(gpre_req* request,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Gets the default value for a domain of an existing table
- */  
+ */
 
 bool MET_get_domain_default(DBB db,
 							const TEXT* domain_name,
@@ -187,16 +187,16 @@ bool MET_get_domain_default(DBB db,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Gets the default value for a column of an existing table.
  *		Will check the default for the column of the table, if that is
  *		not present, will check for the default of the relevant domain
- *  
+ *
  *		The default blr is returned in buffer. The blr is of the form
  *		blr_version4 blr_literal ..... blr_eoc
- *  
+ *
  *		Reads the system tables RDB$FIELDS and RDB$RELATION_FIELDS.
- */  
+ */
 
 bool MET_get_column_default(const gpre_rel* relation,
 							const TEXT* column_name,
@@ -209,11 +209,11 @@ bool MET_get_column_default(const gpre_rel* relation,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup the fields for the primary key
  *		index on a relation, returning a list
  *		of the fields.
- */  
+ */
 
 gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 {
@@ -234,10 +234,10 @@ gpre_lls* MET_get_primary_key(DBB db, const TEXT* relation_name)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a field by name in a relation.
  *		If found, return field block.  If not, return NULL.
- */  
+ */
 
 gpre_fld* MET_field(gpre_rel* relation, const char* string)
 {
@@ -269,9 +269,9 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 
 
 /*____________________________________________________________
- *  
+ *
  *     Return a list of the fields in a relation
- */  
+ */
 
 GPRE_NOD MET_fields(gpre_ctx* context)
 {
@@ -318,9 +318,9 @@ GPRE_NOD MET_fields(gpre_ctx* context)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Shutdown all attached databases.
- */  
+ */
 
 void MET_fini( DBB end)
 {
@@ -329,10 +329,10 @@ void MET_fini( DBB end)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a generator by name.
  *		If found, return string. If not, return NULL.
- */  
+ */
 
 const SCHAR* MET_generator(const TEXT* string, DBB db)
 {
@@ -342,7 +342,7 @@ const SCHAR* MET_generator(const TEXT* string, DBB db)
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
 		if ((symbol->sym_type == SYM_generator) &&
-			(db == (DBB) (symbol->sym_object))) 
+			(db == (DBB) (symbol->sym_object)))
 		{
 			return symbol->sym_string;
 		}
@@ -352,9 +352,9 @@ const SCHAR* MET_generator(const TEXT* string, DBB db)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Compute internal datatype and length based on system relation field values.
- */  
+ */
 
 USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 {
@@ -441,12 +441,12 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a procedure (represented by a token) in a database.
  *		Return a procedure block (if name is found) or NULL.
- *  
+ *
  *		This function has been cloned into MET_get_udf
- */  
+ */
 
 gpre_prc* MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 {
@@ -462,7 +462,7 @@ gpre_prc* MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 			procedure->prc_database == db &&
 			(!owner[0] ||
 			 (procedure->prc_owner
-			  && !strcmp(owner, procedure->prc_owner->sym_string)))) 
+			  && !strcmp(owner, procedure->prc_owner->sym_string))))
 		{
 			break;
 		}
@@ -479,16 +479,16 @@ gpre_prc* MET_get_procedure(DBB db, const TEXT* string, const TEXT* owner_name)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a relation (represented by a token) in a database.
  *		Return a relation block (if name is found) or NULL.
- */  
+ */
 
 gpre_rel* MET_get_relation(DBB db, const TEXT* string, const TEXT* owner_name)
 {
 	gpre_rel* relation;
 	SCHAR name[NAME_SIZE], owner[NAME_SIZE];
-	
+
 	strcpy(name, string);
 	strcpy(owner, owner_name);
 
@@ -509,8 +509,8 @@ gpre_rel* MET_get_relation(DBB db, const TEXT* string, const TEXT* owner_name)
 
 
 /*____________________________________________________________
- *  
- */  
+ *
+ */
 
 INTLSYM MET_get_text_subtype(SSHORT ttype)
 {
@@ -523,12 +523,12 @@ INTLSYM MET_get_text_subtype(SSHORT ttype)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a udf (represented by a token) in a database.
  *		Return a udf block (if name is found) or NULL.
- *  
+ *
  *		This function was cloned from MET_get_procedure
- */  
+ */
 
 udf* MET_get_udf(DBB db, const TEXT* string)
 {
@@ -552,11 +552,11 @@ udf* MET_get_udf(DBB db, const TEXT* string)
 
 
 /*____________________________________________________________
- *  
- *		Return relation if the passed view_name represents a 
- *		view with the passed relation as a base table 
+ *
+ *		Return relation if the passed view_name represents a
+ *		view with the passed relation as a base table
  *		(the relation could be an alias).
- */  
+ */
 
 gpre_rel* MET_get_view_relation(gpre_req* request,
 						  const char* view_name,
@@ -568,10 +568,10 @@ gpre_rel* MET_get_view_relation(gpre_req* request,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup an index for a database.
  *		Return an index block (if name is found) or NULL.
- */  
+ */
 
 IND MET_index(DBB db, const TEXT* string)
 {
@@ -594,11 +594,11 @@ IND MET_index(DBB db, const TEXT* string)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Load all of the relation names
  *       and user defined function names
  *       into the symbol (hash) table.
- */  
+ */
 
 void MET_load_hash_table( DBB db)
 {
@@ -611,9 +611,9 @@ void MET_load_hash_table( DBB db)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Make a field symbol.
- */  
+ */
 
 gpre_fld* MET_make_field(const SCHAR* name,
 						SSHORT dtype,
@@ -634,9 +634,9 @@ gpre_fld* MET_make_field(const SCHAR* name,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Make an index symbol.
- */  
+ */
 
 IND MET_make_index(const SCHAR* name)
 {
@@ -648,9 +648,9 @@ IND MET_make_index(const SCHAR* name)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Make an relation symbol.
- */  
+ */
 
 gpre_rel* MET_make_relation(const SCHAR* name)
 {
@@ -663,9 +663,9 @@ gpre_rel* MET_make_relation(const SCHAR* name)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup a type name for a field.
- */  
+ */
 
 bool MET_type(gpre_fld* field,
 			  const TEXT* string,
@@ -688,12 +688,12 @@ bool MET_type(gpre_fld* field,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Lookup an index for a database.
- *  
+ *
  *  Return: true if the trigger exists
  *		   false otherwise
- */  
+ */
 
 bool MET_trigger_exists(DBB db,
 						const TEXT* trigger_name)
@@ -708,16 +708,16 @@ bool MET_trigger_exists(DBB db,
 
 #ifdef NOT_USED_OR_REPLACED
 /*____________________________________________________________
- *  
+ *
  *		Compute and return the size of the array.
- */  
+ */
 
 static SLONG array_size( gpre_fld* field)
 {
 	ary* array_block = field->fld_array_info;
 	SLONG count = field->fld_array->fld_length;
 	for (dim* dimension = array_block->ary_dimension; dimension;
-		 dimension = dimension->dim_next) 
+		 dimension = dimension->dim_next)
 	{
 		count =
 			count * (dimension->dim_upper - dimension->dim_lower + 1);
@@ -728,9 +728,9 @@ static SLONG array_size( gpre_fld* field)
 
 
 /*____________________________________________________________
- *  
+ *
  *		See if field is array.
- */  
+ */
 
 static void get_array( DBB db, const TEXT* field_name, gpre_fld* field)
 {
@@ -740,22 +740,22 @@ static void get_array( DBB db, const TEXT* field_name, gpre_fld* field)
 
 
 /*____________________________________________________________
- *  
+ *
  *		Character types can be specified as either:
  *		   b) A POSIX style locale name "<collation>.<characterset>"
  *		   or
  *		   c) A simple <characterset> name (using default collation)
  *		   d) A simple <collation> name    (use charset for collation)
- *  
+ *
  *		Given an ASCII7 string which could be any of the above, try to
  *		resolve the name in the order b, c, d.
  *		b) is only tried iff the name contains a period.
  *		(in which case c) and d) are not tried).
- *  
+ *
  *  Return:
  *		true if no errors (and *id is set).
  *		false if the name could not be resolved.
- */  
+ */
 
 static bool get_intl_char_subtype(SSHORT* id,
 								 const UCHAR* name,
@@ -772,31 +772,31 @@ static bool get_intl_char_subtype(SSHORT* id,
 
 
 /*____________________________________________________________
- *  
+ *
  *		Given ASCII7 name of charset & collation
  *		resolve the specification to a ttype (id) that implements
  *		it.
- *  
+ *
  *  Inputs:
- *		(charset) 
+ *		(charset)
  *			ASCII7z name of characterset.
  *			NULL (implying unspecified) means use the character set
  *		        for defined for (collation).
- *  
+ *
  *		(collation)
  *			ASCII7z name of collation.
  *			NULL means use the default collation for (charset).
- *  
+ *
  *  Outputs:
- *		(*id)	
+ *		(*id)
  *			Set to subtype specified by this name.
- *  
+ *
  *  Return:
  *		true if no errors (and *id is set).
  *		false if either name not found.
  *		  or if names found, but the collation isn't for the specified
  *		  character set.
- */  
+ */
 
 static bool resolve_charset_and_collation(
 										 SSHORT* id,
@@ -810,7 +810,7 @@ static bool resolve_charset_and_collation(
 
 
 /*____________________________________________________________
- *  
+ *
  *		Upcase a string into another string.  Return
  *		length of string.
  */

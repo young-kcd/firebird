@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include "../jrd/ibase.h"
 // Those includes until the END comment comes from everything.h and was moved
-// here when the file was removed. 
+// here when the file was removed.
 // Most probably only a few of the includes are needed
 #include "../jrd/common.h"
 #include "../jrd/isc.h"

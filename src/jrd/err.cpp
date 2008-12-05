@@ -55,7 +55,7 @@ using namespace Firebird;
 //#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
-static void internal_error(ISC_STATUS status, int number, 
+static void internal_error(ISC_STATUS status, int number,
 						   const TEXT* file = NULL, int line = 0);
 static void internal_post(const ISC_STATUS* status_vector);
 
@@ -163,13 +163,13 @@ void ERR_duplicate_error(IDX_E	code,
 		break;
 
 	case idx_e_foreign_target_doesnt_exist:
-		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) << 
+		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) <<
 											  Arg::Str(relation->rel_name) <<
 			 	 Arg::Gds(isc_foreign_key_target_doesnt_exist));
 		break;
 
 	case idx_e_foreign_references_present:
-		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) << 
+		ERR_post(Arg::Gds(isc_foreign_key) << Arg::Str(constraint) <<
 											  Arg::Str(relation->rel_name) <<
 			 	 Arg::Gds(isc_foreign_key_references_present));
 		break;
@@ -177,7 +177,7 @@ void ERR_duplicate_error(IDX_E	code,
 	default:
 		if (haveConstraint)
 		{
-			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) << 
+			ERR_post(Arg::Gds(isc_unique_key_violation) << Arg::Str(constraint) <<
 														   Arg::Str(relation->rel_name));
 		}
 		else
@@ -237,7 +237,7 @@ void ERR_log(int facility, int number, const TEXT* message)
  **************************************
  *
  * Functional description
- *	Log a message to the firebird.log    
+ *	Log a message to the firebird.log
  *
  **************************************/
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
@@ -285,7 +285,7 @@ bool ERR_post_warning(const Arg::StatusVector& v)
 		fb_utils::init_status(status_vector);
 		indx = 2;
 	}
-	else 
+	else
 	{
 		/* find end of a status vector */
 		PARSE_STATUS(status_vector, indx, warning_indx);
@@ -294,7 +294,7 @@ bool ERR_post_warning(const Arg::StatusVector& v)
 	}
 
 	/* stuff the warning */
-	if (indx + v.length() + 1 < ISC_STATUS_LENGTH) 
+	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
 	{
 		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
         ERR_make_permanent(&status_vector[indx]);
@@ -573,7 +573,7 @@ void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
 }
 
 
-static void internal_error(ISC_STATUS status, int number, 
+static void internal_error(ISC_STATUS status, int number,
 						   const TEXT* file, int line)
 {
 /**************************************
@@ -593,7 +593,7 @@ static void internal_error(ISC_STATUS status, int number,
 		strcpy(errmsg, "Internal error code");
 
 	const size_t len = strlen(errmsg);
-	
+
 	if (file) {
 		// Remove path information
 		const TEXT* ptr = (TEXT*)file + strlen(file);

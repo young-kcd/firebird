@@ -601,7 +601,7 @@ static void gen_compile( qli_req* request)
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_compile_request(status_vector, &dbb->dbb_handle,
 							 &request->req_handle, length,
-							 (const char*) rlb->rlb_base)) 
+							 (const char*) rlb->rlb_base))
 	{
 		GEN_rlb_release (rlb);
 		ERRQ_database_error(dbb, status_vector);
@@ -658,12 +658,12 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 		STUFF(blr_short);
 		STUFF(desc->dsc_scale);
 		break;
-   
+
 	case dtype_int64:
 		STUFF(blr_int64);
 		STUFF(desc->dsc_scale);
 		break;
-	
+
 	case dtype_long:
 		STUFF(blr_long);
 		STUFF(desc->dsc_scale);
@@ -777,7 +777,7 @@ static void gen_expression(qli_nod* node, qli_req* request)
 			qli_map* map = (qli_map*) node->nod_arg[e_map_map];
 			const qli_ctx* context = (qli_ctx*) node->nod_arg[e_map_context];
 			if (context->ctx_request != request &&
-				map->map_node->nod_type == nod_field) 
+				map->map_node->nod_type == nod_field)
 			{
 				gen_field(map->map_node, request);
 				return;
@@ -1056,7 +1056,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 	gen_rse(node->nod_arg[e_for_rse], request);
 	STUFF(blr_begin);
 
-// If data is to be received (included EOF), build a send 
+// If data is to be received (included EOF), build a send
 
 	const qli_par* eof = 0;
 	dsc desc;

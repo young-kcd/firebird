@@ -25,7 +25,7 @@ public:
 	const PathUtils::dir_iterator& operator++();
 	const Firebird::PathName& operator*() { return file; }
 	operator bool() { return !done; }
-	
+
 private:
 	HANDLE dir;
 	WIN32_FIND_DATA fd;
@@ -42,7 +42,7 @@ void Win32DirItr::Win32DirInit(const Firebird::PathName& path)
 	if (dirPrefix.length() && dirPrefix[dirPrefix.length() - 1] != PathUtils::dir_sep)
 		dirPrefix2 = dirPrefix2 + PathUtils::dir_sep;
 	dirPrefix2 += "*.*";
-	
+
 	dir = FindFirstFile(dirPrefix2.c_str(), &fd);
 	if (dir == INVALID_HANDLE_VALUE) {
 		dir = 0;
@@ -68,7 +68,7 @@ const PathUtils::dir_iterator& Win32DirItr::operator++()
 		done = true;
 	else
 		PathUtils::concatPath(file, dirPrefix, fd.cFileName);
-	
+
 	return *this;
 }
 
@@ -92,7 +92,7 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 			return;
 		}
 	}
-	
+
 	path.erase();
 	path.append(orgPath, 0, pos);	// skip the directory separator
 	file.erase();
@@ -113,7 +113,7 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result = second;
 		return;
 	}
-	
+
 	if (first[first.length() - 1] != PathUtils::dir_sep &&
 		second[0] != PathUtils::dir_sep)
 	{
@@ -127,7 +127,7 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result.append(second, 1, second.length() - 1);
 		return;
 	}
-	
+
 	result = first + second;
 }
 
@@ -136,7 +136,7 @@ void PathUtils::ensureSeparator(Firebird::PathName& in_out)
 {
 	if (in_out.length() == 0)
 		in_out = PathUtils::dir_sep;
-	
+
 	if (in_out[in_out.length() - 1] != PathUtils::dir_sep)
 		in_out += PathUtils::dir_sep;
 }
@@ -146,8 +146,8 @@ bool PathUtils::isRelative(const Firebird::PathName& path)
 	if (path.length() > 0) {
 		char ds = path[0];
 		if (path.length() > 2) {
-			if (path[1] == ':' && 
-				(('A' <= path[0] && path[0] <= 'Z') || 
+			if (path[1] == ':' &&
+				(('A' <= path[0] && path[0] <= 'Z') ||
 				 ('a' <= path[0] && path[0] <= 'z')))
 			{
 				ds = path[2];

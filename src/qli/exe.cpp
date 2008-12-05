@@ -80,7 +80,7 @@ static void transaction_state(qli_nod*, DBB);
 
 const int COUNT_ITEMS	= 4;
 
-static const SCHAR count_info[] = 
+static const SCHAR count_info[] =
 {
 	isc_info_req_select_count,
 	isc_info_req_insert_count,
@@ -134,7 +134,7 @@ void EXEC_execute( qli_nod* node)
 		EXEC_poll_abort();
 
 	if (node) {
-		switch (node->nod_type) 
+		switch (node->nod_type)
 		{
 		case nod_abort:
 			execute_abort(node);
@@ -442,7 +442,7 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 
-	if (message) 
+	if (message)
 	{
 		map_data(message);
 		if (!isc_start_and_send(status_vector, &request->req_handle,
@@ -453,7 +453,7 @@ void EXEC_start_request( qli_req* request, qli_msg* message)
 			return;
 		}
 	}
-	else 
+	else
 	{
 		if (!isc_start_request(status_vector, &request->req_handle,
 								&request->req_database-> dbb_transaction, 0))
@@ -522,7 +522,7 @@ static DSC *assignment(	qli_nod*		from_node,
 
 /* If there is a value present, do any assignment; otherwise null fill */
 
-		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing) 
+		if (*missing_flag = to_desc->dsc_missing = from_desc->dsc_missing)
 		{
 			if (from_desc->dsc_length)
 				memset(from_desc->dsc_address, 0, from_desc->dsc_length);
@@ -690,7 +690,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	ISC_STATUS_ARRAY status_vector;
 	UserBlob to_blob(status_vector);
 	UserBlob from_blob(status_vector);
-	
+
 	if (!to_blob.create(to_dbb->dbb_handle, to_dbb->dbb_transaction,
 						 *(ISC_QUAD*) to_desc->dsc_address))
 	{

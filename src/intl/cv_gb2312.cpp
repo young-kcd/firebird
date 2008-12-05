@@ -113,7 +113,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 							 const UCHAR* p_unicode_str,
 							 ULONG gb_len,
 							 UCHAR* gb_str,
-							 USHORT* err_code, 
+							 USHORT* err_code,
 							 ULONG* err_position)
 {
 	fb_assert(obj != NULL);
@@ -152,9 +152,9 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		const int tmp1 = gb_ch / 256;
 		const int tmp2 = gb_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
-				
+
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
-				
+
 			*gb_str++ = tmp2;
 			gb_len--;
 			unicode_len -= sizeof(*unicode_str);
@@ -186,9 +186,9 @@ INTL_BOOL CVGB_check_gb2312(charset* cs, ULONG gb_len, const UCHAR *gb_str, ULON
 /**************************************
  * Functional description
  *      Make sure that the GB2312 string does not have any truncated 2 byte
- *      character at the end. 
- * If we have a truncated character then, 
- *          return false.  
+ *      character at the end.
+ * If we have a truncated character then,
+ *          return false.
  *          else return(true);
  **************************************/
 	const UCHAR* gb_str_start = gb_str;

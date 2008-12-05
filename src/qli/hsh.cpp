@@ -143,7 +143,7 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
  *
  **************************************/
 	scompare_t scompare = scompare_ins;
-	
+
 	if (length > 1 && string[0] == '"')
 	{
 		// This logic differs from DSQL. See how LEX_token works.
@@ -178,7 +178,7 @@ void HSH_remove( qli_symbol* symbol)
 
 	for (qli_symbol** next = &hash_table[h]; *next; next = &(*next)->sym_collision)
 	{
-		if (symbol == *next) 
+		if (symbol == *next)
 		{
 			qli_symbol* homonym = symbol->sym_homonym;
 			if (homonym) {

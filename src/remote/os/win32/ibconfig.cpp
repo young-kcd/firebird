@@ -86,7 +86,7 @@ static void FillSysdbaSPB(char*, const char*);
 // which is used in the help file.
 static DWORD aMenuHelpIDs1[][2] = {
 	{IDC_MODRES, ibs_modify},		// This has to be the first entry because
-	// we modify the value of ibs_modify to 
+	// we modify the value of ibs_modify to
 	// ibs_reset when the button text changes.
 
 	{IDC_MINSIZETEXT, ibs_min_process_work_set},
@@ -188,7 +188,7 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4) 
+				OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -258,11 +258,11 @@ LRESULT CALLBACK FirebirdPage(HWND hDlg, UINT unMsg, WPARAM wParam,
 				SetWindowLongPtr(hDlg, DWLP_MSGRESULT, FALSE);
 				break;
 			}
-		case PSN_SETACTIVE:	// When the page is about to recieve 
+		case PSN_SETACTIVE:	// When the page is about to recieve
 			{					// focus
-				// This modifies the bubble help table to bring up 
-				// the appropriate help topic based on whether the text 
-				// is "Modify..." or "Reset".  It assumes that the first 
+				// This modifies the bubble help table to bring up
+				// the appropriate help topic based on whether the text
+				// is "Modify..." or "Reset".  It assumes that the first
 				// entry is the first one.
 				aMenuHelpIDs1[0][1] = bModifyMode ? ibs_reset : ibs_modify;
 				break;
@@ -425,7 +425,7 @@ void RefreshIBControls(HWND hDlg, BOOL bEnable)
 	SendDlgItemMessage(hDlg, IDC_MODRES, WM_SETTEXT, 0,
 					   (LPARAM) szButtonName);
 
-// This modifies the bubble help table to bring up the appropriate help 
+// This modifies the bubble help table to bring up the appropriate help
 // topic based on whether the text is "Modify..." or "Reset".  It assumes
 // that the first entry is the first one.
 	aMenuHelpIDs1[0][1] = bEnable ? ibs_reset : ibs_modify;
@@ -605,7 +605,7 @@ BOOL CALLBACK PasswordDlgProc(HWND hDlg, UINT unMsg, WPARAM wParam,
 
 			OsVersionInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 			if (GetVersionEx((LPOSVERSIONINFO) & OsVersionInfo) &&
-				OsVersionInfo.dwMajorVersion < 4) 
+				OsVersionInfo.dwMajorVersion < 4)
 			{
 				SetBkMode((HDC) wParam, TRANSPARENT);
 				return (LRESULT) hIBGrayBrush;
@@ -750,7 +750,7 @@ void FillSysdbaSPB(char *szSpb, const char* szPasswd)
 void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
 {
 /****************************************************************
- *                                              
+ *
  *  H e l p C m d
  *
  ****************************************************************
@@ -761,7 +761,7 @@ void HelpCmd( HWND hWnd, HINSTANCE hInst, WPARAM wId)
  *              nId       - The help message Id.
  *
  *  Description:  Invoke the Windows Help facility with context of nId.
- *      
+ *
  *****************************************************************/
 	SCHAR szPathFileName[1024 + 256 + 1];
 

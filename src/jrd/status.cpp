@@ -40,7 +40,7 @@
 
 
 /** Check that we never overrun the status vector.  The status
- *  vector is 20 elements.  The maximum is 3 entries for a 
+ *  vector is 20 elements.  The maximum is 3 entries for a
  * type.  So check for 17 or less
  */
 

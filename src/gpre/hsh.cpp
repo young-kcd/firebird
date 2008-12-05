@@ -52,9 +52,9 @@ static struct word {
 
 
 //____________________________________________________________
-//  
+//
 //		Release space used by keywords.
-//  
+//
 
 void HSH_fini(void)
 {
@@ -68,10 +68,10 @@ void HSH_fini(void)
 
 
 //____________________________________________________________
-//  
+//
 //		Initialize the hash table.  This mostly involves
 //		inserting all known keywords.
-//  
+//
 
 void HSH_init(void)
 {
@@ -98,9 +98,9 @@ void HSH_init(void)
 
 
 //____________________________________________________________
-//  
+//
 //		Insert a symbol into the hash table.
-//  
+//
 
 void HSH_insert( gpre_sym* symbol)
 {
@@ -115,7 +115,7 @@ void HSH_insert( gpre_sym* symbol)
 		}
 
 		if (scompare(symbol->sym_string, (*next)->sym_string)) {
-			/* insert in most recently seen order; 
+			/* insert in most recently seen order;
 			   This is important for alias resolution in subqueries.
 			   BUT insert tokens AFTER keyword!
 			   In a lookup, keyword should be found first.
@@ -143,16 +143,16 @@ void HSH_insert( gpre_sym* symbol)
 
 
 //____________________________________________________________
-//  
+//
 //		Perform a string lookup against hash table.
-//  
+//
 
 gpre_sym* HSH_lookup(const SCHAR* string)
 {
 	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
-		if (scompare(string, symbol->sym_string)) 
+		if (scompare(string, symbol->sym_string))
 			return symbol;
 	}
 
@@ -160,18 +160,18 @@ gpre_sym* HSH_lookup(const SCHAR* string)
 }
 
 //____________________________________________________________
-//  
+//
 //		Perform a string lookup against hash table.
 //       Calls scompare2 which performs case insensitive
 //		compare.
-//  
+//
 
 gpre_sym* HSH_lookup2(const SCHAR* string)
 {
 	for (gpre_sym* symbol = hash_table[hash(string)]; symbol;
 		 symbol = symbol->sym_collision)
 	{
-		if (scompare2(string, symbol->sym_string)) 
+		if (scompare2(string, symbol->sym_string))
 			return symbol;
 	}
 
@@ -180,9 +180,9 @@ gpre_sym* HSH_lookup2(const SCHAR* string)
 
 
 //____________________________________________________________
-//  
+//
 //		Remove a symbol from the hash table.
-//  
+//
 
 void HSH_remove( gpre_sym* symbol)
 {
@@ -219,9 +219,9 @@ void HSH_remove( gpre_sym* symbol)
 
 
 //____________________________________________________________
-//  
+//
 //		Returns the hash function of a string.
-//  
+//
 
 static int hash(const SCHAR* string)
 {
@@ -237,9 +237,9 @@ static int hash(const SCHAR* string)
 
 
 //____________________________________________________________
-//  
-//		case sensitive Compare 
-//  
+//
+//		case sensitive Compare
+//
 
 static bool scompare(const SCHAR* string1,
 					 const SCHAR* string2)
@@ -248,9 +248,9 @@ static bool scompare(const SCHAR* string1,
 }
 
 //____________________________________________________________
-//  
+//
 //		Compare two strings
-//  
+//
 
 static bool scompare2(const SCHAR* string1,
 					  const SCHAR* string2)
@@ -262,7 +262,7 @@ static bool scompare2(const SCHAR* string1,
 		if (!(c2 = *string2++) || (UPPER(c1) != UPPER(c2)))
 			return false;
 	}
-	
+
 	if (*string2)
 		return false;
 

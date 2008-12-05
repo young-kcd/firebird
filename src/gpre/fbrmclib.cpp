@@ -1539,7 +1539,7 @@ EXPORT RM_ENTRY(rmc_ftoc)
 		*(float *)arg_vector[-1].a_address = arg;
 	else
 		*(double *)arg_vector[-1].a_address = arg;
-		
+
 	return (0);
 }
 
@@ -1552,7 +1552,7 @@ EXPORT RM_ENTRY(rmc_stoc)
 	const int dlen = arg_vector[-1].a_length;
 	const char* src = (char*) arg_vector[0].a_address;
 	const int slen = arg_vector[0].a_length;
-	
+
 	int i = slen - 1;
 	while (src[i] == ' ' && i >= 0)
 		--i;

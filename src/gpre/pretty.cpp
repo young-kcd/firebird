@@ -1,27 +1,27 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	BLR Pretty Printer
 //		MODULE:		pretty.cpp
 //		DESCRIPTION:	BLR Pretty Printer
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
-//  
+//
 //
 //____________________________________________________________
 //
@@ -48,10 +48,10 @@
 
 
 typedef struct ctl {
-	UCHAR *ctl_blr;				// Running blr string 
-	UCHAR *ctl_blr_start;		// Original start of blr string 
-	FPTR_PRINT_CALLBACK ctl_routine;	// Call back 
-	void *ctl_user_arg;		// User argument 
+	UCHAR *ctl_blr;				// Running blr string
+	UCHAR *ctl_blr_start;		// Original start of blr string
+	FPTR_PRINT_CALLBACK ctl_routine;	// Call back
+	void *ctl_user_arg;		// User argument
 	TEXT *ctl_ptr;
 	SSHORT ctl_language;
 	SSHORT ctl_level;
@@ -102,9 +102,9 @@ const char *map_strings[] = {
 };
 
 //____________________________________________________________
-//  
+//
 //		Pretty print create database parameter buffer thru callback routine.
-//  
+//
 
 int PRETTY_print_cdb( UCHAR* blr,
 					  FPTR_PRINT_CALLBACK routine,
@@ -134,7 +134,7 @@ int PRETTY_print_cdb( UCHAR* blr,
 	else
 		sprintf(temp, "gds__dpb_version%d", i);
 	blr_format(control, temp);
-	
+
 	SSHORT offset = 0;
 	print_line(control, offset);
 
@@ -167,11 +167,11 @@ int PRETTY_print_cdb( UCHAR* blr,
 int PRETTY_print_dyn(
 					 UCHAR* blr,
 //____________________________________________________________
-//  
+//
 //		Pretty print dynamic DDL thru callback routine.
-//  
+//
 
-					 FPTR_PRINT_CALLBACK routine, 
+					 FPTR_PRINT_CALLBACK routine,
 					 void* user_arg, SSHORT language)
 {
 	ctl ctl_buffer;
@@ -215,9 +215,9 @@ int PRETTY_print_dyn(
 int
 PRETTY_print_sdl(UCHAR* blr,
 //____________________________________________________________
-//  
+//
 //		Pretty print slice description language.
-//  
+//
 
 				 FPTR_PRINT_CALLBACK routine,
 				 void *user_arg, SSHORT language)
@@ -260,9 +260,9 @@ PRETTY_print_sdl(UCHAR* blr,
 
 
 //____________________________________________________________
-//  
+//
 //		Format an utterance.
-//  
+//
 
 static int blr_format(CTL control, const char *string, ...)
 {
@@ -273,15 +273,15 @@ static int blr_format(CTL control, const char *string, ...)
 	va_end(ptr);
 	while (*control->ctl_ptr)
 		control->ctl_ptr++;
-		
+
 	return 0;
 }
 
 
 //____________________________________________________________
-//  
+//
 //		Put out an error msg and punt.
-//  
+//
 
 static int error( CTL control, SSHORT offset, const TEXT * string, int arg)
 {
@@ -297,9 +297,9 @@ static int error( CTL control, SSHORT offset, const TEXT * string, int arg)
 
 
 //____________________________________________________________
-//  
+//
 //		Indent for pretty printing.
-//  
+//
 
 static int indent( CTL control, SSHORT level)
 {
@@ -312,10 +312,10 @@ static int indent( CTL control, SSHORT level)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a datatype sequence and return the length of the
 //		data described.
-//  
+//
 
 static int print_blr_dtype(CTL control,
 						   bool print_object)
@@ -326,7 +326,7 @@ static int print_blr_dtype(CTL control,
 	const USHORT dtype = BLR_BYTE;
 
 //  Special case blob (261) to keep down the size of the
-//  jump table 
+//  jump table
 
 	switch (dtype) {
 	case blr_short:
@@ -418,7 +418,7 @@ static int print_blr_dtype(CTL control,
 
 	if (!print_object)
 		return length;
-		
+
 //  TMN: FIX FIX Note that offset is not initialized to anything useful
 //  for e.g. print_word(control, (SSHORT)offset). I assume it's better to initialize it to zero
 //  than letting it be random.
@@ -470,9 +470,9 @@ static int print_blr_dtype(CTL control,
 
 
 //____________________________________________________________
-//  
+//
 //		Print a line of pretty-printed BLR.
-//  
+//
 
 static void print_blr_line(void* arg, SSHORT offset, const char* line)
 {
@@ -498,9 +498,9 @@ static void print_blr_line(void* arg, SSHORT offset, const char* line)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a byte as a numeric value and return same.
-//  
+//
 
 static int print_byte( CTL control, SSHORT offset)
 {
@@ -514,9 +514,9 @@ static int print_byte( CTL control, SSHORT offset)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a byte as a numeric value and return same.
-//  
+//
 
 static int print_char( CTL control, SSHORT offset)
 {
@@ -536,9 +536,9 @@ static int print_char( CTL control, SSHORT offset)
 
 
 //____________________________________________________________
-//  
+//
 //		Primary recursive routine to print dynamic DDL.
-//  
+//
 
 static int print_dyn_verb( CTL control, SSHORT level)
 {
@@ -560,7 +560,7 @@ static int print_dyn_verb( CTL control, SSHORT level)
 	++level;
 
 	int length;
-	
+
 	switch (dyn_operator) {
 	case isc_dyn_drop_difference:
 	case isc_dyn_begin_backup:
@@ -721,9 +721,9 @@ static int print_dyn_verb( CTL control, SSHORT level)
 
 
 //____________________________________________________________
-//  
+//
 //		Invoke callback routine to print (or do something with) a line.
-//  
+//
 
 static int print_line( CTL control, SSHORT offset)
 {
@@ -736,9 +736,9 @@ static int print_line( CTL control, SSHORT offset)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a VAX word as a numeric value an return same.
-//  
+//
 
 static SLONG print_long( CTL control, SSHORT offset)
 {
@@ -757,9 +757,9 @@ static SLONG print_long( CTL control, SSHORT offset)
 
 
 //____________________________________________________________
-//  
+//
 //		Primary recursive routine to print slice description language.
-//  
+//
 
 static int print_sdl_verb( CTL control, SSHORT level)
 {
@@ -865,9 +865,9 @@ static int print_sdl_verb( CTL control, SSHORT level)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a byte-counted string.
-//  
+//
 
 static int print_string( CTL control, SSHORT offset)
 {
@@ -881,9 +881,9 @@ static int print_string( CTL control, SSHORT offset)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a VAX word as a numeric value an return same.
-//  
+//
 
 static int print_word( CTL control, SSHORT offset)
 {

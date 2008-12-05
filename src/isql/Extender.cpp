@@ -93,17 +93,17 @@ void Extender::grow(size_t n)
 		alloc(n);
 		return;
 	}
-		
+
 	if (m_size < n)
 	{
 		const size_t old_pos = getUsed();
 		char* const old_buf = m_buf;
-		
+
 		m_buf = new char[m_size = n];
 		memcpy(m_buf, old_buf, old_pos); // Copy only the used bytes.
 		m_pos = m_buf + old_pos; // Reposition the current insertion point.
 		m_pos[0] = 0; // Same as alloc().
-		
+
 		delete[] old_buf;
 	}
 }

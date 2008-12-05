@@ -722,7 +722,7 @@ namespace {
 				flagEcho = GetConsoleMode(handle, &dwMode) && (dwMode & ENABLE_ECHO_INPUT);
 				if (flagEcho)
 					SetConsoleMode(handle, dwMode & ~ENABLE_ECHO_INPUT);
-#endif		
+#endif
 			}
 		}
 		~InputFile()
@@ -738,7 +738,7 @@ namespace {
 				DWORD dwMode;
 				if (GetConsoleMode(handle, &dwMode))
 					SetConsoleMode(handle, dwMode | ENABLE_ECHO_INPUT);
-#endif		
+#endif
 			}
 			if (f && f != stdin) {
 				fclose(f);

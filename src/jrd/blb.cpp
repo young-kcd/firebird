@@ -315,7 +315,7 @@ blb* BLB_create2(thread_db* tdbb,
 		if (to_charset == CS_dynamic)
 			to_charset = tdbb->getAttachment()->att_charset;
 
-		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) && 
+		if ((to_charset != CS_NONE) && (from_charset != CS_NONE) &&
 			(to_charset != CS_BINARY) && (from_charset != CS_BINARY) &&
 			(from_charset != to_charset))
 		{
@@ -389,7 +389,7 @@ void BLB_garbage_collect(
  *              purge           -- removing all but top version of a record
  *              update_in_place -- replace the top level record.
  *
- *	hvlad: note that same blob_id can be reused by the staying record version 
+ *	hvlad: note that same blob_id can be reused by the staying record version
  *		in the different field than it was in going record. This is happening
  *		with 3 blob fields and update_in_place
  *
@@ -399,16 +399,16 @@ void BLB_garbage_collect(
 	RecordBitmap bmGoing;
 	ULONG cntGoing = 0;
 
-	// Loop thru records on the way out looking for blobs to garbage collect 
-	for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1) 
+	// Loop thru records on the way out looking for blobs to garbage collect
+	for (RecordStack::iterator stack1(going); stack1.hasData(); ++stack1)
 	{
 		Record* rec = stack1.object();
 		if (!rec)
 			continue;
 
-		// Look for active blob records 
+		// Look for active blob records
 		const Format* format = rec->rec_format;
-		for (USHORT id = 0; id < format->fmt_count; id++) 
+		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;
 			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
@@ -423,13 +423,13 @@ void BLB_garbage_collect(
 						bmGoing.set(number.getValue());
 						cntGoing++;
 					}
-					else 
+					else
 					{
-						// hvlad: blob_id in descriptor is not from our relation. Yes, it is 
-						// garbage in user data but we can handle it without bugcheck - just 
-						// ignore it. To be reconsider latter based on real user reports. 
+						// hvlad: blob_id in descriptor is not from our relation. Yes, it is
+						// garbage in user data but we can handle it without bugcheck - just
+						// ignore it. To be reconsider latter based on real user reports.
 						// The same about staying blob few lines below
-						gds__log("going blob (%ld:%ld) is not owned by relation (id = %d), ignored", 
+						gds__log("going blob (%ld:%ld) is not owned by relation (id = %d), ignored",
 							blob->bid_quad.bid_quad_high, blob->bid_quad.bid_quad_low, relation->rel_id);
 					}
 				}
@@ -440,15 +440,15 @@ void BLB_garbage_collect(
 	if (!cntGoing)
 		return;
 
-	// Make sure the blob doesn't stay in any record remaining 
-	for (RecordStack::iterator stack2(staying); stack2.hasData(); ++stack2) 
+	// Make sure the blob doesn't stay in any record remaining
+	for (RecordStack::iterator stack2(staying); stack2.hasData(); ++stack2)
 	{
 		Record* rec = stack2.object();
 		if (!rec)
 			continue;
 
 		const Format* format = rec->rec_format;
-		for (USHORT id = 0; id < format->fmt_count; id++) 
+		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;
 			if (DTYPE_IS_BLOB(format->fmt_desc[id].dsc_dtype) &&
@@ -460,7 +460,7 @@ void BLB_garbage_collect(
 					if (blob->bid_internal.bid_relation_id == relation->rel_id)
 					{
 						const RecordNumber number = blob->get_permanent_number();
-						if (bmGoing.test(number.getValue())) 
+						if (bmGoing.test(number.getValue()))
 						{
 							bmGoing.clear(number.getValue());
 							if (!--cntGoing)
@@ -469,7 +469,7 @@ void BLB_garbage_collect(
 					}
 					else
 					{
-						gds__log("staying blob (%ld:%ld) is not owned by relation (id = %d), ignored", 
+						gds__log("staying blob (%ld:%ld) is not owned by relation (id = %d), ignored",
 							blob->bid_quad.bid_quad_high, blob->bid_quad.bid_quad_low, relation->rel_id);
 					}
 				}
@@ -1030,7 +1030,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
 			Database* dbb = tdbb->getDatabase();
-			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ? 
+			const USHORT pageSpace = dbb->dbb_flags & DBB_read_only ?
 				dbb->dbb_page_manager.getTempPageSpaceID(tdbb) : DB_PAGE_SPACE;
 
 			copy_blob(tdbb, source, destination, bpb.getCount(), bpb.begin(), pageSpace);
@@ -1086,7 +1086,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	if (needFilter)
 		BLB_gen_bpb_from_descs(from_desc, to_desc, bpb);
 
-	while (true) 
+	while (true)
 	{
 		materialized_blob = false;
 		blobIndex = NULL;
@@ -1175,8 +1175,8 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 	// This is the only place in the engine where blobs are materialized
 	// If new places appear code below should transform to common sub-routine
 	if (materialized_blob) {
-		// hvlad: we have possible thread switch in DPM_store_blob above and somebody 
-		// can modify transaction->tra_blobs therefore we must update our blobIndex 
+		// hvlad: we have possible thread switch in DPM_store_blob above and somebody
+		// can modify transaction->tra_blobs therefore we must update our blobIndex
 		if (!transaction->tra_blobs->locate(blob->blb_temp_id)) {
 			// If we didn't find materialized blob in transaction blob index it
 			// means memory structures are inconsistent and crash is appropriate
@@ -1190,7 +1190,7 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 		jrd_req* own_request;
 		if (blobIndex->bli_request) {
 			own_request = blobIndex->bli_request;
-		} 
+		}
 		else {
 			own_request = request;
 			while (own_request->req_caller)
@@ -2010,7 +2010,7 @@ static ISC_STATUS blob_filter(	USHORT	action,
 }
 
 
-static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination, 
+static blb* copy_blob(thread_db* tdbb, const bid* source, bid* destination,
 					  USHORT bpb_length, const UCHAR* bpb,
 					  USHORT destPageSpaceID)
 {
@@ -2165,7 +2165,7 @@ static void delete_blob_id(
 
 	/* Fetch blob */
 
-	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans); 
+	blb* blob = allocate_blob(tdbb, dbb->dbb_sys_trans);
 	blob->blb_relation = relation;
 	blob->blb_pg_space_id = relation->getPages(tdbb)->rel_pg_space_id;
 	prior_page =
@@ -2510,7 +2510,7 @@ static void move_from_string(thread_db* tdbb, const dsc* from_desc, dsc* to_desc
 			if (blob_request) {
 				if (blob_request->req_blobs.locate(blob_temp_id)) {
 					blob_request->req_blobs.fastRemove();
-				} 
+				}
 				else {
 					// We should never get here because when bli_request is assigned
 					// item should be added to req_blobs array
@@ -2624,7 +2624,7 @@ static void release_blob(blb* blob, const bool purge_flag)
 			}
 
 			transaction->tra_blobs->fastRemove();
-		} 
+		}
 		else
 		{
 			// We should never get here because allocate_blob stores each blob object

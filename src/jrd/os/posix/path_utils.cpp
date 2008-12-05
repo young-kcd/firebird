@@ -54,7 +54,7 @@ public:
 	const PosixDirItr& operator++();
 	const Firebird::PathName& operator*() { return file; }
 	operator bool() { return !done; }
-	
+
 private:
 	DIR *dir;
 	Firebird::PathName file;
@@ -110,7 +110,7 @@ void PathUtils::splitLastComponent(Firebird::PathName& path, Firebird::PathName&
 		file = orgPath;
 		return;
 	}
-	
+
 	path.erase();
 	path.append(orgPath, 0, pos);	// skip the directory separator
 	file.erase();
@@ -131,7 +131,7 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result = second;
 		return;
 	}
-	
+
 	if (first[first.length() - 1] != dir_sep &&
 		second[0] != dir_sep)
 	{
@@ -145,7 +145,7 @@ void PathUtils::concatPath(Firebird::PathName& result,
 		result.append(second, 1, second.length() - 1);
 		return;
 	}
-	
+
 	result = first + second;
 }
 

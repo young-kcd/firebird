@@ -53,7 +53,7 @@
 #define FREE_PATTERN 0xDEADBEEF
 #define ALLOC_PATTERN 0xFEEDABED
 #ifdef DEBUG_GDS_ALLOC
-inline void PATTERN_FILL(void* ptr, size_t size, unsigned int pattern) 
+inline void PATTERN_FILL(void* ptr, size_t size, unsigned int pattern)
 {
 	for (size_t i = 0; i < size / sizeof(unsigned int); i++)
 	{
@@ -90,13 +90,13 @@ inline static void mem_assert(bool value)
 // Returns redirect list for given memory block
 inline MemoryRedirectList* block_list_small(MemoryBlock* block)
 {
-    return (MemoryRedirectList*)((char*)block + MEM_ALIGN(sizeof(MemoryBlock)) + 
+    return (MemoryRedirectList*)((char*)block + MEM_ALIGN(sizeof(MemoryBlock)) +
 		block->mbk_small.mbk_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
 }
 
 inline MemoryRedirectList* block_list_large(MemoryBlock* block)
 {
-    return (MemoryRedirectList*)((char*)block + MEM_ALIGN(sizeof(MemoryBlock)) + 
+    return (MemoryRedirectList*)((char*)block + MEM_ALIGN(sizeof(MemoryBlock)) +
 		block->mbk_large_length - MEM_ALIGN(sizeof(MemoryRedirectList)));
 }
 
@@ -167,7 +167,7 @@ int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 
 #if defined(WIN_NT) || defined(HAVE_MMAP)
 // Extents cache is not used when DEBUG_GDS_ALLOC or USE_VALGRIND is enabled.
-// This slows down things a little due to frequent syscalls mapping/unmapping 
+// This slows down things a little due to frequent syscalls mapping/unmapping
 // memory but allows to detect more allocation errors
 Vector<void*, MAP_CACHE_SIZE> extents_cache;
 Mutex* cache_mutex;		// Will be initialized manually in MemoryPool::init
@@ -177,7 +177,7 @@ size_t map_page_size = 0;
 
 inline size_t get_map_page_size()
 {
-	if (! map_page_size) 
+	if (! map_page_size)
 	{
 		map_page_size = get_page_size();
 	}
@@ -258,7 +258,7 @@ MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
 	TLS_SET(contextPool, newPool);
 	return old;
 }
-	
+
 MemoryPool* MemoryPool::getContextPool()
 {
 	return TLS_GET(contextPool);
@@ -269,7 +269,7 @@ MemoryStats* MemoryPool::default_stats_group = NULL;
 MemoryPool* MemoryPool::processMemoryPool = NULL;
 
 // Initialize process memory pool (called from InstanceControl).
-// At this point also set contextMemoryPool for main thread 
+// At this point also set contextMemoryPool for main thread
 // (or all process in case of no threading).
 
 void MemoryPool::init()
@@ -311,7 +311,7 @@ void MemoryPool::setStatsGroup(MemoryStats& statsL)
 	// to be safe
 	if (parent)
 		parent->lock.enter();
-		
+
 	lock.enter();
 	const size_t sav_used_memory = used_memory.value();
 	const size_t sav_mapped_memory = mapped_memory;
@@ -319,18 +319,18 @@ void MemoryPool::setStatsGroup(MemoryStats& statsL)
 	decrement_usage(sav_used_memory);
 	this->stats = &statsL;
 	increment_mapping(sav_mapped_memory);
-	increment_usage(sav_used_memory);	
+	increment_usage(sav_used_memory);
 	lock.leave();
 	if (parent)
 		parent->lock.leave();
 }
 
-MemoryPool::MemoryPool(MemoryPool* parentL, 
+MemoryPool::MemoryPool(MemoryPool* parentL,
 		MemoryStats &statsL, void *first_extent, void *root_page
 	) :
 	parent_redirect(parentL != NULL),
 	freeBlocks((InternalAllocator*)this, root_page),
-	extents((MemoryExtent *)first_extent), 
+	extents((MemoryExtent *)first_extent),
 	needSpare(false),
 	pendingFree(NULL),
 	used_memory(0),
@@ -379,7 +379,7 @@ void MemoryPool::updateSpare()
 			// Blocks added with tree_deallocate may require merging with nearby ones
 			// This is why we do internal_deallocate
 			internal_deallocate(temp); // Note that this method may change pendingFree!
-			
+
 			if (needSpare)
 				break; // New pages were added to tree. Loop again
 		}
@@ -394,7 +394,7 @@ void* MemoryPool::external_alloc(size_t &size)
 {
 	// This method is assumed to return NULL in case it cannot alloc
 	size = FB_ALIGN(size, get_map_page_size());
-	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+	void *result = mmap(NULL, size, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	// Let Valgrind forget that block was zero-initialized
 	VALGRIND_DISCARD(
@@ -478,7 +478,7 @@ void* MemoryPool::external_alloc(size_t &size)
 # endif
 # if defined WIN_NT
 	size = FB_ALIGN(size, get_map_page_size());
-	return VirtualAlloc(NULL, size, MEM_COMMIT, 
+	return VirtualAlloc(NULL, size, MEM_COMMIT,
 						PAGE_READWRITE);
 # elif defined (HAVE_MMAP) && !defined(SOLARIS)
 
@@ -489,16 +489,16 @@ void* MemoryPool::external_alloc(size_t &size)
 	size = FB_ALIGN(size, get_map_page_size());
 	void* result = NULL;
 #  ifdef MAP_ANONYMOUS
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
 				  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#  else	
+#  else
 	// This code is needed for Solaris 2.6, AFAIK  (only?)
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
 				  MAP_PRIVATE, dev_zero_fd, 0);
 #  endif //MAP_ANONYMOUS
-	return result == MAP_FAILED ? NULL : result;	
+	return result == MAP_FAILED ? NULL : result;
 # elif  defined(SOLARIS)
 
 // No successful return from mmap()  will  return    the value MAP_FAILED.
@@ -510,33 +510,33 @@ void* MemoryPool::external_alloc(size_t &size)
 	void *result = NULL;
 #  ifdef MAP_ANONYMOUS
 
-	result = mmap(0, size, PROT_READ | PROT_WRITE, 
+	result = mmap(0, size, PROT_READ | PROT_WRITE,
 					MAP_PRIVATE | MAP_ANON , -1, 0);
 	if (result == MAP_FAILED) {
 		// failure happens!
 		return NULL;
-	}	
+	}
 	else {
-		return result;	
-	}	
-#  else	
+		return result;
+	}
+#  else
 	// This code is needed for Solaris 2.6, AFAIK
 	if (dev_zero_fd < 0)
 		dev_zero_fd = open("/dev/zero", O_RDWR);
-	result = mmap(NULL, size, PROT_READ | PROT_WRITE, 
+	result = mmap(NULL, size, PROT_READ | PROT_WRITE,
 					MAP_PRIVATE, dev_zero_fd, 0);
 	if (result == MAP_FAILED) {
 		return NULL;
-	}	
+	}
 	else {
-		return result;	
-	}			
+		return result;
+	}
 #  endif //MAP_ANONYMOUS
 # else
 	return malloc(size);
 # endif
 }
-	
+
 void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 {
 # if !defined(DEBUG_GDS_ALLOC) && (defined(WIN_NT) || defined(HAVE_MMAP))
@@ -558,7 +558,7 @@ void MemoryPool::external_free(void *blk, size_t &size, bool pool_destroying)
 	if (munmap((caddr_t) blk, size))
 		system_call_failed::raise("munmap");
 
-#  else 
+#  else
 	if (munmap(blk, size))
 		system_call_failed::raise("munmap");
 #  endif /*Solaris*/
@@ -573,8 +573,8 @@ void* MemoryPool::tree_alloc(size_t size)
 {
 	if (size == sizeof(FreeBlocksTree::ItemList))
 		// This condition is to handle case when nodelist and itemlist have equal size
-		if (sizeof(FreeBlocksTree::ItemList) != sizeof(FreeBlocksTree::NodeList) || 
-			spareLeafs.getCount()) 
+		if (sizeof(FreeBlocksTree::ItemList) != sizeof(FreeBlocksTree::NodeList) ||
+			spareLeafs.getCount())
 		{
 			if (!spareLeafs.getCount())
 				Firebird::BadAlloc::raise();
@@ -623,7 +623,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 
 	if (parent_redirect)
 	{
-		// We do not synchronize redirect_amount here. In the worst case we redirect slightly 
+		// We do not synchronize redirect_amount here. In the worst case we redirect slightly
 		// more allocations to parent than we wanted. This shouldn't cause problems
 		if (redirect_amount + size < REDIRECT_THRESHOLD)
 		{
@@ -667,7 +667,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		{ // It may have changed while we were taking the lock
 			parent_redirect = false;
 			// Do some hard manual work to initialize first extent
-			
+
 			// This is the exact initial layout of memory pool in the first extent //
 			// MemoryExtent
 			// MemoryBlock
@@ -726,7 +726,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 	lock.enter();
 	// If block cannot fit into extent then allocate it from OS directly
 	if (size > EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryBlock)) - MEM_ALIGN(sizeof(MemoryExtent))) {
-		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size + 
+		size_t ext_size = MEM_ALIGN(sizeof(MemoryBlock)) + size +
 			MEM_ALIGN(sizeof(MemoryRedirectList));
 		MemoryBlock *blk = (MemoryBlock*) external_alloc(ext_size);
 		if (!blk) {
@@ -759,7 +759,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 		//VALGRIND_MAKE_NOACCESS((char*)result - VALGRIND_REDZONE, VALGRIND_REDZONE);
 		//VALGRIND_MAKE_WRITABLE(result, requested_size);
 		//VALGRIND_MAKE_NOACCESS((char*)result + requested_size, VALGRIND_REDZONE);
-#endif 
+#endif
 		return result;
 	}
 	// Otherwise use conventional allocator
@@ -780,7 +780,7 @@ void* MemoryPool::allocate_nothrow(size_t size
 	//VALGRIND_MAKE_NOACCESS((char*)result - VALGRIND_REDZONE, VALGRIND_REDZONE);
 	//VALGRIND_MAKE_WRITABLE(result, requested_size);
 	//VALGRIND_MAKE_NOACCESS((char*)result + requested_size, VALGRIND_REDZONE);
-#endif 
+#endif
 	return result;
 }
 
@@ -802,22 +802,22 @@ void* MemoryPool::allocate(size_t size
 bool MemoryPool::verify_pool(bool fast_checks_only)
 {
 	lock.enter();
-	mem_assert(!pendingFree || needSpare); // needSpare flag should be set if we are in 
+	mem_assert(!pendingFree || needSpare); // needSpare flag should be set if we are in
 										// a critically low memory condition
 	size_t blk_used_memory = 0;
 	size_t blk_mapped_memory = 0;
 
 	// Verify that free blocks tree is consistent and indeed contains free memory blocks
-	if (freeBlocks.getFirst()) 
+	if (freeBlocks.getFirst())
 		do {
 			BlockInfo *current = &freeBlocks.current();
 
 			// Verify that head of free blocks list set correctly
 			mem_assert(current->bli_fragments);
 			mem_assert(ptrToBlock(current->bli_fragments)->mbk_prev_fragment == NULL);
-		
+
 			// Look over all blocks in list checking that things look kosher
-			for (FreeMemoryBlock *fragment = current->bli_fragments; 
+			for (FreeMemoryBlock *fragment = current->bli_fragments;
 				 fragment; fragment = fragment->fbk_next_fragment)
 			{
 				// Make sure that list is actually doubly linked
@@ -847,11 +847,11 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 		blk_mapped_memory += EXTENT_SIZE;
 		USHORT prev_length = 0;
 		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
-			; 
+			;
 			blk = next_block(blk))
 		{
 			// Verify block flags, large blocks are not allowed here
-			mem_assert(!(blk->mbk_flags & 
+			mem_assert(!(blk->mbk_flags &
 				~(MBK_USED | MBK_LAST | MBK_PARENT | MBK_DELAYED)));
 
 			// Check that if block is marked as delayed free it is still accounted as used
@@ -866,8 +866,8 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 			}
 
 			// Calculate memory usage
-			if ((blk->mbk_flags & MBK_USED) && !(blk->mbk_flags & MBK_PARENT) && 
-				!(blk->mbk_flags & MBK_DELAYED) && (blk->mbk_type >= 0)) 
+			if ((blk->mbk_flags & MBK_USED) && !(blk->mbk_flags & MBK_PARENT) &&
+				!(blk->mbk_flags & MBK_DELAYED) && (blk->mbk_type >= 0))
 			{
 				blk_used_memory += blk->mbk_small.mbk_length;
 			}
@@ -897,7 +897,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 						mem_assert(foundPending || ptrToBlock(freeBlocks.current().bli_fragments) == blk);
 					}
 
-					// See if next fragment seems kosher 
+					// See if next fragment seems kosher
 					// (note that FreeMemoryBlock has the same structure as PendingFreeBlock so we can do this check)
 					FreeMemoryBlock *next_fragment = blockToPtr<FreeMemoryBlock*>(blk)->fbk_next_fragment;
 					if (next_fragment) {
@@ -909,9 +909,9 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 				}
 
 				if (fast_checks_only) {
-					foundTree = !(blk->mbk_flags & MBK_USED) && 
+					foundTree = !(blk->mbk_flags & MBK_USED) &&
 						(blk->mbk_prev_fragment || ptrToBlock(freeBlocks.current().bli_fragments) == blk);
-				} 
+				}
 				else {
 					for (FreeMemoryBlock* freeBlk = freeBlocks.current().bli_fragments; freeBlk; freeBlk = freeBlk->fbk_next_fragment)
 					{
@@ -1009,7 +1009,7 @@ bool MemoryPool::verify_pool(bool fast_checks_only)
 	else {
 		mem_assert(blk_used_memory == (size_t) used_memory.value());
 	}
-	
+
 	return true;
 }
 
@@ -1017,8 +1017,8 @@ static void print_block(FILE *file, MemoryBlock *blk, bool used_only,
 	const char* filter_path, const size_t filter_len)
 {
 	void *mem = blockToPtr<void*>(blk);
-	if (((blk->mbk_flags & MBK_USED) && 
-		!(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) || !used_only) 
+	if (((blk->mbk_flags & MBK_USED) &&
+		!(blk->mbk_flags & MBK_DELAYED) && blk->mbk_type >= 0) || !used_only)
 	{
 		char flags[100];
 		flags[0] = 0;
@@ -1068,7 +1068,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only,
 	const char* filter_path)
 {
 	lock.enter();
-	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n", 
+	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld:\n",
 		this, (long)used_memory.value(), (long)mapped_memory);
 
 	const size_t filter_len = filter_path ? strlen(filter_path) : 0;
@@ -1077,7 +1077,7 @@ void MemoryPool::print_contents(FILE *file, bool used_only,
 		if (!used_only)
 			fprintf(file, "EXTENT %p:\n", extent);
 		for (MemoryBlock *blk = (MemoryBlock *)((char*)extent + MEM_ALIGN(sizeof(MemoryExtent)));
-			; 
+			;
 			blk = next_block(blk))
 		{
 			print_block(file, blk, used_only, filter_path, filter_len);
@@ -1103,12 +1103,12 @@ void MemoryPool::print_contents(FILE *file, bool used_only,
 	fprintf(file, "********* End of output for pool %p.\n", this);
 }
 
-MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats) 
+MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 {
 	MemoryPool *pool;
 #ifndef USE_VALGRIND
 	// If pool has a parent things are simplified.
-	// Note we do not use parent redirection when using Valgrind because it is 
+	// Note we do not use parent redirection when using Valgrind because it is
 	// difficult to make memory pass through any delayed free list in this case
 	if (parent) {
 		parent->lock.enter();
@@ -1130,7 +1130,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 		pool->parent_redirected = blk;
 
 		parent->lock.leave();
-	} 
+	}
 	else
 #endif
 	{
@@ -1157,11 +1157,11 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats &stats)
 
 		pool = new(mem +
 			MEM_ALIGN(sizeof(MemoryExtent)) +
-			MEM_ALIGN(sizeof(MemoryBlock))) 
-		MemoryPool(NULL, stats, mem, mem + 
-			MEM_ALIGN(sizeof(MemoryExtent)) + 
-			MEM_ALIGN(sizeof(MemoryBlock)) + 
-			MEM_ALIGN(sizeof(MemoryPool)) + 
+			MEM_ALIGN(sizeof(MemoryBlock)))
+		MemoryPool(NULL, stats, mem, mem +
+			MEM_ALIGN(sizeof(MemoryExtent)) +
+			MEM_ALIGN(sizeof(MemoryBlock)) +
+			MEM_ALIGN(sizeof(MemoryPool)) +
 			MEM_ALIGN(sizeof(MemoryBlock)));
 
 		pool->increment_mapping(EXTENT_SIZE);
@@ -1257,13 +1257,13 @@ void MemoryPool::deletePool(MemoryPool* pool)
 		MemoryExtent *next = extent->mxt_next;
 		size_t ext_size = EXTENT_SIZE;
 		external_free(extent, ext_size, true);
-		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size	
+		fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 		extent = next;
 	}
 
 	// Deallocate blocks redirected to parent
 	// IF parent is set then pool was allocated from it and is not deleted at this point yet
-	if (parent) {		
+	if (parent) {
 		parent->lock.enter();
 		MemoryBlock *redirected = pool->parent_redirected;
 		while (redirected) {
@@ -1276,10 +1276,10 @@ void MemoryPool::deletePool(MemoryPool* pool)
 
 			// Remove protection from red zones of memory block or block as whole if it is
 			// in delayed free queue. Since this code makes pointers to deallocated memory
-			// immediately valid we disable parent redirection in USE_VALGRIND mode. Code is 
+			// immediately valid we disable parent redirection in USE_VALGRIND mode. Code is
 			// here for case if you want to debug something with parent redirection enabled.
 			VALGRIND_DISCARD(
-				VALGRIND_MAKE_WRITABLE((char*)redirected + MEM_ALIGN(sizeof(MemoryBlock)) - VALGRIND_REDZONE, 
+				VALGRIND_MAKE_WRITABLE((char*)redirected + MEM_ALIGN(sizeof(MemoryBlock)) - VALGRIND_REDZONE,
 					(redirected->mbk_flags & MBK_LARGE ? redirected->mbk_large_length: redirected->mbk_small.mbk_length) -
 					(redirected->mbk_flags & (MBK_LARGE | MBK_PARENT) ? MEM_ALIGN(sizeof(MemoryRedirectList)) : 0) +
 					VALGRIND_REDZONE)
@@ -1352,20 +1352,20 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			FreeMemoryBlock *next_free = current->bli_fragments->fbk_next_fragment;
 
 			if (next_free) {
-				// Moderately cheap case. Quite possibly we only need to tweak doubly 
+				// Moderately cheap case. Quite possibly we only need to tweak doubly
 				// linked lists a little
 				ptrToBlock(next_free)->mbk_prev_fragment = NULL;
 				current->bli_fragments = next_free;
 				addFreeBlock(current_block);
-			} 
+			}
 			else {
 				// This is special handling of case when we have single large fragment and
-				// cut off small pieces from it. This is common and we avoid modification 
+				// cut off small pieces from it. This is common and we avoid modification
 				// of free blocks tree in this case.
 				bool get_prev_succeeded = freeBlocks.getPrev();
 				if (!get_prev_succeeded || freeBlocks.current().bli_length < current_block->mbk_small.mbk_length) {
 					current->bli_length = current_block->mbk_small.mbk_length;
-				} 
+				}
 				else {
 					// Moderately expensive case. We need to modify tree for sure
 					if (get_prev_succeeded) {
@@ -1406,7 +1406,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 					if (prev)
 						prev->next = itr->next;
 					else
-						pendingFree = itr->next;						
+						pendingFree = itr->next;
 					PATTERN_FILL(itr, size, ALLOC_PATTERN);
 
 					return itr;
@@ -1460,8 +1460,8 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 		blk->mbk_line = line;
 #endif
 		blk->mbk_small.mbk_prev_length = 0;
-		if (EXTENT_SIZE - size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock)) 
-					< MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT) 
+		if (EXTENT_SIZE - size - MEM_ALIGN(sizeof(MemoryExtent)) - MEM_ALIGN(sizeof(MemoryBlock))
+					< MEM_ALIGN(sizeof(MemoryBlock)) + ALLOC_ALIGNMENT)
 		{
 			// Block is small enough to be returned AS IS
 			blk->mbk_flags |= MBK_LAST;
@@ -1475,7 +1475,7 @@ void* MemoryPool::internal_alloc(size_t size, SSHORT type
 			// Will be initialized (to NULL) by addFreeBlock code
 			// rest->mbk_pool = this;
 			rest->mbk_flags = MBK_LAST;
-			rest->mbk_small.mbk_length = EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryExtent)) - 
+			rest->mbk_small.mbk_length = EXTENT_SIZE - MEM_ALIGN(sizeof(MemoryExtent)) -
 				MEM_ALIGN(sizeof(MemoryBlock)) - size - MEM_ALIGN(sizeof(MemoryBlock));
 			rest->mbk_small.mbk_prev_length = blk->mbk_small.mbk_length;
 			addFreeBlock(rest);
@@ -1516,10 +1516,10 @@ inline void MemoryPool::addFreeBlock(MemoryBlock *blk)
 		// NOTE! Items placed into pendingFree queue have mbk_prev_fragment equal to ZERO.
 	}
 }
-		
+
 void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 {
-	// NOTE! We signal items placed into pendingFree queue via setting their 
+	// NOTE! We signal items placed into pendingFree queue via setting their
 	// mbk_prev_fragment to ZERO.
 
 	FreeMemoryBlock *fragmentToRemove = blockToPtr<FreeMemoryBlock*>(blk);
@@ -1527,7 +1527,7 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 	FreeMemoryBlock *next = fragmentToRemove->fbk_next_fragment;
 	if (prev) {
 		// Cheapest case. There is no need to touch B+ tree at all.
-		// Simply remove item from a middle or end of doubly linked list		
+		// Simply remove item from a middle or end of doubly linked list
 		prev->fbk_next_fragment = next;
 		if (next)
 			ptrToBlock(next)->mbk_prev_fragment = prev;
@@ -1536,8 +1536,8 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 
 	// Need to locate item in tree
 	BlockInfo* current;
-	if (freeBlocks.locate(blk->mbk_small.mbk_length) && 
-		(current = &freeBlocks.current())->bli_fragments == fragmentToRemove) 
+	if (freeBlocks.locate(blk->mbk_small.mbk_length) &&
+		(current = &freeBlocks.current())->bli_fragments == fragmentToRemove)
 	{
 		if (next) {
 			// Still moderately fast case. All we need is to replace the head of fragments list
@@ -1550,10 +1550,10 @@ void MemoryPool::removeFreeBlock(MemoryBlock *blk)
 		}
 	}
 	else {
-		// Our block could be in the pending free blocks list if we are in a 
-		// critically-low memory condition or if tree_free placed it there. 
+		// Our block could be in the pending free blocks list if we are in a
+		// critically-low memory condition or if tree_free placed it there.
 		// Find and remove it from there.
-		PendingFreeBlock *itr = pendingFree, 
+		PendingFreeBlock *itr = pendingFree,
 			*temp = blockToPtr<PendingFreeBlock*>(blk);
 		if (itr == temp)
 			pendingFree = itr->next;
@@ -1584,12 +1584,12 @@ void MemoryPool::free_blk_extent(MemoryBlock *blk)
 	if (extent->mxt_next)
 		extent->mxt_next->mxt_prev = extent->mxt_prev;
 
-	fb_assert(blk->mbk_small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock)) + 
+	fb_assert(blk->mbk_small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock)) +
 		MEM_ALIGN(sizeof(MemoryExtent)) == EXTENT_SIZE);
 
 	size_t ext_size = EXTENT_SIZE;
 	external_free(extent, ext_size, false);
-	fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size	
+	fb_assert(ext_size == EXTENT_SIZE); // Make sure exent size is a multiply of page size
 	decrement_mapping(EXTENT_SIZE);
 }
 
@@ -1598,11 +1598,11 @@ void MemoryPool::internal_deallocate(void *block)
 	MemoryBlock *blk = ptrToBlock(block);
 
 	// This method is normally called for used blocks from our pool. Also it may
-	// be called for free blocks in pendingFree list by updateSpare routine. 
+	// be called for free blocks in pendingFree list by updateSpare routine.
 	// Such blocks must have mbk_prev_fragment equal to NULL.
 
 	fb_assert(
-		blk->mbk_flags & MBK_USED ? 
+		blk->mbk_flags & MBK_USED ?
 			blk->mbk_pool == this :
 			blk->mbk_prev_fragment == NULL);
 
@@ -1643,8 +1643,8 @@ void MemoryPool::internal_deallocate(void *block)
 		// Mark block as free
 		blk->mbk_flags &= ~MBK_USED;
 		// Try to merge block with next free block
-		if (!(blk->mbk_flags & MBK_LAST) && 
-			!((next = next_block(blk))->mbk_flags & MBK_USED)) 
+		if (!(blk->mbk_flags & MBK_LAST) &&
+			!((next = next_block(blk))->mbk_flags & MBK_USED))
 		{
 			removeFreeBlock(next);
 			blk->mbk_small.mbk_length += next->mbk_small.mbk_length + MEM_ALIGN(sizeof(MemoryBlock));
@@ -1694,12 +1694,12 @@ void MemoryPool::deallocate(void *block)
 	VALGRIND_MEMPOOL_FREE(this, block);
 
 	// Make it read and write protected
-	int handle = 
-		VALGRIND_MAKE_NOACCESS((char*)block - VALGRIND_REDZONE, 
+	int handle =
+		VALGRIND_MAKE_NOACCESS((char*)block - VALGRIND_REDZONE,
 			(blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length: blk->mbk_small.mbk_length) -
 			(blk->mbk_flags & (MBK_LARGE | MBK_PARENT) ? MEM_ALIGN(sizeof(MemoryRedirectList)) : 0) +
 			VALGRIND_REDZONE);
-	
+
 	// Extend circular buffer if possible
 	if (delayedFreeCount < FB_NELEM(delayedFree)) {
 		delayedFree[delayedFreeCount] = block;
@@ -1723,7 +1723,7 @@ void MemoryPool::deallocate(void *block)
 
 	// Remove protection from memory block
 	VALGRIND_DISCARD(
-		VALGRIND_MAKE_WRITABLE((char*)block - VALGRIND_REDZONE, 
+		VALGRIND_MAKE_WRITABLE((char*)block - VALGRIND_REDZONE,
 			(blk->mbk_flags & MBK_LARGE ? blk->mbk_large_length: blk->mbk_small.mbk_length) -
 			(blk->mbk_flags & (MBK_LARGE | MBK_PARENT) ? MEM_ALIGN(sizeof(MemoryRedirectList)) : 0) +
 			VALGRIND_REDZONE)
@@ -1804,7 +1804,7 @@ void MemoryPool::deallocate(void *block)
 }
 
 MemoryPool& AutoStorage::getAutoMemoryPool()
-{ 
+{
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
 	if (! p)
@@ -1815,15 +1815,15 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 	MemoryPool* p = getDefaultMemoryPool();
 #endif //SUPERCLIENT
 	fb_assert(p);
-	return *p; 
+	return *p;
 }
 
 #if defined(DEV_BUILD)
 void AutoStorage::ProbeStack() const
 {
 	//
-	// AutoStorage() default constructor can be used only 
-	// for objects on the stack. ProbeStack() uses the 
+	// AutoStorage() default constructor can be used only
+	// for objects on the stack. ProbeStack() uses the
 	// following assumptions to check it:
 	//	1. One and only one stack is used for all kind of variables.
 	//	2. Objects don't grow > 64K.

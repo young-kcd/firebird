@@ -354,7 +354,7 @@ static void add_dimensions( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create dimensions. 
+ *	Generate dynamic DDL to create dimensions.
  *	First get rid of any old ones.
  *
  **************************************/
@@ -385,7 +385,7 @@ static void add_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a 
+ *	Generate dynamic DDL to create a
  *	local field.
  *
  **************************************/
@@ -499,7 +499,7 @@ static void add_filter( STR dyn, FILTER filter)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a 
+ *	Generate dynamic DDL to create a
  *	blob filter.
  *
  **************************************/
@@ -526,7 +526,7 @@ static void add_function( STR dyn, FUNC function)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a 
+ *	Generate dynamic DDL to create a
  *	user define function.
  *
  **************************************/
@@ -551,7 +551,7 @@ static void add_function_arg( STR dyn, FUNCARG func_arg)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a 
+ *	Generate dynamic DDL to create a
  *	user defined function.
  *
  **************************************/
@@ -578,7 +578,7 @@ static void add_generator( STR dyn, SYM symbol)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to create a 
+ *	Generate dynamic DDL to create a
  *	generator.
  *
  **************************************/
@@ -867,7 +867,7 @@ static void drop_field( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to eliminate 
+ *	Generate dynamic DDL to eliminate
  *	a local field.
  *
  **************************************/
@@ -893,7 +893,7 @@ static void drop_filter( STR dyn, FILTER filter)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to delete a 
+ *	Generate dynamic DDL to delete a
  *	blob filter.
  *
  **************************************/
@@ -913,7 +913,7 @@ static void drop_function( STR dyn, FUNC function)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to delete a 
+ *	Generate dynamic DDL to delete a
  *	user defined function.
  *
  **************************************/
@@ -933,7 +933,7 @@ static void drop_global_field( STR dyn, DUDLEY_FLD field)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to eliminate 
+ *	Generate dynamic DDL to eliminate
  *	a global field.
  *
  **************************************/
@@ -969,7 +969,7 @@ static void drop_relation( STR dyn, DUDLEY_REL relation)
 {
 /**************************************
  *
- *	d r o p  _ r e l a t i o n 
+ *	d r o p  _ r e l a t i o n
  *
  **************************************
  *
@@ -1188,7 +1188,7 @@ static void modify_field( STR dyn, DUDLEY_FLD field, DUDLEY_REL view)
  **************************************
  *
  * Functional description
- *	Generate dynamic DDL to modify a 
+ *	Generate dynamic DDL to modify a
  *	local field.
  *
  **************************************/
@@ -1293,7 +1293,7 @@ static void modify_global_field( STR dyn, DUDLEY_FLD field)
 	}
 	else
 		put_symbol(dyn, isc_dyn_fld_query_name, field->fld_query_name);
-		
+
 	if (field->fld_flags & fld_null_query_header) {
 		check_dyn(dyn, 3);
 		dyn->add_byte(isc_dyn_fld_query_header);

@@ -165,7 +165,7 @@ void TPC_set_state(thread_db* tdbb, SLONG number, SSHORT state)
 	const SSHORT shift = TRANS_SHIFT(number);
 
 	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache = tip_cache->tpc_next) 
+		 tip_cache = tip_cache->tpc_next)
 	{
 		if (number < (SLONG)(tip_cache->tpc_base + trans_per_tip)) {
 			UCHAR* address = tip_cache->tpc_transactions + byte;
@@ -191,7 +191,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
  * Functional description
  *	Get the current state of a transaction.
  *	Look at the TIP cache first, but if it
- *	is marked as still alive we must do some 
+ *	is marked as still alive we must do some
  *	further checking to see if it really is.
  *
  **************************************/
@@ -230,7 +230,7 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 							tip_cache->tpc_base,
 							number);
 
-			/* committed or dead transactions always stay that 
+			/* committed or dead transactions always stay that
 			   way, so no need to check their current state */
 
 			if (state == tra_committed || state == tra_dead) {
@@ -258,8 +258,8 @@ int TPC_snapshot_state(thread_db* tdbb, SLONG number)
 			LCK_release(tdbb, &temp_lock);
 
 			/* as a last resort we must look at the TIP page to see
-			   whether the transaction is committed or dead; to minimize 
-			   having to do this again we will check the state of all 
+			   whether the transaction is committed or dead; to minimize
+			   having to do this again we will check the state of all
 			   other transactions on that page */
 
 			return TRA_fetch_state(tdbb, number);
@@ -296,14 +296,14 @@ void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, SLONG s
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 	const SLONG first_trans = sequence * trans_per_tip;
 
-/* while we're in the area we can check to see if there are 
-   any tip cache pages we can release--this is cheaper and 
+/* while we're in the area we can check to see if there are
+   any tip cache pages we can release--this is cheaper and
    easier than finding out when a TIP page is dropped */
 
 	TxPageCache* tip_cache;
 	while ( (tip_cache = dbb->dbb_tip_cache) ) {
 		if (dbb->dbb_oldest_transaction >=
-			tip_cache->tpc_base + trans_per_tip) 
+			tip_cache->tpc_base + trans_per_tip)
 		{
 			dbb->dbb_tip_cache = tip_cache->tpc_next;
 			delete tip_cache;
@@ -347,10 +347,10 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, SLONG base)
 	Database* dbb = tdbb->getDatabase();
 	const SLONG trans_per_tip = dbb->dbb_page_manager.transPerTIP;
 
-/* allocate a TIP cache block with enough room for 
+/* allocate a TIP cache block with enough room for
    all desired transactions */
 
-	TxPageCache* tip_cache = 
+	TxPageCache* tip_cache =
 		FB_NEW_RPT(*dbb->dbb_permanent, trans_per_tip / 4) TxPageCache();
 	tip_cache->tpc_base = base;
 
@@ -358,7 +358,7 @@ static TxPageCache* allocate_tpc(thread_db* tdbb, SLONG base)
 }
 
 
-static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr, 
+static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 							   SLONG oldest)
 {
 /**************************************
@@ -376,7 +376,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-/* check the header page for the oldest and 
+/* check the header page for the oldest and
    newest transaction numbers */
 
 #ifdef SUPERSERVER_V2
@@ -400,7 +400,7 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 		tip_cache_ptr = &dbb->dbb_tip_cache;
 
 	for (SLONG base = oldest - oldest % trans_per_tip; base <= top;
-		 base += trans_per_tip) 
+		 base += trans_per_tip)
 	{
 		*tip_cache_ptr = allocate_tpc(tdbb, base);
 		tip_cache_ptr = &(*tip_cache_ptr)->tpc_next;
@@ -416,9 +416,9 @@ static SLONG cache_transactions(thread_db* tdbb, TxPageCache** tip_cache_ptr,
 	// Moreover out tip cache can now contain an gap between last
 	// cached tip page and new pages if our process was idle for long time
 
-	for (TxPageCache* tip_cache = dbb->dbb_tip_cache; 
-		 tip_cache && (tip_cache->tpc_base + trans_per_tip < hdr_oldest); 
-		 tip_cache = dbb->dbb_tip_cache) 
+	for (TxPageCache* tip_cache = dbb->dbb_tip_cache;
+		 tip_cache && (tip_cache->tpc_base + trans_per_tip < hdr_oldest);
+		 tip_cache = dbb->dbb_tip_cache)
 	{
 		dbb->dbb_tip_cache = tip_cache->tpc_next;
 		delete tip_cache;
@@ -438,8 +438,8 @@ static int extend_cache(thread_db* tdbb, SLONG number)
  *
  * Functional description
  *	Extend the transaction inventory page
- *	cache to include at least all transactions 
- *	up to the passed transaction, and return 
+ *	cache to include at least all transactions
+ *	up to the passed transaction, and return
  *	the state of the passed transaction.
  *
  **************************************/
@@ -458,7 +458,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 		tip_cache = *tip_cache_ptr;
 	}
 
-	const SLONG oldest = cache_transactions(tdbb, tip_cache_ptr, 
+	const SLONG oldest = cache_transactions(tdbb, tip_cache_ptr,
 							tip_cache->tpc_base + trans_per_tip);
 	if (number < oldest)
 		return tra_committed;
@@ -466,7 +466,7 @@ static int extend_cache(thread_db* tdbb, SLONG number)
 	// find the right block for this transaction and return the state
 
 	for (tip_cache = dbb->dbb_tip_cache; tip_cache;
-		 tip_cache = tip_cache->tpc_next) 
+		 tip_cache = tip_cache->tpc_next)
 	{
 		if (number < (SLONG) (tip_cache->tpc_base + trans_per_tip))
 			 return TRA_state(tip_cache->tpc_transactions, tip_cache->tpc_base,

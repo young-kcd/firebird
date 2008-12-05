@@ -40,11 +40,11 @@ void ALL_check_memory()
  *
  * Functional description
  *	This routine goes through all allocated
- *	memory pools and checks the hunks of 
+ *	memory pools and checks the hunks of
  *	memory allocated to make sure they are
  *	valid.  It is designed to be used for
  *	debugging purposes to find bad memory
- *	areas as soon as they are corrupted. 
+ *	areas as soon as they are corrupted.
  *	A call to this routine can be made from
  *	looper() to ensure that it will be regularly
  *	executed.
@@ -104,11 +104,11 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 	{
 		fprintf(fptr, "\n\t dbb #%d -> %s\n", k, dbb->dbb_filename.c_str());
 		j = 0;
-		
+
 		size_t itr;
 		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
-			if (dbb->dbb_pools[itr]) 
+			if (dbb->dbb_pools[itr])
 			{
 				++j;
 			}
@@ -122,7 +122,7 @@ void ALL_print_memory_pool_info(FILE* fptr, Database* databases)
 		for (itr = 0; itr < dbb->dbb_pools.getCount(); ++itr)
 		{
 			MemoryPool *myPool = dbb->dbb_pools[itr];
-			if (myPool) 
+			if (myPool)
 			{
 				myPool->print_contents(fptr, true);
 			}

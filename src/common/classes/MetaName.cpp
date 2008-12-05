@@ -25,7 +25,7 @@
  *
  *
  */
- 
+
 #include "firebird.h"
 
 #include <stdarg.h>
@@ -49,7 +49,7 @@ namespace Firebird {
 		return *this;
 	}
 
-	int MetaName::compare(const char* s, size_t l) const 
+	int MetaName::compare(const char* s, size_t l) const
 	{
 		if (s)
 		{
@@ -83,7 +83,7 @@ namespace Firebird {
 
 	void MetaName::upper7()
 	{
-		for (char* p = data; *p; p++) 
+		for (char* p = data; *p; p++)
 		{
 			*p = UPPER7(*p);
 		}
@@ -91,7 +91,7 @@ namespace Firebird {
 
 	void MetaName::lower7()
 	{
-		for (char* p = data; *p; p++) 
+		for (char* p = data; *p; p++)
 		{
 			*p = LOWWER7(*p);
 		}

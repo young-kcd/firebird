@@ -890,7 +890,7 @@ int DSC_string_length(const dsc* desc)
  *
  * Functional description
  *	Estimate length of string (in bytes) based on descriptor.
- *	Estimated length assumes representing string in 
+ *	Estimated length assumes representing string in
  *	narrow-char ASCII format.
  *
  *	Note that this strips off the short at the
@@ -924,8 +924,8 @@ const TEXT *DSC_dtype_tostring(UCHAR dtype)
  **************************************
  *
  * Functional description
- *	Convert a datatype to its textual representation	
- *	
+ *	Convert a datatype to its textual representation
+ *
  **************************************/
 	if (dtype < FB_NELEM(DSC_dtype_names))
 		return DSC_dtype_names[dtype];
@@ -943,8 +943,8 @@ void DSC_get_dtype_name(const dsc* desc, TEXT * buffer, USHORT len)
  **************************************
  *
  * Functional description
- *	Convert a datatype to its textual representation	
- *	
+ *	Convert a datatype to its textual representation
+ *
  **************************************/
 	// This function didn't put a string terminator even though
 	// it's calling strncpy that doesn't put it if source > target.
@@ -992,7 +992,7 @@ static bool validate_dsc_tables()
  *          server memory.  If you uncomment the printf's and build a
  *          kit, make sure that you run that server with the -d flag
  *          so it won't detach from its controlling terminal.
- *	
+ *
  **************************************/
 	for (BYTE op1 = dtype_unknown; op1 < DTYPE_TYPE_MAX; op1++) {
 		for (BYTE op2 = dtype_unknown; op2 < DTYPE_TYPE_MAX; op2++) {

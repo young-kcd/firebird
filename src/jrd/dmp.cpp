@@ -660,7 +660,7 @@ static void dmp_header(const header_page* page)
 	fprintf(dbg_file,
 			   "HEADER PAGE\t checksum %d\t generation %ld\n\tPage size: %d, version: %d.%d(%d), pages: %ld\n",
 			   ((PAG) page)->pag_checksum, ((PAG) page)->pag_generation,
-			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG, 
+			   page->hdr_page_size, page->hdr_ods_version & ~ODS_FIREBIRD_FLAG,
 			   minor_version, page->hdr_ods_minor_original, page->hdr_PAGES);
 
 	const Firebird::TimeStamp ts(*((GDS_TIMESTAMP *) page->hdr_creation_date));
@@ -992,7 +992,7 @@ static void dmp_transactions(const tx_inv_page* page, ULONG sequence)
 {
 /**************************************
  *
- *	d m p _ t r a n s a c t i o n 
+ *	d m p _ t r a n s a c t i o n
  *
  **************************************
  *

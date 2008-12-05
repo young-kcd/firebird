@@ -142,11 +142,11 @@ dsql_dbb::~dsql_dbb()
 
 
 /**
-  
+
  	DSQL_allocate_statement
-  
+
     @brief	Allocate a statement handle.
- 
+
 
     @param tdbb
     @param attachment
@@ -160,7 +160,7 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb,
 	dsql_dbb* const database = init(attachment);
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
 
-	// allocate the request block 
+	// allocate the request block
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
 	dsql_req* const request = FB_NEW(pool) dsql_req(pool);
@@ -171,11 +171,11 @@ dsql_req* DSQL_allocate_statement(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_execute
-  
+
     @brief	Execute a non-SELECT dynamic SQL statement.
- 
+
 
     @param tdbb
     @param tra_handle
@@ -204,7 +204,7 @@ void DSQL_execute(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->req_flags & REQ_orphan) 
+	if (request->req_flags & REQ_orphan)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
@@ -214,7 +214,7 @@ void DSQL_execute(thread_db* tdbb,
 		request->req_type = REQ_EMBED_SELECT;
 	}
 
-// Only allow NULL trans_handle if we're starting a transaction 
+// Only allow NULL trans_handle if we're starting a transaction
 
 	if (!*tra_handle && request->req_type != REQ_START_TRANS)
 	{
@@ -226,7 +226,7 @@ void DSQL_execute(thread_db* tdbb,
    Make sure the cursor is not already open. */
 
 	if (request->req_type == REQ_SELECT ||
-		request->req_type == REQ_EXEC_BLOCK ||  
+		request->req_type == REQ_EXEC_BLOCK ||
 		request->req_type == REQ_SELECT_BLOCK ||
 		request->req_type == REQ_SELECT_UPD ||
 		request->req_type == REQ_EMBED_SELECT ||
@@ -240,7 +240,7 @@ void DSQL_execute(thread_db* tdbb,
 		}
 	}
 
-// A select with a non zero output length is a singleton select 
+// A select with a non zero output length is a singleton select
 	bool singleton;
 	if (request->req_type == REQ_SELECT && out_msg_length != 0) {
 		singleton = true;
@@ -270,7 +270,7 @@ void DSQL_execute(thread_db* tdbb,
  * to the list of open cursors (it's not really open).
  */
 	if ((request->req_type == REQ_SELECT && out_msg_length == 0) ||
-		(request->req_type == REQ_SELECT_BLOCK) ||  
+		(request->req_type == REQ_SELECT_BLOCK) ||
 		request->req_type == REQ_SELECT_UPD ||
 		request->req_type == REQ_EMBED_SELECT ||
 		request->req_type == REQ_GET_SEGMENT ||
@@ -283,11 +283,11 @@ void DSQL_execute(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_execute_immediate
-  
+
     @brief	Execute a non-SELECT dynamic SQL statement.
- 
+
 
     @param tdbb
     @param attachment
@@ -317,23 +317,23 @@ void DSQL_execute_immediate(thread_db* tdbb,
 							USHORT out_msg_type, USHORT out_msg_length, UCHAR* out_msg)
 {
 	execute_immediate(tdbb, attachment, tra_handle, length,
-		string, dialect, in_blr_length, 
+		string, dialect, in_blr_length,
 		in_blr,
 		in_msg_type, in_msg_length,
 		in_msg,
-		out_blr_length, 
-		out_blr, 
-		out_msg_type, out_msg_length, 
+		out_blr_length,
+		out_blr,
+		out_msg_type, out_msg_length,
 		out_msg);
 }
 
 
 /**
-  
+
  	DSQL_fetch
-  
+
     @brief	Fetch next record from a dynamic SQL cursor
- 
+
 
     @param user_status
     @param req_handle
@@ -359,7 +359,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	// if the cursor isn't open, we've got a problem 
+	// if the cursor isn't open, we've got a problem
 	if (!(request->req_flags & REQ_cursor_open))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
@@ -518,11 +518,11 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_free_statement
-  
+
     @brief	Release request for a dsql statement
- 
+
 
     @param user_status
     @param req_handle
@@ -558,11 +558,11 @@ void DSQL_free_statement(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_insert
-  
+
     @brief	Insert next record into a dynamic SQL cursor
- 
+
 
     @param user_status
     @param req_handle
@@ -582,13 +582,13 @@ void DSQL_insert(thread_db* tdbb,
 
 	Jrd::ContextPoolHolder context(tdbb, &request->req_pool);
 
-	if (request->req_flags & REQ_orphan) 
+	if (request->req_flags & REQ_orphan)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
 		          Arg::Gds(isc_bad_req_handle));
 	}
 
-// if the cursor isn't open, we've got a problem 
+// if the cursor isn't open, we've got a problem
 
 	if (request->req_type == REQ_PUT_SEGMENT)
 	{
@@ -609,7 +609,7 @@ void DSQL_insert(thread_db* tdbb,
 		parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
 	if (request->req_type == REQ_PUT_SEGMENT) {
-		// For put segment, use the user buffer and indicator directly. 
+		// For put segment, use the user buffer and indicator directly.
 
 		dsql_par* parameter = request->req_blob->blb_segment;
 		const UCHAR* buffer = dsql_msg_buf + (IPTR) parameter->par_user_desc.dsc_address;
@@ -621,11 +621,11 @@ void DSQL_insert(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_prepare
-  
+
     @brief	Prepare a statement for execution.
- 
+
 
     @param user_status
     @param trans_handle
@@ -661,7 +661,7 @@ void DSQL_prepare(thread_db* tdbb,
                   Arg::Gds(isc_bad_req_handle));
 	}
 
-	// check to see if old request has an open cursor 
+	// check to see if old request has an open cursor
 
 	if (old_request && (old_request->req_flags & REQ_cursor_open)) {
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-519) <<
@@ -683,7 +683,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 	try {
 
-// Figure out which parser version to use 
+// Figure out which parser version to use
 /* Since the API to dsql8_prepare is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
@@ -735,7 +735,7 @@ void DSQL_prepare(thread_db* tdbb,
 
 		request->req_flags |= REQ_prepared;
 
-		// Now that we know that the new request exists, zap the old one. 
+		// Now that we know that the new request exists, zap the old one.
 
 		{
 			Jrd::ContextPoolHolder context(tdbb, &old_request->req_pool);
@@ -760,11 +760,11 @@ void DSQL_prepare(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_set_cursor_name
-  
+
     @brief	Set a cursor name for a dynamic request
- 
+
 
     @param user_status
     @param req_handle
@@ -790,7 +790,7 @@ void DSQL_set_cursor(thread_db* tdbb,
 		// Note that "" will be replaced with ".
 		// The code is very strange, because it doesn't check for "" really
 		// and thus deletes one isolated " in the middle of the cursor.
-		for (Firebird::string::iterator i = cursor.begin(); 
+		for (Firebird::string::iterator i = cursor.begin();
 						i < cursor.end(); ++i)
 		{
 			if (*i == '\"') {
@@ -819,9 +819,9 @@ void DSQL_set_cursor(thread_db* tdbb,
 	}
 	cursor.resize(length);
 
-	// If there already is a different cursor by the same name, bitch 
+	// If there already is a different cursor by the same name, bitch
 
-	const dsql_sym* symbol = 
+	const dsql_sym* symbol =
 		HSHD_lookup(request->req_dbb, cursor.c_str(), length, SYM_cursor, 0);
 	if (symbol)
 	{
@@ -850,11 +850,11 @@ void DSQL_set_cursor(thread_db* tdbb,
 
 
 /**
-  
+
  	DSQL_sql_info
-  
+
     @brief	Provide information on dsql statement
- 
+
 
     @param user_status
     @param req_handle
@@ -878,11 +878,11 @@ void DSQL_sql_info(thread_db* tdbb,
 
 
 /**
-  
+
  	close_cursor
-  
+
     @brief	Close an open cursor.
- 
+
 
     @param request
     @param tdbb
@@ -917,12 +917,12 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 
 
 /**
-  
+
  	convert
-  
+
     @brief	Convert a number to VAX form -- least significant bytes first.
  	Return the length.
- 
+
 
     @param number
     @param buffer
@@ -956,11 +956,11 @@ static USHORT convert( SLONG number, UCHAR* buffer)
 
 
 /**
-  
+
  	execute_blob
-  
+
     @brief	Open or create a blob.
- 
+
 
 	@param tdbb
     @param request
@@ -1043,11 +1043,11 @@ static void execute_blob(thread_db* tdbb,
 
 
 /**
-  
+
  	execute_immediate
-  
+
     @brief	Common part of prepare and execute a statement.
- 
+
 
     @param tdbb
     @param attachment
@@ -1095,7 +1095,7 @@ static void execute_immediate(thread_db* tdbb,
 
 	try {
 
-// Figure out which parser version to use 
+// Figure out which parser version to use
 /* Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
  * be a way to send the parser version to DSQL so that the parser can compare the keyword
  * version to the parser version.  To accomplish this, the parser version is combined with
@@ -1150,11 +1150,11 @@ static void execute_immediate(thread_db* tdbb,
 
 
 /**
-  
+
  	execute_request
-  
+
     @brief	Execute a dynamic SQL statement.
- 
+
 
 	@param tdbb
     @param request
@@ -1245,11 +1245,11 @@ static void execute_request(thread_db* tdbb,
 		break;
 
 	default:
-		// Catch invalid request types 
+		// Catch invalid request types
 		fb_assert(false);
 	}
 
-	// If there is no data required, just start the request 
+	// If there is no data required, just start the request
 
 	dsql_msg* message = request->req_send;
 	if (!message)
@@ -1286,7 +1286,7 @@ static void execute_request(thread_db* tdbb,
 		if (out_msg_length && out_blr_length) {
 			parse_blr(out_blr_length, out_blr, out_msg_length,
 					  message->msg_parameters);
-		} 
+		}
 		else if (!out_msg_length && isBlock) {
 			message = &temp_msg;
 			message->msg_number = 1;
@@ -1300,7 +1300,7 @@ static void execute_request(thread_db* tdbb,
 		if (out_msg_length)
 			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
 
-		// if this is a singleton select, make sure there's in fact one record 
+		// if this is a singleton select, make sure there's in fact one record
 
 		if (singleton)
 		{
@@ -1393,12 +1393,12 @@ static void execute_request(thread_db* tdbb,
 }
 
 /**
-  
+
  	filter_sub_type
-  
+
     @brief	Determine the sub_type to use in filtering
  	a blob.
- 
+
 
     @param request
     @param node
@@ -1422,13 +1422,13 @@ static SSHORT filter_sub_type( dsql_req* request, const dsql_nod* node)
 
 
 /**
-  
+
  	get_indices
-  
+
     @brief	Retrieve the indices from the index tree in
  	the request info buffer (explain_ptr), and print them out
  	in the plan buffer. Return true on success and false on failure.
- 
+
 
     @param explain_length_ptr
     @param explain_ptr
@@ -1468,7 +1468,7 @@ static bool get_indices(
 		explain_length--;
 		length = *explain++;
 
-		// if this isn't the first index, put out a comma 
+		// if this isn't the first index, put out a comma
 
 		if (plan[-1] != '(' && plan[-1] != ' ') {
 			plan_length -= 2;
@@ -1478,7 +1478,7 @@ static bool get_indices(
 			*plan++ = ' ';
 		}
 
-		// now put out the index name 
+		// now put out the index name
 
 		if ((plan_length -= length) < 0)
 			return false;
@@ -1501,13 +1501,13 @@ static bool get_indices(
 
 
 /**
-  
+
  	get_plan_info
-  
+
     @brief	Get the access plan for the request and turn
  	it into a textual representation suitable for
  	human reading.
- 
+
 
     @param request
     @param buffer_length
@@ -1527,7 +1527,7 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 	SCHAR* buffer_ptr = *out_buffer;
 
-	// get the access path info for the underlying request from the engine 
+	// get the access path info for the underlying request from the engine
 
 	try
 	{
@@ -1573,12 +1573,12 @@ static USHORT get_plan_info(thread_db* tdbb,
 		at the begining of the function hence they had trash the second time. */
 		USHORT join_count = 0, level = 0;
 
-		// keep going until we reach the end of the explain info 
+		// keep going until we reach the end of the explain info
 
 		while (explain_length > 0 && buffer_length > 0)
 		{
 			if (!get_rsb_item(&explain_length, &explain, &buffer_length, &plan,
-							  &join_count, &level)) 
+							  &join_count, &level))
 			{
 				// don't allocate buffer of the same length second time
 				// and let user know plan is incomplete
@@ -1592,7 +1592,7 @@ static USHORT get_plan_info(thread_db* tdbb,
 					break;
 				}
 
-				// assume we have run out of room in the buffer, try again with a larger one 
+				// assume we have run out of room in the buffer, try again with a larger one
 				const size_t new_length = MAX_SSHORT;
 				char* const temp = static_cast<char*>(gds__alloc(new_length));
 				if (!temp) {
@@ -1618,11 +1618,11 @@ static USHORT get_plan_info(thread_db* tdbb,
 
 
 /**
-  
+
  	get_request_info
-  
+
     @brief	Get the records updated/deleted for record
- 
+
 
     @param request
     @param buffer_length
@@ -1637,7 +1637,7 @@ static USHORT get_request_info(thread_db* tdbb,
 	if (!request->req_request)	// DDL
 		return 0;
 
-	// get the info for the request from the engine 
+	// get the info for the request from the engine
 
 	try
 	{
@@ -1691,13 +1691,13 @@ static USHORT get_request_info(thread_db* tdbb,
 
 
 /**
-  
+
  	get_rsb_item
-  
+
     @brief	Use recursion to print out a reverse-polish
  	access plan of joins and join types. Return true on success
  	and false on failure
- 
+
 
     @param explain_length_ptr
     @param explain_ptr
@@ -1727,7 +1727,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 	{
 	case isc_info_rsb_begin:
 		if (!*level_ptr) {
-			// put out the PLAN prefix 
+			// put out the PLAN prefix
 
 			p = "\nPLAN ";
 			if ((plan_length -= strlen(p)) < 0)
@@ -1757,7 +1757,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			*plan++ = '(';
 		}
 
-		// if this isn't the first relation, put out a comma 
+		// if this isn't the first relation, put out a comma
 
 		if (plan[-1] != '(') {
 			plan_length -= 2;
@@ -1767,7 +1767,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			*plan++ = ' ';
 		}
 
-		// put out the relation name 
+		// put out the relation name
 		{ // scope to keep length local.
 			explain_length--;
 			SSHORT length = (UCHAR) * explain++;
@@ -1790,7 +1790,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 		case isc_info_rsb_union:
 		case isc_info_rsb_recursive:
 
-			// put out all the substreams of the join 
+			// put out all the substreams of the join
 			{ // scope to have union_count, union_level and union_join_count local.
 				explain_length--;
 				USHORT union_count = (USHORT) * explain++ - 1;
@@ -1844,7 +1844,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				*plan++ = ' ';
 			}
 
-			// put out the join type 
+			// put out the join type
 
 			if (rsb_type == isc_info_rsb_cross ||
 				rsb_type == isc_info_rsb_left_cross)
@@ -1860,7 +1860,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (*p)
 				*plan++ = *p++;
 
-			// put out all the substreams of the join 
+			// put out all the substreams of the join
 
 			explain_length--;
 			{ // scope to have join_count local.
@@ -1878,14 +1878,14 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				}
 			} // scope
 
-			// put out the final parenthesis for the join 
+			// put out the final parenthesis for the join
 
 			if (--plan_length < 0)
 				return false;
 			else
 				*plan++ = ')';
 
-			// this qualifies as a stream, so decrement the join count 
+			// this qualifies as a stream, so decrement the join count
 
 			if (*parent_join_count)
 				-- * parent_join_count;
@@ -1915,7 +1915,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 			while (*p)
 				*plan++ = *p++;
 
-			// print out additional index information 
+			// print out additional index information
 
 			if (rsb_type == isc_info_rsb_indexed ||
 				rsb_type == isc_info_rsb_navigate ||
@@ -1944,7 +1944,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				*plan++ = ')';
 			}
 
-			// detect the end of a single relation and put out a final parenthesis 
+			// detect the end of a single relation and put out a final parenthesis
 
 			if (!*parent_join_count)
 				if (--plan_length < 0)
@@ -1952,7 +1952,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				else
 					*plan++ = ')';
 
-			// this also qualifies as a stream, so decrement the join count 
+			// this also qualifies as a stream, so decrement the join count
 
 			if (*parent_join_count)
 				-- * parent_join_count;
@@ -1973,7 +1973,7 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 				break;
 			}
 
-			// if this isn't the first item in the list, put out a comma 
+			// if this isn't the first item in the list, put out a comma
 
 			if (*parent_join_count && plan[-1] != '(') {
 				plan_length -= 2;
@@ -2030,11 +2030,11 @@ static bool get_rsb_item(SSHORT*		explain_length_ptr,
 
 
 /**
-  
+
  	init
-  
+
     @brief	Initialize dynamic SQL.  This is called only once.
- 
+
 
     @param db_handle
 
@@ -2126,12 +2126,12 @@ static dsql_dbb* init(Attachment* attachment)
 
 
 /**
-  
+
  	map_in_out
-  
+
     @brief	Map data from external world into message or
  	from message to external world.
- 
+
 
     @param request
     @param message
@@ -2162,7 +2162,7 @@ static void map_in_out(	dsql_req*		request,
 	{
 		if (parameter->par_index)
 		{
-			 // Make sure the message given to us is long enough 
+			 // Make sure the message given to us is long enough
 
 			DSC    desc   = parameter->par_user_desc;
 			USHORT length = (IPTR) desc.dsc_address + desc.dsc_length;
@@ -2252,11 +2252,11 @@ static void map_in_out(	dsql_req*		request,
 
 
 /**
-  
+
  	parse_blr
-  
+
     @brief	Parse the message of a blr request.
- 
+
 
     @param blr_length
     @param blr
@@ -2289,14 +2289,14 @@ static USHORT parse_blr(
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
-	blr++;						// skip the blr_version 
+	blr++;						// skip the blr_version
 	if (*blr++ != blr_begin || *blr++ != blr_message)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err));
 	}
 
-	++blr;						// skip the message number 
+	++blr;						// skip the message number
 	USHORT count = *blr++;
 	count += (*blr++) << 8;
 	count /= 2;
@@ -2308,7 +2308,7 @@ static USHORT parse_blr(
 		desc.dsc_scale = 0;
 		desc.dsc_sub_type = 0;
 		desc.dsc_flags = 0;
-		
+
 		switch (*blr++)
 		{
 		case blr_text:
@@ -2453,12 +2453,12 @@ static USHORT parse_blr(
 
 
 /**
-  
+
  	prepare
-  
+
     @brief	Prepare a statement for execution.  Return SQL status
  	code.  Note: caller is responsible for pool handling.
- 
+
 
     @param request
     @param string_length
@@ -2503,7 +2503,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		}
 	}
 
-	// allocate the statement block, then prepare the statement 
+	// allocate the statement block, then prepare the statement
 
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
 
@@ -2515,7 +2515,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	try {
 
-	// Parse the SQL statement.  If it croaks, return 
+	// Parse the SQL statement.  If it croaks, return
 
 	Parser parser(*tdbb->getDefaultPool(), client_dialect, statement->req_dbb->dbb_db_SQL_dialect,
 		parser_version, string, string_length, tdbb->getAttachment()->att_charset);
@@ -2532,7 +2532,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 				  Arg::Gds(isc_command_end_err));
 	}
 
-	// allocate the send and receive messages 
+	// allocate the send and receive messages
 
 	statement->req_send = FB_NEW(pool) dsql_msg;
 	dsql_msg* message = FB_NEW(pool) dsql_msg;
@@ -2563,7 +2563,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	if (!node)
 		return statement;
 
-	// stop here for statements not requiring code generation 
+	// stop here for statements not requiring code generation
 
 	if (statement->req_type == REQ_DDL && parser.isStmtAmbiguous() &&
 		statement->req_dbb->dbb_db_SQL_dialect != client_dialect)
@@ -2580,7 +2580,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		return statement;
 	}
 
-	// Work on blob segment statements 
+	// Work on blob segment statements
 
 	if (statement->req_type == REQ_GET_SEGMENT ||
 		statement->req_type == REQ_PUT_SEGMENT)
@@ -2591,7 +2591,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		return statement;
 	}
 
-	// Generate BLR, DDL or TPB for statement 
+	// Generate BLR, DDL or TPB for statement
 
 	// Start transactions takes parameters via a parameter block.
 	// The statement blr string is used for that
@@ -2608,8 +2608,8 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 	GEN_request(statement, node);
 	const USHORT length = statement->req_blr_data.getCount();
-	
-	// stop here for ddl statements 
+
+	// stop here for ddl statements
 
 	if (statement->req_type == REQ_CREATE_DB ||
 		statement->req_type == REQ_DDL)
@@ -2617,7 +2617,7 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		return statement;
 	}
 
-	// have the access method compile the statement 
+	// have the access method compile the statement
 
 #ifdef DSQL_DEBUG
 	if (DSQL_debug & 64) {
@@ -2630,9 +2630,9 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 	}
 #endif
 
-	// check for warnings 
+	// check for warnings
 	if (tdbb->tdbb_status_vector[2] == isc_arg_warning) {
-		// save a status vector 
+		// save a status vector
 		memcpy(local_status, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
 	}
 
@@ -2655,17 +2655,17 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 		status = tdbb->tdbb_status_vector[1];
 	}
 
-	// restore warnings (if there are any) 
+	// restore warnings (if there are any)
 	if (local_status[2] == isc_arg_warning)
 	{
 		int indx, len, warning;
 
-		// find end of a status vector 
+		// find end of a status vector
 		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
 		if (indx)
 			--indx;
 
-		// calculate length of saved warnings 
+		// calculate length of saved warnings
 		PARSE_STATUS(local_status, len, warning);
 		len -= 2;
 
@@ -2691,13 +2691,13 @@ static dsql_req* prepare(thread_db* tdbb, dsql_dbb* database, jrd_tra* transacti
 
 
 /**
-  
+
  	put_item
-  
+
     @brief	Put information item in output buffer if there is room, and
  	return an updated pointer.  If there isn't room for the item,
  	indicate truncation and return NULL.
- 
+
 
     @param item
     @param length
@@ -2734,11 +2734,11 @@ static UCHAR* put_item(	UCHAR	item,
 
 
 /**
-  
+
  	release_request
-  
+
     @brief	Release a dynamic request.
- 
+
 
     @param request
     @param top_level
@@ -2747,7 +2747,7 @@ static UCHAR* put_item(	UCHAR	item,
 static void release_request(thread_db* tdbb, dsql_req* request, bool drop)
 {
 	SET_TDBB(tdbb);
-	
+
 	// If request is parent, orphan the children and
 	// release a portion of their requests
 
@@ -2848,7 +2848,7 @@ static void sql_info(thread_db* tdbb,
 	memset(buffer, 0, sizeof(buffer));
 
 	// Pre-initialize buffer. This is necessary because we don't want to transfer rubbish over the wire
-	memset(info, 0, info_length); 
+	memset(info, 0, info_length);
 
 	const UCHAR* const end_items = items + item_length;
 	const UCHAR* const end_info = info + info_length;
@@ -2931,10 +2931,10 @@ static void sql_info(thread_db* tdbb,
 			case REQ_SAVEPOINT:
 				number = isc_info_sql_stmt_savepoint;
 				break;
-			case REQ_EXEC_BLOCK: 
+			case REQ_EXEC_BLOCK:
 				number = isc_info_sql_stmt_exec_procedure;
 				break;
-			case REQ_SELECT_BLOCK: 
+			case REQ_SELECT_BLOCK:
 				number = isc_info_sql_stmt_select;
 				break;
 			default:
@@ -2965,7 +2965,7 @@ static void sql_info(thread_db* tdbb,
 		}
 		else if (item == isc_info_sql_records) {
 			length = get_request_info(tdbb, request, (SSHORT) sizeof(buffer), buffer);
-			if (length && !(info = put_item(item, length, buffer, info, end_info))) 
+			if (length && !(info = put_item(item, length, buffer, info, end_info)))
 			{
 				return;
 			}
@@ -3015,7 +3015,7 @@ static void sql_info(thread_db* tdbb,
 			const UCHAR* end_describe = items;
 			while (end_describe < end_items &&
 			   	*end_describe != isc_info_end &&
-			   	*end_describe != isc_info_sql_describe_end) 
+			   	*end_describe != isc_info_sql_describe_end)
 			{
 				end_describe++;
 			}
@@ -3050,11 +3050,11 @@ static void sql_info(thread_db* tdbb,
 
 
 /**
-  
+
  	var_info
-  
+
     @brief	Provide information on an internal message.
- 
+
 
     @param message
     @param items
@@ -3068,8 +3068,8 @@ static UCHAR* var_info(
 					   dsql_msg* message,
 					   const UCHAR* items,
 					   const UCHAR* const end_describe,
-					   UCHAR* info, 
-					   const UCHAR* const end, 
+					   UCHAR* info,
+					   const UCHAR* const end,
 					   USHORT first_index)
 {
 	if (!message || !message->msg_index)
@@ -3102,7 +3102,7 @@ static UCHAR* var_info(
 			SLONG sql_sub_type = 0;
 			SLONG sql_scale = 0;
 			SLONG sql_type = 0;
-			
+
 			switch (param->par_desc.dsc_dtype)
 			{
 			case dtype_real:

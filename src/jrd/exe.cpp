@@ -33,7 +33,7 @@
  *                            exception handling in SPs/triggers,
  *                            implemented ROWS_AFFECTED system variable
  *
- * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks 
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "MPEXL" port
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "DecOSF" port
  * 2002.10.29 Nickolay Samofatov: Added support for savepoints
@@ -240,8 +240,8 @@ const size_t MAX_STACK_TRACE = 2048;
 
 /* this constant defines how many records are locked
    before we check whether record locking has been
-   turned off for a given relation; if we set the 
-   constant to a low number, we will do too much 
+   turned off for a given relation; if we set the
+   constant to a low number, we will do too much
    locking in the case where record locking is always
    turned on; too high and we will do too much record
    locking in the case where someone is only occasionally
@@ -328,7 +328,7 @@ void EXE_assignment(thread_db* tdbb, jrd_nod* to, dsc* from_desc, bool from_null
 		case nod_variable:
 			if (to->nod_arg[e_var_info])
 			{
-				EVL_validate(tdbb, 
+				EVL_validate(tdbb,
 					Item(nod_variable, (IPTR) to->nod_arg[e_var_id]),
 					reinterpret_cast<const ItemInfo*>(to->nod_arg[e_var_info]),
 					from_desc, null == -1);
@@ -740,7 +740,7 @@ void EXE_receive(thread_db*		tdbb,
 			VIO_start_save_point(tdbb, transaction);
 		}
 	}
-	
+
 	try
 	{
 
@@ -764,7 +764,7 @@ void EXE_receive(thread_db*		tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length) {
-		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << 
+		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) <<
 										   Arg::Num(format->fmt_length));
 	}
 
@@ -834,14 +834,14 @@ void EXE_seek(thread_db* tdbb, jrd_req* request, USHORT direction, ULONG offset)
  **************************************
  *
  * Functional description
- *	Seek a given request in a particular direction 
- *	for offset records. 
+ *	Seek a given request in a particular direction
+ *	for offset records.
  *
  **************************************/
 	SET_TDBB(tdbb);
 	DEV_BLKCHK(request, type_req);
 
-/* loop through all RSEs in the request, 
+/* loop through all RSEs in the request,
    and describe the rsb tree for that rsb;
    go backwards because items were popped
    off the stack backwards */
@@ -872,7 +872,7 @@ void EXE_send(thread_db*		tdbb,
  **************************************
  *
  * Functional description
- *	Send a message from the host program to the engine.  
+ *	Send a message from the host program to the engine.
  *	This corresponds to a blr_receive or blr_select statement.
  *
  **************************************/
@@ -888,18 +888,18 @@ void EXE_send(thread_db*		tdbb,
 	jrd_nod* message;
 	jrd_nod* node;
 #ifdef SCROLLABLE_CURSORS
-/* look for an asynchronous send message--if such 
-   a message was defined, we allow the user to send 
+/* look for an asynchronous send message--if such
+   a message was defined, we allow the user to send
    us a message at any time during request execution */
 	jrd_nod* save_next = NULL;
 	jrd_nod* save_message = NULL;
 	jrd_req::req_s save_operation = jrd_req::req_evaluate;
-	
+
 	if ((message = request->req_async_message) &&
 		(node = message->nod_arg[e_send_message]) &&
 		(msg == (USHORT)(ULONG) node->nod_arg[e_msg_number]))
 	{
-		/* save the current state of the request so we can go 
+		/* save the current state of the request so we can go
 		   back to what was interrupted */
 
 		save_operation = request->req_operation;
@@ -948,7 +948,7 @@ void EXE_send(thread_db*		tdbb,
 		ERR_post(Arg::Gds(isc_req_sync));
 
 	if (length != format->fmt_length) {
-		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) << 
+		ERR_post(Arg::Gds(isc_port_len) << Arg::Num(length) <<
 										   Arg::Num(format->fmt_length));
 	}
 
@@ -1001,8 +1001,8 @@ void EXE_send(thread_db*		tdbb,
 
 #ifdef SCROLLABLE_CURSORS
 	if (save_next) {
-		/* if the message was sent asynchronously, restore all the 
-		   previous values so that whatever we were trying to do when 
+		/* if the message was sent asynchronously, restore all the
+		   previous values so that whatever we were trying to do when
 		   the message came in is what we do next */
 
 		request->req_operation = save_operation;
@@ -1129,9 +1129,9 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 
 	SET_TDBB(tdbb);
 
-	if (request->req_flags & req_active) 
+	if (request->req_flags & req_active)
 	{
-		if (request->req_fors.getCount() || request->req_exec_sta.getCount() || request->req_ext_stmt) 
+		if (request->req_fors.getCount() || request->req_exec_sta.getCount() || request->req_ext_stmt)
 		{
 			Jrd::ContextPoolHolder context(tdbb, request->req_pool);
 			jrd_req* old_request = tdbb->getRequest();
@@ -1242,9 +1242,9 @@ static void cleanup_rpb(thread_db* tdbb, record_param* rpb)
 }
 
 inline void PreModifyEraseTriggers(thread_db* tdbb,
-								   trig_vec** trigs, 
-								   SSHORT which_trig, 
-								   record_param* rpb, 
+								   trig_vec** trigs,
+								   SSHORT which_trig,
+								   record_param* rpb,
 								   record_param* rec,
 								   jrd_req::req_ta op)
 {
@@ -1255,13 +1255,13 @@ inline void PreModifyEraseTriggers(thread_db* tdbb,
  ******************************************************
  *
  * Functional description
- *	Perform operation's pre-triggers, 
+ *	Perform operation's pre-triggers,
  *  storing active rpb in chain.
  *
  ******************************************************/
 	if (! tdbb->getTransaction()->tra_rpblist) {
-		tdbb->getTransaction()->tra_rpblist = 
-			FB_NEW(*tdbb->getTransaction()->tra_pool) 
+		tdbb->getTransaction()->tra_rpblist =
+			FB_NEW(*tdbb->getTransaction()->tra_pool)
 				traRpbList(*tdbb->getTransaction()->tra_pool);
 	}
 	const int rpblevel =
@@ -1364,8 +1364,8 @@ static jrd_nod* erase(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		trigger_failure(tdbb, trigger);
 	}
 
-/* call IDX_erase (which checks constraints) after all post erase triggers 
-   have fired. This is required for cascading referential integrity, which 
+/* call IDX_erase (which checks constraints) after all post erase triggers
+   have fired. This is required for cascading referential integrity, which
    can be implemented as post_erase triggers */
 
 	if (!relation->rel_file &&
@@ -1530,7 +1530,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 	jrd_req* proc_request = EXE_find_request(tdbb, procedure->prc_request, false);
 
 	Firebird::Array<UCHAR> temp_buffer;
-	
+
 	if (!out_message) {
 		const Format* format = (Format*) procedure->prc_output_msg->nod_arg[e_msg_format];
 		out_msg_length = format->fmt_length;
@@ -1608,22 +1608,22 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 
 	const int inputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_inputs];
 	const int outputs = (SSHORT)(IPTR) node->nod_arg[node->nod_count + e_exec_stmt_extra_outputs];
-	
-	jrd_nod** node_inputs = inputs ? 
+
+	jrd_nod** node_inputs = inputs ?
 		node->nod_arg + e_exec_stmt_fixed_count + e_exec_stmt_extra_inputs : NULL;
 
-	jrd_nod** node_outputs = outputs ? 
+	jrd_nod** node_outputs = outputs ?
 		node->nod_arg + e_exec_stmt_fixed_count + inputs : NULL;
-	
+
 	jrd_nod* node_proc_block = node->nod_arg[e_exec_stmt_proc_block];
 
 	if (request->req_operation == jrd_req::req_evaluate)
 	{
 		fb_assert(*stmt_ptr == 0);
 
-		const EDS::ParamNames* inputs_names = 
+		const EDS::ParamNames* inputs_names =
 			(EDS::ParamNames*) node->nod_arg[node->nod_count + e_exec_stmt_extra_input_names];
-		
+
 		const jrd_nod* tra_node = node->nod_arg[node->nod_count + e_exec_stmt_extra_tran];
 		const EDS::TraScope tra_scope = tra_node ? (EDS::TraScope)(IPTR) tra_node : EDS::traCommon;
 
@@ -1675,7 +1675,7 @@ static jrd_nod* execute_statement(thread_db* tdbb, jrd_req* request, jrd_nod* no
 			request->req_operation = jrd_req::req_return;
 		}
 	}
-	
+
 	if (stmt) {
 		stmt->close(tdbb);
 	}
@@ -1724,7 +1724,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 		const Record* record = old_rec ? old_rec : new_rec;
 		fb_assert(record && record->rec_format);
 		// copy the record
-		null_rec = FB_NEW_RPT(record->rec_pool, record->rec_length) 
+		null_rec = FB_NEW_RPT(record->rec_pool, record->rec_length)
 			Record(record->rec_pool);
 		null_rec->rec_length = record->rec_length;
 		null_rec->rec_format = record->rec_format;
@@ -2012,7 +2012,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				}
 			}
 			break;
-		
+
 		case nod_exec_proc:
 			if (request->req_operation == jrd_req::req_unwind) {
 				node = node->nod_parent;
@@ -2227,7 +2227,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						// Release the savepoint and all subsequent ones
 						while (transaction->tra_save_point &&
-							transaction->tra_save_point->sav_number >= sav_number) 
+							transaction->tra_save_point->sav_number >= sav_number)
 						{
 							verb_cleanup(tdbb, transaction);
 						}
@@ -2242,7 +2242,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 						// Undo the savepoint
 						while (transaction->tra_save_point &&
-							transaction->tra_save_point->sav_number >= sav_number) 
+							transaction->tra_save_point->sav_number >= sav_number)
 						{
 							transaction->tra_save_point->sav_verb_count++;
 							verb_cleanup(tdbb, transaction);
@@ -2286,7 +2286,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 				/* If any requested modify/delete/insert
 				   ops have completed, forget them */
 				if (transaction != dbb->dbb_sys_trans) {
-					/* If an error is still pending when the savepoint is 
+					/* If an error is still pending when the savepoint is
 					   supposed to end, then the application didn't handle the
 					   error and the savepoint should be undone. */
 					if (error_pending) {
@@ -2320,7 +2320,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			switch (request->req_operation)
 			{
 			SLONG count;
-			
+
 			case jrd_req::req_evaluate:
 				if (transaction != dbb->dbb_sys_trans) {
 					VIO_start_save_point(tdbb, transaction);
@@ -2398,7 +2398,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 
 									/* Save the previous state of req_error_handler
 									   bit. We need to restore it later. This is
-									   necessary if the error handler is deeply 
+									   necessary if the error handler is deeply
 									   nested. */
 
 									const ULONG prev_req_error_handler =
@@ -2413,9 +2413,9 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 									   never returned back till the node tree
 									   was executed completely. Now that the looper
 									   has changed its behaviour such that it
-									   returns back after handling error. This 
+									   returns back after handling error. This
 									   makes it necessary that the jmpbuf be reset
-									   so that looper can proceede with the 
+									   so that looper can proceede with the
 									   processing of execution tree. If this is
 									   not done then anymore errors will take the
 									   engine out of looper there by abruptly
@@ -2630,7 +2630,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 			node = node->nod_parent;
 			break;
 
-		case nod_exec_into: 
+		case nod_exec_into:
 			{
 				ExecuteStatement* impure = (ExecuteStatement*)
 					((SCHAR*) request + node->nod_impure);
@@ -2774,7 +2774,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		case nod_init_variable:
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				const ItemInfo* itemInfo = 
+				const ItemInfo* itemInfo =
 					reinterpret_cast<const ItemInfo*>(node->nod_arg[e_init_var_info]);
 				if (itemInfo)
 				{
@@ -2865,7 +2865,7 @@ jrd_nod* EXE_looper(thread_db* tdbb, jrd_req* request, jrd_nod* in_node)
 		if (!(tdbb->tdbb_flags & TDBB_stack_trace_done) &&
 			!(tdbb->tdbb_flags & TDBB_sys_error))
 		{
-			stuff_stack_trace(request); 
+			stuff_stack_trace(request);
 			tdbb->tdbb_flags |= TDBB_stack_trace_done;
 		}
 	}
@@ -3029,7 +3029,7 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				++transaction->tra_save_point->sav_verb_count;
 
 			PreModifyEraseTriggers(tdbb, &relation->rel_pre_modify,
-								which_trig, org_rpb, new_rpb, 
+								which_trig, org_rpb, new_rpb,
 								jrd_req::req_trigger_update);
 
 			if (node->nod_arg[e_mod_validate]) {
@@ -3070,8 +3070,8 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 				trigger_failure(tdbb, trigger);
 			}
 
-			/* now call IDX_modify_check_constrints after all post modify triggers 
-			have fired.  This is required for cascading referential integrity, 
+			/* now call IDX_modify_check_constrints after all post modify triggers
+			have fired.  This is required for cascading referential integrity,
 			which can be implemented as post_erase triggers */
 
 			if (!relation->rel_file &&
@@ -3168,9 +3168,9 @@ static jrd_nod* modify(thread_db* tdbb, jrd_nod* node, SSHORT which_trig)
 		DSC org_desc, new_desc;
 
 		for (SSHORT i = 0; i < new_format->fmt_count; i++) {
-			/* In order to "map a null to a default" value (in EVL_field()), 
-			 * the relation block is referenced. 
-			 * Reference: Bug 10116, 10424 
+			/* In order to "map a null to a default" value (in EVL_field()),
+			 * the relation block is referenced.
+			 * Reference: Bug 10116, 10424
 			 */
 			CLEAR_NULL(new_record, i);
 			if (EVL_field(new_rpb->rpb_relation, new_record, i, &new_desc)) {
@@ -3262,7 +3262,7 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 
 		if (request->req_blobs.getFirst())
 		{
-			while (true) 
+			while (true)
 			{
 				const ULONG blob_temp_id = request->req_blobs.current();
 				if (transaction->tra_blobs->locate(blob_temp_id))
@@ -3275,10 +3275,10 @@ static void release_blobs(thread_db* tdbb, jrd_req* request)
 					}
 					else
 					{
-						// Blob was created by request, is accounted for internal needs, 
+						// Blob was created by request, is accounted for internal needs,
 						// but is not materialized. Get rid of it.
 						BLB_cancel(tdbb, current->bli_blob_object);
-						// Since the routine above modifies req_blobs 
+						// Since the routine above modifies req_blobs
 						// we need to reestablish accessor position
 					}
 
@@ -3346,8 +3346,8 @@ static jrd_nod* seek_rse(thread_db* tdbb, jrd_req* request, jrd_nod* node)
  **************************************
  *
  * Functional description
- *	Execute a nod_seek, which specifies 
- *	a direction and offset in which to 
+ *	Execute a nod_seek, which specifies
+ *	a direction and offset in which to
  *	scroll a record selection expression.
  *
  **************************************/
@@ -3389,7 +3389,7 @@ static void seek_rsb(
  **************************************
  *
  * Functional description
- *	Allow scrolling through a stream as defined 
+ *	Allow scrolling through a stream as defined
  *	by the input rsb.  Handles multiple seeking.
  *	Uses RSE_get_record() to do the actual work.
  *
@@ -3438,10 +3438,10 @@ static void seek_rsb(
 		ERR_post(Arg::Gds(isc_invalid_direction));
 	}
 
-/* the actual offset to seek may be one less because the next time 
-   through the blr_for loop we will seek one record--flag the fact 
-   that a fetch is required on this stream in case it doesn't happen 
-   (for example when GPRE generates BLR which does not stall prior to 
+/* the actual offset to seek may be one less because the next time
+   through the blr_for loop we will seek one record--flag the fact
+   that a fetch is required on this stream in case it doesn't happen
+   (for example when GPRE generates BLR which does not stall prior to
    the blr_for, as DSQL does) */
 
 	if (offset > 0)
@@ -3471,9 +3471,9 @@ static void seek_rsb(
 	case blr_forward:			/* go forward from the current location */
 
 		/* the rsb_backwards flag is used to indicate the direction to seek in;
-		   this is sticky in the sense that after the user has seek'ed in the 
-		   backward direction, the next retrieval from a blr_for loop will also 
-		   be in the backward direction--this allows us to continue scrolling 
+		   this is sticky in the sense that after the user has seek'ed in the
+		   backward direction, the next retrieval from a blr_for loop will also
+		   be in the backward direction--this allows us to continue scrolling
 		   without constantly sending messages to the engine */
 
 		impure->irsb_flags &= ~irsb_last_backwards;
@@ -3515,7 +3515,7 @@ static void seek_rsb(
 		RSE_close(tdbb, rsb);
 		RSE_open(tdbb, rsb);
 
-		/* if this is a stream type which uses bof and eof flags, 
+		/* if this is a stream type which uses bof and eof flags,
 		   reverse the sense of bof and eof in this case */
 
 		if (impure->irsb_flags & irsb_bof) {
@@ -3630,9 +3630,9 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	Firebird::MetaName name, relation_name;
 	TEXT message[XCP_MESSAGE_LENGTH + 1];
 
-	// since temp used as vary, we need size of vary::vary_length 
+	// since temp used as vary, we need size of vary::vary_length
 	// (USHORT) extra chars
-	TEXT temp[XCP_MESSAGE_LENGTH + sizeof(USHORT)]; 
+	TEXT temp[XCP_MESSAGE_LENGTH + sizeof(USHORT)];
 
 	SET_TDBB(tdbb);
 
@@ -3646,7 +3646,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 	}
 
 	USHORT length = 0;
-	
+
 	if (msg_node)
 	{
 		const char* string = 0;
@@ -3688,7 +3688,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 		if (exception->xcp_code == isc_check_constraint) {
 			MET_lookup_cnstrt_for_trigger(tdbb, name, relation_name,
 										  request->req_trg_name);
-			ERR_post(Arg::Gds(exception->xcp_code) << Arg::Str(name) << 
+			ERR_post(Arg::Gds(exception->xcp_code) << Arg::Str(name) <<
 													  Arg::Str(relation_name));
 		}
 		else
@@ -3723,7 +3723,7 @@ static void set_error(thread_db* tdbb, const xcp_repeat* exception, jrd_nod* msg
 			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code) <<
 					 Arg::Gds(isc_random) << Arg::Str(name));
 		}
-		else		
+		else
 			ERR_post(Arg::Gds(isc_except) << Arg::Num(exception->xcp_code));
 
 	default:
@@ -3736,7 +3736,7 @@ static jrd_nod* stall(thread_db* tdbb, jrd_nod* node)
 {
 /**************************************
  *
- *	s t a l l 
+ *	s t a l l
  *
  **************************************
  *
@@ -4123,7 +4123,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				name = UNKNOWN_STRING_MARK;
 			}
 
-			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) << 
+			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) <<
 												Arg::Str(value));
 		}
 	}

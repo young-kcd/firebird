@@ -65,7 +65,7 @@ static const FPTR_BFILTER_CALLBACK filters[] =
 };
 
 
-static void open_blob(thread_db*, jrd_tra*, BlobControl**, bid*, 
+static void open_blob(thread_db*, jrd_tra*, BlobControl**, bid*,
 							USHORT, const UCHAR*,
 							FPTR_BFILTER_CALLBACK,
 							USHORT, BlobFilter*);
@@ -300,12 +300,12 @@ void BLF_put_segment(thread_db* tdbb,
 	}
 }
 
-// SEH moved to separate function to avoid conflicts 
+// SEH moved to separate function to avoid conflicts
 // with destructor of BlobControl
 inline void initializeFilter(thread_db *tdbb,
 							 ISC_STATUS &status,
-							 BlobControl *control, 
-							 BlobFilter* filter, 
+							 BlobControl *control,
+							 BlobFilter* filter,
 							 USHORT action)
 {
 	START_CHECK_FOR_EXCEPTIONS(control->ctl_exception_message.c_str())
@@ -348,7 +348,7 @@ static void open_blob(
 
 /* Allocate a filter control block and open blob */
 
-/* utilize a temporary control block just to pass the three 
+/* utilize a temporary control block just to pass the three
    necessary internal parameters to the filter */
 	BlobControl temp;
 	temp.ctl_internal[0] = dbb;

@@ -171,7 +171,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam,
  *  Description: This is the window procedure for the "General" page dialog
  *               of the property sheet dialog box. All the Property Sheet
  *               related events are passed as WM_NOTIFY messages and they
- *               are identified within the LPARAM which will be pointer to 
+ *               are identified within the LPARAM which will be pointer to
  *               the NMDR structure
  *****************************************************************************/
 

@@ -53,7 +53,7 @@ using namespace Jrd;
 
 //#define MOVE_BYTE(x_from, x_to)	*x_to++ = *x_from++;
 
-static int compare_keys(const index_desc*, const UCHAR*, USHORT, 
+static int compare_keys(const index_desc*, const UCHAR*, USHORT,
 						const temporary_key*, USHORT);
 
 #ifdef SCROLLABLE_CURSORS
@@ -79,13 +79,13 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
  **************************************
  *
  * Functional description
- *	Given a window with a btree leaf page loaded into it, 
+ *	Given a window with a btree leaf page loaded into it,
  *	expand the index page into a form that facilitates walking
- *	backward through it.  Each node's data is decompressed.  
- *	Since the prefix field is not needed, it contains an offset to 
+ *	backward through it.  Each node's data is decompressed.
+ *	Since the prefix field is not needed, it contains an offset to
  *	the prior node.
  *
- *	If an impure pointer is passed, set the current node on the 
+ *	If an impure pointer is passed, set the current node on the
  *	expanded page to match that on the corresponding btree page.
  *
  **************************************/
@@ -95,8 +95,8 @@ exp_index_buf* NAV_expand_index(WIN * window, IRSB_NAV impure)
 	// (note that the difference in size of a btree_exp node versus a btree_nod node could
 	// be deducted, but there is no easy way to get the no. of nodes on page) */
 
-	// if the right version of expanded page is available, there 
-	// is no work to be done 
+	// if the right version of expanded page is available, there
+	// is no work to be done
 	exp_index_buf* expanded_page = window->win_expanded_buffer;
 	if (expanded_page &&
 		(expanded_page->exp_incarnation == CCH_get_incarnation(window)))
@@ -157,16 +157,16 @@ bool NAV_get_record(thread_db* tdbb,
  * Functional description
  *	Get a record from a stream, either in
  *	the forward or backward direction, or the
- *	current record.  This routine must set 
+ *	current record.  This routine must set
  *	BOF or EOF properly.
  *
  **************************************/
 	SET_TDBB(tdbb);
 
 #ifdef SCROLLABLE_CURSORS
-	// before we do anything, check for the case where an ascending index 
-	// was used to optimize a descending sort, or a descending index was 
-	// used to optimize an ascending sort--in either case, we need to flip 
+	// before we do anything, check for the case where an ascending index
+	// was used to optimize a descending sort, or a descending index was
+	// used to optimize an ascending sort--in either case, we need to flip
 	// the nominal direction of navigation
 	if (rsb->rsb_flags & rsb_descending) {
 		if (direction == RSE_get_forward) {
@@ -181,7 +181,7 @@ bool NAV_get_record(thread_db* tdbb,
 	init_fetch(impure);
 	index_desc* idx = (index_desc*) ((SCHAR*) impure + (IPTR) rsb->rsb_arg[RSB_NAV_idx_offset]);
 
-	// The bitmap is only valid when we are continuing on in one 
+	// The bitmap is only valid when we are continuing on in one
 	// direction.  It is of no help when we change direction,
 	// and so we need to reset in that case.
 #ifdef SCROLLABLE_CURSORS
@@ -202,18 +202,18 @@ bool NAV_get_record(thread_db* tdbb,
 #endif
 
 	// find the last fetched position from the index
-	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id; 
+	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id;
 	WIN window(pageSpaceID, impure->irsb_nav_page);
 
 	btree_exp* expanded_next = NULL;
-	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window, 
+	UCHAR* nextPointer = get_position(tdbb, rsb, impure, &window,
 		direction, &expanded_next);
 	if (!nextPointer)
 		return false;
 	temporary_key key;
 	memcpy(key.key_data, impure->irsb_nav_data, impure->irsb_nav_length);
 	jrd_nod* retrieval_node = (jrd_nod*) rsb->rsb_arg[RSB_NAV_index];
-	IndexRetrieval* retrieval = 
+	IndexRetrieval* retrieval =
 		(IndexRetrieval*) retrieval_node->nod_arg[e_idx_retrieval];
 
 	// set the upper (or lower) limit for navigational retrieval
@@ -221,7 +221,7 @@ bool NAV_get_record(thread_db* tdbb,
 #ifdef SCROLLABLE_CURSORS
 	temporary_key lower;
 #endif
-	if ((direction == RSE_get_forward) && retrieval->irb_upper_count) 
+	if ((direction == RSE_get_forward) && retrieval->irb_upper_count)
 	{
 		upper.key_length = impure->irsb_nav_upper_length;
 #ifdef SCROLLABLE_CURSORS
@@ -235,7 +235,7 @@ bool NAV_get_record(thread_db* tdbb,
 #endif
 	}
 #ifdef SCROLLABLE_CURSORS
-	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count) 
+	else if ((direction == RSE_get_backward) && retrieval->irb_lower_count)
 	{
 		lower.key_length = impure->irsb_nav_lower_length;
 		memcpy(lower.key_data,
@@ -244,17 +244,17 @@ bool NAV_get_record(thread_db* tdbb,
 	}
 #endif
 
-	// In the case of a DISTINCT, we must detect whether the key changed since the last 
-	// time a record was returned from the rsb.  It is not good enough to know whether the 
-	// key changed since the last node in the index, because the record represented 
-	// by the last index node may not have satisfied some boolean expression on the rsb.  
-	// So to find out whether the key has changed since the last time a record was actually 
-	// returned from the rsb, we save the record count each time we return a candidate record, 
+	// In the case of a DISTINCT, we must detect whether the key changed since the last
+	// time a record was returned from the rsb.  It is not good enough to know whether the
+	// key changed since the last node in the index, because the record represented
+	// by the last index node may not have satisfied some boolean expression on the rsb.
+	// So to find out whether the key has changed since the last time a record was actually
+	// returned from the rsb, we save the record count each time we return a candidate record,
 	// and see if the count is updated the next time we get here.
 
-	// If the count has been updated, we know the record has been returned from the rsb, and 
-	// the index key must change before we can return another DISTINCT record candidate.  If 
-	// the last candidate did not qualify, we know we should return another record no matter 
+	// If the count has been updated, we know the record has been returned from the rsb, and
+	// the index key must change before we can return another DISTINCT record candidate.  If
+	// the last candidate did not qualify, we know we should return another record no matter
 	// what.
 
 	if (rsb->rsb_record_count != impure->irsb_nav_count) {
@@ -281,7 +281,7 @@ bool NAV_get_record(thread_db* tdbb,
 		}
 
 #ifdef SCROLLABLE_CURSORS
-		// in the backwards case, check to make sure we haven't hit the 
+		// in the backwards case, check to make sure we haven't hit the
 		// beginning of a page, and if so fetch the left sibling page.
 		if (direction == RSE_get_backward) {
 			if (pointer < BTreeNode::getPointerFirstNode(page)) {
@@ -328,16 +328,16 @@ bool NAV_get_record(thread_db* tdbb,
 		}
 
 		// In the project (DISTINCT) case, we need to determine if the key has changed
-		// since the last record that was returned from the rsb.  That means that we must 
+		// since the last record that was returned from the rsb.  That means that we must
 		// know what the key was for that record
 
 
-		// in the case where we are on the same page, 
-		// we simply check to see if there is any data in the node;  if we are on a new 
-		// page, we must compare this node with the last key we saw 
-		// NOTE: the optimizer only uses indices which have the same number of fields as 
-		// those in the DISTINCT clause; there's no reason we couldn't use an index which 
-		// has extra fields to the right, we just need to add some code to check 
+		// in the case where we are on the same page,
+		// we simply check to see if there is any data in the node;  if we are on a new
+		// page, we must compare this node with the last key we saw
+		// NOTE: the optimizer only uses indices which have the same number of fields as
+		// those in the DISTINCT clause; there's no reason we couldn't use an index which
+		// has extra fields to the right, we just need to add some code to check
 		// when only the first n segment(s) of the key has changed, rather than the whole key
 		if (rsb->rsb_flags & rsb_project) {
 			if (page_changed)
@@ -368,7 +368,7 @@ bool NAV_get_record(thread_db* tdbb,
 			compare_keys(idx, key.key_data, key.key_length, &upper,
 						 retrieval->irb_generic & (irb_descending |
 												   irb_partial |
-												   irb_starting)) > 0) 
+												   irb_starting)) > 0)
 		{
 			break;
 		}
@@ -378,7 +378,7 @@ bool NAV_get_record(thread_db* tdbb,
 			compare_keys(idx, key.key_data, key.key_length, &lower,
 						 retrieval->irb_generic & (irb_descending |
 												   irb_partial |
-												   irb_starting)) < 0) 
+												   irb_starting)) < 0)
 		{
 			break;
 		}
@@ -395,7 +395,7 @@ bool NAV_get_record(thread_db* tdbb,
 			  || !RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue())))
 			|| RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue())
 			|| ((rsb->rsb_flags & rsb_project)
-				&& !(impure->irsb_flags & irsb_key_changed))) 
+				&& !(impure->irsb_flags & irsb_key_changed)))
 		{
 #ifdef SCROLLABLE_CURSORS
 			if (direction == RSE_get_backward) {
@@ -441,16 +441,16 @@ static int compare_keys(
 						   USHORT length1, const temporary_key* key2, USHORT flags)
 {
 /**************************************
- *      
+ *
  *	c o m p a r e _ k e y s
  *
  **************************************
  *
  * Functional description
- *	Compare two index keys. 
- *	If a partial key comparison is specified, 
- *	ensure that the shorter key (the second 
- *	one) matches segment-by-segment with the 
+ *	Compare two index keys.
+ *	If a partial key comparison is specified,
+ *	ensure that the shorter key (the second
+ *	one) matches segment-by-segment with the
  *	index key.
  *
  **************************************/
@@ -478,7 +478,7 @@ static int compare_keys(
 	// is specified, for other types do only matches on the entire segment
 
 	if ((flags & (irb_partial | irb_starting)) && (length1 > length2)) {
-		// figure out what segment we're on; if it's a 
+		// figure out what segment we're on; if it's a
 		// character segment we've matched the partial string
 		const UCHAR* segment = 0;
 		const index_desc::idx_repeat* tail;
@@ -497,14 +497,14 @@ static int compare_keys(
 			(tail->idx_itype == idx_string ||
 			 tail->idx_itype == idx_byte_array ||
 			 tail->idx_itype == idx_metadata ||
-			 tail->idx_itype >= idx_first_intl_string)) 
+			 tail->idx_itype >= idx_first_intl_string))
 		{
 			return 0;
 		}
 
 		if (idx->idx_count > 1) {
 
-			// If we search for NULLs at the begin then we're done if the first 
+			// If we search for NULLs at the begin then we're done if the first
 			// segment isn't the first one possible (0 for ASC, 255 for DESC).
 			if (length2 == 0) {
 				if (flags & irb_descending) {
@@ -521,7 +521,7 @@ static int compare_keys(
 
 			// if we've exhausted the segment, we've found a match
 			USHORT remainder = length2 % (Ods::STUFF_COUNT + 1);
-			if (!remainder && (*string1 != *segment)) 
+			if (!remainder && (*string1 != *segment))
 			{
 				return 0;
 			}
@@ -529,7 +529,7 @@ static int compare_keys(
 			// if the rest of the key segment is 0's, we've found a match
 			if (remainder) {
 				for (remainder = Ods::STUFF_COUNT + 1 - remainder; remainder;
-					remainder--) 
+					remainder--)
 				{
 					if (*string1++) {
 						break;
@@ -560,10 +560,10 @@ static void expand_index(WIN * window)
  **************************************
  *
  * Functional description
- *	Given a window with a btree leaf page loaded into it, 
+ *	Given a window with a btree leaf page loaded into it,
  *	expand the index page into a form that facilitates walking
- *	backward through it.  Each node's data is decompressed.  
- *	Since the prefix field is not needed, it contains an offset to 
+ *	backward through it.  Each node's data is decompressed.
+ *	Since the prefix field is not needed, it contains an offset to
  *	the prior node.
  *
  **************************************/
@@ -664,8 +664,8 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
  **************************************
  *
  * Functional description
- *	A page has changed.  Find the new position of the 
- *	previously stored node.  The node could even be on 
+ *	A page has changed.  Find the new position of the
+ *	previously stored node.  The node could even be on
  *	a sibling page if the page has split.  If we find
  *	the actual node, return true.
  *
@@ -705,7 +705,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 						impure->irsb_nav_length, &key, 0);
 
 			// if the keys are equal, return this node even if it is just a duplicate node;
-			// duplicate nodes that have already been returned will be filtered out at a 
+			// duplicate nodes that have already been returned will be filtered out at a
 			// higher level by checking the sparse bit map of records already returned, and
 			// duplicate nodes that were inserted before the stored node can be
 			// safely returned since their position in the index is arbitrary
@@ -715,7 +715,7 @@ static bool find_saved_node(RecordSource* rsb, IRSB_NAV impure,
 			}
 
 			// if the stored key is less than the current key, then the stored key
-			// has been deleted from the index and we should just return the next 
+			// has been deleted from the index and we should just return the next
 			// key after it
 			if (result < 0) {
 				*return_pointer = node.nodePointer;
@@ -765,7 +765,7 @@ static UCHAR* get_position(
 	Ods::btree_page* page = (Ods::btree_page*) CCH_FETCH(tdbb, window, LCK_read, pag_index);
 
 #ifdef SCROLLABLE_CURSORS
-	// we must ensure that if we are going backwards, we always 
+	// we must ensure that if we are going backwards, we always
 	// have an expanded buffer (and a valid position on that page)
 	if (direction == RSE_get_backward) {
 		NAV_expand_index(window, impure);
@@ -779,12 +779,12 @@ static UCHAR* get_position(
 	Ods::IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation) {
 		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
-		if (!expanded_page) {		
+		if (!expanded_page) {
 			// theoretically impossible
 			*expanded_node = NULL;
 		}
 		else if (impure->irsb_nav_expanded_offset < 0) {
-			// position unknown or invalid 
+			// position unknown or invalid
 			*expanded_node = find_current(expanded_page, page, pointer);
 		}
 		else {
@@ -836,8 +836,8 @@ static UCHAR* get_position(
 	}
 
 #ifdef SCROLLABLE_CURSORS
-	// As a last resort, return the first (or last if backwards) 
-	// node on the page.  The sparse bitmap will prevent us from 
+	// As a last resort, return the first (or last if backwards)
+	// node on the page.  The sparse bitmap will prevent us from
 	// seeing records we have already visited before.
 	if (direction == RSE_get_backward) {
 		expanded_page = NAV_expand_index(window, 0);
@@ -878,9 +878,9 @@ static bool get_record(
 	try {
 
 	if (inhibit_cleanup) {
-		// Inhibit garbage collection & other housekeeping - 
+		// Inhibit garbage collection & other housekeeping -
 		// to prevent a deadlock when we visit the record.
-		// There are cases when we are called here and have a window locked 
+		// There are cases when we are called here and have a window locked
 		// HACK for bug 7041
 
 		old_att_flags = (tdbb->getAttachment()->att_flags & ATT_no_cleanup);
@@ -911,7 +911,7 @@ static bool get_record(
 				&value,	0, false);
 		if (compare_keys(idx, key->key_data, key->key_length, &value, 0)) {
 			result = false;
-		} 
+		}
 		else {
 			// mark in the navigational bitmap that we have visited this record
 			RBM_SET(tdbb->getDefaultPool(), &impure->irsb_nav_records_visited, rpb->rpb_number.getValue());
@@ -1059,7 +1059,7 @@ static UCHAR* nav_open(
 #endif
 
 	// If there is a starting descriptor, search down index to starting position.
-	// This may involve sibling buckets if splits are in progress.  If there 
+	// This may involve sibling buckets if splits are in progress.  If there
 	// isn't a starting descriptor, walk down the left side of the index (or the
 	// right side if backwards).
 
@@ -1069,7 +1069,7 @@ static UCHAR* nav_open(
 
 	UCHAR* pointer = NULL;
 	if (limit_ptr) {
-		
+
 		// If END_BUCKET is reached BTR_find_leaf will return NULL
 		while (!(pointer = BTR_find_leaf(page, limit_ptr, impure->irsb_nav_data,
 									  0, (idx->idx_flags & idx_descending) != 0, true)))
@@ -1129,7 +1129,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
  **************************************
  *
  * Functional description
- *	Setup the information about the current position 
+ *	Setup the information about the current position
  *	in the navigational index.  Store all required data in the
  *	impure area for the request.
  *
@@ -1141,7 +1141,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	impure->irsb_nav_page = window->win_page.getPageNum();
 	impure->irsb_nav_number = rpb->rpb_number;
 
-	// save the current key value if it hasn't already been saved 
+	// save the current key value if it hasn't already been saved
 	if (key_data) {
 		impure->irsb_nav_length = length;
 		memcpy(impure->irsb_nav_data, key_data, length);
@@ -1152,7 +1152,7 @@ static void set_position(IRSB_NAV impure, record_param* rpb, WIN* window,
 	if (window->win_expanded_buffer) {
 		impure->irsb_nav_expanded_offset =
 			(UCHAR*) expanded_node - (UCHAR*) window->win_expanded_buffer;
-	} 
+	}
 	else {
 		impure->irsb_nav_expanded_offset = -1;
 	}
@@ -1168,7 +1168,7 @@ static bool setup_bitmaps(RecordSource* rsb, IRSB_NAV impure)
  **************************************
  *
  * Functional description
- *	Setup the various bitmaps associated 
+ *	Setup the various bitmaps associated
  *	with a stream.
  *
  **************************************/

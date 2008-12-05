@@ -28,7 +28,7 @@
 namespace {
 
 typedef HANDLE WINAPI tRegisterEventSource(
-		LPCTSTR lpUNCServerName, 
+		LPCTSTR lpUNCServerName,
 		LPCTSTR lpSourceName);
 typedef BOOL WINAPI tReportEvent(
 		HANDLE hEventLog,
@@ -51,7 +51,7 @@ private:
 public:
 	explicit SyslogAccess(Firebird::MemoryPool&)
 	{
-		InitializeCriticalSection(&cs); 
+		InitializeCriticalSection(&cs);
 		InitFlag = false;
 		LogHandle = 0;
 	}
@@ -62,7 +62,7 @@ public:
 	void Record(WORD wType, const char* msg);
 };
 
-void SyslogAccess::Record(WORD wType, const char* msg) 
+void SyslogAccess::Record(WORD wType, const char* msg)
 {
 	EnterCriticalSection(&cs);
 	if (! InitFlag) {
@@ -95,7 +95,7 @@ Firebird::InitInstance<SyslogAccess> iSyslogAccess;
 
 namespace Firebird {
 
-void Syslog::Record(Severity level, const char* msg) 
+void Syslog::Record(Severity level, const char* msg)
 {
 	WORD wType = EVENTLOG_ERROR_TYPE;
 	switch (level) {

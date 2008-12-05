@@ -81,7 +81,7 @@ const UINT16 NULL_TERTIARY		= 0;
  *			+ 2 * ns
  *			+ 3 * nt
  *			+ 3 * (nc/2)
- *			+ 3 * 2 * ne 
+ *			+ 3 * 2 * ne
  *			+ 2 * nsp
  *			+ 1 (if nsp > 0, for separating keys from special keys)
  *
@@ -161,7 +161,7 @@ static ULONG do_debug = 0;
 /*
  *
  *  Convert a user string to a sequence that will collate bytewise.
- * 
+ *
  * RETURN:
  *		Length, in bytes, of returned key
  */
@@ -205,7 +205,7 @@ USHORT LC_NARROW_string_to_key(texttype* obj, USHORT iInLen, const BYTE* pInChar
 	}
 
 	iInLen = (inbuff - pInChar + 1);
-	
+
 	USHORT i;
 
 	for (i = 0; i < iInLen; i++, pInChar++) {
@@ -546,7 +546,7 @@ static const SortOrderTblEntry* get_coltab_entry(texttype* obj, const UCHAR** p,
 
 #define XOR	^					/* C bitwise XOR operator - defined for readability */
 
-SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2, 
+SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const BYTE* s2,
 	INTL_BOOL* error_flag)
 {
 	fb_assert(obj != NULL);
@@ -583,7 +583,7 @@ SSHORT LC_NARROW_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, cons
 	coltab_status stat1, stat2;
 	stat1.stat_flags = 0;
 	stat2.stat_flags = 0;
-	
+
 	const SortOrderTblEntry* col1 = 0;
 	const SortOrderTblEntry* col2 = 0;
 
@@ -689,7 +689,7 @@ static SSHORT old_fam2_compare(texttype* obj, ULONG l1, const BYTE* s1,
 		return (-1);
 	if (len1 > len2)
 		return (1);
-	
+
 	return (0);
 }
 #endif	/* DEBUG_COMPARE */

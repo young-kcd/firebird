@@ -298,13 +298,13 @@ bool EXT_get(RecordSource* rsb)
 	switch (rsb->rsb_type) {
 		case rsb_ext_sequential:
 			return get_sequential(rsb);
-	
+
 		case rsb_ext_indexed:
 			return get_indexed(rsb);
-	
+
 		case rsb_ext_dbkey:
 			return get_dbkey(rsb);
-	
+
 		default:
 			IBERROR(181);			/* msg 181 external access type not implemented */
 	}
@@ -439,7 +439,7 @@ RecordSource* EXT_optimize(OptimizerBlk* opt, SSHORT stream, jrd_nod** sort_ptr)
 	{
 		for (SSHORT i = 0; i < file->ext_index_count; i++) {
 			if (OPT_match_index(opt, stream, idx) &&
-				opt->opt_rpt[0].opt_lower) 
+				opt->opt_rpt[0].opt_lower)
 			{
 				inversion = OPT_make_index(tdbb, opt, relation, idx);
 				if (check_sort(*sort_ptr, idx, stream))
@@ -630,7 +630,7 @@ static bool check_sort(const jrd_nod* sort, const index_desc* index, USHORT stre
 
 	const index_desc::idx_repeat* tail = index->idx_rpt;
 	const jrd_nod* const* ptr = sort->nod_arg;
-	for (const jrd_nod* const* const end = ptr + sort->nod_count; ptr < end; 
+	for (const jrd_nod* const* const end = ptr + sort->nod_count; ptr < end;
 		ptr++, tail++)
 	{
 		const jrd_nod* field = *ptr;
@@ -921,7 +921,7 @@ static bool get_indexed(RecordSource* rsb)
 			UCHAR* p = key_buffer;
 			index_desc::idx_repeat* segment = index->idx_rpt;
 			jrd_nod** ptr = retrieval->irb_value;
-			for (const jrd_nod* const* const end = ptr + retrieval->irb_lower_count; 
+			for (const jrd_nod* const* const end = ptr + retrieval->irb_lower_count;
 				ptr < end; ptr++, segment++)
 			{
 				p += get_key_segment(*ptr, p,
@@ -1209,7 +1209,7 @@ static void set_flags(jrd_rel* relation, Record* record)
 	vec<jrd_fld*>* vector = relation->rel_fields;
 	if (!vector)
 		return;
-	
+
 	jrd_fld** field_ptr = &vector[0];
 	const Format* format = record->rec_format;
 	dsc* desc_ptr = format->fmt_desc;

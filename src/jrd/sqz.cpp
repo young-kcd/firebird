@@ -289,14 +289,14 @@ USHORT SQZ_differences(const SCHAR*	rec1,
  * Functional description
  *	Compute differences between two records.  The difference
  *	record, when applied to the first record, produces the
- *	second record.  
+ *	second record.
  *
  *	    difference_record	:= <control_string>...
  *
  *	    control_string	:= <positive_integer> <positive_integer data bytes>
  *				:= <negative_integer>
  *
- *	Return the total length of the differences string.  
+ *	Return the total length of the differences string.
  *
  **************************************/
 	SCHAR *p;
@@ -306,7 +306,7 @@ USHORT SQZ_differences(const SCHAR*	rec1,
 	MAX record size is currently 64K. Hence it is defined as a SLONG */
 
 #define STUFF(val)	if (out < end) *out++ = val; else return 32000;
-/* WHY IS THIS RETURNING 32000 ??? 
+/* WHY IS THIS RETURNING 32000 ???
  * It returns a large Positive value to indicate to the caller that we ran out
  * of buffer space in the 'out' argument. Thus we could not create a
  * successful differences record. Now it is upto the caller to check the
@@ -315,9 +315,9 @@ USHORT SQZ_differences(const SCHAR*	rec1,
  * information. Of course, the size for a 'differences' record is not expected
  * to go near 32000 in the future. If the case arises where we want to store
  * differences record of 32000 bytes and more, please change the return value
- * above to accomodate a failure value. 
- * 
- * This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999. 
+ * above to accomodate a failure value.
+ *
+ * This was investigated as a part of solving bug 10206, bsriram - 25-Feb-1999.
  */
 
 	const SCHAR* const start = out;

@@ -319,7 +319,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (!lookup_texttype(tt, &info))
 		{
 			delete tt;
-			ERR_post(Arg::Gds(isc_collation_not_installed) << Arg::Str(info.collationName) << 
+			ERR_post(Arg::Gds(isc_collation_not_installed) << Arg::Str(info.collationName) <<
 															  Arg::Str(info.charsetName));
 		}
 
@@ -1250,7 +1250,7 @@ static int blocking_ast_collation(void* ast_object)
 				ThreadContextHolder tdbb;
 				tdbb->setDatabase(dbb);
 				tdbb->setAttachment(tt->existenceLock->lck_attachment);
-		
+
 				Jrd::ContextPoolHolder context(tdbb, 0);
 
 				LCK_release(tdbb, tt->existenceLock);

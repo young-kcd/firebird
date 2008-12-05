@@ -259,7 +259,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 
 			return 0;
 		}
-		
+
 		if (length)
 		{
 			do
@@ -607,7 +607,7 @@ void CVT2_get_name(const dsc* desc, TEXT* string)
 	const char* p;
 
 	const USHORT length = CVT_make_string(desc, ttype_metadata, &p, (vary*) &temp, sizeof(temp), ERR_post);
-							 
+
 	memcpy(string, p, length);
 	string[length] = 0;
 	fb_utils::exact_name(string);

@@ -36,7 +36,7 @@ static void get_set_generator(STR, DUDLEY_NOD);
 
 static inline void check_blr(str* blr, const int l)
 {
-	if (!(blr->str_current - blr->str_start + l <= blr->str_length) 
+	if (!(blr->str_current - blr->str_start + l <= blr->str_length)
 		&& !TRN_get_buffer(blr, l) )
 	{
 		DDL_err(289);
@@ -538,7 +538,7 @@ static void generate( STR blr, DUDLEY_NOD node)
 		operatr = blr_matching2;
 		break;
 //	case nod_substr:
-//		operatr = blr_substring; 
+//		operatr = blr_substring;
 //		break;
 
 	default:

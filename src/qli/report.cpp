@@ -308,7 +308,7 @@ static void top_break( qli_brk* control, qli_prt* print)
  *	Execute a control break.
  *
  **************************************/
-	for (; control; control = control->brk_next) 
+	for (; control; control = control->brk_next)
 	{
 		for (qli_lls* stack = control->brk_statisticals; stack; stack = stack->lls_next)
 		{

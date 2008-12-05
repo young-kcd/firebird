@@ -2,7 +2,7 @@
  *	PROGRAM:	string class definition
  *	MODULE:		fb_string.cpp
  *	DESCRIPTION:	Provides almost that same functionality,
- *			that STL::basic_string<char> does, 
+ *			that STL::basic_string<char> does,
  *			but behaves MemoryPools friendly.
  *
  *  The contents of this file are subject to the Initial
@@ -115,7 +115,7 @@ namespace Firebird {
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);
 	}
-	
+
 	void AbstractString::adjustRange(const size_type length, size_type& pos, size_type& n)
 	{
 		if (pos == npos) {
@@ -153,7 +153,7 @@ namespace Firebird {
 			return baseAppend(n);
 		}
 		reserveBuffer(stringLength + n);
-		memmove(stringBuffer + p0 + n, stringBuffer + p0, 
+		memmove(stringBuffer + p0 + n, stringBuffer + p0,
 				stringLength - p0 + 1); // Do not forget to move null terminator too
 		stringLength += n;
 		return stringBuffer + p0;
@@ -162,7 +162,7 @@ namespace Firebird {
 	void AbstractString::baseErase(size_type p0, size_type n)
 	{
 		adjustRange(length(), p0, n);
-		memmove(stringBuffer + p0, 
+		memmove(stringBuffer + p0,
 				stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
 		stringLength -= n;
 		shrinkBuffer();
@@ -295,7 +295,7 @@ namespace Firebird {
 		baseErase(0, length());
 		if (! file)
 			return false;
-			
+
 		bool rc = false;
 		int c;
 		while ((c = getc(file)) != EOF) {
@@ -423,7 +423,7 @@ extern "C" {
 				}
 			}
 			resize(l);
-			return;	
+			return;
 		}
 		temp[tempsize - 1] = 0;
 		if (l < tempsize) {

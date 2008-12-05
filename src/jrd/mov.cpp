@@ -69,7 +69,7 @@ double MOV_date_to_double(const dsc* desc)
  *
  * Functional description
  *    Convert a date to double precision for
- *    date arithmetic routines.  
+ *    date arithmetic routines.
  *
  **************************************/
 
@@ -189,7 +189,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 {
 /**************************************
  *
- *	M O V _ g e t _ m e t a d a t a _ s t r 
+ *	M O V _ g e t _ m e t a d a t a _ s t r
  *
  **************************************
  *
@@ -204,7 +204,7 @@ void MOV_get_metadata_str(const dsc* desc, TEXT* buffer, USHORT buffer_length)
 
 	USHORT length = CVT_get_string_ptr(desc, &dummy_type, &ptr,
 									   NULL, 0, ERR_post);
-	
+
 #ifdef DEV_BUILD
 	if ((dummy_type != ttype_metadata) &&
 		(dummy_type != ttype_none) && (dummy_type != ttype_ascii))
@@ -245,7 +245,7 @@ SQUAD MOV_get_quad(const dsc* desc, SSHORT scale)
  **************************************
  *
  * Functional description
- *	Convert something arbitrary to a quad 
+ *	Convert something arbitrary to a quad
  *	Note: a quad is NOT the same as a 64 bit integer
  *
  **************************************/
@@ -364,7 +364,7 @@ int MOV_make_string(const dsc*	     desc,
  *	Make a string, in a specified text type, out of a descriptor.
  *	The caller must provide a sufficiently
  *	large temporary.  The address of the resultant string is returned
- *	by reference.  
+ *	by reference.
  *	MOV_make_string returns the length of the string in bytes.
  *
  *	Note: If the descriptor is known to be a string type in the
@@ -380,7 +380,7 @@ int MOV_make_string(const dsc*	     desc,
 int MOV_make_string2(Jrd::thread_db* tdbb,
 					 const dsc* desc,
 					 USHORT ttype,
-					 UCHAR** address, 
+					 UCHAR** address,
 					 Jrd::MoveBuffer& buffer,
 					 bool limit)
 {

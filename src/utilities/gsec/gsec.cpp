@@ -157,7 +157,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		Jrd::SecurityDatabase::getPath(database_name);
 		databaseName = database_name;
 	}
-	
+
 	Firebird::PathName serverName;
 	bool useServices = !uSvc->isService();
 	switch (ISC_extract_host(databaseName, serverName, true))
@@ -169,25 +169,25 @@ int gsec(Firebird::UtilSvc* uSvc)
 		serverName = "\\\\" + serverName + "\\";
 		break;
 	}
-		
+
 	if (!useServices)
 	{
 		serverName = "";
 	}
 	databaseName.copyTo(user_data->database_name, sizeof(user_data->database_name));
-	
+
 	FB_API_HANDLE db_handle = 0;
 
-	if (! useServices) 
+	if (! useServices)
 	{
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 		dpb.insertByte(isc_dpb_gsec_attach, 1); // not 0 - yes, I'm gsec
 		uSvc->getAddressPath(dpb);
 
-		if (user_data->dba_trust_user_name_entered) 
+		if (user_data->dba_trust_user_name_entered)
 		{
 			uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_auth, 
+			dpb.insertString(isc_dpb_trusted_auth,
 				user_data->dba_trust_user_name, strlen(user_data->dba_trust_user_name));
 			if (user_data->trusted_role && !user_data->sql_role_name_entered)
 			{
@@ -197,32 +197,32 @@ int gsec(Firebird::UtilSvc* uSvc)
 		else
 		{
 #ifdef TRUSTED_AUTH
-			if (user_data->trusted_auth) 
+			if (user_data->trusted_auth)
 			{
 				dpb.insertTag(isc_dpb_trusted_auth);
 			}
 #endif
-			if (user_data->dba_user_name_entered) 
+			if (user_data->dba_user_name_entered)
 			{
-				dpb.insertString(isc_dpb_user_name, 
+				dpb.insertString(isc_dpb_user_name,
 					user_data->dba_user_name, strlen(user_data->dba_user_name));
 			}
 
-			if (user_data->dba_password_entered) 
+			if (user_data->dba_password_entered)
 			{
-				dpb.insertString(tdsec->utilSvc->isService() ? 
-								isc_dpb_password_enc : isc_dpb_password, 
+				dpb.insertString(tdsec->utilSvc->isService() ?
+								isc_dpb_password_enc : isc_dpb_password,
 					user_data->dba_password, strlen(user_data->dba_password));
 			}
 		}
 
 		if (user_data->sql_role_name_entered) {
-			dpb.insertString(isc_dpb_sql_role_name, 
+			dpb.insertString(isc_dpb_sql_role_name,
 				user_data->sql_role_name, strlen(user_data->sql_role_name));
 		}
 
-		if (isc_attach_database(status, 0, databaseName.c_str(), &db_handle, 
-				dpb.getBufferLength(), 
+		if (isc_attach_database(status, 0, databaseName.c_str(), &db_handle,
+				dpb.getBufferLength(),
 				reinterpret_cast<const char*>(dpb.getBuffer())))
 		{
 			GSEC_error_redirect(status, GsecMsg15);
@@ -265,9 +265,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 				uSvc->started();
 			if (! useServices)
 			{
-				ret = SECURITY_exec_line(status, db_handle, 
+				ret = SECURITY_exec_line(status, db_handle,
 							user_data, data_print, NULL);
-				if (ret) 
+				if (ret)
 				{
 					GSEC_print(ret, user_data->user_name);
 					if (status[1])
@@ -304,7 +304,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					ret = 0;
 					break;
 				}
-				if (user_data->dba_user_name_entered || 
+				if (user_data->dba_user_name_entered ||
 					user_data->dba_password_entered ||
 					user_data->database_name_entered
 #ifdef TRUSTED_AUTH
@@ -1081,7 +1081,7 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
  *
  * Functional description
  *	Read the command line
- *	returns 0 on normal completion, 
+ *	returns 0 on normal completion,
  *	   1 if user chooses to quit
  *	   -1 on error or if user asks for help
  *
@@ -1134,13 +1134,13 @@ void GSEC_print_status(const ISC_STATUS* status_vector, bool exitOnError)
  *	to allow redirecting output.
  *
  **************************************/
-	if (status_vector) 
+	if (status_vector)
 	{
 		const ISC_STATUS* vector = status_vector;
 		tsec* tdsec = tsec::getSpecific();
 
 		SCHAR s[1024];
-		while (fb_interpret(s, sizeof(s), &vector)) 
+		while (fb_interpret(s, sizeof(s), &vector))
 		{
 			const char* nl = (s[0] ? s[strlen(s) - 1] != '\n' : true) ? "\n" : "";
 			util_output("%s%s", s, nl);
@@ -1168,7 +1168,7 @@ static void util_output(const SCHAR* format, ...)
 	{
 		Firebird::string buf;
 		buf.vprintf(format, arglist);
-	
+
 		tdsec->utilSvc->output(buf.c_str());
 	}
 	va_end(arglist);

@@ -62,13 +62,13 @@ void REMOTE_cleanup_transaction( Rtr* transaction)
  **************************************
  *
  * Functional description
- *	A transaction is being committed or rolled back.  
+ *	A transaction is being committed or rolled back.
  *	Purge any active messages in case the user calls
  *	receive while we still have something cached.
  *
  **************************************/
 	for (Rrq* request = transaction->rtr_rdb->rdb_requests; request;
-		 request = request->rrq_next) 
+		 request = request->rrq_next)
 	{
 		if (request->rrq_rtr == transaction) {
 			REMOTE_reset_request(request, 0);
@@ -112,51 +112,51 @@ ULONG REMOTE_compute_batch_size(rem_port* port,
  * 	...
  *     <op_fetch_response> <data_record n-1>
  *     <op_fetch_response> <data_record n>
- * 
+ *
  * end-of-batch is indicated by setting p_sqldata_messages to
  * 0 in the op_fetch_response.  End of cursor is indicated
  * by setting p_sqldata_status to a non-zero value.  Note
  * that a fetch CAN be attempted after end of cursor, this
  * is sent to the server for the server to return the appropriate
- * error code. 
- * 
+ * error code.
+ *
  * Each data block has one overhead packet
  * to indicate the data is present.
- * 
+ *
  * (See also op_send in receive_msg() - which is a kissing cousin
  *  to this routine)
- * 
+ *
  * Here we make a guess for the optimal number of records to
  * send in each batch.  This is important as we wait for the
  * whole batch to be received before we return the first item
  * to the client program.  How many are cached on the client also
  * impacts client-side memory utilization.
- * 
+ *
  * We optimize the number by how many can fit into a packet.
  * The client calculates this number (n from the list above)
  * and sends it to the server.
- * 
- * I asked why it is that the client doesn't just ask for a packet 
- * full of records and let the server return however many fits in 
- * a packet.  According to Sudesh, this is because of a bug in 
- * Superserver which showed up in the WIN_NT 4.2.x kits.  So I 
- * imagine once we up the protocol so that we can be sure we're not 
- * talking to a 4.2 kit, then we can make this optimization. 
+ *
+ * I asked why it is that the client doesn't just ask for a packet
+ * full of records and let the server return however many fits in
+ * a packet.  According to Sudesh, this is because of a bug in
+ * Superserver which showed up in the WIN_NT 4.2.x kits.  So I
+ * imagine once we up the protocol so that we can be sure we're not
+ * talking to a 4.2 kit, then we can make this optimization.
  *           - Deej 2/28/97
- * 
- * Note: A future optimization can look at setting the packet 
+ *
+ * Note: A future optimization can look at setting the packet
  * size to optimize the transfer.
  *
  * Note: This calculation must use worst-case to determine the
  * packing.  Should the data record have VARCHAR data, it is
  * often possible to fit more than the packing specification
- * into each packet.  This is also a candidate for future 
+ * into each packet.  This is also a candidate for future
  * optimization.
- * 
+ *
  * The data size is either the XDR data representation, or the
  * actual message size (rounded up) if this is a symmetric
- * architecture connection. 
- * 
+ * architecture connection.
+ *
  **************************************/
 
 const USHORT MAX_PACKETS_PER_BATCH	= 4;	/* packets    - picked by SWAG */
@@ -200,7 +200,7 @@ const USHORT MIN_ROWS_PER_BATCH		= 10;	/* data rows  - picked by SWAG */
 
 	ULONG result = (num_packets * port->port_buff_size - buffer_used) / row_size;
 
-/* Must always send some messages, even if message size is more 
+/* Must always send some messages, even if message size is more
    than packet size. */
 
 	result = MAX(result, MIN_ROWS_PER_BATCH);
@@ -311,7 +311,7 @@ void REMOTE_free_packet( rem_port* port, PACKET * packet, bool partial)
 			}
 		}
 #ifdef DEBUG_XDR_MEMORY
-		// All packet memory allocations should now be voided. 
+		// All packet memory allocations should now be voided.
 		// note: this code will may work properly if partial == true
 
 		for (n = 0; n < P_MALLOC_SIZE; n++)
@@ -342,7 +342,7 @@ void REMOTE_get_timeout_params(rem_port* port, Firebird::ClumpletReader* pb)
 
 	fb_assert(isc_dpb_connect_timeout == isc_spb_connect_timeout);
 
-	port->port_connect_timeout = pb && pb->find(isc_dpb_connect_timeout) ? 
+	port->port_connect_timeout = pb && pb->find(isc_dpb_connect_timeout) ?
 								 pb->getInt() : Config::getConnectionTimeout();
 
 	port->port_flags |= PORT_dummy_pckt_set;
@@ -562,7 +562,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
  * Functional description
  *	There has been a failure during attach/create database.
  *	The included string have been allocated off of the database block,
- *	which is going to be released before the message gets passed 
+ *	which is going to be released before the message gets passed
  *	back to the user.  So, to preserve information, copy any included
  *	strings to a special buffer.
  *
@@ -571,7 +571,7 @@ void REMOTE_save_status_strings( ISC_STATUS* vector)
 
 	if (!attachFailures)
 	{
-		try 
+		try
 		{
 			attachFailures = FB_NEW(*getDefaultMemoryPool()) Firebird::CircularStringsBuffer<ATTACH_FAILURE_SPACE>;
 			/* FREE: freed by exit handler cleanup_memory() */
@@ -700,15 +700,15 @@ bool_t REMOTE_getbytes (XDR * xdrs, SCHAR * buff, u_int count)
 			xdrs->x_private = xdrs->x_base;
 		}
 	}
-	
+
 	return TRUE;
 }
 #endif //REM_SERVER
 
 #ifdef TRUSTED_AUTH
-ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, 
+ServerAuth::ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb,
 					   ServerAuth::Part2* p2, P_OP op)
-: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()), 
+: fileName(*getDefaultMemoryPool()), clumplet(*getDefaultMemoryPool()),
   part2(p2), operation(op)
 {
 	fileName.assign(fName, fLen);

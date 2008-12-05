@@ -332,7 +332,7 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 	}
 
 	FILE* input_file;
-	
+
 	if (dudleyGlob.DDL_extract) {
 		strcpy(dudleyGlob.DB_file_string, file_name_1);
 		strcpy(dudleyGlob.DDL_file_string, file_name_2);
@@ -355,8 +355,8 @@ int CLIB_ROUTINE main( int argc, char* argv[])
 		dudleyGlob.DDL_interactive = dudleyGlob.DDL_service || isatty(0);
 	}
 	else {
-		/* 
-		   * try to open the input DDL file.  
+		/*
+		   * try to open the input DDL file.
 		   * If it already has a .GDL extension, just try to open it.
 		   * Otherwise, add the extension, try, remove the extension,
 		   * and try again.
@@ -696,7 +696,7 @@ bool DDL_yes_no( USHORT number)
  *
  **************************************/
 	TEXT prompt[128], reprompt[128], yes_ans[128], no_ans[128];
-	
+
 	static const SafeArg dummy;
 
 	fb_msg_format(0, DDL_MSG_FAC, number, sizeof(prompt), prompt, dummy);

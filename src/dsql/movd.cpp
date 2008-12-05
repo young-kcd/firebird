@@ -40,11 +40,11 @@ static void post_error(const Arg::StatusVector&);
 
 
 /**
-  
+
  	MOVD_move
-  
+
     @brief	Move (and possible convert) something to something else.
- 
+
 
     @param from
     @param to
@@ -58,14 +58,14 @@ void MOVD_move(const dsc* from, dsc* to)
 
 
 /**
-  
+
  	post_error
-  
+
     @brief	A conversion error occurred.  Complain.
- 
+
 
     @param status
-    @param 
+    @param
 
  **/
 static void post_error(const Arg::StatusVector& v)

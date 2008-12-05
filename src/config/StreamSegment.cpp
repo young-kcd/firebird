@@ -97,7 +97,7 @@ void StreamSegment::advance(int size)
 char* StreamSegment::copy(void *target, int length)
 {
 	char* targ = static_cast<char*>(target);
-	
+
 	for (int len = length; len;)
 	{
 		const int l = MIN (len, available);

@@ -36,7 +36,7 @@
 #include <mach-o/dyld.h>
 
 
-static void inline debugPrint(const char* s) 
+static void inline debugPrint(const char* s)
 {
 	//printf("%s\n", s);
 }
@@ -46,10 +46,10 @@ static void inline debugPrint(const char* s)
 class DarwinModule : public ModuleLoader::Module
 {
 public:
-	DarwinModule(NSModule ns, void* dl) : nsModule(ns), dlModule(dl) { } 
+	DarwinModule(NSModule ns, void* dl) : nsModule(ns), dlModule(dl) { }
 	~DarwinModule();
 	void* findSymbol(const Firebird::string&);
-	
+
 private:
 	NSModule nsModule;
 	void* dlModule;		// non-NULL means this is dynamic library
@@ -99,7 +99,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		else
 		{
 			debugPrint("not a Mach-O MH_BUNDLE file type or dynamic library");
-			return 0;	
+			return 0;
 		}
 	case NSObjectFileImageArch:
 		debugPrint("no object for this architecture");
@@ -114,7 +114,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		debugPrint("unknown error from NSCreateObjectFileImageFromFile()");
 		return 0;
 	}
-	
+
 	/* link the image */
 	NSModule mod_handle = NSLinkModule(image, modPath.c_str(), NSLINKMODULE_OPTION_PRIVATE);
 	NSDestroyObjectFileImage(image);
@@ -125,7 +125,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		// We should really throw an error here.
 		return 0;
 	}
-	
+
 	NSSymbol initSym = NSLookupSymbolInModule(mod_handle, "__init");
 	if (initSym != NULL)
 	{
@@ -133,7 +133,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 		init = ( void (*)(void)) NSAddressOfSymbol(initSym);
 		init();
 	}
-	
+
 	return FB_NEW(*getDefaultMemoryPool()) DarwinModule(mod_handle, NULL);
 }
 
@@ -143,7 +143,7 @@ DarwinModule::~DarwinModule()
 	{
 		dlclose(dlModule);
 	}
-	else 
+	else
 	{
 		/* Make sure the fini function gets called, if there is one */
 		NSSymbol symbol = NSLookupSymbolInModule(nsModule, "__fini");

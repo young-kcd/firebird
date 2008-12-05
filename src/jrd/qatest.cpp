@@ -31,8 +31,8 @@ this was done with a user UDF, but with NLM no longer supporting
 user UDF's we are including it in the system.
 
 I have therefore extended the BUILTIN_entrypoint() method to include
-a system UDF entry, QATEST_entrypoint, which will do various 
-nasty things to the system when invoked.  
+a system UDF entry, QATEST_entrypoint, which will do various
+nasty things to the system when invoked.
 
 -------------
 THIS FUNCTION IS NOT TO BE DOCUMENTED OR USED BY CUSTOMERS
@@ -40,31 +40,31 @@ THIS FUNCTION IS NOT TO BE DOCUMENTED OR USED BY CUSTOMERS
 
 To use the UDF, it must be declared to a database, thusly:
 
-    declare external function QAPOKE 
-	    int, int 
+    declare external function QAPOKE
+	    int, int
         returns int by value
-        entry_point "DEBUG_CRASH_TESTS" 
+        entry_point "DEBUG_CRASH_TESTS"
         module_name "TEST1";
 
 Note the special magic values for entry_point & module_name.  Any
 number of parameters can be declared as part of the UDF definition and
-will be passed to the entrypoint - the first parameter selects the 
+will be passed to the entrypoint - the first parameter selects the
 subfunction to invoke.
 
 Currently defined subfunctions, and expected parameters, are:
 
    0	QATEST_testing (SLONG)
-   
+
 	Tests that the mechanism is working properly.
   	returns 2*arg1;
 
-   1	QATEST_delete_database (void)		
-   
+   1	QATEST_delete_database (void)
+
 	Deletes the current database file.
 	Returns 0 on success
 	Returns -1 if database doesn't have a file (when can this happen?)
 
-   2	QATEST_delete_shadow (ULONG)		
+   2	QATEST_delete_shadow (ULONG)
 
 	Deletes shadow #arg1.
 	Returns	0 on success
@@ -80,7 +80,7 @@ Currently defined subfunctions, and expected parameters, are:
 
 Code for the UDF is in jrd/qatest.c.
 
-The R&D TCS test case is QATEST_METHOD, which exercises all the 
+The R&D TCS test case is QATEST_METHOD, which exercises all the
 defined APIs for this function.
 
 1994-July-14 David Schnepper

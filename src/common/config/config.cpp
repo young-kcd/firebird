@@ -135,7 +135,7 @@ static Firebird::InitInstance<ConfigImpl> sysConfig;
  *	Implementation interface
  */
 
-ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p) 
+ConfigImpl::ConfigImpl(MemoryPool& p) : ConfigRoot(p)
 {
 	/* Prepare some stuff */
 
@@ -244,7 +244,7 @@ static Firebird::PathName* rootFromCommandLine = 0;
 void Config::setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot)
 {
 	delete rootFromCommandLine;
-	rootFromCommandLine = FB_NEW(*getDefaultMemoryPool()) 
+	rootFromCommandLine = FB_NEW(*getDefaultMemoryPool())
 		Firebird::PathName(*getDefaultMemoryPool(), newRoot);
 }
 

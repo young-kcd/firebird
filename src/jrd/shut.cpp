@@ -54,7 +54,7 @@ union shutdown_data {
 };
 
 
-// Define this to true if you need to allow no-op behavior when requested shutdown mode 
+// Define this to true if you need to allow no-op behavior when requested shutdown mode
 // matches current. Logic of jrd8_create_database may need attention in this case too
 const bool IGNORE_SAME_MODE = false;
 
@@ -107,7 +107,7 @@ bool SHUT_blocking_ast(thread_db* tdbb)
 		default:
 			fb_assert(false);
 		}
-					
+
 		dbb->dbb_shutdown_delay = 0; // not tested anywhere
 
 		return false;
@@ -154,7 +154,7 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 /* Only platform's user locksmith can shutdown or bring online
    a database. */
 
-	if (!attachment->locksmith()) 
+	if (!attachment->locksmith())
 	{
 		return false;
 	}
@@ -163,11 +163,11 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 
 	// Check if requested shutdown mode is valid
 	// Note that if we are already in requested mode we just return true.
-	// This is required to ensure backward compatible behavior (gbak relies on that, 
+	// This is required to ensure backward compatible behavior (gbak relies on that,
 	// user-written scripts may rely on this behaviour too)
 	switch (shut_mode) {
 	case isc_dpb_shut_full:
-		if (dbb->dbb_ast_flags & DBB_shutdown_full) 
+		if (dbb->dbb_ast_flags & DBB_shutdown_full)
 			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
 	case isc_dpb_shut_multi:
@@ -185,14 +185,14 @@ bool SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay)
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
 			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		break;
-	case isc_dpb_shut_normal:	
+	case isc_dpb_shut_normal:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
 			return bad_mode(tdbb, IGNORE_SAME_MODE);
 		return bad_mode(tdbb, false);
 	default:
 		return bad_mode(tdbb, false); // unexpected mode
 	}
-	
+
 	try {
 
 	// Reject exclusive and single-user shutdown attempts
@@ -351,30 +351,30 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	if (!attachment->att_user->locksmith()) {
 		return false;
 	}
-	
+
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
 
 	// Check if requested shutdown mode is valid
 	switch (shut_mode) {
 	case isc_dpb_shut_normal:
-		if (!(dbb->dbb_ast_flags & DBB_shutdown)) 
+		if (!(dbb->dbb_ast_flags & DBB_shutdown))
 			return bad_mode(tdbb, IGNORE_SAME_MODE); // normal -> normal
 		break;
 	case isc_dpb_shut_multi:
 		if (!(dbb->dbb_ast_flags & DBB_shutdown))
 			return bad_mode(tdbb, false); // normal -> multi
-		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) && 
-		    !(dbb->dbb_ast_flags & DBB_shutdown_single)) 
+		if (!(dbb->dbb_ast_flags & DBB_shutdown_full) &&
+		    !(dbb->dbb_ast_flags & DBB_shutdown_single))
 		{
 			return bad_mode(tdbb, IGNORE_SAME_MODE); // multi -> multi
 		}
 		break;
-	case isc_dpb_shut_single:		
+	case isc_dpb_shut_single:
 		if (dbb->dbb_ast_flags & DBB_shutdown_single)
 			return bad_mode(tdbb, IGNORE_SAME_MODE); //single -> single
 		if (!(dbb->dbb_ast_flags & DBB_shutdown_full))
 			return bad_mode(tdbb, false); // !full -> single
-		break;		
+		break;
 	case isc_dpb_shut_full:
 		if (dbb->dbb_ast_flags & DBB_shutdown_full)
 		{
@@ -384,7 +384,7 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 	default: // isc_dpb_shut_full
 		return bad_mode(tdbb, false); // unexpected mode
 	}
-	
+
 	try {
 
 	// Reject exclusive and single-user shutdown attempts
@@ -435,7 +435,7 @@ bool SHUT_online(thread_db* tdbb, SSHORT flag)
 		Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
 		return false;
 	}
-	
+
 	return true;
 }
 
@@ -444,7 +444,7 @@ static bool bad_mode(thread_db* tdbb, bool ignore)
 {
 	if (!ignore) {
 		Database* dbb = tdbb->getDatabase();
-		
+
 		ERR_build_status(tdbb->tdbb_status_vector, Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}
 	return ignore;
@@ -527,7 +527,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 /* Mark database and all active attachments as shutdown. */
 
 	dbb->dbb_ast_flags &= ~(DBB_shutdown | DBB_shutdown_single | DBB_shutdown_full);
-	
+
 	switch (flag & isc_dpb_shut_mode_mask) {
 	case isc_dpb_shut_normal:
 		break;
@@ -545,7 +545,7 @@ static bool shutdown_locks(thread_db* tdbb, SSHORT flag)
 	}
 
 	Attachment* attachment;
-	
+
 	for (attachment = dbb->dbb_attachments; attachment;
 		 attachment = attachment->att_next)
 	{

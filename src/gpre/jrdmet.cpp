@@ -1,28 +1,28 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	JRD Access Method
 //		MODULE:		jrdmet.cpp
 //		DESCRIPTION:	Non-database meta data for internal JRD stuff
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings
 //  There however is still a bunch of constness errors in this file
-//  
+//
 //
 //
 
@@ -42,9 +42,9 @@
 
 
 //____________________________________________________________
-//  
+//
 //		Initialize in memory meta data.
-//  
+//
 
 void JRDMET_init( DBB db)
 {
@@ -65,7 +65,7 @@ void JRDMET_init( DBB db)
 		HSH_insert(symbol);
 
 		const int* fld = relfld + RFLD_RPT;
-		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH) 
+		for (int n = 0; fld[RFLD_F_NAME]; ++n, fld += RFLD_F_LENGTH)
 		{
 			const gfld* gfield = (fld[RFLD_F_UPD_MINOR]) ?
 										   &gfields[fld[RFLD_F_UPD_ID]] :

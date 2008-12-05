@@ -20,7 +20,7 @@
  *  Contributor(s): ______________________________________.
  *  25 May 2003 - Nickolay Samofatov: Fix several bugs that prevented
  *    compatibility with Kylix
- * 
+ *
  */
 
 #include "firebird.h"
@@ -47,7 +47,7 @@ static string getRootPathFromExePath()
 {
 	// get the pathname of the running executable
 	string bin_dir = fb_utils::get_process_name();
-	if (bin_dir.length() == 0) 
+	if (bin_dir.length() == 0)
 		return "";
 
 	// get rid of the filename

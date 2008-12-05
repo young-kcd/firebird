@@ -167,7 +167,7 @@ static fss_size_t fss_mbtowc( fss_wchar_t* p, const UCHAR* s, fss_size_t n)
 	int nc = 0;
 	if (n <= nc)
 		return -1;
-		
+
 	const int c0 = *s & 0xff;
 	long l = c0;
 	for (const Fss_table* t = fss_sequence_table; t->cmask; t++) {
@@ -265,7 +265,7 @@ ULONG CS_UTFFSS_fss_to_unicode_cc(csconvert* obj,
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == CS_UTFFSS_fss_to_unicode_cc);
 
-	return fss_to_unicode(src_len, src_ptr, 
+	return fss_to_unicode(src_len, src_ptr,
 		dest_len, Firebird::OutAligner<UNICODE>(dest_ptr, dest_len), err_code, err_position);
 }
 

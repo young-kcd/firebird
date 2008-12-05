@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	
+ *	PROGRAM:
  *	MODULE:		DataTypeUtil.cpp
  *	DESCRIPTION:	Data Type Utility functions
  *
@@ -40,7 +40,7 @@ using namespace Firebird;
 
 
 SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* value2)
-{	
+{
 	SSHORT subType1 = value1->getBlobSubType();
 	SSHORT subType2 = value2->getBlobSubType();
 
@@ -71,40 +71,40 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 
 void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args)
 {
-	//-------------------------------------------------------------------------- 
+	//--------------------------------------------------------------------------
 	//  [Arno Brinkman] 2003-08-23
-	//  
+	//
 	//  This function is made to determine a output descriptor from a given list
 	//  of expressions according to the latest SQL-standard that was available.
-	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
-	//  
+	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002)
+	//
 	//  If any datatype has a character type then :
 	//  - the output will always be a character type except unconvertable types.
 	//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
 	//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
 	//  - first character-set and collation are used as output descriptor.
-	//  - if all types have datatype CHAR then output should be CHAR else 
+	//  - if all types have datatype CHAR then output should be CHAR else
 	//    VARCHAR and with the maximum length used from the given list.
-	//  
-	//  If all of the datatypes are EXACT numeric then the output descriptor 
-	//  shall be EXACT numeric with the maximum scale and the maximum precision 
+	//
+	//  If all of the datatypes are EXACT numeric then the output descriptor
+	//  shall be EXACT numeric with the maximum scale and the maximum precision
 	//  used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
-	//  
+	//
 	//  If any of the datatypes is APPROXIMATE numeric then each datatype in the
-	//  list shall be numeric else a error is thrown and the output descriptor 
+	//  list shall be numeric else a error is thrown and the output descriptor
 	//  shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
-	//  
+	//
 	//  If any of the datatypes is a datetime type then each datatype in the
 	//  list shall be the same datetime type else a error is thrown.
 	//  numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
-	//  
+	//
 	//  If any of the datatypes is a BLOB datatype then :
 	//  - all types should be a BLOB else throw error.
 	//  - all types should have the same sub_type else throw error.
 	//  - when TEXT type then use first character-set and collation as output
 	//    descriptor.
 	//  (dtype_blob)
-	//  
+	//
 	//--------------------------------------------------------------------------
 
 	// Initialize values.
@@ -161,10 +161,10 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		}
 		else {
 			if (all_equal) {
-				all_equal = 
+				all_equal =
 					(max_dtype == arg->dsc_dtype) &&
-					(max_scale == arg->dsc_scale) && 
-					(max_length == arg->dsc_length) && 
+					(max_scale == arg->dsc_scale) &&
+					(max_length == arg->dsc_length) &&
 					(max_sub_type == arg->dsc_sub_type);
 			}
 		}
@@ -175,7 +175,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 			// Is there any approximate numeric?
 			if (DTYPE_IS_APPROX(arg->dsc_dtype)) {
 				any_approx = true;
-				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types 
+				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types
 				// 1 and 2 from float types dtype_real, dtype_double
 				if (!any_float) {
 					any_float = (arg->dsc_sub_type == 0);
@@ -218,11 +218,11 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 		if (DTYPE_IS_TEXT(arg->dsc_dtype) ||
 			(arg->dsc_dtype == dtype_blob && arg->dsc_sub_type == isc_blob_text))
 		{
-			// Pick first characterset-collate from args-list  
-			// 
-			// Is there an better way to determine the         
-			// characterset / collate from the list ?          
-			// Maybe first according SQL-standard which has an order 
+			// Pick first characterset-collate from args-list
+			//
+			// Is there an better way to determine the
+			// characterset / collate from the list ?
+			// Maybe first according SQL-standard which has an order
 			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
 			//
 			// At least give any first charset other than ASCII/NONE precedence
@@ -351,7 +351,7 @@ void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int
 	// If all of the arguments are from type text use a text type.
 	// Firebird behaves a little bit different than standard here, because
 	// any datatype (except BLOB) can be converted to a character-type we
-	// allow to use numeric and datetime types together with a 
+	// allow to use numeric and datetime types together with a
 	// character-type, but output will always be varying !
 	if (all_text || (any_text && (any_numeric || any_datetime))) {
 		if (any_text_blob)

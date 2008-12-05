@@ -19,7 +19,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
- 
+
 #include "firebird.h"
 #include "../jrd/common.h"
 #include "../jrd/rpb_chain.h"
@@ -49,8 +49,8 @@ int traRpbList::PushRpb(record_param* value)
 	if (pos-- > 0) {
 		traRpbListElement& prev = (*this)[pos];
 		if (prev.lr_rpb->rpb_relation->rel_id == value->rpb_relation->rel_id &&
-			prev.lr_rpb->rpb_number == value->rpb_number) 
-		{ 
+			prev.lr_rpb->rpb_number == value->rpb_number)
+		{
 			// we got the same record once more - mark for refetch
 			level = prev.level;
 			fb_assert(pos >= level);

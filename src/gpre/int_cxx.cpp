@@ -1,27 +1,27 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	C preprocess
 //		MODULE:		int_cxx.cpp
 //		DESCRIPTION:	Code generate for internal JRD modules
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  TMN (Mike Nordell) 11.APR.2001 - Reduce compiler warnings in generated code
-//  
+//
 //
 //____________________________________________________________
 //
@@ -86,13 +86,13 @@ static inline void endp(const int column)
 }
 
 //____________________________________________________________
-//  
-//  
+//
+//
 
 void INT_CXX_action( const act* action, int column)
 {
 
-//  Put leading braces where required 
+//  Put leading braces where required
 
 	switch (action->act_type) {
 	case ACT_for:
@@ -156,16 +156,16 @@ void INT_CXX_action( const act* action, int column)
 		return;
 	}
 
-//  Put in a trailing brace for those actions still with us 
+//  Put in a trailing brace for those actions still with us
 
 	endp(column);
 }
 
 
 //____________________________________________________________
-//  
+//
 //		Align output to a specific column for output.
-//  
+//
 
 static void align(const int column)
 {
@@ -185,10 +185,10 @@ static void align(const int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Build an assignment from a host language variable to
 //		a port variable.
-//  
+//
 
 static void asgn_from( REF reference, int column)
 {
@@ -229,10 +229,10 @@ static void asgn_from( REF reference, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Build an assignment to a host language variable from
 //		a port variable.
-//  
+//
 #ifdef NOT_USED_OR_REPLACED
 static void asgn_to( REF reference)
 {
@@ -259,9 +259,9 @@ static void asgn_to( REF reference)
 #endif
 
 //____________________________________________________________
-//  
+//
 //		Generate code for AT END clause of FETCH.
-//  
+//
 
 static void gen_at_end( const act* action, int column)
 {
@@ -273,9 +273,9 @@ static void gen_at_end( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Callback routine for BLR pretty printer.
-//  
+//
 
 static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 {
@@ -284,9 +284,9 @@ static void gen_blr(void* user_arg, SSHORT offset, const char* string)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate text to compile a request.
-//  
+//
 
 static void gen_compile( const gpre_req* request, int column)
 {
@@ -302,9 +302,9 @@ static void gen_compile( const gpre_req* request, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate insertion text for the database statement.
-//  
+//
 
 static void gen_database( const act* action, int column)
 {
@@ -319,9 +319,9 @@ static void gen_database( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for END_MODIFY.
-//  
+//
 
 static void gen_emodify( const act* action, int column)
 {
@@ -358,9 +358,9 @@ static void gen_emodify( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for END_STORE.
-//  
+//
 
 static void gen_estore( const act* action, int column, bool special)
 {
@@ -372,9 +372,9 @@ static void gen_estore( const act* action, int column, bool special)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate definitions associated with a single request.
-//  
+//
 
 static void gen_endfor( const act* action, int column)
 {
@@ -389,9 +389,9 @@ static void gen_endfor( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for ERASE.
-//  
+//
 
 static void gen_erase( const act* action, int column)
 {
@@ -401,9 +401,9 @@ static void gen_erase( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for FOR statement.
-//  
+//
 
 static void gen_for( const act* action, int column)
 {
@@ -424,10 +424,10 @@ static void gen_for( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate a name for a reference.  Name is constructed from
 //		port and parameter idents.
-//  
+//
 
 static char* gen_name(char* const string, const ref* reference)
 {
@@ -440,9 +440,9 @@ static char* gen_name(char* const string, const ref* reference)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate BLR in raw, numeric form.  Ugly but dense.
-//  
+//
 
 static void gen_raw( const gpre_req* request)
 {
@@ -473,9 +473,9 @@ static void gen_raw( const gpre_req* request)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate a send or receive call for a port.
-//  
+//
 
 static void gen_receive( const gpre_req* request, const gpre_port* port)
 {
@@ -488,9 +488,9 @@ static void gen_receive( const gpre_req* request, const gpre_port* port)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate definitions associated with a single request.
-//  
+//
 
 static void gen_request( const gpre_req* request)
 {
@@ -514,15 +514,15 @@ static void gen_request( const gpre_req* request)
 
 
 //____________________________________________________________
-//  
+//
 //		Process routine head.  If there are gpreGlob.requests in the
 //		routine, insert local definitions.
-//  
+//
 
 static void gen_routine( const act* action, int column)
 {
 	for (const gpre_req* request = (gpre_req*) action->act_object; request;
-		 request = request->req_routine) 
+		 request = request->req_routine)
 	{
 		for (gpre_port* port = request->req_ports; port; port = port->por_next)
 			make_port(port, column + INDENT);
@@ -531,9 +531,9 @@ static void gen_routine( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for END_STREAM.
-//  
+//
 
 static void gen_s_end( const act* action, int column)
 {
@@ -543,9 +543,9 @@ static void gen_s_end( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate substitution text for FETCH.
-//  
+//
 
 static void gen_s_fetch( const act* action, int column)
 {
@@ -558,10 +558,10 @@ static void gen_s_fetch( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate text to compile and start a stream.  This is
 //		used both by START_STREAM and FOR
-//  
+//
 
 static void gen_s_start( const act* action, int column)
 {
@@ -577,9 +577,9 @@ static void gen_s_start( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Generate a send or receive call for a port.
-//  
+//
 
 static void gen_send( const gpre_req* request, const gpre_port* port,
 	int column, bool special)
@@ -599,9 +599,9 @@ static void gen_send( const gpre_req* request, const gpre_port* port,
 
 
 //____________________________________________________________
-//  
+//
 //		Generate a START.
-//  
+//
 
 static void gen_start( const gpre_req* request, const gpre_port* port,
 	int column, bool special)
@@ -617,9 +617,9 @@ static void gen_start( const gpre_req* request, const gpre_port* port,
 
 
 //____________________________________________________________
-//  
+//
 //		Substitute for a variable reference.
-//  
+//
 
 static void gen_type( const act* action, int column)
 {
@@ -629,9 +629,9 @@ static void gen_type( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Substitute for a variable reference.
-//  
+//
 
 static void gen_variable( const act* action, int column)
 {
@@ -644,9 +644,9 @@ static void gen_variable( const act* action, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Insert a port record description in output.
-//  
+//
 
 static void make_port( gpre_port* port, int column)
 {
@@ -697,7 +697,7 @@ static void make_port( gpre_port* port, int column)
 			fprintf(gpreGlob.out_file, "    ISC_QUAD  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
 			break;
-			
+
 		case dtype_blob:
 			fprintf(gpreGlob.out_file, "    bid  jrd_%d;\t// %s ",
 					   reference->ref_ident, name);
@@ -736,9 +736,9 @@ static void make_port( gpre_port* port, int column)
 
 
 //____________________________________________________________
-//  
+//
 //		Print a fixed string at a particular column.
-//  
+//
 
 static void printa(const int column, const TEXT* string, ...)
 {

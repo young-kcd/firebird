@@ -40,7 +40,7 @@
 // gstat directly reads database files, therefore
 using namespace Ods;
 
-void PPG_print_header(const header_page* header, SLONG page, 
+void PPG_print_header(const header_page* header, SLONG page,
 					  bool nocreation, Firebird::UtilSvc* uSvc)
 {
 /**************************************

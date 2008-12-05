@@ -173,7 +173,7 @@ struct word {
 //		{KW_RAW, "RAW"},
 //		{KW_RAW_PARTITIONS, "RAW_PARTITIONS"},
 		{KW_REFERENCE, "REFERENCE"},
-    	{KW_RELATION, "RELATION"}, 
+    	{KW_RELATION, "RELATION"},
         {KW_RETURN_ARGUMENT, "RETURN_ARGUMENT"},	/* function argument return_mode */
 		{KW_RETURN_VALUE, "RETURN_VALUE"},	/* function argument return_mode */
 		{KW_REVOKE, "REVOKE"},
@@ -250,8 +250,8 @@ struct word {
 		{KW_MAX, "MAX"},
 		{KW_TO, "TO"},
 		{KW_TOTAL, "TOTAL"},
-    	{KW_UNIQUE, "UNIQUE"}, 
-		{KW_UPPERCASE, "UPPERCASE"}, 
+    	{KW_UNIQUE, "UNIQUE"},
+		{KW_UPPERCASE, "UPPERCASE"},
 		{KW_WITH, "WITH"}
 };
 
@@ -344,7 +344,7 @@ void HSH_remove( SYM symbol)
 {
 /**************************************
  *
- *	H S H _ r e m o v e 
+ *	H S H _ r e m o v e
  *
  **************************************
  *

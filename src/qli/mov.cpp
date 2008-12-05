@@ -59,7 +59,7 @@ const char* const YESTERDAY = "YESTERDAY";
 
 const int PRECISION		= 10000;
 
-struct dtypes_t 
+struct dtypes_t
 {
 	USHORT type;
 	const TEXT* description;
@@ -100,7 +100,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
  *
  **************************************/
 
-// Handle the simple (matched) ones first 
+// Handle the simple (matched) ones first
 
 	if (arg1->dsc_dtype == arg2->dsc_dtype &&
 		arg1->dsc_scale == arg2->dsc_scale)
@@ -223,7 +223,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 
 	dsc desc;
 	SLONG date[2];
-	
+
 	switch (arg1->dsc_dtype) {
 	case dtype_timestamp:
 		desc.dsc_dtype = dtype_timestamp;
@@ -354,11 +354,11 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 
 	const TEXT* p = string;
 	const TEXT* const end = p + length;
-	for (; p < end; p++) 
+	for (; p < end; p++)
 	{
 		if (*p == ',')
 			continue;
-		
+
 		if (DIGIT(*p)) {
 			value = value * 10 + *p - '0';
 			if (fraction)
@@ -394,7 +394,7 @@ int MOVQ_decompose(const TEXT* string, USHORT length, SLONG* return_value)
 	if (p < end) {
 		SSHORT exp = 0;
 		sign = false;
-		for (p++; p < end; p++) 
+		for (p++; p < end; p++)
 		{
 			if (DIGIT(*p))
 				exp = exp * 10 + *p - '0';
@@ -609,7 +609,7 @@ SLONG MOVQ_get_long(const dsc* desc, SSHORT scale)
 }
 
 
-int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp, 
+int MOVQ_get_string(const dsc* desc, const TEXT** address, vary* temp,
 					USHORT length)
 {
 /**************************************
@@ -693,7 +693,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	{
 		if (length)
 			memcpy(p, q, length);
-			
+
 		return;
 	}
 
@@ -767,7 +767,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 	case dtype_text:
 	case dtype_cstring:
 	case dtype_varying:
-		switch (from->dsc_dtype) 
+		switch (from->dsc_dtype)
 		{
 		case dtype_varying:
 		case dtype_cstring:
@@ -776,7 +776,7 @@ if (((ALT_DSC*) from)->dsc_combined_type == ((ALT_DSC*) to)->dsc_combined_type)
 				length = MOVQ_get_string(from, &ptr, 0, 0);
 				const TEXT* s = ptr;
 
-				switch (to->dsc_dtype) 
+				switch (to->dsc_dtype)
 				{
 				case dtype_text:
 					{
@@ -934,11 +934,11 @@ static double double_from_text(const dsc* desc)
 	bool fraction = false, sign = false;
 	double value = 0;
 	const TEXT* const end = p + length;
-	for (; p < end; p++) 
+	for (; p < end; p++)
 	{
 		if (*p == ',')
 			continue;
-		
+
 		if (DIGIT(*p)) {
 			value = value * 10. + (*p - '0');
 			if (fraction)

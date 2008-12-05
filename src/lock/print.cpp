@@ -26,7 +26,7 @@
  * 2002.10.28 Sean Leyne - Code cleanup, removed obsolete "SGI" port
  *
  * 2002.10.29 Sean Leyne - Removed obsolete "Netware" port
- * 
+ *
  * 2008.04.04 Roman Simakov - Added html output support
  *
  */
@@ -104,9 +104,9 @@ public:
 	HtmlLink(const TEXT* prefix, const SLONG value)
 	{
 		if (sw_html_format && value && prefix)
-			sprintf(strBuffer, "<a href=\"#%s%"SLONGFORMAT"\">%6"SLONGFORMAT"</a>", prefix, value, value);		
+			sprintf(strBuffer, "<a href=\"#%s%"SLONGFORMAT"\">%6"SLONGFORMAT"</a>", prefix, value, value);
 		else
-			sprintf(strBuffer, "%6"SLONGFORMAT, value);		
+			sprintf(strBuffer, "%6"SLONGFORMAT, value);
 	}
 	operator const TEXT*()
 	{
@@ -124,7 +124,7 @@ static const TEXT history_names[][10] = {
 	"SCAN", "DEAD", "ENTER", "BUG", "ACTIVE", "CLEANUP", "DEL_OWNER"
 };
 
-static const TEXT valid_switches[] = 
+static const TEXT valid_switches[] =
 	"Valid switches are: -o, -p, -l, -r, -a, -h, -n, -s <n>, -c, -i <n> <n>, -m \n";
 
 // The same table is in lock.cpp, maybe worth moving to a common file?
@@ -202,7 +202,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	bool sw_locks = false;
 	bool sw_history = false;
 	bool sw_owners = true;
-	
+
 	USHORT sw_interactive;
 	// Those variables should be signed to accept negative values from atoi
 	SSHORT sw_series;
@@ -319,7 +319,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 					exit(FINI_OK);
 				}
 				break;
-				
+
 			case 'm':
 				sw_html_format = true;
 				break;
@@ -339,12 +339,12 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	SH_MEM_T shmem_data;
 
-	SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file 
-											   will be truncated when engine is not running 
+	SLONG LOCK_size_mapped = 1024 * 1024;	/* NS: we cannot use 0, otherwise the file
+											   will be truncated when engine is not running
 											   and engine globals do not exist anymore */
 
 	ISC_STATUS_ARRAY status_vector;
-	
+
 	lhb* LOCK_header = (lhb*) ISC_map_file(status_vector,
 							lock_file,
 							prt_lock_init,
@@ -357,7 +357,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	sprintf(expanded_lock_filename, lock_file,
 			ISC_get_host(hostname, sizeof(hostname)));
 
-/* Make sure the lock file is valid - if it's a zero length file we 
+/* Make sure the lock file is valid - if it's a zero length file we
  * can't look at the header without causing a BUS error by going
  * off the end of the mapped region.
  */
@@ -393,11 +393,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (LOCK_header->lhb_version != LHB_VERSION)
 	{
-		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0) 
+		if (LOCK_header->lhb_type == 0 && LOCK_header->lhb_version == 0)
 		{
 			FPRINTF(outfile, "\tLock table is empty.\n");
 		}
-		else 
+		else
 		{
 			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
 				LOCK_header->lhb_version);
@@ -415,7 +415,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	}
 
 	lhb* header = NULL;
-	
+
 	if (sw_consistency) {
 		/* To avoid changes in the lock file while we are dumping it - make
 		 * a local buffer, lock the lock file, copy it, then unlock the
@@ -562,7 +562,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	prt_history(outfile, LOCK_header, a_shb->shb_history, "Event log");
 
 	prt_html_end(outfile);
-	
+
 	if (header)
 		gds__free(header);
 
@@ -582,7 +582,7 @@ static void prt_lock_activity(
  **************************************
  *
  * Functional description
- *	Print a time-series lock activity report 
+ *	Print a time-series lock activity report
  *
  **************************************/
 	time_t clock = time(NULL);
@@ -838,7 +838,7 @@ static void prt_history(
 			FPRINTF(outfile,
 					"    %s:\towner = %s, lock = %s, request = %s\n",
 					history_names[history->his_operation],
-					(const TEXT*)HtmlLink(preOwn, history->his_process), 
+					(const TEXT*)HtmlLink(preOwn, history->his_process),
 					(const TEXT*)HtmlLink(preLock, history->his_lock),
 					(const TEXT*)HtmlLink(preRequest, history->his_request));
 		if (history->his_next == history_header)
@@ -858,7 +858,7 @@ static void prt_lock(
  **************************************
  *
  * Functional description
- *      Print a formatted lock block 
+ *      Print a formatted lock block
  *
  **************************************/
 	if (sw_series && lock->lbl_series != sw_series)
@@ -877,14 +877,14 @@ static void prt_lock(
 			lock->lbl_series, (const TEXT*)HtmlLink(preLock, lock->lbl_parent), lock->lbl_state,
 			lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
-	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) && 
-		lock->lbl_length == Jrd::PageNumber::getLockLen()) 
+	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) &&
+		lock->lbl_length == Jrd::PageNumber::getLockLen())
 	{
 		// Since fb 2.1 lock keys for page numbers (series == 3) contains
 		// page space number in high long of two-longs key. Lets print it
 		// in <page_space>:<page_number> format
 		const UCHAR* q = lock->lbl_key;
-		
+
 		SLONG key;
 		memcpy(&key, q, sizeof(SLONG));
 		q += sizeof(SLONG);
@@ -947,7 +947,7 @@ static void prt_lock(
 		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_lbl_requests));
 		FPRINTF(outfile,
 				"\t\tRequest %s, Owner: %s, State: %d (%d), Flags: 0x%02X\n",
-				(const TEXT*)HtmlLink(preRequest, SRQ_REL_PTR(request)), 
+				(const TEXT*)HtmlLink(preRequest, SRQ_REL_PTR(request)),
 				(const TEXT*)HtmlLink(preOwn, request->lrq_owner), request->lrq_state,
 				request->lrq_requested, request->lrq_flags);
 	}
@@ -979,13 +979,13 @@ static void prt_owner(OUTFILE outfile,
 	else
 	{
 		const SLONG rel_owner = SRQ_REL_PTR(owner);
-		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">OWNER BLOCK %6"SLONGFORMAT"</a>\n", 
+		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">OWNER BLOCK %6"SLONGFORMAT"</a>\n",
 				preOwn, rel_owner, rel_owner);
 	}
 	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d, pending: %s\n",
 			owner->own_owner_id, owner->own_owner_type,
 			(const TEXT*)HtmlLink(preRequest, owner->own_pending_request));
-	
+
 	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6d\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
@@ -1040,7 +1040,7 @@ static void prt_owner_wait_cycle(
  * Functional description
  *	For the given owner, print out the list of owners
  *	being waited on.  The printout is recursive, up to
- *	a limit.  It is recommended this be used with 
+ *	a limit.  It is recommended this be used with
  *	the -c consistency mode.
  *
  **************************************/
@@ -1145,11 +1145,11 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 	else
 	{
 		const SLONG rel_request = SRQ_REL_PTR(request);
-		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">REQUEST BLOCK %6"SLONGFORMAT"</a>\n", 
+		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">REQUEST BLOCK %6"SLONGFORMAT"</a>\n",
 				preRequest, rel_request, rel_request);
 	}
 	FPRINTF(outfile, "\tOwner: %s, Lock: %s, State: %d, Mode: %d, Flags: 0x%02X\n",
-			(const TEXT*)HtmlLink(preOwn, request->lrq_owner), 
+			(const TEXT*)HtmlLink(preOwn, request->lrq_owner),
 			(const TEXT*)HtmlLink(preLock, request->lrq_lock), request->lrq_state,
 			request->lrq_requested, request->lrq_flags);
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
@@ -1193,7 +1193,7 @@ static void prt_que(
 		++count;
 
 	FPRINTF(outfile, "%s (%ld):\tforward: %s, backward: %s\n", string, count,
-			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset), 
+			(const TEXT*)HtmlLink(prefix, que_inst->srq_forward - que_offset),
 			(const TEXT*)HtmlLink(prefix, que_inst->srq_backward - que_offset));
 }
 
@@ -1231,7 +1231,7 @@ static void prt_html_begin(OUTFILE outfile)
 {
 	/**************************************
 	 *
-	 *      p r t _ h t m l _ b e g i n 
+	 *      p r t _ h t m l _ b e g i n
 	 *
 	 **************************************
 	 *
@@ -1241,10 +1241,10 @@ static void prt_html_begin(OUTFILE outfile)
 	 **************************************/
 	if (!sw_html_format)
 		return;
-	
+
 	FPRINTF(outfile, "<html><head><title>%s</title></head><body>", "Lock table");
 	FPRINTF(outfile, "<pre>");
-	
+
 }
 
 static void prt_html_end(OUTFILE outfile)
@@ -1261,7 +1261,7 @@ static void prt_html_end(OUTFILE outfile)
 	 **************************************/
 	if (!sw_html_format)
 		return;
-	
+
 	FPRINTF(outfile, "</pre>");
 	FPRINTF(outfile, "</body></html>");
 }

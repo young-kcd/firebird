@@ -277,7 +277,7 @@ EVH EVENT_init(ISC_STATUS* status_vector)
 	if (!(EVENT_header = (EVH) ISC_map_file(status_vector,
 											event_file,
 											init, 0, Config::getEventMemSize(),
-											&EVENT_data))) 
+											&EVENT_data)))
 	{
 		return NULL;
 	}
@@ -544,7 +544,7 @@ static FRB alloc_global(UCHAR type, ULONG length, bool recurse)
 	SRQ_PTR* best = NULL;
 
 	for (ptr = &EVENT_header->evh_free; (free = (FRB) SRQ_ABS_PTR(*ptr)) && *ptr;
-		 ptr = &free->frb_next) 
+		 ptr = &free->frb_next)
 	{
 		const SLONG tail = free->frb_header.hdr_length - length;
 		if (tail >= 0 && (!best || tail < best_tail)) {
@@ -733,7 +733,7 @@ static void delete_process(SLONG process_offset)
 		/* Terminate the event watcher thread */
 		/* When we come through the exit handler, the event semaphore might
 		   have already been released by another exit handler.  So we cannot
-		   use that semaphore to post the event.  Besides, the watcher thread 
+		   use that semaphore to post the event.  Besides, the watcher thread
 		   would be terminated anyway because the whole NLM is being unloaded. */
 		// CVC: NLM??? is this Novell Netware specific code???
 

@@ -15,11 +15,11 @@
  *
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
- * Changes made by Claudio Valderrama for the Firebird project 
- *   changes to substr and added substrlen 
+ * Changes made by Claudio Valderrama for the Firebird project
+ *   changes to substr and added substrlen
  * 2004.9.1 Claudio Valderrama, change some UDF's to be able to detect NULL.
  * 2004.12.5 Slavomir Skopalik contributed IB_UDF_frac.
- * 
+ *
  */
 
 #include "firebird.h"
@@ -145,8 +145,8 @@ double EXPORT IB_UDF_div( ISC_LONG *a, ISC_LONG *b)
 	}
 	else
 	{
-		// This is a Kludge!  We need to return INF, 
-		// but this seems to be the only way to do 
+		// This is a Kludge!  We need to return INF,
+		// but this seems to be the only way to do
 		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
 		return INFINITY;
@@ -189,7 +189,7 @@ char *EXPORT IB_UDF_lower(const char *s)
 {
 	if (!s)
 		return 0;
-		
+
 	char* buf = (char *) ib_util_malloc(strlen(s) + 1);
 	char* p = buf;
 	while (*s)
@@ -211,7 +211,7 @@ char *EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 		return 0;
 
 	const long avalue = *a;
-	
+
 	if (avalue >= 0) {
 		long current = 0;
 		const long length = strlen(s);
@@ -242,10 +242,10 @@ char *EXPORT IB_UDF_ltrim( const char *s)
 {
 	if (!s)
 		return 0;
-		
+
 	while (*s == ' ')		/* skip leading blanks */
 		s++;
-		
+
 	const long length = strlen(s);
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
@@ -265,8 +265,8 @@ double EXPORT IB_UDF_mod( ISC_LONG *a, ISC_LONG *b)
 	}
 	else
 	{
-		// This is a Kludge!  We need to return INF, 
-		// but this seems to be the only way to do 
+		// This is a Kludge!  We need to return INF,
+		// but this seems to be the only way to do
 		// it since there seens to be no constant for it.
 #ifdef HAVE_INFINITY
 		return INFINITY;
@@ -296,7 +296,7 @@ char *EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 {
 	if (!s || !c)
 		return 0;
-		
+
 	const long avalue = *a;
 
 	if (avalue >= 0) {
@@ -328,10 +328,10 @@ char *EXPORT IB_UDF_rtrim( const char *s)
 {
 	if (!s)
 		return 0;
-		
+
 	const char* p = s + strlen(s);
 	while (--p >= s && *p == ' '); // empty loop body
-	
+
 	const long length = p - s + 1;
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);

@@ -28,7 +28,7 @@
 
 
 ColList::item::item(const char* name, int len)
-	: col_len(len), next(0) 
+	: col_len(len), next(0)
 {
 	fb_utils::copy_terminate(col_name, name, sizeof(col_name));
 }

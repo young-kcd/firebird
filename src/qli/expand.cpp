@@ -879,7 +879,7 @@ static qli_nod* expand_expression( qli_syntax* input, qli_lls* stack)
 */
 		if ((value = input->syn_arg[s_stt_value]) &&
 			(input->syn_arg[s_prt_distinct]
-			 || (input->syn_type != nod_agg_count))) 
+			 || (input->syn_type != nod_agg_count)))
 		{
 			node->nod_arg[e_stt_value] =
 				expand_expression(value, stack->lls_next);
@@ -1417,7 +1417,7 @@ static qli_nod* expand_print( qli_syntax* input, qli_lls* right, qli_lls* left)
 				break;
 		}
 
-// If no print object showed up, complain! 
+// If no print object showed up, complain!
 
 	if (!count)
 		IBERROR(150);			// Msg150 No items in print list
@@ -1811,7 +1811,7 @@ static qli_nod* expand_rse( qli_syntax* input, qli_lls** stack)
 						   expand_expression(input->syn_arg[e_rse_boolean],
 											 new_stack));
 
-// Handle implicit boolean from SQL xxx IN (yyy FROM relation) 
+// Handle implicit boolean from SQL xxx IN (yyy FROM relation)
 
 	if (input->syn_arg[s_rse_outer]) {
 		qli_nod* eql_node = make_node((enum nod_t)(IPTR)input->syn_arg[s_rse_op], 2);
@@ -2267,7 +2267,7 @@ static int generate_fields( qli_ctx* context, qli_lls* values, qli_syntax* rse)
  *	input to a store or update.
  *
  **************************************/
-	
+
 	if (context->ctx_type == CTX_VARIABLE)
 		return 0;
 	if (context->ctx_type == CTX_AGGREGATE)
@@ -2512,7 +2512,7 @@ static bool invalid_syn_field( const qli_syntax* syn_node, const qli_syntax* lis
 		return true;
 
 	bool invalid = false;
-	
+
 	if (syn_node->syn_type == nod_field) {
 		const nam* fctx = NULL;
 		const nam* fname = (NAM) syn_node->syn_arg[0];
@@ -2892,7 +2892,7 @@ static qli_fld* resolve( qli_syntax* node, qli_lls* stack, qli_ctx** out_context
 				{
 					if (ptr == base)
 						return field;
-					
+
 					name = *--ptr;
 
 					if (compare_names(name, relation->rel_symbol))

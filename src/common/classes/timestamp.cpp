@@ -53,7 +53,7 @@ TimeStamp TimeStamp::getCurrentTimeStamp()
 	// NS: We round generated timestamps to whole millisecond.
 	// Not many applications can deal with fractional milliseconds properly and
 	// we do not use high resolution timers either so actual time granularity
-	// is going to to be somewhere in range between 1 ms (like on UNIX/Risc) 
+	// is going to to be somewhere in range between 1 ms (like on UNIX/Risc)
 	// and 53 ms (such as Win9X)
 
 	time_t seconds; // UTC time
@@ -71,7 +71,7 @@ TimeStamp TimeStamp::getCurrentTimeStamp()
 	milliseconds = time_buffer.millitm;
 #endif
 
-	// NS: Current FB behavior of using server time zone is not appropriate for 
+	// NS: Current FB behavior of using server time zone is not appropriate for
 	// distributed applications. We should be storing UTC times everywhere and
 	// convert timestamps to client timezone as necessary. Replace localtime stuff
 	// with these lines as soon as the appropriate functionality is implemented
@@ -255,12 +255,12 @@ void TimeStamp::round_time(ISC_TIME &ntime, const int precision)
 {
 	const int scale = -ISC_TIME_SECONDS_PRECISION_SCALE - precision;
 
-	// for the moment, if greater precision was requested than we can 
+	// for the moment, if greater precision was requested than we can
 	// provide return what we have.
 	if (scale <= 0)
 		return;
 
-	static const ISC_TIME pow10table[] = 
+	static const ISC_TIME pow10table[] =
 		{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
 
 	fb_assert(scale < FB_NELEM(pow10table));

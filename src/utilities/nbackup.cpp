@@ -26,7 +26,7 @@
  *  Adriano dos Santos Fernandes
  *
  */
- 
+
 
 #include "firebird.h"
 
@@ -79,12 +79,12 @@ void usage(UtilSvc* uSvc, const char* message, ...)
 	va_start(params, message);
 	msg.vprintf(message, params);
 	va_end(params);
-	
+
 	if (uSvc->isService())
 		(Arg::Gds(isc_random) << msg).raise();
 
 	fprintf(stderr, "ERROR: %s.\n\n", msg.c_str());
-	fprintf(stderr, 
+	fprintf(stderr,
 		"Physical Backup Manager    Copyright (C) 2004 Firebird development team\n"
 		"  Original idea is of Sean Leyne <sean@broadviewsoftware.com>\n"
 		"  Designed and implemented by Nickolay Samofatov <skidder@bssys.com>\n"
@@ -109,17 +109,17 @@ void usage(UtilSvc* uSvc, const char* message, ...)
 	exit(FINI_ERROR);
 }
 
-void missing_parameter_for_switch(UtilSvc* uSvc, const char* sw) 
+void missing_parameter_for_switch(UtilSvc* uSvc, const char* sw)
 {
 	usage(uSvc, "Missing parameter for switch %s", sw);
-} 
+}
 
 void singleAction(UtilSvc* uSvc)
 {
 	usage(uSvc, "Only one of -L, -N, -F, -B or -R should be specified");
 }
 
-namespace 
+namespace
 {
     const int MSG_LEN = 1024;
 	const size_t NBACKUP_FAILURE_SPACE = MSG_LEN * 4;
@@ -200,11 +200,11 @@ struct inc_header
 class NBackup
 {
 public:
-	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username, 
+	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
 			const string& _password, bool _run_db_triggers, const string& _trustedUser,
 			bool _trustedRole)
-	  : uSvc(_uSvc), newdb(0), trans(0), database(_database), 
-		username(_username), password(_password), trustedUser(_trustedUser), 
+	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
+		username(_username), password(_password), trustedUser(_trustedUser),
 		run_db_triggers(_run_db_triggers), trustedRole(_trustedRole),
 		dbase(0), backup(0), db_size_pages(0)
 	{
@@ -246,8 +246,8 @@ private:
 	ULONG  db_size_pages;	// In pages
 
 	// IO functions
-	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
-	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);		
+	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
+	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
 	void pr_error(const ISC_STATUS* status, const char* operation) const;
@@ -274,7 +274,7 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 #ifdef WIN_NT
 	DWORD bytesDone;
 	if (!ReadFile(file, buffer, bufsize, &bytesDone, NULL))
-		b_error::raise(uSvc, "IO error (%d) reading file: %s", 
+		b_error::raise(uSvc, "IO error (%d) reading file: %s",
 			GetLastError(),
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
@@ -282,7 +282,7 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 #else
 	const ssize_t res = read(file, buffer, bufsize);
 	if (res < 0)
-		b_error::raise(uSvc, "IO error (%d) reading file: %s", 
+		b_error::raise(uSvc, "IO error (%d) reading file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
@@ -297,14 +297,14 @@ void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	if (!WriteFile(file, buffer, bufsize, &bytesDone, NULL) ||
 		bytesDone != bufsize)
 	{
-		b_error::raise(uSvc, "IO error (%d) writing file: %s", 
+		b_error::raise(uSvc, "IO error (%d) writing file: %s",
 			GetLastError(),
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (write(file, buffer, bufsize) != (ssize_t)bufsize)
-		b_error::raise(uSvc, "IO error (%d) writing file: %s", 
+		b_error::raise(uSvc, "IO error (%d) writing file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
@@ -317,18 +317,18 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 	LARGE_INTEGER offset;
 	offset.QuadPart = pos;
 	DWORD error;
-	if (SetFilePointer(dbase, offset.LowPart, &offset.HighPart, 
+	if (SetFilePointer(dbase, offset.LowPart, &offset.HighPart,
 					    FILE_BEGIN) == INVALID_SET_FILE_POINTER &&
 		 (error = GetLastError()) != NO_ERROR)
 	{
-		b_error::raise(uSvc, "IO error (%d) seeking file: %s", 
+		b_error::raise(uSvc, "IO error (%d) seeking file: %s",
 			error,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
 	}
 #else
 	if (lseek(file, pos, SEEK_SET) == (off_t) - 1)
-		b_error::raise(uSvc, "IO error (%d) seeking file: %s", 
+		b_error::raise(uSvc, "IO error (%d) seeking file: %s",
 			errno,
 			&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown");
@@ -338,15 +338,15 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 void NBackup::open_database_write()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, 
-		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise(uSvc, "Error (%d) opening database file: %s", GetLastError(), dbname.c_str());
 #else
 	dbase = open(dbname.c_str(), O_RDWR | O_LARGEFILE);
 	if (dbase < 0)
-		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());	
+		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
 #endif
 }
 
@@ -355,13 +355,13 @@ void NBackup::open_database_scan()
 #ifdef WIN_NT
 	// On Windows we use unbuffered IO to work around bug in Windows Server 2003
 	// which has little problems with managing size of disk cache. If you read
-	// very large file (5 GB or more) on this platform filesystem page cache 
+	// very large file (5 GB or more) on this platform filesystem page cache
 	// consumes all RAM of machine and causes excessive paging of user programs
 	// and OS itself. Basically, reading any large file brings the whole system
 	// down for extended period of time. Documented workaround is to avoid using
 	// system cache when reading large files.
 	dbase = CreateFile(dbname.c_str(),
-		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 
+		GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_NO_BUFFERING,
 		NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
@@ -369,21 +369,21 @@ void NBackup::open_database_scan()
 #else
 	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE);
 	if (dbase < 0)
-		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());	
+		b_error::raise(uSvc, "Error (%d) opening database file: %s", errno, dbname.c_str());
 #endif
 }
 
 void NBackup::create_database()
 {
 #ifdef WIN_NT
-	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, 
+	dbase = CreateFile(dbname.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE,
 		NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (dbase == INVALID_HANDLE_VALUE)
 		b_error::raise(uSvc, "Error (%d) creating database file: %s", GetLastError(), dbname.c_str());
 #else
 	dbase = open(dbname.c_str(), O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 	if (dbase < 0)
-		b_error::raise(uSvc, "Error (%d) creating database file: %s", errno, dbname.c_str());	
+		b_error::raise(uSvc, "Error (%d) creating database file: %s", errno, dbname.c_str());
 #endif
 }
 
@@ -399,14 +399,14 @@ void NBackup::close_database()
 void NBackup::open_backup_scan()
 {
 #ifdef WIN_NT
-	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0, 
+	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (backup == INVALID_HANDLE_VALUE)
 		b_error::raise(uSvc, "Error (%d) opening backup file: %s", GetLastError(), bakname.c_str());
 #else
 	backup = open(bakname.c_str(), O_RDONLY | O_LARGEFILE);
 	if (backup < 0)
-		b_error::raise(uSvc, "Error (%d) opening backup file: %s", errno, bakname.c_str());	
+		b_error::raise(uSvc, "Error (%d) opening backup file: %s", errno, bakname.c_str());
 #endif
 }
 
@@ -416,8 +416,8 @@ void NBackup::create_backup()
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
-	else {		
-		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE, 
+	else {
+		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup == INVALID_HANDLE_VALUE)
@@ -452,11 +452,11 @@ void NBackup::fixup_database()
 	if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 		b_error::raise(uSvc, "Unexpected end of database file", errno);
 	const int backup_state = header.hdr_flags & Ods::hdr_backup_mask;
-	if (backup_state != Jrd::nbak_state_stalled)	
+	if (backup_state != Jrd::nbak_state_stalled)
 		b_error::raise(uSvc, "Database is not in state (%d) to be safely fixed up", backup_state);
 	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Jrd::nbak_state_normal;
 	seek_file(dbase, 0);
-	write_file(dbase, &header, sizeof(header));	
+	write_file(dbase, &header, sizeof(header));
 	close_database();
 }
 
@@ -509,7 +509,7 @@ void NBackup::attach_database()
 	if (!run_db_triggers)
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
-	if (isc_attach_database(status, 0, database.c_str(), &newdb, 
+	if (isc_attach_database(status, 0, database.c_str(), &newdb,
 		dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
         pr_error(status, "attach database");
@@ -530,7 +530,7 @@ void NBackup::internal_lock_database()
 {
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
-	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, 
+	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0,
 		"ALTER DATABASE BEGIN BACKUP", 1, NULL))
 		pr_error(status, "begin backup");
 	if (isc_commit_transaction(status, &trans))
@@ -557,7 +557,7 @@ void NBackup::internal_unlock_database()
 {
     if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 		pr_error(status, "start transaction");
-	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0, 
+	if (isc_dsql_execute_immediate(status, &newdb, &trans, 0,
 		"ALTER DATABASE END BACKUP", 1, NULL))
 		pr_error(status, "end backup");
 	if (isc_commit_transaction(status, &trans))
@@ -576,9 +576,9 @@ void NBackup::lock_database(bool get_size)
 			if (db_size_pages && (!uSvc->isService()))
 				printf("%d\n", db_size_pages);
 		}
-	} 
+	}
 	catch (const Exception&) {
-		detach_database();		
+		detach_database();
 		throw;
 	}
 	detach_database();
@@ -589,9 +589,9 @@ void NBackup::unlock_database()
 	attach_database();
 	try {
 		internal_unlock_database();
-	} 
+	}
 	catch (const Exception&) {
-		detach_database();		
+		detach_database();
 		throw;
 	}
 	detach_database();
@@ -641,7 +641,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 			case 100: // No more records available
 				b_error::raise(uSvc, "Cannot find record for database \"%s\" backup level %d "
 					"in the backup history", database.c_str(), level - 1);
-			case 0: 
+			case 0:
 				if (guid_null || scn_null)
 					b_error::raise(uSvc, "Internal error. History query returned null SCN or GUID");
 				prev_guid[sizeof(prev_guid) - 1] = 0;
@@ -656,7 +656,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		// Lock database for backup
 		internal_lock_database();
-		database_locked = true;	
+		database_locked = true;
 		get_database_size();
 		detach_database();
 
@@ -677,11 +677,11 @@ void NBackup::backup_database(int level, const PathName& fname)
 		}
 
 		// Level 0 backup is a full reconstructed database image that can be
-		// used directly after fixup. Incremenal backups of other levels are 
+		// used directly after fixup. Incremenal backups of other levels are
 		// consisted of header followed by page data. Each page is preceded
 		// by 4-byte integer page number
 
-		// Actual IO is optimized to get maximum performance 
+		// Actual IO is optimized to get maximum performance
 		// from the IO subsystem while taking as little CPU time as possible
 
 		// NOTE: this is still possible to improve performance by implementing
@@ -697,9 +697,9 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Read database header
 		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
 
-		Ods::header_page *header = 
+		Ods::header_page *header =
 			reinterpret_cast<Ods::header_page*>(
-				FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));	
+				FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			b_error::raise(uSvc, "Unexpected end of file when reading header of database file");
 		if ((header->hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
@@ -712,7 +712,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		page_buff = reinterpret_cast<Ods::pag*>(
 			FB_ALIGN(
 				(IPTR) unaligned_page_buffer.getBuffer(
-					header->hdr_page_size + SECTOR_ALIGNMENT), 
+					header->hdr_page_size + SECTOR_ALIGNMENT),
 				SECTOR_ALIGNMENT
 			)
 		);
@@ -744,7 +744,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		if (!guid_found)
 			b_error::raise(uSvc, "Internal error. Cannot get backup guid clumplet");
-	
+
 		// Write data to backup file
 		ULONG backup_scn = header->hdr_header.pag_scn - 1;
 		if (level) {
@@ -762,8 +762,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 		ULONG curPage = 0;
 
-		// Starting from ODS 11.1 we can expand file but never use some last 
-		// pages in it. There are no need to backup this empty pages. More, 
+		// Starting from ODS 11.1 we can expand file but never use some last
+		// pages in it. There are no need to backup this empty pages. More,
 		// we can't be sure its not used pages have right SCN assigned.
 		// How many pages are really used we know from pip_header.reserved
 		// where stored number of pages allocated from this pointer page.
@@ -771,7 +771,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		const bool isODS11_x = ((header->hdr_ods_version & ~ODS_FIREBIRD_FLAG) == 11) &&
 								(header->hdr_ods_minor_original >= 1);
 		ULONG lastPage = 1; // first PIP must be at page number 1
-		const ULONG pagesPerPIP = 
+		const ULONG pagesPerPIP =
 			(header->hdr_page_size - OFFSETA(Ods::page_inv_page*, pip_bits)) * 8;
 
 		while (true) {
@@ -787,7 +787,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 			}
 			else
 				write_file(backup, page_buff, header->hdr_page_size);
-		
+
 			if ((db_size_pages != 0) && (db_size == 0))
 				break;
 
@@ -817,7 +817,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 					break;
 				}
 			}
-		}		
+		}
 		close_database();
 		close_backup();
 
@@ -834,7 +834,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		isc_stmt_handle stmt = 0;
 		if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 			pr_error(status, "allocate statement");
-		if (isc_dsql_prepare(status, &trans, &stmt, 0, 
+		if (isc_dsql_prepare(status, &trans, &stmt, 0,
 			"insert into rdb$backup_history(rdb$backup_id, rdb$timestamp,"
 			  "rdb$backup_level, rdb$guid, rdb$scn, rdb$file_name)"
 			"values(gen_id(rdb$backup_history, 1), 'now', ?, ?, ?, ?)",
@@ -868,7 +868,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		if (isc_commit_transaction(status, &trans))
 			pr_error(status, "commit history insert");
 
-	} 
+	}
 	catch (const Exception&) {
 		if (delete_backup)
 			remove(bakname.c_str());
@@ -895,7 +895,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 void NBackup::restore_database(const BackupFiles& files)
 {
 	// We set this flag when database file is in inconsistent state
-	bool delete_database = false; 
+	bool delete_database = false;
 	const int filecount = files.getCount();
 #ifndef WIN_NT
 	create_database();
@@ -918,7 +918,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						scanf("%255s", temp);
 						bakname = temp;
 					}
-					if (bakname == ".") 
+					if (bakname == ".")
 					{
 						close_database();
 						if (!curLevel) {
@@ -959,18 +959,18 @@ void NBackup::restore_database(const BackupFiles& files)
 			if (curLevel) {
 				inc_header bakheader;
 				if (read_file(backup, &bakheader, sizeof(bakheader)) != sizeof(bakheader))
-					b_error::raise(uSvc, "Unexpected end of file when reading header of backup file: %s", bakname.c_str());					
-				if (memcmp(bakheader.signature, backup_signature, sizeof(backup_signature)) != 0)				
+					b_error::raise(uSvc, "Unexpected end of file when reading header of backup file: %s", bakname.c_str());
+				if (memcmp(bakheader.signature, backup_signature, sizeof(backup_signature)) != 0)
 					b_error::raise(uSvc, "Invalid incremental backup file: %s", bakname.c_str());
 				if (bakheader.version != 1)
 					b_error::raise(uSvc, "Unsupported version %d of incremental backup file: %s", bakheader.version, bakname.c_str());
 				if (bakheader.level != curLevel)
-					b_error::raise(uSvc, "Invalid level %d of incremental backup file: %s, expected %d", 
+					b_error::raise(uSvc, "Invalid level %d of incremental backup file: %s, expected %d",
 						bakheader.level, bakname.c_str(), curLevel);
 				// We may also add SCN check, but GUID check covers this case too
 				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(FB_GUID)) != 0)
 				{
-					b_error::raise(uSvc, 
+					b_error::raise(uSvc,
 						"Wrong order of backup files or "
 						"invalid incremental backup file detected, file: %s", bakname.c_str());
 				}
@@ -980,9 +980,9 @@ void NBackup::restore_database(const BackupFiles& files)
 					ULONG pageNum;
 					const size_t bytesDone = read_file(backup, &pageNum, sizeof(pageNum));
 					if (bytesDone == 0)
-						break;					
-					if (bytesDone != sizeof(pageNum) || 
-						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size) 
+						break;
+					if (bytesDone != sizeof(pageNum) ||
+						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size)
 					{
 						b_error::raise(uSvc, "Unexpected end of backup file: %s", bakname.c_str());
 					}
@@ -994,14 +994,14 @@ void NBackup::restore_database(const BackupFiles& files)
 			else {
 #ifdef WIN_NT
 				if (!CopyFile(bakname.c_str(), dbname.c_str(), TRUE)) {
-					b_error::raise(uSvc, "Error (%d) creating database file: %s via copying from: %s", 
+					b_error::raise(uSvc, "Error (%d) creating database file: %s via copying from: %s",
 						GetLastError(), dbname.c_str(), bakname.c_str());
 				}
 				delete_database = true; // database is possibly broken
 				open_database_write();
 #else
 				// Use relatively small buffer to make use of prefetch and lazy flush
-				char buffer[65536]; 
+				char buffer[65536];
 				while (true) {
 					const size_t bytesRead = read_file(backup, buffer, sizeof(buffer));
 					if (bytesRead == 0)
@@ -1009,7 +1009,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					write_file(dbase, buffer, bytesRead);
 				}
 				seek_file(dbase, 0);
-#endif				
+#endif
 				// Read database header
 				Ods::header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
@@ -1048,7 +1048,7 @@ void NBackup::restore_database(const BackupFiles& files)
 				close_backup();
 			curLevel++;
 		}
-	} 
+	}
 	catch (const Exception&) {
 		delete[] page_buffer;
 		if (delete_database)
@@ -1164,7 +1164,7 @@ void nbackup(UtilSvc* uSvc)
 				break;
 			}
 
-			if (op != nbNone) 
+			if (op != nbNone)
 				singleAction(uSvc);
 
 			if (++itr >= argc)
@@ -1175,7 +1175,7 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case 'L':
-			if (op != nbNone) 
+			if (op != nbNone)
 				singleAction(uSvc);
 
 			if (++itr >= argc)
@@ -1186,7 +1186,7 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case 'N':
-			if (op != nbNone) 
+			if (op != nbNone)
 				singleAction(uSvc);
 
 			if (++itr >= argc)
@@ -1197,7 +1197,7 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case 'B':
-			if (op != nbNone) 
+			if (op != nbNone)
 				singleAction(uSvc);
 
 			if (++itr >= argc)
@@ -1217,7 +1217,7 @@ void nbackup(UtilSvc* uSvc)
 			break;
 
 		case 'R':
-			if (op != nbNone) 
+			if (op != nbNone)
 				singleAction(uSvc);
 
 			if (++itr >= argc)

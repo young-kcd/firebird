@@ -57,7 +57,7 @@ enum name_type {
 	NAME_cursor = 2
 };
 
-/* declare a structure which enables us to associate a cursor with a 
+/* declare a structure which enables us to associate a cursor with a
    statement and vice versa */
 
 struct dsql_dbb
@@ -70,14 +70,14 @@ struct dsql_name;	// fwd. decl.
 
 struct dsql_stmt
 {
-	dsql_stmt*	stmt_next;			// next in chain 
+	dsql_stmt*	stmt_next;			// next in chain
 	dsql_name*	stmt_stmt;			// symbol table entry for statement name
 	dsql_name*	stmt_cursor;		// symbol table entry for cursor name
-	FB_API_HANDLE	stmt_handle;		// stmt handle returned by dsql_xxx 
-	FB_API_HANDLE	stmt_db_handle;		// database handle for this statement 
+	FB_API_HANDLE	stmt_handle;		// stmt handle returned by dsql_xxx
+	FB_API_HANDLE	stmt_db_handle;		// database handle for this statement
 };
 
-// declare a structure to hold the cursor and statement names 
+// declare a structure to hold the cursor and statement names
 
 struct dsql_name
 {
@@ -109,9 +109,9 @@ static USHORT	name_length(const SCHAR*);
 static void		remove_name(dsql_name*, dsql_name**);
 static bool		scompare(const SCHAR*, USHORT, const SCHAR*, USHORT);
 
-// declare the private data 
+// declare the private data
 
-static bool		init_flag		= false;	// whether we've been initialized 
+static bool		init_flag		= false;	// whether we've been initialized
 static dsql_err_stblock*	UDSQL_error		= NULL;
 static dsql_stmt*		statements		= NULL;
 static dsql_name*		statement_names	= NULL;
@@ -530,7 +530,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_insert(ISC_STATUS* user_status,
 	INIT_DSQL(user_status, local_status);
 	try
 	{
-		// get the symbol table entry 
+		// get the symbol table entry
 
 		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
@@ -612,7 +612,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_open2(ISC_STATUS* user_status,
 	INIT_DSQL(user_status, local_status);
 	try
 	{
-		// get the symbol table entry 
+		// get the symbol table entry
 
 		dsql_stmt* statement = lookup_stmt(cursor_name, cursor_names, NAME_cursor);
 
@@ -692,7 +692,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 						 length, string, dialect, sqlda);
 
 	if (s) {
-		// An error occurred.  Free any newly allocated statement handle. 
+		// An error occurred.  Free any newly allocated statement handle.
 
 		if (!statement) {
 			ISC_STATUS_ARRAY local_status2;
@@ -711,13 +711,13 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_prepare(ISC_STATUS*	user_status,
 	if (!statement)
 	{
 		statement = (dsql_stmt*) gds__alloc((SLONG) sizeof(dsql_stmt));
-		// FREE: by user calling isc_embed_dsql_release() 
-		if (!statement)			// NOMEM: 
+		// FREE: by user calling isc_embed_dsql_release()
+		if (!statement)			// NOMEM:
 			error_post(Arg::Gds(isc_virmemexh));
 
 #ifdef DEBUG_GDS_ALLOC
 		gds_alloc_flag_unfreed((void *) statement);
-#endif	// DEBUG_GDS_ALLOC 
+#endif	// DEBUG_GDS_ALLOC
 
 		statement->stmt_next = statements;
 		statements = statement;
@@ -762,7 +762,7 @@ ISC_STATUS API_ROUTINE isc_embed_dsql_release(ISC_STATUS* user_status,
 	INIT_DSQL(user_status, local_status);
 	try
 	{
-		// If a request already exists under that name, purge it out 
+		// If a request already exists under that name, purge it out
 
 		dsql_stmt* statement = lookup_stmt(stmt_name, statement_names, NAME_statement);
 
@@ -852,10 +852,10 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch2_a(ISC_STATUS* user_status,
 	*sqlcode = 0;
 
 	const ISC_STATUS s =
-		isc_dsql_fetch2(user_status, 
-				reinterpret_cast<FB_API_HANDLE*>(stmt_handle), 
-				dialect, 
-				reinterpret_cast<XSQLDA*>(sqlda), 
+		isc_dsql_fetch2(user_status,
+				reinterpret_cast<FB_API_HANDLE*>(stmt_handle),
+				dialect,
+				reinterpret_cast<XSQLDA*>(sqlda),
 				direction,
 				offset);
 	if (s == 100)
@@ -1344,8 +1344,8 @@ static dsql_name* insert_name(const TEXT* symbol_name, dsql_name** list_ptr, dsq
  **************************************/
 	const USHORT l = name_length(symbol_name);
 	dsql_name* name = (dsql_name*) gds__alloc((SLONG) sizeof(dsql_name) + l);
-// FREE: by exit handler cleanup() or database_cleanup() 
-	if (!name)					// NOMEM: 
+// FREE: by exit handler cleanup() or database_cleanup()
+	if (!name)					// NOMEM:
 		error_post(Arg::Gds(isc_virmemexh));
 	name->name_stmt = stmt;
 	name->name_length = l;

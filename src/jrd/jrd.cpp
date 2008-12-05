@@ -339,7 +339,7 @@ void Jrd::Trigger::compile(thread_db* tdbb)
 
 			throw;
 		}
-		
+
 		request->req_trg_name = name;
 
 		if (sys_trigger)
@@ -362,7 +362,7 @@ void Jrd::Trigger::release(thread_db* tdbb)
 	{
 		return; // FALSE;
 	}
-	
+
 	CMP_release(tdbb, request);
 	request = NULL;
 	return; // TRUE;
@@ -413,7 +413,7 @@ public:
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 
 	// here begin compound objects
-	// for constructor to work properly dpb_sys_user_name 
+	// for constructor to work properly dpb_sys_user_name
 	// MUST be FIRST
 	string	dpb_sys_user_name;
 	string	dpb_user_name;
@@ -435,8 +435,8 @@ public:
 public:
 	DatabaseOptions()
 	{
-		memset(this, 0, 
-			reinterpret_cast<char*>(&this->dpb_sys_user_name) - 
+		memset(this, 0,
+			reinterpret_cast<char*>(&this->dpb_sys_user_name) -
 			reinterpret_cast<char*>(this));
 	}
 	void get(const UCHAR*, USHORT, bool&);
@@ -458,10 +458,10 @@ namespace {
 	enum vdnResult {vdnFail, vdnOk, vdnSecurity};
 }
 static vdnResult	verify_database_name(const PathName&, ISC_STATUS*);
-static ISC_STATUS	unwindAttach(const Exception& ex, 
-								 ISC_STATUS* userStatus, 
-								 thread_db* tdbb, 
-								 Attachment* attachment, 
+static ISC_STATUS	unwindAttach(const Exception& ex,
+								 ISC_STATUS* userStatus,
+								 thread_db* tdbb,
+								 Attachment* attachment,
 								 Database* dbb);
 #ifdef WIN_NT
 static void		ExtractDriveLetter(const TEXT*, ULONG*);
@@ -492,7 +492,7 @@ static void cancel_attachments()
 		{
 			Database::SyncGuard dsGuard(dbb);
 			Attachment* lockedAtt = NULL;
-			Attachment* att = dbb->dbb_attachments; 
+			Attachment* att = dbb->dbb_attachments;
 
 			while (att)
 			{
@@ -500,12 +500,12 @@ static void cancel_attachments()
 				// deleted while waiting for lock.
 				while (true)
 				{
-					if (att->att_mutex.tryEnter() || (att->att_flags & ATT_purge_error)) 
+					if (att->att_mutex.tryEnter() || (att->att_flags & ATT_purge_error))
 					{
 						lockedAtt = att;
 						break;
 					}
-						
+
 					{
 						const bool cancel_disable = (att->att_flags & ATT_cancel_disable);
 						Database::Checkout dcoHolder(dbb);
@@ -544,7 +544,7 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 {
 	// dimitr: we should ignore autocommit for requests
 	// created by EXECUTE STATEMENT
-	// AP: also do nothing if request is cancelled and 
+	// AP: also do nothing if request is cancelled and
 	// transaction is already missing
 	if ((!request->req_transaction) || (request->req_transaction->tra_callback_count > 0))
 		return;
@@ -667,7 +667,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	if (*handle) 
+	if (*handle)
 	{
 		return handle_error(user_status, isc_bad_db_handle);
 	}
@@ -756,38 +756,38 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	{
 		// Check to see if the database is truly local or if it just looks
 		// that way
-      
+
 		if (ISC_check_if_remote(expanded_name, true)) {
 			ERR_post(Arg::Gds(isc_unavailable));
 		}
 	}
 
-/* If database to be opened is security database, then only 
+/* If database to be opened is security database, then only
    gsec or SecurityDatabase may open it. This protects from use
    of old gsec to write wrong password hashes into it. */
 	if (vdn == vdnSecurity && !options.dpb_gsec_attach && !options.dpb_sec_attach)
 	{
-		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") << 
-										  Arg::Str("security database") << 
+		ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("direct") <<
+										  Arg::Str("security database") <<
 										  Arg::Str(file_name));
 	}
 
 	// Worry about encryption key
 
 	if (dbb->dbb_decrypt) {
-		if (dbb->dbb_filename.hasData() && 
+		if (dbb->dbb_filename.hasData() &&
 			(dbb->dbb_encrypt_key.hasData() || options.dpb_key.hasData()))
 		{
 			if ((dbb->dbb_encrypt_key.hasData() && options.dpb_key.isEmpty()) ||
 				(dbb->dbb_encrypt_key.empty() && options.dpb_key.hasData()) ||
 				(dbb->dbb_encrypt_key != options.dpb_key))
 			{
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("encryption") << 
-												  Arg::Str("database") << 
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("encryption") <<
+												  Arg::Str("database") <<
 												  Arg::Str(file_name));
 			}
 		}
-		else if (options.dpb_key.hasData()) 
+		else if (options.dpb_key.hasData())
 		{
 			dbb->dbb_encrypt_key = options.dpb_key;
 		}
@@ -857,7 +857,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// 1. Ensure uniqueness of ID even in presence of multiple processes
 		// 2. Make sure that ID value can be used to connect back to database
 		//
-		if (is_alias && vdn == vdnFail) 
+		if (is_alias && vdn == vdnFail)
 			dbb->dbb_database_name = file_name;
 		else
 			dbb->dbb_database_name = expanded_name;
@@ -985,7 +985,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		case SQL_DIALECT_V6_TRANSITION:
 		case SQL_DIALECT_V6:
 			{
-				if (userId.usr_sql_role_name.hasData() && 
+				if (userId.usr_sql_role_name.hasData() &&
 					(userId.usr_sql_role_name[0] == DBL_QUOTE ||
 					 userId.usr_sql_role_name[0] == SINGLE_QUOTE))
 				{
@@ -993,7 +993,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 					// remove the delimited quotes and escape quote
 					// from ROLE name
 					userId.usr_sql_role_name.erase(0, 1);
-					for (string::iterator p = userId.usr_sql_role_name.begin(); 
+					for (string::iterator p = userId.usr_sql_role_name.begin();
 						 p < userId.usr_sql_role_name.end(); ++p)
 					{
 						if (*p == end_quote)
@@ -1007,7 +1007,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 							else
 							{
 								// delimited done
-								userId.usr_sql_role_name.erase(--p, 
+								userId.usr_sql_role_name.erase(--p,
 									userId.usr_sql_role_name.end());
 							}
 						}
@@ -1038,21 +1038,21 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
 			else
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") << 
-												  Arg::Str("database") << 
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
+												  Arg::Str("database") <<
 												  Arg::Str(file_name));
 		}
 	}
 
 	if (options.dpb_online)
 	{
-		if (!SHUT_online(tdbb, options.dpb_online)) 
+		if (!SHUT_online(tdbb, options.dpb_online))
 		{
 			if (user_status[1] != FB_SUCCESS)
 				ERR_punt();
 			else
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") << 
-												  Arg::Str("database") << 
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
+												  Arg::Str("database") <<
 												  Arg::Str(file_name));
 		}
 	}
@@ -1206,7 +1206,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		validateAccess(attachment);
 		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD)) {
 			ERR_post(Arg::Gds(isc_lock_timeout) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name)); 
+					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
 		}
 		PAG_set_db_readonly(dbb, options.dpb_db_readonly);
 	}
@@ -1269,7 +1269,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 
 	// guardDatabases.leave();
 
-	*handle = attachment;	
+	*handle = attachment;
 	attachment->att_mutex.leave();
 
 	}	// try
@@ -1689,7 +1689,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	if (!is_alias && vdn == vdnFail)
 	{
 		return user_status[1];
-	} 
+	}
 
 	Database* dbb = NULL;
 	MutexEnsureUnlock guardDatabases(databases_mutex);
@@ -1727,13 +1727,13 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 		// Check to see if the database is truly local or if it just looks
 		// that way
 
-		if (ISC_check_if_remote(expanded_name, true)) 
+		if (ISC_check_if_remote(expanded_name, true))
 		{
 			ERR_post(Arg::Gds(isc_unavailable));
 		}
 	}
 
-	if (options.dpb_key.hasData()) 
+	if (options.dpb_key.hasData())
 	{
 		dbb->dbb_encrypt_key = options.dpb_key;
 	}
@@ -1764,7 +1764,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	switch (options.dpb_sql_dialect) {
 	case 0:
-		// This can be issued by QLI, GDEF and old BDE clients.  
+		// This can be issued by QLI, GDEF and old BDE clients.
 		// In this case assume dialect 1
 		options.dpb_sql_dialect = SQL_DIALECT_V5;
 	case SQL_DIALECT_V5:
@@ -1850,8 +1850,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 			}
 			else
 			{
-				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("overwrite") << 
-												  Arg::Str("database") << 
+				ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("overwrite") <<
+												  Arg::Str("database") <<
 												  Arg::Str(expanded_name));
 			}
 		}
@@ -1871,8 +1871,8 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	// Initialize backup difference subsystem. This must be done before WAL and shadowing
 	// is enabled because nbackup it is a lower level subsystem
-	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal); 
-	
+	dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_normal);
+
 	dbb->dbb_backup_manager->dbCreating = true;
 	PAG_format_header(tdbb);
 	INI_init2(tdbb);
@@ -1885,24 +1885,24 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	if (options.dpb_set_no_reserve)
 		PAG_set_no_reserve(dbb, options.dpb_no_reserve);
 
-	INI_format(attachment->att_user->usr_user_name.c_str(), 
+	INI_format(attachment->att_user->usr_user_name.c_str(),
 			   options.dpb_set_db_charset.c_str());
 
 	// There is no point to move database online at database creation since it is online by default.
 	// We do not allow to create database that is fully shut down.
 	if (options.dpb_online || (options.dpb_shutdown & isc_dpb_shut_mode_mask) == isc_dpb_shut_full)
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(file_name));
-	
+
 	if (options.dpb_shutdown) {
 		if (!SHUT_database(tdbb, options.dpb_shutdown,
 						   options.dpb_shutdown_delay))
 		{
-			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") << 
-											  Arg::Str("database") << 
+			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("shutdown or online") <<
+											  Arg::Str("database") <<
 											  Arg::Str(file_name));
 		}
 	}
-	
+
 	if (options.dpb_sweep_interval != -1) {
 		PAG_sweep_interval(options.dpb_sweep_interval);
 		dbb->dbb_sweep_interval = options.dpb_sweep_interval;
@@ -1924,7 +1924,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
         if (!CCH_exclusive (tdbb, LCK_EX, WAIT_PERIOD))
             ERR_post(Arg::Gds(isc_lock_timeout) <<
 					 Arg::Gds(isc_obj_in_use) << Arg::Str(file_name));
-        
+
         PAG_set_db_readonly(dbb, options.dpb_db_readonly);
     }
 
@@ -2136,8 +2136,8 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		if (!attachment->locksmith())
 		{
-			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") << 
-											  Arg::Str("database") << 
+			ERR_post(Arg::Gds(isc_no_priv) << Arg::Str("drop") <<
+											  Arg::Str("database") <<
 											  Arg::Str(file_name));
 		}
 
@@ -2199,7 +2199,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 
 		// drop the files here
 		bool err = drop_files(file);
-		for (; shadow; shadow = shadow->sdw_next) 
+		for (; shadow; shadow = shadow->sdw_next)
 		{
 			err = err || drop_files(shadow->sdw_file);
 		}
@@ -2298,7 +2298,7 @@ ISC_STATUS GDS_GET_SLICE(ISC_STATUS* user_status,
 		check_database(tdbb);
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_segstr_wrong_db);
-	
+
 		if (!array_id->gds_quad_low && !array_id->gds_quad_high) {
 			MOVE_CLEAR(slice, slice_length);
 			*return_length = 0;
@@ -2520,7 +2520,7 @@ ISC_STATUS GDS_QUE_EVENTS(ISC_STATUS* user_status,
 		{
 			return user_status[1];
 		}
-	
+
 		*id = EVENT_que(user_status,
 						attachment->att_event_session,
 						lock->lck_length,
@@ -2823,12 +2823,12 @@ ISC_STATUS GDS_SEND(ISC_STATUS * user_status,
 		check_transaction(tdbb, request->req_transaction);
 
 		verify_request_synchronization(request, level);
-	
+
 		EXE_send(tdbb, request, msg_type, msg_length,
 				reinterpret_cast<UCHAR*>(msg));
-	
+
 		check_autocommit(request, tdbb);
-	
+
 		if (request->req_flags & req_warning)
 			request->req_flags &= ~req_warning;
 	}
@@ -2955,7 +2955,7 @@ ISC_STATUS GDS_SERVICE_QUERY(ISC_STATUS*	user_status,
 
 			service->query2(tdbb, send_item_length, send_items,
 					recv_item_length, recv_items, buffer_length, buffer);
-	
+
 			// If there is a status vector from a service thread, copy it into the thread status
 			int len, warning;
 			PARSE_STATUS(service->getStatus(), len, warning);
@@ -3004,7 +3004,7 @@ ISC_STATUS GDS_SERVICE_START(ISC_STATUS*	user_status,
 		validateHandle(service);
 
 		service->start(spb_length, reinterpret_cast<const UCHAR*>(spb));
-	
+
 		if (service->getStatus()[1]) {
 			memcpy(tdbb->tdbb_status_vector, service->getStatus(), sizeof(ISC_STATUS_ARRAY));
 		}
@@ -3048,7 +3048,7 @@ ISC_STATUS GDS_START_AND_SEND(ISC_STATUS* user_status,
 		check_transaction(tdbb, request->req_transaction);
 
 		jrd_tra* transaction = find_transaction(tdbb, isc_req_wrong_db);
-	
+
 		JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg, level);
 	}
 	catch (const Exception& ex)
@@ -3255,7 +3255,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
  **************************************/
 	ThreadContextHolder tdbb(user_status);
 
-	try 
+	try
 	{
 		Attachment* attachment = *db_handle;
 		validateHandle(tdbb, attachment);
@@ -3286,11 +3286,11 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 			{
 				if ( (node = csb->csb_rpt[i].csb_message) )
 				{
-					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0) 
+					if ((int) (IPTR) node->nod_arg[e_msg_number] == 0)
 					{
 						in_message = node;
 					}
-					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1) 
+					else if ((int) (IPTR) node->nod_arg[e_msg_number] == 1)
 					{
 						out_message = node;
 					}
@@ -3322,7 +3322,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 
 			if (in_msg_length != len)
 			{
-				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) << 
+				ERR_post(Arg::Gds(isc_port_len) << Arg::Num(in_msg_length) <<
 												   Arg::Num(len));
 			}
 
@@ -3340,7 +3340,7 @@ ISC_STATUS GDS_TRANSACT_REQUEST(ISC_STATUS*	user_status,
 		}
 
 		if (out_msg_length != len) {
-			ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) << 
+			ERR_post(Arg::Gds(isc_port_len) << Arg::Num(out_msg_length) <<
 											   Arg::Num(len));
 		}
 
@@ -3878,7 +3878,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
 #ifdef SUPERSERVER
-		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ? 
+		(quantum ? quantum : (ThreadPriorityScheduler::boosted() ?
 			Config::getPriorityBoost() : 1) * QUANTUM) :
 #else
 		(quantum ? quantum : QUANTUM) :
@@ -4073,7 +4073,7 @@ static bool drop_files(const jrd_file* file)
 	{
 		if (unlink(file->fil_string))
 		{
-			ERR_build_status(status, Arg::Gds(isc_io_error) << Arg::Str("unlink") << 
+			ERR_build_status(status, Arg::Gds(isc_io_error) << Arg::Str("unlink") <<
 							   								   Arg::Str(file->fil_string) <<
 									 Arg::Gds(isc_io_delete_err) << SYS_ERR(errno));
 			Database* dbb = GET_DBB();
@@ -4143,7 +4143,7 @@ static void find_intl_charset(thread_db* tdbb, Attachment* attachment, const Dat
 
 	const UCHAR* lc_ctype =
 		reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
-		
+
 	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
 		INTL_defined_type(tdbb, id & 0xFF) &&
 		((id & 0xFF) != CS_BINARY))
@@ -4593,7 +4593,7 @@ static Database* init(thread_db* tdbb,
 		if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_not_in_use)) &&
 			 (dbb->dbb_filename == expanded_filename))
 		{
-			if (attach_flag) 
+			if (attach_flag)
 				return dbb;
 
 			ERR_post(Arg::Gds(isc_no_meta_update) <<
@@ -4644,7 +4644,7 @@ static Database* init(thread_db* tdbb,
 			else if (GCPolicyDefault == GCPolicyCombined) {
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
 			}
-			else 
+			else
 				fb_assert(false);
 		}
 	}
@@ -4858,7 +4858,7 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment, ISC_STAT
 	if (attachment->att_temp_pg_lock)
 		LCK_release(tdbb, attachment->att_temp_pg_lock);
 
-	for (bool getResult = attachment->att_dsql_cache.getFirst(); getResult; 
+	for (bool getResult = attachment->att_dsql_cache.getFirst(); getResult;
 			  getResult = attachment->att_dsql_cache.getNext())
 	{
 		LCK_release(tdbb, attachment->att_dsql_cache.current()->second.lock);
@@ -4951,10 +4951,10 @@ static void detachLocksFromAttachment(Attachment* attachment)
 Attachment::Attachment(MemoryPool* pool, Database* dbb)
 :	att_pool(pool),
 	att_memory_stats(&dbb->dbb_memory_stats),
-	att_database(dbb), 
+	att_database(dbb),
 	att_lock_owner_id(Database::getLockOwnerId()),
 	att_lc_messages(*pool),
-	att_working_directory(*pool), 
+	att_working_directory(*pool),
 	att_filename(*pool),
 	att_timestamp(TimeStamp::getCurrentTimeStamp()),
 	att_context_vars(*pool),
@@ -4973,9 +4973,9 @@ Attachment::Attachment(MemoryPool* pool, Database* dbb)
 Attachment::~Attachment()
 {
 	// For normal attachments that happens release_attachment(),
-	// but for special ones like GC should be done also in dtor - 
+	// but for special ones like GC should be done also in dtor -
 	// they do not (and should not) call release_attachment().
-	// It's no danger calling detachLocksFromAttachment() 
+	// It's no danger calling detachLocksFromAttachment()
 	// once more here because it nulls att_long_locks.
 	//		AP 2007
 	detachLocksFromAttachment(this);
@@ -5189,7 +5189,7 @@ static void strip_quotes(string& out)
  *	Get rid of quotes around strings
  *
  **************************************/
-	if (out.isEmpty()) 
+	if (out.isEmpty())
 	{
 		return;
 	}
@@ -5357,7 +5357,7 @@ UCHAR* JRD_num_attachments(UCHAR* const buf, USHORT buf_len, JRD_info_tag flag,
 	catch (const Exception&)
 	{
 		// Here we ignore possible errors from databases_mutex.
-		// They were always silently ignored, and for this function 
+		// They were always silently ignored, and for this function
 		// we really have no way to notify world about mutex problem.
 		//		AP. 2008.
 	}
@@ -5466,7 +5466,7 @@ static unsigned int purge_transactions(thread_db*	tdbb,
  **************************************
  *
  * Functional description
- *	commit or rollback all transactions 
+ *	commit or rollback all transactions
  *	from an attachment
  *
  **************************************/
@@ -5540,7 +5540,7 @@ static void purge_attachment(thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 	Database* dbb = attachment->att_database;
-	
+
 	if (!(dbb->dbb_flags & DBB_bugcheck))
 	{
 		try
@@ -5701,10 +5701,10 @@ static void verify_request_synchronization(jrd_req*& request, SSHORT level)
 
 
 /**
-  
+
  	verify_database_name
-  
-    @brief	Verify database name for open/create 
+
+    @brief	Verify database name for open/create
 	against given in conf file list of available directories
 	and security database name
 
@@ -5731,7 +5731,7 @@ static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
 
 	// Check for .conf
 	if (!JRD_verify_database_access(name)) {
-		ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") << 
+		ERR_build_status(status, Arg::Gds(isc_conf_access_denied) << Arg::Str("database") <<
 																	 Arg::Str(name));
 		return vdnFail;
 	}
@@ -5740,9 +5740,9 @@ static vdnResult verify_database_name(const PathName& name, ISC_STATUS* status)
 
 
 /**
-  
+
 	getUserInfo
-  
+
     @brief	Checks the userinfo database to validate
     password to that passed in.
     Takes into account possible trusted authentication.
@@ -5768,7 +5768,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 	else
 	{
-		if (options.dpb_user_name.isEmpty() && 
+		if (options.dpb_user_name.isEmpty() &&
 			options.dpb_network_protocol.isEmpty() &&	// This 2 checks ensure that we are not remote server
 			options.dpb_remote_address.isEmpty()) 		// process, i.e. can use unix OS auth.
 		{
@@ -5778,13 +5778,13 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 		if (options.dpb_user_name.hasData() || (id == -1))
 		{
-			string remote = options.dpb_network_protocol + 
+			string remote = options.dpb_network_protocol +
 				(options.dpb_network_protocol.isEmpty() || options.dpb_remote_address.isEmpty() ? "" : "/") +
 				options.dpb_remote_address;
 
-			SecurityDatabase::verifyUser(name, 
-										 options.dpb_user_name.nullStr(), 
-										 options.dpb_password.nullStr(), 
+			SecurityDatabase::verifyUser(name,
+										 options.dpb_user_name.nullStr(),
+										 options.dpb_password.nullStr(),
 										 options.dpb_password_enc.nullStr(),
 										 &id, &group, &node_id, remote);
 		}
@@ -5810,7 +5810,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 
 	if (name.length() > USERNAME_LENGTH)
 	{
-		status_exception::raise(Arg::Gds(isc_long_login) << 
+		status_exception::raise(Arg::Gds(isc_long_login) <<
 			Arg::Num(name.length()) << Arg::Num(USERNAME_LENGTH));
 	}
 
@@ -5821,7 +5821,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	user.usr_user_id = id;
 	user.usr_group_id = group;
 	user.usr_node_id = node_id;
-	if (wheel) 
+	if (wheel)
 	{
 		user.usr_flags |= USR_locksmith;
 	}
@@ -5832,10 +5832,10 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options)
 	}
 }
 
-static ISC_STATUS unwindAttach(const Exception& ex, 
-							   ISC_STATUS* userStatus, 
-							   thread_db* tdbb, 
-							   Attachment* attachment, 
+static ISC_STATUS unwindAttach(const Exception& ex,
+							   ISC_STATUS* userStatus,
+							   thread_db* tdbb,
+							   Attachment* attachment,
 							   Database* dbb)
 {
 	stuff_exception(userStatus, ex);
@@ -5843,7 +5843,7 @@ static ISC_STATUS unwindAttach(const Exception& ex,
 	try
 	{
 		ThreadStatusGuard temp_status(tdbb);
-		
+
 		dbb->dbb_flags &= ~DBB_being_opened;
 
 		if (attachment)
@@ -6349,7 +6349,7 @@ namespace {
 	public:
 		explicit DatabaseDirectoryList(MemoryPool& p)
 			: DirectoryList(p)
-		{ 
+		{
 			initialize();
 		}
 	};

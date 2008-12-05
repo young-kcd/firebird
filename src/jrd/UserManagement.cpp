@@ -44,7 +44,7 @@ UserManagement::UserManagement(thread_db* tdbb)
 	dpb.insertByte(isc_dpb_gsec_attach, TRUE);
 	dpb.insertString(isc_dpb_trusted_auth, tdbb->getAttachment()->att_user->usr_user_name);
 
-	if (isc_attach_database(status, 0, securityDatabaseName, &database, 
+	if (isc_attach_database(status, 0, securityDatabaseName, &database,
 							dpb.getBufferLength(), reinterpret_cast<const char*>(dpb.getBuffer())))
 	{
 		status_exception::raise(status);
@@ -59,10 +59,10 @@ UserManagement::UserManagement(thread_db* tdbb)
 void UserManagement::commit()
 {
 	ISC_STATUS_ARRAY status;
-	if (transaction) 
+	if (transaction)
 	{
 		// Commit transaction in security database
-		if (isc_commit_transaction(status, &transaction)) 
+		if (isc_commit_transaction(status, &transaction))
 		{
 			status_exception::raise(status);
 		}
@@ -73,18 +73,18 @@ void UserManagement::commit()
 UserManagement::~UserManagement()
 {
 	ISC_STATUS_ARRAY status;
-	if (transaction) 
+	if (transaction)
 	{
 		// Rollback transaction in security database ...
-		if (isc_rollback_transaction(status, &transaction)) 
+		if (isc_rollback_transaction(status, &transaction))
 		{
 			status_exception::raise(status);
 		}
 	}
 
-	if (database) 
+	if (database)
 	{
-		if (isc_detach_database(status, &database)) 
+		if (isc_detach_database(status, &database))
 		{
 			status_exception::raise(status);
 		}

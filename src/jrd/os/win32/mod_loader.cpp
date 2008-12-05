@@ -18,7 +18,7 @@ public:
 	Win32Module(HMODULE m) : module(m) {}
 	~Win32Module();
 	void *findSymbol(const string&);
-	
+
 private:
 	HMODULE module;
 };
@@ -48,7 +48,7 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	HMODULE module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
 	if (!module)
 		return 0;
-	
+
 	return FB_NEW(*getDefaultMemoryPool()) Win32Module(module);
 }
 

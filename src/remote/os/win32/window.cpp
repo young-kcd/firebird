@@ -172,7 +172,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
  *          lParam - LPARAM parameter for the message
  *
  *  Return: FALSE indicates that the message has not been handled
- *          TRUE indicates the message has been handled 
+ *          TRUE indicates the message has been handled
  *
  *  Description: This is main window procedure for the Firebird server. This
  *               traps all the Firebird significant messages and processes
@@ -193,7 +193,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		/* If we are running as a non-service server, then query the user
 		 * to determine if we should end the session.  Otherwise, assume that
 		 * the server is a service  and could be servicing remote clients and
-		 * therefore should not be shut down.  
+		 * therefore should not be shut down.
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			return CanEndServer(hWnd, true);
@@ -207,7 +207,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		 * the server is a service  and could be servicing remote clients and
 		 * therefore should not be shut down.  The DestroyWindow() will destroy
 		 * the hidden window created by the server for IPC.  This should get
-		 * destroyed when the user session ends. 
+		 * destroyed when the user session ends.
 		 */
 		if (usServerFlags & SRVR_non_service) {
 			if (CanEndServer(hWnd, false)) {
@@ -225,7 +225,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 		switch (wParam) {
 		case IDM_CANCEL:
 			if ((usServerFlags & SRVR_non_service)
-				&& (!(usServerFlags & SRVR_no_icon))) 
+				&& (!(usServerFlags & SRVR_no_icon)))
 			{
 				ShowWindow(hWnd, bInTaskBar ? SW_HIDE : SW_MINIMIZE);
 			}
@@ -300,7 +300,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			break;
 
 		case WM_RBUTTONUP:
-			// The TrackPopupMenu() is inconsistant if called from here? 
+			// The TrackPopupMenu() is inconsistant if called from here?
 			// This is the only way I could make it work.
 			PostMessage(hWnd, WM_COMMAND, (WPARAM) IDM_OPENPOPUP, 0);
 			break;
@@ -309,7 +309,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 
 	case WM_CREATE:
 		if ((usServerFlags & SRVR_non_service)
-			&& (!(usServerFlags & SRVR_no_icon))) 
+			&& (!(usServerFlags & SRVR_no_icon)))
 		{
 			HICON hIcon = (HICON) LoadImage(hInstance,
 									  MAKEINTRESOURCE(IDI_IBSVR_SMALL),
@@ -324,7 +324,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 			nid.hIcon = hIcon;
 			lstrcpy(nid.szTip, GDS_VERSION);
 
-			// This will be true in the explorer interface 
+			// This will be true in the explorer interface
 			bInTaskBar = Shell_NotifyIcon(NIM_ADD, &nid);
 
 			if (hIcon)
@@ -433,7 +433,7 @@ LRESULT CALLBACK WindowFunc(HWND hWnd,
 				}
 			/* Fall through to MOVEPENDING if we receive a QUERYDEVICE for the
 			   * same device twice.  This will occur if we say yes to the removal
-			   * of a controller.  The OS will prompt for the removal of all 
+			   * of a controller.  The OS will prompt for the removal of all
 			   * devices connected to that controller.  If you respond no, the
 			   * OS will prompt you again, and then remove the device anyway...
 			 */

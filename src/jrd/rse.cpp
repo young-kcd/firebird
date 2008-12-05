@@ -2369,9 +2369,9 @@ static bool get_record(thread_db*	tdbb,
 			}
 		}
 
-		// hvlad: self referenced members are removed from recursive SELECT's 
-		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other 
-		// members in such SELECT then rsb_count will be zero. Handle it 
+		// hvlad: self referenced members are removed from recursive SELECT's
+		// in recursive CTE (it is done in dsql\pass1.cpp). If there are no other
+		// members in such SELECT then rsb_count will be zero. Handle it
 		else if (rsb->rsb_count == 0)
 			return false;
 
@@ -2620,8 +2620,8 @@ static void invalidate_child_rpbs(thread_db* tdbb, RecordSource* rsb)
 
 			case rsb_recurse:
 				{
-					// hvlad: recursive CTE is always a 'union all' of 
-					// exactly two members. 
+					// hvlad: recursive CTE is always a 'union all' of
+					// exactly two members.
 					// see also comments for RSBRecurse::open
 					invalidate_child_rpbs(tdbb, rsb->rsb_arg[0]);
 					invalidate_child_rpbs(tdbb, rsb->rsb_arg[2]);
@@ -2917,7 +2917,7 @@ static void open_sort(thread_db* tdbb, RecordSource* rsb, irsb_sort* impure, FB_
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	impure->irsb_sort_handle = 
+	impure->irsb_sort_handle =
 		SORT_init(tdbb, map->smb_length, map->smb_keys,
 				  map->smb_keys, map->smb_key_desc,
          		  ((map->smb_flags & SMB_project) ? reject : NULL),
@@ -3608,14 +3608,14 @@ static void write_merge_block(thread_db* tdbb, merge_file* mfb, ULONG block)
 const USHORT RSBRecurse::MAX_RECURSE_LEVEL = 1024;
 
 
-// hvlad: 
+// hvlad:
 // values of rsb_arg's:
-//	0 - 1st stream 
+//	0 - 1st stream
 //	1 - 1st stream map
-//	2 - 2nd stream 
+//	2 - 2nd stream
 //	3 - 2nd stream map
-//	4 - count of the streams that make up the union 
-//	5..5+rsb_arg[4]-1	- numbers of the streams that make up the union 
+//	4 - count of the streams that make up the union
+//	5..5+rsb_arg[4]-1	- numbers of the streams that make up the union
 //	5+rsb_arg[4]		- inner impure area size
 //	6+rsb_arg[4]		- number of stream for next level record
 void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
@@ -3639,7 +3639,7 @@ void RSBRecurse::open(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	// Initialize the record number for both <root> and <child> stream
 	RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
 	const RecordSource* const* end = ptr + streams;
-	for (; ptr < end; ptr++) 
+	for (; ptr < end; ptr++)
 	{
 		const USHORT stream = (USHORT)(U_IPTR) *ptr;
 		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
@@ -3654,15 +3654,15 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	jrd_req* request = tdbb->getRequest();
 
 	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
-	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1]; 
+	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
 	const ULONG rpbs_size = sizeof(record_param) * streams;
 	const USHORT map_stream = (USHORT)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 2];
 	RecordSource** rsb_ptr;
- 
+
 	Record* record = request->req_rpb[rsb->rsb_stream].rpb_record;
 	Record* map_record = request->req_rpb[map_stream].rpb_record;
 
-	switch (irsb->irsb_mode) 
+	switch (irsb->irsb_mode)
 	{
 	case root:
 		rsb_ptr = &rsb->rsb_arg[0];
@@ -3670,7 +3670,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 
 	case recurse:
 		{
-			// Stop infinite recursion of bad queries 
+			// Stop infinite recursion of bad queries
 			if (irsb->irsb_level > MAX_RECURSE_LEVEL)
 				ERR_post(Arg::Gds(isc_req_max_clones_exceeded));
 
@@ -3681,7 +3681,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 			char* p = tmp + inner_size;
 			RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
 			const RecordSource* const* end = ptr + streams;
-			for (; ptr < end; ptr++) 
+			for (; ptr < end; ptr++)
 			{
 				const record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
 				memmove(p, rpb, sizeof(record_param));
@@ -3712,7 +3712,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	// there isn't a previous level, we're done
 	while (!get_record(tdbb, *rsb_ptr, NULL, RSE_get_forward))
 	{
-		if (irsb->irsb_level == 1) 
+		if (irsb->irsb_level == 1)
 		{
 			return false;
 		}
@@ -3726,7 +3726,7 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		char* p = tmp + inner_size;
 		RecordSource** ptr = rsb->rsb_arg + rsb->rsb_count + 1;
 		const RecordSource* const* end = ptr + streams;
-		for (; ptr < end; ptr++) 
+		for (; ptr < end; ptr++)
 		{
 			record_param* rpb = &request->req_rpb[(USHORT)(U_IPTR) *ptr];
 			Record* rec = rpb->rpb_record;
@@ -3740,14 +3740,14 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 		}
 		delete[] tmp;
 
-		if (irsb->irsb_level > 1) 
+		if (irsb->irsb_level > 1)
 		{
 			rsb_ptr = &rsb->rsb_arg[2];
 
 			// Reset our record data so that recursive WHERE clauses work
 			memcpy(record->rec_data, irsb->irsb_data, record->rec_length);
 		}
-		else 
+		else
 		{
 			rsb_ptr = &rsb->rsb_arg[0];
 		}
@@ -3755,8 +3755,8 @@ bool RSBRecurse::get(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	irsb->irsb_mode = recurse;
 
 	// We've got a record, map it into the target record
-	jrd_nod* map = (jrd_nod*) rsb_ptr[1]; 
-	jrd_nod** ptr = map->nod_arg; 
+	jrd_nod* map = (jrd_nod*) rsb_ptr[1];
+	jrd_nod** ptr = map->nod_arg;
 	const jrd_nod *const *end = ptr + map->nod_count;
 	for (; ptr < end; ptr++) {
 		EXE_assignment(tdbb, *ptr);
@@ -3775,7 +3775,7 @@ void RSBRecurse::close(thread_db* tdbb, RecordSource* rsb, irsb_recurse* irsb)
 	const USHORT streams = (USHORT)(U_IPTR) rsb->rsb_arg[rsb->rsb_count];
 	const ULONG inner_size = (ULONG)(U_IPTR) rsb->rsb_arg[streams + rsb->rsb_count + 1];
 
-	while (irsb->irsb_level > 1) 
+	while (irsb->irsb_level > 1)
 	{
 		RSE_close(tdbb, rsb->rsb_arg[2]);
 

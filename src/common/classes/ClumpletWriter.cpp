@@ -36,20 +36,20 @@
 
 namespace Firebird {
 
-ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) : 
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+ClumpletWriter::ClumpletWriter(Kind k, size_t limit, UCHAR tag) :
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
 {
 	initNewBuffer(tag);
 	rewind();
 }
- 
-ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCHAR tag) : 
-	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+
+ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit, UCHAR tag) :
+	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
 {
 	initNewBuffer(tag);
 	rewind();
 }
- 
+
 void ClumpletWriter::initNewBuffer(UCHAR tag)
 {
 	switch (kind)
@@ -72,7 +72,7 @@ void ClumpletWriter::initNewBuffer(UCHAR tag)
 }
 
 ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+	ClumpletReader(k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
@@ -85,7 +85,7 @@ ClumpletWriter::ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t
 
 ClumpletWriter::ClumpletWriter(MemoryPool& given_pool, Kind k, size_t limit,
 							   const UCHAR* buffer, size_t buffLen, UCHAR tag) :
-	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool()) 
+	ClumpletReader(given_pool, k, NULL, 0), sizeLimit(limit), dynamic_buffer(getPool())
 {
 	if (buffer && buffLen) {
 		dynamic_buffer.push(buffer, buffLen);
@@ -203,7 +203,7 @@ void ClumpletWriter::insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const
 		usage_mistake("write past EOF");
 		return;
 	}
-	
+
 	// Check length according to clumplet type
 	const ClumpletType t = getClumpletType(tag);
 	UCHAR lenSize = 0;
@@ -344,7 +344,7 @@ void ClumpletWriter::deleteClumplet()
 	if (buffer_end - clumplet < 2) {
 		// It appears we're erasing EOF marker
 		dynamic_buffer.shrink(cur_offset);
-	} 
+	}
 	else {
 		dynamic_buffer.removeCount(cur_offset, getClumpletSize(true, true, true));
 	}

@@ -1,26 +1,26 @@
 //____________________________________________________________
-//  
+//
 //		PROGRAM:	Language Preprocessor
 //		MODULE:		pat.cpp
 //		DESCRIPTION:	Code generator pattern generator
-//  
+//
 //  The contents of this file are subject to the Interbase Public
 //  License Version 1.0 (the "License"); you may not use this file
 //  except in compliance with the License. You may obtain a copy
 //  of the License at http://www.Inprise.com/IPL.html
-//  
+//
 //  Software distributed under the License is distributed on an
 //  "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
 //  or implied. See the License for the specific language governing
 //  rights and limitations under the License.
-//  
+//
 //  The Original Code was created by Inprise Corporation
 //  and its predecessors. Portions created by Inprise Corporation are
 //  Copyright (C) Inprise Corporation.
-//  
+//
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
-//  
+//
 //
 //____________________________________________________________
 //
@@ -38,23 +38,23 @@
 
 typedef enum {
 	NL,
-	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length 
-	DH, DF,						// Database handle, filename 
-	TH,							// Transaction handle 
-	BH, BI,						// Blob handle, blob_ident 
-	FH,							// Form handle 
-	V1, V2,						// Status vectors 
-	I1, I2,						// Identifier numbers 
-	RF, RE,						// OS- and language-dependent REF and REF-end character 
-	VF, VE,						// OS- and language-dependent VAL and VAL-end character 
+	RH, RL, RT, RI, RS,			// Request handle, level, transaction, ident, length
+	DH, DF,						// Database handle, filename
+	TH,							// Transaction handle
+	BH, BI,						// Blob handle, blob_ident
+	FH,							// Form handle
+	V1, V2,						// Status vectors
+	I1, I2,						// Identifier numbers
+	RF, RE,						// OS- and language-dependent REF and REF-end character
+	VF, VE,						// OS- and language-dependent VAL and VAL-end character
 	S1, S2, S3, S4, S5, S6, S7,
-	// Arbitrary strings 
+	// Arbitrary strings
 	N1, N2, N3, N4,				// Arbitrary number (SSHORT)
 	L1, L2,						// Arbitrary number (SLONG)
-	PN, PL, PI,					// Port number, port length, port ident 
-	QN, QL, QI,					// Second port number, port length, port ident 
-	IF, EL, EN,					// If, else, end 
-	FR							// Field reference 
+	PN, PL, PI,					// Port number, port length, port ident
+	QN, QL, QI,					// Second port number, port length, port ident
+	IF, EL, EN,					// If, else, end
+	FR							// Field reference
 } PAT_T;
 
 static const struct ops {
@@ -109,9 +109,9 @@ static const struct ops {
 
 
 //____________________________________________________________
-//  
+//
 //		Expand a pattern.
-//  
+//
 
 void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 {
@@ -378,7 +378,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 				sprintf(p, gpreGlob.long_ident_pattern, long_value);
 			else
 				sprintf(p, gpreGlob.ident_pattern, value);
-		}	
+		}
 		else if (reference) {
 			if (!reference->ref_port)
 				sprintf(p, gpreGlob.ident_pattern, reference->ref_ident);

@@ -64,7 +64,7 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 #if defined (_WIN32)
 /*
 BOOL APIENTRY DllMain( HANDLE ,//hModule,
-					  DWORD  ul_reason_for_call, 
+					  DWORD  ul_reason_for_call,
 					  LPVOID //lpReserved
 					  )
 {
@@ -114,7 +114,7 @@ namespace internal
 	};
 
 	/*
-	inline fb_len get_varchar_len(const char* vchar) 
+	inline fb_len get_varchar_len(const char* vchar)
 	{
 		return reinterpret_cast<const vvary*>(vchar)->vary_length;
 	}
@@ -129,7 +129,7 @@ namespace internal
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
 	}
-	
+
 	inline void set_varchar_len(ISC_UCHAR* vchar, const fb_len len)
 	{
 		reinterpret_cast<vvary*>(vchar)->vary_length = len;
@@ -739,7 +739,7 @@ FBUDF_API void fbround(const paramdsc* v, paramdsc* rc)
 		rc->dsc_scale = 0;
 		return;
 	}
-	
+
 	// round(0.3)  => 0 ### round(0.5)  =>  1
 	// round(-0.3) => 0 ### round(-0.5) =>  0
 	// round(-0.3) => 0 ### round(-0.5) => -1 ### SYMMETRIC_MATH defined.

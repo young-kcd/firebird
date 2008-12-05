@@ -40,7 +40,7 @@ void Syslog::Record(Severity level, const char* msg)
 		break;
 	}
 	syslog(priority | LOG_LOCAL3, "%s (%m)", msg);
-	
+
 	// try to put it also on controlling tty
 	int fd = 2;
 	if (! isatty(fd))

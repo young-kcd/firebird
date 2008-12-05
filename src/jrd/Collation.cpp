@@ -527,7 +527,7 @@ private:
 					{
 						if (aux(obj, flags, search, end_search, match, end_match))
 							return true;
-							
+
 						if (search < end_search)
 						{
 							const CharType d = *search++;
@@ -545,18 +545,18 @@ private:
 				{
 					if (search >= end_search)
 						return false;
-						
+
 					search++;
 				}
 				else {
 					if (++match >= end_match)
 						return true;
-						
+
 					for (;;)
 					{
 						if (aux(obj, flags, search, end_search, match, end_match))
 							return true;
-							
+
 						if (++search >= end_search)
 							return false;
 					}
@@ -581,7 +581,7 @@ private:
 					{
 						if (aux(obj, flags, search, end_search, match, end_match))
 							return true;
-							
+
 						if (search < end_search)
 						{
 							if (!className(obj, flags, char_class, end_class, *search++))
@@ -622,7 +622,7 @@ private:
 	// Japanese version operates on short-based buffer,
 	// instead of SCHAR-based.
 	static bool className(Jrd::TextType* obj, USHORT flags,
-		const CharType* char_class, const CharType* const end_class, 
+		const CharType* char_class, const CharType* const end_class,
 		CharType character)
 	{
 		fb_assert(char_class != NULL);
@@ -656,9 +656,9 @@ private:
 	}
 
 	// Merge the matching pattern and control strings to give a cannonical
-	// matching pattern.  Return the length of the combined string. 
+	// matching pattern.  Return the length of the combined string.
 	//
-	// What this routine does is to take the language template, strip off 
+	// What this routine does is to take the language template, strip off
 	// the prefix and put it in the output string, then parse the definitions
 	// into an array of character pointers.  The index array is the defined
 	// character.   The routine then takes the actual match pattern and uses
@@ -738,7 +738,7 @@ private:
 				while (*p)
 					*comb++ = *p++;
 
-				// if we've got the definition of a quote character, 
+				// if we've got the definition of a quote character,
 				// slurp the next character too
 
 				if (comb > combined && comb[-1] == *(CharType*) obj->getCanonicalChar(CHAR_GDML_QUOTE) && *match)
@@ -932,7 +932,7 @@ Collation* Collation::createInstance(MemoryPool& pool, TTYPE_ID id, texttype* tt
 				MatchesMatcherULongCanonical, SleuthMatcherULongCanonical>(id, tt, cs);
 	}
 
-	fb_assert(false);	
+	fb_assert(false);
 	return NULL;	// compiler silencer
 }
 

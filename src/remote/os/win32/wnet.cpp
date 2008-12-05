@@ -159,7 +159,7 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
 /* Note: prior to V3.1E a receivers could not in truth handle more
-   then 5 protocol descriptions; however, this restriction does not 
+   then 5 protocol descriptions; however, this restriction does not
    apply to Windows since it was created in 4.0 */
 
 /* If we want user verification, we can't speak anything less than version 7 */
@@ -284,11 +284,11 @@ rem_port* WNET_analyze(const Firebird::PathName& file_name,
 
 	port->port_protocol = packet->p_acpt.p_acpt_version;
 
-/* once we've decided on a protocol, concatenate the version 
+/* once we've decided on a protocol, concatenate the version
    string to reflect it...  */
 
 	Firebird::string temp;
-	temp.printf("%s/P%d", port->port_version->str_data, 
+	temp.printf("%s/P%d", port->port_version->str_data,
 						  port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
@@ -373,7 +373,7 @@ rem_port* WNET_connect(const TEXT*		name,
 		if (port->port_handle == INVALID_HANDLE_VALUE)
 		{
 			const DWORD dwError = GetLastError();
-			if (dwError == ERROR_CALL_NOT_IMPLEMENTED) 
+			if (dwError == ERROR_CALL_NOT_IMPLEMENTED)
 			{
 				disconnect(port);
 				wnet_shutdown = true;
@@ -508,7 +508,7 @@ static int accept_connection( rem_port* port, const P_CNCT* cnct)
 
 /* Pick up account and password, if given */
 
-	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, 
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
 			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
@@ -578,7 +578,7 @@ static rem_port* alloc_port( rem_port* parent)
 	xdrwnet_create(&port->port_receive, port, port->port_buffer, 0,
 				   XDR_DECODE);
 
-	if (parent) 
+	if (parent)
 	{
 		delete port->port_connection;
 		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
@@ -664,7 +664,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  **************************************
  *
  * Functional description
- *	A remote interface has requested the server prepare an auxiliary 
+ *	A remote interface has requested the server prepare an auxiliary
  *	connection; the server calls aux_request to set up the connection.
  *	Send the servers process id on the packet.  If at a later time
  *	a multi client server is used, there may be a need to
@@ -673,7 +673,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  **************************************/
 	rem_port* new_port = NULL;  // If this is the client, we will return NULL
 
-	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ? 
+	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ?
 		++event_counter : GetCurrentProcessId();
 	vport->port_async = new_port = alloc_port(vport->port_parent);
 	new_port->port_server_flags = vport->port_server_flags;
@@ -804,7 +804,7 @@ static void disconnect(rem_port* port)
 		CloseHandle(port->port_event);
 		port->port_event = INVALID_HANDLE_VALUE;
 	}
-	if (port->port_handle) 
+	if (port->port_handle)
 	{
 		CloseHandle(port->port_handle);
 		port->port_handle = 0;
@@ -827,7 +827,7 @@ static void force_close(rem_port* port)
  *
  **************************************/
 
-	if (port->port_event != INVALID_HANDLE_VALUE) 
+	if (port->port_event != INVALID_HANDLE_VALUE)
 	{
 		port->port_state = rem_port::BROKEN;
 
@@ -1461,7 +1461,7 @@ static int packet_receive(
 	BOOL status = ReadFile(port->port_handle, buffer, buffer_length, &n, &ovrl);
 	DWORD dwError = GetLastError();
 
-	if (!status && dwError == ERROR_IO_PENDING) 
+	if (!status && dwError == ERROR_IO_PENDING)
 	{
 		status = GetOverlappedResult(port->port_handle, &ovrl, &n, TRUE);
 		dwError = GetLastError();
@@ -1469,7 +1469,7 @@ static int packet_receive(
 	if (!status && dwError != ERROR_BROKEN_PIPE) {
 		return wnet_error(port, "ReadFile", isc_net_read_err, dwError);
 	}
-	
+
 	if (!n)
 	{
 		if (port->port_flags & PORT_detached)
@@ -1497,7 +1497,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
  **************************************
  *
  * Functional description
- *	Send some data on it's way.  
+ *	Send some data on it's way.
  *
  **************************************/
 	const SCHAR* data = buffer;
@@ -1509,7 +1509,7 @@ static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_lengt
 	BOOL status = WriteFile(port->port_handle, data, length, &n, &ovrl);
 	DWORD dwError = GetLastError();
 
-	if (!status && dwError == ERROR_IO_PENDING) 
+	if (!status && dwError == ERROR_IO_PENDING)
 	{
 		status = GetOverlappedResult(port->port_handle, &ovrl, &n, TRUE);
 		dwError = GetLastError();

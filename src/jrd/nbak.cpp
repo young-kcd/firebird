@@ -158,7 +158,7 @@ void BackupManager::change_dirty_page_owner(thread_db* tdbb, SLONG from_handle, 
 }
 
 void BackupManager::lock_clean_database(
-	thread_db* tdbb, SSHORT wait, WIN* window) 
+	thread_db* tdbb, SSHORT wait, WIN* window)
 {
 	database_lock->flags |= NBAK_state_blocking;
 	// Flush local cache to release all dirty pages
@@ -172,15 +172,15 @@ void BackupManager::lock_clean_database(
 	tdbb->tdbb_flags |= TDBB_backup_write_locked;
 	CCH_FETCH(tdbb, window, LCK_write, pag_header);
 }
- 
+
 void BackupManager::unlock_clean_database(
-	thread_db* tdbb) 
+	thread_db* tdbb)
 {
 	tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
 	database_lock->unlock(tdbb, LCK_write);
 
 	NBAK_TRACE(("database write unlocked"));
-} 
+}
 
 void BackupManager::lock_shared_database(thread_db* tdbb, SSHORT wait)
 {
@@ -247,7 +247,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 
 	bool header_locked = false;
 
-	try 
+	try
 	{
 		CleanDatabaseHolder cdbHolder(tdbb, this, true, &window);
 		Ods::header_page* header = (Ods::header_page*) window.win_buffer;
@@ -261,10 +261,10 @@ void BackupManager::begin_backup(thread_db* tdbb)
 			return;
 		}
 
-		// Create file	
+		// Create file
 		NBAK_TRACE(("Creating difference file %s", diff_name.c_str()));
 		diff_file = PIO_create(database, diff_name, true, false, false);
-#ifdef UNIX 
+#ifdef UNIX
 		// adjust difference file access rights to make it match main DB ones
 		if (diff_file && geteuid() == 0) {
 			struct stat st;
@@ -301,7 +301,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 		int newState = nbak_state_stalled;
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
 		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
-		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid), 
+		PAG_replace_entry_first(header, Ods::HDR_backup_guid, sizeof(guid),
 			reinterpret_cast<const UCHAR*>(&guid));
 
 		header_locked = false;
@@ -312,7 +312,7 @@ void BackupManager::begin_backup(thread_db* tdbb)
 
 		// All changes go to the difference file now
 	}
-	catch (const Firebird::Exception&) 
+	catch (const Firebird::Exception&)
 	{
 		backup_state = nbak_state_unknown;
 		if (header_locked)
@@ -351,7 +351,7 @@ ULONG BackupManager::getPageCount()
 			temp_bdb.bdb_buffer = buf;
 			temp_bdb.bdb_page = pageNum;
 			ISC_STATUS_ARRAY status;
-			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status)) 
+			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
 			{
 				Firebird::status_exception::raise(status);
 			}
@@ -363,10 +363,10 @@ ULONG BackupManager::getPageCount()
 }
 
 
-// Merge difference file to main files (if needed) and unlink() difference 
-// file then. If merge is already in progress method silently returns and 
-// does nothing (so it can be used for recovery on database startup). 
-void BackupManager::end_backup(thread_db* tdbb, bool recover) 
+// Merge difference file to main files (if needed) and unlink() difference
+// file then. If merge is already in progress method silently returns and
+// does nothing (so it can be used for recovery on database startup).
+void BackupManager::end_backup(thread_db* tdbb, bool recover)
 {
 	NBAK_TRACE(("end_backup, recover=%i", recover));
 
@@ -391,13 +391,13 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 						// for some instants and anything is possible at
 						// that times.
 
-	try 
+	try
 	{
 		// Check state under PR lock of backup state for speed
 		{ // scope
 			SharedDatabaseHolder sdbHolder(tdbb, this);
-			// Nobody is doing end_backup but database isn't in merge state. 
-			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) 
+			// Nobody is doing end_backup but database isn't in merge state.
+			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
 			{
 				NBAK_TRACE(("invalid state %d", backup_state));
 				endLock.unlock(tdbb, LCK_write);
@@ -409,7 +409,7 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 
 		CleanDatabaseHolder cdbHolder(tdbb, this, true, &window);
 
-		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) ) 
+		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
 		{
 			NBAK_TRACE(("invalid state %d", backup_state));
 			endLock.unlock(tdbb, LCK_write);
@@ -445,20 +445,20 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 
 	// STEP 2. Merging database and delta
 	// Here comes the dirty work. We need to reapply all changes from difference file to database
-	// Release write state lock and get read lock. 
+	// Release write state lock and get read lock.
 	// Merge process should not inhibit normal operations.
 
-	try 
+	try
 	{
 		NBAK_TRACE(("database locked to merge"));
 
 		SharedDatabaseHolder sdbHolder(tdbb, this);
 
 		NBAK_TRACE(("Merge. State=%d, current_scn=%d, adjusted_scn=%d",
-			backup_state, current_scn, adjusted_scn));	
+			backup_state, current_scn, adjusted_scn));
 
 		actualize_alloc(tdbb);
-		NBAK_TRACE(("Merge. Alloc table is actualized."));	
+		NBAK_TRACE(("Merge. Alloc table is actualized."));
 		AllocItemTree::Accessor all(alloc_table);
 
 		if (all.getFirst()) {
@@ -533,14 +533,14 @@ void BackupManager::end_backup(thread_db* tdbb, bool recover)
 
 	return;
 }
-	
+
 bool BackupManager::actualize_alloc(thread_db* tdbb)
 {
 	ISC_STATUS *status_vector = tdbb->tdbb_status_vector;
 	try {
-		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p", 
+		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p",
 			last_allocated_page, alloc_table));
-		// For SuperServer this routine is really executed only at database startup when 
+		// For SuperServer this routine is really executed only at database startup when
 		// it has exlock or when exclusive access to database is enabled
 		if (!alloc_table)
 			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
@@ -564,7 +564,7 @@ bool BackupManager::actualize_alloc(thread_db* tdbb)
 				if (!alloc_table->add(AllocItem(alloc_buffer[i + 1], temp_bdb.bdb_page.getPageNum() + i + 1)))
 				{
 					database->dbb_flags |= DBB_bugcheck;
-					ERR_build_status(status_vector, 
+					ERR_build_status(status_vector,
 						Arg::Gds(isc_bug_check) << Arg::Str("Duplicated item in allocation table detected"));
 					return false;
 				}
@@ -587,8 +587,8 @@ bool BackupManager::actualize_alloc(thread_db* tdbb)
 	return true;
 }
 
-// Return page index in difference file that can be used in 
-// write_difference call later. 
+// Return page index in difference file that can be used in
+// write_difference call later.
 ULONG BackupManager::get_page_index(thread_db* tdbb, ULONG db_page)
 {
 	NBAK_TRACE(("get_page_index"));
@@ -612,7 +612,7 @@ ULONG BackupManager::allocate_difference_page(thread_db* tdbb, ULONG db_page)
 
 	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference
-	// file consistent in case of write error. We should always be able 
+	// file consistent in case of write error. We should always be able
 	// to read next alloc page when previous one is full.
 	BufferDesc temp_bdb;
 	temp_bdb.bdb_page = last_allocated_page + 1;
@@ -677,7 +677,7 @@ bool BackupManager::write_difference(ISC_STATUS* status, ULONG diff_page, Ods::p
 		return false;
 	return true;
 }
-	
+
 bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* page)
 {
 	NBAK_TRACE(("read_diff"));
@@ -685,11 +685,11 @@ bool BackupManager::read_difference(thread_db* tdbb, ULONG diff_page, Ods::pag* 
 	temp_bdb.bdb_page = diff_page;
 	temp_bdb.bdb_dbb = database;
 	temp_bdb.bdb_buffer = page;
-	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))		
+	if (!PIO_read(diff_file, &temp_bdb, page, tdbb->tdbb_status_vector))
 		return false;
-	return true;	
+	return true;
 }
-	
+
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
 	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
@@ -728,14 +728,14 @@ BackupManager::~BackupManager()
 	delete[] temp_buffers_space;
 }
 
-void BackupManager::set_difference(thread_db* tdbb, const char* filename) 
+void BackupManager::set_difference(thread_db* tdbb, const char* filename)
 {
 	if (filename) {
 		WIN window(HEADER_PAGE_NUMBER);
 		Ods::header_page* header =
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
-		PAG_replace_entry_first(header, Ods::HDR_difference_file, 
+		PAG_replace_entry_first(header, Ods::HDR_difference_file,
 			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		diff_name = filename;
@@ -791,7 +791,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 		nbak_state_normal;
 	NBAK_TRACE(("backup state read from header is %d", new_backup_state));
 	// Check is we missed lock/unlock cycle and need to invalidate
-	// our allocation table and file handle 
+	// our allocation table and file handle
 	const bool missed_cycle = (header->hdr_header.pag_scn - current_scn) > 1;
 	current_scn = header->hdr_header.pag_scn;
 
@@ -845,7 +845,7 @@ bool BackupManager::actualize_state(thread_db* tdbb)
 	return true;
 }
 
-void BackupManager::shutdown(thread_db* tdbb) 
+void BackupManager::shutdown(thread_db* tdbb)
 {
 	if (diff_file)
 		PIO_close(diff_file);

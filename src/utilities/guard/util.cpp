@@ -75,15 +75,15 @@ pid_t UTIL_start_process(const char* process, const char* process2, char** argv,
  **************************************
  *
  * Functional description
- *      
- *     This function is used to create the specified process, 
+ *
+ *     This function is used to create the specified process,
  *
  * Returns Codes:
  *	-1		Process spawn failed.
- *	pid		Successful creation. PID is returned. 
- *      
- *     Note: Make sure that the argument list ends with a null  
- *     and the first argument is large enough to hold the complete 
+ *	pid		Successful creation. PID is returned.
+ *
+ *     Note: Make sure that the argument list ends with a null
+ *     and the first argument is large enough to hold the complete
  *     expanded process name. (MAXPATHLEN recommended)
  *
  **************************************/
@@ -137,7 +137,7 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
  **************************************
  *
  * Functional description
- *      
+ *
  *     This function is used to wait for the child specified by child_pid
  *
  * Return code:
@@ -200,7 +200,7 @@ int UTIL_shutdown_child(pid_t child_pid,
  **************************************
  *
  * Functional description
- *      
+ *
  *     Terminates child using TERM signal, then KILL if it does not finish
  *     within specified timeout
  *
@@ -253,12 +253,12 @@ int UTIL_ex_lock(const TEXT* file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k              
+ *      U T I L _ e x _ l o c k
  *
  **************************************
  *
  * Functional description
- *  
+ *
  *     This function is used to exclusively lock a file.
  *
  * Return Codes:
@@ -307,12 +307,12 @@ void UTIL_ex_unlock( int fd_file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k              
+ *      U T I L _ e x _ l o c k
  *
  **************************************
  *
  * Functional description
- *  
+ *
  *     This function is used to unlock the exclusive file.
  *
  **************************************/
@@ -339,12 +339,12 @@ int UTIL_set_handler(int sig, void (*handler) (int), bool restart)
 {
 /**************************************
  *
- *      U T I L _ s e t _ h a n d l e r      
+ *      U T I L _ s e t _ h a n d l e r
  *
  **************************************
  *
  * Functional description
- *  
+ *
  *     This function sets signal handler
  *
  **************************************/

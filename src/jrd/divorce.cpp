@@ -19,7 +19,7 @@
 *	13379	katz	16-OCT-1993
 *	Move away from C language datatypes
 *
-*	0	katz	7-JUN-1993 
+*	0	katz	7-JUN-1993
 *	history begins
 *
  * The contents of this file are subject to the Interbase Public

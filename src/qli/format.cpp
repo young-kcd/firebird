@@ -285,7 +285,7 @@ TEXT* FMT_format(qli_lls* stack)
 			qli_print_item* item = (qli_print_item*) temp->lls_object;
 			if (item->itm_type != item_value)
 				continue;
-			const USHORT n = 
+			const USHORT n =
 				decompose_header(item->itm_query_header, segments, lengths);
 			const SSHORT segment = j - (number_segments - n);
 			if (segment < 0)
@@ -488,7 +488,7 @@ void FMT_print( qli_nod* list, qli_prt* print)
 		case item_skip:
 			{
 				put_line(print, &p, buffer, '\n');
-				print_blobs(print, (qli_print_item**) list->nod_arg, 
+				print_blobs(print, (qli_print_item**) list->nod_arg,
 					(qli_print_item**) ptr);
 				for (USHORT l = item->itm_count - 1; l > 0; --l)
 					put_line(print, &p, buffer, '\n');
@@ -722,7 +722,7 @@ static USHORT decompose_header(const SCHAR* string,
 		}
 	}
 	else
-	{	
+	{
 		TEXT c;
 		while (c = *string++) {
 			*segments = string;
@@ -1232,7 +1232,7 @@ static void print_blobs( qli_prt* print, qli_print_item** first, qli_print_item*
 		return;
 
 	qli_print_item** ptr;
-	
+
 	USHORT length = 0;
 	for (ptr = first; ptr < last; ptr++) {
 		const qli_print_item* item = *ptr;

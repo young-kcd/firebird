@@ -435,7 +435,7 @@ static C_block constdatablock;	/* encryption constant */
 const static size_t RESULT_SIZE = (1 + 4 + 4 + 11 + 1);
 #define _PASSWORD_EFMT1 '#'
 /*
- * Create data consisting of the "setting" followed by 
+ * Create data consisting of the "setting" followed by
  * an encryption produced by the "key" and "setting".
  */
 void ENC_crypt(TEXT* buf, size_t bufSize, const TEXT* key, const TEXT* setting)
@@ -655,7 +655,7 @@ int des_cipher(const char* in, char* out, SLONG salt, int num_iter)
 
 	C_block *kp;
 	int ks_inc;
-	
+
 	if (num_iter >= 0) {		/* encryption */
 		kp = &KS[0];
 		ks_inc = sizeof(*kp);
@@ -825,7 +825,7 @@ STATIC void init_des()
 	 * SPE table
 	 */
 	static unsigned char tmp32[32];	/* "static" for speed */
-	
+
 	for (i = 0; i < 48; i++)
 		perm[i] = P32Tr[ExpandTr[i] - 1];
 	for (int tableno = 0; tableno < 8; tableno++) {

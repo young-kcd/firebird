@@ -161,10 +161,10 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	jrd_tra* transaction;
 
 	// See if JRD thread data structure looks sane for occasion
-	if (!tdbb || 
-		!(dbb = tdbb->getDatabase()) || 
-		!(transaction = tdbb->getTransaction()) || 
-		!(att = tdbb->getAttachment())) 
+	if (!tdbb ||
+		!(dbb = tdbb->getDatabase()) ||
+		!(transaction = tdbb->getTransaction()) ||
+		!(att = tdbb->getAttachment()))
 	{
 		fb_assert(false);
 		return NULL;
@@ -181,9 +181,9 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
 
 	// Handle system variables
-	if (ns_str == SYSTEM_NAMESPACE) 
+	if (ns_str == SYSTEM_NAMESPACE)
 	{
-		if (name_str == ENGINE_VERSION) 
+		if (name_str == ENGINE_VERSION)
 		{
 			Firebird::string version;
 			version.printf("%s.%s.%s", FB_MAJOR_VER, FB_MINOR_VER, FB_REV_NO);
@@ -191,7 +191,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(version);
 		}
 
-		if (name_str == NETWORK_PROTOCOL_NAME) 
+		if (name_str == NETWORK_PROTOCOL_NAME)
 		{
 			if (att->att_network_protocol.isEmpty())
 				return NULL;
@@ -199,7 +199,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_network_protocol);
 		}
 
-		if (name_str == CLIENT_ADDRESS_NAME) 
+		if (name_str == CLIENT_ADDRESS_NAME)
 		{
 			if (att->att_remote_address.isEmpty())
 				return NULL;
@@ -207,12 +207,12 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_remote_address);
 		}
 
-		if (name_str == DATABASE_NAME) 
+		if (name_str == DATABASE_NAME)
 		{
 			return make_result_str(dbb->dbb_database_name.ToString());
 		}
 
-		if (name_str == CURRENT_USER_NAME) 
+		if (name_str == CURRENT_USER_NAME)
 		{
 			if (!att->att_user || att->att_user->usr_user_name.isEmpty())
 				return NULL;
@@ -220,7 +220,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_user->usr_user_name);
 		}
 
-		if (name_str == CURRENT_ROLE_NAME) 
+		if (name_str == CURRENT_ROLE_NAME)
 		{
 			if (!att->att_user || att->att_user->usr_sql_role_name.isEmpty())
 				return NULL;
@@ -228,7 +228,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(att->att_user->usr_sql_role_name);
 		}
 
-		if (name_str == SESSION_ID_NAME) 
+		if (name_str == SESSION_ID_NAME)
 		{
 			Firebird::string session_id;
 			const SLONG att_id = PAG_attachment_id(tdbb);
@@ -243,7 +243,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return make_result_str(transaction_id);
 		}
 
-		if (name_str == ISOLATION_LEVEL_NAME) 
+		if (name_str == ISOLATION_LEVEL_NAME)
 		{
 			const char* isolation;
 
@@ -258,12 +258,12 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		}
 
 		// "Context variable %s is not found in namespace %s"
-		ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(name_str) << 
+		ERR_post(Arg::Gds(isc_ctx_var_not_found) << Arg::Str(name_str) <<
 													Arg::Str(ns_str));
 	}
 
 	// Handle user-defined variables
-	if (ns_str == USER_SESSION_NAMESPACE) 
+	if (ns_str == USER_SESSION_NAMESPACE)
 	{
 		Firebird::string result_str;
 
@@ -271,8 +271,8 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return NULL;
 
 		return make_result_str(result_str);
-	} 
-	
+	}
+
 	if (ns_str == USER_TRANSACTION_NAMESPACE)
 	{
 		Firebird::string result_str;
@@ -281,10 +281,10 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 			return NULL;
 
 		return make_result_str(result_str);
-	} 
+	}
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << 
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) <<
 													Arg::Str(RDB_GET_CONTEXT));
 	return NULL;
 }
@@ -308,7 +308,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
 
-	if (ns_str == USER_SESSION_NAMESPACE) 
+	if (ns_str == USER_SESSION_NAMESPACE)
 	{
 		Attachment* att = tdbb->getAttachment();
 
@@ -327,7 +327,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		return att->att_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	} 
+	}
 
 	if (ns_str == USER_TRANSACTION_NAMESPACE)
 	{
@@ -348,10 +348,10 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 		return tra->tra_context_vars.put(name_str,
 			Firebird::string(value_vary->vary_string, value_vary->vary_length));
-	} 
+	}
 
 	// "Invalid namespace name %s passed to %s"
-	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) << 
+	ERR_post(Arg::Gds(isc_ctx_namespace_invalid) << Arg::Str(ns_str) <<
 													Arg::Str(RDB_SET_CONTEXT));
 	return 0;
 }
@@ -440,6 +440,6 @@ static SLONG* byteLen(const dsc* v)
 		rc = DSC_string_length(v);
 		break;
 	}
-	
+
 	return &rc;
 }

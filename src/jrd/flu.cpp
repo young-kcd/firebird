@@ -165,8 +165,8 @@ namespace Jrd
 	}
 
 
-	FPTR_INT Module::lookup(const TEXT* module, 
-							const TEXT* name, 
+	FPTR_INT Module::lookup(const TEXT* module,
+							const TEXT* name,
 							DatabaseModules& interest)
 	{
 		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
@@ -196,7 +196,7 @@ namespace Jrd
 		return (FPTR_INT)rc;
 	}
 
-	FPTR_INT Module::lookup(const TEXT* module, 
+	FPTR_INT Module::lookup(const TEXT* module,
 							const TEXT* name)
 	{
 		FPTR_INT function = FUNCTIONS_entrypoint(module, name);
@@ -224,7 +224,7 @@ namespace Jrd
 		Firebird::PathName initialModule;
 		terminate_at_space(initialModule, name);
 
-		// Look for module in array of already loaded 
+		// Look for module in array of already loaded
 		InternalModule* im = scanModule(initialModule);
 		if (im)
 		{
@@ -263,10 +263,10 @@ namespace Jrd
 				// UdfAccess verification
 				Firebird::PathName path, relative;
 
-				// Search for module name in UdfAccess restricted 
+				// Search for module name in UdfAccess restricted
 				// paths list
 				PathUtils::splitLastComponent(path, relative, fixedModule);
-				if (path.length() == 0 && 
+				if (path.length() == 0 &&
 						PathUtils::isRelative(fixedModule))
 				{
 					path = fixedModule;
@@ -281,10 +281,10 @@ namespace Jrd
 				// must satisfy UdfAccess entry in config file.
 				if (! iUdfDirectoryList().isPathInList(fixedModule))
 				{
-					ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("UDF/BLOB-filter module") << 
+					ERR_post(Arg::Gds(isc_conf_access_denied) << Arg::Str("UDF/BLOB-filter module") <<
 																 Arg::Str(initialModule));
 				}
-				
+
 				ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
 				if (mlm)
 				{

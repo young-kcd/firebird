@@ -216,7 +216,7 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 			size_t n = strlen(s);
 			if (n > MAX_STRING)
 				n = MAX_STRING;
-				
+
 			return out_stream.write(s, n);
 		}
 	case safe_cell::at_ptr:
@@ -293,7 +293,7 @@ int MsgPrint(const char* format, const SafeArg& arg)
 int MsgPrint(const char* format)
 {
 	static const SafeArg dummy;
-	
+
 	StdioStream st(stdout);
 	return MsgPrint(st, format, dummy);
 }

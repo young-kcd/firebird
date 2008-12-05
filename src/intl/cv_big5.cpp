@@ -153,9 +153,9 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		const int tmp1 = big5_ch / 256;
 		const int tmp2 = big5_ch % 256;
 		if (tmp1 == 0) {		/* ASCII character */
-				
+
 			fb_assert((UCHAR(tmp2) & 0x80) == 0);
-				
+
 			*big5_str++ = tmp2;
 			big5_len--;
 			unicode_len -= sizeof(*unicode_str);
@@ -190,9 +190,9 @@ INTL_BOOL CVBIG5_check_big5(charset* cs,
 /**************************************
  * Functional description
  *      Make sure that the big5 string does not have any truncated 2 byte
- *      character at the end. 
- * If we have a truncated character then, 
- *          return false.  
+ *      character at the end.
+ * If we have a truncated character then,
+ *          return false.
  *          else return(true);
  **************************************/
 	const UCHAR* big5_str_start = big5_str;

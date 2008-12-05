@@ -74,7 +74,7 @@ void main( int argc, char **argv)
 {
 /**************************************
  *
- *	m a i n 
+ *	m a i n
  *
  **************************************
  *
@@ -119,7 +119,7 @@ void main( int argc, char **argv)
 		ISC_STATUS status = scanf("%s%s", op, arg);
 		if (status == EOF)
 			continue;
-			
+
 		if (!strcmp(op, "rel"))
 		{
 			const SSHORT n = atoi(arg);
@@ -269,7 +269,7 @@ static int ast(void* slot_void)
  **************************************/
 	ISC_STATUS_ARRAY status_vector;
 	int sw_release_use = sw_release;
-	
+
 	const int slot = (int)(IPTR) slot_void; // static cast
 
 	printf("*** blocking AST for lock# %d ", slot);
@@ -345,7 +345,7 @@ static int lookup_lock(const UCHAR* string)
 static void print_help()
 {
 /**************************************
-*                                                       
+*
 *      p r i n t _ h e l p
 *
 **************************************

@@ -108,7 +108,7 @@ int EVAL_boolean( qli_nod* node)
 		if (!(value1 = EVAL_value(node->nod_arg[0])) ||
 			(value1->dsc_missing & DSC_missing) ||
 			!(value2 = EVAL_value(node->nod_arg[1])) ||
-			(value2->dsc_missing & DSC_missing)) 
+			(value2->dsc_missing & DSC_missing))
 		{
 			return false;
 		}
@@ -355,7 +355,7 @@ dsc* EVAL_value(qli_nod* node)
  **************************************/
 	DSC *values[4];
 
-// Start by evaluating sub-expressions (where appropriate) 
+// Start by evaluating sub-expressions (where appropriate)
 
 	dsc* desc = &node->nod_desc;
 	fb_assert(node->nod_count < 5);
@@ -402,7 +402,7 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_add:
 		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing)) 
+			(values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -423,7 +423,7 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_subtract:
 		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing)) 
+			(values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -445,7 +445,7 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_divide:
 		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing)) 
+			(values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -457,7 +457,7 @@ dsc* EVAL_value(qli_nod* node)
 
 	case nod_multiply:
 		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing)) 
+			(values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -624,7 +624,7 @@ static dsc* execute_concatenate( qli_nod* node, const dsc* value1, const dsc* va
 	TEXT temp2[32];
 	const TEXT* address2;
 	USHORT length2 = MOVQ_get_string(value2, &address2, (vary*)temp2, sizeof(temp2));
-	
+
 	dsc* desc = &node->nod_desc;
 	vary* avary = (vary*) desc->dsc_address;
 	TEXT* p = avary->vary_string;
@@ -735,7 +735,7 @@ static DSC *execute_prompt( qli_nod* node)
 	vary* data = (vary*) desc->dsc_address;
 
 	TEXT* value =
-		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ? 
+		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
 		  buffer : data->vary_string;
 	const int length =
 		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
@@ -947,7 +947,7 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
  *
  **************************************/
 
-// Get operator definition string (control string) 
+// Get operator definition string (control string)
 
 	TEXT temp1[TEMP_LENGTH];
 	const TEXT* p1;
@@ -962,8 +962,8 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 // Merge search and control strings
 
 	TEXT control[256];
-	l2 = sleuth_merge((const UCHAR*) p2, (const UCHAR*) (p2 + l2), 
-					(const UCHAR*) p1, (const UCHAR*) (p1 + l1), 
+	l2 = sleuth_merge((const UCHAR*) p2, (const UCHAR*) (p2 + l2),
+					(const UCHAR*) p1, (const UCHAR*) (p1 + l1),
 					(UCHAR*) control);
 
 // If source is not a blob, do a simple search
@@ -1044,7 +1044,7 @@ static bool sleuth_check(
 				{
 					if (sleuth_check(flags, search, end_search, match, end_match))
 						return true;
-					if (search < end_search) 
+					if (search < end_search)
 					{
 						const UCHAR d = *search++;
 						if (c != cond_upper(d, flags))
@@ -1091,7 +1091,7 @@ static bool sleuth_check(
 				{
 					if (sleuth_check(flags, search, end_search, match, end_match))
 						return true;
-					if (search < end_search) 
+					if (search < end_search)
 					{
 						if (!sleuth_class(flags, char_class, end_class, *search++))
 							return false;
@@ -1228,7 +1228,7 @@ static int sleuth_merge(
 // Interpret matching string, substituting where appropriate
 
 	UCHAR c;
-	while (c = *match++) 
+	while (c = *match++)
 	{
 	    const UCHAR* p;
 
@@ -1358,7 +1358,7 @@ static bool string_function(
 	if (node->nod_type == nod_starts) {
 		if (l1 < l2)
 			return false;
-			
+
 		if (l2)
 			return memcmp(p1, p2, l2) == 0;
 

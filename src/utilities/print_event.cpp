@@ -79,7 +79,7 @@ static void event_list(void)
 {
 /**************************************
  *
- *	e v e n t _ l i s t 
+ *	e v e n t _ l i s t
  *
  **************************************
  *
@@ -99,7 +99,7 @@ static void event_list(void)
 		if (database_event->evnt_parent)
 			continue;
 
-		/* Print out the magic name for the database, this name 
+		/* Print out the magic name for the database, this name
 		   comes from the lock key_id for the database, on Unix
 		   this is comprised of the device number and inode */
 
@@ -107,7 +107,7 @@ static void event_list(void)
 		const UCHAR* p = (UCHAR *) database_event->evnt_name;
 		for (ULONG l = database_event->evnt_length; l; --l)
 			printf("%02x", *p++);
-			
+
 		printf(" count: %6ld\n", database_event->evnt_count);
 
 		{ // scope
@@ -190,7 +190,7 @@ static void event_table_dump(void)
 
 	event_hdr* block = 0;
 	for (SLONG offset = sizeof(evh); offset < EVENT_header->evh_length;
-		 offset += block->hdr_length) 
+		 offset += block->hdr_length)
 	{
 		printf("\n%.5ld ", offset);
 		block = (event_hdr*) SRQ_ABS_PTR(offset);

@@ -181,7 +181,7 @@ void Stream::setMinSegment(int length)
 Stream::Segment* Stream::allocSegment(int tail)
 {
 	fb_assert(tail >= 0);
-	
+
 	Segment *segment;
 	int length = tail;
 

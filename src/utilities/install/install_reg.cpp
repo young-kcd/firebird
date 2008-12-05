@@ -40,8 +40,8 @@ static const struct
 	USHORT code;
 } commands[] =
 {
-	{"INSTALL", 1, COMMAND_INSTALL}, 
-	{"REMOVE", 1, COMMAND_REMOVE}, 
+	{"INSTALL", 1, COMMAND_INSTALL},
+	{"REMOVE", 1, COMMAND_REMOVE},
 	{NULL, 0, 0}
 };
 

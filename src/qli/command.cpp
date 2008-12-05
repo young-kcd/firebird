@@ -255,7 +255,7 @@ void CMD_rename_proc( qli_syntax* node)
  **************************************/
 	QPR old_proc = (QPR) node->syn_arg[0];
 	QPR new_proc = (QPR) node->syn_arg[1];
-	
+
 	DBB database = old_proc->qpr_database;
 	if (!database)
 		database = QLI_databases;
@@ -493,7 +493,7 @@ void CMD_transaction( qli_syntax* node)
 	}
 
 
-	if (node->syn_count == 0) 
+	if (node->syn_count == 0)
 	{
 		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
 		{

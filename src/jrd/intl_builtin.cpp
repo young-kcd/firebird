@@ -17,7 +17,7 @@
 
 using Firebird::IntlUtil;
 using Jrd::UnicodeUtil;
- 
+
 
 static USHORT internal_keylength(texttype*, USHORT);
 static USHORT internal_string_to_key(texttype*, USHORT, const UCHAR*, USHORT, UCHAR*, USHORT);
@@ -669,9 +669,9 @@ static USHORT utf16_string_to_key(
 
 static SSHORT utf16_compare(
 							texttype* obj,
-							ULONG len1, 
-							const UCHAR* str1, 
-							ULONG len2, 
+							ULONG len1,
+							const UCHAR* str1,
+							ULONG len2,
 							const UCHAR* str2,
 							INTL_BOOL* error_flag)
 {
@@ -702,9 +702,9 @@ static SSHORT utf16_compare(
 
 static ULONG utf16_upper(
 						 texttype* obj,
-						 ULONG srcLen, 
-						 const UCHAR* src, 
-						 ULONG dstLen, 
+						 ULONG srcLen,
+						 const UCHAR* src,
+						 ULONG dstLen,
 						 UCHAR* dst)
 {
 /**************************************
@@ -726,9 +726,9 @@ static ULONG utf16_upper(
 
 static ULONG utf16_lower(
 						 texttype* obj,
-						 ULONG srcLen, 
-						 const UCHAR* src, 
-						 ULONG dstLen, 
+						 ULONG srcLen,
+						 const UCHAR* src,
+						 ULONG dstLen,
 						 UCHAR* dst)
 {
 /**************************************
@@ -896,7 +896,7 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 {
 /**************************************
  *
- *      w c _ t o _ m b 
+ *      w c _ t o _ m b
  *
  **************************************
  *
@@ -1127,10 +1127,10 @@ static INTL_BOOL ttype_utf32_init(texttype* tt, const ASCII* texttype_name, cons
 
 
 /*
- *      Start of Character set definitions 
+ *      Start of Character set definitions
  */
 
-static INTL_BOOL cs_utf8_well_formed(charset* cs, 
+static INTL_BOOL cs_utf8_well_formed(charset* cs,
 									 ULONG len,
 									 const UCHAR* str,
 									 ULONG* offending_position)
@@ -1151,7 +1151,7 @@ static INTL_BOOL cs_utf8_well_formed(charset* cs,
 }
 
 
-static INTL_BOOL cs_utf16_well_formed(charset* cs, 
+static INTL_BOOL cs_utf16_well_formed(charset* cs,
 									  ULONG len,
 									  const UCHAR* str,
 									  ULONG* offending_position)
@@ -1172,7 +1172,7 @@ static INTL_BOOL cs_utf16_well_formed(charset* cs,
 }
 
 
-static ULONG cs_utf16_length(charset* cs, 
+static ULONG cs_utf16_length(charset* cs,
 							 ULONG srcLen,
 							 const UCHAR* src)
 {
@@ -1191,7 +1191,7 @@ static ULONG cs_utf16_length(charset* cs,
 }
 
 
-static ULONG cs_utf16_substring(charset* cs, 
+static ULONG cs_utf16_substring(charset* cs,
 								ULONG srcLen,
 								const UCHAR* src,
 								ULONG dstLen,
@@ -1216,7 +1216,7 @@ static ULONG cs_utf16_substring(charset* cs,
 }
 
 
-static INTL_BOOL cs_utf32_well_formed(charset* cs, 
+static INTL_BOOL cs_utf32_well_formed(charset* cs,
 									  ULONG len,
 									  const UCHAR* str,
 									  ULONG* offending_position)
@@ -1333,11 +1333,11 @@ static ULONG cvt_utffss_to_ascii(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 {
 /**************************************
  *
- *      c v t _ u t f f s s _ t o _ a s c i i 
+ *      c v t _ u t f f s s _ t o _ a s c i i
  * also
- *      c v t _ a s c i i _ t o _ u t f f s s 
+ *      c v t _ a s c i i _ t o _ u t f f s s
  * also
- *      c v t _ n o n e _ t o _ u t f f s s 
+ *      c v t _ n o n e _ t o _ u t f f s s
  *
  **************************************
  *
@@ -1389,7 +1389,7 @@ static ULONG cvt_unicode_to_utf8(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf8);
-	return UnicodeUtil::utf16ToUtf8(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
+	return UnicodeUtil::utf16ToUtf8(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len),
 		utf8_len, utf8_str, err_code, err_position);
 }
 
@@ -1404,7 +1404,7 @@ static ULONG cvt_utf8_to_unicode(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_utf8_to_unicode);
-	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str, 
+	return UnicodeUtil::utf8ToUtf16(utf8_len, utf8_str,
 		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
 }
 
@@ -1419,7 +1419,7 @@ static ULONG cvt_unicode_to_utf32(csconvert* obj,
 {
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_unicode_to_utf32);
-	return UnicodeUtil::utf16ToUtf32(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len), 
+	return UnicodeUtil::utf16ToUtf32(unicode_len, Firebird::Aligner<USHORT>(unicode_str, unicode_len),
 		utf32_len, Firebird::OutAligner<ULONG>(utf32_str, utf32_len), err_code, err_position);
 }
 
@@ -1435,7 +1435,7 @@ static ULONG cvt_utf32_to_unicode(csconvert* obj,
 	fb_assert(obj != NULL);
 	fb_assert(obj->csconvert_fn_convert == cvt_utf32_to_unicode);
 
-	return UnicodeUtil::utf32ToUtf16(utf32_len, Firebird::Aligner<ULONG>(utf32_str, utf32_len), 
+	return UnicodeUtil::utf32ToUtf16(utf32_len, Firebird::Aligner<ULONG>(utf32_str, utf32_len),
 		unicode_len, Firebird::OutAligner<USHORT>(unicode_str, unicode_len), err_code, err_position);
 }
 

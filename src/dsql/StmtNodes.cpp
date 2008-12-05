@@ -161,7 +161,7 @@ jrd_nod* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* request)
 			EXE_execute_db_triggers(tdbb, request->req_transaction,
 				jrd_req::req_trigger_trans_commit);
 		}
-		
+
 		{ // scope
 			Firebird::AutoSetRestore2<jrd_req*, thread_db> autoNullifyRequest(
 				tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);

@@ -25,7 +25,7 @@
  *
  */
 
- 
+
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
@@ -311,10 +311,10 @@ void SafeArg::dump(const TEXT* target[], size_t v_size) const
 const safe_cell& SafeArg::getCell(size_t index) const
 {
 	static safe_cell aux_cell = {safe_cell::at_none, {0}};
-	
+
 	if (index < m_count)
 		return m_arguments[index];
-		
+
 	return aux_cell;
 }
 

@@ -297,7 +297,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
  **************************************
  *
  * Functional description
- *      Convert your basic binary number to 
+ *      Convert your basic binary number to
  *      nice, formatted text.
  *
  **************************************/
@@ -455,9 +455,9 @@ static void string_to_datetime(const dsc* desc,
  *      "today"         Today's date       0:0:0.0 time
  *      "tomorrow"      Tomorrow's date    0:0:0.0 time
  *      "yesterday"     Yesterday's date   0:0:0.0 time
- *      YYYY-MM-DD [HH:[Min:[SS.[Thou]]]]] 
- *      MM:DD[:YY [HH:[Min:[SS.[Thou]]]]] 
- *      DD.MM[:YY [HH:[Min:[SS.[Thou]]]]] 
+ *      YYYY-MM-DD [HH:[Min:[SS.[Thou]]]]]
+ *      MM:DD[:YY [HH:[Min:[SS.[Thou]]]]]
+ *      DD.MM[:YY [HH:[Min:[SS.[Thou]]]]]
  *      Where:
  *        DD = 1  .. 31    (Day of month)
  *        YY = 00 .. 99    2-digit years are converted to the nearest year
@@ -476,7 +476,7 @@ static void string_to_datetime(const dsc* desc,
  *                              95 ==> 1995
  *                         If the current year is 1997, then 46 is converted
  *                         to 2046 (etc).
- *           = 100.. 5200  (Year) 
+ *           = 100.. 5200  (Year)
  *        MM = 1  .. 12    (Month of year)
  *           = "JANUARY"... (etc)
  *        HH = 0  .. 23    (Hour of day)
@@ -512,7 +512,7 @@ static void string_to_datetime(const dsc* desc,
 	const char* p = NULL;
 	const USHORT length =
 		CVT_make_string(desc, ttype_ascii, &p, (vary*) buffer, sizeof(buffer), err);
-						
+
 	const char* const end = p + length;
 
 	USHORT n, components[7];
@@ -526,7 +526,7 @@ static void string_to_datetime(const dsc* desc,
 
 	const int start_component = (expect_type == expect_sql_time) ? 3 : 0;
 	int i;
-	for (i = start_component; i < 7; i++) 
+	for (i = start_component; i < 7; i++)
 	{
 
 		// Skip leading blanks.  If we run out of characters, we're done
@@ -927,7 +927,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else
 			d -= 0.5 + eps;
 
-		/* make sure the cast will succeed - different machines 
+		/* make sure the cast will succeed - different machines
 		   do different things if the value is larger than a long
 		   can hold */
 		/* If rounding would yield a legitimate value, permit it */
@@ -1129,7 +1129,7 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 						exp = exp * 10 + *p - '0';
 
 						/* The following is a 'safe' test to prevent overflow of
-						   exp here and of scale below. A more precise test occurs 
+						   exp here and of scale below. A more precise test occurs
 						   later in this routine. */
 
 						if (exp >= SHORT_LIMIT)
@@ -1237,7 +1237,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	const UCHAR* q = from->dsc_address;
 
 /* If the datatypes and lengths are identical, just move the
-   stuff byte by byte.  Although this may seem slower than 
+   stuff byte by byte.  Although this may seem slower than
    optimal, it would cost more to find the fast move than the
    fast move would gain. */
 
@@ -1358,7 +1358,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_cstring:
 		case dtype_text:
 		{
-			/* If we are within the engine, INTL_convert_string 
+			/* If we are within the engine, INTL_convert_string
 			 * will convert the string between character sets
 			 * (or die trying).
 			 * This module, however, can be called from outside
@@ -1371,7 +1371,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			 *
 			 * a charset type binary is compatible with all other types.
 			 * if a charset involved is ttype_dynamic, we must look up
-			 *    the charset of the attachment (only if we are in the 
+			 *    the charset of the attachment (only if we are in the
 			 *    engine). If we are outside the engine, the
 			 *    assume that the engine has converted the values
 			 *    previously in the request.
@@ -1383,7 +1383,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 			CHARSET_ID charset2;
 			if (cb->transliterate(from, to, charset2, cb->err))
 				return;
-				
+
 			{ // scope
 				USHORT strtype_unused;
 				UCHAR *ptr;
@@ -1756,7 +1756,7 @@ USHORT CVT_make_string(const dsc*          desc,
 {
 /**************************************
  *
- *      C V T _ m a k e _ s t r i n g 
+ *      C V T _ m a k e _ s t r i n g
  *
  **************************************
  *
@@ -2198,7 +2198,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else
 			d -= 0.5;
 
-		/* make sure the cast will succeed - different machines 
+		/* make sure the cast will succeed - different machines
 		   do different things if the value is larger than a quad
 		   can hold */
 
@@ -2343,7 +2343,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 		else
 			d -= 0.5 + eps;
 
-		/* make sure the cast will succeed - different machines 
+		/* make sure the cast will succeed - different machines
 		   do different things if the value is larger than a quad
 		   can hold.
 
@@ -2524,7 +2524,7 @@ void CVT_move(const dsc* from, dsc* to, ErrorFunction err)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	Callbacks toCommon = {transliterate, getChid, err, getToCharset, 
+	Callbacks toCommon = {transliterate, getChid, err, getToCharset,
 						  validateData, validateLength, getCurDate, isVersion4};
 
 	CVT_move_common(from, to, &toCommon);

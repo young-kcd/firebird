@@ -1320,7 +1320,7 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 		if (procedure) {
 			par_name(csb, name);
 			if ((id = find_proc_field(procedure, name)) == -1)
-				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) << 
+				error(csb, Arg::Gds(isc_fldnotdef2) << Arg::Str(name) <<
 													   Arg::Str(procedure->prc_name));
 		}
 		else {
@@ -1354,12 +1354,12 @@ static jrd_nod* par_field(thread_db* tdbb, CompilerScratch* csb, SSHORT blr_oper
 
  					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(csb, Arg::Warning(isc_fldnotdef) << Arg::Str(name) << 
+						warning(csb, Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
 																	Arg::Str(relation->rel_name));
 					}
 					else if (!(relation->rel_flags & REL_deleted))
 					{
-						error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) << 
+						error(csb, Arg::Gds(isc_fldnotdef) << Arg::Str(name) <<
 															  Arg::Str(relation->rel_name));
 					}
 					else
@@ -1893,12 +1893,12 @@ static jrd_nod* par_plan(thread_db* tdbb, CompilerScratch* csb)
 				{
 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
 					{
-						warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) << 
+						warning(csb, Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																	Arg::Str(relation->rel_name));
 					}
 					else
 					{
-						error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) << 
+						error(csb, Arg::Gds(isc_indexname) << Arg::Str(name) <<
 															  Arg::Str(relation->rel_name));
 					}
 				}
@@ -3433,8 +3433,8 @@ void PAR_syntax_error(CompilerScratch* csb, const TEXT* string)
  *
  **************************************/
 
-	error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) << 
-										  Arg::Num(csb->csb_running - csb->csb_blr - 1) << 
+	error(csb, Arg::Gds(isc_syntaxerr) << Arg::Str(string) <<
+										  Arg::Num(csb->csb_running - csb->csb_blr - 1) <<
 										  Arg::Num(csb->csb_running[-1]));
 }
 

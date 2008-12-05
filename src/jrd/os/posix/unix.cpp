@@ -73,7 +73,7 @@ using namespace Firebird;
 #define O_DIRECT F_NOCACHE
 #endif
 
-// Some operating systems have problems with use of write/read with 
+// Some operating systems have problems with use of write/read with
 // big (>2Gb) files. On the other hand, pwrite/pread works fine for them.
 // Therefore:
 #if defined SOLARIS
@@ -221,9 +221,9 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #endif
 
 	const int desc = open(file_name.c_str(), flag, 0666);
-	if (desc == -1) 
+	if (desc == -1)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") <<
 										   Arg::Str(file_name) <<
                  Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 	}
@@ -239,7 +239,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 		// we cannot help much with former recovery
 		close(desc);
 		unlink(file_name.c_str());
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("chmod") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("chmod") <<
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_create_err) << Arg::Unix(chmodError));
 	}
@@ -250,12 +250,12 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #endif
 				 )
 	{
-		int rc = unlink(file_name.c_str());	
+		int rc = unlink(file_name.c_str());
 		// it's no use throwing an error if unlink() failed for temp file in release build
 #ifdef DEV_BUILD
 		if (rc < 0)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("unlink") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("unlink") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 		}
@@ -287,7 +287,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
  *
  **************************************/
 
-	return ISC_expand_filename(file_name, file_length, 
+	return ISC_expand_filename(file_name, file_length,
 		expanded_name, len_expanded, false);
 }
 
@@ -301,7 +301,7 @@ void PIO_extend(Database* dbb, jrd_file* /*main_file*/, const ULONG /*extPages*/
  **************************************
  *
  * Functional description
- *	Extend file by extPages pages of pageSize size. 
+ *	Extend file by extPages pages of pageSize size.
  *
  **************************************/
 	// not implemented
@@ -369,7 +369,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 		}
 #else //FCNTL_BROKEN
 		maybeCloseFile(file->fil_desc);
-		file->fil_desc = openFile(file->fil_string, forcedWrites, 
+		file->fil_desc = openFile(file->fil_string, forcedWrites,
 								  notUseFSCache, file->fil_flags & FIL_readonly);
 		if (file->fil_desc == -1)
 		{
@@ -378,7 +378,7 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 #endif //FCNTL_BROKEN
 
 		file->fil_flags &= ~(FIL_force_write | FIL_no_fs_cache);
-		file->fil_flags |= (forcedWrites ? FIL_force_write : 0) | 
+		file->fil_flags |= (forcedWrites ? FIL_force_write : 0) |
 						   (notUseFSCache ? FIL_no_fs_cache : 0);
 	}
 #endif
@@ -447,7 +447,7 @@ void PIO_get_unique_file_id(const Jrd::jrd_file* file, UCharBuffer& id)
 	memcpy(p, &statistics.st_ino, len2);
 }
 
-	
+
 void PIO_header(Database* dbb, SCHAR * address, int length)
 {
 /**************************************
@@ -517,7 +517,7 @@ void PIO_header(Database* dbb, SCHAR * address, int length)
 static InitInstance<HugeStaticBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector, 
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -561,7 +561,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
 		SLONG to_write = write_pages * dbb->dbb_page_size;
 		SLONG written;
 
-		for (int r = 0; r < IO_RETRY; r++) 
+		for (int r = 0; r < IO_RETRY; r++)
 		{
 			if (!(file = seek_file(file, &bdb, &offset, status_vector)))
 				return false;
@@ -605,7 +605,7 @@ jrd_file* PIO_open(Database* dbb,
 		 */
 		desc = openFile(ptr, false, false, true);
 		if (desc == -1) {
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
@@ -630,7 +630,7 @@ jrd_file* PIO_open(Database* dbb,
 	if (PIO_on_raw_device(file_name)
 		&& !raw_devices_validate_database(desc, file_name))
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_open_err) << Arg::Unix(ENOENT));
 	}
@@ -671,7 +671,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 		for (i = 0; i < IO_RETRY; i++) {
 			if (!(file = seek_file(file, bdb, &offset, status_vector)))
 				return false;
-            if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size) 
+            if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
 			{
 				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data,
 									 spare_buffer, size, page);
@@ -946,12 +946,12 @@ static bool unix_error(const TEXT* string,
 		return false;
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << 
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) <<
 									   Arg::Str(file->fil_string) <<
 			 Arg::Gds(operation) << Arg::Unix(errno));
 
     // Added a false for final return - which seems to be the answer,
-    // but is better than what it was which was nothing ie random 
+    // but is better than what it was which was nothing ie random
     // Most usages within here want it to return a failure.
     // MOD 01-July-2002
 
@@ -1100,7 +1100,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	/* Read in database header. Code lifted from PIO_header. */
 	if (desc == -1)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("raw_devices_validate_database") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("raw_devices_validate_database") <<
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 	}
@@ -1109,7 +1109,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	{
 		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		}
@@ -1117,16 +1117,16 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 		const ssize_t bytes = read (desc, header, sizeof(header));
 		if (bytes == sizeof(header))
 			goto read_finished;
-		
+
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		}
 	}
 
-	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") << 
+	ERR_post(Arg::Gds(isc_io_error) << Arg::Str("read_retry") <<
 									   Arg::Str(file_name) <<
 			 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 
@@ -1134,7 +1134,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	/* Rewind file pointer */
 	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") <<
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 	}
@@ -1177,7 +1177,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 
 		if (!SYSCALL_INTERRUPTED(errno))
 		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << 
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") <<
 											   Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
@@ -1192,7 +1192,7 @@ static int raw_devices_unlink_database(const PathName& file_name)
 			break;
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") << 
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") <<
 										   Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_write_err) << Arg::Unix(errno));
 	}

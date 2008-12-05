@@ -33,7 +33,7 @@ int OptionsBase::getCommand(const char* cmd) const
 	const size_t swlen = strlen(cmd);
 	if (!swlen)
 		return m_wrong;
-	
+
 	for (int i = 0; i < m_size; ++i)
 	{
 		const optionsMap& item = m_options[i];
@@ -64,10 +64,10 @@ void OptionsBase::showCommands(FILE* out) const
 			const optionsMap& item = m_options[i];
 			if (item.text[0] != cap)
 				continue;
-			
+
 			const size_t swlen = strlen(item.text);
 			fb_assert(swlen >= item.abbrlen || !item.abbrlen);
-			
+
 			if (!item.abbrlen)
 				fprintf(out, "%-25s", item.text);
 			else
@@ -84,11 +84,11 @@ void OptionsBase::showCommands(FILE* out) const
 
 					fputc(c, out);
 				}
-				
+
 				for (; j < 25; ++j)
 					fputc(' ', out);
 			}
-			
+
 			if (newline == 2)
 			{
 				fputc('\n', out);
@@ -98,7 +98,7 @@ void OptionsBase::showCommands(FILE* out) const
 				++newline;
 		}
 	}
-	
+
 	if (newline) // Last line was without newline.
 		fputc('\n', out);
 }

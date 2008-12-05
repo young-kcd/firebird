@@ -960,7 +960,7 @@ void DatabaseSnapshot::putDatabase(const Database* database,
 	// SQL dialect
 	temp = (database->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
 	writer.insertInt(f_mon_db_dialect, temp);
-	
+
 	// shutdown mode
 	if (database->dbb_ast_flags & DBB_shutdown_full)
 		temp = shut_mode_full;

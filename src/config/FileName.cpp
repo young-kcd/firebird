@@ -24,20 +24,20 @@ FileName::FileName(const Firebird::PathName& name) :
 		else if (*p == '.')
 			dot = p;
 	}
-	
+
 	if (slash)
 	{
 		directory.assign (start, (int) (slash - rootName));
 		rootName = slash + 1;
 	}
-	
+
 	if (dot)
 	{
 		extension = dot + 1;
 		root.assign (rootName, (int) (dot - rootName));
 	}
 	else
-		root = rootName;	
+		root = rootName;
 }
 
 FileName::~FileName()

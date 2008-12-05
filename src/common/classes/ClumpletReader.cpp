@@ -58,12 +58,12 @@ public:
 		return t2;
 	}
 protected:
-	virtual void usage_mistake(const char* what) const 
+	virtual void usage_mistake(const char* what) const
 	{
 		fatal_exception::raiseFmt(
 		        "Internal error when using clumplet API: %s", what);
 	}
-	virtual void invalid_structure(const char* what) const 
+	virtual void invalid_structure(const char* what) const
 	{
 		fatal_exception::raiseFmt(
 				"Invalid clumplet buffer structure: %s", what);
@@ -80,7 +80,7 @@ void ClumpletReader::dump() const
 		return;
 	}
 	dmp++;
-	
+
 	try {
 		ClumpletDump d(kind, getBuffer(), getBufferLength());
 		int t = (kind == SpbStart || kind == UnTagged || kind == WideUnTagged) ? -1 : d.getBufferTag();
@@ -107,13 +107,13 @@ void ClumpletReader::dump() const
 namespace Firebird {
 
 ClumpletReader::ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen) :
-	kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen) 
+	kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	rewind();	// this will set cur_offset and spbState
 }
 
 ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen) :
-	AutoStorage(pool), kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen) 
+	AutoStorage(pool), kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	rewind();	// this will set cur_offset and spbState
 }
@@ -140,13 +140,13 @@ UCHAR ClumpletReader::getBufferTag() const
 {
 	const UCHAR* const buffer_end = getBufferEnd();
 	const UCHAR* buffer_start = getBuffer();
-	
-	switch (kind) 
+
+	switch (kind)
 	{
 	case Tpb:
 	case Tagged:
 	case WideTagged:
-		if (buffer_end - buffer_start == 0) 
+		if (buffer_end - buffer_start == 0)
 		{
 			invalid_structure("empty buffer");
 			return 0;
@@ -159,7 +159,7 @@ UCHAR ClumpletReader::getBufferTag() const
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
-		if (buffer_end - buffer_start == 0) 
+		if (buffer_end - buffer_start == 0)
 		{
 			invalid_structure("empty buffer");
 			return 0;
@@ -167,12 +167,12 @@ UCHAR ClumpletReader::getBufferTag() const
 		switch (buffer_start[0])
 		{
 		case isc_spb_version1:
-			// This is old SPB format, it's almost like DPB - 
+			// This is old SPB format, it's almost like DPB -
 			// buffer's tag is the first byte.
 			return buffer_start[0];
 		case isc_spb_version:
 			// Buffer's tag is the second byte
-			if (buffer_end - buffer_start == 1) 
+			if (buffer_end - buffer_start == 1)
 			{
 				invalid_structure("buffer too short (1 byte)");
 				return 0;
@@ -215,7 +215,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			return SingleTpb;
 		case isc_action_svc_backup:
 		case isc_action_svc_restore:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_bkp_file:
 			case isc_spb_dbname:
@@ -235,7 +235,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			invalid_structure("unknown parameter for backup/restore");
 			break;
 		case isc_action_svc_repair:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_dbname:
 				return StringSpb;
@@ -247,11 +247,11 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			}
 			invalid_structure("unknown parameter for repair");
 			break;
-		case isc_action_svc_add_user:     
+		case isc_action_svc_add_user:
 		case isc_action_svc_delete_user:
 		case isc_action_svc_modify_user:
 		case isc_action_svc_display_user:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_dbname:
 			case isc_spb_sql_role_name:
@@ -269,7 +269,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			invalid_structure("unknown parameter for security database operation");
 			break;
 		case isc_action_svc_properties:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_dbname:
 				return StringSpb;
@@ -296,7 +296,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 //		case isc_action_svc_add_license:
 //		case isc_action_svc_remove_license:
 		case isc_action_svc_db_stats:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_dbname:
 			case isc_spb_command_line:
@@ -311,7 +311,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			break;
 		case isc_action_svc_nbak:
 		case isc_action_svc_nrest:
-			switch (tag) 
+			switch (tag)
 			{
 			case isc_spb_nbk_file:
 			case isc_spb_dbname:
@@ -358,7 +358,7 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 	size_t rc = wTag ? 1 : 0;
 	size_t lengthSize = 0;
 	size_t dataSize = 0;
-	
+
 	switch (getClumpletType(clumplet[0]))
 	{
 
@@ -455,7 +455,7 @@ void ClumpletReader::rewind()
 	}
 	if (kind == UnTagged || kind == WideUnTagged || kind == SpbStart || kind == SpbItems)
 		cur_offset = 0;
-	else if (kind == SpbAttach && getBufferLength() > 0 
+	else if (kind == SpbAttach && getBufferLength() > 0
 						 && getBuffer()[0] != isc_spb_version1)
 		cur_offset = 2;
 	else

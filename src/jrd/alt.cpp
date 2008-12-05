@@ -78,7 +78,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 
 	va_start(ptr, count);
 
-/* calculate length of event parameter block, 
+/* calculate length of event parameter block,
    setting initial length to include version
    and counts for each argument */
 
@@ -142,7 +142,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
 {
 /**************************************
  *
- *	i s c _ e v e n t _ b l o c k _ a 
+ *	i s c _ e v e n t _ b l o c k _ a
  *
  **************************************
  *
@@ -155,7 +155,7 @@ USHORT API_ROUTINE isc_event_block_a(SCHAR** event_buffer,
  **************************************/
 const int MAX_NAME_LENGTH		= 31;
 
-/* calculate length of event parameter block, 
+/* calculate length of event parameter block,
    setting initial length to include version
    and counts for each argument */
 
@@ -357,7 +357,7 @@ ISC_STATUS API_ROUTINE gds__create_blob(ISC_STATUS* status_vector,
 									FB_API_HANDLE* tra_handle,
 									FB_API_HANDLE* blob_handle, GDS_QUAD* blob_id)
 {
-	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle, 
+	return isc_create_blob(status_vector, db_handle, tra_handle, blob_handle,
 						   blob_id);
 }
 
@@ -484,7 +484,7 @@ ISC_STATUS API_ROUTINE gds__put_slice(ISC_STATUS* status_vector,
 								  const SLONG* parameters,
 								  SLONG slice_length, void* slice)
 {
-	return isc_put_slice(status_vector, db_handle, tra_handle, array_id, 
+	return isc_put_slice(status_vector, db_handle, tra_handle, array_id,
 						 sdl_length, sdl, parameters_leng, parameters,
 						 slice_length, reinterpret_cast<SCHAR*>(slice));
 }
@@ -557,7 +557,7 @@ ISC_STATUS API_ROUTINE gds__send(ISC_STATUS* status_vector,
 							 SSHORT msg_length, const void* msg,
 							 SSHORT req_level)
 {
-	return isc_send(status_vector, req_handle, msg_type, msg_length, 
+	return isc_send(status_vector, req_handle, msg_type, msg_length,
 					static_cast<const SCHAR*>(msg), req_level);
 }
 
@@ -576,7 +576,7 @@ ISC_STATUS API_ROUTINE gds__start_multiple(ISC_STATUS * status_vector,
 									   FB_API_HANDLE* tra_handle,
 									   SSHORT db_count, void *teb_vector)
 {
-	return isc_start_multiple(status_vector, tra_handle, db_count, 
+	return isc_start_multiple(status_vector, tra_handle, db_count,
 							  (SCHAR *) teb_vector);
 }
 
@@ -845,7 +845,7 @@ void API_ROUTINE CVT_move(const dsc*, dsc*, FPTR_ERROR err)
 }
 
 #if !defined(SUPERSERVER) || defined(SUPERCLIENT)
-// AP: isc_*_user entrypoints are used only in any kind of embedded 
+// AP: isc_*_user entrypoints are used only in any kind of embedded
 // server (both posix and windows) and fbclient
 
 #ifndef BOOT_BUILD
@@ -1208,7 +1208,7 @@ static ISC_STATUS executeSecurityCommand(
 				input_user_data->dba_user_name,
 				input_user_data->dba_password,
 				false,
-				input_user_data->protocol, 
+				input_user_data->protocol,
 				input_user_data->server);
 	if (handle)
 	{
@@ -1216,7 +1216,7 @@ static ISC_STATUS executeSecurityCommand(
 		static Firebird::GlobalPtr<Firebird::CircularStringsBuffer<1024> > secExecBuf;
 
 		callRemoteServiceManager(status, handle, userInfo, 0, 0);
-		
+
 		{	// scope for MutexLockGuard
 			Firebird::MutexLockGuard lockMutex(secExecMutex);
 			secExecBuf->makePermanentVector(status, status);

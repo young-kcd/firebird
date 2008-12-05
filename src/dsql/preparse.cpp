@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Dynamic SQL runtime support
  *	MODULE:		preparse.cpp
- *	DESCRIPTION:	Dynamic SQL pre parser / parser on client side. 
+ *	DESCRIPTION:	Dynamic SQL pre parser / parser on client side.
  *			This module will probably change to a YACC parser.
  *
  * The contents of this file are subject to the Interbase Public
@@ -79,7 +79,7 @@ static const pp_table pp_symbols[] = {
 	{"", 0, 0}
 };
 
-// define the tokens 
+// define the tokens
 
 enum token_vals {
 	NO_MORE_TOKENS = -1,
@@ -95,9 +95,9 @@ using namespace Firebird;
 
 
 /**
-  
+
  	PREPARSE_execute
-  
+
     @brief
 
     @param user_status
@@ -135,7 +135,7 @@ bool PREPARSE_execute(
 
 		if (get_token(user_status, SYMBOL, false, &stmt, stmt_end, token) ||
 			token.length() != pp_symbols[PP_CREATE].length ||
-			token != pp_symbols[PP_CREATE].symbol) 
+			token != pp_symbols[PP_CREATE].symbol)
 		{
 			return false;
 		}
@@ -144,7 +144,7 @@ bool PREPARSE_execute(
 			(token.length() != pp_symbols[PP_DATABASE].length &&
 			 token.length() != pp_symbols[PP_SCHEMA].length) ||
 			(token != pp_symbols[PP_DATABASE].symbol &&
-			 token != pp_symbols[PP_SCHEMA].symbol)) 
+			 token != pp_symbols[PP_SCHEMA].symbol))
 		{
 			return false;
 		}
@@ -175,7 +175,7 @@ bool PREPARSE_execute(
 			matched = false;
 			for (int i = 3; pp_symbols[i].length && !matched; i++) {
 				if (token.length() == pp_symbols[i].length &&
-					token == pp_symbols[i].symbol) 
+					token == pp_symbols[i].symbol)
 				{
 					bool get_out = false;
 					// CVC: What's strange, this routine doesn't check token.length()
@@ -232,7 +232,7 @@ bool PREPARSE_execute(
 						break;
 
 					case PP_LENGTH:
-						// Skip a token for value 
+						// Skip a token for value
 
 						if (get_token(user_status, '=', true, &stmt, stmt_end, token) ||
 							get_token(user_status, NUMERIC, false, &stmt, stmt_end, token))
@@ -258,10 +258,10 @@ bool PREPARSE_execute(
 
 		} while (matched);
 
-// This code is because 3.3 server does not recognize isc_dpb_overwrite. 
+// This code is because 3.3 server does not recognize isc_dpb_overwrite.
 		FB_API_HANDLE temp_db_handle = 0;
-		if (!isc_attach_database(user_status, 0, file_name.c_str(), 
-				&temp_db_handle, dpb.getBufferLength(), 
+		if (!isc_attach_database(user_status, 0, file_name.c_str(),
+				&temp_db_handle, dpb.getBufferLength(),
 				reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer())) ||
 					user_status[1] != isc_io_error)
 			{
@@ -287,7 +287,7 @@ bool PREPARSE_execute(
 
 		isc_create_database(user_status, 0, file_name.c_str(),
 							(db_handle), dpb.getBufferLength(),
-							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()), 
+							reinterpret_cast<const ISC_SCHAR*>(dpb.getBuffer()),
 							0);
 	}
 	catch (const Exception& ex)
@@ -301,9 +301,9 @@ bool PREPARSE_execute(
 
 
 /**
-  
+
  	generate_error
-  
+
     @brief
 
     @param user_status
@@ -351,9 +351,9 @@ static void generate_error(ISC_STATUS* user_status,
 
 
 /**
-  
+
  	get_next_token
-  
+
     @brief
 
     @param stmt
@@ -426,7 +426,7 @@ static SSHORT get_next_token(const SCHAR** stmt,
 		}
 		*stmt = s;
 		if (token.length() > MAX_TOKEN_SIZE) {
-			// '=' used as then there is no place for null termination 
+			// '=' used as then there is no place for null termination
 			token.erase(MAX_TOKEN_SIZE);
 			return TOKEN_TOO_LONG;
 		}
@@ -448,7 +448,7 @@ static SSHORT get_next_token(const SCHAR** stmt,
 		return NUMERIC;
 	}
 
-// Is is a symbol 
+// Is is a symbol
 
 	if (char_class & CHR_LETTER) {
 		token += UPPER(c);
@@ -473,9 +473,9 @@ static SSHORT get_next_token(const SCHAR** stmt,
 
 
 /**
-  
+
  	get_token
-  
+
     @brief
 
     @param status
@@ -506,13 +506,13 @@ static SSHORT get_token(ISC_STATUS* status,
 	case TOKEN_TOO_LONG:
 		*stmt = temp_stmt;
 
-		// generate error here 
+		// generate error here
 
 		generate_error(status, token, result, 0);
 		return FB_FAILURE;
 	}
 
-// Some token was found 
+// Some token was found
 
 	if (result == token_type) {
 		*stmt = temp_stmt;

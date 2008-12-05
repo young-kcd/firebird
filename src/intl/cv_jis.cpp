@@ -241,7 +241,7 @@ Received: by dbase.a-t.com (/\==/\ Smail3.1.21.1 #21.5)
 	id <m0kjfXI-0004qKC@dbase.a-t.com>; Tue, 19 Nov 91 16:11 PST
 Received: by tate.a-t.com (/\==/\ Smail3.1.21.1 #21.1)
 	id <m0kjfPU-000Gf0C@tate.a-t.com>; Tue, 19 Nov 91 16:03 PST
-Received: from Sun.COM by relay1.UU.NET with SMTP 
+Received: from Sun.COM by relay1.UU.NET with SMTP
 	(5.61/UUNET-internet-primary) id AA21144; Tue, 19 Nov 91 18:45:19 -0500
 Received: from Eng.Sun.COM (zigzag-bb.Corp.Sun.COM) by Sun.COM (4.1/SMI-4.1)
 	id AA04289; Tue, 19 Nov 91 15:40:59 PST
@@ -350,7 +350,7 @@ STEPS:
 
 EX: JIS 1st is in the range 33-94, so we execute step 3(a). JIS 1st = 76
     (is NOT odd), so JIS 2nd = 150 ((76/2) + 112)
-   
+
 JIS 1st:  150
 JIS 2nd:  162
 
@@ -561,7 +561,7 @@ INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str, ULON
  * Functional description
  *	This is a cousin of the KANJI_check_sjis routine.
  *      Make sure that the euc string does not have any truncated 2 byte
- *      character at the end. * If we have a truncated character then, 
+ *      character at the end. * If we have a truncated character then,
  *          return false.
  *          else return true;
  **************************************/
@@ -598,9 +598,9 @@ INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str, U
  *
  * Functional description
  *	This is a cousin of the KANJI_check_euc routine.
- *      Make sure that the sjis string does not have any truncated 2 byte 
+ *      Make sure that the sjis string does not have any truncated 2 byte
  *	character at the end. *	If we have a truncated character then,
- *	    return 1. 
+ *	    return 1.
  *	    else return(0);
  **************************************/
 	const UCHAR* start = sjis_str;

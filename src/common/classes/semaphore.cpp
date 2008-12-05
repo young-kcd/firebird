@@ -33,7 +33,7 @@
 /*
 There is a problem with values returned by sem_open() in MacOS 10.5 and earlier.
 They are not pointers. They are handles, in format of file handle (0,1,2,3,...),
-and worse - they share same space with actual file handles. And when we close 
+and worse - they share same space with actual file handles. And when we close
 unneeded file handles in divorce_terminal(), we kill all global semaphores.
 MIXED_SEMAPHORE_AND_FILE_HANDLE exists to avoid it.
 */

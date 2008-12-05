@@ -53,7 +53,7 @@
 
 #define BLKDEF(type, root, tail) { sizeof(root), tail },
 
-static const struct 
+static const struct
 {
 	SSHORT typ_root_length;
 	SSHORT typ_tail_length;
@@ -107,7 +107,7 @@ BLK ALLQ_alloc( PLB pool, UCHAR type, int count)
 	FRB* best;
 	size_t best_tail;
 
-	while (true) 
+	while (true)
 	{
 		best = NULL;
 		best_tail = 32767;

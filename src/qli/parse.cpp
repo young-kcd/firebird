@@ -1359,7 +1359,7 @@ static int parse_dtype( USHORT * length, USHORT * scale)
 		*length = sizeof(SSHORT);
 		dtype = dtype_short;
 		break;
- 
+
    	case KW_BIGINT:
 		*length = sizeof(SINT64);
 		dtype = dtype_int64;
@@ -1875,10 +1875,10 @@ static TEXT* parse_header(void)
 		const TEXT* q = QLI_token->tok_string;
 		while (*q && p < end)
 			*p++ = *q++;
-			
+
 		if (p == end && *q)
 		    ERRQ_syntax(184); // Msg184 quoted header segment
-		    
+
 		PAR_real_token();
 		if (!PAR_match(KW_SLASH))
 			break;
@@ -3315,7 +3315,7 @@ static qli_syntax* parse_relation(void)
 			if (!QLI_databases)
 				IBERROR(207);	// Msg207 a database has not been readied
 			ERRQ_print_error(208, context->sym_string);
-			// Msg208 expected \"relation_name\", encountered \"%s\" 
+			// Msg208 expected \"relation_name\", encountered \"%s\"
 		}
 		if (!
 			(node->syn_arg[s_rel_relation] = (qli_syntax*) parse_qualified_relation()))
@@ -3424,7 +3424,7 @@ static qli_syntax* parse_report(void)
 			PAR_match(KW_OF);
 			if (PAR_match(KW_REPORT)) {
 				qli_brk* control = (qli_brk*) ALLOCD(type_brk);
-				qli_brk** ptr = 
+				qli_brk** ptr =
 					(top) ? &report->rpt_top_rpt : &report->rpt_bottom_rpt;
 				control->brk_next = *ptr;
 				*ptr = control;
@@ -3441,7 +3441,7 @@ static qli_syntax* parse_report(void)
 				control->brk_line = parse_print_list();
 			}
 			else {
-				qli_brk** ptr = 
+				qli_brk** ptr =
 					(top) ? &report->rpt_top_breaks : &report->rpt_bottom_breaks;
 				if (!*ptr) {
 					/* control breaks should only be on sorted fields, set up list
@@ -3893,7 +3893,7 @@ static qli_syntax* parse_show(void)
 			sw = show_matching_language;
 		else if (PAR_match(KW_VERSION))
 			sw = show_version;
-		else if (PAR_match(KW_RELATION)) 
+		else if (PAR_match(KW_RELATION))
 		{
 			if (!(value = (BLK) parse_qualified_relation()))
 				ERRQ_syntax(216);	// Msg216 relation name
@@ -4137,7 +4137,7 @@ static qli_syntax* parse_sort(void)
 
 	while (true) {
 		PAR_real();
-		if (!sql_flag) 
+		if (!sql_flag)
 		{
 			if (PAR_match(KW_ASCENDING)) {
 				direction = 0;
@@ -4354,7 +4354,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
 		dtype = dtype_long;
 		*sub_type = dsc_num_type_decimal;
 		break;
-		
+
 	case KW_NUMERIC:
 		*length = sizeof(SLONG);
 		dtype = dtype_long;
@@ -4366,7 +4366,7 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
 	//if (dtype == dtype_long || dtype == dtype_real || dtype == dtype_double) {
 	if (keyword == KW_DECIMAL || keyword == KW_NUMERIC)
 	{
-		if (PAR_match(KW_LEFT_PAREN)) 
+		if (PAR_match(KW_LEFT_PAREN))
 		{
 			const USHORT logLength = parse_ordinal();
 			if (logLength < 1)
@@ -4383,14 +4383,14 @@ static int parse_sql_dtype( USHORT* length, USHORT* scale, USHORT* precision,
 				*length = sizeof(SINT64);
 				dtype = dtype_int64;
 			}
-			
+
 			if (PAR_match(KW_COMMA))
 			{
 				const bool l = (PAR_match(KW_MINUS)) ? true : false;
 				*scale = parse_ordinal();
 				if (*scale > logLength)
 					ERRQ_syntax(510);  // Msg510 "Field scale exceeds allowed range"
-					
+
 				if (l || *scale > 0) // We need to have it negative in system tables.
 					*scale = -(*scale);
 			}
@@ -4519,7 +4519,7 @@ static qli_syntax* parse_sql_grant_revoke( USHORT type)
 				privileges |= PRV_delete;
 				continue;
 			}
-			if (PAR_match(KW_UPDATE)) 
+			if (PAR_match(KW_UPDATE))
 			{
 				privileges |= PRV_update;
 

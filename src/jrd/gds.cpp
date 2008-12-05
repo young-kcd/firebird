@@ -375,7 +375,7 @@ void gds__ulstr(char* buffer, ULONG value, const int minlen, const char filler)
 
 	if (minlen > c)
 		c = minlen;
-		
+
 	char* p = buffer + c;
 
 	do {
@@ -406,7 +406,7 @@ ISC_STATUS API_ROUTINE gds__decode(ISC_STATUS code, USHORT* fac, USHORT* code_cl
 
 	if (!code)
 		return FB_SUCCESS;
-		
+
 	// not an ISC error message
 	if ((code & ISC_MASK) != ISC_MASK)
 		return code;
@@ -483,7 +483,7 @@ void API_ROUTINE isc_decode_timestamp(const GDS_TIMESTAMP* date, void* times_arg
  * Functional description
  *	Convert from internal timestamp format to UNIX time structure.
  *
- *	Note: This routine is intended only for public API use. Engine itself and 
+ *	Note: This routine is intended only for public API use. Engine itself and
  *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
@@ -573,7 +573,7 @@ void API_ROUTINE isc_encode_timestamp(const void* times_arg, GDS_TIMESTAMP* date
  * Functional description
  *	Convert from UNIX time structure to internal timestamp format.
  *
- *	Note: This routine is intended only for public API use. Engine itself and 
+ *	Note: This routine is intended only for public API use. Engine itself and
  *  utilities should be using TimeStamp class directly in type-safe manner.
  *
  **************************************/
@@ -588,7 +588,7 @@ void GDS_breakpoint(int parameter)
 {
 /**************************************
  *
- *	G D S _ b r e a k p o i n t 
+ *	G D S _ b r e a k p o i n t
  *
  **************************************
  *
@@ -612,7 +612,7 @@ SINT64 API_ROUTINE isc_portable_integer(const UCHAR* ptr, SSHORT length)
  **************************************
  *
  * Functional description
- *	Pick up (and convert) a Little Endian (VAX) style integer 
+ *	Pick up (and convert) a Little Endian (VAX) style integer
  *      of length 1, 2, 4 or 8 bytes to local system's Endian format.
  *
  *   various parameter blocks (i.e., dpb, tpb, spb) flatten out multibyte
@@ -654,7 +654,7 @@ void API_ROUTINE gds_alloc_flag_unfreed(void *blk)
  *
  **************************************/
 // JMB: need to rework this for the new pools
-// Skidder: Not sure we need to rework this routine. 
+// Skidder: Not sure we need to rework this routine.
 // What we really need is to fix all memory leaks including very old.
 }
 
@@ -663,7 +663,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
 {
 /**************************************
  *
- *	g d s _ a l l o c _ r e p o r t 
+ *	g d s _ a l l o c _ r e p o r t
  *
  **************************************
  *
@@ -689,7 +689,7 @@ fb_interpret
 	Translate a status code with arguments to a string.  Return the
 	length of the string while updating the vector address.  If the
 	message is null (end of messages) or invalid, return 0;
-	
+
 	@param s the output buffer where a human readable version of the error is put
 	@param bufsize the size of the output buffer
 	@param vector the input, the address of const pointer to the status vector
@@ -729,7 +729,7 @@ SLONG API_ROUTINE gds__interprete(char* s, ISC_STATUS** vector)
 	return safe_interpret(s, 1024, const_cast<const ISC_STATUS**>(vector), true);
 }
 
- 
+
 /**
 safe_interpret
 
@@ -833,7 +833,7 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 				// We'll silently truncate the parameter to our available space.
 				while (--len) // CVC: Decrement first to make room for the null terminator.
 					*p++ = *q++;
-					
+
 				*p++ = 0;
 			}
 			else  // No space at all, pass the empty string.
@@ -841,7 +841,7 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 				*arg++ = "";
 				safe << "";
 			}
-				
+
 			continue;
 
 		default:
@@ -853,7 +853,7 @@ static SLONG safe_interpret(char* const s, const size_t bufsize,
 
 	// Handle primary code on a system by system basis
 
-	switch ((UCHAR) (*vector)[0]) 
+	switch ((UCHAR) (*vector)[0])
 	{
 	case isc_arg_warning:
 	case isc_arg_gds:
@@ -1012,10 +1012,10 @@ public:
 	{
 		CloseHandle(trace_mutex_handle);
 		trace_mutex_handle = INVALID_HANDLE_VALUE;
-		
+
 		if (trace_file_handle != INVALID_HANDLE_VALUE)
 			CloseHandle(trace_file_handle);
-			
+
 		trace_file_handle = INVALID_HANDLE_VALUE;
 	}
 
@@ -1045,19 +1045,19 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
  *  This function tries to be async-signal safe
  *
  **************************************/
-	if (!length) 
+	if (!length)
 		length = strlen(text);
 #ifdef WIN_NT
 	// Note: thread-safe code
 
-	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly. 
+	// Nickolay Samofatov, 12 Sept 2003. Windows open files extremely slowly.
 	// Slowly enough to make such trace useless. Thus we cache file handle !
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
 	while (true) {
 		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE) {
 			TEXT name[MAXPATHLEN];
 			gds__prefix(name, LOGFILE);
-			// We do not care to close this file. 
+			// We do not care to close this file.
 			// It will be closed automatically when our process terminates.
 			CleanupTraceHandles::trace_file_handle = CreateFile(name, GENERIC_WRITE,
 				FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -1086,7 +1086,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	int file = open(name, O_CREAT | O_APPEND | O_WRONLY, 0660);
 	if (file == -1)
 		return;
-		
+
 	write(file, text, length);
 	close(file);
 #endif
@@ -1105,12 +1105,12 @@ void API_ROUTINE gds__trace(const TEXT * text)
  *  This function tries to be async-signal safe
  *
  **************************************/
-	
+
 	const time_t now = time((time_t *)0); // is specified in POSIX to be signal-safe
-	
+
 	// 07 Sept 2003, Nickolay Samofatov.
-	// Since we cannot call ctime/localtime_r or anything else like this from 
-	// signal hanlders we need to decode time by hand. 
+	// Since we cannot call ctime/localtime_r or anything else like this from
+	// signal hanlders we need to decode time by hand.
 
 	const int days = now / SECS_PER_DAY;
 	int rem = now % SECS_PER_DAY;
@@ -1208,7 +1208,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
-		fprintf(file, "\n%s%s\t%.25s\t", 
+		fprintf(file, "\n%s%s\t%.25s\t",
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
@@ -1233,7 +1233,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
  **************************************
  *
  * Functional description
- *	Print pool contents to the log file. 
+ *	Print pool contents to the log file.
  * Preced it with normal log record as in gds__log
  *
  **************************************/
@@ -1258,7 +1258,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	FILE* file = fopen(name, "a");
 	if (file != NULL)
 	{
-		fprintf(file, "\n%s%s\t%.25s\t", 
+		fprintf(file, "\n%s%s\t%.25s\t",
 				   ISC_get_host(name, MAXPATHLEN), gdslogid, ctime(&now));
 		va_start(ptr, text);
 		vfprintf(file, text, ptr);
@@ -1475,10 +1475,10 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 				Firebird::string::size_type pos = p.find_last_of('/');
 				if (pos == Firebird::string::npos)
 				    pos = p.find_last_of('\\');
-				    
+
 				if (pos != Firebird::string::npos)
 				    p.erase(0, pos + 1);
-				    
+
 				fb_utils::snprintf(translated_msg_file,
 					sizeof(translated_msg_file), MSG_FILE_LANG, p.c_str());
 				gds__prefix_msg(msg_file, translated_msg_file);
@@ -1488,7 +1488,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 			}
 			else
 				status = 1;
-				
+
 			if (status) {
 				/* Default to standard message file */
 
@@ -1509,7 +1509,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 /* Search down index levels to the leaf.  If we get lost, punt */
 
 	const ULONG code = MSG_NUMBER(facility, number);
-	const msgnod* const end = 
+	const msgnod* const end =
 		(msgnod*) ((char*) messageL->msg_bucket + messageL->msg_bucket_size);
 	ULONG position = messageL->msg_top_tree;
 
@@ -1539,7 +1539,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 	if (!status) {
 		/* Search the leaf */
 		for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status;
-			 leaf = NEXT_LEAF(leaf)) 
+			 leaf = NEXT_LEAF(leaf))
 		{
 			if (leaf >= (const msgrec*) end || leaf->msgrec_code > code) {
 				status = -1;
@@ -1668,7 +1668,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
  *		it has very strange name, but to keep API as is leave it
  **************************************/
 	int count = 0;
-	
+
 	if (! passed_string)
 		return -1;
 
@@ -2084,8 +2084,8 @@ void API_ROUTINE gds__register_cleanup(FPTR_VOID_PTR routine, void* arg)
  *
  **************************************/
 
-/* 
- * Ifdef out for windows client.  We have not implemented any way of 
+/*
+ * Ifdef out for windows client.  We have not implemented any way of
  * determining when a task ends, therefore this never gets called.
 */
 
@@ -2138,7 +2138,7 @@ SLONG API_ROUTINE gds__sqlcode(const ISC_STATUS* status_vector)
 
 /* SQL code -999 (GENERIC_SQLCODE) is generic, meaning "no other sql code
  * known".  Now scan the status vector, seeing if there is ANY sqlcode
- * reported.  Make note of the first error in the status vector who's 
+ * reported.  Make note of the first error in the status vector who's
  * SQLCODE is NOT -999, that will be the return code if there is no specific
  * sqlerr reported.
  */
@@ -2249,7 +2249,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 			++s;
 			if (s >= last_status)
 				break;
-				
+
 			const char* state = (char*) *s; // easy, next argument points to sqlstate string
 			fb_utils::copy_terminate(sqlstate, state, FB_SQLSTATE_SIZE);
 			have_sqlstate = true;
@@ -2279,7 +2279,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 			++s;
 			if (s >= last_status)
 				break;
-				
+
 			const SLONG gdscode = (const SLONG) *s;
 			if (gdscode != 0)
 			{
@@ -2292,7 +2292,7 @@ void API_ROUTINE fb_sqlstate(char* sqlstate, const ISC_STATUS* status_vector)
 					int first = 0;
 					int last = FB_NELEM(gds__sql_states) - 1;
 					while (first <= last)
-					{				
+					{
 						const int mid = (first + last) / 2;
 						const SLONG new_code = gds__sql_states[mid].gds_code;
 						if (gdscode > new_code)
@@ -2364,11 +2364,11 @@ void* API_ROUTINE gds__temp_file(
  *      Create and open a temp file with a given location.
  *      Unless the address of a buffer for the expanded file name string is
  *      given, make up the file "pre-deleted". Return -1 on failure.
- *      If unlink_flag is TRUE than file is marked as pre-deleted even if 
+ *      If unlink_flag is TRUE than file is marked as pre-deleted even if
  *      expanded_string is not NULL.
- * NOTE 
+ * NOTE
  *      Function returns untyped handle that needs to be casted to either FILE
- *      or used as file descriptor. This is ugly and needs to be fixed probably 
+ *      or used as file descriptor. This is ugly and needs to be fixed probably
  *      via introducing two functions with different return types.
  *
  **************************************/
@@ -2420,10 +2420,10 @@ void API_ROUTINE gds__unregister_cleanup(FPTR_VOID_PTR routine, void *arg)
 	Firebird::MutexLockGuard guard(cleanup_handlers_mutex);
 
 	for (CLEAN* clean_ptr = &cleanup_handlers; clean = *clean_ptr;
-		 clean_ptr = &clean->clean_next) 
+		 clean_ptr = &clean->clean_next)
 	{
         if (clean->clean_routine == routine
-            && clean->clean_arg == arg) 
+            && clean->clean_arg == arg)
 		{
 			*clean_ptr = clean->clean_next;
 			gds__free(clean);
@@ -2446,10 +2446,10 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
  *
  * Functional description
  *	Find the external library path variable.
- *	Validate that the path to the library module name 
+ *	Validate that the path to the library module name
  *	in the path specified.  If the external lib path
- *	is not defined then accept any path, and return 
- *	TRUE. If the module is in the path then return TRUE 
+ *	is not defined then accept any path, and return
+ *	TRUE. If the module is in the path then return TRUE
  * 	else, if the module is not in the path return FALSE.
  *
  **************************************/
@@ -2490,7 +2490,7 @@ BOOLEAN API_ROUTINE gds__validate_lib_path(const TEXT* module,
 			if ((p != path) && ((p[-1] == '/') || (p[-1] == '\\')))
 				p[-1] = 0;
 			if ((EXPAND_PATH(path, abs_path))
-				&& (!COMPARE_PATH(abs_path, abs_module_path))) 
+				&& (!COMPARE_PATH(abs_path, abs_module_path)))
 			{
 				strncpy(resolved_module, abs_module, length);
 				resolved_module[length - 1] = 0;
@@ -2518,7 +2518,7 @@ SLONG API_ROUTINE gds__vax_integer(const UCHAR* ptr, SSHORT length)
  **************************************/
 	if (!ptr || length <= 0 || length > 4)
 		return 0;
-		
+
 	SLONG value = 0;
 
 	for (int shift = 0; --length >= 0; shift += 8) {
@@ -2602,13 +2602,13 @@ void API_ROUTINE isc_print_sqlerror(SSHORT sqlcode, const ISC_STATUS* status)
 	TEXT* p = error_buffer;
 	while (*p)
 		p++;
-		
+
 	isc_sql_interprete(sqlcode, p,
 					   (SSHORT) (sizeof(error_buffer) - (p - error_buffer) -
 								 2));
 	while (*p)
 		p++;
-		
+
 	*p++ = '\n';
 	*p = 0;
 	gds__put_error(error_buffer);
@@ -3279,7 +3279,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			else
 				blr_print_word(control);
 			break;
-		
+
 		case op_exec_into: {
 			blr_print_verb(control, level);
 			if (! blr_print_byte(control)) {
@@ -3291,14 +3291,14 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 		}
 
-		case op_exec_stmt: 
+		case op_exec_stmt:
 		{
 			offset = blr_print_line(control, offset);
-			static const char* sub_codes[] = 
+			static const char* sub_codes[] =
 			{
 				NULL,
 				"inputs",
-				"outputs",		
+				"outputs",
 				"sql",
 				"proc_block",
 				"data_src",
@@ -3311,7 +3311,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				"in_params2",
 				"out_params"
 			};
-			
+
 			int inputs = 0;
 			int outputs = 0;
 			while ((blr_operator = BLR_BYTE) != blr_end)
@@ -3345,7 +3345,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 					blr_print_byte(control);
 					offset = blr_print_line(control, offset);
 				break;
-				
+
 				case blr_exec_stmt_privs:
 					offset = blr_print_line(control, offset);
 				break;
@@ -3354,16 +3354,16 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				case blr_exec_stmt_in_params2:
 					offset = blr_print_line(control, offset);
 					level++;
-					while (inputs) 
+					while (inputs)
 					{
 						// input param name
 						if (blr_operator == blr_exec_stmt_in_params2)
 						{
 							blr_indent(control, level);
-							int len = blr_print_byte(control);							
-							while (len--) 
+							int len = blr_print_byte(control);
+							while (len--)
 								blr_print_char(control);
-							
+
 							offset = blr_print_line(control, offset);
 						}
 						--inputs;
@@ -3376,7 +3376,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 				case blr_exec_stmt_out_params:
 					offset = blr_print_line(control, offset);
 					level++;
-					while (outputs) 
+					while (outputs)
 					{
 						--outputs;
 						blr_print_verb(control, level);		// param expression
@@ -3392,7 +3392,7 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 
 			// print blr_end
 			control->ctl_blr--;
-			blr_print_verb(control, level); 
+			blr_print_verb(control, level);
 			break;
 		}
 
@@ -3471,7 +3471,7 @@ void gds__cleanup()
 	CLEAN clean;
 
 	initialized = false;
-	Firebird::InstanceControl::registerGdsCleanup(0);	
+	Firebird::InstanceControl::registerGdsCleanup(0);
 
 	while ( (clean = cleanup_handlers) ) {
 		cleanup_handlers = clean->clean_next;
@@ -3524,11 +3524,11 @@ static void init(void)
 			new_max.rlim_cur = new_max.rlim_max = old.rlim_max;
 			if (!setrlimit(RLIMIT_NOFILE, &new_max))
 			{
-#if _FILE_OFFSET_BITS == 64 
+#if _FILE_OFFSET_BITS == 64
 				gds__log("64 bit i/o support is on.");
 				gds__log("Open file limit increased from %lld to %lld",
 						 old.rlim_cur, new_max.rlim_cur);
-		       
+
 #else
 				gds__log("Open file limit increased from %d to %d",
 						 old.rlim_cur, new_max.rlim_cur);
@@ -3659,7 +3659,7 @@ public:
 
 		// Find appropiate temp directory
 		Firebird::PathName tempDir;
-		if (!fb_utils::readenv(FB_TMP_ENV, tempDir)) 
+		if (!fb_utils::readenv(FB_TMP_ENV, tempDir))
 		{
 #ifdef WIN_NT
 			const DWORD len = GetTempPath(sizeof(fbTempDir), fbTempDir);
@@ -3733,7 +3733,7 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 #ifdef WIN_NT
 	const char* pdir = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion";
 	const char* pvalue = "ProgramFilesDir";
-	
+
 	HKEY hkey;
 	LONG rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, pdir, 0, KEY_READ, &hkey);
 	if (rc != ERROR_SUCCESS)
@@ -3746,7 +3746,7 @@ static bool GetProgramFilesDir(Firebird::PathName& output)
 		RegCloseKey(hkey);
 		return false;
 	}
-	
+
 	output.reserve(size);
 	BYTE* answer = reinterpret_cast<BYTE*>(output.begin());
 	rc = RegQueryValueEx(hkey, pvalue, NULL, &type, answer, &size);

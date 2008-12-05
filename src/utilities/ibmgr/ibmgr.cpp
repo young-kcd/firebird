@@ -155,7 +155,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 
 /* Shutdown is not in progress and we are not attached to service yet.
-   But obviously we will need attachment. 
+   But obviously we will need attachment.
 */
 	ibmgr_data.shutdown = false;
 	ibmgr_data.attached = 0;
@@ -201,7 +201,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	int local_argc;
 	SCHAR* local_argv[MAXARGS];
 	TEXT stuff[MAXSTUFF];
-	
+
 	for (;;) {
 		if (get_line(&local_argc, local_argv, stuff))
 			break;
@@ -390,7 +390,7 @@ static SSHORT get_switches(
 				pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
 				break;
 			}
-			
+
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);
 				fprintf(OUTFILE, "%s\n", msg);
@@ -529,7 +529,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_HOST:
 
 				/* The above switches are separate case: they can be
-				   used as operation or parameter switches. If an 
+				   used as operation or parameter switches. If an
 				   operation has already been specified, we assume it
 				   is a switch else we set an implied operation type
 				   OP_SET.
@@ -592,7 +592,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_IGNORE:
 			case IN_SW_IBMGR_POOL:
 
-				/* These switches are operation modifiers or 
+				/* These switches are operation modifiers or
 				   suboperations. Each of them makes sense only
 				   in a contex of certain operation. So, let's
 				   make sure it is a right contex.
@@ -622,7 +622,7 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-					
+
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_ONCE:
@@ -645,7 +645,7 @@ static SSHORT get_switches(
 						err_msg_no = MSG_INVSWOP;
 						break;
 					}
-					
+
 					switch (in_sw)
 					{
 					case IN_SW_IBMGR_NOW:
@@ -681,7 +681,7 @@ static SSHORT get_switches(
 			case IN_SW_IBMGR_Z:
 
 				/* This is also a separate case - it could be
-				   operation switch or just switch. Also, 
+				   operation switch or just switch. Also,
 				   does not matter how many times version switch
 				   was specified, we output version only once
 				 */
@@ -713,7 +713,7 @@ static SSHORT get_switches(
 				}
 				break;
 			}
-			
+
 			default:
 #ifdef DEV_BUILD
 				fprintf(OUTFILE, "ASSERT: file %s line %"LINEFORMAT": in_sw = %d\n",
@@ -839,7 +839,7 @@ static SSHORT parse_cmd_line( int argc, TEXT** argv, bool zapPasswd)
  *
  *	returns:
  *
- *	    FB_SUCCESS   on normal completion, 
+ *	    FB_SUCCESS   on normal completion,
  *	    ACT_QUIT  if user chooses to quit
  *	    ACT_PROMT used by main() to switch into
  *	              the prompt mode

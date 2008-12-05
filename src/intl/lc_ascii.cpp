@@ -121,7 +121,7 @@ static inline bool FAMILY_ASCII(texttype* cache,
 
 		TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
 		cache->texttype_impl = impl;
-		
+
 		memset(&impl->cs, 0, sizeof(impl->cs));
 		LD_lookup_charset(&impl->cs, cs_name, config_info);
 
@@ -504,7 +504,7 @@ USHORT famasc_key_length(texttype* obj, USHORT inLen)
  *
  *  For ASCII type collation (codepoint collation) this mearly
  *  involves stripping the space character off the key.
- * 
+ *
  * RETURN:
  *		Length, in bytes, of returned key
  */
@@ -569,7 +569,7 @@ SSHORT famasc_compare(texttype* obj, ULONG l1, const BYTE* s1, ULONG l2, const B
 			return 1;
 		if (s1[i] < s2[i])
 			return -1;
-		
+
 		return 1;
 	}
 

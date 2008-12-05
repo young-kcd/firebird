@@ -15,7 +15,7 @@
 #include "../common/classes/array.h"
 #include "../jrd/os/guid.h"
 
-namespace 
+namespace
 {
 
 /* Useful defines & typedefs */
@@ -350,7 +350,7 @@ typedef Firebird::HalfStaticArray<unsigned char, SHA_DIGESTSIZE> BinHash;
 void base64(Firebird::string& b64, const BinHash& bin)
 {
 	b64.erase();
-	const unsigned char* f = 
+	const unsigned char* f =
 		reinterpret_cast<const unsigned char*>(bin.begin());
 	for (int i = bin.getCount(); i > 0; i -= 3, f += 3)
 	{

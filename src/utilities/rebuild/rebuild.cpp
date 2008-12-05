@@ -512,7 +512,7 @@ static void dump(
 {
 /**************************************
  *
- *	d u m p 
+ *	d u m p
  *
  **************************************
  *
@@ -563,7 +563,7 @@ static void dump_tips( FILE * file, RBDB rbdb)
 {
 /**************************************
  *
- *	d u m p _ t i p s 
+ *	d u m p _ t i p s
  *
  **************************************
  *
@@ -678,7 +678,7 @@ static void format_pip( page_inv_page* page, int page_size, int last_flag)
  *
  * Functional description
  *	Fake a fully RBDB_allocated (all pages RBDB_allocated) page inventory
- *	page.  
+ *	page.
  *
  **************************************/
 	page->pag_type = pag_pages;
@@ -716,7 +716,7 @@ static void format_tip( tx_inv_page* page, int page_size, SLONG next_page)
 
 /* The "next" tip page number is included for redundancy, but is not actually
    read by the engine, so can be safely left zero.  If known, it would nice
-   to supply it. 
+   to supply it.
 */
 
 	page->tip_next = next_page;
@@ -804,7 +804,7 @@ static void get_range(
 		get_switch(*argv, token);
 		if (token->swc_switch)
 			return;
-		if ((*token->swc_string == ':') || (*token->swc_string == ',')) 
+		if ((*token->swc_string == ':') || (*token->swc_string == ','))
 		{
 			const TEXT* p = token->swc_string;
 			if (*++p) {
@@ -893,8 +893,8 @@ static header_page* open_database( RBDB rbdb, ULONG pg_size)
 
 	if (header->hdr_ods_version != ODS_VERSION | ODS_TYPE_CURRENT) {
 		printf("Wrong ODS version, expected %d type %04x, encountered %d type %04x.\n",
-				  ODS_VERSION, ODS_TYPE_CURRENT, 
-				  header->hdr_ods_version & ~ODS_TYPE_MASK, 
+				  ODS_VERSION, ODS_TYPE_CURRENT,
+				  header->hdr_ods_version & ~ODS_TYPE_MASK,
 				  header->hdr_ods_version & ODS_TYPE_MASK
 			  );
 		rbdb->rbdb_valid = FALSE;
@@ -937,8 +937,8 @@ static void print_db_header( FILE* file, const header_page* header)
  **************************************/
 	fprintf(file, "Database header page information:\n");
 	fprintf(file, "    Page size\t\t\t%d\n", header->hdr_page_size);
-	fprintf(file, "    ODS version\t\t\t%d type %04x\n", 
-		header->hdr_ods_version & ~ODS_TYPE_MASK, 
+	fprintf(file, "    ODS version\t\t\t%d type %04x\n",
+		header->hdr_ods_version & ~ODS_TYPE_MASK,
 		header->hdr_ods_version & ODS_TYPE_MASK);
 	fprintf(file, "    PAGES\t\t\t%d\n", header->hdr_PAGES);
 	fprintf(file, "    next page\t\t\t%d\n", header->hdr_next_page);
@@ -979,7 +979,7 @@ fprintf ("    Creation date    \n", header->hdr_creation_date);
 	fprintf(file, "\n    Variable header data:\n");
 
 	SLONG number;
-	
+
 	const UCHAR* p = header->hdr_data;
 	for (const UCHAR* const end = p + header->hdr_page_size;
 		 p < end && *p != HDR_end; p += 2 + p[1])
@@ -1046,7 +1046,7 @@ static void rebuild( RBDB rbdb)
 {
 /**************************************
  *
- *	r e b u i l d 
+ *	r e b u i l d
  *
  **************************************
  *
@@ -1184,7 +1184,7 @@ static void write_headers(
 					   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
 			break;
 			}
-			
+
 		case pag_ids:
 			fprintf(file, "generator page, checksum %d\n\n",
 					   page->pag_checksum);

@@ -242,7 +242,7 @@ FUNC PARSE_function(int existingFunction)
  *
  * Functional description
  *	Get the function block associated with the current token.  Also
- *	advance the token.  Create a new function requested.  
+ *	advance the token.  Create a new function requested.
  *
  **************************************/
 	if (dudleyGlob.DDL_token.tok_type != tok_ident)
@@ -253,7 +253,7 @@ FUNC PARSE_function(int existingFunction)
 
 	FUNC function;
 	if (symbol && (function = (FUNC) symbol->sym_object) &&
-		function->func_database == dudleyGlob.database) 
+		function->func_database == dudleyGlob.database)
 	{
 		LEX_token();
 		return function;
@@ -324,7 +324,7 @@ DUDLEY_NOD PARSE_make_list(dudley_lls* stack)
 
 	while (stack)
 		node->nod_arg[--count] = LLS_POP(&stack);
-	
+
 	return node;
 }
 
@@ -369,7 +369,7 @@ bool PARSE_match( enum kwwords keyword)
 
 	for (SYM symbol = dudleyGlob.DDL_token.tok_symbol; symbol; symbol = symbol->sym_homonym)
 		if (symbol->sym_type == SYM_keyword &&
-			symbol->sym_keyword == (int) keyword) 
+			symbol->sym_keyword == (int) keyword)
 		{
 			LEX_token();
 			return true;
@@ -560,7 +560,7 @@ static SYM copy_symbol( SYM old_name)
  *    does the implicit invocation of same-named
  *    global fields.
  *
- *    We'll just leave the type blank for now. 
+ *    We'll just leave the type blank for now.
  *
  **************************************/
 	SYM new_name = (SYM) DDL_alloc(SYM_LEN + old_name->sym_length);
@@ -674,7 +674,7 @@ static void define_database( enum act_t action_type)
  **************************************/
 	if (dudleyGlob.database)
 		DDL_error_abort(0, 120);
-		// msg 120: GDEF processes only one database at a time 
+		// msg 120: GDEF processes only one database at a time
 
 	dudleyGlob.database = (DBB) DDL_alloc(sizeof(dbb));
 	dudleyGlob.database->dbb_name = PARSE_symbol(tok_quoted);
@@ -740,7 +740,7 @@ static void define_database( enum act_t action_type)
 */
 			else
 				PARSE_error(121, 0, 0);
-			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped 
+			// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
 		}
 		else if (PARSE_match(KW_FILE)) {
 			FIL file = define_file();
@@ -1113,7 +1113,7 @@ static FIL define_log_file( USHORT log_type)
 		else if (PARSE_match(KW_RAW_PARTITIONS)) {
 			if (log_type != DBB_log_preallocated)
 				PARSE_error(332, 0, 0);
-			// msg 332: Partitions not supported in series of log file specification 
+			// msg 332: Partitions not supported in series of log file specification
 			PARSE_match(KW_EQUALS);
 			file->fil_partitions = PARSE_number();
 			file->fil_raw = LOG_raw;
@@ -1204,7 +1204,7 @@ static void define_relation(void)
 		 || EXE_relation(relation)))
 	{
 		PARSE_error(137, relation->rel_name->sym_string, 0);
-		// msg 137: relation %s already exists 
+		// msg 137: relation %s already exists
 	}
 
 	if (PARSE_match(KW_EXTERNAL_FILE)) {
@@ -1334,7 +1334,7 @@ static void define_shadow(void)
  *
  * Functional description
  *	Define a shadow file to the database.
- *	Parse it as a set of normal file additions, 
+ *	Parse it as a set of normal file additions,
  *	setting the shadow number on all files.
  *
  **************************************/
@@ -1351,7 +1351,7 @@ static void define_shadow(void)
 			PARSE_error(139, 0, 0);	/* msg 139: shadow number must be a positive integer */
 	}
 
-/* match the keywords MANUAL or AUTO to imply whether the shadow 
+/* match the keywords MANUAL or AUTO to imply whether the shadow
    should be automatically deleted when something goes awry */
 
 	if (PARSE_match(KW_MANUAL))
@@ -1365,7 +1365,7 @@ static void define_shadow(void)
 	shadow->fil_name = PARSE_symbol(tok_quoted);
 	if (!check_filename(shadow->fil_name, false))
 		PARSE_error(297, 0, 0);
-	// msg 297: A node name is not permitted in a shadow or secondary file name 
+	// msg 297: A node name is not permitted in a shadow or secondary file name
 
 	if (PARSE_match(KW_LENGTH)) {
 		shadow->fil_length = PARSE_number();
@@ -1424,7 +1424,7 @@ static void define_trigger(void)
 	trigger->trg_sequence = trg_sequence;
 
 	if (!(int) trigger->trg_type)	/* still none */
-		PARSE_error(141, dudleyGlob.DDL_token.tok_string, 0);	
+		PARSE_error(141, dudleyGlob.DDL_token.tok_string, 0);
 		/* msg 141: expected STORE, MODIFY, ERASE, encountered \"%s\" */
 
 	bool action = false;
@@ -1530,7 +1530,7 @@ static void define_view(void)
 		 || EXE_relation(relation)))
 	{
 		PARSE_error(300, relation->rel_name->sym_string, 0);
-		// msg 300: relation %s already exists 
+		// msg 300: relation %s already exists
 	}
 
 	PARSE_match(KW_OF);
@@ -1895,7 +1895,7 @@ static void end_text( TXT text)
 		dudleyGlob.DDL_token.tok_position - dudleyGlob.DDL_token.tok_length - text->txt_position;
 
 #if (defined WIN_NT)
-/* the length of the text field should subtract out the 
+/* the length of the text field should subtract out the
    line feeds, since they are automatically filtered out
    when reading from a file */
 
@@ -1913,7 +1913,7 @@ static SYM gen_trigger_name( TRG_T type, DUDLEY_REL relation)
  **************************************
  *
  * Functional description
- *	Generate a trigger name for an old style trigger.  
+ *	Generate a trigger name for an old style trigger.
  *
  **************************************/
 	SYM symbol = (SYM) DDL_alloc(SYM_LEN + GDS_NAME_LEN);
@@ -1992,7 +1992,7 @@ static void get_trigger_attributes( int *flags, int *type, int *sequence)
  *	PRE and POST are optional in new style definitions.
  *	For STORE & MODIFY PRE is the default.
  *	For ERASE, POST is the default.
- *	
+ *
  **************************************/
 
 	if (PARSE_match(KW_INACTIVE)) {
@@ -2098,9 +2098,9 @@ static void grant_user_privilege(void)
 				PARSE_error(313, dudleyGlob.DDL_token.tok_string, 0);	/* msg 313: expected ON or '(', encountered "%s" */
 
 			do {
-				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT 
-					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT 
-					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE 
+				if (dudleyGlob.DDL_token.tok_keyword == KW_SELECT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_INSERT
+					|| dudleyGlob.DDL_token.tok_keyword == KW_DELETE
 					|| dudleyGlob.DDL_token.tok_keyword == KW_UPDATE)
 				{
 					break;
@@ -2188,7 +2188,7 @@ static DUDLEY_CTX lookup_context( SYM symbol, dudley_lls* contexts)
 	for (; contexts; contexts = contexts->lls_next) {
 		DUDLEY_CTX context = (DUDLEY_CTX) contexts->lls_object;
 		SYM name = context->ctx_name;
-		if (name && !strcmp(name->sym_string, symbol->sym_string)) 
+		if (name && !strcmp(name->sym_string, symbol->sym_string))
 			return context;
 	}
 
@@ -2713,7 +2713,7 @@ static void modify_trigger(void)
 
 	while (!(dudleyGlob.DDL_token.tok_keyword == KW_SEMI)) {
 		if ((PARSE_match(KW_MESSAGE)) || (PARSE_match(KW_MSGADD)) ||
-			(PARSE_match(KW_MSGMODIFY))) 
+			(PARSE_match(KW_MSGMODIFY)))
 		{
 			msg_type = trgmsg_modify;
 		}
@@ -3089,9 +3089,9 @@ static bool parse_action(void)
 
 static void parse_array( DUDLEY_FLD field)
 {
-/************************************** 
+/**************************************
  *
- *	p a r s e _ a r r a y 
+ *	p a r s e _ a r r a y
  *
  **************************************
  *
@@ -3149,7 +3149,7 @@ static TXT parse_description(void)
  **************************************
  *
  * Functional description
- *	Create a text block to hold the pointer and length 
+ *	Create a text block to hold the pointer and length
  *	of the description of a metadata item.
  *
  **************************************/
@@ -3444,7 +3444,7 @@ static void parse_field_dtype( DUDLEY_FLD field)
 	LEX_token();
 
 	if (field->fld_dtype == blr_text ||
-		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring) 
+		field->fld_dtype == blr_varying || field->fld_dtype == blr_cstring)
 	{
 		if (!PARSE_match(KW_L_BRCKET) && !PARSE_match(KW_LT))
 			PARSE_error(200, dudleyGlob.DDL_token.tok_string, 0);	/* msg 200: expected \"[\", encountered \"%s\" */
@@ -3561,7 +3561,7 @@ static FUNCARG parse_function_arg( FUNC function, USHORT * position)
 		PARSE_error(204, 0, 0);	/* msg 204: argument mode is by value, or by reference */
 	}
 
-/* (kw_comma or kw_semi) here means this argument is not a 
+/* (kw_comma or kw_semi) here means this argument is not a
    return_value or a return_argument in which case it had
    better not be passed by value */
 
@@ -3786,7 +3786,7 @@ static int parse_page_size(void)
  * Functional description
  *	parse the page_size clause of a
  *	define database statement
- *	
+ *
  *
  **************************************/
 	PARSE_match(KW_EQUALS);
@@ -3971,8 +3971,8 @@ static SLONG score_entry( SCE element)
  **************************************
  *
  * Functional description
- *	Compute a value to determine placement of an 
- *	access control element in an Apollo access 
+ *	Compute a value to determine placement of an
+ *	access control element in an Apollo access
  *	control list.
  *
  **************************************/
@@ -3982,7 +3982,7 @@ static SLONG score_entry( SCE element)
 
 	const TEXT* const* ptr = (TEXT**) element->sce_idents;
 	for (const TEXT* const* const end = ptr + id_max; ptr < end;
-		 ptr++) 
+		 ptr++)
 	{
 		score <<= 1;
 		if (*ptr)

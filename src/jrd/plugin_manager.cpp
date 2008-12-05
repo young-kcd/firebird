@@ -1,4 +1,4 @@
-/*                      
+/*
  *  PROGRAM:    JRD Plugin Manager Method
  *  MODULE:     plugin_manager.cpp
  *  DESCRIPTION:    Manages dynamically loadable engine plugins
@@ -36,9 +36,9 @@ PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 		if (itr->name() == name)
 			return itr;
 	}
-	
+
 	Module *result = 0;
-	
+
 	result = loadPluginModule(name);
 	if (!result)
 	{
@@ -49,7 +49,7 @@ PluginManager::Plugin PluginManager::findPlugin(const Firebird::PathName &name)
 			return 0;
 		}
 	}
-	
+
 	// Link the new module into the module list
 	result->acquire();
 	if (moduleList)
@@ -66,7 +66,7 @@ void PluginManager::loadAllPlugins()
 {
 	Firebird::PathName checkDir;
 	const Firebird::PathName fbLibPath = Config::getRootDirectory();
-	
+
 	for (spIterator pathItr = searchPaths.begin(); pathItr != searchPaths.end(); ++pathItr)
 	{
 		if (pathItr->second)	// This path is fb relative
@@ -77,8 +77,8 @@ void PluginManager::loadAllPlugins()
 		{
 			checkDir = pathItr->first;
 		}
-		
-		PathUtils::dir_iterator *dirItr = 
+
+		PathUtils::dir_iterator *dirItr =
 			PathUtils::newDirItr(getPool(), checkDir);
 		while (*dirItr)
 		{
@@ -92,7 +92,7 @@ void PluginManager::loadAllPlugins()
 					break;
 				}
 			}
-			
+
 			// Check to see if the module has been explicitly excluded from loading
 			if (!alreadyLoaded && ignoreModules.getCount() > 0)
 			{
@@ -108,7 +108,7 @@ void PluginManager::loadAllPlugins()
 					}
 				}
 			}
-			
+
 			// If we haven't already loaded, and the module is loadable
 			// as defined by the host os, then by all means load it!
 			if (!alreadyLoaded && ModuleLoader::isLoadableModule(**dirItr))
@@ -122,7 +122,7 @@ void PluginManager::loadAllPlugins()
 				mod->next = moduleList;
 				mod->prev = &moduleList;
 				moduleList = mod;
-			}		
+			}
 			++(*dirItr);
 		}
 		delete dirItr;
@@ -133,7 +133,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 {
 	Firebird::PathName checkPath;
 	const Firebird::PathName fbLibPath = Config::getRootDirectory();
-	
+
 	// Check to see if the module name was specified as a relative path
 	//	from one of our search paths.  This only makes sense if the name
 	//	of the module is relative.
@@ -150,7 +150,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			{
 				PathUtils::concatPath(checkPath, itr->first, name);
 			}
-			
+
 			if (ModuleLoader::isLoadableModule(checkPath))
 			{
 				return FB_NEW(getPool()) PluginModule(getPool(), name,
@@ -164,7 +164,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			}
 		}
 	}
-	
+
 	// If we get this far we know the module isn't given as a relative path.
 	// Check to see if it is a valid absolute path that happens to fall in one
 	// of our search paths.  This only makes sense if the name of the module
@@ -176,7 +176,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 		{
 			Firebird::PathName::size_type pos = 0;
 			Firebird::PathName::size_type checkPos;
-			
+
 			if (itr->second)	// use fb path prefix
 			{
 				checkPos = name.find(fbLibPath, pos);
@@ -202,7 +202,7 @@ PluginManager::Module *PluginManager::loadPluginModule(const Firebird::PathName&
 			}
 		}
 	}
-	
+
 	// If we made it this far there is nothing left we can try.
 	//	The module _must_ not be an on-disk module :-)
 	return 0;
@@ -220,7 +220,7 @@ void PluginManager::addSearchPath(const Firebird::PathName& path, bool isFBRelat
 		if (itr->first == path && itr->second == isFBRelative)
 			return;
 	}
-	
+
 	searchPaths.push(Path(path, isFBRelative));
 }
 
@@ -311,7 +311,7 @@ void PluginManager::load_engine_plugins()
 {
 	enginePluginManager().addSearchPath(ENGINE_PLUGIN_DIR);
 	enginePluginManager().loadAllPlugins();
-	
+
 	const Firebird::string entryPoint(ENGINE_PLUGIN_REGISTRATION_ENTRYPOINT);
 	for (PluginManager::iterator itr = enginePluginManager().begin();
 	    itr != enginePluginManager().end(); ++itr)
