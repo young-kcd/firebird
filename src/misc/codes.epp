@@ -32,8 +32,8 @@
 #include "../jrd/ibase.h"
 #include "../jrd/msg_encode.h"
 
-/* The MSG.GDB database is found under the /msgs component subdirectory.
-   Use links or logicals to point it there, thanks!   AMG */
+// The MSG.GDB database is found under the /msgs component subdirectory.
+//   Use links or logicals to point it there, thanks!   AMG
 
 DATABASE DB = FILENAME "msg.fdb";
 
@@ -42,7 +42,7 @@ const char* CODES_FTN	= "gds_codes.ftn";
 //const char* CODES_H	= "codes.h"
 const char* IBERROR_H	= "iberror.h";
 const char* CODETEXT_H	= "codetext.h";
-const char* MSGS_H	= "msgs.h";
+const char* MSGS_H		= "msgs.h";
 const char* SQL_CODES_H	= "sql_code.h";
 const char* MSGFAC_H	= "msg_facs.h";
 const char* SQL_STATES_H	= "sql_state.h";
@@ -50,7 +50,7 @@ const char* SQL_STATES_H	= "sql_state.h";
 
 enum formatStyle
 {
- 	CSTYLE 		=	1,
+	CSTYLE 		=	1,
 	PASSTYLE	=	2,
 	FTNSTYLE	=	3,
 	CPPSTYLE	=	4
@@ -81,8 +81,8 @@ static void check_open(FILE*& f, const char* name, const char* tmp, const char* 
 static void check_close(FILE* f, const char* name, const char* tmp, const char* mode,
 	 const char* directory)
 {
- 	 fclose(f);
-	 move_if_not_identical(name, tmp, directory);
+	fclose(f);
+	move_if_not_identical(name, tmp, directory);
 }
 
 const int FAC_SQL_POSITIVE	= 14;	// facility for positive SQL codes
@@ -300,14 +300,14 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	START_TRANSACTION;
 
 	build_iberror_h();
-//	build_codes_h();
+	// build_codes_h();
 	build_msgfac_h();
 	build_other_headers();
 
 	COMMIT;
 	FINISH;
 
-	//	exit(0);
+	// exit(0);
 	return 0;
 }
 
@@ -328,7 +328,7 @@ static void build_msgfac_h(void)
 *******************************************/
 	FILE *msgfac = NULL;
 
-/* Open msgfac.h in the current directory */
+	// Open msgfac.h in the current directory
 	check_open(msgfac, MSGFAC_H, "tmpcode1", "w");
 
 	add_text(msgfac, CSTYLE, license);
@@ -379,7 +379,7 @@ static void build_iberror_h(void)
 	int i, code = 1, last_code = code - 1;
 	unsigned long new_code = 0L;
 
-/* Open iberror.h in the current directory. */
+	// Open iberror.h in the current directory.
 	check_open(iberror, IBERROR_H, "tmpcode2", "w");
 
 	fprintf(iberror, "\n#ifndef JRD_GEN_IBERROR_H\n");
@@ -685,7 +685,7 @@ static void build_other_headers(void)
 	int i;
 	unsigned long new_code = 0L;
 
-/* Use the check_open function to open header files in current directory. */
+	// Use the check_open function to open header files in current directory.
 
 	FILE* pas_codes = NULL;
 	check_open(pas_codes, CODES_PAS, "tmpcode4", "w");
@@ -700,7 +700,7 @@ static void build_other_headers(void)
 	FILE* sql_states = NULL;
 	check_open(sql_states, SQL_STATES_H, "tmpcode10", "w");
 
-/* Add license */
+	// Add license
 
 	add_text(pas_codes, PASSTYLE, license);
 	add_text(pas_codes, PASSTYLE, warn);
@@ -715,7 +715,7 @@ static void build_other_headers(void)
 	add_text(sql_states, CSTYLE, license);
 	add_text(sql_states, CSTYLE, warn);
 
-/* Start the PASCAL codes file */
+	// Start the PASCAL codes file
 
 	fprintf(pas_codes, "\n"
 		"const\n"
@@ -729,7 +729,7 @@ static void build_other_headers(void)
 		fprintf(pas_codes, "%s\n", pas_boiler_plate[i]);
 	}
 
-/* Start the FORTRAN codes file */
+	// Start the FORTRAN codes file
 
 	fprintf(ftn_codes, "\n"
 		"      INTEGER*4\n"
@@ -754,36 +754,36 @@ static void build_other_headers(void)
 		fprintf(ftn_codes, "%s\n", ftn_boiler_plate_data[i]);
 	}
 
-/* Start the codetext.h */
+	// Start the codetext.h
 
 	fprintf(code_text, "static const struct {\n");
 	fprintf(code_text, "\tconst SCHAR *code_string;\n");
 	fprintf(code_text, "\tSLONG code_number;\n");
 	fprintf(code_text, "} codes[] =\n{\n");
 
-/* Start the MSGS file */
+	// Start the MSGS file
 
 	fprintf(msgs, "static const struct {\n");
 	fprintf(msgs, "\tSLONG code_number;\n");
 	fprintf(msgs, "\tconst SCHAR *code_text;\n");
 	fprintf(msgs, "} messages[] = {\n");
 
-/* Start the sqlcodes */
+	// Start the sqlcodes
 
 	fprintf(sql_codes, "static const struct {\n");
 	fprintf(sql_codes, "\tSLONG gds_code;\n");
 	fprintf(sql_codes, "\tSSHORT sql_code;\n");
 	fprintf(sql_codes, "} gds__sql_code[] = {\n");
 
-/* Start the sqlstates */
+	// Start the sqlstates
 
 	fprintf(sql_states, "static const struct {\n");
 	fprintf(sql_states, "\tSLONG gds_code;\n");
 	fprintf(sql_states, "\tconst char* sql_state;\n");
 	fprintf(sql_states, "} gds__sql_states[] = {\n");
 
-/* Fetch error codes from SYSTEM_ERRORS relation.  Write them
-   out to the pascal, fortran, and rdb header files */
+	// Fetch error codes from SYSTEM_ERRORS relation.  Write them
+	// out to the pascal, fortran, and rdb header files
 
 	int code = 1;
 	int last_code = code - 1;
@@ -858,16 +858,16 @@ static void build_other_headers(void)
 
 	END_FOR;
 
-/* end the codetext.h */
+	// end the codetext.h
 	fprintf(code_text, "\t{NULL, 0}\n");
 	fprintf(code_text, "};\n");
-/* end the msgs.h */
+	// end the msgs.h
 	fprintf(msgs, "\t{0, NULL}\n");
 	fprintf(msgs, "};\n");
-/* end the sqlcodes.h */
+	// end the sqlcodes.h
 	fprintf(sql_codes, "\t{0, 0}\n");
 	fprintf(sql_codes, "};\n");
-/* end the sqlstates.h */
+	// end the sqlstates.h
 	fprintf(sql_states, "\t{0, NULL}\n");
 	fprintf(sql_states, "};\n");
 
@@ -892,11 +892,11 @@ static void move_if_not_identical( const char* original, const char* new_file,
 	else {
 		sprintf(origName, ".\\%s", original);
 	}
-	/*
-	 * This is a trick to make on systems previous to W2K were apparently
-	 * fc does not return a errorlevel, but find return it (1 found 0 not found)
-	 * FC: appear only where there are no differences (and the switch /B is not used)
-	 */
+
+	// This is a trick to make on systems previous to W2K were apparently
+	// fc does not return a errorlevel, but find return it (1 found 0 not found)
+	// FC: appear only where there are no differences (and the switch /B is not used)
+
 	sprintf(buffer, "fc %s %s | find \"FC:\" > nul", new_file, origName);
 #else
 	if ( directory != NULL) {
@@ -908,14 +908,13 @@ static void move_if_not_identical( const char* original, const char* new_file,
 	sprintf(buffer, "cmp -s %s %s", new_file, origName);
 #endif
 
-/* If the new file is identical to the original, then don't update
-   the original */
+	// If the new file is identical to the original, then don't update the original
 	if (system(buffer) == 0) {
 		fprintf(stdout, "No need to update %s\n", origName);
 		unlink(new_file);
 	}
 	else {
-		/* Original file is missing or different */
+		// Original file is missing or different
 #if defined(WIN_NT) && !defined(__GNUC__)
 		sprintf(buffer, "move %s %s > nul", new_file, origName);
 #else
