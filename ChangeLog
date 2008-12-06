@@ -1,3 +1,9 @@
+2008-12-06 10:25  robocop
+
+	* firebird2/src/misc/codes.epp (1.30):
+
+	Misc.
+
 2008-12-05 16:06  alexpeshkoff
 
 	* firebird2/src/: burp/burp.h (1.96), burp/restore.epp (1.149),
