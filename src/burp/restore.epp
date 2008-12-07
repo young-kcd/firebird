@@ -7224,7 +7224,7 @@ bool blobGetData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, UCH
 		return false;
 
 	bool rc = false;
-	real_len = 0;
+	*real_len = 0;
 	char* buf2 = reinterpret_cast<char*>(buffer);
 	while (len)
 	{
@@ -7235,7 +7235,7 @@ bool blobGetData(ISC_STATUS* status_vector, FB_API_HANDLE* blob, size_t len, UCH
 		{
 			len -= olen;
 			buf2 += olen;
-			real_len += olen;
+			*real_len += olen;
 			rc = true;
 		}
 		else
