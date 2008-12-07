@@ -1,3 +1,9 @@
+2008-12-07 18:49  hvlad
+
+	* firebird2/src/burp/restore.epp (1.101.4.4):
+
+	Correct typo in fix for CORE-2223
+
 2008-12-05 19:13  alexpeshkoff
 
 	* firebird2/src/: burp/burp.h (1.72.4.3), burp/restore.epp
