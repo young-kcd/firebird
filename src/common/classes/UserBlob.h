@@ -40,8 +40,7 @@ public:
 				USHORT bpb_len, const UCHAR* bpb);
 	bool close(bool force_internal_SV = false);
 	bool getSegment(size_t len, void* buffer, size_t& real_len);
-	bool getData(size_t len, void* buffer, size_t& real_len);
-	bool getData(size_t len, void* buffer, size_t& real_len, bool use_sep, const UCHAR separator);
+	bool getData(size_t len, void* buffer, size_t& real_len, bool use_sep = false, const UCHAR separator = '\0');
 	bool putSegment(size_t len, const void* buffer);
 	bool putSegment(size_t len, const void* buffer, size_t& real_len);
 	bool putData(size_t len, const void* buffer);
@@ -101,11 +100,6 @@ inline bool UserBlob::putData(size_t len, const void* buffer)
 {
 	size_t dummy;
 	return putData(len, buffer, dummy);
-}
-
-inline bool UserBlob::getData(size_t len, void* buffer, size_t& real_len)
-{
-	return getData(len, buffer, real_len, false, '\0');
 }
 
 bool getBlobSize(	const UserBlob& b,

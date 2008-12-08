@@ -247,7 +247,7 @@ static const SCHAR *ftn_boiler_plate_data[] = {
 	"     + GDS_ARG_VMS          = 6,   { VAX/VMS status code (long) }",
 	"     + GDS_ARG_UNIX         = 7,   { UNIX error code }",
 	"     + GDS_ARG_DOMAIN       = 8,   { Apollo/Domain error code }",
-	"     + GDS_ARG_DOS	       = 9)   { Apollo/Domain error code }",
+	"     + GDS_ARG_DOS	         = 9)   { Apollo/Domain error code }",
 	"",
 };
 
