@@ -64,7 +64,7 @@ CXXFLAGS:= $(CXXFLAGS) $(CFLAGS)
 
 GPRE_FLAGS=	-r -m -z -n
 JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
-DSQL_GPRE_FLAGS =  -lang_internal -r -m -z -n
+DSQL_GPRE_FLAGS = -r -m -z -n
 
 
 .SUFFIXES: .c .e .epp .cpp
@@ -73,16 +73,14 @@ DSQL_GPRE_FLAGS =  -lang_internal -r -m -z -n
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
-.epp.cpp:
-	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
+$(OBJ)/jrd/%.cpp: $(SRC_ROOT)/jrd/%.epp 
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $(firstword $<) $@
 
-
-$(SRC_ROOT)/jrd/%.cpp:: $(SRC_ROOT)/jrd/%.epp 
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
-
-
-$(SRC_ROOT)/dsql/%.cpp:: $(SRC_ROOT)/dsql/%.epp 
+$(OBJ)/dsql/%.cpp: $(SRC_ROOT)/dsql/%.epp
 	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
+
+$(OBJ)/%.cpp: $(SRC_ROOT)/%.epp 
+	$(GPRE_CURRENT) $(GPRE_FLAGS) $(firstword $<) $@
 
 
 .SUFFIXES: .lo .o .cpp .c
@@ -102,6 +100,9 @@ $(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
 endif
 $(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(CFLAGS) -c $(firstword $<) -o $@
+
+$(OBJ)/%.o: $(OBJ)/%.cpp 
+	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@
 
 $(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(CXXFLAGS) -c $(firstword $<) -o $@

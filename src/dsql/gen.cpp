@@ -1962,7 +1962,7 @@ static void gen_field( CompiledStatement* statement, const dsql_ctx* context,
 	else {
 		stuff(statement, blr_field);
 		stuff_context(statement, context);
-		stuff_string(statement, field->fld_name);
+		stuff_meta_string(statement, field->fld_name.c_str());
 	}
 
 	if (indices) {

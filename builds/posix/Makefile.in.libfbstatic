@@ -40,6 +40,8 @@ include     $(ROOT)/gen/make.shared.variables
 @SET_MAKE@
 
 
+DSQL_GPRE_FLAGS += -lang_internal
+
 AllObjects= $(LIBFBSTATIC_Objects)
 Dependancies=$(AllObjects:.o=.d)
 

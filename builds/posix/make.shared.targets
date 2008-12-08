@@ -67,19 +67,19 @@ help.fdb:
 
 
 # These need to change to $(GEN_SRC) at some stage
-$(SRC_ROOT)/dudley/exe.cpp $(SRC_ROOT)/dudley/extract.epp:      yachts.lnk
+#$(SRC_ROOT)/dudley/exe.cpp $(SRC_ROOT)/dudley/extract.epp:      yachts.lnk
 
-$(SRC_ROOT)/qli/meta.cpp $(SRC_ROOT)/qli/proc.cpp $(SRC_ROOT)/qli/show.cpp: yachts.lnk
-$(SRC_ROOT)/qli/help.cpp:        help.fdb
+#$(SRC_ROOT)/qli/meta.cpp $(SRC_ROOT)/qli/proc.cpp $(SRC_ROOT)/qli/show.cpp: yachts.lnk
+#$(SRC_ROOT)/qli/help.cpp:        help.fdb
 
 # Explicit dependence on generated header
 $(OBJ)/jrd/par.o:	$(SRC_ROOT)/include/gen/blrtable.h
 
 # Special cases for building cpp from epp
-$(SRC_ROOT)/dsql/metd.cpp:: $(SRC_ROOT)/dsql/metd.epp 
-	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
+$(OBJ)/dsql/metd.cpp: $(SRC_ROOT)/dsql/metd.epp
+	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) -cxx $< $@
 
-$(SRC_ROOT)/dsql/DdlNodes.cpp:: $(SRC_ROOT)/dsql/DdlNodes.epp 
+$(OBJ)/dsql/DdlNodes.cpp: $(SRC_ROOT)/dsql/DdlNodes.epp
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $< $@
 
 # Rebuild blrtable.h
