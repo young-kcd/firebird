@@ -50,7 +50,7 @@ C --
      + GDS_ARG_VMS          = 6,   { VAX/VMS status code (long) }
      + GDS_ARG_UNIX         = 7,   { UNIX error code }
      + GDS_ARG_DOMAIN       = 8,   { Apollo/Domain error code }
-     + GDS_ARG_DOS	       = 9)   { Apollo/Domain error code }
+     + GDS_ARG_DOS	         = 9)   { Apollo/Domain error code }
 
       INTEGER*4 GDS__arith_except                    
       PARAMETER (GDS__arith_except                     = 335544321)
