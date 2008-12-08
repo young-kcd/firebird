@@ -1,3 +1,23 @@
+2008-12-08 16:54  alexpeshkoff
+
+	* firebird2/builds/posix/prefix.aix_powerpc (1.4):
+
+	AIX port
+
+2008-12-08 15:23  asfernandes
+
+	* firebird2/src/common/classes/: UserBlob.cpp (1.9), UserBlob.h
+	(1.8):
+
+	Misc
+
+2008-12-08 01:26  asfernandes
+
+	* firebird2/src/: common/classes/UserBlob.h (1.7), misc/codes.epp
+	(1.31):
+
+	Misc
+
 2008-12-06 10:25  robocop
 
 	* firebird2/src/misc/codes.epp (1.30):
