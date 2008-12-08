@@ -40,7 +40,7 @@ public:
 				USHORT bpb_len, const UCHAR* bpb);
 	bool close(bool force_internal_SV = false);
 	bool getSegment(size_t len, void* buffer, size_t& real_len);
-	bool getData(size_t len, void* buffer, size_t& real_len, bool use_sep = false, const UCHAR separator = '\0');
+	bool getData(size_t len, void* buffer, size_t& real_len, const UCHAR separator = '\0');
 	bool putSegment(size_t len, const void* buffer);
 	bool putSegment(size_t len, const void* buffer, size_t& real_len);
 	bool putData(size_t len, const void* buffer);

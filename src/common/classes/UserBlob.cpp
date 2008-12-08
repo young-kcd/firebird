@@ -129,8 +129,7 @@ bool UserBlob::getSegment(size_t len, void* buffer, size_t& real_len)
 	return false;
 }
 
-bool UserBlob::getData(size_t len, void* buffer, size_t& real_len,
-						bool use_sep, const UCHAR separator)
+bool UserBlob::getData(size_t len, void* buffer, size_t& real_len, const UCHAR separator)
 {
 	if (!m_blob || m_direction == dir_write)
 		return false;
@@ -151,7 +150,7 @@ bool UserBlob::getData(size_t len, void* buffer, size_t& real_len,
 			len -= olen;
 			buf2 += olen;
 			real_len += olen;
-			if (len && use_sep) // Append the segment separator.
+			if (len && separator) // Append the segment separator.
 			{
 				--len;
 				*buf2++ = separator;
