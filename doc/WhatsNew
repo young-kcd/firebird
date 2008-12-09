@@ -2,6 +2,11 @@
   * v2.0.5
   **************************
 
+    * Fixed bug CORE-2223
+        Multiple bugs in GBAK when working with ACLs
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
     * Fixed bug CORE-2108
         "get_free_slot() failed" error
       Contributor(s):
