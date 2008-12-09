@@ -978,10 +978,13 @@ void DYN_define_exception( Global* gbl, const UCHAR** ptr)
 
 			break;
 		}
-		catch (const Firebird::status_exception&)
+		catch (const Firebird::status_exception& ex)
 		{
 			if (b_ending_store)
 				DYN_rundown_request(request, drq_s_xcp);
+
+			if (ex.value()[1] != isc_no_dup)
+				throw;
 
 			if (++faults > MAX_SSHORT)
 				throw;
@@ -1610,10 +1613,13 @@ void DYN_define_generator( Global* gbl, const UCHAR** ptr)
 
 			break;
 		}
-		catch (const Firebird::status_exception&)
+		catch (const Firebird::status_exception& ex)
 		{
 			if (b_ending_store)
 				DYN_rundown_request(request, drq_s_gens);
+
+			if (ex.value()[1] != isc_no_dup)
+				throw;
 
 			if (++faults > MAX_SSHORT)
 				throw;
@@ -3404,9 +3410,12 @@ void DYN_define_procedure( Global* gbl, const UCHAR** ptr)
 
 			break;
 		}
-		catch (const Firebird::status_exception&)
+		catch (const Firebird::status_exception& ex)
 		{
 			DYN_rundown_request(request, id);
+
+			if (ex.value()[1] != isc_no_dup)
+				throw;
 
 			if (++faults > MAX_SSHORT)
 				throw;
