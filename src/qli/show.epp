@@ -773,22 +773,27 @@ static void show_datatype(
 		ERRQ_msg_partial(433);	// Msg433  array
 	}
 
-	if (dtype == dtype_short || dtype == dtype_long || dtype == dtype_quad || dtype == dtype_int64)
+	switch (dtype)
 	{
+	case dtype_short:
+	case dtype_long:
+	case dtype_quad:
+	case dtype_int64:
 		if (scale) {
 			ERRQ_msg_partial(111, SafeArg() << scale);
 			// Msg111 , scale %d
 		}
-	}
-
-	if (dtype == dtype_text || dtype == dtype_varying || dtype == dtype_cstring)
-	{
+		break;
+	case dtype_text:
+	case dtype_varying:
+	case dtype_cstring:
 		if (sub_type == 1)
 			ERRQ_msg_partial(112);	// Msg112 , subtype fixed
 		else if (sub_type != 0) {
 			sprintf(subtype, "%d", sub_type);
 			ERRQ_msg_partial(107, SafeArg() << subtype);
 		}
+		break;
 	}
 }
 
@@ -885,7 +890,8 @@ static void show_dbb_parameters( DBB database)
 	}
 
 	if (database->dbb_capabilities & DBB_cap_files) {
-		if (database->dbb_capabilities & DBB_cap_shadowing) {
+		if (database->dbb_capabilities & DBB_cap_shadowing)
+		{
 			FOR(REQUEST_HANDLE database->dbb_requests[REQ_show_files])
 				F IN DB.RDB$FILES SORTED BY F.RDB$SHADOW_NUMBER, F.RDB$FILE_START
 
@@ -1066,7 +1072,7 @@ static void show_fields( qli_rel* relation, qli_fld* fields)
 		database = NULL;
 
 	USHORT max_name = 0;
-	qli_fld* field;
+	const qli_fld* field;
 
 	for (field = fields; field; field = field->fld_next) {
 		USHORT l = field->fld_name->sym_length;
