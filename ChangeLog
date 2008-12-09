@@ -1,3 +1,77 @@
+2008-12-09 19:33  dimitr
+
+	* firebird2/src/jrd/dyn_def.epp (1.173):
+
+	Better error handling for CORE-1544.
+
+2008-12-09 16:20  alexpeshkoff
+
+	* firebird2/src/utilities/guard/util.cpp (1.18):
+
+	Simplified code, avoid #ifdef
+
+2008-12-09 15:46  alexpeshkoff
+
+	* firebird2/: src/config/ScanDir.cpp (1.12), configure.in (1.302):
+
+	OS-independent way to detect presence of dirent.d_type - suggested
+	by Bill Oliver
+
+2008-12-09 09:37  robocop
+
+	* firebird2/src/qli/show.epp (1.46):
+
+	Misc.
+
+2008-12-09 09:09  dimitr
+
+	* firebird2/src/jrd/ini.epp (1.105):
+
+	Fixed CORE-2231: Bugcheck 179 when attempting to read from the
+	table RDB$TRIGGER_MESSAGES in ODS10.  Thanks to Vlad for the test
+	case and the proposed fix.
+
+2008-12-09 08:24  robocop
+
+	* firebird2/src/qli/: all.cpp (1.35), comma_proto.h (1.7),
+	command.cpp (1.29), compile.cpp (1.31), compile.h (1.10), dtr.cpp
+	(1.60), dtr.h (1.32), err.cpp (1.25), err_proto.h (1.10), eval.cpp
+	(1.51), exe.cpp (1.59), exe.h (1.26), expand.cpp (1.39), format.cpp
+	(1.38), format.h (1.14), gener.cpp (1.43), help.epp (1.26), hsh.cpp
+	(1.21), lex.cpp (1.43), lex_proto.h (1.10), meta.epp (1.73),
+	meta_proto.h (1.13), mov.cpp (1.45), nounix.cpp (1.5), parse.cpp
+	(1.45), parse.h (1.12), parse_proto.h (1.7), picstr.cpp (1.32),
+	proc.epp (1.32), report.cpp (1.21), show.epp (1.45), symbols.h
+	(1.5), words.h (1.6):
+
+	Style and minor cleanup.
+
+2008-12-09 08:23  robocop
+
+	* firebird2/src/common/classes/: UserBlob.cpp (1.10), UserBlob.h
+	(1.9):
+
+	The original idea is to allow ANY character to serve as segment
+	separator (it may make sense in binary streams) when fetching data
+	from blobs. Restore Alex' code that respected the original design.
+
+2008-12-09 00:45  asfernandes
+
+	* firebird2/: builds/posix/Makefile.in.embed.qli (1.24),
+	builds/posix/Makefile.in.libfbstatic (1.11),
+	builds/posix/make.rules (1.39), builds/posix/make.shared.targets
+	(1.29), builds/win32/preprocess.bat (1.41), src/dsql/gen.cpp
+	(1.179):
+
+	Fixed CORE-2227 - Problem with column names with Accents and
+	triggers.  Thanks to Alex for makefile fixes!
+
+2008-12-09 00:43  asfernandes
+
+	* firebird2/lang_helpers/gds_codes.ftn (1.91):
+
+	Misc
+
 2008-12-08 16:54  alexpeshkoff
 
 	* firebird2/builds/posix/prefix.aix_powerpc (1.4):
