@@ -767,7 +767,7 @@ void INI_init2(thread_db* tdbb)
 					if ((fld[RFLD_F_NAME] == nam_msg) &&
 						(major_version < ODS_VERSION11))
 					{
-						desc->dsc_length = 80;
+						desc->dsc_length = 80 + sizeof(USHORT);
 					}
 
 					// In ODS prior to 11.2 all varchar columns were actually
