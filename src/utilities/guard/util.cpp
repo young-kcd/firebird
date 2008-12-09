@@ -164,22 +164,10 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 		return (errno);
 	}
 
-/* Check for very specific conditions before we assume the child
-   did a normal exit. */
+	if (WIFEXITED(child_exit_status))
+		return WEXITSTATUS(child_exit_status);
 
-	if (WIFEXITED(child_exit_status) && (WEXITSTATUS(child_exit_status) != 0))
-		return (WEXITSTATUS(child_exit_status));
-
-	if (
-#ifndef AIX_PPC
-		   WCOREDUMP(child_exit_status) ||
-#endif
-		   WIFSIGNALED(child_exit_status) || !WIFEXITED(child_exit_status))
-	{
-		return (-1);
-	}
-
-	return (0);
+	return -1;
 }
 
 
