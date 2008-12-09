@@ -146,16 +146,11 @@ bool ScanDir::match(const char *pattern, const char *name)
 
 bool ScanDir::isDirectory()
 {
-#ifdef _WIN32
+#if defined(_WIN32)
 	return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+#elif defined(HAVE_STRUCT_DIRENT_D_TYPE)
+	return (data->d_type == DT_DIR);
 #else
-#ifndef SOLARIS
-#ifndef HPUX
-	if (data->d_type == DT_DIR)
-		return true;
-#endif
-#endif
-
 	struct stat buf;
 
     if (stat (getFilePath(), &buf))

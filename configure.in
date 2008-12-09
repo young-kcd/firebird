@@ -700,6 +700,10 @@ AC_CHECK_TYPES([struct XDR::xdr_ops],,,[#include <rpc/rpc.h>
 AC_CHECK_TYPES([struct xdr_ops],,,[#include <rpc/rpc.h> 
 #include <rpc/xdr.h>])
 
+dnl AC_STRUCT_DIRENT_D_TYPE
+AC_CHECK_MEMBER([struct dirent.d_type],
+				AC_DEFINE(HAVE_STRUCT_DIRENT_D_TYPE,1,[Define this if struct dirent has d_type]),, 
+				[#include <dirent.h>])
 
 dnl EKU: try to determine the alignment of long and double
 dnl      replaces FB_ALIGNMENT and FB_DOUBLE_ALIGN in src/jrd/common.h
