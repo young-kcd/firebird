@@ -88,10 +88,8 @@ void CMD_copy_procedure( qli_syntax* node)
 	QPR old_proc = (QPR) node->syn_arg[0];
 	QPR new_proc = (QPR) node->syn_arg[1];
 
-	PRO_copy_procedure(old_proc->qpr_database,
-					   old_proc->qpr_name->nam_string,
-					   new_proc->qpr_database,
-					   new_proc->qpr_name->nam_string);
+	PRO_copy_procedure(old_proc->qpr_database, old_proc->qpr_name->nam_string,
+					   new_proc->qpr_database, new_proc->qpr_name->nam_string);
 }
 
 
@@ -180,8 +178,7 @@ void CMD_extract( qli_syntax* node)
 	qli_syntax* list = node->syn_arg[0];
 	if (list) {
 		qli_syntax** ptr = list->syn_arg;
-		for (const qli_syntax* const* const end = ptr + list->syn_count;
-			ptr < end; ptr++)
+		for (const qli_syntax* const* const end = ptr + list->syn_count; ptr < end; ptr++)
 		{
 			QPR proc = (QPR) *ptr;
 			DBB database = proc->qpr_database;
@@ -196,8 +193,7 @@ void CMD_extract( qli_syntax* node)
 							 database->dbb_symbol->sym_string);
 				continue;
 			}
-			dump_procedure(database, file, name->nam_string, name->nam_length,
-						   blob);
+			dump_procedure(database, file, name->nam_string, name->nam_length, blob);
 		}
 	}
 	else {
@@ -265,8 +261,7 @@ void CMD_rename_proc( qli_syntax* node)
 	NAM old_name = old_proc->qpr_name;
 	NAM new_name = new_proc->qpr_name;
 
-	if (PRO_rename_procedure
-		(database, old_name->nam_string, new_name->nam_string))
+	if (PRO_rename_procedure(database, old_name->nam_string, new_name->nam_string))
 	{
 		return;
 	}
@@ -322,15 +317,13 @@ void CMD_set( qli_syntax* node)
 			QLI_echo = (bool)(IPTR) value;
 			break;
 
-		case set_form:
-			IBERROR(484);		// FORMs not supported
-			break;
+		//case set_form:
+		//	IBERROR(484);		// FORMs not supported
+		//	break;
 
 		case set_password:
 			string = (qli_const*) value;
-			length =
-				MIN(string->con_desc.dsc_length,
-					sizeof(QLI_default_password));
+			length = MIN(string->con_desc.dsc_length, sizeof(QLI_default_password));
 			strncpy(QLI_default_password, (char*) string->con_data, length);
 			QLI_default_password[length] = 0;
 			break;
@@ -339,8 +332,7 @@ void CMD_set( qli_syntax* node)
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_prompt_string))
 				ERRQ_error(86);	// Msg86 substitute prompt string too long
-			strncpy(QLI_prompt_string, (char*) string->con_data,
-					string->con_desc.dsc_length);
+			strncpy(QLI_prompt_string, (char*) string->con_data, string->con_desc.dsc_length);
 			QLI_prompt_string[string->con_desc.dsc_length] = 0;
 			break;
 
@@ -348,8 +340,7 @@ void CMD_set( qli_syntax* node)
 			string = (qli_const*) value;
 			if (string->con_desc.dsc_length > sizeof(QLI_cont_string))
 				ERRQ_error(87);	// Msg87 substitute prompt string too long
-			strncpy(QLI_cont_string, (char*) string->con_data,
-					string->con_desc.dsc_length);
+			strncpy(QLI_cont_string, (char*) string->con_data, string->con_desc.dsc_length);
 			QLI_cont_string[string->con_desc.dsc_length] = 0;
 			break;
 
@@ -360,21 +351,17 @@ void CMD_set( qli_syntax* node)
 				QLI_matching_language = NULL;
 				break;
 			}
-			QLI_matching_language =
-				(qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
+			QLI_matching_language = (qli_const*) ALLOCPV(type_con, string->con_desc.dsc_length);
 			strncpy((char*)QLI_matching_language->con_data, (char*)string->con_data,
 					string->con_desc.dsc_length);
 			QLI_matching_language->con_desc.dsc_dtype = dtype_text;
-			QLI_matching_language->con_desc.dsc_address =
-				QLI_matching_language->con_data;
-			QLI_matching_language->con_desc.dsc_length =
-				string->con_desc.dsc_length;
+			QLI_matching_language->con_desc.dsc_address = QLI_matching_language->con_data;
+			QLI_matching_language->con_desc.dsc_length = string->con_desc.dsc_length;
 			break;
 
 		case set_user:
 			string = (qli_const*) value;
-			length =
-				MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
+			length = MIN(string->con_desc.dsc_length, sizeof(QLI_default_user));
 			strncpy(QLI_default_user, (char*)string->con_data, length);
 			QLI_default_user[length] = 0;
 			break;
@@ -477,8 +464,7 @@ void CMD_transaction( qli_syntax* node)
 
 	if (node->syn_type == nod_commit)
 	{
-		if ((node->syn_count > 1) ||
-			(node->syn_count == 0 && QLI_databases->dbb_next))
+		if ((node->syn_count > 1) || (node->syn_count == 0 && QLI_databases->dbb_next))
 		{
 			node->syn_type = nod_prepare;
 			CMD_transaction(node);
@@ -497,8 +483,7 @@ void CMD_transaction( qli_syntax* node)
 	{
 		for (DBB db_iter = QLI_databases; db_iter; db_iter = db_iter->dbb_next)
 		{
-			if ((node->syn_type == nod_commit)
-				&& !(db_iter->dbb_flags & DBB_prepared))
+			if ((node->syn_type == nod_commit) && !(db_iter->dbb_flags & DBB_prepared))
 			{
 				ERRQ_msg_put(465, db_iter->dbb_symbol->sym_string);
 			}
@@ -515,12 +500,10 @@ void CMD_transaction( qli_syntax* node)
 	}
 
 	qli_syntax** ptr = node->syn_arg;
-	for (const qli_syntax* const* const end = ptr + node->syn_count;
-		ptr < end; ptr++)
+	for (const qli_syntax* const* const end = ptr + node->syn_count; ptr < end; ptr++)
 	{
 		DBB database = (DBB) *ptr;
-		if ((node->syn_type == nod_commit) &&
-			!(database->dbb_flags & DBB_prepared))
+		if ((node->syn_type == nod_commit) && !(database->dbb_flags & DBB_prepared))
 		{
 				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 		}

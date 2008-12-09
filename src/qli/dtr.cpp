@@ -63,7 +63,7 @@ const char* STARTUP_FILE	= "HOME";	// Assume its Unix
 
 extern TEXT *QLI_prompt;
 
-static void enable_signals(void);
+static void enable_signals();
 static bool process_statement(bool);
 static void CLIB_ROUTINE signal_arith_excp(USHORT, USHORT, USHORT);
 static int async_quit(const int, const int, void*);
@@ -288,7 +288,7 @@ int  CLIB_ROUTINE main( int argc, char **argv)
 }
 
 
-static void enable_signals(void)
+static void enable_signals()
 {
 /**************************************
  *
@@ -435,10 +435,11 @@ static bool process_statement(bool flush_flag)
 
 	if (QLI_statistics)
 		for (dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
-			if (dbb->dbb_flags & DBB_active) {
-				if (!dbb->dbb_statistics) {
-					dbb->dbb_statistics =
-						(int *) gds__alloc((SLONG) sizeof(PERF));
+			if (dbb->dbb_flags & DBB_active)
+			{
+				if (!dbb->dbb_statistics)
+				{
+					dbb->dbb_statistics = (int *) gds__alloc((SLONG) sizeof(PERF));
 #ifdef DEBUG_GDS_ALLOC
 					// We don't care about QLI specific memory leaks for V4.0
 					gds_alloc_flag_unfreed((void *) dbb->dbb_statistics);	// QLI: don't care
@@ -466,8 +467,7 @@ static bool process_statement(bool flush_flag)
 				ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
 				// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
 				perf_get_info(&dbb->dbb_handle, &statistics);
-				perf_format((perf*) dbb->dbb_statistics, &statistics,
-							report, buffer, 0);
+				perf_format((perf*) dbb->dbb_statistics, &statistics, report, buffer, 0);
 				ERRQ_msg_put(26, SafeArg() << dbb->dbb_filename << buffer);	// Msg26 Statistics for database %s %s
 				QLI_skip_line = true;
 			}
@@ -618,8 +618,7 @@ static bool yes_no(USHORT number, const TEXT* arg1)
 		buffer[0] = 0;
 		if (!LEX_get_line(prompt, buffer, sizeof(buffer)))
 			return true;
-		for (const answer_t* response = answer_table; *response->answer != '\0';
-			response++)
+		for (const answer_t* response = answer_table; *response->answer != '\0'; response++)
 		{
 			const TEXT* p = buffer;
 			while (*p == ' ')

@@ -24,23 +24,23 @@
 #ifndef QLI_LEX_PROTO_H
 #define QLI_LEX_PROTO_H
 
-bool	LEX_active_procedure (void);
+bool	LEX_active_procedure ();
 void	LEX_edit (SLONG, SLONG);
-qli_tok*	LEX_edit_string(void);
-qli_tok*	LEX_filename(void);
-void	LEX_fini (void);
-void	LEX_flush (void);
+qli_tok*	LEX_edit_string();
+qli_tok*	LEX_filename();
+void	LEX_fini ();
+void	LEX_flush ();
 bool	LEX_get_line (const TEXT*, TEXT *, int);
-void	LEX_init (void);
-void	LEX_mark_statement (void);
-void	LEX_pop_line (void);
+void	LEX_init ();
+void	LEX_mark_statement ();
+void	LEX_pop_line ();
 void	LEX_procedure(dbb*, FB_API_HANDLE);
 bool	LEX_push_file (const TEXT*, const bool);
 bool	LEX_push_string (const TEXT* const);
 void	LEX_put_procedure (FB_API_HANDLE, SLONG, SLONG);
-void	LEX_real (void);
-qli_lls*	LEX_statement_list(void);
-qli_tok*	LEX_token(void);
+void	LEX_real ();
+qli_lls*	LEX_statement_list();
+qli_tok*	LEX_token();
 
 #endif // QLI_LEX_PROTO_H
 

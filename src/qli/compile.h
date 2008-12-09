@@ -72,7 +72,7 @@ enum show_t {
     show_variable,
     show_variables,
     show_indices,
-    show_qualified_procedure,
+    //show_qualified_procedure,
     show_field,
     show_filter,
     show_filters,
@@ -82,7 +82,7 @@ enum show_t {
     show_triggers,
     show_security_class,
     show_security_classes,
-    show_forms,
+    //show_forms,
     show_function,
     show_functions,
     show_views,
@@ -95,18 +95,18 @@ enum show_t {
 enum set_t {
     set_blr,
     set_statistics,
-    set_epilog,
+    //set_epilog, Unused
     set_columns,
     set_lines,
     set_semi,
     set_echo,
-    set_form,
+    //set_form,
     set_matching_language,
     set_prompt,
     set_continuation,
     set_user,
     set_password,
-    set_euc_justify,			// JPN specific option
+    //set_euc_justify,			// JPN specific option
     set_count,
     set_charset
 #ifdef DEV_BUILD
@@ -141,12 +141,7 @@ const int s_rse_op			= 8;	// Comparison operator
 const int s_rse_join_type	= 9;	// Join type
 const int s_rse_all_flag	= 10;	// Explicit "ALL" flag
 const int s_rse_list		= 11;
-#ifdef PC_ENGINE
-const int s_rse_index		= 12;
-const int s_rse_count		= 13;
-#else
 const int s_rse_count		= 12;
-#endif
 
 const int s_for_rse			= 0;
 const int s_for_statement	= 1;

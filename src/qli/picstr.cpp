@@ -86,10 +86,12 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
  *
  **************************************/
 	if (!string)
+	{
 		if (!desc)
 			return NULL;
-		else
-			string = default_edit_string(desc, NULL);
+
+		string = default_edit_string(desc, NULL);
+	}
 
 	pics* picture = (pics*) ALLOCD(type_pic);
 	picture->pic_string = picture->pic_pointer = string;
@@ -255,35 +257,24 @@ pics* PIC_analyze(const TEXT* string, const dsc* desc)
 		picture->pic_floats +
 		picture->pic_literals +
 		picture->pic_decimals +
-		picture->pic_months +
-		picture->pic_days +
-		picture->pic_weekdays +
-		picture->pic_years +
-		picture->pic_nmonths +
-		picture->pic_julians +
+		picture->pic_months + picture->pic_days + picture->pic_weekdays + picture->pic_years +
+		picture->pic_nmonths + picture->pic_julians +
 		picture->pic_brackets +
 		picture->pic_exponents +
 		picture->pic_float_digits +
-		picture->pic_hours +
-		picture->pic_minutes + picture->pic_seconds + picture->pic_meridian;
+		picture->pic_hours + picture->pic_minutes + picture->pic_seconds +
+		picture->pic_meridian;
 
 
 	if (picture->pic_missing) {
-		picture->pic_length =
-			MAX(picture->pic_print_length,
-				picture->pic_missing->pic_print_length);
+		picture->pic_length = MAX(picture->pic_print_length, picture->pic_missing->pic_print_length);
 		picture->pic_missing->pic_length = picture->pic_length;
 	}
 	else
 		picture->pic_length = picture->pic_print_length;
 
-	if (picture->pic_days ||
-		picture->pic_weekdays ||
-		picture->pic_months ||
-		picture->pic_nmonths ||
-		picture->pic_years ||
-		picture->pic_hours ||
-		picture->pic_julians)
+	if (picture->pic_days || picture->pic_weekdays || picture->pic_months || picture->pic_nmonths ||
+		picture->pic_years || picture->pic_hours || picture->pic_julians)
 	{
 		picture->pic_type = pic_date;
 	}
@@ -361,8 +352,7 @@ void PIC_missing( qli_const* constant, pics* picture)
 
     pics* missing_picture = PIC_analyze(scratch->str_data, desc);
 	picture->pic_missing = missing_picture;
-	picture->pic_length =
-		MAX(picture->pic_print_length, missing_picture->pic_print_length);
+	picture->pic_length = MAX(picture->pic_print_length, missing_picture->pic_print_length);
 	missing_picture->pic_length = picture->pic_length;
 }
 
@@ -732,9 +722,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
    (G-format is untrustworthy.) */
 
 	if (picture->pic_exponents) {
-		width =
-			picture->pic_print_length - picture->pic_floats -
-			picture->pic_literals;
+		width = picture->pic_print_length - picture->pic_floats - picture->pic_literals;
 		decimal_digits = picture->pic_fractions;
 		sprintf(temp, "%*.*e", width, decimal_digits, number);
 #ifdef WIN_NT
@@ -757,8 +745,8 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 				++p;
 			*p = 0;				// move the end
 		}
-		if ((w_digits > width)
-			|| (!f_digits && w_digits == 1 && temp[0] == '0')) {
+		if ((w_digits > width) || (!f_digits && w_digits == 1 && temp[0] == '0'))
+		{
 			/* if the number doesn't fit in the default window, revert
 			   to exponential notation; displaying the maximum number of
 			   mantissa digits. */

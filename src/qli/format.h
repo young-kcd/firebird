@@ -26,6 +26,7 @@
 
 // Logical column block
 
+/*
 typedef struct col {
     blk		col_header;
     col*	col_next;		// Next logical column
@@ -34,6 +35,7 @@ typedef struct col {
     USHORT	col_column;		// Starting column number
     USHORT	col_print_length;	// Max print length
 } *COL;
+*/
 
 /* Picture string elements:
 
@@ -74,7 +76,7 @@ typedef enum pic_t {
     pic_numeric,
     pic_date,
     pic_float,
-    pic_text
+    // pic_text // unused
 } PIC_T;
 
 // Picture string handling block
@@ -88,7 +90,7 @@ struct pics {
     USHORT	pic_count;		// Count of repeat characters
     TEXT	pic_character;		// Last significant character
     PIC_T	pic_type;		// Type of edit
-    USHORT	pic_length;		/* Printing columns (MAX of edit_string & missing) */
+    USHORT	pic_length;		// Printing columns (MAX of edit_string & missing)
     USHORT	pic_floats;		// Character of floating things
     USHORT	pic_digits;		// Digits of number
     USHORT	pic_hex_digits;		// Hexidecimal digits
@@ -101,7 +103,7 @@ struct pics {
     USHORT	pic_nmonths;		// Digits of numeric month
     USHORT	pic_years;		// Digits of year
     USHORT	pic_julians;		// Digits of julian days
-    USHORT	pic_decimals;		/* Number of decimal points (?!) */
+    USHORT	pic_decimals;		// Number of decimal points (?!)
     USHORT	pic_brackets;		// Pairs of deficit brackets
     USHORT	pic_exponents;		// Exponential indicators
     USHORT	pic_float_digits;	// Floating digits

@@ -89,7 +89,7 @@ static const SCHAR count_info[] =
 };
 
 
-void EXEC_abort(void)
+void EXEC_abort()
 {
 /**************************************
  *
@@ -254,8 +254,7 @@ FB_API_HANDLE EXEC_open_blob( qli_nod* node)
 
 	ISC_STATUS_ARRAY status_vector;
 	if (isc_open_blob2(status_vector, &dbb->dbb_handle, &dbb->dbb_transaction,
-						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length,
-						bpb))
+						&blob, (ISC_QUAD*) desc->dsc_address, bpb_length, bpb))
 	{
 		ERRQ_database_error(dbb, status_vector);
 	}
@@ -351,7 +350,7 @@ FILE* EXEC_open_output(qli_nod* node)
 }
 
 
-void EXEC_poll_abort(void)
+void EXEC_poll_abort()
 {
 /**************************************
  *
@@ -508,8 +507,7 @@ static DSC *assignment(	qli_nod*		from_node,
 	qli_msg* message = NULL;
 	if (parameter) {
 		message = parameter->par_message;
-		missing_flag =
-			(USHORT *) (message->msg_buffer + parameter->par_offset);
+		missing_flag = (USHORT *) (message->msg_buffer + parameter->par_offset);
 	}
 
 	try {
@@ -573,8 +571,7 @@ static void commit_retaining( qli_nod* node)
 		return;
 
 	if (node->nod_type == nod_commit_retaining &&
-		((node->nod_count > 1) ||
-		 (node->nod_count == 0 && QLI_databases->dbb_next)))
+		((node->nod_count > 1) || (node->nod_count == 0 && QLI_databases->dbb_next)))
 	{
 		node->nod_type = nod_prepare;
 		commit_retaining(node);
@@ -589,11 +586,9 @@ static void commit_retaining( qli_nod* node)
 
 
 	if (node->nod_count == 0) {
-		for (DBB database = QLI_databases; database;
-			 database = database->dbb_next)
+		for (DBB database = QLI_databases; database; database = database->dbb_next)
 		{
-			if ((node->nod_type == nod_commit_retaining)
-				&& !(database->dbb_flags & DBB_prepared))
+			if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
 			{
 				ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 			}
@@ -609,8 +604,7 @@ static void commit_retaining( qli_nod* node)
 	for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ptr++)
 	{
 		DBB database = (DBB) *ptr;
-		if ((node->nod_type == nod_commit_retaining) &&
-			!(database->dbb_flags & DBB_prepared))
+		if ((node->nod_type == nod_commit_retaining) && !(database->dbb_flags & DBB_prepared))
 		{
 			ERRQ_msg_put(465, database->dbb_symbol->sym_string);
 		}
@@ -658,8 +652,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	dsc* to_desc = EVAL_parameter(parameter);
 
 	if (to_dbb == from_dbb &&
-		(!to_desc->dsc_sub_type ||
-		 from_desc->dsc_sub_type == to_desc->dsc_sub_type))
+		(!to_desc->dsc_sub_type || from_desc->dsc_sub_type == to_desc->dsc_sub_type))
 	{
 		return false;
 	}
@@ -698,8 +691,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 	}
 
 	if (!from_blob.open(from_dbb->dbb_handle, from_dbb->dbb_transaction,
-						*(ISC_QUAD*) from_desc->dsc_address, bpb_length,
-						bpb))
+						*(ISC_QUAD*) from_desc->dsc_address, bpb_length, bpb))
 	{
 		ERRQ_database_error(from_dbb, status_vector);
 	}
@@ -782,8 +774,7 @@ static void execute_abort( qli_nod* node)
 	    const TEXT* ptr = NULL;
 		UCHAR temp[80];
 		const USHORT l =
-			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr,
-				(vary*) temp, sizeof(temp));
+			MOVQ_get_string(EVAL_value(node->nod_arg[0]), &ptr, (vary*) temp, sizeof(temp));
 
 		UCHAR msg[128];
 		MOVQ_terminate(ptr, (SCHAR*) msg, l, sizeof(msg));
@@ -817,8 +808,7 @@ static void execute_assignment( qli_nod* node)
 	if (to->nod_type == nod_field) {
 		qli_nod* reference = to->nod_arg[e_fld_reference];
 		parameter = reference->nod_import;
-		if (to->nod_desc.dsc_dtype == dtype_blob &&
-			from->nod_desc.dsc_dtype == dtype_blob &&
+		if (to->nod_desc.dsc_dtype == dtype_blob && from->nod_desc.dsc_dtype == dtype_blob &&
 			copy_blob(from, parameter))
 		{
 			return;
@@ -830,8 +820,7 @@ static void execute_assignment( qli_nod* node)
 	if (parameter)
 		parameter = parameter->par_missing;
 
-	assignment(from, EVAL_value(to),
-			   node->nod_arg[e_asn_valid], initial, parameter);
+	assignment(from, EVAL_value(to), node->nod_arg[e_asn_valid], initial, parameter);
 
 // propagate the missing flag in variable assignments
 
@@ -943,9 +932,7 @@ static void execute_output( qli_nod* node)
 	// Set up error handling
 
 	try {
-
 		// Finally, execute the query
-
 		EXEC_execute(node->nod_arg[e_out_statement]);
 		fclose(print->prt_file);
 
@@ -1057,8 +1044,7 @@ static void map_data( qli_msg* message)
 		desc->dsc_address = message->msg_buffer + parameter->par_offset;
 		qli_par* missing_parameter = parameter->par_missing;
 		if (missing_parameter) {
-			USHORT* missing_flag = (USHORT*) (message->msg_buffer +
-							missing_parameter->par_offset);
+			USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
 			*missing_flag = (desc->dsc_missing & DSC_missing) ? DSC_missing : 0;
 		}
 
@@ -1142,8 +1128,7 @@ static void set_null( qli_msg* message)
  *	statements.
  *
  **************************************/
-	for (qli_par* parameter = message->msg_parameters; parameter;
-		 parameter = parameter->par_next)
+	for (qli_par* parameter = message->msg_parameters; parameter; parameter = parameter->par_next)
 	{
 		qli_nod* from = parameter->par_value;
 		if (from->nod_type == nod_field) {
@@ -1177,11 +1162,11 @@ static void transaction_state( qli_nod* node, DBB database)
 	if (database->dbb_transaction) {
 		if (node->nod_type == nod_commit_retaining) {
 			if (isc_commit_retaining(status, &database->dbb_transaction))
-					ERRQ_database_error(database, status);
+				ERRQ_database_error(database, status);
 		}
 		else if (node->nod_type == nod_prepare) {
 			if (isc_prepare_transaction(status, &database->dbb_transaction))
-					ERRQ_database_error(database, status);
+				ERRQ_database_error(database, status);
 		}
 	}
 }

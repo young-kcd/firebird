@@ -300,7 +300,7 @@ typedef struct dbb {
     FB_API_HANDLE	dbb_edit_blob;
     FB_API_HANDLE	dbb_edit_store;
     FB_API_HANDLE	dbb_scan_blobs;
-    FB_API_HANDLE	dbb_delete_blob;
+    //FB_API_HANDLE	dbb_delete_blob;	// Unused
     USHORT			dbb_flags;
     USHORT			dbb_type;			/* Friend or foe? */
     USHORT			dbb_pagesize;		// For SQL metadata
@@ -326,13 +326,13 @@ const ULONG DBB_cap_security		= 4;	// Firebird style security classes
 const ULONG DBB_cap_idx_inactive	= 16;	// Firebird index inactive flag
 const ULONG DBB_cap_multi_trans		= 32;	// Database supports multiple transactions
 const ULONG DBB_cap_single_trans	= 64;	// Database supports only a single transaction
-const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates
+//const ULONG DBB_cap_dudley			= 128;	// We're authorized for meta-data updates. Unused
 const ULONG DBB_cap_functions		= 256;	// The DBMS knows about function
 const ULONG DBB_cap_new_triggers	= 512;	// triggers (new V3 style)
 const ULONG DBB_cap_shadowing		= 1024;	// Database supports shadowing
 const ULONG DBB_cap_types			= 2048;	// Database has RDB$TYPES relation
 const ULONG DBB_cap_dimensions		= 4096;	// Database supports arrays -- What a database!
-const ULONG DBB_cap_external_type	= 8192;	// Database supports external datatypes
+//const ULONG DBB_cap_external_type	= 8192;	// Database supports external datatypes. Unused
 const ULONG DBB_cap_rfr_sys_flag	= 16384;	// Database hasn't forgotten about the system flag
 const ULONG DBB_cap_filters			= 32768;	// Database supports filters
 const ULONG DBB_cap_index_type		= 65536;	// Database has too damn much stuff
@@ -373,7 +373,7 @@ struct qli_fld {
     USHORT		fld_segment_length;	// Segment length for blobs
     SSHORT		fld_scale;			// Scale factor of field
     qli_syntax*		fld_validation;		// Validation expression
-    qli_syntax*		fld_computed;		// Computed by expression
+    //qli_syntax*		fld_computed;		// Computed by expression. Unused
     qli_const*	fld_missing;		// Missing value defined in system relation
     SSHORT		fld_sub_type;		// Subtype for blobs, text and EXACT_NUMERICs.
     SSHORT		fld_sub_type_missing;	// Subtype missing flag
@@ -390,7 +390,7 @@ const USHORT FLD_modify		= 4;
 const USHORT FLD_missing	= 8;
 const USHORT FLD_not_null	= 16;
 const USHORT FLD_add		= 32;
-const USHORT FLD_unique		= 64;
+//const USHORT FLD_unique		= 64; Unused
 const USHORT FLD_array		= 128;
 
 // Privileges for SQL metadata
@@ -413,7 +413,7 @@ struct qli_lls {
 struct qli_str {
     blk		str_header;
     USHORT	str_length;
-    USHORT	str_fluff;
+    USHORT	str_fluff; // ??? Not used, maybe alignment?
     TEXT	str_data[2];
 };
 
@@ -450,7 +450,7 @@ typedef struct plb {
 // State flags for dsc_missing
 
 const USHORT DSC_missing	= 1;
-const USHORT DSC_initial	= 2;
+const USHORT DSC_initial	= 2; // Nobody sets this value, at least directly
 
 // Function description
 
@@ -461,7 +461,7 @@ struct qli_fun {
     qli_symbol*	fun_symbol;		// Associated symbol block
     qli_symbol*	fun_query_name;
     dsc			fun_return;		// Return descriptor
-    USHORT		fun_args;		// Number of arguments
+    //USHORT		fun_args;		// Number of arguments. Unused
     dsc			fun_arg[1];		/* Data type of arguments
 							   If you change this change blk.h too */
 };

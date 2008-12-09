@@ -45,7 +45,7 @@ void	MET_modify_field(dbb*, qli_fld*);
 void	MET_modify_index(qli_syntax*);
 void	MET_modify_relation(qli_rel*, qli_fld*);
 void	MET_ready(qli_syntax*, USHORT);
-void	MET_shutdown (void);
+void	MET_shutdown();
 void	MET_sql_alter_table(qli_rel*, qli_fld*);
 void	MET_sql_cr_view(qli_syntax*);
 void	MET_sql_grant(qli_syntax*);

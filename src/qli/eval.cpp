@@ -51,11 +51,11 @@ static bool like(const UCHAR*, SSHORT, const UCHAR*, SSHORT, const UCHAR);
 static TEXT* make_blob_buffer(FB_API_HANDLE, USHORT *);
 static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
 static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
-static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const,
-	const UCHAR*, const UCHAR* const);
+static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const, const UCHAR*,
+	const UCHAR* const);
 static bool sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
-static int sleuth_merge(const UCHAR*, const UCHAR* const , const UCHAR*,
-	const UCHAR* const, UCHAR* const);
+static int sleuth_merge(const UCHAR*, const UCHAR* const , const UCHAR*, const UCHAR* const,
+	UCHAR* const);
 static bool string_boolean(qli_nod*);
 static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
@@ -105,10 +105,8 @@ int EVAL_boolean( qli_nod* node)
 	case nod_leq:
 	case nod_lss:
 	case nod_between:
-		if (!(value1 = EVAL_value(node->nod_arg[0])) ||
-			(value1->dsc_missing & DSC_missing) ||
-			!(value2 = EVAL_value(node->nod_arg[1])) ||
-			(value2->dsc_missing & DSC_missing))
+		if (!(value1 = EVAL_value(node->nod_arg[0])) || (value1->dsc_missing & DSC_missing) ||
+			!(value2 = EVAL_value(node->nod_arg[1])) || (value2->dsc_missing & DSC_missing))
 		{
 			return false;
 		}
@@ -147,8 +145,7 @@ int EVAL_boolean( qli_nod* node)
 	case nod_between:
 		if (result < 0)
 			return false;
-		if (!(value2 = EVAL_value(node->nod_arg[2])) ||
-			(value2->dsc_missing & DSC_missing))
+		if (!(value2 = EVAL_value(node->nod_arg[2])) || (value2->dsc_missing & DSC_missing))
 		{
 			return false;
 		}
@@ -281,8 +278,7 @@ void EVAL_break_increment( qli_nod* node)
 	case nod_rpt_total:
 	case nod_rpt_average:
 		if (desc1->dsc_dtype == dtype_long)
-			*(SLONG *) desc1->dsc_address +=
-				MOVQ_get_long(desc2, desc1->dsc_scale);
+			*(SLONG *) desc1->dsc_address += MOVQ_get_long(desc2, desc1->dsc_scale);
 		else
 			*(double *) desc1->dsc_address += MOVQ_get_double(desc2);
 		break;
@@ -330,8 +326,7 @@ dsc* EVAL_parameter(qli_par* parameter)
 	qli_msg* message = parameter->par_message;
 
 	if (missing_parameter = parameter->par_missing) {
-		const USHORT* missing_flag =
-			(USHORT*) (message->msg_buffer + missing_parameter->par_offset);
+		const USHORT* missing_flag = (USHORT*) (message->msg_buffer + missing_parameter->par_offset);
 		desc->dsc_missing = (*missing_flag) ? DSC_missing : 0;
 	}
 
@@ -386,8 +381,7 @@ dsc* EVAL_value(qli_nod* node)
 	case nod_variable:
 		{
 			qli_fld* field = (qli_fld*) node->nod_arg[e_fld_field];
-			desc->dsc_missing =
-				(field->fld_flags & FLD_missing) ? DSC_missing : 0;
+			desc->dsc_missing = (field->fld_flags & FLD_missing) ? DSC_missing : 0;
 		}
 		return desc;
 
@@ -401,8 +395,7 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_add:
-		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing))
+		if ((values[0]->dsc_missing & DSC_missing) || (values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -422,8 +415,7 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_subtract:
-		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing))
+		if ((values[0]->dsc_missing & DSC_missing) || (values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -444,8 +436,7 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_divide:
-		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing))
+		if ((values[0]->dsc_missing & DSC_missing) || (values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -456,8 +447,7 @@ dsc* EVAL_value(qli_nod* node)
 		return desc;
 
 	case nod_multiply:
-		if ((values[0]->dsc_missing & DSC_missing) ||
-			(values[1]->dsc_missing & DSC_missing))
+		if ((values[0]->dsc_missing & DSC_missing) || (values[1]->dsc_missing & DSC_missing))
 		{
 			desc->dsc_missing = DSC_missing;
 			return desc;
@@ -480,19 +470,16 @@ dsc* EVAL_value(qli_nod* node)
 		desc->dsc_missing = FALSE;
 		switch (desc->dsc_dtype) {
 		case dtype_short:
-			*((SSHORT *) desc->dsc_address) =
-				-MOVQ_get_long(values[0], desc->dsc_scale);
+			*((SSHORT *) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
 		case dtype_long:
-			*((SLONG *) desc->dsc_address) =
-				-MOVQ_get_long(values[0], desc->dsc_scale);
+			*((SLONG *) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
 /*   	lets throw arithmetic not supported until fixed
         case dtype_int64:
-			*((SINT64 *) desc->dsc_address) =
-				-MOVQ_get_long(values[0], desc->dsc_scale);
+			*((SINT64 *) desc->dsc_address) = -MOVQ_get_long(values[0], desc->dsc_scale);
 			break;
 
 */		case dtype_real:
@@ -540,8 +527,7 @@ dsc* EVAL_value(qli_nod* node)
 				if (desc2->dsc_missing & DSC_missing)
 					return desc;
 				if (desc->dsc_dtype == dtype_long)
-					*(SLONG *) desc->dsc_address +=
-						MOVQ_get_long(desc2, desc->dsc_scale);
+					*(SLONG *) desc->dsc_address += MOVQ_get_long(desc2, desc->dsc_scale);
 				else
 					*(double *) desc->dsc_address += MOVQ_get_double(desc2);
 			}
@@ -551,8 +537,7 @@ dsc* EVAL_value(qli_nod* node)
 	case nod_format:
 		{
 			UCHAR* p = desc->dsc_address;
-			PIC_edit(values[0], (pics*) node->nod_arg[e_fmt_picture], (TEXT**) &p,
-				 desc->dsc_length);
+			PIC_edit(values[0], (pics*) node->nod_arg[e_fmt_picture], (TEXT**) &p, desc->dsc_length);
 			desc->dsc_length = p - desc->dsc_address;
 		}
 		return desc;
@@ -734,22 +719,18 @@ static DSC *execute_prompt( qli_nod* node)
 	dsc* desc = &node->nod_desc;
 	vary* data = (vary*) desc->dsc_address;
 
-	TEXT* value =
-		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
+	TEXT* value = (desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
 		  buffer : data->vary_string;
-	const int length =
-		(desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
+	const int length = (desc->dsc_length - 2 <= static_cast<int>(sizeof(buffer))) ?
 		  sizeof(buffer) : desc->dsc_length - 2;
 
 	for (;;) {
 		++QLI_prompt_count;
 		if (node->nod_arg[e_prm_prompt]) {
 			if (reprompt)
-				sprintf(string, "\07%s %s: ", prompt[0],
-						(TEXT *) node->nod_arg[e_prm_prompt]);
+				sprintf(string, "\07%s %s: ", prompt[0], (TEXT*) node->nod_arg[e_prm_prompt]);
 			else
-				sprintf(string, "%s %s: ", prompt[1],
-						(TEXT *) node->nod_arg[e_prm_prompt]);
+				sprintf(string, "%s %s: ", prompt[1], (TEXT*) node->nod_arg[e_prm_prompt]);
 		}
 		else {
 			if (reprompt)
@@ -1270,12 +1251,10 @@ static bool string_boolean( qli_nod* node)
  *	or STARTS WITH.
  *
  **************************************/
-	DSC *desc1, *desc2, *desc3;
+	const DSC *desc1, *desc2, *desc3;
 
-	if (!(desc1 = EVAL_value(node->nod_arg[0])) ||
-		(desc1->dsc_missing & DSC_missing) ||
-		!(desc2 = EVAL_value(node->nod_arg[1])) ||
-		(desc2->dsc_missing & DSC_missing) ||
+	if (!(desc1 = EVAL_value(node->nod_arg[0])) || (desc1->dsc_missing & DSC_missing) ||
+		!(desc2 = EVAL_value(node->nod_arg[1])) || (desc2->dsc_missing & DSC_missing) ||
 		(node->nod_arg[2] && (!(desc3 = EVAL_value(node->nod_arg[2])) ||
 							  (desc3->dsc_missing & DSC_missing))))
 	{
@@ -1314,8 +1293,7 @@ static bool string_boolean( qli_nod* node)
 
 	ISC_STATUS_ARRAY status_vector;
 	SSHORT l3 = 0;
-	while (!isc_get_segment(status_vector, &blob, (USHORT*) &l3,
-							 buffer_length, buffer))
+	while (!isc_get_segment(status_vector, &blob, (USHORT*) &l3, buffer_length, buffer))
 	{
 		if (string_function(node, l3, buffer, l2, p2)) {
 			result = true;
@@ -1391,8 +1369,7 @@ static bool string_function(
 		TEXT temp[16];
 		const TEXT* q1 = NULL;
 		if (node->nod_count > 2 &&
-			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (vary*) temp,
-							sizeof(temp)))
+			MOVQ_get_string(EVAL_value(node->nod_arg[2]), &q1, (vary*) temp, sizeof(temp)))
 		{
 			c1 = *q1;
 		}

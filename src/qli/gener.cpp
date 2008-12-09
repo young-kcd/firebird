@@ -94,7 +94,7 @@ qli_nod* GEN_generate( qli_nod* node)
 }
 
 
-void GEN_release(void)
+void GEN_release()
 {
 /**************************************
  *
@@ -599,8 +599,7 @@ static void gen_compile( qli_req* request)
 	DBB dbb = request->req_database;
 
 	ISC_STATUS_ARRAY status_vector;
-	if (isc_compile_request(status_vector, &dbb->dbb_handle,
-							 &request->req_handle, length,
+	if (isc_compile_request(status_vector, &dbb->dbb_handle, &request->req_handle, length,
 							 (const char*) rlb->rlb_base))
 	{
 		GEN_rlb_release (rlb);
@@ -776,8 +775,7 @@ static void gen_expression(qli_nod* node, qli_req* request)
 		{
 			qli_map* map = (qli_map*) node->nod_arg[e_map_map];
 			const qli_ctx* context = (qli_ctx*) node->nod_arg[e_map_context];
-			if (context->ctx_request != request &&
-				map->map_node->nod_type == nod_field)
+			if (context->ctx_request != request && map->map_node->nod_type == nod_field)
 			{
 				gen_field(map->map_node, request);
 				return;
@@ -999,8 +997,7 @@ static void gen_field( qli_nod* node, qli_req* request)
 		if (args) {
 			STUFF(args->nod_count);
 			qli_nod** ptr = args->nod_arg;
-			for (const qli_nod* const* const end = ptr + args->nod_count;
-				ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + args->nod_count; ptr < end; ++ptr)
 			{
 				gen_expression(*ptr, request);
 			}
@@ -1069,7 +1066,7 @@ static void gen_for( qli_nod* node, qli_req* request)
 		// Build assigments for all values referenced.
 
 		for (const qli_par* parameter = message->msg_parameters; parameter;
-			 parameter = parameter->par_next)
+			parameter = parameter->par_next)
 		{
 			if (parameter->par_value) {
 				STUFF(blr_assignment);
@@ -1465,8 +1462,7 @@ static void gen_request( qli_req* request)
 
 // Build declarations for all messages.
 
-	for (qli_msg* message = request->req_messages; message;
-		message = message->msg_next)
+	for (qli_msg* message = request->req_messages; message; message = message->msg_next)
 	{
 		message->msg_length = 0;
 		for (param = message->msg_parameters; param; param = param->par_next) {
@@ -1474,15 +1470,13 @@ static void gen_request( qli_req* request)
 			param->par_parameter = message->msg_parameter++;
 			const USHORT alignment = type_alignments[desc->dsc_dtype];
 			if (alignment)
-				message->msg_length =
-					FB_ALIGN(message->msg_length, alignment);
+				message->msg_length = FB_ALIGN(message->msg_length, alignment);
 			param->par_offset = message->msg_length;
 			message->msg_length += desc->dsc_length;
 			qli_par* missing_param = param->par_missing;
 			if (missing_param) {
 				missing_param->par_parameter = message->msg_parameter++;
-				message->msg_length =
-					FB_ALIGN(message->msg_length, sizeof(USHORT));
+				message->msg_length = FB_ALIGN(message->msg_length, sizeof(USHORT));
 				desc = &missing_param->par_desc;
 				missing_param->par_offset = message->msg_length;
 				message->msg_length += desc->dsc_length;
@@ -1540,8 +1534,7 @@ static void gen_rse( qli_nod* node, qli_req* request)
 			request->req_flags |= REQ_group_by;
 			STUFF(list->nod_count);
 			qli_nod** ptr = list->nod_arg;
-			for (const qli_nod* const* const end = ptr + list->nod_count;
-				ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + list->nod_count; ptr < end; ++ptr)
 			{
 				gen_expression(*ptr, request);
 			}
@@ -1647,8 +1640,7 @@ static void gen_sort( qli_nod* node, qli_req* request, const UCHAR operatr)
 
 	request->req_flags |= REQ_project;
 	qli_nod** ptr = node->nod_arg;
-	for (qli_nod** const end = ptr + node->nod_count * 2; ptr < end;
-		ptr += 2)
+	for (qli_nod** const end = ptr + node->nod_count * 2; ptr < end; ptr += 2)
 	{
 		if (operatr == blr_sort)
 			STUFF((ptr[1]) ? blr_descending : blr_ascending);
@@ -1698,8 +1690,7 @@ static void gen_statement( qli_nod* node, qli_req* request)
 	case nod_list:
 	    {
 	        qli_nod** ptr = node->nod_arg;
-			for (const qli_nod* const* const end = ptr + node->nod_count;
-				ptr < end; ++ptr)
+			for (const qli_nod* const* const end = ptr + node->nod_count; ptr < end; ++ptr)
 			{
 				gen_statement(*ptr, request);
 			}

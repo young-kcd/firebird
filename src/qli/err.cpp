@@ -94,8 +94,7 @@ void ERRQ_database_error( DBB dbb, ISC_STATUS* status_vector)
 }
 
 
-void ERRQ_error(USHORT number,
-				const SafeArg& arg)
+void ERRQ_error(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -122,8 +121,7 @@ void ERRQ_error(USHORT number,
 	*/
 }
 
-void ERRQ_error(USHORT number,
-				const char* str)
+void ERRQ_error(USHORT number, const char* str)
 {
 /**************************************
  *
@@ -142,8 +140,7 @@ void ERRQ_error(USHORT number,
 }
 
 
-void ERRQ_error_format(USHORT number,
-					   const SafeArg& arg)
+void ERRQ_error_format(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -185,10 +182,7 @@ void ERRQ_exit( int status)
 }
 
 
-void ERRQ_msg_format(USHORT number,
-					 USHORT length,
-					 TEXT* output_string,
-					 const SafeArg& arg)
+void ERRQ_msg_format(USHORT number, USHORT length, TEXT* output_string, const SafeArg& arg)
 {
 /**************************************
  *
@@ -205,9 +199,7 @@ void ERRQ_msg_format(USHORT number,
 }
 
 
-void ERRQ_msg_partial(
-					  USHORT number,
-					  const SafeArg& arg)
+void ERRQ_msg_partial(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -220,14 +212,12 @@ void ERRQ_msg_partial(
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
-					ERRQ_message, arg);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, arg);
 	printf("%s", ERRQ_message);
 }
 
 
-void ERRQ_msg_put(USHORT number,
-				  const SafeArg& arg)
+void ERRQ_msg_put(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -241,14 +231,12 @@ void ERRQ_msg_put(USHORT number,
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
-					ERRQ_message, arg);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, arg);
 	printf("%s\n", ERRQ_message);
 }
 
 
-void ERRQ_msg_put(USHORT number,
-				  const char* str)
+void ERRQ_msg_put(USHORT number, const char* str)
 {
 /**************************************
  *
@@ -262,8 +250,7 @@ void ERRQ_msg_put(USHORT number,
  *
  **************************************/
 
-	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message),
-					ERRQ_message, SafeArg() << str);
+	fb_msg_format(0, QLI_MSG_FAC, number, sizeof(ERRQ_message), ERRQ_message, SafeArg() << str);
 	printf("%s\n", ERRQ_message);
 }
 
@@ -287,7 +274,7 @@ int ERRQ_msg_get( USHORT number, TEXT* output_msg, size_t s_size)
 }
 
 
-void ERRQ_pending(void)
+void ERRQ_pending()
 {
 /**************************************
  *
@@ -307,8 +294,7 @@ void ERRQ_pending(void)
 }
 
 
-void ERRQ_print_error(USHORT number,
-					  const SafeArg& arg)
+void ERRQ_print_error(USHORT number, const SafeArg& arg)
 {
 /**************************************
  *
@@ -326,8 +312,7 @@ void ERRQ_print_error(USHORT number,
 }
 
 
-void ERRQ_print_error(USHORT number,
-					  const char* str)
+void ERRQ_print_error(USHORT number, const char* str)
 {
 /**************************************
  *

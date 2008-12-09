@@ -402,8 +402,7 @@ void ALLQ_release( FRB block)
 	UCHAR pool_id = block->frb_header.blk_pool_id;
 
 	PLB pool;
-	if (pool_id >= global_pools->vec_count ||
-		!(pool = (PLB) global_pools->vec_object[pool_id]))
+	if (pool_id >= global_pools->vec_count || !(pool = (PLB) global_pools->vec_object[pool_id]))
 	{
 		ERRQ_bugcheck(4);
 		// Msg4 bad pool id
@@ -412,8 +411,7 @@ void ALLQ_release( FRB block)
 	FRB prior = NULL;
 	FRB free;
 	FRB* ptr;
-	for (ptr = &pool->plb_free; free = *ptr;
-		 prior = free, ptr = &free->frb_next)
+	for (ptr = &pool->plb_free; free = *ptr; prior = free, ptr = &free->frb_next)
 	{
 		if ((SCHAR *) block <= (SCHAR *) free)
 			break;
@@ -489,8 +487,7 @@ static void extend_pool( PLB pool, USHORT count)
  *	of given size.
  *
  **************************************/
-	const SLONG size =
-		(count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
+	const SLONG size = (count + sizeof(hnk) + MIN_ALLOCATION - 1) & ~(MIN_ALLOCATION - 1);
 
 	if ((USHORT) size < count)
 		IBERROR(481);			// msg 481 unsuccessful attempt to extend pool beyond 64KB

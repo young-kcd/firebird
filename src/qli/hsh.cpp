@@ -50,7 +50,7 @@ const qli_kword keywords[] =
 };
 
 
-void HSH_fini(void)
+void HSH_fini()
 {
 /**************************************
  *
@@ -71,7 +71,7 @@ void HSH_fini(void)
 }
 
 
-void HSH_init(void)
+void HSH_init()
 {
 /**************************************
  *
@@ -116,8 +116,7 @@ void HSH_insert( qli_symbol* symbol, bool ignore_case)
 
 	for (qli_symbol* old = hash_table[h]; old; old = old->sym_collision)
 	{
-		if (scompare(symbol->sym_string, symbol->sym_length,
-					 old->sym_string, old->sym_length))
+		if (scompare(symbol->sym_string, symbol->sym_length, old->sym_string, old->sym_length))
 		{
 			symbol->sym_homonym = old->sym_homonym;
 			old->sym_homonym = symbol;
@@ -152,7 +151,7 @@ qli_symbol* HSH_lookup(const SCHAR* string, int length)
 		scompare = scompare_sens;
 	}
 	for (qli_symbol* symbol = hash_table[hash(string, length)]; symbol;
-		 symbol = symbol->sym_collision)
+		symbol = symbol->sym_collision)
 	{
 		if (scompare(string, length, symbol->sym_string, symbol->sym_length))
 			return symbol;

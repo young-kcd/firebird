@@ -96,7 +96,7 @@ typedef enum {
     CTX_RELATION,
     CTX_VARIABLE,
     CTX_AGGREGATE,
-    CTX_UNION,
+    //CTX_UNION,
     CTX_STREAM
 } CTX_T;
 
@@ -132,7 +132,7 @@ struct qli_map {
 struct qli_msg {
     blk			msg_header;
     qli_req*	msg_request;		// Parent request
-    qli_ctx*	msg_context;		// Contexts in message
+    //qli_ctx*	msg_context;		// Contexts in message
     qli_msg*	msg_next;			// Next message in request
     struct qli_par*	msg_parameters;	// Field instances
     USHORT		msg_number;			// Message number
@@ -157,7 +157,7 @@ struct qli_par {
 // Print item block
 
 typedef enum itm_t
-    {
+{
     item_value,
     item_skip,
     item_column,
@@ -182,12 +182,12 @@ struct qli_print_item {
     USHORT		itm_print_length;
     USHORT		itm_header_offset;
     USHORT		itm_header_length;
-    USHORT		itm_header_segments;
+    //USHORT		itm_header_segments;
     USHORT		itm_count;			// Number of lines to skip
-    USHORT		itm_column;			// Logical column number
+    //USHORT		itm_column;			// Logical column number
     FB_API_HANDLE itm_stream;
-    USHORT		itm_kanji_fragment;	// JPN: last kanji on line border
-    ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch
+    //USHORT		itm_kanji_fragment;	// JPN: last kanji on line border
+    //ISC_STATUS	itm_blob_status;	// JPN: status of the last blob fetch
 };
 
 // itm_flags
@@ -255,10 +255,7 @@ const int e_rse_context		= 4;	// Context block
 const int e_rse_group_by	= 5;
 const int e_rse_having		= 6;
 const int e_rse_join_type	= 7;
-#ifdef PC_ENGINE
-const int e_rse_index		= 8;
-#endif
-const int e_rse_count		= 9;
+const int e_rse_count		= 8;
 
 const int e_prt_list		= 0;	// List of print items
 const int e_prt_file_name	= 1;	// Output file name

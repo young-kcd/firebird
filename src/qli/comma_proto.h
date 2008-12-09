@@ -24,7 +24,7 @@
 #ifndef QLI_COMMA_PROTO_H
 #define QLI_COMMA_PROTO_H
 
-bool	CMD_check_ready(void);
+bool	CMD_check_ready();
 void	CMD_copy_procedure(qli_syntax*);
 void	CMD_define_procedure(qli_syntax*);
 void	CMD_delete_proc(qli_syntax*);

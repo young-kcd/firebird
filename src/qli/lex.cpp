@@ -66,7 +66,7 @@ static int nextchar(const bool);
 static void next_line(const bool);
 static void retchar();
 static bool scan_number(SSHORT, TEXT **);
-static int skip_white(void);
+static int skip_white();
 
 static qli_lls* QLI_statements;
 static int QLI_position;
@@ -134,7 +134,7 @@ inline char classes(UCHAR idx)
 
 
 
-bool LEX_active_procedure(void)
+bool LEX_active_procedure()
 {
 /**************************************
  *
@@ -198,7 +198,7 @@ void LEX_edit(SLONG start, SLONG stop)
 }
 
 
-qli_tok* LEX_edit_string(void)
+qli_tok* LEX_edit_string()
 {
 /**************************************
  *
@@ -264,7 +264,7 @@ qli_tok* LEX_edit_string(void)
 }
 
 
-qli_tok* LEX_filename(void)
+qli_tok* LEX_filename()
 {
 /**************************************
  *
@@ -351,7 +351,7 @@ qli_tok* LEX_filename(void)
 }
 
 
-void LEX_fini(void)
+void LEX_fini()
 {
 /**************************************
  *
@@ -371,7 +371,7 @@ void LEX_fini(void)
 }
 
 
-void LEX_flush(void)
+void LEX_flush()
 {
 /**************************************
  *
@@ -482,7 +482,7 @@ bool LEX_get_line(const TEXT* prompt,
 }
 
 
-void LEX_init(void)
+void LEX_init()
 {
 /**************************************
  *
@@ -515,7 +515,7 @@ void LEX_init(void)
 }
 
 
-void LEX_mark_statement(void)
+void LEX_mark_statement()
 {
 /**************************************
  *
@@ -530,9 +530,7 @@ void LEX_mark_statement(void)
  **************************************/
 	qli_line* temp;
 
-	for (temp = QLI_line;
-		 temp->line_next && QLI_statements;
-		 temp = temp->line_next)
+	for (temp = QLI_line; temp->line_next && QLI_statements; temp = temp->line_next)
 	{
 		if (temp->line_next->line_position == (IPTR) QLI_statements->lls_object)
 			return;
@@ -545,7 +543,7 @@ void LEX_mark_statement(void)
 }
 
 
-void LEX_pop_line(void)
+void LEX_pop_line()
 {
 /**************************************
  *
@@ -585,8 +583,7 @@ void LEX_procedure( DBB database, FB_API_HANDLE blob)
  **************************************/
 	qli_line* temp = (qli_line*) ALLOCPV(type_line, QLI_token->tok_length);
 	temp->line_source_blob = blob;
-	strncpy(temp->line_source_name, QLI_token->tok_string,
-			QLI_token->tok_length);
+	strncpy(temp->line_source_name, QLI_token->tok_string, QLI_token->tok_length);
 	temp->line_type = line_blob;
 	temp->line_database = database;
 	temp->line_size = sizeof(temp->line_data);
@@ -711,7 +708,7 @@ void LEX_put_procedure(FB_API_HANDLE blob, SLONG start, SLONG stop)
 }
 
 
-void LEX_real(void)
+void LEX_real()
 {
 /**************************************
  *
@@ -729,7 +726,7 @@ void LEX_real(void)
 }
 
 
-qli_lls* LEX_statement_list(void)
+qli_lls* LEX_statement_list()
 {
 /**************************************
  *
@@ -748,7 +745,7 @@ qli_lls* LEX_statement_list(void)
 }
 
 
-qli_tok* LEX_token(void)
+qli_tok* LEX_token()
 {
 /**************************************
  *
@@ -788,8 +785,7 @@ qli_tok* LEX_token(void)
 	}
 
 	*p++ = c;
-	QLI_token->tok_position = QLI_line->line_position +
-		QLI_line->line_ptr - QLI_line->line_data - 1;
+	QLI_token->tok_position = QLI_line->line_position + QLI_line->line_ptr - QLI_line->line_data - 1;
 
 // On end of file, generate furious but phone end of line tokens
 
@@ -984,8 +980,7 @@ static void next_line(const bool eof_ok)
 		if (QLI_line->line_type == line_blob) {
 			// If the current blob segment contains another line, use it
 
-			if ((p = QLI_line->line_ptr) != QLI_line->line_data
-				&& p[-1] == '\n' && *p)
+			if ((p = QLI_line->line_ptr) != QLI_line->line_data && p[-1] == '\n' && *p)
 			{
 				flag = true;
 			}
@@ -995,8 +990,7 @@ static void next_line(const bool eof_ok)
 				p = QLI_line->line_data;
 				QLI_line->line_ptr = QLI_line->line_data;
 
-				flag = PRO_get_line(QLI_line->line_source_blob, p,
-								 QLI_line->line_size);
+				flag = PRO_get_line(QLI_line->line_source_blob, p, QLI_line->line_size);
 				if (flag && QLI_echo)
 					printf("%s", QLI_line->line_data);
 			}
@@ -1176,7 +1170,7 @@ static bool scan_number(SSHORT c,
 }
 
 
-static int skip_white(void)
+static int skip_white()
 {
 /**************************************
  *

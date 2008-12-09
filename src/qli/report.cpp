@@ -44,9 +44,9 @@ static void top_of_page(qli_prt*, bool);
 //#define SWAP(a, b)	{temp = a; a = b; b = temp;}
 inline void swap_uchar(UCHAR*& a, UCHAR*& b)
 {
-		UCHAR* temp = a;
-		a = b;
-		b = temp;
+	UCHAR* temp = a;
+	a = b;
+	b = temp;
 }
 
 
@@ -117,14 +117,13 @@ void RPT_report( qli_nod* loop)
 
 // Force TOP breaks for all fields
 
-	for (control = report->rpt_top_breaks; control;
-		 control = control->brk_next) FMT_print((qli_nod*) control->brk_line, print);
+	for (control = report->rpt_top_breaks; control; control = control->brk_next)
+		FMT_print((qli_nod*) control->brk_line, print);
 
 	for (;;) {
 		// Check for bottom breaks.  If we find one, force all lower breaks.
 
-		for (control = report->rpt_bottom_breaks; control;
-			 control = control->brk_next)
+		for (control = report->rpt_bottom_breaks; control; control = control->brk_next)
 		{
 			if (test_break(control, report, message)) {
 				swap_uchar(message->msg_buffer, report->rpt_buffer);
@@ -140,8 +139,7 @@ void RPT_report( qli_nod* loop)
 
 		// Now check for top breaks.
 
-		for (control = report->rpt_top_breaks; control;
-			 control = control->brk_next)
+		for (control = report->rpt_top_breaks; control; control = control->brk_next)
 		{
 			if (test_break(control, report, message)) {
 				top_break(control, print);

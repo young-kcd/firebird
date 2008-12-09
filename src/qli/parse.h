@@ -54,8 +54,8 @@ struct qli_tok {
     KWWORDS		tok_keyword;	// keyword number, if recognized
     SLONG		tok_position;	// byte number in input stream
     USHORT		tok_length;
-    qli_tok*	tok_next;
-    qli_tok*	tok_prior;
+    //qli_tok*	tok_next;
+    //qli_tok*	tok_prior;
     TEXT		tok_string [2];
 };
 
@@ -65,8 +65,8 @@ enum line_t {
     line_stdin,
     line_blob,
     line_file,
-    line_string,
-    line_edit
+    line_string
+    //, line_edit
 };
 
 struct qli_line {
@@ -79,7 +79,7 @@ struct qli_line {
     SLONG		line_position;
     FB_API_HANDLE line_source_blob;			// Blob handle
 	FILE*		line_source_file;			// File handle
-    enum line_t	line_type;
+	line_t		line_type;
     TEXT		line_data[256];
     TEXT		line_source_name[2];
 };

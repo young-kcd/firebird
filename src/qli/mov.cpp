@@ -38,9 +38,9 @@ using MsgFormat::SafeArg;
 
 static void date_error(const TEXT*, const USHORT);
 static double double_from_text(const dsc* desc);
-static void timestamp_to_text(SLONG[2], DSC *);
-static void sql_time_to_text(ULONG[1], DSC *);
-static void sql_date_to_text(SLONG[1], DSC *);
+static void sql_date_to_text(const SLONG[1], DSC*);
+static void sql_time_to_text(const ULONG[1], DSC*);
+static void timestamp_to_text(const SLONG[2], DSC*);
 static void mover_error(int, USHORT, USHORT);
 static void now_to_date(const tm*, SLONG[2]);
 static void numeric_to_text(const dsc*, dsc*);
@@ -102,8 +102,7 @@ int MOVQ_compare(const dsc* arg1, const dsc* arg2)
 
 // Handle the simple (matched) ones first
 
-	if (arg1->dsc_dtype == arg2->dsc_dtype &&
-		arg1->dsc_scale == arg2->dsc_scale)
+	if (arg1->dsc_dtype == arg2->dsc_dtype && arg1->dsc_scale == arg2->dsc_scale)
 	{
 		const UCHAR* p1 = arg1->dsc_address;
 		const UCHAR* p2 = arg2->dsc_address;
@@ -999,7 +998,7 @@ static double double_from_text(const dsc* desc)
 }
 
 
-static void sql_date_to_text( SLONG date[1], DSC * to)
+static void sql_date_to_text( const SLONG date[1], DSC* to)
 {
 /**************************************
  *
@@ -1016,7 +1015,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 
 	date2[0] = date[0];
 	date2[1] = 0;
-	isc_decode_date((ISC_QUAD*) date2, &times);
+	isc_decode_date((const ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1037,7 +1036,7 @@ static void sql_date_to_text( SLONG date[1], DSC * to)
 }
 
 
-static void sql_time_to_text( ULONG date[1], DSC * to)
+static void sql_time_to_text( const ULONG date[1], DSC* to)
 {
 /**************************************
  *
@@ -1055,7 +1054,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 	date2[0] = 0;
 	date2[1] = date[0];
 
-	isc_decode_date((ISC_QUAD*) date2, &times);
+	isc_decode_date((const ISC_QUAD*) date2, &times);
 
 	TEXT temp[35];
 	sprintf(temp, " %2d:%.2d:%.2d.%.4"SLONGFORMAT, times.tm_hour, times.tm_min,
@@ -1076,7 +1075,7 @@ static void sql_time_to_text( ULONG date[1], DSC * to)
 }
 
 
-static void timestamp_to_text( SLONG date[2], DSC * to)
+static void timestamp_to_text( const SLONG date[2], DSC* to)
 {
 /**************************************
  *
@@ -1089,7 +1088,7 @@ static void timestamp_to_text( SLONG date[2], DSC * to)
  *
  **************************************/
 	tm times;
-	isc_decode_date((ISC_QUAD*)date, &times);
+	isc_decode_date((const ISC_QUAD*) date, &times);
 
     TEXT temp[35];
 	sprintf(temp, "%2d-%.3s-%04d", times.tm_mday,
@@ -1231,8 +1230,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
-		(to->dsc_dtype == dtype_varying
-		 && length > to->dsc_length - sizeof(SSHORT)))
+		(to->dsc_dtype == dtype_varying && length > to->dsc_length - sizeof(SSHORT)))
 	{
 		IBERROR(57);			// Msg 57 overflow during conversion
 	}
@@ -1287,8 +1285,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		return;
 	}
 
-	*(SSHORT *) (to->dsc_address) =
-		(UCHAR *) q - to->dsc_address - sizeof(SSHORT);
+	*(SSHORT *) (to->dsc_address) = (UCHAR *) q - to->dsc_address - sizeof(SSHORT);
 }
 
 
@@ -1450,7 +1447,9 @@ static void string_to_date(const TEXT* string, USHORT length, SLONG date[2])
 
 	if (times.tm_year != times2.tm_year ||
 		times.tm_mon != times2.tm_mon || times.tm_mday != times2.tm_mday)
+	{
 		date_error(string, length);
+	}
 
 	while (precision++ < 4)
 		components[6] *= 10;
