@@ -2,9 +2,21 @@
   * v2.0.5
   **************************
 
+    * Fixed unregistered bug
+        Issue with @prefix@ in aliases.conf on MacOS
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
     * Fixed bug CORE-2223
         Multiple bugs in GBAK when working with ACLs
       Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+ 
+    * Fixed bug CORE-2221
+        Attach to any database fails after modification of access rights
+        of security2.fdb from 0660 to 0666
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
         Alex Peshkov <peshkoff at mail.ru>
  
     * Fixed bug CORE-2108
