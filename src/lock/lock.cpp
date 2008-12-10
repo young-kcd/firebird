@@ -878,6 +878,30 @@ int LOCK_init(
 
 
 #ifdef MANAGER_PROCESS
+
+#ifdef TERMINATE_IDLE_LOCK_MANAGER
+
+static int doLock(int fd, bool shared, bool wait)
+{
+#ifdef HAVE_FLOCK
+	if (flock(fd, (shared ? LOCK_SH : LOCK_EX) | (wait ? 0 : LOCK_NB)))
+#else //use FCNTL
+	struct flock lock;
+	lock.l_type = shared ? F_RDLCK : F_WRLCK;
+	lock.l_whence = 0;
+	lock.l_start = 0;
+	lock.l_len = 0;
+	if (fcntl(fd, wait ? F_SETLKW : F_SETLK, &lock) == -1)
+#endif
+	{
+		return errno;
+	}
+
+	return 0;
+}
+
+#endif //TERMINATE_IDLE_LOCK_MANAGER
+
 void LOCK_manager( SRQ_PTR* manager_owner_offset)
 {
 /**************************************
@@ -1005,10 +1029,10 @@ void LOCK_manager( SRQ_PTR* manager_owner_offset)
 		   expires, exit. */
 
 		if (ret == FALSE)
-			if (!flock((int) LOCK_data.sh_mem_handle, LOCK_EX | LOCK_NB))
+			if (doLock((int) LOCK_data.sh_mem_handle, false, false) == 0)
 				break;
 			else
-				flock((int) LOCK_data.sh_mem_handle, LOCK_SH);
+				doLock((int) LOCK_data.sh_mem_handle, true, true);
 #endif
 	}
 

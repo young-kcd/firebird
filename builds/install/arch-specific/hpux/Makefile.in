@@ -27,7 +27,7 @@
 #  Contributor(s):
 # 
 #
-#  $Id: Makefile.in,v 1.3.2.2 2008-01-17 13:14:10 paulbeach Exp $
+#  $Id: Makefile.in,v 1.3.2.3 2008-12-10 15:22:13 alexpeshkoff Exp $
 #
 ROOT=..
 
@@ -91,11 +91,11 @@ TarInstallDir=$(GEN_ROOT)/install
 
 dist : packages
 
-packages: depotfile tarfile debugfile
+packages: tarfile debugfile depotfile
 depotfile: $(DepotFile)
 
 $(DepotFile): buildDepot
-	(cd $(GEN_ROOT); swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
+	(cd $(GEN_ROOT); /usr/sbin/swpackage -d "| gzip -c > $(DepotFile).gz" -x media_type=tape -s $(psfFile)) 
 
 tarfile:  $(TarFile)
 
@@ -162,7 +162,7 @@ buildTarDir: buildImageDir
 	cp -r $(GEN_ROOT)/install/scripts $(GEN_ROOT)/$(TarDir)
 	cp -r $(GEN_ROOT)/install/scripts/tarmainInstall.sh $(GEN_ROOT)/$(TarDir)/install.sh
 	chmod a+x $(GEN_ROOT)/$(TarDir)/install.sh $(GEN_ROOT)/$(TarDir)/scripts/*sh
-	(cd $(GEN_ROOT)/buildroot; tar -cvf buildroot.tar usr opt )
+	(cd $(GEN_ROOT)/buildroot; rm -f buildroot.tar manifest.txt; tar -cvf buildroot.tar * )
 	(cd $(GEN_ROOT)/buildroot; tar -tvf buildroot.tar > manifest.txt )
 	(cd $(GEN_ROOT)/buildroot; cp buildroot.tar ../$(TarDir)/buildroot.tar )
 	(cd $(GEN_ROOT)/buildroot; cp manifest.txt ../$(TarDir)/manifest.txt )

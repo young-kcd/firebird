@@ -139,7 +139,7 @@ public:
 	}
 };
 
-#ifndef DARWIN
+#if !(defined(DARWIN) | defined(HPUX))
 class Spinlock {
 private:
 	pthread_spinlock_t spinlock;
@@ -161,7 +161,9 @@ public:
 			system_call_failed::raise("pthread_spin_unlock");
 	}
 };
-#endif //DARWIN
+#else // have spinlocks
+typedef Mutex Spinlock;
+#endif // have spinlocks
 
 #endif //SOLARIS_MT
 
